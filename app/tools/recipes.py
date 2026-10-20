@@ -3448,7 +3448,7 @@ def _step_words_missing(used_text: str, listed: str) -> list[str]:
     # 1.5 lb of chicken breast this way).
     used_text = _SIDE_UP_RE.sub(" side", used_text)
     plain = used_text
-    for _words, pattern in _coordination._COMPOUND_EXCEPTIONS:
+    for _words, pattern, *_ in _coordination._COMPOUND_EXCEPTIONS:
         plain = pattern.sub(" ", plain)
     no_egg_words = _NOT_AN_EGG_RE.sub(" ", plain)
 

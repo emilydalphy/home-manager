@@ -53,13 +53,27 @@ why*, not duplicating the diff.
   an Approved badge. The shell now tells tour.js (`host.weekApproved`,
   Plan's own `weekPlanState`) and those two stops drop the "approve" half;
   the first-draft tour reads exactly as before.
+- **"No red meat" holds back lamb** (2026-10-20, defect hunt, branch
+  `overnight/no-red-meat-holds-back-lamb`, stacked on
+  `overnight/mustard-holds-back-dijon`; tests
+  `tests/test_no_red_meat_holds_back_lamb.py`). "red meat" was matched as
+  the words "red" then "meat", so Lamb Kofta passed the hard gate. Now
+  `coordination._PHRASE_FAMILIES[("red","meat")]` = beef, lamb, mutton,
+  veal, venison, goat, bison, elk, PORK + the beef/pork cut tables (no
+  "steak", "burger", "buffalo"); goat cheese and lamb's lettuce are
+  compound exceptions. Pork counts: WHO/IARC, Canada's Food Guide and USDA
+  file it as red meat, and over-safe is the right way for a hard gate to be
+  wrong. Retired `test_beef_is_a_known_miss_for_red_meat`. Still open: a
+  hard note "Maya doesn't eat X" avoids nothing — "doesn't eat" is no
+  trigger in `_AVOIDANCE_TRIGGER_RE` (any food, not just red meat).
+
 - **A mustard allergy holds back Dijon** (2026-10-20, defect hunt, branch
   `overnight/mustard-holds-back-dijon`, stacked on
   `overnight/celiac-holds-back-gluten`; tests
   `tests/test_mustard_holds_back_dijon.py`). "mustard" had no family, so a
   "Dijon" line passed the hard gate. Now `_ALLERGEN_ALIASES["mustard"]` =
   dijon, piccalilli. Why: a Canadian priority allergen, and the jar is
-  named for the town. Still open: "no red meat" doesn't reach lamb.
+  named for the town. ("No red meat" reaching lamb: the entry above.)
 
 - **"Celiac" on someone's restrictions holds back gluten** (2026-10-20,
   defect hunt, branch `overnight/celiac-holds-back-gluten`, tests
