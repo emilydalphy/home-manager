@@ -1205,6 +1205,8 @@ def run_morning_texts_once(
 # at the landing time is a nudge after the cook should have begun. 'all_over'
 # and an unanswered question have no window to start, so they take the
 # middle of the road — stated here as a default, not a household fact.
+# A cook too long to start after the window opens goes earlier, at its own
+# planned start (see _run_household_evening; 2026-10-20).
 EVENING_NUDGE_CLOCK_BY_WINDOW = {
     "5_6ish": time(17, 0),
     "6_8": time(18, 0),
@@ -1443,7 +1445,7 @@ def _run_household_evening(now_utc: datetime, send: Callable[[dict, str], dict])
     local_now = now_utc.astimezone(_zone(hh["timezone"]))
     clock = evening_nudge_clock(_household_dinner_window())
     due_at = local_now.replace(hour=clock.hour, minute=clock.minute, second=0, microsecond=0)
-    if local_now < due_at or local_now - due_at > timedelta(minutes=EVENING_NUDGE_LATE_WINDOW_MINUTES):
+    if local_now - due_at > timedelta(minutes=EVENING_NUDGE_LATE_WINDOW_MINUTES):
         conn.close()
         return []
     sent_on = local_now.date().isoformat()
@@ -1468,6 +1470,31 @@ def _run_household_evening(now_utc: datetime, send: Callable[[dict, str], dict])
     if not waiting:
         conn.close()
         return []
+
+    if local_now < due_at:
+        # Before the window opens, the nudge is due only for a cook too long
+        # to start after it: the window's start is ahead of the cook just
+        # while the cook fits between it and dinner landing (30 minutes for
+        # "5 to 6ish", an hour otherwise). A 1 hr 50 min roast for 5:30 said
+        # "Start by 3:40" on Today and was told "Tap to start" at 5:00
+        # (overnight hunt, 2026-10-20). So it goes at the move's own planned
+        # start — the clock Today and the morning text name — and the late
+        # window counts from there. Only a start on today's date moves it: a
+        # cook begun yesterday has no "now" today but the window's.
+        naive_now = local_now.replace(tzinfo=None)
+        dinner = tonight_for_nudge(naive_now)["dinner"]
+        try:
+            planned = datetime.fromisoformat((dinner or {}).get("planned_start") or "")
+        except ValueError:
+            planned = None
+        if (
+            planned is None
+            or planned.date() != naive_now.date()
+            or naive_now < planned
+            or naive_now - planned > timedelta(minutes=EVENING_NUDGE_LATE_WINDOW_MINUTES)
+        ):
+            conn.close()
+            return []
 
     text = build_evening_nudge(local_now.replace(tzinfo=None))
     if not text:
