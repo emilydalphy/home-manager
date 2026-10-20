@@ -1,0 +1,125 @@
+{
+ "dish_name": "Ethiopian Ful",
+ "cuisine": "Ethiopian",
+ "main_protein": "beans",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Canned fava beans",
+   "qty": "2 cans (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Ghee",
+   "qty": "1 jar",
+   "category": "dairy",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Berbere",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub",
+   "category": "dairy"
+  },
+  {
+   "item": "Crusty rolls",
+   "qty": "4",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Bring a small pot of water to a boil over high. Lower in the 4 eggs with a spoon and boil them for 9 minutes, for firm yolks.",
+  "Meanwhile, finely chop the onion and mince the 3 garlic cloves. Dice the 2 tomatoes and set half of them aside for the top.",
+  "Seed and finely chop the jalapeño and put it in a small bowl for the table. Drain and rinse the 2 cans of beans.",
+  "When the eggs are done, move them to a bowl of cold water.",
+  "Melt 2 tbsp of the ghee (or niter kibbeh, if you have it) in a large skillet over medium. Add the onion and cook for 5 to 6 minutes, stirring now and then, until it's soft and golden at the edges.",
+  "Add the garlic and cook for 30 seconds. Stir in the 1 1/2 tsp berbere and 1/2 tsp cumin and cook for 30 seconds more, until it smells toasty.",
+  "Add half the tomatoes and cook for 2 minutes, until they start to break down.",
+  "Add the beans, 1/2 cup water and the 1/2 tsp salt. Simmer for 5 minutes, stirring now and then.",
+  "Mash the beans in the pan with a potato masher or a fork until they're mostly smooth with a few whole beans left. It should be soft and spoonable, like refried beans. Add a splash of water if it gets too stiff.",
+  "Take the pan off the heat. Stir in the last 1 tbsp ghee and the juice of half the lemon. Taste it. If it's flat, add a pinch more salt first, then a little more lemon.",
+  "Peel the eggs and cut them in half.",
+  "Spoon the ful into four bowls. Top each one with a spoonful of yogurt, some of the reserved tomato and two egg halves.",
+  "Cut the other half of the lemon into wedges. Serve with the crusty rolls, the lemon wedges and the chopped jalapeño on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three fry onion and garlic, bloom berbere in the fat, then simmer fava beans with a little water and mash them to a soft, spoonable paste. Herbivoracious uses cooked beans and olive oil, tops the bowls with tomato, jalapeño, feta, green onion and sliced hard-boiled egg with a pinch of cumin, and serves crusty white rolls the Ethiopian way; I Can Cook That starts from dried favas soaked overnight, uses cumin and lemon and soft-boiled eggs; Brundo simmers canned ful in niter kibbeh with onion, tomato and jalapeño and tops it with sour cream. This one uses canned beans, ghee or niter kibbeh, hard-boiled eggs and yogurt, and puts the jalapeño on the side. No version had ratings and RecipeTin Eats (the trusted cook for Ethiopian) has no version, so the first read version leads.",
+ "sources": [
+  {
+   "name": "Herbivoracious",
+   "title": "Ethiopian Ful Medames - Fava Beans with Berbere and Tasty Garnishes",
+   "url": "https://herbivoracious.com/2010/08/ethiopian-ful-mudammas-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "I Can Cook That",
+   "title": "Ful Medames",
+   "url": "https://icancookthat.org/2018/08/ful-medames.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Brundo",
+   "title": "Fuul (Fava Bean Mash)",
+   "url": "https://brundo.com/blogs/recipes/ful",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

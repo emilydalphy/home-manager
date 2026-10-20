@@ -1,0 +1,48 @@
+{
+ "dish_name": "Tikil Gomen",
+ "cuisine": "Ethiopian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {"item": "Yukon Gold potatoes", "qty": "1.5 lbs", "category": "produce"},
+  {"item": "Carrots", "qty": "1 lb", "category": "produce"},
+  {"item": "Green cabbage", "qty": "1 small head", "category": "produce"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Fresh ginger", "qty": "1 small piece", "category": "produce"},
+  {"item": "Vegetable oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Ground turmeric", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Ground cumin", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Lemon", "qty": "1", "category": "produce"},
+  {"item": "Jalapeño", "qty": "1", "category": "produce"},
+  {"item": "Injera", "qty": "1 package", "category": "other"}
+ ],
+ "instructions": [
+  "Peel the potatoes and cut them into 3/4-inch cubes. Peel the carrots and slice them into rounds about 1/4 inch thick.",
+  "Thinly slice the onion, mince the 3 garlic cloves, and finely grate the ginger until you have about 2 tsp.",
+  "Cut the cabbage in half, cut out the hard core, and slice it into ribbons about 1/2 inch wide.",
+  "Heat 2 tbsp of the oil in a large deep skillet or wide pot with a lid over medium-high. Add the potatoes and carrots in one layer with 1/2 tsp of the salt. Leave them alone for 3 minutes, then stir and cook for 4 to 5 minutes more, until the potatoes have golden patches.",
+  "Turn the heat down to medium. Add the last 1 tbsp of oil and the onion, and cook, stirring now and then, until the onion is soft and turning golden, about 5 minutes.",
+  "Add the garlic and ginger and stir for 30 seconds, until they smell fragrant. Sprinkle in the 1 tsp turmeric and 1 tsp cumin and stir for another 30 seconds, until everything is yellow and the spices smell toasty.",
+  "Pile in the cabbage with the remaining 1/2 tsp salt and the 1/2 tsp pepper, and pour in 1/2 cup water. Toss it with tongs until the cabbage is coated in the yellow oil. It will look like far too much cabbage, and it cooks down by about half.",
+  "Cover and cook over medium-low for 15 to 20 minutes, stirring every 5 minutes, until a fork slides easily into a potato and the cabbage is soft.",
+  "While it cooks, slice the jalapeño into thin rings and put them in a small bowl for the table.",
+  "Take the lid off and cook for 2 more minutes, until the watery liquid at the bottom has cooked away. Turn off the heat, squeeze half the lemon over the top, and stir.",
+  "Taste it. If it's flat, add salt first, then a squeeze from the other lemon half.",
+  "Serve with injera or rice, and the jalapeño on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "None of the versions that could be read had 20 or more ratings, and the trusted cook for this cuisine has no version, so this follows Cook's Hideout. All three soften onion in oil, add turmeric, then cook carrots, potatoes and cabbage covered until the potatoes are tender, with little or no added water because the cabbage gives off its own. Cook's Hideout adds garlic, ginger and green chilies and finishes with cumin; Caroline's Cooking cooks the onion and carrots first, then covers everything for 20 to 30 minutes with turmeric and cumin; Big Flavors from a Tiny Kitchen uses a lot of olive oil and adds the potatoes last for up to 30 minutes. This version browns the potatoes and carrots first and puts the chili on the side.",
+ "sources": [
+  {"name": "Cook's Hideout", "title": "Tikel Gomen | Ethiopian Cabbage", "url": "https://www.cookshideout.com/tikel-gomen-ethiopian-cabbage", "rating": null, "rating_count": null, "read": true, "lead": true},
+  {"name": "Caroline's Cooking", "title": "Ethiopian injera and tikel gomen (cabbage, carrots and potato)", "url": "https://www.carolinescooking.com/ethiopian-injera-and-tikel-gomen-cabbage-carrots-and-potato/", "rating": 5.0, "rating_count": 2, "read": true, "lead": false},
+  {"name": "Big Flavors from a Tiny Kitchen", "title": "Supper Club: Ethiopian Cabbage Dish", "url": "https://bigflavorstinykitchen.com/?p=6705", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

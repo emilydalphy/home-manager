@@ -1,0 +1,82 @@
+{
+ "dish_name": "Chechebsa",
+ "cuisine": "Ethiopian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ghee",
+   "qty": "1 jar",
+   "category": "dairy",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Berbere",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub",
+   "category": "dairy"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Whisk the 2 cups flour and 1/2 tsp salt in a large bowl. Slowly pour in 2 cups water, whisking, until it's a smooth, thin batter with no lumps.",
+  "Heat a large nonstick skillet over medium and brush it with a little of the oil.",
+  "Pour in about 1/2 cup of batter and tilt the pan so it spreads into a thin round. Cook for 2 to 3 minutes, until the top looks dry and the underside is lightly golden.",
+  "Flip it and cook the other side for 1 to 2 minutes, until it has golden spots. Slide it onto a plate.",
+  "Make the rest the same way, brushing the pan with oil before each one. You'll get about 6 rounds. If they brown too fast, turn the heat down a little.",
+  "Meanwhile, melt 1/3 cup ghee (or niter kibbeh, if you have it) in a small pan over medium low. Stir in the 2 tsp berbere and cook for 1 to 2 minutes, until the ghee is deep red and smells toasty. Don't let it smoke.",
+  "While the rounds are still warm, tear them into bite-size pieces and drop them into a large bowl.",
+  "Pour the spiced ghee over the pieces and toss with a fork until every piece is coated.",
+  "Serve warm, with the yogurt and honey on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions cook a thin flour, salt and water batter into flatbread, tear it while warm and toss it in niter kibbeh warmed with berbere. Tara's Multicultural Table makes several thin rounds from equal parts flour and water and serves it with yogurt, honey and scrambled eggs; Just a Pinch makes one thicker kita, optionally with some teff flour, and fries the torn pieces in the spiced butter for a few minutes. This one follows Tara's thin rounds with a little less berbere. No version had 20 or more ratings (Tara's has 2, at 5 stars) and RecipeTin Eats (the trusted cook for Ethiopian) has no version, so the first read version leads.",
+ "sources": [
+  {
+   "name": "Tara's Multicultural Table",
+   "title": "Chechebsa (Ethiopian Torn Flatbread Breakfast)",
+   "url": "https://tarasmulticulturaltable.com/chechebsa-ethiopian-torn-flatbread/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Just a Pinch",
+   "title": "Chechebsa (Ethiopian Breakfast Dish)",
+   "url": "https://www.justapinch.com/recipes/breakfast/other-breakfast/chechebsa-ethiopian-breakfast-dish.html",
+   "rating": null,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
