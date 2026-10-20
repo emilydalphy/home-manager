@@ -1,0 +1,44 @@
+{
+ "dish_name": "Gigantes Plaki",
+ "cuisine": "Greek",
+ "main_protein": "beans",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 140,
+ "ingredients": [
+  {"item": "Dried gigantes beans", "qty": "12 oz", "category": "pantry"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Celery", "qty": "1 bunch", "category": "produce", "cook_qty": "1 stalk"},
+  {"item": "Fresh parsley", "qty": "1 bunch", "category": "produce", "cook_qty": "1/4 cup + 2 tbsp chopped"},
+  {"item": "Olive oil", "qty": "6 tbsp", "category": "pantry"},
+  {"item": "Tomato paste", "qty": "1 can (6 oz)", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Diced tomatoes", "qty": "1 can (14 oz)", "category": "pantry"},
+  {"item": "Dried oregano", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Feta cheese", "qty": "4 oz", "category": "dairy"},
+  {"item": "Crusty bread", "qty": "1 loaf", "category": "other"}
+ ],
+ "instructions": [
+  "The night before: put the 12 oz beans in a large bowl and cover them with plenty of cold water, at least 3 inches over the top. They more than double as they soak. Leave them on the counter overnight.",
+  "On the day, drain and rinse the beans. Put them in a large pot, cover them with fresh cold water by about 2 inches and add 1/2 tsp of the salt. Bring them to a boil, then turn the heat down and simmer for 45 minutes to 1 hour, until they're tender on the outside but still hold their shape.",
+  "While the beans simmer, heat the oven to 350°F. Finely chop the onion. Peel the 2 garlic cloves and leave them whole. Finely chop 1 celery stalk, and chop 1/4 cup plus 2 tbsp of the parsley, keeping the 2 tbsp separate.",
+  "Pour 5 tbsp of the olive oil into a 9x13 inch baking dish and stir in the onion and the whole garlic cloves. Bake for about 15 minutes, until the onion is soft and turning golden at the edges.",
+  "Take the dish out and stir in 1 tbsp tomato paste. The heat of the oil cooks it for a minute and it turns a shade darker.",
+  "Scoop out 1/2 cup of the bean cooking water, then drain the beans. Add the beans to the baking dish with the celery, the 1/4 cup parsley, the 1/2 cup bean water, 1 tsp of the salt and 1/4 tsp of the pepper. Stir gently and bake for 30 minutes.",
+  "Take the dish out and stir in the can of diced tomatoes, the 1 tsp oregano, the last 1/2 tsp salt and the last 1/4 tsp pepper. Press a few of the beans against the side of the dish with the spoon so they thicken the sauce.",
+  "Bake for 50 minutes to 1 hour more, until the sauce has thickened and the beans on top are browned at the edges. If it looks dry before then, stir in a few tablespoons of water.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Crumble the 4 oz feta over the top, scatter on the last 2 tbsp parsley and drizzle with the last 1 tbsp olive oil. Serve warm with the crusty bread."
+ ],
+ "advance_prep_notes": "Soak the dried beans overnight, the night before.",
+ "advance_prep_step_indices": [1],
+ "method_notes": "Both soak dried giant beans overnight, boil them until nearly tender, and bake them slowly in an olive oil and tomato sauce until it's thick. My Greek Dish softens the onion and a whole garlic clove in the oil in the oven, bakes the beans with celery, parsley and a little water before the tomatoes go in, and finishes for nearly another hour; Supergolden Bakes uses canned butter beans in a stovetop sauce with carrot, dill, bay and stock and bakes it 40 to 50 minutes. This one follows My Greek Dish's order and ratios, adds a spoon of tomato paste to the oil, and borrows the feta to finish from Supergolden Bakes. Large dried lima beans work if you can't find gigantes.",
+ "sources": [
+  {"name": "My Greek Dish", "title": "Gigantes Plaki recipe (Gigandes Greek Baked 'Giant' Beans)", "url": "https://www.mygreekdish.com/recipe/gigantes-plaki-greek-baked-giant-beans/", "rating": 4.7, "rating_count": 906, "read": true, "lead": true},
+  {"name": "Supergolden Bakes", "title": "Gigantes Plaki – Greek Baked Beans Recipe", "url": "https://www.supergoldenbakes.com/gigantes-plaki-greek-baked-beans-recipe/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

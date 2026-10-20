@@ -1,0 +1,42 @@
+{
+ "dish_name": "Fasolada",
+ "cuisine": "Greek",
+ "main_protein": "beans",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 90,
+ "ingredients": [
+  {"item": "Dried cannellini beans", "qty": "12 oz", "category": "pantry"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Carrots", "qty": "3", "category": "produce"},
+  {"item": "Celery", "qty": "1 bunch", "category": "produce", "cook_qty": "2 stalks"},
+  {"item": "Olive oil", "qty": "6 tbsp", "category": "pantry"},
+  {"item": "Tomato paste", "qty": "1 can (6 oz)", "category": "pantry", "cook_qty": "1 1/2 tbsp"},
+  {"item": "Sweet paprika", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Kalamata olives", "qty": "1 jar", "category": "pantry"},
+  {"item": "Crusty bread", "qty": "1 loaf", "category": "other"}
+ ],
+ "instructions": [
+  "The night before: put the 12 oz beans in a large bowl and cover them with plenty of cold water, at least 3 inches over the top. Leave them on the counter overnight.",
+  "On the day, drain and rinse the beans. Put them in a large pot, cover them with fresh cold water by about 2 inches and bring them to a boil. Turn the heat down to medium and simmer for 30 minutes, until they're just starting to soften. Drain them.",
+  "While the beans simmer, put a kettle or a pot of 6 cups water on to boil. Finely chop the onion, the 3 carrots and 2 celery stalks.",
+  "Heat 3 tbsp of the olive oil in a large soup pot over medium. Add the onion, carrots, celery and 1/2 tsp of the salt. Cook for 6 to 8 minutes, stirring now and then, until the onion is soft and see-through.",
+  "Stir in 1 1/2 tbsp tomato paste and the 1/4 tsp paprika and cook for 1 minute, stirring, until the paste turns a shade darker.",
+  "Add the drained beans and pour in the 6 cups boiling water. It should cover the beans by an inch or so. Put the lid on, leaving a small gap, and simmer gently for 35 to 45 minutes, until the beans are soft and creamy all the way through. Add a splash more hot water if it gets too thick.",
+  "Stir in the last 3 tbsp olive oil, the last 1 1/2 tsp salt and the 1/2 tsp black pepper. Take the lid off and let it boil gently for 5 minutes. Press a few beans against the side of the pot with the spoon, until the soup turns thick and creamy.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve hot with a few Kalamata olives and the crusty bread."
+ ],
+ "advance_prep_notes": "Soak the dried beans overnight, the night before.",
+ "advance_prep_step_indices": [1],
+ "method_notes": "All three build the soup on onion, carrot and celery softened in a lot of olive oil, with tomato for color, and simmer the beans until they're creamy. My Greek Dish parboils the beans, fries tomato paste and a pinch of paprika with the vegetables, simmers about 35 minutes, and stirs the rest of the olive oil in at the end; Green Bowl 2 Soul adds garlic, dill, oregano and stock and blends a ladle of beans with lemon to thicken it; Mia Kouppa soaks the beans for 12 to 24 hours and uses passata. This one follows My Greek Dish's method and ratios and adds the overnight soak the other two use, so the beans soften in the time given.",
+ "sources": [
+  {"name": "My Greek Dish", "title": "Traditional Greek bean soup recipe (Fasolada)", "url": "https://www.mygreekdish.com/recipe/traditional-greek-bean-soup-recipe-fasolada/", "rating": 4.7, "rating_count": 813, "read": true, "lead": true},
+  {"name": "Green Bowl 2 Soul", "title": "Greek White Bean Soup- Fasolada", "url": "https://greenbowl2soul.com/greek-white-bean-soup-fasolada/", "rating": 4.64, "rating_count": 33, "read": true, "lead": false},
+  {"name": "Mia Kouppa", "title": "Fasolatha with tomato", "url": "https://miakouppa.com/fasolatha-with-tomato/", "rating": 5.0, "rating_count": 4, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

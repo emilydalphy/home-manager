@@ -1,0 +1,47 @@
+{
+ "dish_name": "Lamb Kleftiko",
+ "cuisine": "Greek",
+ "main_protein": "lamb",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 145,
+ "ingredients": [
+  {"item": "Boneless leg of lamb", "qty": "2 lbs", "category": "meat/seafood"},
+  {"item": "Yukon gold potatoes", "qty": "4", "category": "produce"},
+  {"item": "Red onion", "qty": "1", "category": "produce"},
+  {"item": "Bell peppers", "qty": "2", "category": "produce"},
+  {"item": "Tomato", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "4 cloves", "category": "produce"},
+  {"item": "Lemon", "qty": "1", "category": "produce"},
+  {"item": "Kefalotyri cheese", "qty": "5 oz", "category": "dairy"},
+  {"item": "Olive oil", "qty": "1/3 cup", "category": "pantry"},
+  {"item": "Dry white wine", "qty": "1/3 cup", "category": "other"},
+  {"item": "Dijon mustard", "qty": "1 jar", "category": "pantry", "cook_qty": "1 1/2 tbsp"},
+  {"item": "Dried oregano", "qty": "2 1/2 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "The night before, or at least 2 hours ahead: cut the 2 lbs lamb into chunks about 2 inches across and put them in a large bowl. Cut the onion into 8 wedges and the 2 bell peppers into 1 inch pieces. Slice 2 of the garlic cloves and peel the other 2, leaving them whole. Add all of it to the bowl.",
+  "Whisk the 1/3 cup olive oil, 1/3 cup white wine, 1 1/2 tbsp mustard, the juice of half the lemon, 2 tsp of the oregano, 1 tsp of the salt and the 1/2 tsp black pepper together. Pour it over the lamb and vegetables and mix it all with your hands. Cover the bowl and put it in the fridge.",
+  "On the day, take the bowl out of the fridge 30 minutes before it goes in the oven. Heat the oven to 350°F.",
+  "Peel the 4 potatoes and cut each one into quarters. Big pieces hold their shape through the long bake. Cut the 5 oz cheese into 3/4 inch cubes and stir them into the lamb. Slice the tomato into rounds.",
+  "Lay two long sheets of parchment across each other in a cross in a roasting pan. They need to be long enough to wrap right over the top. Pile the potatoes in the middle and sprinkle them with the last 1/2 tsp salt and the last 1/2 tsp oregano.",
+  "Pour the marinade from the bowl over the potatoes. Set the lamb, vegetables and cheese on top and lay the tomato slices over everything.",
+  "Gather the parchment up over the top, twist it closed and tie it tightly with kitchen string. If the paper won't close all the way, cover the gap with foil. Roast for 1 hour 45 minutes.",
+  "Take the pan out and turn the oven up to 425°F. Open the parcel and fold the paper back under the rim of the pan. Spoon the juices over the lamb and roast it uncovered for 20 minutes, until the top is browned. It's done when a fork slides into the lamb with no push.",
+  "Lift the lamb onto a plate and cover it with foil. Turn the potatoes over in the juices and roast them for another 20 minutes, until they're golden at the edges.",
+  "Return the lamb to the pan. Taste the juices. If they're flat, add a pinch more salt or a squeeze of the lemon.",
+  "Cut what's left of the lemon into wedges. Serve the lamb and potatoes with the pan juices spooned over and the lemon wedges on the side."
+ ],
+ "advance_prep_notes": "Marinate the lamb the night before, or at least 2 hours ahead.",
+ "advance_prep_step_indices": [1, 2],
+ "method_notes": "All three marinate the lamb in olive oil, lemon, garlic and oregano, wrap it with potatoes, onion and peppers in a sealed parchment parcel, and bake it low until the meat is tender before opening the parcel to brown. My Greek Dish adds white wine, mustard and cubes of kefalotyri or graviera, bakes 1 hour 45 minutes at 180°C, then browns the lamb and potatoes separately at 220°C; Caroline's Cooking uses lamb shoulder at a lower 170°C for 2 1/2 hours; Dimitra's Dishes swaps in feta, cumin and coriander and bakes a much bigger joint for over 4 hours. This one follows My Greek Dish's method and ratios. Pecorino works if you can't find kefalotyri.",
+ "sources": [
+  {"name": "My Greek Dish", "title": "Lamb Kleftiko Recipe (Greek Lamb Cooked In Parchment Paper)", "url": "https://www.mygreekdish.com/recipe/lamb-kleftiko-recipe-greek-lamb-cooked-in-parchment-paper/", "rating": 4.7, "rating_count": 762, "read": true, "lead": true},
+  {"name": "Caroline's Cooking", "title": "Greek lamb kleftiko", "url": "https://www.carolinescooking.com/greek-lamb-kleftiko/", "rating": 5.0, "rating_count": 3, "read": true, "lead": false},
+  {"name": "Dimitra's Dishes", "title": "Lamb Kleftiko: Greek Lamb Cooked in Parchment Paper", "url": "https://www.dimitrasdishes.com/lamb-kleftiko-greek-lamb-cooked-in-parchment-paper/", "rating": 5.0, "rating_count": 1, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
