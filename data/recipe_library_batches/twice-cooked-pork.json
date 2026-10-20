@@ -1,0 +1,138 @@
+{
+ "dish_name": "Twice-Cooked Pork",
+ "cuisine": "Chinese",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Skin-on pork belly",
+   "qty": "1.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Leeks",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fermented black beans",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Chili bean paste (doubanjiang)",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sweet bean sauce",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Dark soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "to taste",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "At least 3 hours ahead, or the day before: put the 1.5 lb pork belly in a pot in one piece, or cut in two if it doesn't fit. Slice the ginger and add it with 2 of the scallions and 1 tbsp of the Shaoxing wine. Cover with cold water by an inch and bring it to a boil over high heat.",
+  "Turn the heat to low and simmer for 25 to 30 minutes, until a chopstick slides into the thickest part easily and the juices run clear. Lift the pork out and let it cool. Wrap it and chill it for at least 2 hours. Cold pork slices thinly without the fat and lean coming apart.",
+  "Rinse the 1 1/2 cups jasmine rice in a pot, swishing it with your fingers and pouring off the water two or three times, until the water is only a little cloudy. Add 2 1/4 cups water and bring it to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on for 10 minutes.",
+  "Meanwhile, cut the cold pork into thin slices about 1/8 inch thick, each with a strip of skin. Pat them dry with paper towels so they spatter less in the pan.",
+  "Trim the dark green tops off the 3 leeks. Halve them lengthwise, rinse out any grit and cut them on a sharp angle into 1 1/2 inch pieces. Thinly slice the 3 garlic cloves. Rinse the 1 tbsp black beans and pat them dry.",
+  "Heat 1 tbsp of the oil in a wok or large skillet over high. Add the leeks and stir fry for about 1 minute, until they turn bright green and just start to soften. Transfer them onto a plate.",
+  "Turn the heat to medium and add the remaining 2 tbsp oil and the pork. Spread it out and fry, stirring now and then, for 6 to 8 minutes, until the fat has melted out and the slices are golden at the edges and curled. Stand back a little. They'll spatter.",
+  "Push the pork to one side. Add the 2 tbsp chili bean paste to the clear space and stir it in the oil for 30 seconds, until the oil turns red. Add the garlic, the 2 tsp sweet bean sauce and the black beans and stir for 20 seconds, until they smell fragrant.",
+  "Stir everything together. Add the 2 tsp dark soy sauce, 2 tsp sugar and the remaining 1 tbsp Shaoxing wine and toss until the pork is coated.",
+  "Add the leeks back in and toss for 1 to 2 minutes, until they're tender but still bright green.",
+  "Taste it. If it's flat, add a pinch of salt.",
+  "Serve with the rice."
+ ],
+ "advance_prep_notes": "Boil and chill the pork belly at least 3 hours ahead, or the day before.",
+ "advance_prep_step_indices": [
+  1,
+  2
+ ],
+ "method_notes": "All three boil a piece of pork belly until just cooked, slice it thinly, fry the slices until the fat runs and they curl, then add chili bean paste and garlic and finish with a green vegetable tossed in at the end. Fuchsia Dunlop chills the boiled pork for a couple of hours so it slices cleanly, fries the chili bean paste until the oil turns red before adding sweet bean paste, fermented black beans, dark soy and sugar, and quickly fries ordinary leeks first since they're tougher than baby leeks. Omnivore's Cookbook simmers the pork with ginger for 30 minutes, slices it once cool, and uses ground Sichuan pepper, Shaoxing wine, light soy, a hot pepper and scallions in place of leeks, while Dai Ga Sik Faan boils it with scallion and Shaoxing wine and adds cabbage with the leek. No version with 20 or more ratings was found and RecipeTin Eats has none, so this follows Dunlop doubled to 1.5 lb of belly for 4, with the ginger, scallion and Shaoxing wine in the pot from the other two.",
+ "sources": [
+  {
+   "name": "NPR (Fuchsia Dunlop, Land of Plenty)",
+   "title": "Twice-Cooked Pork",
+   "url": "https://www.npr.org/2008/05/02/89925951/twice-cooked-pork",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Omnivore's Cookbook",
+   "title": "Twice Cooked Pork",
+   "url": "https://omnivorescookbook.com/twice-cooked-pork/",
+   "rating": 4.88,
+   "rating_count": 8,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Dai Ga Sik Faan",
+   "title": "Sichuan Twice Cooked Pork",
+   "url": "https://daigasikfaan.co/sichuan-twice-cooked-pork/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

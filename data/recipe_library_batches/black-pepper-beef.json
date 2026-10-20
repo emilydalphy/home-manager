@@ -1,0 +1,123 @@
+{
+ "dish_name": "Black Pepper Beef",
+ "cuisine": "Chinese",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Flank steak",
+   "qty": "1.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Whole black peppercorns",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp + 1/4 cup"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "to taste",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups jasmine rice in a pot, swishing it with your fingers and pouring off the water two or three times, until the water is only a little cloudy. Add 2 1/4 cups water and bring it to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on for 10 minutes.",
+  "Meanwhile, put the 2 tsp peppercorns in a zip bag and crush them coarsely with a rolling pin or the bottom of a heavy pan. You want rough pieces, not a powder.",
+  "Slice the 1.5 lb flank steak across the grain into thin strips about 1/4 inch thick. In a medium bowl, toss the beef with 1 tbsp of the soy sauce, the 2 tsp cornstarch and 1/2 tsp of the crushed pepper.",
+  "In a small bowl, stir together the remaining 1/4 cup soy sauce, the 1/4 cup honey, 2 tbsp oyster sauce, 2 tbsp Shaoxing wine, 3 tbsp water and the remaining 1 1/2 tsp crushed pepper.",
+  "Peel the onion, halve it and cut it into wedges about 1/2 inch thick. Finely chop the 2 garlic cloves.",
+  "Heat 1 tbsp of the oil in a wok or large skillet over high until it's just smoking. Add half the beef, spread it out and leave it for 1 minute, until the underside is browned.",
+  "Stir and cook for 30 seconds, until it's barely pink. Move it to a plate. Add another 1 tbsp of the oil and cook the rest of the beef the same way.",
+  "Turn the heat to medium high and add the last 1 tbsp oil and the onion. Stir fry for 2 to 3 minutes, until it's soft at the edges and starting to brown but still has some crunch. Add the garlic and stir for 30 seconds, until it smells fragrant.",
+  "Pour in the sauce. It'll bubble up fast. Let it boil, stirring, for 1 to 2 minutes, until it turns syrupy with big glossy bubbles.",
+  "Put the beef back in with any juices from the plate and toss for about 1 minute, until it's coated and hot. Don't leave it any longer, or the beef turns tough.",
+  "Taste it. If it's flat, add a pinch of salt.",
+  "Serve over the rice."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three slice the beef thinly across the grain, sear it fast over high heat, take it out, cook the onion and then toss the beef back in a peppery soy based sauce for under a minute so it stays tender. RecipeTin Eats makes the sauce from soy sauce, honey, oyster sauce, Chinese cooking wine, water and coarsely crushed black pepper and boils it until syrupy before the beef goes back in. Wok and Kin marinates the beef with white pepper, both soys, oyster sauce, egg white and cornstarch and adds bell peppers and a bottled black pepper sauce, and Krumpli marinates in dark soy, egg white and sesame oil and adds green pepper. This follows RecipeTin Eats scaled up by half for 1.5 lb of beef and a whole onion, with a light soy and cornstarch coating on the beef from the other two and the beef seared in two batches.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Beef Stir Fry with Honey and Black Pepper Sauce",
+   "url": "https://www.recipetineats.com/chinese-beef-with-honey-and-black-pepper-sauce/",
+   "rating": 4.97,
+   "rating_count": 176,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Wok and Kin",
+   "title": "Black Pepper Beef Stir Fry",
+   "url": "https://www.wokandkin.com/black-pepper-beef-stir-fry/",
+   "rating": 5.0,
+   "rating_count": 11,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Krumpli",
+   "title": "Black Pepper Beef Stir Fry Recipe",
+   "url": "https://www.krumpli.co.uk/black-pepper-beef-stir-fry/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

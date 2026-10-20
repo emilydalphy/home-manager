@@ -1,0 +1,131 @@
+{
+ "dish_name": "Onion Bhaji",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Red onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Curry leaves",
+   "qty": "1 package",
+   "category": "produce",
+   "cook_qty": "1 sprig"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce",
+   "cook_qty": "1 tsp grated"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ajwain (carom seeds)",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chickpea flour",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Rice flour",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "3/4 cup"
+  }
+ ],
+ "instructions": [
+  "Peel the 2 onions, halve them through the root and slice them as thinly as you can into half moons. Keep the slices thin and even. Thick ones stay raw in the middle.",
+  "Put the onions in a large bowl. Seed the green chili and chop it finely. Chop the leaves from 1 sprig of curry leaves and 2 tbsp of the cilantro, and grate 1 tsp of the ginger. Add them all to the onions.",
+  "Add the 1/2 tsp chili powder, 1/4 tsp turmeric, 1/4 tsp cumin, 1/4 tsp ajwain and 3/4 tsp of the salt. Squeeze and rub the onions with your hands for about 1 minute, until they soften and look wet. Leave them for 10 minutes so they give off more water.",
+  "Meanwhile, pour the 4 cups oil into a heavy pot. It should be about 2 inches deep. Heat it over medium. You're heating it to 350°F, so if you have a thermometer, check it. No thermometer? Drop in one slice of onion: it's ready when it sizzles and floats up straight away.",
+  "While the oil heats, chop 2 tbsp of the cilantro. Stir it into the 3/4 cup yogurt in a small bowl with the remaining 1/4 tsp salt, and set it aside.",
+  "Add the 1 1/2 cups chickpea flour and 1/4 cup rice flour to the onions and mix with your hands. The water from the onions should bring it together into a thick, sticky mix that holds in a clump. If it's still dry and floury, sprinkle in 1 tbsp water at a time until it does.",
+  "Line a tray with paper towels and set it by the stove. Pick up a loose, rough clump of the mix about the size of a golf ball and lower it gently into the oil. Add 5 or 6 more, with room between them. Stand back a little. They'll spatter.",
+  "Fry them for 2 minutes, until the underside is golden. Turn them over and cook the other side for 2 to 3 minutes, until they're deep golden brown and crisp all over. If they brown in under a minute, turn the heat down a little.",
+  "Lift them out with a slotted spoon onto the paper towels. Fry the rest in batches the same way, giving the oil a minute to heat up again between batches. You'll get about 16 bhajis.",
+  "Taste one. If it's flat, sprinkle a pinch more salt over the rest while they're hot.",
+  "Serve hot with the cilantro yogurt."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three slice onions thinly, coat them in a stiff spiced batter and fry spoonfuls until golden and crisp. Hebbar's Kitchen squeezes the onions with green chili, curry leaves, cilantro, ginger, chili powder, turmeric, cumin, ajwain and salt so their own water binds the gram flour and rice flour without added water, and fries on medium. Indian Healthy Recipes rests the salted onions for 10 minutes and uses less gram flour with rice flour, cornstarch and a spoon of hot oil, while Good to Know uses plain flour, turmeric, cumin and garam masala mixed with water. This follows Hebbar's ratios for 2 large onions with the 10 minute rest from Indian Healthy Recipes, one seeded chili instead of three, and Hebbar's yogurt chutney simplified to yogurt with cilantro.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Onion Pakoda Recipe | Kanda Bajji | Pyaj ke Pakode",
+   "url": "https://hebbarskitchen.com/onion-pakoda-recipe-kanda-bhaji/",
+   "rating": 5.0,
+   "rating_count": 62,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Indian Healthy Recipes",
+   "title": "Pakodi Recipe (Street Style Onion Pakora)",
+   "url": "https://www.indianhealthyrecipes.com/onion-pakora-recipe/",
+   "rating": 4.95,
+   "rating_count": 17,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Good to Know",
+   "title": "Onion bhaji recipe",
+   "url": "https://www.goodtoknow.co.uk/recipes/onion-bhaji",
+   "rating": 4.0,
+   "rating_count": 2890,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,49 @@
+{
+ "dish_name": "Fish-Fragrant Eggplant",
+ "cuisine": "Chinese",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {"item": "Jasmine rice", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Chinese eggplants", "qty": "2 lb", "category": "produce"},
+  {"item": "Salt", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Cornstarch", "qty": "1 box", "category": "pantry", "cook_qty": "2 tbsp + 2 tsp"},
+  {"item": "Chinkiang black vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Shaoxing wine", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Low-sodium vegetable broth", "qty": "1 carton (32 oz)", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "Vegetable oil", "qty": "5 tbsp", "category": "pantry"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce", "cook_qty": "4"},
+  {"item": "Garlic", "qty": "4 cloves", "category": "produce"},
+  {"item": "Ginger", "qty": "1 small piece", "category": "produce", "cook_qty": "2 tbsp minced"},
+  {"item": "Dried red chilies", "qty": "1 bag", "category": "pantry", "cook_qty": "6"},
+  {"item": "Doubanjiang (chili bean paste)", "qty": "1 jar", "category": "pantry", "cook_qty": "4 tsp"}
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups jasmine rice in a sieve until the water runs mostly clear. Put it in a saucepan with 2 1/4 cups water and bring it to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave it covered for 10 minutes. No peeking.",
+  "Meanwhile, trim the ends off the eggplants and cut them into bite-size pieces. Put them in a large bowl, cover them with cold water and stir in the 2 tsp salt. Set a plate on top to keep them under the water and leave them for 10 to 15 minutes.",
+  "While the eggplant soaks, make the sauce. In a small bowl, stir together the 3 tbsp black vinegar, 3 tbsp soy sauce, 2 tbsp Shaoxing wine, 3 tbsp sugar, 1/2 cup vegetable broth and 2 tsp of the cornstarch until the sugar and cornstarch dissolve.",
+  "Slice the 4 green onions. Mince the 4 garlic cloves and 2 tbsp of the ginger. Leave the 6 dried chilies whole.",
+  "Drain the eggplant and pat it dry with paper towels. Transfer it into a dry bowl, sprinkle the last 2 tbsp cornstarch over it and toss with your hands until every piece is lightly coated.",
+  "Heat a wok or your largest skillet over medium high until it's hot. Add 2 tbsp of the oil and spread half the eggplant in one layer. Cook for about 5 minutes, turning the pieces now and then, until the edges are browned in spots and the pieces are starting to soften. If the pan starts to smoke, turn it down to medium. Move them to a plate.",
+  "Add another 2 tbsp oil and cook the rest of the eggplant the same way. Move it to the plate.",
+  "Turn the heat to medium and add the last 1 tbsp oil. Add the green onions, garlic, ginger and chilies and stir for about 30 seconds, until it smells fragrant. Don't let the garlic brown.",
+  "Add the 4 tsp doubanjiang and stir for 30 seconds, until the oil turns red.",
+  "Stir the sauce again, since the cornstarch settles, and pour it in. Stir for about 1 minute, until it bubbles and turns thick and glossy.",
+  "Put all the eggplant back in the wok and stir gently for 1 to 2 minutes, until every piece is coated and the eggplant is soft all the way through.",
+  "Taste it. If it's flat, add a pinch more salt or a splash more of the black vinegar.",
+  "Serve over the rice."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions build the classic yu xiang flavor of pickled chili heat, garlic, ginger and scallion with a sweet and sour sauce, and both pan sear the eggplant in a few tablespoons of oil rather than deep frying it. Omnivore's Cookbook soaks the eggplant in salted water, coats it in cornstarch, and uses Chinkiang vinegar, soy, Shaoxing wine, sugar and stock with doubanjiang and dried chilies. The Woks of Life uses a lighter touch of rice vinegar with oyster sauce, optional fish sauce and ground pork. This follows Omnivore's Cookbook, doubled to make a main for 4, without the optional pork and with vegetable broth so it stays vegetarian; the chilies go in whole for fragrance and the optional ground Sichuan peppercorn is left out.",
+ "sources": [
+  {"name": "Omnivore's Cookbook", "title": "Yu Xiang Eggplant (Sichuan Eggplant Stir Fry)", "url": "https://omnivorescookbook.com/fish-fragrant-eggplant/", "rating": 4.95, "rating_count": 54, "read": true, "lead": true},
+  {"name": "The Woks of Life", "title": "Fish Fragrant Eggplant (Yuxiang Qiezi)", "url": "https://thewoksoflife.com/fish-fragrant-eggplant-yuxiang-qiezi/", "rating": 5.0, "rating_count": 19, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

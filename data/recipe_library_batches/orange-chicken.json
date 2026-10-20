@@ -1,0 +1,139 @@
+{
+ "dish_name": "Orange Chicken",
+ "cuisine": "Chinese",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/4 cup + 2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Oranges",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Orange marmalade",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Low-sodium chicken broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "White vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce",
+   "cook_qty": "1 tsp grated"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups jasmine rice in a pot, swishing it with your fingers and pouring off the water two or three times, until the water is only a little cloudy. Add 2 1/4 cups water and bring it to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on for 10 minutes.",
+  "Meanwhile, pat the 1.5 lb chicken dry with paper towels and cut it into 1 inch pieces. Put it in a large bowl with the 1/2 tsp salt, 1/4 tsp pepper and 1/4 cup of the cornstarch, and toss until every piece is coated.",
+  "Finely grate the zest of 1 orange and set it aside. Juice both oranges. That should be about 1/2 cup. If it's short, top it up with water.",
+  "Mince the 2 garlic cloves and grate 1 tsp of the ginger. In a medium bowl, whisk the orange juice with the 1/2 cup marmalade, 1/3 cup soy sauce, 1/3 cup broth, 1 tbsp vinegar, the garlic, the ginger, a pinch of red pepper flakes and the remaining 2 tbsp cornstarch until smooth. Thinly slice 2 of the scallions.",
+  "Heat 1 1/2 tbsp of the oil in a large skillet over medium high until it shimmers. Add half the chicken in a single layer and leave it alone for 2 minutes, until the underside is golden and lets go of the pan.",
+  "Turn the pieces and cook the other side for 2 minutes. Move them to a plate. Add the remaining 1 1/2 tbsp oil and brown the rest of the chicken the same way.",
+  "Put all the chicken back in the pan and turn the heat to medium. Whisk the sauce again so the cornstarch is mixed back in, and pour it over the chicken.",
+  "Simmer, stirring often, for 6 to 8 minutes, until the sauce is thick and glossy and clings to the chicken. You're cooking the chicken to 175°F, so if you have a thermometer, check the thickest piece. No thermometer? Cut one open: it's done when there's no pink left and the juices run clear.",
+  "Turn off the heat and stir in the orange zest.",
+  "Taste it. If it's flat, add a pinch more salt or a splash of the vinegar.",
+  "Fluff the rice with a fork. Serve the chicken over the rice with the scallions on top."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three coat bite size chicken in cornstarch, brown it in a skillet rather than deep frying, and toss it in an orange sauce thickened with cornstarch. Spend With Pennies builds the sauce from marmalade, orange juice, soy sauce, broth, white vinegar, garlic, ginger and a pinch of chili flakes, then simmers the browned chicken in it until cooked through. RecipeTin Eats shallow fries a soy and cornstarch coated chicken in more oil and uses fresh orange juice, Shaoxing wine, rice vinegar and sugar with the zest stirred in at the end, and Omnivore's Cookbook adds an egg to the coating and dried tangerine peel to the sauce. This follows Spend With Pennies with thighs in place of breasts, browned in two batches, and fresh juice and zest from RecipeTin Eats.",
+ "sources": [
+  {
+   "name": "Spend With Pennies",
+   "title": "Skillet Orange Chicken Recipe",
+   "url": "https://www.spendwithpennies.com/skillet-orange-chicken-recipe/",
+   "rating": 4.96,
+   "rating_count": 67,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "Chinese Orange Chicken",
+   "url": "https://www.recipetineats.com/orange-chicken/",
+   "rating": 4.94,
+   "rating_count": 49,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Omnivore's Cookbook",
+   "title": "Chinese Orange Chicken (Crispy Chicken without Deep Frying)",
+   "url": "https://omnivorescookbook.com/orange-chicken/",
+   "rating": 4.95,
+   "rating_count": 34,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
