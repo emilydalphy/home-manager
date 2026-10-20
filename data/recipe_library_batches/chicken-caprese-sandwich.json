@@ -1,0 +1,43 @@
+{
+ "dish_name": "Chicken Caprese Sandwich",
+ "cuisine": "Italian",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Boneless skinless chicken breasts", "qty": "2 large (about 1 1/2 lb)", "category": "meat/seafood"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Italian seasoning", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Olive oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Fresh mozzarella", "qty": "8 oz", "category": "dairy"},
+  {"item": "Roma tomatoes", "qty": "2", "category": "produce"},
+  {"item": "Ciabatta rolls", "qty": "4", "category": "other"},
+  {"item": "Garlic", "qty": "1 clove", "category": "produce"},
+  {"item": "Basil pesto", "qty": "1 jar (6 oz)", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "Fresh basil", "qty": "1 bunch", "category": "produce", "cook_qty": "16 leaves"},
+  {"item": "Balsamic glaze", "qty": "1 bottle", "category": "pantry"}
+ ],
+ "instructions": [
+  "Lay each chicken breast flat and slice it in half horizontally, so you have 4 thin cutlets. Pat them dry with paper towels and sprinkle the 1 tsp salt, the 1/2 tsp pepper and the 1 tsp Italian seasoning over both sides.",
+  "Slice the 8 oz mozzarella into 8 slices and the 2 tomatoes into thin rounds. Split the 4 ciabatta rolls in half.",
+  "Heat 2 tbsp of the olive oil in a large cast iron skillet over medium high until it shimmers. Add the cutlets and leave them alone for 4 to 5 minutes, until the underside is deep golden and lets go of the pan.",
+  "Flip them and cook the other side for 3 to 4 minutes. You're cooking them to 160°F in the thickest part, so if you have a thermometer, check them there. No thermometer? Cut into the thickest one: it's done when there's no pink left. Move them to a plate to rest for 5 minutes. If you'd like a head start, cook the chicken up to 2 days ahead and keep it in the fridge.",
+  "Turn the heat down to medium. Brush the cut sides of the rolls with the remaining 2 tbsp olive oil. Put them in the same pan cut side down, in batches, and toast them for 1 to 2 minutes, until they're golden and crisp.",
+  "Cut the garlic clove in half and rub the cut side over the warm toasted bread.",
+  "Slice the chicken across into strips. Spread 1 tbsp of the pesto on each cut side of the rolls, 1/2 cup in all.",
+  "On the 4 bottom halves, layer the chicken, 2 slices of mozzarella, the tomato and 4 basil leaves each. Sprinkle a pinch of salt over the tomato and drizzle a little balsamic glaze over the top.",
+  "Put the tops on and press down gently. Serve them warm. Build them just before eating so the bread stays crisp."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All the versions read pair seared or grilled chicken with fresh mozzarella, tomato, basil and pesto on toasted bread. Oh Sweet Basil (the lead) grills marinated chicken breasts, toasts ciabatta brushed with olive oil, rubs it with a cut garlic clove, spreads on pesto and finishes with balsamic glaze. Craving Home Cooked halves the breasts into cutlets seasoned with Italian seasoning and garlic powder and grills them, while Sweet Tea and Thyme pounds the chicken thin and swaps the pesto for a lemony herb gremolata. This follows the lead's build with the thin seasoned cutlets from Craving Home Cooked, cooked in one skillet that also toasts the bread.",
+ "sources": [
+  {"name": "Oh Sweet Basil", "title": "Chicken Caprese Sandwich", "url": "https://ohsweetbasil.com/chicken-caprese-sandwich", "rating": 4.1, "rating_count": 31, "read": true, "lead": true},
+  {"name": "Sweet Tea and Thyme", "title": "Chicken Caprese Sandwich", "url": "https://www.sweetteaandthyme.com/chicken-caprese-sandwich/", "rating": 4.8, "rating_count": 15, "read": true, "lead": false},
+  {"name": "Craving Home Cooked", "title": "Grilled Chicken Caprese Sandwiches", "url": "https://cravinghomecooked.com/grilled-chicken-caprese-sandwiches/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
