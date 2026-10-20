@@ -2925,10 +2925,11 @@ def cooking_ingredients(
 
 # "a pinch of sugar", "a splash of soy sauce", "a dash of hot sauce" — the
 # three word amounts _FREEFORM_COOKING_OK already reads as an amount. The
-# words after "of" run to the next comma/full stop/"and", so "a pinch of
-# salt and the sugar" is the salt's pinch and nobody else's.
+# words after "of" run to the next comma/full stop/"and"/"with", so "a
+# pinch of salt and the sugar" is the salt's pinch and nobody else's, and
+# "a splash of red wine with the tomato paste" is the wine's.
 _STEP_WORD_AMOUNT_RE = re.compile(
-    r"\b(?:a|one)\s+(pinch|dash|splash)\s+of\s+(?:the\s+)?([a-z][a-z' -]*?)(?=\s+(?:and|or|to|into|over|in|on)\b|[,.;:)!]|$)"
+    r"\b(?:a|one)\s+(pinch|dash|splash)\s+of\s+(?:the\s+)?([a-z][a-z' -]*?)(?=\s+(?:and|or|to|into|over|in|on|with|until|for|then|at|from)\b|[,.;:)!]|$)"
 )
 
 
@@ -2985,13 +2986,16 @@ def cook_amounts_from_steps(ingredients: list[dict], instructions: list[str] | N
         if (stored and not _quantity_problem(item, stored)) or not _quantity_problem(item, qty):
             out.append(ing)
             continue
-        # Every word of the line's name in what followed "of", plural or
-        # not: "Sugar" in "a pinch of sugar", "Red pepper flakes" in "a
-        # pinch of red pepper flakes" — and "Brown sugar" NOT in "a pinch
-        # of sugar", which may be another line's.
+        # What followed "of" IS the line's name, plural or not: "Sugar" in
+        # "a pinch of sugar", "Red pepper flakes" in "a pinch of red pepper
+        # flakes" — and "Brown sugar" NOT in "a pinch of sugar", nor
+        # "Sauce" in "a dash of hot sauce" or "Lemon" in "a splash of
+        # lemon juice": a phrase with more in it than the line is about
+        # something else, and the table's guess is the safer miss.
         amount = next(
             (said_amount for phrase, said_amount in said.items()
-             if all(_item_matches(phrase, w) for w in words)),
+             if len([w for w in phrase.split() if len(w) > 2]) == len(words)
+             and all(_item_matches(phrase, w) for w in words)),
             None,
         )
         if not amount:

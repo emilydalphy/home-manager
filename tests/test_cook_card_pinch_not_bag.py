@@ -96,3 +96,27 @@ def test_a_pinch_of_sugar_is_not_the_brown_sugar_and_a_measured_cook_qty_stands(
     )
     assert "cook_qty" not in lines[0]
     assert lines[1]["cook_qty"] == "1 tbsp"
+
+
+def test_a_phrase_about_something_else_gives_the_line_nothing():
+    # Review 2026-10-20: the words after "of" ran on past "with", so "a
+    # splash of red wine with the tomato paste" handed the paste a splash;
+    # and a line whose name is only PART of the phrase ("Sauce" in "hot
+    # sauce", "Lemon" in "lemon juice") is about another thing.
+    lines = tools.recipes.cook_amounts_from_steps(
+        [
+            {"item": "Tomato paste", "qty": "1 can"},
+            {"item": "Red wine", "qty": "1 bottle"},
+            {"item": "Sauce", "qty": "1 bottle"},
+            {"item": "Lemon", "qty": "1 bag"},
+        ],
+        [
+            "Stir in a splash of red wine with the tomato paste.",
+            "Finish with a dash of hot sauce and a splash of lemon juice.",
+        ],
+    )
+    rows = {line["item"]: line for line in lines}
+    assert rows["Red wine"]["cook_qty"] == "a splash"
+    assert "cook_qty" not in rows["Tomato paste"]
+    assert "cook_qty" not in rows["Sauce"]
+    assert "cook_qty" not in rows["Lemon"]

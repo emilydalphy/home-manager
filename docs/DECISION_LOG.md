@@ -21,6 +21,9 @@ why*, not duplicating the diff.
   handed the steps — the Cook screen and scale_recipe), instead of the bag
   or the table's half cup. Read, not stored, so saved recipes get it; the
   qty the list buys is untouched; a line a step also numbers is skipped.
+  The phrase after "of" must BE the line's name (review: "a splash of red
+  wine with the tomato paste" gave the paste a splash; "Sauce" took "hot
+  sauce"'s dash) — a partial match misses to the table's guess instead.
   The fill tool's cook_qty description now asks for "a pinch" too.
   The Settings → Recipes sheet still shows the stored shopping qty.
 - **Recipe steps sound like a person, and a temperature is the target**
