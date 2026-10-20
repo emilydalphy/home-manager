@@ -1,0 +1,143 @@
+{
+ "dish_name": "Sheet Pan Chicken Fajita Bowls",
+ "cuisine": "American",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Chili powder",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Bell peppers",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Black beans",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Avocados",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Sour cream",
+   "qty": "1 tub",
+   "category": "dairy"
+  },
+  {
+   "item": "Salsa",
+   "qty": "1 jar",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 425°F with one rack in the upper third and one in the lower third.",
+  "Rinse the 1 1/2 cups rice in a sieve under cold water until the water runs mostly clear. Add it to a medium saucepan with 2 1/4 cups water and 1/2 tsp of the salt.",
+  "Bring the rice to a boil over high heat. Cover it, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on until you serve.",
+  "Meanwhile, squeeze one of the limes into a large bowl. That should be about 2 tbsp of juice. Mince the 2 garlic cloves and add them to the bowl with 2 tbsp of the olive oil, 1 1/2 tsp of the chili powder, 1 tsp of the cumin, 1 tsp of the salt and 1/4 tsp of the pepper. Stir it together.",
+  "Pat the chicken thighs dry with paper towels. Turn them in the marinade until they're coated all over, and leave them in the bowl while you cut the vegetables.",
+  "Seed the 3 bell peppers and cut them into strips about 1/2 inch wide. Peel the onion, cut it in half and slice it into 1/2 inch wedges.",
+  "Put the peppers and onion on a large sheet pan. Add the last 2 tbsp olive oil, the remaining 1/2 tsp chili powder, 1/2 tsp cumin, 1/2 tsp salt and 1/4 tsp pepper, and toss with your hands until everything is coated. Spread them out in one layer.",
+  "Lay the chicken thighs flat on a second sheet pan with a little room between each one, letting the extra marinade drip back into the bowl. Throw out what's left in the bowl.",
+  "Put the chicken on the upper rack and the vegetables on the lower rack. Roast for 20 minutes, tossing the vegetables once halfway, until the chicken is golden at the edges and the onion is soft.",
+  "You're cooking the chicken to 175°F in the thickest part, so if you have a thermometer, check it there. No thermometer? Cut into the thickest piece: it's done when there's no pink left and the juices run clear. If it isn't there yet, roast it for 5 minutes and check again.",
+  "Move the chicken to a cutting board and cover it loosely with foil. Let it rest for 5 minutes.",
+  "Meanwhile, move the vegetable pan to the upper rack and turn on the broiler. Broil for 2 to 3 minutes, until the peppers are charred at the edges. Watch them closely. They go from charred to burnt fast.",
+  "While the vegetables broil, drain and rinse the black beans. Warm them in a small saucepan over medium with 2 tbsp water for 3 to 4 minutes, stirring once or twice, until they're hot.",
+  "Slice the 2 avocados. Chop a handful of the cilantro and cut the other lime into wedges.",
+  "Fluff the rice with a fork. Slice the chicken into strips and toss it on the vegetable pan with any juices from the board.",
+  "Taste a strip of chicken. If it's flat, add a pinch more salt or a squeeze of lime.",
+  "Serve the rice, the chicken and vegetables and the beans at the table with the avocado, sour cream, salsa, cilantro and lime wedges."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No sheet pan fajita bowl had 20 ratings, so this leads with RecipeTin Eats' chicken fajitas, which marinates chicken thighs in lime, garlic, cumin, salt and pepper, sears them and chars the peppers and onion hard in a smoking pan. Killing Thyme and Well Plated move the whole thing onto sheet pans at 425°F for about 20 minutes with chili powder in the spice mix, and Killing Thyme spoons it over rice with black beans, avocado, sour cream and salsa. Well Plated warns that one pan gets crowded and spreads the vegetables over a second. This one keeps RecipeTin Eats' thigh marinade, roasts the chicken and vegetables on separate pans and broils the vegetables at the end for the char a skillet would give, then builds Killing Thyme's bowls. It skips RecipeTin Eats' orange juice.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Chicken Fajitas",
+   "url": "https://www.recipetineats.com/chicken-fajitas/",
+   "rating": 4.94,
+   "rating_count": 89,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Killing Thyme",
+   "title": "Sheet Pan Chicken Fajita Bowl",
+   "url": "https://www.killingthyme.net/sheet-pan-chicken-fajita-bowl/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Well Plated",
+   "title": "Sheet Pan Chicken Fajitas",
+   "url": "https://www.wellplated.com/sheet-pan-chicken-fajitas/",
+   "rating": 4.6,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

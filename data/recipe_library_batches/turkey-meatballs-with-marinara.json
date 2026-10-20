@@ -1,0 +1,116 @@
+{
+ "dish_name": "Turkey Meatballs with Marinara",
+ "cuisine": "American",
+ "main_protein": "turkey",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Basil",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped + more for serving"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Ground turkey",
+   "qty": "1.25 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Italian-style breadcrumbs",
+   "qty": "2/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Pecorino Romano cheese",
+   "qty": "1 wedge",
+   "category": "dairy",
+   "cook_qty": "1/3 cup grated + more for serving"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Marinara sauce",
+   "qty": "1 jar (24 oz)",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Mince the 2 garlic cloves and finely chop 3 tbsp of the onion. Chop 1/4 cup of the basil and grate 1/3 cup of the Romano.",
+  "In a large bowl, whisk the egg with the chopped basil, the 1/2 tsp salt, 1/4 tsp pepper, 1/2 tsp oregano, the garlic and 2 tbsp water.",
+  "Add the onion, the 1.25 lb turkey, the 2/3 cup breadcrumbs and the grated Romano. Mix it with your hands until it looks even all the way through and stop there.",
+  "Wet your hands with water and roll the mixture into balls a little bigger than a golf ball. Wet your hands again whenever it starts to stick. You should get about 18.",
+  "Heat the 2 tbsp olive oil in a large nonstick skillet over medium heat until it shimmers. Add the meatballs in a single layer with a little space between them. Let them brown for about 2 minutes before you turn them, and keep turning them until they're browned on all sides, 7 to 8 minutes in all.",
+  "Pour the jar of marinara over the meatballs and bring it to a boil. Turn the heat to low, cover the pan tightly and simmer for 15 minutes. You're cooking them to 165°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut one open: it's done when there's no pink left in the center.",
+  "Taste the sauce. If it's flat, add a pinch more salt. Tear a few basil leaves over the top and grate on some more Romano.",
+  "Serve over spaghetti or with crusty bread. If you'd like some for a busy night, let the extra meatballs and sauce cool, then freeze them in a container for up to 3 months. Thaw them in the fridge overnight and warm them, covered, over low heat."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three bind about a pound of 93% lean turkey with an egg, breadcrumbs, grated cheese, garlic, oregano and fresh herbs, and keep the mixing light so the meatballs stay tender. Once Upon a Chef adds a little water and minced onion, browns the meatballs in a skillet and simmers them covered in a jar of marinara for 15 minutes to 165°F. Well Plated bakes them at 375°F for 15 minutes and spoons warmed sauce over the top, and Cooking Classy soaks the crumbs in milk, bakes at 450°F and tosses the meatballs in marinara at the end. This follows Once Upon a Chef, written with the 1.25 lb package turkey comes in.",
+ "sources": [
+  {
+   "name": "Once Upon a Chef",
+   "title": "Turkey Meatballs",
+   "url": "https://www.onceuponachef.com/recipes/turkey-meatballs.html",
+   "rating": 4.91,
+   "rating_count": 53,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Well Plated",
+   "title": "Juicy Turkey Meatballs",
+   "url": "https://www.wellplated.com/baked-turkey-meatballs/",
+   "rating": 4.84,
+   "rating_count": 374,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Cooking Classy",
+   "title": "Turkey Meatballs",
+   "url": "https://www.cookingclassy.com/turkey-meatballs/",
+   "rating": 5.0,
+   "rating_count": 9,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

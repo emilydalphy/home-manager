@@ -1,0 +1,142 @@
+{
+ "dish_name": "Turkey Taco Skillet",
+ "cuisine": "American",
+ "main_protein": "turkey",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ground turkey",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chili powder",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Diced tomatoes",
+   "qty": "1 can (14.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Low-sodium chicken broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Shredded cheddar",
+   "qty": "1 bag (8 oz)",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3"
+  },
+  {
+   "item": "Sour cream",
+   "qty": "1 tub (8 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Hot sauce",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Dice the onion and mince the 4 garlic cloves. Thinly slice 3 of the green onions.",
+  "Heat the 2 tbsp olive oil in a 12 inch skillet with a lid over medium high until it shimmers. Add the onion and cook for 4 to 5 minutes, stirring now and then, until it's soft and starting to turn golden.",
+  "Push the onion to the edges and add the 1 lb turkey to the middle. Sprinkle 1/2 tsp of the salt and the 1/4 tsp pepper over it. Press it into a flat layer and leave it alone for 3 to 4 minutes, until the underside is browned.",
+  "Break the turkey into small crumbles and stir it into the onion. Cook for 3 to 4 minutes, until there's no pink left.",
+  "Add the garlic, 1 tbsp chili powder, 2 tsp cumin, 1 tsp paprika, 1 tsp oregano and 1/2 tsp coriander. Stir for 30 seconds to 1 minute, until the spices smell toasty and coat the meat.",
+  "Add the 1 cup rice and stir for 1 minute, until every grain is coated in the spiced oil.",
+  "Pour in the tomatoes with their juice, 2 cups of the broth and the remaining 1/2 tsp salt. Scrape up the browned bits from the bottom of the pan and bring it to a boil.",
+  "Turn the heat to low, put the lid on and cook for 20 minutes, until the rice is tender and has soaked up the liquid. No peeking.",
+  "Take the lid off and check the rice. If it's still firm or there's liquid on the bottom of the pan, cook it uncovered for 2 to 3 minutes, stirring once or twice.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Take the pan off the heat. Scatter the 1 cup cheddar over the top, put the lid back on and leave it for 3 minutes, until the cheese melts.",
+  "Scatter the sliced green onions over the top. Serve with the sour cream, and put the hot sauce on the table."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions brown a pound of ground turkey with onion in one big skillet, then stir in raw long grain rice, a can of diced tomatoes and broth and simmer it covered for 20 to 25 minutes until the rice has taken up the liquid. The Kitchen Girl uses a packet's worth of taco seasoning, chicken broth and garlic and tops it with green onions. Together as Family mixes its own cumin, chili powder and coriander, uses beef broth, adds corn and pinto beans and melts cheese over the top. This follows The Kitchen Girl's ratio of 1 cup rice to 2 cups broth and a can of tomatoes, swaps the packet for a mild spice mix like Together as Family's, bloomed in the pan, and melts cheddar on top, with hot sauce on the side.",
+ "sources": [
+  {
+   "name": "The Kitchen Girl",
+   "title": "Ground Turkey and Rice Taco Skillet",
+   "url": "https://thekitchengirl.com/turkey-taco-skillet/",
+   "rating": 5.0,
+   "rating_count": 25,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Together as Family",
+   "title": "Turkey Taco Rice Skillet",
+   "url": "https://togetherasfamily.com/turkey-taco-rice-skillet/",
+   "rating": 4.04,
+   "rating_count": 28,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

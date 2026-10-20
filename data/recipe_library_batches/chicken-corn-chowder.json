@@ -1,0 +1,139 @@
+{
+ "dish_name": "Chicken Corn Chowder",
+ "cuisine": "American",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Frozen corn",
+   "qty": "1 bag (16 oz)",
+   "category": "frozen",
+   "cook_qty": "3 cups"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Celery",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 ribs"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Thick-cut bacon",
+   "qty": "1 package",
+   "category": "meat/seafood",
+   "cook_qty": "4 slices"
+  },
+  {
+   "item": "Cooked chicken",
+   "qty": "2 cups",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Low-sodium chicken broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "2 1/2 cups"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole milk",
+   "qty": "1 pint",
+   "category": "dairy",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1 carton (8 oz)",
+   "category": "dairy",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Measure 3 cups of the corn into a sieve and run warm water over it for about 1 minute to thaw it. Shake it dry.",
+  "Dice the onion, chop 2 ribs of the celery and mince the 2 garlic cloves. Peel the 1 lb potatoes and cut them into 1/2 inch cubes. Cut 4 slices of the bacon into 1/2 inch pieces and pull the 2 cups chicken into bite size pieces.",
+  "Put 1 1/2 cups of the corn, 1 cup of the broth and the 1 tbsp flour in a blender. Blend for about 30 seconds, until smooth, and set it aside.",
+  "Put the bacon in a large pot, off the heat, then set it over medium heat. Cook for 6 to 8 minutes, stirring now and then, until it's crisp and the fat has melted out. Lift it onto a paper towel lined plate with a slotted spoon and leave the fat in the pot.",
+  "Add the onion, celery and 1/4 tsp of the salt to the fat. Cook for 4 to 5 minutes, stirring now and then, until they're soft.",
+  "Add the garlic, the 1/2 tsp oregano and the 1/4 tsp thyme. Stir for 30 seconds, until it smells fragrant.",
+  "Add the potatoes, the remaining 1 1/2 cups broth and 1/2 tsp of the salt. Bring it to a boil over medium high, then turn it down to a simmer, put the lid on and cook for 10 to 12 minutes, until a fork slides easily into the potatoes.",
+  "For a thicker chowder, press a few of the potato cubes against the side of the pot with a spoon to mash them.",
+  "Stir in the blended corn, the remaining 1 1/2 cups corn, the 1/2 cup milk, the 1/2 cup cream, the chicken and the 1/4 tsp pepper. Simmer gently for 5 minutes, stirring now and then, until it's slightly thickened and the chicken is hot. Keep it at a gentle bubble. A hard boil can split the cream.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Ladle the chowder into bowls and scatter the bacon over the top."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three cook corn, onion and celery in chicken broth with potatoes or another thickener, add chicken and finish with milk or cream. Spend With Pennies crisps bacon and softens the vegetables in its fat, blends half the corn with broth and flour to thicken the soup, simmers diced potatoes with oregano and thyme and stirs in cooked chicken, milk and cream at the end. Lauren's Latest builds a flour roux with carrots, zucchini and poultry seasoning and poaches raw chicken breasts in it, and Noble Pig thickens a quick version with instant potato flakes. This follows Spend With Pennies, with its amounts kept for 4 hearty bowls since the chowder is the whole meal.",
+ "sources": [
+  {
+   "name": "Spend With Pennies",
+   "title": "Chicken Corn Chowder with Bacon",
+   "url": "https://www.spendwithpennies.com/chicken-corn-chowder/",
+   "rating": 4.96,
+   "rating_count": 49,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Lauren's Latest",
+   "title": "Chicken Corn Chowder Recipe",
+   "url": "https://laurenslatest.com/creamy-chicken-chowder",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Noble Pig",
+   "title": "Chicken Corn Chowder",
+   "url": "https://noblepig.com/chicken-corn-chowder/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,105 @@
+{
+ "dish_name": "Chicken Avocado Wraps",
+ "cuisine": "American",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 5,
+ "ingredients": [
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  },
+  {
+   "item": "Plain Greek yogurt",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Ranch dressing",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cooked chicken",
+   "qty": "2 cups",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Avocados",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Large flour tortillas",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "4"
+  },
+  {
+   "item": "Shredded cheddar",
+   "qty": "1 bag (8 oz)",
+   "category": "dairy",
+   "cook_qty": "1/2 cup"
+  }
+ ],
+ "instructions": [
+  "Chop 2 tbsp of the cilantro. In a medium bowl, stir together 1/4 cup of the yogurt, 1/4 cup of the ranch, the cilantro, the 1/4 tsp salt and the 1/4 tsp pepper.",
+  "Pull or chop the 2 cups chicken into bite size pieces. Stir it into the sauce until it's coated.",
+  "Halve the 2 tomatoes and scoop out the seeds with a spoon. Dice them and pat them dry with a paper towel. Wet tomato makes the wraps soggy by lunch.",
+  "Squeeze the juice of the lime into a shallow bowl. Halve, pit and peel the 2 avocados, then slice them thinly. Turn the slices in the lime juice until they're coated. The juice keeps them from browning.",
+  "Warm a tortilla in a dry skillet over medium for about 15 seconds. Flip it and warm the other side for 15 seconds, until it's soft and bends without cracking. Do the same with 3 more tortillas, so you have 4.",
+  "Lay a tortilla flat. Spoon a quarter of the chicken in a line across the lower third, leaving about 2 inches clear at each side. Top it with a quarter of the avocado, a quarter of the tomato and 2 tbsp of the 1/2 cup cheddar.",
+  "Fold the sides in over the filling, then roll it up tightly from the bottom. Make the other 3 wraps the same way.",
+  "Cut each wrap in half on the diagonal. Wrap each one tightly in foil or plastic wrap and keep them in the fridge. Eat them within a day."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No chicken avocado wrap reached 20 ratings, and RecipeTin Eats, the trusted cook for American food, has no version of it, so this leads with the best rated one found. Gimme Delicious stirs Greek yogurt, ranch and cilantro into a quick sauce and rolls cooked chicken, sliced avocado, tomato and a little cheese into flour tortillas. Taste of Home braises chicken legs with tomato, onion and cumin for its filling and dresses the avocado with lime juice. This follows Gimme Delicious with leftover chicken, coats the chicken in the sauce and takes Taste of Home's lime on the avocado so the wraps keep until lunch.",
+ "sources": [
+  {
+   "name": "Gimme Delicious",
+   "title": "Avocado Ranch Chicken Burrito Wraps",
+   "url": "https://gimmedelicious.com/avocado-ranch-chicken-burrito-wraps/",
+   "rating": 4.86,
+   "rating_count": 7,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Taste of Home",
+   "title": "Chicken Avocado Wrap",
+   "url": "https://www.tasteofhome.com/recipes/chicken-avocado-wraps/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

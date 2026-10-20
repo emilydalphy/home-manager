@@ -1,0 +1,110 @@
+{
+ "dish_name": "Stuffed Baked Potatoes",
+ "cuisine": "American",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 105,
+ "ingredients": [
+  {
+   "item": "Russet potatoes",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Broccoli",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3"
+  },
+  {
+   "item": "Chives",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 1/2 tbsp chopped"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "6 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1 carton (8 oz)",
+   "category": "dairy",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Shredded cheddar",
+   "qty": "1 bag (8 oz)",
+   "category": "dairy",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Sour cream",
+   "qty": "1 tub (8 oz)",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 430°F with a rack in the middle. If you have a wire rack, set it on a baking sheet.",
+  "Scrub the 4 potatoes and dry them well. Prick each one all over with a fork, about 8 times. Rub them with 1 tbsp of the oil, then sprinkle 1/2 tsp of the salt over them.",
+  "Put the potatoes on the rack, or straight on the baking sheet, and bake for 60 to 75 minutes, until a small knife slides into the middle with no resistance.",
+  "Meanwhile, cut the broccoli into small florets about the size of a grape. That should be about 2 cups. Thinly slice 3 of the green onions and finely chop 1 1/2 tbsp of the chives.",
+  "Heat the remaining 1 tbsp oil in a large skillet over medium high. Add the broccoli, 1/4 tsp of the salt and 2 tbsp water, and put a lid on. Cook for 2 minutes, until the broccoli is bright green.",
+  "Take the lid off and cook for 2 to 3 minutes, stirring once or twice, until the water is gone and the edges are browned in spots. Transfer it to a plate.",
+  "Put the 6 tbsp butter and 1/3 cup cream in a small saucepan over medium low. Heat until the butter melts and the cream is hot, but don't let it boil. Take it off the heat.",
+  "When the potatoes are done, take them out and turn the oven down to 390°F. Leave them for 5 minutes, until you can hold them in a kitchen towel.",
+  "Cut each potato in half lengthwise. Scoop the flesh into a large bowl, leaving a layer about 1/3 inch thick inside each skin. Set the skins cut side up on the baking sheet.",
+  "Mash the potato while it's hot until it's smooth. Stir in the hot butter and cream, 3/4 cup of the cheddar, the broccoli, the green onions, the remaining 1/2 tsp salt and the 1/4 tsp pepper.",
+  "Taste the filling. If it's flat, add a pinch more salt.",
+  "Spoon the filling back into the skins, mounding it up. Sprinkle the remaining 3/4 cup cheddar over the tops. If you'd like to make them ahead, stuff them up to a day before, cover and refrigerate, then bake them for 30 to 35 minutes in the next step.",
+  "Bake for 20 to 25 minutes, until the cheese is melted and golden in spots and the filling is hot all the way through.",
+  "Scatter the chives over the top. Serve with the sour cream."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions bake russets until soft, scoop out the flesh, mash it with butter and a dairy, fold in cheddar, pile it back into the skins and bake them again under more cheese. RecipeTin Eats rubs the skins with oil and salt, bakes them on a rack at 430°F for 75 minutes so the skins crisp, beats in hot butter and cream, uses bacon and green onions and finishes with sour cream and chives. Baker by Nature bakes at 400°F, uses Greek yogurt and buttermilk with dried herbs and folds in cooked broccoli. This follows RecipeTin Eats' method and its hot butter and cream, and keeps it vegetarian by swapping the bacon for Baker by Nature's broccoli, browned in a skillet first.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Twice Baked Potatoes (Stuffed Jacket Potatoes)",
+   "url": "https://www.recipetineats.com/twice-baked-potatoes-stuffed-jacket-potatoes/",
+   "rating": 5.0,
+   "rating_count": 41,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Baker by Nature",
+   "title": "Broccoli and Cheddar Twice-Baked Potatoes",
+   "url": "https://bakerbynature.com/broccoli-and-cheddar-twice-baked-potatoes/",
+   "rating": 4.85,
+   "rating_count": 19,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
