@@ -1,0 +1,100 @@
+{
+ "dish_name": "Tamagoyaki",
+ "cuisine": "Japanese",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "6",
+   "category": "dairy"
+  },
+  {
+   "item": "Instant dashi granules",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Neutral oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Stir the 1/2 tsp dashi granules into 1/4 cup of warm water until they dissolve. Add the 4 tsp sugar, 1 tsp soy sauce, 2 tsp mirin and 1/8 tsp salt and stir until the sugar is gone.",
+  "Crack the 6 eggs into a jug with a spout. Beat them gently with chopsticks, cutting through the whites in a zigzag, until there are no clear streaks left. Try not to whip in bubbles.",
+  "Pour the seasoning into the eggs and stir to mix. You'll make two rolls, so pour half the mixture into a second cup.",
+  "Put the 2 tbsp oil in a small dish. Fold a paper towel, dip it in the oil and wipe a thin coat over a tamagoyaki pan or an 8 inch nonstick skillet.",
+  "Heat the pan over medium. Touch a drop of egg to it. When it sizzles right away, the pan is ready.",
+  "Pour in just enough egg to thinly cover the bottom and tilt the pan so it reaches the corners. Pop any big bubbles with a chopstick.",
+  "When the bottom is set and the top is still a little wet, about 30 seconds, roll the egg up from the far side toward you with chopsticks or a spatula. It doesn't have to be neat. The inside layers won't show.",
+  "Wipe the empty part of the pan with the oiled towel, push the roll back to the far side and wipe the space it left.",
+  "Pour in another thin layer of egg. Lift the roll with your chopsticks and tilt the pan so some of the egg runs under it.",
+  "When the new layer is set on the bottom and still soft on top, roll the omelette back toward you, wrapping it in the new layer. If the egg is browning fast, lift the pan off the heat for a few seconds.",
+  "Keep going, oiling the pan and adding a thin layer each time, until the first cup of egg is used up. Press the roll against the side of the pan to square it off.",
+  "Tip the roll onto a bamboo mat or a sheet of foil, wrap it snugly and leave it for 5 minutes to set its shape.",
+  "Make the second roll the same way with the rest of the egg.",
+  "Unwrap the rolls and cut each one into 6 slices about 1/2 inch thick.",
+  "Serve warm or at room temperature, or pack it in a bento."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions season beaten egg with a little sugar and soy, cook it in thin layers in an oiled pan, and roll each layer around the last while the top is still soft, then shape the roll in a bamboo mat. Tasting Table and Just One Cookbook's dashimaki both add dashi and mirin for a softer, custardy roll; Just One Cookbook's sweet atsuyaki version makes a sweetened dashi ahead and uses much more sugar. This one follows Tasting Table's lightly sweet ratio, doubled into two rolls so it fits a small pan.",
+ "sources": [
+  {
+   "name": "Tasting Table",
+   "title": "Classic, Custardy, Just a Touch Sweet Tamagoyaki Recipe",
+   "url": "https://tastingtable.com/1466461/classic-custardy-just-a-touch-sweet-tamagoyaki-recipe",
+   "rating": 5,
+   "rating_count": 37,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Just One Cookbook",
+   "title": "Dashimaki Tamago (Japanese Dashi Rolled Omelette)",
+   "url": "https://www.justonecookbook.com/tamagoyaki-japanese-rolled-omelette/",
+   "rating": 4.64,
+   "rating_count": 287,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Just One Cookbook",
+   "title": "Sweet Tamagoyaki (Atsuyaki Tamago)",
+   "url": "https://www.justonecookbook.com/japanese-sweet-rolled-omelet/",
+   "rating": 4.53,
+   "rating_count": 107,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

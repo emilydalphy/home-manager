@@ -1,0 +1,129 @@
+{
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "fallback_used": false,
+ "origin": "seed",
+ "dish_name": "Chicken Nanban",
+ "cuisine": "Japanese",
+ "main_protein": "chicken",
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup + 2 tsp"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Japanese mayonnaise",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "6 tbsp"
+  },
+  {
+   "item": "Persian cucumbers",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Short-grain rice",
+   "qty": "1.5 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1.5 cups rice in a few changes of cold water until the water runs mostly clear. Cook it in a rice cooker or a covered pot according to the package.",
+  "Put 2 of the eggs in a small saucepan and cover them with cold water by an inch. Bring it to a boil over medium heat, then turn it down to a gentle simmer and cook for 12 minutes.",
+  "Meanwhile, mince half the onion as finely as you can and put it in a bowl of cold water for 10 minutes. Cut the cucumber in half lengthwise, scoop out the seeds with a spoon and chop it into small dice.",
+  "Move the boiled eggs into a bowl of cold water. When they're cool enough to hold, peel them and chop them finely.",
+  "Drain the onion and squeeze it dry in your hand. Put it in a bowl with the chopped eggs and cucumber.",
+  "Stir in 6 tbsp mayonnaise, 2 tsp of the rice vinegar, 1/4 tsp of the salt and 1/8 tsp of the pepper until it's evenly mixed. Cover the tartar sauce and put it in the fridge.",
+  "In a small saucepan, combine 1/4 cup soy sauce, 1/4 cup rice vinegar, 2 tbsp mirin and 1/4 cup sugar. Bring it to a gentle simmer over medium heat, stirring until the sugar dissolves, then take it off the heat.",
+  "Pour 3 tbsp of the nanban sauce into a small bowl for the table and the rest into a wide, shallow dish.",
+  "Pat the 1.5 lb chicken thighs dry with paper towels. If one is much thicker than the others, cut into the thick part and open it out so they're all about the same thickness. Season both sides with the remaining 1/2 tsp salt and 1/8 tsp pepper.",
+  "Pour the 4 cups oil into a heavy pot so it's at least 1.5 inches deep and heat it over medium. You're heating it to 340°F, so if you have a thermometer, clip it to the side. No thermometer? Dip the tip of a wooden chopstick in. When small bubbles rise around it, the oil is ready.",
+  "While the oil heats, put the 1/4 cup flour on a plate and beat the other 2 eggs in a shallow bowl. Dust each thigh in the flour and shake off the extra.",
+  "Dip 2 thighs in the egg so they're coated all over and lower them gently into the oil. Stand back a little. They'll spatter. Leave them alone for the first minute so the egg can set.",
+  "Fry them for 5 to 6 minutes in all, turning them once, until they're light golden. Move them to a wire rack and fry the rest the same way, scooping out any stray bits of coating between batches.",
+  "Turn the heat up until the oil reaches 350°F, or until bubbles rush up around the chopstick. Fry the thighs a second time, 2 at a time, for about 1 minute, turning them once, until they're deep golden and crisp. You're cooking them to 175°F in the middle, so if you have a thermometer, check the thickest one there. No thermometer? Cut into the thickest one: it's done when the juices run clear and there's no pink left.",
+  "Lay the hot chicken straight into the dish of nanban sauce and spoon the sauce over both sides until every piece is coated.",
+  "Taste the tartar sauce. If it's flat, add a pinch more salt.",
+  "Slice each thigh into strips about 3/4 inch wide. Serve over the rice with a big spoonful of the tartar sauce on top and the 3 tbsp nanban sauce from the small bowl drizzled over."
+ ],
+ "method_notes": "Both read versions flour the chicken, dip it in beaten egg, fry it at 340°F and then dunk it in a sweet soy and rice vinegar sauce, served sliced with a cold egg and mayonnaise tartar sauce. Just One Cookbook (the lead) butterflies chicken breast, double fries it (340°F, then a short second fry at 350°F) and makes the tartar with boiled egg, soaked onion, cucumber and Kewpie. No Recipes uses skin-on thighs in a single fry, adds ginger and sake to the nanban sauce and puts celery, scallion, mustard and lemon in the tartar. This one follows the lead's sauce ratios, tartar and double fry, but uses boneless thighs, which stay juicier and don't need butterflying.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Chicken Nanban (Fried Chicken with Tartar Sauce)",
+   "url": "https://www.justonecookbook.com/chicken-nanban/",
+   "rating": 4.68,
+   "rating_count": 31,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "No Recipes",
+   "title": "Chicken Nanban",
+   "url": "https://norecipes.com/chicken-nanban/",
+   "rating": 4.46,
+   "rating_count": 22,
+   "read": true,
+   "lead": false
+  }
+ ]
+}
