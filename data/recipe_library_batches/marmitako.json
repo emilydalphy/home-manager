@@ -1,0 +1,136 @@
+{
+ "dish_name": "Marmitako",
+ "cuisine": "Spanish",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 50,
+ "ingredients": [
+  {
+   "item": "Fresh tuna steaks",
+   "qty": "1.25 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Extra virgin olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "1.5 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Diced tomatoes",
+   "qty": "1 can (14 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Smoked paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1 bottle",
+   "category": "other",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Fish stock",
+   "qty": "5 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Crusty bread",
+   "qty": "1 loaf",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Finely dice the onion and both peppers. Mince the 4 garlic cloves.",
+  "Peel the 1.5 lb potatoes. Push the tip of a knife into a potato and twist, so a rough chunk about 1 inch across snaps off. Keep going until they're all in chunks. The rough edges help thicken the broth.",
+  "Heat the 1/4 cup olive oil in a large heavy pot over medium. Add the onion and 1/2 tsp of the salt and cook for about 5 minutes, stirring now and then, until it's soft.",
+  "Add both peppers and cook for another 5 to 6 minutes, until they're soft and the onion is starting to turn golden.",
+  "Add the garlic and cook for 1 minute. Stir in the 1 tsp smoked paprika and 1 tsp thyme and cook for 30 seconds, until it smells smoky.",
+  "Add the potatoes and stir them through the oil and peppers for 2 minutes.",
+  "Add the can of tomatoes with their juice and 1/2 tsp of the salt, and cook for 2 minutes.",
+  "Turn the heat to high and pour in 1 cup white wine. Let it bubble for about 3 minutes, until the sharp smell of alcohol is gone.",
+  "Pour in the 5 cups fish stock and bring it to a boil. Cover, turn the heat to low and simmer for 20 to 25 minutes, until a potato chunk breaks apart when you press it against the side of the pot.",
+  "Meanwhile, pat the 1.25 lb tuna dry and cut it into 1 inch cubes. Season it with the last 1/2 tsp salt and the 1/2 tsp pepper. Chop a big handful of the parsley.",
+  "Stir the tuna into the pot so it's under the broth. Cover and simmer gently for 3 minutes, then take the pot off the heat and leave it covered for 5 minutes. The tuna is done when it's opaque on the outside with a little pink left in the middle. Any longer and it turns dry.",
+  "Squeeze in the juice of half the lemon and stir in the parsley. Taste it. If it's flat, add salt first, then a squeeze more lemon.",
+  "Cut the rest of the lemon into wedges. Serve in shallow bowls with crusty bread and the lemon wedges."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions soften onion, garlic and peppers in olive oil, add tomato and potatoes, simmer them in fish stock until the potatoes are tender, and add cubed tuna only at the very end so it stays moist. Spain on a Fork seasons the base with smoked paprika and thyme, adds white wine before the stock, and cooks the tuna in the covered pot for 10 minutes. Feed Me Phoebe sears the tuna first, uses poblano and a little chile in the base with no wine, and lets the tuna finish off the heat in about 3 minutes. This one follows Spain on a Fork but finishes the tuna gently off the heat as Feed Me Phoebe does, and snaps the potatoes into rough chunks to thicken the broth. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Spanish) has no version, so the first read version leads.",
+ "sources": [
+  {
+   "name": "Spain on a Fork",
+   "title": "Marmitako - Basque Tuna Stew Recipe",
+   "url": "https://spainonafork.com/marmitako-basque-tuna-stew-recipe/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Feed Me Phoebe",
+   "title": "Spanish Basque Tuna Stew Recipe with Peppers & Potatoes (Marmitako)",
+   "url": "https://feedmephoebe.com/marmitako-spanish-basque-tuna-stew-recipe-with-peppers-and-potatoes/",
+   "rating": 4.5,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

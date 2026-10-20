@@ -1,0 +1,121 @@
+{
+ "dish_name": "Pisto",
+ "cuisine": "Spanish",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 45,
+ "ingredients": [
+  {
+   "item": "Extra virgin olive oil",
+   "qty": "1/4 cup + 2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Zucchini",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "6",
+   "category": "produce"
+  },
+  {
+   "item": "Bay leaf",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "a pinch"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sherry vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Crusty bread",
+   "qty": "1 loaf",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Finely chop the onion and thinly slice the 4 garlic cloves. Cut both peppers into 1/2 inch squares. Cut the zucchini into 1/2 inch cubes and keep it in its own pile.",
+  "Halve the 6 tomatoes and grate the cut sides on the big holes of a box grater into a bowl, until only the skin is left in your hand. Throw the skins away.",
+  "Warm 1/4 cup of the olive oil in a large deep skillet over medium low. Add the onion and 1/4 tsp of the salt and cook for about 10 minutes, stirring every couple of minutes, until it's soft and see-through. Don't rush the onions. That's where the flavor starts.",
+  "Add the garlic and cook for 1 minute, until it smells sweet.",
+  "Add both peppers and 1/4 tsp of the salt. Cook for about 10 minutes, stirring now and then, until they're tender.",
+  "Add the zucchini and cook for 5 minutes, until it starts to soften at the edges.",
+  "Stir in the grated tomato, the bay leaf, 1/2 tsp of the salt, the 1/4 tsp pepper and a pinch of sugar. Simmer for 10 to 15 minutes, stirring now and then, until most of the liquid has cooked off and it looks thick and jammy.",
+  "Take the pan off the heat, lift out the bay leaf and stir in 1 tsp sherry vinegar. Taste it. If it's flat, add a pinch of salt first, then a few more drops of vinegar.",
+  "Heat the remaining 2 tbsp olive oil in a nonstick skillet over medium high until it shimmers. Crack in the 4 eggs and sprinkle them with the last 1/4 tsp of salt. Stand back a little. They'll spatter.",
+  "Fry them for 2 to 3 minutes, tilting the pan and spooning the hot oil over the whites, until the edges are crisp and brown and the yolks are still runny.",
+  "Spoon the pisto into shallow bowls and slide a fried egg on top of each one.",
+  "Serve with crusty bread."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions cook the vegetables slowly in olive oil in stages, onion first, then the peppers, then zucchini, and finish with tomato simmered down until thick. Spain on a Fork grates fresh tomatoes straight into the pan, adds a bay leaf and a pinch of sugar, and cooks it over low to medium heat for about 45 minutes. Eating European peels and chops the tomatoes, covers the pot for a longer simmer, and finishes with sherry vinegar, smoked paprika and shaved Manchego. This one follows Spain on a Fork, borrows the splash of sherry vinegar at the end, and tops each bowl with an egg fried in olive oil, which both pages name as the usual way to serve it. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Spanish) has no version, so the first read version leads.",
+ "sources": [
+  {
+   "name": "Spain on a Fork",
+   "title": "The Secret to the Best Spanish Ratatouille | Pisto Manchego Recipe",
+   "url": "https://spainonafork.com/spanish-ratatouille-pisto-manchego-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Eating European",
+   "title": "Pisto Manchego (Spanish Ratatouille)",
+   "url": "https://eatingeuropean.com/pisto-manchego-spanish-ratatouille/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
