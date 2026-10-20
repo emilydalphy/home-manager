@@ -431,6 +431,19 @@ def remove_member(household_id: int, member_id: int) -> dict:
             ).rowcount
             if n:
                 touched["household_rhythm.member_name"] = n
+            # "Who does the cooking?" answered with their name is a
+            # household-level row (member_name '') whose `who` is free text,
+            # so the delete above never reached it: after Vineeth left,
+            # Kitchen and Today kept naming him as tonight's cook (defect
+            # hunt 2026-10-20). The answer goes, back to unanswered — never
+            # handed to whoever is left, which would be inventing a cook.
+            n = conn.execute(
+                "DELETE FROM household_rhythm WHERE household_id = ? AND fact_type = 'cooking_role' "
+                "AND LOWER(TRIM(who)) = LOWER(TRIM(?))",
+                (hid, name),
+            ).rowcount
+            if n:
+                touched["household_rhythm.who"] = n
             _strip_from_json_list(conn, "chores_profile", "rotation_members_json", hid, name)
             conn.execute("DELETE FROM members WHERE id = ? AND household_id = ?", (mid, hid))
             touched["members"] = 1
