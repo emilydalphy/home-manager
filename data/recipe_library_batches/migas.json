@@ -1,0 +1,43 @@
+{
+ "dish_name": "Migas",
+ "cuisine": "Mexican",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {"item": "Eggs", "qty": "8", "category": "dairy"},
+  {"item": "Corn tortillas", "qty": "6", "category": "other"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Red bell pepper", "qty": "1", "category": "produce"},
+  {"item": "Vegetable oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Monterey Jack cheese", "qty": "4 oz", "category": "dairy"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"},
+  {"item": "Pickled jalapeños", "qty": "1 jar", "category": "pantry"},
+  {"item": "Salsa", "qty": "1 jar", "category": "pantry"}
+ ],
+ "instructions": [
+  "Cut the 6 tortillas into strips about 1 inch long and 1/2 inch wide. Tortillas that are a day or two old fry up crisper. Finely chop the onion. Seed the bell pepper and chop it fine.",
+  "Crack the 8 eggs into a bowl with 1/4 tsp of the salt and the 1/4 tsp pepper. Whisk for about 1 minute, until they're an even yellow.",
+  "Heat the 3 tbsp oil in a 12 inch nonstick skillet over medium high until it shimmers. Add the tortilla strips and 1/4 tsp of the salt and cook for 4 to 6 minutes, stirring now and then, until they're golden and crisp.",
+  "Add the onion, bell pepper and the remaining 1/4 tsp salt. Cook for 5 to 7 minutes, stirring now and then, until the vegetables are soft.",
+  "Meanwhile, shred the 4 oz cheese and chop 1 tbsp of the cilantro.",
+  "Pour in the eggs. Scrape the spatula firmly along the bottom and sides of the pan without stopping for 30 to 60 seconds, until the eggs start to clump and the spatula leaves a trail.",
+  "Turn the heat down to low and keep folding gently for another 30 to 60 seconds, until the eggs are in soft clumps and still look a little wet. Take the pan off the heat.",
+  "Fold in a third of the cheese and the cilantro.",
+  "Taste it, and add a pinch more salt if it's flat.",
+  "Serve with the salsa, the rest of the cheese and the pickled jalapeños on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions fry corn tortilla strips in oil until crisp, soften onion and chile in the same pan, then scramble the eggs right in with them. America's Test Kitchen fries the strips with the onion, red bell pepper and jarred jalapeños, scrapes the eggs hard over medium high to start the curds, finishes them on low and folds in Monterey Jack and cilantro off the heat. Bon Appetit lifts the strips out while it softens onion, serrano and cumin in butter and serves a cherry tomato salad on top, and Mexican Please adds bacon and a roasted tomatillo salsa. This one follows the lead and puts the jalapeños on the side.",
+ "sources": [
+  {"name": "America's Test Kitchen", "title": "Migas", "url": "https://www.americastestkitchen.com/recipes/5242-migas", "rating": 4.2, "rating_count": 42, "read": true, "lead": true},
+  {"name": "Bon Appetit", "title": "Migas", "url": "https://www.bonappetit.com/recipe/migas", "rating": 5.0, "rating_count": 7, "read": true, "lead": false},
+  {"name": "Mexican Please", "title": "Migas", "url": "https://www.mexicanplease.com/migas/", "rating": 3.95, "rating_count": 19, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,41 @@
+{
+ "dish_name": "Sopa de Fideo",
+ "cuisine": "Mexican",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "Roma tomatoes", "qty": "3", "category": "produce"},
+  {"item": "White onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Olive oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Fideo noodles", "qty": "1 package (7 oz)", "category": "pantry"},
+  {"item": "Vegetable broth", "qty": "2 cartons (32 oz)", "category": "pantry", "cook_qty": "5 cups"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Queso fresco", "qty": "4 oz", "category": "dairy"},
+  {"item": "Avocado", "qty": "1", "category": "produce"},
+  {"item": "Lime", "qty": "1", "category": "produce"},
+  {"item": "Pickled jalapeños", "qty": "1 jar", "category": "pantry"}
+ ],
+ "instructions": [
+  "Cut the 3 tomatoes into quarters and roughly chop half the onion. Put them in a blender with the 2 garlic cloves and 3/4 cup water and blend until smooth.",
+  "Heat the 3 tbsp olive oil in a large pot over medium low. Add the package of fideo and stir to coat it in the oil. Keep stirring for 3 to 5 minutes, until the noodles are golden brown and smell nutty. Stay at the pot. They go from golden to burnt quickly.",
+  "Stand back a little and pour in the tomato purée. It will spatter. Stir it through, turn the heat to low and simmer for 8 minutes, stirring now and then, until the sauce thickens a little and turns a deeper red.",
+  "Pour in the 5 cups broth and add 2 sprigs of the cilantro and the 1 tsp salt. Partly cover the pot and simmer for 8 to 10 minutes, until the noodles are tender but not mushy.",
+  "Meanwhile, crumble the 4 oz queso fresco, dice the avocado, cut the lime into wedges and chop a small handful of the cilantro leaves. Put the pickled jalapeños in a small bowl for the table.",
+  "Fish out the cilantro sprigs. Taste the soup, and add a pinch more salt if it's flat, or a squeeze of the lime.",
+  "Serve topped with the queso fresco, avocado and chopped cilantro, with the lime wedges and pickled jalapeños on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three blend tomato, onion and garlic into a purée, toast the fideo in oil until golden, then simmer it in the tomato and broth until tender. Mexican Made Meatless uses vegetable broth, fries the purée with the toasted noodles for 8 minutes until it darkens before the broth goes in, and adds a couple of cilantro sprigs, which this version follows. Tara's Multicultural Table uses canned tomatoes, chicken broth and a little cumin, and Cooking Classy uses a pound and a half of fresh tomatoes and simmers it 15 minutes. All top it with some mix of queso fresco, avocado, cilantro and lime.",
+ "sources": [
+  {"name": "Mexican Made Meatless", "title": "How to Make Traditional Sopa de Fideo (Just Like Mom's and Ready in 30 Minutes)", "url": "https://mexicanmademeatless.com/sopa-de-fideo/", "rating": 5.0, "rating_count": 31, "read": true, "lead": true},
+  {"name": "Tara's Multicultural Table", "title": "Sopa de Fideo (Mexican Noodle Soup)", "url": "https://tarasmulticulturaltable.com/sopa-de-fideo-mexican-noodle-soup/", "rating": 5.0, "rating_count": 2, "read": true, "lead": false},
+  {"name": "Cooking Classy", "title": "Sopa de Fideo", "url": "https://www.cookingclassy.com/sopa-de-fideo/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

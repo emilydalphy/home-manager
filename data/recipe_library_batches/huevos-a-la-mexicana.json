@@ -1,0 +1,44 @@
+{
+ "dish_name": "Huevos a la Mexicana",
+ "cuisine": "Mexican",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {"item": "Eggs", "qty": "8", "category": "dairy"},
+  {"item": "Roma tomatoes", "qty": "4", "category": "produce"},
+  {"item": "White onion", "qty": "1", "category": "produce"},
+  {"item": "Jalapeño", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"},
+  {"item": "Vegetable oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Refried beans", "qty": "1 can (16 oz)", "category": "pantry"},
+  {"item": "Corn tortillas", "qty": "12", "category": "other"}
+ ],
+ "instructions": [
+  "Chop half the onion into small pieces. Seed the 4 tomatoes and cut them into small dice. Mince the 2 garlic cloves and chop 2 tbsp of the cilantro.",
+  "Seed the jalapeño and chop it fine. Use a serrano instead if everyone likes more heat.",
+  "Crack the 8 eggs into a bowl, add 1/2 tsp of the salt and beat them with a fork until there are no streaks of white left.",
+  "Spoon the refried beans into a small pot with a splash of water. Warm them over low, stirring now and then, and keep them covered on low until you serve.",
+  "Warm the 12 tortillas in a large dry nonstick skillet over medium, about 30 seconds a side, and stack them in a clean kitchen towel.",
+  "Add the 2 tbsp oil to the same skillet. Add the onion and jalapeño and cook for about 2 minutes, stirring, until the onion turns soft and see-through.",
+  "Add the garlic and cook for 30 seconds, until you can smell it.",
+  "Add the tomatoes and the remaining 1/2 tsp salt. Cook for 2 to 3 minutes, until the tomatoes soften and most of their juice has cooked off. Stir in the cilantro.",
+  "Turn the heat down to medium low and pour in the eggs. Leave them for about 1 minute, until they start to set around the edges.",
+  "Fold them gently with a spatula for 1 to 2 minutes, until they're just set but still look a little moist. Take the pan off the heat.",
+  "Taste the eggs, and add a pinch more salt if they're flat.",
+  "Serve with the refried beans and the warm tortillas."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions soften onion, chile and tomato in oil first, then pour in beaten eggs and cook them gently until just set. Mexican Food Journal adds garlic, cooks the tomato for about 2 minutes, stirs in cilantro and salt before the eggs, lets them set for 2 minutes before stirring, and serves them with refried beans and corn tortillas. Grantourismo uses green chiles and spring onion and spoons the eggs onto tortillas with avocado and hot sauce, and Kitchen Gidget keeps the vegetables tender crisp. This one follows the lead's order and ratios with a seeded jalapeño, which the lead names as the milder swap for serrano. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Mexican) has no version, so the first read version leads.",
+ "sources": [
+  {"name": "Mexican Food Journal", "title": "Huevo a la Mexicana Recipe", "url": "https://mexicanfoodjournal.com/huevo-a-la-mexicana/", "rating": 3.84, "rating_count": 6, "read": true, "lead": true},
+  {"name": "Grantourismo", "title": "Huevos a la Mexicana Recipe", "url": "https://grantourismotravels.com/huevos-a-la-mexicana-recipe/", "rating": 5.0, "rating_count": 2, "read": true, "lead": false},
+  {"name": "Kitchen Gidget", "title": "Huevos a la Mexicana", "url": "https://www.kitchengidget.com/huevos-a-la-mexicana/", "rating": 5.0, "rating_count": 1, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
