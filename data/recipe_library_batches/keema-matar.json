@@ -1,0 +1,51 @@
+{
+ "dish_name": "Keema Matar",
+ "cuisine": "Indian",
+ "main_protein": "lamb",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {"item": "Ground lamb", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Frozen peas", "qty": "1 bag", "category": "frozen", "cook_qty": "1 cup"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Ginger", "qty": "1 piece (2 inch)", "category": "produce", "cook_qty": "1 tbsp minced"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Green chili", "qty": "1", "category": "produce"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce", "cook_qty": "1/4 cup chopped"},
+  {"item": "Tomato sauce", "qty": "1 can (8 oz)", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "Ghee", "qty": "1 jar", "category": "dairy", "cook_qty": "2 tbsp"},
+  {"item": "Cumin seeds", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Bay leaves", "qty": "1", "category": "pantry"},
+  {"item": "Ground coriander", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Ground cumin", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Kashmiri chili powder", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Ground turmeric", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Garam masala", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Finely chop the onion. Mince 1 tbsp of the ginger and the 3 garlic cloves. Chop 1/4 cup of the cilantro. Thinly slice the green chili into a small bowl for the table.",
+  "Melt the 2 tbsp ghee in a large, deep skillet over medium and add the 1 tsp cumin seeds and the bay leaf. After about 20 seconds the seeds will sizzle and smell toasty. That's your cue for the onion.",
+  "Add the onion and cook for 6 to 8 minutes, stirring now and then, until it's soft and golden at the edges.",
+  "Add the ginger and garlic and stir for about a minute, until they stop smelling raw.",
+  "Turn the heat to low and stir in the 2 tsp coriander, 1 tsp ground cumin, 1 tsp Kashmiri chili powder and 1/2 tsp turmeric for 30 seconds.",
+  "Add 1/2 cup tomato sauce and 1/2 tsp of the salt. Turn the heat to medium and cook for 2 minutes, stirring, until it thickens and you see oil at the edges.",
+  "Turn the heat to medium high and add the lamb with the other 1/2 tsp salt. Break it into small crumbs with a wooden spoon and cook for about 5 minutes, stirring, until there's no pink left and it starts to sizzle. If a lot of fat pools in the pan, spoon some of it off.",
+  "Stir in the 1 cup peas and 1/2 cup water, scraping the bottom of the pan. Bring it to a simmer, cover and cook over medium low for 15 minutes, stirring once or twice, until the lamb is tender. If it starts to stick, add a splash of water.",
+  "Uncover, turn the heat to medium and cook for 2 to 3 minutes, stirring, until most of the liquid has cooked off and the keema is moist but not soupy.",
+  "Stir in the 1 1/2 tsp garam masala and cook for 1 minute. Take the pan off the heat, fish out the bay leaf and stir in the cilantro.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with roti, naan or basmati rice, with the sliced green chili on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions cook ground meat into an onion, ginger and garlic base with tomato, coriander, cumin, turmeric and mild chili, then add peas near the end and finish with garam masala and cilantro. Easy Indian Cookbook (the lead) uses ground lamb in ghee with cumin seeds and a bay leaf, cooks tomato puree and the ground spices before the meat goes in, and pressure cooks it with half a cup of water and the peas for 10 minutes before drying it off. Tea for Turmeric uses beef on the stove, browns the onions longer, adds yogurt and black pepper and simmers covered for 15 minutes, and Glebe Kitchen cooks the lamb separately and builds a restaurant style sauce from blended onion with tamarind. This one follows the lead's ratios on the stovetop with the covered 15 minute simmer, and the green chili goes on the side.",
+ "sources": [
+  {"name": "Easy Indian Cookbook", "title": "Keema Matar (Ground Meat Curry) - Instant Pot", "url": "https://easyindiancookbook.com/keema-matar/", "rating": 5.0, "rating_count": 23, "read": true, "lead": true},
+  {"name": "Tea for Turmeric", "title": "Keema Matar (Ground Beef Curry with Peas)", "url": "https://www.teaforturmeric.com/keema-matar/", "rating": 4.88, "rating_count": 75, "read": true, "lead": false},
+  {"name": "Glebe Kitchen", "title": "lamb keema matar", "url": "https://glebekitchen.com/keema-matar-nearly-restaurant-style/", "rating": 5.0, "rating_count": 11, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
