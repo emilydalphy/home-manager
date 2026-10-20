@@ -400,11 +400,19 @@ def update_recipe_details(
         # 0 or a negative used to save as is, and every reader then quietly
         # scaled the recipe as if it served 4 (scale_recipe's fallback) while
         # the recipe card said 0. A recipe serves at least one person.
+        # "4" from the model saved fine before this check (SQLite takes it
+        # as a number), so a whole number written as text still counts.
+        if isinstance(default_servings, str) and default_servings.strip().lstrip("-").isdigit():
+            default_servings = int(default_servings.strip())
         if isinstance(default_servings, float) and default_servings.is_integer():
             default_servings = int(default_servings)
-        if isinstance(default_servings, bool) or not isinstance(default_servings, int) or default_servings < 1:
+        if isinstance(default_servings, bool) or not isinstance(default_servings, int):
             raise ValueError(
-                f"A recipe has to serve at least 1 — {default_servings!r} isn't a number of servings."
+                f"Servings has to be a whole number of people — {default_servings!r} isn't one."
+            )
+        if default_servings < 1:
+            raise ValueError(
+                f"A recipe has to serve at least 1 — {default_servings} isn't a number of servings."
             )
     conn = get_conn()
     existing = conn.execute(

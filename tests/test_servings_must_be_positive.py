@@ -23,10 +23,11 @@ def _recipe() -> None:
     )
 
 
-@pytest.mark.parametrize("bad", [0, -2, True, "4"])
-def test_a_non_positive_serving_count_is_refused_and_nothing_changes(bad):
+@pytest.mark.parametrize("bad, says", [(0, "at least 1"), (-2, "at least 1"), ("0", "at least 1"),
+                                       (True, "whole number"), (2.5, "whole number"), ("lots", "whole number")])
+def test_a_non_positive_serving_count_is_refused_and_nothing_changes(bad, says):
     _recipe()
-    with pytest.raises(ValueError, match="at least 1"):
+    with pytest.raises(ValueError, match=says):
         tools.update_recipe_details("Weeknight Dal", default_servings=bad, prep_time_minutes=5)
     recipe = tools.get_recipe("Weeknight Dal")
     assert recipe["default_servings"] == 4
@@ -38,6 +39,14 @@ def test_a_positive_serving_count_still_saves_and_scales_from_it():
     tools.update_recipe_details("Weeknight Dal", default_servings=2)
     assert tools.get_recipe("Weeknight Dal")["default_servings"] == 2
     assert tools.scale_recipe("Weeknight Dal", 4)["base_servings"] == 2
+
+
+def test_a_whole_number_sent_as_text_still_saves():
+    """The model sometimes sends "6" for an integer field; that saved before
+    the check and still does."""
+    _recipe()
+    tools.update_recipe_details("Weeknight Dal", default_servings="6")
+    assert tools.get_recipe("Weeknight Dal")["default_servings"] == 6
 
 
 def test_fill_in_drops_a_models_zero_and_keeps_the_steps(monkeypatch):
