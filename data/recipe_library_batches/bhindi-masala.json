@@ -1,0 +1,136 @@
+{
+ "dish_name": "Bhindi Masala",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Okra",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce",
+   "cook_qty": "1 tsp grated"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kasuri methi",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 lb okra and dry every pod well with a kitchen towel. If they still feel damp, spread them out on the towel for 10 minutes. Wet okra turns slimy in the pan.",
+  "Trim off both ends of each pod and cut the okra into 3/4 inch pieces.",
+  "Finely chop the 2 onions and the 3 tomatoes. Grate 1 tsp of the ginger and mince the 3 garlic cloves. Thinly slice the green chili and put it in a small bowl for the table.",
+  "Heat 2 tbsp of the oil in a large skillet over medium. Add the okra in an even layer and cook for 7 to 8 minutes, stirring every minute or so, until it's bright green, browned in spots and no longer sticky. Leave the lid off, or the okra steams and turns slimy. Tip it onto a plate.",
+  "Add the other 2 tbsp oil to the same pan with the 3/4 tsp cumin seeds. After about 20 seconds the seeds will sizzle and turn a shade darker.",
+  "Add the onions and 1/4 tsp of the salt. Cook for 6 to 8 minutes, stirring now and then, until they're soft and golden.",
+  "Add the ginger and garlic and cook for 1 minute, until they stop smelling raw.",
+  "Add the tomatoes and another 1/4 tsp of the salt. Cook for about 5 minutes, mashing them with the spoon, until they're soft and mushy.",
+  "Turn the heat down to low and stir in the 1/4 tsp turmeric, 3/4 tsp chili powder, 1 tsp coriander and 1 tsp garam masala. Stir for about 1 minute, until the masala darkens and you can see oil at the edges.",
+  "Pour in 1/3 cup water and cook over medium for 2 to 3 minutes, stirring, until it's thick again.",
+  "Crush the 3/4 tsp kasuri methi between your palms over the pan. Add the okra and the last 1/4 tsp salt and stir gently to coat. Cook uncovered over medium low for 5 minutes, until a piece of okra is tender when you press it.",
+  "Chop 2 tbsp of the cilantro and scatter it over the top. Taste it. If it's flat, add a pinch more salt.",
+  "Serve with roti or rice, with the sliced green chili on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions fry the okra on its own first, uncovered, until it's no longer slimy, then build an onion and tomato masala in the same pan and fold the okra back in at the end. Swasthi's adds ginger garlic and garam masala, loosens the masala with a little water and finishes with kasuri methi, then covers the pan briefly; Cook with Manali skips the garlic, adds amchur for tang and cooks the okra in the masala uncovered for 5 minutes. This one follows Swasthi's spices with Manali's uncovered finish, and puts the green chili on the side.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Bhindi Masala Recipe (Okra Masala)",
+   "url": "https://www.indianhealthyrecipes.com/bhindi-masala-recipe/",
+   "rating": 4.99,
+   "rating_count": 397,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cook with Manali",
+   "title": "Bhindi Masala",
+   "url": "https://www.cookwithmanali.com/bhindi-masala/",
+   "rating": 4.96,
+   "rating_count": 101,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Bhindi Masala Recipe - Dhaba Style",
+   "url": "https://hebbarskitchen.com/bhindi-masala-recipe/",
+   "rating": 4.8,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

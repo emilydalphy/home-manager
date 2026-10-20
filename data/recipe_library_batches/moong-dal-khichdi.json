@@ -1,0 +1,51 @@
+{
+ "dish_name": "Moong Dal Khichdi",
+ "cuisine": "Indian",
+ "main_protein": "lentils",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {"item": "Basmati rice", "qty": "3/4 cup", "category": "pantry"},
+  {"item": "Split yellow moong dal", "qty": "3/4 cup", "category": "pantry"},
+  {"item": "Ghee", "qty": "1 jar", "category": "dairy", "cook_qty": "1/4 cup"},
+  {"item": "Ground turmeric", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Cumin seeds", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Bay leaf", "qty": "1", "category": "pantry"},
+  {"item": "Asafoetida", "qty": "a pinch", "category": "pantry"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Tomatoes", "qty": "1", "category": "produce"},
+  {"item": "Ginger", "qty": "1 piece (1 inch)", "category": "produce"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Kashmiri chili powder", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Garam masala", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce", "cook_qty": "3 tbsp chopped"},
+  {"item": "Papad", "qty": "1 package", "category": "pantry", "cook_qty": "4"},
+  {"item": "Plain yogurt", "qty": "1 tub", "category": "dairy"},
+  {"item": "Mango pickle", "qty": "1 jar", "category": "pantry"}
+ ],
+ "instructions": [
+  "Put the 3/4 cup rice and 3/4 cup moong dal in a bowl and rinse them under the tap, swishing with your hand, until the water runs mostly clear. Cover them with fresh water and soak for 15 minutes while you chop.",
+  "Finely chop the onion and the tomato. Grate the ginger, mince the 3 garlic cloves and chop 3 tbsp of the cilantro.",
+  "Drain the rice and dal. Melt 1 tbsp of the ghee in a large heavy pot over medium, add them and stir for 2 minutes, until the dal smells nutty.",
+  "Add 5 cups water, 1/4 tsp of the turmeric and 3/4 tsp of the salt. Bring it to a boil, then turn the heat to low, partly cover and simmer for 25 to 30 minutes, until the dal has broken down and the rice is very soft. Stir it every 5 minutes or so. It catches on the bottom easily.",
+  "Meanwhile, melt 2 tbsp ghee in a skillet over medium low. Add the 1 tsp cumin seeds, the bay leaf and the pinch of asafoetida. After about 20 seconds the seeds will sizzle and darken a shade. That's your cue for the onion.",
+  "Add the onion and cook over medium for 5 to 6 minutes, stirring, until it's soft and golden at the edges. Add the ginger and garlic and stir for about a minute, until they stop smelling raw.",
+  "Add the tomato and cook for 4 to 5 minutes, mashing it with the spoon, until it's soft and pulpy.",
+  "Turn the heat to low and stir in the remaining 1/4 tsp turmeric, 1 tsp Kashmiri chili powder, 1/2 tsp garam masala and the remaining 3/4 tsp salt. Cook for 1 to 2 minutes, stirring, until it smells toasty.",
+  "Scrape the masala into the pot of rice and dal and add 1 cup hot water. Stir well, cover and simmer over low for 5 minutes. It should be loose and spoonable, like a thick porridge. It thickens as it sits, so add a splash more hot water if it gets stiff.",
+  "Microwave the 4 papads one at a time for 45 to 60 seconds each, until they blister and turn crisp all over.",
+  "Take the pot off the heat and stir in the chopped cilantro. Taste it. If it's flat, add a pinch more salt.",
+  "Spoon it into bowls and drizzle the last 1 tbsp ghee over the top. Serve with the papads, plain yogurt and mango pickle."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both rinse and briefly soak equal parts rice and split yellow moong dal and cook them very soft with turmeric and salt, then season the pot with a tempering in ghee. Hebbar's toasts the rice and dal in ghee first, pressure cooks them, and builds a fuller tempering of cumin, bay leaf, asafoetida, onion, ginger garlic, tomato, chili powder and garam masala before simmering it all together with a cup of water and finishing with cilantro. Cook with Manali puts the asafoetida in with the dal, tempers mustard and cumin seeds with ginger and green chili, and stirs in tomato and green peas. Both serve it with yogurt, pickle and papad and more ghee on top. This one follows Hebbar's, cooks it on the stove in a pot instead of a pressure cooker and uses Kashmiri chili for a milder pot.",
+ "sources": [
+  {"name": "Hebbar's Kitchen", "title": "Khichdi Recipe 2 Ways | Moong Dal Khichdi", "url": "https://www.hebbarskitchen.com/moong-dal-khichdi-recipe/", "rating": 4.97, "rating_count": 247, "read": true, "lead": true},
+  {"name": "Cook with Manali", "title": "Moong Dal Khichdi", "url": "https://www.cookwithmanali.com/moong-dal-khichdi/", "rating": 4.83, "rating_count": 17, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,124 @@
+{
+ "dish_name": "Masoor Dal",
+ "cuisine": "Indian",
+ "main_protein": "lentils",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Red lentils",
+   "qty": "1 1/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ghee",
+   "qty": "1 jar",
+   "category": "dairy",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Mustard seeds",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried red chilies",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Asafoetida",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kasuri methi",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  }
+ ],
+ "instructions": [
+  "Put the 1 1/4 cups red lentils in a bowl, cover them with water and swish them around with your hand. Pour off the cloudy water and repeat 3 or 4 times, until the water is almost clear. Drain them.",
+  "Chop the 3 tomatoes. Put the lentils, tomatoes and 4 cups water in a medium pot and bring it to a boil over high heat.",
+  "Turn the heat down to medium low and skim off the foam with a spoon. Simmer with the lid ajar for 18 to 20 minutes, stirring now and then, until the lentils are completely soft and falling apart. If it gets thicker than you like, stir in a splash of hot water.",
+  "Meanwhile, chop the 4 garlic cloves and 2 tbsp of the cilantro. Cut the lemon in half.",
+  "Mash the dal with a whisk or the back of the spoon, as smooth or as rough as you like, and stir in the 1 tsp salt. Keep it at a gentle simmer.",
+  "For the tadka, melt the 3 tbsp ghee in a small frying pan over medium. Add the 1/2 tsp mustard seeds, 1 tsp cumin seeds and the 2 dried chilies, broken in half. When the mustard seeds start to pop, add the garlic.",
+  "Stir the garlic for about a minute, until it's just turning golden. Take the pan off the heat and stir in the pinch of asafoetida, 1/2 tsp chili powder, 1/2 tsp turmeric and 1/4 tsp garam masala. The heat left in the pan is enough to cook them.",
+  "Pour the tadka straight into the dal. It'll sizzle. Crush the 1 tsp kasuri methi between your palms over the pot, stir it in and simmer for 2 minutes.",
+  "Turn off the heat and squeeze in the juice of half the lemon. Cut the other half into wedges. Taste it, and add a pinch more salt or a squeeze from a wedge if it's flat. Scatter over the cilantro.",
+  "Serve with rice or roti, with the lemon wedges on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both wash the red lentils until the water runs clear and cook them soft without soaking, then season them with a ghee or oil tempering and finish with kasuri methi, lemon and cilantro. Swasthi's cooks the lentils with the tomatoes from the start, skims the foam, and pours a tadka of mustard, cumin, dried red chili and garlic over the mashed dal, with the ground spices stirred into the hot fat off the heat. Tea for Turmeric boils the lentils plain for 30 minutes and cooks the onion, ginger, garlic, tomatoes and ground spices into a separate masala that the dal is stirred into, with ghee added at the end. This one follows Swasthi's method and ratios for four, using red lentils alone in place of her optional moong dal.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Masoor Dal Recipe (Red Lentil Dal)",
+   "url": "https://www.indianhealthyrecipes.com/masoor-dal-recipe/",
+   "rating": 5.0,
+   "rating_count": 270,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Tea for Turmeric",
+   "title": "My Go-To Masoor Dal Recipe (Red Lentil Dal)",
+   "url": "https://www.teaforturmeric.com/masoor-dal/",
+   "rating": 4.98,
+   "rating_count": 98,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
