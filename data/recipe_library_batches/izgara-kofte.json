@@ -1,0 +1,134 @@
+{
+ "dish_name": "Izgara Kofte",
+ "cuisine": "Turkish",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 35,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Ground beef",
+   "qty": "1.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Romaine lettuce",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Pita bread",
+   "qty": "1 package",
+   "category": "other"
+  },
+  {
+   "item": "Aleppo pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Grate the yellow onion on the big holes of a box grater into a sieve set over a bowl. Press out as much juice as you can and put the onion in a large bowl.",
+  "Mince 2 of the garlic cloves and finely chop 3 tbsp of the parsley. Add them to the onion with the 1.5 lb beef, the 1 tbsp cumin, the 1 tsp black pepper and 1 tsp of the salt.",
+  "Mix it with your hands until the onion and spices are spread evenly through the meat, about 1 minute. Stop there. Any longer and the köfte come out dense.",
+  "Wet your hands and shape the mixture into 12 flat ovals about 3 inches long and 3/4 inch thick. Lay them on a plate and refrigerate them for 30 minutes. Cold köfte hold together better in the pan.",
+  "Meanwhile, make the sauce. Mince the last garlic clove into a small bowl and stir in 1 cup yogurt, the juice of half the lemon and the last 1/4 tsp salt. Cut the other half of the lemon into wedges.",
+  "Thinly slice the red onion and toss it with a small handful of chopped parsley. Slice the 2 tomatoes and tear the lettuce into leaves.",
+  "Heat 1 tbsp of the olive oil in a large skillet over medium high until it shimmers. Add half the köfte with room between them and leave them alone for about 4 minutes, until the undersides are deep brown and they let go of the pan.",
+  "Flip them and cook the other side for 3 to 4 minutes. You're cooking them to 160°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut into the thickest one: it's done when there's no pink left. Move them to a plate.",
+  "Add the last 1 tbsp olive oil and cook the second batch the same way. On a grill instead, heat it to high, brush the grates with oil and grill the köfte for about 4 minutes on each side, with the same check.",
+  "Warm the pita in the hot skillet for about 20 seconds on each side.",
+  "Taste a piece of köfte. If it's flat, add a pinch of salt first, then a squeeze of a lemon wedge. Put the Aleppo pepper in a small bowl for the table.",
+  "Serve with the warm pita, the yogurt sauce, the lettuce, tomatoes and parsley onions, and the lemon wedges, with the Aleppo pepper on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three season ground meat with grated onion, black pepper and cumin, shape it into patties or logs and cook it hard on a grill or in a hot pan, served with flatbread, raw onion and tomato and something yogurty. RecipeTin Eats uses lamb (beef works the same), mixes it only until combined, pan fries it about 8 minutes and serves it with a lemon and garlic yogurt sauce. Unicorns in the Kitchen uses beef with parsley, dried mint and onion juice soaked bread, kneads it and chills it for 30 minutes to an hour. Olive Magazine mixes lamb and beef with red pepper paste and chills the patties an hour before grilling. This one follows the lead, adds the parsley the other two use, chills the köfte briefly and keeps the chilli on the side.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Turkish Lamb Kofta Kebabs",
+   "url": "https://www.recipetineats.com/turkish-lamb-kebab-koftas/",
+   "rating": 4.92,
+   "rating_count": 25,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Unicorns in the Kitchen",
+   "title": "Kofta Kebab Recipe",
+   "url": "https://www.unicornsinthekitchen.com/kofta-kebab/",
+   "rating": 4.95,
+   "rating_count": 18,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Olive Magazine",
+   "title": "Grilled kofte (izgara köfte)",
+   "url": "https://www.olivemagazine.com/recipes/meat-and-poultry/grilled-kofte-izgara-kofte/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

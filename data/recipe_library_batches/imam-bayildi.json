@@ -1,0 +1,128 @@
+{
+ "dish_name": "Imam Bayildi",
+ "cuisine": "Turkish",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 115,
+ "ingredients": [
+  {
+   "item": "Small eggplants",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/2 cup + 1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub",
+   "category": "dairy"
+  },
+  {
+   "item": "Crusty bread",
+   "qty": "1 loaf",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Peel the 4 eggplants in long stripes from the stem down, leaving every other strip of skin on and the stem in place.",
+  "Heat 1/2 cup of the olive oil in a large skillet over medium. Fry the eggplants for about 10 minutes, turning them now and then, until they start to soften but still hold their shape. Stand back a little when they go in. They'll spatter. Lift them onto paper towels.",
+  "Meanwhile, heat the oven to 350°F. Finely dice the 2 onions, finely chop the 5 garlic cloves and dice the 3 tomatoes.",
+  "Pour off all but about 2 tbsp of the oil left in the skillet. Add the onions and cook over medium for about 10 minutes, stirring often, until they're soft and see-through but not browned. Don't rush the onions. That's where the flavor starts.",
+  "Add the garlic and cook for 1 minute, stirring. Add the tomatoes, 1 tsp of the salt, the 1/2 tsp black pepper and 1/2 tsp sugar. Cook for 5 to 6 minutes, until the tomatoes soften and the mixture thickens.",
+  "Chop 2 tbsp of the parsley and stir it in. Take the pan off the heat, taste the filling, and add a pinch more salt if it's flat.",
+  "Cut a slit down the length of each eggplant, stopping about an inch from both ends. Don't cut through the bottom. Open each one gently with a spoon to make a boat, sprinkle the inside with the last 1/2 tsp salt, and set them in a baking dish.",
+  "Pack the filling into the eggplants and heap any extra on top.",
+  "Stir 1 tbsp tomato paste into 2/3 cup water and pour it around the eggplants.",
+  "Cover the dish with a lid or foil and bake for 1 hour.",
+  "Take off the cover. If the dish looks dry, add a splash of water. Bake for another 30 minutes, until the eggplants are completely soft and starting to slump.",
+  "Let them cool for at least 15 minutes. They're good warm or at room temperature.",
+  "Chop a small handful of the parsley and scatter it over the top, then drizzle on the last 1 tbsp olive oil.",
+  "Taste a bit of the filling with some of the sauce. If it's flat, add a pinch of salt first, then a squeeze of the lemon. Cut the rest of the lemon into wedges.",
+  "Serve with plain yogurt, warm crusty bread and the lemon wedges."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three peel or halve small eggplants, soften them first, fill them with onion, garlic and tomato cooked in plenty of olive oil, and serve them warm or at room temperature. Cooking Gorgeous fries the striped eggplants whole, cooks the onions soft without browning them, pours tomato paste and water around the dish and bakes it covered for an hour, then 30 minutes uncovered. Give Recipe roasts the eggplants instead and adds green pepper, mint and a little sugar to the filling. The Mom 100 halves them, browns the onions deep golden with sugar and Aleppo pepper, and bakes them until the liquid is gone. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Turkish) has no version, so the most rated read version leads.",
+ "sources": [
+  {
+   "name": "Cooking Gorgeous",
+   "title": "Imam Bayildi",
+   "url": "https://cookingorgeous.com/imam-bayildi-turkish-stuffed-eggplant/",
+   "rating": 5.0,
+   "rating_count": 16,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Give Recipe",
+   "title": "Imam Bayildi",
+   "url": "https://www.giverecipe.com/imam-bayildi/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "The Mom 100",
+   "title": "Turkish Stuffed Eggplants (Imam Bayildi)",
+   "url": "https://themom100.com/recipe/turkish-stuffed-eggplants-imam-bayildi/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
