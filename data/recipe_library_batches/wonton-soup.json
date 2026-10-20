@@ -1,0 +1,45 @@
+{
+ "dish_name": "Wonton Soup",
+ "cuisine": "Chinese",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {"item": "Ground pork", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Wonton wrappers", "qty": "1 package", "category": "frozen"},
+  {"item": "Fresh ginger", "qty": "1 piece", "category": "produce", "cook_qty": "1 tbsp grated + 1/2 inch sliced"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Shaoxing wine", "qty": "1 bottle", "category": "pantry", "cook_qty": "5 tbsp"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Toasted sesame oil", "qty": "2 tbsp + 1 tsp", "category": "pantry"},
+  {"item": "Chicken broth", "qty": "2 cartons (32 oz)", "category": "pantry", "cook_qty": "6 cups"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "4 tsp"},
+  {"item": "Baby bok choy", "qty": "4", "category": "produce"},
+  {"item": "Chili oil", "qty": "1 jar", "category": "pantry"}
+ ],
+ "instructions": [
+  "Up to a month ahead, make the filling. Put the 1 lb pork in a bowl with 1 tbsp grated ginger, 2 of the green onions finely chopped, 1 tbsp soy sauce, 2 tbsp Shaoxing wine, the 1/2 tsp salt and 2 tbsp sesame oil. Mash it with a potato masher or stir it hard with chopsticks for about a minute, until it looks sticky.",
+  "Lay a few wrappers out at a time and keep the rest under a damp towel. Put 2 tsp of filling in the middle of a wrapper, brush water along two edges and fold it into a triangle, pressing out the air as you seal it. Wet one of the long corners, bring the two side corners together and press them to seal. You'll get about 48.",
+  "Set the wontons on a lined tray so they don't touch and freeze them for about 1 hour, until they're hard. Tip them into a freezer bag and keep them frozen.",
+  "On the day, bring a large pot of water to a boil for the wontons.",
+  "Meanwhile, put the 6 cups broth in a saucepan with the 2 garlic cloves, smashed, a 1/2 inch piece of the ginger, sliced, 3 tbsp soy sauce, 3 tbsp Shaoxing wine and the 4 tsp sugar.",
+  "Cover the broth and bring it to a simmer over high. Turn it down to medium and simmer for 10 minutes.",
+  "While it simmers, halve the 4 bok choy lengthwise and rinse out any grit. Thinly slice the rest of the green onions.",
+  "Fish the garlic and ginger out of the broth. Add the bok choy and cook for 1 to 2 minutes, until the stems are tender but still bright green. Lift it into 4 bowls.",
+  "Drop 12 frozen wontons per bowl into the boiling water and stir gently so they don't stick to the bottom. Cook for 6 to 8 minutes, until they float and look plump. You're cooking the filling to 160°F, so if you have a thermometer, check one there. No thermometer? Cut one open: the filling should be pale all the way through with no pink.",
+  "Stir the last 1 tsp sesame oil into the broth. Taste it. If it's flat, add a pinch more salt.",
+  "Lift the wontons into the bowls with a slotted spoon and ladle the hot broth over them. Scatter the green onions on top and serve with the chili oil on the side."
+ ],
+ "advance_prep_notes": "make and freeze the wontons up to a month ahead (about 45 minutes of wrapping, then 1 hour in the freezer)",
+ "advance_prep_step_indices": [1, 2, 3],
+ "method_notes": "Both versions mix the filling with ginger, green onion, soy, Shaoxing wine, salt and sesame oil, fold the wonton into a triangle and bring the corners together, and cook the wontons in a separate pot of water before they go into the broth. RecipeTin Eats simmers chicken broth with garlic, ginger, soy, sugar and wine for 5 to 10 minutes and freezes the wontons raw, cooking them from frozen for 6 to 8 minutes; Omnivore's Cookbook infuses the stock with ginger only and seasons each bowl with soy and sesame oil. Both use half pork and half shrimp, and RecipeTin says not to freeze wontons made with shrimp that was already frozen, so this one uses all pork for a filling that freezes safely.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Wonton Soup", "url": "https://www.recipetineats.com/wonton-soup/", "rating": 4.97, "rating_count": 258, "read": true, "lead": true},
+  {"name": "Omnivore's Cookbook", "title": "Wonton Soup", "url": "https://omnivorescookbook.com/wonton-soup/", "rating": 4.97, "rating_count": 28, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
