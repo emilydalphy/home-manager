@@ -2503,6 +2503,23 @@ def _refuse_last_adult_leaving(name: str, age_group: str) -> None:
         )
 
 
+def _refuse_own_age_leaving_adult(name: str, age_group: str) -> None:
+    """A signed-in adult can't move THEIR OWN age group off Adult here —
+    another adult still can (Emily, 2026-10-20). Marking yourself Teen in a
+    two-adult home quietly made the phone act as the other adult
+    (current_member reads a re-marked pick as no pick). No pick on this
+    device (shared passphrase, nobody chosen) keeps today's behaviour.
+    Runs after _refuse_last_adult_leaving, so a lone adult still hears that."""
+    if age_group == "adult" or tools.member_id() is None:
+        return
+    me = tools.current_member()
+    if me and (me.get("name") or "").strip().lower() == (name or "").strip().lower():
+        raise HTTPException(
+            status_code=400,
+            detail="Your own age stays Adult here. Another adult can change it.",
+        )
+
+
 @app.post("/api/memory/member/age-group")
 def set_memory_member_age_group(req: MemberAgeGroupRequest):
     """Set one member's age group — What We Know's People tab. No route onto
@@ -2514,6 +2531,7 @@ def set_memory_member_age_group(req: MemberAgeGroupRequest):
     if age_group not in _SETTINGS_AGE_GROUPS:
         raise HTTPException(status_code=400, detail="Pick Adult, Teen or Child.")
     _refuse_last_adult_leaving(req.name, age_group)
+    _refuse_own_age_leaving_adult(req.name, age_group)
     try:
         tools.set_member_age_group(req.name, age_group)
         memory = tools.get_household_memory_for_display()

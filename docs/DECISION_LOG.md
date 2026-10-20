@@ -13,6 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+
+- **A person's own age stays Adult in Who's here** (2026-10-20, Emily's call;
+  branch `fix/own-age-stays-adult`; tests `tests/test_own_age_stays_adult.py`).
+  POST /api/memory/member/age-group refuses, 400 "Your own age stays Adult
+  here. Another adult can change it.", when the signed-in (verified
+  `current_member`) member is the target and the new group isn't Adult.
+  Why: in a two-adult home, marking yourself Teen made your phone quietly act
+  as the other adult. No pick on the device keeps today's behaviour; a lone
+  adult still hears the last-adult sentence. The screen's existing refusal
+  path (wwkCommit: revert + toast of `userMessage`) shows it; no JS change.
 - **Trading two nights' dinners refuses a night that has gone by**
   (2026-10-20, overnight hunt; branch `overnight/swap-nights-refuses-the-past`;
   tests `tests/test_swap_nights_refuses_the_past.py`). `swap_dinner_nights`
