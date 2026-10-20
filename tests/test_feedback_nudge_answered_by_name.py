@@ -63,3 +63,12 @@ def test_a_verdict_on_another_dish_does_not_answer_this_one():
     _cooked("Chicken Skewers")
 
     assert [n["summary"] for n in _nudges()] == ["How did Chicken Skewers go?"]
+
+
+def test_a_household_rating_still_answers_it():
+    _cooked("Chicken Skewers")
+    assert [n["summary"] for n in _nudges()] == ["How did Chicken Skewers go?"]
+
+    tools.mark_recipe_feedback("Chicken Skewers", "liked")
+
+    assert _nudges() == []
