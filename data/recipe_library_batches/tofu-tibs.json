@@ -1,0 +1,116 @@
+{
+ "dish_name": "Tofu Tibs",
+ "cuisine": "Ethiopian",
+ "main_protein": "tofu",
+ "ingredients": [
+  {
+   "item": "Extra-firm tofu",
+   "qty": "2 blocks (14 oz each)",
+   "category": "dairy"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Rosemary",
+   "qty": "2 sprigs",
+   "category": "produce"
+  },
+  {
+   "item": "Berbere (gluten-free)",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Red wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Jalapeno",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put 1 1/2 cups of the basmati rice in a fine strainer and rinse it under cold water until the water runs mostly clear. Transfer it to a medium saucepan with 2 1/4 cups water and a pinch of salt.",
+  "Bring the rice to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on for 5 minutes, then fluff it with a fork.",
+  "Meanwhile, cut each block of tofu into 1 inch cubes. Spread them on a clean kitchen towel, fold it over and press gently to soak up the water.",
+  "Thinly slice the onion and the bell pepper. Mince the garlic and ginger, strip the rosemary leaves from the stems and chop them, and chop the tomatoes. Slice the jalapeno and set it in a small bowl for the table.",
+  "Heat 2 tbsp of the oil in a large nonstick skillet over medium-high heat. Add half the tofu in one layer with a pinch of salt. Cook for 5 minutes without stirring, until the underside is deep golden, then turn the pieces and cook for 2 minutes. Transfer to a plate, then repeat with 1 tbsp more oil and the rest of the tofu.",
+  "Add the remaining 1 tbsp oil to the pan and turn the heat to medium. Add the onion and bell pepper with a pinch of salt. Cook for 4 minutes, until soft.",
+  "Add the garlic, ginger and rosemary and stir for 1 minute.",
+  "Add 2 tsp of the berbere and stir for 30 seconds. Add a splash of water to loosen it.",
+  "Add the tomatoes and cook for 3 minutes, until they soften and make a thick sauce.",
+  "Return the tofu to the pan with the remaining salt. Toss gently for 2 minutes, until the tofu is coated and hot. Take the pan off the heat.",
+  "Stir in the red wine vinegar.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice, with the sliced jalapeno and the rest of the berbere on the side."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree that tibs is cubes of protein sauteed hot and fast with onion, garlic, ginger, rosemary and berbere. They differ in the fat, since the traditional version uses spiced butter (niter kibbeh), and in the finish, from tomato and jalapeno to a splash of vinegar. This version uses seared extra-firm tofu in place of beef, olive oil in place of spiced butter so it stays vegan, and a little red wine vinegar at the end. Check that the berbere label has no wheat. It is served over rice, not injera, which is often made with wheat. No cook on the trusted list for Ethiopian food has a version, so this follows the Food Network and Flavour Network tibs.",
+ "sources": [
+  {
+   "name": "Flavour Network",
+   "title": "Easy Ethiopian Mushroom Stir-Fry (Mushroom Tibs)",
+   "url": "https://www.flavournetwork.ca/everyday-cooking/blog/ethiopian-mushroom-stir-fry/",
+   "rating": 5.0,
+   "rating_count": 8,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food Network",
+   "title": "Injera with Tibs (Marcus Samuelsson)",
+   "url": "https://www.foodnetwork.com/fnk/recipes/injera-with-tibs-9443725",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

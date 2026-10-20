@@ -1,0 +1,98 @@
+{
+ "dish_name": "Revuelto de Setas",
+ "cuisine": "Spanish",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Cremini mushrooms",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Baby potatoes",
+   "qty": "1 1/2 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Mixed salad greens",
+   "qty": "1 bag (5 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Sherry vinegar",
+   "qty": "1 bottle",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 425°F/220°C with a rack in the middle.",
+  "Halve the potatoes. Toss them on a rimmed baking sheet with 2 tbsp of the oil and 3/4 tsp of the salt, then turn them cut side down.",
+  "Roast the potatoes for 25 minutes, until the cut sides are golden and a knife slides in easily.",
+  "Meanwhile, slice the mushrooms 1/4 inch thick and mince the garlic. In a bowl, whisk the eggs with 1/2 tsp of the salt and 1/4 tsp of the pepper.",
+  "Set a large nonstick skillet over medium-high heat. Add 3 tbsp of the oil and the mushrooms. Leave them for 3 minutes until browned on the bottom, then stir and cook for 4 minutes, until the liquid is gone.",
+  "Add the garlic and 1/4 tsp of the salt and stir for 30 seconds. Turn the heat to medium-low.",
+  "Pour in the eggs. Stir slowly with a spatula, folding from the edges to the middle, for about 3 minutes. Take the pan off the heat when the eggs are just set but still soft and glossy.",
+  "Chop 2 tbsp of the parsley and stir it in.",
+  "In a large bowl, whisk 1 tbsp of the sherry vinegar with 3 tbsp of the oil, 1/4 tsp of the salt and the remaining 1/4 tsp pepper. Toss the salad greens in it.",
+  "Taste the eggs. If they're flat, add a pinch more salt.",
+  "Serve the eggs with the roasted potatoes and the salad."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree that revuelto is soft scrambled eggs stirred over gentle heat with mushrooms cooked first until their liquid is gone, and they serve it with crusty bread. They differ on butter and milk against plain olive oil, wild mushrooms against button, and adding shrimp or ajetes. This one uses olive oil, cremini and garlic, and serves it with roasted potatoes and a sherry vinegar salad instead of bread to keep it gluten-free. No source gave a rating of 20 or more.",
+ "sources": [
+  {
+   "name": "Spanish Fiestas",
+   "title": "Revuelto con Setas Recipe",
+   "url": "https://www.spanish-fiestas.com/recipes/revuelto-con-setas/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Andalucia.com",
+   "title": "Revuelto de setas y gambas",
+   "url": "https://andalucia.com/node/5966",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

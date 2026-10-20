@@ -1,0 +1,145 @@
+{
+ "dish_name": "Ca Ri Chay",
+ "cuisine": "Vietnamese",
+ "main_protein": "chickpeas",
+ "ingredients": [
+  {
+   "item": "Sweet potatoes",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Yukon gold potatoes",
+   "qty": "12 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Cremini mushrooms",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Chickpeas",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Coconut milk",
+   "qty": "1 can (13.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Gluten-free vegetable broth",
+   "qty": "3 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemongrass",
+   "qty": "2 stalks",
+   "category": "produce"
+  },
+  {
+   "item": "Shallots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Curry powder (gluten-free)",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tamari (gluten-free)",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups of jasmine rice under cold water until it runs mostly clear. Transfer it to a medium pot with 2 1/4 cups of water and bring it to a boil. Cover, turn the heat to the lowest setting and cook for 12 minutes. Take it off the heat and leave the lid on until you serve.",
+  "Meanwhile, peel the sweet potatoes and the potatoes and cut them into 3/4 inch pieces. Slice the carrots into 1/2 inch coins and quarter the mushrooms. Drain and rinse the chickpeas. Mince the shallots and the garlic. Cut the lemongrass into 4 inch pieces and smash them with the side of a knife. Juice half the lime and cut the other half into wedges. Chop 1/4 cup of the cilantro.",
+  "Heat 1 tbsp of the oil in a large pot over medium-high heat for 1 minute. Add the mushrooms in a single layer with 1/4 tsp of the salt. Leave them alone for 3 minutes, until they're browned underneath. Stir and cook for 2 minutes, then transfer them to a plate.",
+  "Add the remaining 1 tbsp oil and the shallots to the pot and cook for 3 minutes, until soft.",
+  "Add the curry powder and the lemongrass and stir for 30 seconds, until it smells toasty. Add the garlic and stir for 30 seconds.",
+  "Add the broth, 1 tbsp tamari, 1 tbsp sugar, the sweet potatoes, the potatoes and the carrots. Bring it to a boil, then cover and turn the heat down so it bubbles gently. Cook for 12 minutes, until the pieces are nearly tender.",
+  "Add the coconut milk, the chickpeas and the mushrooms. Cook uncovered for 6 minutes, until the potatoes are soft and the sauce has thickened a little. Take the pot off the heat and lift out the lemongrass.",
+  "Stir in the juice of half the lime and the chopped cilantro. Taste it, and add the remaining 1/4 tsp salt if it's flat.",
+  "Serve over the rice with the lime wedges."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree on the Vietnamese style: curry powder and lemongrass cooked in oil, root vegetables simmered in broth and finished with coconut milk, with a touch of sweetness. The lead (Wok & Kin) is a long, rich pot with taro, eggplant, tofu puffs, condensed milk and stock powder, which takes over an hour. This version cuts it to 45 minutes with sweet potato, potato, carrot, mushrooms and canned chickpeas, uses sugar in place of condensed milk and broth in place of stock powder, and tamari in place of any fish sauce so it stays vegan and gluten-free. No source had 20 or more ratings, and the lead is the best-rated one that could be read.",
+ "sources": [
+  {
+   "name": "Wok & Kin",
+   "title": "Ca Ri Chay (Vietnamese Vegetarian Curry)",
+   "url": "https://www.wokandkin.com/ca-ri-chay/",
+   "rating": 5.0,
+   "rating_count": 8,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cinnamon Snail",
+   "title": "Ca Ri Chay (Vegan Vietnamese Curry Recipe)",
+   "url": "https://cinnamonsnail.com/ca-ri-chay-vegan-vietnamese-curry-recipe/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true
+  },
+  {
+   "name": "Runaway Rice",
+   "title": "Vegetable Curry (Ca Ri Chay)",
+   "url": "https://runawayrice.com/main-dishes/vegetable-curry-ca-ri-chay/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

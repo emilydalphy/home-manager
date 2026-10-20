@@ -1,0 +1,110 @@
+{
+  "dish_name": "Crustless Leek and Gruyere Quiche",
+  "cuisine": "French",
+  "main_protein": "eggs",
+  "default_servings": 4,
+  "prep_time_minutes": 10,
+  "cook_time_minutes": 35,
+  "ingredients": [
+    {
+      "item": "Leeks",
+      "qty": "3 medium (about 1 lb)",
+      "category": "produce"
+    },
+    {
+      "item": "Butter",
+      "qty": "2 tbsp",
+      "category": "dairy"
+    },
+    {
+      "item": "Eggs",
+      "qty": "6",
+      "category": "dairy"
+    },
+    {
+      "item": "Whole milk",
+      "qty": "2 1/2 cups",
+      "category": "dairy"
+    },
+    {
+      "item": "Cornstarch",
+      "qty": "1 tbsp",
+      "category": "pantry"
+    },
+    {
+      "item": "Gruyere",
+      "qty": "4 oz",
+      "category": "dairy"
+    },
+    {
+      "item": "Dried thyme",
+      "qty": "1/2 tsp",
+      "category": "pantry"
+    },
+    {
+      "item": "Ground nutmeg",
+      "qty": "1/4 tsp",
+      "category": "pantry"
+    },
+    {
+      "item": "Mixed salad greens",
+      "qty": "1 bag (5 oz)",
+      "category": "produce"
+    },
+    {
+      "item": "Lemon",
+      "qty": "1",
+      "category": "produce"
+    },
+    {
+      "item": "Olive oil",
+      "qty": "2 tbsp",
+      "category": "pantry"
+    },
+    {
+      "item": "Salt",
+      "qty": "1 1/4 tsp",
+      "category": "pantry"
+    },
+    {
+      "item": "Black pepper",
+      "qty": "1/2 tsp",
+      "category": "pantry"
+    }
+  ],
+  "instructions": [
+    "Heat the oven to 375°F/190°C with a rack in the middle. Butter a 9 by 13 inch baking dish.",
+    "Trim the leeks, cut off the dark green tops and halve them lengthwise. Slice them thinly, then rinse the slices in a bowl of cold water and drain them well. Shred the Gruyere.",
+    "Set a large skillet over medium-high heat. Add the butter and the leeks with 1/2 tsp of the salt and the thyme. Cook for 7 minutes, stirring often, until soft and starting to brown.",
+    "While the leeks cook, whisk the cornstarch with 1/4 cup of the milk in a large bowl until smooth. Add the eggs, the rest of the milk, the remaining 1/2 tsp salt, 1/4 tsp of the pepper and the nutmeg and whisk until smooth.",
+    "Spread the leeks in the baking dish in an even layer and scatter the Gruyere over them. Pour the custard over the leeks.",
+    "Bake for 22 minutes, until the top is lightly golden and the center is set. It should barely jiggle when you shake the dish.",
+    "Let it stand for 4 minutes. Meanwhile, squeeze the lemon over the greens, add the olive oil, a pinch of salt and the remaining 1/4 tsp pepper and toss.",
+    "Taste a bit of the quiche. If it's flat, add a pinch of salt to the salad greens or the slice.",
+    "Cut the quiche into squares and serve with the salad."
+  ],
+  "advance_prep_notes": "",
+  "advance_prep_step_indices": [],
+  "method_notes": "The crustless leek and Gruyere sources agree on leeks cooked in butter or oil first, a custard of eggs and milk, Gruyere on top and a bake at 350°F. They differ on cream against milk, cornstarch against none, and the size of the dish. This follows the cornstarch version, bakes it in a wide 9 by 13 dish at 375°F so it sets in about 22 minutes, and uses no flour.",
+  "sources": [
+    {
+      "name": "A Beautiful Plate",
+      "title": "Gruyere Leek Quiche",
+      "url": "https://www.abeautifulplate.com/gruyere-leek-quiche/",
+      "rating": 4.84,
+      "rating_count": 6,
+      "read": true,
+      "lead": true
+    },
+    {
+      "name": "Polly Castor",
+      "title": "Crustless Leek and Gruyere Quiche",
+      "url": "https://pollycastor.com/2013/05/30/crustless-leek-and-gruyere-quiche-recipe/",
+      "rating": null,
+      "rating_count": null,
+      "read": true
+    }
+  ],
+  "fallback_used": true,
+  "origin": "seed"
+}
