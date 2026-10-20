@@ -1,0 +1,49 @@
+{
+ "dish_name": "Pozole Rojo",
+ "cuisine": "Mexican",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 195,
+ "ingredients": [
+  {"item": "Boneless pork shoulder", "qty": "1.5 lbs", "category": "meat/seafood"},
+  {"item": "White onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "6 cloves", "category": "produce"},
+  {"item": "Bay leaves", "qty": "2", "category": "pantry"},
+  {"item": "Salt", "qty": "1 1/4 tsp", "category": "pantry"},
+  {"item": "Dried guajillo chiles", "qty": "3", "category": "pantry"},
+  {"item": "Dried ancho chiles", "qty": "2", "category": "pantry"},
+  {"item": "Mexican oregano", "qty": "1 tsp", "category": "pantry"},
+  {"item": "White hominy", "qty": "1 can (25 oz)", "category": "pantry"},
+  {"item": "Green cabbage", "qty": "1 small head", "category": "produce"},
+  {"item": "Radishes", "qty": "1 bunch", "category": "produce"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"},
+  {"item": "Avocado", "qty": "1", "category": "produce"},
+  {"item": "Limes", "qty": "2", "category": "produce"}
+ ],
+ "instructions": [
+  "Trim any thick pieces of fat off the pork and cut it into chunks about 3 inches across. Peel the onion and cut it in half. Set one half aside for later.",
+  "Put the pork in a large pot with one onion half, 4 of the garlic cloves (peeled and lightly smashed), the 2 bay leaves and 3/4 tsp of the salt. Pour in 5 cups of water.",
+  "Bring it to a boil over high heat, then turn it down to a gentle simmer. For the first 10 minutes, skim off the gray foam that rises to the top with a big spoon.",
+  "Simmer it uncovered for 1 1/2 to 2 hours, until a chunk of pork falls apart when you press it with a fork. Add a splash of water if the meat starts poking above the liquid.",
+  "Meanwhile, cut the stems off the 3 guajillo and 2 ancho chiles, shake out the seeds and rinse them. Put them in a small saucepan with about 2 cups of water and bring it to a simmer over medium. Simmer for 15 minutes, until the chiles are soft and floppy.",
+  "While the chiles simmer, heat the broiler with a rack about 5 inches below it. Cut the onion half you set aside into two quarters. Put one quarter on a small foil-lined pan with the last 2 garlic cloves, still in their skins. Broil for 4 to 6 minutes, until the onion is charred in spots. Let the garlic cool enough to handle.",
+  "Lift the chiles into a blender with tongs and add 1/2 cup of their soaking water. Squeeze the garlic out of its skins and add it with the charred onion quarter, the 1 tsp oregano and the last 1/2 tsp salt. Blend on high for 1 to 2 minutes, until it's completely smooth. Set the sauce aside until the pork is ready.",
+  "When the pork is tender, lift it onto a cutting board and shred it into bite-size pieces with two forks. Fish the onion, garlic and bay leaves out of the pot and throw them away. Put the pork back in the broth.",
+  "Drain and rinse the hominy. Stir it into the pot with the red chile sauce. Bring it back to a simmer, cover the pot partway, and cook gently for 1 hour, stirring now and then, until the broth is deep red and the hominy is soft.",
+  "Meanwhile, shred a quarter of the cabbage very thin. Thinly slice 4 or 5 of the radishes. Chop a handful of the cilantro and finely dice the last onion quarter. Cut 1 lime into wedges and put everything in small bowls for the table.",
+  "Right before you serve, dice the avocado.",
+  "Taste the broth. If it's flat, add a pinch more salt or a squeeze of the other lime.",
+  "Serve in deep bowls, with the cabbage, radishes, cilantro, onion, avocado and lime wedges on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three simmer pork shoulder until it falls apart, blend dried guajillo and ancho chiles into a red sauce and finish the pot with hominy. Downshiftology, the lead, simmers the pork in plain water with onion, garlic and bay, blends the softened chiles with broiled onion, garlic and oregano, and gives the sauce and hominy an hour together. Jo Cooks sears the pork first, adds chile de árbol, cumin and chicken broth and serves it with cabbage, radish, onion and lime. So Much Food braises the pork in the chile sauce in the oven for 3 hours before adding stock. This one follows the lead at half its size and keeps the hotter chiles out of the pot.",
+ "sources": [
+  {"name": "Downshiftology", "title": "Pozole Rojo with Pork", "url": "https://downshiftology.com/recipes/pozole/", "rating": 5.0, "rating_count": 20, "read": true, "lead": true},
+  {"name": "Jo Cooks", "title": "Pozole Rojo Recipe", "url": "https://www.jocooks.com/recipes/pozole-rojo-recipe/", "rating": 4.8, "rating_count": 15, "read": true, "lead": false},
+  {"name": "So Much Food", "title": "Pork Pozole Rojo (Authentic Red Pozole)", "url": "https://somuchfoodblog.com/pork-pozole-rojo/", "rating": 4.92, "rating_count": 12, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

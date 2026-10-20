@@ -1,0 +1,48 @@
+{
+ "dish_name": "Shrimp Tacos",
+ "cuisine": "Mexican",
+ "main_protein": "shrimp",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {"item": "Raw shrimp", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Garlic", "qty": "1 clove", "category": "produce"},
+  {"item": "Ground cumin", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Olive oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Sour cream", "qty": "1 tub", "category": "dairy", "cook_qty": "1/3 cup"},
+  {"item": "Mayonnaise", "qty": "1 jar", "category": "pantry", "cook_qty": "1/3 cup"},
+  {"item": "Limes", "qty": "2", "category": "produce"},
+  {"item": "Garlic powder", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Red cabbage", "qty": "1 small head", "category": "produce"},
+  {"item": "Red onion", "qty": "1", "category": "produce"},
+  {"item": "Avocado", "qty": "1", "category": "produce"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"},
+  {"item": "Cotija cheese", "qty": "4 oz", "category": "dairy", "cook_qty": "1 cup grated"},
+  {"item": "Corn tortillas", "qty": "8 (6 inch)", "category": "other"},
+  {"item": "Sriracha", "qty": "1 bottle", "category": "pantry"}
+ ],
+ "instructions": [
+  "If the shrimp are frozen, put them in a colander and run cool water over them for about 5 minutes, until they're thawed. Peel them if they still have shells on.",
+  "Make the sauce. Squeeze one of the limes, about 1 1/2 tbsp of juice, into a small bowl. Add the 1/3 cup sour cream, the 1/3 cup mayonnaise and the 3/4 tsp garlic powder and whisk until it's smooth.",
+  "Shred half the cabbage very thin. You want about 2 cups. Finely dice half the onion and coarsely chop about a quarter of the cilantro. Dice the avocado and grate the cotija. Cut the other lime into 8 wedges. Put everything in small bowls.",
+  "Pat the shrimp very dry with paper towels and put them in a bowl. Mince the garlic clove and add it with the 1/4 tsp cumin, the 1/2 tsp salt and the 1/4 tsp pepper. Stir until every shrimp is coated.",
+  "Heat a large dry skillet over medium high. Warm the 8 tortillas one or two at a time for about 30 seconds, then flip them and warm the other side until they're soft and have a few brown spots. Stack them in a clean kitchen towel and wrap them up.",
+  "Add the 1 tbsp olive oil to the same skillet, still over medium high. Lay the shrimp in a single layer. If they don't all fit, cook them in two batches.",
+  "Cook for 1 to 2 minutes, until the undersides turn pink. Flip them and cook the other side for 1 to 2 minutes, until they're opaque all the way through and curled into a loose C. Move them to a plate right away.",
+  "Taste a shrimp. If it's flat, add a pinch more salt or a squeeze of lime.",
+  "Serve the shrimp with the warm tortillas, the cabbage, onion, avocado, cilantro, cotija, sauce and lime wedges, with the sriracha on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three season a pound of peeled shrimp with ground spices, sear them for a minute or two a side in a hot pan and serve them in small tortillas with cabbage, lime and a creamy sauce. Natasha's Kitchen, the lead, seasons the shrimp with garlic, cumin, salt, pepper and cayenne, whisks sour cream, mayonnaise, lime and garlic powder into a sauce with a little sriracha, and tops the tacos with purple cabbage, avocado, red onion, cilantro and cotija. RecipeTin Eats marinates the shrimp in chipotle and lime and wilts a dressed slaw for an hour, and Salt and Lavender tosses the cabbage straight into the mayonnaise dressing. This one follows the lead and moves the cayenne and sriracha out of the base, with the sriracha at the table.",
+ "sources": [
+  {"name": "Natasha's Kitchen", "title": "Shrimp Tacos", "url": "https://natashaskitchen.com/shrimp-tacos/", "rating": 5.0, "rating_count": 825, "read": true, "lead": true},
+  {"name": "RecipeTin Eats", "title": "Prawn Tacos (Shrimp) with Chipotle Lime Marinade", "url": "https://www.recipetineats.com/prawn-tacos/", "rating": 4.97, "rating_count": 32, "read": true, "lead": false},
+  {"name": "Salt and Lavender", "title": "Shrimp Tacos", "url": "https://www.saltandlavender.com/shrimp-tacos/", "rating": 5.0, "rating_count": 10, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
