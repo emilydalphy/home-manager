@@ -1,0 +1,80 @@
+{
+ "dish_name": "Sucuklu Yumurta",
+ "cuisine": "Turkish",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {
+   "item": "Sucuk",
+   "qty": "8 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Butter",
+   "qty": "1 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Aleppo pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Crusty bread",
+   "qty": "1 loaf",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Run the tip of a knife down the length of the sucuk and peel off the casing. Slice it into rounds about 1/4 inch thick.",
+  "Put the 1/2 tsp Aleppo pepper in a small bowl for the table, and slice the bread.",
+  "Lay the sucuk in a single layer in a cold 12 inch skillet, then set it over medium heat. Cook for about a minute, until the edges start to curl and red fat runs into the pan.",
+  "Flip the slices and cook the other side for about a minute. If the pan still looks dry, add the 1 tbsp butter. If there's a lot of fat, pour off all but a thin layer.",
+  "Spread the slices out so there are gaps between them and turn the heat down to low. Crack the 8 eggs into the gaps.",
+  "Cook for 3 to 4 minutes, spooning a little of the red fat over the whites, until the whites are set and the yolks are still runny. If you like the tops firmer, put a lid on for the last minute.",
+  "Grind the 1/4 tsp black pepper over the eggs. Taste a bit of the white first. The sucuk is salty, so add the pinch of salt only if it needs it.",
+  "Serve straight from the pan with the bread and the Aleppo pepper on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions brown sliced sucuk first and fry the eggs in the fat it gives off, then serve it straight from the pan with bread. Cooking Gorgeous starts the slices in a cold pan so the fat runs out before they color, adds butter only if the sucuk is lean and spoons the fat over the whites; Turkeys for Life fries the sucuk in a little sunflower oil and seasons the eggs with chilli flakes as they cook. This follows Cooking Gorgeous and puts the pepper flakes on the side. No version had 20 or more ratings and RecipeTin Eats, the trusted cook for Turkish, has no version, so the first read version leads.",
+ "sources": [
+  {
+   "name": "Cooking Gorgeous",
+   "title": "Sucuklu Yumurta - Turkish Sausage and Eggs",
+   "url": "https://cookingorgeous.com/blog/sucuklu-yumurta-turkish-sausage-and-eggs/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Turkeys for Life",
+   "title": "Sucuklu Yumurta - Sucuk & Eggs",
+   "url": "https://www.turkeysforlife.com/2018/03/sucuk-eggs-sucuklu-yumurta.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
