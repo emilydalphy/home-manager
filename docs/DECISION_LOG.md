@@ -182,6 +182,14 @@ why*, not duplicating the diff.
   member_name delete never reached — Kitchen, Today's moves and What we know
   kept naming the leaver as the cook. Now that row goes too (unanswered,
   never reassigned to whoever is left).
+- **"How did it go?" stops once someone answered it by name** (2026-10-20,
+  overnight hunt; branch `overnight/answered-by-name-stops-asking`; tests
+  `tests/test_feedback_nudge_answered_by_name.py`). `get_feedback_nudge`
+  counted only `recipes.rating`, but the chat records "Sam loved it, I
+  wasn't keen" per person (`attribute_recipe_feedback`) and leaves that
+  empty, so the question stayed on Kitchen's card and came back in each
+  new chat for 7 days. A per-person verdict on the recipe now counts as
+  answered; the next unrated dish is asked instead.
 
 - **Recipe steps sound like a person, and a temperature is the target**
   (2026-10-19, Emily on the recipe-library samples: "very robotic and AI",

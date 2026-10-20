@@ -1717,6 +1717,13 @@ def get_feedback_nudge() -> dict:
     Only surfaces a meal that's been checked off as cooked (check_off_meal)
     in the last 7 days AND whose recipe has never been rated — once a
     recipe has any rating this stops nudging about it.
+
+    "Rated" means EITHER verdict the app keeps: the household's own
+    (recipes.rating) or anyone's by name (member_recipe_feedback). "Sam
+    loved it, I wasn't keen" is an answer to "How did it go?" — the chat
+    records it per person and leaves the household rating empty, and the
+    question used to keep coming back on Kitchen and in every new chat
+    for a week after it had been answered.
     """
     conn = get_conn()
     row = conn.execute(
@@ -1728,6 +1735,10 @@ def get_feedback_nudge() -> dict:
           AND mpe.cooked_at >= datetime('now', '-7 days')
           AND mpe.recipe_id IS NOT NULL
           AND (SELECT rating FROM recipes WHERE id = mpe.recipe_id) = ''
+          AND NOT EXISTS (
+              SELECT 1 FROM member_recipe_feedback mrf
+              WHERE mrf.household_id = mpe.household_id AND mrf.recipe_id = mpe.recipe_id
+          )
         ORDER BY mpe.cooked_at DESC LIMIT 1
         """,
         (household_id(),),
