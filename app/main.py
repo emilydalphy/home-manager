@@ -7357,7 +7357,9 @@ def summarize_chat_actions(before_history: list, after_history: list) -> list[Ch
             args = getattr(block, "input", None)
             if args is None and isinstance(block, dict):
                 args = block.get("input")
-            tool_names_by_id[block_id] = (name, args or {})
+            # The card describes what was saved, so it reads the arguments
+            # the way the tool did — not '["milk","eggs"]' as text.
+            tool_names_by_id[block_id] = (name, agent.read_tool_input(name, args or {}))
 
     by_category: dict[str, ChatAction] = {}
     # Every day/slot a week write touched this turn, in call order — see

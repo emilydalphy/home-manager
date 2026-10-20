@@ -108,3 +108,27 @@ def test_only_what_the_schema_declares_is_changed():
     # An optional null is left out so the function's own default applies.
     assert agent.read_tool_input("set_lunch_location", {"member_name": "Theo", "location": "out", "weekday": None}) == {
         "member_name": "Theo", "location": "out"}
+
+
+def test_one_object_sent_as_json_text_for_a_list_of_objects_is_a_list_of_one():
+    read = agent.read_tool_input("add_recipe", {
+        "name": "Toast",
+        "ingredients": '{"item": "bread", "quantity": "2 slices"}',
+    })
+    assert read["ingredients"] == [{"item": "bread", "quantity": "2 slices"}]
+
+
+def test_the_action_card_reads_the_list_the_tool_saved():
+    from app.main import summarize_chat_actions
+    convo = [
+        {"role": "assistant", "content": [
+            {"type": "tool_use", "id": "t1", "name": "add_grocery_items",
+             "input": {"items": '["milk", "eggs"]'}},
+        ]},
+        {"role": "user", "content": [
+            {"type": "tool_result", "tool_use_id": "t1", "content": "{}"},
+        ]},
+    ]
+    text = " ".join(str(a) for a in summarize_chat_actions([], convo))
+    assert "milk" in text
+    assert '["milk"' not in text

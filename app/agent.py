@@ -10271,12 +10271,20 @@ def read_tool_input(tool_name: str, tool_input):
             value = value.strip().lower() == "true"
         elif kind == "array" and isinstance(value, str):
             parsed = None
-            if value.strip().startswith("["):
+            if value.strip()[:1] in ("[", "{"):
                 try:
                     parsed = json.loads(value)
                 except ValueError:
                     parsed = None
-            value = parsed if isinstance(parsed, list) else [value]
+            item_kind = (spec.get("items") or {}).get("type")
+            if isinstance(parsed, list):
+                value = parsed
+            elif isinstance(parsed, dict) and item_kind == "object":
+                # One ingredient sent as JSON text: a list of that one
+                # object, not an ingredient named '{"item": ...}'.
+                value = [parsed]
+            else:
+                value = [value]
         elif kind == "object" and isinstance(value, str) and value.strip().startswith("{"):
             try:
                 parsed = json.loads(value)
