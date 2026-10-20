@@ -1,0 +1,51 @@
+{
+ "dish_name": "Upma",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "Semolina (rava)", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Mustard seeds", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Cumin seeds", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Urad dal", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Chana dal", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Cashews", "qty": "1 bag", "category": "pantry", "cook_qty": "12"},
+  {"item": "Asafoetida (hing)", "qty": "a pinch", "category": "pantry"},
+  {"item": "Curry leaves", "qty": "1 package", "category": "produce", "cook_qty": "2 sprigs"},
+  {"item": "Green chili", "qty": "1", "category": "produce"},
+  {"item": "Ginger", "qty": "1 piece (1 inch)", "category": "produce", "cook_qty": "1 tsp grated"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Carrot", "qty": "1", "category": "produce"},
+  {"item": "Frozen peas", "qty": "1 bag", "category": "frozen", "cook_qty": "1/2 cup"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Ghee", "qty": "1 jar", "category": "dairy", "cook_qty": "1 tbsp"},
+  {"item": "Lemon", "qty": "1", "category": "produce"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce", "cook_qty": "2 tbsp chopped"},
+  {"item": "Plain yogurt", "qty": "1 tub", "category": "dairy"}
+ ],
+ "instructions": [
+  "Finely chop the onion and peel and finely dice the carrot. Slit the green chili down one side, grate 1 tsp of the ginger and chop 2 tbsp of the cilantro.",
+  "Put the 1 1/2 cups semolina in a large, deep pan over medium heat. Stir it often for 6 to 8 minutes, until it smells nutty and feels dry and sandy. Don't let it brown. Tip it straight into a bowl, or it keeps browning in the hot pan.",
+  "Heat the 3 tbsp oil in the same pan over medium. Add the 3/4 tsp mustard seeds, 3/4 tsp cumin seeds, 1 1/2 tsp urad dal and 2 tsp chana dal. Stir for about a minute, until the mustard seeds pop and the dals turn light golden.",
+  "Add the 12 cashews and stir for about a minute, until they're golden. Add the pinch of hing, the chili, the ginger and the 2 curry leaf sprigs, and stir for 30 seconds. Stand back a little. The leaves spatter.",
+  "Add the onion and cook for 3 to 4 minutes, stirring now and then, until it's soft and see through.",
+  "Add the carrot and the 1/2 cup peas. Cover the pan and cook for about 3 minutes, until the carrot is just tender.",
+  "Pour in 4 1/2 cups water, add the 1 tsp salt and bring it to a rolling boil. Taste the water. It should taste a little salty.",
+  "Turn the heat to low. Pour in the semolina in a slow, steady stream with one hand while you stir with the other, so it doesn't form lumps. Break up any lumps that do form with the back of the spoon.",
+  "Cover the pan and cook on the lowest heat for 2 to 4 minutes, until all the water has been absorbed. Stir in the 1 tbsp ghee, turn off the heat, cover it again and leave it for 5 minutes.",
+  "Squeeze in the juice of half the lemon and fluff the upma with a fork. Taste it, and add a pinch more salt or a squeeze more of the lemon if it's flat.",
+  "Scatter the cilantro over the top and serve hot, with the rest of the lemon cut into wedges and the yogurt on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both dry roast the semolina first until it smells toasted without browning, temper mustard and cumin seeds with urad and chana dal in oil, add green chili, ginger, curry leaves and onion, then pour the semolina slowly into boiling salted water and finish it covered with ghee, lemon and cilantro. Swasthi's adds cashews or peanuts, hing and optional mixed vegetables, uses 3 cups water to 1 cup rava, and rests it covered for 5 minutes; Hebbar's canteen style boils 2 1/2 cups water with 1/2 cup milk and a teaspoon of sugar and simmers it 5 minutes. This follows Swasthi's ratio at one and a half times the amount, with carrot and peas as the vegetables.",
+ "sources": [
+  {"name": "Swasthi's Recipes", "title": "Upma Recipe (Rava Upma)", "url": "https://www.indianhealthyrecipes.com/upma-recipe-how-to-make-upma/", "rating": 4.99, "rating_count": 495, "read": true, "lead": true},
+  {"name": "Hebbar's Kitchen", "title": "Upma Recipe | How to Make Sooji Upma, Canteen Style", "url": "https://hebbarskitchen.com/rava-upma-recipe-uppittu-sooji-upma/", "rating": 4.97, "rating_count": 26, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

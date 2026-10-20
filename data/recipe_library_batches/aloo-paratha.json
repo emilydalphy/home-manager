@@ -1,0 +1,53 @@
+{
+ "dish_name": "Aloo Paratha",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 55,
+ "ingredients": [
+  {"item": "Whole wheat flour (atta)", "qty": "2 1/2 cups", "category": "pantry"},
+  {"item": "Salt", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Russet potatoes", "qty": "3", "category": "produce"},
+  {"item": "Green chili", "qty": "1", "category": "produce"},
+  {"item": "Ginger", "qty": "1 piece (1 inch)", "category": "produce", "cook_qty": "3/4 tsp grated"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce", "cook_qty": "2 tbsp chopped"},
+  {"item": "Kasuri methi", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Garam masala", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Kashmiri chili powder", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Ground coriander", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Chaat masala", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Ajwain (carom seeds)", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Ghee", "qty": "1 jar", "category": "dairy", "cook_qty": "4 tbsp"},
+  {"item": "Plain yogurt", "qty": "1 tub", "category": "dairy"},
+  {"item": "Mango pickle", "qty": "1 jar", "category": "pantry"}
+ ],
+ "instructions": [
+  "Put the 3 potatoes in a pot, cover them with cold water and bring it to a boil over high. Turn it down and simmer for 20 to 25 minutes, until a knife slides in easily but the potatoes aren't falling apart.",
+  "Meanwhile, make the dough. In a large bowl, mix 2 cups of the flour with 1/4 tsp of the salt and the 1 tbsp oil. Pour in 1/2 cup water and stir, then add about 6 tbsp more, a spoonful at a time, until it comes together in a soft dough that isn't sticky.",
+  "Knead it on the counter for about 5 minutes, until it's smooth and a fingertip pressed into it leaves a dent. Cover it with the upturned bowl and leave it to rest for at least 20 minutes.",
+  "While the potatoes finish, finely chop the green chili and 2 tbsp of the cilantro, and grate 3/4 tsp of the ginger.",
+  "Drain the potatoes and leave them until you can handle them. Peel them while they're still warm.",
+  "Grate the potatoes on the large holes of a box grater into a bowl, or mash them, until no lumps are left. Break up any bits with your fingers, or they'll tear the dough. Stop there. Overworked potato turns sticky.",
+  "Crush the 1 tsp kasuri methi between your palms over the bowl. Add the chili, ginger, cilantro, the remaining 1/2 tsp salt, 1/2 tsp garam masala, 1/2 tsp Kashmiri chili powder, 3/4 tsp ground coriander, 1/2 tsp chaat masala and 1/4 tsp ajwain. Mix it gently with your fingers and taste. Add a pinch more salt if it's flat.",
+  "Divide the dough into 8 balls and the filling into 8 portions. Keep the dough covered while you work.",
+  "Dust a ball of dough with some of the remaining flour and roll it into a 4 inch round. Set a portion of filling in the middle. Bring the edges up and over the filling, pleating as you go, until it's closed. Pinch the top to seal it and twist off any extra dough.",
+  "Dip the ball in flour and flatten it gently with your palm. Set it sealed side down and roll it out to about 7 inches, turning it a little every few rolls so it doesn't stick or tear. If filling pokes through, dab a little flour on the spot. Roll out 2 or 3 before you start cooking.",
+  "Heat a cast iron pan or tawa over medium high until it's properly hot. On a cool pan the parathas turn out hard.",
+  "Lay a paratha in the dry pan. After 1 to 2 minutes small bubbles appear on top. Flip it and cook the other side for about 1 minute.",
+  "Spread about 3/4 tsp of the ghee over the top, then flip it and spread another 3/4 tsp on the second side. Press the edges down with a spatula and cook for about 2 minutes, flipping once more, until both sides have golden brown spots.",
+  "Stack it on a plate under a clean towel. Cook the rest the same way, rolling out the next one while each one cooks.",
+  "Serve hot with yogurt and mango pickle."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three knead a soft dough, rest it about 20 minutes, mash boiled potato with green chili, cilantro, ginger and garam masala, seal a ball of filling inside a small round of dough and roll it out before cooking it on a hot pan with oil or ghee. Swasthi's uses whole wheat atta, insists the potatoes be firm and grated with no lumps, and seasons with Kashmiri chili, ground coriander, chaat masala and kasuri methi; Hebbar's swaps chaat masala for amchur and adds cumin; RecipeTin Eats makes four larger parathas from plain white flour with scallions and cooks them in a nonstick pan with oil. This follows Swasthi's amounts for 8 parathas.",
+ "sources": [
+  {"name": "Swasthi's Recipes", "title": "Aloo Paratha Recipe | Potato Stuffed Paratha", "url": "https://www.indianhealthyrecipes.com/aloo-paratha/", "rating": 5.0, "rating_count": 215, "read": true, "lead": true},
+  {"name": "Hebbar's Kitchen", "title": "Aloo Paratha Recipe | Aalu ka Paratha", "url": "https://hebbarskitchen.com/aloo-paratha-recipe/", "rating": 4.97, "rating_count": 86, "read": true, "lead": false},
+  {"name": "RecipeTin Eats", "title": "Aloo Paratha (Indian Potato Stuffed Flatbread)", "url": "https://www.recipetineats.com/aloo-paratha-indian-potato-stuffed-flatbread/", "rating": 4.89, "rating_count": 42, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
