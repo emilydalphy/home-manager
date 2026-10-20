@@ -1,0 +1,129 @@
+{
+ "dish_name": "Drunken Noodles",
+ "cuisine": "Thai",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 12,
+ "ingredients": [
+  {
+   "item": "Wide rice noodles",
+   "qty": "14 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "6 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Dark soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Thai bird chilies",
+   "qty": "1 package",
+   "category": "produce",
+   "cook_qty": "4"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "4"
+  },
+  {
+   "item": "Thai basil",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the 14 oz noodles in a large bowl and cover them with very hot tap water. Soak them for 20 to 30 minutes, until they're soft and bendy but still a little firm in the middle. Drain them, rinse them under cold water and drain them well again.",
+  "While they soak, stir 6 tbsp oyster sauce, 3 tbsp soy sauce, 3 tbsp dark soy sauce, 4 tsp sugar and 2 tbsp water together in a small bowl.",
+  "Cut the 1 lb chicken thighs into bite-size pieces and toss them with 4 tsp fish sauce.",
+  "Mince the 6 garlic cloves. Seed 1 chili and chop it very finely. Thinly slice the other 3 chilies into a small bowl for the table.",
+  "Slice the onion. Cut 4 green onions into 2 inch pieces. Pick the leaves off the basil. You want about 2 cups.",
+  "Heat 2 tbsp oil in a wok or large heavy skillet over high until it shimmers. Add the chicken in a single layer and leave it for 1 minute, until the underside browns. Stir-fry for 2 to 3 minutes more. It's done when there's no pink left in the middle of a piece (175°F, if you have a thermometer). Move it to a plate.",
+  "Add the other 2 tbsp oil and the onion and stir-fry for 1 minute, until it starts to soften. Add the garlic and the chopped chili and stir for 10 seconds. Stand back a little. The chili fumes can make you cough.",
+  "Add the chicken, green onions, noodles and sauce. Toss with tongs for 1 to 2 minutes, until the sauce has cooked down and coats every noodle.",
+  "Take the pan off the heat. Add the basil and toss until it just wilts.",
+  "Taste it. If it's flat, add a splash more fish sauce.",
+  "Serve right away, with the sliced chilies on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three stir-fry wide rice noodles over high heat with chicken, garlic, chilies and onion in an oyster sauce and soy sauce mix, and toss in a lot of Thai basil at the end. RecipeTin Eats fries garlic and chili first, cooks the chicken with a splash of fish sauce, then tosses the noodles with oyster sauce, light and dark soy and sugar for about a minute. Billy Parisi sears the chicken first and sets it aside, uses dried chiles and adds baby corn and ginger. The Wanderlust Kitchen marinates the chicken in some of the sauce and adds egg, cabbage, carrot and lime. This one doubles RecipeTin's ratios for 4, browns the chicken first as Billy Parisi does so the pan isn't crowded, and keeps most of the chili on the side.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Drunken Noodles (Pad Kee Mao)",
+   "url": "https://www.recipetineats.com/pad-kee-mao-thai-drunken-noodles/",
+   "rating": 4.94,
+   "rating_count": 227,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Billy Parisi",
+   "title": "Thai Drunken Noodles Recipe (Pad Kee Mao)",
+   "url": "https://www.billyparisi.com/thai-drunken-noodles-recipe-pad-kee-mao/",
+   "rating": 5.0,
+   "rating_count": 19,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "The Wanderlust Kitchen",
+   "title": "Drunken Noodles with Chicken (Pad Kee Mao)",
+   "url": "https://thewanderlustkitchen.com/easy-thai-drunken-noodles/",
+   "rating": 4.63,
+   "rating_count": 16,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
