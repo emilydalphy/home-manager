@@ -1,0 +1,110 @@
+{
+ "dish_name": "Sopa de Ajo",
+ "cuisine": "Spanish",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Garlic",
+   "qty": "8 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Crusty bread",
+   "qty": "1 loaf",
+   "category": "other"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1 bottle",
+   "category": "other",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Sweet paprika",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "6 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sherry vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  }
+ ],
+ "instructions": [
+  "Thinly slice the 8 garlic cloves. Tear 4 thick slices of the bread (about 4 oz) into small pieces, leaving off any crust that's very hard.",
+  "Crack the 4 eggs into a bowl and beat them with a fork until smooth. Chop 2 tbsp of the parsley.",
+  "Warm 1/4 cup olive oil in a large saucepan over medium heat. Add the garlic and cook for 1 to 2 minutes, stirring, until it's light golden and smells nutty. Watch it closely. Dark brown garlic tastes bitter.",
+  "Pour in 3 tbsp white wine and let it bubble for about 30 seconds, until the sharp smell of alcohol is gone.",
+  "Turn the heat down to low, stir in 2 tsp sweet paprika and cook for 30 seconds, until the oil turns brick red and smells sweet.",
+  "Add the torn bread and stir for about a minute, until every piece is coated in the red oil.",
+  "Pour in the 6 cups chicken broth and add 3/4 tsp salt. Bring it to a boil, then turn the heat down and simmer for 10 minutes, stirring now and then, until the bread is soft and falling apart. Break up any big pieces with the spoon.",
+  "With the soup at a gentle simmer, pour in the eggs in a thin stream while you stir slowly. They'll set into long, soft ribbons in about a minute.",
+  "Take the pan off the heat and stir in 1 tsp sherry vinegar. Taste it, and add a pinch more salt if it's flat.",
+  "Ladle it into bowls and scatter the parsley on top.",
+  "Serve hot, with the rest of the bread."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Every read version cooks garlic and paprika in olive oil, simmers stale bread in liquid until it breaks down and adds eggs at the end. The Food.com version (credited to José Andrés), the lead, sautés sliced garlic until golden, adds a splash of white wine and sweet paprika, simmers torn bread in chicken stock for 8 minutes and stirs in beaten eggs so they form long strands. Recipes From Europe pounds some of the garlic into a paste with smoked paprika and uses water, and Spain on a Fork toasts the bread in the garlic oil and poaches whole eggs on top. This one follows the lead with more broth and eggs for a lunch portion and finishes with a splash of sherry vinegar. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Spanish) has no version, so the first read version leads.",
+ "sources": [
+  {
+   "name": "Food.com",
+   "title": "Castilian Garlic Soup - Sopa De Ajo",
+   "url": "https://www.food.com/recipe/castilian-garlic-soup-sopa-de-ajo-370354",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Recipes From Europe",
+   "title": "Sopa de Ajo (Spanish Garlic Soup)",
+   "url": "https://www.recipesfromeurope.com/sopa-de-ajo/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Spain on a Fork",
+   "title": "Garlic Soup - Sopa de Ajo",
+   "url": "https://spainonafork.com/garlic-soup/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

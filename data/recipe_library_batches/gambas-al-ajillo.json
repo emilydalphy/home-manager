@@ -1,0 +1,111 @@
+{
+ "dish_name": "Gambas al Ajillo",
+ "cuisine": "Spanish",
+ "main_protein": "shrimp",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 8,
+ "ingredients": [
+  {
+   "item": "Large shrimp",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Baguette",
+   "qty": "1",
+   "category": "other"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "4 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Sweet paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "If the shrimp still have their shells, peel and devein them. Pat them very dry with paper towels and toss them with 3/4 tsp salt and 1/4 tsp black pepper.",
+  "Thinly slice the 6 garlic cloves. Chop 1/4 cup of the parsley and cut the lemon in half.",
+  "Put the 1/2 tsp red pepper flakes in a small bowl for the table, and slice the baguette.",
+  "Warm 1/4 cup olive oil and 4 tbsp butter in a large skillet over medium low heat until the butter melts and foams. Add the garlic and cook for 2 to 3 minutes, stirring, until it's pale gold at the edges and smells sweet. Don't let it go brown, or it turns bitter.",
+  "Turn the heat up to medium high. Add the shrimp in a single layer and leave them alone for about 1 minute, until the undersides turn pink.",
+  "Flip them, sprinkle 1 tsp paprika over the pan and cook the other side for 1 to 2 minutes, until they're pink all over and curled into a loose C. Cut one open if you're not sure. It's done when the middle is white, with no gray left.",
+  "Take the pan off the heat. Squeeze in the juice from both lemon halves, add the parsley and stir so every shrimp is coated in the garlic oil.",
+  "Taste the oil, and add a pinch more salt if it's flat.",
+  "Serve straight from the pan with the sliced baguette, and the red pepper flakes on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Every read version cooks the shrimp fast in plenty of olive oil and garlic and finishes with parsley. The Food.com version, the lead, adds butter to the oil, cooks the shrimp and garlic together over high heat for 2 to 3 minutes and finishes with lemon juice, paprika and red pepper flakes. Spain on a Fork and Recipes From Europe slice the garlic, add whole dried cayenne peppers and finish with white wine instead of lemon. This one keeps the lead's butter, lemon and paprika, takes the sliced garlic and gentle start from the other two so the garlic doesn't burn, and puts the red pepper flakes on the side.",
+ "sources": [
+  {
+   "name": "Food.com",
+   "title": "Gambas Al Ajillo (Shrimp W/ Garlic) Catalonia",
+   "url": "https://www.food.com/recipe/gambas-al-ajillo-shrimp-w-garlic-catalonia-127029",
+   "rating": 5.0,
+   "rating_count": 50,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Spain on a Fork",
+   "title": "The Famous Spanish Garlic Shrimp | Gambas al Ajillo from Madrid",
+   "url": "https://spainonafork.com/the-famous-spanish-garlic-shrimp-gambas-al-ajillo-from-madrid/",
+   "rating": 4.86,
+   "rating_count": 7,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Recipes From Europe",
+   "title": "Spanish Garlic Shrimp (Gambas al Ajillo)",
+   "url": "https://www.recipesfromeurope.com/gambas-al-ajillo/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
