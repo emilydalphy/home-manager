@@ -1,0 +1,117 @@
+{
+ "dish_name": "Garbanzos con Espinacas",
+ "cuisine": "Spanish",
+ "main_protein": "chickpeas",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Chickpeas",
+   "qty": "2 cans (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Frozen chopped spinach",
+   "qty": "1 package (10 oz)",
+   "category": "frozen"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Crusty bread",
+   "qty": "1 loaf",
+   "category": "other"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "6 tbsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Smoked paprika",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Saffron",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Sherry vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Open the 2 cans of chickpeas. Drain one can, then tip both cans into a large saucepan, keeping the liquid from the second can. Add 1 1/2 cups of the broth and bring it to a boil over high heat.",
+  "Turn the heat down to a steady simmer and cook for about 10 minutes, until the liquid sits just below the top layer of chickpeas.",
+  "Meanwhile, put the spinach in a bowl and microwave it for 3 to 4 minutes to thaw it. Once it's cool enough to touch, squeeze out as much water as you can with your hands.",
+  "Cut one thick slice from the bread and tear it into small crumbs. Mince the 5 garlic cloves.",
+  "Halve the 2 tomatoes and grate the cut sides on the large holes of a box grater into a bowl. Throw away the skins.",
+  "Heat 1/4 cup of the oil in a medium skillet over medium until it shimmers. Add the bread crumbs and cook for 3 to 4 minutes, stirring often, until they're deep golden and crisp.",
+  "Add the garlic, the 1 tbsp smoked paprika, 1 tsp cumin, 1/8 tsp cinnamon, the saffron and 1/4 tsp of the salt. Stir for about 30 seconds, until it smells toasty. Don't let the garlic brown.",
+  "Take the pan off the heat and stir in the grated tomato and 1 tbsp of the vinegar. Mash it all together with the back of a spoon into a rough paste.",
+  "Scrape the paste and the spinach into the chickpeas. Simmer for 5 to 10 minutes, stirring now and then, until it's thick like a stew.",
+  "Take the pot off the heat and stir in the last 2 tbsp of oil. Cover it and let it sit for 5 minutes.",
+  "Taste it. If it's flat, add the remaining 1/4 tsp salt first, then the last 1 tsp of vinegar.",
+  "Slice the rest of the bread. Serve the chickpeas in bowls with the bread on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions bloom smoked paprika and cumin in olive oil with garlic. America's Test Kitchen (the lead) simmers canned chickpeas in broth with some of their liquid, fries bread crumbs in plenty of oil with garlic, cumin, cinnamon and saffron, stirs in grated tomato and sherry vinegar, and thickens the stew with that paste and frozen spinach. Spain on a Fork skips the bread, wilts fresh spinach with onion and tops the chickpeas with yogurt and chives. This one follows the lead, uses vegetable broth so it stays meatless, and leaves out the lead's pinch of cayenne to keep it mild.",
+ "sources": [
+  {
+   "name": "America's Test Kitchen",
+   "title": "Espinacas con Garbanzos (Andalusian Spinach and Chickpeas)",
+   "url": "https://www.americastestkitchen.com/recipes/13696-espinacas-con-garbanzos-andalusian-spinach-and-chickpeas",
+   "rating": 4.1,
+   "rating_count": 334,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Spain on a Fork",
+   "title": "Spanish Beans: Garbanzos con Espinacas",
+   "url": "https://spainonafork.com/spanish-beans-garbanzos-con-espinacas-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

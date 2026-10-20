@@ -1,0 +1,39 @@
+{
+ "dish_name": "Hummus",
+ "cuisine": "Lebanese",
+ "main_protein": "chickpeas",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {"item": "Canned chickpeas", "qty": "1 can (15 oz)", "category": "pantry"},
+  {"item": "Tahini", "qty": "1 jar", "category": "pantry", "cook_qty": "1/3 cup"},
+  {"item": "Lemon", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "1 clove", "category": "produce"},
+  {"item": "Olive oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Paprika", "qty": "a pinch", "category": "pantry"},
+  {"item": "Pita bread", "qty": "1 package", "category": "other"},
+  {"item": "Persian cucumbers", "qty": "3", "category": "produce"}
+ ],
+ "instructions": [
+  "Drain the can of chickpeas into a strainer and rinse them under the tap. Squeeze 2 tbsp juice from the lemon.",
+  "Put the chickpeas in a blender or food processor with the 1/3 cup tahini, 2 tbsp of the olive oil, the lemon juice, the garlic clove and the 1/2 tsp salt.",
+  "Blend until it's very smooth, about 1 minute, stopping to scrape down the sides. Add cold water 1 tbsp at a time while it runs, up to about 5 tbsp, until it's thick but spreads easily off a spoon.",
+  "Taste it. If it's flat, add a pinch more salt first, then a little more lemon.",
+  "Spread it in a shallow bowl and make a swirl in the top with the back of a spoon. Drizzle the last 1 tbsp olive oil into the swirl and dust it with the paprika.",
+  "Cut the cucumbers into spears and the pita into wedges.",
+  "Serve with the warm pita and the cucumber spears.",
+  "Cover whatever's left and keep it in the fridge for up to 5 days."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three blend canned chickpeas with tahini, lemon, garlic, olive oil and salt, thin it with a little liquid, and finish it with olive oil and paprika. Love and Lemons puts everything in a blender at once and loosens it with water, using more tahini than lemon. Inspired Taste whips the tahini and lemon on their own first and adds cumin, and RecipeTin Eats uses more lemon, thins it with the liquid from the can and suggests warming the chickpeas for a smoother dip. This one follows the lead's one step blend and its ratios.",
+ "sources": [
+  {"name": "Love and Lemons", "title": "BEST Hummus", "url": "https://www.loveandlemons.com/hummus-recipe/", "rating": 4.96, "rating_count": 315, "read": true, "lead": true},
+  {"name": "Inspired Taste", "title": "Easy Hummus Recipe (Better than Store-Bought)", "url": "https://www.inspiredtaste.net/15938/easy-and-smooth-hummus-recipe/", "rating": 4.9, "rating_count": 1983, "read": true, "lead": false},
+  {"name": "RecipeTin Eats", "title": "Hummus", "url": "https://www.recipetineats.com/hummus/", "rating": 4.84, "rating_count": 99, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

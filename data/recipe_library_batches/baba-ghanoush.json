@@ -1,0 +1,43 @@
+{
+ "dish_name": "Baba Ghanoush",
+ "cuisine": "Lebanese",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 60,
+ "ingredients": [
+  {"item": "Eggplants", "qty": "2", "category": "produce"},
+  {"item": "Tahini", "qty": "1 jar", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Lemon", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Olive oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Smoked paprika", "qty": "a pinch", "category": "pantry"},
+  {"item": "Flat-leaf parsley", "qty": "1 bunch", "category": "produce"},
+  {"item": "Red pepper flakes", "qty": "a pinch", "category": "pantry"},
+  {"item": "Pita bread", "qty": "1 package", "category": "other"},
+  {"item": "Carrots", "qty": "1 lb", "category": "produce"}
+ ],
+ "instructions": [
+  "At least 2 hours ahead, or up to 3 days ahead: heat the oven to 400°F and line a baking sheet with foil. Prick the 2 eggplants all over with a fork and lay them on the sheet.",
+  "Roast them for 50 to 60 minutes, turning them over halfway. They're done when the skin is dark and wrinkled and they've slumped flat, and a knife slides into the thickest part with no push back.",
+  "Let the eggplants cool on the sheet until you can handle them, about 15 minutes. Split them open, scoop the soft flesh away from the skin and pull out any big clumps of seeds.",
+  "Put the flesh in a strainer set over a bowl and leave it for 20 minutes to drain. Throw away the liquid that collects. Skip this and the dip comes out watery.",
+  "Squeeze the juice from the lemon. You want about 3 tbsp.",
+  "Put the drained eggplant in a food processor with the 1/4 cup tahini, the lemon juice, 2 tbsp of the olive oil, the 2 garlic cloves and the 1/2 tsp salt. Pulse until it's smooth but still has a little texture. No processor? Mince the garlic, then mash everything together in a bowl with a fork.",
+  "Taste it, and add a pinch more salt if it's flat. Scrape it into a container, cover it and keep it in the fridge until you want it. It keeps for up to 3 days.",
+  "To serve, spread it in a shallow bowl and make a swirl in the top with the back of a spoon. Drizzle the last 1 tbsp olive oil into the swirl, chop a small handful of the parsley and scatter it over, and dust the top with the smoked paprika.",
+  "Cut the carrots into sticks and the pita into wedges.",
+  "Serve with the pita and carrot sticks, with the red pepper flakes on the side."
+ ],
+ "advance_prep_notes": "Roast and blend it at least 2 hours ahead, or up to 3 days ahead",
+ "advance_prep_step_indices": [1, 2, 3, 4, 5, 6, 7],
+ "method_notes": "All three roast whole eggplants until they collapse, peel them, and mix the flesh with tahini, lemon, garlic and salt. Love and Lemons wraps them in foil at 400°F for 50 to 60 minutes, drains the flesh for 20 minutes and blends it smooth with olive oil, then tops it with parsley, smoked paprika and chili flakes. The Endless Meal roasts them bare at 425°F for a darker skin and a smokier dip, then rests it in the fridge before serving, and Simply Lebanese grills them and mashes the dip by hand with more garlic and tahini, keeping it chunky. This one follows the lead's ratios and draining, roasts the eggplants unwrapped so the skins char, and puts the chili flakes on the side.",
+ "sources": [
+  {"name": "Love and Lemons", "title": "Baba Ganoush", "url": "https://www.loveandlemons.com/baba-ganoush/", "rating": 4.98, "rating_count": 72, "read": true, "lead": true},
+  {"name": "The Endless Meal", "title": "Baba Ganoush Recipe (just like I enjoyed in the Middle East!)", "url": "https://www.theendlessmeal.com/homemade-baba-ganoush/", "rating": 4.84, "rating_count": 30, "read": true, "lead": false},
+  {"name": "Simply Lebanese", "title": "Baba Ghanouj", "url": "https://www.simplyleb.com/recipe/baba-ghanouj/", "rating": 4.87, "rating_count": 15, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

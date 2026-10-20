@@ -1,0 +1,117 @@
+{
+ "dish_name": "Merluza en Salsa Verde",
+ "cuisine": "Spanish",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Hake fillets",
+   "qty": "1.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Fish stock",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Crusty bread",
+   "qty": "1 loaf",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Pat the 1.5 lb hake dry with paper towels and cut it into 4 even pieces. Sprinkle 1/2 tsp of the salt and the 1/4 tsp pepper over both sides.",
+  "Mince the 4 garlic cloves. Chop 1/2 cup of the parsley leaves.",
+  "Stir the 2 tsp cornstarch into 1/2 cup of the wine in a cup until there are no lumps.",
+  "Heat 3 tbsp of the oil in a large nonstick skillet over medium high until it shimmers. Lay in the fish and cook for 2 to 3 minutes without moving it, until it's golden underneath and lets go of the pan.",
+  "Flip the pieces and cook the other side for 2 minutes. They'll still be a little see-through in the middle. Move them to a plate.",
+  "Turn the heat down to medium low and add the last 1 tbsp of oil and the garlic. Stir for about 1 minute, until it smells sweet and turns pale gold. Don't let it brown.",
+  "Stir in the parsley for 15 seconds. Give the wine mixture a stir and pour it in. Keep stirring for about 1 minute, until the sauce thickens and turns glossy.",
+  "Pour in 3/4 cup of the fish stock and add the remaining 1/4 tsp salt. Let it simmer gently for 2 minutes, scraping up anything stuck to the pan.",
+  "Nestle the fish back into the pan with any juices from the plate and spoon some sauce over each piece. Cover the pan and cook on low for 3 to 4 minutes, shaking the pan gently side to side a few times. The fish is done when it flakes when you press a fork into the thickest piece.",
+  "Take the pan off the heat. Cut the lemon in half and squeeze the juice from one half over the fish. Cut the other half into wedges.",
+  "Taste the sauce. If it's flat, add a pinch more salt first, then a squeeze from one of the wedges.",
+  "Serve with the crusty bread and the lemon wedges."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions build the sauce from olive oil, plenty of garlic and parsley, white wine and fish stock, thickened with a little starch, and finish the hake gently in it. Spain on a Fork (the lead) sears the seasoned fillets first, makes the sauce in the same pan with cornstarch and returns the fish to finish. The Spanish Chef and Recipes from Europe thicken with flour and poach the raw fish in the sauce under a lid, and both add clams if you have them. This one follows the lead, leaves out the clams and finishes with lemon. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Spanish) has no version, so the first read version leads.",
+ "sources": [
+  {
+   "name": "Spain on a Fork",
+   "title": "Spanish Hake in Green Sauce: Merluza en Salsa Verde Recipe",
+   "url": "https://spainonafork.com/spanish-hake-in-green-sauce-merluza-en-salsa-verde-recipe/",
+   "rating": 4.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Spanish Chef",
+   "title": "Traditional Spanish hake recipe in green sauce (Merluza en salsa verde)",
+   "url": "https://thespanishchef.com/recipes/spanish-hake-recipe",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Recipes from Europe",
+   "title": "Hake in Green Sauce (Merluza en salsa verde)",
+   "url": "https://www.recipesfromeurope.com/hake-in-green-sauce/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

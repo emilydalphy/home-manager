@@ -1,0 +1,135 @@
+{
+ "dish_name": "Fideua",
+ "cuisine": "Spanish",
+ "main_protein": "seafood",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Fideo noodles",
+   "qty": "12 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Large shrimp",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Cod fillets",
+   "qty": "12 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Smoked paprika",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Saffron",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Fish stock",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "3 1/2 cups"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "5 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F.",
+  "Pat the shrimp and the cod dry with paper towels. Cut the cod into chunks about 1 1/2 inches across. Sprinkle 1/2 tsp of the salt over the shrimp and the fish.",
+  "Finely chop the onion and the red pepper. Mince 4 of the garlic cloves.",
+  "Halve the 3 tomatoes and grate the cut sides on the large holes of a box grater into a bowl. Throw away the skins.",
+  "Grate the last garlic clove into a small bowl and stir in the 1/2 cup mayonnaise. Cut the lemon in half, squeeze in the juice from one half and stir. Cut the other half into wedges, and put the garlic mayo in the fridge.",
+  "Heat 1 tbsp of the oil in a 12 inch ovenproof skillet or paella pan over medium. Add the 12 oz noodles and stir them constantly for 4 to 5 minutes, until they're deep golden and smell nutty. Tip them into a bowl.",
+  "Turn the heat up to high and add 2 tbsp of the oil. Lay the shrimp in one layer and cook for 1 minute. Flip them and cook the other side for 1 minute. They'll still be see-through in the middle. Move them to a plate.",
+  "Add the cod to the same pan and cook for about 2 minutes, turning the pieces once, until they're golden on the outside. Move them to the plate with the shrimp. They finish cooking in the oven.",
+  "Turn the heat down to medium and add the last 2 tbsp of oil. Add the onion, the pepper and the remaining 1/2 tsp salt. Cook for 8 to 10 minutes, stirring now and then, until they're soft and turning golden. Don't rush this. That's where the flavor starts.",
+  "Add the garlic and the 2 tsp paprika, and crumble in the saffron between your fingers. Stir for 30 seconds, until it smells fragrant.",
+  "Add the grated tomato and cook for 3 to 4 minutes, stirring, until it turns darker and thick.",
+  "Pour in 3 1/2 cups of the fish stock and scrape up the browned bits from the bottom. Bring it to a boil.",
+  "Stir in the toasted noodles and spread them into an even layer. Boil them over high heat for 5 minutes without stirring.",
+  "Tuck the shrimp and cod into the top of the noodles. Slide the pan into the oven and bake for 5 to 7 minutes, until the stock is gone and the noodles on top curl up and crisp at the edges. The fish is done when it flakes and the shrimp are pink all the way through. Use an oven mitt on the handle when you take it out.",
+  "Taste a noodle. If it's flat, add a pinch more salt first, then a squeeze from one of the lemon wedges.",
+  "Serve with the garlic mayo and the lemon wedges."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions toast short noodles, build a sofrito of onion, pepper, garlic, grated tomato and paprika in a wide pan, then cook the noodles in fish stock until it's absorbed. BBC Good Food (the lead) sears prawns, monkfish and squid first, adds saffron with the paprika and finishes the pan in a hot oven with a homemade aioli on the side. Recipes from Europe toasts the noodles dry and finishes on the stove under a lid, and Spain on a Fork cooks it all on the stove and rests it under a towel. This one follows the lead's oven finish, uses shrimp and cod in place of three kinds of seafood, and makes a quick garlic mayo instead of aioli from scratch. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Spanish) has no version, so the first read version leads.",
+ "sources": [
+  {
+   "name": "BBC Good Food",
+   "title": "Seafood fideuà",
+   "url": "https://www.bbcgoodfood.com/recipes/seafood-fideua",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Recipes from Europe",
+   "title": "Fideuá (Spanish Noodle \"Paella\")",
+   "url": "https://www.recipesfromeurope.com/fideua/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Spain on a Fork",
+   "title": "Authentic Spanish Seafood Fideuà Recipe from Valencia",
+   "url": "https://spainonafork.com/authentic-spanish-seafood-fideua-recipe-from-valencia/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

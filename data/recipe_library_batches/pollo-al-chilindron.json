@@ -1,0 +1,144 @@
+{
+ "dish_name": "Pollo al Chilindron",
+ "cuisine": "Spanish",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 75,
+ "ingredients": [
+  {
+   "item": "Bone-in chicken thighs",
+   "qty": "2.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Serrano ham",
+   "qty": "3 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Roasted red peppers",
+   "qty": "1 jar (16 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "1 can (14.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Sweet paprika",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh rosemary",
+   "qty": "1 package",
+   "category": "produce"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Crusty bread",
+   "qty": "1 loaf",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Pat the 2.5 lb chicken thighs dry with paper towels. Sprinkle 1 tsp of the salt over both sides and leave them on a plate while you chop.",
+  "Meanwhile, slice the 2 onions thin from root to tip. Chop the 6 garlic cloves and dice the 3 oz ham.",
+  "Drain the jar of roasted peppers and cut them into strips. Strip the leaves from a sprig of rosemary and chop 1 tbsp of them.",
+  "Heat the 3 tbsp oil in a Dutch oven or heavy pot over medium high until it shimmers. Pat the chicken dry again and lay in half the pieces, skin side down. Stand back a little. They'll spatter.",
+  "Cook for 5 to 6 minutes without moving them, until the skin is deep golden and lets go of the pot. Flip them and cook the other side for 3 minutes. Move them to a plate and brown the rest the same way.",
+  "Pour off all but about 2 tbsp of the fat. Turn the heat down to medium, add the onions and 1/4 tsp of the salt, and cook for 8 to 10 minutes. Scrape up the browned bits as the onions soften, and stop when they're soft and golden at the edges.",
+  "Add the garlic and ham and cook for about 1 minute, until the garlic smells fragrant.",
+  "Stir in the 1 tbsp paprika and cook for 30 seconds.",
+  "Pour in 1 1/2 cups of the wine and turn the heat up to high. Boil it hard for 4 to 5 minutes, until about half of it has cooked off.",
+  "Turn the heat back to medium. Stir in the can of tomatoes, the pepper strips, the chopped rosemary, the 2 bay leaves, the remaining 1/4 tsp salt, 1/2 tsp black pepper and 1 cup of the broth.",
+  "Nestle the chicken back in, skin side up, with any juices from the plate. The liquid should come about two thirds of the way up the chicken.",
+  "Bring it to a bubble, cover the pot and turn the heat down low, so it barely bubbles. Cook for 45 to 50 minutes, until the meat is very tender. You're cooking the thighs to 175°F, so if you have a thermometer, check the thickest piece near the bone. No thermometer? Pierce the thickest thigh near the bone: it's done when the juices run clear and the meat pulls away from the bone easily.",
+  "Take out the bay leaves. Chop 1/4 cup of the parsley and stir it in off the heat.",
+  "Taste the sauce, and add a pinch more salt if it's flat.",
+  "Serve with the crusty bread."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions brown the chicken first, soften onion and peppers with garlic in the same pot, add wine and tomato, and braise the chicken until tender. Honest Food (Hank Shaw's version, the lead) salts the meat ahead, uses jarred roasted red peppers and cured ham, boils the wine down by half, adds rosemary and bay, and braises at a bare simmer with parsley stirred in at the end. The Mediterranean Dish uses fresh red peppers, jamón and smoked paprika with a pinch of sugar, and Recipes from Europe uses fresh red and green peppers with grated tomato. This one follows the lead with thighs, and leaves out its hot paprika to keep the pot mild. The ratings for Honest Food and The Mediterranean Dish come from a 2025 archived copy of each page, as both sites block direct reads.",
+ "sources": [
+  {
+   "name": "Honest Food",
+   "title": "Chilindron, a Spanish Stew",
+   "url": "https://honest-food.net/spanish-chilindron-stew/",
+   "rating": 4.95,
+   "rating_count": 75,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Mediterranean Dish",
+   "title": "Basque Chicken and Peppers (Pollo al Chilindrón)",
+   "url": "https://www.themediterraneandish.com/basque-chicken-and-peppers-pollo-al-chilindron/",
+   "rating": 4.6,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Recipes from Europe",
+   "title": "Spanish Stewed Chicken (Pollo al chilindrón)",
+   "url": "https://www.recipesfromeurope.com/pollo-al-chilindron/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
