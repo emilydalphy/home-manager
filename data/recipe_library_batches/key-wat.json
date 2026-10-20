@@ -1,0 +1,121 @@
+{
+ "dish_name": "Key Wat",
+ "cuisine": "Ethiopian",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 130,
+ "ingredients": [
+  {
+   "item": "Beef chuck",
+   "qty": "2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ghee",
+   "qty": "1 jar",
+   "category": "dairy",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Berbere",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Beef broth",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Injera",
+   "qty": "1 package",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Cut the 2 lbs beef chuck into 1-inch cubes and pat them dry with paper towels. Toss them with 1 tsp of the salt.",
+  "Finely chop the onion and mince the 3 garlic cloves.",
+  "Heat 2 tbsp of the oil in a Dutch oven or heavy pot over medium-high. Add half the beef in a single layer and cook for 4 to 5 minutes, turning once or twice, until two sides are deep brown. Move it to a plate.",
+  "Add the last 1 tbsp oil and brown the rest of the beef the same way, then move it to the plate too.",
+  "Turn the heat to medium-low and add the 2 tbsp ghee and the onion. Cook for 12 to 15 minutes, stirring often and scraping up the brown bits, until the onion is very soft and deep golden. If it starts to catch, add a splash of water. Don't rush the onions. That's where the flavor starts.",
+  "Add the garlic and stir for 30 seconds, until it smells fragrant.",
+  "Add the 2 tbsp berbere, 2 tbsp tomato paste and 1/2 tsp sugar. Stir for 2 to 3 minutes, until it turns into a thick, dark red paste and smells toasty. Turn the heat down if it starts to stick. Burnt berbere tastes bitter.",
+  "Stir in 1/2 cup of the broth and scrape the bottom of the pot until the paste loosens. Add the other 1 1/2 cups broth, the beef with its juices and the last 1 tsp salt, and bring it to a boil.",
+  "Cover, turn the heat to low and simmer gently for 1 1/2 to 2 hours, stirring every 20 minutes or so, until a cube of beef falls apart when you press it with a spoon. If the sauce gets too thick, add a splash of water. If it's still thin at the end, simmer it with the lid off for 10 minutes.",
+  "Take the pot off the heat and squeeze in the juice of half the lemon.",
+  "Taste it. If it's flat, add salt first, then a squeeze of the other lemon half.",
+  "Serve with injera or rice."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three cook onion slowly in oil and niter kibbeh or ghee, fry garlic, berbere, tomato paste and a pinch of sugar into a thick paste, then simmer cubed beef in stock for about an hour or more until tender and the sauce reduces. Food.com and Just a Pinch put the raw beef straight into the sauce, while A Duck's Oven browns it in batches first, simmers it up to two hours and shreds it at the end. The berbere amount swings widely because some versions use a homemade blend; this one uses 2 tbsp of store-bought berbere and browns the beef. It keeps well for a few days in the fridge, so it works as a cook-once dinner: reheat it low with a splash of water and finish with a squeeze of lemon.",
+ "sources": [
+  {
+   "name": "Food.com",
+   "title": "Ethiopian Spicy Beef Stew (Key Wat)",
+   "url": "https://www.food.com/recipe/ethiopian-spicy-beef-stew-key-wat-436458",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "A Duck's Oven",
+   "title": "Spicy Ethiopian Stewed Beef (Key Wat)",
+   "url": "https://aducksoven.com/recipes/spicy-ethiopian-stewed-beef-key-wat/",
+   "rating": 4.5,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Just a Pinch",
+   "title": "Key Wat (Ethiopian Spicy Beef Stew)",
+   "url": "https://www.justapinch.com/recipes/main-course/beef/key-wat-ethiopian-spicy-beef-stew.html",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,127 @@
+{
+ "dish_name": "Doro Tibs",
+ "cuisine": "Ethiopian",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Berbere",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeños",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece",
+   "category": "produce"
+  },
+  {
+   "item": "Ghee",
+   "qty": "1 jar",
+   "category": "dairy",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Injera",
+   "qty": "1 package",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Cut the 2 lbs chicken thighs into 1-inch pieces and pat them dry with paper towels. Toss them in a bowl with 1 tbsp of the berbere, 1 tsp salt and 1/2 tsp black pepper, and leave them on the counter while you get the vegetables ready.",
+  "Meanwhile, thinly slice the red onion and both bell peppers. Mince the 4 garlic cloves, and peel and finely grate the ginger until you have about 1 tbsp.",
+  "Seed one jalapeño and slice it into thin strips for the pan. Slice the second jalapeño into thin rounds and put it in a small bowl for the table.",
+  "Heat 2 tbsp of the ghee in a large heavy skillet over medium-high until it shimmers. Add half the chicken in a single layer and leave it alone for 3 to 4 minutes, until the underside is deep golden and lets go of the pan.",
+  "Flip the pieces and cook the other side for 2 minutes, then move them to a plate. Brown the second half of the chicken the same way. It doesn't need to be cooked through yet.",
+  "Turn the heat to medium and add the last 1 tbsp ghee. Add the onion and cook for 5 minutes, stirring and scraping up the brown bits, until it's soft and turning golden.",
+  "Add both bell peppers and the jalapeño strips and cook for 3 minutes, until they start to soften but still have some bite.",
+  "Push the vegetables to one side. Put the garlic, ginger, 1 tbsp tomato paste and the last 1 tbsp berbere in the open space and stir for about 1 minute, until the paste darkens and it smells toasty. Turn the heat down if the berbere starts to stick. Burnt berbere tastes bitter.",
+  "Pour in the 1/2 cup broth and scrape the bottom of the pan. Put the chicken back with any juices from the plate, stir everything together and simmer for 5 to 7 minutes, until the sauce clings to the chicken.",
+  "You're cooking the thighs to 175°F in the middle, so if you have a thermometer, check the thickest piece. No thermometer? Cut one open: it's done when there's no pink left and the juices run clear.",
+  "Take the pan off the heat and squeeze in the juice of half the lemon. Cut the other half into wedges.",
+  "Taste it. If it's flat, add salt first, then a squeeze from one of the lemon wedges.",
+  "Serve with injera, with the jalapeño rounds and the lemon wedges on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions cut boneless thigh into small pieces, fry it hard in a wide pan, and cook it with red onion, garlic and green chili seasoned with berbere and niter kibbeh. Eat Healthy 365 seasons the chicken with half the berbere first, sears it in batches, then blooms tomato paste and the rest of the berbere and deglazes with broth or red wine for a short simmer. Clove Garden keeps it drier and quicker, frying the chicken with onion, leek and garlic and stirring the bell pepper and chili strips in for only a few seconds at the end. No version had 20 or more ratings and the trusted cook for this cuisine (RecipeTin Eats) has no doro tibs, so this follows the best-rated version read.",
+ "sources": [
+  {
+   "name": "Eat Healthy 365",
+   "title": "Authentic Ethiopian Chicken Tibs",
+   "url": "https://eathealthy365.com/authentic-ethiopian-chicken-tibs/",
+   "rating": 4.57,
+   "rating_count": 7,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Clove Garden",
+   "title": "Chicken Tibs (Yedoro Tibs)",
+   "url": "https://www.clovegarden.com/recipes/qmc_chktib1.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

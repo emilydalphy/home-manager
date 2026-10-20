@@ -1,0 +1,123 @@
+{
+ "dish_name": "Azifa",
+ "cuisine": "Ethiopian",
+ "main_protein": "lentils",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Green lentils",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground ginger",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Injera",
+   "qty": "1 package",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "The night before, or at least 3 hours ahead: rinse the 1 1/2 cups lentils in a sieve and put them in a medium pot with 5 cups of water. Bring it to a boil over high heat, then turn it down so it bubbles gently.",
+  "Simmer the lentils uncovered for 20 to 25 minutes, and start tasting them at 20. They're ready when they're soft all the way through but still hold their shape. Stop there, or they go mushy in the salad.",
+  "Drain the lentils, spread them out on a large plate, and sprinkle 1/2 tsp of the salt over them.",
+  "While they cool, juice both lemons into a large bowl. Whisk in 1 1/2 tbsp Dijon mustard, the olive oil, 1/2 tsp ground ginger, 1/2 tsp black pepper and another 1/2 tsp of the salt.",
+  "Finely chop the red onion. Cut the jalapeño in half, scrape out the seeds and ribs, and chop it fine. Stir both into the dressing.",
+  "Once the lentils are cool to the touch, about 15 minutes, tip them into the bowl and stir gently until they're coated. Cover and refrigerate for at least 2 hours, or overnight.",
+  "When you're ready to eat, seed and chop the 2 tomatoes and chop 2 tbsp of the parsley. Stir both into the cold lentils.",
+  "Taste it. If it's flat, add the last 1/4 tsp salt and a little more mustard.",
+  "Serve cold with injera."
+ ],
+ "advance_prep_notes": "Cook and dress the lentils the night before, or at least 3 hours ahead, so they're cold.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6
+ ],
+ "method_notes": "All three simmer whole green or brown lentils until just tender, drain and cool them, then dress them with citrus, oil, chopped onion and green chili and serve them cold. Adamant Kitchen uses 1 cup lentils with Dijon mustard, ground ginger, black pepper and lime and chills it a few hours; Urban Farmie grinds brown mustard seeds into a senafich paste the day before and uses lemon and parsley; Brundo blends the lentils into a smooth spread with mustard seed. This version keeps the lentils whole like Adamant Kitchen and Urban Farmie, uses Dijon for the mustard, and uses lemon as the dish note asks.",
+ "sources": [
+  {
+   "name": "Adamant Kitchen",
+   "title": "Azifa ~ Ethiopian Lentil Salad",
+   "url": "https://adamantkitchen.com/azifa-ethiopian-lentil-salad/",
+   "rating": 4.47,
+   "rating_count": 15,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Urban Farmie",
+   "title": "Azifa (Ethiopian Lentil Salad)",
+   "url": "https://urbanfarmie.com/azifa-ethiopian-lentil-salad/",
+   "rating": 4.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Brundo",
+   "title": "Azifa (Ethiopian Lentil Salad)",
+   "url": "https://brundo.com/blogs/recipes/azifa-ethiopian-lentil-salad",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

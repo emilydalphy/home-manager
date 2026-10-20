@@ -1,0 +1,129 @@
+{
+ "dish_name": "Fasolia",
+ "cuisine": "Ethiopian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Green beans",
+   "qty": "1.5 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 small piece",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Injera",
+   "qty": "1 package",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Fill a large pot with water, add 1 tsp of the salt, and bring it to a boil over high heat.",
+  "Meanwhile, trim the green beans and cut them into 2 inch pieces. Peel the carrots and cut them into sticks about the size of the beans.",
+  "Slice the onion thin, mince the 4 garlic cloves and grate 1 tsp of the ginger. Chop the 2 tomatoes.",
+  "Cut the jalapeño in half, scrape out the seeds, and slice it thin. Put it in a small bowl for the table.",
+  "When the water boils, add the green beans and cook for 4 minutes, until they're bright green and bend a little. Drain them.",
+  "Heat the oil in a large deep skillet over medium high heat. Add the carrots and cook for 5 minutes, stirring now and then, until the edges start to brown.",
+  "Add the onion and the last 1/2 tsp salt and cook for 5 minutes, stirring, until the onion is soft and golden. Don't rush the onion. That's where the flavor starts.",
+  "Add the garlic, ginger, 1/2 tsp turmeric, 1 tsp coriander and 1/4 tsp black pepper. Stir for 30 seconds, until it smells fragrant.",
+  "Add the tomatoes and cook for 3 minutes, stirring, until they collapse into a sauce.",
+  "Stir in the green beans. Cover the pan, turn the heat down to medium low, and cook for 10 to 12 minutes, stirring once or twice, until a knife slides easily into a carrot. If the pan looks dry, add a splash of water.",
+  "Take the pan off the heat and squeeze half the lemon over the vegetables. Cut the other half into wedges.",
+  "Taste it. If it's flat, add salt first, then a squeeze of lemon.",
+  "Serve with injera or over rice, with the lemon wedges and the sliced jalapeño on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three soften onion in oil with garlic, add carrots and green beans, then cover the pan with a little water until the vegetables are tender. Lula Moges's Enebla version blanches the green beans first, cooks the carrots before the onion, garlic and ginger, and seasons with ground coriander and jalapeños; Satyori and E-pad skip the blanch and season with turmeric, with E-pad adding cumin and an optional chopped tomato. This version follows the Enebla order and blanch, adds turmeric and a little tomato for a sauce, and cooks the vegetables soft as the dish note asks, with the jalapeño moved to the table.",
+ "sources": [
+  {
+   "name": "TouchWood Editions (Enebla, Lula Moges)",
+   "title": "Fossolia (Ethiopian Green Beans)",
+   "url": "https://touchwoodeditions.com/blogs/recipes/fossolia-ethiopian-green-beans",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Satyori",
+   "title": "Fosolia",
+   "url": "https://satyori.com/recipes/fosolia/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "E-pad",
+   "title": "Fossolia (Ethiopian Green Beans and Carrots)",
+   "url": "https://epad.substack.com/p/ethiopian-green-beans-and-carrots",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

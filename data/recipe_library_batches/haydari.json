@@ -1,0 +1,41 @@
+{
+ "dish_name": "Haydari",
+ "cuisine": "Turkish",
+ "main_protein": "dairy",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 2,
+ "ingredients": [
+  {"item": "Greek yogurt", "qty": "2 cups", "category": "dairy"},
+  {"item": "Feta cheese", "qty": "1 block", "category": "dairy"},
+  {"item": "Butter", "qty": "2 tbsp", "category": "dairy"},
+  {"item": "Dried mint", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Fresh dill", "qty": "1 bunch", "category": "produce"},
+  {"item": "Olive oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Persian cucumbers", "qty": "2", "category": "produce"},
+  {"item": "Pita bread", "qty": "1 package", "category": "other"}
+ ],
+ "instructions": [
+  "Finely grate the 2 garlic cloves into a medium bowl and mash them with a pinch of the salt until they're a paste.",
+  "Crumble enough feta into the bowl to make about 1/2 cup and mash it into the garlic with a fork until it's mostly smooth.",
+  "Add the 2 cups Greek yogurt and the rest of the salt and stir until smooth and thick.",
+  "Finely chop 2 tbsp of the dill and stir it in.",
+  "Melt the 2 tbsp butter in a small pan over low heat. When it foams, take the pan off the heat and stir in the 2 tsp dried mint. After a few seconds it will sizzle and smell sweet and minty.",
+  "Pour the mint butter into the yogurt and stir until it's smooth and flecked with green.",
+  "Spread it into a shallow bowl, make a swirl in the top with the back of a spoon, and drizzle the 1 tbsp olive oil into the swirl. Scatter a few small sprigs of the dill over the top.",
+  "Cut the cucumbers into sticks and the pita into wedges.",
+  "Serve with the pita and cucumber sticks."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "None of the versions that could be read had 20 or more ratings, and the trusted cook for this cuisine has no version, so this follows Lezzet, a Turkish recipe site. All three stir garlic and herbs into thick yogurt, and two warm the herbs in butter first. Lezzet mixes crushed garlic into strained yogurt, warms dried mint in melted butter, stirs it through and finishes with olive oil and fresh dill. Chef Not Required mashes feta with garlic into Greek yogurt with fresh mint, dill and lemon, and The Green Creator makes a dairy-free version, gently cooking garlic and dried dill in butter and chilling it an hour to set. This version uses Lezzet's mint butter with a little feta for body.",
+ "sources": [
+  {"name": "Lezzet", "title": "Turkish Yogurt Dip (Haydari)", "url": "https://www.lezzet.com.tr/en/recipe/turkish-yogurt-dip-haydari", "rating": null, "rating_count": null, "read": true, "lead": true},
+  {"name": "Chef Not Required", "title": "Haydari Recipe", "url": "https://www.chefnotrequired.com/haydari-recipe/", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "The Green Creator", "title": "Haydari (Turkish Yogurt Sauce)", "url": "https://thegreencreator.com/haydari/", "rating": 5.0, "rating_count": 3, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

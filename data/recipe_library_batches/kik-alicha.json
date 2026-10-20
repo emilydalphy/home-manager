@@ -1,0 +1,46 @@
+{
+ "dish_name": "Kik Alicha",
+ "cuisine": "Ethiopian",
+ "main_protein": "lentils",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 70,
+ "ingredients": [
+  {"item": "Yellow split peas", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Red onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "5 cloves", "category": "produce"},
+  {"item": "Fresh ginger", "qty": "1 small piece", "category": "produce"},
+  {"item": "Vegetable oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Ground turmeric", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Lemon", "qty": "1", "category": "produce"},
+  {"item": "Jalapeño", "qty": "1", "category": "produce"},
+  {"item": "Injera", "qty": "1 package", "category": "other"}
+ ],
+ "instructions": [
+  "At least 2 hours ahead, or the night before: put the 1 1/2 cups split peas in a bowl, cover them with warm water by about 2 inches, and leave them to soak.",
+  "Drain the split peas in a sieve and rinse them under cold water.",
+  "Finely chop the onion, mince the 5 garlic cloves, and finely grate the ginger until you have about 2 tsp.",
+  "Heat the 3 tbsp oil in a heavy pot over medium. Add the onion and 1/2 tsp of the salt and cook, stirring now and then, until it's soft and golden at the edges, 8 to 10 minutes. Don't rush the onions. That's where the flavor starts.",
+  "Add the garlic and ginger and stir for about 1 minute, until they smell fragrant. If they start to stick, add a splash of water.",
+  "Stir in the 1 tsp turmeric and cook for 30 seconds, until the onions turn bright yellow.",
+  "Add the split peas, 6 cups water, the remaining 1 tsp salt and the 1/4 tsp pepper. Bring it to a boil over high heat and skim off the foam that rises to the top with a spoon.",
+  "Turn the heat down to low, set the lid on slightly ajar, and simmer for 45 minutes to 1 hour, stirring every 10 minutes, until the peas are completely soft and starting to fall apart. If it gets thick before the peas are soft, add 1/2 cup hot water.",
+  "While it simmers, slice the jalapeño into thin rings and put them in a small bowl for the table.",
+  "Mash some of the peas against the side of the pot with the back of a spoon, until the stew is thick and creamy with some whole peas still in it.",
+  "Turn off the heat, squeeze in half the lemon, and stir.",
+  "Taste it. If it's flat, add salt first, then a squeeze from the other lemon half.",
+  "Serve with injera or rice, and the jalapeño on the side."
+ ],
+ "advance_prep_notes": "soak the split peas at least 2 hours ahead, or the night before",
+ "advance_prep_step_indices": [1],
+ "method_notes": "All three soften onion, garlic and ginger in oil, bloom turmeric in it, then simmer yellow split peas in water until they collapse into a thick, mild yellow stew. Vegan Richa soaks the peas at least 2 hours (or overnight), uses about 4 cups water to 1 cup peas and simmers partly covered for 45 minutes to 1 hour, with chili and berbere optional. Urban Farmie cooks the peas separately in 3 cups water per cup and stirs the onion base in at the end, and My Jewish Learning purees the onions, garlic and ginger and stirs a split jalapeño through the stew. This version keeps the chili at the table and finishes with lemon.",
+ "sources": [
+  {"name": "Vegan Richa", "title": "Kik Alicha (Ethiopian Split Pea Stew)", "url": "https://www.veganricha.com/kik-alicha-ethiopian-split-pea-stew/", "rating": 4.94, "rating_count": 33, "read": true, "lead": true},
+  {"name": "Urban Farmie", "title": "Kik Alicha (Ethiopian Split Pea Stew)", "url": "https://urbanfarmie.com/kik-alicha/", "rating": 4.5, "rating_count": 2, "read": true, "lead": false},
+  {"name": "My Jewish Learning", "title": "Kik Alicha (Ethiopian Yellow Split Pea Stew)", "url": "https://www.myjewishlearning.com/the-nosher/kik-alicha-ethiopian-yellow-split-pea-stew-recipe/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

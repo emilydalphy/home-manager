@@ -1,0 +1,112 @@
+{
+ "dish_name": "Gomen",
+ "cuisine": "Ethiopian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Collard greens",
+   "qty": "2 bunches",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Ghee",
+   "qty": "1 jar",
+   "category": "dairy",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Injera",
+   "qty": "1 package",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Wash the 2 bunches of collards well in a sink of cold water. Strip the leaves off the thick stems, stack a few leaves at a time, roll them up and slice them into 1/2-inch ribbons. Shake off as much water as you can.",
+  "Thinly slice the onion. Mince the 4 garlic cloves, and peel and finely grate the ginger until you have about 1 tbsp. Seed the jalapeño, cut it into thin strips and put it in a small bowl for the table.",
+  "Melt 3 tbsp of the ghee in a large, wide pot over medium-high. Add the onion and 1/2 tsp of the salt and cook for 5 to 7 minutes, stirring, until it's soft and starting to color.",
+  "Add the garlic, ginger, 1 1/2 tsp cumin and 1 1/2 tsp coriander and stir for 1 minute, until it smells fragrant. Turn the heat down if the spices start to stick.",
+  "Add the collards a big handful at a time with the last 1 tbsp ghee and 1/4 cup water, stirring each handful until it wilts enough to make room for the next.",
+  "Cover the pot and cook for 5 minutes, until the greens are bright green and wilted.",
+  "Take the lid off, add the last 1/2 tsp salt and cook for 2 to 3 minutes more, stirring, until the water is gone and the greens are tender with a little bite left.",
+  "Take the pot off the heat and squeeze in the juice of half the lemon.",
+  "Taste it. If it's flat, add salt first, then a squeeze of the other lemon half.",
+  "Serve with injera, with the jalapeño strips on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three soften onion in fat, add garlic and ginger with a few ground spices, then cook chopped collards with a little water; kale works in any of them. The Daring Gourmet uses niter kibbeh with cumin and coriander and keeps the greens bright and slightly crisp, about 5 to 7 minutes, adding a last spoonful of butter with the greens. Urban Farmie makes it vegan in oil with tomato, cardamom and chili powder and braises the greens covered for 15 to 20 minutes, while Milk Street stews them longer in ghee with ginger, cardamom and turmeric. This version doubles the lead's single bunch so it can stand as a main for four, and finishes with lemon.",
+ "sources": [
+  {
+   "name": "The Daring Gourmet",
+   "title": "Gomen (Ethiopian Collard Greens)",
+   "url": "https://www.daringgourmet.com/gomen-ethiopian-collard-greens/",
+   "rating": 4.96,
+   "rating_count": 25,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Milk Street",
+   "title": "Ethiopian Stewed Collard Greens (Gomen Wat)",
+   "url": "https://www.177milkstreet.com/recipes/ethiopian-stewed-collard-greens-gomen-wat",
+   "rating": 4.75,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Urban Farmie",
+   "title": "Gomen Wat (Ethiopian Collard Greens)",
+   "url": "https://urbanfarmie.com/wprm_print/gomen-wat-ethiopian-collard-greens",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
