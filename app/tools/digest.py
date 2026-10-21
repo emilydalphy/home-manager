@@ -63,7 +63,7 @@ from datetime import datetime, time, timedelta, timezone
 from typing import Callable
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from ..db import get_conn
+from ..db import get_conn, write
 from ._shared import PUBLIC_BASE_URL, household_id, use_household
 from . import attendance as _attendance
 from . import attention as _attention
@@ -474,72 +474,67 @@ def set_morning_text_for_member(
 
     `parts` / `add_parts` / `drop_parts` are the household's, not this
     member's; see set_morning_text.
+
+    Under db.write(): a refusal part-way through (a time it can't read —
+    "noon", "half seven" — or a part it doesn't know, from the chat) used
+    to raise past a bare close with the number's UPDATE already begun, so
+    the connection was left holding SQLite's write lock and the household's
+    next save anywhere waited out the busy timeout and 500'd (defect hunt,
+    2026-10-21). Now a refusal changes nothing and leaves the lock free.
     """
-    conn = get_conn()
-    if not any(r["id"] == member_id for r in _adult_rows(conn)):
-        conn.close()
-        raise ValueError("I don't have that person down as an adult here.")
-    new_phone = normalise_phone(phone) if phone is not None else None
-    if new_phone is not None:
-        conn.execute(
-            "UPDATE members SET phone = ? WHERE id = ? AND household_id = ?",
-            (new_phone, member_id, household_id()),
-        )
-        if new_phone == "":
+    with write() as conn:
+        if not any(r["id"] == member_id for r in _adult_rows(conn)):
+            raise ValueError("I don't have that person down as an adult here.")
+        new_phone = normalise_phone(phone) if phone is not None else None
+        if new_phone is not None:
             conn.execute(
-                "UPDATE members SET morning_text_on = 0 WHERE id = ? AND household_id = ?",
-                (member_id, household_id()),
+                "UPDATE members SET phone = ? WHERE id = ? AND household_id = ?",
+                (new_phone, member_id, household_id()),
             )
-    if on is not None:
-        if on:
-            current = conn.execute(
-                "SELECT phone FROM members WHERE id = ? AND household_id = ?",
-                (member_id, household_id()),
-            ).fetchone()["phone"]
-            if not current:
-                conn.close()
-                raise ValueError("I need a mobile number before I can text you — which number should it go to?")
-        conn.execute(
-            "UPDATE members SET morning_text_on = ? WHERE id = ? AND household_id = ?",
-            (1 if on else 0, member_id, household_id()),
-        )
-    if time is not None:
-        conn.execute(
-            "UPDATE households SET morning_text_time = ? WHERE id = ?",
-            (normalise_time(time), household_id()),
-        )
-    if timezone is not None:
-        # rhythm.checked_timezone is the column's one validator; a zone
-        # chosen here is an answer, so the was-it-ever-answered flag goes
-        # with it (households.timezone_set, 2026-10-13).
-        from . import rhythm as _rhythm
-        try:
+            if new_phone == "":
+                conn.execute(
+                    "UPDATE members SET morning_text_on = 0 WHERE id = ? AND household_id = ?",
+                    (member_id, household_id()),
+                )
+        if on is not None:
+            if on:
+                current = conn.execute(
+                    "SELECT phone FROM members WHERE id = ? AND household_id = ?",
+                    (member_id, household_id()),
+                ).fetchone()["phone"]
+                if not current:
+                    raise ValueError("I need a mobile number before I can text you — which number should it go to?")
+            conn.execute(
+                "UPDATE members SET morning_text_on = ? WHERE id = ? AND household_id = ?",
+                (1 if on else 0, member_id, household_id()),
+            )
+        if time is not None:
+            conn.execute(
+                "UPDATE households SET morning_text_time = ? WHERE id = ?",
+                (normalise_time(time), household_id()),
+            )
+        if timezone is not None:
+            # rhythm.checked_timezone is the column's one validator; a zone
+            # chosen here is an answer, so the was-it-ever-answered flag goes
+            # with it (households.timezone_set, 2026-10-13).
+            from . import rhythm as _rhythm
             zone = _rhythm.checked_timezone(timezone)
-        except ValueError:
-            conn.close()
-            raise
-        conn.execute("UPDATE households SET timezone = ?, timezone_set = 1 WHERE id = ?", (zone, household_id()))
-    if parts is not None or add_parts is not None or drop_parts is not None:
-        # Composed off what is STORED rather than off the defaults, so a
-        # delta on a household that has never answered adds to the three
-        # the card switches on rather than replacing them with one part.
-        row = conn.execute(
-            "SELECT morning_text_parts FROM households WHERE id = ?", (household_id(),)
-        ).fetchone()
-        chosen = list(_read_parts(row["morning_text_parts"] if row else ""))
-        if parts is not None:
-            chosen = _checked_parts(parts)
-        chosen = [k for k in chosen + _checked_parts(add_parts) if k not in set(_checked_parts(drop_parts))]
-        try:
+            conn.execute("UPDATE households SET timezone = ?, timezone_set = 1 WHERE id = ?", (zone, household_id()))
+        if parts is not None or add_parts is not None or drop_parts is not None:
+            # Composed off what is STORED rather than off the defaults, so a
+            # delta on a household that has never answered adds to the three
+            # the card switches on rather than replacing them with one part.
+            row = conn.execute(
+                "SELECT morning_text_parts FROM households WHERE id = ?", (household_id(),)
+            ).fetchone()
+            chosen = list(_read_parts(row["morning_text_parts"] if row else ""))
+            if parts is not None:
+                chosen = _checked_parts(parts)
+            chosen = [k for k in chosen + _checked_parts(add_parts) if k not in set(_checked_parts(drop_parts))]
             stored = _write_parts(chosen)
-        except ValueError:
-            conn.close()
-            raise
-        conn.execute(
-            "UPDATE households SET morning_text_parts = ? WHERE id = ?", (stored, household_id())
-        )
-    conn.commit()
-    conn.close()
+            conn.execute(
+                "UPDATE households SET morning_text_parts = ? WHERE id = ?", (stored, household_id())
+            )
     settings = get_morning_text_settings()
     me = next((a for a in settings["adults"] if a["member_id"] == member_id), None)
     return {

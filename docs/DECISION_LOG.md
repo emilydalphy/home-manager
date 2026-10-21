@@ -13,6 +13,14 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A refused morning-text change no longer locks every save** (2026-10-21,
+  defect hunt; branch `overnight/hunt-prefs-staples-2026-10-21b`; tests
+  `tests/test_morning_text_refusal_leaves_the_lock_free.py`).
+  `digest.set_morning_text_for_member` wrote the number, then refused a time
+  it couldn't read ("noon", "half seven") or an unknown part past a bare
+  close, leaving SQLite's write lock held: on uvicorn the other adult's Save
+  waited 5s and 500'd. It now runs under `db.write()` (off the close census).
+  Why: a refusal must change nothing, and must never cost the next save.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
