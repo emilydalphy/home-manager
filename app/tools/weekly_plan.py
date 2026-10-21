@@ -9094,10 +9094,18 @@ def delete_plan_entry(conn, entry_id: int) -> None:
     )
 
 
-def fed_night_label(target: dict) -> str:
+def fed_night_label(target: dict, today: str | None = None) -> str:
     """"Wednesday", or "Wednesday’s lunch" for a night a chain feeds at
     another meal — the one way this app names a fed night, read by the
-    night off's sub-line and toast and by the Review stepper's "−"."""
+    night off's sub-line and toast and by the Review stepper's "−".
+
+    `today` (the household's ISO date) is for a line said NOW about a move
+    that can land on today: "tonight", or "today’s lunch", rather than the
+    weekday it is (Today toasted "Weeknight Chili moved to Thursday." on a
+    Thursday — overnight, 2026-10-21). Never pass it for text that is
+    stored and read on a later day."""
+    if today and target["date"] == today:
+        return "tonight" if target["slot"] == "dinner" else f"today’s {target['slot']}"
     return _weekday_of(target["date"]) if target["slot"] == "dinner" \
         else f"{_weekday_of(target['date'])}’s {target['slot']}"
 

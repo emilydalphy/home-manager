@@ -43,7 +43,7 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from ..db import get_conn
@@ -171,6 +171,27 @@ def _night_off_row(row) -> bool:
     return derived.get("constraint") == NIGHT_OFF_CONSTRAINT
 
 
+def _evening_over(now: datetime) -> bool:
+    """
+    Whether tonight's question has closed: past the evening nudge's late
+    window — EVENING_NUDGE_LATE_WINDOW_MINUTES after its clock for the
+    household's dinner_window (digest.evening_nudge_clock). That is the
+    app's one existing answer to "the night has moved on", and this card
+    already goes quiet where the nudge does (the 'cooking' reason,
+    2026-10-14). It ends 30–60 minutes after dinner lands
+    (defrost._DINNER_CLOCK_BY_WINDOW) for every window, so a household
+    running late can still say "we're going out" at the table's own time;
+    a cutoff AT the landing clock would close the night off at the moment
+    it is most wanted. The long-cook early nudge (planned_start) is not
+    read: it moves when the text goes, not when the night is over.
+    """
+    from . import digest as _digest  # lazily: digest reaches most of the package
+    clock = _digest.evening_nudge_clock(_digest._household_dinner_window())
+    closes = datetime.combine(now.date(), clock) + timedelta(
+        minutes=_digest.EVENING_NUDGE_LATE_WINDOW_MINUTES)
+    return now.replace(tzinfo=None) > closes
+
+
 def tonight_check(now: datetime | None = None) -> dict:
     """
     What Now's top card should say about tonight, and what "Something
@@ -191,7 +212,8 @@ def tonight_check(now: datetime | None = None) -> dict:
                      "leftovers_from"}],   # up to TONIGHT_OPTION_LIMIT
       }
 
-    `ask` is True only when every one of these holds: it is the afternoon;
+    `ask` is True only when every one of these holds: it is the afternoon
+    and the evening is not over (_evening_over);
     a plan covers today and tonight's dinner on it is a real, planned,
     not-yet-cooked, not-yet-started dish; and nobody has said "Yes" today. `answered` is
     NOT one of those conditions read backwards: it is a fact about the
@@ -199,7 +221,7 @@ def tonight_check(now: datetime | None = None) -> dict:
     alongside every `reason` rather than only the ones that get far
     enough to look. `reason` names the first condition that fails —
     'morning', 'no_plan', 'components', 'unplanned', 'away', 'open',
-    'cooked', 'cooking', 'answered', 'night_off' — so a screen (or a test) can tell a
+    'cooked', 'cooking', 'evening_over', 'answered', 'night_off' — so a screen (or a test) can tell a
     quiet card from a broken one. 'night_off' is the one quiet reason the
     screen still draws something for: `night_off` is True, `use_soon`
     lists anything already bought for the dropped dish that won't keep,
@@ -355,6 +377,11 @@ def tonight_check(now: datetime | None = None) -> dict:
         return out
     if not afternoon:
         out["reason"] = "morning"
+    elif _evening_over(now):
+        # Past the dinner window the night has moved on: at nine, "Still
+        # good?" about a dinner nobody started is not a question anyone can
+        # act on (overnight, 2026-10-21). See _evening_over for the clock.
+        out["reason"] = "evening_over"
     elif answered:
         out["reason"] = "answered"
     else:

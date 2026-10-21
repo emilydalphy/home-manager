@@ -264,10 +264,12 @@ def _skip(entry_id: int, meal: str, day: str, today: str) -> dict | None:
             "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?",
             (json.dumps(derived), entry_id, household_id()),
         )
-        label = _weekly_plan.fed_night_label(target)
+        # The stored reason is read on later days, so it keeps the weekday;
+        # the toast is said now, so a move onto today says "tonight".
+        label = _weekly_plan.fed_night_label(target, today=today)
         holder_id = _weekly_plan.plan_slot_empty(
             plan_id, entry["date"], entry["slot"],
-            reason=f"Skipped — the {meal} moved to {label}.",
+            reason=f"Skipped — the {meal} moved to {_weekly_plan.fed_night_label(target)}.",
             derived_from={"constraint": SKIPPED_MOVED_CONSTRAINT, "moved_entry_id": entry_id},
             conn=conn,
         )["entry_id"]

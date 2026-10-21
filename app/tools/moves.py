@@ -957,6 +957,16 @@ def _shop_move(view: dict, day: date, now: datetime, dinner_clock: time) -> list
     a_cook_at_all = False
     soonest = None
     soonest_meal = None
+    # A cook of TODAY's whose time has gone by, still not started or cooked
+    # and still waiting on the list. The cook card stays on Today all
+    # evening, so the shop it is waiting on has to as well — `now <= at`
+    # alone dropped the move at 6:31 with the chili's things still unbought
+    # while "Start by 5:55" stayed (overnight, 2026-10-21). Used only when
+    # no cook still AHEAD is waiting: a 7am breakfast nobody ticked must not
+    # take the deadline from tonight's dinner. The latest one wins — at nine
+    # it is dinner's shop, not breakfast's.
+    passed = None
+    passed_meal = None
     for meal in view.get("meals") or []:
         # A cook already STARTED is out for the same reason a cooked one is:
         # it is on the stove, so whatever of its is still on the list is
@@ -971,20 +981,28 @@ def _shop_move(view: dict, day: date, now: datetime, dinner_clock: time) -> list
             at = _slot_dt(date.fromisoformat(meal["date"]), meal.get("slot") or "dinner", dinner_clock)
         except (KeyError, ValueError):
             continue
-        if not (now <= at <= horizon):
-            continue
-        a_cook_at_all = True
         # entry_ids for a component-based plan's merged card, entry_id for
         # every other — the same reading cooker.start_cooking makes of one.
         ids = [i for i in (meal.get("entry_ids") or [meal.get("entry_id")]) if i]
+        if at < now:
+            if at.date() == now.date() and any(i in waiting for i in ids):
+                if passed is None or at > passed:
+                    passed = at
+                    passed_meal = meal
+            continue
+        if at > horizon:
+            continue
+        a_cook_at_all = True
         if not any(i in waiting for i in ids):
             continue
         if soonest is None or at < soonest:
             soonest = at
             soonest_meal = meal
-    if not a_cook_at_all:
+    if soonest is None and passed is not None:
+        soonest, soonest_meal = passed, passed_meal
+    elif not a_cook_at_all:
         return []
-    if soonest is None:
+    elif soonest is None:
         return _standing_list_move(day, needed)
 
     # The deadline is when the bags need to be back, not when the plate
