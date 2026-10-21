@@ -647,6 +647,12 @@ def set_away_stretch(
     date.fromisoformat(to_date)
     _validate_slot(from_slot, allow_snack=False)
     _validate_slot(to_slot, allow_snack=False)
+    # Checked on the dates first: a start days after the end pads to a
+    # sequence that holds neither edge, and the lookup below answered with
+    # Python's own "('2026-11-20', 'dinner') is not in list" (defect hunt
+    # 2026-10-21). Same-day slot order is still the index check's job.
+    if from_date > to_date:
+        raise ValueError("An away stretch's start must come before (or be) its end.")
 
     from . import attendance as _attendance
     travelers = _attendance.resolve_member_ids(member_names)
