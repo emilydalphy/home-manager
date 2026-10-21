@@ -12568,7 +12568,7 @@
     }
     return '<div class="wwk-remove-confirm" role="group" aria-label="Take ' + name + ' out of the household?">' +
       '<p class="wwk-remove-q">Take ' + name + ' out of the household?</p>' +
-      '<p class="wwk-note">I’ll sign ' + name + ' out on every device, and their link stops working. What they added stays.</p>' +
+      '<p class="wwk-note">I’ll sign ' + name + ' out on every device, and their link stops working. What they added stays. If ' + name + ' knows the household passphrase, they could still sign back in with it.</p>' +
       '<div class="wwk-invite">' +
         '<button type="button" class="wwk-invite-btn" data-invite="remove-yes" data-member-id="' + id + '">Take ' + name + ' out</button>' +
         '<button type="button" class="wwk-invite-again" data-invite="remove-no">Keep ' + name + '</button>' +
@@ -12594,7 +12594,7 @@
       }
       inviteState.removeAsk = null;
       delete inviteState.ready[String(id)];
-      showToast(((data && data.name) || name) + ' was taken out of the household');
+      showToast(((data && data.name) || name) + '’s out of the household');
       // Who's here loses a person (and anything keyed to them), so the
       // answers are re-read, the invite rows with them.
       prefsInvalidate();
