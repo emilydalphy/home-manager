@@ -7192,6 +7192,7 @@ def preview_plan_grocery_impact(weekly_plan_id: int, today: str | None = None) -
         ).fetchall()
     }
     conn.close()
+    from . import spices as _spices
 
     would_add: set[str] = set()
     already_have: set[str] = set()
@@ -7207,7 +7208,9 @@ def preview_plan_grocery_impact(weekly_plan_id: int, today: str | None = None) -
             name = ing["item"].strip()
             if name.lower() in have_names:
                 already_have.add(name.lower())
-            else:
+            elif not _spices.is_assumed(name):
+                # What approval counts as to buy (approve_weekly_plan): a
+                # spice, sauce or pantry staple waits in its own section.
                 would_add.add(name.lower())
     return {
         "weekly_plan_id": weekly_plan_id,
@@ -7737,7 +7740,24 @@ def _settle_weekly_plan_approval(
             # reports are the same number rather than two different ways of
             # counting the same groceries. Persisted because neither is
             # recoverable later — see schema.sql on approved_grocery_added.
-            added_count = len({n.strip().lower() for n in added_items})
+            #
+            # And counted as what is to BUY (defect hunt, 2026-10-21): a line
+            # the list assumes is at home — a spice, sauce or pantry staple
+            # waiting unticked in its own section, status 'spice' (spices.py,
+            # pantry.py) — is not one. The toast said "Week approved · 10
+            # things to buy." over a list of nine, the oats in "Pantry
+            # staples this week", while Today's count and the receipt
+            # ('needed' only) said nine. Read off the lines as they landed,
+            # so the household's own oats a plan merged onto still count.
+            assumed = {
+                _grocery._merge_key(r["item"]) for r in conn.execute(
+                    "SELECT item FROM grocery_items WHERE household_id = ? AND status = 'spice'",
+                    (household_id(),),
+                ).fetchall()
+            }
+            added_count = len({
+                n.strip().lower() for n in added_items if _grocery._merge_key(n) not in assumed
+            })
             skipped_count = len({n.strip().lower() for n in already_have})
             # A rebuild that put nothing back (every line now skipped as
             # already-have, say) keeps the first approval's receipt: a 0
