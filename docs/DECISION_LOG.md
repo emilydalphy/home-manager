@@ -14,8 +14,8 @@ detail lives in the commit that made the change (`git log --oneline` /
 why*, not duplicating the diff.
 
 - **Census audit for write-then-raise: nothing else is reachable, nothing
-  converted** (2026-10-21; branch `overnight/census-write-then-refuse`, no
-  code change). After `digest.set_morning_text_for_member` (a write, then a
+  converted** (2026-10-21; branch `overnight/census-write-then-refuse`; one
+  one-line guard in `plan_meal`, below). After `digest.set_morning_text_for_member` (a write, then a
   refusal, with the lock held), every `UNPROTECTED_WRITERS` entry in
   `tests/test_connection_close_sweep.py` outside chores/digest was read for
   a write followed by a raise. Each was also fuzzed through its chat-tool
