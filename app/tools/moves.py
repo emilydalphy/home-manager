@@ -561,6 +561,43 @@ def _open_slot_moves(view: dict, day: date, dinner_clock: time) -> list[dict]:
     return moves
 
 
+def _missed_fridge_moves(view: dict, day: date, now: datetime) -> set[int]:
+    """
+    Fridge moves dated on an EARLIER day and never ticked, whose meal is
+    still ahead: the ids _prep_moves carries onto today as "still to do".
+
+    A fridge move is dated one or two days before its cook (defrost.
+    _move_date), and _prep_moves used to read only rows dated today — so a
+    move missed on Monday vanished on Tuesday from Now, the morning text
+    and the evening nudge, while the meat stayed in the freezer. Only Cook's
+    Tonight card, on the cook day itself, still said "— still to do"
+    (overnight hunt, 2026-10-21). The meal has to be in this view, still
+    to come today or later, and neither cooked nor started: a thaw for a
+    dinner already on the stove or eaten is not anything left to do. Only
+    on the real today (the tomorrow look-ahead must not repeat today's
+    rows), and only pending rows ('skipped' is the household's decline).
+    """
+    if day != now.date():
+        return set()
+    day_str = day.isoformat()
+    meals: dict[int, dict] = {}
+    for meal in view.get("meals") or []:
+        for i in (meal.get("entry_ids") or [meal.get("entry_id")]):
+            if i:
+                meals[i] = meal
+    carried: set[int] = set()
+    for task in view.get("prep_tasks") or []:
+        if (task.get("task_type") != "defrost" or task.get("status") != "pending"
+                or not task.get("task_date") or task["task_date"] >= day_str):
+            continue
+        meal = meals.get(task.get("meal_plan_entry_id"))
+        if (meal is None or (meal.get("date") or "") < day_str
+                or meal.get("cooked_status") == "done" or meal.get("cook_started_at")):
+            continue
+        carried.add(task["id"])
+    return carried
+
+
 def _prep_moves(view: dict, day: date, now: datetime, dinner_clock: time) -> list[dict]:
     """
     Fridge moves (task_type='defrost') and the rest of the day's prep.
@@ -593,9 +630,10 @@ def _prep_moves(view: dict, day: date, now: datetime, dinner_clock: time) -> lis
     window_end = datetime.combine(day, time(22, 0))
     evening = datetime.combine(day, dinner_clock)
     open_from = datetime.combine(day, time(0, 0))
+    carried = _missed_fridge_moves(view, day, now)
     moves = []
     for task in view.get("prep_tasks") or []:
-        if task.get("task_date") != day_str:
+        if task.get("task_date") != day_str and task.get("id") not in carried:
             continue
         is_fridge = task.get("task_type") == "defrost"
         # A holiday's shop row (big_meal.SHOP_MARK) is a shop, not a prep:
@@ -613,7 +651,9 @@ def _prep_moves(view: dict, day: date, now: datetime, dinner_clock: time) -> lis
         # and the Today tile used to offer it — so it counts as handled,
         # not as still waiting.
         done = task.get("status") in ("done", "skipped")
-        overdue = (not done) and evening < now
+        # A move carried from an earlier day is late from the moment the
+        # day starts: its own day has already gone by.
+        overdue = (not done) and (evening < now or task.get("id") in carried)
         when = "still to do" if overdue else "by tonight"
         reason = reason or (task.get("related_meal") and f"for {task['related_meal']}") or ""
         # What it's for, first; "still to do" only once it's running late —

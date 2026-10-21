@@ -1340,7 +1340,12 @@ def _for_a_later_meal(first: dict | None, dinner: dict) -> str:
     if not reason.lower().startswith("for "):
         return ""
     if first.get("kind") == "fridge":
-        return reason
+        # Always for a later day when it is dated today — but a move missed
+        # on an earlier day is carried onto Today until its cook (moves.
+        # _missed_fridge_moves), and on the cook day it is for TONIGHT's
+        # dish: "first — then", not "for Wednesday's Chili. Tonight: Chili".
+        entry = first.get("entry_id")
+        return "" if entry and entry == dinner.get("entry_id") else reason
     if first.get("kind") != "prep":
         return ""
     entry = first.get("entry_id")

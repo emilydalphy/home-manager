@@ -13,6 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A fridge move nobody ticked stays on Today until its cook** (2026-10-21,
+  overnight hunt; branch `overnight/defect-hunt-3-2026-10-21`; tests
+  `tests/test_missed_fridge_move_carries.py`). `_prep_moves` read only rows
+  dated today, so Monday's missed "Move the beef to the fridge" vanished on
+  Tuesday from Now, the morning text and the evening nudge ("Tap to start")
+  while Cook's card still said "still to do". `moves._missed_fridge_moves`
+  carries a pending defrost row onto the real today, overdue, while its meal
+  is today or later and neither cooked nor started. On the cook day the nudge
+  reads "Move the beef to the fridge first — then Chili". Not done: missed
+  general prep rows, and entry-less defrost rows, still drop with their day.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
