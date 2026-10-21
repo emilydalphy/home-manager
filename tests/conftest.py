@@ -400,6 +400,17 @@ def pytest_configure(config):
     global _REAL_EPOCH_AT_PIN, _FROZEN_EPOCH_AT_PIN
     pinned = _parse_pin(raw)
     at, offset = _freeze_args(raw)
+    # The SDK's response model is built HERE, before the freeze, because it
+    # cannot be built after it. anthropic defers `Message`'s pydantic schema
+    # to first use, and pydantic recognises a datetime field by comparing
+    # against `datetime.datetime` — which freezegun has swapped for
+    # FakeDatetime by then, so the lazy build raises "Unable to generate
+    # pydantic-core schema for <class 'datetime.datetime'>". That made the one
+    # @real_model_client test (test_chat_sessions_in_db.py's byte-for-byte
+    # round trip) fail under EVERY --today pin and pass unpinned — the pin
+    # failing, not the day. Production has no freezegun, so no app change.
+    from anthropic.types import Message as _SdkMessage
+    _SdkMessage.model_rebuild()
     _REAL_EPOCH_AT_PIN = time.time()
     config._pomona_freezer = freeze_time(at, tz_offset=offset, tick=True)
     config._pomona_freezer.start()
