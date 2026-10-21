@@ -4208,6 +4208,7 @@ def _maybe_auto_attribute_solo_night(recipe_id: int, recipe_name: str, rating: s
     Same trick household.py uses for the same reason.
     """
     from . import attendance as _attendance
+    from . import cooker as _cooker  # deferred for the same reason
 
     # try/finally on both connections, and the second one is why. The INSERT
     # below writes into member_recipe_feedback.rating, which carries
@@ -4224,18 +4225,27 @@ def _maybe_auto_attribute_solo_night(recipe_id: int, recipe_name: str, rating: s
     # could not see. mark_recipe_feedback's vocabulary guard closes today's
     # trigger; this is what makes the NEXT unexpected failure in here visible
     # instead of silent.
+    #
+    # A reheat is not a cook (defect hunt 2026-10-21): the dinner both ate
+    # Monday and the leftover lunch only Emily was home for are ticked
+    # together, and the lunch — newest by id — was read as the "last
+    # cooked", so "Chili wasn't a hit" became Emily's own verdict. Ticked
+    # leftovers / made-ahead nights are skipped by the rule the cook
+    # counter already uses (cooker._is_leftovers_night); the cook they eat
+    # from is the meal whose table the verdict is about.
     conn = get_conn()
     try:
-        entry = conn.execute(
+        rows = conn.execute(
             """
-            SELECT date, slot FROM meal_plan_entries
+            SELECT date, slot, derived_from_json FROM meal_plan_entries
             WHERE household_id = ? AND recipe_id = ? AND cooked_status = 'done'
-            ORDER BY COALESCE(cooked_at, created_at) DESC, id DESC LIMIT 1
+            ORDER BY COALESCE(cooked_at, created_at) DESC, id DESC
             """,
             (household_id(), recipe_id),
-        ).fetchone()
+        ).fetchall()
     finally:
         conn.close()
+    entry = next((r for r in rows if not _cooker._is_leftovers_night(r["derived_from_json"])), None)
     if not entry:
         return None
 

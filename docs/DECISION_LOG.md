@@ -13,6 +13,13 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Solo-night taste learning reads the cook, not its leftovers** (2026-10-21,
+  defect hunt; branch `overnight/hunt-taste-2026-10-21b`; tests
+  `tests/test_solo_taste_skips_reheats.py`). A dinner both adults ate plus a
+  leftover lunch only one was home for: rating the dish credited it to that
+  one person, because the reheat was the newest ticked row.
+  `_maybe_auto_attribute_solo_night` now skips leftovers / made-ahead nights
+  (`cooker._is_leftovers_night`, the cook counter's rule).
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
