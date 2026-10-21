@@ -1199,3 +1199,19 @@ def _agent_ast():
     if not _AGENT_AST:
         _AGENT_AST.append(_ast.parse(agent_source()))
     return _AGENT_AST[0]
+
+
+@pytest.fixture
+def snacks_as_the_model_sent_them(monkeypatch):
+    """
+    Stand the everyday-snack-list pass down (agent._hold_counts ->
+    everyday_snacks.enforce_snacks_from_list), so a snack name the stubbed
+    model sent survives. Since 2026-10-21 an invented snack is replaced by
+    one from data/everyday_snacks.json; a test of ANOTHER pass (the swap
+    tool, the grocery list, the no-repeat re-pick, the variety cap) that
+    drives the planner with its own snack names asks for this so it keeps
+    testing that pass. The list itself is tested in test_everyday_snacks.py.
+    """
+    from app.tools import everyday_snacks
+    monkeypatch.setattr(everyday_snacks, "enforce_snacks_from_list",
+                        lambda *a, **k: {"replaced": [], "left": [], "skipped": "test"})

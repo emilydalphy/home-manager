@@ -13,6 +13,24 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A week's snacks come from the everyday snack list** (2026-10-21; branch
+  `overnight/snacks-from-the-list`; tests `tests/test_everyday_snacks.py`).
+  The 40 snacks live in `data/everyday_snacks.json` (group, food groups,
+  allergens, per-person lines, a nut-free swap for each nut butter);
+  `app/tools/everyday_snacks.py` filters it per household in code (allergen
+  gate with the list's own tags, nut-free lunch, vegetarian/vegan/pescatarian,
+  dislikes, the two-week window), hands the model a least-recently-used
+  shortlist (`everyday_snacks.pick_from`), swaps a nut-butter list snack for
+  its nut-free version before the gate, and after the count fold
+  (`_hold_counts`, both runs, no model call) replaces any off-list / can't-have
+  / recent snack dish-for-dish, keeping the count and spread. Off-list stays
+  only when they asked for it, it's cooked, nothing fits, or an eating style
+  (keto, allowed-foods list) the code can't judge. `snack_variety`'s pool is
+  now this list (the old 12-snack pool is gone). Why code-side: prompt-only
+  is a request. Emily to decide: strict "from the list" vs "lean on it"; the
+  62 party snacks in the shared library are not removed, just replaced when
+  the model picks one.
+
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
