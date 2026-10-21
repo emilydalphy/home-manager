@@ -27,7 +27,10 @@ why*, not duplicating the diff.
   with) as no name: /api/household/leave says "your household", /api/share
   says "" (share.html keeps "This week's meals"). Why: nothing ever names
   one, so Preferences read "Delete Your household?" and a babysitter's link
-  "Your household's meals this week". Naming households is not built.
+  "Your household's meals this week". The recipe library's private-word
+  check reads it the same way, or "your" kept "Build-Your-Own Tacos" out of
+  the shared library for every email household. Naming households is not
+  built.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
