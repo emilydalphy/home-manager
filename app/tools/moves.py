@@ -571,11 +571,13 @@ def _missed_fridge_moves(view: dict, day: date, now: datetime) -> set[int]:
     move missed on Monday vanished on Tuesday from Now, the morning text
     and the evening nudge, while the meat stayed in the freezer. Only Cook's
     Tonight card, on the cook day itself, still said "— still to do"
-    (overnight hunt, 2026-10-21). The meal has to be in this view, still
-    to come today or later, and neither cooked nor started: a thaw for a
-    dinner already on the stove or eaten is not anything left to do. Only
-    on the real today (the tomorrow look-ahead must not repeat today's
-    rows), and only pending rows ('skipped' is the household's decline).
+    (overnight hunt, 2026-10-21). The meal has to be in this view, on a
+    LATER day, and not already ticked cooked. Not on the cook day itself:
+    by then it is too late to thaw in the fridge, and Now stays quiet about
+    it (tests/test_own_freezer_portion_thaw.py) — Cook's card still says
+    "still to do" there. Only on the real today (the tomorrow look-ahead
+    must not repeat today's rows), and only pending rows ('skipped' is the
+    household's decline).
     """
     if day != now.date():
         return set()
@@ -591,8 +593,7 @@ def _missed_fridge_moves(view: dict, day: date, now: datetime) -> set[int]:
                 or not task.get("task_date") or task["task_date"] >= day_str):
             continue
         meal = meals.get(task.get("meal_plan_entry_id"))
-        if (meal is None or (meal.get("date") or "") < day_str
-                or meal.get("cooked_status") == "done" or meal.get("cook_started_at")):
+        if meal is None or (meal.get("date") or "") <= day_str or meal.get("cooked_status") == "done":
             continue
         carried.add(task["id"])
     return carried

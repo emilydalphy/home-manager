@@ -26,9 +26,11 @@ why*, not duplicating the diff.
   Tuesday from Now, the morning text and the evening nudge ("Tap to start")
   while Cook's card still said "still to do". `moves._missed_fridge_moves`
   carries a pending defrost row onto the real today, overdue, while its meal
-  is today or later and neither cooked nor started. On the cook day the nudge
-  reads "Move the beef to the fridge first — then Chili". Not done: missed
-  general prep rows, and entry-less defrost rows, still drop with their day.
+  is on a LATER day and not ticked cooked. Never onto the cook day (too late
+  to thaw; `test_own_freezer_portion_thaw` pins Now quiet there), so that
+  evening's nudge still says "Tap to start" over Cook's "still to do" — left
+  for Emily. `test_thaw_follows_the_meal`'s swap catch now sees the carried
+  row on Now. Not done: missed general prep rows and entry-less defrost rows.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

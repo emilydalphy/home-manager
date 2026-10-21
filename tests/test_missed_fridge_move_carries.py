@@ -7,7 +7,7 @@ _prep_moves read only rows dated today, so a move missed on Monday vanished
 on Tuesday from Now, the morning text and the evening nudge while the meat
 stayed frozen — only Cook's Tonight card, on the cook day, still said
 "— still to do". moves._missed_fridge_moves carries such a row onto today,
-"still to do", while its meal is still ahead and neither cooked nor started.
+"still to do", while its meal is on a later day and not ticked cooked. Never onto the cook day itself (too late to thaw).
 """
 from __future__ import annotations
 
@@ -66,27 +66,19 @@ def test_a_move_missed_yesterday_is_still_on_today_and_in_the_morning_text():
     assert "Move the ground beef to the fridge — for Wednesday's Weeknight Chili." in text
 
 
-def test_on_the_cook_day_the_evening_nudge_says_it_first_then_the_dish():
-    _seed(chili_day=0)
-    assert len(_fridge(_at(17))) == 1
-    assert digest.build_evening_nudge(_at(17), link=False) == \
-        "Move the ground beef to the fridge first — then Weeknight Chili."
-
-
-def test_not_carried_once_ticked_started_cooked_or_its_night_has_gone():
-    entry, task = _seed(chili_day=0)
-    # The look-ahead at tomorrow never repeats today's carried row.
+def test_not_carried_onto_the_cook_day_or_once_ticked_or_cooked():
+    entry, task = _seed(chili_day=2)  # move due today; carried tomorrow only
+    tomorrow = _at(7, day=1)
+    # The look-ahead at tomorrow never repeats today's own row.
     assert len(_fridge(_at(7))) == 1
-    ahead = _moves.moves_for_day(TODAY + dt.timedelta(days=1), now=_at(7))
-    assert not [m for m in ahead if m["kind"] == "fridge"]
-    # The night after its cook: nothing left to thaw for.
-    assert _fridge(_at(7, day=1)) == []
-    tools.start_cooking(entry)
-    assert _fridge(_at(17)) == []
-    conn = get_conn()
-    conn.execute("UPDATE meal_plan_entries SET cook_started_at = NULL WHERE id = ?", (entry,))
-    conn.commit()
-    conn.close()
-    assert len(_fridge(_at(17))) == 1
+    assert not [m for m in _moves.moves_for_day(TODAY + dt.timedelta(days=1), now=_at(7))
+                if m["kind"] == "fridge"]
+    assert len(_fridge(tomorrow)) == 1
+    # The cook day itself: too late to thaw, and Now stays quiet (as before).
+    assert _fridge(_at(7, day=2)) == []
+    tools.check_off_meal(entry, "done")
+    assert _fridge(tomorrow) == []
+    tools.check_off_meal(entry, "pending")
+    assert len(_fridge(tomorrow)) == 1
     tools.check_off_prep_step(task, "skipped")
-    assert _fridge(_at(17)) == []
+    assert _fridge(tomorrow) == []
