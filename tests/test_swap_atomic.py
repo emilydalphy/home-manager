@@ -476,7 +476,7 @@ def test_resolve_open_slot_route_says_nothing_changed_and_is_telling_the_truth(s
     assert _snapshot() == before
 
 
-def test_the_generation_snack_repair_leaves_the_day_intact_on_a_failure(monkeypatch, caplog):
+def test_the_generation_snack_repair_leaves_the_day_intact_on_a_failure(monkeypatch, caplog, snacks_as_the_model_sent_them):
     """
     The one generation path that swaps: repair_snack_clashes, taking another
     day's snack for a day whose own snack repeats its breakfast when no

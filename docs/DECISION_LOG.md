@@ -20,8 +20,10 @@ why*, not duplicating the diff.
   `app/tools/everyday_snacks.py` filters it per household in code (allergen
   gate with the list's own tags, nut-free lunch, vegetarian/vegan/pescatarian,
   dislikes, the two-week window), hands the model a least-recently-used
-  shortlist (`everyday_snacks.pick_from`), swaps a nut-butter list snack for
-  its nut-free version before the gate, and after the count fold
+  shortlist (`everyday_snacks.pick_from`), reads every list snack the model
+  sent with the list's own tags before the gate (nut butter -> its swap;
+  can't-have -> held, and a held snack is re-picked from the list with no
+  model call instead of left open), and after the count fold
   (`_hold_counts`, both runs, no model call) replaces any off-list / can't-have
   / recent snack dish-for-dish, keeping the count and spread. Off-list stays
   only when they asked for it, it's cooked, nothing fits, or an eating style

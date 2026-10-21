@@ -121,21 +121,42 @@ def test_four_weeks_rotate_through_the_list(household, monkeypatch):
 
 
 def test_a_nut_allergy_gets_the_nut_free_swap_and_never_a_nut(household, monkeypatch):
+    """A nut butter on the list becomes its bracketed swap; an invented
+    peanut-butter snack the gate holds back is re-picked from the list, not
+    left open; and a saved recipe under a list name that is made with
+    peanut butter is never the pick (review, 2026-10-21)."""
     tools.set_member_dietary_restrictions("Sam", ["tree nut allergy", "peanut allergy"])
+    tools.add_recipe(name="Cottage Cheese with Pineapple and Crackers", default_servings=2,
+                     food_groups=["protein", "carb"],
+                     ingredients=[{"item": "cottage cheese", "qty": "1 cup"}, {"item": "peanut butter", "qty": "2 tbsp"}])
     nutty = ["Rice Cakes with Almond Butter and Banana", "Dates Stuffed with Peanut Butter",
-             "Muhammara with Veg Sticks and Pita", "Ants on a Log with Almond Butter and Dried Cherries"]
+             "Apple with Peanut Butter", "Ants on a Log with Almond Butter and Dried Cherries"]
     shortlist = everyday_snacks.prompt_context(tools.get_household_memory(), _monday())["pick_from"]
     assert not any("almond" in s["name"].lower() or "peanut" in s["name"].lower()
                    or "muhammara" in s["name"].lower() for s in shortlist), shortlist
-    plan_id = _plan(monkeypatch, _monday(), _week(_monday(), snacks=nutty))
-    names = {m["meal"] for m in _snacks(plan_id)}
+    days = _week(_monday(), snacks=nutty)
+    for d in days:  # the model's own lines name the nut, as a real draft's would
+        if d["slot"] == "snack" and "Butter" in d["meal_name"]:
+            d["ingredients"] = [{"item": "peanut butter" if "Peanut" in d["meal_name"] else "almond butter", "qty": "2 tbsp"}]
+    plan_id = _plan(monkeypatch, _monday(), days)
+    snacks = _snacks(plan_id)
+    names = {m["meal"] for m in snacks}
     nut_list = {s["name"] for s in everyday_snacks.load_list()
                 if {"nuts", "peanuts"} & set(s["allergens"])}
     assert not names & nut_list, names
     assert "Rice Cakes with Sunflower Butter and Banana" in names, names
     assert "Ants on a Log with Sunflower Butter and Dried Cherries" in names, names
     assert "Dates Stuffed with Goat Cheese" in names, names
-    assert names <= _list_names()
+    assert "Cottage Cheese with Pineapple and Crackers" not in names, names
+    assert names <= _list_names(), names
+    # Every day keeps its two snacks: nothing held back was left open.
+    assert len(snacks) == 14, sorted((m["date"], m["meal"]) for m in snacks)
+
+
+def test_a_swap_a_house_with_no_nut_rule_was_given_stays(household, monkeypatch):
+    swap = "Rice Cakes with Sunflower Butter and Banana"
+    names = {m["meal"] for m in _snacks(_plan(monkeypatch, _monday(), _week(_monday(), snacks=[swap] + OFF_LIST[:3])))}
+    assert swap in names and "Rice Cakes with Almond Butter and Banana" not in names, names
 
 
 def test_a_snack_they_asked_for_stays_off_list(household, monkeypatch):

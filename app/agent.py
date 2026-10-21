@@ -7490,9 +7490,11 @@ def _generate_weekly_plan(
     # A list snack this house can only have nut-free ("Rice Cakes with
     # Almond Butter") becomes the list's own swap before the gate would
     # hold it back and lose the snack (tools/everyday_snacks.py).
-    if not is_component_based:
-        _everyday_snacks.swap_for_household(items, effective_memory)
+    # One it can't have at all (read with the list's own allergen tags) is
+    # held back here like any clashing dish.
+    listed_held = [] if is_component_based else _everyday_snacks.swap_for_household(items, effective_memory)
     items, held_back = _allergen_gate.split_safe(items, hard_avoidances)
+    held_back = listed_held + held_back
     items = GeneratedDays(items)
     items.report = plan_report
     if held_back and not items:
@@ -7692,6 +7694,12 @@ def _generate_weekly_plan(
             # question. The stream is told as each lands, so a screen
             # holding "Finding another breakfast…" fills that row then.
             in_scope_held = [h for h in held_back if (h["item"].get("date") or "") in in_scope]
+            # A held SNACK is re-picked from the everyday list first, with
+            # no model call (everyday_snacks.fill_held_snacks).
+            if in_scope_held:
+                in_scope_held = _everyday_snacks.fill_held_snacks(
+                    plan_id, in_scope_held, effective_memory, content_start_date,
+                )
             if in_scope_held:
                 try:
                     _allergen_gate.repick_held(

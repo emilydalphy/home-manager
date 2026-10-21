@@ -104,7 +104,9 @@ def asks_for_same_snacks(*texts: str | None) -> bool:
 # restriction is written in, matched for allergies only (review,
 # 2026-10-19: a "milk allergy" house was offered yogurt and cheddar). The
 # pool protects itself rather than waiting on the matcher.
-# SNACK_POOL is the whole list, unfiltered, in that shape.
+# SNACK_POOL is the whole list, UNFILTERED (nut snacks included), in that
+# shape — for reading only; anything that picks from it goes through
+# everyday_snacks.eligible, as _pool_pick below does.
 SNACK_POOL: list[dict] = [_everyday.as_pool(s) for s in _everyday.load_list()]
 
 
@@ -177,12 +179,13 @@ def _week_text(plan_id: int) -> str:
 
 
 def _overlap(pool: dict, week_text: str) -> int:
-    return sum(1 for line in pool["lines"] if line[4] in week_text)
+    # From the start of a word: "pea" (snap peas) is not in "chickpea".
+    return sum(1 for line in pool["lines"]
+               if line[4] and re.search(rf"\b{re.escape(line[4])}", week_text))
 
 
 def _disliked(pool: dict, dislikes: list[str]) -> bool:
-    words = " ".join([pool["name"]] + [l[0] for l in pool["lines"]]).lower()
-    return any(d and d.strip().lower() in words for d in dislikes or [])
+    return _everyday.disliked(" ".join([pool["name"]] + [l[0] for l in pool["lines"]]), dislikes)
 
 
 def _spread(n: int, keep: int) -> list[int]:
