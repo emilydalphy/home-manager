@@ -116,6 +116,17 @@ _WHEAT_WORDS = {
     "rigatoni", "ravioli", "tortellini", "fusilli", "farfalle", "ziti", "pappardelle",
     "gnocchi", "dough", "tempura", "wonton", "pastry", "phyllo", "filo", "roux", "beer",
     "sourdough", "focaccia", "brioche", "challah", "lo mein",
+    # Third audit (2026-10-21, snacks builder): the bought wheat foods whose
+    # flour is never written as an ingredient. "Apple slices with cheddar and
+    # pretzels" passed the gate for a gluten-free child. A "gluten-free
+    # pretzels" / "GF crackers" line is still believed (_GLUTEN_FREE_SEGMENT_RE).
+    # Not "tortilla" (corn ones are the gluten-free kind; "flour tortilla" is
+    # caught on "flour"), "bun" (Vietnamese bún is rice noodle), "cookie" or
+    # "cake" (often flourless, and their lists say flour when they have it).
+    # Not "graham" either: it is a person's name, and big_meal keeps a food
+    # word in a guest note, so "no nuts for Graham" became the phrase "nuts
+    # graham" and found no nuts (review). Graham crackers trip on "cracker".
+    "pretzel", "cracker", "baguette", "ciabatta", "matzo", "matzah",
 }
 _ALLERGEN_ALIASES: dict[str, set[str]] = {
     "nut": {"peanut", "walnut", "almond", "cashew", "pecan", "hazelnut",

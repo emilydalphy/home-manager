@@ -13,6 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A gluten / wheat / celiac restriction holds back pretzels and crackers**
+  (2026-10-21, defect hunt; branch `overnight/allergen-gate-knows-pretzels`;
+  tests `tests/test_gluten_gate_knows_pretzels.py`). `_WHEAT_WORDS` gained
+  pretzel, cracker, baguette, ciabatta, matzo, matzah: "Apple slices
+  with cheddar and pretzels" passed the hard gate for a gluten-free child.
+  Why: bought wheat foods never list flour. "gluten-free pretzels" / "GF
+  crackers" are still believed. Left out on purpose: tortilla (corn), bun
+  (bún), cookie, cake, and graham (a name: "no nuts for Graham" lost its nuts). Still open: "vegetarian" / "vegan" / "no meat"
+  restrictions hold back nothing (see the celiac entry below).
+
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
