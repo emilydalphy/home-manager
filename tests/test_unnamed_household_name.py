@@ -54,3 +54,13 @@ def _name_of(hid: int) -> str:
         conn.close()
     assert name and name != account_email.NEW_HOUSEHOLD_NAME
     return name
+
+
+def test_your_is_not_a_private_word_for_an_unnamed_household():
+    # "Your household" fed "your" into the library's private words, so
+    # "Build-Your-Own Tacos" was never filed for any email household.
+    from app import tools
+    from app.tools import recipe_library
+    hid = account_email.create_household_for("unnamed-library@example.com")
+    with tools.use_household(hid):
+        assert "your" not in recipe_library._household_words()

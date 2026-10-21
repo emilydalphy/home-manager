@@ -163,6 +163,8 @@ def household_display_name(name: str | None) -> str:
     """The household's name for a sentence, or "" when it has none of its own."""
     clean = (name or "").strip()
     return "" if clean == UNNAMED_HOUSEHOLD else clean
+
+
 # The people meals are planned for (2026-09-30). A helper added as
 # "Someone not eating here" (members.eats_here = 0) signs in and sees the
 # plan and the list, but is left out of everything that decides who eats:
