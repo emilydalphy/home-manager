@@ -196,6 +196,11 @@ def plan_meal(
     # take the "dinner" default, so this does not narrow them — checked, not
     # assumed (agent.py's component branch and swap_component_in_plan).
     _weekly_plan.validate_slot(slot)
+    # The column is NOT NULL, and generation passes the model's own value
+    # (day.get("reasoning", "") is None when the JSON says null): the
+    # insert raised with the write lock held and the week stopped halfway
+    # (census audit, 2026-10-21). A null "why" is no "why".
+    reasoning = reasoning or ""
 
     own_conn = conn is None
     if own_conn:

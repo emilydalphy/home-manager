@@ -29,8 +29,9 @@ why*, not duplicating the diff.
   `save_prep_tasks` related_meal) or a bad FK id from internal callers
   (`attach_intake_to_plan`, `plan_slot_empty`). The one model-shaped edge is
   `agent`'s `day.get("reasoning", "")` into `plan_meal`: a JSON null would
-  trip NOT NULL mid-generation. It is left alone because no such output has
-  been seen. The census is unchanged.
+  trip NOT NULL mid-generation, so `plan_meal` now reads a None reasoning
+  as "" (`tests/test_plan_meal_null_reasoning.py`) — one line, every caller.
+  The census is unchanged.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
