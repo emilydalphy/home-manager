@@ -38,7 +38,7 @@ def _leftover_lunch(cook_date: str, lunch_date: str, away: str | None) -> int:
     if away:
         tools.set_member_attendance(lunch_date, "lunch", away, present=False)
     return tools.plan_meal(
-        lunch_date, "Chili", slot="lunch", derived_from={"links_to": f"{cook_date} dinner"},
+        lunch_date, "Chili", slot="lunch", derived_from={"links_to": f"{cook_date}:dinner"},
     )["entry_id"]
 
 
@@ -82,4 +82,20 @@ def test_a_ticked_reheat_with_no_ticked_cook_teaches_nobody():
     tools.check_off_meal(_leftover_lunch(mon, tue, away="Vineeth"))
 
     assert tools.mark_recipe_feedback("Chili", rating="liked")["solo_auto_attribution"] is None
+    assert _per_person_rows() == []
+
+
+def test_a_reheat_never_reaches_back_to_an_older_solo_cook():
+    # Review find: with this week's shared dinner unticked and only Emily's
+    # leftover lunch ticked, skipping the reheat walked on to a solo bowl
+    # Vineeth had three weeks ago and made "Not a hit" his. The reheat
+    # stands for its own cook — shared — so nobody is credited.
+    _couple_and_chili()
+    old, mon, tue = household_date(-20), household_date(-2), household_date(-1)
+    tools.set_member_attendance(old, "dinner", "Emily", present=False)
+    tools.check_off_meal(tools.plan_meal(old, "Chili", slot="dinner")["entry_id"])
+    tools.plan_meal(mon, "Chili", slot="dinner")
+    tools.check_off_meal(_leftover_lunch(mon, tue, away="Vineeth"))
+    result = tools.mark_recipe_feedback("Chili", rating="disliked")
+    assert result["solo_auto_attribution"] is None
     assert _per_person_rows() == []
