@@ -13,6 +13,21 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The passphrase form's ninth try is the sign-in page, not JSON**
+  (2026-10-21; branch `overnight/hunt-accounts-2026-10-21b`; tests
+  `tests/test_login_too_many_tries.py`). Over the "login" bucket, POST /login
+  now re-renders /login (429) with "That’s a lot of tries. Wait a few
+  minutes, then try again." in the passphrase banner, `next` kept. Why: it
+  is a plain form post, so the 429's `{"detail": …}` WAS the page — no form,
+  and no way back in the iPhone app's web view.
+- **An email sign-up's household is never called "Your household"**
+  (2026-10-21; branch `overnight/hunt-accounts-2026-10-21b`; tests
+  `tests/test_unnamed_household_name.py`). `_shared.household_display_name`
+  reads the placeholder (`UNNAMED_HOUSEHOLD`, which `account_email` creates
+  with) as no name: /api/household/leave says "your household", /api/share
+  says "" (share.html keeps "This week's meals"). Why: nothing ever names
+  one, so Preferences read "Delete Your household?" and a babysitter's link
+  "Your household's meals this week". Naming households is not built.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

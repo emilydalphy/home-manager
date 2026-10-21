@@ -150,6 +150,19 @@ def use_member(value: int | None) -> Iterator[int | None]:
 
 
 _ADULT_SQL = "LOWER(TRIM(age_group)) = 'adult'"
+
+# The name an email sign-up's household is created with (app/account_email.py,
+# 2026-10-05). Nothing asks for a real one yet, so it is a placeholder, not a
+# name: said as one it read "Delete Your household?" in Preferences and "Your
+# household's meals this week" to the babysitter holding the share link
+# (defect hunt, 2026-10-21).
+UNNAMED_HOUSEHOLD = "Your household"
+
+
+def household_display_name(name: str | None) -> str:
+    """The household's name for a sentence, or "" when it has none of its own."""
+    clean = (name or "").strip()
+    return "" if clean == UNNAMED_HOUSEHOLD else clean
 # The people meals are planned for (2026-09-30). A helper added as
 # "Someone not eating here" (members.eats_here = 0) signs in and sees the
 # plan and the list, but is left out of everything that decides who eats:
