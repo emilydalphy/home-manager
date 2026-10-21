@@ -13,6 +13,17 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A household's own line comes back to the same number after Swap then Undo**
+  (2026-10-21, overnight; branch `overnight/own-line-undo-no-creep`, built on
+  `overnight/defect-hunt-2-2026-10-21` and to merge after it; tests
+  `tests/test_own_line_undo_no_creep.py`). Onions 14 + a hand-added 2 = 16 (the
+  household's own line), Swap 17, Undo stayed 17 over a ledger back at 14.0, and
+  each cycle added one: a plan's add rounded one meal's share alone (0.5 -> 1)
+  while every removal took back only ceil(ledger) moves. The add now restates
+  the line the same way (`grocery._restate_standing_want_after_add`, from
+  `WeekGroceryBuffer.flush`), held between the line's old number and the plain
+  add's; spices and store-unit lines are left as before.
+
 - **A meal added to an approved week rounds the plan's line once** (2026-10-21,
   defect hunt; branch `overnight/defect-hunt-2-2026-10-21`; tests
   `tests/test_plan_line_rounds_once_after_an_add.py`). Swap then Undo read 21

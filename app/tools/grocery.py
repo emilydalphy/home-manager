@@ -1177,6 +1177,67 @@ def _restate_standing_want(
     return _quantities._with_note(written, note), False
 
 
+def _ledger_quantities(item_id: int, conn) -> list[str]:
+    """Every per-meal ledger row's quantity on one grocery line."""
+    return [
+        row["quantity"] or ""
+        for row in conn.execute(
+            "SELECT quantity FROM meal_plan_grocery_links WHERE household_id = ? AND grocery_item_id = ?",
+            (household_id(), item_id),
+        ).fetchall()
+    ]
+
+
+def _restate_standing_want_after_add(
+    item_id: int, previous_qty: str, prior_ledger: list[str], merged_qty: str, conn=None,
+) -> None:
+    """
+    The ADD half of _restate_standing_want: a plan's meal joining a
+    household's own line puts on what the plan's ROUNDED total moved by —
+    ceil(ledger after) - ceil(ledger before) — not the meal's share rounded
+    on its own.
+
+    add_grocery_item sums the incoming amount, rounded alone, onto the line
+    (half an onion goes on as a whole one). Every removal then takes back
+    only the rounded-total difference, so the extra stayed on as if the
+    household had typed it: Swap then Undo read 16 -> 17 -> 17 over a
+    ledger back at exactly 14.0, and every cycle added an onion (overnight
+    2026-10-21). Restating with the same arithmetic both ways is what makes
+    there-and-back land where it started.
+
+    Held between what the line read before (the household's own amount is
+    never lost) and what the plain add wrote (a line the household edited
+    down, which the restate cannot see, does no worse than it did). Leaves
+    the add's answer alone wherever the restate declines (None).
+    """
+    own_conn = conn is None
+    conn = conn or get_conn()
+    try:
+        totals = _quantities._ledger_totals(_ledger_quantities(item_id, conn), prior_ledger)
+        if totals is None:
+            return
+        total_after, total_before, unit = totals
+        restated = _restate_standing_want(previous_qty, total_before, total_after, unit)
+        if restated is None or restated[1]:
+            return
+        new_qty = _quantities._with_note(
+            _quantities._split_quantity_note(restated[0])[0], _quantities._quantity_note(merged_qty),
+        )
+        new_qty = _no_more_than(new_qty, merged_qty)
+        if _more_than(previous_qty, new_qty):
+            new_qty = merged_qty
+        if new_qty != merged_qty:
+            conn.execute(
+                "UPDATE grocery_items SET quantity = ? WHERE id = ? AND household_id = ?",
+                (new_qty, item_id, household_id()),
+            )
+            if own_conn:
+                conn.commit()
+    finally:
+        if own_conn:
+            conn.close()
+
+
 def _reverse_meal_grocery_contributions(entry_id: int, conn=None, only_items=None, only_link_ids=None) -> dict:
     """
     Undo whatever a meal_plan_entries row added to the grocery list, via the
@@ -1501,6 +1562,7 @@ def add_grocery_item(
     source_weekly_plan_id: int | None = None,
     quantity_mode: str = "sum",
     conn=None,
+    report_previous: bool = False,
 ) -> dict:
     """
     Add an item to the grocery list. If an item with the same name is
@@ -1691,7 +1753,15 @@ def add_grocery_item(
         if own_conn:
             conn.commit()
             conn.close()
-        return {"item_id": item_id, "item": item_name, "quantity": merged_qty, "merged": True, "units_reconciled": merged}
+        result = {"item_id": item_id, "item": item_name, "quantity": merged_qty, "merged": True, "units_reconciled": merged}
+        if report_previous:
+            # What the line read before this add, and whether it was the
+            # household's own: WeekGroceryBuffer.flush restates a standing
+            # want from them (_restate_standing_want_after_add). Asked for,
+            # not always said: this dict is what the add route and chat see.
+            result.update(previous_quantity=existing["quantity"] or "", standing=keep_standing,
+                          status=existing["status"])
+        return result
 
     # Who added it: the adult picked on this device, when the caller did
     # not say (the shell sends nothing; the offline queue replays the same

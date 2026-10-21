@@ -4960,13 +4960,36 @@ class WeekGroceryBuffer:
             qty = _quantities._with_note(_quantities._format_quantity(rounded, unit), line["note"])
             add_result = _grocery.add_grocery_item(
                 line["item"], quantity=qty, category=line["category"], added_by="ai",
-                source_weekly_plan_id=self.weekly_plan_id, conn=self.conn,
+                source_weekly_plan_id=self.weekly_plan_id, conn=self.conn, report_previous=True,
             )
+            # A plan's share that joined a household's own line (a standing
+            # want) is restated off the ledger's rounded total once its links
+            # are in — grocery._restate_standing_want_after_add, the mirror of
+            # what every removal does to that line. Not a spice (one jar,
+            # _rack_quantity) or a store-unit line (_store_amount).
+            restate_own = (
+                add_result.get("merged") and add_result.get("standing")
+                and add_result.get("status") == "needed" and self.weekly_plan_id is not None
+                and not _grocery._store_kind(line["item"]) and not _spices.is_spice(line["item"])
+            )
+            prior_ledger = None
+            if restate_own:
+                read_conn = self.conn or get_conn()
+                try:
+                    prior_ledger = _grocery._ledger_quantities(add_result["item_id"], read_conn)
+                finally:
+                    if self.conn is None:
+                        read_conn.close()
             for entry_id, share in zip(entry_ids, shares):
                 _record_grocery_link(
                     entry_id, line["item"], add_result["item_id"],
                     _ledger_share(share, line["unit"], unit), conn=self.conn,
                     measure=line["measures"].get(entry_id),
+                )
+            if prior_ledger is not None:
+                _grocery._restate_standing_want_after_add(
+                    add_result["item_id"], add_result["previous_quantity"], prior_ledger,
+                    add_result["quantity"], conn=self.conn,
                 )
             # A counted pack that landed on a line the plan already had is
             # re-read from the whole ledger, so two passes' cartons don't
