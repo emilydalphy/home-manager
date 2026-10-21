@@ -1767,10 +1767,20 @@ def list_built_at() -> str:
     off the status alone; it is the rows ticked since the list was last
     built. The next approval moves the window, and last week's ticks stop
     being drawn as this week's.
+
+    A RE-approval is not a new list (2026-10-21, defect hunt): reopening a
+    week clears its approved_at and approving it again re-stamps it, so
+    Tuesday's ticks vanished from the checklist when Thursday's dinner was
+    changed on Wednesday — under a toast saying "Nothing has come off your
+    shopping list" — and while it sat reopened, last week's ticks came
+    back instead. A plan's first approval (weekly_plans.list_built_at,
+    never cleared) is when its list was built; approved_at stands in for a
+    plan approved before that column existed.
     """
     conn = get_conn()
     row = conn.execute(
-        "SELECT MAX(approved_at) AS at FROM weekly_plans WHERE household_id = ? AND approved_at IS NOT NULL",
+        "SELECT MAX(COALESCE(list_built_at, approved_at)) AS at FROM weekly_plans "
+        "WHERE household_id = ? AND COALESCE(list_built_at, approved_at) IS NOT NULL",
         (household_id(),),
     ).fetchone()
     fallback = conn.execute("SELECT datetime('now', '-7 days') AS at").fetchone()["at"]

@@ -7497,7 +7497,8 @@ def _settle_weekly_plan_approval(
         # built the list.
         flipped = conn.execute(
             "UPDATE weekly_plans SET status = 'approved', updated_at = datetime('now'), "
-            "approved_by = ?, approved_by_member_id = ?, approved_at = datetime('now') "
+            "approved_by = ?, approved_by_member_id = ?, approved_at = datetime('now'), "
+            "list_built_at = COALESCE(list_built_at, datetime('now')) "
             "WHERE id = ? AND household_id = ? AND status != 'approved'",
             (approved_by.strip(), approved_by_member_id, weekly_plan_id, household_id()),
         ).rowcount

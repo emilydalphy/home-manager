@@ -662,6 +662,14 @@ _MIGRATIONS = [
     # nothing for THIS plan and every other plan is untouched. Set through
     # set_prep_days(this_week_only=True).
     ("weekly_plans", "skip_prep_this_week", "INTEGER NOT NULL DEFAULT 0"),
+    # When this plan's approval FIRST built the shopping list (2026-10-21,
+    # defect hunt). approved_at is cleared by a reopen and re-stamped by the
+    # re-approval, and Shop's ticked rows are the ones bought since the list
+    # was built (grocery.list_built_at): reopening Wednesday to change
+    # Thursday's dinner made Tuesday's ticks vanish off the checklist. Set
+    # once, never cleared. NULL on plans approved before it existed — the
+    # reader falls back to approved_at for those.
+    ("weekly_plans", "list_built_at", "TEXT"),
     # Loop Board "A browser error tells us nothing" (Emily, 2026-09-10). The
     # whole record of a real tester's crash was kind=client, where=/,
     # detail='browser error' — true, and impossible to find in the code. So
