@@ -13,6 +13,17 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A past dinner nobody ticked counts as eaten for inventory** (2026-10-21,
+  Loop Board; branch `overnight/past-dinner-counts-as-eaten`; tests
+  `tests/test_past_dinner_counts_as_eaten.py`). Last week's ticked tortillas
+  and beef stayed "at home" because the tacos were never marked cooked, so
+  this week's tacos got neither. `_KitchenStock.reserve_bought_for_meals_ahead`
+  now also claims a past meal's ledger share (no depletion stamp, no
+  `skipped_at`) while the shelf row its tick wrote still exists; approval
+  ingest, pre-shop and defrost all read it. Read-side only: no inventory row
+  is changed, so a later "We skipped it" puts the food back. Reverses the
+  2026-10-12 "past meal left out on purpose" call (its guard test flipped).
+  Default "assume it was eaten" is Emily's open question.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
