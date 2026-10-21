@@ -13,6 +13,12 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **One tap on Today's dock runs its action once** (2026-10-21, overnight
+  hunt; branch `overnight/defect-hunt-3-2026-10-21`; tests
+  `tests/test_today_dock_fires_once.py`). renderTodayMoves bound every
+  `[data-move-action]` in the panel after renderTodayDock had bound the
+  dock's own, so a dock "Done"/"Mark eaten" posted a tick AND an untick from
+  one tap and the two raced. The panel-wide binding now skips the dock.
 - **A fridge move nobody ticked stays on Today until its cook** (2026-10-21,
   overnight hunt; branch `overnight/defect-hunt-3-2026-10-21`; tests
   `tests/test_missed_fridge_move_carries.py`). `_prep_moves` read only rows

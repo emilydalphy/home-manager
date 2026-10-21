@@ -3271,6 +3271,10 @@
       });
     });
     panel.querySelectorAll('[data-move-action]').forEach(function (btn) {
+      // The dock's button is in the panel too, and renderTodayDock (above)
+      // has already bound it: a second listener ran one tap twice, so a
+      // dock "Done" ticked and unticked at once (overnight hunt, 2026-10-21).
+      if (btn.closest && btn.closest('#today-dock')) return;
       btn.addEventListener('click', function () {
         runTodayMoveAction(panel, btn.getAttribute('data-move-action'));
       });
