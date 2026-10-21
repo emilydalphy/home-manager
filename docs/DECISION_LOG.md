@@ -21,6 +21,8 @@ why*, not duplicating the diff.
   ticks vanished on Wednesday's reopen+approve (and last week's showed while
   reopened). New `weekly_plans.list_built_at`, stamped on a plan's first
   approval and never cleared; the reader falls back to `approved_at`.
+  Startup's `_backfill_list_built_at` copies `approved_at` into plans that
+  predate the column, so the week running on deploy day is covered too.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

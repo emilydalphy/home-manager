@@ -1301,6 +1301,22 @@ def _backfill_snack_dishes_set(conn):
     )
 
 
+def _backfill_list_built_at(conn):
+    """
+    A plan approved before list_built_at existed (2026-10-21) gets its
+    approval time, so the week running on deploy day is covered too: left
+    NULL, its first reopen cleared approved_at and the re-approval stamped
+    list_built_at = now — the very ticks-vanish bug the column fixes.
+    Idempotent: from then on every approval sets both columns, and only a
+    NULL is ever filled. A week already reopened at deploy has nothing to
+    copy and stays as it was.
+    """
+    conn.execute(
+        "UPDATE weekly_plans SET list_built_at = approved_at "
+        "WHERE list_built_at IS NULL AND approved_at IS NOT NULL"
+    )
+
+
 def _run_migrations(conn):
     for table, column, coltype in _MIGRATIONS:
         existing = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
@@ -1332,6 +1348,7 @@ def _run_migrations(conn):
     _backfill_snack_dishes(conn)
     _backfill_snack_dishes_set(conn)
     _backfill_timezone_set(conn)
+    _backfill_list_built_at(conn)
     _migrate_chore_modes(conn)
     _backfill_chore_done_on(conn)
     _backfill_primary_member(conn)

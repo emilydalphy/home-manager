@@ -100,3 +100,27 @@ def test_the_next_weeks_approval_still_starts_a_new_list(signed_in, frozen_today
     frozen_today(household_pin(9, on=monday))
     _week(signed_in, monday, meal="Salad")
     assert _names(signed_in, "bought") == [], "last week's beef is drawn as last week's, not this one's"
+
+
+def test_a_week_approved_before_the_column_existed_is_covered_too(signed_in, frozen_today):
+    # The week running on deploy day was approved by the old code, so its
+    # list_built_at is NULL. Startup's backfill copies its approval time in;
+    # without it, its first reopen loses Tuesday's ticks exactly as before.
+    from app import db
+    _recipes()
+    monday = _this_monday()
+    frozen_today(household_pin(9, on=monday))
+    plan = _week(signed_in, monday)
+    conn = db.get_conn()
+    conn.execute("UPDATE weekly_plans SET list_built_at = NULL WHERE id = ?", (plan,))
+    conn.commit()
+    conn.close()
+    db.init_db()  # the deploy's startup
+
+    frozen_today(household_pin(17, on=monday + dt.timedelta(days=1)))
+    beef = _ids(signed_in)["Ground beef"]
+    signed_in.post(f"/api/grocery-list/{beef}/status", json={"status": "purchased"})
+    frozen_today(household_pin(9, on=monday + dt.timedelta(days=2)))
+    assert signed_in.post(f"/api/week/{monday}/reopen").status_code == 200
+    assert signed_in.post(f"/api/week/{monday}/approve", json={"approved_by": "Emily"}).status_code == 200
+    assert _names(signed_in, "bought") == ["Ground beef"]

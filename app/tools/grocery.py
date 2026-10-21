@@ -1755,9 +1755,9 @@ def add_grocery_items(items: list, category: str = "other", added_by: str = "use
 def list_built_at() -> str:
     """
     When the household's list was last BUILT, as the UTC timestamp the
-    grocery_items stamps compare against: the most recent approval of a
-    week (weekly_plans.approved_at — approving is what writes the list,
-    see approve_weekly_plan), or seven days ago for a household that has
+    grocery_items stamps compare against: the most recent FIRST approval
+    of a week (weekly_plans.list_built_at — approving is what writes the
+    list, see approve_weekly_plan), or seven days ago for a household that has
     never approved one and shops from a hand-made list.
 
     This is the window the Shop tab's checklist reads its BOUGHT rows in
