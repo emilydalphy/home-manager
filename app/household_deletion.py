@@ -375,10 +375,16 @@ def removal_check(household_id: int, member_id: int | None) -> str | None:
     return None
 
 
-def remove_member(household_id: int, member_id: int) -> dict:
+def remove_member(household_id: int, member_id: int, by_member_id: int | None = None) -> dict:
     """
     Take one adult out of a household that keeps at least one other adult.
     Returns {"table.column": rows touched}.
+
+    `by_member_id` is who asked, when it is not the person leaving: the
+    main person taking a former nanny or an ex-partner out from their row
+    in Who's here (2026-10-21). It changes the log line only — what goes
+    and what stays is the same as "Remove me", by design. Who may ask is
+    the route's to decide (main.remove_household_member).
     """
     hid = int(household_id)
     mid = int(member_id)
@@ -453,7 +459,10 @@ def remove_member(household_id: int, member_id: int) -> dict:
             raise
     finally:
         conn.close()
-    logger.info("Member %s removed themselves from household %s", mid, hid)
+    if by_member_id is not None and int(by_member_id) != mid:
+        logger.info("Member %s was taken out of household %s by member %s", mid, hid, int(by_member_id))
+    else:
+        logger.info("Member %s removed themselves from household %s", mid, hid)
     return touched
 
 

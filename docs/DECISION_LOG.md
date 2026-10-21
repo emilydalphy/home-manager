@@ -13,6 +13,23 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Who's here invites a helper, and the main person can take someone out**
+  (2026-10-21, two Loop Board cards; branch
+  `overnight/whos-here-invite-helper-and-remove`; tests
+  `tests/test_whos_here_invite_helper_and_remove.py`). "+ Invite another
+  adult" now asks setup's choice (Eats here / Someone not eating here) and
+  sends `eats_here` to the route setup already used. New POST
+  /api/household/members/remove: the main person takes another adult or a
+  helper out from their row ("Take Maria out of the household" -> a confirm
+  in place that names them). It is `household_deletion.remove_member`, i.e.
+  "Remove me"'s removal exactly: devices signed out
+  (session_still_holds), invite links and sign-in email gone, a cook answer
+  naming them back to unanswered, what they added stays. 403 for anyone
+  but the main person (and an unpicked device), 400 on yourself, 404 for
+  anyone not an adult in THIS household. `/api/household/invites` carries
+  `can_remove` per row. Open for Emily: main person only (built), or any
+  adult? Household 1 stays protected, so Emily's own household can't use
+  it yet — same rule as Remove me.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

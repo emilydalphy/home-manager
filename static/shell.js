@@ -12371,6 +12371,7 @@
           wwkAddChip('data-wwk="add" data-kind="restriction" data-member="' + escapeHtml(name) + '"') +
         '</div>' +
         moveMain +
+        inviteRemoveHtml(inviteAdultNamed(name)) +
       '</div>';
     });
     if (!(mem.members || []).length) html += '<p class="wwk-empty">Nobody yet — set up the household first.</p>';
@@ -12478,13 +12479,16 @@
   // (a laptop): the link is copied and the toast says so. Once they've
   // joined the row reads "Joined Sep 27" with a quiet "Send a new link"
   // (a new phone, a lost message). Under the people, "+ Invite another
-  // adult" asks for a first name only and adds them as an adult.
+  // adult" asks for a first name and setup's choice — eats here, or
+  // "Someone not eating here" (2026-10-21) — and adds them as an adult.
   //
   // The link is /join#<token> — the token in the fragment, which never
   // reaches the server's logs (static/join.html POSTs it).
   var inviteState = {
     adults: null,     // GET /api/household/invites — adults + joined
     newOpen: false,   // "+ Invite another adult" turned into its field
+    newEatsHere: true, // that field's "Eats here" / "Doesn't eat here" pick
+    removeAsk: null,  // member id whose "Take <name> out?" is showing
     busy: false,
     ready: {}         // member id -> link made, waiting for a second tap to share
   };
@@ -12546,6 +12550,68 @@
     '</div>';
   }
 
+  // Take someone out of the household (Loop Board, 2026-10-21): a former
+  // nanny, an ex-partner. Only the main person sees it, on every OTHER
+  // adult's row and every helper's (`can_remove`, which the server works
+  // out and checks again on POST /api/household/members/remove). One quiet
+  // line, then a confirm in place that names them — the grocery list's
+  // "Take carrots off the list?" shape. What goes is "Remove me"'s: they
+  // are signed out on every device and their link stops working; what
+  // they added to the house stays.
+  function inviteRemoveHtml(adult) {
+    if (!adult || !adult.can_remove) return '';
+    var id = String(adult.id);
+    var name = escapeHtml(adult.name);
+    if (String(inviteState.removeAsk) !== id) {
+      return '<button type="button" class="wwk-remove-link" data-invite="remove-ask" data-member-id="' + id + '">' +
+        'Take ' + name + ' out of the household</button>';
+    }
+    return '<div class="wwk-remove-confirm" role="group" aria-label="Take ' + name + ' out of the household?">' +
+      '<p class="wwk-remove-q">Take ' + name + ' out of the household?</p>' +
+      '<p class="wwk-note">I’ll sign ' + name + ' out on every device, and their link stops working. What they added stays.</p>' +
+      '<div class="wwk-invite">' +
+        '<button type="button" class="wwk-invite-btn" data-invite="remove-yes" data-member-id="' + id + '">Take ' + name + ' out</button>' +
+        '<button type="button" class="wwk-invite-again" data-invite="remove-no">Keep ' + name + '</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  async function inviteRemove(id) {
+    if (inviteState.busy) return;
+    var adult = (inviteState.adults || []).filter(function (a) { return String(a.id) === String(id); })[0];
+    var name = adult ? adult.name : '';
+    inviteState.busy = true;
+    try {
+      var res = await Api.fetch('/api/household/members/remove', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ member_id: parseInt(id, 10) })
+      });
+      var data = null;
+      try { data = await res.json(); } catch (e) { /* below */ }
+      if (!res.ok) {
+        showToast((data && typeof data.detail === 'string') ? data.detail : 'That didn’t go through, and nothing changed. Try again in a moment.');
+        return;
+      }
+      inviteState.removeAsk = null;
+      delete inviteState.ready[String(id)];
+      showToast(((data && data.name) || name) + ' was taken out of the household');
+      // Who's here loses a person (and anything keyed to them), so the
+      // answers are re-read, the invite rows with them.
+      prefsInvalidate();
+      // Tonight's cook, who's home and the moves can name them on the
+      // tabs already built (a cook answer naming them is cleared), and
+      // tabs build once per page load — so those are re-read too.
+      refreshStaleTabsFromActions([{ tab: 'week' }, { tab: 'kitchen' }], { listMoved: false });
+      await loadInviteAdults();
+      inviteRerender();
+    } catch (err) {
+      console.warn('Remove failed:', err);
+      showToast('That didn’t go through, and nothing changed. Try again in a moment.');
+    } finally {
+      inviteState.busy = false;
+    }
+  }
+
   // The helpers (2026-10-20): an adult added as "Someone not eating here"
   // (a nanny, a grandparent who helps with dinners — members.eats_here = 0)
   // signs in like anyone, but the people above are the ones meals are
@@ -12563,6 +12629,7 @@
           ' <span class="pill pill-neutral wwk-person-main">Helps out</span></p>' +
         '<p class="wwk-note">Sees the plan and the list. I don’t plan meals for them.</p>' +
         inviteRowHtml(a) +
+        inviteRemoveHtml(a) +
       '</div>';
     }).join('');
   }
@@ -12574,7 +12641,16 @@
         wwkAddChip('data-invite="new-open"', 'Invite another adult') +
       '</div>';
     }
-    return '<div class="wwk-invite-new">' +
+    // The same choice setup asks (2026-10-21): somebody who eats here, or
+    // "Someone not eating here" — a helper who signs in but is never
+    // planned for (members.eats_here = 0; app/invites.add_adult).
+    var eats = inviteState.newEatsHere !== false;
+    return '<div class="wwk-invite-new wwk-invite-open">' +
+      '<div class="wwk-chips" role="group" aria-label="Do they eat here?">' +
+        wwkChip('Eats here', 'data-invite="new-eats" data-value="1"', eats ? 'on' : '') +
+        wwkChip('Someone not eating here', 'data-invite="new-eats" data-value="0"', eats ? '' : 'on') +
+      '</div>' +
+      (eats ? '' : wwkNote('They see the plan and the list. I won’t plan meals for them.')) +
       '<div class="wwk-input-row">' +
         '<input type="text" class="snw-input wwk-text" id="invite-new-name" maxlength="40" autocomplete="off" ' +
           'placeholder="Their first name" aria-label="Their first name">' +
@@ -12640,6 +12716,7 @@
       if (body.name) {
         // A new adult: Who's here gains a person, so the answers are re-read.
         inviteState.newOpen = false;
+        inviteState.newEatsHere = true;
         prefsInvalidate();
       }
       await loadInviteAdults();
@@ -12680,6 +12757,27 @@
         var field = document.querySelector('[data-invite-link="' + id + '"]');
         if (field) { field.focus(); field.select(); }
       });
+    } else if (what === 'remove-ask') {
+      inviteState.removeAsk = id;
+      inviteRerender();
+    } else if (what === 'remove-no') {
+      inviteState.removeAsk = null;
+      inviteRerender();
+    } else if (what === 'remove-yes') {
+      inviteRemove(id);
+    } else if (what === 'new-eats') {
+      // Keep what's typed: the field is drawn again with the pick.
+      var typed = document.getElementById('invite-new-name');
+      var keep = typed ? typed.value : '';
+      inviteState.newEatsHere = target.getAttribute('data-value') !== '0';
+      inviteRerender();
+      var again = document.getElementById('invite-new-name');
+      if (again) {
+        again.value = keep;
+        again.focus();
+        var sendBtn = again.parentNode && again.parentNode.querySelector('[data-invite="new-send"]');
+        if (sendBtn) sendBtn.textContent = keep.trim() ? 'Invite ' + keep.trim() : 'Invite';
+      }
     } else if (what === 'new-open') {
       inviteState.newOpen = true;
       inviteRerender();
@@ -12689,7 +12787,18 @@
       var field = document.getElementById('invite-new-name');
       var name = field ? field.value.trim() : '';
       if (!name) { if (field) field.focus(); return; }
-      inviteSend({ name: name }, name);
+      var helper = inviteState.newEatsHere === false;
+      // An adult already here under that name is invited as they are
+      // (invites.add_adult never re-marks someone), so a helper pick for
+      // somebody who eats here would quietly not take. Say so instead.
+      var already = (inviteState.adults || []).filter(function (a) {
+        return String(a.name || '').trim().toLowerCase() === name.toLowerCase();
+      })[0];
+      if (helper && already && already.eats_here !== false) {
+        showToast(already.name + ' is already here, eating with you. Pick Eats here to send their link.');
+        return;
+      }
+      inviteSend({ name: name, eats_here: !helper }, name);
     }
   });
 
