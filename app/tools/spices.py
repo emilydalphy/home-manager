@@ -625,12 +625,17 @@ def list_spices_this_week() -> dict:
         due = bool(ticked and linked and staple is not None and _due(staple, today))
         # The week's measured amount, off the meals that put it here
         # (week_total). `quantity` stays what the line buys — one store
-        # unit — and the row shows `total` where there is one.
+        # unit — and the row shows `total` where there is one. Only for a
+        # rack thing (is_spice): that is the line the ingest measures in
+        # teaspoons and writes as one store unit. A sauce or pantry staple
+        # that isn't one (rice, pasta, soy sauce, flour) already carries the
+        # week's amount on its line; read as a spice, "2 cups" of rice
+        # showed "32 tbsp" and "1 box" of pasta "about ¼ tsp".
         links = conn.execute(
             "SELECT quantity, measure_tsp, measure_about FROM meal_plan_grocery_links "
             "WHERE household_id = ? AND grocery_item_id = ?",
             (household_id(), r["id"]),
-        ).fetchall()
+        ).fetchall() if is_spice(r["item"]) else []
         items.append({
             "id": r["id"], "item": r["item"], "quantity": r["quantity"] or "",
             "total": week_total(r["item"], links)["text"] if links else "",

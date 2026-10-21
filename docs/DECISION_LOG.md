@@ -13,6 +13,13 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Sauce and pantry-staple rows show the line's amount, not teaspoons**
+  (2026-10-21; branch `overnight/defect-hunt-2026-10-21`; tests
+  `tests/test_pantry_rows_show_their_own_amount.py`). `list_spices_this_week`
+  computes `total` (`spices.week_total`) only for a rack thing (`is_spice`);
+  Shop read "Rice · 32 tbsp", "Pasta · about ¼ tsp". Why: the spice-totals
+  and pantry-staples branches merged; only rack lines are measured/stored
+  as one store unit, a non-rack line already holds the week's amount.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
