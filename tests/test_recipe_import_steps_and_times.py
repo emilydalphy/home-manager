@@ -58,6 +58,7 @@ def test_a_step_that_opens_on_an_amount_keeps_it_through_the_save(signed_in, mon
     ("2) Stir.", "Stir."),
     ("3:30 is when the oven goes on.", "3:30 is when the oven goes on."),
     ("1 - 2 minutes more.", "1 - 2 minutes more."),
+    ("Step 2 - 3 eggs in.", "3 eggs in."),  # "Step" makes it a step number, whatever follows
 ])
 def test_only_a_step_number_is_dropped(step, kept):
     assert ri.parse_instructions([step]) == [kept]
@@ -70,3 +71,9 @@ def test_only_a_step_number_is_dropped(step, kept):
 ])
 def test_times_read_the_way_they_are_written(value, minutes):
     assert ri.parse_duration_minutes(value) == minutes
+
+
+@pytest.mark.parametrize("value", ["1/0 hours", "2 1/0 hrs", "PT1/0M"])
+def test_a_time_over_zero_is_no_time_not_a_failed_import(value):
+    # Fraction(1, 0) raised ZeroDivisionError and the whole import 500'd.
+    assert ri.parse_duration_minutes(value) is None

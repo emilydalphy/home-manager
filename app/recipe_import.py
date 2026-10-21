@@ -489,7 +489,12 @@ def parse_duration_minutes(value) -> int | None:
     if hours or mins:
         def number(found):
             return float(sum(Fraction(part) for part in found.group(1).split())) if found else 0.0
-        total = number(hours) * 60 + number(mins)
+        try:
+            total = number(hours) * 60 + number(mins)
+        except ZeroDivisionError:
+            # "1/0 hours" — from a page or a model's answer — is no time,
+            # as it was before fractions were read, not a failed import.
+            return None
         return int(round(total)) or None
     if text.isdigit():
         return int(text) or None
@@ -578,8 +583,14 @@ def parse_instructions(value) -> list[str]:
     # amount ("1.5 kg potatoes into the pot", "2-3 minutes per side") used
     # to lose its first number to the strip and save as "5 kg" and "3
     # minutes" (defect hunt, 2026-10-21). So "." and ":" count only when no
-    # digit follows, and "-" only when no number does.
-    return [re.sub(r"^(?:step\s*)?\d+\s*(?:\.(?!\d)|\)|:(?!\d)|-(?!\s*\d))\s*", "", s, flags=re.I) for s in steps]
+    # digit follows, and "-" only when no number does. A line that says
+    # "Step" is a step number whatever follows ("Step 2 - 3 eggs in").
+    return [
+        re.sub(r"^step\s*\d+\s*[.):-]\s*", "", s, flags=re.I)
+        if re.match(r"^step\s*\d+\s*[.):-]", s, flags=re.I)
+        else re.sub(r"^\d+\s*(?:\.(?!\d)|\)|:(?!\d)|-(?!\s*\d))\s*", "", s)
+        for s in steps
+    ]
 
 
 # ---------- ingredient lines -> {item, qty} ----------
