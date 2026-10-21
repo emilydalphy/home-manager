@@ -13,6 +13,11 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A celiac refusal names gluten, not the condition** (2026-10-21, overnight;
+  branch `overnight/allergen-gate-knows-pretzels`). "Soup and crackers has
+  celiac, which Maya can't have" read as if celiac were in the bowl;
+  `_clash_sentence` now says the food the word stands for
+  (`_WHOLE_WORD_FAMILIES`: celiac/coeliac → gluten, milk/lactose → dairy).
 - **A gluten / wheat / celiac restriction holds back pretzels and crackers**
   (2026-10-21, defect hunt; branch `overnight/allergen-gate-knows-pretzels`;
   tests `tests/test_gluten_gate_knows_pretzels.py`). `_WHEAT_WORDS` gained

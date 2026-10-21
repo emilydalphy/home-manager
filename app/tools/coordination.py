@@ -1227,6 +1227,10 @@ def _clash_sentence(c: dict) -> str:
     # own name doesn't already say. "Pineapple Salsa has pineapple" is
     # noise; "Pineapple Salsa" plus the person is the whole fact.
     term = terms[0] if terms else ""
+    # A condition is not an ingredient: "has celiac" names the person's
+    # restriction, not what is in the dish. Said as the food it stands for
+    # ("has gluten") — the same mapping the gate matched it by.
+    term = _WHOLE_WORD_FAMILIES.get(term.lower(), term)
     # Always a full sentence, even when the dish name already says it:
     # "Pineapple Salsa Bowls has pineapple, which Emily is allergic to."
     # A fragment is the wrong shape for the one card about someone's allergy.

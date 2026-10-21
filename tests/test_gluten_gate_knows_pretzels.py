@@ -61,3 +61,14 @@ def test_a_guest_named_graham_is_still_a_name_not_a_food():
     from app.tools import big_meal
 
     assert big_meal.dish_conflicts("Pesto Pasta", [{"item": "basil pesto", "qty": "1 cup"}], "no nuts for Graham")
+
+
+def test_a_celiac_refusal_names_gluten_not_the_condition(maya):
+    """"Soup and crackers has celiac" named the person's condition as if it
+    were in the bowl; the card says the food the condition stands for."""
+    from app.tools import coordination
+    tools.set_member_dietary_restrictions("Maya", ["Celiac"])
+
+    clash = allergen_gate.hard_clashes("Soup and crackers", [{"item": "saltine crackers", "qty": "1"}])[0]
+
+    assert coordination._clash_sentence(clash) == "Soup and crackers has gluten, which Maya can’t have."
