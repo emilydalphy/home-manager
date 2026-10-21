@@ -1432,23 +1432,24 @@ def _reverse_meal_grocery_contributions(entry_id: int, conn=None, only_items=Non
 
 
 def _recompute_plan_line_from_ledger(
-    item_id: int, conn=None, only_if_edited_down: bool = False, skip_link_ids: list[int] | None = None,
+    item_id: int, conn=None, skip_link_ids: list[int] | None = None,
 ) -> None:
     """
     Put a plan-owned grocery line back to what its whole ledger adds up
     to — the recompute half of _reverse_meal_grocery_contributions, run
     after an ADD instead of after a removal.
 
-    Needed for a counted pack (quantities._PACK_CONVERSION_GROUPS), and
-    only there. Every ingest pass rounds its own total up to whole packs
-    before it reaches the list, so a second pass onto the same line — a
-    meal swapped in after approval, a dinner planned in chat — adds a
-    whole carton to a whole carton: three eggs already on the line and
-    three more arriving read "1 dozen" + "1 dozen" = "2 dozen" for six
-    eggs. The ledger still holds the six, so the line is simply re-read
-    from it, exactly as a reversal would. A measurable unit rounds to a
-    quarter and a count to a whole one, both small enough that summing
-    two rounded displays has always been accepted; a pack is twelve.
+    Every ingest pass rounds its own total before it reaches the list,
+    so a second pass onto the same line — a meal swapped in after
+    approval, a dinner planned in chat — adds a rounded amount to a
+    rounded amount. For a counted pack that is a whole carton onto a
+    whole carton: three eggs already on the line and three more arriving
+    read "1 dozen" + "1 dozen" = "2 dozen" for six eggs. A count was
+    once thought small enough to accept, and is not: one meal's 0.75
+    onion went on as a whole one, so Swap then Undo read 21 onions over
+    a ledger of exactly 20 (defect hunt 2026-10-21). The ledger holds
+    the unrounded shares, so WeekGroceryBuffer.flush re-reads every line
+    a share merged onto, exactly as a reversal would.
 
     Only a line the ledger fully describes (source_weekly_plan_id set)
     is touched; a person's standing want keeps whatever it reads. A
@@ -1463,14 +1464,9 @@ def _recompute_plan_line_from_ledger(
         "FROM grocery_items WHERE id = ? AND household_id = ?",
         (item_id, household_id()),
     ).fetchone()
-    # only_if_edited_down: the ingest's call after any merge. A meal's
-    # share summed onto a line the household edited down undid the edit a
-    # little more with every swap; re-read off the ledger, the edit goes
-    # back on (_with_household_edit). Any other line is left as the add
-    # wrote it.
-    if not row or row["source_weekly_plan_id"] is None or row["status"] not in ("needed", "spice") or (
-        only_if_edited_down and not (row["short_amount"] or "").strip()
-    ):
+    # A line the household edited down keeps their number on the re-read
+    # (_with_household_edit, Emily 2026-10-12).
+    if not row or row["source_weekly_plan_id"] is None or row["status"] not in ("needed", "spice"):
         if own_conn:
             conn.close()
         return

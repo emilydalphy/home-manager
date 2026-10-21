@@ -4978,23 +4978,27 @@ class WeekGroceryBuffer:
             # PLAN-owned line is re-read; a household's standing want never
             # takes a different-unit plan share in the first place
             # (_merge_target), so its own amount is never re-rounded.
-            if _grocery._store_kind(line["item"]) or _spices.is_spice(line["item"]):
+            #
+            # And so is EVERY share that merged onto a plan's line (defect
+            # hunt 2026-10-21). add_grocery_item sums this pass's ROUNDED
+            # amount onto the line's rounded amount, so one meal's 0.75
+            # onion went on as a whole one: Swap then Undo on an approved
+            # week read 21 onions over a ledger adding up to exactly 20.
+            # The ledger holds the unrounded shares, so the line is re-read
+            # and rounded once, as approval and every removal already do;
+            # a line the household edited down keeps their number
+            # (_with_household_edit, Emily 2026-10-12). Still plan-owned
+            # lines only: a merge onto a household's own line leaves it
+            # theirs (source_weekly_plan_id NULL), and the re-read skips it.
+            if (
+                add_result["merged"]
+                or _grocery._store_kind(line["item"]) or _spices.is_spice(line["item"])
+            ):
                 # Bread, berries, yogurt…: the line is written in the
                 # store's unit, read off the whole ledger once
                 # (grocery._store_amount) — merged or new alike. A spice
                 # too: its line buys one jar (grocery._rack_quantity).
                 _grocery._recompute_plan_line_from_ledger(add_result["item_id"], conn=self.conn)
-            elif add_result["merged"] and (
-                _quantities._pack_group(unit)
-                or (_quantities._measurable_unit(unit) and not add_result.get("units_reconciled", True))
-            ):
-                _grocery._recompute_plan_line_from_ledger(add_result["item_id"], conn=self.conn)
-            elif add_result["merged"]:
-                # A line the household edited down keeps their number
-                # (Emily, 2026-10-12) — see grocery._with_household_edit.
-                _grocery._recompute_plan_line_from_ledger(
-                    add_result["item_id"], conn=self.conn, only_if_edited_down=True,
-                )
         self._lines.clear()
 
 
