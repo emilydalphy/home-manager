@@ -13,6 +13,11 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A cook-ahead approval test is pinned to its week's Monday** (2026-10-21,
+  overnight; branch `overnight/cook-ahead-test-any-weekday`).
+  `test_a_dish_that_already_cooks_ahead_is_not_offered_again` went red on
+  main on a Wednesday: Monday's chain was behind the household and Wed/Thu
+  were a real fresh repeat. Test-only; now `@ON_MONDAY`, green on all 7 days.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
