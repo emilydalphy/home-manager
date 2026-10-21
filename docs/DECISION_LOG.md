@@ -13,6 +13,17 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A fridge move the household booked is not booked again by the inventory
+  sync** (2026-10-21, overnight defect hunt; branch
+  `overnight/hunt-kitchen-2026-10-21b`; tests
+  `tests/test_thaw_not_booked_twice.py`). Chicken thighs ticked on the freezer
+  step AND on the freezer shelf in inventory: the next resync (night off,
+  swap, move) inserted its own "Move the chicken thighs to the fridge" beside
+  the household's, so Today and the prep session showed it twice, one ticked
+  and one not. `sync_defrost_tasks` now skips a candidate whose night already
+  has a hand-booked move for that item (any status, plural-tolerant) — the
+  check the ask and Shop's "freezing it" already make.
+
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
