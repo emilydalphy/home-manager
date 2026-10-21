@@ -91,3 +91,23 @@ def test_guard_stock_put_away_since_is_still_spare(tacos):
     tools.update_inventory("Tortillas", "add", quantity="8", category="pantry")
     res = _approve_this_week_with_tacos()
     assert set(res["already_have_skipped"]) == {"Ground beef", "Tortillas"}
+
+
+def test_catch_a_count_since_is_believed_over_old_claims(tacos):
+    # Three past weeks of tacos ticked bought, never cooked: the tortilla
+    # row (one row, merged by every tick) reads 24. Then the household
+    # counts it — "we have 8" — and that count already reflects every
+    # past dinner. It must not have three dinners' worth taken off it again.
+    today = household_today()
+    for weeks_ago in (3, 2, 1):
+        start = today - datetime.timedelta(days=7 * weeks_ago)
+        plan = tools.create_weekly_plan(start.isoformat(), day_count=7)["weekly_plan_id"]
+        tools.plan_meal((start + datetime.timedelta(days=2)).isoformat(), "Tacos", slot="dinner", weekly_plan_id=plan)
+        with approving_on(start):
+            tools.approve_weekly_plan(plan, approved_by="Emily")
+        for r in tools.list_grocery_list("needed"):
+            tools.mark_grocery_item(r["id"], "purchased")
+    tools.update_inventory("Tortillas", "set", quantity="8", category="pantry")
+    res = _approve_this_week_with_tacos()
+    assert "Tortillas" in res["already_have_skipped"]
+    assert _needed("Tortillas") == []

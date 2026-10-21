@@ -907,6 +907,13 @@ _MIGRATIONS = [
     # "never on a household that has approved a week" reads both. '' on
     # existing rows; their approved plans still answer for them.
     ("households", "first_approved_at", "TEXT NOT NULL DEFAULT ''"),
+    # The household-local day the household last COUNTED this row (a "set",
+    # a partial "use", the Kitchen stepper) — never a purchase tick or an
+    # "add". A past meal's bought-for share stops being claimed against a
+    # row counted on a later day, because that count already reflects it
+    # (recipes._KitchenStock.reserve_bought_for_meals_ahead). NULL = never
+    # counted.
+    ("inventory_items", "counted_on", "TEXT"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people

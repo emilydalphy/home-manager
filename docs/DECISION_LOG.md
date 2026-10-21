@@ -19,7 +19,11 @@ why*, not duplicating the diff.
   and beef stayed "at home" because the tacos were never marked cooked, so
   this week's tacos got neither. `_KitchenStock.reserve_bought_for_meals_ahead`
   now also claims a past meal's ledger share (no depletion stamp, no
-  `skipped_at`) while the shelf row its tick wrote still exists; approval
+  `skipped_at`) while the shelf row its tick wrote still exists and was not
+  counted by the household on a later day (new `inventory_items.counted_on`,
+  stamped by "set", a partial "use" and the Kitchen stepper — never by a tick
+  or "add", which merge into the same row; without it every old claim was
+  subtracted again from an honest count, growing weekly); approval
   ingest, pre-shop and defrost all read it. Read-side only: no inventory row
   is changed, so a later "We skipped it" puts the food back. Reverses the
   2026-10-12 "past meal left out on purpose" call (its guard test flipped).

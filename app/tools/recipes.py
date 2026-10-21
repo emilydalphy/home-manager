@@ -4742,10 +4742,16 @@ class _KitchenStock:
         whether that is right. A moved dinner carries its ledger to its new
         date, so it is the "still to come" case above, not this one. Only
         while the shelf row its tick wrote (inventory_receipt_json's
-        inventory_id) still exists: a row deleted or replaced since is the
-        household's own account of the kitchen, and an old purchase is not
-        in it — which is also what keeps these claims from piling up
-        against stock bought months later.
+        inventory_id) still exists, and that row has not been COUNTED by the
+        household (inventory_items.counted_on: a "set", a partial "use", the
+        Kitchen stepper) on a day after the meal. A tick merges into the
+        same row, so the row alone bounds nothing — every past meal that
+        ever bought into it would keep its claim for ever, and the first
+        honest count would then have every one of them subtracted from a
+        figure that already reflects them. A count on the meal's own day
+        still claims (the dinner may not have happened yet; buying is the
+        safe side). The past branch ignores `exclude_plan_id` on purpose:
+        a past dinner of that same plan really ate its food.
         A share in a unit that will not convert makes the claim unreadable,
         and covers() then buys — the safe direction, as everywhere here.
         """
@@ -4761,7 +4767,8 @@ class _KitchenStock:
             "AND ((e.cooked_status = 'pending' AND e.date >= ? AND COALESCE(e.weekly_plan_id, -1) != ?) "
             "  OR (e.date < ? AND e.skipped_at IS NULL AND EXISTS ("
             "        SELECT 1 FROM inventory_items i WHERE i.household_id = l.household_id "
-            "        AND i.id = json_extract(g.inventory_receipt_json, '$.inventory_id'))))",
+            "        AND i.id = json_extract(g.inventory_receipt_json, '$.inventory_id') "
+            "        AND (i.counted_on IS NULL OR e.date >= i.counted_on))))",
             (household_id(), today, -1 if exclude_plan_id is None else exclude_plan_id, today),
         ).fetchall()
         for row in rows:
