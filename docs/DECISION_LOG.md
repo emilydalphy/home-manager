@@ -13,6 +13,20 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A night off on a started dinner is refused, whatever it feeds**
+  (2026-10-22, defect hunt; branch `overnight/hunt-cook-2026-10-22b`; tests
+  `tests/test_started_cook_stays_put.py`). `_night_off_plan` asked
+  `cook_begun` only of a chain source, so a started dinner feeding nobody
+  fell to `drop`: "X is off the week", groceries reversed, pot on the stove.
+  Reachable from chat's `take_the_night_off` and a second phone's stale
+  tonight card. Now `kind: 'cooking'` before move/drop, as the Review "−"
+  already refuses. The chat tool's description names the refusal.
+- **"We skipped it" forgets the start** (2026-10-22, defect hunt; same
+  branch and tests). `yesterday_check._skip` kept `cook_started_at`; on a
+  double batch the dish moved onto its fed night with yesterday's stamp —
+  Today read "Started 6:02" there and every `cook_begun` door said "Already
+  cooking". Both skip shapes now clear it, like "Mark not cooked"; Undo puts
+  it back from the snapshot.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
