@@ -126,14 +126,29 @@ def _put_back_prep_cuts(weekly_plan_id: int, entry_id: int, meal: str, cuts) -> 
     if not cuts:
         return
     with write() as conn:
+        # The dinner may have moved since the swap (its undo note rides
+        # along), so a cut goes back on or before the dinner's day as it is
+        # NOW, and a pending one never on a day already past — the rules
+        # add_prep_cut and the Move's _shift_late_prep_cuts keep (review).
+        row = conn.execute(
+            "SELECT date FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+            (entry_id, household_id()),
+        ).fetchone()
+        meal_day = row["date"] if row else None
+        today = _weekly_plan._household_today(conn).isoformat()
         for cut in cuts:
             if not isinstance(cut, dict) or not cut.get("description"):
                 continue
+            day = cut.get("task_date")
+            if day and (cut.get("status") or "pending") == "pending" and day < today:
+                day = today
+            if day and meal_day and day > meal_day:
+                day = meal_day
             exists = conn.execute(
                 "SELECT 1 FROM prep_tasks WHERE household_id = ? AND weekly_plan_id = ? AND task_type = ? "
                 "AND task_date IS ? AND description = ? AND meal_plan_entry_id = ?",
                 (household_id(), weekly_plan_id, _prep_sessions.PREP_CUT_TASK_TYPE,
-                 cut.get("task_date"), cut["description"], entry_id),
+                 day, cut["description"], entry_id),
             ).fetchone()
             if exists:
                 continue
@@ -141,7 +156,7 @@ def _put_back_prep_cuts(weekly_plan_id: int, entry_id: int, meal: str, cuts) -> 
                 "INSERT INTO prep_tasks (household_id, weekly_plan_id, task_date, description, "
                 "related_meal, status, task_type, meal_plan_entry_id, quantity) "
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, '')",
-                (household_id(), weekly_plan_id, cut.get("task_date"), cut["description"], meal or "",
+                (household_id(), weekly_plan_id, day, cut["description"], meal or "",
                  cut.get("status") or "pending", _prep_sessions.PREP_CUT_TASK_TYPE, entry_id),
             )
 

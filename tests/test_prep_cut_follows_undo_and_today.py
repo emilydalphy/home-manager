@@ -114,3 +114,21 @@ def test_undo_of_a_whole_dish_swap_puts_each_days_prep_back():
     by_entry = {c["meal_plan_entry_id"]: c["task_date"] for c in _cuts()}
     assert sorted(by_entry.values()) == [d[1], d[4]]
     assert set(by_entry) == set(back["entry_ids"])
+
+
+def test_undo_after_the_dinner_moved_puts_the_cut_on_or_before_it():
+    """Review, same night: swap, move the new dinner earlier, Undo — the
+    cut came back two days AFTER the restored dinner."""
+    _recipe("Chicken Bowls")
+    d = _days()
+    plan = tools.create_weekly_plan(d[0])["weekly_plan_id"]
+    bowls = tools.plan_meal(d[4], "Chicken Bowls", slot="dinner", weekly_plan_id=plan)["entry_id"]
+    prep_sessions.add_prep_cut(plan, d[3], "Cut up romaine", [bowls])
+
+    swapped = swap_in_place.swap_meal_in_place(plan, bowls, picker=_pick("Fish Tacos"))
+    assert meal_move.move_meal(plan, swapped["entry_id"], d[1])["status"] == "moved"
+    back = swap_in_place.undo_meal_swap(plan, swapped["entry_id"])
+
+    assert back["meal"] == "Chicken Bowls"
+    [cut] = _cuts()
+    assert cut["task_date"] <= d[1] and cut["task_date"] >= d[0]

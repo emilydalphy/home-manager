@@ -21,7 +21,8 @@ why*, not duplicating the diff.
   today, as the nights swap does. A swap in place released the meal's prep
   cuts and Undo never put them back; the first swap keeps them on
   `swapped_from.prep_cuts` and Undo re-adds them, status kept (one-day and
-  whole-dish).
+  whole-dish), never after the dinner's current day and a pending one never
+  in the past (review: the dinner can move between swap and Undo).
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
