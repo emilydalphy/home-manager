@@ -82,6 +82,18 @@ def test_un_picking_a_store_on_shop_does_the_same(signed_in):
     assert _prefs() == {"milk": "Farm Boy"}
 
 
+def test_an_accented_store_name_is_forgotten_too(signed_in):
+    # SQLite's lower() folds ASCII only: "ÉPICERIE Ô MARCHÉ" was missed.
+    tools.add_usual_stores(["Épicerie Ô Marché", "Farm Boy"])
+    tools.set_item_store("cheese", "Épicerie Ô Marché")
+    tools.add_grocery_item("cheese", "1")
+    res = signed_in.post("/api/memory/delete",
+                         json={"field": "usual_stores", "item": "ÉPICERIE Ô MARCHÉ"})
+    assert res.status_code == 200, res.text
+    assert "cheese" not in _prefs()
+    assert _lines()["cheese"]["store"] == ""
+
+
 def test_a_store_that_was_never_a_usual_one_is_not_forgotten():
     # Tagged ad hoc ("we got it at the market") without ever being picked:
     # removing some other store must not throw that filing away.

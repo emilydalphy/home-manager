@@ -22,6 +22,8 @@ why*, not duplicating the diff.
   (cart/bought keep theirs). "Closed on holidays" skips occasions no shop
   closes for (`holidays.shops_close_for`: Halloween, Mother's/Father's Day,
   Valentine's, St Patrick's, Christmas/New Year's Eve).
+  Names are matched in Python (SQLite lower() is ASCII-only: "Épicerie").
+  A rename is a drop + add, so its filing is re-asked, not carried.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

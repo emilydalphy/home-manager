@@ -150,17 +150,29 @@ def forget_dropped_stores(conn, dropped: set[str]) -> None:
     names = {(n or "").strip().lower() for n in dropped} - {""}
     if not names:
         return
-    marks = ",".join("?" for _ in names)
-    conn.execute(
-        f"DELETE FROM item_store_preferences WHERE household_id = ? AND lower(trim(store)) IN ({marks})",
-        (household_id(), *names),
-    )
-    conn.execute(
-        f"UPDATE grocery_items SET store = '', store_decided = 0 "
-        f"WHERE household_id = ? AND lower(trim(store)) IN ({marks}) "
-        f"AND status IN ('needed', 'carried', 'spice')",
-        (household_id(), *names),
-    )
+    # Matched in Python, not with SQLite's lower(): that one folds ASCII
+    # only, so "Épicerie Ô Marché" was missed and kept its items (review).
+    hid = household_id()
+    pref_ids = [
+        r["id"] for r in conn.execute(
+            "SELECT id, store FROM item_store_preferences WHERE household_id = ?", (hid,)
+        ).fetchall()
+        if (r["store"] or "").strip().lower() in names
+    ]
+    line_ids = [
+        r["id"] for r in conn.execute(
+            "SELECT id, store FROM grocery_items WHERE household_id = ? AND store != '' "
+            "AND status IN ('needed', 'carried', 'spice')", (hid,)
+        ).fetchall()
+        if (r["store"] or "").strip().lower() in names
+    ]
+    for pid in pref_ids:
+        conn.execute("DELETE FROM item_store_preferences WHERE id = ? AND household_id = ?", (pid, hid))
+    for lid in line_ids:
+        conn.execute(
+            "UPDATE grocery_items SET store = '', store_decided = 0 WHERE id = ? AND household_id = ?",
+            (lid, hid),
+        )
 
 
 def is_multi_store_household() -> bool:
