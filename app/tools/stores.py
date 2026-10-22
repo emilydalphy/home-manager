@@ -90,13 +90,29 @@ def canonical_store_name(conn, name) -> str:
     first spelling of that store when it already has one (any capitals, any
     spacing), otherwise the typed name tidied. '' stays '' (no store).
     """
+    return _canonical_among(_known_store_names(conn), name)
+
+
+def _canonical_among(known: list[str], name) -> str:
     wanted = store_key(name)
     if not wanted:
         return ""
-    for known in _known_store_names(conn):
-        if store_key(known) == wanted:
-            return tidy_store_name(known)
+    for spelling in known:
+        if store_key(spelling) == wanted:
+            return tidy_store_name(spelling)
     return tidy_store_name(name)
+
+
+def store_namer():
+    """canonical_store_name for a read that names many lines' stores at
+    once (Sort's groups, Today's shop stops): the household's spellings are
+    read once, on a connection of its own, and each call is then free."""
+    conn = get_conn()
+    try:
+        known = _known_store_names(conn)
+    finally:
+        conn.close()
+    return lambda name: _canonical_among(known, name)
 
 
 def _apply_store_to_matching_rows(conn, item: str, store: str) -> None:
@@ -254,13 +270,13 @@ def get_grocery_list_by_store(status: str = "needed") -> dict:
         _staples.sync_due_staples()
     items = _grocery.list_grocery_list(status=status)
     by_store: dict[str, list[dict]] = {}
-    # One group per store_key, under the first spelling met, so a line
-    # filed as "costco" before 2026-10-22 joins "Costco" rather than
-    # heading a second Costco group.
-    shown: dict[str, str] = {}
+    # Each group is named the household's spelling of its store
+    # (canonical_store_name), so a line filed as "costco " before
+    # 2026-10-22 joins "Costco" rather than heading — or naming — a second
+    # Costco group. Only this read is folded: the line keeps its old text.
+    namer = store_namer()
     for it in items:
-        store = it.get("store") or "Unassigned"
-        store = shown.setdefault(store_key(store), store)
+        store = namer(it.get("store")) or "Unassigned"
         by_store.setdefault(store, []).append(it)
     stores = []
     for store, store_items in by_store.items():

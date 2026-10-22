@@ -87,3 +87,49 @@ def test_exact_names_and_a_different_store_are_unchanged(signed_in):
     blank = tools.add_grocery_item("napkins")
     tools.set_grocery_item_store(blank["item_id"], "   ")
     assert _line_store(blank["item_id"]) == ""
+
+
+def test_unpicking_one_store_keeps_a_store_saved_with_a_double_space():
+    # Review, 2026-10-22: usual_stores was tidied but the prune compared
+    # strip().lower(), so "Farm  Boy" read as dropped and lost its hours
+    # and typical items when Metro was un-picked.
+    conn = get_conn()
+    conn.execute(
+        "INSERT INTO meal_preferences (household_id, usual_stores_json, store_typical_items_json, store_hours_json) "
+        "VALUES (1, ?, ?, ?) ON CONFLICT(household_id) DO UPDATE SET usual_stores_json = excluded.usual_stores_json, "
+        "store_typical_items_json = excluded.store_typical_items_json, store_hours_json = excluded.store_hours_json",
+        ('["Costco", "Farm  Boy", "Metro"]', '{"Farm  Boy": ["bread"], "Metro": ["eggs"]}',
+         '{"Farm  Boy": {"days": {"sun": "closed"}, "closed_on_holidays": false}}'),
+    )
+    conn.commit()
+    conn.close()
+    tools.edit_preference("usual_stores", ["Costco", "Farm  Boy"])
+    memory = tools.get_household_memory()
+    assert memory["store_typical_items"] == {"Farm  Boy": ["bread"]}
+    assert _stores.hours_for("Farm Boy") == {"days": {"sun": "closed"}, "closed_on_holidays": False}
+
+
+def _old_split_lines():
+    """Two lines filed before this change, as typed: "costco " then "Costco"."""
+    tools.add_usual_stores(["Costco"])
+    a = tools.add_grocery_item("oat milk")
+    b = tools.add_grocery_item("paper towels")
+    conn = get_conn()
+    conn.execute("UPDATE grocery_items SET store = 'costco ' WHERE id = ?", (a["item_id"],))
+    conn.execute("UPDATE grocery_items SET store = 'Costco' WHERE id = ?", (b["item_id"],))
+    conn.commit()
+    conn.close()
+
+
+def test_old_split_lines_read_as_one_group_named_the_households_way():
+    _old_split_lines()
+    groups = tools.get_grocery_list_by_store()["stores"]
+    assert [g["store"] for g in groups] == ["Costco"]
+
+
+def test_todays_shop_stops_fold_old_split_lines_into_one_stop():
+    from app.tools import moves as _moves
+    _old_split_lines()
+    needed = tools.list_grocery_list(status="needed")
+    stops = _moves._shop_stops(needed)
+    assert [(s["store"], s["count"]) for s in stops] == [("Costco", 2)]

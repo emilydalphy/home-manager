@@ -673,8 +673,12 @@ def _shop_stops(needed: list[dict], named: set[int] | None = None) -> list[dict]
     """
     by_store: dict[str, list[str]] = {}
     counts: dict[str, int] = {}
+    # One stop per store under the household's spelling: a line still
+    # saved as "costco" from before 2026-10-22 is part of the Costco stop
+    # (stores.store_namer), not a second one.
+    namer = _stores.store_namer()
     for row in needed:
-        store = (row.get("store") or "").strip()
+        store = namer(row.get("store"))
         if store == "Unassigned":
             store = ""
         counts[store] = counts.get(store, 0) + 1
@@ -833,8 +837,10 @@ def _standing_list_move(day: date, needed: list[dict]) -> list[dict]:
     disagreeing about what is on the list, which is its own card.
     """
     count = len(needed)
-    stops = len({(r.get("store") or "").strip() for r in needed} - {"", "Unassigned"})
     stop_rows = _shop_stops(needed)
+    # Counted off the stops themselves, so "Costco" and an old "costco"
+    # line are one stop here too (see _shop_stops).
+    stops = len([s for s in stop_rows if s["store"]])
     return [{
         "id": f"shop:{day.isoformat()}",
         "kind": "shop",
@@ -1101,8 +1107,9 @@ def _stores_closed_on(shop_day: str, needed: list[dict]) -> list[str]:
     all_hours, first_store = _hours_context()
     if not all_hours:
         return []
+    namer = _stores.store_namer()  # one name per store, however a line spelled it
     names = list(dict.fromkeys(
-        (r.get("store") or "").strip() for r in needed
+        namer(r.get("store")) for r in needed
         if (r.get("store") or "").strip() not in ("", "Unassigned")
     ))
     if not names and first_store:
