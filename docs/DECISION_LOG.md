@@ -13,6 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **An ended week's share on a household's own grocery line is asked about,
+  not carried forward** (2026-10-22, overnight; branch
+  `overnight/hunt-listedit-2026-10-22b`; tests `tests/test_own_line_week_ends.py`).
+  A typed "Onion 2" that a week's curries added 4 onto read 6; only PLAN lines
+  were set aside when the week ended, so the next week's 4 landed on top: 2 → 6
+  → 10, a week at a time, never asked about. `_set_aside_ended_shares` (run by
+  `set_aside_carried_over_items`, so at approval and on the Monday read) takes
+  the ended plan's part off in one `_restate_standing_want` step and makes it
+  that plan's own 'carried' line, ledger rows moved onto it. A borrowed
+  package/spice and an unreadable line are left as before.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
