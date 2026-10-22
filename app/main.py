@@ -6760,6 +6760,9 @@ def add_grocery_list_item(req: GroceryAddRequest):
         # nothing, so "2 milk" stays 2.
         result = grocery_add_once.add_once(req.client_id, do_add)
     except grocery_add_once.AddInFlight:
+        # The phone's queue keeps the add on a 409 and tries again later
+        # (grocery-offline.js replay); a claim abandoned for a minute is
+        # taken over then, so the add still lands.
         raise HTTPException(status_code=409, detail="That add is already on its way.")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

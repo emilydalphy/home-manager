@@ -24,6 +24,15 @@ from .tools._shared import household_id
 # signal and the app open, which can be days after the store, not minutes.
 RETENTION_DAYS = 30
 
+# How long an answerless receipt counts as "still adding". Past this the
+# request that claimed it is taken to have died between the claim and the
+# answer (a Railway redeploy mid-request is enough — and Railway redeploys
+# on every push) and the next send takes the claim over and adds. Without
+# it an orphan answered every resend with a 409 for 30 days, and the add
+# never reached the list. An add is a few database writes; a minute is
+# far past any live one.
+ABANDONED_AFTER_SECONDS = 60
+
 
 class AddInFlight(Exception):
     """The same id is being added right now by an earlier request."""
@@ -53,9 +62,22 @@ def add_once(client_id, do_add):
                 "SELECT result_json FROM grocery_add_receipts WHERE household_id = ? AND client_id = ?",
                 (hid, client_id),
             ).fetchone()
-            if row is None or row["result_json"] is None:
+            if row is not None and row["result_json"] is not None:
+                return json.loads(row["result_json"])
+            # Answerless: still adding, or abandoned. Take an abandoned one
+            # over in one statement, so two resends cannot both take it.
+            # The cost, knowingly paid: if the dead request HAD added before
+            # it died, this adds again — rarer, and kinder than an add that
+            # never lands at all.
+            taken = conn.execute(
+                "UPDATE grocery_add_receipts SET created_at = datetime('now') "
+                "WHERE household_id = ? AND client_id = ? AND result_json IS NULL "
+                "AND created_at <= datetime('now', ?)",
+                (hid, client_id, f"-{ABANDONED_AFTER_SECONDS} seconds"),
+            ).rowcount
+            conn.commit()
+            if row is None or not taken:
                 raise AddInFlight()
-            return json.loads(row["result_json"])
     finally:
         conn.close()
 

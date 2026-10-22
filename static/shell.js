@@ -5266,8 +5266,14 @@
   var GRO_CAUGHT_UP_TOAST = "Back online — your ticks are saved.";
   // Ticks the server refused on replay: the row is gone (a partner removed
   // it, or bought it and finished the stop) and the fresh list is the truth.
-  function groTicksDroppedToast(n) {
-    return (n === 1 ? "One tick" : n + " ticks") + " couldn’t be saved — the list is up to date now.";
+  // `adds`: how many of the n were things added, not ticks — an add the
+  // server refused is not a tick, and the toast used to call it one.
+  function groTicksDroppedToast(n, adds) {
+    adds = adds || 0;
+    var what = !adds ? (n === 1 ? "One tick" : n + " ticks")
+      : adds === n ? (n === 1 ? "Something you added" : n + " things you added")
+      : n + " changes";
+    return what + " couldn’t be saved — the list is up to date now.";
   }
   // No signal and no copy to show (this device hasn't heard which household
   // is signed in, or was just signed out): a calm empty state, not an error.
@@ -5389,12 +5395,15 @@
     return groOffline.replay(groPostJson).then(function (result) {
       if (!result) return result;
       if (result.kept > 0) {
-        groSetOffline(true);
+        // `waiting`: the server answered, it is just still finishing an
+        // add this phone sent before (a 409 — see grocery-offline.js
+        // replay). That is not "no signal"; the timer sends it again.
+        if (!result.waiting) groSetOffline(true);
         return result;
       }
       groSetOffline(false);
       if (groReplayTimer) { clearInterval(groReplayTimer); groReplayTimer = null; }
-      if (result.dropped > 0) showToast(groTicksDroppedToast(result.dropped));
+      if (result.dropped > 0) showToast(groTicksDroppedToast(result.dropped, result.droppedAdds));
       else if (result.sent > 0) showToast(GRO_CAUGHT_UP_TOAST);
       renderGroceryOfflineLine();
       if (result.sent > 0 || result.dropped > 0) return loadGrocery().then(function () { return result; });

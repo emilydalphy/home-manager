@@ -28,7 +28,9 @@
 // it answers. A 404 means the row is gone (a partner removed it) and
 // sending it again would not bring it back; a 500 means the same request
 // will fail the same way. Only a request the server never saw — fetch
-// threw — stays queued, and the queue stops there so order holds. The
+// threw — stays queued, and the queue stops there so order holds. (One
+// exception since 2026-10-22: a 409 on an add means the server is still
+// adding that same client_id, so it stays queued too — see replay.) The
 // status route is idempotent (see tools.mark_grocery_item), so a request
 // whose reply was lost in the store's dead zone is safe to send twice.
 //
@@ -445,11 +447,24 @@
           return Promise.resolve()
             .then(function () { return post(req.url, req.body); })
             .then(function (res) {
+              // A 409 on an add: the same client_id is still being added by
+              // an earlier request whose reply this phone never got — or
+              // that request died, and the server takes its claim over
+              // after a minute (app/grocery_add_once.py). Either way the
+              // add is not spent yet: keep it, stop here so order holds,
+              // and let the slow timer send it again. Not "no signal" —
+              // `waiting` tells shell.js the server did answer.
+              if (isAdd(op) && res && res.status === 409) {
+                result.kept = pending().length;
+                result.waiting = 1;
+                return result;
+              }
               // Answered: spent, whichever way it went.
               writePending(pending().filter(function (o) {
                 return !(o.id === op.id && o.at === op.at && isFreezing(o) === isFreezing(op));
               }));
-              if (res && res.ok) result.sent += 1; else result.dropped += 1;
+              if (res && res.ok) result.sent += 1;
+              else { result.dropped += 1; if (isAdd(op)) result.droppedAdds = (result.droppedAdds || 0) + 1; }
               return step();
             }, function () {
               // Never reached the server. Stop here; order holds.
