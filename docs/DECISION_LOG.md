@@ -26,7 +26,8 @@ why*, not duplicating the diff.
   and tests file). `add_staple` on an existing staple with `every_days`
   changed the cadence but left next_due on the old one ("about every week ·
   due in 3 weeks"). It is now last bought + the told cadence; a staple never
-  bought stays due.
+  bought stays due; and a later date a "We have plenty" / "Not this trip"
+  set stands (review round: rebuilding from last bought alone undid it).
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

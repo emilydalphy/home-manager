@@ -739,10 +739,22 @@ def add_staple(
             # week" on a 3-week default left it "about every week · due in
             # 3 weeks". Only from a real last-bought date — a staple never
             # bought is due already, and stays so.
+            #
+            # A due date LATER than the old rhythm put it is an answer the
+            # household gave — "We have plenty" / "Not this trip" push it
+            # out from today and leave last bought alone — and a new rhythm
+            # does not take that answer back: rebuilding from last bought
+            # alone made coffee "probably running low" right after "we have
+            # plenty". So the later of the two stands.
             last = _parse(existing["last_bought_at"])
             if last is not None and not due_now:
+                new_due = last + timedelta(days=_clamp(every_days))
+                current = _parse(existing["next_due_at"])
+                old_rhythm_due = last + timedelta(days=existing["cadence_days"] or 0)
+                if current is not None and current > old_rhythm_due:
+                    new_due = max(new_due, current)
                 fields.append("next_due_at = ?")
-                params.append(_iso(last + timedelta(days=_clamp(every_days))))
+                params.append(_iso(new_due))
         if quantity:
             fields.append("quantity = ?")
             params.append(quantity)

@@ -113,3 +113,38 @@ def test_a_line_bought_before_the_tick_stamp_still_counts_by_its_listing_day():
     s = tools.add_staple("Yogurt", category="dairy")
     assert s["cadence_source"] == "learned" and s["cadence_days"] == 7
     assert s["last_bought_at"] == "2026-09-02"
+
+
+# ------------------- a told rhythm keeps the household's last answer ----
+
+
+def _overdue_coffee() -> int:
+    s = tools.add_staple("Coffee beans", category="pantry")  # bought today, 21 days
+    st._TODAY_OVERRIDE = WEDNESDAY + timedelta(days=25)
+    return s["id"]
+
+
+def test_we_have_plenty_then_a_told_rhythm_stays_not_due():
+    _overdue_coffee()
+    plenty = tools.mark_staple_plenty("Coffee beans")
+    assert plenty["next_due_at"] == _iso(25 + 21)
+    told = tools.add_staple("Coffee beans", every_days=14)
+    assert told["cadence_days"] == 14
+    # last bought + 14 is long past; the plenty answer still stands.
+    assert told["next_due_at"] == _iso(25 + 21)
+    assert told["due"] is False
+
+
+def test_not_this_trip_then_a_told_rhythm_stays_not_due():
+    staple_id = _overdue_coffee()
+    tools.get_grocery_list_by_section(status="needed")  # puts the due line on
+    conn = get_conn()
+    (line_id,) = conn.execute(
+        "SELECT id FROM grocery_items WHERE staple_id = ? AND status = 'needed'", (staple_id,)
+    ).fetchone()
+    conn.close()
+    skipped = tools.decide_staple_line(line_id, "skip")
+    assert skipped["next_due_at"] == _iso(25 + st.SKIP_DAYS)
+    told = tools.add_staple("Coffee beans", every_days=14)
+    assert told["next_due_at"] == _iso(25 + st.SKIP_DAYS)
+    assert told["due"] is False
