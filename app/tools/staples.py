@@ -613,27 +613,42 @@ def _relearn(conn, staple_id: int) -> None:
 def _seed_history(conn, staple_id: int, item: str, except_line_id: int | None = None) -> int:
     """
     What Pomona already knows about buying this, so a household that has
-    been shopping with it for weeks doesn't start from a default. Purchased
-    grocery lines carry no purchase timestamp — only when the line was
-    made — so each purchased line's created_at counts as ONE approximate
-    bought date. That is honest enough to learn a cadence from (it is off
-    by the few days between listing and buying, the same way every time)
-    and is never used for anything finer than "about every N weeks".
+    been shopping with it for weeks doesn't start from a default. Each
+    purchased line counts as ONE bought date: the day it was TICKED
+    (inventory_added_at, stamped by mark_grocery_item), on the household's
+    clock — or, for a line bought before that stamp existed, the day it
+    was made, which is off by the days between listing and buying and is
+    never used for anything finer than "about every N weeks".
+
+    Until 2026-10-22 it was always created_at, and that was wrong where it
+    matters most: a week's line is made at approval and bought days later,
+    so the LAST date — which _relearn anchors next_due on — was the
+    approval, not the shop. Milk bought Saturday off three weeks' lists,
+    made a staple that evening, read "last bought Sunday, due tomorrow"
+    and was back on the list the next morning.
+
     except_line_id leaves out the line being bought at this very moment —
-    its created_at and today's tick are the same purchase, and counting
-    both would teach a few-day "interval" that never happened.
+    its tick is today's purchase, which the caller records itself, and
+    counting both would teach a few-day "interval" that never happened.
     Returns how many dates were seeded.
     """
+    from . import before_shop as _before_shop  # lazy: it imports this module
+    from . import cooker as _cooker
+
+    # On the caller's connection: add_staple is mid-write when it seeds.
+    zone = _cooker.household_zone(conn)
     wanted = _grocery._merge_key(item)
     rows = conn.execute(
-        "SELECT id, item, created_at FROM grocery_items WHERE household_id = ? AND status = 'purchased'",
+        "SELECT id, item, COALESCE(inventory_added_at, created_at) AS bought_at FROM grocery_items "
+        "WHERE household_id = ? AND status = 'purchased'",
         (household_id(),),
     ).fetchall()
     seen = set()
     for row in rows:
         if row["id"] == except_line_id or _grocery._merge_key(row["item"]) != wanted:
             continue
-        d = (row["created_at"] or "")[:10]
+        day = _before_shop._household_date_of(row["bought_at"], zone)
+        d = _iso(day) if day is not None else ""
         if not d or d in seen:
             continue
         seen.add(d)
@@ -719,6 +734,15 @@ def add_staple(
         if every_days:
             fields += ["cadence_days = ?", "cadence_source = 'told'"]
             params.append(_clamp(every_days))
+            # The due date was a cadence out from the last purchase on the
+            # OLD rhythm, so it moves with the new one: "we buy coffee every
+            # week" on a 3-week default left it "about every week · due in
+            # 3 weeks". Only from a real last-bought date — a staple never
+            # bought is due already, and stays so.
+            last = _parse(existing["last_bought_at"])
+            if last is not None and not due_now:
+                fields.append("next_due_at = ?")
+                params.append(_iso(last + timedelta(days=_clamp(every_days))))
         if quantity:
             fields.append("quantity = ?")
             params.append(quantity)

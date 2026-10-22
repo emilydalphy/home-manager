@@ -13,6 +13,20 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A staple made from buying history learns from the day things were
+  TICKED, on the household's clock** (2026-10-22; branch
+  `overnight/hunt-shoptrip-2026-10-22b`; tests
+  `tests/test_staple_rhythm_dates.py`). `staples._seed_history` read each
+  purchased line's `created_at`, so a week's line (made at approval, bought
+  days later) anchored next_due on the approval: milk bought today, made a
+  staple, read "last bought Sunday, due" and was back on the list within
+  days. It now reads `inventory_added_at` (the tick), falling back to
+  `created_at` for lines older than the stamp.
+- **Telling a staple's rhythm moves its due date** (2026-10-22; same branch
+  and tests file). `add_staple` on an existing staple with `every_days`
+  changed the cadence but left next_due on the old one ("about every week ·
+  due in 3 weeks"). It is now last bought + the told cadence; a staple never
+  bought stays due.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
