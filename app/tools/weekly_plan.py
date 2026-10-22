@@ -4098,6 +4098,20 @@ def _finish_takeover_result(result: dict, new_plan_id: int) -> dict:
     return result
 
 
+# What a takeover does to a plan's grocery line, by its status — the
+# rule _grocery._reverse_meal_grocery_contributions applies, said once for
+# the two readers that describe it before and after (preview_approved_
+# takeover's question, _release_plan_days' `grocery_kept_bought`). 'spice'
+# is a recipe's spice, sauce or pantry staple assumed at home (pantry.py):
+# never bought, reversed like a needed line. Both readers used to say
+# "anything not 'needed' is bought", so a re-plan over nights whose lines
+# were pasta and stock was told "it's all bought already" and then took
+# both off the list (defect hunt 2026-10-22). Anything else — a line set
+# aside, a carried-over line — is neither, and is counted as neither.
+_TAKEOVER_LIVE_STATUSES = "('needed', 'spice')"
+_TAKEOVER_BOUGHT_STATUSES = "('in_cart', 'purchased')"
+
+
 def preview_approved_takeover(period_start: str, day_count: int) -> dict | None:
     """
     What APPROVING a draft of this period would take away from an APPROVED
@@ -4171,8 +4185,8 @@ def preview_approved_takeover(period_start: str, day_count: int) -> dict | None:
         entry_placeholders = ",".join("?" * len(entry_ids))
         counts = conn.execute(
             f"SELECT "
-            f"COUNT(DISTINCT CASE WHEN g.status = 'needed' THEN g.id END) AS needed, "
-            f"COUNT(DISTINCT CASE WHEN g.status != 'needed' THEN g.id END) AS bought "
+            f"COUNT(DISTINCT CASE WHEN g.status IN {_TAKEOVER_LIVE_STATUSES} THEN g.id END) AS needed, "
+            f"COUNT(DISTINCT CASE WHEN g.status IN {_TAKEOVER_BOUGHT_STATUSES} THEN g.id END) AS bought "
             f"FROM meal_plan_grocery_links l "
             f"JOIN grocery_items g ON g.id = l.grocery_item_id "
             f"WHERE l.household_id = ? AND l.meal_plan_entry_id IN ({entry_placeholders})",
@@ -4417,7 +4431,7 @@ def _release_plan_days(plan_id: int, dates: list[str], include_components: bool 
                     f"SELECT DISTINCT g.item FROM meal_plan_grocery_links l "
                     f"JOIN grocery_items g ON g.id = l.grocery_item_id "
                     f"WHERE l.household_id = ? AND l.meal_plan_entry_id IN ({entry_placeholders}) "
-                    f"AND g.status != 'needed'",
+                    f"AND g.status IN {_TAKEOVER_BOUGHT_STATUSES}",
                     (household_id(), *entry_ids),
                 ).fetchall()
             ]
