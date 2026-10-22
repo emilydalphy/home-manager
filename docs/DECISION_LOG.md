@@ -13,6 +13,14 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **"Costco" and "costco " are one store** (2026-10-22; branch
+  `overnight/store-names-match`; tests `tests/test_store_names_match.py`).
+  Every store-name writer stored the text as typed, so Sort grew a second
+  Costco group and usual_stores held both. Now `stores.canonical_store_name`
+  (household's first spelling: usual stores, then oldest line) on every write,
+  `store_key` (tidied + casefold) on every compare, `one_spelling_each` for
+  usual_stores. Lines already split before this are not rewritten; the
+  by-store read folds them, shell.js's own grouping does not.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

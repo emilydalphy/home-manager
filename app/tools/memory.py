@@ -852,6 +852,10 @@ def edit_preference(field: str, value) -> dict:
             )
         return {"dislikes": value}
     if field == "usual_stores":
+        # One spelling per store, the first given ("Costco" and "costco "
+        # are one shop — stores.store_key), tidied of stray spaces.
+        from . import stores as _stores
+        value = _stores.one_spelling_each(value)
         with write() as conn:
             before = conn.execute(
                 "SELECT usual_stores_json, store_typical_items_json, store_hours_json FROM meal_preferences WHERE household_id = ?",

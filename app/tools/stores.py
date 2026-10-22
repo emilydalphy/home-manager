@@ -19,6 +19,86 @@ from . import quantities as _quantities
 MAX_BULK_STORE_ASSIGNMENTS = 500
 
 
+# ---------- one store, one name ----------
+#
+# "Costco" and "costco " are the same shop. Until 2026-10-22 every writer
+# below stored the store exactly as typed, so Sort grew a second Costco
+# group, usual_stores held both, and hours saved under one were looked up
+# under the other. These are the ONE place a store name's identity is
+# decided; every writer of a store name goes through canonical_store_name,
+# and every comparison through store_key.
+
+def tidy_store_name(name) -> str:
+    """The name as typed, with the spaces tidied: ends trimmed, runs of
+    spaces made one. Capitals are kept — they are the household's own."""
+    return " ".join(str(name or "").split())
+
+
+def store_key(name) -> str:
+    """What makes two store names the same store: tidied and case-folded.
+    A matching key only — never stored or shown."""
+    return tidy_store_name(name).casefold()
+
+
+def one_spelling_each(names) -> list[str]:
+    """A list of store names with each store once, in its first spelling,
+    tidied; blanks dropped. What usual_stores is saved as."""
+    by_key: dict[str, str] = {}
+    for name in names or []:
+        name = tidy_store_name(name)
+        if name:
+            by_key.setdefault(store_key(name), name)
+    return list(by_key.values())
+
+
+def _known_store_names(conn) -> list[str]:
+    """Every spelling of a store this household already has, earliest
+    first: its usual stores in their own order (the names it chose), then
+    the stores on its grocery lines oldest line first, then remembered
+    item stores and the Kitchen sheet's typical-items stores."""
+    hid = household_id()
+    names: list[str] = []
+    row = conn.execute(
+        "SELECT usual_stores_json, store_typical_items_json FROM meal_preferences WHERE household_id = ?", (hid,)
+    ).fetchone()
+    typical: dict = {}
+    if row:
+        try:
+            usual = json.loads(row["usual_stores_json"] or "[]")
+        except (TypeError, ValueError):
+            usual = []
+        if isinstance(usual, list):
+            names += [n for n in usual if isinstance(n, str)]
+        try:
+            typical = json.loads(row["store_typical_items_json"] or "{}")
+        except (TypeError, ValueError):
+            typical = {}
+    names += [r["store"] for r in conn.execute(
+        "SELECT store FROM grocery_items WHERE household_id = ? AND store != '' ORDER BY id", (hid,)
+    ).fetchall()]
+    names += [r["store"] for r in conn.execute(
+        "SELECT store FROM item_store_preferences WHERE household_id = ? AND store != '' ORDER BY id", (hid,)
+    ).fetchall()]
+    if isinstance(typical, dict):
+        names += [k for k in typical if isinstance(k, str)]
+    return names
+
+
+def canonical_store_name(conn, name) -> str:
+    """
+    The spelling to store for a store name somebody typed: the household's
+    first spelling of that store when it already has one (any capitals, any
+    spacing), otherwise the typed name tidied. '' stays '' (no store).
+    """
+    wanted = store_key(name)
+    if not wanted:
+        return ""
+    for known in _known_store_names(conn):
+        if store_key(known) == wanted:
+            return tidy_store_name(known)
+    return tidy_store_name(name)
+
+
 def _apply_store_to_matching_rows(conn, item: str, store: str) -> None:
     """
     Set the store on whichever line the list is actually holding.
@@ -89,6 +169,7 @@ def set_item_store(item: str, store: str, log_event: bool = True, sync_typical: 
     that's a matching key, not something to show anyone).
     """
     conn = get_conn()
+    store = canonical_store_name(conn, store)
     key = _merge_key(item)
     existing_rows = conn.execute(
         "SELECT id, item FROM item_store_preferences WHERE household_id = ?", (household_id(),)
@@ -153,7 +234,8 @@ def is_multi_store_household() -> bool:
     ).fetchall()
     conn.close()
     tagged = {r["store"] for r in tagged_rows}
-    return len(usual | tagged) > 1
+    # Counted by store_key: "Costco" and "costco" are one shop, not two.
+    return len({store_key(n) for n in usual | tagged if isinstance(n, str)} - {""}) > 1
 
 
 def get_grocery_list_by_store(status: str = "needed") -> dict:
@@ -172,8 +254,13 @@ def get_grocery_list_by_store(status: str = "needed") -> dict:
         _staples.sync_due_staples()
     items = _grocery.list_grocery_list(status=status)
     by_store: dict[str, list[dict]] = {}
+    # One group per store_key, under the first spelling met, so a line
+    # filed as "costco" before 2026-10-22 joins "Costco" rather than
+    # heading a second Costco group.
+    shown: dict[str, str] = {}
     for it in items:
         store = it.get("store") or "Unassigned"
+        store = shown.setdefault(store_key(store), store)
         by_store.setdefault(store, []).append(it)
     stores = []
     for store, store_items in by_store.items():
@@ -258,6 +345,8 @@ def _stage_grocery_item_store(conn, item_id: int, store: str, remember: bool, de
     ).fetchone()
     if not row:
         return {"item_id": item_id, "found": False}
+    # "costco" files under the household's "Costco", not beside it.
+    store = canonical_store_name(conn, store)
     conn.execute(
         "UPDATE grocery_items SET store = ?, store_decided = ? "
         "WHERE id = ? AND household_id = ?",
@@ -594,14 +683,16 @@ def set_store_hours(store: str, hours: dict | None) -> dict:
         raise ValueError("That store name is too long.")
     cleaned = _clean_hours(hours)
     with write() as conn:
-        usual = {n.lower(): n for n in _usual_stores(conn)}
-        if name.lower() not in usual:
+        usual: dict[str, str] = {}
+        for n in _usual_stores(conn):
+            usual.setdefault(store_key(n), n)
+        if store_key(name) not in usual:
             raise ValueError(f"{name} isn't one of your stores yet — add it first.")
-        name = usual[name.lower()]
+        name = usual[store_key(name)]
         current = _read_store_hours(conn)
-        # One entry per store, whatever case it was saved under — the same
-        # case-insensitive identity add_usual_stores merges on.
-        current = {k: v for k, v in current.items() if k.strip().lower() != name.lower()}
+        # One entry per store, whatever case or spacing it was saved under —
+        # the same store_key identity add_usual_stores merges on.
+        current = {k: v for k, v in current.items() if store_key(k) != store_key(name)}
         if cleaned:
             current[name] = cleaned
         conn.execute(
@@ -618,12 +709,12 @@ def set_store_hours(store: str, hours: dict | None) -> dict:
 
 def hours_for(store: str, all_hours: dict | None = None) -> dict | None:
     """One store's hours, matched case-insensitively, or None."""
-    name = (store or "").strip().lower()
+    name = store_key(store)
     if not name:
         return None
     table = all_hours if all_hours is not None else get_store_hours()
     for key, value in table.items():
-        if key.strip().lower() == name and isinstance(value, dict):
+        if store_key(key) == name and isinstance(value, dict):
             return value
     return None
 
