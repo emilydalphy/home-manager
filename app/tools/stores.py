@@ -131,6 +131,38 @@ def set_item_store(item: str, store: str, log_event: bool = True, sync_typical: 
     return {"item": item, "store": store}
 
 
+def forget_dropped_stores(conn, dropped: set[str]) -> None:
+    """
+    A usual store the household took off its list stops being where things
+    go. Called inside the same write as the usual_stores change
+    (memory.edit_preference / delete_preference), with the dropped names.
+
+    Those two already drop the store's typical-items list and its hours;
+    the per-item preference was the half left behind, so "paper towels"
+    kept being filed under Costco after Costco was removed — the Shop tab
+    grew a Costco group again, and the household read as multi-store with
+    one shop on its list. The preference goes (set_item_store's own
+    "clear" meaning), and a line still to buy that was filed there goes
+    back to unsorted with its question re-opened, exactly as clearing
+    the item's store does. A line already in the cart or bought keeps the
+    store it was bought at.
+    """
+    names = {(n or "").strip().lower() for n in dropped} - {""}
+    if not names:
+        return
+    marks = ",".join("?" for _ in names)
+    conn.execute(
+        f"DELETE FROM item_store_preferences WHERE household_id = ? AND lower(trim(store)) IN ({marks})",
+        (household_id(), *names),
+    )
+    conn.execute(
+        f"UPDATE grocery_items SET store = '', store_decided = 0 "
+        f"WHERE household_id = ? AND lower(trim(store)) IN ({marks}) "
+        f"AND status IN ('needed', 'carried', 'spice')",
+        (household_id(), *names),
+    )
+
+
 def is_multi_store_household() -> bool:
     """
     Whether this household actually shops at more than one store — the
@@ -636,7 +668,10 @@ def _is_holiday(day: date, cache: dict | None = None) -> bool:
         return cache[day]
     from . import holidays as _holidays  # call time: holidays reaches back into the plan
     try:
-        found = _holidays.holiday_on(day.isoformat()) is not None
+        # An occasion like Halloween is on the holiday table but shuts no
+        # shop (holidays.shops_close_for).
+        h = _holidays.holiday_on(day.isoformat())
+        found = h is not None and _holidays.shops_close_for(h["name"])
     except Exception:
         found = False
     if cache is not None:
@@ -657,7 +692,9 @@ def open_window(store: str, day: date, all_hours: dict | None = None, cache: dic
 
     "Closed on holidays" counts on the dates the holidays module already
     knows (its rule table for the household's region, plus holiday-looking
-    events on its calendar) — no real holiday hours in this slice.
+    events on its calendar), less the occasions no shop closes for
+    (holidays.shops_close_for: Halloween, Mother's Day, …) — no real
+    holiday hours in this slice.
     """
     hours = hours_for(store, all_hours)
     if not hours:

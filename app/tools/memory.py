@@ -904,6 +904,10 @@ def edit_preference(field: str, value) -> dict:
                         "UPDATE meal_preferences SET store_hours_json = ? WHERE household_id = ?",
                         (json.dumps(kept_hours), household_id()),
                     )
+            if dropped:
+                # And what is filed under it (see stores.forget_dropped_stores).
+                from . import stores as _stores
+                _stores.forget_dropped_stores(conn, dropped)
         return {"usual_stores": value}
     if field == "cuisine_preferences":
         return _preferences.set_household_meal_preferences(cuisine_preferences=value, mark_complete=False)
@@ -997,7 +1001,14 @@ def delete_preference(field: str, item: str | None = None) -> dict:
                 (json.dumps(updated), household_id()),
             )
         elif field == "usual_stores":
-            updated = [s for s in _as_str_list(json.loads(existing["usual_stores_json"])) if s.lower() != (item or "").lower()]
+            was_stores = _as_str_list(json.loads(existing["usual_stores_json"]))
+            updated = [s for s in was_stores if s.lower() != (item or "").lower()]
+            if len(updated) < len(was_stores):
+                # Only a store that WAS a usual one — the same narrow rule
+                # edit_preference's un-pick follows. Its per-item filing goes
+                # with it (stores.forget_dropped_stores).
+                from . import stores as _stores
+                _stores.forget_dropped_stores(conn, {(item or "").strip().lower()})
             # Drop that store's typical-items list along with it — an orphaned
             # entry would keep surfacing "usually get here" suggestions in the
             # grocery list for a store the household no longer shops at.
