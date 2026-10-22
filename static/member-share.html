@@ -114,6 +114,19 @@ function escapeHtml(s) {
   }[c]));
 }
 
+// When a note was left, on this phone's clock. The server stamps notes with
+// SQLite's datetime('now') — UTC, with no zone on it — and this page used to
+// print that string as it came: a note left at 9pm in Toronto read
+// "2026-10-23 01:00:00", tomorrow at 1am (defect hunt, 2026-10-22). Read as
+// UTC, shown in the app's date style ("Oct 22, 9:00 PM").
+function noteWhen(stamp) {
+  if (!stamp) return '';
+  const d = new Date(String(stamp).replace(' ', 'T') + 'Z');
+  if (isNaN(d)) return '';
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ', ' +
+    d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+}
+
 function getToken() {
   return window.location.pathname.split('/').filter(Boolean).pop();
 }
@@ -140,7 +153,7 @@ function render(view) {
       <p class="hint">Anything you'd like factored in — a preference, feedback on a recent meal, anything.</p>
       <textarea id="note-input" placeholder="e.g. I'd love more vegetarian nights"></textarea>
       <button class="action" id="note-btn">Save note</button>
-      ${notes.length ? `<div style="margin-top:14px">${notes.map(n => `<div class="note-item">${escapeHtml(n.note)}<div class="note-date">${escapeHtml(n.created_at || '')}</div></div>`).join('')}</div>` : ''}
+      ${notes.length ? `<div style="margin-top:14px">${notes.map(n => `<div class="note-item">${escapeHtml(n.note)}<div class="note-date">${escapeHtml(noteWhen(n.created_at))}</div></div>`).join('')}</div>` : ''}
     </div>
     <p class="footer-note">This link is just for you — it only edits your own restrictions and notes, nothing else in the household.</p>
   `;
