@@ -264,11 +264,17 @@ def _drop_name_filler(cleaned: str) -> str:
 
 
 def _fold_accents(text: str) -> str:
+    # Only a mark on a Latin letter is dropped: "ñ" -> "n" is a spelling
+    # variant, but a Japanese voicing mark makes a different word (ごま,
+    # sesame, is not こま) and must not merge two lines.
     if text.isascii():
         return text
-    return "".join(
-        ch for ch in unicodedata.normalize("NFKD", text) if not unicodedata.combining(ch)
-    )
+    out: list[str] = []
+    for ch in unicodedata.normalize("NFD", text):
+        if unicodedata.combining(ch) and out and out[-1].isascii() and out[-1].isalpha():
+            continue
+        out.append(ch)
+    return unicodedata.normalize("NFC", "".join(out))
 
 
 def _plain_name_key(name: str) -> str:

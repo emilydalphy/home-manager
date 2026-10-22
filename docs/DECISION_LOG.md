@@ -20,7 +20,8 @@ why*, not duplicating the diff.
   "1,5 kg" showed "1": `quantities._number_commas` (3 digits after = thousands,
   else decimal) runs first. `grocery._plain_name_key` now folds accents, so
   two recipes' spellings are one line; the line keeps the name as written.
-
+  Review fixes: "0,500 kg" and a 3-digit group before kg/l stay decimals
+  (were 1000x too big); only marks on Latin letters fold (ごま is not こま).
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

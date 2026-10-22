@@ -68,3 +68,18 @@ def test_different_letters_still_stay_apart():
     tools.add_grocery_item("Paté", quantity="1", category="meat/seafood")
     tools.add_grocery_item("Pita", quantity="1", category="pantry")
     assert len(_lines("Pâté", "Paté", "Pita")) == 2
+
+
+def test_a_french_decimal_is_never_read_as_thousands():
+    from app.tools.quantities import _number_commas
+    # Review, same night: "0,500 kg" came out "500 kg" — 1000x too big.
+    assert _number_commas("0,500 kg") == "0.500 kg"
+    assert _number_commas("1,250 kg") == "1.250 kg"
+    assert _number_commas("0,750 l") == "0.750 l"
+    assert _number_commas("1,000 g") == "1000 g"
+
+
+def test_accents_fold_only_on_latin_letters():
+    from app.tools.grocery import _plain_name_key
+    assert _plain_name_key("Jalapeño") == _plain_name_key("jalapeno")
+    assert _plain_name_key("ごま") != _plain_name_key("こま")

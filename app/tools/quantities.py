@@ -526,11 +526,27 @@ def _number_commas(qty: str) -> str:
     after the next add (defect hunt, 2026-10-22). Exactly three digits
     after the comma is a thousands separator; anything else is a decimal.
     "3, diced" has a space after its comma and is untouched.
+
+    Except where a thousand can't be meant: "0,500 kg" is half a kilo, and
+    "1,250 kg" / "0,750 l" are a French writer's decimals, not a 1250 kg
+    shop — read as thousands they came out 1000x too big (review, same
+    night).
     """
     if not qty or "," not in qty:
         return qty
-    qty = re.sub(r"(?<=\d),(?=\d{3}(?!\d))", "", qty)
+
+    def _group(match: re.Match) -> str:
+        whole, frac, gap, unit = match.groups()
+        decimal = whole.lstrip("0") == "" or unit.lower() in _BIG_METRIC_UNITS
+        return f"{whole}{'.' if decimal else ''}{frac}{gap}{unit}"
+
+    qty = re.sub(r"(\d+),(\d{3})(?!\d)(\s*)([A-Za-z]*)", _group, qty)
     return re.sub(r"(?<=\d),(?=\d)", ".", qty)
+
+
+# Units where "1,250" can only be a decimal comma: nobody buys 1250 kg.
+_BIG_METRIC_UNITS = {"kg", "kgs", "kilo", "kilos", "kilogram", "kilograms",
+                     "l", "litre", "litres", "liter", "liters"}
 
 
 def _parse_quantity(qty: str) -> tuple[float, str | None] | None:
