@@ -23,7 +23,15 @@ why*, not duplicating the diff.
   freezer lines keep their status (remembered amount resized). The rebuy-only cut
   (`e0de6e35`) was pulled: new ids every tap, dropped lines came back. Left alone:
   drafts, past/cooked nights (incl. a reheat whose cook night moved), holiday
-  menus, any week with a line in cart/bought, component plates, `clear_slot_attendance`.
+  menus, any week with a line in cart/bought, component plates, and
+  `clear_slot_attendance` (usual_week.py, holidays.py — it skips the write hook).
+  Review fixes: `quantities._ledger_buckets` snaps each sum to 9 significant
+  figures (12-figure ledger strings re-read 18 oz as 18.00000000003 and broke an
+  exact quarter tie the other way — "1 lb" came back "1.25 lbs"); the simulation
+  reads with the kitchen's stock blanked and matches rows per (meal, item, unit
+  family), so a line inventory flipped is left (logged) while the rest resize.
+  A share re-converted between units can differ in its 12th figure from what
+  approval wrote (display unaffected).
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

@@ -223,3 +223,44 @@ def test_everyone_out_is_the_away_conversion_not_a_resize():
     for name in ("Alex", "Sam", "Rae"):
         tools.set_member_attendance(WED, "dinner", name, present=False)
     assert _list() == {}, "nobody home: nothing bought, as before"
+
+
+def _two_people_two_beef_dinners():
+    for n in ("Alex", "Sam"):
+        tools.add_member(n)
+    tools.add_recipe("A", default_servings=3, ingredients=[{"item": "beef", "qty": "1 lb"}])
+    tools.add_recipe("B", default_servings=3, ingredients=[{"item": "beef", "qty": "11 oz"}])
+    plan_id = tools.create_weekly_plan(_monday().isoformat())["weekly_plan_id"]
+    tools.plan_meal(WED, "A", slot="dinner", weekly_plan_id=plan_id)
+    tools.plan_meal(_day(4), "B", slot="dinner", weekly_plan_id=plan_id)
+    tools.approve_weekly_plan(plan_id, "Alex")
+
+
+def test_a_line_on_an_exact_rounding_tie_comes_back_to_what_approval_wrote():
+    # 2/3 of 16 oz + 2/3 of 11 oz = 18 oz exactly, which approval rounds to
+    # "1 lb"; the ledger's twelve-figure strings re-read as 18.00000000003
+    # and rounded the other way ("1.25 lbs") until the sum was snapped.
+    _two_people_two_beef_dinners()
+    assert _list() == {"beef": "1 lb"}
+    tools.set_guest_count(WED, "dinner", 1)
+    tools.set_guest_count(WED, "dinner", 0)
+    assert _list() == {"beef": "1 lb"}
+
+
+def test_food_logged_in_the_kitchen_after_approval_does_not_freeze_the_line():
+    _household()
+    _one_dinner()
+    tools.update_inventory("beef", quantity="12 oz", location="fridge", action="add")
+    tools.set_member_attendance(WED, "dinner", "Rae", present=False)
+    assert _list() == {"beef": "10.75 oz", "lettuce": "1 head"}
+
+
+def test_a_line_the_kitchen_covered_at_approval_stays_off_while_the_rest_resizes():
+    _household()
+    tools.update_inventory("lettuce", quantity="1 head", location="fridge", action="add")
+    _one_dinner()
+    assert _list() == {"beef": "1 lb"}
+    tools.set_guest_count(WED, "dinner", 3)
+    assert _list() == {"beef": "2 lbs"}, "beef follows the table; lettuce is the kitchen's call, left as it was"
+    tools.set_guest_count(WED, "dinner", 0)
+    assert _list() == {"beef": "1 lb"}

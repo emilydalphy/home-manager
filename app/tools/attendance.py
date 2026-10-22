@@ -367,6 +367,19 @@ def _share_in_unit(new_qty: str, old_qty: str) -> str | None:
     return _quantities._format_quantity(converted, old[1], sig=_recipes._LEDGER_SIG)
 
 
+def _unit_family(qty: str) -> str:
+    """Which unit family a ledger row is written in ("measure:lb/oz",
+    a bare unit, or "" for freeform) — for pairing like rows with like."""
+    parsed = _quantities._parse_quantity(qty or "")
+    if not parsed:
+        return ""
+    unit = parsed[1]
+    for group in _quantities._UNIT_CONVERSION_GROUPS + _quantities._PACK_CONVERSION_GROUPS:
+        if unit in group:
+            return "measure:" + min(group, key=group.get)
+    return unit or ""
+
+
 def resize_for_new_headcount(date_str: str, slot: str) -> list[int]:
     """
     An approved week's shopping follows a meal whose table changed size —
@@ -471,9 +484,16 @@ def _resize_recipe_week(conn, plan_id: int, recipe_id: int, today: str, _recipe_
     if not links or any(l["status"] in ("in_cart", "purchased") for l in links):
         return []
 
-    # What the ingest would record now — read, then rolled back.
+    # What the ingest would record now — read, then rolled back. The
+    # kitchen's stock is blanked for the read (inside the savepoint, so
+    # it is rolled back with everything else): coverage is all-or-nothing
+    # (recipes._KitchenStock), so a fridge logged since approval flipped a
+    # line in or out of the simulation and the week used to be left at the
+    # old size whole. A line already on the list is resized as a line;
+    # one stock kept off it stays off (below, rows the file doesn't hold).
     conn.execute("SAVEPOINT headcount_resize")
     try:
+        conn.execute("UPDATE inventory_items SET quantity = '' WHERE household_id = ?", (hid,))
         _recipe_change._unbuy(conn, ids)
         _recipe_change._rebuy(conn, plan_id, ids)
         simulated = conn.execute(
@@ -486,27 +506,41 @@ def _resize_recipe_week(conn, plan_id: int, recipe_id: int, today: str, _recipe_
         conn.execute("RELEASE headcount_resize")
 
     def keyed(rows):
+        # One meal's rows for one item, by unit family then order: a side's
+        # lemon beside the recipe's own pairs like with like.
         out: dict[tuple, list] = {}
         for r in rows:
-            out.setdefault((int(r["meal_plan_entry_id"]), _grocery._merge_key(r["item"] or "")), []).append(r)
+            out.setdefault((int(r["meal_plan_entry_id"]), _grocery._merge_key(r["item"] or ""),
+                            _unit_family(r["quantity"] or "")), []).append(r)
         return out
 
     old_by_key, new_by_key = keyed(links), keyed(simulated)
-    if set(old_by_key) != set(new_by_key) or any(
-            len(old_by_key[k]) != len(new_by_key[k]) for k in old_by_key):
-        return []
+    log = logging.getLogger("home_manager")
     rewrites: list[tuple] = []
     for key, old_rows in old_by_key.items():
-        for old, new in zip(old_rows, new_by_key[key]):
+        new_rows = new_by_key.get(key)
+        if not new_rows or len(new_rows) != len(old_rows):
+            # The ingest no longer writes this row the way the file holds
+            # it — left at the size it was bought at; every other line of
+            # the week still follows the table.
+            log.info("Headcount resize left %s on entry %s as it was (ledger no longer lines up)", key[1], key[0])
+            continue
+        pending = []
+        for old, new in zip(old_rows, new_rows):
             share = _share_in_unit(new["quantity"] or "", old["quantity"] or "")
             if share is None:
-                return []
+                pending = None
+                break
             # The spice rack's teaspoons ride along with the share.
             if share != (old["quantity"] or "") or new["measure_tsp"] != old["measure_tsp"] \
                     or new["measure_about"] != old["measure_about"]:
                 if key[0] in frozen:
                     return []  # a past or cooked night's batch would move
-                rewrites.append((int(old["id"]), share, new["measure_tsp"], new["measure_about"]))
+                pending.append((int(old["id"]), share, new["measure_tsp"], new["measure_about"]))
+        if pending is None:
+            log.info("Headcount resize left %s on entry %s as it was (units don't reconcile)", key[1], key[0])
+            continue
+        rewrites.extend(pending)
     if not rewrites:
         return []
     rewritten = {r[0] for r in rewrites}

@@ -1044,7 +1044,23 @@ def _ledger_buckets(qty_strings: list[str]) -> dict | None:
             key = ("discrete", unit)
             bucket = totals.setdefault(key, [0.0, unit])
             bucket[0] += amount
+    # Rows are written at twelve significant figures (recipes._LEDGER_SIG),
+    # so three thirds of 18 oz read back as 18.00000000003 — and the
+    # quarter rounding, which breaks an exact tie one way, broke this one
+    # the other: a line approved at "1 lb" re-read as "1.25 lbs" with the
+    # ledger untouched (2026-10-22, a headcount resized and resized back).
+    # Nine figures is far below anything a list shows and far above the
+    # twelve-figure writing noise.
+    for bucket in totals.values():
+        bucket[0] = _snap_sig(bucket[0], 9)
     return totals
+
+
+def _snap_sig(value: float, sig: int) -> float:
+    """value rounded to `sig` significant figures (0 stays 0)."""
+    if not value:
+        return value
+    return round(value, sig - 1 - int(math.floor(math.log10(abs(value)))))
 
 
 def _sum_ledger_quantities(qty_strings: list[str]) -> str | None:
