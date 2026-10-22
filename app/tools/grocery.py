@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import re
 import json
+import unicodedata
 import math
 from datetime import date
 from ..db import get_conn, write
@@ -262,9 +263,22 @@ def _drop_name_filler(cleaned: str) -> str:
     return out or cleaned
 
 
+def _fold_accents(text: str) -> str:
+    if text.isascii():
+        return text
+    return "".join(
+        ch for ch in unicodedata.normalize("NFKD", text) if not unicodedata.combining(ch)
+    )
+
+
 def _plain_name_key(name: str) -> str:
-    """_merge_key without the same-purchase step: the name's own key."""
-    cleaned = " ".join((name or "").strip().lower().split())
+    """_merge_key without the same-purchase step: the name's own key.
+
+    Accents are folded (defect hunt, 2026-10-22): "Jalapeño" and
+    "jalapeno", "Crème fraîche" and "creme fraiche" are one thing to buy,
+    and recipes spell them both ways — the list carried two lines for one
+    pepper. Only the key folds; the line keeps the name as written."""
+    cleaned = " ".join(_fold_accents(name or "").strip().lower().split())
     if not cleaned:
         return ""
     cleaned = _drop_name_filler(_uninvert_name(cleaned))

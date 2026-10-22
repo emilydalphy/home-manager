@@ -13,6 +13,14 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **"1,000 g" is a kilo and "Jalapeño" is "jalapeno" on the grocery list**
+  (2026-10-22, overnight hunt; branch `overnight/hunt-grocery-2026-10-22`;
+  `tests/test_grocery_numbers_and_accents.py`). A comma between digits was
+  read as a "3, diced" prep comma, so a typed "1,000 g" flour showed "1" and
+  "1,5 kg" showed "1": `quantities._number_commas` (3 digits after = thousands,
+  else decimal) runs first. `grocery._plain_name_key` now folds accents, so
+  two recipes' spellings are one line; the line keeps the name as written.
+
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
