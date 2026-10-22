@@ -582,8 +582,14 @@ def _without_moot_prep(moves: list[dict], view: dict) -> list[dict]:
             cooked.update(i for i in (meal.get("entry_ids") or [meal.get("entry_id")]) if i)
     if not cooked:
         return moves
+    # A batch step rides on its FIRST cook's entry but feeds later meals
+    # ("Grill extra chicken for tomorrow's Fish Tacos too"), so tonight's
+    # tick doesn't make it moot — it stays (review, same night).
+    batch = {t.get("id") for t in view.get("prep_tasks") or []
+             if t.get("task_type") == "batch_component"}
     return [m for m in moves
-            if not (m["kind"] in ("fridge", "prep") and not m["done"] and m.get("entry_id") in cooked)]
+            if not (m["kind"] in ("fridge", "prep") and not m["done"]
+                    and m.get("entry_id") in cooked and m.get("task_id") not in batch)]
 
 
 def _prep_moves(view: dict, day: date, now: datetime, dinner_clock: time) -> list[dict]:

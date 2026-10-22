@@ -13,6 +13,7 @@ true (defect hunt, 2026-10-22).
 from __future__ import annotations
 
 import datetime as dt
+import json
 
 import pytest
 
@@ -94,6 +95,29 @@ def test_a_prep_step_ticked_before_the_cook_stays_as_the_record(frozen_today):
     tools.set_move_done(ids["dinner"], True)
     prep = next(m for m in tools.today_moves()["moves"] if m["id"] == ids["prep"])
     assert prep["done"]
+
+
+@pytest.mark.real_time_of_day
+def test_a_batch_step_for_a_later_meal_stays_after_tonights_cook(frozen_today):
+    """GUARD (review, same night). A batch row rides on its first cook's
+    entry but feeds tomorrow's tacos: ticking tonight doesn't make it moot."""
+    frozen_today(household_pin(6, 0, on=D))
+    ids = _week()
+    conn = get_conn()
+    plan, entry = conn.execute(
+        "SELECT weekly_plan_id, id FROM meal_plan_entries WHERE date = ? AND slot = 'dinner'", (T,)).fetchone()
+    tacos = conn.execute("SELECT id FROM meal_plan_entries WHERE date = ? AND slot = 'dinner'", (T1,)).fetchone()[0]
+    batch = conn.execute(
+        "INSERT INTO prep_tasks (household_id, weekly_plan_id, task_date, description, related_meal, "
+        "task_type, meal_plan_entry_id, detail_json) VALUES (1, ?, ?, 'Grill extra chicken for tomorrow''s tacos too', "
+        "'Chicken Skewers', 'batch_component', ?, ?)",
+        (plan, T, entry, json.dumps({"key": "chicken", "covered_entry_ids": [tacos]}))).lastrowid
+    conn.commit()
+    conn.close()
+    frozen_today(household_pin(19, 30, on=D))
+    assert f"prep:{batch}" in [m["id"] for m in tools.today_moves()["moves"]]
+    tools.set_move_done(ids["dinner"], True)
+    assert f"prep:{batch}" in [m["id"] for m in tools.today_moves()["moves"]]
 
 
 # ---------- food past its date ----------

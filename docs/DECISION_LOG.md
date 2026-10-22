@@ -19,7 +19,8 @@ why*, not duplicating the diff.
   `tests/test_today_after_dinner_and_old_food.py`). `moves._without_moot_prep`
   (in `today_moves`, not `moves_for_day` — move_credits looks moves up there
   at tick time) drops a pending fridge/prep step whose meal is cooked; it was
-  the "still to do" card until midnight. The use-it-up notification (and the
+  the "still to do" card until midnight (a `batch_component` row stays: it
+  feeds a later meal). The use-it-up notification (and the
   morning text's kitchen line) skips `expired` rows, which
   `get_expiring_soon` returns with no lower bound.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
