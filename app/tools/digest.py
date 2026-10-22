@@ -64,7 +64,7 @@ from typing import Callable
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from ..db import get_conn
-from ._shared import PUBLIC_BASE_URL, household_id, use_household
+from ._shared import PUBLIC_BASE_URL, current_member, household_id, use_household
 from . import attendance as _attendance
 from . import attention as _attention
 from . import cooker as _cooker
@@ -406,6 +406,15 @@ def _resolve_member(conn, name: str | None, phone: str) -> int:
         for r in adults:
             if r["phone"] == phone:
                 return r["id"]
+    # "Text me" from a phone whose adult is known is that adult — the rule
+    # every other write follows (_shared.acting_name: the session fills in
+    # a name nobody gave). It asked "Which of you is this for?" of a
+    # two-adult house that had already said, at "Who's this?" — and the
+    # model, told to pass a name it cannot know, could guess the wrong one
+    # (defect hunt 2026-10-22). current_member() is verified: a stale pick asks.
+    member = current_member()
+    if member and any(r["id"] == member["id"] for r in adults):
+        return member["id"]
     if len(adults) == 1:
         return adults[0]["id"]
     if not adults:
@@ -429,8 +438,8 @@ def set_morning_text(
     optional and only what's given changes: a number, the household's hour,
     on/off, (rarely) the household's time zone, and what the message
     includes. `name` says whose number it is; left out, it resolves to the
-    only adult, or to the adult already holding that number, and otherwise
-    asks.
+    adult already holding that number, else to the adult using this device
+    ("text me"), else to the only adult, and otherwise asks.
 
     Turning it on with no number on record is refused rather than stored
     as a promise nothing can keep. Turning it off is always accepted, and

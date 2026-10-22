@@ -13,6 +13,20 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A phone whose adult was re-marked Teen/Child is nobody, not the adult left**
+  (2026-10-22; branch `overnight/hunt-adults-2026-10-22b`; tests
+  `tests/test_two_adults_two_phones.py`). `current_member()` now returns None
+  when the cookie's pick fails the adult check, instead of falling through to
+  the one-adult inference. Why: Emily marking Vic a Teen left his phone signed
+  in (he is still a member) and acting AS Emily — his adds and approval
+  credited to her, her sign-in email his to change. The lone-adult inference
+  stays for a device with no pick.
+- **"Text me" in chat is the adult on this phone** (2026-10-22; same branch
+  and tests file). `digest._resolve_member` uses the verified session adult
+  before asking "Which of you is this for?"; the tool description tells the
+  model to leave `name` out for "me" and never guess it. Why: a two-adult
+  house was asked who it was after answering "Who's this?", and the model,
+  told to pass a name it cannot know, could set the other adult's texts.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

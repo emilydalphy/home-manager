@@ -116,7 +116,9 @@ def use_household(value: int) -> Iterator[int]:
 # A household with exactly one adult never sees the question, and
 # current_member() answers with that adult without a pick. That is a
 # deliberate inference rather than a stored fact: there is no one else it
-# could be, and asking would be an extra step for nothing.
+# could be, and asking would be an extra step for nothing. It holds only
+# for a device with NO pick: a device that picked someone who has since
+# stopped being an adult here is a different person, not the one left.
 #
 # Default None: scripts, tests and the chat agent's tool calls run with no
 # adult picked unless a request set one, and every write below falls back
@@ -275,8 +277,9 @@ def current_member() -> dict | None:
 
     Verified means: the claimed id names an adult in THIS household right
     now. Anything else — a removed member, one re-marked as a child, an id
-    from some other household — reads as no pick. A household with exactly
-    one adult resolves to that adult with no pick at all.
+    from some other household — reads as nobody. A household with exactly
+    one adult resolves to that adult only when the device has NO pick; a
+    pick that fails the check never resolves to whoever is left.
     """
     from ..db import get_conn
 
@@ -287,9 +290,15 @@ def current_member() -> dict | None:
             f"SELECT id, name, color FROM members WHERE id = ? AND household_id = ? AND {_ADULT_SQL}",
             (claimed, household_id()),
         ).fetchone()
-        if row is not None:
-            conn.close()
-            return _member_row_dict(row)
+        conn.close()
+        # A pick that no longer checks out is nobody — never the lone adult
+        # below. That inference is for a device nobody was ever picked on;
+        # this one named a person, and it was not them. Without this, Emily
+        # marking Vic a Teen (still a member, so his phone stays signed in)
+        # left Vic's phone acting AS Emily: his adds and his approval
+        # credited to her, her sign-in email his to change (defect hunt
+        # 2026-10-22).
+        return _member_row_dict(row) if row is not None else None
     rows = conn.execute(
         f"SELECT id, name, color FROM members WHERE household_id = ? AND {_ADULT_SQL} ORDER BY id ASC LIMIT 2",
         (household_id(),),
