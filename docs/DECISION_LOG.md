@@ -13,6 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A "½" lemon scales on the stepper, and the recipe page shows cooking
+  amounts** (2026-10-22, defect hunt; branch
+  `overnight/hunt-recipes-page-2026-10-22`; tests
+  `tests/test_recipe_page_cook_amounts.py`). `scale_recipe` left a glyph COUNT
+  ("½", "1 ½", "½ medium") as written at every size and listed it under
+  "Eyeball these", while "1/2" lime scaled and the step said "Squeeze 1
+  lemon"; it now reads it as "1/2". `GET /api/recipes/{id}` served the stored
+  SHOPPING qty ("1 bottle" olive oil, butter "6 tbsp" for "1/4 cup + 2 tbsp");
+  it now serves `cooking_ingredients` (as the stepper at the recipe's own
+  size), `shopping_qty` beside it, nothing stored changed.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

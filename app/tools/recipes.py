@@ -1059,10 +1059,23 @@ def scale_recipe(recipe_name: str, target_servings: int) -> dict:
             rescaled = scale_steps([qty_text], ratio)[0] if abs(ratio - 1) > 1e-9 else qty_text
             if rescaled == qty_text and abs(ratio - 1) > 1e-9:
                 rescaled = _scaled_count_range(qty_text, ratio) or qty_text
-            scaled_ingredients.append(_with_item_label({**ing, "qty": rescaled}))
-            if rescaled == qty_text and abs(ratio - 1) > 1e-9:
-                unscaled_items.append(ing["item"])
-            continue
+            # "½" lemon, "1 ½" onions, "½ medium" (defect hunt, 2026-10-22):
+            # a COUNT written with a glyph. scale_steps only scales a bare
+            # count with a food word after it, which a qty column has not,
+            # so these stayed "½" at every size and were listed as "eyeball
+            # these" while "1/2" lime beside them scaled and the step above
+            # said "Squeeze 1 lemon". Read as "1/2" and scaled as one.
+            ascii_text = _ascii_fractions(qty_text)
+            glyph_count_left = (
+                rescaled == qty_text and abs(ratio - 1) > 1e-9 and ascii_text != qty_text
+                and not _QTY_NEEDS_TEXT_SCALING.search(ascii_text)
+            )
+            if not glyph_count_left:
+                scaled_ingredients.append(_with_item_label({**ing, "qty": rescaled}))
+                if rescaled == qty_text and abs(ratio - 1) > 1e-9:
+                    unscaled_items.append(ing["item"])
+                continue
+            qty_text = ascii_text
         parsed = _parse_cook_qty(qty_text)
         if parsed:
             amount, unit = parsed
