@@ -3309,6 +3309,11 @@ def cooker_check_prep(req: CheckOffPrepRequest):
     try:
         tools.check_off_prep_step(req.prep_task_id, req.status)
         view = tools.get_cooker_view()
+    except tools.InvalidPrepStatus as e:
+        # A bad status is a bad request, not a missing prep task — 422 like
+        # check-meal above, not the 404 below. Must come first: it IS a
+        # ValueError, and the 404 would swallow it.
+        raise HTTPException(status_code=422, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:

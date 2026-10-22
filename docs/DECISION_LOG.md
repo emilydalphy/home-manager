@@ -13,6 +13,23 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A bad prep status is a 422, not "not found"** (2026-10-22; branch
+  `overnight/three-small-truths-2026-10-22`; tests
+  `tests/test_check_prep_status_is_422.py`). `check_off_prep_step` refused a
+  third word with a plain ValueError, the missing-row error's own type, so
+  `/api/cooker/check-prep` answered 404 for a task that exists. Now
+  `cooker.InvalidPrepStatus` (a ValueError) and 422, matching check-meal.
+- **"How did X go?" never asks about a reheat** (2026-10-22; same branch;
+  tests `tests/test_feedback_nudge_skips_reheats.py`). "Mark eaten" stamps
+  cooked_at, so `get_feedback_nudge` could ask about a leftovers / made-ahead
+  / freezer night. It now skips the nights the cook view marks
+  `is_leftovers` (confirmed chain, or `leftovers.frozen_portion_on`) — the
+  flag Cook's toast keys "Rate it" off — and still asks about the cook behind.
+- **member-share.html shows the server's sentence when a save is refused**
+  (2026-10-22; same branch). Every failure said "try again", false for a note
+  over 2000 characters, the rate limit and a revoked link. Any 4xx with a
+  string detail is shown; a 500 or a parser 422 keeps the generic line.
+  Plain text in alert(), so nothing becomes markup. Checked in Chromium at 375px.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

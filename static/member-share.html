@@ -114,6 +114,25 @@ function escapeHtml(s) {
   }[c]));
 }
 
+// The line to show when a save is refused. The server's own sentence when
+// it sent one — a note over the cap, the rate limit, a link revoked while
+// this page was open — because "try again" is false for all three; the
+// generic line otherwise. Only a 4xx with a string detail: a 500's detail
+// is "Server error: …", which is not a sentence for a person, and a 422
+// from the field parser is a list. alert() draws plain text, so the
+// sentence can never become markup here.
+async function saveFailedLine(res) {
+  const generic = "Couldn't save that — try again.";
+  if (!res || res.status < 400 || res.status >= 500) return generic;
+  try {
+    const body = await res.json();
+    const detail = body && typeof body.detail === 'string' ? body.detail.trim() : '';
+    return detail || generic;
+  } catch (e) {
+    return generic;
+  }
+}
+
 function getToken() {
   return window.location.pathname.split('/').filter(Boolean).pop();
 }
@@ -157,7 +176,11 @@ function render(view) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ restriction: val }),
       });
-      if (!res.ok) throw new Error('failed');
+      if (!res.ok) {
+        btn.disabled = false;
+        alert(await saveFailedLine(res));
+        return;
+      }
       render(await res.json());
     } catch (err) {
       btn.disabled = false;
@@ -177,7 +200,11 @@ function render(view) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ note: val }),
       });
-      if (!res.ok) throw new Error('failed');
+      if (!res.ok) {
+        btn.disabled = false;
+        alert(await saveFailedLine(res));
+        return;
+      }
       render(await res.json());
     } catch (err) {
       btn.disabled = false;
