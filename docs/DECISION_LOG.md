@@ -13,6 +13,13 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Nine routes no test drove are pinned; `/api/inventory/expiring` bounds
+  `days`** (2026-10-22; branch `overnight/test-gaps-2026-10-22`; tests
+  `tests/test_untested_routes_2026_10_22.py`). Meal-planning prefs
+  GET/PATCH, notifications/dismiss, inventory + expiring + duplicates,
+  stores, member-needs GET, scan-receipt: happy path, 4xx on bad input,
+  household isolation with valid bodies. `days=99999999999` overflowed
+  `timedelta` and 500'd; now `Query(ge=0, le=366)` answers 422.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

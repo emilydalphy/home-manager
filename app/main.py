@@ -4,7 +4,7 @@ FastAPI backend for the Home Manager chat app.
 Run with:  uvicorn app.main:app --reload
 Then open: http://localhost:8000
 """
-from fastapi import BackgroundTasks, FastAPI, HTTPException, File, Form, Request, UploadFile
+from fastapi import BackgroundTasks, FastAPI, HTTPException, File, Form, Query, Request, UploadFile
 from fastapi.encoders import jsonable_encoder
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import (
@@ -5898,8 +5898,9 @@ def get_inventory_view():
 
 
 @app.get("/api/inventory/expiring")
-def get_inventory_expiring(days: int = 4):
-    """Items already expired or expiring within `days` days — powers the Inventory view's 'going bad soon' banner."""
+def get_inventory_expiring(days: int = Query(4, ge=0, le=366)):
+    """Items already expired or expiring within `days` days — powers the Inventory view's 'going bad soon' banner.
+    Bounded so a window too big for a date is a 422, not an OverflowError 500 (2026-10-22)."""
     try:
         result = tools.get_expiring_soon(days=days)
     except Exception as e:
