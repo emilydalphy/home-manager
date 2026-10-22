@@ -13,6 +13,15 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A meal's day is a YYYY-MM-DD string, whatever shape chat sends it in**
+  (2026-10-22, defect hunt; branch `overnight/hunt-chat-2026-10-22`; tests
+  `tests/test_meal_day_is_a_day.py`). plan_meal saved `"2026-10-23T00:00"`,
+  "Friday" or "tomorrow" as the day, so the reply said planned and no screen
+  drew it; swap_meal_in_plan with a timestamp wrote a second dinner beside
+  the one it replaced (string compare put it inside the week). Day fields
+  (`agent._DAY_FIELDS`) sent as a timestamp are read as their date part in
+  `read_tool_input`; `weekly_plan.validate_meal_date` refuses anything else
+  at both writers.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

@@ -10237,6 +10237,20 @@ _TOOL_INPUT_SCHEMAS = {d["name"]: d.get("input_schema") or {} for d in TOOL_DEFI
 
 _INT_STRING = re.compile(r"\s*-?\d+\s*")
 
+# A day argument sent as a timestamp ("2026-10-23T00:00", "2026-10-23
+# 18:00:00Z") is read as the day it names (2026-10-22 defect hunt). Every
+# tool keys meals by the bare YYYY-MM-DD string, so plan_meal saved
+# "2026-10-23T00:00" as a dinner no screen draws, and swap_meal_in_plan
+# wrote a second row beside the meal it was asked to replace. The date part
+# is the day the household meant; the clock part is never a meal's.
+_DAY_FIELDS = frozenset({
+    "meal_date", "date_str", "date_a", "date_b", "from_date", "to_date",
+    "week_start", "week_start_date", "start_date", "day",
+})
+_DAY_WITH_A_TIME = re.compile(
+    r"\s*(\d{4}-\d{2}-\d{2})(?:[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)?\s*"
+)
+
 
 def read_tool_input(tool_name: str, tool_input):
     """
@@ -10272,7 +10286,8 @@ def read_tool_input(tool_name: str, tool_input):
       stringified-array habit), otherwise a one-item list. Not
       comma-split: "salt, kosher" is one thing, and a single item is
       never letters;
-    - object + a string that is a JSON object -> that object.
+    - object + a string that is a JSON object -> that object;
+    - a day field (_DAY_FIELDS) sent as a timestamp -> its YYYY-MM-DD part.
     Anything else is passed through untouched, so a tool's own validation
     still sees the odd cases and answers them in its own words. Returns a
     new dict; the model's block (which stays in the conversation) is not
@@ -10299,6 +10314,10 @@ def read_tool_input(tool_name: str, tool_input):
             value = int(value)
         elif kind == "boolean" and isinstance(value, str) and value.strip().lower() in ("true", "false"):
             value = value.strip().lower() == "true"
+        elif kind == "string" and key in _DAY_FIELDS and isinstance(value, str):
+            day = _DAY_WITH_A_TIME.fullmatch(value)
+            if day:
+                value = day.group(1)
         elif kind == "array" and isinstance(value, str):
             parsed = None
             if value.strip()[:1] in ("[", "{"):

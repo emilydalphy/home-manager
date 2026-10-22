@@ -196,6 +196,9 @@ def plan_meal(
     # take the "dinner" default, so this does not narrow them — checked, not
     # assumed (agent.py's component branch and swap_component_in_plan).
     _weekly_plan.validate_slot(slot)
+    # And a day is a YYYY-MM-DD string: a row dated "Friday" or
+    # "2026-10-23T00:00" is saved and shown nowhere (validate_meal_date).
+    _weekly_plan.validate_meal_date(meal_date)
 
     own_conn = conn is None
     if own_conn:
