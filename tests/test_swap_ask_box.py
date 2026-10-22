@@ -145,6 +145,7 @@ def _run_ask(first_options, fetch_outs, typed, shown_before=None):
         + "var st = { entryId: 5, weekStart: '2026-10-05', wholeDish: false, busy: false, view: 'picks', trouble: '',"
           " options: " + json.dumps(first_options) + ", shown: " + json.dumps(shown_before or []) + " };\n"
         + "var swapSheetState = st;\n"
+        + _extract("withPlanId", SHELL_JS) + "\n"
         + _extract_async("fetchSwapPicks", SHELL_JS) + "\n" + _extract_async("askSwapAgain", SHELL_JS) + "\n"
         + "(async function () { await askSwapAgain(st, " + json.dumps(typed) + ");"
           " console.log(JSON.stringify({ calls: calls, st: { options: st.options, shown: st.shown, draft: st.draft } })); })();"

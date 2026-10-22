@@ -19,7 +19,7 @@ why*, not duplicating the diff.
   a week leaves the week filed under its old start, so two live plans share
   one key and the bare key resolved approve/reopen/slot/swap/defrost to the
   newest. shell.js now sends `weekly_plan_id` (as /discard did) and
-  `_plan_id_for_week` prefers it, 404ing another household's or a retired
+  `_plan_id_for_request` prefers it, 404ing another household's or a retired
   one. Start over's "this week's answers" also counts a same-key plan as
   sharing them (week_intake is keyed by week_start), not only an overlap.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's

@@ -96,12 +96,14 @@ def test_another_households_plan_id_is_refused(recipes, stub_model, signed_in):
     conn.commit()
     conn.close()
 
-    for path, body in [("approve", {"approved_by": "Emily"}), ("reopen", {}), ("discard", {}),
+    for path, body in [("approve", {"approved_by": "Emily"}), ("reopen", {}),
                        ("slot", {"date": week, "choice": "Tacos"}), ("swap-undo", {"entry_id": 1}),
                        ("defrost-confirm", {"items": []})]:
         res = signed_in.post(f"/api/week/{week}/{path}", json={**body, "weekly_plan_id": other})
         assert res.status_code == 404, (path, res.status_code, res.text)
     assert signed_in.get(f"/api/week/{week}/defrost-items?weekly_plan_id={other}").status_code == 404
+    # /discard keeps its own contract: an id this household lacks is its plain 400.
+    assert signed_in.post(f"/api/week/{week}/discard", json={"weekly_plan_id": other}).status_code == 400
     with tools.use_household(beta):
         assert _plan_row(other)["status"] == "draft"
 
