@@ -49,7 +49,6 @@ is present, exactly as the no-row default would have them.
 from __future__ import annotations
 
 import json
-import logging
 import math
 import threading
 from contextlib import contextmanager
@@ -349,81 +348,6 @@ def _sync_away_need(date_str: str, slot: str, att: dict, away_stretch_id: int | 
     return "unchanged"
 
 
-def rebuy_for_new_headcount(date_str: str, slot: str) -> list[int]:
-    """
-    An approved week's shopping follows a meal whose table changed size —
-    guests added or taken off, one person out or back — the way approval
-    would have bought it had the household said so first.
-
-    Before this, the ingest read attendance only at approval, so "my
-    parents are coming Thursday" after the week was approved changed the
-    Cook card ("Cooking for 5") and left the list at three people's beef
-    (recipes._add_recipe_ingredients_for_entries' named KNOWN LIMITATION).
-
-    Re-bought as the recipe-week it was bought as: every night of that plan
-    on the same recipe — so a reheat night's guests resize its cook
-    night's batch — through recipe_change's _unbuy/_rebuy (one buffer, one
-    rounding). Only nights still ahead, 'planned', and not yet cooked. Left
-    alone, as before, when any line the group bought is already in a cart
-    or through the till (the shop has happened; reversing would drop the
-    ledger and buy it all again beside the bag), for a hosted holiday's
-    menu (big_meal.on_attendance_changed refreshes that one), and for any
-    draft. Returns the entry ids re-bought; never raises — an attendance
-    write must not fail over the list.
-    """
-    from . import recipe_change as _recipe_change  # deferred: it imports grocery/recipes
-    from . import grocery as _grocery
-
-    try:
-        with write() as conn:
-            conn.execute("BEGIN IMMEDIATE")
-            today = _grocery._household_today(conn=conn).isoformat()
-            hid = household_id()
-            here = conn.execute(
-                "SELECT mpe.weekly_plan_id, mpe.recipe_id, mpe.derived_from_json "
-                "FROM meal_plan_entries mpe JOIN weekly_plans wp ON wp.id = mpe.weekly_plan_id "
-                "WHERE mpe.household_id = ? AND mpe.date = ? AND mpe.slot = ? "
-                "AND wp.status = 'approved' AND mpe.slot_state = 'planned' "
-                "AND mpe.recipe_id IS NOT NULL AND mpe.component_category IS NULL",
-                (hid, date_str, slot),
-            ).fetchall()
-            rebought: list[int] = []
-            for row in here:
-                try:
-                    derived = json.loads(row["derived_from_json"] or "{}") or {}
-                except (TypeError, ValueError):
-                    derived = {}
-                if isinstance(derived, dict) and derived.get("holiday_menu"):
-                    continue
-                plan_id = int(row["weekly_plan_id"])
-                ids = [int(r["id"]) for r in conn.execute(
-                    "SELECT id FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ? "
-                    "AND recipe_id = ? AND component_category IS NULL AND slot_state = 'planned' "
-                    "AND date >= ? AND cooked_at IS NULL ORDER BY date ASC, id ASC",
-                    (plan_id, hid, int(row["recipe_id"]), today),
-                ).fetchall()]
-                if not ids:
-                    continue
-                marks = ",".join("?" * len(ids))
-                shopped = conn.execute(
-                    "SELECT 1 FROM meal_plan_grocery_links l JOIN grocery_items g ON g.id = l.grocery_item_id "
-                    f"WHERE l.household_id = ? AND l.meal_plan_entry_id IN ({marks}) "
-                    "AND g.status IN ('in_cart', 'purchased') LIMIT 1",
-                    [hid, *ids],
-                ).fetchone()
-                if shopped:
-                    continue
-                _recipe_change._unbuy(conn, ids)
-                _recipe_change._rebuy(conn, plan_id, ids)
-                rebought.extend(ids)
-            conn.commit()
-            return rebought
-    except Exception:
-        logging.getLogger("home_manager").exception(
-            "The list could not follow the headcount change for %s %s", date_str, slot)
-        return []
-
-
 def _supersede_record(need: dict) -> dict | None:
     """
     The parts of a need that have to survive being covered by an away: what
@@ -466,7 +390,6 @@ def _set_slot_attendance_locked(
     guest_count: int | None, source: str, away_stretch_id: int | None,
 ) -> dict:
     current = get_slot_attendance(date_str, slot)
-    before_headcount = current["headcount"]
     if present_member_ids is None:
         absent = current["absent_member_ids"]
     else:
@@ -477,19 +400,14 @@ def _set_slot_attendance_locked(
         absent = [i for i in _household_member_ids() if i not in set(present)]
     guests = current["guest_count"] if guest_count is None else max(0, int(guest_count))
     _write(date_str, slot, absent, guests, source or current["source"] or "", away_stretch_id)
-    return _after_attendance_write(date_str, slot, away_stretch_id, before_headcount)
+    return _after_attendance_write(date_str, slot, away_stretch_id)
 
 
-def _after_attendance_write(date_str: str, slot: str, away_stretch_id: int | None,
-                            before_headcount: int | None = None) -> dict:
+def _after_attendance_write(date_str: str, slot: str, away_stretch_id: int | None) -> dict:
     """What every attendance write does once the row is stored: read it
-    back, keep the away need in step, let an approved week's shopping
-    follow a table that changed size, and let a hosted holiday follow."""
+    back, keep the away need in step, and let a hosted holiday follow."""
     att = get_slot_attendance(date_str, slot)
     att["away_need"] = _sync_away_need(date_str, slot, att, away_stretch_id)
-    if (before_headcount is not None and att["headcount"] != before_headcount
-            and not att["nobody_home"] and att["away_need"] != "cleared_away"):
-        rebuy_for_new_headcount(date_str, slot)
     # A hosted holiday's dinner whose table just changed size follows it
     # (the menu's shopping rescales, its prep re-spreads) — a no-op for
     # every other meal, and never a failure of this write. Imported at
@@ -526,9 +444,6 @@ def set_member_attendance(date_str: str, slot: str, member: str, present: bool =
                 (household_id(), date_str, slot),
             ).fetchone()
             absent = set(json.loads(row["absent_member_ids_json"] or "[]")) if row else set()
-            live_set = set(live)
-            guests_before = int(row["guest_count"] or 0) if row else 0
-            before_headcount = len(live_set - absent) + guests_before
             absent = (absent - member_ids) if present else (absent | member_ids)
             # Live members only, as the whole-list write always stored it:
             # someone since removed stops being carried along.
@@ -537,7 +452,7 @@ def set_member_attendance(date_str: str, slot: str, member: str, present: bool =
                 json.dumps(sorted(i for i in live if i in absent)),
                 int(row["guest_count"] or 0) if row else 0, "toggle", None,
             ))
-        return _after_attendance_write(date_str, slot, None, before_headcount)
+        return _after_attendance_write(date_str, slot, None)
 
 
 def set_day_attendance(date_str: str, slots: dict, source: str = "sheet") -> dict:

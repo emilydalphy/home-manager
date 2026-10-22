@@ -5134,13 +5134,16 @@ def _add_recipe_ingredients_for_entries(
     ingredients land on the list identically whether it was planned
     one-off in chat or arrived with an approved week.
 
-    This runs when ingredients are ADDED to the list, so it reflects
-    attendance as it stands at that moment. A headcount that changes after
-    approval (guests, one person out or back) is followed by
-    attendance.rebuy_for_new_headcount (2026-10-22), which reverses and
-    re-ingests that meal's recipe-week through here — except once any of
-    its lines is in a cart or bought, when the list is left as it was.
-    (The away path reverses on its own: "nothing bought" is a promise.)
+    KNOWN LIMITATION: this runs when ingredients are ADDED to the list, so
+    it reflects attendance as it stood at approval. Changing a meal's
+    headcount after the week is approved does not re-quantify what's
+    already on the list — the line stays at the number it was bought for.
+    (The away path is different, and does reverse post-approval: an away
+    slot's ingredients are taken back off, because "nothing bought" is a
+    promise rather than an estimate.) Re-scaling an approved line means
+    reversing and re-adding a partial contribution, which is the
+    swap-a-meal machinery, not this function's. Worth doing; deliberately
+    not smuggled into this change.
 
     `conn` is for one caller and is not part of the assistant-facing API:
     swap_meal_in_plan takes the old meal off the plan and the list and puts

@@ -19,14 +19,11 @@ why*, not duplicating the diff.
   skipped out/left/away/holiday nights but not guests, so "3 servings" from a night
   off could be the whole (unbought, freeform) dinner for 7. Now skips a `guests`
   tag, an intake guest count, and `guest_nights` (attendance guests, read by agent).
-- **Guests (or one person out) after approval change the list too**
-  (2026-10-22, overnight hunt; branch `overnight/hunt-guests-leftovers-2026-10-22`;
-  tests `tests/test_guests_after_approval_reach_the_list.py`). The ingest read
-  attendance only at approval, so 3 guests on a reheat Thursday made Cook say
-  "Cooking for 9" while the list kept 6 people's beef. `attendance.rebuy_for_new_headcount`
-  (on any headcount change, not away) unbuys/rebuys the approved recipe-week via
-  `recipe_change._unbuy/_rebuy`; skips cooked nights, past nights, hosted big meals
-  (big_meal refreshes those), drafts, and any group with a line in cart/bought.
+- **Guests after approval do NOT yet change the list — tried and pulled**
+  (2026-10-22, overnight). A rebuy-on-headcount via `recipe_change._unbuy/_rebuy`
+  got the arithmetic right but brought back lines the household dropped,
+  removed or excluded, and re-minted every plan line's id on each tap. Needs an
+  in-place resize; see the Loop Board card. `recipes.py`'s KNOWN LIMITATION stands.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
