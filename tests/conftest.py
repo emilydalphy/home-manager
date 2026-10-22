@@ -102,6 +102,8 @@ _TABLES = [
     # about (schema.sql), so nothing cascades it away — it is wiped here
     # by name like every other table.
     "pre_shop_decisions",
+    # Add receipts (2026-10-22) reference households only.
+    "grocery_add_receipts",
     "grocery_substitutions", "grocery_items", "inventory_items", "member_recipe_feedback", "recipe_notes", "recipe_photos", "recipes",
     "chore_instances", "chores", "chores_profile", "attention_items",
     "member_notes", "member_share_links", "share_links", "household_invites", "facts",

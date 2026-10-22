@@ -13,6 +13,22 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Adding "2 milk" in a dead zone puts 2 on the list, not 4** (2026-10-22;
+  branch `overnight/rate-refresh-and-offline-once`; tests
+  `tests/test_grocery_add_once.py`). The add sheet now names each add with a
+  `client_id` before its first send, and the offline queue re-sends a
+  lost-reply add under that same id; `/api/grocery-list/add` answers a repeat
+  (per household) with its first answer and adds nothing
+  (`app/grocery_add_once.py`, table `grocery_add_receipts`, 30-day sweep). A
+  table rather than an in-memory map because the resend can come days later,
+  across a redeploy. No id behaves as before. Reproduced in Chromium on main:
+  reply dropped, list read 4.
+- **Rating a dish from its recipe page stops "How did it go?" asking about
+  it** (2026-10-22; branch `overnight/rate-refresh-and-offline-once`; verified
+  by a Playwright drive, no new test file). `recipeRate` posted the rating and
+  re-rendered without re-reading `/api/attention`, so Kitchen's banner kept
+  asking until a reload; it now calls `refreshCookAttention()` like
+  `cookRateMeal`.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

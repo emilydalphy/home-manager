@@ -3950,10 +3950,13 @@
       }
       closeTonightSheet();
       if (out.status !== 'night_off') {
-        // A 200 that says no — only a night with no plan covering it now,
-        // which a sheet left open across midnight can reach. The sentence
-        // is the server's, the sheet is closed so the toast is the only
-        // thing saying it, and the card is re-read.
+        // A 200 that says no. Usually one of two things: a sheet left open
+        // across midnight (no plan covers the new "tonight"), or the dish
+        // is already cooking — someone started it on another phone and the
+        // cook feeds later nights, so it stays (tonight_night_off's
+        // `cooking` refusal). The sentence is the server's, the sheet is
+        // closed so the toast is the only thing saying it, and the card is
+        // re-read.
         showToast(out.message || TONIGHT_SWAP_TROUBLE, null, 6000);
         afterTonightSwap(panel);
         return;
@@ -8546,6 +8549,11 @@
   // A write the server refused reopens the sheet with the typing in it.
   function groAddLine(line) {
     var payload = { item: line.item, quantity: line.quantity || '', category: line.category };
+    // Named ONCE, before the first send, and carried into the queue when
+    // that send fails: a reply lost in a store's dead zone gets the add
+    // re-sent under the same name, and the server answers the repeat
+    // instead of adding "2 milk" a second time (app/grocery_add_once.py).
+    if (window.PomonaGroceryOffline) payload.client_id = window.PomonaGroceryOffline.newClientId();
     if (line.store !== null && line.store !== undefined) {
       payload.store = line.store;
       payload.remember = true;
@@ -24157,7 +24165,13 @@
       await cookPost('/api/recipe-feedback', { recipe_name: meal.meal, rating: el.getAttribute('data-rating'), notes: '' });
       cookState.recipeMenuOpen = false;
       cookState.recipeRateOpen = false;
+      // The rating answers "How did it go?" for this dish too — re-read the
+      // attention list the way cookRateMeal does, or the banner keeps
+      // asking about a dish just rated until the page reloads.
+      // refreshCookAttention renders on success; the render here covers a
+      // failed re-read, so the menu still closes.
       renderCook();
+      await refreshCookAttention();
       showToast('Noted — that’ll steer next week.');
     } catch (err) {
       el.disabled = false;

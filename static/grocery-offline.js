@@ -55,10 +55,15 @@
 // op), in the queue's order with the ticks. A tick on the local row is
 // refused by the screen (isPendingAddId) — there is nothing on the
 // server to tick yet — and Put back on the toast takes the add out of
-// the queue again (unqueue). The route is not idempotent the way the
-// status route is: a request whose reply was lost lands the line, and a
-// resend merges into it (add_grocery_item consolidates same-name lines),
-// which for a shopping list is the right side to err on.
+// the queue again (unqueue). Since 2026-10-22 an add also carries a
+// `client_id`, made once before its first send (newClientId — the add
+// sheet's own add makes it before it tries the network, so an add that
+// was SENT, lost its reply and then queued keeps the same one) and sent
+// unchanged on every replay. The route answers a repeat of the id with
+// its first answer and adds nothing (app/grocery_add_once.py). Before
+// that, a request whose reply was lost landed the line and the resend
+// merged into it: "2 milk" became 4. An op queued by an older build has
+// no client_id and replays as it always did.
 //
 // This file has no DOM and no fetch of its own: shell.js hands it storage
 // and a post function, which is also what lets tests/test_grocery_offline.py
@@ -264,6 +269,7 @@
       if (isAdd(op)) {
         var body = { item: op.item, quantity: op.quantity || '', category: op.category || 'other' };
         if (op.store !== undefined) { body.store = op.store; body.remember = true; }
+        if (op.client_id) body.client_id = op.client_id;
         return { url: '/api/grocery-list/add', body: body };
       }
       return { url: '/api/grocery-list/' + op.id + '/status', body: { status: op.status } };
@@ -393,7 +399,8 @@
       queueAdd: function (line) {
         if (!line || typeof line.item !== 'string' || !line.item.trim()) return null;
         var op = { id: ADD_ID_PREFIX + now() + '-' + (++addSeq), kind: 'add', item: line.item.trim(),
-          quantity: line.quantity || '', category: line.category || 'other', at: now() };
+          quantity: line.quantity || '', category: line.category || 'other', at: now(),
+          client_id: typeof line.client_id === 'string' && line.client_id ? line.client_id : newClientId() };
         if (line.store !== undefined && line.store !== null) op.store = line.store;
         return enqueue(op);
       },
@@ -456,5 +463,23 @@
     return api;
   }
 
-  return { create: create, applyStatus: applyStatus, SECTION_ORDER: SECTION_ORDER };
+  // A name for one add, unique across the household's phones. crypto's
+  // own where the browser has it (randomUUID needs a secure context, so
+  // http on a LAN address has getRandomValues only); a time-and-random
+  // string otherwise — the server keys it per household, so it only has
+  // to be unlikely to collide between two phones of one house.
+  function newClientId() {
+    var c = typeof crypto !== 'undefined' ? crypto : null;
+    if (c && typeof c.randomUUID === 'function') return c.randomUUID();
+    var hex = '';
+    if (c && typeof c.getRandomValues === 'function') {
+      var bytes = c.getRandomValues(new Uint8Array(16));
+      for (var i = 0; i < bytes.length; i++) hex += (bytes[i] + 256).toString(16).slice(1);
+      return hex;
+    }
+    for (var j = 0; j < 4; j++) hex += Math.floor(Math.random() * 0x100000000).toString(16);
+    return Date.now().toString(16) + '-' + hex;
+  }
+
+  return { create: create, applyStatus: applyStatus, newClientId: newClientId, SECTION_ORDER: SECTION_ORDER };
 });
