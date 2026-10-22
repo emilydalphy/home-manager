@@ -10247,8 +10247,13 @@ _DAY_FIELDS = frozenset({
     "meal_date", "date_str", "date_a", "date_b", "from_date", "to_date",
     "week_start", "week_start_date", "start_date", "day",
 })
+# A zone suffix is taken only on midnight ("…T00:00:00Z" is a date sent
+# as a timestamp). "…T02:00:00Z" names a moment, which is the evening
+# before in Toronto, so it is left alone and validate_meal_date refuses it
+# rather than putting the dinner on the wrong day (review, same night).
 _DAY_WITH_A_TIME = re.compile(
-    r"\s*(\d{4}-\d{2}-\d{2})(?:[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)?\s*"
+    r"\s*(\d{4}-\d{2}-\d{2})(?:[T ](?:00:00(?::00(?:\.0+)?)?(?:Z|[+-]\d{2}:?\d{2})?"
+    r"|\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?))?\s*"
 )
 
 

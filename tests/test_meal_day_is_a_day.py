@@ -88,3 +88,16 @@ def test_only_a_day_field_has_its_clock_taken_off():
     assert args["note"] == "2026-10-23T18:00 was great"
     args = agent.read_tool_input("set_slot_need", {"date_str": " 2026-10-23 18:00 ", "slot": "dinner", "need": "away"})
     assert args["date_str"] == "2026-10-23"
+
+
+def test_a_moment_with_a_zone_is_not_trimmed_onto_the_wrong_day():
+    from app.agent import _DAY_WITH_A_TIME
+    # 02:00Z is 22:00 the evening before in Toronto: refused, not guessed.
+    assert _DAY_WITH_A_TIME.fullmatch("2026-10-24T02:00:00Z") is None
+    assert _DAY_WITH_A_TIME.fullmatch("2026-10-24T00:00:00Z").group(1) == "2026-10-24"
+    assert _DAY_WITH_A_TIME.fullmatch("2026-10-24T18:00").group(1) == "2026-10-24"
+
+
+def test_the_needs_you_card_answers_a_bad_day_with_a_400(signed_in):
+    res = signed_in.post("/api/needs-you/dinner", json={"date": "Friday", "meal": "Tacos"})
+    assert res.status_code == 400, res.text

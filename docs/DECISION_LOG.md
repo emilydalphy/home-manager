@@ -22,6 +22,8 @@ why*, not duplicating the diff.
   (`agent._DAY_FIELDS`) sent as a timestamp are read as their date part in
   `read_tool_input`; `weekly_plan.validate_meal_date` refuses anything else
   at both writers.
+  Review: a zone suffix is trimmed only on midnight (02:00Z is the evening
+  before here, so it is refused), and the needs-you card answers 400.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

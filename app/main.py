@@ -5846,6 +5846,9 @@ def resolve_needs_you_dinner(req: ResolveDinnerRequest):
         )
     except tools.SlotRefused as e:
         return _card_refusal(e)
+    except ValueError as e:
+        # Not a day (validate_meal_date): the request's fault, not ours.
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.exception("Needs-you dinner resolve failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
