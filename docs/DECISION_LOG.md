@@ -13,6 +13,15 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A moved dinner's prep never lands in the past; Undo of a swap brings its
+  prep back** (2026-10-22; branch `overnight/hunt-prep-2026-10-22`; tests
+  `tests/test_prep_cut_follows_undo_and_today.py`). The Move sheet carried a
+  late cut back by the meal's shift with no floor (Saturday's bowls to tonight
+  put Friday's "Cut up romaine" on yesterday, shown nowhere); it now lands on
+  today, as the nights swap does. A swap in place released the meal's prep
+  cuts and Undo never put them back; the first swap keeps them on
+  `swapped_from.prep_cuts` and Undo re-adds them, status kept (one-day and
+  whole-dish).
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

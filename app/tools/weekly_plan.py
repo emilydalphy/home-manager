@@ -9639,8 +9639,16 @@ def _shift_late_prep_cuts(conn, weekly_plan_id: int, entry_id: int, old_date: st
     same number of days the meal did. Either way a weekday the sentence
     names is re-said. (The nights swap no longer uses this: it carries
     every cut with its dinner — _nights_swap_prep_cut_moves, 2026-10-20.)
+
+    A carried day that would be in the past lands on today, never after the
+    meal — the nights swap's own rule (2026-10-22). Moving Saturday's bowls
+    to tonight carried Friday's "Cut up romaine" to Thursday, yesterday:
+    Today lists only today's prep and the Kitchen root drops a past prep
+    day, so the cut for tonight's dinner showed nowhere. Undo still puts it
+    back on its own day (meal_move keeps the original date on the token).
     """
     from . import prep_sessions as _prep_sessions  # lazy: it imports this module
+    today = _household_today(conn).isoformat()
     delta = (date.fromisoformat(new_date) - date.fromisoformat(old_date)).days
     old_wd, new_wd = _weekday_of(old_date), _weekday_of(new_date)
     tasks = conn.execute(
@@ -9653,6 +9661,8 @@ def _shift_late_prep_cuts(conn, weekly_plan_id: int, entry_id: int, old_date: st
         task_date = t["task_date"]
         if task_date and task_date > new_date:
             task_date = (date.fromisoformat(task_date) + timedelta(days=delta)).isoformat()
+            if task_date < today:
+                task_date = min(today, new_date)
             moved += 1
         said = (t["description"] or "").replace(f"for {old_wd}", f"for {new_wd}")
         if task_date != t["task_date"] or said != t["description"]:
