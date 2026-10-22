@@ -26,7 +26,8 @@ rather than by the model, written after generation whatever the model sent):
       and a portion that only needs reheating fits any cap, so the cap
       RANKS here rather than filtering as it does for bring_over), never a
       night the household is out, away, reheating already, left out of the
-      plan or holding a holiday. The model is then told the slot is taken.
+      plan, holding a holiday or hosting guests. The model is then told the
+      slot is taken.
 
   apply_to_plan — writes them after generation, clearing whatever the model
       sent there (telling is not preventing — the rule every pass in
@@ -254,6 +255,7 @@ def choose_nights(
     zero_slots: set[str] | frozenset = frozenset(),
     cap_for=None,
     taken: set[tuple[str, str]] | frozenset = frozenset(),
+    guest_nights: set[str] | frozenset = frozenset(),
 ) -> tuple[list[dict], list[dict]]:
     """
     Where each portion goes: (placed, not_placed). Each placed row is the
@@ -266,6 +268,14 @@ def choose_nights(
     (bring_over's, which runs first). At most MAX_PORTIONS_PER_WEEK are
     placed; the rest wait for next week and sweep_use_soon says so if they
     wait too long.
+
+    Never a night with guests (defect hunt, 2026-10-22): the portion is
+    the household's own share ("3 servings") and a freeform night buys
+    nothing, so the Friday the intake tagged "Hosting guests" for 4 was
+    being handed three reheated servings for seven. A guest night is the
+    intake's `guests` tag or a guest count on it, plus `guest_nights` —
+    dates attendance already holds guests for (chat's set_guest_count),
+    which the caller reads; this function stays pure.
     """
     portions = [p for p in (portions or []) if isinstance(p, dict) and p.get("dish")]
     if not portions or SLOT in zero_slots:
@@ -280,11 +290,15 @@ def choose_nights(
     for h in holidays or []:
         if ((h.get("answer") or {}).get("answer")) in ("out", "hosting"):
             blocked.add((h.get("date"), "dinner"))
+    guests = set(guest_nights or ())
+    for d, extras in (intake.get("guest_counts") or {}).items():
+        if _guest_total(extras):
+            guests.add(d)
 
     def open_night(d: str) -> bool:
-        if (d, SLOT) in blocked or d in skipped:
+        if (d, SLOT) in blocked or d in skipped or d in guests:
             return False
-        return not any(t in (tags.get(d) or []) for t in _NO_COOK_TAGS)
+        return not any(t in (tags.get(d) or []) for t in _NO_COOK_TAGS + ("guests",))
 
     # A night with a cap on it is a night the household said is short on
     # time (time_caps.minutes_cap: a rush tag, or their own weeknight
@@ -309,6 +323,28 @@ def choose_nights(
             ", ".join(str(m.get("dish")) for m in missed),
         )
     return placed, missed
+
+
+def _guest_total(extras) -> int:
+    """Adults + children in one intake guest_counts entry (week_intake's
+    shape); 0 for anything unreadable or a bare number."""
+    from . import week_intake as _week_intake
+    return _week_intake._guest_total(extras)
+
+
+def guest_nights(dates: list[str]) -> set[str]:
+    """The dates whose dinner attendance already holds guests — what the
+    planner hands choose_nights. Never raises: an unreadable night is
+    simply not known to have guests."""
+    from . import attendance as _attendance
+    out = set()
+    for d in dates:
+        try:
+            if _attendance.get_slot_attendance(d, SLOT)["guest_count"]:
+                out.add(d)
+        except Exception:
+            continue
+    return out
 
 
 def prompt_lines(placed: list[dict]) -> list[dict]:
