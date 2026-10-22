@@ -13,6 +13,13 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Frozen food no longer "turns soon"; a "+1" number gets the NANP check**
+  (2026-10-22; branch `overnight/hunt-digest-2026-10-22`; tests
+  `tests/test_frozen_food_is_not_turning.py`, `tests/test_morning_text.py`).
+  Every estimated expiry is a fridge shelf life, so freezer chicken said "turns
+  soon" in the same morning text that said to thaw it; `get_expiring_soon` now
+  skips freezer rows. `normalise_phone` let "+1 416 555 010" through to fail
+  at Twilio every morning; "+1" numbers now take the bare-number rule.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

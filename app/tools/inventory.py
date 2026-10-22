@@ -550,6 +550,15 @@ def get_expiring_soon(days: int = 4) -> list[dict]:
     check it proactively when generating a weekly plan or suggesting a
     meal, so near-expiring items get worked in before they're wasted (see
     generate_weekly_plan's use_it_up weighting).
+
+    Not the freezer. Every estimated date is a FRIDGE/pantry shelf life
+    (quantities._ITEM_SHELF_LIFE_DAYS says so), so a pack of chicken thighs
+    told to the app as "in the freezer" was dated two days out and then said
+    "turns soon" every morning, in the same text that told the household to
+    move it to the fridge for Friday (defect hunt, 2026-10-22). Frozen food
+    left too long is freezer_portions.sweep_use_soon's to say, not this.
+    A row with a blank location counts as frozen by its category, the
+    same fallback as quantities._display_location.
     """
     today_date = _today()
     cutoff = (today_date + timedelta(days=days)).isoformat()
@@ -558,6 +567,7 @@ def get_expiring_soon(days: int = 4) -> list[dict]:
     rows = conn.execute(
         "SELECT id, item, quantity, category, expiration_date FROM inventory_items "
         "WHERE household_id = ? AND expiration_date IS NOT NULL AND expiration_date != '' AND expiration_date <= ? "
+        "AND COALESCE(NULLIF(location, ''), category, '') NOT IN ('freezer', 'frozen') "
         "ORDER BY expiration_date ASC",
         (household_id(), cutoff),
     ).fetchall()
