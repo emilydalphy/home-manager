@@ -3879,7 +3879,7 @@
       var res = await Api.fetch('/api/week/' + encodeURIComponent(data.week_start) + '/swap-nights', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date_a: tonightDate, date_b: otherDate })
+        body: JSON.stringify(withPlanId({ date_a: tonightDate, date_b: otherDate }, data.weekly_plan_id))
       });
       if (!res.ok) throw new Error('swap failed (' + res.status + ')');
       var out = await res.json();
@@ -4083,7 +4083,7 @@
       var res = await Api.fetch('/api/week/' + encodeURIComponent(data.week_start) + '/swap-nights-undo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date_a: tonightDate, date_b: otherDate })
+        body: JSON.stringify(withPlanId({ date_a: tonightDate, date_b: otherDate }, data.weekly_plan_id))
       });
       if (!res.ok) throw new Error('undo failed (' + res.status + ')');
       showToast(wasTonights
@@ -16273,7 +16273,7 @@
       var res = await Api.fetch('/api/week/' + encodeURIComponent(weekStart) + '/flag-fix', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entry_id: entryId, action: action })
+        body: JSON.stringify(withPlanId({ entry_id: entryId, action: action }, planIdForSwap()))
       });
       if (!res.ok) throw new Error('flag fix failed');
       var data = await res.json();
@@ -18181,7 +18181,7 @@
       var res = await Api.fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/move-options', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entry_id: st.entryId })
+        body: JSON.stringify(withPlanId({ entry_id: st.entryId }, st.planId))
       });
       var out = res.ok ? await res.json() : null;
       if (swapSheetState !== st) return;
@@ -18206,7 +18206,7 @@
     closeAskSheet();
     swapSheetState = {
       panel: panel, day: day, date: day.date, slot: slot, entry: entry, entryId: entry.entry_id,
-      name: mealDisplayName(entry), weekStart: weekStart, view: 'move', move: null, trouble: '',
+      name: mealDisplayName(entry), weekStart: weekStart, planId: planIdForSwap(), view: 'move', move: null, trouble: '',
       busy: false, holdHeight: 0, dates: [day.date], pending: null
     };
     var thisOpen = swapSheetState;
@@ -18244,13 +18244,13 @@
     var st = swapSheetState;
     if (!st || st.busy || st.view !== 'move' || !toDate) return;
     st.busy = true;
-    var panel = st.panel, weekStart = st.weekStart;
+    var panel = st.panel, weekStart = st.weekStart, planId = st.planId;
     drawSwapSheet();
     try {
       var res = await Api.fetch('/api/week/' + encodeURIComponent(weekStart) + '/move-meal', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entry_id: st.entryId, to_date: toDate })
+        body: JSON.stringify(withPlanId({ entry_id: st.entryId, to_date: toDate }, planId))
       });
       if (!res.ok) {
         st.busy = false;
@@ -18270,7 +18270,7 @@
       renderMealsStep(panel);
       var thaw = (out.thaw_notes || []).join(' ');
       toastSaved(out.said + (thaw ? '. ' + thaw : ''),
-        { label: 'Undo', onClick: function () { runMoveMealUndo(panel, weekStart, out.move_id, out.said); } },
+        { label: 'Undo', onClick: function () { runMoveMealUndo(panel, weekStart, out.move_id, out.said, planId); } },
         thaw ? MOVE_THAW_TOAST_MS : MOVE_TOAST_MS);
       await loadWeekMenu(panel);
       refreshTodayMoves();
@@ -18284,12 +18284,12 @@
     }
   }
 
-  async function runMoveMealUndo(panel, weekStart, moveId, said) {
+  async function runMoveMealUndo(panel, weekStart, moveId, said, planId) {
     try {
       var res = await Api.fetch('/api/week/' + encodeURIComponent(weekStart) + '/move-meal-undo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ move_id: moveId })
+        body: JSON.stringify(withPlanId({ move_id: moveId }, planId))
       });
       if (!res.ok) {
         showToast(swapRouteMessage(await res.json().catch(function () { return null; })) || SWAP_TROUBLE);
@@ -20183,7 +20183,7 @@
       var res = await Api.fetch('/api/week/' + encodeURIComponent(weekStart) + '/fill-day', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: day.date })
+        body: JSON.stringify(withPlanId({ date: day.date }, planIdForSwap()))
       });
       if (!res.ok) throw new Error('fill-day failed');
       var data = await res.json();
@@ -20580,7 +20580,7 @@
     var source = (part && part.source) || '';
     var mode = (role === 'protein' || source === 'dish') ? 'change' : 'add';
     mealAddState = {
-      panel: panel, date: day.date, slot: slot, entryId: entry.entry_id, weekStart: weekStart, busy: false,
+      panel: panel, date: day.date, slot: slot, entryId: entry.entry_id, weekStart: weekStart, planId: planIdForSwap(), busy: false,
       mode: mode, role: role, roleWord: PART_WORDS[role] || '', side: (part && part.side) || '',
       selected: null, offer: null, markRow: !!(part && part.markRow)
     };
@@ -20606,6 +20606,8 @@
           // before its six-row cap — a low-carb house tapping "Add a
           // carb" must see the carbs, not one of them (Emily, 2026-09-15).
           (role && PART_COVERS[role] ? '&role=' + encodeURIComponent(PART_COVERS[role]) : '');
+      // The plan on screen, beside its week key (planIdForSwap).
+      if (planIdForSwap() !== null) url += '&weekly_plan_id=' + encodeURIComponent(planIdForSwap());
       var res = await Api.fetch(url);
       if (!res.ok) throw new Error('options failed (' + res.status + ')');
       offer = await res.json();
@@ -20690,7 +20692,7 @@
       var res = await Api.fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/remove-component', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entry_id: st.entryId, name: name })
+        body: JSON.stringify(withPlanId({ entry_id: st.entryId, name: name }, st.planId))
       });
       if (!res.ok) throw new Error('remove failed (' + res.status + ')');
       closeMealAddSheet();
@@ -20724,7 +20726,7 @@
       var res = await Api.fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/change-part', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entry_id: st.entryId, role: st.role || 'protein', choice: choice })
+        body: JSON.stringify(withPlanId({ entry_id: st.entryId, role: st.role || 'protein', choice: choice }, st.planId))
       });
       var out = await res.json().catch(function () { return null; });
       // A failed request gets the swap's own line (SWAP_TROUBLE), never
@@ -20797,7 +20799,7 @@
       var res = await Api.fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/add-component', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entry_id: st.entryId, key: pick.key || null, text: pick.text || null })
+        body: JSON.stringify(withPlanId({ entry_id: st.entryId, key: pick.key || null, text: pick.text || null }, st.planId))
       });
       if (!res.ok) throw new Error('add failed (' + res.status + ')');
       var out = await res.json();
@@ -20815,7 +20817,7 @@
           await Api.fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/remove-component', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ entry_id: st.entryId, name: st.side })
+            body: JSON.stringify(withPlanId({ entry_id: st.entryId, name: st.side }, st.planId))
           });
         } catch (err) {
           console.warn('Taking the old side off failed:', err);
@@ -20861,14 +20863,14 @@
       var res = await Api.fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/remove-component', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entry_id: st.entryId, name: name })
+        body: JSON.stringify(withPlanId({ entry_id: st.entryId, name: name }, st.planId))
       });
       if (!res.ok) throw new Error('undo failed (' + res.status + ')');
       if (replaced) {
         var back = await Api.fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/add-component', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ entry_id: st.entryId, key: null, text: replaced })
+          body: JSON.stringify(withPlanId({ entry_id: st.entryId, key: null, text: replaced }, st.planId))
         });
         if (!back.ok) throw new Error('put back failed (' + back.status + ')');
       }

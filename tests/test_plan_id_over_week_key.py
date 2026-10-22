@@ -134,3 +134,44 @@ def test_start_over_will_not_clear_answers_a_same_key_plan_shares(recipes, stub_
     assert tools.get_reset_preview(draft)["intake_shared"] is True
     with pytest.raises(ValueError, match="overlaps another plan"):
         tools.check_week_answers_clearable(draft)
+
+
+def _cut_down(stub_model):
+    """The reviewer's shape: approving a draft over the front of an approved
+    week takes those days off it, and the week stays filed under its old
+    start — two approved plans, one key, no shared day."""
+    week, approved, draft = _shared_key(stub_model)
+    tools.approve_weekly_plan(draft, approved_by="Emily")
+    assert _plan_row(approved)["week_start_date"] == _plan_row(draft)["week_start_date"] == week
+    assert tools.plan_period(_plan_row(approved))[0] != week, "the week lost its front days"
+    assert _plan_row(approved)["status"] == _plan_row(draft)["status"] == "approved"
+    return week, approved, draft
+
+
+def test_move_options_on_the_cut_down_week(recipes, stub_model, signed_in):
+    week, approved, draft = _cut_down(stub_model)
+    entry_id, _ = _later_dinner(approved, week)
+    assert signed_in.post(f"/api/week/{week}/move-options", json={"entry_id": entry_id}).status_code == 400
+    res = signed_in.post(f"/api/week/{week}/move-options", json={"entry_id": entry_id, "weekly_plan_id": approved})
+    assert res.status_code == 200, res.text
+    assert res.json().get("days") is not None
+
+
+def test_fill_day_on_the_cut_down_week(recipes, stub_model, signed_in, monkeypatch):
+    week, approved, draft = _cut_down(stub_model)
+    _, date = _later_dinner(approved, week)
+    seen = []
+    monkeypatch.setattr(_main.tools, "fill_empty_day", lambda plan_id, d: seen.append(plan_id) or {"status": "filled"})
+    signed_in.post(f"/api/week/{week}/fill-day", json={"date": date})
+    res = signed_in.post(f"/api/week/{week}/fill-day", json={"date": date, "weekly_plan_id": approved})
+    assert res.status_code == 200, res.text
+    assert seen == [draft, approved]
+
+
+@pytest.mark.parametrize("path", ["part-options", "additions"])
+def test_the_plate_sheet_reads_the_cut_down_week(recipes, stub_model, signed_in, path):
+    week, approved, draft = _cut_down(stub_model)
+    entry_id, _ = _later_dinner(approved, week)
+    assert signed_in.get(f"/api/week/{week}/{path}?entry_id={entry_id}").status_code == 404
+    res = signed_in.get(f"/api/week/{week}/{path}?entry_id={entry_id}&weekly_plan_id={approved}")
+    assert res.status_code != 404, res.text
