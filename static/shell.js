@@ -17860,9 +17860,9 @@
     var call = Api.fetch('/api/week/' + encodeURIComponent(job.weekStart) + '/swap-options', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(job.wholeDish
+      body: JSON.stringify(withPlanId(job.wholeDish
         ? { entry_id: job.entryId, avoid: [], whole_dish: true }
-        : { entry_id: job.entryId, avoid: [] })
+        : { entry_id: job.entryId, avoid: [] }, job.planId))
     }).catch(function () { /* the sheet asks again itself */ }).then(function () {
       st.running = false;
       delete st.inflight[jobKey];
@@ -17895,7 +17895,7 @@
     if (st.asked[key]) return;
     st.asked[key] = true;
     st.count += 1;
-    st.queue.push({ weekStart: weekStart, entryId: entry.entry_id, wholeDish: wholeDish });
+    st.queue.push({ weekStart: weekStart, planId: planIdForSwap(), entryId: entry.entry_id, wholeDish: wholeDish });
     prefetchSwapRun();
   }
 
@@ -17936,6 +17936,7 @@
       ? { entry_id: st.entryId, avoid: ask.avoid || [], whole_dish: true }
       : { entry_id: st.entryId, avoid: ask.avoid || [] };
     if (ask.request) body.request = ask.request;
+    withPlanId(body, st.planId);
     try {
       var res = await Api.fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/swap-options', {
         method: 'POST',
@@ -18002,7 +18003,7 @@
     closeAskSheet();
     swapSheetState = {
       panel: panel, day: day, date: day.date, slot: slot, entry: entry, entryId: entry.entry_id,
-      name: mealDisplayName(entry), weekStart: weekStart, options: null, trouble: '', busy: false, view: 'picks',
+      name: mealDisplayName(entry), weekStart: weekStart, planId: planIdForSwap(), options: null, trouble: '', busy: false, view: 'picks',
       holdHeight: 0, wholeDish: !!opts.wholeDish, dates: opts.wholeDish && opts.dates ? opts.dates : [day.date],
       pending: null
     };
@@ -18056,7 +18057,7 @@
       var res = await Api.fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/swap-choose', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entry_id: st.entryId, option: picked.index, whole_dish: !!st.wholeDish, meal: picked.meal })
+        body: JSON.stringify(withPlanId({ entry_id: st.entryId, option: picked.index, whole_dish: !!st.wholeDish, meal: picked.meal }, st.planId))
       });
       if (res.status === 404) {
         stopWorking();
@@ -20067,6 +20068,23 @@
     return (weekState.data && weekState.data.week_start_date) || null;
   }
 
+  // The plan on screen, sent beside its week key on every week-scoped call
+  // that writes to one plan (overnight/plan-id-over-week-key). The key is
+  // not unique — a plan whose front days were taken over keeps its old
+  // start, and a later plan starting that day shares it — and the server
+  // resolves a bare key to the newest. /discard has always sent it.
+  function planIdForSwap() {
+    var d = weekState.data;
+    return (d && d.weekly_plan_id !== null && d.weekly_plan_id !== undefined) ? d.weekly_plan_id : null;
+  }
+
+  // `body` with the plan id added when there is one; untouched otherwise,
+  // so a screen with no plan id makes exactly the call it always made.
+  function withPlanId(body, planId) {
+    if (planId !== null && planId !== undefined) body.weekly_plan_id = planId;
+    return body;
+  }
+
   async function runSwapInPlace(panel, day, slot) {
     var entry = daySlotEntry(day, slot);
     var weekStart = weekStartForSwap();
@@ -20084,9 +20102,9 @@
         headers: { 'Content-Type': 'application/json' },
         // On a Meal step opened as a whole dish, every day the row stood
         // for (the server works them out, swap_in_place.batch_days).
-        body: JSON.stringify(weekState.step === 'meal' && weekState.mealWholeDish
+        body: JSON.stringify(withPlanId(weekState.step === 'meal' && weekState.mealWholeDish
           ? { entry_id: entry.entry_id, avoid: carried, whole_dish: true }
-          : { entry_id: entry.entry_id, avoid: carried })
+          : { entry_id: entry.entry_id, avoid: carried }, planIdForSwap()))
       });
       if (!res.ok) throw new Error('swap failed');
       var data = await res.json();
@@ -20875,7 +20893,7 @@
       var res = await Api.fetch('/api/week/' + encodeURIComponent(weekStart) + '/swap-undo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entry_id: entry.entry_id })
+        body: JSON.stringify(withPlanId({ entry_id: entry.entry_id }, planIdForSwap()))
       });
       if (!res.ok) throw new Error('undo failed');
       var data = await res.json();
@@ -21087,7 +21105,7 @@
       var res = await Api.fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/slot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: date, slot: slot, choice: choice })
+        body: JSON.stringify(withPlanId({ date: date, slot: slot, choice: choice }, data.weekly_plan_id))
       });
       if (!res.ok) throw new Error('slot resolve failed');
       var settled = await res.json();
@@ -21340,7 +21358,8 @@
       var res;
       try {
         res = await Promise.race([
-          Api.fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/defrost-items'), waited]);
+          Api.fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/defrost-items' +
+            (data.weekly_plan_id ? '?weekly_plan_id=' + encodeURIComponent(data.weekly_plan_id) : '')), waited]);
       } finally { clearTimeout(waitTimer); }
       if (!res.ok) throw new Error('defrost items lookup failed');
       var body = await res.json();
@@ -21398,7 +21417,7 @@
       var res = await Api.fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/defrost-confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: items }),
+        body: JSON.stringify(withPlanId({ items: items }, data.weekly_plan_id)),
       });
       if (!res.ok) throw new Error('defrost confirm failed');
       var body = await res.json();
@@ -21627,7 +21646,11 @@
 
   async function reopenWeek(panel, data) {
     try {
-      var res = await Api.fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/reopen', { method: 'POST' });
+      var res = await Api.fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/reopen', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(withPlanId({}, data.weekly_plan_id))
+      });
       if (!res.ok) throw new Error('reopen failed');
       await res.json();
       showToast('Open again. Nothing has come off your shopping list.');
@@ -22182,7 +22205,7 @@
       var res = await Api.fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/approve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ approved_by: approvedBy, confirm_hard_conflicts: !!confirmHardConflicts })
+        body: JSON.stringify(withPlanId({ approved_by: approvedBy, confirm_hard_conflicts: !!confirmHardConflicts }, data.weekly_plan_id))
       });
       if (!res.ok) throw new Error('approve failed');
       // The approve endpoint answers with the dietary check it ran on the
