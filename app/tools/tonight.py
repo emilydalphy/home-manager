@@ -1062,7 +1062,7 @@ def tonight_night_off(day: str | None = None, now: datetime | None = None,
             return {**out, **asked, "said": asked["message"]}
 
         if kind == "cooking":
-            # See _night_off_plan: a started cook feeding later nights stays.
+            # See _night_off_plan: a started, unticked cook is never dropped or moved.
             conn.rollback()
             return {"status": "refused", "date": today, "message": step["line"]}
 
