@@ -88,6 +88,12 @@ def test_a_cooked_dinner_stays_when_nobody_is_home(signed_in):
     assert _groceries() == before, "nothing comes off the list for a dinner already cooked"
     assert tools.get_slot_need(today, "dinner")["need"] == "away", "the away itself is still recorded"
     assert tools.audit_plan_slots(plan)["complete"]
+    # Meals shows the dinner that was eaten — no "Away" badge, no "nothing
+    # planned, nothing bought" line over it.
+    menu = signed_in.get("/api/week-menu").json()
+    entry = next(d for d in menu["days"] if d["date"] == today)["dinner"]
+    assert entry["cooked"] and "need" not in entry and "need_reason" not in entry
+    assert "attendance_summary" not in entry
 
 
 def test_a_dinner_on_the_stove_stays_too(signed_in):

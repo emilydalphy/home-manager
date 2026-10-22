@@ -6410,7 +6410,12 @@ def _decorate_with_needs(days: list[dict], week_start: str) -> str:
                 day[slot] = entry
             if entry is None:
                 continue
-            if info:
+            # A meal already cooked (or cooking) stays on the plan when the
+            # household is then marked away for it (slot_needs keeps it,
+            # 2026-10-22), so the away mustn't badge it "Away" or call it
+            # "nothing planned, nothing bought" — it was eaten.
+            begun = entry.get("cooked") or entry.get("cooking")
+            if info and not begun:
                 entry["need"] = info["need"]
                 entry["need_reason"] = info["reason"]
                 entry["need_for_names"] = info["for_member_names"]
@@ -6421,7 +6426,8 @@ def _decorate_with_needs(days: list[dict], week_start: str) -> str:
                 entry["away_names"] = att["absent_names"]
                 entry["present_names"] = att["present_names"]
                 entry["guest_count"] = att["guest_count"]
-                entry["attendance_summary"] = _attendance.summary_line(att)
+                if not begun:
+                    entry["attendance_summary"] = _attendance.summary_line(att)
 
     if not away_dates:
         return ""

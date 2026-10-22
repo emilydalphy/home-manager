@@ -23,6 +23,8 @@ why*, not duplicating the diff.
   "lunches per week: 0" (or a usual-week off) back into an OPEN "tell me
   what you'd like" question; it now goes back to `planned_empty` in
   generation's own words. Past uncooked nights still convert: Emily's call.
+  The week menu drops the away badge and "nothing bought" line off a kept
+  cooked meal.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
