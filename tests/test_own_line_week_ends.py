@@ -128,3 +128,45 @@ def test_a_line_typed_down_to_the_plans_share_is_asked_about_not_left_blank():
         tools.approve_weekly_plan(plan, approved_by="Emily")
     # The line itself is last week's leftover — not a blank "Onion" beside it.
     assert sorted(_onions()) == [("4", "carried", False), ("4", "needed", False)]
+
+
+def _fractional():
+    # Half an onion a night: three nights want 1.5, and the list buys 2.
+    tools.add_recipe("Dal", ingredients=[{"item": "Onion", "qty": "0.5", "category": "produce"}])
+
+
+def _dal_week(week: int) -> int:
+    plan = tools.create_weekly_plan(_day(week))["weekly_plan_id"]
+    for n in range(3):
+        tools.plan_meal(_day(week, n + 1), "Dal", slot="dinner", weekly_plan_id=plan)
+    return plan
+
+
+def test_fractional_shares_never_creep_when_next_week_is_approved_early():
+    """Review, 2026-10-22: each approval adds its OWN rounded total (2), so
+    each ended week has to come off as 2 — restating ended + live together
+    took off ceil(3) - ceil(1.5) = 1 and the own line went 4 -> 5 -> 6 -> 7."""
+    _fractional()
+    tools.add_grocery_item("Onion", "2", category="produce")
+    tools.approve_weekly_plan(_dal_week(0), approved_by="Emily")
+    for week in (1, 2, 3):
+        tools.approve_weekly_plan(_dal_week(week), approved_by="Emily")  # early, the week before
+        with _on(week):
+            tools.set_aside_ended_weeks()
+        needed = [o for o in _onions() if o[1] == "needed"]
+        assert needed == [("4", "needed", True)], (week, _onions())  # own 2 + the live week's 2
+    assert [c["quantity"] for c in tools.list_carried_over_items()] == ["2", "2", "2"]
+
+
+def test_two_ended_weeks_pooled_at_one_approval_each_come_off_whole():
+    _fractional()
+    tools.add_grocery_item("Onion", "4", category="produce")
+    tools.approve_weekly_plan(_dal_week(0), approved_by="Emily")
+    tools.approve_weekly_plan(_dal_week(1), approved_by="Emily")
+    assert _onions() == [("8", "needed", True)]
+    plan = _dal_week(2)
+    with _on(2):
+        tools.approve_weekly_plan(plan, approved_by="Emily")
+    needed = [o for o in _onions() if o[1] == "needed"]
+    assert needed == [("6", "needed", True)], _onions()  # own 4 + this week's 2
+    assert sorted(c["quantity"] for c in tools.list_carried_over_items()) == ["2", "2"]
