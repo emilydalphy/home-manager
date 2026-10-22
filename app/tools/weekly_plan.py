@@ -4108,8 +4108,8 @@ def _finish_takeover_result(result: dict, new_plan_id: int) -> dict:
 # were pasta and stock was told "it's all bought already" and then took
 # both off the list (defect hunt 2026-10-22). Anything else — a line set
 # aside, a carried-over line — is neither, and is counted as neither.
-_TAKEOVER_LIVE_STATUSES = "('needed', 'spice')"
-_TAKEOVER_BOUGHT_STATUSES = "('in_cart', 'purchased')"
+_TAKEOVER_LIVE_STATUSES = ("needed", "spice")
+_TAKEOVER_BOUGHT_STATUSES = ("in_cart", "purchased")
 
 
 def preview_approved_takeover(period_start: str, day_count: int) -> dict | None:
@@ -4183,17 +4183,34 @@ def preview_approved_takeover(period_start: str, day_count: int) -> dict | None:
     bought_line_count = 0
     if entry_ids:
         entry_placeholders = ",".join("?" * len(entry_ids))
-        counts = conn.execute(
-            f"SELECT "
-            f"COUNT(DISTINCT CASE WHEN g.status IN {_TAKEOVER_LIVE_STATUSES} THEN g.id END) AS needed, "
-            f"COUNT(DISTINCT CASE WHEN g.status IN {_TAKEOVER_BOUGHT_STATUSES} THEN g.id END) AS bought "
+        links = conn.execute(
+            f"SELECT l.id, l.quantity, g.id AS line_id, g.item, g.status "
             f"FROM meal_plan_grocery_links l "
             f"JOIN grocery_items g ON g.id = l.grocery_item_id "
             f"WHERE l.household_id = ? AND l.meal_plan_entry_id IN ({entry_placeholders})",
             (household_id(), *entry_ids),
-        ).fetchone()
-        grocery_line_count = counts["needed"]
-        bought_line_count = counts["bought"]
+        ).fetchall()
+        live_lines: dict[int, dict] = {}
+        bought_lines = set()
+        for link in links:
+            if link["status"] in _TAKEOVER_BOUGHT_STATUSES:
+                bought_lines.add(link["line_id"])
+            elif link["status"] in _TAKEOVER_LIVE_STATUSES:
+                line = live_lines.setdefault(link["line_id"], {"item": link["item"], "ids": [], "qtys": []})
+                line["ids"].append(link["id"])
+                line["qtys"].append(link["quantity"])
+        # A live line is counted only if the reversal will really change
+        # it: a jar or bottle that a surviving night still names stays on
+        # the list untouched (grocery.reversal_changes_line).
+        for line_id, line in live_lines.items():
+            others_left = conn.execute(
+                "SELECT COUNT(*) AS n FROM meal_plan_grocery_links WHERE household_id = ? "
+                f"AND grocery_item_id = ? AND id NOT IN ({','.join('?' * len(line['ids']))})",
+                (household_id(), line_id, *line["ids"]),
+            ).fetchone()["n"]
+            if _grocery.reversal_changes_line(line["item"], line["qtys"], others_left):
+                grocery_line_count += 1
+        bought_line_count = len(bought_lines)
     conn.close()
 
     meals_by_date: dict[str, list[dict]] = {}
@@ -4431,7 +4448,7 @@ def _release_plan_days(plan_id: int, dates: list[str], include_components: bool 
                     f"SELECT DISTINCT g.item FROM meal_plan_grocery_links l "
                     f"JOIN grocery_items g ON g.id = l.grocery_item_id "
                     f"WHERE l.household_id = ? AND l.meal_plan_entry_id IN ({entry_placeholders}) "
-                    f"AND g.status IN {_TAKEOVER_BOUGHT_STATUSES}",
+                    f"AND g.status IN {_TAKEOVER_BOUGHT_STATUSES!r}",
                     (household_id(), *entry_ids),
                 ).fetchall()
             ]

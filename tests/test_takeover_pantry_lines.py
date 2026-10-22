@@ -94,3 +94,62 @@ def test_a_purchased_line_is_still_bought(monkeypatch):
 
     result = tools.retire_overlapping_plans(draft_id, _day(10), 7)
     assert result["grocery_kept_bought"] == ["penne"]
+
+
+def _jar_week(monkeypatch) -> None:
+    tools.add_recipe("Pasta", ingredients=[{"item": "ground cumin", "qty": "1 jar"},
+                                           {"item": "olive oil", "qty": "1 bottle"},
+                                           {"item": "soy sauce", "qty": "2 tbsp"}],
+                     prep_time_minutes=5, cook_time_minutes=15)
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}],
+                     prep_time_minutes=5, cook_time_minutes=15)
+    monkeypatch.setattr(agent, "generate_weekly_plan_llm",
+                        lambda c: _period(c["week_start_date"], c["day_count"], "Pasta"))
+    week = agent.generate_weekly_plan(_day(7), day_count=7, period_start=_day(7), confirm_takeover=True)
+    tools.approve_weekly_plan(week["weekly_plan_id"])
+    monkeypatch.setattr(agent, "generate_weekly_plan_llm",
+                        lambda c: _period(c["week_start_date"], c["day_count"], "Chili"))
+
+
+def test_a_jar_no_surviving_night_names_is_counted(monkeypatch):
+    # The other side of the jar rule: replace every night and the jar, the
+    # bottle and the soy sauce all go — three lines, said as three.
+    _jar_week(monkeypatch)
+    agent.generate_weekly_plan(_day(7), day_count=7, period_start=_day(7), confirm_takeover=True)
+    assert tools.preview_approved_takeover(_day(7), 7)["grocery_line_count"] == 3
+
+
+def test_a_jar_a_surviving_night_still_names_is_not_counted(monkeypatch):
+    # Review, 2026-10-22: a jar of cumin and a bottle of oil are held whole
+    # while any meal still names them, so replacing four of seven nights
+    # leaves both lines exactly as they were — only the soy sauce (a
+    # measured amount) is trimmed. The question has to say one, not three.
+    tools.add_recipe("Pasta", ingredients=[{"item": "ground cumin", "qty": "1 jar"},
+                                           {"item": "olive oil", "qty": "1 bottle"},
+                                           {"item": "soy sauce", "qty": "2 tbsp"}],
+                     prep_time_minutes=5, cook_time_minutes=15)
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}],
+                     prep_time_minutes=5, cook_time_minutes=15)
+    monkeypatch.setattr(agent, "generate_weekly_plan_llm",
+                        lambda c: _period(c["week_start_date"], c["day_count"], "Pasta"))
+    week = agent.generate_weekly_plan(_day(7), day_count=7, period_start=_day(7), confirm_takeover=True)
+    tools.approve_weekly_plan(week["weekly_plan_id"])
+    conn = get_conn()
+    before = {r["item"].lower(): (r["status"], r["quantity"]) for r in conn.execute("SELECT item, status, quantity FROM grocery_items")}
+    conn.close()
+    assert set(before) == {"ground cumin", "olive oil", "soy sauce"}, before
+    monkeypatch.setattr(agent, "generate_weekly_plan_llm",
+                        lambda c: _period(c["week_start_date"], c["day_count"], "Chili"))
+    draft = agent.generate_weekly_plan(_day(10), day_count=7, period_start=_day(10), confirm_takeover=True)
+
+    preview = tools.preview_approved_takeover(_day(10), 7)
+    result = tools.retire_overlapping_plans(draft["weekly_plan_id"], _day(10), 7)
+
+    conn = get_conn()
+    after = {r["item"].lower(): (r["status"], r["quantity"]) for r in conn.execute("SELECT item, status, quantity FROM grocery_items")}
+    conn.close()
+    changed = {item for item in before if after.get(item) != before[item]}
+    assert changed == {"soy sauce"}, (before, after)
+    assert preview["grocery_line_count"] == len(changed) == 1
+    assert "one thing on your shopping list would change" in preview["note"]
+    assert {i.lower() for i in result["grocery_removed"] + result["grocery_trimmed"]} == {"soy sauce"}
