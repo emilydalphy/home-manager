@@ -298,6 +298,14 @@ def set_slot_need(
              json.dumps(sorted(for_member_ids or [])), json.dumps(superseded) if superseded else ""),
         )
         plan_id = _plan_id_for_date(conn, date_str, slot) if need == "away" else None
+        # A meal already cooked (or on the stove) stays as the record it is
+        # — the night off, the Move sheet, the nights swap and the Review
+        # "−" all keep one (weekly_plan.cook_begun); this door deleted it
+        # and reversed its groceries (overnight 2026-10-22). The away need
+        # is still recorded; only the conversion is skipped.
+        kept_cooked = plan_id is not None and _cook_has_begun(conn, plan_id, date_str, slot)
+        if kept_cooked:
+            plan_id = None
         if plan_id is not None:
             if not _cook_on_the_fed_night(conn, plan_id, date_str, slot):
                 _drop_its_freezer_nights(conn, plan_id, date_str, slot)
@@ -324,8 +332,21 @@ def set_slot_need(
     return {
         "date": date_str, "slot": slot, "need": need, "reason": resolved_reason,
         "converted_existing_plan_slot": converted,
+        "kept_cooked_meal": kept_cooked,
         "for_member_ids": sorted(for_member_ids or []),
     }
+
+
+def _cook_has_begun(conn, plan_id: int, date_str: str, slot: str) -> bool:
+    """Whether the planned meal on this slot is ticked cooked or has its
+    cook started. On the caller's connection."""
+    rows = conn.execute(
+        "SELECT cooked_status, cook_started_at FROM meal_plan_entries "
+        "WHERE weekly_plan_id = ? AND household_id = ? AND date = ? AND slot = ? "
+        "AND slot_state = 'planned' AND component_category IS NULL",
+        (plan_id, household_id(), date_str, slot),
+    ).fetchall()
+    return any(_weekly_plan.cook_begun(r) for r in rows)
 
 
 def _cook_on_the_fed_night(conn, plan_id: int, date_str: str, slot: str) -> bool:
@@ -428,6 +449,14 @@ def _reopen_away_slot(date_str: str, slot: str, attendance: dict) -> bool:
     # a raise here against 0.0s and a False on main, with another writer
     # holding the lock). It fails loudly and corrupts nothing, which is the
     # ordinary price of the fix.
+    #
+    # A meal the household doesn't plan at all — a count of 0 ("None,
+    # thanks") or one their usual week has off — goes back to being
+    # deliberately empty, never a question (overnight 2026-10-22): a trip
+    # cancelled over a weekend handed a no-lunches household every lunch
+    # back as "tell me what you'd like and I'll shop for it". Asked here,
+    # before the lock: both reads open connections of their own.
+    not_planned = _not_planned_here(date_str, slot)
     conn = get_conn()
     try:
         conn.execute("BEGIN IMMEDIATE")
@@ -443,6 +472,16 @@ def _reopen_away_slot(date_str: str, slot: str, attendance: dict) -> bool:
         if not row or row["slot_state"] != "planned_empty" or not row["weekly_plan_id"]:
             conn.rollback()
             return False
+
+        if not_planned is not None:
+            reason, derived = not_planned
+            _weekly_plan.clear_plan_slot(row["weekly_plan_id"], date_str, slot, conn=conn)
+            _weekly_plan.plan_slot_empty(
+                weekly_plan_id=row["weekly_plan_id"], meal_date=date_str, slot=slot,
+                reason=reason, derived_from=derived, conn=conn,
+            )
+            conn.commit()
+            return True
 
         who = attendance.get("present_names") or []
         guests = attendance.get("guest_count") or 0
@@ -469,6 +508,25 @@ def _reopen_away_slot(date_str: str, slot: str, attendance: dict) -> bool:
     finally:
         conn.close()
     return True
+
+
+_MEAL_PLURALS = {"breakfast": "breakfasts", "lunch": "lunches", "dinner": "dinners"}
+
+
+def _not_planned_here(date_str: str, slot: str) -> tuple[str, dict] | None:
+    """(reason, derived_from) for a slot the household doesn't plan at all —
+    a count of 0, or a meal its usual week has off that day — in the words
+    and constraint generation writes for it; None for an ordinary slot.
+    Opens its own connections, so never call it inside a write."""
+    from . import usual_week as _usual_week  # lazy: it reaches back into this module
+    if slot in _weekly_plan.unwanted_meal_slots():
+        return (
+            f"You’ve asked me not to plan {_MEAL_PLURALS.get(slot, slot + 's')} — I’ve left this to you.",
+            {"constraint": f"{slot}s_per_week:0"},
+        )
+    if (date_str, slot) in _usual_week.off_slots_on([date_str]):
+        return _usual_week.OFF_REASON, {"constraint": _usual_week.OFF_CONSTRAINT}
+    return None
 
 
 def _join_people(names: list[str]) -> str:
