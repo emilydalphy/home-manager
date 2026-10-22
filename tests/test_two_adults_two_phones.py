@@ -105,3 +105,18 @@ def test_a_named_adult_and_a_device_with_nobody_picked_still_behave():
     assert _morning(vic)["phone"] == ""
     with tools.use_member(None), pytest.raises(ValueError, match="Which of you"):
         tools.set_morning_text(phone="416-555-0199")
+
+
+def test_a_stale_pick_is_asked_and_never_overwrites_the_adult_left():
+    """Review, 2026-10-22: Vic re-marked Teen, his session still carrying
+    his pick — "text me" overwrote Emily's number as "the only adult"."""
+    emily = _member("Emily", "adult")
+    vic = _member("Vic", "adult")
+    tools.set_morning_text_for_member(emily, phone="416-555-0101", on=True)
+    tools.set_member_age_group("Vic", "teen")
+    with tools.use_member(vic), pytest.raises(ValueError, match="who's on this phone"):
+        tools.set_morning_text(phone="416-555-0102", on=True)
+    assert _morning(emily) == {"member_id": emily, "name": "Emily", "phone": "+14165550101", "on": True}
+    with tools.use_member(None):
+        tools.set_morning_text(on=False)
+    assert _morning(emily)["on"] is False, "no pick, one adult: still that adult"

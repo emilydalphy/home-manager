@@ -65,6 +65,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from ..db import get_conn
 from ._shared import PUBLIC_BASE_URL, current_member, household_id, use_household
+from ._shared import member_id as _session_member_id
 from . import attendance as _attendance
 from . import attention as _attention
 from . import cooker as _cooker
@@ -411,10 +412,17 @@ def _resolve_member(conn, name: str | None, phone: str) -> int:
     # a name nobody gave). It asked "Which of you is this for?" of a
     # two-adult house that had already said, at "Who's this?" — and the
     # model, told to pass a name it cannot know, could guess the wrong one
-    # (defect hunt 2026-10-22). current_member() is verified: a stale pick asks.
+    # (defect hunt 2026-10-22).
     member = current_member()
     if member and any(r["id"] == member["id"] for r in adults):
         return member["id"]
+    # A device that picked someone who no longer checks out (re-marked a
+    # Teen, say) is NOT "the only adult" — that inference is for a device
+    # with no pick, and here it overwrote the remaining adult's number
+    # (review, 2026-10-22). Ask rather than guess; current_member() above
+    # is None for exactly this case.
+    if _session_member_id() is not None:
+        raise ValueError("I'm not sure who's on this phone right now — whose texts are these?")
     if len(adults) == 1:
         return adults[0]["id"]
     if not adults:

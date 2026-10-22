@@ -1557,8 +1557,9 @@ def onboarding_household(req: HouseholdOnboardingRequest, request: Request):
     # who had just typed the household in). record_setup_adult returns an id
     # ONLY on the pass that actually recorded the setter-up — a re-run of
     # onboarding, or one that finds a setter-up already on file, returns None
-    # and pins nobody — and only when this session has no adult picked yet,
-    # so an existing pick (or an invited adult's) is never overwritten. Other
+    # and pins nobody — and only when this session resolves to no adult (no
+    # pick, or a pick that no longer checks out — current_member), so a
+    # live pick (or an invited adult's) is never overwritten. Other
     # devices and the other adult get the question as before. Same cookie
     # write as /api/whoami/pick.
     if setup_adult_id is not None and tools.current_member() is None:
