@@ -1497,6 +1497,81 @@ def _recompute_plan_line_from_ledger(
         conn.close()
 
 
+def _restate_lines_for_new_shares(conn, before_by_line: dict[int, list[str]]) -> list[int]:
+    """
+    Re-read each of these lines from its ledger after some of its meals'
+    shares were rewritten IN PLACE (attendance.resize_for_new_headcount:
+    a table that changed size after approval). `before_by_line` is
+    {grocery_item_id: every ledger quantity on that line BEFORE the
+    rewrite}; the rows as they stand now are the after.
+
+    The same two readings the meal reversal uses, so a line resized and
+    resized back is where it started:
+      - a plan line (source_weekly_plan_id set) is recomputed from its
+        whole ledger (_plan_or_rack_amount — the kept amount and the
+        household's edit down ride on top, as they do on a reversal);
+      - a household's own standing want is RESTATED in one step
+        (_ledger_totals + _restate_standing_want): what is on it, less
+        what the plan's meals rounded to before, plus what they round to
+        now. Never a share subtracted or added on its own (see CLAUDE.md,
+        "Grocery quantity merging/display"), and never blanked here — a
+        restate that would empty it, or that can't read it, leaves it.
+    A sealed package keeps its one jar (a spice's or a store-sold line is
+    re-read, as on a reversal). Only a line the reversal would keep in
+    step is touched: needed / a pending spice, a plan line set aside
+    ("Have it", the freezer step, a pre-shop drop), or one taken off with
+    Remove. The status is NEVER changed — a line off the list stays off
+    and its Put back / Undo returns the resized amount on the same row.
+    A line in a cart or bought is the caller's to refuse before this.
+    Returns the ids whose quantity changed.
+    """
+    changed: list[int] = []
+    hid = household_id()
+    for item_id, before in before_by_line.items():
+        row = conn.execute(
+            "SELECT id, item, quantity, status, removed_by, source_weekly_plan_id, kept_amount, "
+            "short_amount, edited_to FROM grocery_items WHERE id = ? AND household_id = ?",
+            (item_id, hid),
+        ).fetchone()
+        if row is None:
+            continue
+        plan_line = row["source_weekly_plan_id"] is not None
+        live = row["status"] in ("needed", "spice")
+        set_aside = (row["status"] == "removed" and plan_line
+                     and row["removed_by"] not in ("carried_kept", "carried_dropped"))
+        list_removed = row["status"] == "removed" and row["removed_by"] == REMOVED_BY_LIST
+        if not (live or set_aside or list_removed):
+            continue
+        after = [r["quantity"] or "" for r in conn.execute(
+            "SELECT quantity FROM meal_plan_grocery_links WHERE household_id = ? AND grocery_item_id = ? ORDER BY id",
+            (hid, item_id),
+        ).fetchall()]
+        if not after:
+            continue
+        current = row["quantity"] or ""
+        if any(_holds_one_package(row["item"], q) for q in after):
+            if not (plan_line and (_spices_is_spice(row["item"]) or _store_kind(row["item"]))):
+                continue
+        if plan_line:
+            summed = _plan_or_rack_amount(row["item"], after, row["kept_amount"], row["short_amount"], row["edited_to"])
+            if not summed:
+                continue
+            new_qty = _quantities._with_note(summed, _quantities._quantity_note(current))
+        else:
+            totals = _quantities._ledger_totals(before, after)
+            restated = None if totals is None else _restate_standing_want(current, *totals)
+            if restated is None or restated[1] or not restated[0]:
+                continue
+            new_qty = restated[0]
+        if new_qty != current:
+            conn.execute(
+                "UPDATE grocery_items SET quantity = ? WHERE id = ? AND household_id = ?",
+                (new_qty, item_id, hid),
+            )
+            changed.append(int(item_id))
+    return changed
+
+
 def add_grocery_item(
     item: str,
     quantity: str = "",

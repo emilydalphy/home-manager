@@ -13,6 +13,17 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Guests (or someone out) after approval resize the list IN PLACE**
+  (2026-10-22; branch `overnight/guests-resize-in-place`; tests
+  `tests/test_guests_resize_in_place.py`). `attendance.resize_for_new_headcount`
+  runs the recipe-week's unbuy+rebuy inside a SAVEPOINT only to read the new
+  ledger shares, rolls back, rewrites the existing `meal_plan_grocery_links` rows,
+  and re-reads each line (`grocery._restate_lines_for_new_shares`: plan line from
+  its ledger, standing want restated). Ids never change; dropped/removed/excluded/
+  freezer lines keep their status (remembered amount resized). The rebuy-only cut
+  (`e0de6e35`) was pulled: new ids every tap, dropped lines came back. Left alone:
+  drafts, past/cooked nights (incl. a reheat whose cook night moved), holiday
+  menus, any week with a line in cart/bought, component plates, `clear_slot_attendance`.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
