@@ -13,6 +13,17 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A test run that crosses midnight is held to the day it started**
+  (2026-10-23 overnight; branch `overnight/tests-survive-midnight`; tests
+  `tests/test_run_crosses_midnight.py`). 84 files compute `TODAY` at module
+  scope, i.e. at collection, so tests after a crossing seeded yesterday: 55
+  false failures reproduced on the swap/freezer/carousel files when started at
+  23:58:30 Toronto, none at 00:05. `conftest._a_run_that_crosses_midnight`
+  pins each post-crossing test back to the collection instant (5 min short of
+  midnight if it was closer; a start that close also holds collection itself,
+  since importing takes 10-15 s). Done centrally, not by rewriting 84 files, so
+  the 85th file is covered too. test_frozen_clock's two "nothing is pinned"
+  checks skip while held (`conftest.held_past_midnight()`).
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
