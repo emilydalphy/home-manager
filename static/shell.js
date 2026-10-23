@@ -22798,7 +22798,17 @@
       .filter(function (x) { return x.m.date === iso; })
       .sort(function (a, b) { return cookSlotRank(a.m) - cookSlotRank(b.m); });
     if (!todays.length) return null;
-    var fromNow = todays.filter(function (x) { return cookSlotRank(x.m) >= from; });
+    // A snack is eaten in the afternoon — Today files it there, "Start by
+    // 3:00" — even though COOK_SLOT_ORDER lists it last. Ranked last here,
+    // the evening's "dinner onwards" took in the 3pm snack, and once dinner
+    // was cooked the Cook card offered that snack to start, at 11pm
+    // (overnight e2e hunt, 2026-10-23). From dinner on a snack has gone by
+    // and the card stays on dinner, cooked. Earlier in the day it still
+    // ranks after dinner, as it always has.
+    var fromNow = todays.filter(function (x) {
+      if (x.m.slot === 'snack' && from >= 2) return false;
+      return cookSlotRank(x.m) >= from;
+    });
     var uncooked = fromNow.filter(function (x) { return x.m.cooked_status !== 'done'; });
     if (uncooked.length) return uncooked[0].i;
     if (fromNow.length) return fromNow[0].i;
