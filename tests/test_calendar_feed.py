@@ -425,7 +425,22 @@ def test_webcal_and_webcals_links_are_https_underneath():
 def test_a_path_the_http_client_itself_rejects_never_reaches_the_log(monkeypatch, caplog, path):
     """http.client's InvalidURL quotes the whole request path in its
     message. The path IS the secret, so the fetch log line must carry the
-    exception's class and the host — never its text."""
+    exception's class and the host — never its text.
+
+    Since 2026-10-23 the fetch percent-encodes the path before it asks
+    (recipe_import._check_url), so these two no longer reach http.client
+    raw; the connection here raises the InvalidURL http.client would have,
+    path and all, so the log rule is still what is tested."""
+    import http.client
+
+    class Refuses:
+        def request(self, method, path, headers=None):
+            raise http.client.InvalidURL(f"URL can't contain control characters. {path!r}")
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(ri, "_open_connection", lambda *a, **k: Refuses())
     monkeypatch.setattr(ri.socket, "getaddrinfo", lambda host, port, **k: [
         (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("142.250.65.78", port)),
     ])

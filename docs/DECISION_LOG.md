@@ -13,6 +13,17 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A recipe link with an accent or a space in it is read, not a 500**
+  (defect hunt 2026-10-23; branch
+  `overnight/hunt-delete-feedback-import-2026-10-23`; tests
+  `tests/test_recipe_import_link_encoding.py`). `recipe_import._check_url`
+  now percent-encodes the path+query (`%` kept safe, so an encoded link is
+  unchanged) and IDNA-encodes the host before the localhost check. Why: a
+  link pasted from a message ("…/recettes/crêpes") went to http.client raw —
+  UnicodeEncodeError escaped the fetch's except and the household saw
+  "Server error: 'ascii' codec…"; a space read as "couldn't reach that
+  page". The calendar feed shares the fetch, so its InvalidURL log test now
+  raises InvalidURL from a fake connection instead of relying on it.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

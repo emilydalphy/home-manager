@@ -117,11 +117,30 @@ def _check_url(url: str) -> tuple[str, str, int | None, str]:
     if port not in ALLOWED_PORTS:
         raise RecipeImportError(MSG_BLOCKED, "blocked")
     host = hostname.rstrip(".").lower()
+    try:
+        # A name in its own alphabet ("café.example") goes on the wire as
+        # IDNA, the way a browser sends it: the Host header is latin-1 at
+        # best, so anything past that raised inside http.client. A name the
+        # codec refuses (a 64-character label) is left as typed, for the
+        # DNS lookup to call unreachable as it always has. Before the name
+        # check, so a look-alike spelling of "localhost" is judged as what
+        # it becomes.
+        host = host.encode("idna").decode("ascii")
+    except UnicodeError:
+        pass
     if host in ("localhost",) or host.endswith((".localhost", ".local", ".internal", ".home.arpa")):
         raise RecipeImportError(MSG_BLOCKED, "blocked")
     path = parts.path or "/"
     if parts.query:
         path += "?" + parts.query
+    # Percent-encoded the way a browser does before it asks — a pasted or
+    # shared link can carry the raw "crêpes" or a space a browser's address
+    # bar would have hidden. Sent raw, http.client refused the space (said
+    # as "couldn't reach that page" for a page that is there) and raised
+    # UnicodeEncodeError on the accent, which nothing caught: a 500 quoting
+    # the codec (defect hunt 2026-10-23). "%" is in `safe`, so a link that
+    # is already encoded goes out exactly as it came in.
+    path = quote(path, safe="!#$%&'()*+,/:;=?@[]~")
     return parts.scheme, host, port, path
 
 
