@@ -13,6 +13,17 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **"Different dishes a week" held in two more places** (2026-10-23; branch
+  `overnight/dish-count-after-swaps`; tests `tests/test_dish_count_holds_after_every_pass.py`).
+  Tester Home's week of 10-19 (Dinners 2, Lunches 2) came out with three of each, and the
+  tripwire was right: it runs once, at generation, never after a swap. (1) The count's own
+  fold let the dropped dish STAND when it held the slot's first night with no earlier cook
+  and the kept dishes in model-written chains; `enforce_distinct_count` now tries the other
+  choices of dish to drop before letting one stand. (2) `draft_rules.enforce_protein_variety`
+  runs after the guard and the tripwire and could re-pick a third lunch dish; it now skips
+  a re-pick that would take a meal past the count the household set (count beats the
+  MAX_PER_PROTEIN default). NOT fixed, reported: cold-packed re-picks and the first plan's
+  gap fill (`wanted = max(1, …)`) can also add a dish after the tripwire has looked.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

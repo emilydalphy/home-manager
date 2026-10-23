@@ -7712,7 +7712,17 @@ def _generate_weekly_plan(
             # that can write a lunch (leftover copies, the first-week fill).
             # See tools/draft_rules.py; neither raises.
             _draft_rules.enforce_cold_packed_lunches(plan_id, usual_period)
-            _draft_rules.enforce_protein_variety(plan_id)
+            # The counts the household set, as _finish_week_slots' guard holds
+            # them (effective memory, so a part-week's prorated number; never a
+            # meal whose count they named in their own words this week): the
+            # protein re-pick runs after that guard and must not undo it.
+            count_asks = (context.get("constraints_notes"), (intake or {}).get("freeform"))
+            _draft_rules.enforce_protein_variety(plan_id, targets={
+                slot: effective_memory.get(field)
+                for slot, field in _meal_variety.COUNT_FIELDS.items()
+                if effective_memory.get("meal_counts_set") and effective_memory.get(field)
+                and not _meal_variety.asks_for_a_count(*count_asks, slot=slot)
+            })
 
         if intake:
             tools.attach_intake_to_plan(plan_id, intake["intake_id"])
