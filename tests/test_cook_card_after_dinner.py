@@ -68,3 +68,25 @@ def test_earlier_in_the_day_nothing_moves():
     after_lunch = _DAY.replace("slot: 'lunch', cooked_status: 'pending'", "slot: 'lunch', cooked_status: 'done'")
     assert _pick(after_lunch % "pending", 13) == "dinner:pending"
     assert _pick(_DAY % "pending", 8) == "breakfast:pending"
+
+
+_NO_DINNER = """[
+  {date: T, slot: 'breakfast', cooked_status: 'pending'},
+  {date: T, slot: 'lunch', cooked_status: 'pending'},
+  {date: T, slot: 'snack', cooked_status: 'pending'}
+]"""
+
+
+@_needs_node
+def test_a_night_with_no_dinner_does_not_fall_back_to_the_snack():
+    """CATCH (review, 2026-10-23): dinner planned_empty — nobody home — left
+    nothing from dinner on, and the fallback (the day's last meal) was the
+    snack: "START 3:25 … Start cooking" at 11pm. Same rule: not the snack."""
+    assert _pick(_NO_DINNER, 23) == "lunch:pending"
+
+
+@_needs_node
+def test_a_snack_only_evening_pins_nothing():
+    assert _pick("[{date: T, slot: 'snack', cooked_status: 'pending'}]", 21) is None
+    # GUARD: in the afternoon the snack is still a fine card.
+    assert _pick("[{date: T, slot: 'snack', cooked_status: 'pending'}]", 14) == "snack:pending"

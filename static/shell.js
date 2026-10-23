@@ -22812,6 +22812,13 @@
     var uncooked = fromNow.filter(function (x) { return x.m.cooked_status !== 'done'; });
     if (uncooked.length) return uncooked[0].i;
     if (fromNow.length) return fromNow[0].i;
+    // No dinner today (nobody home): the same rule holds — the evening
+    // falls back to the day's last meal that isn't a snack, and with none
+    // to nothing pinned, never to the 3pm snack.
+    if (from >= 2) {
+      var notSnacks = todays.filter(function (x) { return x.m.slot !== 'snack'; });
+      return notSnacks.length ? notSnacks[notSnacks.length - 1].i : null;
+    }
     return todays[todays.length - 1].i;
   }
 
