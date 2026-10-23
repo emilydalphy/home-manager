@@ -27,7 +27,11 @@ why*, not duplicating the diff.
   went to an aisle as "½ tsp"; now in the rack list, plus "kashmiri"/
   "chinese"/"sichuan"/"korean"/"black" as descriptors and a bracketed other
   name ("Asafoetida (hing)"). (3) `recipes._clean_item` drops "in olive
-  oil/water/brine", so Salade Nicoise's 2 cans of tuna aren't "2 tbsp".
+  oil/water/brine", so Salade Nicoise's 2 cans of tuna aren't "2 tbsp";
+  review: `spices.is_spice` does the same, so the tuna (and sardines,
+  sun-dried tomatoes in oil) is bought, not assumed at home (on main too).
+  Glass/bean-thread/mung-bean/rice-stick vermicelli and rice-paper wrappers
+  pass; a dish NAMED "…Vermicelli Bowl" is still held on its name.
   Left for Emily (product calls): the per-serving guard still rewrites the
   library's own amounts on the cook card — deep-frying oil "4 cups" -> "2
   tbsp" (~30 dishes), cookies' "1 cup butter" -> "2 tbsp" — while the steps

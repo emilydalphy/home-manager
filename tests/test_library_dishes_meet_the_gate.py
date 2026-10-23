@@ -169,3 +169,49 @@ def test_the_oil_itself_is_still_measured():
     """GUARD: a can of olive oil is still not a cooking amount."""
     assert recipes.cooking_ingredients([{"item": "Olive oil", "qty": "1 can"}], 4)[0]["qty"] == "2 tbsp"
     assert recipes._clean_item("Sun-dried tomatoes in oil") == "sun-dried tomatoes"
+
+
+# ---------- review, 2026-10-23: what the new words must not hold ----------
+
+@pytest.mark.parametrize("item", [
+    "Glass vermicelli", "Bean thread vermicelli", "Mung bean vermicelli", "Rice stick vermicelli",
+    "Vermicelli rice noodles", "Rice vermicelli noodles", "Bean thread noodles",
+    "Spring roll wrappers (rice paper)", "Rice paper spring roll wrappers",
+])
+def test_noodles_and_wrappers_that_say_what_they_are_pass_for_celiac(item):
+    tools.add_member("Maya")
+    tools.set_member_dietary_restrictions("Maya", ["Celiac"])
+    assert allergen_gate.hard_clashes("Weeknight Bowl", [{"item": item, "qty": "8 oz"}]) == []
+
+
+@pytest.mark.parametrize("item", ["Vermicelli", "Spring roll wrappers"])
+def test_the_bare_word_is_still_wheat(item):
+    tools.add_member("Maya")
+    tools.set_member_dietary_restrictions("Maya", ["Celiac"])
+    assert allergen_gate.hard_clashes("Weeknight Bowl", [{"item": item, "qty": "8 oz"}])
+
+
+@pytest.mark.parametrize("item", [
+    "Tuna in olive oil", "Canned tuna in olive oil", "Sardines in olive oil", "Sun-dried tomatoes in oil",
+])
+def test_food_packed_in_oil_is_bought_not_assumed_at_home(item):
+    """CATCH (on main too): these sat in Spices this week, assumed at home."""
+    assert not spices.is_assumed(item)
+
+
+def test_salade_nicoises_tuna_is_on_the_list_to_buy():
+    e = _entry("salade-nicoise")
+    tools.add_member("A")
+    tools.add_member("B")
+    tools.add_recipe(e["dish_name"], ingredients=e["ingredients"], instructions=e["instructions"],
+                     default_servings=e["default_servings"])
+    today = household_today()
+    monday = today - datetime.timedelta(days=today.weekday()) + datetime.timedelta(days=7)
+    plan_id = tools.create_weekly_plan(monday.isoformat())["weekly_plan_id"]
+    tools.plan_meal(monday.isoformat(), e["dish_name"], slot="dinner", weekly_plan_id=plan_id)
+    tools.approve_weekly_plan(plan_id, "A")
+    conn = get_conn()
+    row = conn.execute("SELECT quantity, status FROM grocery_items WHERE item = 'Tuna in olive oil'").fetchone()
+    conn.close()
+    assert row["status"] == "needed" and "can" in row["quantity"]
+    assert spices.assumed_section("Tuna in olive oil") is None

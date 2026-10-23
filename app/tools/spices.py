@@ -149,6 +149,11 @@ def is_spice(name: str) -> bool:
     # oil for frying" and "Canola oil, for frying" are one kind of line
     # (review, 2026-10-19 — punctuation decided it).
     raw = _FOR_RE.sub("", raw).strip() or raw
+    # What it is packed in is not what it is: "Tuna in olive oil" is tuna,
+    # bought in an aisle — read as oil, it went to Spices this week, assumed
+    # at home, and Salade Nicoise's tuna was never bought (review, 2026-10-23).
+    if _PACKED_IN_RE.search(raw):
+        return False
     if _is_spice_name(raw):
         return True
     # Fresh anywhere is bought fresh: "Oregano (fresh)", "Bay leaves (fresh)".
@@ -175,6 +180,9 @@ def is_spice(name: str) -> bool:
 
 _PAREN_RE = re.compile(r"\([^()]*\)")
 _FOR_RE = re.compile(r",?\s+for\s+[a-z ,'-]+$")
+_PACKED_IN_RE = re.compile(
+    r"\S\s+(?:packed\s+)?in\s+(?:extra[\s-]virgin\s+)?(?:(?:olive|sunflower|vegetable|canola)\s+)?(?:oil|water|brine)$"
+)
 
 
 def _is_spice_name(name: str) -> bool:

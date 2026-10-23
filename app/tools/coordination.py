@@ -405,9 +405,19 @@ _COMPOUND_EXCEPTIONS: tuple[tuple, ...] = (
         r"\b(?:rice|almond|chickpea|buckwheat|corn|oat|coconut|tapioca)\s+flours?\b"
     )),
     (frozenset({"noodle", "noodles"}), re.compile(
-        r"\b(?:rice|glass|soba|buckwheat)\s+noodles?\b"
+        r"\b(?:rice|glass|soba|buckwheat|rice\s+vermicelli|bean\s+thread|mung\s+bean)\s+noodles?\b"
     )),
-    (frozenset({"vermicelli", "vermicellis"}), re.compile(r"\brice\s+vermicellis?\b")),
+    # Vermicelli is wheat unless it says what else it is (review, 2026-10-23).
+    # A dish NAMED "Vermicelli Bowl" with no qualifier is still held on its
+    # name even over a rice list — over-safe, as every name is.
+    (frozenset({"vermicelli", "vermicellis"}), re.compile(
+        r"\b(?:rice(?:\s+stick)?|glass|bean\s+thread|mung\s+bean)\s+vermicellis?\b"
+        r"|\bvermicelli\s+rice\s+noodles?\b"
+    )),
+    # Rice-paper spring roll wrappers are rice, however the line says it.
+    (frozenset({"spring roll wrapper", "spring roll wrappers"}), re.compile(
+        r"\brice\s+paper\s+spring\s+roll\s+wrappers?\b|\bspring\s+roll\s+wrappers?\s+rice\s+paper\b"
+    )),
     (frozenset({"pasta", "pastas"}), re.compile(
         r"\b(?:chickpea|lentil|rice)\s+pastas?\b"
     )),
