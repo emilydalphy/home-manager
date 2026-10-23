@@ -1861,8 +1861,17 @@ def _measured_units() -> set[str]:
 
 def _clean_item(item: str) -> str:
     """The ingredient name lowercased and stripped of the prep descriptor
-    the grocery layer already ignores ("Baby spinach, chopped")."""
-    return (item or "").split(",", 1)[0].strip().lower()
+    the grocery layer already ignores ("Baby spinach, chopped"), and of
+    what it is packed in: "Tuna in olive oil" is tuna, not olive oil — read
+    as the oil, the cook card showed "2 tbsp" for Salade Nicoise's two cans
+    (recipe library defect hunt, 2026-10-23)."""
+    clean = (item or "").split(",", 1)[0].strip().lower()
+    return _PACKED_IN_RE.sub("", clean).strip() or clean
+
+
+_PACKED_IN_RE = re.compile(
+    r"\s+(?:packed\s+)?in\s+(?:extra[\s-]virgin\s+)?(?:(?:olive|sunflower|vegetable|canola)\s+)?(?:oil|water|brine)$"
+)
 
 
 def _item_matches(text: str, word: str) -> bool:

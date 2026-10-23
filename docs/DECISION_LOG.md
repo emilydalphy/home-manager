@@ -13,6 +13,25 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Recipe library defect hunt: buns are gluten, Kashmiri chili powder is a
+  jar, canned tuna is tuna** (2026-10-23; branch
+  `overnight/hunt-recipe-library-2026-10-23`; tests
+  `tests/test_library_dishes_meet_the_gate.py`). Swept all 594 library dishes
+  through the app's own checks. (1) A library copy has no writer told about
+  allergies, so the alias table is the gate: Celiac/gluten households were
+  copied 42 dishes with wheat (hamburger buns, hoagie rolls, baguettes,
+  parathas, ditalini, Shaoxing wine…), soy households gochujang. Added to
+  `_WHEAT_WORDS`/soy; "buns" verbatim (Bun Cha is rice); rice vermicelli
+  excepted. (2) 26 spices `spices.is_spice` didn't know (Kashmiri chili
+  powder on 46 dishes, kasuri methi, asafoetida, gochugaru, chaat masala…)
+  went to an aisle as "½ tsp"; now in the rack list, plus "kashmiri"/
+  "chinese"/"sichuan"/"korean"/"black" as descriptors and a bracketed other
+  name ("Asafoetida (hing)"). (3) `recipes._clean_item` drops "in olive
+  oil/water/brine", so Salade Nicoise's 2 cans of tuna aren't "2 tbsp".
+  Left for Emily (product calls): the per-serving guard still rewrites the
+  library's own amounts on the cook card — deep-frying oil "4 cups" -> "2
+  tbsp" (~30 dishes), cookies' "1 cup butter" -> "2 tbsp" — while the steps
+  say the real amount; soba is still excepted from gluten.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
