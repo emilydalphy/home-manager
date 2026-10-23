@@ -364,17 +364,45 @@ def test_preview_moves_on_from_a_week_with_no_dinners_left_to_the_next(client):
     assert [d["title"] for d in body["dinners"]] == ["Pasta"]
 
 
+def test_an_upcoming_plan_with_no_dinners_to_name_is_passed_over(client):
+    """
+    A later plan whose every dinner is still open (or nobody-home) named
+    with nothing under it read "No more dinners on this week's plan" beside
+    "Next week's a draft". The next plan WITH dinners is the one named; a
+    zero-day plan is no plan at all; with neither, it is "No week planned".
+    """
+    today = _wp._household_today()
+    empty = _plan("draft", today + timedelta(days=1))
+    _dinner(empty, today + timedelta(days=1), "", state="open")
+    _dinner(empty, today + timedelta(days=2), "", state="planned_empty")
+    _plan("draft", today + timedelta(days=2), days=0)
+    _sign_in(client)
+    body = client.get("/api/first-open").json()
+    assert body["week_state"] == "none" and body["dinners"] == [], body
+
+    later = _plan("approved", today + timedelta(days=8))
+    _dinner(later, today + timedelta(days=8), "Chili")
+    body = client.get("/api/first-open").json()
+    assert body["week_state"] == "approved" and body["starts_later"] is True
+    assert [d["title"] for d in body["dinners"]] == ["Chili"]
+
+
 def test_the_welcome_says_next_weeks_draft_is_next_weeks():
     start = SHELL_JS.index("  function firstOpenDayWord(d) {")
     end = SHELL_JS.index("  function firstOpenRowHtml(r) {", start)
     script = SHELL_JS[start:end] + (
         "\nvar base = {week_state: 'draft', dinners: [], list_count: 0, decisions: []};"
         "\nfunction said(p) { return firstOpenRows(Object.assign({}, base, p)).map(function (r) { return r.body; }).join(' | '); }"
-        "\nconsole.log(JSON.stringify([said({starts_later: true}), said({starts_later: false}), said({})]));"
+        "\nfunction titles(p) { return firstOpenRows(Object.assign({}, base, p)).map(function (r) { return r.title; }).join(' | '); }"
+        "\nconsole.log(JSON.stringify([said({starts_later: true}), said({starts_later: false}), said({}), titles({starts_later: true})]));"
     )
     res = nodeharness.run_node(script, timeout=30)
     assert res.returncode == 0, res.stderr
-    later, now, unsaid = json.loads(res.stdout.strip().splitlines()[-1])
+    later, now, unsaid, later_titles = json.loads(res.stdout.strip().splitlines()[-1])
+    # A plan that hasn't started, with no dinners to name, is never "this
+    # week's plan" and never asks for "the next one".
+    assert "this week’s plan" not in later_titles and "Plan the next one" not in later
+    assert "No dinners on next week’s plan yet" in later_titles
     assert "Next week’s a draft, waiting for a yes on Plan." in later
     assert "This week’s a draft, waiting for a yes on Plan." in now
     assert "This week’s a draft" in unsaid

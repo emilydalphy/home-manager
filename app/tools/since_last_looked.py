@@ -305,4 +305,13 @@ def look(*, stamp: bool = True) -> list[dict]:
     finally:
         conn.close()
     lines.sort(key=lambda l: (not l["for_you"], l["at"]))
-    return [{"text": l["text"], "for_you": l["for_you"], "target": l["target"]} for l in lines]
+    # One sentence once. Two intakes in a week (Monday's answers, then a
+    # mid-week re-plan) are two rows that read identically now both are
+    # "this week's"; the card says it once, at its first place.
+    out, said = [], set()
+    for l in lines:
+        if l["text"] in said:
+            continue
+        said.add(l["text"])
+        out.append({"text": l["text"], "for_you": l["for_you"], "target": l["target"]})
+    return out

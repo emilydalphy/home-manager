@@ -230,3 +230,34 @@ def test_undo_takes_back_the_use_soon_note_the_night_off_queued():
     assert back["status"] == "restored", back
     left = [i for i in tools.get_attention_items() if i["kind"] == "use_soon"]
     assert [n["detail"]["dish"] for n in left] == ["Salmon Bowls"], left
+
+
+def test_undo_leaves_the_same_note_when_an_earlier_answer_queued_it():
+    """
+    add_attention_item keeps one pending note per sentence. When the same
+    "Use the Ground turkey soon — Turkey Chili came off the plan." is
+    already pending from an earlier answer (the chili planned twice, its
+    other night dropped first), this night off queues nothing new — so its
+    Undo has nothing of its own to take back, and the earlier, still-true
+    note stays.
+    """
+    plan_id, cook = _week(fill_every_night=True)
+    conn = get_conn()
+    conn.execute("UPDATE grocery_items SET status = 'purchased' WHERE item = 'Ground turkey'")
+    conn.commit()
+    conn.close()
+    earlier = tools.add_attention_item(
+        "use_soon", "Use the Ground turkey soon — Turkey Chili came off the plan.",
+        {"items": ["Ground turkey"], "dish": "Turkey Chili"},
+    )["id"]
+
+    out = tools.tonight_night_off(day=MON)
+    assert out["kind"] == "drop" and out["can_undo"] is True, out
+    notes = [i for i in tools.get_attention_items() if i["kind"] == "use_soon"]
+    assert [n["id"] for n in notes] == [earlier], notes      # deduped onto it
+
+    back = tools.tonight_night_off_undo(day=MON)
+
+    assert back["status"] == "restored", back
+    left = [i for i in tools.get_attention_items() if i["kind"] == "use_soon"]
+    assert [n["id"] for n in left] == [earlier], left

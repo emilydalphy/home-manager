@@ -30,6 +30,11 @@ why*, not duplicating the diff.
   chat kept saying it with X back on tonight. Undo resolves that exact note
   (kind + summary, pending only) (`tonight._unqueue_use_soon`;
   `tests/test_freezer_night_goes_with_its_cook.py`).
+  Review round: the welcome skips an upcoming plan with no dinners to name
+  (and zero-day plans) for the next one that has some, and never says "this
+  week's plan" of one that hasn't started; Undo resolves only the note its
+  own tap made pending (id on the undo stamp), not the same sentence already
+  pending from an earlier answer; identical since-looked lines say once.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

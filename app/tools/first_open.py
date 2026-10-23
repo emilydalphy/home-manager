@@ -216,16 +216,28 @@ def _dinner_title(row) -> str:
 
 
 def _soonest_upcoming_plan(conn, today: date):
-    """The live plan whose period starts soonest after today, or None."""
+    """
+    (plan, its dinners) for the live plan starting soonest after today that
+    has a dinner to name, or (None, []). A later plan whose every dinner is
+    open or nobody-home is passed over for the next one: named with nothing
+    under it, the welcome said "No more dinners on this week's plan" and
+    "Next week's a draft" in one breath. A zero-day plan (content_start_date
+    set, day_count 0) is no plan, as first_plan_start reads it.
+    """
     from . import weekly_plan as _wp
 
-    return conn.execute(
+    for plan in conn.execute(
         "SELECT * FROM weekly_plans WHERE household_id = ? AND status != 'retired' "
+        "AND NOT (content_start_date != '' AND day_count = 0) "
         f"AND date({_wp._SQL_PERIOD_START}) > date(?) "
         f"ORDER BY date({_wp._SQL_PERIOD_START}) ASC, {_wp._SQL_APPROVED_FIRST}, "
-        "created_at DESC, id DESC LIMIT 1",
+        "created_at DESC, id DESC",
         (household_id(), today.isoformat()),
-    ).fetchone()
+    ).fetchall():
+        dinners = _next_dinners(conn, plan, today)
+        if dinners:
+            return plan, dinners
+    return None, []
 
 
 def _next_dinners(conn, plan, today: date) -> list[dict]:
@@ -294,10 +306,9 @@ def first_open_preview() -> dict:
             # weekend was told "No week planned yet. Plan one from Today."
             # over a week waiting on Plan — and invited to plan it twice
             # (defect hunt 2026-10-23). The soonest one to start, then.
-            upcoming = _soonest_upcoming_plan(conn, today)
+            upcoming, upcoming_dinners = _soonest_upcoming_plan(conn, today)
             if upcoming is not None:
-                plan = upcoming
-                dinners = _next_dinners(conn, plan, today)
+                plan, dinners = upcoming, upcoming_dinners
         week_state = "none"
         starts_later = False
         if plan is not None:

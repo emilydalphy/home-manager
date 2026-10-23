@@ -204,10 +204,14 @@ def test_questions_for_a_period_already_under_way_are_this_weeks():
         "Vineeth answered this week’s questions.",
         "Vineeth answered next week’s questions.",
     ]
+    # Monday's answers and a mid-week re-plan are two intakes, one sentence.
     _looked_long_ago(ids["Emily"])
     with _shared.use_member(ids["Vineeth"]):
         tools.save_week_intake((today - datetime.timedelta(days=2)).isoformat(), night_tags={})
-    assert "Vineeth answered this week’s questions." in _texts(_look_as(ids["Emily"]))
+    assert _texts(_look_as(ids["Emily"])) == [
+        "Vineeth answered this week’s questions.",
+        "Vineeth answered next week’s questions.",
+    ]
 
 
 # ---------- 3. for you first ----------
