@@ -226,9 +226,15 @@ def _lines_for(conn, other: dict, me: dict, since: str, today: date, name_ok: bo
         "GROUP BY week_start ORDER BY at",
         (hid, key, since),
     ).fetchall()
-    monday = today - timedelta(days=today.weekday())
+    # An intake's week_start is the first day of the period it answers for —
+    # the household's own start (planning_anchor), or today when they plan
+    # the rest of a week already under way, or any day for "as we go". So
+    # the test is "has that period started?", never "is it past this
+    # calendar Monday": against Monday, answering this week's questions on a
+    # Wednesday (the suggestion starts today), or on a Sunday-start
+    # household's Sunday, read "next week's" (defect hunt 2026-10-23).
     for r in intake:
-        which = "next week’s" if r["week_start"] > monday.isoformat() else "this week’s"
+        which = "next week’s" if r["week_start"] > today.isoformat() else "this week’s"
         line(f"answered {which} questions.", r["at"])
 
     added = conn.execute(

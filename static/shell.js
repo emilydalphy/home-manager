@@ -28459,7 +28459,11 @@
       });
     }
     var decide = (preview.decisions || []).map(function (t) { return t + '.'; });
-    if (preview.week_state === 'draft') decide.push('This week’s a draft, waiting for a yes on Plan.');
+    // starts_later: the week named is next week's (the first one setup
+    // filed to start later), so it isn't "this week" that's waiting.
+    if (preview.week_state === 'draft') {
+      decide.push((preview.starts_later ? 'Next' : 'This') + ' week’s a draft, waiting for a yes on Plan.');
+    }
     if (decide.length) {
       rows.push({ icon: 'ask', title: 'Still to decide', body: decide.join(' ') });
     }

@@ -199,3 +199,34 @@ def test_a_night_off_that_moves_the_cook_keeps_its_freezer_night():
 
     assert out["kind"] == "move" and out["moved_to"] == TUE, out
     assert _dinners(plan_id)[FRI] == ("planned", "Leftovers from the freezer — Tuesday’s Turkey Chili")
+
+
+def test_undo_takes_back_the_use_soon_note_the_night_off_queued():
+    """
+    A night off that drops a dish already shopped for queues "Use the …
+    soon — Turkey Chili came off the plan." on the attention queue, which
+    Cook's fold, the morning text and every new chat read. Undo puts the
+    chili back on tonight, so the note is no longer true and goes with it
+    (defect hunt 2026-10-23: it stayed, and the next morning's text told
+    the household to use up the turkey for a dinner still planned).
+    """
+    plan_id, cook = _week(fill_every_night=True)
+    conn = get_conn()
+    conn.execute("UPDATE grocery_items SET status = 'purchased' WHERE item = 'Ground turkey'")
+    conn.commit()
+    conn.close()
+    # Another night's note, still true, which Undo must leave alone.
+    tools.add_attention_item("use_soon", "Use the salmon soon — Salmon Bowls came off the plan.",
+                             {"items": ["salmon"], "dish": "Salmon Bowls"})
+
+    out = tools.tonight_night_off(day=MON)
+    assert out["kind"] == "drop" and out["can_undo"] is True, out
+    assert out["use_soon"], out
+    notes = [i for i in tools.get_attention_items() if i["kind"] == "use_soon"]
+    assert [n["detail"]["dish"] for n in notes] == ["Salmon Bowls", "Turkey Chili"], notes
+
+    back = tools.tonight_night_off_undo(day=MON)
+
+    assert back["status"] == "restored", back
+    left = [i for i in tools.get_attention_items() if i["kind"] == "use_soon"]
+    assert [n["detail"]["dish"] for n in left] == ["Salmon Bowls"], left

@@ -13,6 +13,23 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Three defect-hunt fixes: since-you-last-looked, the first-open welcome,
+  night-off Undo** (2026-10-23; branch `overnight/hunt-notif-tour-2026-10-23`).
+  (1) "Sam answered next week's questions" was decided against the calendar
+  Monday, but an intake's `week_start` is its period's first day — today when
+  the rest of a week is planned mid-week, any weekday for other anchors — so
+  this week's answers read "next week's". Now: started (<= today) is this
+  week's (`since_last_looked._lines_for`; `tests/test_since_last_looked.py`).
+  (2) The partner's first-open welcome said "No week planned yet. Plan one
+  from Today." when the only plan starts later (setup's "next week"), or
+  "No more dinners" on a week's last night with the next already approved;
+  it now falls to the soonest upcoming live plan and says "Next week's a
+  draft" (`first_open_preview` `starts_later`; `tests/test_first_open.py`).
+  (3) Undo on a night off that dropped a shopped-for dish left its "Use the …
+  soon — X came off the plan" note pending — Cook's fold, the morning text and
+  chat kept saying it with X back on tonight. Undo resolves that exact note
+  (kind + summary, pending only) (`tonight._unqueue_use_soon`;
+  `tests/test_freezer_night_goes_with_its_cook.py`).
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

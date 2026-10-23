@@ -18,6 +18,8 @@ from __future__ import annotations
 import datetime
 import json
 
+import pytest
+
 from app import main, tools
 from app.db import get_conn
 from app.tools import _shared
@@ -172,6 +174,40 @@ def test_approval_questions_and_credited_ticks_are_told():
     _looked_long_ago(ids["Emily"])
     _cooker.check_off_meal(entry, "pending")
     assert "Vineeth made the Chicken Skewers." not in _texts(_look_as(ids["Emily"]))
+
+
+@pytest.mark.today("2026-10-21 12:00")
+def test_questions_for_a_period_already_under_way_are_this_weeks():
+    """
+    An intake's week_start is the first day of the period it answers, and
+    mid-week that is TODAY (the suggestion never starts before today) — or
+    any weekday at all for a household whose week starts on Sunday or that
+    plans as it goes. Against the calendar Monday, every one of those read
+    "next week's" (defect hunt 2026-10-23). Pinned to a Wednesday, the day
+    the two answers part: on a Monday they cannot.
+    """
+    today = household_today()
+    assert today.weekday() == 2, today
+    ids = _adults("Emily", "Vineeth")
+    _looked_long_ago(ids["Emily"])
+    with _shared.use_member(ids["Vineeth"]):
+        # The rest of this week, planned from today.
+        tools.save_week_intake(today.isoformat(), night_tags={}, day_count=5)
+    assert _texts(_look_as(ids["Emily"])) == ["Vineeth answered this week’s questions."]
+
+    # A period that starts tomorrow (a Thursday-start household's next
+    # week) is still next week's, and one that began on Monday is this one.
+    _looked_long_ago(ids["Emily"])
+    with _shared.use_member(ids["Vineeth"]):
+        tools.save_week_intake((today + datetime.timedelta(days=1)).isoformat(), night_tags={})
+    assert _texts(_look_as(ids["Emily"])) == [
+        "Vineeth answered this week’s questions.",
+        "Vineeth answered next week’s questions.",
+    ]
+    _looked_long_ago(ids["Emily"])
+    with _shared.use_member(ids["Vineeth"]):
+        tools.save_week_intake((today - datetime.timedelta(days=2)).isoformat(), night_tags={})
+    assert "Vineeth answered this week’s questions." in _texts(_look_as(ids["Emily"]))
 
 
 # ---------- 3. for you first ----------
