@@ -13,6 +13,15 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A staple's line sheds an ended week's share too** (2026-10-23, overnight;
+  branch `overnight/staple-share-asked-not-added`, on top of
+  `overnight/hunt-listedit-2026-10-22b`; tests `tests/test_staple_line_week_ends.py`).
+  `_ended_share_splits` no longer skips `staple_id` lines: a staple's "Onion 2"
+  plus a week's curries' 4 went 6 → 10 → 14. The staple keeps its own amount
+  and buttons; a line that was ALL the ended week's becomes the plan's
+  leftover (staple_id cleared, as `_trim_to_the_weeks_part` does). Still not
+  covered: a PLAN line a staple was attached to is never asked about (it
+  doesn't climb — next week gets its own line).
 - **An ended week's share on a household's own grocery line is asked about,
   not carried forward** (2026-10-22, overnight; branch
   `overnight/hunt-listedit-2026-10-22b`; tests `tests/test_own_line_week_ends.py`).

@@ -2427,8 +2427,8 @@ def set_aside_carried_over_items(weekly_plan_id: int, conn=None) -> list[dict]:
 def _ended_share_splits(conn, ended: set) -> list[tuple]:
     """
     What _set_aside_ended_shares would write, read only: for each of a
-    household's own lines (source NULL, still needed, on the list, not a
-    staple's) that an ENDED plan's meals put an amount on, (line, the
+    household's own lines (source NULL, still needed, on the list — a
+    staple's included) that an ENDED plan's meals put an amount on, (line, the
     line's restated (amount, nothing of it left), [(plan id, its ledger rows, its amount)]).
     Shared with _ended_week_to_ask_about, so a Today or Shop read only
     takes the write lock when there is really something to move.
@@ -2440,13 +2440,20 @@ def _ended_share_splits(conn, ended: set) -> list[tuple]:
     if not ended:
         return []
     rows = conn.execute(
-        "SELECT g.id, g.item, g.quantity, g.category, g.store, l.id AS link_id, "
+        "SELECT g.id, g.item, g.quantity, g.category, g.store, g.staple_id, l.id AS link_id, "
         "l.quantity AS share, e.weekly_plan_id AS plan_id "
         "FROM grocery_items g "
         "JOIN meal_plan_grocery_links l ON l.grocery_item_id = g.id AND l.household_id = g.household_id "
         "JOIN meal_plan_entries e ON e.id = l.meal_plan_entry_id "
         "WHERE g.household_id = ? AND g.status = 'needed' AND g.excluded_from_list = 0 "
-        "AND g.staple_id IS NULL AND g.source_weekly_plan_id IS NULL ORDER BY g.id, l.id",
+        # A staple's line too (overnight review, 2026-10-22): "Onion 2" put
+        # there as probably running low, plus a week's curries' 4, went
+        # 6 -> 10 -> 14 while it was left out. The staple's amount is a
+        # standing want exactly like a typed one — the same restate takes
+        # the ended plan's rounded total off it — and its "We have plenty"
+        # / "Not this trip" (staples._trim_to_the_weeks_part) then answer
+        # for the staple's amount and leave only the LIVE week's meals.
+        "AND g.source_weekly_plan_id IS NULL ORDER BY g.id, l.id",
         (household_id(),),
     ).fetchall()
     by_line: dict[int, list] = {}
@@ -2516,10 +2523,18 @@ def _set_aside_ended_shares(conn, ended: set) -> list[dict]:
             # with Undo, an edit down below the plan's share): the line
             # itself is the leftover, rather than a blank "Onion" left
             # on the list beside it.
+            # On a staple's line it stops being the staple's, as the split-off
+            # lines below never were: the leftover is the plan's, and a Keep
+            # must not bring it back as "Probably running low" with the
+            # staple's buttons on it (the same handover _trim_to_the_weeks_part
+            # makes). With no line of its own, the staple is listed again
+            # only when sync_due_staples finds it due.
             plan_id, _links, qty = parts[0]
             conn.execute(
                 "UPDATE grocery_items SET quantity = ?, status = 'carried', source_weekly_plan_id = ?, "
-                "carried_from_plan_id = ? WHERE id = ? AND household_id = ?",
+                "carried_from_plan_id = ?, staple_id = NULL, "
+                "added_by = CASE WHEN added_by = 'staple' THEN 'ai' ELSE added_by END "
+                "WHERE id = ? AND household_id = ?",
                 (qty, plan_id, plan_id, line["id"], household_id()),
             )
             out.append({"id": line["id"], "item": line["item"], "quantity": qty})
