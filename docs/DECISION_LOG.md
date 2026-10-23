@@ -19,7 +19,10 @@ why*, not duplicating the diff.
   `_ended_share_splits` no longer skips `staple_id` lines: a staple's "Onion 2"
   plus a week's curries' 4 went 6 → 10 → 14. The staple keeps its own amount
   and buttons; a line that was ALL the ended week's becomes the plan's
-  leftover (staple_id cleared, as `_trim_to_the_weeks_part` does). Still not
+  leftover (staple_id cleared, as `_trim_to_the_weeks_part` does). Keep never
+  merges onto a staple's own suggestion line (`_this_weeks_line(for_keep=True)`):
+  "We have plenty" cut it to the meals' share and took the kept 4 with it
+  (review); the kept amount stands on its own line. Still not
   covered: a PLAN line a staple was attached to is never asked about (it
   doesn't climb — next week gets its own line).
 - **An ended week's share on a household's own grocery line is asked about,

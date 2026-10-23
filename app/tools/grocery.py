@@ -2655,7 +2655,7 @@ def _ended_week_to_ask_about(conn, today: str) -> int | None:
     return live_approved if waiting else None
 
 
-def _this_weeks_line(conn, item: str, quantity: str):
+def _this_weeks_line(conn, item: str, quantity: str, for_keep: bool = False):
     """
     The line a carried-over amount would merge into, if this week's
     recipes (or a hand add) put one there: a 'needed' line, or a spice
@@ -2673,11 +2673,20 @@ def _this_weeks_line(conn, item: str, quantity: str):
     # Not a line set aside as "somewhere else": Keep would park the kept
     # amount on a hidden line — the hole add_grocery_item closes too.
     for r in conn.execute(
-        "SELECT id, item, quantity, status, source_weekly_plan_id, kept_amount, short_amount, edited_to "
-        "FROM grocery_items "
+        "SELECT id, item, quantity, status, source_weekly_plan_id, kept_amount, short_amount, edited_to, "
+        "staple_id, added_by FROM grocery_items "
         "WHERE household_id = ? AND status IN ('needed', 'spice') AND excluded_from_list = 0 ORDER BY id",
         (household_id(),),
     ).fetchall():
+        # Never Keep onto a staple's own suggestion ("Probably running low"):
+        # its "We have plenty" / "Not this trip" cut it back to the meals'
+        # share (staples._trim_to_the_weeks_part), and a kept amount merged
+        # in went with the staple's — kept, then gone, never asked about
+        # again (review, 2026-10-23: Onion 2 + kept 4 + this week's 4,
+        # plenty left 4). The kept amount stands on its own line instead,
+        # the household's want, which the staple's answers don't touch.
+        if for_keep and r["staple_id"] and r["added_by"] == "staple" and r["source_weekly_plan_id"] is None:
+            continue
         if _merge_key(r["item"]) == wanted and _try_consolidate_quantity(r["quantity"] or "", quantity)[1]:
             return r
     return None
@@ -2734,7 +2743,7 @@ def keep_carried_over_item(item_id: int) -> dict:
     if row["status"] != "carried":
         conn.close()
         return {"item_id": item_id, "item": row["item"], "unchanged": True}
-    target = _this_weeks_line(conn, row["item"], row["quantity"] or "")
+    target = _this_weeks_line(conn, row["item"], row["quantity"] or "", for_keep=True)
     if target is not None:
         merged_qty, _reconciled = _try_consolidate_quantity(target["quantity"] or "", row["quantity"] or "")
         # Last week's unbought jar of cumin is the jar this week's cumin

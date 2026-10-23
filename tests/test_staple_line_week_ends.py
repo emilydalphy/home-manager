@@ -138,3 +138,40 @@ def test_a_staple_line_that_was_all_last_weeks_becomes_the_plans_leftover():
     added_by = conn.execute("SELECT added_by FROM grocery_items WHERE id = ?", (line,)).fetchone()[0]
     conn.close()
     assert added_by != "staple"
+
+
+def _kept_then_answer(decision: str):
+    _seed()
+    tools.approve_weekly_plan(_week(0), approved_by="Emily")
+    plan = _week(1)
+    with _on(1):
+        tools.approve_weekly_plan(plan, approved_by="Emily")
+    carried = tools.list_carried_over_items()[0]
+    kept = tools.keep_carried_over_item(carried["item_id"])
+    # Kept on a line of its own, not onto the staple's suggestion: the
+    # staple's answers would take it off with the staple's 2 (review,
+    # 2026-10-23).
+    assert kept["merged_into"] is None
+    assert sorted(_onions()) == [("4", "needed", False), ("6", "needed", True)]
+    staple = _staple_line()
+    out = tools.decide_staple_line(staple, decision)
+    return carried["item_id"], staple, out
+
+
+def test_kept_amount_survives_we_have_plenty_and_both_undo():
+    carried, _staple, out = _kept_then_answer("plenty")
+    # The staple's 2 go; the kept 4 and this week's 4 stay.
+    assert sorted(_onions()) == [("4", "needed", False), ("4", "needed", False)]
+    tools.undo_staple_decision(out["id"])
+    assert sorted(_onions()) == [("4", "needed", False), ("6", "needed", True)]
+    tools.undo_carried_over_decision(carried)
+    assert sorted(_onions()) == [("4", "carried", False), ("6", "needed", True)]
+
+
+def test_kept_amount_survives_not_this_trip_and_both_undo():
+    carried, _staple, out = _kept_then_answer("skip")
+    assert sorted(_onions()) == [("4", "needed", False), ("4", "needed", False)]
+    tools.undo_staple_decision(out["id"])
+    assert sorted(_onions()) == [("4", "needed", False), ("6", "needed", True)]
+    tools.undo_carried_over_decision(carried)
+    assert sorted(_onions()) == [("4", "carried", False), ("6", "needed", True)]
