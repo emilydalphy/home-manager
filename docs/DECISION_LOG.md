@@ -13,6 +13,18 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The calendar feed: three ways it misread a real household's week**
+  (2026-10-23; branch `overnight/hunt-calendar-2026-10-23`; tests at the foot
+  of `tests/test_calendar_feed.py`). (1) A feed naming no zone (all times in
+  UTC "Z", how team/school apps publish) fell to the SERVER's clock — UTC on
+  Railway — so a 6pm practice read as 22:00 and the evening looked free;
+  `resolve_display_zone` now tries `households.timezone` (source
+  `"household"`) before the env var and the server. (2) `MAX_EVENTS_PER_WINDOW`
+  was applied during the walk, in FEED order, so a few daily work series
+  listed first filled the 8-week read and a one-off this week vanished; it is
+  applied after the sort now, at a whole-day edge. (3) WEEKLY rules ignored
+  WKST; with INTERVAL > 1 Google's `WKST=SU` "every other weekend, Sat+Sun"
+  landed a week off from Google's own display. Matches RFC 5545's WKST example.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
