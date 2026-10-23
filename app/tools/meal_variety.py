@@ -115,6 +115,10 @@ VARIETY_WINDOW_WEEKS = 2
 PRORATE_TO_DAYS_PLANNED = True
 PRORATE_ROUNDING = math.ceil
 
+# How many other choices of dish to drop enforce_distinct_count tries when
+# its first choice would leave a dropped dish standing (see there).
+MAX_DROP_CHOICES = 64
+
 # The slots a per-week count applies to, with its household_memory field.
 COUNT_FIELDS = {"dinner": "dinners_per_week", "lunch": "lunches_per_week", "breakfast": "breakfasts_per_week"}
 
@@ -1023,9 +1027,22 @@ def enforce_distinct_count(
             # A different dish of the same number may go cleanly, so every
             # other choice is tried (a handful of dishes, no model call),
             # in _pick_surplus' own order of preference, before one stands.
-            droppable = _pick_surplus(dishes, 0, caps)
+            # Never, as an alternative, a dish whose cook feeds a meal in
+            # ANOTHER slot (Thursday's dinner made double for Friday's
+            # lunch): this fold rewrites only its own slot, so that lunch
+            # would be left a fresh cook of the dish just dropped (review,
+            # 2026-10-23). And a bounded search: a 28-day plan's every
+            # combination was thousands of _plan_batches calls.
+            def feeds_another_slot(dish):
+                return any(
+                    t.get("slot") != slot
+                    for n in dish["nights"]
+                    for t in (chains["sources"].get(n["id"]) or {}).get("targets") or []
+                )
+
+            droppable = [d for d in _pick_surplus(dishes, 0, caps) if not feeds_another_slot(d)]
             first = [_key(d["name"]) for d in surplus]
-            for combo in itertools.combinations(droppable, len(surplus)):
+            for combo in itertools.islice(itertools.combinations(droppable, len(surplus)), MAX_DROP_CHOICES):
                 if [_key(d["name"]) for d in combo] == first:
                     continue
                 tried_left, tried = decide(combo)

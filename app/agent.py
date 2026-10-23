@@ -7716,7 +7716,7 @@ def _generate_weekly_plan(
             # them (effective memory, so a part-week's prorated number; never a
             # meal whose count they named in their own words this week): the
             # protein re-pick runs after that guard and must not undo it.
-            count_asks = (context.get("constraints_notes"), (intake or {}).get("freeform"))
+            count_asks = (context.get("constraints_notes"), (context.get("intake") or {}).get("freeform"))
             _draft_rules.enforce_protein_variety(plan_id, targets={
                 slot: effective_memory.get(field)
                 for slot, field in _meal_variety.COUNT_FIELDS.items()

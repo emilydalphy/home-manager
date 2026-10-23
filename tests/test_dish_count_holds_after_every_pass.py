@@ -104,3 +104,34 @@ def test_the_protein_repick_still_runs_where_the_count_has_room(stub_model, shri
     lunches = meal_variety.distinct_dishes(plan_id, "lunch")
     assert any(name.startswith("Shrimp Dish") for name in lunches)
     assert len(lunches) == 3
+
+
+def test_a_dinner_that_feeds_a_lunch_is_not_the_alternative_dropped(stub_model):
+    """Review, 2026-10-23: Thursday's Salmon is made double for Friday's
+    dinner AND Friday's lunch. Dropping Salmon instead of Kofte rewrote the
+    dinners only, and left Friday's lunch a fresh cook of the dish just
+    dropped — a lunch dish that wasn't there before. The search for another
+    dish to drop never picks one whose cook feeds another meal."""
+    for name in ("Kofte", "Chili", "Salmon", "Toast"):
+        tools.add_recipe(name, ingredients=[{"item": f"{name} stuff", "qty": "1"}], main_protein=name)
+    tools.set_household_meal_preferences(dinners_per_week=2)
+    week = _monday()
+    d = tools._week_dates(week)
+    days = _week(week, ["Kofte", "Chili", "Chili", "Salmon", "Salmon", "Chili", "Salmon"], dinner_extra={
+        d[1]: {"derived_from": {"make_double_for": [f"{d[2]}:dinner"]}},
+        d[2]: {"derived_from": {"links_to": f"{d[1]}:dinner"}},
+        d[3]: {"derived_from": {"make_double_for": [f"{d[4]}:dinner", f"{d[4]}:lunch"]}},
+        d[4]: {"derived_from": {"links_to": f"{d[3]}:dinner"}},
+    })
+    for day in days:
+        if day["slot"] == "lunch" and day["date"] == d[4]:
+            day["meal_name"] = "Salmon"
+            day["derived_from"] = {"links_to": f"{d[3]}:dinner"}
+    stub_model(days)
+
+    plan_id = agent.generate_weekly_plan(week)["weekly_plan_id"]
+
+    assert meal_variety.distinct_dishes(plan_id, "lunch") == ["Toast"]
+    friday_lunch = [v for v in tools.plan_leftover_chains(plan_id)["leftovers"].values()
+                    if v["date"] == d[4] and v["slot"] == "lunch"]
+    assert friday_lunch and friday_lunch[0]["source"]["slot"] == "dinner"
