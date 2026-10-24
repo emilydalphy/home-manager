@@ -8484,13 +8484,18 @@
     'lb', 'lbs', 'pound', 'pounds', 'oz', 'ounce', 'ounces', 'kg', 'g', 'gram',
     'grams', 'cup', 'cups', 'tbsp', 'tsp', 'can', 'cans', 'bag', 'bags', 'box',
     'boxes', 'bunch', 'bunches', 'head', 'heads', 'dozen', 'pack', 'packs',
-    'jar', 'jars', 'bottle', 'bottles', 'loaf', 'loaves', 'l', 'ml'
+    'pk', 'pks', 'jar', 'jars', 'bottle', 'bottles', 'loaf', 'loaves', 'l', 'ml'
   ];
+  // A multipack is written "24-pack" as often as "24 pack" (and "12pk"), so
+  // a hyphen may sit between the number and its unit word: "24-pack water"
+  // sends quantity "24 pack", which the server keeps as one 24-pack
+  // (quantities.typed_multipack). Without it the whole text was the name.
+  var GRO_ADD_NUM_UNIT = '(\\d+(?:[.\\/]\\d+)?)(?:\\s*-\\s*(?=[a-zA-Z])|\\s*)([a-zA-Z]*)';
   function groParseAddInput(text) {
     var raw = String(text || '').trim();
     if (!raw) return { item: '', quantity: '' };
     // "2 lb carrots" / "3 apples" / "1.5 cups rice"
-    var lead = raw.match(/^(\d+(?:[.\/]\d+)?)\s*([a-zA-Z]*)\s+(.+)$/);
+    var lead = raw.match(new RegExp('^' + GRO_ADD_NUM_UNIT + '\\s+(.+)$'));
     if (lead) {
       var leadUnit = lead[2].toLowerCase();
       if (!leadUnit || GRO_ADD_UNIT_WORDS.indexOf(leadUnit) !== -1) {
@@ -8498,7 +8503,7 @@
       }
     }
     // "milk 2" / "eggs 12"
-    var trail = raw.match(/^(.+?)\s+(\d+(?:[.\/]\d+)?)\s*([a-zA-Z]*)$/);
+    var trail = raw.match(new RegExp('^(.+?)\\s+' + GRO_ADD_NUM_UNIT + '$'));
     if (trail) {
       var trailUnit = trail[3].toLowerCase();
       if (!trailUnit || GRO_ADD_UNIT_WORDS.indexOf(trailUnit) !== -1) {

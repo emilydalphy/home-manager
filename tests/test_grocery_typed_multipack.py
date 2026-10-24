@@ -70,3 +70,53 @@ def test_a_plans_amount_is_not_read_as_a_multipack(clean_state):
     plan = tools.create_weekly_plan("2026-10-26", day_count=7)["weekly_plan_id"]
     added = tools.add_grocery_item("Tortillas", quantity="2 pack", source_weekly_plan_id=plan)
     assert _line(added["item_id"])["quantity"] == "2 packs"
+
+
+# ---------- the Shop add field (static/shell.js groParseAddInput) ----------
+# Review, 2026-10-24: "12 pk water", "water 24pk" and "24-pack water" never
+# reached the server as an amount — "pk" was not a unit word and the parser
+# could not read a hyphen — so the whole text became the item's name.
+
+import json
+import shutil
+from pathlib import Path
+
+import nodeharness
+
+_SHELL_JS = (Path(__file__).resolve().parent.parent / "static" / "shell.js").read_text(encoding="utf-8")
+
+
+def _parser_source() -> str:
+    start = _SHELL_JS.index("  var GRO_ADD_UNIT_WORDS = [")
+    end = _SHELL_JS.index("\n  }\n", _SHELL_JS.index("  function groParseAddInput(", start)) + 4
+    return _SHELL_JS[start:end]
+
+
+_ADD_FIELD_CASES = [
+    ("12 pk water", {"item": "water", "quantity": "12 pk"}),
+    ("water 24pk", {"item": "water", "quantity": "24 pk"}),
+    ("24-pack water", {"item": "water", "quantity": "24 pack"}),
+    ("Water 24-pack", {"item": "Water", "quantity": "24 pack"}),
+    ("24 pack water", {"item": "water", "quantity": "24 pack"}),
+    # Unchanged readings.
+    ("2 lb carrots", {"item": "carrots", "quantity": "2 lb"}),
+    ("milk 2", {"item": "milk", "quantity": "2"}),
+    ("7-up", {"item": "7-up", "quantity": ""}),
+    ("3-4 apples", {"item": "3-4 apples", "quantity": ""}),
+]
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node runs the shell's own parser")
+def test_the_add_field_reads_a_multipack_off_either_end():
+    typed = [t for t, _ in _ADD_FIELD_CASES]
+    script = _parser_source() + f"\nconsole.log(JSON.stringify({json.dumps(typed)}.map(groParseAddInput)));\n"
+    res = nodeharness.run_node(script)
+    assert res.returncode == 0, res.stderr
+    got = json.loads(res.stdout.strip().splitlines()[-1])
+    assert got == [want for _, want in _ADD_FIELD_CASES]
+
+
+def test_what_the_add_field_sends_lands_as_one_pack(clean_state, signed_in):
+    for i, quantity in enumerate(["12 pk", "24 pk", "24 pack"]):
+        added = signed_in.post("/api/grocery-list/add", json={"item": f"Water {i}", "quantity": quantity}).json()
+        assert _line(added["item_id"])["quantity"] == f"{quantity.split()[0]}-pack"

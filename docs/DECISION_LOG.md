@@ -18,6 +18,8 @@ why*, not duplicating the diff.
   Shop's "24 pack water" read "24 packs", and "48 packs" when added again;
   a person's typed amount (the add, the row's quantity box) is now written
   "24-pack" by `quantities.typed_multipack`. A plan's amount is untouched.
+  Shop's add field (`groParseAddInput`) now also reads "12 pk", "24pk" and
+  "24-pack" at either end; before, they became the item's name.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
