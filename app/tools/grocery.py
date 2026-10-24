@@ -2399,6 +2399,7 @@ def set_aside_carried_over_items(weekly_plan_id: int, conn=None) -> list[dict]:
             "WHERE id = ? AND household_id = ?",
             [(r["id"], household_id()) for r in set_aside],
         )
+    set_aside = [dict(r) for r in set_aside] + _set_aside_ended_shares(conn, ended)
     # An earlier week's spices still UNTICKED in the section were never
     # wanted, so there is nothing to keep or drop: they go, and this
     # week's recipes put their own in (spices.py).
@@ -2421,6 +2422,143 @@ def set_aside_carried_over_items(weekly_plan_id: int, conn=None) -> list[dict]:
         conn.commit()
         conn.close()
     return [{"item_id": r["id"], "item": r["item"], "quantity": r["quantity"] or ""} for r in set_aside]
+
+
+def _ended_share_splits(conn, ended: set) -> list[tuple]:
+    """
+    What _set_aside_ended_shares would write, read only: for each of a
+    household's own lines (source NULL, still needed, on the list — a
+    staple's included) that an ENDED plan's meals put an amount on, (line, the
+    line's restated (amount, nothing of it left), [(plan id, its ledger rows, its amount)]).
+    Shared with _ended_week_to_ask_about, so a Today or Shop read only
+    takes the write lock when there is really something to move.
+
+    Left out (as before): a sealed package or spice the plan only borrowed
+    (it never added an amount — the household's bottle is the week's
+    bottle), and any line the restate can't read in one unit.
+    """
+    if not ended:
+        return []
+    rows = conn.execute(
+        "SELECT g.id, g.item, g.quantity, g.category, g.store, g.staple_id, l.id AS link_id, "
+        "l.quantity AS share, e.weekly_plan_id AS plan_id "
+        "FROM grocery_items g "
+        "JOIN meal_plan_grocery_links l ON l.grocery_item_id = g.id AND l.household_id = g.household_id "
+        "JOIN meal_plan_entries e ON e.id = l.meal_plan_entry_id "
+        "WHERE g.household_id = ? AND g.status = 'needed' AND g.excluded_from_list = 0 "
+        # A staple's line too (overnight review, 2026-10-22): "Onion 2" put
+        # there as probably running low, plus a week's curries' 4, went
+        # 6 -> 10 -> 14 while it was left out. The staple's amount is a
+        # standing want exactly like a typed one — the same restate takes
+        # the ended plan's rounded total off it — and its "We have plenty"
+        # / "Not this trip" (staples._trim_to_the_weeks_part) then answer
+        # for the staple's amount and leave only the LIVE week's meals.
+        "AND g.source_weekly_plan_id IS NULL ORDER BY g.id, l.id",
+        (household_id(),),
+    ).fetchall()
+    by_line: dict[int, list] = {}
+    for r in rows:
+        by_line.setdefault(r["id"], []).append(r)
+    splits = []
+    for links in by_line.values():
+        line = links[0]
+        ended_links = [r for r in links if r["plan_id"] in ended]
+        if not ended_links or any(_holds_one_package(line["item"], r["share"] or "") for r in ended_links):
+            continue
+        by_plan: dict[int, list] = {}
+        for r in ended_links:
+            by_plan.setdefault(r["plan_id"], []).append(r)
+        # One ended plan at a time, each restated from ITS shares alone
+        # (before = that plan's, after = nothing). Each week's approval
+        # added its own rounded total, so that is what comes back off.
+        # Restating all the line's shares at once (ended + live, before vs
+        # live after) took off ceil(ended + live) - ceil(live), less than
+        # was added whenever shares are fractional: the household's own
+        # line still climbed a unit a week (review, 2026-10-22: Onion 0.5
+        # x 3 nights, own 4 -> 5 -> 6 -> 7).
+        restated = (line["quantity"] or "", False)
+        for plan_links in by_plan.values():
+            if restated[1]:
+                break  # nothing left on the line for a later plan to take
+            totals =_quantities._ledger_totals([r["share"] or "" for r in plan_links], [])
+            restated = None if totals is None else _restate_standing_want(restated[0], *totals)
+            if restated is None:
+                break
+        if restated is None:
+            continue
+        parts = [
+            (plan_id, plan_links,
+             _plan_or_rack_amount(line["item"], [r["share"] or "" for r in plan_links], "", "", ""))
+            for plan_id, plan_links in by_plan.items()
+        ]
+        # Only when every ended plan's part reads as an amount: half a split
+        # would take the share off the line and ask about less than it took.
+        if all(qty for _p, _l, qty in parts):
+            splits.append((line, restated, parts))
+    return splits
+
+
+def _set_aside_ended_shares(conn, ended: set) -> list[dict]:
+    """
+    The ended week's share on a household's OWN line, set aside the way its
+    plan lines are (defect hunt, 2026-10-22). A plan's amount joins a line
+    a person typed ("Onion 2" + three soups = "Onion 5"), and so does a
+    person's add onto a plan line (which then becomes theirs). Only plan
+    lines were set aside when the week ended, so last week's three onions
+    stayed on the household's line, never asked about, and next week's
+    soups landed on top: 2 -> 5 -> 8 -> 11, one week at a time, for as long
+    as nobody bought onions — the creep CLAUDE.md warns about.
+
+    Now the ended plan's part comes off the household's line in one step
+    (_ledger_totals + _restate_standing_want, the same restate a dropped
+    night uses) and stands as that plan's own 'carried' line with its
+    meals' ledger rows moved onto it, so Shop asks "Still on the list from
+    last week — keep or drop?" about it like any other. The household's own
+    amount, and any live week's share, stay where they were.
+    """
+    out = []
+    for line, (new_qty, nothing_left), parts in _ended_share_splits(conn, ended):
+        if nothing_left:
+            # All of the line was the ended week's (a merged add put back
+            # with Undo, an edit down below the plan's share): the line
+            # itself is the leftover, rather than a blank "Onion" left
+            # on the list beside it.
+            # On a staple's line it stops being the staple's, as the split-off
+            # lines below never were: the leftover is the plan's, and a Keep
+            # must not bring it back as "Probably running low" with the
+            # staple's buttons on it (the same handover _trim_to_the_weeks_part
+            # makes). With no line of its own, the staple is listed again
+            # only when sync_due_staples finds it due.
+            plan_id, _links, qty = parts[0]
+            conn.execute(
+                "UPDATE grocery_items SET quantity = ?, status = 'carried', source_weekly_plan_id = ?, "
+                "carried_from_plan_id = ?, staple_id = NULL, "
+                "added_by = CASE WHEN added_by = 'staple' THEN 'ai' ELSE added_by END "
+                "WHERE id = ? AND household_id = ?",
+                (qty, plan_id, plan_id, line["id"], household_id()),
+            )
+            out.append({"id": line["id"], "item": line["item"], "quantity": qty})
+            parts = parts[1:]
+        else:
+            conn.execute(
+                "UPDATE grocery_items SET quantity = ? WHERE id = ? AND household_id = ?",
+                (new_qty, line["id"], household_id()),
+            )
+        for plan_id, plan_links, qty in parts:
+            cur = conn.execute(
+                "INSERT INTO grocery_items (household_id, item, quantity, category, added_by, "
+                "source_weekly_plan_id, store, status, carried_from_plan_id) "
+                "VALUES (?, ?, ?, ?, 'ai', ?, ?, 'carried', ?)",
+                (household_id(), line["item"], qty, line["category"], plan_id, line["store"] or "", plan_id),
+            )
+            marks = ",".join("?" * len(plan_links))
+            conn.execute(
+                f"UPDATE meal_plan_grocery_links SET grocery_item_id = ? "
+                f"WHERE household_id = ? AND id IN ({marks})",
+                (cur.lastrowid, household_id(), *[r["link_id"] for r in plan_links]),
+            )
+            out.append({"id": cur.lastrowid, "item": line["item"], "quantity": qty})
+    return out
 
 
 def set_aside_ended_weeks() -> list[dict]:
@@ -2509,10 +2647,15 @@ def _ended_week_to_ask_about(conn, today: str) -> int | None:
         f"AND source_weekly_plan_id IN ({marks}) LIMIT 1",
         (household_id(), *sorted(ended)),
     ).fetchone()
+    # Or an ended week's share sitting on a household's own line
+    # (_set_aside_ended_shares): with next week approved before this one
+    # ended, nothing else would ever ask about it.
+    if not waiting and _ended_share_splits(conn, ended):
+        waiting = True
     return live_approved if waiting else None
 
 
-def _this_weeks_line(conn, item: str, quantity: str):
+def _this_weeks_line(conn, item: str, quantity: str, for_keep: bool = False):
     """
     The line a carried-over amount would merge into, if this week's
     recipes (or a hand add) put one there: a 'needed' line, or a spice
@@ -2530,11 +2673,20 @@ def _this_weeks_line(conn, item: str, quantity: str):
     # Not a line set aside as "somewhere else": Keep would park the kept
     # amount on a hidden line — the hole add_grocery_item closes too.
     for r in conn.execute(
-        "SELECT id, item, quantity, status, source_weekly_plan_id, kept_amount, short_amount, edited_to "
-        "FROM grocery_items "
+        "SELECT id, item, quantity, status, source_weekly_plan_id, kept_amount, short_amount, edited_to, "
+        "staple_id, added_by FROM grocery_items "
         "WHERE household_id = ? AND status IN ('needed', 'spice') AND excluded_from_list = 0 ORDER BY id",
         (household_id(),),
     ).fetchall():
+        # Never Keep onto a staple's own suggestion ("Probably running low"):
+        # its "We have plenty" / "Not this trip" cut it back to the meals'
+        # share (staples._trim_to_the_weeks_part), and a kept amount merged
+        # in went with the staple's — kept, then gone, never asked about
+        # again (review, 2026-10-23: Onion 2 + kept 4 + this week's 4,
+        # plenty left 4). The kept amount stands on its own line instead,
+        # the household's want, which the staple's answers don't touch.
+        if for_keep and r["staple_id"] and r["added_by"] == "staple" and r["source_weekly_plan_id"] is None:
+            continue
         if _merge_key(r["item"]) == wanted and _try_consolidate_quantity(r["quantity"] or "", quantity)[1]:
             return r
     return None
@@ -2591,7 +2743,7 @@ def keep_carried_over_item(item_id: int) -> dict:
     if row["status"] != "carried":
         conn.close()
         return {"item_id": item_id, "item": row["item"], "unchanged": True}
-    target = _this_weeks_line(conn, row["item"], row["quantity"] or "")
+    target = _this_weeks_line(conn, row["item"], row["quantity"] or "", for_keep=True)
     if target is not None:
         merged_qty, _reconciled = _try_consolidate_quantity(target["quantity"] or "", row["quantity"] or "")
         # Last week's unbought jar of cumin is the jar this week's cumin
