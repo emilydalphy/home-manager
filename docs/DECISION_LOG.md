@@ -22,8 +22,10 @@ why*, not duplicating the diff.
   waiting 'spice' line" rule, which was written for the jar-a-name spice
   rack). Now only a spice-rack line takes an unaddable typed amount; an
   amount that adds up ("3 cups") still merges and ticks. While their own line
-  is on the list the waiting sauce/staple is not asked about again
-  (`spices.list_spices_this_week`, so Before you shop step 2 too).
+  is on the list, or after they tap Already have on it, the waiting
+  sauce/staple is not asked about again (`spices._answered_by_own_line`, so
+  Before you shop step 2 too), and a stale tick on it is refused rather than
+  buying the food twice.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

@@ -112,3 +112,35 @@ def test_a_spice_is_still_one_jar_on_one_line():
     _week_with("Ground cumin", "2 tsp")
     tools.add_grocery_item("Ground cumin", "50 g", category="pantry")
     assert [(l["quantity"], l["status"]) for l in _lines("Ground cumin")] == [("1 jar", "needed")]
+
+
+def _soy_waiting() -> list[tuple]:
+    return [(s["quantity"], s["ticked"], s["new"]) for s in tools.list_spices_this_week()["items"]
+            if s["item"] == "Soy sauce"]
+
+
+def test_already_have_on_their_own_line_does_not_ask_about_the_recipes_share():
+    # Review, 2026-10-24: "Already have" took their bottle off and the
+    # recipes' 2 tbsp came straight back with "Check you have this" — the
+    # question they had just answered.
+    _week_with("Soy sauce", "2 tbsp")
+    own = tools.add_grocery_item("Soy sauce", "1 bottle", category="pantry")
+    tools.move_grocery_item_to_inventory(own["item_id"])
+    assert _soy_waiting() == []
+    assert "Soy sauce" not in [c["name"] for c in tools.before_shop_steps()["spices"]["choices"]]
+    assert "Soy sauce" not in {i["item"] for i in tools.list_grocery_list()}
+    # Put back from the Review screen: their line is on the list again.
+    tools.undo_pre_shop_drop(own["item_id"])
+    assert _soy_waiting() == []
+    assert {i["item"]: i["quantity"] for i in tools.list_grocery_list()}["Soy sauce"] == "1 bottle"
+
+
+def test_a_tick_on_the_recipes_share_beside_their_own_line_buys_nothing_twice():
+    _week_with("Soy sauce", "2 tbsp")
+    tools.add_grocery_item("Soy sauce", "1 bottle", category="pantry")
+    [waiting] = [l for l in _lines("Soy sauce") if l["status"] == "spice"]
+    got = tools.tick_spice(waiting["id"], ticked=True)
+    assert got.get("unchanged") is True and got["said"]
+    assert [(l["quantity"], l["status"]) for l in _lines("Soy sauce")] == [
+        ("2 tbsp", "spice"), ("1 bottle", "needed"),
+    ]

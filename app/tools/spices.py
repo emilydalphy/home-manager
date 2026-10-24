@@ -556,6 +556,51 @@ def _a_lot(section: str | None, quantity: str) -> bool:
     return ml >= _A_LOT_ML[section] or g >= _A_LOT_G[section]
 
 
+# What "answered" holds for a key: the household's own line is on the list.
+_ON_THE_LIST = "on the list"
+
+
+def _answered_by_own_line(conn) -> dict[str, str]:
+    """
+    Merge key -> how the household has already answered a waiting sauce or
+    staple with a line of its OWN (no plan behind it): _ON_THE_LIST while
+    that line is live, or the moment they said "Already have" on it.
+
+    A typed "1 bag" of rice beside the recipes' "2 cups" stays two lines
+    when the amounts don't add up (grocery._merge_target). While theirs is
+    on the list they are buying it; once they tapped Already have on it
+    they have it. Either way asking "Check you have this" about the
+    recipes' share as well is the question twice, and a tick would buy
+    both. The waiting line itself stays (it leaves with its week).
+    """
+    out: dict[str, str] = {}
+    for r in conn.execute(
+        "SELECT item, status, removed_at FROM grocery_items WHERE household_id = ? "
+        "AND source_weekly_plan_id IS NULL AND excluded_from_list = 0 AND ("
+        "status IN ('needed', 'in_cart') OR (status = 'removed' AND removed_by = 'already_have'))",
+        (household_id(),),
+    ).fetchall():
+        key = _grocery._merge_key(r["item"])
+        if r["status"] != "removed":
+            out[key] = _ON_THE_LIST
+        elif out.get(key) != _ON_THE_LIST and (r["removed_at"] or "") > out.get(key, ""):
+            out[key] = r["removed_at"] or ""
+    return out
+
+
+def _waiting_is_answered(row, section: str | None, answered: dict[str, str]) -> bool:
+    """Whether a waiting ('spice') sauce or staple row is already answered by
+    the household's own line — see _answered_by_own_line. An Already have
+    answers only a row that was waiting when it was said: next week's
+    recipes put a fresh row, and that one is asked again."""
+    if row["status"] != "spice" or section not in (SECTION_SAUCES, SECTION_PANTRY):
+        return False
+    how = answered.get(_grocery._merge_key(row["item"]))
+    if how is None:
+        return False
+    return how == _ON_THE_LIST or how >= (row["created_at"] or "")
+
+
 def list_spices_this_week() -> dict:
     """
     The list's three "assumed at home" sections — "Spices this week",
@@ -582,30 +627,20 @@ def list_spices_this_week() -> dict:
     known = _known_sauces(conn)
     today = _staples._today()
     rows = conn.execute(
-        "SELECT id, item, quantity, category, status, store, staple_id, source_weekly_plan_id FROM grocery_items "
+        "SELECT id, item, quantity, category, status, store, staple_id, source_weekly_plan_id, created_at "
+        "FROM grocery_items "
         "WHERE household_id = ? AND status IN ('spice', 'needed', 'in_cart') AND excluded_from_list = 0 "
         "ORDER BY item",
         (household_id(),),
     ).fetchall()
     items, left_out = [], []
     by_section: dict[str, list[str]] = {k: [] for k in ASSUMED_SECTIONS}
-    # A sauce or staple the household already has its own line for — a
-    # typed "1 bag" of rice beside the recipes' "2 cups", which stay two
-    # lines when the amounts don't add up (grocery._merge_target) — is
-    # answered: they are buying it. Asking "Check you have this" about the
-    # recipes' share as well is the question twice, and a tick would buy
-    # both. The waiting line stays (it leaves with its week) and comes
-    # back here if their own line goes.
-    own_keys = {
-        _grocery._merge_key(r["item"]) for r in rows
-        if r["status"] != "spice" and r["source_weekly_plan_id"] is None
-    }
+    answered = _answered_by_own_line(conn)
     for r in rows:
         section = assumed_section(r["item"])
         if r["status"] != "spice" and section is None:
             continue
-        if (r["status"] == "spice" and section in (SECTION_SAUCES, SECTION_PANTRY)
-                and _grocery._merge_key(r["item"]) in own_keys):
+        if _waiting_is_answered(r, section, answered):
             continue
         staple = rack.get(_grocery._merge_key(r["item"]))
         if (r["status"] != "spice" and section != SECTION_SPICES and r["source_weekly_plan_id"] is None
@@ -671,13 +706,23 @@ def tick_spice(item_id: int, ticked: bool = True) -> dict:
     """
     conn = get_conn()
     row = conn.execute(
-        "SELECT id, item, status, staple_id, source_weekly_plan_id FROM grocery_items "
+        "SELECT id, item, status, staple_id, source_weekly_plan_id, created_at FROM grocery_items "
         "WHERE id = ? AND household_id = ?",
         (item_id, household_id()),
     ).fetchone()
     if row is None:
         conn.close()
         raise ValueError(f"No grocery list item with id {item_id}.")
+    # A tick on a waiting sauce or staple the household's own line already
+    # covers (a stale screen — the section no longer shows it, see
+    # _answered_by_own_line) would put the recipes' amount on the list
+    # beside theirs: the same food bought twice. Their line is the answer.
+    if (ticked and row["status"] == "spice"
+            and _answered_by_own_line(conn).get(_grocery._merge_key(row["item"])) == _ON_THE_LIST
+            and assumed_section(row["item"]) in (SECTION_SAUCES, SECTION_PANTRY)):
+        conn.close()
+        return {"item_id": item_id, "item": row["item"], "ticked": False, "unchanged": True,
+                "said": "You already have this on the list. Change the amount there."}
     # A line a person added to themselves and a recipe's amount joined is
     # theirs (no plan behind it — grocery's keep_standing). Unticking it
     # back into the section would take THEIR amount off the list with the
