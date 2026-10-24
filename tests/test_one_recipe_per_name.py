@@ -23,6 +23,7 @@ import pytest
 
 from app import agent, tools
 from app.db import get_conn
+from app.tools import recipes as _recipes
 from conftest import agent_function_source, household_today
 
 
@@ -381,3 +382,64 @@ def test_two_saves_at_the_same_instant_still_leave_one_recipe():
             f"trial {trial}: one of the two had to lose — "
             f"saved {saved}, refused {refused}"
         )
+
+
+# ---------------------------------------------------------------------------
+# Accents and capitals beyond ASCII (2026-10-24, overnight/recipes-box)
+# ---------------------------------------------------------------------------
+# SQLite's LOWER() folds A-Z only, so "Shrimp Étouffée" and "shrimp
+# étouffée" were two names to the rule above: POST /api/recipes/add saved
+# both (and "Crème brûlée" four times — NFC, NFD, unaccented, double space),
+# and rating "shrimp étouffée" answered "No recipe named". db.name_key is
+# the one rule now, in Python and as the SQL function name_key().
+
+ETOUFFEE = [{"item": "Shrimp", "qty": "1 lb", "category": "meat-seafood"}]
+
+
+@pytest.mark.parametrize("second", [
+    "SHRIMP ÉTOUFFÉE",                       # capital É: LOWER() leaves it
+    "shrimp etouffee",                       # typed without the accents
+    "Shrimp E\u0301touffe\u0301e",          # decomposed (NFD), as a Mac pastes it
+    "Shrimp   Étouffée",                     # a run of spaces
+])
+def test_a_name_that_differs_only_in_accents_or_unicode_case_is_the_same_name(signed_in, second):
+    first = signed_in.post("/api/recipes/add", json={
+        "name": "Shrimp Étouffée", "ingredients": ETOUFFEE, "instructions": ["Make a roux."],
+    })
+    assert first.status_code == 200
+    res = signed_in.post("/api/recipes/add", json={
+        "name": second, "ingredients": ETOUFFEE, "instructions": ["Make a roux."],
+    })
+    assert res.status_code == 409
+    assert "Shrimp Étouffée" in res.json()["detail"]
+    with pytest.raises(tools.DuplicateRecipeName):
+        tools.add_recipe(second, ETOUFFEE)
+    assert len(_recipe_rows()) == 1
+
+
+def test_different_dishes_that_share_letters_still_save():
+    tools.add_recipe("Pâté chinois", BEEF)
+    tools.add_recipe("Pâté", BEEF)
+    tools.add_recipe("Pate chinois maison", BEEF)
+    assert len(_recipe_rows()) == 3
+
+
+def test_a_decomposed_name_is_stored_composed():
+    tools.add_recipe("Cre\u0300me bru\u0302le\u0301e", CHICKEN)
+    assert _recipe_rows()[0]["name"] == "Crème brûlée"
+
+
+def test_the_chat_tools_and_planning_find_an_accented_recipe_however_it_is_typed():
+    tools.add_recipe("Shrimp Étouffée", ETOUFFEE, instructions=["Make a roux."])
+    tools.mark_recipe_feedback("SHRIMP ÉTOUFFÉE", "liked")
+    tools.log_recipe_note("shrimp etouffee", "a bit salty")
+    assert tools.get_recipe("shrimp étouffée")["rating"] == "liked"
+    assert _recipes.saved_ingredients("Shrimp Etouffee")[0]["item"] == "Shrimp"
+    today = household_today().isoformat()
+    plan = tools.create_weekly_plan(today, day_count=7)
+    tools.plan_meal(today, "shrimp etouffee", slot="dinner", weekly_plan_id=plan["weekly_plan_id"])
+    conn = get_conn()
+    row = conn.execute("SELECT recipe_id, freeform_meal FROM meal_plan_entries").fetchone()
+    conn.close()
+    assert row["recipe_id"] is not None and row["freeform_meal"] is None
+    assert len(_recipe_rows()) == 1

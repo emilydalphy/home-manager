@@ -79,7 +79,7 @@ import logging
 import re
 from datetime import date, datetime, time, timedelta
 
-from ..db import get_conn
+from ..db import get_conn, name_key
 from ._shared import household_id
 from . import attendance as _attendance
 from . import cooker as _cooker
@@ -1732,7 +1732,7 @@ def set_big_meal_dish(
     if role == "main":
         if not ingredients:
             existing = _recipes.list_recipes()
-            match = next((r for r in existing if r["name"].lower() == name.strip().lower()), None)
+            match = next((r for r in existing if name_key(r["name"]) == name_key(name)), None)
             if match is None:
                 raise ValueError(f"I don’t have a recipe called {name!r} — give me its ingredients and I’ll save it.")
             ingredients = match["ingredients"]
