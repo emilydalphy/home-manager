@@ -14,6 +14,7 @@ def test_a_very_long_time_zone_is_a_400_in_words_on_both_doors(signed_in):
         res = signed_in.post(path, json=body)
         assert res.status_code == 400, (path, res.text[:200])
         assert "it wants a name like America/Toronto" in res.json()["detail"]
+        assert len(res.json()["detail"]) < 160, "the 5,000 characters are not echoed back"
     assert signed_in.post("/api/household/clock", json={"timezone": "America/Vancouver"}).json()["timezone"] == "America/Vancouver"
 
 
