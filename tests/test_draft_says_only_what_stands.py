@@ -1,0 +1,219 @@
+"""
+The draft's "as you asked" is only said of a dish that is still on the week.
+
+Defect hunt, 2026-10-24. The model's report of what it did with the typed
+requests (honoured_requests) was stored as it came back, and the opener
+believed it — but the passes after the model can take a requested dish
+away: an out night is emptied whatever is on it, and the allergen gate
+swaps a dish someone can't have (carrying the slot's citation onto the
+replacement). And a "tomorrow" was pinned onto a night tagged out, BEFORE
+the out pass, so the dish was moved there and then cleared. What the
+household read, each case measured on origin/main 2f2557a:
+
+  "Lasagna Wednesday, as you asked, Wednesday left free."   (no lasagna)
+  "Peanut noodles Tuesday, as you asked."                   (Tuesday: a peanut-free swap)
+  "Monday left free." / "I moved Lamb Curry to Monday dinner, as you asked."
+                                                            (no curry anywhere)
+
+CATCH = red on that commit; GUARD = green there, pinning what must not move.
+The model and every re-pick are stubbed; nothing reaches the API.
+"""
+from __future__ import annotations
+
+import datetime
+
+import pytest
+
+from app import agent, tools
+from app.db import get_conn
+from app.tools import allergen_gate, swap_in_place
+from conftest import household_date, household_pin
+
+SUNDAY = "2026-09-27"
+PERIOD = [(datetime.date(2026, 9, 27) + datetime.timedelta(days=i)).isoformat() for i in range(6)]
+
+
+def _next_monday() -> str:
+    today = datetime.date.fromisoformat(household_date())
+    return (today - datetime.timedelta(days=today.weekday()) + datetime.timedelta(days=7)).isoformat()
+
+
+def _slot(date, slot, name, freeform=None, ingredients=None):
+    out = {"date": date, "slot": slot, "meal_name": name, "is_new_recipe": True,
+           "ingredients": ingredients or [{"item": f"{name} base", "qty": "1", "category": "pantry"}],
+           "reasoning": f"{name} fits", "food_groups": ["protein", "vegetable", "carb"],
+           "prep_time_minutes": 10, "cook_time_minutes": 15}
+    if freeform:
+        out["derived_from"] = {"freeform": freeform}
+    return out
+
+
+def _week(dates, special: dict) -> list[dict]:
+    out = []
+    for i, d in enumerate(dates):
+        out.append(_slot(d, "breakfast", "Oatmeal"))
+        out.append(_slot(d, "lunch", ["Lentil Soup", "Turkey Wraps"][i % 2]))
+        out.append(special.get(d) or _slot(d, "dinner", f"House Dinner {i}"))
+    return out
+
+
+@pytest.fixture
+def household():
+    for name in ("Emily", "Vineeth"):
+        tools.add_member(name)
+        tools.set_member_age_group(name, "adult")
+
+
+@pytest.fixture
+def picker(monkeypatch):
+    names = iter([f"Quick Dish {i}" for i in range(1, 40)])
+
+    def pick(context):
+        name = next(names)
+        return {"meal_name": name, "reason": "quick",
+                "ingredients": [{"item": f"{name} base", "qty": "1", "category": "pantry"}],
+                "instructions": ["Cook it.", "Serve."], "food_groups": ["protein", "vegetable", "carb"],
+                "prep_time_minutes": 5, "cook_time_minutes": 10}
+    monkeypatch.setattr(swap_in_place, "_pick_replacement", pick)
+    monkeypatch.setattr(allergen_gate, "quick_pick", pick)
+
+
+def _model(monkeypatch, days, honoured):
+    def gen(context):
+        out = agent.GeneratedDays(days)
+        out.report = {"honoured_requests": honoured, "unmet_requests": []}
+        return out
+    monkeypatch.setattr(agent, "generate_weekly_plan_llm", gen)
+
+
+def _dinner(plan_id, date):
+    conn = get_conn()
+    rows = conn.execute(
+        """SELECT mpe.slot_state, COALESCE(r.name, mpe.freeform_meal) AS meal
+           FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id
+           WHERE mpe.weekly_plan_id = ? AND mpe.date = ? AND mpe.slot = 'dinner'""",
+        (plan_id, date)).fetchall()
+    conn.close()
+    assert len(rows) == 1, rows
+    return dict(rows[0])
+
+
+def _all_dinners(plan_id):
+    conn = get_conn()
+    rows = conn.execute(
+        """SELECT COALESCE(r.name, mpe.freeform_meal) AS meal FROM meal_plan_entries mpe
+           LEFT JOIN recipes r ON r.id = mpe.recipe_id
+           WHERE mpe.weekly_plan_id = ? AND mpe.slot = 'dinner' AND mpe.slot_state = 'planned'""",
+        (plan_id,)).fetchall()
+    conn.close()
+    return {r["meal"] for r in rows}
+
+
+def test_a_requested_dish_cleared_off_an_out_night_is_not_as_you_asked(household, picker, monkeypatch):
+    """CATCH. The model put the lasagna they asked for on the night they
+    tagged out; the tag wins and the night is emptied, so the draft says it
+    couldn't fit the lasagna rather than crediting it."""
+    week = _next_monday()
+    dates = tools.period_dates(week, 7)
+    words = "Lasagna on Wednesday please"
+    tools.save_week_intake(week, night_tags={dates[2]: ["out"]}, freeform=words)
+    _model(monkeypatch, _week(dates, {dates[2]: _slot(dates[2], "dinner", "Lasagna", freeform=words)}),
+           [{"words": words, "label": "Lasagna Wednesday"}])
+
+    plan_id = agent.generate_weekly_plan(week)["weekly_plan_id"]
+
+    assert _dinner(plan_id, dates[2])["slot_state"] == "planned_empty"
+    opener = tools.get_week_menu(plan_id)["draft_opener"]
+    assert not any("as you asked" in line and "Lasagna" in line for line in opener), opener
+    assert "I couldn’t fit “Lasagna on Wednesday please” in this week." in opener
+
+
+def test_a_requested_dish_swapped_for_an_allergy_is_not_as_you_asked(household, picker, monkeypatch):
+    """CATCH. Peanut noodles, asked for by name, for a household where Emily
+    is allergic to peanuts: the gate swaps the dish, and neither the opener
+    nor the replacement's row says it was what they asked for."""
+    tools.set_member_dietary_restrictions("Emily", ["peanut allergy"])
+    week = _next_monday()
+    dates = tools.period_dates(week, 7)
+    words = "Peanut noodles one night"
+    tools.save_week_intake(week, freeform=words)
+    noodles = _slot(dates[1], "dinner", "Peanut Noodles", freeform=words,
+                    ingredients=[{"item": "peanut butter", "qty": "1 cup", "category": "pantry"}])
+    _model(monkeypatch, _week(dates, {dates[1]: noodles}), [{"words": words, "label": "Peanut noodles"}])
+
+    plan_id = agent.generate_weekly_plan(week)["weekly_plan_id"]
+
+    assert _dinner(plan_id, dates[1])["meal"].startswith("Quick Dish")
+    menu = tools.get_week_menu(plan_id)
+    assert not any("as you asked" in line for line in menu["draft_opener"]), menu["draft_opener"]
+    assert "I couldn’t fit “Peanut noodles one night” in this week." in menu["draft_opener"]
+    tuesday = next(d for d in menu["days"] if d["date"] == dates[1])
+    assert not (tuesday["dinner"].get("asked") or ""), tuesday["dinner"]
+
+
+def test_a_requested_dish_that_stays_is_still_credited(household, picker, monkeypatch):
+    """GUARD. The ordinary case: the dish is on the night asked, and so is
+    a request the model honoured without citing any slot (its say-so is
+    all there is to go on, and the opener has always taken it)."""
+    week = _next_monday()
+    dates = tools.period_dates(week, 7)
+    words = "Lasagna on Wednesday please"
+    tools.save_week_intake(week, freeform=words + ". Something with greens.")
+    _model(monkeypatch, _week(dates, {dates[2]: _slot(dates[2], "dinner", "Lasagna", freeform=words)}),
+           [{"words": words, "label": "Lasagna Wednesday"},
+            {"words": "Something with greens", "label": "greens"}])
+
+    plan_id = agent.generate_weekly_plan(week)["weekly_plan_id"]
+
+    first = tools.get_week_menu(plan_id)["draft_opener"][0]
+    assert "Lasagna Wednesday" in first and "greens" in first and first.endswith("as you asked."), first
+
+
+@pytest.mark.real_time_of_day
+def test_tomorrow_is_not_pinned_onto_a_night_tagged_out(household, picker, monkeypatch, frozen_today):
+    """CATCH. "Lamb curry tomorrow." with tomorrow tagged out: the curry used
+    to be moved onto Monday and then cleared with the night. It stays where
+    the model put it, still credited, and no line claims a move."""
+    frozen_today(household_pin(9, 0, on=datetime.date(2026, 9, 27)))
+    words = "Lamb curry tomorrow."
+    tools.save_week_intake(SUNDAY, day_count=6, freeform=words, night_tags={PERIOD[1]: ["out"]})
+    _model(monkeypatch, _week(PERIOD, {PERIOD[3]: _slot(PERIOD[3], "dinner", "Lamb Curry", freeform=words)}),
+           [{"words": words, "label": "Lamb curry"}])
+
+    plan_id = agent.generate_weekly_plan(SUNDAY, day_count=6, period_start=SUNDAY)["weekly_plan_id"]
+
+    assert _dinner(plan_id, PERIOD[1])["slot_state"] == "planned_empty"
+    assert "Lamb Curry" in _all_dinners(plan_id)
+    opener = tools.get_week_menu(plan_id)["draft_opener"]
+    assert not any("I moved" in line for line in opener), opener
+    assert opener[0].startswith("Lamb curry Wednesday, as you asked"), opener
+
+
+@pytest.mark.real_time_of_day
+def test_tomorrow_is_not_pinned_onto_a_day_tapped_off(household, picker, monkeypatch, frozen_today):
+    """CATCH, the same rule for a day left out on "Which days?"."""
+    frozen_today(household_pin(9, 0, on=datetime.date(2026, 9, 27)))
+    words = "Lamb curry tomorrow."
+    tools.save_week_intake(SUNDAY, day_count=6, freeform=words, skipped_days=[PERIOD[1]])
+    _model(monkeypatch, _week(PERIOD, {PERIOD[3]: _slot(PERIOD[3], "dinner", "Lamb Curry", freeform=words)}),
+           [{"words": words, "label": "Lamb curry"}])
+
+    plan_id = agent.generate_weekly_plan(SUNDAY, day_count=6, period_start=SUNDAY)["weekly_plan_id"]
+
+    assert "Lamb Curry" in _all_dinners(plan_id)
+    assert not any("I moved" in line for line in tools.get_week_menu(plan_id)["draft_opener"])
+
+
+@pytest.mark.real_time_of_day
+def test_tomorrow_still_moves_onto_a_night_someone_is_home(household, picker, monkeypatch, frozen_today):
+    """GUARD. With nobody out, the curry moves to Monday and the line says so."""
+    frozen_today(household_pin(9, 0, on=datetime.date(2026, 9, 27)))
+    words = "Lamb curry tomorrow."
+    tools.save_week_intake(SUNDAY, day_count=6, freeform=words)
+    _model(monkeypatch, _week(PERIOD, {PERIOD[3]: _slot(PERIOD[3], "dinner", "Lamb Curry", freeform=words)}),
+           [{"words": words, "label": "Lamb curry"}])
+
+    plan_id = agent.generate_weekly_plan(SUNDAY, day_count=6, period_start=SUNDAY)["weekly_plan_id"]
+
+    assert _dinner(plan_id, PERIOD[1])["meal"] == "Lamb Curry"
+    assert "I moved Lamb Curry to Monday dinner, as you asked." in tools.get_week_menu(plan_id)["draft_opener"]

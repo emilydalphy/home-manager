@@ -13,6 +13,17 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The draft says "as you asked" only of a dish still on the week**
+  (2026-10-24, defect hunt; branch `overnight/hunt-draft-rules-1024`; tests
+  `tests/test_draft_says_only_what_stands.py`). `draft_opener.settle_report`
+  turns an honoured request the model cited but no planned slot still cites
+  (out night emptied, allergen swap) into an unmet line, and drops a "moved"
+  line whose dish left that meal; `their_words` stops an allergen-swapped
+  slot citing the request; a "tomorrow" is never pinned onto a meal nobody
+  eats (out, day off, usual-week off, away). Why: the opener trusted the
+  model's report, so "Lasagna Wednesday, as you asked, Wednesday left free."
+  and "I moved Lamb Curry to Monday dinner" were said of dishes nowhere on
+  the week.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

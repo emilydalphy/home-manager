@@ -500,8 +500,12 @@ def place_day_requests(plan_id: int, requests: list[dict], report: dict | None =
                 # you asked — its usual time had already gone by."), so it
                 # is not said again by the opener. Its words still ride
                 # along, with no line, so line one does not repeat them.
+                # `to` and `meal` are for draft_opener.settle_report, which
+                # drops the line if a later pass takes the dish off that
+                # meal; record_plan_requests stores only words and line.
                 report.setdefault("moved_requests", []).append(
-                    {"words": request["words"], "line": "" if request.get("late") else line})
+                    {"words": request["words"], "line": "" if request.get("late") else line,
+                     "to": f"{target[0]}:{target[1]}", "meal": dish["meal"]})
     except Exception:
         logger.exception("Placing today/tonight/tomorrow requests failed for plan %s; the week stands", plan_id)
     if out["moved"] or out["missing"]:
