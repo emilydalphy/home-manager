@@ -9983,7 +9983,7 @@ def swap_dinner_nights(weekly_plan_id: int, date_a: str, date_b: str) -> dict:
     Trade the dinners on two nights of a plan — "move Thursday's dinner to
     Friday" — keeping each dish's groceries, cooked tick and leftover
     chain with it, and moving its defrost reminders by the same number of
-    days. The grocery list is not touched: same dishes, same lines.
+    days. Same dishes, same lines — each resized for its new night's table in an approved week.
 
     Returns `status` 'swapped' with `moved` (each entry's id, dish, from
     and to), `prep_tasks_moved`, both changed `days` in get_week_menu's
@@ -10004,7 +10004,8 @@ def swap_dinner_nights(weekly_plan_id: int, date_a: str, date_b: str) -> dict:
     week that was standing.
     """
     today = _household_today().isoformat()
-    return _apply_dinner_nights_swap(weekly_plan_id, date_a, date_b, undo=False, today=today)
+    return _resize_after_nights_swap(
+        _apply_dinner_nights_swap(weekly_plan_id, date_a, date_b, undo=False, today=today))
 
 
 def undo_dinner_nights_swap(weekly_plan_id: int, date_a: str, date_b: str) -> dict:
@@ -10015,7 +10016,18 @@ def undo_dinner_nights_swap(weekly_plan_id: int, date_a: str, date_b: str) -> di
     night); raises ValueError otherwise, so an Undo tapped after a second
     move can never quietly move the wrong dish.
     """
-    return _apply_dinner_nights_swap(weekly_plan_id, date_a, date_b, undo=True)
+    return _resize_after_nights_swap(
+        _apply_dinner_nights_swap(weekly_plan_id, date_a, date_b, undo=True))
+
+
+def _resize_after_nights_swap(out: dict) -> dict:
+    """Same dishes, same lines — but each is bought for the table on the
+    night it is on now (attendance.resize_after_redate). After the swap's
+    own commit; a no-op on a draft or when both tables are the same size."""
+    if out.get("status") in ("swapped", "restored") and out.get("moved"):
+        from . import attendance as _attendance  # lazy: attendance imports this module
+        _attendance.resize_after_redate([m["entry_id"] for m in out["moved"]])
+    return out
 
 
 def swap_component_in_plan(

@@ -1060,5 +1060,9 @@ def _after_move(weekly_plan_id: int, moved_ids: list[int]) -> list[str]:
         _draft_flags.refresh(weekly_plan_id, moved_ids)
     except Exception:
         logger.exception("Refreshing the draft's flags after a move failed (plan %s)", weekly_plan_id)
+    # The shopping follows each moved meal's table on its new day — and
+    # back again on Undo. Lazy: attendance imports weekly_plan at load.
+    from . import attendance as _attendance
+    _attendance.resize_after_redate(moved_ids)
     from . import defrost as _defrost
     return _defrost.resync_plan_thaws(weekly_plan_id, moved_ids)

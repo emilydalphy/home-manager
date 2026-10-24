@@ -13,6 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A moved meal is bought for the table on its new day** (2026-10-24; branch
+  `overnight/plan-move-follows-headcount`, builds on
+  `overnight/guests-resize-in-place` — merge after it; tests
+  `tests/test_move_follows_headcount.py`). Move and the nights swap kept each
+  dish's grocery links as approved, so salmon for two traded onto a six-person
+  night stayed "2 fillets" while Cook said 6. `meal_move._after_move` (Move and
+  its Undo) and `swap_dinner_nights` / `undo_dinner_nights_swap` now call
+  `attendance.resize_after_redate` after commit. Night off's move
+  (`tonight._night_off_with_undo`) is NOT hooked: its Undo snapshot holds the
+  grocery links, so a resize there needs its own care.
 - **Guests (or someone out) after approval resize the list IN PLACE**
   (2026-10-22; branch `overnight/guests-resize-in-place`; tests
   `tests/test_guests_resize_in_place.py`). `attendance.resize_for_new_headcount`

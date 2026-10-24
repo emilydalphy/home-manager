@@ -454,6 +454,43 @@ def resize_for_new_headcount(date_str: str, slot: str) -> list[int]:
         return []
 
 
+def resize_after_redate(entry_ids) -> list[int]:
+    """
+    A meal that moved to another day of an approved week is bought for the
+    table on the day it is on NOW. Move and the nights swap re-date rows in
+    place and keep their grocery links, so a dish bought for two that
+    traded onto Monday's six-person dinner kept two people's shopping while
+    Cook said six (2026-10-24). Called after the move has committed, with
+    the ids it re-dated: each one's day and meal is resized exactly as a
+    guest change on it would be (resize_for_new_headcount — drafts, cooked
+    or past nights and bought lines are left alone there). An Undo calls it
+    too, which puts the list back. Never raises.
+    """
+    ids = sorted({int(i) for i in entry_ids or []})
+    if not ids:
+        return []
+    try:
+        conn = get_conn()
+        try:
+            marks = ",".join("?" * len(ids))
+            spots = sorted({
+                (r["date"], r["slot"]) for r in conn.execute(
+                    "SELECT date, slot FROM meal_plan_entries "
+                    f"WHERE household_id = ? AND id IN ({marks}) AND slot_state = 'planned'",
+                    [household_id(), *ids],
+                ).fetchall()
+            })
+        finally:
+            conn.close()
+    except Exception:
+        logging.getLogger("home_manager").exception("Reading the moved meals' days failed")
+        return []
+    resized: list[int] = []
+    for day, slot in spots:
+        resized.extend(resize_for_new_headcount(day, slot))
+    return resized
+
+
 def _resize_recipe_week(conn, plan_id: int, recipe_id: int, today: str, _recipe_change, _grocery) -> list[int]:
     hid = household_id()
     # The recipe-week as approval bought it: the shape
