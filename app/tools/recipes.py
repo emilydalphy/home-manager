@@ -991,6 +991,22 @@ def _scaled_count_range(qty_text: str, ratio: float) -> str | None:
     return amount + (m.group("rest") or "")
 
 
+def _scaled_plain_measure(qty_text: str, ratio: float, keep_spoons: bool = False) -> str | None:
+    """A bare "amount unit" the step scaler has no word for, scaled the way
+    the parsed route scales it: "1 ½ quarts" x2 -> "3 quarts". The steps
+    leave quart/pint alone on purpose (a "6 quart pot" is a pot), but on the
+    ingredient list it is always food — and it stayed "1 ½ quarts" at every
+    size while the water beside it doubled (defect hunt, 2026-10-24). None
+    for anything with more than an amount and one unit word."""
+    ascii_text = _ascii_fractions(qty_text or "").strip()
+    if not re.fullmatch(r"(?:" + _NUM + r")\s*[a-z]+\.?", ascii_text, re.IGNORECASE):
+        return None
+    parsed = _parse_cook_qty(ascii_text)
+    if not parsed or parsed[1] not in _measured_units():
+        return None
+    return _measure_terms_qty(_scaled_measure(parsed[0], ratio, parsed[1], keep_spoons=keep_spoons))
+
+
 def _qty_words_after_amount(qty_text: str, parsed: tuple) -> str:
     """The words a qty carries after its amount and unit, as written —
     "grated" in "1/3 cup grated", "small" in "1 small". _parse_quantity
@@ -1058,7 +1074,11 @@ def scale_recipe(recipe_name: str, target_servings: int) -> dict:
             # so the list and the steps agree and nothing written is lost.
             rescaled = scale_steps([qty_text], ratio)[0] if abs(ratio - 1) > 1e-9 else qty_text
             if rescaled == qty_text and abs(ratio - 1) > 1e-9:
-                rescaled = _scaled_count_range(qty_text, ratio) or qty_text
+                rescaled = (
+                    _scaled_count_range(qty_text, ratio)
+                    or _scaled_plain_measure(qty_text, ratio, keep_spoons)
+                    or qty_text
+                )
             scaled_ingredients.append(_with_item_label({**ing, "qty": rescaled}))
             if rescaled == qty_text and abs(ratio - 1) > 1e-9:
                 unscaled_items.append(ing["item"])
@@ -1823,6 +1843,10 @@ COOKING_QUANTITIES_PER_4 = {
     # liquids and canned goods
     "broth": "4 cups", "chicken broth": "4 cups", "vegetable broth": "4 cups",
     "beef broth": "4 cups", "stock": "4 cups", "white wine": "1/2 cup",
+    # Their own keys, because the longest key wins and "chicken" is longer
+    # than "stock": "chicken stock" came out as "1.5 lb" (2026-10-24).
+    "chicken stock": "4 cups", "beef stock": "4 cups", "vegetable stock": "4 cups",
+    "turkey stock": "4 cups", "fish stock": "4 cups",
     "coconut milk": "1 can (14 oz)", "crushed tomatoes": "1 can (28 oz)",
     "diced tomatoes": "1 can (14 oz)", "tomato sauce": "1 can (14 oz)",
     "black beans": "1 can (15 oz)", "chickpeas": "1 can (15 oz)",
