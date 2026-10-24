@@ -13,6 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A "Who's on it?" claim leaves with the adult who left; two phones
+  ticking one dinner count it once** (2026-10-24, defect hunt; branch
+  `overnight/hunt-moves-owners-1024`; tests `tests/test_moves_owners_hunt.py`).
+  `remove_member` deletes the leaver's `move_owner_overrides` rows instead of
+  letting the member-column sweep null them — a NULL there is "Nobody yet",
+  so Emily's Today said nobody was cooking her own night. `check_off_meal`
+  re-reads the batch under `BEGIN IMMEDIATE` before writing: the unlocked
+  read plus `meal_credit`'s cooker view let two concurrent ticks both bump
+  `times_cooked` (2 of 2 over HTTP); the depletion was already claimed so.
+
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

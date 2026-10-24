@@ -466,6 +466,36 @@ def check_off_meal(entry_id: int, status: str = "done") -> dict:
         _move_credits.meal_credit(linked_ids, row["weekly_plan_id"])
         if status == "done" and not was_done else None
     )
+    # Read the batch again UNDER the write lock before writing. Everything
+    # above read it unlocked, and meal_credit builds a whole cooker view in
+    # between — long enough that two adults ticking tonight's dinner from
+    # two phones both read "not done", and times_cooked went up by two for
+    # one dinner ("you've made this 2 times"; defect hunt 2026-10-24). The
+    # depletion below was already claimed this way; the count wasn't. The
+    # loser of the race is the repeat tick it really is: unchanged.
+    conn.execute("BEGIN IMMEDIATE")
+    marks = ",".join("?" for _ in linked_ids)
+    now_statuses = {
+        r["id"]: r["cooked_status"]
+        for r in conn.execute(
+            f"SELECT id, cooked_status FROM meal_plan_entries WHERE household_id = ? AND id IN ({marks})",
+            (household_id(), *linked_ids),
+        )
+    }
+    if now_statuses and all(s == status for s in now_statuses.values()):
+        conn.rollback()
+        conn.close()
+        result["unchanged"] = True
+        if status == "done":
+            result["inventory_depleted"] = []
+            result["inventory_queued_for_review"] = []
+        return result
+    if was_done != any(s == "done" for s in now_statuses.values()):
+        # The other phone changed the batch in between (an untick, or a
+        # sibling ticked): go by what it is NOW. A credit worked out for the
+        # old state is dropped rather than recorded against the wrong one.
+        was_done = not was_done
+        credit = None
     cooked_at = "datetime('now')" if status == "done" else "NULL"
     # "Mark not cooked" also forgets when the cook began (cook_started_at,
     # 2026-09-13): a night put back to not-cooked is a night still to
