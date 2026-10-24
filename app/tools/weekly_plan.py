@@ -7036,6 +7036,55 @@ def _reingest_unlinked_entries(weekly_plan_id: int, conn=None) -> dict:
     return result
 
 
+def buy_for_late_written_recipe(recipe_id: int) -> list[str]:
+    """
+    Put a just-written recipe's ingredients on the list for every meal of
+    it on an APPROVED week that is still ahead — the meals approval could
+    not buy for, because the recipe was still pending then (defect hunt,
+    2026-10-24).
+
+    Approval writes the week's pending recipes first and goes ahead when
+    one fails (_write_pending_recipes: "a lost approval over one recipe is
+    the worse outcome"). That dish was approved with no ingredients, so it
+    bought nothing and left no ledger row — and when Cook's "Fill in this
+    recipe" (or a later pass) wrote it, nothing went back to the list. The
+    household shopped for the week without Tuesday's curry. Called by
+    recipes.fill_recipe_details on the one call that clears
+    details_pending, so this runs once per recipe.
+
+    Only this recipe's entries, not every unlinked one: an entry whose
+    every ingredient was skipped as already in the kitchen also has no
+    ledger row, and approval's guard is that nothing re-buys it later.
+    The same query approval buys from (_plan_grocery_candidate_entries —
+    today on, no ledger row yet), the same grouped ingest, and under the
+    write lock from the first read, so an approval landing at the same
+    moment and this can't both buy the same meal. A draft is left alone:
+    its approval buys it.
+    """
+    added: list[str] = []
+    with write() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        plan_ids = [
+            row["weekly_plan_id"] for row in conn.execute(
+                "SELECT DISTINCT mpe.weekly_plan_id FROM meal_plan_entries mpe "
+                "JOIN weekly_plans wp ON wp.id = mpe.weekly_plan_id AND wp.household_id = mpe.household_id "
+                "WHERE mpe.household_id = ? AND mpe.recipe_id = ? AND wp.status = 'approved'",
+                (household_id(), recipe_id),
+            ).fetchall()
+        ]
+        for plan_id in plan_ids:
+            entries = [
+                e for e in _plan_grocery_candidate_entries(conn, plan_id)
+                if e["recipe_id"] == recipe_id
+            ]
+            if not entries:
+                continue
+            buffer = _recipes.WeekGroceryBuffer(plan_id, conn=conn)
+            added += _ingest_recipe_group_and_sides(entries, plan_id, buffer)["groceries_added"]
+            buffer.flush()
+    return added
+
+
 def _entry_shopping_ingredients(row) -> list[dict]:
     """
     Everything one plan entry puts on the shopping list: its recipe's own

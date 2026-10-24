@@ -620,6 +620,17 @@ def fill_recipe_details(
         raise
     finally:
         conn.close()
+    # Written AFTER its week was approved (the recipe pass failed at
+    # approval, then Cook's fill-in wrote it): approval bought nothing for
+    # it, so its ingredients go on the list now. Only on this, the one call
+    # that cleared details_pending. A failure here is logged, not raised —
+    # the recipe is saved, and losing the shopping is what this was
+    # already doing (weekly_plan.buy_for_late_written_recipe).
+    try:
+        from . import weekly_plan as _weekly_plan
+        _weekly_plan.buy_for_late_written_recipe(row["id"])
+    except Exception:
+        logger.exception("Buying for %r on an approved week after it was written failed", recipe_name)
     return get_recipe(recipe_name)
 
 
