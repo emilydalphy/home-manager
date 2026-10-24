@@ -1140,6 +1140,33 @@ def _ledger_totals(
     return total_before, (after[key][0] if key in after else 0.0), unit
 
 
+# "24 pack", "12pk", "6 pack (355 ml)": the size of ONE multipack, as a
+# shopper writes it — a number of two or more and the SINGULAR word. Read as
+# a count, "24 pack" of water became "24 packs" on the list and "48 packs"
+# when it was added again (defect hunt, 2026-10-24).
+_MULTIPACK_RE = re.compile(r"^(\d+)\s*-?\s*(?:pack|pk)\.?(\s*\([^()]*\))?$", re.IGNORECASE)
+
+
+def typed_multipack(qty: str) -> str:
+    """
+    A household's typed "24 pack" written the way the shelf says it,
+    "24-pack" — one pack of 24 — so it is never read as twenty-four packs.
+    Anything else comes back unchanged, "1 pack" and "24 packs" included.
+
+    "24-pack" is the spelling this module already leaves alone ("6-pack"
+    never parsed), so the line reads as typed and a second add of the same
+    pack counts up as "24-pack ×2" (grocery._repeat_or_concatenate). For a
+    person's own words only (add_grocery_item's standing add,
+    update_grocery_item): a plan's amount is written by _format_quantity,
+    which never puts a singular "pack" after a number above one.
+    """
+    raw = (qty or "").strip()
+    match = _MULTIPACK_RE.match(raw)
+    if not match or int(match.group(1)) < 2:
+        return qty
+    return f"{int(match.group(1))}-pack" + (f" {match.group(2).strip()}" if match.group(2) else "")
+
+
 def _normalize_grocery_quantity(qty: str) -> str:
     """
     Reformat a raw quantity string for shopper-friendly display (see

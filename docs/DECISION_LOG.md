@@ -13,6 +13,11 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A typed "24 pack" is one pack of 24, not 24 packs** (2026-10-24; branch
+  `overnight/grocery-hunt`; tests `tests/test_grocery_typed_multipack.py`).
+  Shop's "24 pack water" read "24 packs", and "48 packs" when added again;
+  a person's typed amount (the add, the row's quantity box) is now written
+  "24-pack" by `quantities.typed_multipack`. A plan's amount is untouched.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

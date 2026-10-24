@@ -1561,6 +1561,9 @@ def add_grocery_item(
     quantity = (quantity or "").strip()
     if len(quantity) > MAX_QUANTITY_LENGTH:
         quantity = quantity[:MAX_QUANTITY_LENGTH].rstrip()
+    if source_weekly_plan_id is None:
+        # A person's "24 pack" is one pack of 24, not 24 packs.
+        quantity = _quantities.typed_multipack(quantity)
     quantity = _quantities._normalize_grocery_quantity(quantity)
     # A recipe's "light soy sauce", "dark soy sauce" and "tamari" are one
     # bottle on the list (Emily, 2026-10-18) — renamed before the merge key
@@ -3284,6 +3287,9 @@ def update_grocery_item(item_id: int, quantity: str | None = None, category: str
     if not row:
         conn.close()
         raise ValueError(f"No grocery list item with id {item_id}.")
+    if quantity is not None:
+        # Typed into the row's box: "24 pack" is one pack of 24.
+        quantity = _quantities.typed_multipack(quantity)
     if quantity is not None and _quantities.same_shown_quantity(
         row["item"] or "", quantity.strip(), row["quantity"] or ""
     ):
