@@ -991,13 +991,17 @@ def delete_preference(field: str, item: str | None = None) -> dict:
                 (json.dumps(updated), household_id()),
             )
         elif field == "cuisine_preferences":
-            updated = [c for c in _as_str_list(json.loads(existing["cuisine_preferences_json"])) if c.lower() != (item or "").lower()]
+            before = _as_str_list(json.loads(existing["cuisine_preferences_json"]))
+            updated = [c for c in before if c.lower() != (item or "").lower()]
+            removed_listed = len(updated) < len(before)
             conn.execute(
                 "UPDATE meal_preferences SET cuisine_preferences_json = ?, updated_at = datetime('now') WHERE household_id = ?",
                 (json.dumps(updated), household_id()),
             )
         elif field == "usual_stores":
-            updated = [s for s in _as_str_list(json.loads(existing["usual_stores_json"])) if s.lower() != (item or "").lower()]
+            before = _as_str_list(json.loads(existing["usual_stores_json"]))
+            updated = [s for s in before if s.lower() != (item or "").lower()]
+            removed_listed = len(updated) < len(before)
             # Drop that store's typical-items list along with it — an orphaned
             # entry would keep surfacing "usually get here" suggestions in the
             # grocery list for a store the household no longer shops at.
@@ -1101,4 +1105,8 @@ def delete_preference(field: str, item: str | None = None) -> dict:
         return {"field": field, "item": item, "deleted": bool(removed_proteins), "removed": removed_proteins}
     if field == "dislikes":
         return {"field": field, "item": item, "deleted": removed_dislikes}
+    if field in ("cuisine_preferences", "usual_stores"):
+        # Said back the same way: "stop going to Costco" when Costco was
+        # never one of the stores removed nothing (defect hunt 2026-10-24).
+        return {"field": field, "item": item, "deleted": removed_listed}
     return {"field": field, "item": item, "deleted": True}

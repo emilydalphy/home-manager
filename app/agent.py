@@ -11224,6 +11224,13 @@ READ_ONLY_TOOLS = frozenset({"explain_meal_choice", "check_plan_conflicts", "sca
 # draw an "updated" card -- "Swapped in Weeknight Chili on Wednesday has
 # already been cooked" -- and back a "Done, moved it" as true.
 _NOTHING_CHANGED_STATUSES = frozenset({"refused", "needs_confirmation", "nothing", "ambiguous"})
+# The same answer spelled as a flag: "forget cilantro" when cilantro was
+# never a dislike (delete_preference -> deleted false), add_fact with no
+# text (added false), hold_thing with nothing to hold (held false). Each
+# drew "Household info updated" over a turn that saved nothing (defect hunt
+# 2026-10-24). Only a literal False counts: add_grocery_items' `added` is a
+# list, and an empty one is not this answer.
+_NOTHING_CHANGED_FLAGS = ("deleted", "added", "held")
 
 
 def is_read_only_tool(name: str) -> bool:
@@ -11238,7 +11245,11 @@ def result_changed_nothing(content) -> bool:
         return False
     if not isinstance(result, dict):
         return False
-    return result.get("status") in _NOTHING_CHANGED_STATUSES or result.get("found") is False
+    return (
+        result.get("status") in _NOTHING_CHANGED_STATUSES
+        or result.get("found") is False
+        or any(result.get(flag) is False for flag in _NOTHING_CHANGED_FLAGS)
+    )
 
 _CHANGE_VERBS = (
     "changed|swapped|replaced|updated|added|removed|deleted|planned|scheduled"
