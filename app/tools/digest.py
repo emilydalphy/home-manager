@@ -686,6 +686,13 @@ def _digest_parts(now_local: datetime, included) -> list[tuple[str, str]]:
             # standing property worth not undoing.
             parts.append(("meals", "Tonight's still open — it's your call."))
 
+        # An allergy saved since the week was approved, which tonight's
+        # dish has (allergen_gate.clashes_since_approval): said straight
+        # under the dish it is about, never left for Today to say alone.
+        tonight = dinner_cook or dinner_reheat
+        if tonight and tonight.get("allergy_note"):
+            parts.append(("meals", tonight["allergy_note"]))
+
         # The other meals being cooked today, after tonight's.
         for m in by_kind.get("cook", []):
             if m is dinner_cook or m["slot"] == "dinner":

@@ -319,6 +319,111 @@ def refusal_sentence(name: str, clashes: list[dict]) -> str:
     return f"{name} has {food}, which {cannot}{CHAT_ASK}"
 
 
+# ---------- an allergy added after the week was approved ----------
+#
+# Defect hunt 2026-10-24: Theo's peanut allergy saved in Preferences, with
+# Peanut Noodles on the approved week that night, and nothing anywhere
+# said so. The gate above guards every door that WRITES a dish; a week
+# already written was checked once, at approval, against the allergies on
+# file then, and never again: Today read "Cook · Peanut Noodles", the
+# morning text "Tonight: Peanut Noodles." The decision log's rule for a
+# clash is "warn, never block — the app is merely never silent". So the
+# week is not changed here; it is SAID, on the dish's row.
+#
+# Only an allergy that was NOT on file at approval: a clash the household
+# confirmed with "Approve anyway — I've seen the clash" is a decision made
+# (tests/test_allergy_safety.py, "not nagged"), and stays quiet.
+
+
+def avoidance_key(avoidance: dict) -> str:
+    """One allergy or must-avoid as a stable string: where it lives, whose
+    it is, and its words. Re-saving the same allergy is the same key;
+    rewording it is a new one, and is told as new."""
+    return "|".join(
+        (avoidance.get(k) or "").strip().lower() for k in ("source", "member", "label")
+    )
+
+
+def avoidance_keys_now() -> list[str]:
+    """The household's hard avoidances right now, as keys — what approval
+    records on the week (weekly_plans.avoidances_at_approval_json)."""
+    return sorted({avoidance_key(a) for a in hard_avoidances()})
+
+
+def _keys_at_approval(weekly_plan_id) -> set[str] | None:
+    """The keys the week was approved with; an empty set for a week
+    approved before they were recorded (every allergy counts as new — an
+    allergy is the one thing better said twice than not at all); None when
+    the plan isn't an approved one of this household's."""
+    from ..db import get_conn
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            "SELECT status, avoidances_at_approval_json FROM weekly_plans WHERE id = ? AND household_id = ?",
+            (weekly_plan_id, _shared.household_id()),
+        ).fetchone()
+    finally:
+        conn.close()
+    if row is None or row["status"] != "approved":
+        return None
+    try:
+        keys = json.loads(row["avoidances_at_approval_json"] or "[]")
+    except (TypeError, ValueError):
+        keys = []
+    return {str(k) for k in keys} if isinstance(keys, list) else set()
+
+
+def clashes_since_approval(view: dict) -> dict[int, list[dict]]:
+    """
+    {entry_id: hard clashes} for the dishes still to eat on an APPROVED
+    week (cooker.get_cooker_view's payload) that trip an allergy or
+    must-avoid saved after the week was approved. {} for a draft (the gate
+    above already keeps a clash off it), for a week with nothing new, and
+    if the check itself breaks — Today must still render.
+    """
+    try:
+        if not view or view.get("weekly_plan_id") is None:
+            return {}
+        seen = _keys_at_approval(view["weekly_plan_id"])
+        if seen is None:
+            return {}
+        fresh = [a for a in hard_avoidances() if avoidance_key(a) not in seen]
+        if not fresh:
+            return {}
+        out: dict[int, list[dict]] = {}
+        for meal in view.get("meals") or []:
+            name = (meal.get("meal") or "").strip()
+            if (not name or meal.get("entry_id") is None or meal.get("cooked_status") == "done"
+                    or meal.get("slot_state") in ("planned_empty", "open")):
+                continue
+            hits = hard_clashes(name, ingredients=_lines(meal.get("ingredients")),
+                                sides=meal.get("sides"), avoidances=fresh)
+            # A matcher that could not run is the write gates' reason to
+            # hold a dish back; on a row it would be a warning about
+            # nothing, so only a real match is said.
+            hits = [h for h in hits if h.get("source") != "check_failed"]
+            if hits:
+                out[meal["entry_id"]] = hits
+        return out
+    except Exception:
+        logger.exception("Checking the approved week against new allergies failed")
+        return {}
+
+
+def since_approval_line(clashes: list[dict], sentence: bool = False) -> str:
+    """Today's line under the dish: "Has peanut, which Theo can’t have —
+    swap it on Plan". The thing, and its way out (DESIGN_SYSTEM §8).
+    `sentence=True` is the morning text's, said straight after "Tonight:
+    Peanut Noodles.": "It has peanut, which Theo can’t have — swap it on
+    Plan." """
+    food = _food_word(clashes)
+    who = _person(clashes)
+    cannot = f"{who} can’t have" if who else "this house can’t have"
+    if sentence:
+        return f"It has {food}, which {cannot} — swap it on Plan."
+    return f"Has {food}, which {cannot} — swap it on Plan"
+
+
 def refuse_if_clashing(name: str, ingredients: list[dict] | None = None, override: bool = False) -> None:
     """
     The gate in front of chat's own writes (meal_plans.plan_meal_for_chat,

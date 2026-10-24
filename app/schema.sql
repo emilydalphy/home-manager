@@ -666,6 +666,13 @@ CREATE TABLE IF NOT EXISTS weekly_plans (
     -- requests_json, which record_plan_requests rewrites wholesale after
     -- generation and would clobber it. See app/tools/draft_flags.py.
     draft_flags_json TEXT NOT NULL DEFAULT '',
+    -- The household's allergies and must-avoids as they stood at approval
+    -- (allergen_gate.avoidance_key, a JSON list). An allergy added AFTER
+    -- approval is not in it, so Today and the morning text can say which
+    -- planned dish now has it (allergen_gate.clashes_since_approval) — and
+    -- a clash the household confirmed at approval is not raised again.
+    -- '' on a week approved before this existed: every clash is new.
+    avoidances_at_approval_json TEXT NOT NULL DEFAULT '',
     constraints_notes TEXT NOT NULL DEFAULT '', -- freeform per-week asks, e.g. "out Thu/Fri, keep it under 30 min"
     -- Snapshotted from meal_preferences.planning_mode at creation time, so a
     -- past plan stays interpretable even if the household later switches

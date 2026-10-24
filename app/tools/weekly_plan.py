@@ -7427,7 +7427,18 @@ def approve_weekly_plan(
     # so it is computed out here instead, exactly where `approved_by`
     # itself already is.
     approved_by_member_id = acting_member_id_for(approved_by)
-    result = _settle_weekly_plan_approval(weekly_plan_id, approved_by, approved_by_member_id, conflicts, conflicts_note)
+    # The allergies on file at this yes, so an allergy added later is told
+    # apart from one the household approved past (allergen_gate.
+    # clashes_since_approval). Read out here for the same reason as the
+    # conflict check: its own connections, nothing slow inside the lock.
+    try:
+        from . import allergen_gate as _allergen_gate  # lazy: it imports this module
+        avoidance_keys = _allergen_gate.avoidance_keys_now()
+    except Exception:
+        logger.exception("Reading the allergies at approval failed for plan %s", weekly_plan_id)
+        avoidance_keys = None
+    result = _settle_weekly_plan_approval(weekly_plan_id, approved_by, approved_by_member_id, conflicts, conflicts_note,
+                                          avoidance_keys=avoidance_keys)
 
     # A hosted holiday's big meal on this plan gets its prep spread now —
     # approval is the moment the week becomes real (app/tools/big_meal.py).
@@ -7461,6 +7472,7 @@ def approve_weekly_plan(
 def _settle_weekly_plan_approval(
     weekly_plan_id: int, approved_by: str, approved_by_member_id: int | None,
     conflicts: list[dict], conflicts_note: str | None,
+    avoidance_keys: list[str] | None = None,
 ) -> dict:
     """
     The write behind a genuine transition into 'approved' — one connection,
@@ -7501,6 +7513,11 @@ def _settle_weekly_plan_approval(
             "WHERE id = ? AND household_id = ? AND status != 'approved'",
             (approved_by.strip(), approved_by_member_id, weekly_plan_id, household_id()),
         ).rowcount
+        if flipped and avoidance_keys is not None:
+            conn.execute(
+                "UPDATE weekly_plans SET avoidances_at_approval_json = ? WHERE id = ? AND household_id = ?",
+                (json.dumps(avoidance_keys), weekly_plan_id, household_id()),
+            )
         if flipped:
             # The household has said yes to a week at least once — kept on
             # the household because reopening a week clears approved_at, and

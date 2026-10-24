@@ -77,6 +77,7 @@ from datetime import date, datetime, time, timedelta
 # (_view_for_day) only hands it to weekly_plan._live_plan_covering, which
 # scopes its own query.
 from ..db import get_conn
+from . import allergen_gate as _allergen_gate
 from . import cooker as _cooker
 from . import day_meals as _day_meals
 from . import defrost as _defrost
@@ -296,12 +297,29 @@ def is_takeout_night(meal: dict) -> bool:
     return not meal.get("recipe_id") and _weekly_plan.written_in_not_a_cook(meal.get("meal")) == "takeout"
 
 
+def _with_allergy_line(reason: str, clashes: list[dict] | None) -> str:
+    """A row's quiet line, with an allergy saved since approval said first
+    (allergen_gate.clashes_since_approval) — the one thing on the row that
+    must not be missed. The batch or reheat note follows it."""
+    if not clashes:
+        return reason
+    line = _allergen_gate.since_approval_line(clashes)
+    return f"{line} · {reason}" if reason else line
+
+
 def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[dict]:
     day_str = day.isoformat()
     moves: list[dict] = []
+    # Only this day's dishes are matched: the check reads every allergy
+    # and each dish's ingredients, and Today asks about one day at a time.
+    new_allergies = _allergen_gate.clashes_since_approval({
+        "weekly_plan_id": view.get("weekly_plan_id"),
+        "meals": [m for m in (view.get("meals") or []) if m.get("date") == day_str],
+    })
     for meal in view.get("meals") or []:
         if meal.get("date") != day_str:
             continue
+        allergy = new_allergies.get(meal.get("entry_id"))
         slot = meal.get("slot") or "dinner"
         at = _slot_dt(day, slot, dinner_clock)
         done = meal.get("cooked_status") == "done"
@@ -332,7 +350,8 @@ def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[di
                 "kind": "reheat",
                 "title": meal.get("meal") or headline or "Leftovers",
                 "detail": f"{provenance}{how} · {_clock(at.time())}",
-                "reason": meal.get("reheat_note") or "",
+                "reason": _with_allergy_line(meal.get("reheat_note") or "", allergy),
+                "allergy_note": _allergen_gate.since_approval_line(allergy, sentence=True) if allergy else "",
                 "date": day_str,
                 "slot": slot,
                 "window_start": at.isoformat(),
@@ -383,7 +402,8 @@ def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[di
                 "kind": "reheat",
                 "title": meal.get("meal") or slot.capitalize(),
                 "detail": f"{prepped_line} · {_clock(at.time())}",
-                "reason": "",
+                "reason": _with_allergy_line("", allergy),
+                "allergy_note": _allergen_gate.since_approval_line(allergy, sentence=True) if allergy else "",
                 "date": day_str,
                 "slot": slot,
                 "window_start": at.isoformat(),
@@ -445,7 +465,10 @@ def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[di
             # own `reasoning` used to be the fallback and was cut on
             # 2026-09-11 (copy cleanse) — it read as the planner explaining
             # itself, not as something a person would say across the table.
-            "reason": meal.get("covers_note") or "",
+            "reason": _with_allergy_line(meal.get("covers_note") or "", allergy),
+            # Its own field too, for the morning text (digest.py), which
+            # says it on a line of its own rather than inside the reason.
+            "allergy_note": _allergen_gate.since_approval_line(allergy, sentence=True) if allergy else "",
             "date": day_str,
             "slot": slot,
             "window_start": start.isoformat(),
