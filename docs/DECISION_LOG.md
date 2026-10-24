@@ -13,6 +13,13 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The Review "−" takes the dropped night's fridge move with it**
+  (2026-10-24, overnight hunt; branch `overnight/hunt-defrost-nudge-1024`;
+  tests `tests/test_drop_takes_its_thaw.py`). `drop_dish_from_day` deleted
+  its row by hand without `_release_prep_rows`, so a thaw booked at approval
+  outlived the dinner: chat's "what do I need to defrost?" and the Cook tab's
+  prep session still named it. Now released like every swap door; a ticked
+  thaw is held, and `held_thawed` rides on the result.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
