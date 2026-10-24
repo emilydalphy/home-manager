@@ -589,9 +589,23 @@ def list_spices_this_week() -> dict:
     ).fetchall()
     items, left_out = [], []
     by_section: dict[str, list[str]] = {k: [] for k in ASSUMED_SECTIONS}
+    # A sauce or staple the household already has its own line for — a
+    # typed "1 bag" of rice beside the recipes' "2 cups", which stay two
+    # lines when the amounts don't add up (grocery._merge_target) — is
+    # answered: they are buying it. Asking "Check you have this" about the
+    # recipes' share as well is the question twice, and a tick would buy
+    # both. The waiting line stays (it leaves with its week) and comes
+    # back here if their own line goes.
+    own_keys = {
+        _grocery._merge_key(r["item"]) for r in rows
+        if r["status"] != "spice" and r["source_weekly_plan_id"] is None
+    }
     for r in rows:
         section = assumed_section(r["item"])
         if r["status"] != "spice" and section is None:
+            continue
+        if (r["status"] == "spice" and section in (SECTION_SAUCES, SECTION_PANTRY)
+                and _grocery._merge_key(r["item"]) in own_keys):
             continue
         staple = rack.get(_grocery._merge_key(r["item"]))
         if (r["status"] != "spice" and section != SECTION_SPICES and r["source_weekly_plan_id"] is None

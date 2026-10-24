@@ -796,7 +796,20 @@ def _merge_target(same_name: list, quantity: str, consolidate, standing: bool, s
             merged_qty, merged = consolidate(row["quantity"] or "", quantity)
         if merged:
             return row, merged_qty, True
-        own_kind = (row["source_weekly_plan_id"] is None) == standing or (standing and row["status"] == "spice")
+        # A person's add joins a waiting 'spice' line only when it is a
+        # spice-rack line — one jar whatever is written, which the rack
+        # branch above settles. A waiting SAUCE or PANTRY STAPLE (pantry.py,
+        # 2026-10-18) shares the status but carries the recipes' real amount,
+        # so a typed "1 bag" of rice concatenated onto its "2 cups" read
+        # "2 cups + 1 bag", the merge made it the household's line, and no
+        # swap or drop could take the plan's "2 cups" back off — the
+        # 2026-09-13 bug above, through the one door it was left open. Its
+        # own line instead: theirs on the list, the plan's still waiting
+        # in its section, leaving with its week. An amount that adds up
+        # cleanly ("3 cups") still merges and ticks, above.
+        own_kind = (row["source_weekly_plan_id"] is None) == standing or (
+            standing and row["status"] == "spice" and _spices.is_spice(row["item"])
+        )
         if kin is None and own_kind:
             kin = (row, merged_qty, False)
     return kin
