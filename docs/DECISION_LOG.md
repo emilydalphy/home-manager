@@ -13,6 +13,18 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Every id-taking chat tool is now attacked with another household's id**
+  (2026-10-24; branch `overnight/test-gaps-chat-tools-1024`; tests
+  `tests/test_chat_tool_isolation.py`). It found two: `hold_thing` took a
+  foreign `member_id` and showed that household's adult as "said by" (their
+  name, on B's Today), and the chat's `add_grocery_item` stamped B's line with
+  A's plan as `source_weekly_plan_id`. Both now `require_household_row` first
+  (the grocery one in `add_grocery_item_for_chat` only — the ingest is
+  trusted); the held-things join is scoped too. Why: neither arg is in the
+  tool schema, but `agent.read_tool_input` passes undeclared keys through, so
+  the model can send them. A new tool with an id arg fails the test until it
+  is classified.
+
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
