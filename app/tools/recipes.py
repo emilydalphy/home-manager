@@ -1158,8 +1158,12 @@ _STEP_NICE_FRACTIONS = (
 
 # Measuring words a step's amount can carry, as written -> (canonical unit
 # for scale_recipe's rules, singular form, plural form). Abbreviations keep
-# their one spelling. Deliberately NOT here: pint/quart/inch (pots and
-# pieces far more often than food), "c" and "pinch"/"dash" (freeform).
+# their one spelling. Deliberately NOT here: pint/inch (pots and pieces far
+# more often than food), "c" and "pinch"/"dash" (freeform). Quart and gallon
+# ARE here since 2026-10-24 (review of overnight/kitchen-hunt-quarts: the
+# list said "3 quarts" of stock over a step still saying "1 ½ quarts"); a
+# pot's size is still left alone by the "a/an before it" rule, a vessel word
+# after it ("6 quart pot", "5 quart Dutch oven"), or a dash ("8-qt").
 _STEP_UNIT_WORDS: dict[str, tuple[str, str, str]] = {}
 for _canon, _sing, _plur in (
     ("cup", "cup", "cups"),
@@ -1182,11 +1186,15 @@ for _canon, _sing, _plur in (
     ("head", "head", "heads"),
     ("bunch", "bunch", "bunches"),
     ("handful", "handful", "handfuls"),
+    ("quart", "quart", "quarts"),
+    ("gallon", "gallon", "gallons"),
 ):
     _STEP_UNIT_WORDS[_sing] = (_canon, _sing, _plur)
     _STEP_UNIT_WORDS[_plur] = (_canon, _sing, _plur)
 for _abbr in ("tbsp", "tsp", "oz", "g", "kg", "ml", "l", "fl oz"):
     _STEP_UNIT_WORDS[_abbr] = (_abbr, _abbr, _abbr)
+for _abbr, _canon in (("qt", "quart"), ("gal", "gallon")):
+    _STEP_UNIT_WORDS[_abbr] = (_canon, _abbr, _abbr)
 
 # A measure followed by one of these sizes the container, not the food.
 _STEP_VESSEL_WORDS = {
@@ -1194,6 +1202,7 @@ _STEP_VESSEL_WORDS = {
     "bag", "bags", "box", "boxes", "bottle", "bottles", "carton", "cartons",
     "container", "containers", "tub", "tubs", "block", "blocks", "pan", "pans",
     "pot", "pots", "saucepan", "skillet", "dish", "casserole", "sheet", "tray",
+    "stockpot", "stockpots", "dutch", "slow", "crockpot", "kettle", "roaster", "bowl",
 }
 _STEP_SIZE_WORDS = ("large", "medium", "small", "whole")
 # A number after one of these is a count of pieces or portions, not an

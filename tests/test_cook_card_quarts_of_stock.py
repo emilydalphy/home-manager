@@ -82,3 +82,32 @@ def test_quarts_and_a_quart_are_one_unit_to_the_list_too():
     assert _quantities._parse_quantity("2 quarts") == (2.0, "quart")
     assert _quantities._parse_quantity("1 gallon") == (1.0, "gallon")
     assert _quantities._format_quantity(3, "quart") == "3 quarts"
+
+
+def test_a_step_scales_quarts_of_food_and_leaves_the_pot_alone():
+    """Review, 2026-10-24: the list said "3 quarts" of stock while the step
+    still said "1 ½ quarts". Both in one step: the stock scales, the pot
+    doesn't — whichever way the pot's size is written."""
+    tools.add_recipe(
+        "Stock Pot",
+        ingredients=[
+            {"item": "chicken stock", "qty": "1 ½ quarts"},
+            {"item": "beef broth", "qty": "2 qt"},
+            {"item": "water", "qty": "1 gallon"},
+        ],
+        default_servings=4,
+        instructions=[
+            "Bring 1 ½ quarts chicken stock to a boil in a 6 quart pot",
+            "Add 2 qt beef broth and 1 gallon water to an 8-qt stockpot or 6 quart pot",
+        ],
+        amounts_as_written=True,
+    )
+
+    scaled = tools.scale_recipe("Stock Pot", 8)
+
+    qty = {i["item"]: i["qty"] for i in scaled["scaled_ingredients"]}
+    assert qty["chicken stock"] == "3 quarts"
+    assert scaled["scaled_instructions"] == [
+        "Bring 3 quarts chicken stock to a boil in a 6 quart pot",
+        "Add 4 qt beef broth and 2 gallons water to an 8-qt stockpot or 6 quart pot",
+    ]
