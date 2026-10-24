@@ -22,6 +22,12 @@ why*, not duplicating the diff.
   (`recipe_change._approved_users_of`, apply_rewrite's sequence, one
   transaction). Since the added lines are now bought, they get
   `add_recipe_for_chat`'s allergen gate: a hard clash refuses the edit.
+  Review fixes: a night ticked cooked is never re-bought for
+  (`_approved_users_of` skips `cooked_status = 'done'`, which apply_rewrite
+  and undo share); `recipe_change._rebuy_after_edit` reverses only unticked
+  lines and buys each night's new share less what is in the cart or bought
+  (1 lb ticked + servings doubled = 1 lb more, not 2); a same-value servings
+  call rebuilds nothing. apply_rewrite still re-buys over a ticked line.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

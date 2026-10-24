@@ -550,23 +550,27 @@ def update_recipe_details(
         # A changed list or serving count changes what an approved week
         # buys for this dish. The steps' new eggs used to reach the recipe
         # and never the shopping list (2026-10-24): the list is taken back
-        # off for every night still ahead on this recipe and bought again
-        # from the row as it now stands — apply_rewrite's own sequence, in
-        # the same transaction as the edit. Nights already cooked, drafts
-        # and past weeks are left alone (_approved_users_of).
+        # off for every night still ahead and uncooked on this recipe and
+        # bought again from the row as it now stands, less what is already
+        # ticked (recipe_change._rebuy_after_edit), in the same transaction
+        # as the edit. Cooked nights, drafts and past weeks are left alone
+        # (_approved_users_of).
         from . import recipe_change as _recipe_change   # circular at module scope
-        reprices_the_list = any(
-            f.startswith(("ingredients_json", "default_servings")) for f in fields
+        # Only when something the list is bought from really changed: a
+        # same-value servings call rebuilt every line under new ids, which
+        # an open Shop screen or a queued offline tick still points at.
+        reprices_the_list = any(f.startswith("ingredients_json") for f in fields) or (
+            default_servings is not None and default_servings != existing["default_servings"]
         )
         try:
             users = _recipe_change._approved_users_of(conn, existing["id"]) if reprices_the_list else {}
-            _recipe_change._unbuy_users(conn, users)
             conn.execute(
                 f"UPDATE recipes SET {', '.join(fields)} WHERE id = ? AND household_id = ?",
                 params,
             )
             if users:
-                _recipe_change._rebuy_users(conn, users)
+                # Less what is already in the cart or bought for those nights.
+                _recipe_change._rebuy_after_edit(conn, users)
             conn.commit()
         except Exception:
             conn.rollback()
