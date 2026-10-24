@@ -473,6 +473,10 @@ def set_leftovers_stance(value: str, source: str = "onboarding") -> dict:
     return {"leftovers_stance": value}
 
 
+# The longest one prep day can be: a day. Anything above is a typo.
+MAX_PREP_MINUTES = 24 * 60
+
+
 def _normalize_prep_days(days) -> list[dict]:
     """
     The stored shape, from whatever a caller handed in: a list of
@@ -497,9 +501,18 @@ def _normalize_prep_days(days) -> list[dict]:
         if minutes in ("", None):
             minutes = None
         else:
-            minutes = int(minutes)
+            # Refused in words, never Python's ("invalid literal for int()
+            # with base 10: 'abc'" reached the screen as the 400's detail),
+            # and never more than a day: a prep session of 10**30 minutes
+            # was stored as typed (defect hunt 2026-10-24).
+            try:
+                minutes = int(minutes)
+            except (TypeError, ValueError, OverflowError):
+                raise ValueError("minutes must be a whole number of minutes, or omitted.")
             if minutes <= 0:
                 raise ValueError("minutes must be a positive number of minutes, or omitted.")
+            if minutes > MAX_PREP_MINUTES:
+                raise ValueError(f"minutes can't be more than a day ({MAX_PREP_MINUTES}).")
         note = (raw.get("note") or "").strip() or None
         out.append({"weekday": weekday, "minutes": minutes, "note": note})
         seen.add(weekday)
@@ -724,7 +737,10 @@ def checked_timezone(name: str) -> str:
     zone = _BROWSER_ZONE_NAMES.get(zone, zone)
     try:
         ZoneInfo(zone)
-    except (ZoneInfoNotFoundError, ValueError):
+    except (ZoneInfoNotFoundError, ValueError, OSError):
+        # OSError: a name too long to be a file on this system ("File name
+        # too long") was a 500 from Preferences' clock and setup's rhythm
+        # save (defect hunt 2026-10-24). Not a zone either way.
         raise ValueError(f"I don't know the time zone {name!r} — it wants a name like America/Toronto.")
     # ZoneInfo also opens files that are not places — 'localtime',
     # 'posixrules', 'Factory' — which would make "today" whatever the

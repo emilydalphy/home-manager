@@ -13,6 +13,13 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Rhythm junk is refused in words** (2026-10-24, defect hunt; branch
+  `overnight/prefs-b`; tests `tests/test_rhythm_input_words.py`). A very long
+  time zone was a 500 from `/api/household/clock` and `/api/onboarding/rhythm`
+  (ZoneInfo's OSError "File name too long" got past `checked_timezone`); prep
+  minutes "abc" answered "invalid literal for int()…", and 10**30 minutes was
+  stored. Now all three are 400s in a sentence; a prep day is capped at a day
+  (`rhythm.MAX_PREP_MINUTES`). Why: setup and Preferences show the detail.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
