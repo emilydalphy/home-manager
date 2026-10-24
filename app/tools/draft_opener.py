@@ -211,6 +211,8 @@ def settle_report(plan_id: int, report: dict | None, model_spans: list[str]) -> 
         without citing any slot is left as it said: there is nothing to
         check it against, and the opener's rule is to say nothing rather
         than guess (module docstring);
+      * one whose cited dish the allergen gate swapped is said neither way
+        (the replacement may or may not still answer it);
       * a "moved" line whose dish is no longer on the meal it names is
         dropped — its request is then said like any other.
 
@@ -229,18 +231,52 @@ def settle_report(plan_id: int, report: dict | None, model_spans: list[str]) -> 
         ).fetchall()
         conn.close()
         planned = [r for r in rows if (r["slot_state"] or "planned") == "planned"]
-        still = [s for s in (their_words(_derived({"derived_from": r["derived_from_json"]})) for r in planned) if s]
+        # Matched on the model's own span STRINGS, not on word overlap:
+        # every pass carries derived_from across unchanged, so the span it
+        # wrote is still there, verbatim, wherever its dish still is. Word
+        # overlap (_cited) is loose by design — "Chicken tacos on Tuesday"
+        # and "Chicken curry on Friday" share a word — and here it let a
+        # request whose dish was gone borrow the other's slot (review,
+        # 2026-10-24: "Chicken tacos Tuesday Friday, … as you asked,
+        # Tuesday left free.").
+        still, swapped = set(), set()
+        for r in planned:
+            d = _derived({"derived_from": r["derived_from_json"]})
+            span = str(d.get("freeform") or "").strip().lower()
+            if span:
+                (swapped if d.get("allergen_repick") else still).add(span)
         spans = [s for s in (str(x or "").strip() for x in model_spans) if s]
 
-        honoured, lost = [], []
-        for r in report.get("honoured_requests") or []:
-            words = str((r or {}).get("words") or "").strip() if isinstance(r, dict) else ""
-            if words and any(_cited(words, s) for s in spans) and not any(_cited(words, s) for s in still):
-                lost.append(r)
-            else:
+        requests = [r for r in report.get("honoured_requests") or []]
+        words_of = [str(r.get("words") or "").strip() if isinstance(r, dict) else "" for r in requests]
+        # Each span goes to the request it shares the MOST words with (ties
+        # to all of them): both chicken requests are _cited by both spans.
+        owners: dict[int, set] = {i: set() for i in range(len(requests))}
+        for span in spans:
+            scores = {i: len(_content_words(w) & _content_words(span))
+                      for i, w in enumerate(words_of) if w and _cited(w, span)}
+            best = max(scores.values(), default=0)
+            for i, score in scores.items():
+                if score == best:
+                    owners[i].add(span.lower())
+
+        honoured, lost, unsaid = [], [], []
+        for i, r in enumerate(requests):
+            mine = owners[i]
+            if not mine or mine & still:
                 honoured.append(r)
-        if lost:
+            elif mine & swapped:
+                # The allergen gate swapped the dish: the replacement may
+                # still answer the request (Shrimp Pad Thai → Chicken Pad
+                # Thai) or may not, and nothing here can tell. So it is
+                # neither "as you asked" nor "couldn't fit" — it is not
+                # said at all (the wording is Emily's to give).
+                unsaid.append(r)
+            else:
+                lost.append(r)
+        if lost or unsaid:
             report["honoured_requests"] = honoured
+        if lost:
             report["unmet_requests"] = list(report.get("unmet_requests") or []) + [
                 {"words": r["words"], "reason": "not on the week after all"} for r in lost
             ]

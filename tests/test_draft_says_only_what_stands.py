@@ -146,7 +146,9 @@ def test_a_requested_dish_swapped_for_an_allergy_is_not_as_you_asked(household, 
     assert _dinner(plan_id, dates[1])["meal"].startswith("Quick Dish")
     menu = tools.get_week_menu(plan_id)
     assert not any("as you asked" in line for line in menu["draft_opener"]), menu["draft_opener"]
-    assert "I couldn’t fit “Peanut noodles one night” in this week." in menu["draft_opener"]
+    # Nor "couldn't fit": a swap may still answer a request (review,
+    # 2026-10-24 — Shrimp Pad Thai → Chicken Pad Thai), so it is not said.
+    assert not any("Peanut noodles" in line for line in menu["draft_opener"]), menu["draft_opener"]
     tuesday = next(d for d in menu["days"] if d["date"] == dates[1])
     assert not (tuesday["dinner"].get("asked") or ""), tuesday["dinner"]
 
@@ -217,3 +219,68 @@ def test_tomorrow_still_moves_onto_a_night_someone_is_home(household, picker, mo
 
     assert _dinner(plan_id, PERIOD[1])["meal"] == "Lamb Curry"
     assert "I moved Lamb Curry to Monday dinner, as you asked." in tools.get_week_menu(plan_id)["draft_opener"]
+
+
+def test_two_requests_sharing_a_word_do_not_vouch_for_each_other(household, picker, monkeypatch):
+    """CATCH (review, 2026-10-24). "Chicken tacos on Tuesday" and "Chicken
+    curry on Friday" share "chicken"; Tuesday is tagged out, so the tacos
+    are gone. Word overlap let the curry's slot keep the tacos credited."""
+    week = _next_monday()
+    dates = tools.period_dates(week, 7)
+    tacos, curry = "Chicken tacos on Tuesday", "Chicken curry on Friday"
+    tools.save_week_intake(week, night_tags={dates[1]: ["out"]}, freeform=f"{tacos}. {curry}.")
+    _model(monkeypatch, _week(dates, {
+        dates[1]: _slot(dates[1], "dinner", "Chicken Tacos", freeform=tacos),
+        dates[4]: _slot(dates[4], "dinner", "Chicken Curry", freeform=curry),
+    }), [{"words": tacos, "label": "Chicken tacos"}, {"words": curry, "label": "Chicken curry"}])
+
+    plan_id = agent.generate_weekly_plan(week)["weekly_plan_id"]
+
+    opener = tools.get_week_menu(plan_id)["draft_opener"]
+    assert not any("tacos" in line.lower() and "as you asked" in line for line in opener), opener
+    assert "Chicken curry Friday, as you asked" in opener[0], opener
+    assert "I couldn’t fit “Chicken tacos on Tuesday” in this week." in opener
+
+
+def test_an_allergen_swap_that_may_still_meet_the_request_is_not_called_unmet(household, picker, monkeypatch):
+    """CATCH (review, 2026-10-24). Shellfish allergy, "Pad Thai on Friday",
+    the model's Shrimp Pad Thai swapped by the gate: the request is said
+    neither as met nor as unmet."""
+    tools.set_member_dietary_restrictions("Emily", ["shellfish allergy"])
+    week = _next_monday()
+    dates = tools.period_dates(week, 7)
+    words = "Pad Thai on Friday"
+    tools.save_week_intake(week, freeform=words)
+    shrimp = _slot(dates[4], "dinner", "Shrimp Pad Thai", freeform=words,
+                   ingredients=[{"item": "shrimp", "qty": "1 lb", "category": "seafood"}])
+    _model(monkeypatch, _week(dates, {dates[4]: shrimp}), [{"words": words, "label": "Pad Thai Friday"}])
+
+    plan_id = agent.generate_weekly_plan(week)["weekly_plan_id"]
+
+    assert _dinner(plan_id, dates[4])["meal"] != "Shrimp Pad Thai"
+    opener = tools.get_week_menu(plan_id)["draft_opener"]
+    assert not any("Pad Thai" in line for line in opener), opener
+
+
+@pytest.mark.real_time_of_day
+def test_tomorrow_is_not_pinned_onto_a_meal_they_asked_for_none_of(household, picker, monkeypatch, frozen_today):
+    """CATCH (review nit). Lunches 0: every lunch is emptied, so "Soup for
+    lunch tomorrow" is not pinned there and no line claims a move."""
+    frozen_today(household_pin(9, 0, on=datetime.date(2026, 9, 27)))
+    tools.set_household_meal_preferences(lunches_per_week=0)
+    words = "Soup for lunch tomorrow."
+    tools.save_week_intake(SUNDAY, day_count=6, freeform=words)
+    days = _week(PERIOD, {})
+    days = [d for d in days if not (d["date"] == PERIOD[3] and d["slot"] == "lunch")]
+    days.append(_slot(PERIOD[3], "lunch", "Tomato Soup", freeform=words))
+    _model(monkeypatch, days, [{"words": words, "label": "Soup lunch"}])
+    told = []
+    stub = agent.generate_weekly_plan_llm
+    monkeypatch.setattr(agent, "generate_weekly_plan_llm", lambda ctx: told.append(ctx) or stub(ctx))
+
+    plan_id = agent.generate_weekly_plan(SUNDAY, day_count=6, period_start=SUNDAY)["weekly_plan_id"]
+
+    assert not told[0].get("freeform_on_a_day"), "the model is not told to pin soup onto a lunch nobody eats"
+    opener = tools.get_week_menu(plan_id)["draft_opener"]
+    assert not any("I moved" in line for line in opener), opener
+    assert not any("Soup" in line and "as you asked" in line for line in opener), opener

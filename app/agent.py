@@ -7191,6 +7191,12 @@ def _generate_weekly_plan(
         nobody_eats = {(d, "dinner") for d, tags in night_tags.items() if "out" in (tags or [])}
         nobody_eats |= {(d, s) for d in usual_skipped for s in ("breakfast", "lunch", "dinner")}
         nobody_eats |= {(s["date"], s["slot"]) for s in usual_plan["off_slots"]}
+        # A meal they asked for none of (Lunches 0): emptied every day by
+        # _finish_week_slots' zero-count pass, so the same trap.
+        nobody_eats |= {
+            (d, slot) for slot, field in _meal_variety.COUNT_FIELDS.items()
+            if household_memory.get(field) == 0 for d in period_days
+        }
         nobody_eats |= {
             (s["date"], s["slot"])
             for s in tools.generation_context_for_week(content_start_date, day_count)["away_slots"]
