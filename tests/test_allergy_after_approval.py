@@ -83,3 +83,40 @@ def test_a_hard_fact_written_after_approval_counts_too():
     tools.approve_weekly_plan(plan_id, approved_by="Emily")
     tools.add_fact("people", "Emily is allergic to peanuts", hard=True)
     assert "which Emily can’t have" in _tonight()["reason"]
+
+
+def test_the_warning_rides_on_the_tonight_line_so_a_full_text_never_trims_it(signed_in):
+    from app.tools import digest
+    plan_id = _week_with_peanut_noodles_tonight()
+    tools.approve_weekly_plan(plan_id, approved_by="Emily")
+    tools.set_member_dietary_restrictions("Theo", ["peanut allergy"])
+    tonight_line = next(l for l in signed_in.get("/api/morning-text/preview").json()["lines"]
+                        if l.startswith("Tonight:"))
+    assert tonight_line.endswith("It has peanut, which Theo can’t have — swap it on Plan.")
+    # A busy morning: every other part has a long line competing for the
+    # production budget (MAX_TEXT_CHARS less a link).
+    filler = "x" * 70
+    tagged = [("meals", tonight_line), ("freezer", "Move the beef to the fridge " + filler),
+              ("prep", "Marinate the chicken " + filler), ("start", "Start by 5:45 " + filler),
+              ("shop", "Shop for tonight " + filler), ("kitchen", "Use the spinach " + filler)]
+    lines, _said, _dropped = digest._trim_to_budget(tagged, digest.MAX_TEXT_CHARS - 47)
+    assert lines[0] == tonight_line
+
+
+def test_a_week_approved_before_the_record_existed_starts_quiet():
+    from app.db import get_conn
+    from app.tools import allergen_gate
+    plan_id = _week_with_peanut_noodles_tonight()
+    tools.set_member_dietary_restrictions("Theo", ["peanut allergy"])
+    tools.approve_weekly_plan(plan_id, approved_by="Emily", confirm_hard_conflicts=True)
+    conn = get_conn()
+    conn.execute("UPDATE weekly_plans SET avoidances_at_approval_json = '' WHERE id = ?", (plan_id,))
+    conn.commit()
+    conn.close()
+
+    assert allergen_gate.snapshot_unrecorded_approvals() == 1
+    assert _tonight()["reason"] == "", "the clash approved past before the deploy stays quiet"
+    assert allergen_gate.snapshot_unrecorded_approvals() == 0, "a recorded week is never re-snapshotted"
+
+    tools.add_fact("people", "Emily is allergic to peanuts", hard=True)
+    assert "which Emily can’t have" in _tonight()["reason"], "an allergy added after it still is said"

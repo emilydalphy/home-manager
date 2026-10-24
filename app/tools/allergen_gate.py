@@ -350,11 +350,53 @@ def avoidance_keys_now() -> list[str]:
     return sorted({avoidance_key(a) for a in hard_avoidances()})
 
 
+def snapshot_unrecorded_approvals() -> int:
+    """
+    Give every approved week that has no record yet ('' — approved before
+    the column existed) the household's avoidances as they are NOW, so a
+    week in flight when this shipped starts quiet: a clash the household
+    already approved past with "Approve anyway" is not raised on Today the
+    morning after a deploy (review, 2026-10-24). Only allergies added after
+    this runs are new. Run at startup (main.startup); idempotent — a week
+    with a record, even '[]', is never touched. Returns weeks recorded.
+    """
+    from ..db import get_conn
+    conn = get_conn()
+    try:
+        rows = conn.execute(
+            "SELECT id, household_id FROM weekly_plans "
+            "WHERE status = 'approved' AND avoidances_at_approval_json = ''"
+        ).fetchall()
+    finally:
+        conn.close()
+    by_household: dict[int, list[int]] = {}
+    for r in rows:
+        by_household.setdefault(int(r["household_id"]), []).append(int(r["id"]))
+    done = 0
+    for hid, plan_ids in by_household.items():
+        with _shared.use_household(hid):
+            keys = json.dumps(avoidance_keys_now())
+            conn = get_conn()
+            try:
+                for pid in plan_ids:
+                    conn.execute(
+                        "UPDATE weekly_plans SET avoidances_at_approval_json = ? "
+                        "WHERE id = ? AND household_id = ? AND avoidances_at_approval_json = ''",
+                        (keys, pid, hid),
+                    )
+                    done += 1
+                conn.commit()
+            finally:
+                conn.close()
+    return done
+
+
 def _keys_at_approval(weekly_plan_id) -> set[str] | None:
-    """The keys the week was approved with; an empty set for a week
-    approved before they were recorded (every allergy counts as new — an
-    allergy is the one thing better said twice than not at all); None when
-    the plan isn't an approved one of this household's."""
+    """The keys the week was approved with — an empty set if none were
+    recorded (snapshot_unrecorded_approvals fills those at startup, so this
+    only happens if that failed: then every allergy counts as new, the one
+    thing better said twice than not at all); None when the plan isn't an
+    approved one of this household's."""
     from ..db import get_conn
     conn = get_conn()
     try:

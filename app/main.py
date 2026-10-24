@@ -1355,6 +1355,15 @@ class ResetRequest(BaseModel):
 def startup():
     init_db()
     _prune_chat_sessions_now()
+    # Weeks approved before the allergies-at-approval record existed get
+    # today's allergies as theirs, so a clash already approved past isn't
+    # raised again after a deploy (allergen_gate.snapshot_unrecorded_approvals).
+    # A failure here must not stop the app; those weeks then flag every clash.
+    try:
+        from .tools import allergen_gate as _allergen_gate
+        _allergen_gate.snapshot_unrecorded_approvals()
+    except Exception:
+        logger.exception("Recording allergies on already-approved weeks failed")
     # Says in the logs, on day one, whether this database will survive a
     # redeploy — rather than leaving that discoverable only by losing it.
     backup.warn_if_database_is_ephemeral()

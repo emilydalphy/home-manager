@@ -18,12 +18,15 @@ why*, not duplicating the diff.
   `tests/test_allergy_after_approval.py`). Approval now records the hard
   avoidances on file (`weekly_plans.avoidances_at_approval_json`); a newer one
   that a still-to-eat dish trips puts "Has peanut, which Theo can’t have —
-  swap it on Plan" on Today's cook/reheat row and "It has peanut…" after
-  "Tonight:" in the morning text (`allergen_gate.clashes_since_approval`). The
-  week is not changed (warn, never block). Why: an approved week was checked
-  once and never again, so a Preferences allergy left Today and the text
-  silent. A clash confirmed at approval stays quiet; a week approved before
-  the column has '' and every clash counts as new. `.day-node-why` wraps.
+  swap it on Plan" on Today's cook/reheat row and "It has peanut…" ON the
+  morning text's "Tonight:" line, so the budget trim can't drop it
+  (`allergen_gate.clashes_since_approval`). The week is not changed (warn,
+  never block). Why: an approved week was checked once and never again, so a
+  Preferences allergy left Today and the text silent. A clash confirmed at
+  approval stays quiet; weeks approved before this get today's allergies at
+  startup (`snapshot_unrecorded_approvals`). Rewording an allergy counts as
+  new. On Today it follows the "Start by" chip (order is shell.js's);
+  `.day-node-why` wraps.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

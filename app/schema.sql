@@ -671,7 +671,9 @@ CREATE TABLE IF NOT EXISTS weekly_plans (
     -- approval is not in it, so Today and the morning text can say which
     -- planned dish now has it (allergen_gate.clashes_since_approval) — and
     -- a clash the household confirmed at approval is not raised again.
-    -- '' on a week approved before this existed: every clash is new.
+    -- '' on a week approved before this existed until the next startup,
+    -- which records the allergies of that moment on it
+    -- (allergen_gate.snapshot_unrecorded_approvals).
     avoidances_at_approval_json TEXT NOT NULL DEFAULT '',
     constraints_notes TEXT NOT NULL DEFAULT '', -- freeform per-week asks, e.g. "out Thu/Fri, keep it under 30 min"
     -- Snapshotted from meal_preferences.planning_mode at creation time, so a

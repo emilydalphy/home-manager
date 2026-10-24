@@ -298,9 +298,12 @@ def is_takeout_night(meal: dict) -> bool:
 
 
 def _with_allergy_line(reason: str, clashes: list[dict] | None) -> str:
-    """A row's quiet line, with an allergy saved since approval said first
-    (allergen_gate.clashes_since_approval) — the one thing on the row that
-    must not be missed. The batch or reheat note follows it."""
+    """A row's quiet line (`reason`), with an allergy saved since approval
+    (allergen_gate.clashes_since_approval) ahead of the batch or reheat
+    note. On Today the screen puts a cook's "Start by" chip before the
+    whole reason (shell.js dayNodeWhyHtml), so the line reads "Start by
+    7:35 · Has peanut, …" — first in the reason, second on the row.
+    Leading the row needs shell.js; noted for Emily (review, 2026-10-24)."""
     if not clashes:
         return reason
     line = _allergen_gate.since_approval_line(clashes)

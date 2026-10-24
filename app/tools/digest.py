@@ -570,6 +570,14 @@ def _tidy(text: str) -> str:
     return re.sub(r"\s+", " ", (text or "").replace(" · ", ", ")).strip().rstrip(".?!")
 
 
+def _allergy_clause(move: dict) -> str:
+    """" It has peanut, which Theo can’t have — swap it on Plan." for a
+    move carrying an allergy saved since approval (moves.py's
+    allergy_note), else ''."""
+    note = (move.get("allergy_note") or "").strip()
+    return f" {note}" if note else ""
+
+
 def _takeout_tonight(payload: dict) -> str:
     """Tonight's written-in takeout dish as Today's meals row names it, or ''."""
     for row in payload.get("day_meals") or []:
@@ -630,11 +638,16 @@ def _digest_parts(now_local: datetime, included) -> list[tuple[str, str]]:
     # is where the rest of what you're eating today belongs.
     if "meals" in want:
         dinner_reheat = next((m for m in by_kind.get("reheat", []) if m["slot"] == "dinner"), None)
+        # An allergy saved since the week was approved, which tonight's dish
+        # has (allergen_gate.clashes_since_approval), rides ON the "Tonight:"
+        # line: the first line of a part is the one _trim_to_budget always
+        # keeps, so the warning can never be trimmed away from the dish it
+        # is about on a busy morning (review, 2026-10-24).
         if dinner_cook:
-            parts.append(("meals", f"Tonight: {_tidy(dinner_cook['title'])}."))
+            parts.append(("meals", f"Tonight: {_tidy(dinner_cook['title'])}.{_allergy_clause(dinner_cook)}"))
         elif dinner_reheat:
             provenance = _tidy(dinner_reheat["detail"]).split(",")[0]
-            parts.append(("meals", f"Tonight: {_tidy(dinner_reheat['title'])}, {provenance}."))
+            parts.append(("meals", f"Tonight: {_tidy(dinner_reheat['title'])}, {provenance}.{_allergy_clause(dinner_reheat)}"))
         elif _takeout_tonight(payload):
             # A takeout night is no move (moves._cook_and_reheat_moves), so
             # it is read off Today's own meals row: named, never a start.
@@ -685,13 +698,6 @@ def _digest_parts(now_local: datetime, included) -> list[tuple[str, str]]:
             # (agent.py's per-slot pass) off the SMS channel entirely, a
             # standing property worth not undoing.
             parts.append(("meals", "Tonight's still open — it's your call."))
-
-        # An allergy saved since the week was approved, which tonight's
-        # dish has (allergen_gate.clashes_since_approval): said straight
-        # under the dish it is about, never left for Today to say alone.
-        tonight = dinner_cook or dinner_reheat
-        if tonight and tonight.get("allergy_note"):
-            parts.append(("meals", tonight["allergy_note"]))
 
         # The other meals being cooked today, after tonight's.
         for m in by_kind.get("cook", []):
