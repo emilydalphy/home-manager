@@ -3567,11 +3567,6 @@ def _rescale_leftover_source_grocery(source_entry_id: int, unlinked_entry_id: in
         return
 
     shared = None if own_conn else conn
-    # What the shopper has already ticked for this recipe-week, read BEFORE
-    # anything is reversed — see _ticked_recipe_week below.
-    bought, untouched = _ticked_recipe_week(
-        shared, [e["id"] for e in entries] + ([unlinked_entry_id] if unlinked_entry_id else []),
-    )
     if unlinked_entry_id:
         # Excluded means OFF the ledger, not just out of the re-ingest. Its
         # rows left standing are counted by every recompute below, and the
@@ -3586,158 +3581,10 @@ def _rescale_leftover_source_grocery(source_entry_id: int, unlinked_entry_id: in
         # caller's own reversal a no-op: its ledger rows are already gone.
         _grocery._reverse_meal_grocery_contributions(unlinked_entry_id, conn=shared)
     for entry in entries:
-        # Only the rows on lines still to buy. A ticked row stays on the
-        # ledger: it is food already bought for this week, and
-        # bring_over.bought_items reads it next week.
-        _grocery._reverse_meal_grocery_contributions(
-            entry["id"], conn=shared, only_link_ids=untouched.get(entry["id"], []),
-        )
+        _grocery._reverse_meal_grocery_contributions(entry["id"], conn=shared)
     buffer = _recipes.WeekGroceryBuffer(source["weekly_plan_id"], conn=shared)
     _ingest_recipe_group_and_sides(entries, source["weekly_plan_id"], buffer)
     buffer.flush()
-    if bought:
-        _take_ticked_off_rebuy(shared, [e["id"] for e in entries], bought)
-
-
-# A line the shopper has acted on. Never recomputed or removed by a
-# reversal (grocery._reverse_meal_grocery_contributions leaves it alone).
-_TICKED_LINE_STATUSES = ("in_cart", "purchased")
-
-
-def _ticked_recipe_week(conn, entry_ids: list[int]) -> tuple[dict[str, list[str]], dict[int, list[int]]]:
-    """
-    For a rescale: ({merge key: [ledger shares on TICKED lines]}, {entry id:
-    [ledger row ids on lines still to buy]}).
-
-    WHY (2026-10-24, hunt-leftovers-1024): the rescale reverses and
-    re-ingests the whole recipe-week, and a reversal leaves a ticked line
-    exactly as it is — so what was already bought went on the list AGAIN,
-    whenever inventory's "already have" didn't happen to cover it. Driven
-    on a throwaway DB: Monday's chili batched for Wednesday, shopped,
-    Monday cooked (which depletes the kitchen), then "cook the chili fresh
-    on Wednesday" — "2 lbs" turkey and "2 cans" beans needed again. A
-    partial shop (1 lb of a 2 lb need ticked) re-bought the full 2 lbs.
-    The bought amount is counted across the GROUP, not per night: a
-    batch is exactly shares moving between its nights, so Tuesday's ticked
-    2 lbs is what covers Thursday once Thursday cooks for itself.
-    """
-    if not entry_ids:
-        return {}, {}
-    own = conn is None
-    c = get_conn() if own else conn
-    try:
-        marks = ",".join("?" * len(entry_ids))
-        rows = c.execute(
-            "SELECT l.id, l.meal_plan_entry_id, l.item, l.quantity, g.status "
-            "FROM meal_plan_grocery_links l LEFT JOIN grocery_items g "
-            "  ON g.id = l.grocery_item_id AND g.household_id = l.household_id "
-            f"WHERE l.household_id = ? AND l.meal_plan_entry_id IN ({marks}) ORDER BY l.id",
-            (household_id(), *entry_ids),
-        ).fetchall()
-    finally:
-        if own:
-            c.close()
-    bought: dict[str, list[str]] = {}
-    untouched: dict[int, list[int]] = {}
-    for r in rows:
-        if r["status"] in _TICKED_LINE_STATUSES:
-            if (r["quantity"] or "").strip():
-                bought.setdefault(_grocery._merge_key(r["item"] or ""), []).append(r["quantity"])
-        else:
-            untouched.setdefault(int(r["meal_plan_entry_id"]), []).append(int(r["id"]))
-    return bought, untouched
-
-
-def _take_ticked_off_rebuy(conn, entry_ids: list[int], bought: dict[str, list[str]]) -> None:
-    """
-    After a rescale's re-ingest: cut each fresh ledger share by what the
-    shopper already ticked for the same food (_ticked_recipe_week), then
-    restate the line from its ledger — and take the line away when every
-    share on it is already bought. The same "a ticked line buys only the
-    difference" rule a recipe edit follows. An amount the subtraction can't
-    reconcile (a freeform "a handful") is left as the ingest wrote it:
-    buying one thing twice beats guessing it is already in the kitchen.
-    """
-    own = conn is None
-    c = get_conn() if own else conn
-    hid = household_id()
-    try:
-        marks = ",".join("?" * len(entry_ids))
-        fresh = c.execute(
-            "SELECT l.id, l.item, l.quantity, l.grocery_item_id, g.status, g.quantity AS line_qty, "
-            "       g.source_weekly_plan_id "
-            "FROM meal_plan_grocery_links l JOIN grocery_items g "
-            "  ON g.id = l.grocery_item_id AND g.household_id = l.household_id "
-            f"WHERE l.household_id = ? AND l.meal_plan_entry_id IN ({marks}) ORDER BY l.id",
-            (hid, *entry_ids),
-        ).fetchall()
-        remaining = {k: list(v) for k, v in bought.items()}
-        touched: set[int] = set()
-        for link in fresh:
-            if link["status"] in _TICKED_LINE_STATUSES:
-                continue  # one of the ticked rows themselves
-            had = remaining.get(_grocery._merge_key(link["item"] or ""))
-            if not had:
-                continue
-            left, used = link["quantity"] or "", []
-            while had and left:
-                cut, gone = _grocery._subtract_quantity(left, had[0])
-                if gone:
-                    # This share is covered; keep what is left of the tick
-                    # for the next share of the same food.
-                    rest, rest_gone = _grocery._subtract_quantity(had[0], left)
-                    used.append(left)
-                    if rest_gone or rest == had[0]:
-                        had.pop(0)
-                    else:
-                        had[0] = rest
-                    left = ""
-                elif cut == left:
-                    break  # units that don't reconcile — leave it to buy
-                else:
-                    used.append(had.pop(0))
-                    left = cut
-            if not used:
-                continue
-            if link["source_weekly_plan_id"] is None:
-                # A person's own line the share was merged onto: the ledger
-                # can't restate it, so the covered part comes off its words.
-                line_left, line_gone = link["line_qty"] or "", False
-                for qty in used:
-                    line_left, line_gone = _grocery._subtract_quantity(line_left, qty)
-                    if line_gone:
-                        break
-                if not line_gone and line_left != (link["line_qty"] or ""):
-                    c.execute("UPDATE grocery_items SET quantity = ? WHERE id = ? AND household_id = ?",
-                              (line_left, link["grocery_item_id"], hid))
-            if left:
-                c.execute("UPDATE meal_plan_grocery_links SET quantity = ? WHERE id = ? AND household_id = ?",
-                          (left, link["id"], hid))
-            else:
-                c.execute("DELETE FROM meal_plan_grocery_links WHERE id = ? AND household_id = ?",
-                          (link["id"], hid))
-            touched.add(int(link["grocery_item_id"]))
-        for item_id in touched:
-            still = c.execute(
-                "SELECT 1 FROM meal_plan_grocery_links WHERE household_id = ? AND grocery_item_id = ? LIMIT 1",
-                (hid, item_id),
-            ).fetchone()
-            if still:
-                _grocery._recompute_plan_line_from_ledger(item_id, conn=c)
-            else:
-                # Nothing left wanting it: a plan line goes (a person's own
-                # line, and one holding a kept amount, never do).
-                c.execute(
-                    "DELETE FROM grocery_items WHERE id = ? AND household_id = ? "
-                    "AND source_weekly_plan_id IS NOT NULL AND status IN ('needed', 'spice') "
-                    "AND COALESCE(kept_amount, '') = ''",
-                    (item_id, hid),
-                )
-        if own:
-            c.commit()
-    finally:
-        if own:
-            c.close()
 
 
 def _dedupe_duplicate_slots(weekly_plan_id: int, duplicated: list[dict]) -> None:

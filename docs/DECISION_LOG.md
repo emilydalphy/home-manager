@@ -13,16 +13,11 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
-- **A frozen portion is never planned past its use-by; a batch change after
-  the shop doesn't buy the shop again** (2026-10-24; branch
-  `overnight/hunt-leftovers-1024`; tests `tests/test_freezer_portion_use_by.py`,
-  `tests/test_batch_change_keeps_what_was_bought.py`). `freezer_portions`
-  ignored the row's own use-by: a portion a month past it was drafted as "the
-  night to eat it" and nudged "worth eating soon" — now skipped, and placed
-  only on a night inside its use-by. `_rescale_leftover_source_grocery`
-  reversed ticked lines' ledger rows and re-bought in full (unbatch after
-  Monday's batch was cooked: 2 lbs turkey needed again); it now keeps ticked
-  rows and buys only the difference, the rule a recipe edit follows.
+- **A frozen portion is never planned past its use-by** (2026-10-24; branch
+  `overnight/hunt-leftovers-1024`; tests `tests/test_freezer_portion_use_by.py`).
+  `freezer_portions` ignored the row's own use-by: a portion a month past it
+  was drafted as "the night to eat it" and nudged "worth eating soon" — now
+  skipped, and placed only on a night inside its use-by.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
