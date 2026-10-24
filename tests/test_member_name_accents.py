@@ -54,9 +54,40 @@ def test_two_people_told_apart_only_by_an_accent_are_never_merged():
     _chat("set_member_dietary_restrictions", name="rene", restrictions=["no pork"])
     assert _members() == [("Rene", '["no pork"]'), ("René", '["vegetarian"]')]
     # A third spelling that folds onto both is nobody in particular: asked
-    # back, never guessed onto one of them.
-    with pytest.raises(ValueError, match="No household member named"):
+    # back, naming both — never guessed onto one, never a new person.
+    with pytest.raises(ValueError, match="Rene or René"):
         _chat("set_member_attendance", date_str=household_date(1), slot="dinner", member="Rêne", present=False)
+
+
+@pytest.mark.parametrize("tool,kw", [
+    ("set_member_dietary_restrictions", {"restrictions": ["nut allergy"]}),
+    ("set_member_age_group", {"age_group": "child"}),
+    ("add_member", {}),
+])
+def test_an_ambiguous_name_is_asked_back_never_added_as_a_third_person(tool, kw):
+    conn = get_conn()
+    conn.execute("INSERT INTO members (household_id, name) VALUES (1, 'Rene'), (1, 'René')")
+    conn.commit()
+    conn.close()
+    with pytest.raises(ValueError, match="Rene or René"):
+        _chat(tool, name="Rêne", **kw)
+    assert _members() == [("Rene", "[]"), ("René", "[]")]
+
+
+def test_an_invite_for_zoe_never_promotes_the_child_zoe(client):
+    # Before: the invite's own check (SQLite LOWER) missed Zoé, then the
+    # accent-blind add landed on her and made her an adult.
+    tools.add_member("Emily")
+    tools.set_member_age_group("Emily", "adult")
+    tools.add_member("Zoé")
+    tools.set_member_age_group("Zoé", "child")
+    client.post("/login", data={"password": "test-password", "next": "/"}, follow_redirects=False)
+    res = client.post("/api/household/invites", json={"name": "Zoe"})
+    assert res.status_code == 400 and "not as an adult" in res.text, res.text
+    conn = get_conn()
+    rows = conn.execute("SELECT name, age_group FROM members ORDER BY id").fetchall()
+    conn.close()
+    assert [(r["name"], r["age_group"]) for r in rows] == [("Emily", "adult"), ("Zoé", "child")]
 
 
 def test_attendance_and_lunch_find_the_accented_person():

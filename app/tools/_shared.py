@@ -180,6 +180,10 @@ def _fold_for_compare(name: str) -> str:
     ).lower()
 
 
+class AmbiguousMemberName(ValueError):
+    """A typed name that fits more than one person here (find_member_row)."""
+
+
 def _member_name_key(name: str | None) -> str:
     """A person's name as it is compared, not shown: trimmed, inner spaces
     collapsed, case and accents folded. "Zoe", "zoé " and "ZOÉ" are all Zoé."""
@@ -199,6 +203,9 @@ def find_member_row(conn, name: str | None, rows=None):
     empty (defect hunt 2026-10-24). Exact (trimmed, case-blind) wins first,
     so two people whose names differ only by an accent are still told
     apart; the folded match is used only when exactly one person has it.
+    When it fits more than one ("Rêne" with a Rene and a René here) it is
+    nobody in particular, and AmbiguousMemberName says so, naming them —
+    never None, which every get-or-create would read as "add a new person".
     `rows` (each with id and name) may be passed by a caller that already
     read the members it wants to choose from.
     """
@@ -214,7 +221,12 @@ def find_member_row(conn, name: str | None, rows=None):
         return exact[0]
     key = _member_name_key(wanted)
     folded = [r for r in rows if _member_name_key(r["name"]) == key]
-    return folded[0] if len(folded) == 1 else None
+    if len(folded) > 1:
+        names = [r["name"] for r in folded]
+        raise AmbiguousMemberName(
+            f"\"{wanted}\" could be {', '.join(names[:-1])} or {names[-1]} — which one do you mean?"
+        )
+    return folded[0] if folded else None
 
 
 def display_initials(names: list[str]) -> list[str]:

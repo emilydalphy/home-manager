@@ -42,6 +42,7 @@ from .db import get_conn, init_db
 from .agent import run_agent_turn, trim_conversation, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo, scan_pantry_photo, scan_grocery_list_image, AssistantUnavailableError
 from . import tools
 from .tools import household as _household_tools
+from .tools._shared import AmbiguousMemberName, find_member_row
 from .tools import feedback as _feedback
 from .tools import draft_flags as _draft_flags
 from .tools import meal_move as _meal_move
@@ -2450,16 +2451,16 @@ def _require_member_here(name: str | None) -> None:
     could become the main one. 400 for a blank name, 404 for a stranger,
     nothing written either way.
     """
-    # Blank is refused trimmed; the lookup is the tools' own (case-blind,
-    # untrimmed), so a name this check finds is the row the write lands on.
+    # Blank is refused trimmed; the lookup is the tools' own
+    # (find_member_row: case-, space- and accent-blind), so a name this
+    # check finds is the row the write lands on.
     if not (name or "").strip():
         raise HTTPException(status_code=400, detail="Say who this is about.")
     conn = get_conn()
     try:
-        row = conn.execute(
-            "SELECT 1 FROM members WHERE household_id = ? AND LOWER(name) = LOWER(?)",
-            (tools.household_id(), name),
-        ).fetchone()
+        row = find_member_row(conn, name)
+    except AmbiguousMemberName as e:
+        raise HTTPException(status_code=400, detail=str(e))
     finally:
         conn.close()
     if row is None:
@@ -2486,17 +2487,19 @@ def _refuse_last_adult_leaving(name: str, age_group: str) -> None:
         return
     conn = get_conn()
     try:
-        # Matched by SQLite's LOWER, the same lookup _require_member_here
+        # Matched by find_member_row, the same lookup _require_member_here
         # and the tool use, so the person checked is the row written.
-        row = conn.execute(
-            "SELECT COUNT(*) AS adults, "
-            "SUM(CASE WHEN LOWER(name) = LOWER(?) THEN 1 ELSE 0 END) AS is_them "
-            "FROM members WHERE household_id = ? AND LOWER(TRIM(age_group)) = 'adult'",
-            (name, tools.household_id()),
-        ).fetchone()
+        try:
+            them = find_member_row(conn, name)
+        except AmbiguousMemberName as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        adult_ids = [r["id"] for r in conn.execute(
+            "SELECT id FROM members WHERE household_id = ? AND LOWER(TRIM(age_group)) = 'adult'",
+            (tools.household_id(),),
+        )]
     finally:
         conn.close()
-    if row["adults"] == 1 and row["is_them"]:
+    if them is not None and adult_ids == [them["id"]]:
         raise HTTPException(
             status_code=400,
             detail=f"{name.strip()} is the only adult here. Add another adult before changing this.",
