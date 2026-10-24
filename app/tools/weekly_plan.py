@@ -9020,6 +9020,25 @@ def _taste_verdict_for_slot(meal: str, meal_date: str, slot: str) -> dict | None
 NIGHTS_MOVED_KEY = "moved_from"
 
 
+def moved_dish_changed(row, token: dict) -> bool:
+    """True when the row holding a move's Undo token no longer holds the
+    dish that move moved. A swap deletes the row and writes a NEW one, and
+    copies derived_from onto it, the token with it (swap_in_place.
+    apply_pick), so without this an Undo carried a dish it never moved —
+    move Tacos to Thursday, swap Thursday to Beef Bulgogi, Undo the move:
+    Bulgogi went back to Tuesday (overnight 2026-10-24). Both Undos ask it:
+    undo_meal_move and the nights swap's.
+
+    Changed means a different row AND a different dish. The same row is the
+    same dish even if its name was re-said since (a freezer night naming
+    its cook's new day, a recipe edited in place); the same dish on a new
+    row is a swap the household has already undone. A token written before
+    either was recorded says nothing."""
+    if not isinstance(token, dict) or "entry" not in token or "meal" not in token:
+        return False
+    return token["entry"] != row["id"] and (token["meal"] or "") != (row["meal"] or "")
+
+
 def _weekday_of(date_str: str) -> str:
     return date.fromisoformat(date_str).strftime("%A")
 
@@ -9440,7 +9459,10 @@ def _redate_plan_rows(
             if token_for is None:
                 derived.pop(NIGHTS_MOVED_KEY, None)
             else:
-                derived[NIGHTS_MOVED_KEY] = token_for(r)
+                # The row and dish it moved, so an Undo can tell when the
+                # row has been swapped to another dish since
+                # (moved_dish_changed).
+                derived[NIGHTS_MOVED_KEY] = {**token_for(r), "entry": r["id"], "meal": r["meal"]}
             changed = True
         after.append({
             "id": r["id"], "date": new_date.get(r["id"], r["date"]), "slot": r["slot"],
@@ -9831,6 +9853,8 @@ def _apply_dinner_nights_swap(
                 other = date_b if r["date"] == date_a else date_a
                 if token.get("date") != other:
                     raise ValueError("Those nights haven’t just been moved, so there’s nothing to put back.")
+                if moved_dish_changed(r, token):
+                    raise ValueError("That dinner has changed since, so there’s nothing to put back.")
 
         new_date = {r["id"]: (date_b if r["date"] == date_a else date_a) for r in moving}
         mapping = {f"{date_a}:dinner": f"{date_b}:dinner", f"{date_b}:dinner": f"{date_a}:dinner"}

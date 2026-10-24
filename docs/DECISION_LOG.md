@@ -13,6 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A Move's Undo, and a nights swap's Undo, carry back only the dish they
+  moved** (2026-10-24, overnight; branch `overnight/plan-undo-after-swap`;
+  tests `tests/test_undo_after_swap_moves_only_its_dish.py`). Move Tacos to
+  Thursday, Swap Thursday to Beef Bulgogi, Undo the move: Bulgogi went to
+  Tuesday, "Back as it was". `apply_pick` writes a new row and copies
+  derived_from, the `moved_from` Undo token with it. The token now names its
+  row and dish (`_redate_plan_rows`); both Undos refuse when it sits on a new
+  row with another dish (`weekly_plan.moved_dish_changed`). Same row renamed
+  (freezer night re-said, recipe edited) still undoes; so does a swap already
+  undone. Tokens written before this carry neither and are not checked.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
