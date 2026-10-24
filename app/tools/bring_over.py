@@ -266,6 +266,64 @@ def resolve(choices, week_start: str) -> list[dict]:
     return out
 
 
+def release_last_weeks_share(conn, weekly_plan_id: int) -> list[str]:
+    """
+    Take a brought-over meal's share off LAST week's still-unbought lines,
+    as `weekly_plan_id` is approved. Returns the items trimmed or removed.
+
+    The meal moved weeks: this week's ingest buys whatever last week's list
+    didn't (bought_items is all it skips), so last week's unbought share of
+    the same dish is now a second copy of one need. Left alone, it is
+    bought twice whenever last week is still on the list — approve and shop
+    on the Sunday and Shop drew "Chicken tikka masala base 2 lb · 1 lb this
+    week · 1 lb next week" for one tikka; approve on the Monday and it came
+    back as "Still on the list from last week — keep?", where Keep doubled
+    it. Called by approve_weekly_plan before set_aside_carried_over_items,
+    so what is left of last week is asked about exactly as before.
+
+    Only lines still to buy ('needed', or a spice unticked): a ticked line
+    keeps its ledger row, because that row IS bought_items' evidence and
+    the re-buy after a swap reads it again. The reversal is the ledger's
+    own (grocery._reverse_meal_grocery_contributions), so a line another of
+    last week's meals still wants keeps that meal's amount. On `conn`,
+    inside the approval's transaction; never commits.
+    """
+    from . import cooker as _cooker
+    from . import grocery as _grocery
+
+    # Only a night approval buys for (weekly_plan._plan_grocery_candidate_
+    # entries: today on, the household's day): a brought-over night already
+    # gone by buys nothing this week, so last week's line is still the only
+    # one, and is asked about as last week's like the rest.
+    today = _cooker.household_today(conn=conn).isoformat()
+    trimmed: list[str] = []
+    for row in conn.execute(
+        "SELECT derived_from_json FROM meal_plan_entries WHERE household_id = ? AND weekly_plan_id = ? "
+        "AND slot_state = 'planned' AND date >= ? AND derived_from_json LIKE ?",
+        (household_id(), weekly_plan_id, today, f'%"{KEY}"%'),
+    ).fetchall():
+        brought = _derived(row["derived_from_json"]).get(KEY)
+        ids = brought.get("entry_ids") if isinstance(brought, dict) else None
+        for old_id in ids or []:
+            if not isinstance(old_id, int) or isinstance(old_id, bool):
+                continue
+            link_ids = [r["id"] for r in conn.execute(
+                "SELECT l.id FROM meal_plan_grocery_links l JOIN grocery_items g ON g.id = l.grocery_item_id "
+                "JOIN meal_plan_entries e ON e.id = l.meal_plan_entry_id "
+                "WHERE l.household_id = ? AND l.meal_plan_entry_id = ? AND e.weekly_plan_id != ? "
+                "AND g.status IN ('needed', 'spice')",
+                (household_id(), old_id, weekly_plan_id),
+            ).fetchall()]
+            if not link_ids:
+                continue
+            result = _grocery._reverse_meal_grocery_contributions(old_id, conn=conn, only_link_ids=link_ids)
+            trimmed.extend(result.get("removed_items") or [])
+            trimmed.extend(result.get("trimmed_items") or [])
+    if trimmed:
+        logger.info("Bring over: plan %s took last week's share off %s", weekly_plan_id, trimmed)
+    return trimmed
+
+
 # ---------- placing them ----------
 
 def _minutes(recipe_ids: list[int]) -> dict[int, int | None]:
@@ -297,13 +355,19 @@ def choose_nights(
     holidays: list[dict] | None = None,
     zero_slots: set[str] | frozenset = frozenset(),
     cap_for=None,
+    gone: set[tuple[str, str]] | frozenset = frozenset(),
 ) -> tuple[list[dict], list[dict]]:
     """
     Where each brought-over meal goes: (placed, not_placed). Each placed
     row is the stored row plus `on` (the new date) — `date` stays the
     night it was planned for last week. See the module docstring for the
     rules; `cap_for(date, slot)` is the planner's own time cap
-    (agent._meal_minutes_cap), None meaning no cap.
+    (agent._meal_minutes_cap), None meaning no cap. `gone` is the
+    (date, slot) of today's meals that have already gone by on the
+    household's clock (today_meals.past_meals): a week planned at 9:45pm
+    on its first day must not put the dish they chose to bring over on
+    tonight's dinner, which _finish_week_slots would then write over the
+    "already gone by" row — planned, bought for, and never eaten again.
 
     Dinners are placed before lunches, each in the order they fell last
     week, each on the earliest night left that fits. A lunch that finds
@@ -323,7 +387,7 @@ def choose_nights(
     for d in ((intake.get("weekday_lunches") or {}).get("days") or []):
         if isinstance(d, dict) and d.get("date"):
             kinds[d["date"]] = d.get("kind")
-    blocked: set[tuple[str, str]] = set()
+    blocked: set[tuple[str, str]] = set(gone)
     for key in ("away_slots", "ready_made_slots"):
         for s in (slot_needs or {}).get(key) or []:
             blocked.add((s.get("date"), s.get("slot")))
