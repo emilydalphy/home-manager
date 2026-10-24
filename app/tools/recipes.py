@@ -9,7 +9,7 @@ import re
 from fractions import Fraction
 from urllib.parse import urlsplit
 from ..db import get_conn, write
-from ._shared import household_id
+from ._shared import find_member_row, household_id
 from . import grocery as _grocery
 from . import household as _household
 from . import quantities as _quantities
@@ -4331,10 +4331,7 @@ def attribute_recipe_feedback(
         # adding someone is add_member's job, asked for in so many words.
         # The refusal names who IS here so the model can retry with the
         # right name, or keep a guest's opinion as a note on the recipe.
-        member = conn.execute(
-            "SELECT id FROM members WHERE household_id = ? AND LOWER(name) = LOWER(?)",
-            (household_id(), (member_name or "").strip()),
-        ).fetchone()
+        member = find_member_row(conn, member_name)
         if not member:
             names = [r["name"] for r in conn.execute(
                 "SELECT name FROM members WHERE household_id = ? ORDER BY id", (household_id(),),
@@ -4376,10 +4373,7 @@ def get_member_taste(member_name: str) -> dict:
     knowledge than actually exists yet.
     """
     conn = get_conn()
-    member = conn.execute(
-        "SELECT id FROM members WHERE household_id = ? AND LOWER(name) = LOWER(?)",
-        (household_id(), member_name),
-    ).fetchone()
+    member = find_member_row(conn, member_name)
     if not member:
         conn.close()
         raise ValueError(f"No household member named '{member_name}'.")

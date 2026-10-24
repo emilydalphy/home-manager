@@ -6,7 +6,7 @@ from __future__ import annotations
 import json
 import secrets
 from ..db import get_conn
-from ._shared import household_id, use_household, _absolute_url
+from ._shared import find_member_row, household_id, use_household, _absolute_url
 from . import cooker as _cooker
 from . import household as _household
 from . import weekly_plan as _weekly_plan
@@ -146,10 +146,7 @@ def get_or_create_member_share_link(member_name: str) -> dict:
     share that value verbatim, never construct or guess a URL yourself.
     """
     conn = get_conn()
-    member = conn.execute(
-        "SELECT id, name FROM members WHERE household_id = ? AND LOWER(name) = LOWER(?)",
-        (household_id(), member_name),
-    ).fetchone()
+    member = find_member_row(conn, member_name)
     if not member:
         conn.close()
         raise ValueError(f"No household member named '{member_name}' yet.")
@@ -174,10 +171,7 @@ def get_or_create_member_share_link(member_name: str) -> dict:
 def revoke_member_share_link(member_name: str) -> dict:
     """Revoke a household member's self-service link — any existing link stops working immediately. Use before regenerate_member_share_link, or on its own if the link should just be shut off (e.g. it was shared by mistake)."""
     conn = get_conn()
-    member = conn.execute(
-        "SELECT id FROM members WHERE household_id = ? AND LOWER(name) = LOWER(?)",
-        (household_id(), member_name),
-    ).fetchone()
+    member = find_member_row(conn, member_name)
     if not member:
         conn.close()
         raise ValueError(f"No household member named '{member_name}'.")

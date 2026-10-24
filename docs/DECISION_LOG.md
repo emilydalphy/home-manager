@@ -20,7 +20,17 @@ why*, not duplicating the diff.
   with no adult. One rule now (`tools.last_adult_leaving`), read by the route
   and by `set_member_age_group_for_chat`, which raises `tools.MemberRefused`
   (a fourth REFUSALS_OWED_TO_A_PERSON marker: an answer, not a breakage).
-  Chat's word stays freeform; the own-age rule stays route-only.
+  Chat's word stays freeform; the own-age rule stays route-only. Merged
+  with `overnight/chat-tools-sig`: the person is found by `find_member_row`,
+  so "Emily " / "Émily" is still the only adult, and an ambiguous name is refused.
+- **A name said in chat finds its person whatever the accents, case or
+  spaces** (2026-10-24, defect hunt; branch `overnight/chat-tools-sig`; tests
+  `tests/test_member_name_accents.py`). "zoe is allergic to nuts" about Zoé
+  added a second child "Zoe" with the allergy, counted at every meal, and
+  left Zoé's list empty: SQLite `LOWER()` folds only A-Z and nothing trimmed.
+  `_shared.find_member_row` (exact case-blind first, accent-folded only when
+  unique) now backs get-or-create, attendance, lunch facts, share links and
+  per-person taste.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

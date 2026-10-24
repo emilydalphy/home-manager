@@ -180,6 +180,55 @@ def _fold_for_compare(name: str) -> str:
     ).lower()
 
 
+class AmbiguousMemberName(ValueError):
+    """A typed name that fits more than one person here (find_member_row)."""
+
+
+def _member_name_key(name: str | None) -> str:
+    """A person's name as it is compared, not shown: trimmed, inner spaces
+    collapsed, case and accents folded. "Zoe", "zoé " and "ZOÉ" are all Zoé."""
+    return " ".join(_fold_for_compare((name or "").strip()).split())
+
+
+def find_member_row(conn, name: str | None, rows=None):
+    """
+    The household's member called `name`, or None — how a name the
+    household (or the chat model) typed is matched to a person.
+
+    SQLite's LOWER() folds only A-Z and nothing trimmed the name, so a
+    parent's "zoe is allergic to nuts" (member saved as Zoé), "émile" for
+    Émile, or a stray trailing space matched nobody — and the get-or-create
+    behind the chat's member tools then ADDED a second person carrying the
+    allergy, counted at every meal, while the real child's list stayed
+    empty (defect hunt 2026-10-24). Exact (trimmed, case-blind) wins first,
+    so two people whose names differ only by an accent are still told
+    apart; the folded match is used only when exactly one person has it.
+    When it fits more than one ("Rêne" with a Rene and a René here) it is
+    nobody in particular, and AmbiguousMemberName says so, naming them —
+    never None, which every get-or-create would read as "add a new person".
+    `rows` (each with id and name) may be passed by a caller that already
+    read the members it wants to choose from.
+    """
+    wanted = (name or "").strip()
+    if not wanted:
+        return None
+    if rows is None:
+        rows = conn.execute(
+            "SELECT id, name FROM members WHERE household_id = ? ORDER BY id", (household_id(),)
+        ).fetchall()
+    exact = [r for r in rows if (r["name"] or "").strip().lower() == wanted.lower()]
+    if exact:
+        return exact[0]
+    key = _member_name_key(wanted)
+    folded = [r for r in rows if _member_name_key(r["name"]) == key]
+    if len(folded) > 1:
+        names = [r["name"] for r in folded]
+        raise AmbiguousMemberName(
+            f"\"{wanted}\" could be {', '.join(names[:-1])} or {names[-1]} — which one do you mean?"
+        )
+    return folded[0] if folded else None
+
+
 def display_initials(names: list[str]) -> list[str]:
     """
     The letter (or letters) each person is shown as wherever the app draws

@@ -128,3 +128,37 @@ def test_both_doors_say_the_same_sentence(signed_in, monkeypatch):
     assert res.status_code == 400 and res.json()["detail"] == ONLY_ADULT
     handed = _chat_calls_set_age_group(monkeypatch, "Emily", "teen")
     assert json.loads(handed["content"])["error"] == ONLY_ADULT
+
+
+def test_a_name_variant_is_still_the_only_adult_on_both_doors(signed_in, monkeypatch):
+    """CATCH (merge review, 2026-10-24). The write finds its person with
+    find_member_row (case-, space- and accent-blind); a plain-LOWER check
+    missed "Emily " and "Émily", so both doors demoted the only adult."""
+    _household("Emily")
+    for variant in ("Emily ", "Émily", "  EMILY"):
+        handed = _chat_calls_set_age_group(monkeypatch, variant, "teen")
+        assert handed["is_error"] is True, variant
+        assert json.loads(handed["content"]) == {"error": ONLY_ADULT}, variant
+        res = signed_in.post("/api/memory/member/age-group", json={"name": variant, "age_group": "teen"})
+        assert res.status_code == 400, (variant, res.text)
+        assert res.json()["detail"] == ONLY_ADULT
+    assert _age("Emily") == "adult"
+    assert [a["name"] for a in _shared.household_adults()] == ["Emily"]
+    assert _error_rows() == []
+
+
+def test_a_name_that_could_be_two_adults_is_asked_back_not_written(signed_in, monkeypatch):
+    """Two adults told apart only by an accent, and a third spelling that
+    folds onto both: nobody in particular, so refused — a MemberRefused in
+    chat, a 400 on the route — and neither adult changes."""
+    conn = get_conn()
+    conn.execute("INSERT INTO members (household_id, name, age_group) VALUES (1, 'Rene', 'adult'), (1, 'René', 'adult')")
+    conn.commit()
+    conn.close()
+    handed = _chat_calls_set_age_group(monkeypatch, "Rêne", "teen")
+    assert handed["is_error"] is True
+    assert "Rene or René" in json.loads(handed["content"])["error"]
+    res = signed_in.post("/api/memory/member/age-group", json={"name": "Rêne", "age_group": "teen"})
+    assert res.status_code == 400 and "Rene or René" in res.json()["detail"]
+    assert (_age("Rene"), _age("René")) == ("adult", "adult")
+    assert _error_rows() == []
