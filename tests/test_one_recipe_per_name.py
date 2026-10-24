@@ -443,3 +443,14 @@ def test_the_chat_tools_and_planning_find_an_accented_recipe_however_it_is_typed
     conn.close()
     assert row["recipe_id"] is not None and row["freeform_meal"] is None
     assert len(_recipe_rows()) == 1
+
+
+def test_a_dish_brought_to_a_holiday_finds_the_accented_recipe():
+    """holidays._recipe_named used lower(name) = lower(?): "creme brulee"
+    brought to Thanksgiving never linked to the saved "Crème Brûlée"."""
+    from app.tools import holidays as _holidays
+    tools.add_recipe("Crème Brûlée", CHICKEN)
+    name, recipe_id = _holidays._recipe_named("CRÈME BRÛLÉE")
+    assert (name, recipe_id) == ("Crème Brûlée", _recipe_rows()[0]["id"])
+    assert _holidays._recipe_named("creme  brulee")[1] == recipe_id
+    assert _holidays._recipe_named("Flan")[1] is None

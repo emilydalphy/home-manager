@@ -58,7 +58,7 @@ import logging
 import re
 import uuid
 
-from ..db import get_conn
+from ..db import get_conn, name_key
 from ._shared import household_id
 from . import attendance as _attendance
 from . import coordination as _coordination
@@ -1024,7 +1024,7 @@ def honest_meal_name(pick: dict) -> str:
         pick.get("meal_name") or "",
         pick.get("ingredients") or [],
         pick.get("instructions") or [],
-        taken={(r.get("name") or "").strip().lower() for r in _recipes.list_recipes()},
+        taken={name_key(r.get("name")) for r in _recipes.list_recipes()},
     )
 
 

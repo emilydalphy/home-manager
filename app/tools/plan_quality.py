@@ -107,7 +107,7 @@ import logging
 import re
 from dataclasses import dataclass
 
-from ..db import get_conn
+from ..db import get_conn, name_key
 from . import recipes as _recipes
 from . import usage as _usage
 from ._shared import household_id
@@ -1432,7 +1432,8 @@ def title_correction(
     prints it, and printing the same sentence for three different refusals
     — as the first cut did — tells the person reading it something untrue.
     """
-    held = {str(t).strip().lower() for t in (taken or ())}
+    # By db.name_key, add_recipe's own rule: a lowercased `taken` keys the same.
+    held = {name_key(t) for t in (taken or ())}
     # THE ONE GUARD THAT MATTERS, and the root of three separate blockers.
     # A name that is already a recipe of this household's does not describe
     # a dish, it IDENTIFIES A ROW — and what it is being judged against here
@@ -1447,7 +1448,7 @@ def title_correction(
     # This subsumes the is_new_recipe gates rather than replacing them: a
     # model that mislabels a reuse as new lands here too, which is the case
     # those gates cannot see.
-    if (name or "").strip().lower() in held:
+    if name_key(name) in held:
         return name, None
     allergens = _allergen_title_words()
     unkept = [
@@ -1464,7 +1465,7 @@ def title_correction(
         return name, "Taking that off would leave a name that doesn't say what the dish is."
     kept = [p for p in _split_title_clause(match.group("clause")) if p not in unkept]
     honest = f"{head} with {' and '.join(kept)}" if kept else head
-    if honest.strip().lower() in held:
+    if name_key(honest) in held:
         return name, f"{honest!r} is already another of your recipes, so renaming onto it would point meals at the wrong one."
     return honest, None
 

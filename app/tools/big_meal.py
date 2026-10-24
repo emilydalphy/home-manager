@@ -647,7 +647,7 @@ def _clean_main(raw: dict | None, eaters: int) -> dict | None:
     # check below still reads what matters.
     name = _plan_quality.honest_recipe_title(
         name, ingredients, raw.get("instructions") or [],
-        taken={(r.get("name") or "").strip().lower() for r in _recipes.list_recipes()},
+        taken={name_key(r.get("name")) for r in _recipes.list_recipes()},
     )
     return {
         "name": name,
