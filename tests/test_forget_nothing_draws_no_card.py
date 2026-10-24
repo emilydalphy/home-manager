@@ -66,3 +66,18 @@ def test_an_empty_list_add_is_not_mistaken_for_nothing():
     # add_grocery_items' `added` is a LIST; only a literal False is the answer.
     assert agent.result_changed_nothing('{"added": [], "merged_with_existing": ["milk"]}') is False
     assert agent.result_changed_nothing('{"added": false, "reason": "empty"}') is True
+
+
+def test_forgetting_a_store_that_only_had_typical_items_left_still_says_deleted():
+    # Not in usual_stores (any more), but its typical items were still
+    # saved: those go, so something WAS forgotten and the card is right.
+    import json
+    from app.db import get_conn
+    tools.add_store_typical_items("Costco", ["paper towels"])
+    conn = get_conn()
+    conn.execute("UPDATE meal_preferences SET usual_stores_json = '[]' WHERE household_id = 1")
+    conn.commit()
+    assert tools.delete_preference("usual_stores", "Costco")["deleted"] is True
+    left = conn.execute("SELECT store_typical_items_json FROM meal_preferences WHERE household_id = 1").fetchone()[0]
+    conn.close()
+    assert "Costco" not in json.loads(left)

@@ -1006,11 +1006,17 @@ def delete_preference(field: str, item: str | None = None) -> dict:
             # entry would keep surfacing "usually get here" suggestions in the
             # grocery list for a store the household no longer shops at.
             store_items = json.loads(existing["store_typical_items_json"])
+            items_before = len(store_items)
             store_items = {k: v for k, v in store_items.items() if k.lower() != (item or "").lower()}
             # Its hours go too, for the same reason: a store nobody shops at
             # must not keep putting "closes at 5:30" on Today.
             store_hours = _store_hours_payload(existing)
+            hours_before = len(store_hours)
             store_hours = {k: v for k, v in store_hours.items() if k.lower() != (item or "").lower()}
+            # Its typical items or hours going is a removal too, even for a
+            # store no longer in the list itself.
+            removed_listed = (removed_listed or len(store_items) < items_before
+                              or len(store_hours) < hours_before)
             conn.execute(
                 "UPDATE meal_preferences SET usual_stores_json = ?, store_typical_items_json = ?, store_hours_json = ?, updated_at = datetime('now') WHERE household_id = ?",
                 (json.dumps(updated), json.dumps(store_items), json.dumps(store_hours), household_id()),
