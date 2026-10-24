@@ -152,3 +152,35 @@ def test_undo_of_a_minus_that_took_a_freezer_night_puts_the_move_back():
 
     assert tools.drop_dish_undo(pid, out["undo_entry_id"])["status"] == "restored"
     assert cook_moves() == before
+
+
+def test_undo_after_a_ticked_thaw_takes_the_hold_back_off():
+    """CATCH (review, 2026-10-24) — tick the cook's thaw, "−" the cook (a
+    hold is made), Undo: the move is back as done, so the hold "came out of
+    the freezer — the dinner it was for has changed" must go, or the same
+    turkey is promised twice."""
+    tools.add_member("Emily")
+    tools.set_member_age_group("Emily", "adult")
+    tools.add_recipe("Turkey Chili",
+                     ingredients=[{"item": "Ground turkey", "qty": "1.5 lbs", "category": "meat"}],
+                     default_servings=2)
+    today = household_today()
+    cook_day = (today + timedelta(days=2)).isoformat()
+    pid = tools.create_weekly_plan(today.isoformat())["weekly_plan_id"]
+    cook = tools.plan_meal(cook_day, "Turkey Chili", slot="dinner", weekly_plan_id=pid)["entry_id"]
+    tools.plan_meal((today + timedelta(days=6)).isoformat(), "Turkey Chili", slot="dinner",
+                    weekly_plan_id=pid, derived_from={"links_to": f"{cook_day}:dinner"})
+    tools.repair_leftover_chains(pid)
+    tools.approve_weekly_plan(pid, approved_by="Emily")
+    tools.confirm_frozen_items(pid, ["Ground turkey"])
+    move = next(r for r in _prep_rows() if r["meal_plan_entry_id"] == cook)
+    tools.check_off_prep_step(move["id"], status="done")
+
+    out = tools.drop_dish_from_day(pid, cook)
+    assert out.get("can_undo") and out.get("held_thawed"), out
+    assert len(tools.list_held_things()) == 1
+
+    assert tools.drop_dish_undo(pid, out["undo_entry_id"])["status"] == "restored"
+    back = [r for r in _prep_rows() if r["meal_plan_entry_id"] == cook]
+    assert [r["status"] for r in back] == ["done"]
+    assert tools.list_held_things() == []

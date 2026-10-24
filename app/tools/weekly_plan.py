@@ -1239,6 +1239,9 @@ def drop_dish_from_day(weekly_plan_id: int, entry_id: int, open_reason: str | No
                 "weekly_plan_id": weekly_plan_id, **snap, "invented": invented,
                 "after": _plan_undo.fingerprint(conn, touched | set(invented), holder_id),
                 "grocery": _plan_undo.lines_changed(conn, snap),
+                # The holds a ticked thaw just became: Undo puts the move
+                # back as done, so the hold would promise the same meat twice.
+                "held_ids": [h["held_id"] for h in held_thawed],
             })
         conn.commit()
     except Exception:
@@ -1272,8 +1275,9 @@ def drop_dish_from_day(weekly_plan_id: int, entry_id: int, open_reason: str | No
                 rescale_source_id, entry_id,
             )
         _keep_freezer_answer_after_rescale(weekly_plan_id, rescale_source_id, entry_id)
-    # Only when there is something to say, as the swap does: the chat reads
-    # it to tell the household the meat did not go with the meal.
+    # Only when there is something to say, the swap's own key. No screen or
+    # chat tool reads it off this door yet (the "−" is reached through its
+    # route and the allergen sweep); the hold itself shows on Today.
     held = {"held_thawed": held_thawed} if held_thawed else {}
     if dropped_freezer:
         days = [_weekday_of(meal_date)]
@@ -1546,6 +1550,18 @@ def drop_dish_undo(weekly_plan_id: int, entry_id: int) -> dict:
             }
         meal_date, slot = holder["date"], holder["slot"]
         _plan_undo.restore(conn, record, holder["id"])
+        # A ticked thaw the "−" turned into a hold is back as its done move
+        # (restore reinserts the prep rows), so the hold goes: left, it said
+        # "came out of the freezer — the dinner it was for has changed" about
+        # a dinner that is back (review, 2026-10-24). Only one still open —
+        # a hold the household already ticked off is theirs.
+        held_ids = [int(i) for i in record.get("held_ids") or []]
+        if held_ids:
+            conn.execute(
+                f"DELETE FROM held_things WHERE household_id = ? AND resolved_at IS NULL "
+                f"AND id IN ({','.join('?' * len(held_ids))})",
+                (household_id(), *held_ids),
+            )
         conn.commit()
     except Exception:
         conn.rollback()
