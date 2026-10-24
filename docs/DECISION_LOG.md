@@ -13,6 +13,13 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A due staple comes on beside a week's line for the same thing** (2026-10-24;
+  branch `overnight/grocery-staple-beside-week`; tests
+  `tests/test_staple_beside_a_weeks_line.py`). `sync_due_staples` counted a
+  recipe's "Milk · 1/2 cup" as cover, so the weekly 2 L never reached the list
+  and the tick taught the staple it was bought. Only a person's own line, an
+  "elsewhere" line, or the plan row a staple was made from covers it now; the
+  staple's line joins the week's when amounts add (as in the other order).
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
