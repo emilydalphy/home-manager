@@ -703,6 +703,7 @@ from .slot_needs import (  # noqa: F401
     get_week_slot_needs,
     set_away_stretch,
     set_slot_need,
+    set_slot_need_for_chat,
     set_slot_recommendation,
 )
 from .staples import (  # noqa: F401

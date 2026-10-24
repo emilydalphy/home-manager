@@ -450,8 +450,12 @@ def _reopen_away_slot(date_str: str, slot: str, attendance: dict) -> bool:
             eaters = f"{_join_people(who)} plus {guests} guest{'s' if guests != 1 else ''}"
         elif who:
             eaters = _join_people(who)
-        else:
+        elif guests:
             eaters = f"{guests} guest{'s' if guests != 1 else ''}"
+        else:
+            # Nobody on record to name (a household mid-onboarding, reached
+            # from set_slot_need_for_chat): never "0 guests will be here".
+            eaters = "you"
         _weekly_plan.clear_plan_slot(row["weekly_plan_id"], date_str, slot, conn=conn)
         _weekly_plan.plan_slot_open(
             weekly_plan_id=row["weekly_plan_id"], meal_date=date_str, slot=slot,
@@ -488,6 +492,76 @@ def clear_slot_need(date_str: str, slot: str) -> dict:
     conn.commit()
     conn.close()
     return {"date": date_str, "slot": slot, "need": "normal"}
+
+
+def set_slot_need_for_chat(date_str: str, slot: str, need: str, reason: str = "") -> dict:
+    """
+    set_slot_need as the assistant reaches it — "we're out Friday", "actually
+    we're home Thursday" — keeping attendance in step, which the primitive
+    alone does not do and must not (attendance's own sync calls it).
+
+    "Away" means an empty attendance (attendance.py's docstring), and every
+    other door that writes one writes both halves: a trip, the day sheet,
+    a toggle, a holiday "out". This door wrote only the need, so the two
+    halves disagreed and the next ordinary gesture read the disagreement
+    as news (overnight 2026-10-24, measured over a real uvicorn):
+
+    - "We're out Friday" in chat, then Vineeth tapping himself out of that
+      same Friday, turned the night into an OPEN question — "This was down
+      as nobody home, but Emily will be here after all" — because the
+      tap's sync saw a stored attendance with Emily in it under an away.
+    - "Set Thursday back to normal" deleted the need and left the dinner
+      planned_empty, still saying "You're away — I've planned nothing and
+      bought nothing", with nothing on the list and no question asked.
+
+    So 'away' records nobody home as well (the holiday's order: the need
+    first, with its own sentence and what it covers, then the attendance,
+    whose sync then finds it already away). And any other need over an
+    away is the household coming home: attendance back to everyone, the
+    night handed back as the open question an attendance undo already
+    asks, and then the need asked for — 'normal' meaning normal, not a
+    trip edge the away happened to cover.
+    """
+    date.fromisoformat(date_str)
+    if need not in NEEDS:
+        raise ValueError(f"need must be one of {NEEDS}, not {need!r}.")
+    if slot == "snack":
+        raise ValueError(SNACK_NEED_REFUSAL)
+    _validate_slot(slot)
+    from . import attendance as _attendance
+
+    current = get_slot_need(date_str, slot)
+    if need == "away":
+        superseded = (
+            current.get("superseded") if current["need"] == "away"
+            else _attendance._supersede_record(current)
+        )
+        result = set_slot_need(date_str, slot, "away", reason=reason, superseded=superseded)
+        att = _attendance.get_slot_attendance(date_str, slot)
+        if att["household_size"] and not att["nobody_home"]:
+            # guest_count=0 too: guests with nobody home to host them is
+            # the day sheet's "I'll plan nothing", and a headcount left at
+            # 2 would read as somebody home and undo the away at once.
+            _attendance.set_slot_attendance(
+                date_str, slot, present_member_ids=[], guest_count=0, source="chat",
+            )
+        return result
+
+    if current["need"] == "away":
+        att = _attendance.get_slot_attendance(date_str, slot)
+        if att["household_size"] and att["nobody_home"]:
+            # Clearing the row is everyone home; its sync takes the away
+            # off and reopens the night, the same path a toggle back takes.
+            _attendance.clear_slot_attendance(date_str, slot)
+        else:
+            # The disagreeing state this door used to leave behind (an away
+            # over an attendance with people in it), or a household with
+            # nobody on record: no sync will run, so do its two steps here.
+            clear_slot_need(date_str, slot)
+            _reopen_away_slot(date_str, slot, att)
+    if need == "normal":
+        return clear_slot_need(date_str, slot)
+    return set_slot_need(date_str, slot, need, reason=reason)
 
 
 def get_slot_need(date_str: str, slot: str) -> dict:

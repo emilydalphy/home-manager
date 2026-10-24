@@ -10511,7 +10511,9 @@ TOOL_FUNCTIONS = {
     "set_member_attendance": tools.set_member_attendance,
     "set_guest_count": tools.set_guest_count,
     "get_week_attendance": tools.get_week_attendance,
-    "set_slot_need": tools.set_slot_need,
+    # The chat door keeps attendance in step with the need; the bare
+    # primitive is what attendance's own sync calls (see its docstring).
+    "set_slot_need": tools.set_slot_need_for_chat,
     "get_week_slot_needs": tools.get_week_slot_needs,
     "confirm_slot_recommendation": tools.confirm_slot_recommendation,
     "set_lunch_location": tools.set_lunch_location,
