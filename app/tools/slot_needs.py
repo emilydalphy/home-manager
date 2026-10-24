@@ -20,7 +20,7 @@ from __future__ import annotations
 import json
 from datetime import date, timedelta
 from ..db import get_conn
-from ._shared import household_id
+from ._shared import household_id, require_household_row
 from . import week_intake as _week_intake
 from . import weekly_plan as _weekly_plan
 
@@ -282,6 +282,16 @@ def set_slot_need(
     conn = get_conn()
     try:
         conn.execute("BEGIN IMMEDIATE")
+        # Both ids come from the model on the chat path: the schema doesn't
+        # declare them, but agent.read_tool_input passes an undeclared key
+        # through untouched. Another household's stretch or adult stored
+        # here is a row of theirs this household's screens join against
+        # (who the need is for, which trip made it). Refused the way every
+        # by-id write is, on this connection, inside the lock.
+        if away_stretch_id is not None:
+            require_household_row(conn, "away_stretches", away_stretch_id, label="away stretch", close_on_miss=False)
+        for member in set(for_member_ids or []):
+            require_household_row(conn, "members", member, label="member", close_on_miss=False)
         conn.execute(
             """
             INSERT INTO slot_needs

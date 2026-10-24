@@ -153,7 +153,7 @@ def hold_thing(text: str, *, ask_text: str = "", member_id=SESSION_MEMBER, conn=
     # on this household's Today. Refused the way every by-id write is.
     if member_id is not None:
         try:
-            require_household_row(conn, "members", member_id, label="member")
+            require_household_row(conn, "members", member_id, label="member", close_on_miss=False)
         except ValueError:
             if own_conn:
                 conn.close()

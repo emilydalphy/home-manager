@@ -349,7 +349,9 @@ def _absolute_url(path: str) -> str:
     return f"{PUBLIC_BASE_URL}{path}" if PUBLIC_BASE_URL else path
 
 
-def require_household_row(conn, table: str, id_value: int, *, label: str, id_column: str = "id") -> None:
+def require_household_row(
+    conn, table: str, id_value: int, *, label: str, id_column: str = "id", close_on_miss: bool = True,
+) -> None:
     """
     Confirm a row exists **in the caller's own household** before writing to
     it, or raise ``ValueError``.
@@ -378,6 +380,12 @@ def require_household_row(conn, table: str, id_value: int, *, label: str, id_col
         # Close on the caller's behalf — every call site is about to bail
         # out via the exception below, matching the existing
         # close-then-raise idiom the rest of this package already uses
-        # (see e.g. move_grocery_item_to_inventory).
-        conn.close()
+        # (see e.g. move_grocery_item_to_inventory). `close_on_miss=False`
+        # is for a caller that does NOT own the connection, or holds it in
+        # a transaction it must roll back itself: closing it here took a
+        # caller's connection away mid-transaction (held.hold_thing with
+        # the conn weekly_plan passes; slot_needs.set_slot_need's rollback
+        # then raised on a closed database and hid the refusal).
+        if close_on_miss:
+            conn.close()
         raise ValueError(f"No {label} with id {id_value}.")

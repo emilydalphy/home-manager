@@ -432,7 +432,9 @@ def add_grocery_item_for_chat(
     if source_weekly_plan_id is not None:
         conn = get_conn()
         try:
-            require_household_row(conn, "weekly_plans", source_weekly_plan_id, label="weekly plan")
+            require_household_row(
+                conn, "weekly_plans", source_weekly_plan_id, label="weekly plan", close_on_miss=False,
+            )
         finally:
             conn.close()
     result = _grocery.add_grocery_item(

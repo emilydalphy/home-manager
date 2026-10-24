@@ -35,6 +35,9 @@ generate_prep_schedule is driven here up to the offline-model refusal.
 from __future__ import annotations
 
 import inspect
+import json
+import sqlite3
+import sys
 
 import pytest
 
@@ -72,7 +75,7 @@ def _tomorrow():
 
 
 # (tool name, kwargs built from A's ids). `ids` keys: plan, entry, grocery,
-# staple, held, member, prep, recipe.
+# staple, held, member, prep, recipe, stretch.
 CASES = [
     # --- declared ids ---
     ("get_weekly_plan", lambda i: {"weekly_plan_id": i["plan"]}),
@@ -95,13 +98,18 @@ CASES = [
     ("get_cooker_view", lambda i: {"weekly_plan_id": i["plan"]}),
     ("check_plan_conflicts", lambda i: {"weekly_plan_id": i["plan"]}),
     ("resolve_held_thing", lambda i: {"held_id": i["held"]}),
+    # --- accepted through a *_for_chat wrapper, undeclared in the schema ---
+    ("plan_meal", lambda i: {"meal_date": _today(), "meal": "Injected Stew", "slot": "lunch",
+                             "weekly_plan_id": i["plan"]}),
     # --- accepted but undeclared ids (read_tool_input passes them through) ---
     ("add_grocery_item", lambda i: {"item": "injected beans", "source_weekly_plan_id": i["plan"]}),
     ("add_staple", lambda i: {"item": "injected coffee", "every_days": 7,
                               "grocery_item_id": i["grocery"]}),
     ("hold_thing", lambda i: {"text": "injected reminder", "member_id": i["member"]}),
-    ("set_slot_need", lambda i: {"date_str": _today(), "slot": "dinner", "need": "early",
+    ("set_slot_need", lambda i: {"date_str": _today(), "slot": "dinner", "need": "quick",
                                  "for_member_ids": [i["member"]]}),
+    ("set_slot_need", lambda i: {"date_str": _today(), "slot": "dinner", "need": "quick",
+                                 "away_stretch_id": i["stretch"]}),
     ("consolidate_grocery_list", lambda i: {"only_ids": [i["grocery"]]}),
     ("clear_stale_grocery_items", lambda i: {"current_weekly_plan_id": i["plan"]}),
 ]
@@ -115,13 +123,27 @@ def _id_params(name):
         if d["name"] == name:
             out |= {p for p in (d["input_schema"].get("properties") or {})
                     if p.endswith("_id") or p.endswith("_ids")}
-    fn = agent.TOOL_FUNCTIONS[name]
-    try:
-        params = inspect.signature(fn).parameters
-    except (TypeError, ValueError):
-        params = {}
-    out |= {p for p in params if p.endswith("_id") or p.endswith("_ids")}
+    fn = _real_function(agent.TOOL_FUNCTIONS[name])
+    out |= {p for p in inspect.signature(fn).parameters if p.endswith("_id") or p.endswith("_ids")}
     return out
+
+
+def _real_function(fn):
+    """The function a chat tool's arguments actually land on. The
+    `*_for_chat(*args, **kwargs)` wrappers (plan_meal, add_recipe,
+    swap_meal_in_plan) hand everything through to the bare function of the
+    same name in the same module, so their own signature says nothing —
+    plan_meal's weekly_plan_id was invisible here until this followed it."""
+    fn = inspect.unwrap(fn)
+    params = inspect.signature(fn).parameters.values()
+    if not any(p.kind is p.VAR_KEYWORD for p in params):
+        return fn
+    module = sys.modules[fn.__module__]
+    real = getattr(module, fn.__name__.removesuffix("_for_chat"), None)
+    assert real is not None and real is not fn, (
+        f"{fn.__module__}.{fn.__name__} takes **kwargs and isn't a *_for_chat wrapper "
+        "of a same-module function — say here where its arguments go")
+    return _real_function(real)
 
 
 def test_every_id_taking_tool_is_classified():
@@ -151,6 +173,10 @@ def _a_ids():
         "INSERT INTO prep_tasks (household_id, weekly_plan_id, task_date, description) VALUES (?, ?, ?, ?)",
         (A, ids["plan"], _today(), "Zqs chop the onions"))
     ids["prep"] = cur.lastrowid
+    cur = conn.execute(
+        "INSERT INTO away_stretches (household_id, from_date, from_slot, to_date, to_slot, reason) "
+        "VALUES (?, ?, 'dinner', ?, 'dinner', 'Zqs at the cottage')", (A, _tomorrow(), _tomorrow()))
+    ids["stretch"] = cur.lastrowid
     conn.commit()
     conn.close()
     return ids
@@ -172,7 +198,8 @@ def _b_views():
 # join, even when the join that reads it today happens to be scoped.
 _POINTS_AT = {"member_id": "members", "weekly_plan_id": "weekly_plans",
               "source_weekly_plan_id": "weekly_plans", "grocery_item_id": "grocery_items",
-              "recipe_id": "recipes", "staple_id": "staples", "meal_plan_entry_id": "meal_plan_entries"}
+              "recipe_id": "recipes", "staple_id": "staples", "meal_plan_entry_id": "meal_plan_entries",
+              "away_stretch_id": "away_stretches"}
 
 
 def _bs_rows_pointing_at_as(b):
@@ -185,6 +212,19 @@ def _bs_rows_pointing_at_as(b):
         if "household_id" not in cols:
             continue
         for col in cols:
+            if col.endswith("member_ids_json"):
+                # A JSON array of members.id (slot_needs.for_member_ids_json, ...).
+                theirs = {r["id"] for r in conn.execute(
+                    "SELECT id FROM members WHERE household_id = ?", (A,))}
+                for r in conn.execute(
+                        f"SELECT rowid AS rid, {col} AS v FROM {table} WHERE household_id = ?", (b,)):
+                    try:
+                        held = set(json.loads(r["v"] or "[]"))
+                    except (TypeError, ValueError):
+                        continue
+                    if held & theirs:
+                        out.append(f"{table}.{col} row {r['rid']}")
+                continue
             target = _POINTS_AT.get(col)
             if not target:
                 continue
@@ -208,7 +248,7 @@ def two_households(a_household_named):
     return b, ids
 
 
-@pytest.mark.parametrize("name,build", CASES, ids=[c[0] for c in CASES])
+@pytest.mark.parametrize("name,build", CASES, ids=[f"{c[0]}-{n}" for n, c in enumerate(CASES)])
 def test_household_bs_chat_tool_cannot_reach_household_as_rows(two_households, name, build):
     b, ids = two_households
     fn = agent.TOOL_FUNCTIONS[name]
@@ -217,6 +257,10 @@ def test_household_bs_chat_tool_cannot_reach_household_as_rows(two_households, n
         try:
             said = repr(fn(**build(ids)))
         except Exception as exc:  # a refusal is a fine answer; it must not leak either
+            # ...but a database error is not a refusal: a guard that closed
+            # the connection under its own caller surfaced as "Cannot
+            # operate on a closed database", which hid the real answer.
+            assert not isinstance(exc, sqlite3.Error), f"{name} crashed instead of refusing: {exc!r}"
             said = f"{type(exc).__name__}: {exc}"
         afterwards = _b_views()
     damage = _damage(before, _owned_state()) + [
@@ -225,3 +269,18 @@ def test_household_bs_chat_tool_cannot_reach_household_as_rows(two_households, n
     for where, text in (("its answer", said), ("B's own lists afterwards", afterwards)):
         leaked = [m for m in MARKERS if m in text]
         assert not leaked, f"{name} with A's id showed A's {leaked} in {where}:\n{text[:800]}"
+
+
+def test_a_refused_member_leaves_a_callers_connection_open(two_households):
+    """hold_thing's foreign-member refusal closes only a connection it
+    opened: the one caller that passes its own (weekly_plan._release_prep_rows)
+    is mid-transaction, and must still be able to roll back."""
+    b, ids = two_households
+    conn = get_conn()
+    try:
+        with tools.use_household(b):
+            with pytest.raises(ValueError):
+                tools.hold_thing("injected", member_id=ids["member"], conn=conn)
+        assert conn.execute("SELECT 1").fetchone()[0] == 1
+    finally:
+        conn.close()
