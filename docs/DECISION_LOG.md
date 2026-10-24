@@ -13,6 +13,14 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A name said in chat finds its person whatever the accents, case or
+  spaces** (2026-10-24, defect hunt; branch `overnight/chat-tools-sig`; tests
+  `tests/test_member_name_accents.py`). "zoe is allergic to nuts" about Zoé
+  added a second child "Zoe" with the allergy, counted at every meal, and
+  left Zoé's list empty: SQLite `LOWER()` folds only A-Z and nothing trimmed.
+  `_shared.find_member_row` (exact case-blind first, accent-folded only when
+  unique) now backs get-or-create, attendance, lunch facts, share links and
+  per-person taste.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

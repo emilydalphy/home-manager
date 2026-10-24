@@ -27,7 +27,7 @@ from functools import lru_cache
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError, available_timezones
 
 from ..db import get_conn
-from ._shared import EATS_HERE_SQL, household_id
+from ._shared import EATS_HERE_SQL, find_member_row, household_id
 from . import household as _household
 
 
@@ -157,10 +157,9 @@ def _member_spelling(conn, member_name: str) -> str:
     (defect hunt 2026-10-12). No match is left as it was: a lunch answer
     can arrive before its person does (setup, and the tests that model it).
     """
-    row = conn.execute(
-        "SELECT name FROM members WHERE household_id = ? AND LOWER(TRIM(name)) = LOWER(?) ORDER BY id LIMIT 1",
-        (household_id(), member_name),
-    ).fetchone()
+    # Accents too (find_member_row): "zoe's out at lunch" about Zoé was
+    # stored under "zoe", the same unread key (defect hunt 2026-10-24).
+    row = find_member_row(conn, member_name)
     return row["name"] if row else member_name
 
 
