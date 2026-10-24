@@ -96,3 +96,23 @@ def test_a_count_of_pieces_or_an_unsized_can_is_not_a_sized_container():
     assert _recipes._count_first_sized("2 (15 oz) handfuls") is None
     assert _recipes._count_first_sized("2 cans") is None
     assert _recipes._count_first_sized("1 (14.5 ounce) can") == (1.0, "can (14.5 oz)")
+
+
+def test_an_x_sized_tin_scales_the_same_on_the_list_and_in_the_step():
+    """Review, 2026-10-24: "2 x 400g tins" scaled on the list ("4 tins
+    (400 g)") while the step kept "Add 2 x 400g tins". Both say the count."""
+    tools.add_recipe(
+        "Tomato Soup",
+        ingredients=[{"item": "tomatoes", "qty": "2 x 400g tins"}],
+        default_servings=4,
+        instructions=["Add 2 x 400g tins tomatoes", "Bake in a 9 x 13 inch dish"],
+        amounts_as_written=True,
+    )
+
+    for servings, count, step in ((8, "4 tins", "Add 4 x 400g tins tomatoes"),
+                                  (2, "1 tin", "Add 1 x 400g tin tomatoes")):
+        scaled = tools.scale_recipe("Tomato Soup", servings)
+        qty = {i["item"]: i["qty"] for i in scaled["scaled_ingredients"]}
+        assert qty["tomatoes"] == f"{count} (400 g)"
+        assert scaled["scaled_instructions"][0] == step
+        assert scaled["scaled_instructions"][1] == "Bake in a 9 x 13 inch dish", "a dish size is not food"

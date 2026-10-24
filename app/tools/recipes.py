@@ -1212,8 +1212,12 @@ _STEP_CONTAINER_PLURAL = {
     "tub": "tubs", "block": "blocks",
 }
 _STEP_CONTAINER_SINGULAR = {v: k for k, v in _STEP_CONTAINER_PLURAL.items()}
+# "2 x 400g tins" is the same shape with the size after an "x" (review of
+# overnight/kitchen-hunt, 2026-10-24: the list scaled it, the step didn't).
+# The size must be a weight or volume, so "9 x 13 inch dish" never matches.
 _STEP_COUNT_FIRST_CONTAINER = re.compile(
-    r"(?<![\w.\-–/])(?P<n>" + _STEP_NUM + r")(?P<mid>\s*\([^)]*\)\s*)(?P<word>"
+    r"(?<![\w.\-–/])(?P<n>" + _STEP_NUM + r")"
+    r"(?P<mid>\s*\([^)]*\)\s*|\s*[x×]\s*\d+(?:\.\d+)?\s*(?:g|kg|ml|l|oz|lb)\s+)(?P<word>"
     + "|".join(sorted(list(_STEP_CONTAINER_PLURAL) + list(_STEP_CONTAINER_PLURAL.values()), key=len, reverse=True))
     + r")\b",
     re.IGNORECASE,
