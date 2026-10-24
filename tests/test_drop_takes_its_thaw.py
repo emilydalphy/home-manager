@@ -120,3 +120,35 @@ def _prep_rows() -> list[dict]:
     rows = conn.execute("SELECT * FROM prep_tasks ORDER BY id").fetchall()
     conn.close()
     return [dict(r) for r in rows]
+
+
+def test_undo_of_a_minus_that_took_a_freezer_night_puts_the_move_back():
+    """GUARD — the "−" on a cook whose only later night eats a portion it
+    freezes leaves an Undo (drop_with_freezer). Its snapshot is taken
+    before the prep rows are released, so Undo restores the cook's own
+    fridge move exactly."""
+    tools.add_member("Emily")
+    tools.set_member_age_group("Emily", "adult")
+    tools.add_recipe("Turkey Chili",
+                     ingredients=[{"item": "Ground turkey", "qty": "1.5 lbs", "category": "meat"}],
+                     default_servings=2)
+    today = household_today()
+    cook_day = (today + timedelta(days=2)).isoformat()
+    freezer_day = (today + timedelta(days=6)).isoformat()
+    pid = tools.create_weekly_plan(today.isoformat())["weekly_plan_id"]
+    cook = tools.plan_meal(cook_day, "Turkey Chili", slot="dinner", weekly_plan_id=pid)["entry_id"]
+    tools.plan_meal(freezer_day, "Turkey Chili", slot="dinner", weekly_plan_id=pid,
+                    derived_from={"links_to": f"{cook_day}:dinner"})
+    tools.repair_leftover_chains(pid)
+    tools.approve_weekly_plan(pid, approved_by="Emily")
+    tools.confirm_frozen_items(pid, ["Ground turkey"])
+    cook_moves = lambda: [r for r in _prep_rows() if r["meal_plan_entry_id"] == cook]
+    before = cook_moves()
+    assert before, "premise: the cook's own fridge move is booked"
+
+    out = tools.drop_dish_from_day(pid, cook)
+    assert out.get("can_undo"), out
+    assert cook_moves() == []
+
+    assert tools.drop_dish_undo(pid, out["undo_entry_id"])["status"] == "restored"
+    assert cook_moves() == before
