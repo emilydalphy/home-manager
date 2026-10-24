@@ -10023,10 +10023,13 @@ def undo_dinner_nights_swap(weekly_plan_id: int, date_a: str, date_b: str) -> di
 def _resize_after_nights_swap(out: dict) -> dict:
     """Same dishes, same lines — but each is bought for the table on the
     night it is on now (attendance.resize_after_redate). After the swap's
-    own commit; a no-op on a draft or when both tables are the same size."""
+    own commit, both nights in one transaction; a no-op on a draft or when
+    both tables are the same size. `list_changed` tells the screen to
+    re-read Shop."""
     if out.get("status") in ("swapped", "restored") and out.get("moved"):
         from . import attendance as _attendance  # lazy: attendance imports this module
-        _attendance.resize_after_redate([m["entry_id"] for m in out["moved"]])
+        out["list_changed"] = bool(_attendance.resize_after_redate(
+            {m["entry_id"]: m["from"] for m in out["moved"]}))
     return out
 
 

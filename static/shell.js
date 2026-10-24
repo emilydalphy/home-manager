@@ -3865,7 +3865,8 @@
 
   // One tap: tonight and the chosen night trade dinners (POST
   // /api/week/{week}/swap-nights — the rows are re-dated, groceries and
-  // defrost reminders ride along, the list is untouched). Then every
+  // defrost reminders ride along; a dish landing on a different-size table
+  // is resized, `list_changed`). Then every
   // surface that reads the plan by date is told: Now's own strip and this
   // card, Plan, and Cook.
   async function runTonightSwap(panel, otherDate) {
@@ -3902,7 +3903,7 @@
           return undoTonightSwap(panel, tonightDate, otherDate, away && away.meal);
         }
       }, tradeToast.ms);
-      afterTonightSwap(panel);
+      afterTonightSwap(panel, { listMoved: !!out.list_changed });
     } catch (err) {
       console.warn('Swapping tonight failed:', err);
       showToast(TONIGHT_SWAP_TROUBLE);
@@ -3964,9 +3965,9 @@
         label: 'Undo',
         onClick: function () { return undoTonightNightOff(panel, tonightDate, out.dish); }
       } : null, offToast.ms);
-      // listMoved: the one thing a night off can change that a nights swap
-      // never does — a dropped dish puts back whatever it had put on the
-      // list that nobody has bought yet. This used to be a
+      // listMoved: a dropped dish puts back whatever it had put on the
+      // list that nobody has bought yet (a nights swap moves it only when
+      // a dish lands on a different-size table — its `list_changed`). This used to be a
       // refreshGroceryPanel() of its own, directly under this sentence;
       // once the `week` branch started re-reading Shop too that was a
       // second reload of the same panel on one tap (measured: 2), so the
@@ -4086,10 +4087,11 @@
         body: JSON.stringify({ date_a: tonightDate, date_b: otherDate })
       });
       if (!res.ok) throw new Error('undo failed (' + res.status + ')');
+      var undone = await res.json().catch(function () { return {}; });
       showToast(wasTonights
         ? wasTonights + ' is back on tonight.'
         : 'Tonight and ' + dayName(otherDate, { weekday: 'long' }) + ' are back as they were.');
-      afterTonightSwap(panel);
+      afterTonightSwap(panel, { listMoved: !!(undone && undone.list_changed) });
     } catch (err) {
       console.warn('Undoing tonight’s swap failed:', err);
       showToast(TONIGHT_SWAP_TROUBLE);
@@ -4103,13 +4105,13 @@
   //
   // `opts.listMoved` is the one thing this caller knows that a chat action
   // never can, and it is why the second argument exists (2026-09-17, on
-  // review). A NIGHTS SWAP leaves the grocery list alone — swap_dinner_-
-  // nights re-dates the rows in place, ids kept, so the grocery links ride
-  // along: same dishes, same lines, nothing to re-read (worktree-week-
-  // tiles, 2026-09-13). A NIGHT OFF does move it: a dropped dish puts back
-  // whatever it had put on the list that nobody has bought yet. So Shop is
-  // left alone for the first and re-read for the second, rather than both
-  // paying the chat door's "the client cannot tell" price.
+  // review). A NIGHTS SWAP keeps the same lines — swap_dinner_nights
+  // re-dates the rows in place, ids kept — but resizes a dish that lands on
+  // a different-size table, and says so in `list_changed` (2026-10-24); the
+  // caller passes that through. A NIGHT OFF does move it: a dropped dish
+  // puts back whatever it had put on the list that nobody has bought yet.
+  // So Shop is re-read only when the server says the list moved, rather
+  // than paying the chat door's "the client cannot tell" price.
   function afterTonightSwap(panel, opts) {
     loadTonightAsk(panel);
     loadNeedsYou(panel);
@@ -18273,6 +18275,9 @@
         thaw ? MOVE_THAW_TOAST_MS : MOVE_TOAST_MS);
       await loadWeekMenu(panel);
       refreshTodayMoves();
+      // A meal that moved onto a different-size table is bought for it now
+      // (2026-10-24): Shop builds once per page load, so tell it.
+      if (out.list_changed) refreshGroceryPanel();
     } catch (err) {
       console.warn('Moving a meal failed:', err);
       if (swapSheetState === st) {
@@ -18304,6 +18309,7 @@
       showToast(out.said || 'Back as it was');
       await loadWeekMenu(panel);
       refreshTodayMoves();
+      if (out.list_changed) refreshGroceryPanel();
     } catch (err) {
       console.warn('Undoing a meal move failed:', err);
       showToast(SWAP_TROUBLE);

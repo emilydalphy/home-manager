@@ -122,3 +122,55 @@ def test_a_move_in_a_draft_writes_nothing_to_the_list():
     plan_id, ids = _week(approve=False)
     assert meal_move.move_meal(plan_id, ids[WED], THU)["status"] == "moved"
     assert _rows() == [] and _ledger() == []
+
+
+def test_the_answers_say_whether_the_list_changed():
+    """The screen re-reads Shop only when told to (`list_changed`)."""
+    plan_id, ids = _week()
+    out = meal_move.move_meal(plan_id, ids[WED], THU)
+    assert out["list_changed"] is True
+    assert meal_move.undo_meal_move(plan_id, out["move_id"])["list_changed"] is True
+    assert tools.swap_dinner_nights(plan_id, WED, THU)["list_changed"] is True
+    assert tools.undo_dinner_nights_swap(plan_id, WED, THU)["list_changed"] is True
+
+
+def test_a_move_between_same_size_tables_leaves_a_drifted_list_alone_and_undo_is_exact():
+    """Review repro: a recipe's servings edited after approval leaves the
+    week's ledger out of step with what the ingest would write today. A
+    move between two three-person nights is not a headcount change, so it
+    must not 'correct' that drift — Undo could never put it back."""
+    plan_id, ids = _week()
+    tools.set_guest_count(THU, "dinner", 0)  # both tables are three now
+    tools.update_recipe_details("Bulgogi Wraps", default_servings=6)
+    rows, ledger = _rows(), _ledger()
+    assert _list()["beef"] == "1 lb"
+
+    out = meal_move.move_meal(plan_id, ids[WED], THU)
+    assert out["status"] == "moved" and out["list_changed"] is False
+    assert _rows() == rows and _ledger() == ledger, "FAILED ON THE FIRST CUT: beef went to 8 oz"
+
+    meal_move.undo_meal_move(plan_id, out["move_id"])
+    assert _rows() == rows and _ledger() == ledger
+
+
+def test_a_nights_swap_resizes_both_dishes_or_neither(monkeypatch):
+    """One transaction: if the second dish's resize fails, the first one's
+    is rolled back too — never one dish at its new table and one at its old."""
+    from app.tools import attendance
+
+    plan_id, _ = _week()
+    rows, ledger = _rows(), _ledger()
+    real = attendance._resize_recipe_week
+    calls = []
+
+    def second_fails(conn, *a, **kw):
+        calls.append(1)
+        if len(calls) == 2:
+            raise RuntimeError("boom")
+        return real(conn, *a, **kw)
+
+    monkeypatch.setattr(attendance, "_resize_recipe_week", second_fails)
+    out = tools.swap_dinner_nights(plan_id, WED, THU)
+    assert out["status"] == "swapped" and out["list_changed"] is False
+    assert len(calls) == 2
+    assert _rows() == rows and _ledger() == ledger

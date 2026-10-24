@@ -22,7 +22,12 @@ why*, not duplicating the diff.
   its Undo) and `swap_dinner_nights` / `undo_dinner_nights_swap` now call
   `attendance.resize_after_redate` after commit. Night off's move
   (`tonight._night_off_with_undo`) is NOT hooked: its Undo snapshot holds the
-  grocery links, so a resize there needs its own care.
+  grocery links, so a resize there needs its own care. Review round: only a
+  meal whose table size differs between its old and new day is resized (a
+  same-size move once "corrected" a recipe edited since approval, and Undo
+  couldn't put it back); every moved meal resizes in ONE transaction; the
+  answers carry `list_changed` and shell.js re-reads Shop on Move, the
+  Tonight trade and both Undos.
 - **Guests (or someone out) after approval resize the list IN PLACE**
   (2026-10-22; branch `overnight/guests-resize-in-place`; tests
   `tests/test_guests_resize_in_place.py`). `attendance.resize_for_new_headcount`
