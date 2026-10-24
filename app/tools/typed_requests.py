@@ -1121,6 +1121,7 @@ def attach_named_sides(plan_id: int, moved: list[dict], context: dict | None = N
     can't, the side goes on as named so nothing they were shown
     disappears. Returns how many were attached. Never raises.
     """
+    from . import weekly_plan as _weekly_plan
     attached = 0
     if not moved:
         return attached
@@ -1151,6 +1152,11 @@ def attach_named_sides(plan_id: int, moved: list[dict], context: dict | None = N
                     )
                     if result.get("status") == "added":
                         attached += 1
+                except _weekly_plan.SlotRefused as e:
+                    # An expected answer, not a fault: the side clashes with
+                    # someone at the table (or the night has gone), so it
+                    # stays off and the dish stands without it. Quiet.
+                    logger.info("Left the named side %r off %s %s: %s", side, m.get("date"), m.get("slot"), e)
                 except Exception:
                     logger.exception("Attaching %r as a side of %s %s failed", side, m.get("date"), m.get("slot"))
     except Exception:

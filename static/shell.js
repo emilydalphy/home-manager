@@ -20768,6 +20768,22 @@
 
   var MEAL_ADD_TROUBLE = 'That didn’t go on — try again.';
 
+  // A side the server refused for a reason the household should read — a
+  // night that has gone by, or something someone at the table can't have
+  // (plates.add_component, 2026-10-24) — arrives as a 409 whose `detail` is
+  // the sentence: "I left it off — Orzo clashes with gluten." Read here so
+  // the toast says that and not "try again", which would never work. ''
+  // for any other answer, and for a 409 without a sentence.
+  async function mealAddRefusal(res) {
+    if (!res || res.status !== 409) return '';
+    try {
+      var data = await res.json();
+      return data && typeof data.detail === 'string' ? data.detail.trim() : '';
+    } catch (err) {
+      return '';
+    }
+  }
+
   async function runMealAdd(pick) {
     var st = mealAddState;
     if (!st || st.busy) return;
@@ -20781,6 +20797,12 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ entry_id: st.entryId, key: pick.key || null, text: pick.text || null })
       });
+      var refused = await mealAddRefusal(res);
+      if (refused) {
+        // Nothing went on. The sheet stays open so another pick is one tap.
+        showToast(refused);
+        return;
+      }
       if (!res.ok) throw new Error('add failed (' + res.status + ')');
       var out = await res.json();
       closeMealAddSheet();
@@ -20852,6 +20874,15 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ entry_id: st.entryId, key: null, text: replaced })
         });
+        // The new side DID come off; the old one is refused now (an
+        // allergy saved since, say). Say both, not "couldn't take that off".
+        var notBack = await mealAddRefusal(back);
+        if (notBack) {
+          delete recentlyChanged[st.date + ':' + st.slot];
+          await loadWeekMenu(panel);
+          showToast('Taken back off. ' + notBack);
+          return;
+        }
         if (!back.ok) throw new Error('put back failed (' + back.status + ')');
       }
       // Undone, so the row no longer wears "Changed".

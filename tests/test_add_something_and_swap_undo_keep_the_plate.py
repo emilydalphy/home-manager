@@ -221,3 +221,70 @@ def test_a_swap_then_a_change_then_undo_goes_back_to_the_first_plate():
     assert back["meal"] == "Pork Chops"
     assert _sides(back["entry_id"]) == ["Roasted potatoes"]
     assert "Mixed greens" not in _needed()
+
+
+# ---------------------------------------------- 3. the screen says the refusal
+
+import json as _json
+import logging
+import pathlib
+import shutil
+
+import nodeharness
+
+SHELL_JS = (pathlib.Path(__file__).resolve().parent.parent / "static" / "shell.js").read_text(encoding="utf-8")
+
+
+def _extract(name: str) -> str:
+    start = SHELL_JS.index(f"async function {name}(")
+    i = SHELL_JS.index("{", start)
+    depth, j = 0, i
+    while True:
+        depth += {"{": 1, "}": -1}.get(SHELL_JS[j], 0)
+        if depth == 0:
+            break
+        j += 1
+    return SHELL_JS[start:j + 1]
+
+
+def _refusal(status: int, body) -> str:
+    script = f"""
+    {_extract("mealAddRefusal")}
+    const body = {_json.dumps(body)};
+    const res = {{ status: {status}, ok: {str(status < 400).lower()},
+                   json: async () => {{ if (body === null) throw new Error('not json'); return body; }} }};
+    mealAddRefusal(res).then(said => console.log(JSON.stringify(said)));
+    """
+    out = nodeharness.run_node(script, timeout=30)
+    assert out.returncode == 0, out.stderr
+    return _json.loads(out.stdout.strip().splitlines()[-1])
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node not installed")
+def test_a_409_reads_the_servers_sentence_and_nothing_else_does():
+    said = "I left it off — Orzo clashes with gluten."
+    assert _refusal(409, {"detail": said}) == said
+    assert _refusal(404, {"detail": "No meal plan entry 9 in this household."}) == ""
+    assert _refusal(200, {"status": "added"}) == ""
+    assert _refusal(409, None) == ""
+
+
+def test_the_add_sheet_toasts_the_refusal_before_the_generic_trouble_line():
+    add = SHELL_JS[SHELL_JS.index("async function runMealAdd("):SHELL_JS.index("async function runMealAddUndo(")]
+    assert add.index("await mealAddRefusal(res)") < add.index("if (!res.ok) throw")
+    assert "showToast(refused)" in add
+    undo = SHELL_JS[SHELL_JS.index("async function runMealAddUndo("):SHELL_JS.index("async function runSwapUndo(")]
+    assert "await mealAddRefusal(back)" in undo
+    assert "'Taken back off. ' + notBack" in undo
+
+
+def test_a_clashing_named_side_is_left_off_quietly(caplog):
+    from app.tools import typed_requests
+    plan_id, ids = _seed()
+    moved = [{"date": DAY1, "slot": "dinner", "meal_name": "Pork Chops", "sides": ["garlic bread"]}]
+    with caplog.at_level(logging.INFO, logger="home_manager"):
+        n = typed_requests.attach_named_sides(plan_id, moved, side_generator=lambda ctx: [])
+    assert n == 0
+    assert _sides(ids["today"]) == []
+    hits = [r for r in caplog.records if "garlic bread" in r.getMessage()]
+    assert hits and all(r.levelno == logging.INFO and not r.exc_info for r in hits)
