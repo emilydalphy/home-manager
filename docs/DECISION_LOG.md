@@ -13,6 +13,12 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **"2 (15 oz) cans" on the cook card is two cans** (2026-10-24, defect hunt;
+  branch `overnight/kitchen-hunt`; tests `tests/test_cook_card_sized_cans.py`).
+  The parser read no count-first sized container ("2 (15 oz) cans", "2 x 400g
+  tins"), so the cook card swapped the household's line for the table's "1 can
+  (15 oz)" (½ can for two) under a step saying 2. `recipes._parse_cook_qty`
+  now reads that shape; the grocery parser is untouched.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

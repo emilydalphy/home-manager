@@ -2094,10 +2094,50 @@ _NUM = r"\d+(?:\.\d+)?(?:\s+\d+/\d+)?|\d+/\d+"
 _RANGE_RE = re.compile(r"^\s*(" + _NUM + r")\s*(?:-|–|—|to)\s*(?:" + _NUM + r")(\s.*)?$", re.IGNORECASE)
 
 
+# "2 (15 oz) cans", "1 (14.5-ounce) can", "2 x 400g tins": the COUNT first,
+# then the size of ONE container, then the container word — the way most
+# recipes write a canned good. quantities._parse_quantity reads none of
+# these (or reads "1 (28-ounce) can" with the size dropped), so the cook
+# card called the household's own "2 (15 oz) cans chickpeas" unmeasured
+# and put the table's "1 can (15 oz)" in its place, under a step that
+# still said "Drain 2 (15 oz) cans" (defect hunt, 2026-10-24).
+_COUNT_FIRST_SIZED_RE = re.compile(
+    r"^\s*(?P<n>" + _NUM + r")\s*"
+    r"(?:\(\s*(?P<bracket>[^)]*?)\s*\)|[x×]\s*(?P<times>\d+(?:\.\d+)?\s*-?\s*[a-z]+))"
+    r"\s*(?P<word>[a-z]+)\b",
+    re.IGNORECASE,
+)
+
+
+def _count_first_sized(ascii_text: str):
+    """(2.0, "can (15 oz)") for "2 (15 oz) cans" / "2 x 15 oz cans", the
+    shape quantities writes "2 cans (15 oz)" back as — or None when the
+    text is not a count of same-sized containers."""
+    m = _COUNT_FIRST_SIZED_RE.match(ascii_text or "")
+    if not m:
+        return None
+    word = m.group("word").lower()
+    container = _quantities._CONTAINER_UNIT_SINGULARS.get(word, word)
+    if container not in _quantities._CONTAINER_UNIT_PLURALS:
+        return None
+    size_text = re.sub(r"(?<=\d)\s*-\s*(?=[a-z])", " ", m.group("bracket") or m.group("times") or "", flags=re.I)
+    size = _quantities._parse_quantity(size_text)
+    if not size or not size[1] or size[1] not in _quantities._measure_units():
+        return None
+    count = _quantities._parse_quantity(m.group("n"))
+    if not count or count[1] or count[0] <= 0:
+        return None
+    return count[0], _quantities._sized_package_unit(container, size[0], size[1])
+
+
 def _parse_cook_qty(text: str):
-    """_quantities._parse_quantity, reading ½-style fractions as 1/2 and a
-    range by its low end ("2-3 cloves" → 2 clove)."""
+    """_quantities._parse_quantity, reading ½-style fractions as 1/2, a
+    range by its low end ("2-3 cloves" → 2 clove) and a count of sized
+    containers ("2 (15 oz) cans" → 2 can (15 oz))."""
     ascii_text = _ascii_fractions(text)
+    sized = _count_first_sized(ascii_text)
+    if sized:
+        return sized
     parsed = _quantities._parse_quantity(ascii_text)
     if parsed:
         return _measure_before_a_word(parsed)
