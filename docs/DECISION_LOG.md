@@ -13,6 +13,14 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Chat keeps one adult too** (2026-10-24, overnight test-gap pass; branch
+  `overnight/chat-keeps-one-adult`; tests `tests/test_chat_keeps_one_adult.py`).
+  Settings' age chip refused taking the only adult off Adult; chat's
+  set_member_age_group did not, so "Emily's a teen" left a one-adult home
+  with no adult. One rule now (`tools.last_adult_leaving`), read by the route
+  and by `set_member_age_group_for_chat`, which raises `tools.MemberRefused`
+  (a fourth REFUSALS_OWED_TO_A_PERSON marker: an answer, not a breakage).
+  Chat's word stays freeform; the own-age rule stays route-only.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
