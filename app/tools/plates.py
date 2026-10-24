@@ -1188,6 +1188,19 @@ def suggest_additions(entry_id: int, eating_style: str | None = None, weekly_pla
     per_kind_cap = None if asked_for else 3
     kind_counts: dict[str, int] = {}
     options = []
+    added = [s.get("name") for s in sides if s.get("added_by") == "household"]
+    # The sheet is the app's own suggestion, so it is held to the rule
+    # every other option sheet is (swap_in_place.offer_gate, 2026-10-19):
+    # nothing someone at the table can't have, nothing on the Won't eat
+    # list. Measured before this: a house with a gluten-free adult was
+    # offered Crusty bread, Couscous and Orzo, and a dairy-free one Garlic
+    # yogurt sauce — one tap planted it and bought the baguette. Read once
+    # for the whole sheet; a check that can't run offers nothing rather
+    # than an unchecked list (the typed line still works).
+    from . import swap_in_place as _swap
+    avoidances = _swap.offer_avoidances()
+    if avoidances is None:
+        return {"entry_id": entry_id, "meal": row["meal"], "options": [], "added": added}
     for a in sorted(ADDITIONS, key=rank):
         # A role sheet is filtered to its own kind BEFORE the six-row cap,
         # not merely sorted to the top of it — see the docstring above.
@@ -1198,6 +1211,15 @@ def suggest_additions(entry_id: int, eating_style: str | None = None, weekly_pla
         if _addition_matches(a, words):
             continue
         if per_kind_cap and kind_counts.get(a["kind"], 0) >= per_kind_cap:
+            continue
+        # Before the row counts toward its kind's cap, so one held back
+        # frees its place for the next of that kind (Quinoa in for Crusty
+        # bread) rather than leaving the sheet a row short.
+        why = _swap.offer_gate(a["name"], ingredients=a["ingredients"], avoidances=avoidances)
+        if why == _swap.CHECK_FAILED:
+            return {"entry_id": entry_id, "meal": row["meal"], "options": [], "added": added}
+        if why:
+            logger.info("Add something held back %r: %s", a["name"], why)
             continue
         kind_counts[a["kind"]] = kind_counts.get(a["kind"], 0) + 1
         options.append({
@@ -1211,7 +1233,7 @@ def suggest_additions(entry_id: int, eating_style: str | None = None, weekly_pla
         "entry_id": entry_id,
         "meal": row["meal"],
         "options": options,
-        "added": [s.get("name") for s in sides if s.get("added_by") == "household"],
+        "added": added,
     }
 
 
@@ -1392,6 +1414,14 @@ def add_component(
     conn.close()
     if not row:
         raise ValueError(f"No meal plan entry {entry_id} in this household.")
+    # A night that has gone by takes no new side, the rule Swap and Change
+    # already keep (swap_in_place.swap_meal_in_place's note on it): the
+    # screen hides the button on a past day by the BROWSER's date, but on an
+    # approved week this write still bought the side for a dinner that was
+    # over. Asked before the free-text model call, so it costs nothing.
+    from . import weekly_plan as _weekly_plan
+    if _weekly_plan.night_has_gone(row["date"]):
+        raise _weekly_plan.SlotRefused(_weekly_plan.NIGHT_GONE)
     sides = _sides_of(row)
     note = ""
     if key:
@@ -1413,6 +1443,21 @@ def add_component(
             **(context or {}),
         }
         side, note = _free_text_side(text, ctx, side_generator)
+
+    # Never a side someone at the table can't have — the hard half of the
+    # gate a Swap or a Change already runs on the household's own pick
+    # (swap_in_place.pick_gate / _hard_clash: an allergy or a hard fact, a
+    # dislike never). A tapped catalogue row from a sheet drawn before the
+    # allergy was saved, and a typed "cheese sauce" for a dairy-free adult,
+    # both went on and were bought. Refused with nothing written.
+    from . import swap_in_place as _swap
+    clash = _swap._hard_clash({"meal_name": side["name"], "ingredients": side.get("ingredients") or []})
+    if clash:
+        who = ", ".join(sorted({c.get("restriction") or "" for c in clash if c.get("restriction")}))
+        raise _weekly_plan.SlotRefused(
+            f"I left it off — {side['name']} clashes with {who}." if who
+            else f"I left it off — I couldn’t check {side['name']} against what this house can’t have."
+        )
 
     if _name_key(side["name"]) in {_name_key(s.get("name") or "") for s in sides}:
         return {

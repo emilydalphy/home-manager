@@ -5089,6 +5089,13 @@ def week_add_component(week_start: str, req: AddComponentRequest):
             req.entry_id, key=req.key, text=req.text,
             context=_addition_context() if req.text else None, weekly_plan_id=plan_id,
         )
+    except tools.SlotRefused as e:
+        # A night gone by, or a side someone at the table can't have:
+        # nothing was written, and the sentence says why. A 409 rather than
+        # the swap's 200 'refused', because the sheet's handler reads any
+        # 200 as "added" (runMealAdd) and would toast a side that isn't on.
+        # ABOVE ValueError, which SlotRefused subclasses.
+        raise HTTPException(status_code=409, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
