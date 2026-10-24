@@ -81,10 +81,9 @@ def _line(item, status="needed"):
 
 
 @ON_MONDAY
-def test_unbatching_after_the_shop_and_the_cook_adds_nothing():
+def test_unbatching_after_the_shop_but_before_the_cook_adds_nothing():
     _plan_id, ids = _chili_week()
     _tick_all()
-    tools.check_off_meal(ids[MON])
     before = _rows()
     result = batch_undo.unbatch("chili")
     assert result["status"] == "unbatched"
@@ -92,6 +91,34 @@ def test_unbatching_after_the_shop_and_the_cook_adds_nothing():
     assert _rows() == before
     assert result["list_changed"] is False
     assert "list has changed" not in result["said"]
+
+
+@ON_MONDAY
+def test_unbatching_after_the_double_was_cooked_buys_wednesdays_share():
+    # Monday's double is in a pot, not on the shelf: what was bought for
+    # Wednesday went into it, so a fresh Wednesday needs its own (review,
+    # 2026-10-24 — crediting it again left Wednesday with nothing).
+    _plan_id, ids = _chili_week()
+    _tick_all()
+    tools.check_off_meal(ids[MON])
+    result = batch_undo.unbatch("chili")
+    assert _needed() == {"Ground turkey": "1 lb", "Black beans": "1 can"}
+    assert result["list_changed"] is True
+
+
+@ON_MONDAY
+def test_store_unit_foods_are_not_bought_again_after_the_shop():
+    recipe = ("Breakfast Plate", [
+        {"item": "Bread", "qty": "2 slices", "category": "bakery"},
+        {"item": "Blueberries", "qty": "1 cup", "category": "produce"},
+        {"item": "Butter", "qty": "3 tbsp", "category": "dairy"},
+    ])
+    _plan_id, ids = _chili_week(recipe=recipe)
+    assert _needed()
+    _tick_all()
+    result = batch_undo.unbatch("breakfast")
+    assert _needed() == {}
+    assert result["list_changed"] is False
 
 
 @ON_MONDAY

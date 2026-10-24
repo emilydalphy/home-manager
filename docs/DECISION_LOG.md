@@ -21,7 +21,11 @@ why*, not duplicating the diff.
   chili put 2 lbs of turkey back. Now ticked rows stay; the re-buy is cut by
   what the ticked LINE says was bought (an edit to "1 lb" counts as 1 lb), less
   other dishes' rows and kept amounts, capped at these nights' rows; a ticked
-  jar/bottle covers the week. A hand-added line under the cut is restated once
+  jar/bottle covers the week; bread/berries/butter are compared in the store
+  unit (`_store_amount`). Once a batch's cook night is ticked cooked, the
+  shares of the nights it fed are in the pot: no credit, so unbatching after
+  the cook buys Wednesday's share (review call; a gentler "already made
+  double — still cook fresh?" question is Emily's). A hand-added line under the cut is restated once
   via `_ledger_totals` + `_restate_standing_want`. Tests clear
   `inventory_items` after ticking — the inventory beta's "already have" hid
   the bug.

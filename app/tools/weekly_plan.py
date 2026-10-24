@@ -3471,7 +3471,9 @@ def _unlink_leftover_target(weekly_plan_id: int, entry_id: int, conn=None) -> in
     return None
 
 
-def _rescale_leftover_source_grocery(source_entry_id: int, unlinked_entry_id: int, conn=None) -> None:
+def _rescale_leftover_source_grocery(
+    source_entry_id: int, unlinked_entry_id: int, conn=None, freed_entry_ids=(),
+) -> None:
     """
     Redo an already-approved leftover SOURCE's grocery contribution — and
     every OTHER already-approved entry in the plan that cooks the SAME
@@ -3514,6 +3516,11 @@ def _rescale_leftover_source_grocery(source_entry_id: int, unlinked_entry_id: in
     A no-op for a freeform source: nothing structured to rescale, and a
     freeform meal never reaches the grocery list to begin with (see
     plan_meal).
+
+    `freed_entry_ids` are the nights batch_undo.unbatch just took off this
+    source's batch. Only read when the source is already cooked: their
+    share went into that pot, so what was bought for them is not on the
+    shelf for them to cook fresh (_bought_toward).
 
     `conn` is for one caller (swap_meal_in_plan, through
     _replace_slot_entries) and is not part of the assistant-facing API.
@@ -3578,9 +3585,9 @@ def _rescale_leftover_source_grocery(source_entry_id: int, unlinked_entry_id: in
     # what it says was bought comes off the re-buy (_take_bought_off_rebuy).
     read_conn = conn if shared is not None else get_conn()
     try:
-        bought, ticked_rows, last_link_id = _bought_toward(
-            read_conn, group_ids, [unlinked_entry_id] if unlinked_entry_id else [],
-        )
+        gone_ids = [unlinked_entry_id] if unlinked_entry_id else []
+        cooked_ids, eaten_ids = _eaten_ids(read_conn, source_entry_id, group_ids, [*gone_ids, *freed_entry_ids])
+        bought, ticked_rows, last_link_id = _bought_toward(read_conn, group_ids, gone_ids, eaten_ids)
     finally:
         if shared is None:
             read_conn.close()
@@ -3611,10 +3618,48 @@ def _rescale_leftover_source_grocery(source_entry_id: int, unlinked_entry_id: in
     _ingest_recipe_group_and_sides(entries, source["weekly_plan_id"], buffer)
     buffer.flush()
     if bought and shared is not None:
-        _take_bought_off_rebuy(shared, group_ids, last_link_id, bought)
+        _take_bought_off_rebuy(shared, group_ids, last_link_id, bought, cooked_ids)
     elif bought:
         with write() as write_conn:
-            _take_bought_off_rebuy(write_conn, group_ids, last_link_id, bought)
+            _take_bought_off_rebuy(write_conn, group_ids, last_link_id, bought, cooked_ids)
+
+
+def _eaten_ids(conn, source_entry_id: int, group_ids: list[int], freed_ids: list[int]):
+    """
+    (the nights ticked cooked, the nights whose share of a ticked line is
+    already in a pot). The second: the nights whose share of a ticked line is already in a pot: every
+    night ticked cooked, and — once the batch's own cook night is cooked —
+    every night that batch was made for: the ones it still covers, the one
+    being taken away and the ones unbatch just freed.
+
+    Without this, unbatching after Monday's double was cooked credited
+    the bought turkey to Wednesday's fresh cook a second time, and
+    Wednesday had nothing to cook with (review, 2026-10-24).
+    """
+    ids = list(dict.fromkeys([int(source_entry_id), *group_ids]))
+    marks = ",".join("?" * len(ids))
+    cooked = {
+        int(r["id"]) for r in conn.execute(
+            f"SELECT id FROM meal_plan_entries WHERE household_id = ? AND id IN ({marks}) "
+            "AND cooked_status = 'done'",
+            [household_id(), *ids],
+        ).fetchall()
+    }
+    if int(source_entry_id) not in cooked:
+        return cooked, cooked
+    from . import leftovers as _leftovers   # circular at module scope
+    plan = conn.execute(
+        "SELECT weekly_plan_id FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+        (source_entry_id, household_id()),
+    ).fetchone()
+    covered = set()
+    if plan and plan["weekly_plan_id"]:
+        chains = _leftovers.plan_leftover_chains(plan["weekly_plan_id"], conn=conn)
+        covered = {
+            int(eid) for eid, info in chains["leftovers"].items()
+            if int(info["source"]["entry_id"]) == int(source_entry_id)
+        }
+    return cooked, cooked | covered | {int(i) for i in freed_ids if i}
 
 
 def _ledger_link_ids(entry_id: int, exclude: set[int], conn=None) -> list[int]:
@@ -3646,7 +3691,35 @@ def _amount_in(qty: str, unit: str | None) -> float | None:
 WHOLE_PACKAGE = "whole package"
 
 
-def _ticked_line_credit(conn, row, ours: list[str], entry_ids: list[int]) -> tuple[float, str | None] | str | None:
+def _store_credit(row, ours_live: list[str], ours_eaten: list[str], others: list[str]):
+    """
+    _ticked_line_credit for bread, berries, butter and the other foods the
+    store sells in its own unit (grocery._store_kind): the line says "1
+    loaf" and the rows say slices, which no unit conversion reads. Every
+    side is read in the store unit through grocery._store_amount — which
+    rounds up, so the credit errs small and the safe side is buying.
+    ("store", amount, unit) or None.
+    """
+    item = row["line_item"] or ""
+    bought = _quantities._parse_quantity(_quantities._split_quantity_note((row["line_qty"] or "").strip())[0])
+    if not bought:
+        return None
+    amount, unit = bought
+
+    def _in_store_unit(qtys):
+        if not [q for q in qtys if (q or "").strip()]:
+            return 0.0
+        text = _grocery._store_amount(item, qtys)
+        return None if not text else _amount_in(text, unit)
+
+    others_amt, eaten_amt = _in_store_unit(others), _in_store_unit(ours_eaten)
+    kept = _amount_in(row["kept_amount"], unit) if (row["kept_amount"] or "").strip() else 0.0
+    if others_amt is None or eaten_amt is None or kept is None or not ours_live:
+        return None
+    return ("store", max(0.0, amount - others_amt - eaten_amt - kept), unit)
+
+
+def _ticked_line_credit(conn, row, ours: list[str], entry_ids: list[int], eaten: list[str] = ()):
     """
     How much of one in-cart/bought line counts toward these nights, in the
     line's own unit — or None when it can't be read in one unit with its
@@ -3657,13 +3730,17 @@ def _ticked_line_credit(conn, row, ours: list[str], entry_ids: list[int]) -> tup
     update_grocery_item leaves the rows saying two. Off that comes what
     the line was bought for besides these nights — other dishes' rows and a
     kept amount — and it is capped at what these nights' rows asked of it,
-    so turkey bought for Friday's tacos is never spent on the chili. On a
+    so turkey bought for Friday's tacos is never spent on the chili. The
+    rows of nights already eaten (`eaten`, see _eaten_ids) come off too,
+    and are no part of the cap: that food is in a pot. On a
     household's own line the person's part is on no row; it is read as
     whatever the line holds above its meals' rounded total, so an untouched
     line credits exactly its meals and one edited down credits the meals
     first.
     """
     hid = household_id()
+    if not ours:
+        return None   # every night it was bought for is eaten: nothing left to credit
     if _grocery._holds_one_package(row["line_item"] or "", row["line_qty"] or ""):
         # A jar of chili powder or a bottle of oil is the week's, however
         # many nights name it (grocery._holds_one_package): one bought is
@@ -3681,14 +3758,17 @@ def _ticked_line_credit(conn, row, ours: list[str], entry_ids: list[int]) -> tup
             [hid, row["grocery_item_id"], *entry_ids],
         ).fetchall()
     ]
+    eaten = list(eaten)
+    if _grocery._store_kind(row["line_item"] or ""):
+        return _store_credit(row, ours, eaten, others)
     ours_amt = [_amount_in(x, unit) for x in ours]
-    others_amt = [_amount_in(x, unit) for x in others]
+    others_amt = [_amount_in(x, unit) for x in others + eaten]
     kept = _amount_in(row["kept_amount"], unit) if (row["kept_amount"] or "").strip() else 0.0
     if None in ours_amt or None in others_amt or kept is None:
         return None
     have = amount - sum(others_amt) - kept
     if row["source_weekly_plan_id"] is None:
-        meals = _quantities._ledger_totals(ours + others, [])
+        meals = _quantities._ledger_totals(ours + others + eaten, [])
         if meals is None:
             return None
         r_amt, r_unit = _quantities._shopping_round(meals[0], meals[2])
@@ -3699,13 +3779,14 @@ def _ticked_line_credit(conn, row, ours: list[str], entry_ids: list[int]) -> tup
     return max(0.0, min(have, sum(ours_amt))), unit
 
 
-def _bought_toward(conn, group_ids: list[int], gone_ids: list[int]):
+def _bought_toward(conn, group_ids: list[int], gone_ids: list[int], eaten_ids: set[int] = frozenset()):
     """
     What the in-cart and bought lines already hold for a recipe-week about
     to be re-bought: ({merge key: (amount, unit), WHOLE_PACKAGE, or None
     where it can't be read}, {entry id: its ticked ledger row ids}, the
-    highest ledger row id on file before the re-buy). `gone_ids` is the night being taken away:
-    what was bought for it is still in the kitchen, so it counts too.
+    highest ledger row id on file before the re-buy). `gone_ids` is the
+    night being taken away: what was bought for it is still in the kitchen
+    (unless its batch was cooked — `eaten_ids`), so it counts too.
     """
     hid = household_id()
     last = conn.execute(
@@ -3729,12 +3810,12 @@ def _bought_toward(conn, group_ids: list[int], gone_ids: list[int]):
     for row in rows:
         if int(row["meal_plan_entry_id"]) in in_group:
             ticked.setdefault(int(row["meal_plan_entry_id"]), set()).add(int(row["id"]))
-        _first, ours = lines.setdefault(int(row["grocery_item_id"]), (row, []))
-        ours.append(row["quantity"] or "")
-    bought: dict[str, tuple[float, str | None] | None] = {}
-    for row, ours in lines.values():
+        _first, ours, eaten = lines.setdefault(int(row["grocery_item_id"]), (row, [], []))
+        (eaten if int(row["meal_plan_entry_id"]) in eaten_ids else ours).append(row["quantity"] or "")
+    bought: dict = {}
+    for row, ours, eaten in lines.values():
         key = _grocery._merge_key(row["line_item"] or "")
-        credit = _ticked_line_credit(conn, row, ours, ids)
+        credit = _ticked_line_credit(conn, row, ours, ids, eaten)
         if key not in bought:
             bought[key] = credit
             continue
@@ -3743,15 +3824,24 @@ def _bought_toward(conn, group_ids: list[int], gone_ids: list[int]):
             bought[key] = WHOLE_PACKAGE
         elif prev is None or credit is None:
             bought[key] = None
+        elif isinstance(prev, tuple) and len(prev) == 3 or len(credit) == 3:
+            same = len(prev) == 3 and len(credit) == 3 and prev[2] == credit[2]
+            bought[key] = ("store", prev[1] + credit[1], prev[2]) if same else None
         else:
             more = _quantities._convert_to_unit(credit[0], credit[1], prev[1])
             bought[key] = None if more is None else (prev[0] + more, prev[1])
+    # A key whose credit is None (unreadable, or all of it eaten) stays in:
+    # a cooked night's fresh rows of that food are still cut (_take_bought_off_rebuy).
     return {
-        k: v for k, v in bought.items() if v is None or v == WHOLE_PACKAGE or v[0] > 1e-9
+        k: v for k, v in bought.items()
+        if v is None or v == WHOLE_PACKAGE or (v[1] if len(v) == 3 else v[0]) > 1e-9
+        or eaten_ids
     }, ticked, last
 
 
-def _take_bought_off_rebuy(conn, group_ids: list[int], last_link_id: int, bought: dict) -> None:
+def _take_bought_off_rebuy(
+    conn, group_ids: list[int], last_link_id: int, bought: dict, cooked_ids: set[int] = frozenset(),
+) -> None:
     """
     Cut the rows a recipe-week's re-buy just wrote (ledger ids above
     `last_link_id`) by what _bought_toward found already ticked for it,
@@ -3763,11 +3853,17 @@ def _take_bought_off_rebuy(conn, group_ids: list[int], last_link_id: int, bought
     + grocery._restate_standing_want), never by subtracting row by row: the
     ingest added one rounded total to it, and taking back less than that
     leaves a remainder the ceil pushes up again on every unbatch.
+
+    A night already cooked buys nothing of a food that was ticked for it:
+    its fresh rows go without spending any credit. A store-unit food
+    (_store_credit) is all-or-nothing — covered when the re-buy, read in
+    the store unit, is no more than what is left of what was bought;
+    otherwise it is bought as before.
     """
     hid = household_id()
     marks = ",".join("?" * len(group_ids))
     fresh = conn.execute(
-        "SELECT l.id, l.item, l.quantity, l.grocery_item_id FROM meal_plan_grocery_links l "
+        "SELECT l.id, l.item, l.quantity, l.grocery_item_id, l.meal_plan_entry_id FROM meal_plan_grocery_links l "
         "JOIN grocery_items g ON g.id = l.grocery_item_id "
         f"WHERE l.household_id = ? AND l.id > ? AND l.meal_plan_entry_id IN ({marks}) "
         "AND g.status IN ('needed', 'spice') ORDER BY l.id",
@@ -3775,8 +3871,29 @@ def _take_bought_off_rebuy(conn, group_ids: list[int], last_link_id: int, bought
     ).fetchall()
     left = {k: v for k, v in bought.items() if v is not None}
     cuts: dict[int, dict[int, str]] = {}   # line id -> {ledger row id: its new quantity, "" = gone}
+    live = []
     for link in fresh:
         key = _grocery._merge_key(link["item"] or "")
+        if key in bought and int(link["meal_plan_entry_id"]) in cooked_ids:
+            cuts.setdefault(int(link["grocery_item_id"]), {})[int(link["id"])] = ""
+        else:
+            live.append(link)
+    store_rows: dict[str, list] = {}
+    for link in live:
+        key = _grocery._merge_key(link["item"] or "")
+        if isinstance(left.get(key), tuple) and len(left[key]) == 3:
+            store_rows.setdefault(key, []).append(link)
+    for key, links in store_rows.items():
+        _tag, have, unit = left[key]
+        text = _grocery._store_amount(links[0]["item"] or "", [l["quantity"] or "" for l in links])
+        need = _amount_in(text, unit) if text else None
+        if need is not None and need <= have + 1e-9:
+            for link in links:
+                cuts.setdefault(int(link["grocery_item_id"]), {})[int(link["id"])] = ""
+    for link in live:
+        key = _grocery._merge_key(link["item"] or "")
+        if key in store_rows:
+            continue
         if left.get(key) == WHOLE_PACKAGE:
             cuts.setdefault(int(link["grocery_item_id"]), {})[int(link["id"])] = ""
             continue
