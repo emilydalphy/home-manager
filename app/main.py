@@ -2912,14 +2912,41 @@ class HolidayAnswerRequest(BaseModel):
     answered_by: str = ""
 
 
+# The years a date a route is handed may fall in. Python's own range is
+# years 1-9999, and every route that takes a day does arithmetic around it
+# (a week's Monday, a holiday window up to 366 days long, the lookback for
+# history), so 9999-12-31 or 0001-01-01 overflowed into an OverflowError
+# and a 500 instead of a refusal. 1900-2999 keeps that arithmetic centuries
+# clear of either edge while refusing nothing a household -- or a test,
+# several of which ask about 1999 on purpose to get "no plan" -- would send.
+ROUTE_DATE_MIN_YEAR = 1900
+ROUTE_DATE_MAX_YEAR = 2999
+
+
+def _route_date(value: str, name: str) -> datetime.date:
+    """
+    Parse a date a route was handed, or refuse it with a 400 -- the one
+    door for the "<name> must be an ISO date" check, so an ISO date at the
+    very edge of the calendar is refused the same way a garbled one is
+    rather than reaching the date maths and coming back a server error.
+    """
+    try:
+        day = datetime.date.fromisoformat(value)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"{name} must be an ISO date (YYYY-MM-DD).")
+    if not ROUTE_DATE_MIN_YEAR <= day.year <= ROUTE_DATE_MAX_YEAR:
+        raise HTTPException(
+            status_code=400,
+            detail=f"{name} has to fall between {ROUTE_DATE_MIN_YEAR} and {ROUTE_DATE_MAX_YEAR}.",
+        )
+    return day
+
+
 @app.get("/api/holidays")
 def holidays_in_window(start: str = "", days: int = 60):
     """The holidays from `start` (today if blank) for `days` days, each with the household's answer."""
     if start:
-        try:
-            datetime.date.fromisoformat(start)
-        except ValueError:
-            raise HTTPException(status_code=400, detail="start must be an ISO date (YYYY-MM-DD).")
+        _route_date(start, "start")
     if days < 1 or days > 366:
         raise HTTPException(status_code=400, detail="days has to be between 1 and 366.")
     try:
@@ -3612,6 +3639,8 @@ def today_moves(date: str | None = None, look: int = 0):
     (Emily's approved design, 2026-09-08), replacing the four separate
     fetches it used to make. See app/tools/moves.py for the ranking rule.
     """
+    if date is not None:
+        _route_date(date, "date")
     try:
         # A week that ended with unbought lines while a later week was
         # already approved: they go to Shop's keep-or-drop step on this,
@@ -3988,10 +4017,7 @@ def _plan_id_for_week(week_start: str) -> int:
     has no plan. Kept here rather than in each route so every week-scoped
     endpoint fails the same way for the same reason.
     """
-    try:
-        datetime.date.fromisoformat(week_start)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="week_start must be an ISO date (YYYY-MM-DD).")
+    _route_date(week_start, "week_start")
     plan_id = tools.get_plan_id_for_week(week_start)
     if plan_id is None:
         raise HTTPException(status_code=404, detail=f"No plan for the week of {week_start}.")
@@ -4082,10 +4108,7 @@ def week_intake_prefill(week_start: str, day_count: int = 7):
     maths, and any intake already in flight for this week (so the second
     adult to start joins the first one's answers instead of a blank set).
     """
-    try:
-        datetime.date.fromisoformat(week_start)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="week_start must be an ISO date (YYYY-MM-DD).")
+    _route_date(week_start, "week_start")
     if day_count < 1 or day_count > tools.MAX_PERIOD_DAYS:
         raise HTTPException(
             status_code=400,
@@ -4108,6 +4131,7 @@ def save_week_intake_route(week_start: str, req: WeekIntakeRequest):
     # place it was missing: day_count went straight to period_dates, so a
     # request for three million days spent a second building date strings
     # and then surfaced an OverflowError as a 500.
+    _route_date(week_start, "week_start")
     if req.day_count < 1 or req.day_count > tools.MAX_PERIOD_DAYS:
         raise HTTPException(
             status_code=400,
@@ -4412,10 +4436,7 @@ def generate_week_status(week_start: str, run: str | None = None):
     "failed", "started_at", "finished_at" (UTC ISO, null while running),
     "plan_id" (when done), "error": {"status", "detail"} (when failed)}.
     """
-    try:
-        datetime.date.fromisoformat(week_start)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="week_start must be an ISO date (YYYY-MM-DD).")
+    _route_date(week_start, "week_start")
     if run is not None and len(run) > 64:
         raise HTTPException(status_code=400, detail="run must be 64 characters or fewer.")
     status = agent.week_generation_status(week_start, run_token=run)
@@ -4492,10 +4513,7 @@ def week_fill_day(week_start: str, req: FillDayRequest):
     planned is touched; see swap_in_place.fill_empty_day. Like Swap, a 200
     can say no (`status` 'refused', with the sentence to show).
     """
-    try:
-        datetime.date.fromisoformat(req.date)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="date must be an ISO date (YYYY-MM-DD).")
+    _route_date(req.date, "date")
     plan_id = _plan_id_for_week(week_start)
     try:
         return tools.fill_empty_day(plan_id, req.date)
@@ -5214,10 +5232,7 @@ def week_attendance(week_start: str):
     usually before a plan for that week exists at all, exactly like
     week_intake.night_tags. So this must not 404 on "no plan yet".
     """
-    try:
-        datetime.date.fromisoformat(week_start)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="week_start must be an ISO date (YYYY-MM-DD).")
+    _route_date(week_start, "week_start")
     try:
         return {
             "week_start": week_start,

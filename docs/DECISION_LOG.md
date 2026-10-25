@@ -13,6 +13,13 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A date at the edge of the calendar is refused, not a 500** (2026-10-25;
+  branch `overnight/edge-dates-refused`; tests
+  `tests/test_edge_of_calendar_dates.py`). `main._route_date` is now the one
+  "<name> must be an ISO date" check for the routes that had it, plus
+  today/moves and POST intake, and refuses a year outside 1900–2999 with a
+  400. Why: 9999-12-31 / 0001-01-01 are valid ISO, so they reached the date
+  maths and overflowed; 1900 (not 2000) because tests use 1999 for "no plan".
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
