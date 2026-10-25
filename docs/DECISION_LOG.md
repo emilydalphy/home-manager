@@ -13,6 +13,25 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **When the AI call fails: Approve waits, the report hears, the words are
+  true** (2026-10-25; branch `overnight/ai-failure-hunt`; tests
+  `tests/test_ai_failures.py`). Found against a fake Anthropic API on a real
+  server. (1) Approve with Claude unreachable approved the week with every
+  new dish unwritten and nothing on the list for them; now a recipe the pass
+  couldn't reach Claude for (`unreachable`) stops approval with a 503
+  (`RECIPES_UNREACHABLE_LINE`), nothing written, written recipes kept — one
+  recipe that comes back wrong still approves as before. (2) Every AI call
+  that gives up (`_create_with_retry` / `_stream_forced_tool_call`, retries
+  spent or a 4xx) files kind `ai`, where = its label, class + status only;
+  `.warm` and a consent refusal are not filed; `record_server_errors` skips
+  the route's 5xx when the cause carries `agent.AI_FILED`, so one outage is
+  one row. Why: swap options, part options, the setup note and the recipe
+  pass turn an outage into a 200 and filed nothing. (3) Unusable answers:
+  a week with no meals is `AssistantAnswerUnusableError` (503, filed, no
+  "model call" in the words) not a 400; Swap with no dish says `NO_PICK`,
+  not the allergy refusal; chat's two give-up replies lost their "Sorry".
+  Merge note: `overnight/report-gaps-1025`'s `_record_stream_failure` should
+  skip an `AI_FILED` error the same way.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

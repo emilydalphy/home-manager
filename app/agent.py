@@ -311,6 +311,83 @@ class AIConsentRequiredError(AssistantUnavailableError):
     """
 
 
+class AssistantAnswerUnusableError(AssistantUnavailableError):
+    """
+    Claude answered, but with nothing the app can use — prose where a tool
+    call was forced, a tool call with its fields missing, an answer cut off
+    at max_tokens. The same 503 and the same "try again" as an outage, in
+    every route that already catches AssistantUnavailableError; only the
+    sentence differs, because "trouble reaching Claude's servers" would not
+    be true. Filed in the morning report by whoever raises it.
+    """
+
+
+# The AI layer's own row in the morning report (2026-10-25, branch
+# overnight/ai-failure-hunt). A route that turns an AI failure into a 200
+# ("options_unavailable"), a 400, or a recipe left pending at approval used
+# to file nothing, so a night Claude was down read "Nothing broke". Filed
+# here, once per call that gave up, kind "ai" and where = the call's label;
+# the exception carries AI_FILED so main.record_server_errors doesn't file
+# the same failure a second time as the route's 5xx.
+AI_FILED = "_pomona_ai_filed"
+
+
+def _ai_error_shape(error: BaseException | None) -> str:
+    """Class name and status code only — never the API's message text."""
+    if error is None:
+        return ""
+    status = getattr(error, "status_code", None)
+    return f"{type(error).__name__} {status}" if status else type(error).__name__
+
+
+def record_ai_failure(label: str, error: BaseException | None = None, *, why: str = "") -> None:
+    """
+    File one AI call that gave up (an outage, a refused request) or came
+    back unusable (`why`, a fixed phrase — never the model's words or the
+    household's). Marks `error` as filed. A household that hasn't said yes
+    to AI is the app working as intended, not breakage: not filed. Never
+    raises.
+    """
+    try:
+        # A cache warm-up (".warm") is optional and never seen: its caller
+        # carries on without it, so a refused one is not breakage.
+        if isinstance(error, AIConsentRequiredError) or label.endswith(".warm"):
+            return
+        tools.record_error("ai", where=label, detail=why or _ai_error_shape(error))
+        if error is not None:
+            setattr(error, AI_FILED, True)
+    except Exception:
+        logger.exception("Recording an AI failure for %s failed", label)
+
+
+def unusable_answer(label: str, why: str, line: str) -> AssistantAnswerUnusableError:
+    """Filed and ready to raise: `line` is the sentence the household reads."""
+    err = AssistantAnswerUnusableError(line)
+    record_ai_failure(label, err, why=why)
+    return err
+
+
+UNAVAILABLE_LINE = (
+    "I'm having trouble reaching Claude's servers right now — looks like a temporary "
+    "hiccup on their end, not anything wrong with your data. Please try again in a "
+    "moment, and if it's still not working after a minute or two, let me know."
+)
+
+
+def _gave_up(label: str, last_error: BaseException | None) -> AssistantUnavailableError:
+    """The error both call points raise once retries are spent, filed."""
+    err = AssistantUnavailableError(UNAVAILABLE_LINE)
+    record_ai_failure(label, last_error)
+    setattr(err, AI_FILED, True)
+    return err
+
+
+# Chat's two give-up replies (2026-10-25: both opened "Sorry," against the
+# voice rules the model itself is held to).
+CHAT_GAVE_UP_LINE = "I couldn’t finish that one in one go. Try asking again — two smaller asks may work better."
+CHAT_EMPTY_REPLY_LINE = "I couldn’t put an answer together just now. Try asking again."
+
+
 def _require_ai_consent(label: str) -> None:
     """The consent check both call points run before anything leaves the building."""
     try:
@@ -437,6 +514,9 @@ def _create_with_retry(
             last_error = e
         except APIStatusError as e:
             if e.status_code not in _RETRYABLE_STATUS_CODES:
+                # A 4xx is our request's fault (or a bad key) — every
+                # household's call fails the same way, so it is filed too.
+                record_ai_failure(label, e)
                 raise
             last_error = e
         if attempt < max_attempts:
@@ -482,11 +562,7 @@ def _create_with_retry(
             last_error = fallback_error
 
     logger.error("Anthropic API call failed after %d attempts: %s", max_attempts, last_error)
-    raise AssistantUnavailableError(
-        "I'm having trouble reaching Claude's servers right now — looks like a temporary "
-        "hiccup on their end, not anything wrong with your data. Please try again in a "
-        "moment, and if it's still not working after a minute or two, let me know."
-    ) from last_error
+    raise _gave_up(label, last_error) from last_error
 
 
 # ---------- per-route response effort ----------
@@ -741,6 +817,9 @@ def _stream_forced_tool_call(
             last_error = e
         except APIStatusError as e:
             if e.status_code not in _RETRYABLE_STATUS_CODES:
+                # A 4xx is our request's fault (or a bad key) — every
+                # household's call fails the same way, so it is filed too.
+                record_ai_failure(label, e)
                 raise
             last_error = e
         if attempt < max_attempts:
@@ -751,11 +830,7 @@ def _stream_forced_tool_call(
             time.sleep(delay)
             delay *= 2
     logger.error("Anthropic streaming call failed after %d attempts: %s", max_attempts, last_error)
-    raise AssistantUnavailableError(
-        "I'm having trouble reaching Claude's servers right now — looks like a temporary "
-        "hiccup on their end, not anything wrong with your data. Please try again in a "
-        "moment, and if it's still not working after a minute or two, let me know."
-    ) from last_error
+    raise _gave_up(label, last_error) from last_error
 
 
 SYSTEM_PROMPT = """You are a helpful home manager assistant for a household — the kind of \
@@ -5642,7 +5717,18 @@ def _write_one_pending_recipe(recipe: dict, slot: str, shared: dict, avoidances:
                 except Exception:
                     logger.exception("Filing %r in the recipe library failed; the recipe is saved", plain)
             return {"name": plain, "ok": True, "clash": [], "was": name}
+        # Two answers with no ingredients or no steps: Claude answered, but
+        # with nothing to save — filed, as an outage is.
+        record_ai_failure("generate_recipe_details_llm", why="no ingredients or steps, twice")
         return {"name": name, "ok": False, "clash": []}
+    except AssistantUnavailableError as e:
+        # Claude couldn't be reached (already filed by the call itself).
+        # Marked, so approval can tell "Claude is down" from one bad recipe
+        # — see weekly_plan._write_pending_recipes. A refused consent is
+        # not an outage and stays the plain failure it always was.
+        logger.warning("Recipe pass could not reach Claude for %r; it stays pending: %s", name, e)
+        return {"name": name, "ok": False, "clash": [],
+                "unreachable": not isinstance(e, AIConsentRequiredError)}
     except Exception:
         logger.exception("Recipe pass failed for %r; it stays pending", name)
         return {"name": name, "ok": False, "clash": []}
@@ -5722,7 +5808,7 @@ def fill_pending_recipes_for_plan(weekly_plan_id: int, *, wait: bool = True) -> 
     leaves the rest to whoever holds them, and never re-picks a slot (see
     _fill_claimed_recipes).
     """
-    result = {"filled": [], "failed": [], "clashed": []}
+    result = {"filled": [], "failed": [], "clashed": [], "unreachable": []}
     # Approval (wait=True) tells any background pass on this plan to stop
     # searching the web and write (2026-10-06); see _research_capped.
     waiting_key = (tools.household_id(), int(weekly_plan_id)) if wait and weekly_plan_id else None
@@ -5763,12 +5849,12 @@ def _fill_pending_recipes(weekly_plan_id: int, wait: bool, result: dict) -> dict
                 to_write = [r for r in mine if r["id"] in still]
                 part = (
                     _fill_claimed_recipes(weekly_plan_id, to_write, sweep_clashes=wait)
-                    if to_write else {"filled": [], "failed": [], "clashed": []}
+                    if to_write else {"filled": [], "failed": [], "clashed": [], "unreachable": []}
                 )
             finally:
                 _release_recipes(mine)
             for k in result:
-                result[k] += part[k]
+                result[k] += part.get(k, [])
         if not theirs or not wait:
             break
         for held in theirs:
@@ -5784,7 +5870,7 @@ def _fill_pending_recipes(weekly_plan_id: int, wait: bool, result: dict) -> dict
 
 def _fill_claimed_recipes(weekly_plan_id: int, pending: list[dict], *, sweep_clashes: bool = True) -> dict:
     """The recipe pass proper, for recipes this caller has claimed."""
-    result = {"filled": [], "failed": [], "clashed": []}
+    result = {"filled": [], "failed": [], "clashed": [], "unreachable": []}
     for recipe in pending:
         must = _typed_requests.plan_must_use(weekly_plan_id, recipe["id"])
         if must:
@@ -5843,6 +5929,8 @@ def _fill_claimed_recipes(weekly_plan_id: int, pending: list[dict], *, sweep_cla
             result["clashed"].append(outcome["name"])
         else:
             result["failed"].append(outcome["name"])
+            if outcome.get("unreachable"):
+                result["unreachable"].append(outcome["name"])
     logger.info(
         "Recipe pass for plan %s: %d written, %d failed, %d clashed, %.1fs for %d recipe(s)",
         weekly_plan_id, len(result["filled"]), len(result["failed"]), len(result["clashed"]),
@@ -7433,9 +7521,13 @@ def _generate_weekly_plan(
         # days and carry no date, so it is deliberately not run over them.
         items = _expand_repeated_dates(generate_weekly_plan_llm(context))
     if not items:
-        raise ValueError(
-            "Generating this week's plan didn't come back with any meals — the model call may "
-            "have been cut off or hit an error. Nothing was saved; try generating the week again."
+        # Claude answered with no meals (prose, an empty tool call, an
+        # answer cut off). An AI failure, not a refused request: a 503 the
+        # morning report hears of, where a ValueError was a 400 it never
+        # did — and a sentence without "the model call" in it.
+        raise unusable_answer(
+            "generate_weekly_plan", "no meals in the answer",
+            "I couldn’t put the week together just now — nothing was saved. Try again in a minute.",
         )
     _honest_meal_names(items)
     # A dish they asked for by name keeps that name; a side the model
@@ -11589,10 +11681,11 @@ def run_agent_turn(
         rounds += 1
         if rounds > MAX_TOOL_ROUNDS:
             logger.warning("run_agent_turn hit MAX_TOOL_ROUNDS (%d) — aborting loop", MAX_TOOL_ROUNDS)
-            text = (
-                "Sorry, that got stuck in a loop on my end — could you try again, maybe broken "
-                "into a couple smaller requests?"
-            )
+            # Filed: the turn gave up, and a 200 with this line was a night
+            # the morning report called fine. No "Sorry" (SYSTEM_PROMPT rule
+            # 5, DESIGN_SYSTEM §8): the plain fact, then the way out.
+            record_ai_failure("run_agent_turn", why=f"gave up after {MAX_TOOL_ROUNDS} rounds")
+            text = CHAT_GAVE_UP_LINE
             _log_turn_timing()
             return text, conversation
 
@@ -11722,10 +11815,8 @@ def run_agent_turn(
                 logger.warning(
                     "run_agent_turn produced an empty reply (stop_reason=%s)", response.stop_reason
                 )
-                text = (
-                    "Sorry, I hit a snag putting that response together — could you try asking "
-                    "again, maybe a bit more specifically?"
-                )
+                record_ai_failure("run_agent_turn", why="empty reply")
+                text = CHAT_EMPTY_REPLY_LINE
             # A reply that says it changed something, on a turn that
             # changed nothing, is rewritten rather than sent — see
             # verify_change_claim.
