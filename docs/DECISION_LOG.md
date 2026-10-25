@@ -23,6 +23,11 @@ why*, not duplicating the diff.
   door (edit_preference, add_food_dislikes, onboarding, the cuisine write);
   protein names trimmed, a blank one refused. `/api/facts/add` refuses a
   category that is no tab (it was drawn nowhere but read by the planner).
+  Review round: What we know drops its typed line when the server answers
+  `already_known` ("I already have that one."), since two rows under one id
+  let X delete the real fact; hard rules are deduped where READ
+  (`memory.hard_facts`, used by must_not_contain and the clash check);
+  `add_fact_from_chat` refuses a non-tab category; a repeat draws no card.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

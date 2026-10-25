@@ -1045,9 +1045,9 @@ def _avoidances() -> list[dict]:
     # is parsed out of the sentence when one of them is named in it
     # ("Emily is allergic to pineapple"); otherwise the fact stands for the
     # whole household ("no shellfish in this house").
-    for fact in _memory.get_facts():
-        if not fact.get("hard"):
-            continue
+    # hard_facts: each sentence once, so one dish is never "a clash with
+    # two things" because the same rule sits under two tabs.
+    for fact in _memory.hard_facts():
         text = fact.get("text") or ""
         named = _named_member(text, member_names)
         phrases, excepted = _fact_keywords(text, drop=_name_words(named))

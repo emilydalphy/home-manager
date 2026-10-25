@@ -133,6 +133,10 @@ tonight today tomorrow mornings evenings nights
 """.split())
 
 
+# The What we know tabs a fact can be shown on (schema.sql's facts.category).
+FACT_CATEGORIES = ("people", "taste", "rhythm")
+
+
 def household_wont_eat_items(category: str, text: str) -> list[str]:
     """The foods a household-wide "we don't eat X" names, or [] when the
     sentence is anything else (a person's rule, a routine, a taste note)."""
@@ -159,6 +163,14 @@ def add_fact_from_chat(category: str, text: str, hard: bool = False, author: str
     is not a freeform fact: it is routed to the household's Won't eat list,
     and a protein it names has its Settings chip put to "skip". Only the chat
     routes: the Settings box's own "Something else" keeps what was typed."""
+    # A fact goes on one of the three What we know tabs or nowhere
+    # (2026-10-25): filed under any other word it was drawn on no tab —
+    # nothing could edit or delete it — while the planner still read it.
+    # Checked here, the chat's door, and in /api/facts/add; add_fact itself
+    # stays open for internal callers.
+    if (category or "") not in FACT_CATEGORIES:
+        return {"added": False, "category": category,
+                "reason": "A fact goes under people, taste or rhythm — nothing was saved."}
     items = household_wont_eat_items(category, (text or "").strip())
     if items:
         saved = _preferences.add_food_dislikes(items)
@@ -170,6 +182,25 @@ def add_fact_from_chat(category: str, text: str, hard: bool = False, author: str
         return {"added": True, "routed_to": "Won't eat", "dislikes": saved["dislikes"],
                 "protein_chips_skipped": skipped, "category": category, "text": (text or "").strip(), "hard": hard}
     return add_fact(category, text, hard=hard, author=author)
+
+
+def hard_facts() -> list[dict]:
+    """The household's must-avoid facts, each sentence once (2026-10-25).
+    The same sentence filed under two tabs is one rule, not two: read
+    twice it went into must_not_contain twice and made one sesame dish "a
+    clash with two things Sam can't have". The first one filed is kept."""
+    seen: set[str] = set()
+    out = []
+    for fact in get_facts():
+        text = (fact.get("text") or "").strip()
+        if not fact.get("hard") or not text:
+            continue
+        key = _fact_key(text)
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(fact)
+    return out
 
 
 def _fact_key(text: str) -> str:

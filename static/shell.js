@@ -14434,18 +14434,41 @@
 
   // ---------- freeform facts ----------
 
-  function wwkAddFact(category, text) {
+  async function wwkAddFact(category, text) {
     var section = { people: 'people', rhythm: 'rhythm', taste: 'taste' }[category];
     var temp = { id: 'new-' + Date.now(), category: category, text: text };
-    wwkCommit(section, function () {
+    var known = false;
+    var saved = await wwkCommit(section, function () {
       wwkState.facts = (wwkState.facts || []).concat([temp]);
     }, function () {
       return wwkPost('/api/facts/add', { category: category, text: text });
     }, function (result) {
+      if (result && result.already_known) {
+        // Said before (2026-10-25): the server answers with the row it
+        // already has. The typed line goes — keeping it under that id drew
+        // two rows for one fact, and an X on the copy deleted the real one.
+        // The row already on screen shows the server's words and flag; if
+        // it isn't on screen yet (chat added it since this opened), the
+        // server's copy takes the typed line's place.
+        known = true;
+        var facts = wwkState.facts || [];
+        var mine = facts.filter(function (f) { return String(f.id) === String(result.id); })[0];
+        if (mine) {
+          mine.text = result.text;
+          mine.hard = result.hard ? 1 : 0;
+          wwkState.facts = facts.filter(function (f) { return f !== temp; });
+        } else {
+          temp.id = result.id;
+          temp.text = result.text;
+          temp.hard = result.hard ? 1 : 0;
+        }
+        return;
+      }
       if (result && result.id) {
         (wwkState.facts || []).forEach(function (f) { if (f.id === temp.id) f.id = result.id; });
       }
     });
+    if (saved && known) showToast('I already have that one.');
   }
 
   function wwkUpdateFact(id, text) {

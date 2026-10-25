@@ -101,3 +101,30 @@ def test_a_protein_rating_is_saved_under_its_name_without_stray_spaces():
     with pytest.raises(ValueError):
         tools.edit_preference("protein_preferences", {"  ": 5})
     assert tools.get_household_memory()["protein_preferences"] == {"Chicken": 5}
+
+
+# ---------- review round, 2026-10-25 ----------
+
+def test_one_hard_sentence_under_two_tabs_is_one_rule_where_it_is_read(household):
+    tools.add_fact("people", "Sam is allergic to sesame", hard=True)
+    tools.add_fact("taste", "sam is allergic to sesame.", hard=True)
+    assert len(tools.get_facts()) == 2  # both rows stay, each on its tab
+    assert sum("sesame" in line.lower() for line in tools.swap_hard_exclusions()) == 1
+    assert len(tools.check_meal_conflicts("Sesame Chicken")) == 1
+
+
+def test_chat_cannot_file_a_fact_on_no_tab(household):
+    result = tools.add_fact_from_chat("preferences", "Sam hates beets")
+    assert result["added"] is False
+    assert tools.get_facts() == []
+    assert tools.add_fact_from_chat("taste", "Sam hates beets")["added"] is True
+
+
+def test_a_fact_said_again_in_chat_draws_no_card_unless_it_became_hard(household):
+    import json
+    from app import agent
+    tools.add_fact("people", "Sam is allergic to sesame")
+    again = tools.add_fact_from_chat("people", "Sam is allergic to sesame")
+    assert agent.result_changed_nothing(json.dumps(again)) is True
+    hardened = tools.add_fact_from_chat("people", "Sam is allergic to sesame", hard=True)
+    assert agent.result_changed_nothing(json.dumps(hardened)) is False

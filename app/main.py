@@ -42,6 +42,7 @@ from .db import get_conn, init_db
 from .agent import run_agent_turn, trim_conversation, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo, scan_pantry_photo, scan_grocery_list_image, AssistantUnavailableError
 from . import tools
 from .tools import household as _household_tools
+from .tools import memory as _memory_tools
 from .tools import feedback as _feedback
 from .tools import draft_flags as _draft_flags
 from .tools import meal_move as _meal_move
@@ -6005,10 +6006,6 @@ def step_inventory_expiration_view(item_id: int, req: InventoryExpirationStepReq
     return result
 
 
-# The What we know tabs a fact can be shown on (schema.sql's facts.category).
-FACT_CATEGORIES = ("people", "taste", "rhythm")
-
-
 class FactAddRequest(BaseModel):
     category: str
     text: str
@@ -6131,7 +6128,7 @@ def add_fact_view(req: FactAddRequest):
     # One of the three tabs, or nowhere (defect hunt 2026-10-25): a fact
     # filed under any other word was drawn on no tab — so nothing could edit
     # or delete it — while the planner and the allergy check still read it.
-    if (req.category or "") not in FACT_CATEGORIES:
+    if (req.category or "") not in _memory_tools.FACT_CATEGORIES:
         raise HTTPException(status_code=400, detail="Put it under People, Taste or Rhythm.")
     try:
         result = tools.add_fact(req.category, req.text, hard=req.hard, author=req.author)

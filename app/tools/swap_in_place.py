@@ -209,9 +209,9 @@ def _hard_exclusions() -> list[str]:
     from . import member_needs as _member_needs
     for name in _member_needs.nut_free_member_names():
         out.append(f"{name}: no nuts or peanuts (nut-free lunch) — in any dish, since leftovers and snacks reach the lunchbox")
-    for fact in _memory.get_facts():
-        if fact.get("hard") and (fact.get("text") or "").strip():
-            out.append(fact["text"].strip())
+    # Each must-avoid sentence once, whichever tabs it is filed under.
+    for fact in _memory.hard_facts():
+        out.append(fact["text"].strip())
     return out
 
 
