@@ -362,6 +362,34 @@
     setTimeout(finish, motionMs('--motion-base') + 50);
   }
 
+  // Escape for the tab-level sheets (phone walk, 2026-10-25). Settings and
+  // every sheet reached from it close on Escape; these ten — the ones a tab
+  // opens directly — had only their scrim, handle and x, so on the desktop
+  // "phone in the room" a keyboard had no way out of Cook's More but the
+  // mouse. Escape does exactly what a tap outside does: it clicks the
+  // scrim, so a sheet that holds itself open mid-write (the swap's
+  // dismissSwapSheet) holds against the key too. Listed innermost first —
+  // a swap opened from the whole-week sheet closes before the week does.
+  var ESCAPE_CLOSES_SCRIMS = [
+    'wk-swap-scrim', 'wk-tweak-scrim', 'wk-add-scrim', 'gro-scan-scrim',
+    'gro-add-scrim', 'tonight-scrim', 'cook-more-scrim', 'meals-more-scrim',
+    'week-sheet-scrim', 'notif-scrim'
+  ];
+  function escapeClosesTabSheet(e) {
+    if (!e || e.key !== 'Escape' || e.defaultPrevented) return false;
+    for (var i = 0; i < ESCAPE_CLOSES_SCRIMS.length; i++) {
+      var scrim = document.getElementById(ESCAPE_CLOSES_SCRIMS[i]);
+      if (scrim && !scrim.hidden && scrim.classList.contains('is-open')) {
+        scrim.click();
+        return true;
+      }
+    }
+    return false;
+  }
+  if (typeof document !== 'undefined' && document.addEventListener) {
+    document.addEventListener('keydown', escapeClosesTabSheet);
+  }
+
   // ---------- One level at a time: the sheet stack (2026-10-05) ----------
   //
   // Gowthami's household, 2026-10-04: "Everytime you click x on the top it
@@ -2442,6 +2470,28 @@
     showToast(said || SAVED_PLAIN, action || null, holdMs);
   }
 
+  // The dock at the foot of the tab on screen, when one is there — Shop's
+  // "Add something", Cook's "Start cooking", Now's plan-the-week. The toast's
+  // usual spot (72px up) is the middle of that strip, so for its 2–6 seconds
+  // it covered the one button the screen exists for (found on the phone walk,
+  // 2026-10-25: "Logged — that'll steer next week. Rate it" sat on top of
+  // "Start cooking"). Only a dock that is really at the foot counts — one a
+  // short page left mid-screen would throw the toast up into the content —
+  // and none while a sheet is up, whose own content is what the toast is over.
+  function toastDockBelow() {
+    if (document.querySelector('[id$="scrim"].is-open')) return null;
+    var panel = document.querySelector('.tab-panel.active');
+    if (!panel) return null;
+    var docks = panel.querySelectorAll('.dock');
+    var vh = window.innerHeight;
+    for (var i = 0; i < docks.length; i++) {
+      if (docks[i].offsetParent === null) continue;
+      var top = docks[i].getBoundingClientRect().top;
+      if (top > vh / 2 && top < vh) return docks[i];
+    }
+    return null;
+  }
+
   function showToast(message, action, holdMs, opts) {
     // holdMs: for the rare toast that is a sentence rather than a
     // confirmation — an allergy warning after approval — 2.2 seconds is not
@@ -2477,9 +2527,10 @@
     var sheetOpen = typeof askSheet !== 'undefined' && askSheet && !askSheet.hidden;
     toastEl.classList.toggle('is-over-sheet', !!sheetOpen);
     // In cook mode the Back / Next dock sits where the toast usually does.
-    // Sit just above whichever dock is on screen, so the buttons stay tappable.
+    // Sit just above whichever dock is on screen, so the buttons stay tappable
+    // — cook mode's, or a tab root's (toastDockBelow).
     toastEl.style.bottom = '';
-    var dockEl = !sheetOpen && document.querySelector('.cook-focus .cook-dock');
+    var dockEl = !sheetOpen && (document.querySelector('.cook-focus .cook-dock') || toastDockBelow());
     if (dockEl && dockEl.offsetParent !== null) {
       var dockTop = dockEl.getBoundingClientRect().top;
       toastEl.style.bottom = Math.max(0, Math.round(window.innerHeight - dockTop + 12)) + 'px';
@@ -19687,6 +19738,9 @@
     // not one step name. Day/Meal steps and the plain week root untouched.
     var usesReviewLayout = weekState.step === 'review' || (weekState.step === 'week' && draft);
     panel.classList.toggle('is-review-layout', usesReviewLayout);
+    // And the Meal step's dock (mealDockHtml), for the same reason: one
+    // freeform dish is a short page (shell.css, is-meal-layout).
+    panel.classList.toggle('is-meal-layout', weekState.step === 'meal');
 
     // Chores is a state of the ROOT (a sibling of the week, not a step
     // under it): it keeps the band and the gear, and has no crumb of its
