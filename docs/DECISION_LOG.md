@@ -13,6 +13,24 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Recipe library audit: the dishes pass, four checker misreads and a
+  vegetarian copy fixed** (2026-10-25; branch
+  `overnight/library-audit-2026-10-25`; tests
+  `tests/test_library_batches_pass_the_checks.py`). All 594 batch files
+  through `library_batch.py check` and the morning report's recipe rules:
+  no clear data defect. Fixed in the checks: a pan's "9x13" read as 9
+  onions; "Whole"/"Fresh"/"Large" in a name credited with "2 whole garlic
+  cloves"/"fresh oil"; Frank's RedHot not the step's hot sauce. Fixed in
+  the copy: a member's vegetarian/vegan/pescatarian/halal/kosher holds
+  nothing back at the gate, so `_copy_from_library` now writes for that
+  household (as for `eating_style`) — Broccoli Cheddar Soup on chicken
+  broth was copied. `check` also flags a bad category, an out-of-range
+  advance-prep step, and a vegetarian tag over meat/fish (a look). The
+  test pins today's 19 amount looks (all misreads) so a new one goes red.
+  Left for Emily: "Serve with rice/naan" is a morning-report line on ~60
+  library dishes (by the 2026-10-13 split); Green Papaya Salad tagged
+  vegetarian with fish sauce; the style rules (`longest_thing_not_first`
+  96, `method_is_assembly` 54) fire on researched dishes that are fine.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

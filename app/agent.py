@@ -5458,6 +5458,14 @@ def _research_capped(plain: str, recipe: dict, *, search: bool, weekly_plan_id=N
 # billed) rather than a copy. eating_style for safety of a kind (vegetarian,
 # keto), kit and children for whether they can cook and eat it as written.
 _WRITE_INSTEAD_OF_COPY = ("eating_style", "kitchen_kit", "children_at_table")
+# The same, said on a PERSON: the allergen gate holds no meat back for these
+# (coordination's matcher reads foods, not diets), so a copy is unguarded —
+# a "vegetarian" member's household was copied Broccoli Cheddar Soup on
+# chicken broth and Green Papaya Salad with fish sauce (library audit,
+# 2026-10-25). The writer is told them (must_not_contain); a copy is not.
+_DIET_THE_GATE_CANT_READ = re.compile(
+    r"\b(?:vegetarian|vegan|pescatarian|plant[\s-]based|halal|kosher)\b", re.IGNORECASE
+)
 
 
 def _copy_from_library(recipe: dict, name: str, plain: str, avoidances: list[dict],
@@ -5474,6 +5482,8 @@ def _copy_from_library(recipe: dict, name: str, plain: str, avoidances: list[dic
     """
     try:
         if any((shared or {}).get(k) for k in _WRITE_INSTEAD_OF_COPY):
+            return None, False
+        if any(_DIET_THE_GATE_CANT_READ.search(a.get("label") or "") for a in avoidances or []):
             return None, False
         entry = _recipe_library.base_recipe(plain)
         if not entry:
