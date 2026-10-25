@@ -24,7 +24,10 @@ why*, not duplicating the diff.
   the copy: a member's vegetarian/vegan/pescatarian/halal/kosher holds
   nothing back at the gate, so `_copy_from_library` now writes for that
   household (as for `eating_style`) — Broccoli Cheddar Soup on chicken
-  broth was copied. `check` also flags a bad category, an out-of-range
+  broth was copied. Review: read off `swap_hard_exclusions` (restrictions
+  + hard facts as written), not the gate's avoidances, which drop "We're
+  vegetarian" / "We keep kosher"; "no meat", "meat-free", "veggie" count;
+  the pan guard spares "2 x 400g cans". `check` also flags a bad category, an out-of-range
   advance-prep step, and a vegetarian tag over meat/fish (a look). The
   test pins today's 19 amount looks (all misreads) so a new one goes red.
   Left for Emily: "Serve with rice/naan" is a morning-report line on ~60

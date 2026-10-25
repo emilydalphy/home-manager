@@ -108,11 +108,19 @@ def _mismatched(ingredients, steps):
     return [m["item"] for m in recipes.check_steps_ingredients_consistency(ingredients, steps, 4)["amount_mismatches"]]
 
 
-@pytest.mark.parametrize("dish", ["9x13 inch", "9 x 13 inch", "13x9 inch"])
+@pytest.mark.parametrize("dish", ["9x13 inch", "9 x 13 inch", "13x9 inch", "8 x 8"])
 def test_a_pans_size_is_not_an_amount_of_what_goes_in_it(dish):
     """CATCH: Gigantes Plaki's 9 onions."""
     steps = [f"Pour the oil into a {dish} baking dish and stir in the onion.", "Bake the onion until soft."]
     assert _mismatched([{"item": "Yellow onion", "qty": "1"}, {"item": "Olive oil", "qty": "5 tbsp"}], steps) == []
+
+
+def test_a_can_count_by_weight_is_still_an_amount():
+    """GUARD (review): "2 x 400g cans" is two cans, not a pan's size."""
+    found = [m.group(1) for m in recipes._CHECK_AMOUNT_RE.finditer("add 2 x 400g cans of tomatoes")]
+    assert found[0] == "2"
+    # The pan's first number is not read; its second sizes the pan.
+    assert [m.group(1) for m in recipes._CHECK_AMOUNT_RE.finditer("an 8 x 8 pan")] == ["8"]
 
 
 def test_a_sort_word_in_a_name_is_not_the_food():
@@ -136,12 +144,15 @@ def test_a_hot_sauce_named_for_its_maker_is_the_hot_sauce():
 
 # ---------- a diet the gate can't read is written, not copied ----------
 
-def _copied(key, restriction):
+def _copied(key, restriction=None, fact=None):
     with open(library_batch.BATCH_DIR / f"{key}.json") as f:
         e = json.load(f)
     lib.file_entry(e["dish_name"], **{**{k: v for k, v in e.items() if k != "dish_name"}, "origin": "seed"})
     tools.add_member("Pat")
-    tools.set_member_dietary_restrictions("Pat", [restriction])
+    if restriction is not None:
+        tools.set_member_dietary_restrictions("Pat", [restriction])
+    if fact:
+        tools.add_fact("diet", fact, hard=True)
     name = e["dish_name"]
     tools.add_recipe(name=name, ingredients=[], details_pending=True, cuisine="")
     recipe = {**tools.get_recipe(name), "slot": "dinner"}
@@ -149,13 +160,26 @@ def _copied(key, restriction):
     return bool(out)
 
 
-@pytest.mark.parametrize("restriction", ["vegetarian", "Vegan", "pescatarian"])
+@pytest.mark.parametrize("restriction", [
+    "vegetarian", "Vegan", "pescatarian", "no meat", "meat-free", "veggie", "plant-based",
+])
 def test_a_household_with_a_vegetarian_is_never_copied_a_library_dish(restriction):
     """CATCH: Broccoli Cheddar Soup, chicken broth and all, copied for a
-    household with a vegetarian member."""
+    household with a vegetarian member — however the restriction is put."""
     assert not _copied("broccoli-cheddar-soup", restriction)
 
 
-def test_an_allergy_the_gate_reads_still_copies_a_clean_dish():
-    """GUARD: a sesame allergy doesn't stop a sesame-free copy."""
-    assert _copied("broccoli-cheddar-soup", "sesame")
+@pytest.mark.parametrize("fact", [
+    "Pat is vegetarian", "We're vegetarian", "We keep kosher", "No meat in this house",
+])
+def test_a_hard_fact_naming_a_diet_is_never_copied_a_library_dish(fact):
+    """CATCH (review): a fact whose words name no food never reaches the
+    gate's avoidances, so reading those let the soup be copied."""
+    assert not _copied("broccoli-cheddar-soup", fact=fact)
+
+
+@pytest.mark.parametrize("restriction", ["sesame", "omnivore", "none", ""])
+def test_an_allergy_the_gate_reads_or_no_diet_still_copies_a_clean_dish(restriction):
+    """GUARD: a sesame allergy, or a restriction that says no diet, doesn't
+    stop a sesame-free copy."""
+    assert _copied("broccoli-cheddar-soup", restriction)

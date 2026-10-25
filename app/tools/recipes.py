@@ -3409,9 +3409,11 @@ _CHECK_CLAUSE_BREAK_RE = re.compile(r"[,;.:()\n]|\bthen\b|\buntil\b|\bwhile\b")
 # Not a pan's size either: "a 9x13 inch baking dish and stir in the onion"
 # was 9 onions to Gigantes Plaki's 1 (library audit, 2026-10-25) — the "x"
 # read as the word after the number. The (?!\d) stops "13x9" backing off
-# to a lone "1".
+# to a lone "1". Only number-by-number with no weight on the second: "2 x
+# 400g cans" is two cans, and stays counted (review, same day).
 _CHECK_AMOUNT_RE = re.compile(
-    r"(?<![\w./])(\d+\s+\d+/\d+|\d+/\d+|\d+(?:\.\d+)?)(?!\d)(?!\s*[x×]\s*\d)\s*°?\s*([a-z]+)?"
+    r"(?<![\w./])(\d+\s+\d+/\d+|\d+/\d+|\d+(?:\.\d+)?)(?!\d)"
+    r"(?!\s*[x×]\s*\d+(?![\d.]*\s*(?:g|kg|oz|ml|l|lb|lbs)\b))\s*°?\s*([a-z]+)?"
 )
 
 # A model writes "1½ cups" as often as "1 1/2 cups", and a fraction this

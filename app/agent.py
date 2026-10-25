@@ -5463,8 +5463,16 @@ _WRITE_INSTEAD_OF_COPY = ("eating_style", "kitchen_kit", "children_at_table")
 # a "vegetarian" member's household was copied Broccoli Cheddar Soup on
 # chicken broth and Green Papaya Salad with fish sauce (library audit,
 # 2026-10-25). The writer is told them (must_not_contain); a copy is not.
+# Read off what the writer is told (swap_hard_exclusions: restrictions and
+# hard facts as written), NOT the gate's avoidances — a fact whose words
+# name no food ("We're vegetarian", "We keep kosher") never becomes one
+# (review, same day). Leans to writing: a needless write costs cents, a
+# wrong copy is meat on a vegetarian's plate.
 _DIET_THE_GATE_CANT_READ = re.compile(
-    r"\b(?:vegetarian|vegan|pescatarian|plant[\s-]based|halal|kosher)\b", re.IGNORECASE
+    r"\b(?:vegetarians?|vegans?|pescatarians?|plant[\s-]?based|halal|kosher|veggie|"
+    r"meat[\s-]?free|meatless|no\s+(?:red\s+)?meat|without\s+meat|"
+    r"(?:doesn['’]?t|does\s+not|don['’]?t|do\s+not|won['’]?t|never|can['’]?t)\s+eats?\s+meat)\b",
+    re.IGNORECASE,
 )
 
 
@@ -5483,7 +5491,7 @@ def _copy_from_library(recipe: dict, name: str, plain: str, avoidances: list[dic
     try:
         if any((shared or {}).get(k) for k in _WRITE_INSTEAD_OF_COPY):
             return None, False
-        if any(_DIET_THE_GATE_CANT_READ.search(a.get("label") or "") for a in avoidances or []):
+        if any(_DIET_THE_GATE_CANT_READ.search(line) for line in tools.swap_hard_exclusions()):
             return None, False
         entry = _recipe_library.base_recipe(plain)
         if not entry:
