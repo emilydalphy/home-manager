@@ -183,11 +183,12 @@ def allergy_request_text(asked: str, food: str, who: list[str], dish: str,
     "You asked for peanut noodles, but Sam can't have peanuts, so Tuesday is
     Sesame Noodles instead." Their own words for the dish, the person and
     the food the allergen gate matched (`who` empty: a hard no for the whole
-    house — "…but pork is a hard no here, …"), and what went there instead.
+    house — "…but this house doesn't eat pork, …", which needs no is/are),
+    and what went there instead.
     No sentence was decided for rule 9; this one is Pomona's, for Emily to
     approve.
     """
-    cannot = f"{' and '.join(who)} can’t have {food}" if who else f"{food} is a hard no here"
+    cannot = f"{' and '.join(who)} can’t have {food}" if who else f"this house doesn’t eat {food}"
     when = _weekday(meal_date) if slot == "dinner" else f"{_weekday(meal_date)} {slot}"
     return f"You asked for {asked}, but {cannot}, so {when} is {dish} instead."
 
@@ -598,6 +599,28 @@ def _their_phrase(clauses: list[str], stems: set[str]) -> str:
     return " ".join(best)
 
 
+# Their words turning a dish DOWN, not asking for it: "No pad thai this
+# week, we had it last week". week_intake's own negation words, plus the
+# ways a household says "not again". Leans to silence — a wrong "You asked
+# for…" is worse than no line.
+_TURNED_DOWN_RE = re.compile(
+    r"\b(?:no|not|nothing|never|none|without|skip|avoid|don't|dont|do not|instead of|rather than"
+    r"|had (?:it|that|them|this|those)|last week|sick of|tired of)\b|n't\b",
+    re.IGNORECASE,
+)
+
+
+def _turned_down(phrase: str, clauses: list[str], asks: tuple[str | None, ...]) -> bool:
+    """Whether a clause about the dish, or any sentence of theirs that
+    names it, says no to it."""
+    from . import cap_enforce as _cap_enforce  # lazy: it imports this module
+    texts = list(clauses) + [
+        sentence for text in asks or () for sentence in _cap_enforce._SENTENCE_SPLIT_RE.split(text or "")
+        if phrase in " ".join(re.findall(r"[a-z]+(?:[-'’][a-z]+)*", sentence.lower()))
+    ]
+    return any(_TURNED_DOWN_RE.search(t.replace("’", "'")) for t in texts)
+
+
 def flags_for_allergy_requests(weekly_plan_id: int, asks: tuple[str | None, ...] = ()) -> list[dict]:
     """
     Rule 9: one line per dish they ASKED FOR that the allergen gate took
@@ -627,16 +650,18 @@ def flags_for_allergy_requests(weekly_plan_id: int, asks: tuple[str | None, ...]
         dish = (r["meal"] or "").strip()
         if not isinstance(stamp, dict) or "who" not in stamp or not dish:
             continue
-        dropped, food = str(stamp.get("dropped") or "").strip(), str(stamp.get("avoided") or "").strip()
+        # `food` is only there when the matcher named one: a line that
+        # can't name the food is no line at all.
+        dropped, food = str(stamp.get("dropped") or "").strip(), str(stamp.get("food") or "").strip()
         if not dropped or not food or not str(derived.get("freeform") or "").strip():
             continue
         clauses, stems = _cap_enforce._clauses_about(derived, asks, dropped, strict=True)
         phrase = _their_phrase(clauses, stems)
-        if not phrase or phrase in said:
+        if not phrase or phrase in said or _turned_down(phrase, clauses, asks):
             continue
         theirs = {_cap_enforce._stem(w) for w in phrase.split()}
         clashes = [c for c in _allergen_gate.hard_clashes(phrase, draft=True)
-                   if (c.get("matched") or c.get("restriction") or "").strip() == food]
+                   if _allergen_gate.plain_food(c.get("matched") or "") == food]
         whole_dish = _cap_enforce._name_stems(re.split(r"\bwith\b", dropped, flags=re.IGNORECASE)[0]) <= theirs
         if not clashes and not (whole_dish and not theirs <= _cap_enforce._name_stems(dish)):
             continue

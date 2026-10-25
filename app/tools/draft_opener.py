@@ -274,8 +274,25 @@ def _honoured_items(entries: list[dict], report: dict | None, period: list[str])
     # review of 2026-09-27 caught. So it leaves line one.
     moved = [str(m.get("words") or "") for m in ((report or {}).get("moved") or []) if m.get("words")]
 
+    # Every request line one could say, for the owner rule below.
+    pool = [c["words"] for c in cited.values()] + [
+        str(r.get("words") or "") for r in ((report or {}).get("honoured") or [])]
+
     def _is_moved(words: str) -> bool:
-        return any(_cited(words, m) for m in moved)
+        # A move takes only the request(s) it shares the MOST content words
+        # with (ties: all of them) — _cited alone is loose by design, and a
+        # moved "Chicken tacos on Tuesday" took "as you asked" off "Chicken
+        # curry on Friday" for sharing "chicken" (review, 2026-10-25). The
+        # same owner rule as settle_report on hunt-draft-rules-1024.
+        mine = _content_words(words)
+        for m in moved:
+            if not _cited(words, m):
+                continue
+            theirs = _content_words(m)
+            best = max((len(_content_words(w) & theirs) for w in pool if _cited(w, m)), default=0)
+            if len(mine & theirs) >= best:
+                return True
+        return False
 
     cited = {k: c for k, c in cited.items() if not _is_moved(c["words"])}
     honoured = [r for r in ((report or {}).get("honoured") or []) if not _is_moved(str(r.get("words") or ""))]

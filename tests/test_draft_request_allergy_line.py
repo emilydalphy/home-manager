@@ -103,7 +103,7 @@ def test_a_household_wide_hard_no_is_said_as_one(stub_model, run, replaced_with)
     plan_id, _ = run(week, None)
 
     assert _texts(plan_id) == [
-        "You asked for pork chops, but pork is a hard no here, so Thursday is Chicken Thighs instead."
+        "You asked for pork chops, but this house doesn’t eat pork, so Thursday is Chicken Thighs instead."
     ]
 
 
@@ -155,3 +155,76 @@ def test_a_swapped_dish_they_did_not_ask_for_gets_no_line(stub_model, run, repla
 
     assert asked, "the gate did swap it"
     assert _texts(plan_id) == []
+
+
+# ---------- review round (2026-10-25) ----------
+
+def test_an_allergy_written_as_peanut_allergy_is_said_as_peanuts(stub_model, run, replaced_with):
+    """The matcher's word for "peanut allergy" is "peanut"; a person says
+    "peanuts". Two people with it the two ways are one line about both."""
+    tools.add_member("Sam")
+    tools.set_member_dietary_restrictions("Sam", ["peanut allergy"])
+    tools.add_member("Ana")
+    tools.set_member_dietary_restrictions("Ana", ["peanuts"])
+    week = _monday()
+    dates = tools._week_dates(week)
+    _filler()
+    _recipe("Quick Eggs", 10)
+    said = "Peanut noodles one night please"
+    tools.save_week_intake(week, freeform=said)
+    replaced_with("Sesame Noodles")
+    stub_model(_week_with(dates, 1, "Peanut Noodles", said))
+
+    plan_id, _ = run(week, None)
+
+    assert _texts(plan_id) == [
+        "You asked for peanut noodles, but Sam and Ana can’t have peanuts, so Tuesday is Sesame Noodles instead."
+    ]
+
+
+def test_a_dish_they_turned_down_is_never_said_as_asked_for(stub_model, run, replaced_with):
+    """The model drafted pad thai anyway and cited their "no": the gate
+    swaps it, and the draft must not say "You asked for pad thai"."""
+    tools.add_member("Sam")
+    tools.set_member_dietary_restrictions("Sam", ["peanuts"])
+    week = _monday()
+    dates = tools._week_dates(week)
+    _filler()
+    _recipe("Quick Eggs", 10)
+    words = "No pad thai this week, we had it last week"
+    tools.save_week_intake(week, freeform=words)
+    asked = replaced_with("Chicken Stir-Fry")
+    stub_model(_week_with(dates, 2, "Pad Thai", words,
+                          ingredients=[{"item": "rice noodles", "qty": "1"}, {"item": "crushed peanuts", "qty": "1"}]))
+
+    plan_id, _ = run(week, None)
+
+    assert asked, "the gate did swap it"
+    assert _texts(plan_id) == []
+
+
+def test_a_moved_request_does_not_take_as_you_asked_off_another_sharing_a_word(stub_model, run):
+    """
+    Rule 8 moves the chicken tacos off the out Tuesday; "Chicken curry on
+    Friday" shares "chicken" with them, and the opener's loose match took
+    its "as you asked" too (main of the stack: line one was only "Tuesday
+    left free."). A move takes only the request it shares the most words with.
+    """
+    week = _monday()
+    dates = tools._week_dates(week)
+    _filler()
+    _recipe("Quick Eggs", 10)
+    _recipe("Chicken Tacos", 20)
+    _recipe("Chicken Curry", 30)
+    tacos, curry = "Chicken tacos on Tuesday", "Chicken curry on Friday"
+    tools.save_week_intake(week, night_tags={dates[1]: ["out"]}, freeform=f"{tacos}. {curry}.")
+    days = _week(dates, ["Quick Eggs", "Chicken Tacos", "Quick Eggs", "Quick Eggs", "Chicken Curry",
+                         "Quick Eggs", "Quick Eggs"], **{dates[1]: _asked(tacos), dates[4]: _asked(curry)})
+    stub_model(days)
+
+    plan_id, _ = run(week, None)
+
+    assert _texts(plan_id)[0].startswith("You're out Tuesday, so Chicken Tacos moved to")
+    opener = tools.get_week_menu(plan_id)["draft_opener"]
+    assert any("curry" in line.lower() and "as you asked" in line for line in opener), opener
+    assert not any("tacos" in line.lower() and "as you asked" in line for line in opener), opener

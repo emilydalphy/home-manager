@@ -21,7 +21,7 @@ why*, not duplicating the diff.
   (`allergen_gate.repick_stamp`; [] = a household-wide hard no), and
   `draft_flags.flags_for_allergy_requests` turns it into "You asked for
   peanut noodles, but Sam can't have peanuts, so Tuesday is Sesame Noodles
-  instead." ("…but pork is a hard no here, …"), no buttons. Why: on main
+  instead." ("…but this house doesn't eat pork, …"), no buttons. Why: on main
   the gate swapped the dish silently. Said only for a dish they ASKED FOR:
   their own words about it (cap_enforce._clauses_about, strict) name the
   food, or name the whole dish and the replacement isn't it any more —
@@ -29,7 +29,20 @@ why*, not duplicating the diff.
   Pomona's, not Emily's — hers to approve. Not built: a request the gate
   could not replace (the slot's own open question says why), or that the
   model left off unasked; the opener's "as you asked" over the swap is
-  `overnight/hunt-draft-rules-1024`'s fix.
+  `overnight/hunt-draft-rules-1024`'s fix. Review round: a clause saying
+  no to the dish ("No pad thai this week, we had it last week") gets no
+  line; the food is said the way people say it ("peanut allergy" ->
+  "peanuts", `allergen_gate.plain_food`) and a house-wide one as "this
+  house doesn't eat pork"; no matched food, no line. And rule 8's stack
+  bug: a moved request took "as you asked" off any request sharing a word
+  ("Chicken curry on Friday" lost it to moved chicken tacos) — now only
+  the one it shares the most words with (`draft_opener._is_moved`).
+  MERGING `overnight/hunt-draft-rules-1024` onto this stack: its tests
+  `test_a_requested_dish_cleared_off_an_out_night_is_not_as_you_asked` and
+  `test_two_requests_sharing_a_word_do_not_vouch_for_each_other` need their
+  "I couldn't fit …" assertion replaced with
+  `assert not any("couldn’t fit" in line for line in opener)` — rule 8 now
+  keeps the dish on another night (keep their other assertions).
 - **A dish asked for at a meal, naming no day, goes at that meal with
   everyone home and the time for it** (2026-10-25, snag rule 2; branch
   `overnight/snag-rule-2-meal-no-day`, on top of rules 5 and 8; tests
