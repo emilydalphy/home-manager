@@ -13,6 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Plan a week's and onboarding's screens work by keyboard and screen
+  reader** (2026-10-25, overnight hunt; branch
+  `overnight/hunt-plan-week-screens`; tests
+  `tests/test_plan_week_screens_a11y.py`). Chips now carry aria-pressed (one
+  observer in `setup-screens.js` follows `.active`); Who's eating keeps focus
+  across its redraw and scrolls an opened picker clear of the foot; the away
+  sheet takes focus in and gives it back, its choices say pressed; the six
+  quiet skip lines are buttons; Return in the name box is Next. Why: found
+  driving the pages at 390px — chosen was colour-only, Tab restarted at
+  Monday after every tap, and Skip was unreachable without a finger.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

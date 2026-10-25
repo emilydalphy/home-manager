@@ -88,6 +88,35 @@ function addCustomChip(container, text, multi) {
   btn.onclick = () => btn.classList.toggle('active');
   container.appendChild(btn);
 }
+// Every chip on these screens is an on/off button, and "on" was the
+// .active class alone — a colour. A screen reader heard "Mexican, button"
+// whether it was chosen or not (found driving both pages, 2026-10-25), on
+// every chip row of onboarding and of Plan a week's Change screens. The
+// class is toggled from a dozen places across three files, so rather than
+// teach each of them, aria-pressed follows the class wherever it changes:
+// one observer, set up once by whichever page loads this file. A chip that
+// already says aria-pressed itself (the allergens, "It changes week to
+// week") is told the same thing again.
+const CHIP_TOGGLE = 'button.chip, button.rhythm-chip';
+function syncChipPressed(el) {
+  el.setAttribute('aria-pressed', el.classList.contains('active') ? 'true' : 'false');
+}
+function sweepChipPressed(node) {
+  if (!node || node.nodeType !== 1) return;
+  if (node.matches(CHIP_TOGGLE)) syncChipPressed(node);
+  node.querySelectorAll(CHIP_TOGGLE).forEach(syncChipPressed);
+}
+function watchChipPressed(root) {
+  new MutationObserver(records => records.forEach(r => {
+    if (r.type === 'attributes') { if (r.target.matches(CHIP_TOGGLE)) syncChipPressed(r.target); }
+    else r.addedNodes.forEach(sweepChipPressed);
+  })).observe(root, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'] });
+  sweepChipPressed(root);
+}
+if (typeof MutationObserver === 'function' && typeof document !== 'undefined' && document.documentElement) {
+  watchChipPressed(document.documentElement);
+}
+
 function getActiveChips(container) {
   return [...container.querySelectorAll('.chip.active')].map(c => c.dataset.value);
 }
@@ -236,10 +265,47 @@ function uwMealCardHtml(meal, names) {
   }
   return html + '</div>';
 }
+// The grid is redrawn whole on every tap, and a redraw used to drop the
+// keyboard on <body>: Enter on Friday's dinner opened its picker and the
+// next Tab started again at Monday's breakfast (found 2026-10-25). The
+// control that had focus is found again by what it is — its card and its
+// data-uw-* answer — and focused; one that is gone (a pick closes the
+// picker; "−" to no guests) hands focus to the day it was under. A tap
+// on a phone focuses nothing, so there is nothing to put back.
+const UW_FOCUS_ATTRS = ['data-uw-day', 'data-uw-pick', 'data-uw-quick', 'data-uw-tag', 'data-uw-guests'];
+function uwFocusSelector(el) {
+  if (!el || !el.closest) return null;
+  const card = el.closest('[data-uw-card]');
+  const attr = UW_FOCUS_ATTRS.find(a => el.hasAttribute(a));
+  if (!card || !attr) return null;
+  const value = el.getAttribute(attr).replace(/["\\]/g, '\\$&');
+  return `[data-uw-card="${card.dataset.uwCard}"] [${attr}="${value}"]`;
+}
+function uwDaySelector(open) {
+  return `[data-uw-card="${open.meal}"] [data-uw-day="${open.i}"]`;
+}
+let uwShownOpen = null;   // the cell whose picker the last draw showed
 function renderMealsDays() {
+  const grid = document.getElementById('uw-grid');
+  const active = document.activeElement;
+  const focusSel = active && grid.contains(active) ? uwFocusSelector(active) : null;
+  const wasOpen = uwShownOpen;
   const names = currentMembers({ forMeals: true }).map(m => m.name);
   UW_MEALS.forEach(meal => { usualGrid[meal] = usualGrid[meal].map(cell => uwCleanCell(cell, names)); });
-  document.getElementById('uw-grid').innerHTML = UW_MEALS.map(meal => uwMealCardHtml(meal, names)).join('');
+  grid.innerHTML = UW_MEALS.map(meal => uwMealCardHtml(meal, names)).join('');
+  uwShownOpen = uwOpen;
+  if (focusSel) {
+    const back = grid.querySelector(focusSel) || (wasOpen && grid.querySelector(uwDaySelector(wasOpen)));
+    if (back) back.focus({ preventScroll: true });
+  }
+  // A picker that has just opened is the card's last rows — and on the
+  // dinner card they open under the fixed foot, out of sight (the CSS's
+  // scroll-margin on .uw-row is what clears the foot).
+  if (uwOpen && !(wasOpen && wasOpen.meal === uwOpen.meal && wasOpen.i === uwOpen.i)) {
+    const card = grid.querySelector(`[data-uw-card="${uwOpen.meal}"]`);
+    const last = card && card.lastElementChild;
+    if (last && last.scrollIntoView) last.scrollIntoView({ block: 'nearest' });
+  }
   document.getElementById('uw-sum').textContent = typeof uwSummaryLine === 'function' ? uwSummaryLine() : uwSummary(usualGrid);
   const next = document.getElementById('meals-days-next');
   if (next) next.disabled = uwTotalMeals(usualGrid) === 0;
