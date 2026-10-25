@@ -156,7 +156,13 @@ def get_active_notifications() -> list[dict]:
                 # COPY.md's use-it-up rewrite: name what's happening and
                 # what I'll do about it, rather than reporting a date and
                 # leaving the household to work out the implication.
-                title = f"Your {it['item'].lower()} turns soon"
+                # "Your chicken thighs turns soon" — the verb agrees with
+                # the name, here and in the morning text, which reads this
+                # title (defect hunt, 2026-10-25).
+                from .typed_requests import _is_plural_dish_noun
+
+                verb = "turn" if _is_plural_dish_noun(it["item"].strip()) else "turns"
+                title = f"Your {it['item'].strip().lower()} {verb} soon"
                 body = (
                     f"{it['quantity']} — I’ll work it into this week if you’d like."
                     if it["quantity"] else "I’ll work it into this week if you’d like."

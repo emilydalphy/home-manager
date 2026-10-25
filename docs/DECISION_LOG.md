@@ -13,6 +13,21 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Kitchen inventory: stepper, form category, freezer door** (2026-10-25;
+  branch `overnight/inventory-hunt`; tests
+  `tests/test_inventory_hunt_2026_10_25.py`). "+" on an item with no amount
+  (the form's amount is optional) or "½ cup" was a 500 — `parsed` unassigned;
+  glyphs and decimal commas now step. The form posts no category and the route
+  defaulted "other", re-filing list-bought milk as Other and every new row as
+  Other; now None, a new row is read by name (`_new_row_category`, positive
+  fresh/frozen reads only). Crossing the freezer door restarts the date (in:
+  90 days; out: the item's own fridge life, 3 for frozen food), and a row
+  added straight to the freezer gets 90 — thawed chicken read "12 days past".
+  A shelf outside fridge/freezer/pantry is 400 (it used to vanish from
+  Kitchen). Compatible with `overnight/hunt-digest-2026-10-22`'s read-side
+  freezer exclusion. A fridge→freezer→fridge mis-tap re-dates the row.
+  The bell / morning text said "Your chicken thighs turns soon": the verb now
+  agrees (`typed_requests._is_plural_dish_noun`).
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

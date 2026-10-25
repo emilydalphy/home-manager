@@ -102,14 +102,20 @@ _ITEM_SHELF_LIFE_DAYS = {
 }
 
 
-def _lookup_item_shelf_life_days(item: str, category: str | None) -> int:
+def _item_shelf_life_match(item: str) -> int | None:
+    """The item-level shelf life for this name, or None when no key matches."""
     name = item.strip().lower()
     best_match: tuple[str, int] | None = None
     for key, days in _ITEM_SHELF_LIFE_DAYS.items():
         if key in name and (best_match is None or len(key) > len(best_match[0])):
             best_match = (key, days)
-    if best_match:
-        return best_match[1]
+    return best_match[1] if best_match else None
+
+
+def _lookup_item_shelf_life_days(item: str, category: str | None) -> int:
+    matched = _item_shelf_life_match(item)
+    if matched is not None:
+        return matched
     return _DEFAULT_SHELF_LIFE_DAYS.get(category, _DEFAULT_SHELF_LIFE_DAYS["other"])
 
 
