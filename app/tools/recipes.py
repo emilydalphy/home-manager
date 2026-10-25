@@ -2252,6 +2252,17 @@ _PLAUSIBLE_PER_SERVING = (
     ), {"tsp": (0, 96), "g": (0, 227)}),                    # up to 2 cups / 8 oz a head
 )
 
+# A nut, seed or fruit "butter" is a spread, not a cooking fat: the base
+# of a peanut sauce is measured like tahini (which this table has no class
+# for), not like the butter in a pan. Read as "butter" it was held to
+# 2 tbsp a head, and a Thai peanut bowl's "1/3 cup" for two showed as
+# 1 tbsp on the cook card (live report, 2026-10-25). "nut butter" covers
+# peanut, hazelnut, walnut and coconut butter.
+_SPREAD_BUTTERS = (
+    "nut butter", "almond butter", "cashew butter", "pecan butter", "pistachio butter",
+    "seed butter", "apple butter", "pumpkin butter", "cookie butter",
+)
+
 # Names that borrow a class word and would be judged by the wrong table:
 # vegetables and drinks, and the "low-fat"/"fat-free" of a dairy label.
 # Matched as plain substrings of the cleaned name.
@@ -2260,7 +2271,15 @@ _NOT_THIS_CLASS = (
     "onion rings", "garlic bread", "garlic knots", "ginger snap", "gingerbread",
     "low-fat", "low fat", "fat-free", "fat free", "nonfat", "non-fat", "full-fat", "full fat",
     "reduced-fat", "reduced fat",
-)
+) + _SPREAD_BUTTERS
+
+
+def _is_spread_butter(item: str) -> bool:
+    """A nut, seed or fruit butter — "Peanut butter", never "Butter" or
+    "Salted butter"."""
+    clean = _clean_item(item)
+    return any(phrase in clean for phrase in _SPREAD_BUTTERS)
+
 
 # Kitchen units read into the families above, for the check only — the
 # app's own unit arithmetic (quantities._UNIT_CONVERSION_GROUPS) never
@@ -3122,6 +3141,21 @@ def validate_measured_quantities(ingredients: list[dict], field: str = "qty", se
     return {"ok": not problems, "problems": problems}
 
 
+def _old_spread_clamp(item: str, qty: str, stored: str, servings: int | None) -> bool:
+    """
+    True for a saved cook_qty that is the old fat-range correction of a
+    nut/seed/fruit butter, not an amount anyone wrote: the item is a
+    spread (_SPREAD_BUTTERS), its qty measures something, the cook_qty
+    differs from it and is exactly the table's guess for this table
+    (cooking_quantity — what plausible_cooking_quantity substituted). A
+    recipe saved at approval before 2026-10-25 carries "1 tbsp" there for a
+    "1/3 cup" of peanut butter, and the cook card read it ahead of the list.
+    """
+    if not _is_spread_butter(item) or not qty or stored == qty or _quantity_problem(item, qty):
+        return False
+    return stored == cooking_quantity(item, servings=_servings_or_base(servings), shopping_qty=qty)
+
+
 def cooking_ingredients(
     ingredients: list[dict], servings: int | None = None, instructions: list[str] | None = None,
 ) -> list[dict]:
@@ -3169,6 +3203,12 @@ def cooking_ingredients(
             written = (ing.get("qty_as_written") or "").strip()
             out.append({**row, "qty": written, "shopping_qty": qty} if written else row)
             continue
+        if stored and _old_spread_clamp(item, qty, stored, servings):
+            # The pre-save pass's guess from when a peanut butter was held
+            # to the butter range (before 2026-10-25), on a line whose own
+            # qty already measures: the recipe's amount, as the list says.
+            stored = ""
+            ing = {k: v for k, v in ing.items() if k != "cook_qty"}
         if stored and not _quantity_problem(item, stored):
             sane = plausible_cooking_quantity(item, stored, servings, shopping_qty=qty)
             out.append({**ing, "qty": sane, "shopping_qty": qty})

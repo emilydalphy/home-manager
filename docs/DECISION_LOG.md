@@ -13,6 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Peanut butter is a spread, not a cooking fat** (2026-10-25, live FOOD
+  report; branch `overnight/cook-amounts-hunt`; tests
+  `tests/test_cook_card_peanut_butter.py`). `_PLAUSIBLE_PER_SERVING` read the
+  "butter" in "Peanut butter" as the fat class (2 tbsp a head), so a Thai peanut
+  bowl's "1/3 cup" for two got a cook_qty of "1 tbsp" and the cook card
+  disagreed with the list and steps. Nut/seed/fruit butters (`_SPREAD_BUTTERS`)
+  joined `_NOT_THIS_CLASS`, like tahini; `cooking_ingredients` ignores a saved
+  cook_qty that is exactly the old guess on such a line. Real butter and oils
+  are still clamped — the open "trust the library's own amounts / frying oil"
+  card is a different question and is untouched.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
