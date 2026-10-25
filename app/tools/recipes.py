@@ -4687,16 +4687,21 @@ class _KitchenStock:
         # Food past its use-by is not stock (2026-10-25): last week's beef,
         # bought for a dinner that was skipped and dated to keep three days,
         # took next week's beef off the list eight days later. Read on the
-        # household's clock; a row with no date is kept, as it always was.
+        # household's clock; a row with no date is kept, as it always was,
+        # and so is anything in the FREEZER — its date is the category's
+        # fridge estimate (meat: two days), not how long frozen food keeps.
         today = _grocery._household_today(conn=conn).isoformat()
         rows = conn.execute(
-            "SELECT item, quantity, category, location, source FROM inventory_items "
-            "WHERE household_id = ? AND TRIM(quantity) != '' "
-            "AND (expiration_date IS NULL OR TRIM(expiration_date) = '' OR expiration_date >= ?)",
-            (household_id(), today),
+            "SELECT item, quantity, category, location, source, expiration_date FROM inventory_items "
+            "WHERE household_id = ? AND TRIM(quantity) != ''",
+            (household_id(),),
         ).fetchall()
         for row in rows:
             if exclude_sources and (row["source"] or "") in exclude_sources:
+                continue
+            use_by = (row["expiration_date"] or "").strip()
+            if (use_by and use_by < today
+                    and _quantities._display_location(dict(row)).strip().lower() != "freezer"):
                 continue
             if locations is not None:
                 where = _quantities._display_location(dict(row)).strip().lower()

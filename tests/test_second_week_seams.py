@@ -112,19 +112,28 @@ def _night_off_onto_the_fed_night():
 # 1. A night off's freezer portion with no cook behind it
 # ==========================================================================
 
-def test_skipping_the_cook_a_night_off_moved_takes_its_portion_back_out():
+def test_skipping_the_cook_a_night_off_moved_leaves_nothing_to_plan():
     """CATCH. "We skipped it" on the night the cook moved to: nothing was
-    cooked, so nothing went in the freezer, and next week has nothing of it
-    to plan."""
+    cooked, so next week has no portion of it to plan. The row itself is
+    only ignored, not deleted — see the next test."""
     _plan, cook, today, _d1 = _night_off_onto_the_fed_night()
     tools.answer_yesterday(cook, "skipped", today)
-    assert _freezer() == []
     assert _fp.portions_to_plan() == []
+
+
+def test_ticking_it_cooked_after_a_skip_brings_the_portion_back():
+    """GUARD (review, 2026-10-25). A skip has no Undo; the correction is the
+    cooked tick. It must find the portion still there."""
+    _plan, cook, today, _d1 = _night_off_onto_the_fed_night()
+    tools.answer_yesterday(cook, "skipped", today)
+    tools.check_off_meal(cook, "done")
+    assert [p["dish"] for p in _fp.portions_to_plan()] == ["Pasta Primavera"]
+    assert [r["item"] for r in _freezer()] == ["Pasta Primavera (cooked)"]
     conn = get_conn()
     derived = json.loads(conn.execute("SELECT derived_from_json FROM meal_plan_entries WHERE id = ?",
                                       (cook,)).fetchone()[0] or "{}")
     conn.close()
-    assert _leftovers.FREEZER_EXTRA_KEY not in derived
+    assert derived.get(_leftovers.FREEZER_EXTRA_KEY), "the cook still carries its portion"
 
 
 def test_a_night_off_on_the_night_the_cook_moved_to_takes_its_portion_back_out():
@@ -304,6 +313,12 @@ def test_a_brought_over_dish_buys_again_what_has_gone_past_its_use_by():
     conn.commit()
     conn.close()
     assert bring_over.bought_items([entry]) == {"kidney beans"}
+    # Put in the freezer, the same past date is no reason to buy it again.
+    conn = get_conn()
+    conn.execute("UPDATE inventory_items SET location = 'freezer' WHERE item = 'Ground beef'")
+    conn.commit()
+    conn.close()
+    assert bring_over.bought_items([entry]) == {"ground beef", "kidney beans"}
 
 
 # ==========================================================================
@@ -320,14 +335,28 @@ def test_the_opener_counts_new_dishes_in_english(monkeypatch, new, start):
     assert line.startswith(start), line
 
 
-def test_fresh_food_bought_onto_an_expired_row_takes_the_new_use_by():
-    """CATCH. This week's pound, ticked bought, merges into last week's row
-    that is past its use-by: the row takes the new food's date, so it is
-    stock again rather than read as expired the day it was bought."""
-    _stock("Ground beef", (household_today() - datetime.timedelta(days=5)).isoformat())
+def test_fresh_food_bought_onto_an_expired_row_replaces_it():
+    """CATCH. This week's pound, bought onto last week's two pounds already
+    past their use-by: the row is the new pound with the new date — not
+    three pounds "in date" (a week needing three would buy nothing), and
+    not the old date (expired the day it was bought)."""
+    tools.update_inventory("Ground beef", "add", quantity="2 lb", category="meat/seafood", location="fridge",
+                           expiration_date=(household_today() - datetime.timedelta(days=5)).isoformat())
     tools.update_inventory("Ground beef", "add", quantity="1 lb", category="meat/seafood", location="fridge")
     [row] = [r for r in tools.get_inventory() if r["item"] == "Ground beef"]
     assert row["expiration_date"] >= household_today().isoformat(), row
+    assert row["quantity"] == "1 lb", row
+    plan = _week_needing("Ground beef", qty="2 lb")
+    tools.approve_weekly_plan(plan)
+    assert [r["quantity"] for r in _needed("Ground beef")] == ["2 lbs"]
+
+
+def test_meat_in_the_freezer_is_stock_whatever_its_date():
+    """GUARD (review, 2026-10-25). A freezer row's date is the category's
+    fridge estimate, not how long frozen meat keeps: it still covers the
+    week, and bought-last-week still holds for it."""
+    tools.update_inventory("Ground beef", "add", quantity="1 lb", category="meat/seafood", location="freezer",
+                           expiration_date=(household_today() - datetime.timedelta(days=7)).isoformat())
     plan = _week_needing("Ground beef")
     tools.approve_weekly_plan(plan)
     assert _needed("Ground beef") == []

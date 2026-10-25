@@ -21,15 +21,19 @@ why*, not duplicating the diff.
   `freezer_portions` night as its dish's cook and linked two later nights
   to it ("Leftovers — Monday's Leftovers from the freezer — Pasta"), and
   `repair_leftover_chains` accepted such a link; both now refuse. A
-  `cook_on_fed` night off writes its portion before the cook happens, so
-  "We skipped it" (ordinary skip) or a `drop` night off on that cook now
-  deletes the night off's own freezer rows (`freezer_portions.
-  release_uncooked_extra`) — not one a live plan already stands on, and not
-  the `drop_with_freezer` path (its Undo restores no inventory). `_KitchenStock`
+  `cook_on_fed` night off writes its portion before the cook happens. After
+  "We skipped it" the planner ignores that portion while the cook stays
+  skipped (`freezer_portions._skipped_cooks_portion_ids`) — read lazily, not
+  deleted, because a skip has no Undo and the cooked tick that corrects it
+  must find the row (review). A `drop` night off deletes the cook, so there
+  the night off's own rows are deleted (`release_uncooked_extra`) — not one
+  a live plan already stands on, not on `drop_with_freezer`. `_KitchenStock`
   skips rows past `expiration_date` and `bring_over.bought_items` re-buys an
   ingredient whose every kitchen row is past it (8-day-old beef was "already
-  have"); a purchase merged into a row past its use-by now takes the new
-  food's date (`inventory._add_to_inventory` kept the old one). Also "One new dish" / "No new dishes" and "lunches" in two reasons.
+  have") — FREEZER rows exempt, their date is a fridge estimate (review). A
+  purchase onto a non-freezer row past its use-by replaces it: the new
+  amount and date (`inventory._add_to_inventory` kept the old date on the
+  sum). Also "One new dish" / "No new dishes" and "lunches" in two reasons.
 
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
