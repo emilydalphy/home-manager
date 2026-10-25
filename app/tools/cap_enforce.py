@@ -566,9 +566,14 @@ def named_a_day(derived: dict, asks: tuple[str | None, ...] = (), meal: str | No
     return any(_names_a_day_outside_the_dish(c, stems) for c in clauses)
 
 
-def _clauses_about(derived: dict, asks: tuple[str | None, ...], meal: str | None) -> tuple[list[str], set[str]]:
+def _clauses_about(derived: dict, asks: tuple[str | None, ...], meal: str | None,
+                   strict: bool = False) -> tuple[list[str], set[str]]:
     """The clauses of their words about this dish (see named_a_day), and
-    the dish's name stems."""
+    the dish's name stems. `strict` drops the lean-to-"named" fallback:
+    rule 5 leaves a dish alone when unsure, but rule 8 MOVES one and says
+    "you asked for it Friday", so it needs the day in a clause about the
+    dish or in the model's own span ("Something mexican please, we're out
+    Friday" names no day for the tacos — review, 2026-10-25)."""
     span = str(derived.get("freeform") or "").strip()
     from . import draft_opener as _draft_opener  # lazy: it reaches back through meal_variety
     texts = [span] + [
@@ -578,6 +583,10 @@ def _clauses_about(derived: dict, asks: tuple[str | None, ...], meal: str | None
     clauses = [c for t in texts for c in _CLAUSE_SPLIT_RE.split(t) if c and c.strip()]
     stems = _name_stems(meal)
     mine = [c for c in clauses if stems & {_stem(w) for w in _WORD_RE.findall(c.lower())}]
+    if strict:
+        # Positive evidence only: a clause that names the dish, or the span
+        # the model cited for it. No fallback to every clause.
+        return mine + [c for c in _CLAUSE_SPLIT_RE.split(span) if c and c.strip() and c not in mine], stems
     return (mine or clauses), stems
 
 
@@ -591,11 +600,12 @@ _WEEKDAY_OF_WORD = {
 
 
 def weekdays_named(derived: dict, asks: tuple[str | None, ...] = (), meal: str | None = None) -> set[int]:
-    """The weekdays (Monday = 0) their words for THIS dish named — the same
-    clauses named_a_day reads, the dish's own name taken out. "Today",
+    """The weekdays (Monday = 0) their words for THIS dish named — the
+    clauses named_a_day reads, strictly (see _clauses_about), with the
+    dish's own name taken out. "Today",
     "tomorrow" and "weekend" name no single weekday and are not here."""
     derived = derived if isinstance(derived, dict) else {}
-    clauses, stems = _clauses_about(derived, asks, meal)
+    clauses, stems = _clauses_about(derived, asks, meal, strict=True)
     return {
         _WEEKDAY_OF_WORD[m.group(1).lower()]
         for c in clauses for m in _NAMED_DAY_RE.finditer(_outside_the_dish(c, stems))

@@ -217,3 +217,25 @@ def test_moved_by_hand_afterwards_the_line_goes(stub_model, run):
     assert result.get("status") == "swapped", result
 
     assert _texts(plan_id) == []
+
+
+# ---------------------------------------------------------------- review, 2026-10-25
+
+def test_a_day_out_said_for_nothing_in_particular_does_not_move_a_dish(stub_model, run):
+    """CATCH (review: Tacos were traded Wednesday -> Saturday and the draft
+    said "You're out Friday, so Tacos moved to Saturday." — nobody asked
+    for tacos on Friday). Rule 8 acts only on a day named for THIS dish."""
+    week = _monday()
+    dates = tools._week_dates(week)
+    _filler()
+    for n in ["Tacos", "A1", "A2", "A3", "A4", "A5", "A6"]:
+        _recipe(n, 15)
+    said = "Something mexican please, we're out Friday"
+    tools.save_week_intake(week, night_tags={dates[4]: ["out"]}, freeform=said)
+    stub_model(_week(dates, ["A1", "A2", "Tacos", "A3", "A4", "A5", "A6"],
+                     **{dates[2]: _asked("Something mexican please")}))
+
+    plan_id, _ = run(week, None)
+
+    assert _by_date(plan_id)[dates[2]]["meal"] == "Tacos"
+    assert _texts(plan_id) == []

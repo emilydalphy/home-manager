@@ -28,7 +28,9 @@ why*, not duplicating the diff.
   to Saturday." ("away" for an away need), no buttons, only when their words
   named that night. Why: on main the out-night pass DELETED the dish, and a
   model-made move was unchecked and unsaid. Not built: a skipped day ("Which
-  days?") is not a night out here.
+  days?") is not a night out here. Review round: rule 8 reads a day only
+  from a clause naming the dish or the model's own span — no fallback to
+  every clause ("Something mexican please, we're out Friday" moved Tacos).
 - **A dish they asked for that fits no night goes on the longest one, and
   the draft says so** (2026-10-25, snag rule 5; branch
   `overnight/snag-rule-5-fits-nowhere`; tests
