@@ -982,6 +982,134 @@ def place_off_nights_out(plan_id: int, intake: dict | None, memory: dict | None,
     return placed
 
 
+# ---------- a dish they asked for at a meal, naming no day (Emily's rule 2) ----------
+#
+# "A request with a meal but no day goes at that meal on a day with enough
+# time and everyone home. Dishes over 30 minutes stay off short-on-time
+# nights." (2026-09-23; her example, "Tacos for dinner once this week".)
+# Before this the model was told and nothing checked: the tacos stayed
+# wherever it put them — `theirs` makes a typed dish untouchable to both
+# stages below — so a night Vineeth is out got them, and a rush night got
+# them with scenario 3's "…Wednesday is short on time." about a night
+# nobody chose.
+#
+# No line was decided for this rule (rule 1's "tells you where it went" is
+# for a request with no meal either), so it is a SILENT repair: the dish
+# trades places with a dish Pomona chose, through meal_move.move_meal —
+# the Move sheet's own write, the one door that trades a lunch as well as
+# a dinner (rows re-dated in place, so groceries, sides and thaws ride
+# along; a veto at the new table refuses it). The meal they named is kept
+# by construction: a lunch only ever trades with a lunch.
+#
+# "Everyone home" is slot_attendance, per person per meal — the day sheet's
+# toggles, a trip, the usual-week grid — read as "nobody from the household
+# is marked out of it". Guests don't make a meal less everyone's.
+MEAL_NO_DAY_KEY = "meal_no_day"
+
+
+def meals_named(derived: dict, asks: tuple[str | None, ...] = (), meal: str | None = None) -> set[str]:
+    """The meals ("dinner", "lunch", "breakfast") their words for THIS dish
+    named — the clauses rule 8 reads (strict), the dish's own name taken
+    out, so a "Breakfast Burrito" is not a breakfast request."""
+    from . import week_intake as _week_intake  # lazy: it reaches the whole app
+    clauses, stems = _clauses_about(derived if isinstance(derived, dict) else {}, asks, meal, strict=True)
+    return {
+        _week_intake._MEAL_OF_WORD[m.group(1).lower()]
+        for c in clauses for m in _week_intake._MEAL_WORD_RE.finditer(_outside_the_dish(c, stems))
+    }
+
+
+def _someone_out(meal_date: str, slot: str) -> bool:
+    from . import attendance as _attendance  # lazy: it imports weekly_plan
+    try:
+        return bool(_attendance.get_slot_attendance(meal_date, slot).get("absent_member_ids"))
+    except Exception:
+        logger.exception("Reading who is at %s %s failed", meal_date, slot)
+        return False
+
+
+def place_meal_requests(plan_id: int, intake: dict | None, memory: dict | None,
+                        asks: tuple[str | None, ...] = ()) -> list[dict]:
+    """
+    Rule 2: each dish they typed for a meal, naming no day, that sits on a
+    meal someone is out of or hasn't the time for, goes to the nearest meal
+    of that kind with everyone home and enough time. Runs BEFORE rule 5 and
+    stage 1, so the dish it trades back onto the bad night is the app's to
+    trade on or re-pick.
+
+    The order is the card's: who's home, then time. When no meal has both,
+    a dish OVER its night's time goes to the nearest meal it fits (time
+    beats a partial table — her second sentence is absolute); a dish that
+    fits where it is stays; and one that fits no meal at all is left for
+    rule 5 (the longest night, and its line), which runs next. Nearest by
+    days, a tie to the LATER day (move_target's rule, and rule 8's).
+
+    A meal it can go to holds a dish Pomona chose (never theirs, a reheat or
+    either end of a chain, never cooked, gone by, planned_empty or open,
+    never a dinner tagged Leftovers). Never raises.
+    """
+    placed: list[dict] = []
+    done: set[int] = set()
+    for slot in ("dinner", "lunch"):  # meal_move.MOVABLE_SLOTS: breakfast has no move door
+        for _ in range(_MAX_TRADES):
+            try:
+                rows = nights(plan_id, intake, memory, slot)
+            except Exception:
+                logger.exception("Plan %s: reading the week's %ss for a meal request failed", plan_id, slot)
+                break
+            out = {r["date"]: _someone_out(r["date"], slot) for r in rows}
+            night = None
+            for row in rows:
+                derived = row.get("derived") or {}
+                if (row["id"] in done or not fits_nowhere_candidate(row, asks)
+                        or DAY_OUT_KEY in derived or FITS_NOWHERE_KEY in derived
+                        or _weekly_plan.night_has_gone(row["date"])
+                        or slot not in meals_named(derived, asks, row["meal"])):
+                    continue
+                if out[row["date"]] or row["over"]:
+                    night = row
+                    break
+            if night is None:
+                break
+            done.add(night["id"])
+            minutes = night["minutes"]
+
+            def fits(r: dict) -> bool:
+                return not r.get("cap") or not minutes or minutes <= r["cap"]
+
+            def distance(r: dict) -> tuple[int, int]:
+                gap = (datetime.date.fromisoformat(r["date"]) - datetime.date.fromisoformat(night["date"])).days
+                return (abs(gap), 0 if gap > 0 else 1)
+
+            open_to = [
+                r for r in rows
+                if r["id"] != night["id"] and r["slot_state"] == "planned" and (r.get("meal") or "").strip()
+                and (r.get("cooked_status") or "") != "done" and not _meal_variety.theirs(r.get("derived") or {})
+                and not r.get("reheat") and not r.get("source")
+                and not (slot == "dinner" and "left" in (r.get("tags") or []))
+                and not _weekly_plan.night_has_gone(r["date"]) and fits(r)
+            ]
+            best = sorted((r for r in open_to if not out[r["date"]]), key=distance)
+            if not best and night["over"]:
+                best = sorted(open_to, key=distance)
+            try:
+                from . import meal_move as _meal_move  # lazy: it imports weekly_plan and tonight
+                for target in best:
+                    result = _meal_move.move_meal(plan_id, night["id"], target["date"])
+                    if result.get("status") != "moved":
+                        logger.info("Plan %s: %s would not move to %s — %s", plan_id, night["meal"],
+                                    target["date"], result.get("message") or "refused")
+                        continue
+                    _stamp(night["id"], MEAL_NO_DAY_KEY, {"from": night["date"]})
+                    placed.append({"meal": night["meal"], "slot": slot, "from": night["date"], "to": target["date"]})
+                    logger.info("Plan %s: %s was asked for at %s with no day; moved %s -> %s", plan_id,
+                                night["meal"], slot, night["date"], target["date"])
+                    break
+            except Exception:
+                logger.exception("Plan %s: placing %s at %s failed", plan_id, night["meal"], slot)
+    return placed
+
+
 def _recipe_minutes(meal: str) -> int | None:
     conn = get_conn()
     try:
@@ -1375,13 +1503,22 @@ def enforce_minutes_caps(plan_id: int, intake: dict | None, memory: dict | None,
     moved: list[dict] = []
     repicked: list[dict] = []
     stood: dict[int, str] = {}  # meals a re-pick never tried, and why
-    # Rule 5 first: a dish they asked for that fits no night goes on the
+    # Rule 2 first: a dish they asked for at a meal, naming no day, goes to
+    # a meal of that kind with everyone home and the time for it. What it
+    # cannot place for time is rule 5's, next.
+    try:
+        moved = [{"from": p["from"], "to": p["to"], "meal_no_day": True, "slot": p["slot"],
+                  "moved": [{"meal": p["meal"], "from": p["from"], "to": p["to"]}]}
+                 for p in place_meal_requests(plan_id, intake, memory, asks)]
+    except Exception:
+        logger.exception("Plan %s: placing a dish asked for at a meal failed", plan_id)
+    # Rule 5: a dish they asked for that fits no night goes on the
     # longest one, so the dinner it trades onto the short night is there
     # in time for stage 1 and 2 to put right.
     try:
-        moved = [{"from": p["from"], "to": p["to"], "fits_nowhere": True,
-                  "moved": [{"meal": p["meal"], "from": p["from"], "to": p["to"]}]}
-                 for p in place_fits_nowhere(plan_id, intake, memory, asks) if p["from"] != p["to"]]
+        moved += [{"from": p["from"], "to": p["to"], "fits_nowhere": True,
+                   "moved": [{"meal": p["meal"], "from": p["from"], "to": p["to"]}]}
+                  for p in place_fits_nowhere(plan_id, intake, memory, asks) if p["from"] != p["to"]]
     except Exception:
         logger.exception("Plan %s: placing a dish that fits no night failed", plan_id)
     try:
