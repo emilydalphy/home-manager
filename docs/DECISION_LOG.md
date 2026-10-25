@@ -13,6 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **"Start cooking" is refused on every reheat night the Cook card calls one**
+  (2026-10-25, test-gap pass; branch `overnight/test-gaps-1025`; tests
+  `tests/test_start_cooking_reheat_nights.py`). `cooker.start_cooking` only
+  refused a recipe-less night whose name STARTED "Leftover", so a cook-ahead
+  day, a chain's leftovers night (both carry the recipe_id) or a freezer
+  portion took a start from a stale screen — and a started night reads
+  "cooking" to every move/swap door. New `_is_reheat_entry` asks the same
+  three questions `_apply_leftover_chains` uses for `is_leftovers`. Route gap
+  sweep found only scan-fridge/scan-pantry uncalled; already pinned on
+  `overnight/hunt-2026-10-25`, so not redone.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
