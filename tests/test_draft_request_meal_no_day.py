@@ -25,7 +25,7 @@ import datetime
 
 from app import tools
 from app.db import get_conn
-from app.tools import draft_flags
+from app.tools import cap_enforce, draft_flags
 
 from conftest import household_today
 from test_rush_cap_enforced import (  # noqa: E402 — the fixtures this is about
@@ -194,3 +194,49 @@ def test_never_traded_onto_a_dish_they_asked_for(stub_model, run):
 
     assert _where(plan_id, "dinner", "Pizza") == [(dates[2], "dinner")]
     assert _where(plan_id, "dinner", "Tacos") == [(dates[0], "dinner")]
+
+
+# ---------------------------------------------------------------- review, 2026-10-25
+
+def test_a_dinner_request_rescued_off_a_night_nobody_is_home_goes_where_everyone_is(stub_model, run):
+    """CATCH (review: rule 8 took the tacos off the Thursday nobody is home
+    to Friday — nearest, tie later — where Vineeth is out, and rule 2 then
+    left a rule-8 row alone). Wednesday has everyone home."""
+    _two_adults()
+    week = _monday()
+    dates = tools._week_dates(week)
+    _seed(("Tacos", 25))
+    said = "Tacos for dinner once this week"
+    tools.save_week_intake(week, freeform=said)
+    for who in ("Emily", "Vineeth"):
+        tools.set_member_attendance(dates[3], "dinner", who, present=False)
+    tools.set_member_attendance(dates[4], "dinner", "Vineeth", present=False)
+    dinners = list(_OTHERS)
+    dinners[3] = "Tacos"
+    stub_model(_week(dates, dinners, **{f"{dates[3]}:dinner": _asked(said)}))
+
+    plan_id, _ = run(week, None)
+
+    assert _where(plan_id, "dinner", "Tacos") == [(dates[2], "dinner")]
+    assert [f["text"] for f in draft_flags.plan_flags(plan_id)] == [], "no day was named, so nothing is said"
+
+
+def test_another_dishs_meal_word_in_a_shared_span_is_not_this_dishs(stub_model, run):
+    """CATCH (review: both dishes cited the whole sentence, so the tacos'
+    "for dinner" made the pasta a dinner request and it was moved off
+    Vineeth's night out). Pasta named no meal: it stays."""
+    _two_adults()
+    week = _monday()
+    dates = tools._week_dates(week)
+    _seed(("Pasta", 20), ("Tacos", 20))
+    said = "Pasta sometime, and tacos for dinner"
+    tools.save_week_intake(week, freeform=said)
+    tools.set_member_attendance(dates[1], "dinner", "Vineeth", present=False)
+    dinners = list(_OTHERS)
+    dinners[1], dinners[4] = "Pasta", "Tacos"
+    stub_model(_week(dates, dinners, **{f"{dates[1]}:dinner": _asked(said), f"{dates[4]}:dinner": _asked(said)}))
+
+    plan_id, _ = run(week, None)
+
+    assert _where(plan_id, "dinner", "Pasta") == [(dates[1], "dinner")]
+    assert cap_enforce.meals_named({"freeform": "Lasagna for the dinner party"}, (), "Lasagna") == set()

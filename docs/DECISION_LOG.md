@@ -27,7 +27,12 @@ why*, not duplicating the diff.
   Why: on main a typed dish is `theirs`, untouchable to the cap pass, so it
   stayed on Vineeth's night out or a rush night. Not built: breakfast (no
   move door); a request the model put at the WRONG meal is not moved
-  across meals.
+  across meals. Review round: rule 8 rescuing a dinner-named, no-day dish
+  off a night nobody is home now prefers a night everyone is home; and a
+  cited span of several clauses counts only the clauses about this dish
+  ("Pasta sometime, and tacos for dinner" no longer makes pasta a dinner
+  request — tightens rule 8's day reading too). "Dinner party", "dinner
+  rolls", "after dinner" don't name the meal.
 - **A dish asked for on a night nobody is home moves to the nearest night
   that fits its time, and the draft says so** (2026-10-25, snag rule 8;
   branch `overnight/snag-rule-8-day-out`, on top of rule 5's; tests

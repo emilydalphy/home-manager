@@ -585,8 +585,13 @@ def _clauses_about(derived: dict, asks: tuple[str | None, ...], meal: str | None
     mine = [c for c in clauses if stems & {_stem(w) for w in _WORD_RE.findall(c.lower())}]
     if strict:
         # Positive evidence only: a clause that names the dish, or the span
-        # the model cited for it. No fallback to every clause.
-        return mine + [c for c in _CLAUSE_SPLIT_RE.split(span) if c and c.strip() and c not in mine], stems
+        # the model cited for it when that span is ONE clause. A span of
+        # several ("Pasta sometime, and tacos for dinner", cited on both
+        # dishes) counts only its clauses about this dish, which `mine`
+        # already holds — otherwise the tacos' "for dinner" became the
+        # pasta's (review, 2026-10-25). No fallback to every clause.
+        span_clauses = [c for c in _CLAUSE_SPLIT_RE.split(span) if c and c.strip()]
+        return mine + (span_clauses if len(span_clauses) == 1 and span_clauses[0] not in mine else []), stems
     return (mine or clauses), stems
 
 
@@ -822,7 +827,7 @@ def requests_on_nights_out(plan_id: int, nobody_home: dict[str, bool]) -> list[d
 
 
 def _day_out_target(meal: str, minutes: int | None, from_date: str, rows: list[dict],
-                    here: dict | None = None) -> tuple[str | None, bool]:
+                    here: dict | None = None, everyone_home_first: bool = False) -> tuple[str | None, bool]:
     """
     The night a dish asked for on `from_date` goes to, and whether it fits
     none (then it is the longest night, rule 5's answer, and the second
@@ -865,6 +870,9 @@ def _day_out_target(meal: str, minutes: int | None, from_date: str, rows: list[d
     if not open_to:
         return None, False
     fits = [r for r in open_to if not r.get("cap") or not minutes or minutes <= r["cap"]]
+    if everyone_home_first:
+        # Rule 2's order inside rule 8's: who's home, then time.
+        fits = [r for r in fits if not _someone_out(r["date"], "dinner")] or fits
     if fits:
         return min(fits, key=distance)["date"], False
     most = max(r["cap"] for r in open_to)
@@ -921,7 +929,14 @@ def place_off_nights_out(plan_id: int, intake: dict | None, memory: dict | None,
                    and r["slot_state"] == "planned" for r in rows):
                 continue
             minutes = _recipe_minutes(dish["meal"])
-            target, nowhere = _day_out_target(dish["meal"], minutes, dish["date"], rows)
+            # A dish asked for at dinner with no day is rule 2's too: the
+            # night it goes to has everyone home when one fits (review,
+            # 2026-10-25 — rule 8 put the tacos on Vineeth's night out,
+            # and rule 2 leaves a rule-8 row alone).
+            home_first = ("dinner" in meals_named(dish["derived"], asks, dish["meal"])
+                          and not named_a_day(dish["derived"], asks, dish["meal"]))
+            target, nowhere = _day_out_target(dish["meal"], minutes, dish["date"], rows,
+                                              everyone_home_first=home_first)
             if target is None:
                 logger.info("Plan %s: nowhere to put %s off %s", plan_id, dish["meal"], dish["date"])
                 continue
@@ -1016,7 +1031,15 @@ def meals_named(derived: dict, asks: tuple[str | None, ...] = (), meal: str | No
     return {
         _week_intake._MEAL_OF_WORD[m.group(1).lower()]
         for c in clauses for m in _week_intake._MEAL_WORD_RE.finditer(_outside_the_dish(c, stems))
+        if not _NOT_A_MEAL_RE.match(_outside_the_dish(c, stems)[m.end():])
+        and not _AFTER_A_MEAL_RE.search(_outside_the_dish(c, stems)[:m.start()])
     }
+
+
+# A meal word that is not the meal they asked for it at: "a dinner party",
+# "dinner rolls", "after dinner a cake" (review, 2026-10-25).
+_NOT_A_MEAL_RE = re.compile(r"\s+(?:party|parties|roll|rolls|guests?)\b", re.IGNORECASE)
+_AFTER_A_MEAL_RE = re.compile(r"\b(?:after|before)\s+$", re.IGNORECASE)
 
 
 def _someone_out(meal_date: str, slot: str) -> bool:
