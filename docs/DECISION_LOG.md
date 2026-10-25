@@ -13,6 +13,24 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Week 2 seams: a freezer night is never a cook; a night off's portion
+  with no cook comes back out; food past its use-by is not stock**
+  (2026-10-25; branch `overnight/second-week-hunt`; tests
+  `tests/test_second_week_seams.py`). Found living week 1 over HTTP and
+  drafting week 2: the count fold (`meal_variety._slot_nights`) read a
+  `freezer_portions` night as its dish's cook and linked two later nights
+  to it ("Leftovers — Monday's Leftovers from the freezer — Pasta"), and
+  `repair_leftover_chains` accepted such a link; both now refuse. A
+  `cook_on_fed` night off writes its portion before the cook happens, so
+  "We skipped it" (ordinary skip) or a `drop` night off on that cook now
+  deletes the night off's own freezer rows (`freezer_portions.
+  release_uncooked_extra`) — not one a live plan already stands on, and not
+  the `drop_with_freezer` path (its Undo restores no inventory). `_KitchenStock`
+  skips rows past `expiration_date` and `bring_over.bought_items` re-buys an
+  ingredient whose every kitchen row is past it (8-day-old beef was "already
+  have"); a purchase merged into a row past its use-by now takes the new
+  food's date (`inventory._add_to_inventory` kept the old one). Also "One new dish" / "No new dishes" and "lunches" in two reasons.
+
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

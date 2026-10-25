@@ -415,18 +415,22 @@ def _line_two(entries: list[dict], report: dict | None, recent: set[str] | None,
         return ""
     back = [n for n in names if n.lower() in recent]
     new = len(names) - len(back)
+    # "One new dish", never "One new dishes" — a second week with a single
+    # new dinner is the ordinary case once a household has a few favourites.
+    dishes = ("No new dishes" if new == 0
+              else f"{_cap(number_word(new))} new {'dish' if new == 1 else 'dishes'}")
     if surprise:
         if not back:
-            return f"{_cap(number_word(new))} new dishes — nothing you’ve had from me before."
+            return f"{dishes} — nothing you’ve had from me before."
         if len(back) <= 2:
-            return f"{_cap(number_word(new))} new dishes; {_join(back)} you’ve had from me before."
-        return f"{_cap(number_word(new))} new dishes, {number_word(len(back))} you’ve had from me before."
+            return f"{dishes}; {_join(back)} you’ve had from me before."
+        return f"{dishes}, {number_word(len(back))} you’ve had from me before."
     window = _meal_variety.variety_window_words()
     if not back:
-        return f"{_cap(number_word(new))} new dishes — nothing from {window}."
+        return f"{dishes} — nothing from {window}."
     if len(back) <= 2:
-        return f"{_cap(number_word(new))} new dishes; {_join(back)} back from {window}."
-    return f"{_cap(number_word(new))} new dishes, {number_word(len(back))} back from {window}."
+        return f"{dishes}; {_join(back)} back from {window}."
+    return f"{dishes}, {number_word(len(back))} back from {window}."
 
 
 def batch_line(entries: list[dict]) -> str:

@@ -3123,6 +3123,10 @@ def repair_leftover_chains(weekly_plan_id: int) -> dict:
             issue = "a meal that hasn’t happened yet"
         elif source["slot_state"] != "planned" or not (source["recipe_id"] or source["freeform_meal"]):
             issue = "a night nothing was actually cooked"
+        elif _leftovers.frozen_portion_on(source["derived_from_json"]):
+            # A night eating a portion out of the freezer cooks nothing:
+            # the portion is that night's and no more.
+            issue = "a night eating from the freezer, not an actual cook"
         elif source["slot"] not in ("lunch", "dinner") and not derived.get("cook_ahead"):
             # A household's own cook-ahead (cook_ahead.set_cook_ahead) is
             # the one chain that legitimately runs breakfast -> breakfast:

@@ -4684,10 +4684,16 @@ class _KitchenStock:
         self._on_hand: dict[str, list[tuple[float, str | None]]] = {}
         self._unreadable: set[str] = set()
         self._claimed: dict[str, list[tuple[float, str | None]]] = {}
+        # Food past its use-by is not stock (2026-10-25): last week's beef,
+        # bought for a dinner that was skipped and dated to keep three days,
+        # took next week's beef off the list eight days later. Read on the
+        # household's clock; a row with no date is kept, as it always was.
+        today = _grocery._household_today(conn=conn).isoformat()
         rows = conn.execute(
             "SELECT item, quantity, category, location, source FROM inventory_items "
-            "WHERE household_id = ? AND TRIM(quantity) != ''",
-            (household_id(),),
+            "WHERE household_id = ? AND TRIM(quantity) != '' "
+            "AND (expiration_date IS NULL OR TRIM(expiration_date) = '' OR expiration_date >= ?)",
+            (household_id(), today),
         ).fetchall()
         for row in rows:
             if exclude_sources and (row["source"] or "") in exclude_sources:

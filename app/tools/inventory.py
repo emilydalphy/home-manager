@@ -228,6 +228,14 @@ def _add_to_inventory(
         fields = "quantity = ?, source = ?, updated_at = datetime('now')"
         params = [merged_qty, source]
         resolved_exp = _quantities._resolved_expiration_update(expiration_date, category, existing["category"], existing["expiration_date"], item)
+        old_use_by = (existing["expiration_date"] or "").strip()
+        if (not resolved_exp and old_use_by and (category or existing["category"])
+                and old_use_by < _grocery._household_today(conn=conn).isoformat()):
+            # Fresh food added to a row already past its use-by (2026-10-25):
+            # the row kept the old date, so this week's pasta, merged into
+            # last week's, read as expired the day it was bought. The new
+            # food's own estimate wins.
+            resolved_exp = _quantities._estimate_expiration_date(category or existing["category"], item)
         if resolved_exp:
             fields += ", expiration_date = ?"
             params.append(resolved_exp)

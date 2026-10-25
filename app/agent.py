@@ -8053,7 +8053,7 @@ def _finish_week_slots(
                 weekly_plan_id=plan_id,
                 meal_date=day,
                 slot=slot,
-                reason=f"You’ve asked me not to plan {slot}s — I’ve left this to you.",
+                reason=f"You’ve asked me not to plan {slot}{'es' if slot == 'lunch' else 's'} — I’ve left this to you.",
                 derived_from={"constraint": f"{slot}s_per_week:0"},
             )
 

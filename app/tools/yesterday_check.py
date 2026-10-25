@@ -47,6 +47,7 @@ from ..db import get_conn, write
 from ._shared import household_id
 from . import bring_over as _bring_over
 from . import cooker as _cooker
+from . import freezer_portions as _freezer_portions
 from . import leftovers as _leftovers
 from . import plan_undo as _plan_undo
 from . import weekly_plan as _weekly_plan
@@ -220,6 +221,9 @@ def _skip(entry_id: int, meal: str, day: str, today: str) -> dict | None:
                 "WHERE id = ? AND household_id = ? AND skipped_at IS NULL",
                 (entry_id, household_id()),
             )
+            # A cook a night off had loaded with freezer portions made none:
+            # those portions come back out of the freezer.
+            _freezer_portions.release_uncooked_extra(conn, entry_id)
             return None
         plan_id = entry["weekly_plan_id"]
         new_ref = f"{target['date']}:{target['slot']}"

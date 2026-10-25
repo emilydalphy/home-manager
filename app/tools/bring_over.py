@@ -172,10 +172,33 @@ def bought_items(entry_ids: list[int], conn=None) -> set[str]:
             f"WHERE l.household_id = ? AND l.meal_plan_entry_id IN ({marks}) AND g.status = 'purchased'",
             (household_id(), *ids),
         ).fetchall()
+        bought = {(r["item"] or "").strip().lower() for r in rows if (r["item"] or "").strip()}
+        # Bought last week is not the same as still good (2026-10-25): a
+        # pound of beef bought on Saturday for Monday's chili, brought over
+        # to the Sunday after, was eight days old and five past the use-by
+        # the kitchen itself holds for it. An ingredient whose every row in
+        # the kitchen is past its use-by is bought again; one with no row
+        # at all (used, or never tracked) stays bought, as before.
+        if bought:
+            from . import cooker as _cooker
+
+            today = _cooker.household_today(conn=conn).isoformat()
+            fresh: set[str] = set()
+            stale: set[str] = set()
+            for r in conn.execute(
+                "SELECT item, expiration_date FROM inventory_items WHERE household_id = ?",
+                (household_id(),),
+            ).fetchall():
+                key = (r["item"] or "").strip().lower()
+                if key not in bought:
+                    continue
+                use_by = (r["expiration_date"] or "").strip()
+                (stale if use_by and use_by < today else fresh).add(key)
+            bought -= stale - fresh
     finally:
         if own:
             conn.close()
-    return {(r["item"] or "").strip().lower() for r in rows if (r["item"] or "").strip()}
+    return bought
 
 
 def last_week_uncooked(conn, week_start: str) -> list[dict]:
