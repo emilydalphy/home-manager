@@ -571,6 +571,100 @@ def test_what_the_switch_saves_is_the_whole_chores_schema(monkeypatch):
 
 
 # ==========================================================================
+# 3c. ...and neither is the chores half of the system prompt
+# ==========================================================================
+#
+# Same card, the found-not-fixed it left: SYSTEM_PROMPT's chores walk-through
+# and day-to-day rules went on being sent to every household after their
+# tools stopped being. They live in CHORES_PROMPT now and system_prompt_for
+# appends them only when the switch is on.
+
+def _system_sent(monkeypatch, message="what's for dinner?"):
+    """The cached system block, and the tools, one real turn put on the wire."""
+    fake = _stub_client(monkeypatch, [
+        types.SimpleNamespace(content=[_text_block("Sure.")], stop_reason="end_turn", usage=_Usage()),
+    ])
+    agent.run_agent_turn([], message)
+    (request,) = fake.requests
+    return request["system"], request["tools"]
+
+
+# Lines a reader would recognise from each half of the moved guidance, so a
+# failure names what leaked rather than just "the block is there".
+_CHORES_ONLY_PHRASES = (
+    "Chores onboarding (do this first if chores aren't set up yet)",
+    "get_starter_chore_list",
+    "Never type out a list of your own instead",
+    "generate_chore_schedule",
+    "A chore that slipped is DUE, not overdue",
+    "is skip_chore, not complete_chore",
+    "hand_chore",
+)
+
+
+def test_a_paused_house_is_sent_none_of_the_chores_guidance(monkeypatch):
+    _adult("Emily")
+    system, _ = _system_sent(monkeypatch)
+    wire = "\n".join(b["text"] for b in system)
+    leaked = [p for p in _CHORES_ONLY_PHRASES if p in wire]
+    assert leaked == [], leaked
+    # Every non-blank line of the moved block, not only the phrases above.
+    leaked_lines = [line for line in agent.CHORES_PROMPT.splitlines() if line.strip() and line in wire]
+    assert leaked_lines == [], leaked_lines[:3]
+    assert system[0]["text"] == agent.SYSTEM_PROMPT
+    # What a paused house DOES need stays: the one-sentence answer to a
+    # chores question asked outright.
+    assert "chores isn't switched on for their house yet, in one sentence" in system[0]["text"]
+
+
+def test_a_house_with_chores_on_gets_all_of_it_after_the_base(monkeypatch):
+    _adult("Emily")
+    tools.set_chores_enabled(True)
+    system, _ = _system_sent(monkeypatch)
+    assert system[0]["text"] == agent.SYSTEM_PROMPT + "\n" + agent.CHORES_PROMPT
+    assert system[0]["cache_control"] == {"type": "ephemeral"}
+    for phrase in _CHORES_ONLY_PHRASES:
+        assert phrase in system[0]["text"], phrase
+    # The off-house sentence is in the base, so an on house is still told it
+    # too — it is conditional on the field, and harmless when the field is true.
+    assert "If chores_enabled (from get_household_setup_status) is false" in system[0]["text"]
+
+
+@pytest.mark.parametrize("chores_on", [False, True])
+def test_the_warmup_writes_the_prefix_the_turn_reads(monkeypatch, chores_on):
+    """
+    The warm-up exists to write the cache entry the next message reads;
+    built from the other variant it would pay for an entry no turn of this
+    house ever reads. Tools and the cached system block must match.
+    """
+    _adult("Emily")
+    tools.set_chores_enabled(chores_on)
+    agent._CHAT_CACHE_WARM_AT.clear()
+    warm = _stub_client(monkeypatch, [
+        types.SimpleNamespace(content=[], stop_reason="max_tokens", usage=_Usage()),
+    ])
+    assert agent.warm_chat_cache() is True
+    agent._CHAT_CACHE_WARM_AT.clear()
+    (warmed,) = warm.requests
+    system, sent_tools = _system_sent(monkeypatch)
+    assert warmed["system"] == [system[0]]
+    assert warmed["tools"] == sent_tools
+
+
+def test_what_the_switch_saves_from_the_system_prompt():
+    """
+    Measured 2026-10-25: CHORES_PROMPT is 3,634 characters (the moved
+    3,613 plus a two-line heading) — about 900 tokens a paused house is no
+    longer sent, ~7% of the old system text, on top of the tool block's
+    ~2,940. Asserted as a floor, since the guidance is edited for its own
+    reasons.
+    """
+    saved = len(agent.system_prompt_for(True)) - len(agent.system_prompt_for(False))
+    assert saved > 3000, saved
+    assert agent.system_prompt_for(False) is agent.SYSTEM_PROMPT
+
+
+# ==========================================================================
 # 4. The ops script
 # ==========================================================================
 
