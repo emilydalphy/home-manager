@@ -97,6 +97,22 @@ def test_a_made_ahead_day_is_refused_and_nothing_is_written(signed_in):
     assert _started(tonight) is None
 
 
+def test_the_day_the_batch_is_cooked_still_starts(signed_in):
+    # The other half of the rule: the cook day of a chain is not a reheat.
+    # A guard that refused anything in a chain would pass every test above.
+    _chili()
+    plan, today, _ = _week()
+    tomorrow = (household_today() + datetime.timedelta(days=1)).isoformat()
+    cook = tools.plan_meal(today, "Bean Chili", slot="dinner", weekly_plan_id=plan)["entry_id"]
+    later = tools.plan_meal(tomorrow, "Bean Chili", slot="dinner", weekly_plan_id=plan)["entry_id"]
+    assert isinstance(tools.set_cook_ahead(cook, [later]), dict)
+
+    res = signed_in.post("/api/cooker/start", json={"entry_id": cook})
+
+    assert res.json().get("status") != "refused"
+    assert _started(cook)
+
+
 def test_a_portion_out_of_the_freezer_is_refused(signed_in):
     plan, today, _ = _week()
     tonight = tools.plan_meal(today, "Bean chili from the freezer", slot="dinner", weekly_plan_id=plan)["entry_id"]
