@@ -375,12 +375,26 @@
     'gro-add-scrim', 'tonight-scrim', 'cook-more-scrim', 'meals-more-scrim',
     'week-sheet-scrim', 'notif-scrim'
   ];
+  //
+  // Two courtesies a tap outside doesn't need. A field in the sheet with
+  // words typed in keeps the sheet open — Escape is a reflex, and Shop's
+  // "Add something" forgets its draft on close, so "oat milk" went with it
+  // (review of this branch, 2026-10-25). And focus goes back to whatever
+  // had it before the sheet opened, the last thing focused outside any
+  // dialog, so a keyboard lands where it left rather than on <body>.
+  var escapeOpener = null;
   function escapeClosesTabSheet(e) {
     if (!e || e.key !== 'Escape' || e.defaultPrevented) return false;
+    var active = document.activeElement;
+    if (active && /^(INPUT|TEXTAREA)$/.test(active.tagName) && active.closest &&
+        active.closest('[role="dialog"]') && String(active.value || '').trim()) return false;
     for (var i = 0; i < ESCAPE_CLOSES_SCRIMS.length; i++) {
       var scrim = document.getElementById(ESCAPE_CLOSES_SCRIMS[i]);
       if (scrim && !scrim.hidden && scrim.classList.contains('is-open')) {
         scrim.click();
+        if (escapeOpener && escapeOpener.isConnected && escapeOpener.focus) {
+          escapeOpener.focus({ preventScroll: true });
+        }
         return true;
       }
     }
@@ -388,6 +402,10 @@
   }
   if (typeof document !== 'undefined' && document.addEventListener) {
     document.addEventListener('keydown', escapeClosesTabSheet);
+    document.addEventListener('focusin', function (e) {
+      var t = e.target;
+      if (t && t.closest && !t.closest('[role="dialog"]')) escapeOpener = t;
+    });
   }
 
   // ---------- One level at a time: the sheet stack (2026-10-05) ----------
@@ -2475,19 +2493,23 @@
   // usual spot (72px up) is the middle of that strip, so for its 2–6 seconds
   // it covered the one button the screen exists for (found on the phone walk,
   // 2026-10-25: "Logged — that'll steer next week. Rate it" sat on top of
-  // "Start cooking"). Only a dock that is really at the foot counts — one a
-  // short page left mid-screen would throw the toast up into the content —
-  // and none while a sheet is up, whose own content is what the toast is over.
+  // "Start cooking"). Only a dock STUCK at the foot counts: .dock is sticky,
+  // so on a short page it just sits after the content (the approved Plan
+  // root's at 541px of 844), and lifting over that one put the toast on the
+  // "Anything in the freezer?" row instead of over empty ground. Stuck means
+  // its bottom is the scroller's visible bottom (#shell-scroll, which ends
+  // at the tab bar), give or take a pixel of rounding. None while a sheet is
+  // up, whose own content is what the toast is over.
   function toastDockBelow() {
     if (document.querySelector('[id$="scrim"].is-open')) return null;
     var panel = document.querySelector('.tab-panel.active');
     if (!panel) return null;
+    var scroller = document.getElementById('shell-scroll');
+    var foot = scroller ? scroller.getBoundingClientRect().bottom : window.innerHeight;
     var docks = panel.querySelectorAll('.dock');
-    var vh = window.innerHeight;
     for (var i = 0; i < docks.length; i++) {
       if (docks[i].offsetParent === null) continue;
-      var top = docks[i].getBoundingClientRect().top;
-      if (top > vh / 2 && top < vh) return docks[i];
+      if (Math.abs(docks[i].getBoundingClientRect().bottom - foot) <= 2) return docks[i];
     }
     return null;
   }

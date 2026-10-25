@@ -23,7 +23,10 @@ why*, not duplicating the diff.
   sheets had no Escape (one handler clicks the open scrim, innermost first);
   the Meal step's dock sat mid-screen on a short page (`is-meal-layout`,
   same cure as is-review-layout). "Carrots was added" left as is: it is
-  DESIGN_SYSTEM's own example — a voice call.
+  DESIGN_SYSTEM's own example — a voice call. Review fix: "at the foot" means
+  the dock's bottom IS `#shell-scroll`'s (sticky docks sit mid-page on short
+  pages; the Plan root's lifted the toast onto the freezer row); Escape keeps
+  a sheet whose field has typed text, and hands focus back to the opener.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

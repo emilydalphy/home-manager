@@ -63,9 +63,9 @@ Cls.prototype.add = function(c){ this.s[c] = 1; };
 Cls.prototype.remove = function(c){ delete this.s[c]; };
 Cls.prototype.contains = function(c){ return !!this.s[c]; };
 Cls.prototype.toggle = function(c, on){ if (on) this.add(c); else this.remove(c); };
-function El(top){ this.top = top; this.style = {}; this.classList = new Cls(); this.children = [];
+function El(top, h){ this.top = top; this.h = h || 75; this.style = {}; this.classList = new Cls(); this.children = [];
   this.offsetParent = {}; this.offsetWidth = 1; this.hidden = true; }
-El.prototype.getBoundingClientRect = function(){ return { top: this.top }; };
+El.prototype.getBoundingClientRect = function(){ return { top: this.top, bottom: this.top + this.h }; };
 El.prototype.appendChild = function(c){ this.children.push(c); };
 El.prototype.addEventListener = function(){};
 El.prototype.setAttribute = function(){};
@@ -74,6 +74,7 @@ var panel = { querySelectorAll: function(sel){ return sel === '.dock' ? STATE.do
 var document = {
   createElement: function(){ return new El(0); },
   createTextNode: function(t){ return { text: t }; },
+  getElementById: function(id){ return id === 'shell-scroll' ? { getBoundingClientRect: function(){ return { bottom: 761 }; } } : null; },
   querySelector: function(sel){
     if (sel === '[id$="scrim"].is-open') return STATE.scrimOpen ? {} : null;
     if (sel === '.cook-focus .cook-dock') return STATE.cookDock;
@@ -90,7 +91,7 @@ function setTimeout(){ return 1; } function clearTimeout(){}
 def _toast_bottom(**state) -> str:
     script = _TOAST_PRELUDE + _TOAST + r"""
 var s = %s;
-if (s.docks) STATE.docks = s.docks.map(function(t){ var d = new El(t); if (t < 0) d.offsetParent = null; d.top = Math.abs(t); return d; });
+if (s.docks) STATE.docks = s.docks.map(function(p){ var d = new El(Math.abs(p[0]), p[1]); if (p[0] < 0) d.offsetParent = null; return d; });
 STATE.scrimOpen = !!s.scrimOpen;
 if (s.cookDock) STATE.cookDock = new El(s.cookDock);
 showToast('lemons was added', { label: 'Undo' });
@@ -101,29 +102,34 @@ console.log(JSON.stringify(toastEl.style.bottom || ''));
 
 @_needs_node
 def test_a_toast_sits_above_the_tab_dock_rather_than_on_its_button():
-    # Shop's dock top measured at 690 on a 844px phone.
-    assert _toast_bottom(docks=[690]) == f"{844 - 690 + 12}px"
+    # Shop's dock measured stuck at the foot: top 628, 133 tall, its bottom
+    # the scroller's (761, where the tab bar starts) on a 844px phone.
+    assert _toast_bottom(docks=[[628, 133]]) == f"{844 - 628 + 12}px"
 
 
 @_needs_node
 def test_a_dock_a_short_page_left_mid_screen_does_not_throw_the_toast_up():
-    assert _toast_bottom(docks=[300]) == ""
+    # The approved Plan root, measured: .dock is sticky, so on a short page
+    # it sits after the content (541..616) — in the lower half, not at the
+    # foot. Lifting over it put the toast on the freezer row (review, 2026-10-25).
+    assert _toast_bottom(docks=[[541, 75]]) == ""
+    assert _toast_bottom(docks=[[300, 75]]) == ""
 
 
 @_needs_node
 def test_a_hidden_dock_is_passed_over_for_the_one_on_screen():
     # A negative top here stands for offsetParent === null (display: none).
-    assert _toast_bottom(docks=[-700, 686]) == f"{844 - 686 + 12}px"
+    assert _toast_bottom(docks=[[-686, 75], [686, 75]]) == f"{844 - 686 + 12}px"
 
 
 @_needs_node
 def test_with_a_sheet_up_the_toast_keeps_its_usual_spot():
-    assert _toast_bottom(docks=[690], scrimOpen=True) == ""
+    assert _toast_bottom(docks=[[686, 75]], scrimOpen=True) == ""
 
 
 @_needs_node
 def test_cook_modes_own_dock_still_wins():
-    assert _toast_bottom(docks=[690], cookDock=640) == f"{844 - 640 + 12}px"
+    assert _toast_bottom(docks=[[686, 75]], cookDock=640) == f"{844 - 640 + 12}px"
 
 
 # ---------------------------------------------------------------------------
@@ -133,39 +139,54 @@ def test_cook_modes_own_dock_still_wins():
 _ESC = _slice("  // Escape for the tab-level sheets", "  // ---------- One level at a time")
 
 
-def _escape(open_ids, key="Escape", prevented=False):
+def _escape(open_ids, key="Escape", prevented=False, typed=None, opener=True):
     script = r"""
-var clicked = [];
+var clicked = [], focused = [];
 var listeners = [];
 function Scrim(id, open){ this.id = id; this.hidden = !open; this.classList = { contains: function(c){ return c === 'is-open' && open; } }; }
 Scrim.prototype.click = function(){ clicked.push(this.id); };
-var OPEN = %s;
+var OPEN = %s, TYPED = %s;
+var opener = { isConnected: true, focus: function(){ focused.push('opener'); }, closest: function(){ return null; } };
+var field = { tagName: 'INPUT', value: TYPED || '', closest: function(sel){ return sel === '[role="dialog"]' ? {} : null; } };
 var document = {
+  activeElement: TYPED === null ? null : field,
   getElementById: function(id){ return new Scrim(id, OPEN.indexOf(id) !== -1); },
   addEventListener: function(type, fn){ listeners.push([type, fn]); }
 };
-""" % json.dumps(open_ids) + _ESC + r"""
+""" % (json.dumps(open_ids), json.dumps(typed)) + _ESC + r"""
+if (%s) listeners.forEach(function(l){ if (l[0] === 'focusin') l[1]({ target: opener }); });
 listeners.forEach(function(l){ if (l[0] === 'keydown') l[1]({ key: %s, defaultPrevented: %s }); });
-console.log(JSON.stringify(clicked));
-""" % (json.dumps(key), json.dumps(prevented))
+console.log(JSON.stringify({ clicked: clicked, focused: focused }));
+""" % (json.dumps(opener), json.dumps(key), json.dumps(prevented))
     return _node(script)
 
 
 @_needs_node
 def test_escape_closes_cooks_more_the_way_a_tap_outside_does():
-    assert _escape(["cook-more-scrim"]) == ["cook-more-scrim"]
+    out = _escape(["cook-more-scrim"])
+    assert out["clicked"] == ["cook-more-scrim"]
+    # ...and the keyboard lands back on what opened it.
+    assert out["focused"] == ["opener"]
 
 
 @_needs_node
 def test_escape_closes_only_the_innermost_of_two():
     # The swap, opened from the whole-week sheet, goes first; the week stays.
-    assert _escape(["week-sheet-scrim", "wk-swap-scrim"]) == ["wk-swap-scrim"]
+    assert _escape(["week-sheet-scrim", "wk-swap-scrim"])["clicked"] == ["wk-swap-scrim"]
 
 
 @_needs_node
 def test_another_key_or_an_escape_already_handled_closes_nothing():
-    assert _escape(["cook-more-scrim"], key="Enter") == []
-    assert _escape(["cook-more-scrim"], prevented=True) == []
+    assert _escape(["cook-more-scrim"], key="Enter")["clicked"] == []
+    assert _escape(["cook-more-scrim"], prevented=True)["clicked"] == []
+
+
+@_needs_node
+def test_escape_in_a_field_with_words_in_it_keeps_the_sheet_and_the_words():
+    # Shop's "Add something" forgets its draft on close (review, 2026-10-25).
+    assert _escape(["gro-add-scrim"], typed="oat milk")["clicked"] == []
+    # An empty field is no draft: Escape still closes.
+    assert _escape(["gro-add-scrim"], typed="  ")["clicked"] == ["gro-add-scrim"]
 
 
 def test_every_listed_scrim_is_a_real_scrim_the_shell_has():
