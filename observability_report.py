@@ -107,6 +107,7 @@ from __future__ import annotations
 
 import argparse
 import datetime
+import http.client
 import http.cookiejar
 import json
 import os
@@ -215,8 +216,10 @@ def _collect_over_token(days: int) -> list[dict]:
                 "predates the route. Nothing was read."
             )
         raise NoData(f"{base} answered {e.code} to /api/health-report. Nothing was read.")
-    except (urllib.error.URLError, OSError) as e:
-        raise NoData(f"could not reach {base}: {e}")
+    except (urllib.error.URLError, OSError, http.client.HTTPException) as e:
+        # HTTPException: a body cut off mid-way (IncompleteRead) or a reply
+        # that is not HTTP at all — "couldn't look", never a traceback.
+        raise NoData(f"could not reach {base}: {type(e).__name__}: {e}")
 
     households = data.get("households") if isinstance(data, dict) else None
     if not isinstance(households, list):
@@ -245,31 +248,38 @@ def _check_households(households: list, where: str) -> None:
     Every live database has household 1, so an EMPTY list is not a quiet
     night: it is the wrong database (an unmounted volume answers with a
     fresh one) or a broken route, and it printed nothing at all and exited
-    0 — "nothing broke" from having looked at nothing (2026-10-25). And a
-    household without a readable error count cannot be said to have had no
-    errors, so it is "couldn't look" too, rather than a traceback halfway
-    through the printout that exited 1.
+    0 — "nothing broke" from having looked at nothing (2026-10-25). An
+    entry that is not a record at all is the same: the reply is not the
+    route's.
+
+    ONE household without a readable error count is NOT a reason to drop
+    the rest: it becomes UNREACHABLE (exit 1, as a refused passphrase is),
+    in place, and every other household still prints — otherwise one bad
+    record turned another household's five real errors into "couldn't look"
+    with nothing shown (review, 2026-10-25).
     """
     if not households:
         raise NoData(f"{where} listed no households at all, so nothing was read.")
-    for h in households:
+    for i, h in enumerate(households):
         if not isinstance(h, dict):
             raise NoData(f"{where} answered with a household that is not a record.")
         if not h.get("unreachable") and not _readable(h):
-            raise NoData(
-                f"{where} answered without a readable error count for household "
-                f"{h.get('household_id')!r}, so whether anything broke is unknown."
-            )
+            households[i] = {
+                "household_id": h.get("household_id"),
+                "household": h.get("household") or f"household {h.get('household_id')}",
+                "unreachable": f"{where} answered without a readable error count for this "
+                               "household, so whether anything broke there is unknown.",
+            }
 
 
 def _readable(h: dict) -> bool:
-    """Has an error count the exit code can be computed from."""
+    """Has an error count the exit code can be computed from. Usage is not
+    needed for that, and a missing usage block gets its own line instead."""
     errors = h.get("errors")
     total = errors.get("total") if isinstance(errors, dict) else None
     return (
         isinstance(total, int) and not isinstance(total, bool)
         and isinstance(errors.get("by_kind"), dict)
-        and isinstance(h.get("usage"), dict)
     )
 
 
@@ -296,7 +306,7 @@ def _collect_over_http(days: int) -> list[dict]:
             opener = _sign_in(base, phrase)
             who = _get_json(opener, f"{base}/api/whoami")
             data = _get_json(opener, f"{base}/api/observability?days={int(days)}")
-        except (NoData, urllib.error.URLError, OSError, ValueError) as e:
+        except (NoData, urllib.error.URLError, OSError, ValueError, http.client.HTTPException) as e:
             # One household being unreachable must not hide the others —
             # including when the reason is a refused passphrase, which is
             # the likeliest failure of all and used to abort the whole run.
@@ -343,13 +353,8 @@ def _collect_over_http(days: int) -> list[dict]:
     # A household whose answer has no readable error count is one we could
     # not look at — said as UNREACHABLE (which exits 1, like a refused
     # passphrase), never left to crash the printer and cost the others.
-    for i, h in enumerate(out):
-        if not h.get("unreachable") and not _readable(h):
-            out[i] = {
-                "household_id": h.get("household_id"),
-                "household": h.get("household"),
-                "unreachable": f"{base}/api/observability answered without a readable error count.",
-            }
+    if out:
+        _check_households(out, f"{base}/api/observability")
     return out
 
 
@@ -1281,197 +1286,219 @@ def _food_line_text(severity: str, message: str, nights: int) -> str:
     return f"      {severity:5} {message}{nightly}"
 
 
+def _say_unprintable(h: dict, e: Exception) -> None:
+    note = (f"(The rest of {h.get('household')!s}'s section could not be printed: "
+            f"{type(e).__name__}: {e})")
+    print(f"  {note}")
+    print(note, file=sys.stderr)
+
+
+def _print_household(h: dict, days: int) -> None:
+    print(f"\n=== {h['household']} (household {h['household_id']}) ===")
+
+    if h.get("unreachable"):
+        print(f"  UNREACHABLE — {h['unreachable']}")
+        return
+
+    errors, usage = h["errors"], h.get("usage")
+    if errors["total"]:
+        kinds = ", ".join(f"{n} {k}" for k, n in errors["by_kind"].items())
+        print(f"  BROKEN — {errors['total']} in the last {days}d: {kinds}")
+        latest = _latest_rows(errors)
+        for key, n in sorted(_error_shapes(errors).items(), key=lambda kv: -kv[1])[:8]:
+            _print_shape(key, n, latest.get(key), h.get("current_build") or "")
+    else:
+        print("  Nothing broke.")
+
+    # Requests that never reached the server — the browser's own
+    # "Load failed" / "Failed to fetch", matched against a closed list
+    # (main._NETWORK_FAILURE_MESSAGES). Its own line because a bare
+    # "TypeError on /" reads exactly like a bug and usually is not one:
+    # this is the line that says "her phone, not your code". Under
+    # BROKEN as well once they cluster — see
+    # tools.usage.NETWORK_CLUSTER_THRESHOLD — at which point the
+    # count above already includes them and this line says where.
+    # .get because a deployment older than this work answers without
+    # the key.
+    network = errors.get("network") or {}
+    if network.get("total"):
+        where = ", ".join(
+            f"{req or '(unknown route)'} x{n}" for req, n in list(network["by_request"].items())[:4]
+        )
+        n = network["total"]
+        print(
+            f"  {'Network — ' if not network.get('clustered') else 'Network, CLUSTERED — '}"
+            f"{n} request{'' if n == 1 else 's'} never reached the server "
+            f"in the last {days}d: {where}"
+        )
+
+    # Chat replies that drifted from the voice rules (builder words, two
+    # questions, too long — agent._note_voice_drift). Its own line, never
+    # under BROKEN and never the exit code: a reply that said
+    # "inventory" is drift to read about, not an outage. .get because a
+    # deployment older than this work answers without the key.
+    drift = errors.get("voice_drift") or {}
+    if drift.get("total"):
+        flags = ", ".join(f"{f} x{n}" for f, n in drift["by_flags"].items())
+        print(f"  Off-voice — {drift['total']} chat repl{'y' if drift['total'] == 1 else 'ies'} in the last {days}d: {flags}")
+
+    if not isinstance(usage, dict):
+        # The counts above are what the exit code needs; without a usage
+        # block the rest of this section has nothing to read.
+        print("  Usage — not in this answer, so the rest of this section can't be read.")
+        return
+    if usage["looks_inactive"]:
+        print(f"  QUIET — no chat, no meals cooked, no plans in {usage['days']}d.")
+    else:
+        print(
+            f"  Used — {usage['chat_turns']} chat turns, "
+            f"{usage['meals_cooked']} meals cooked, "
+            f"{usage['plans_generated']} plans ({usage['plans_approved']} approved)"
+        )
+    # .get everywhere below, not [], because this reads a *remote* app:
+    # a deployment older than this work answers without these keys,
+    # and a morning report that crashes tells you less than one that
+    # omits a line.
+    chat_tools = usage.get("chat_tools")
+    if chat_tools:
+        _print_chat_tools(chat_tools, usage["chat_turns"])
+    _print_chat_rounds(usage.get("chat_round_spread"), usage.get("chat_rounds") or 0)
+
+    month_cost = usage.get("month_to_date_cost")
+    chat_themes = usage.get("chat_themes")
+    if chat_themes:
+        _print_chat_themes(chat_themes, month_cost)
+
+    if month_cost:
+        total = month_cost["total_cost"]["total"]
+        flag = "OVER" if total > _MONTHLY_TARGET_DOLLARS else "under"
+        print(
+            f"  API cost, all calls, month-to-date — {_money(total)} "
+            f"— vs target ${_MONTHLY_TARGET_DOLLARS:.2f}/household/month: {flag}"
+        )
+        by_site = month_cost.get("by_call_site") or {}
+        for site, info in sorted(by_site.items(), key=lambda kv: -kv[1]["cost"]["total"]):
+            label = _CALL_SITE_LABELS.get(site, site)
+            print(f"      {label:32} {_money(info['cost']['total']):>10}  ({info['calls']} calls)")
+
+    plan_gen = usage.get("plan_generation")
+    if plan_gen and plan_gen.get("count"):
+        print(
+            f"  Week generation — {plan_gen['count']} this month, "
+            f"{_money(plan_gen['total_cost']['total'])} total, "
+            f"latency p50={plan_gen['p50_seconds']}s max={plan_gen['max_seconds']}s"
+        )
+
+    # Was the "Maybe already home" check right? (Emily, 2026-09-22.)
+    # Counts only, never a line's name — these come straight out of
+    # /api/health-report, which is read into an agent's context.
+    #
+    # "flagged" is lines the card HELD OFF THE LIST in the window,
+    # counted once each however many times the screen was reloaded;
+    # the three answers are lines, not taps, so they can never exceed
+    # it, and a line that was dropped and then put back counts as
+    # "put back" and not also as "dropped". The four therefore read as
+    # a partition, with the remainder being cards nobody answered.
+    # `.get` like everything else here: a deployment older than this
+    # work answers without the key, and one missing line beats a crash.
+    pre_shop = usage.get("pre_shop") or {}
+    if any(pre_shop.get(k) for k in ("flagged", "kept", "dropped", "undone")):
+        print(
+            f"  Maybe already home: {pre_shop.get('flagged', 0)} flagged · "
+            f"{pre_shop.get('dropped', 0)} dropped · "
+            f"{pre_shop.get('kept', 0)} kept · "
+            f"{pre_shop.get('undone', 0)} put back"
+        )
+
+    # The shared recipe library (2026-10-19): what it saved this
+    # household against what was researched new and billed. Counts only.
+    library = usage.get("recipe_library") or {}
+    if any(library.get(k) for k in ("recipe", "research", "new")):
+        print(
+            f"  Recipe library: {library.get('recipe', 0) + library.get('research', 0)} hits "
+            f"({library.get('recipe', 0)} whole recipe, {library.get('research', 0)} research only) · "
+            f"{library.get('new', 0)} new research"
+        )
+
+    # What the week got wrong about the FOOD. Its own section, below
+    # errors and usage and never folded into BROKEN: a dull dinner is a
+    # real problem and it is not an outage, and the whole value of the
+    # BROKEN line is that it means exactly one thing. `.get` for the same
+    # reason as the block above — a deployment older than this work
+    # answers without the key.
+    quality = h.get("plan_quality") or {}
+    if quality.get("total"):
+        rules = ", ".join(f"{n} {r}" for r, n in quality["by_rule"].items())
+        # The count is DISTINCT violations on plans that are still the
+        # household's (get_recent_plan_quality). `logged` is the raw row
+        # count, and it is said only when it is bigger — re-drafting one
+        # week logs the same violation once per draft, and "5, logged 12
+        # times" is the honest way to keep that signal without the
+        # headline reading as twelve separate problems. `.get` because a
+        # deployment older than 2026-09-26 answers without the key.
+        redrafts = quality.get("logged") or 0
+        extra = f" (logged {redrafts} times across re-drafts)" if redrafts > quality["total"] else ""
+        print(f"  FOOD — {quality['total']} in the last {quality['days']}d{extra}: {rules}")
+        for line in _food_lines(quality["recent"])[:6]:
+            print(_food_line_text(*line))
+
+    # A count, never a word of what was written — see this file's
+    # --feedback note. The pointer is the point: without it the read
+    # path is a flag nobody knows to run.
+    waiting = h.get("feedback_waiting") or 0
+    if waiting:
+        # How many sit next to an error from the ten minutes before them
+        # (2026-09-25): a NUMBER, never which errors or what the note
+        # says. The pairing itself is printed only under --feedback.
+        beside = min(int(h.get("feedback_with_errors") or 0), waiting)
+        print(
+            f"  {waiting} 'something not working' "
+            f"{'note' if waiting == 1 else 'notes'} waiting"
+            + (f" ({beside} with errors just before)" if beside else "")
+            + " — read with `python observability_report.py --feedback`"
+        )
+
+    # The recipe asks are no longer a count here: every one of them is
+    # listed word for word in its own section at the end of the report
+    # (Emily, 2026-10-05) — see _print_recipe_requests_today.
+
+    # The morning text ("Reach me before the moment", 2026-09-11). One
+    # line, only when there is something to say: someone has signed up
+    # or a send was attempted. Counts and a status, never a number or a
+    # body. `.get` for the same reason as everything above.
+    texts = h.get("morning_texts") or {}
+    if texts.get("opted_in") or texts.get("total"):
+        by_status = texts.get("by_status") or {}
+        parts = ", ".join(f"{n} {status}" for status, n in sorted(by_status.items()))
+        if not texts.get("configured"):
+            print(
+                f"  Morning text — {texts.get('opted_in', 0)} signed up, but texting is OFF "
+                f"(TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_FROM_NUMBER not all set)"
+            )
+        elif by_status.get("failed"):
+            print(
+                f"  Morning text — FAILED for {by_status['failed']} in the last {texts.get('days', days)}d "
+                f"({parts}); last reason: {texts.get('last_failure') or 'unknown'}"
+            )
+        else:
+            print(
+                f"  Morning text — {texts.get('opted_in', 0)} signed up; "
+                f"{parts or 'nothing attempted yet'} in the last {texts.get('days', days)}d"
+            )
+
+    print(f"  Last active: {usage['last_active_at'] or 'never'}")
+
+
 def _print_human(report: list[dict], days: int, source: str) -> None:
     print(f"(read from {source})")
     for h in report:
-        print(f"\n=== {h['household']} (household {h['household_id']}) ===")
-
-        if h.get("unreachable"):
-            print(f"  UNREACHABLE — {h['unreachable']}")
-            continue
-
-        errors, usage = h["errors"], h["usage"]
-        if errors["total"]:
-            kinds = ", ".join(f"{n} {k}" for k, n in errors["by_kind"].items())
-            print(f"  BROKEN — {errors['total']} in the last {days}d: {kinds}")
-            latest = _latest_rows(errors)
-            for key, n in sorted(_error_shapes(errors).items(), key=lambda kv: -kv[1])[:8]:
-                _print_shape(key, n, latest.get(key), h.get("current_build") or "")
-        else:
-            print("  Nothing broke.")
-
-        # Requests that never reached the server — the browser's own
-        # "Load failed" / "Failed to fetch", matched against a closed list
-        # (main._NETWORK_FAILURE_MESSAGES). Its own line because a bare
-        # "TypeError on /" reads exactly like a bug and usually is not one:
-        # this is the line that says "her phone, not your code". Under
-        # BROKEN as well once they cluster — see
-        # tools.usage.NETWORK_CLUSTER_THRESHOLD — at which point the
-        # count above already includes them and this line says where.
-        # .get because a deployment older than this work answers without
-        # the key.
-        network = errors.get("network") or {}
-        if network.get("total"):
-            where = ", ".join(
-                f"{req or '(unknown route)'} x{n}" for req, n in list(network["by_request"].items())[:4]
-            )
-            n = network["total"]
-            print(
-                f"  {'Network — ' if not network.get('clustered') else 'Network, CLUSTERED — '}"
-                f"{n} request{'' if n == 1 else 's'} never reached the server "
-                f"in the last {days}d: {where}"
-            )
-
-        # Chat replies that drifted from the voice rules (builder words, two
-        # questions, too long — agent._note_voice_drift). Its own line, never
-        # under BROKEN and never the exit code: a reply that said
-        # "inventory" is drift to read about, not an outage. .get because a
-        # deployment older than this work answers without the key.
-        drift = errors.get("voice_drift") or {}
-        if drift.get("total"):
-            flags = ", ".join(f"{f} x{n}" for f, n in drift["by_flags"].items())
-            print(f"  Off-voice — {drift['total']} chat repl{'y' if drift['total'] == 1 else 'ies'} in the last {days}d: {flags}")
-
-        if usage["looks_inactive"]:
-            print(f"  QUIET — no chat, no meals cooked, no plans in {usage['days']}d.")
-        else:
-            print(
-                f"  Used — {usage['chat_turns']} chat turns, "
-                f"{usage['meals_cooked']} meals cooked, "
-                f"{usage['plans_generated']} plans ({usage['plans_approved']} approved)"
-            )
-        # .get everywhere below, not [], because this reads a *remote* app:
-        # a deployment older than this work answers without these keys,
-        # and a morning report that crashes tells you less than one that
-        # omits a line.
-        chat_tools = usage.get("chat_tools")
-        if chat_tools:
-            _print_chat_tools(chat_tools, usage["chat_turns"])
-        _print_chat_rounds(usage.get("chat_round_spread"), usage.get("chat_rounds") or 0)
-
-        month_cost = usage.get("month_to_date_cost")
-        chat_themes = usage.get("chat_themes")
-        if chat_themes:
-            _print_chat_themes(chat_themes, month_cost)
-
-        if month_cost:
-            total = month_cost["total_cost"]["total"]
-            flag = "OVER" if total > _MONTHLY_TARGET_DOLLARS else "under"
-            print(
-                f"  API cost, all calls, month-to-date — {_money(total)} "
-                f"— vs target ${_MONTHLY_TARGET_DOLLARS:.2f}/household/month: {flag}"
-            )
-            by_site = month_cost.get("by_call_site") or {}
-            for site, info in sorted(by_site.items(), key=lambda kv: -kv[1]["cost"]["total"]):
-                label = _CALL_SITE_LABELS.get(site, site)
-                print(f"      {label:32} {_money(info['cost']['total']):>10}  ({info['calls']} calls)")
-
-        plan_gen = usage.get("plan_generation")
-        if plan_gen and plan_gen.get("count"):
-            print(
-                f"  Week generation — {plan_gen['count']} this month, "
-                f"{_money(plan_gen['total_cost']['total'])} total, "
-                f"latency p50={plan_gen['p50_seconds']}s max={plan_gen['max_seconds']}s"
-            )
-
-        # Was the "Maybe already home" check right? (Emily, 2026-09-22.)
-        # Counts only, never a line's name — these come straight out of
-        # /api/health-report, which is read into an agent's context.
-        #
-        # "flagged" is lines the card HELD OFF THE LIST in the window,
-        # counted once each however many times the screen was reloaded;
-        # the three answers are lines, not taps, so they can never exceed
-        # it, and a line that was dropped and then put back counts as
-        # "put back" and not also as "dropped". The four therefore read as
-        # a partition, with the remainder being cards nobody answered.
-        # `.get` like everything else here: a deployment older than this
-        # work answers without the key, and one missing line beats a crash.
-        pre_shop = usage.get("pre_shop") or {}
-        if any(pre_shop.get(k) for k in ("flagged", "kept", "dropped", "undone")):
-            print(
-                f"  Maybe already home: {pre_shop.get('flagged', 0)} flagged · "
-                f"{pre_shop.get('dropped', 0)} dropped · "
-                f"{pre_shop.get('kept', 0)} kept · "
-                f"{pre_shop.get('undone', 0)} put back"
-            )
-
-        # The shared recipe library (2026-10-19): what it saved this
-        # household against what was researched new and billed. Counts only.
-        library = usage.get("recipe_library") or {}
-        if any(library.get(k) for k in ("recipe", "research", "new")):
-            print(
-                f"  Recipe library: {library.get('recipe', 0) + library.get('research', 0)} hits "
-                f"({library.get('recipe', 0)} whole recipe, {library.get('research', 0)} research only) · "
-                f"{library.get('new', 0)} new research"
-            )
-
-        # What the week got wrong about the FOOD. Its own section, below
-        # errors and usage and never folded into BROKEN: a dull dinner is a
-        # real problem and it is not an outage, and the whole value of the
-        # BROKEN line is that it means exactly one thing. `.get` for the same
-        # reason as the block above — a deployment older than this work
-        # answers without the key.
-        quality = h.get("plan_quality") or {}
-        if quality.get("total"):
-            rules = ", ".join(f"{n} {r}" for r, n in quality["by_rule"].items())
-            # The count is DISTINCT violations on plans that are still the
-            # household's (get_recent_plan_quality). `logged` is the raw row
-            # count, and it is said only when it is bigger — re-drafting one
-            # week logs the same violation once per draft, and "5, logged 12
-            # times" is the honest way to keep that signal without the
-            # headline reading as twelve separate problems. `.get` because a
-            # deployment older than 2026-09-26 answers without the key.
-            redrafts = quality.get("logged") or 0
-            extra = f" (logged {redrafts} times across re-drafts)" if redrafts > quality["total"] else ""
-            print(f"  FOOD — {quality['total']} in the last {quality['days']}d{extra}: {rules}")
-            for line in _food_lines(quality["recent"])[:6]:
-                print(_food_line_text(*line))
-
-        # A count, never a word of what was written — see this file's
-        # --feedback note. The pointer is the point: without it the read
-        # path is a flag nobody knows to run.
-        waiting = h.get("feedback_waiting") or 0
-        if waiting:
-            # How many sit next to an error from the ten minutes before them
-            # (2026-09-25): a NUMBER, never which errors or what the note
-            # says. The pairing itself is printed only under --feedback.
-            beside = min(int(h.get("feedback_with_errors") or 0), waiting)
-            print(
-                f"  {waiting} 'something not working' "
-                f"{'note' if waiting == 1 else 'notes'} waiting"
-                + (f" ({beside} with errors just before)" if beside else "")
-                + " — read with `python observability_report.py --feedback`"
-            )
-
-        # The recipe asks are no longer a count here: every one of them is
-        # listed word for word in its own section at the end of the report
-        # (Emily, 2026-10-05) — see _print_recipe_requests_today.
-
-        # The morning text ("Reach me before the moment", 2026-09-11). One
-        # line, only when there is something to say: someone has signed up
-        # or a send was attempted. Counts and a status, never a number or a
-        # body. `.get` for the same reason as everything above.
-        texts = h.get("morning_texts") or {}
-        if texts.get("opted_in") or texts.get("total"):
-            by_status = texts.get("by_status") or {}
-            parts = ", ".join(f"{n} {status}" for status, n in sorted(by_status.items()))
-            if not texts.get("configured"):
-                print(
-                    f"  Morning text — {texts.get('opted_in', 0)} signed up, but texting is OFF "
-                    f"(TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_FROM_NUMBER not all set)"
-                )
-            elif by_status.get("failed"):
-                print(
-                    f"  Morning text — FAILED for {by_status['failed']} in the last {texts.get('days', days)}d "
-                    f"({parts}); last reason: {texts.get('last_failure') or 'unknown'}"
-                )
-            else:
-                print(
-                    f"  Morning text — {texts.get('opted_in', 0)} signed up; "
-                    f"{parts or 'nothing attempted yet'} in the last {texts.get('days', days)}d"
-                )
-
-        print(f"  Last active: {usage['last_active_at'] or 'never'}")
+        try:
+            _print_household(h, days)
+        except (KeyError, TypeError, AttributeError, ValueError) as e:
+            # One household's section is short; the others still print, and
+            # the exit code is still computed from the error counts read
+            # before this (_check_households).
+            _say_unprintable(h, e)
 
     # The one thing no per-household section can say: the same break, in
     # more than one house. That is the difference between a tester's own
@@ -1633,7 +1660,9 @@ def main() -> int:
             # so the exit code below is still the truth about breakage; this
             # only says the rest of the page is short, instead of a
             # traceback that exited 1 whatever the counts said.
-            print(f"\n(The rest of this report could not be printed: {type(e).__name__}: {e})")
+            note = f"(The rest of this report could not be printed: {type(e).__name__}: {e})"
+            print(f"\n{note}")
+            print(note, file=sys.stderr)
         if feedback is not None:
             _print_feedback(feedback, max(args.days, 30))
         if recipe_changes is not None:

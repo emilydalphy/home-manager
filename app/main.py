@@ -1475,7 +1475,7 @@ async def start_morning_text_loop():
                 # The loop must outlive any single bad pass — a Twilio
                 # outage at seven is not a reason to miss tomorrow.
                 logger.exception("Morning text pass failed; will try again in a few minutes")
-                await run_in_threadpool(_record_background_failure, "morning_text", e)
+                await run_in_threadpool(_record_background_failure, "morning_text_loop", e)
             try:
                 nudged = await run_in_threadpool(tools.run_evening_nudges_once)
                 if nudged:
@@ -1485,7 +1485,7 @@ async def start_morning_text_loop():
                     )
             except Exception as e:
                 logger.exception("Evening nudge pass failed; will try again in a few minutes")
-                await run_in_threadpool(_record_background_failure, "evening_nudge", e)
+                await run_in_threadpool(_record_background_failure, "evening_nudge_loop", e)
             await asyncio.sleep(tools.MORNING_TEXT_POLL_SECONDS)
 
     asyncio.create_task(_loop())

@@ -195,21 +195,76 @@ def _run_main(monkeypatch, body: bytes) -> int:
     b"[]",
     b'{"households": []}',
     b'{"households": [1]}',
-    b'{"households": [{"household_id": 1, "household": "a"}]}',
-    b'{"households": [{"household_id": 1, "household": "a", '
-    b'"errors": {"total": "3", "by_kind": {}}, "usage": {}}]}',
-], ids=["html", "list", "no-households", "not-a-record", "no-errors", "string-total"])
+], ids=["html", "list", "no-households", "not-a-record"])
 def test_a_reply_it_cannot_read_is_couldnt_look_never_nothing_broke(monkeypatch, capsys, body):
     assert _run_main(monkeypatch, body) == 2
 
 
-def test_breakage_it_could_read_still_exits_1_when_the_rest_will_not_print(monkeypatch, capsys):
-    body = json.dumps({"households": [{
-        "household_id": 1, "household": "a",
-        "errors": {"total": 2, "by_kind": {"server": 2}, "recent": []},
-        "usage": {},  # missing everything the usage lines read
-    }]}).encode()
+def test_a_cut_off_body_is_couldnt_look(monkeypatch, capsys):
+    import http.client
+
+    class _Cut(_Resp):
+        def read(self):
+            raise http.client.IncompleteRead(b"{")
+
+    monkeypatch.setenv("HOME_MANAGER_URL", "https://example.invalid")
+    monkeypatch.setenv("REPORT_TOKEN", "abc")
+    monkeypatch.setattr(report.urllib.request, "urlopen", lambda req, timeout=60: _Cut(b""))
+    monkeypatch.setattr(sys, "argv", ["observability_report.py"])
+    assert report.main() == 2
+
+
+@pytest.mark.parametrize("bad", [
+    {"by_kind": {}},
+    {"total": "3", "by_kind": {}},
+    None,
+], ids=["no-total", "string-total", "no-errors"])
+def test_one_unreadable_household_never_hides_another_s_breakage(monkeypatch, capsys, bad):
+    """Review repro: household 1 had 5 real errors, household 2's record was
+    unreadable, and the whole run was exit 2 with nothing printed."""
+    body = json.dumps({"households": [
+        {"household_id": 1, "household": "Ours",
+         "errors": {"total": 5, "by_kind": {"server": 5}, "recent": []}, "usage": {}},
+        {"household_id": 2, "household": "Julia", "errors": bad, "usage": {}},
+    ]}).encode()
     assert _run_main(monkeypatch, body) == 1
     out = capsys.readouterr().out
-    assert "BROKEN — 2" in out
-    assert "could not be printed" in out
+    assert "BROKEN — 5" in out
+    assert "=== Julia (household 2) ===" in out
+    assert "UNREACHABLE" in out.split("=== Julia")[1]
+
+
+def test_an_unreadable_household_alone_is_still_said_out_loud(monkeypatch, capsys):
+    body = b'{"households": [{"household_id": 1, "household": "a"}]}'
+    assert _run_main(monkeypatch, body) == 1
+    assert "UNREACHABLE" in capsys.readouterr().out
+
+
+def test_a_missing_usage_block_is_its_own_note_not_an_unreadable_count(monkeypatch, capsys):
+    body = json.dumps({"households": [
+        {"household_id": 1, "household": "Ours",
+         "errors": {"total": 0, "by_kind": {}, "recent": []}},
+        {"household_id": 2, "household": "Julia",
+         "errors": {"total": 2, "by_kind": {"server": 2}, "recent": []}},
+    ]}).encode()
+    assert _run_main(monkeypatch, body) == 1
+    out = capsys.readouterr().out
+    assert "UNREACHABLE" not in out
+    assert out.count("Usage — not in this answer") == 2
+    assert "Nothing broke." in out and "BROKEN — 2" in out
+
+
+def test_breakage_it_could_read_still_exits_1_when_the_rest_will_not_print(monkeypatch, capsys):
+    # usage {}: present, but missing everything the usage lines read.
+    body2 = json.dumps({"households": [
+        {"household_id": 1, "household": "a",
+         "errors": {"total": 2, "by_kind": {"server": 2}, "recent": []}, "usage": {}},
+        {"household_id": 2, "household": "b",
+         "errors": {"total": 0, "by_kind": {}, "recent": []}, "usage": {}},
+    ]}).encode()
+    assert _run_main(monkeypatch, body2) == 1
+    captured = capsys.readouterr()
+    assert "BROKEN — 2" in captured.out
+    assert "could not be printed" in captured.out and "could not be printed" in captured.err
+    # The household after the short one still prints.
+    assert "=== b (household 2) ===" in captured.out

@@ -27,6 +27,11 @@ why*, not duplicating the diff.
   count may include pre-window hits (safe direction). `{"households": []}`
   exited 0 and a non-JSON/malformed reply was a traceback exit 1 — both 2 now.
   Why: a false "nothing broke" is the worst thing this report can say.
+  Review fix, same branch: one unreadable household is UNREACHABLE in place
+  (exit 1, the rest still print), never NoData for the whole reply — that hid
+  another household's real errors behind exit 2; a missing `usage` is its own
+  line; IncompleteRead is exit 2; whole-loop failures file as
+  `morning_text_loop` / `evening_nudge_loop`.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
