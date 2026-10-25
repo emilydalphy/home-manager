@@ -886,7 +886,7 @@ from .swap_in_place import _hard_exclusions as swap_hard_exclusions  # noqa: F40
 # reveal's Swap and the Plan tab's Swap sheet (2026-09-18; the two were
 # built apart and reconciled onto this one module). A screen's own read
 # and write, not agent tools.
-from .swap_options import (  # noqa: F401
+from .swap_option_picks import (  # noqa: F401
     choose_swap_option,
     swap_options,
 )
@@ -912,7 +912,7 @@ from .proposals import (  # noqa: F401
 )
 # Today's "Did you have it?" card, the morning after (Emily, 2026-09-25):
 # a screen's own read and one answer per row. Not agent tools.
-from .yesterday_check import (  # noqa: F401
+from .yesterday_ask import (  # noqa: F401
     NotAskedAbout,
     answer_yesterday,
     undo_skipped_move,

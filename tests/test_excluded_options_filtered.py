@@ -18,7 +18,7 @@ from app import tools
 from app.tools import plate_parts as pp
 from test_plate_parts import DAY2, _dinner, week  # noqa: F401
 
-sop = importlib.import_module("app.tools.swap_options")
+sop = importlib.import_module("app.tools.swap_option_picks")
 from test_week1_carousel import DAY1, _asker, _entry_id, _pick  # noqa: E402
 
 

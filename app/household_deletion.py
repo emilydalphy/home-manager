@@ -216,11 +216,11 @@ def forget_in_memory(hid: int) -> None:
         logger.exception("Forgetting household %s's proposals failed", hid)
     try:
         from . import agent
-        # By attribute, not `from .tools import swap_options`: tools/__init__
-        # re-exports a FUNCTION called swap_options that shadows the module
-        # (tests/test_module_name_collisions.py).
+        # The module was swap_options.py until 2026-10-25, when it was
+        # renamed because the FUNCTION tools/__init__ re-exports under that
+        # name shadowed it (tests/test_module_name_collisions.py).
         from .tools.plate_parts import _OPTIONS_CACHE as plate_cache
-        from .tools.swap_options import _OPTIONS_CACHE as swap_cache
+        from .tools.swap_option_picks import _OPTIONS_CACHE as swap_cache
 
         for cache in (
             plate_cache,

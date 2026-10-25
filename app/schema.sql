@@ -756,7 +756,7 @@ CREATE TABLE IF NOT EXISTS meal_plan_entries (
     -- column, which is not backfilled. See check_off_meal.
     inventory_depleted_at TEXT,
     -- When the household answered "We skipped it" on Today's "Did you have
-    -- it?" card (tools/yesterday_check.py). cooked_status stays 'pending'
+    -- it?" card (tools/yesterday_ask.py). cooked_status stays 'pending'
     -- on a skipped meal on purpose, so nothing that asks "is it done?"
     -- needs a third value, and bring_over still offers it next week. Its
     -- only reader is the card: a stamped row is answered and never asked
