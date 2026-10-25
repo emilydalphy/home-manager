@@ -222,6 +222,12 @@ def test_the_evening_nudge_is_silent_on_an_empty_night(week):
 
 def test_tonight_does_not_ask_about_an_empty_night(week):
     assert tools.tonight_check(now=_at(0, 16))["ask"] is False
+    # Control: a planned night IS asked about — and its "Something else"
+    # never offers Thursday, the empty night, as a dinner to move to.
+    wednesday = tools.tonight_check(now=_at(2, 16))
+    assert wednesday["ask"] is True and wednesday["dinner"]["meal"] == "Soup"
+    assert wednesday["options"]
+    assert not {o["date"] for o in wednesday["options"]} & EMPTY_DINNER_DATES
 
 
 # ---------------------------------------------------------------------------
@@ -252,6 +258,56 @@ def test_the_needs_you_dinner_door_refuses_an_empty_night(week):
     conn.close()
     assert after == before and stock == 0
     assert tools.audit_plan_slots(week["plan_id"])["duplicated"] == []
+
+
+def _dinner_rows(day: str) -> list:
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT slot_state, weekly_plan_id FROM meal_plan_entries WHERE date = ? AND slot = 'dinner'", (day,)
+    ).fetchall()
+    conn.close()
+    return [(r["slot_state"], r["weekly_plan_id"]) for r in rows]
+
+
+def _grocery_count(item: str) -> int:
+    conn = get_conn()
+    n = conn.execute("SELECT COUNT(*) FROM grocery_items WHERE item LIKE ?", (f"%{item}%",)).fetchone()[0]
+    conn.close()
+    return n
+
+
+def test_the_needs_you_dinner_door_settles_an_open_night_in_place(week):
+    """The card's pick on an OPEN night fills that row, the way the slot API
+    does — not a planned row beside a question still asked. A retry of the
+    same pick is answered as done and writes nothing; a different dish on
+    the now-decided night is refused. Groceries bought once."""
+    tools.approve_weekly_plan(week["plan_id"], approved_by="Emily")
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}], instructions=["Cook it."])
+    tools.resolve_needs_you_dinner(_d(1), "Chili", add_ingredients_to_grocery_list=True)
+    assert _dinner_rows(_d(1)) == [("planned", week["plan_id"])]
+    assert _grocery_count("beans") == 1
+
+    again = tools.resolve_needs_you_dinner(_d(1), "chili", add_ingredients_to_grocery_list=True)
+    assert again["groceries_added"] == []
+    with pytest.raises(weekly_plan.SlotRefused):
+        tools.resolve_needs_you_dinner(_d(1), "Soup", add_ingredients_to_grocery_list=True)
+    assert _dinner_rows(_d(1)) == [("planned", week["plan_id"])]
+    assert _grocery_count("beans") == 1
+    assert tools.audit_plan_slots(week["plan_id"])["duplicated"] == []
+
+
+def test_the_needs_you_dinner_door_plans_a_night_with_no_row(week):
+    """A night with nothing on it — inside the plan, and one no plan covers —
+    is still planned, once, however many times the card is tapped."""
+    conn = get_conn()
+    conn.execute("DELETE FROM meal_plan_entries WHERE id = ?", (week["ids"][(_d(5), "dinner")],))
+    conn.commit()
+    conn.close()
+    for day, plan in ((_d(5), week["plan_id"]), (_d(8), None)):
+        tools.resolve_needs_you_dinner(day, "Soup", add_ingredients_to_grocery_list=True)
+        tools.resolve_needs_you_dinner(day, "Soup", add_ingredients_to_grocery_list=True)
+        assert _dinner_rows(day) == [("planned", plan)], day
+    assert tools.audit_plan_slots(week["plan_id"])["complete"] is True
 
 
 def test_swap_is_not_offered_on_an_empty_slot(week):
@@ -305,6 +361,8 @@ def test_the_routes_agree(week, signed_in):
 
     today = signed_in.get("/api/today/moves").json()
     assert not [m for m in today["moves"] if (m.get("date"), m.get("slot")) in EMPTY_KEYS]
+    # Control: the route does carry today's real meal.
+    assert [(m["kind"], m["slot"]) for m in today["moves"] if m.get("date") == _d(0)] == [("cook", "lunch")]
 
     for day, slot in EMPTY_KEYS:
         res = signed_in.post(f"/api/week/{_d(0)}/slot", json={"date": day, "slot": slot, "choice": "Pasta"})

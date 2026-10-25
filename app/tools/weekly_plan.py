@@ -2579,7 +2579,7 @@ def resolve_open_slot(weekly_plan_id: int, meal_date: str, slot: str, choice: st
     if row["slot_state"] == "planned_empty":
         raise ValueError(
             f"That {slot} is deliberately empty — nothing is planned or bought for it. "
-            "Change the night's answer if you're in after all."
+            "Change the night’s answer if you’re in after all."
         )
 
     # The same strict allergen check chat and the needs-you card run, asked
@@ -6740,32 +6740,57 @@ def resolve_needs_you_dinner(
     from . import allergen_gate as _allergen_gate
     _allergen_gate.refuse_if_clashing(meal)
     weekly_plan_id = get_plan_id_for_date(meal_date)
-    # A night the plan holds as planned_empty is not a dinner to decide
-    # (overnight, 2026-10-25). The band never offers one, but a card drawn
-    # before the trip was marked, a retried POST or another tab can still
-    # land here — and plan_meal only inserts, so it wrote a second row
-    # beside the empty one and, with the card's yes, bought for a night
-    # nobody is eating. The read and the write are one transaction so a
-    # night marked away in between is refused too.
+    # ONE row for the slot, whatever the card saw (overnight, 2026-10-25).
+    # plan_meal only inserts, so a card drawn before the night changed — a
+    # trip marked, the week generated, a pick in another tab — or a retried
+    # POST wrote a second row beside what was there: planned_empty plus a
+    # dinner (and, with the card's yes, groceries for a night nobody eats),
+    # open plus planned, or two dinners and the shop bought twice. So the
+    # door reads the slot first, under the write lock:
+    #   - planned_empty: refused (the chat door's own guard and words);
+    #   - a dinner already there: the same dish is the retry, answered as
+    #     done with nothing written — a second tap of one pick must not read
+    #     as a failure — and a different dish is refused: replacing a
+    #     decided dinner is Swap's job, not a "needs a dinner" card's;
+    #   - open: settled in place through resolve_open_slot, the slot API's
+    #     own write (its stale check rolls back if the row moved after
+    #     this read). It buys by the plan's approved state, as every open
+    #     slot answered on Plan does, not by the card's flag;
+    #   - nothing: planned here, as it always was.
+    # Loose rows (no plan covers the day) are read the same way, `IS ?`.
     conn = get_conn()
+    open_row = False
     try:
         conn.execute("BEGIN IMMEDIATE")
-        if weekly_plan_id is not None:
-            _meal_plans.refuse_if_planned_empty(conn.execute(
-                "SELECT slot_state, derived_from_json FROM meal_plan_entries "
-                "WHERE weekly_plan_id = ? AND household_id = ? AND date = ? AND slot = 'dinner'",
-                (weekly_plan_id, household_id(), meal_date),
-            ).fetchall(), "dinner")
-        result = _meal_plans.plan_meal(
-            meal_date, meal, slot="dinner", weekly_plan_id=weekly_plan_id,
-            add_ingredients_to_grocery_list=add_ingredients_to_grocery_list, conn=conn,
-        )
+        rows = conn.execute(
+            "SELECT mpe.slot_state, mpe.derived_from_json, COALESCE(r.name, mpe.freeform_meal) AS meal "
+            "FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id "
+            "WHERE mpe.weekly_plan_id IS ? AND mpe.household_id = ? AND mpe.date = ? AND mpe.slot = 'dinner'",
+            (weekly_plan_id, household_id(), meal_date),
+        ).fetchall()
+        _meal_plans.refuse_if_planned_empty(rows, "dinner")
+        planned = [r for r in rows if r["slot_state"] == "planned"]
+        open_row = weekly_plan_id is not None and bool(rows) and not planned
+        if planned:
+            there = (planned[0]["meal"] or "").strip()
+            if there.casefold() != meal.strip().casefold():
+                raise SlotRefused(
+                    f"That dinner’s already decided — {there}. Swap it on Plan if you’d like something else."
+                )
+            result = {"groceries_added": [], "already_have_skipped": []}
+        elif not open_row:
+            result = _meal_plans.plan_meal(
+                meal_date, meal, slot="dinner", weekly_plan_id=weekly_plan_id,
+                add_ingredients_to_grocery_list=add_ingredients_to_grocery_list, conn=conn,
+            )
         conn.commit()
     except Exception:
         conn.rollback()
         raise
     finally:
         conn.close()
+    if open_row:
+        result = resolve_open_slot(weekly_plan_id, meal_date, "dinner", meal)
     return {
         "items": get_needs_you_items(),
         "groceries_added": result["groceries_added"],

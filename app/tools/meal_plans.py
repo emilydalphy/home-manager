@@ -68,7 +68,7 @@ def refuse_if_planned_empty(rows, slot: str) -> None:
         )
     raise _weekly_plan.SlotRefused(
         f"That {slot} is deliberately empty — nothing is planned or bought for it. "
-        "Change the night's answer if you're in after all."
+        "Change the night’s answer if you’re in after all."
     )
 
 

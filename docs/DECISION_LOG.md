@@ -24,7 +24,11 @@ why*, not duplicating the diff.
   straight to `plan_meal`, which only inserts — a second row beside the
   empty one, and with the card's yes, groceries for a night nobody eats.
   Now refused through `meal_plans.refuse_if_planned_empty` (chat's guard,
-  shared), read and write in one transaction. Left for shell.js: the Day
+  shared), read and write in one transaction. Same door, review round: it
+  now writes ONE row per slot — an open night is settled through
+  `resolve_open_slot` (buys by the plan's approved state, as Plan's own
+  pick does), the same dish on a decided night is a retry answered as done
+  with nothing written, a different dish is refused (Swap's job). Left for shell.js: the Day
   step offers "Swap · I'll pick" and the root "Add a meal" on any
   planned_empty that isn't an `away` need; Swap 404s.
 
