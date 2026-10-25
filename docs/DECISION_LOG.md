@@ -13,6 +13,23 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A dish they asked for that someone can't have is replaced, and the
+  draft says why** (2026-10-25, snag rule 9; branch
+  `overnight/snag-rule-9-allergy-says-why`, on top of rules 5, 8 and 2;
+  tests `tests/test_draft_request_allergy_line.py`). The allergen gate's
+  re-pick stamp now records WHO can't have the food
+  (`allergen_gate.repick_stamp`; [] = a household-wide hard no), and
+  `draft_flags.flags_for_allergy_requests` turns it into "You asked for
+  peanut noodles, but Sam can't have peanuts, so Tuesday is Sesame Noodles
+  instead." ("…but pork is a hard no here, …"), no buttons. Why: on main
+  the gate swapped the dish silently. Said only for a dish they ASKED FOR:
+  their own words about it (cap_enforce._clauses_about, strict) name the
+  food, or name the whole dish and the replacement isn't it any more —
+  "something Mexican" on swapped pineapple tacos gets no line. Sentence is
+  Pomona's, not Emily's — hers to approve. Not built: a request the gate
+  could not replace (the slot's own open question says why), or that the
+  model left off unasked; the opener's "as you asked" over the swap is
+  `overnight/hunt-draft-rules-1024`'s fix.
 - **A dish asked for at a meal, naming no day, goes at that meal with
   everyone home and the time for it** (2026-10-25, snag rule 2; branch
   `overnight/snag-rule-2-meal-no-day`, on top of rules 5 and 8; tests

@@ -256,6 +256,26 @@ def _person(clashes: list[dict]) -> str | None:
     return names[0] if names else None
 
 
+def repick_stamp(dropped: str, clashes: list[dict]) -> dict:
+    """
+    What a re-picked slot records about the dish it replaced: the dish,
+    the food it had (`avoided`, as _food_word reads it) and WHO can't have
+    that food — every member whose clash matched it, or [] when it is a
+    household-wide hard no (a hard What-we-know fact naming nobody). The
+    draft's "You asked for peanut noodles, but Sam can't have peanuts…"
+    (draft_flags.flags_for_allergy_requests, snag rule 9) is built from
+    this record and nothing else, so it can only name a person and a food
+    this gate actually matched.
+    """
+    food = _food_word(clashes)
+    who = []
+    for c in clashes:
+        if (c.get("matched") or c.get("restriction") or "").strip() == food and c.get("member") \
+                and c["member"] not in who:
+            who.append(c["member"])
+    return {"dropped": dropped, "avoided": food, "who": who}
+
+
 def open_reason(slot: str, clashes: list[dict]) -> str:
     """
     The open slot's own sentence when nothing safe could be found: plain
@@ -580,7 +600,7 @@ def repick_slot(
         reasoning=(pick.get("reason") or "").strip(),
         derived_from={
             **(item.get("derived_from") or {}),
-            "allergen_repick": {"dropped": dropped, "avoided": _food_word(clashes)},
+            "allergen_repick": repick_stamp(dropped, clashes),
         },
     )
     logger.info("Allergen re-pick: %s %s %r -> %r", meal_date, slot, dropped, pick["meal_name"])
@@ -990,7 +1010,7 @@ def _write_group(weekly_plan_id: int, group: list[dict], pick: dict | None, on_f
             reasoning=(pick.get("reason") or "").strip(),
             derived_from={
                 **(item.get("derived_from") or {}),
-                "allergen_repick": {"dropped": dropped, "avoided": _food_word(held["clashes"])},
+                "allergen_repick": repick_stamp(dropped, held["clashes"]),
             },
         )
         logger.info("Allergen re-pick: %s %s %r -> %r", meal_date, slot, dropped, pick["meal_name"])

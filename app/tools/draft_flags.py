@@ -72,7 +72,9 @@ DELIBERATELY NOT BUILT HERE, so nobody reports them as missing:
     `FITS_NOWHERE` below is the line, with no fixes. So is rule 8 — a
     dish asked for on a night nobody is home moves to the nearest night
     that fits its time (cap_enforce.place_off_nights_out), and `DAY_OUT`
-    is the line.
+    is the line. And rule 9 — a dish they asked for that clashes with an
+    allergy or a hard no is replaced by the allergen gate, and
+    `ALLERGY_REQUEST` is the line saying why (2026-10-25).
   * A chain end — a cook that feeds a later night, or the reheat itself —
     is never flagged. cap_enforce's own docstring names the over-cap
     chain source as its biggest open hole and Emily's call; widening into
@@ -83,6 +85,7 @@ from __future__ import annotations
 import datetime
 import json
 import logging
+import re
 
 from ..db import get_conn
 from ._shared import household_id
@@ -115,6 +118,13 @@ FITS_NOWHERE = "fits_nowhere"
 # that fits its time, and this is the line that says so. No fixes: none
 # were decided, and the row's own Move or Swap is the way out.
 DAY_OUT = "day_out"
+
+# Emily's rule 9 (2026-09-23): a dish they asked for that clashes with an
+# allergy or a hard no — the allergen gate replaced it with a safe dish
+# (allergen_gate.repick_held), and this is the one line that says why their
+# request isn't there. No fixes: the allergy wins, and there is nothing to
+# choose.
+ALLERGY_REQUEST = "allergy_request"
 
 # What a fix does. Each is an existing write; see the module docstring.
 FIX_PREP_AHEAD = "prep_ahead"
@@ -165,6 +175,21 @@ def day_out_text(dish: str, from_date: str, to_date: str, away: bool = False) ->
     and set_away_stretch use for it.
     """
     return f"You're {'away' if away else 'out'} {_weekday(from_date)}, so {dish} moved to {_weekday(to_date)}."
+
+
+def allergy_request_text(asked: str, food: str, who: list[str], dish: str,
+                         meal_date: str, slot: str = "dinner") -> str:
+    """
+    "You asked for peanut noodles, but Sam can't have peanuts, so Tuesday is
+    Sesame Noodles instead." Their own words for the dish, the person and
+    the food the allergen gate matched (`who` empty: a hard no for the whole
+    house — "…but pork is a hard no here, …"), and what went there instead.
+    No sentence was decided for rule 9; this one is Pomona's, for Emily to
+    approve.
+    """
+    cannot = f"{' and '.join(who)} can’t have {food}" if who else f"{food} is a hard no here"
+    when = _weekday(meal_date) if slot == "dinner" else f"{_weekday(meal_date)} {slot}"
+    return f"You asked for {asked}, but {cannot}, so {when} is {dish} instead."
 
 
 def late_text(dish: str, meal_date: str, slot: str, moved: bool = False) -> str:
@@ -425,7 +450,7 @@ def plan_flags(weekly_plan_id: int, intake: dict | None = None,
     live = []
     planned = _planned_rows(weekly_plan_id)
     for flag in flags:
-        if flag.get("kind") in (LATE_REQUEST, RUN_LEFT, DAY_OUT):
+        if flag.get("kind") in (LATE_REQUEST, RUN_LEFT, DAY_OUT, ALLERGY_REQUEST):
             # Not about a cap, so not judged by one: still about something
             # while the same dish is on the same meal, and not yet cooked.
             row = planned.get(flag.get("entry_id"))
@@ -552,6 +577,75 @@ def flags_for_days_out(weekly_plan_id: int) -> list[dict]:
                       "text": day_out_text(r["meal"], stamp["from"], r["date"], bool(stamp.get("away"))),
                       "entry_id": r["id"], "date": r["date"], "slot": "dinner", "dish": r["meal"], "fixes": []})
     return sorted(flags, key=lambda f: f["date"])
+
+
+def _their_phrase(clauses: list[str], stems: set[str]) -> str:
+    """The longest run of the dish's own name words in their clauses about
+    it — "peanut noodles" out of "peanut noodles one night please", "pad
+    thai" out of "pad thai on tuesday with shrimp". Their words, as typed
+    (lower case, the way they type them)."""
+    from . import cap_enforce as _cap_enforce  # lazy: it imports this module
+    best: list[str] = []
+    for clause in clauses:
+        run: list[str] = []
+        for word in re.findall(r"[a-z]+(?:[-'’][a-z]+)*", clause.lower()) + [""]:
+            if word and _cap_enforce._stem(word) in stems:
+                run.append(word)
+                continue
+            if len(run) > len(best):
+                best = run
+            run = []
+    return " ".join(best)
+
+
+def flags_for_allergy_requests(weekly_plan_id: int, asks: tuple[str | None, ...] = ()) -> list[dict]:
+    """
+    Rule 9: one line per dish they ASKED FOR that the allergen gate took
+    off the draft and replaced (the row carries allergen_repick's stamp,
+    allergen_gate.repick_stamp). Built from the gate's own record — the
+    dish it dropped, the food it matched, who can't have it — and from
+    their own words about that dish, never from the model's prose.
+
+    "Asked for" is read off their words (derived_from.freeform and the
+    sentences it came from, cap_enforce._clauses_about strictly: only a
+    clause that names the dish), and is one of two things:
+      * their words for the dish themselves have the food ("peanut
+        noodles" for Sam's peanuts) — the request is what clashes;
+      * they named the whole dish ("pad thai", the gate's Pad Thai had
+        peanuts in its list) and what replaced it is not that dish any
+        more. A Chicken Pad Thai still IS their pad thai: nothing to say.
+    A dish the gate swapped that they only gestured at ("something
+    Mexican") is not a request for that dish, and gets no line.
+    """
+    from . import allergen_gate as _allergen_gate  # lazy: keeps this module's imports light
+    from . import cap_enforce as _cap_enforce  # lazy: it imports this module
+    flags, said = [], set()
+    rows = sorted(_planned_rows(weekly_plan_id).values(), key=lambda r: (r["date"], r["slot"]))
+    for r in rows:
+        derived = _derived_of(r)
+        stamp = derived.get("allergen_repick")
+        dish = (r["meal"] or "").strip()
+        if not isinstance(stamp, dict) or "who" not in stamp or not dish:
+            continue
+        dropped, food = str(stamp.get("dropped") or "").strip(), str(stamp.get("avoided") or "").strip()
+        if not dropped or not food or not str(derived.get("freeform") or "").strip():
+            continue
+        clauses, stems = _cap_enforce._clauses_about(derived, asks, dropped, strict=True)
+        phrase = _their_phrase(clauses, stems)
+        if not phrase or phrase in said:
+            continue
+        theirs = {_cap_enforce._stem(w) for w in phrase.split()}
+        clashes = [c for c in _allergen_gate.hard_clashes(phrase, draft=True)
+                   if (c.get("matched") or c.get("restriction") or "").strip() == food]
+        whole_dish = _cap_enforce._name_stems(re.split(r"\bwith\b", dropped, flags=re.IGNORECASE)[0]) <= theirs
+        if not clashes and not (whole_dish and not theirs <= _cap_enforce._name_stems(dish)):
+            continue
+        said.add(phrase)
+        who = [str(w) for w in stamp.get("who") or [] if str(w).strip()]
+        flags.append({"kind": ALLERGY_REQUEST,
+                      "text": allergy_request_text(phrase, food, who, dish, r["date"], r["slot"]),
+                      "entry_id": r["id"], "date": r["date"], "slot": r["slot"], "dish": dish, "fixes": []})
+    return flags
 
 
 def _week_nights(weekly_plan_id: int, intake: dict | None,
