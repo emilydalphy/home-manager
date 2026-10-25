@@ -155,6 +155,32 @@ def _consent_refusal_response() -> JSONResponse:
     return JSONResponse({"detail": ai_consent.REFUSAL_LINE, "ai_consent_required": True}, status_code=503)
 
 
+# A number SQLite can't hold names nothing — no row has an id, and no
+# household a count, past 2**63-1. Python parses any size of integer and
+# pydantic passes it through, so `/api/staples/10**20/pause` reached the
+# query and SQLite raised OverflowError: ~60 routes answered "something went
+# wrong on my side" and filed the request as breakage in the morning report
+# (junk-input sweep, 2026-10-25). It is the caller's mistake, said as one.
+NUMBER_TOO_BIG_LINE = "That number is too big — nothing here goes that high."
+
+
+def _number_too_big(exc: BaseException | None) -> bool:
+    """
+    Did this failure come from binding an out-of-range integer into a
+    query? The exception itself or the one it was raised while handling —
+    one link, as _refused_for_consent reads it. Only SQLite's own bind
+    message counts: that integer can only have come from the request (a
+    stored one is 64-bit by construction), whereas an OverflowError from
+    date arithmetic on a stored date would be a real bug and stays a 500.
+    """
+    if exc is None:
+        return False
+    for e in (exc, exc.__cause__ or exc.__context__):
+        if isinstance(e, OverflowError) and "SQLite INTEGER" in str(e):
+            return True
+    return False
+
+
 @app.exception_handler(StarletteHTTPException)
 async def record_server_errors(request: Request, exc: StarletteHTTPException):
     """
@@ -174,6 +200,8 @@ async def record_server_errors(request: Request, exc: StarletteHTTPException):
         _refused_for_consent(exc) or (exc.status_code == 503 and exc.detail == ai_consent.REFUSAL_LINE)
     ):
         return _consent_refusal_response()
+    if exc.status_code >= 500 and _number_too_big(exc):
+        return JSONResponse({"detail": NUMBER_TOO_BIG_LINE}, status_code=400)
     if exc.status_code >= 500 and _has_bound_household(request):
         # The status code, never the message. 83 routes build their detail
         # as f"Server error: {e}", and {e} is unbounded application text —
@@ -240,6 +268,8 @@ async def record_unhandled_errors(request: Request, exc: Exception):
     """
     if _refused_for_consent(exc):
         return _consent_refusal_response()
+    if _number_too_big(exc):
+        return JSONResponse({"detail": NUMBER_TOO_BIG_LINE}, status_code=400)
     # Bind the household from the cookie before recording.
     #
     # This handler runs in ServerErrorMiddleware, which sits OUTSIDE
@@ -5840,6 +5870,13 @@ def resolve_needs_you_dinner(req: ResolveDinnerRequest):
     the grocery list is only written to when the person actually said yes
     — same rule the assistant follows in chat.
     """
+    # The card sends the day it was offered; anything else is the caller's
+    # mistake, not ours. It used to reach plan_meal's own fromisoformat and
+    # come back as a recorded 500 (junk-input sweep, 2026-10-25).
+    try:
+        datetime.date.fromisoformat(req.date)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="date must be an ISO date (YYYY-MM-DD).")
     try:
         result = tools.resolve_needs_you_dinner(
             req.date, req.meal, add_ingredients_to_grocery_list=req.add_ingredients

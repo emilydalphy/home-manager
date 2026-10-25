@@ -13,6 +13,15 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A number too big to be an id is a 400, not recorded breakage**
+  (2026-10-25, standing work; branch `overnight/hunt-2026-10-25`; tests
+  `tests/test_route_junk_input_2026_10_25.py`). A junk-input sweep of every
+  route found ~60 answering 500 to an id or count past 2**63 (SQLite's bind
+  OverflowError) and filing it in the morning report; main's two error
+  handlers now answer `NUMBER_TOO_BIG_LINE` for that one message only (a date
+  running off the calendar stays a 500 — it could be stored data gone wrong).
+  `POST /api/needs-you/dinner` now refuses a non-date with a 400. Scan-fridge
+  and scan-pantry pinned (no test anywhere drove them).
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
