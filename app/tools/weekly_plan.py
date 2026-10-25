@@ -6740,10 +6740,32 @@ def resolve_needs_you_dinner(
     from . import allergen_gate as _allergen_gate
     _allergen_gate.refuse_if_clashing(meal)
     weekly_plan_id = get_plan_id_for_date(meal_date)
-    result = _meal_plans.plan_meal(
-        meal_date, meal, slot="dinner", weekly_plan_id=weekly_plan_id,
-        add_ingredients_to_grocery_list=add_ingredients_to_grocery_list,
-    )
+    # A night the plan holds as planned_empty is not a dinner to decide
+    # (overnight, 2026-10-25). The band never offers one, but a card drawn
+    # before the trip was marked, a retried POST or another tab can still
+    # land here — and plan_meal only inserts, so it wrote a second row
+    # beside the empty one and, with the card's yes, bought for a night
+    # nobody is eating. The read and the write are one transaction so a
+    # night marked away in between is refused too.
+    conn = get_conn()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        if weekly_plan_id is not None:
+            _meal_plans.refuse_if_planned_empty(conn.execute(
+                "SELECT slot_state, derived_from_json FROM meal_plan_entries "
+                "WHERE weekly_plan_id = ? AND household_id = ? AND date = ? AND slot = 'dinner'",
+                (weekly_plan_id, household_id(), meal_date),
+            ).fetchall(), "dinner")
+        result = _meal_plans.plan_meal(
+            meal_date, meal, slot="dinner", weekly_plan_id=weekly_plan_id,
+            add_ingredients_to_grocery_list=add_ingredients_to_grocery_list, conn=conn,
+        )
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
     return {
         "items": get_needs_you_items(),
         "groceries_added": result["groceries_added"],

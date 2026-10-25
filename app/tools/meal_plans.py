@@ -44,6 +44,34 @@ def plan_meal_for_chat(*args, override: bool = False, **kwargs) -> dict:
     return plan_meal(**bound.arguments)
 
 
+def refuse_if_planned_empty(rows, slot: str) -> None:
+    """
+    SlotRefused when any of `rows` (one slot's entries: slot_state and
+    derived_from_json) is `planned_empty` — planning beside it would buy for
+    a meal nobody is eating. Nobody home gets resolve_open_slot's words; a
+    meal the household switched off (`{slot}s_per_week:0`, or off every day
+    of the usual week) is told where to turn it back on, because "if you're
+    in after all" is not the answer to "no breakfasts, please".
+
+    Shared by the two doors that plan straight onto a day by date: chat's
+    plan_meal (below) and Now's dinner card (resolve_needs_you_dinner).
+    """
+    empty = [r for r in rows if r["slot_state"] == "planned_empty"]
+    if not empty:
+        return
+    constraints = {str(json.loads(r["derived_from_json"] or "{}").get("constraint") or "") for r in empty}
+    from . import usual_week as _usual_week  # lazy: it reaches back into weekly_plan
+    if f"{slot}s_per_week:0" in constraints or slot in _usual_week.switched_off_meals():
+        raise _weekly_plan.SlotRefused(
+            f"You’ve asked me not to plan {slot}s, so nothing is planned or bought for this one. "
+            "You can turn them back on in Preferences, under Your rhythm."
+        )
+    raise _weekly_plan.SlotRefused(
+        f"That {slot} is deliberately empty — nothing is planned or bought for it. "
+        "Change the night's answer if you're in after all."
+    )
+
+
 def _into_the_covering_plan(a: dict) -> dict | None:
     """
     A chat plan_meal for a night a live plan already covers, filed INTO
@@ -94,22 +122,8 @@ def _into_the_covering_plan(a: dict) -> dict | None:
         ).fetchall()
     finally:
         conn.close()
+    refuse_if_planned_empty(rows, slot)
     states = {r["slot_state"] for r in rows}
-    if "planned_empty" in states:
-        constraints = {
-            str(json.loads(r["derived_from_json"] or "{}").get("constraint") or "")
-            for r in rows if r["slot_state"] == "planned_empty"
-        }
-        from . import usual_week as _usual_week  # lazy: it reaches back into weekly_plan
-        if f"{slot}s_per_week:0" in constraints or slot in _usual_week.switched_off_meals():
-            raise _weekly_plan.SlotRefused(
-                f"You’ve asked me not to plan {slot}s, so nothing is planned or bought for this one. "
-                "You can turn them back on in Preferences, under Your rhythm."
-            )
-        raise _weekly_plan.SlotRefused(
-            f"That {slot} is deliberately empty — nothing is planned or bought for it. "
-            "Change the night's answer if you're in after all."
-        )
     if not rows:
         return plan_meal(**{**a, "weekly_plan_id": plan["id"],
                             "add_ingredients_to_grocery_list": plan["status"] == "approved"})

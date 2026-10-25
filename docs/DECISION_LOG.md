@@ -13,6 +13,21 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Now's dinner card refuses a night the plan holds empty** (2026-10-25;
+  branch `overnight/planned-empty-never-offered`; tests
+  `tests/test_planned_empty_never_offered.py`). One week with planned_empty
+  slots (away need, out night, `*_per_week:0`) beside two open ones, run
+  through every reader that offers slots (needs-you, bell, moves, cooker,
+  week menu, draft opener, audit, `get_weekly_plan`, morning text, evening
+  nudge, tonight, the slot/swap/fill/move/trade doors, approval, routes).
+  One leak: `resolve_needs_you_dinner` (POST /api/needs-you/dinner) went
+  straight to `plan_meal`, which only inserts — a second row beside the
+  empty one, and with the card's yes, groceries for a night nobody eats.
+  Now refused through `meal_plans.refuse_if_planned_empty` (chat's guard,
+  shared), read and write in one transaction. Left for shell.js: the Day
+  step offers "Swap · I'll pick" and the root "Add a meal" on any
+  planned_empty that isn't an `away` need; Swap 404s.
+
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
