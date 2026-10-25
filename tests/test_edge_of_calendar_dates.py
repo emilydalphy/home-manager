@@ -37,6 +37,17 @@ EDGE_REQUESTS = [
     ("GET", "/api/week/0001-01-01/intake", None, "week_start"),
     ("POST", "/api/week/9999-12-31/intake", {}, "week_start"),
     ("GET", "/api/week/9999-12-31/attendance", None, "week_start"),
+    # The siblings the review found: the period check both generate routes
+    # share (the stream used to answer 200 and then an error frame), the
+    # trip range, and a tick's timeline day -- refused before the tick.
+    ("POST", "/api/week/9999-12-31/generate", {"day_count": 7}, "week_start"),
+    ("POST", "/api/week/9999-12-31/generate/stream", {"day_count": 7}, "week_start"),
+    ("POST", "/api/week/2026-10-26/generate",
+     {"day_count": 7, "period_start": "9999-12-31"}, "period_start"),
+    ("POST", "/api/week/2026-10-26/away-stretch",
+     {"from_date": "9999-12-31", "to_date": "9999-12-31"}, "from_date"),
+    ("POST", "/api/today/moves/cook:1/done?date=9999-12-31", {"done": True}, "date"),
+    ("POST", "/api/today/moves/cook:1/done", {"done": True, "date": "0001-01-01"}, "date"),
 ]
 
 

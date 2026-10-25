@@ -3684,6 +3684,10 @@ def today_move_done(move_id: str, req: MoveDoneRequest, date: str | None = None)
     should render the day the caller is actually looking at, not always
     today's.
     """
+    # Checked before the tick, not after: a day the timeline can't be built
+    # for used to write the tick and then fail, so the refusal left a change.
+    if (date or req.date) is not None:
+        _route_date(date or req.date, "date")
     try:
         tools.set_move_done(move_id, req.done)
         payload = tools.today_moves(date or req.date)
@@ -3977,12 +3981,9 @@ def _validated_period(week_start: str, req: WeekGenerateRequest) -> tuple[str, i
     same failure would arrive as an `error` frame after a 200 and a set of
     headers, i.e. as a stream that starts fine and then says no.
     """
-    try:
-        datetime.date.fromisoformat(week_start)
-        if req.period_start:
-            datetime.date.fromisoformat(req.period_start)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Dates must be ISO dates (YYYY-MM-DD).")
+    _route_date(week_start, "week_start")
+    if req.period_start:
+        _route_date(req.period_start, "period_start")
     if req.day_count < 1 or req.day_count > tools.MAX_PERIOD_DAYS:
         raise HTTPException(
             status_code=400,
@@ -5319,6 +5320,8 @@ def set_week_away_stretch(week_start: str, req: AwayStretchRequest):
     which merely shrank, and the two derived edges, which is exactly what
     the picker's confirmation copy reports back.
     """
+    _route_date(req.from_date, "from_date")
+    _route_date(req.to_date, "to_date")
     try:
         return tools.set_away_stretch(
             req.from_date, req.from_slot, req.to_date, req.to_slot,

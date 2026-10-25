@@ -17,9 +17,11 @@ why*, not duplicating the diff.
   branch `overnight/edge-dates-refused`; tests
   `tests/test_edge_of_calendar_dates.py`). `main._route_date` is now the one
   "<name> must be an ISO date" check for the routes that had it, plus
-  today/moves and POST intake, and refuses a year outside 1900–2999 with a
-  400. Why: 9999-12-31 / 0001-01-01 are valid ISO, so they reached the date
-  maths and overflowed; 1900 (not 2000) because tests use 1999 for "no plan".
+  today/moves (GET and a tick's day, checked before the tick), POST intake,
+  both generate routes' period check and away-stretch, and refuses a year
+  outside 1900–2999 with a 400. Why: 9999-12-31 / 0001-01-01 are valid
+  ISO, so they reached the date maths and overflowed; 1900 (not 2000)
+  because tests use 1999 for "no plan".
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
