@@ -97,6 +97,13 @@ function addCustomChip(container, text, multi) {
 // one observer, set up once by whichever page loads this file. A chip that
 // already says aria-pressed itself (the allergens, "It changes week to
 // week") is told the same thing again.
+//
+// ONLY over the screens that use .active (chipPressedRoot): Plan a week's
+// own chips outside #setup-host mean "chosen" by .on and say aria-pressed
+// themselves (paintChipSet), and some of them are actions ("+ Add one",
+// "did you mean"), not toggles — watched from the whole document, this
+// read their missing .active as "not pressed" and overwrote what
+// paintChipSet had said (review, 2026-10-25).
 const CHIP_TOGGLE = 'button.chip, button.rhythm-chip';
 function syncChipPressed(el) {
   el.setAttribute('aria-pressed', el.classList.contains('active') ? 'true' : 'false');
@@ -113,8 +120,13 @@ function watchChipPressed(root) {
   })).observe(root, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'] });
   sweepChipPressed(root);
 }
+// Plan a week: the onboarding screens it lifts into #setup-host (which is
+// in its markup before this script). Onboarding: the whole page, all .active.
+function chipPressedRoot(doc) {
+  return doc.getElementById('setup-host') || doc.documentElement;
+}
 if (typeof MutationObserver === 'function' && typeof document !== 'undefined' && document.documentElement) {
-  watchChipPressed(document.documentElement);
+  watchChipPressed(chipPressedRoot(document));
 }
 
 function getActiveChips(container) {

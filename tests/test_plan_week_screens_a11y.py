@@ -112,6 +112,27 @@ console.log(JSON.stringify({ first: first, tapped: plain.attrs['aria-pressed'], 
     assert _node(script) == {"first": ["true", "false"], "tapped": "true", "drawn": "false", "watches": ["class"]}
 
 
+@_needs_node
+def test_plan_a_weeks_own_on_chips_are_left_to_say_their_own_pressed():
+    """Plan a week's own chips mean chosen by .on and set aria-pressed
+    themselves (paintChipSet); some are actions. The observer watches only
+    #setup-host there — the .active screens — and the whole page only on
+    onboarding, which has no host."""
+    script = FAKE_EL + _fn("chipPressedRoot", SCREENS) + r"""
+var host = el({}), html = el({});
+var planWeek = { documentElement: html, getElementById: function (id) { return id === 'setup-host' ? host : null; } };
+var onboarding = { documentElement: html, getElementById: function () { return null; } };
+console.log(JSON.stringify([chipPressedRoot(planWeek) === host, chipPressedRoot(onboarding) === html]));
+"""
+    assert _node(script) == [True, True]
+    # The host is in plan-week's markup before the script that looks for it.
+    assert PAGE.index('<section id="setup-host"') < PAGE.index('<script src="/static/setup-screens.js">')
+    assert 'id="setup-host"' not in ONBOARDING
+    # And Plan a week's own convention is still its own: .on plus aria-pressed.
+    paint = _fn("paintChipSet", PAGE)
+    assert "classList.toggle('on', on)" in paint and "setAttribute('aria-pressed'" in paint
+
+
 def _grid_harness(body: str) -> object:
     script = FAKE_EL + _const("UW_MEALS") + _const("UW_FOCUS_ATTRS") + "\n".join(
         _fn(n, SCREENS) for n in ("uwFocusSelector", "uwDaySelector", "renderMealsDays")
