@@ -201,6 +201,12 @@ def _collect_over_token(days: int) -> list[dict]:
     try:
         with urllib.request.urlopen(req, timeout=60) as resp:
             data = json.loads(resp.read().decode("utf-8"))
+    except ValueError as e:
+        # Not JSON at all — a login page, a proxy's error page, a body cut
+        # off mid-way. That is "couldn't look" (exit 2); left uncaught it
+        # was a traceback and exit 1, i.e. "something broke" about the
+        # app when nothing had been read from it (2026-10-25).
+        raise NoData(f"{base} answered /api/health-report with something that is not JSON ({e}).")
     except urllib.error.HTTPError as e:
         if e.code == 404:
             raise NoData(
@@ -212,9 +218,10 @@ def _collect_over_token(days: int) -> list[dict]:
     except (urllib.error.URLError, OSError) as e:
         raise NoData(f"could not reach {base}: {e}")
 
-    households = data.get("households")
+    households = data.get("households") if isinstance(data, dict) else None
     if not isinstance(households, list):
         raise NoData(f"{base} answered /api/health-report without a households list.")
+    _check_households(households, f"{base}/api/health-report")
     # Same shape _collect_from_db produces, because the server builds it
     # with exactly that function — so the printer below needs nothing new.
     #
@@ -229,6 +236,41 @@ def _collect_over_token(days: int) -> list[dict]:
             if isinstance(h, dict):
                 h["current_build"] = current.strip()
     return households
+
+
+def _check_households(households: list, where: str) -> None:
+    """
+    Refuse an answer the exit code cannot be honest about.
+
+    Every live database has household 1, so an EMPTY list is not a quiet
+    night: it is the wrong database (an unmounted volume answers with a
+    fresh one) or a broken route, and it printed nothing at all and exited
+    0 — "nothing broke" from having looked at nothing (2026-10-25). And a
+    household without a readable error count cannot be said to have had no
+    errors, so it is "couldn't look" too, rather than a traceback halfway
+    through the printout that exited 1.
+    """
+    if not households:
+        raise NoData(f"{where} listed no households at all, so nothing was read.")
+    for h in households:
+        if not isinstance(h, dict):
+            raise NoData(f"{where} answered with a household that is not a record.")
+        if not h.get("unreachable") and not _readable(h):
+            raise NoData(
+                f"{where} answered without a readable error count for household "
+                f"{h.get('household_id')!r}, so whether anything broke is unknown."
+            )
+
+
+def _readable(h: dict) -> bool:
+    """Has an error count the exit code can be computed from."""
+    errors = h.get("errors")
+    total = errors.get("total") if isinstance(errors, dict) else None
+    return (
+        isinstance(total, int) and not isinstance(total, bool)
+        and isinstance(errors.get("by_kind"), dict)
+        and isinstance(h.get("usage"), dict)
+    )
 
 
 def _try_recipe_requests(opener, base: str, days: int):
@@ -277,8 +319,8 @@ def _collect_over_http(days: int) -> list[dict]:
                 # "household 2 (household 2)". Only running it against a
                 # real server showed it.
                 "household": who.get("household_name") or f"household {who.get('household_id')}",
-                "errors": data["errors"],
-                "usage": data["usage"],
+                "errors": data.get("errors"),
+                "usage": data.get("usage"),
                 # .get: a deployment older than the feedback feature
                 # answers without this key, and the report should print
                 # one line less rather than crash.
@@ -298,6 +340,16 @@ def _collect_over_http(days: int) -> list[dict]:
                 "recipe_change_requests": _try_recipe_requests(opener, base, days),
             }
         )
+    # A household whose answer has no readable error count is one we could
+    # not look at — said as UNREACHABLE (which exits 1, like a refused
+    # passphrase), never left to crash the printer and cost the others.
+    for i, h in enumerate(out):
+        if not h.get("unreachable") and not _readable(h):
+            out[i] = {
+                "household_id": h.get("household_id"),
+                "household": h.get("household"),
+                "unreachable": f"{base}/api/observability answered without a readable error count.",
+            }
     return out
 
 
@@ -1573,7 +1625,15 @@ def main() -> int:
             out["recipe_changes_untrusted_quoted_text"] = recipe_changes
         print(json.dumps(out, indent=2))
     else:
-        _print_human(report, args.days, source)
+        try:
+            _print_human(report, args.days, source)
+        except (KeyError, TypeError, AttributeError, ValueError) as e:
+            # A field the printer needed was missing or the wrong shape.
+            # The error counts were checked before this (_check_households),
+            # so the exit code below is still the truth about breakage; this
+            # only says the rest of the page is short, instead of a
+            # traceback that exited 1 whatever the counts said.
+            print(f"\n(The rest of this report could not be printed: {type(e).__name__}: {e})")
         if feedback is not None:
             _print_feedback(feedback, max(args.days, 30))
         if recipe_changes is not None:

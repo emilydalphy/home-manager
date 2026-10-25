@@ -13,6 +13,20 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The morning report hears of streamed and background failures, windows on
+  last-seen, and exits 2 on a reply it can't read** (2026-10-25; branch
+  `overnight/report-gaps-1025`; tests `tests/test_report_gaps_2026_10_25.py`).
+  Found by breaking things on a local server: a crashed `/api/chat/stream`
+  (and draft/first-plan streams) answered 200 + an `error` frame and was never
+  recorded — now `_record_stream_failure` files the plain twin's row (5xx
+  only; refusals and the consent 503 stay out). Backup / morning-text /
+  evening-nudge loop failures were log-only — now kind `background`
+  (per-household in `digest`, loop-wide against household 1). A repeat folded
+  into a row filed >`--days` ago was invisible (window read `created_at`) —
+  `get_recent_errors` now windows on `COALESCE(last_seen_at, created_at)`; the
+  count may include pre-window hits (safe direction). `{"households": []}`
+  exited 0 and a non-JSON/malformed reply was a traceback exit 1 — both 2 now.
+  Why: a false "nothing broke" is the worst thing this report can say.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

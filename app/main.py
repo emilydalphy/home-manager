@@ -1360,6 +1360,38 @@ def startup():
     backup.warn_if_database_is_ephemeral()
 
 
+def _record_background_failure(where: str, exc: BaseException) -> None:
+    """
+    A background loop's failure, filed where the morning report reads.
+
+    The backup and morning-text loops run with no request and no household,
+    so before 2026-10-25 a failure in either was a log line on Railway and
+    nothing else — a backup failing every night read "Nothing broke" every
+    morning. Filed against household 1, the operator's own report: these
+    loops are the whole database's, not any one household's (a per-household
+    morning-text failure is filed against that household in tools.digest).
+    Class name only, never the message, as every server row.
+    """
+    with tools.use_household(households.DEFAULT_HOUSEHOLD_ID):
+        tools.record_error("background", where=where, detail=type(exc).__name__)
+
+
+def _run_backup_pass() -> None:
+    """One day's backup maintenance; never raises (see start_backup_loop)."""
+    try:
+        result = backup.run_daily_maintenance()
+        logger.info(
+            "Backup maintenance: created=%s pruned=%d kept=%d",
+            result["created"], len(result["pruned"]), result["kept"],
+        )
+    except Exception as e:
+        # The loop must outlive any single bad day. A backup task
+        # that dies quietly would leave the household uncovered
+        # with nothing to show for it.
+        logger.exception("Backup maintenance failed; will try again tomorrow")
+        _record_background_failure("daily_backup", e)
+
+
 @app.on_event("startup")
 async def start_backup_loop():
     """
@@ -1381,17 +1413,7 @@ async def start_backup_loop():
 
     async def _loop():
         while True:
-            try:
-                result = await run_in_threadpool(backup.run_daily_maintenance)
-                logger.info(
-                    "Backup maintenance: created=%s pruned=%d kept=%d",
-                    result["created"], len(result["pruned"]), result["kept"],
-                )
-            except Exception:
-                # The loop must outlive any single bad day. A backup task
-                # that dies quietly would leave the household uncovered
-                # with nothing to show for it.
-                logger.exception("Backup maintenance failed; will try again tomorrow")
+            await run_in_threadpool(_run_backup_pass)
             # A long-running quiet deploy restarts rarely, so startup alone
             # would not hold the week. Its own try inside the helper: a
             # failed sweep must not cost the backup, or the backup the sweep.
@@ -1449,10 +1471,11 @@ async def start_morning_text_loop():
                         "Morning texts: %s",
                         ", ".join(f"household {r['household_id']} member {r['member_id']} {r['status']}" for r in results),
                     )
-            except Exception:
+            except Exception as e:
                 # The loop must outlive any single bad pass — a Twilio
                 # outage at seven is not a reason to miss tomorrow.
                 logger.exception("Morning text pass failed; will try again in a few minutes")
+                await run_in_threadpool(_record_background_failure, "morning_text", e)
             try:
                 nudged = await run_in_threadpool(tools.run_evening_nudges_once)
                 if nudged:
@@ -1460,8 +1483,9 @@ async def start_morning_text_loop():
                         "Evening nudges: %s",
                         ", ".join(f"household {r['household_id']} member {r['member_id']} {r['status']}" for r in nudged),
                     )
-            except Exception:
+            except Exception as e:
                 logger.exception("Evening nudge pass failed; will try again in a few minutes")
+                await run_in_threadpool(_record_background_failure, "evening_nudge", e)
             await asyncio.sleep(tools.MORNING_TEXT_POLL_SECONDS)
 
     asyncio.create_task(_loop())
@@ -2160,6 +2184,7 @@ def onboarding_generate_first_plan_stream(req: FirstPlanRequest | None = None):
         _stream_week_generation(
             week_start=week_start, constraints_notes="", intake_id=None,
             day_count=day_count, period_start=period_start, run_token=req.run_token,
+            where="/api/onboarding/generate-first-plan/stream",
         ),
         what=f"First-plan stream for the week of {week_start}", carries_on="generation continues",
     )
@@ -4217,6 +4242,28 @@ _STREAM_HEARTBEAT_SECONDS = 5.0
 _SSE_HEARTBEAT = ": keep-alive\n\n"
 
 
+def _record_stream_failure(where: str, status: int, exc: BaseException) -> None:
+    """
+    File a streamed request's failure in the morning report, as the plain
+    route's 5xx is filed.
+
+    A stream has already answered 200 by the time its worker fails, so the
+    failure travels as an `error` frame and never reaches
+    record_server_errors. Until 2026-10-25 that meant a chat turn, a draft
+    week or a first plan that crashed — the three things the app streams,
+    and chat is the streamed path the shell actually uses — was logged and
+    nothing else: the report said "Nothing broke" over a night when chat
+    failed every time. Same row as the plain twin writes ("server",
+    route pattern, "HTTP <status>"), so the two count as one shape; never the
+    message, for the reason record_server_errors gives. A refusal (4xx) and a
+    household that hasn't said yes to AI (the consent 503) are answers, not
+    breakage, exactly as on the plain routes.
+    """
+    if status < 500 or _refused_for_consent(exc):
+        return
+    tools.record_error("server", where=where, detail=f"HTTP {status}")
+
+
 def _relay_stream_events(events: "queue.Queue", done, *, first_frame: str):
     """
     The shared back half of _stream_week_generation and _stream_chat_turn:
@@ -4286,6 +4333,7 @@ class _SSEResponse(StreamingResponse):
 def _stream_week_generation(
     *, week_start: str, constraints_notes: str, intake_id,
     day_count: int = 7, period_start: str | None = None, run_token: str | None = None,
+    where: str = "/api/week/{week_start}/generate/stream",
 ):
     """
     Run generate_weekly_plan on a background thread and yield its progress
@@ -4331,12 +4379,14 @@ def _stream_week_generation(
         # left nothing in the app log to find it by.
         except AssistantUnavailableError as e:
             logger.warning("Streaming week generation for %s: Claude unavailable (503): %s", week_start, e)
+            _record_stream_failure(where, 503, e)
             events.put(("error", {"status": 503, "detail": str(e)}))
         except ValueError as e:
             logger.warning("Streaming week generation for %s refused (400): %s", week_start, e)
             events.put(("error", {"status": 400, "detail": str(e)}))
         except Exception as e:
             logger.exception("Streaming week generation failed")
+            _record_stream_failure(where, 500, e)
             events.put(("error", {"status": 500, "detail": f"Server error: {e}"}))
         finally:
             agent._WEEK_GEN_PROGRESS.reset(token)
@@ -7828,9 +7878,11 @@ def _stream_chat_turn(*, session_id: str, message: str, history: list, proactive
             events.put(("done", _finish_chat_turn(session_id, history, reply, updated_history)))
         except AssistantUnavailableError as e:
             logger.warning("Chat turn hit a transient Claude API failure: %s", e)
+            _record_stream_failure("/api/chat/stream", 503, e)
             events.put(("error", {"status": 503, "detail": str(e)}))
         except Exception as e:
             logger.exception("Chat turn failed")
+            _record_stream_failure("/api/chat/stream", 500, e)
             events.put(("error", {"status": 500, "detail": f"Server error: {e}"}))
         finally:
             agent._WEEK_GEN_PROGRESS.reset(token)
