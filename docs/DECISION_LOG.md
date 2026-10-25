@@ -13,6 +13,22 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A dish asked for on a night nobody is home moves to the nearest night
+  that fits its time, and the draft says so** (2026-10-25, snag rule 8;
+  branch `overnight/snag-rule-8-day-out`, on top of rule 5's; tests
+  `tests/test_draft_request_on_day_out.py`). `cap_enforce.
+  requests_on_nights_out` reads their dish off an Out or away dinner before
+  `_finish_week_slots` clears it; `place_off_nights_out` (after the
+  away/holiday/brought-over/freezer passes) puts it on the nearest home
+  night it fits, tie to the LATER night (move_target's rule; Friday →
+  Saturday), in place of a dinner Pomona chose (`_replace_slot_entries`,
+  so groceries follow) — and trades a dish the MODEL already moved off a
+  named out night onto that same night. Fits none: rule 5's longest night,
+  both lines said. `draft_flags.DAY_OUT`: "You're out Friday, so Pizza moved
+  to Saturday." ("away" for an away need), no buttons, only when their words
+  named that night. Why: on main the out-night pass DELETED the dish, and a
+  model-made move was unchecked and unsaid. Not built: a skipped day ("Which
+  days?") is not a night out here.
 - **A dish they asked for that fits no night goes on the longest one, and
   the draft says so** (2026-10-25, snag rule 5; branch
   `overnight/snag-rule-5-fits-nowhere`; tests

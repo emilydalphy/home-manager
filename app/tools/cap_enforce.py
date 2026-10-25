@@ -524,10 +524,10 @@ def _name_stems(meal: str | None) -> set[str]:
             if len(w) >= 3 and w not in _NOT_A_NAME_WORD}
 
 
-def _names_a_day_outside_the_dish(clause: str, stems: set[str]) -> bool:
-    """A day word in this clause that is not part of the dish's own name —
-    "Sunday Roast" and "Taco Tuesday" are dishes, not days. Each name word
-    is taken out ONCE, so "Sunday roast on Sunday" still names Sunday."""
+def _outside_the_dish(clause: str, stems: set[str]) -> str:
+    """The clause with the dish's own name taken out — "Sunday Roast" and
+    "Taco Tuesday" are dishes, not days. Each name word is taken out ONCE,
+    so "Sunday roast on Sunday" still names Sunday."""
     # Hyphenated words stay whole, so "sun-dried" never loses the hyphen
     # that tells _NAMED_DAY_RE it is not a day.
     words = re.findall(r"[a-z]+(?:-[a-z]+)*", clause.lower())
@@ -536,7 +536,11 @@ def _names_a_day_outside_the_dish(clause: str, stems: set[str]) -> bool:
             if _stem(w) == stem:
                 del words[i]
                 break
-    return bool(_NAMED_DAY_RE.search(" ".join(words)))
+    return " ".join(words)
+
+
+def _names_a_day_outside_the_dish(clause: str, stems: set[str]) -> bool:
+    return bool(_NAMED_DAY_RE.search(_outside_the_dish(clause, stems)))
 
 
 def named_a_day(derived: dict, asks: tuple[str | None, ...] = (), meal: str | None = None) -> bool:
@@ -558,6 +562,13 @@ def named_a_day(derived: dict, asks: tuple[str | None, ...] = (), meal: str | No
     derived = derived if isinstance(derived, dict) else {}
     if derived.get("moved_for"):
         return True
+    clauses, stems = _clauses_about(derived, asks, meal)
+    return any(_names_a_day_outside_the_dish(c, stems) for c in clauses)
+
+
+def _clauses_about(derived: dict, asks: tuple[str | None, ...], meal: str | None) -> tuple[list[str], set[str]]:
+    """The clauses of their words about this dish (see named_a_day), and
+    the dish's name stems."""
     span = str(derived.get("freeform") or "").strip()
     from . import draft_opener as _draft_opener  # lazy: it reaches back through meal_variety
     texts = [span] + [
@@ -567,7 +578,29 @@ def named_a_day(derived: dict, asks: tuple[str | None, ...] = (), meal: str | No
     clauses = [c for t in texts for c in _CLAUSE_SPLIT_RE.split(t) if c and c.strip()]
     stems = _name_stems(meal)
     mine = [c for c in clauses if stems & {_stem(w) for w in _WORD_RE.findall(c.lower())}]
-    return any(_names_a_day_outside_the_dish(c, stems) for c in (mine or clauses))
+    return (mine or clauses), stems
+
+
+# A weekday their words named, Monday = 0 — every form _NAMED_DAY_RE takes.
+_WEEKDAY_OF_WORD = {
+    **{w: 0 for w in ("monday", "mon")}, **{w: 1 for w in ("tuesday", "tue", "tues")},
+    **{w: 2 for w in ("wednesday", "wed", "weds")}, **{w: 3 for w in ("thursday", "thu", "thur", "thurs")},
+    **{w: 4 for w in ("friday", "fri")}, **{w: 5 for w in ("saturday", "sat")},
+    **{w: 6 for w in ("sunday", "sun")},
+}
+
+
+def weekdays_named(derived: dict, asks: tuple[str | None, ...] = (), meal: str | None = None) -> set[int]:
+    """The weekdays (Monday = 0) their words for THIS dish named — the same
+    clauses named_a_day reads, the dish's own name taken out. "Today",
+    "tomorrow" and "weekend" name no single weekday and are not here."""
+    derived = derived if isinstance(derived, dict) else {}
+    clauses, stems = _clauses_about(derived, asks, meal)
+    return {
+        _WEEKDAY_OF_WORD[m.group(1).lower()]
+        for c in clauses for m in _NAMED_DAY_RE.finditer(_outside_the_dish(c, stems))
+        if m.group(1).lower() in _WEEKDAY_OF_WORD
+    }
 
 
 def longest_nights(night: dict, rows: list[dict]) -> list[str] | None:
@@ -718,6 +751,238 @@ def place_fits_nowhere(plan_id: int, intake: dict | None, memory: dict | None,
         except Exception:
             logger.exception("Plan %s: putting %s on its longest night failed", plan_id, night["meal"])
     return placed
+
+
+# ---------- a dish they asked for on a night nobody is home (Emily's rule 8) ----------
+#
+# "A request on a day out or away moves to the nearest night that fits the
+# time rules, always flagged." (2026-09-23.) Who's home outranks the day
+# they named, and the day they named outranks a time limit — so the dish
+# leaves the night they're out, and the night it goes to is the nearest one
+# whose time it fits. Before this the prompt asked the model to move it and
+# nothing checked: a model that left it on the out night lost it (the
+# out-night pass writes planned_empty over whatever is there — the tag
+# wins), and one that moved it put it wherever it liked, with nothing said.
+#
+# The stamp on the row is what the draft's line reads
+# (draft_flags.flags_for_days_out): the night it was asked for, whether
+# that night is out or away, and whether their words named it — a dish the
+# MODEL happened to put on an out night is rescued the same way, but the
+# household never asked for that night, so "You're out Friday, so …" would
+# be about nothing they said.
+DAY_OUT_KEY = "day_out"
+
+
+def requests_on_nights_out(plan_id: int, nobody_home: dict[str, bool]) -> list[dict]:
+    """
+    The dinners they asked for (their typed words cite it) that the model
+    put on a night nobody is home — read BEFORE the out-night and away
+    passes clear those nights, because after them the dish is gone.
+    `nobody_home` is {date: away?} for every such night. Never raises.
+    """
+    if not nobody_home:
+        return []
+    try:
+        conn = get_conn()
+        rows = conn.execute(
+            """SELECT mpe.date, mpe.slot_state, mpe.reasoning, mpe.food_groups_json, mpe.derived_from_json,
+                      COALESCE(r.name, mpe.freeform_meal) AS meal
+               FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id
+               WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ? AND mpe.slot = 'dinner'
+                 AND mpe.component_category IS NULL ORDER BY mpe.date, mpe.id""",
+            (plan_id, household_id()),
+        ).fetchall()
+        conn.close()
+    except Exception:
+        logger.exception("Plan %s: reading the dinners on nights nobody is home failed", plan_id)
+        return []
+    out = []
+    for r in rows:
+        if r["date"] not in nobody_home or r["slot_state"] != "planned" or not (r["meal"] or "").strip():
+            continue
+        try:
+            derived = json.loads(r["derived_from_json"] or "{}") or {}
+            groups = json.loads(r["food_groups_json"] or "[]") or None
+        except (TypeError, ValueError):
+            continue
+        if str(derived.get("freeform") or "").strip():
+            out.append({"date": r["date"], "meal": r["meal"], "derived": derived,
+                        "food_groups": groups, "reasoning": r["reasoning"] or ""})
+    return out
+
+
+def _day_out_target(meal: str, minutes: int | None, from_date: str, rows: list[dict],
+                    here: dict | None = None) -> tuple[str | None, bool]:
+    """
+    The night a dish asked for on `from_date` goes to, and whether it fits
+    none (then it is the longest night, rule 5's answer, and the second
+    value is True).
+
+    NEAREST by days from the night they asked for; A TIE GOES TO THE LATER
+    NIGHT — draft_flags.move_target's own tie-break, and Emily's example
+    (out Friday: Thursday and Saturday are both one night away, and her
+    line says Saturday). A night it can go to is one someone is home for
+    and still to come, holding a dinner Pomona chose (never theirs, a
+    reheat or either end of a chain, never a night tagged Leftovers), that
+    nobody eating there has said no to. `here` is the night the dish is
+    already on, which counts as one it can stay on.
+
+    When it fits none of them, Who's home and the day they named are
+    already spent, and what is left is a requested dish that fits no night
+    — rule 5: the longest night, nearest of a tie. Never "the nearest home
+    night, short on time": a time limit outranks an unnamed request, and
+    once the day they named is gone that is what this is.
+    """
+    def distance(row: dict) -> tuple[int, int]:
+        gap = (datetime.date.fromisoformat(row["date"]) - datetime.date.fromisoformat(from_date)).days
+        return (abs(gap), 0 if gap > 0 else 1)
+
+    open_to = []
+    for row in rows:
+        if here is not None and row["id"] == here["id"]:
+            open_to.append(row)
+            continue
+        if (row["slot_state"] != "planned" or not (row.get("meal") or "").strip()
+                or row["date"] == from_date or (row.get("cooked_status") or "") == "done"
+                or _meal_variety.theirs(row.get("derived") or {}) or row.get("reheat") or row.get("source")
+                or "left" in (row.get("tags") or []) or _weekly_plan.night_has_gone(row["date"])):
+            continue
+        if would_offend(meal, row["date"]):
+            continue
+        if here is not None and would_offend(row["meal"], here["date"]):
+            continue  # a trade puts theirs on the night ours leaves
+        open_to.append(row)
+    if not open_to:
+        return None, False
+    fits = [r for r in open_to if not r.get("cap") or not minutes or minutes <= r["cap"]]
+    if fits:
+        return min(fits, key=distance)["date"], False
+    most = max(r["cap"] for r in open_to)
+    return min((r for r in open_to if r["cap"] == most), key=distance)["date"], True
+
+
+def place_off_nights_out(plan_id: int, intake: dict | None, memory: dict | None,
+                         nobody_home: dict[str, bool], rescued: list[dict],
+                         asks: tuple[str | None, ...] = (), report: dict | None = None) -> list[dict]:
+    """
+    Rule 8, after the out, away, holiday, brought-over and freezer passes
+    have settled which nights nobody is home (every one of them is now a
+    planned_empty row, so "a night it can go to" is read off the week
+    itself):
+
+      * each dish in `rescued` (requests_on_nights_out, read before those
+        passes cleared it) goes on its night (_day_out_target) in place of
+        the dinner Pomona chose there — through _replace_slot_entries,
+        which takes the old dinner's groceries off and the prep rows with
+        it. Skipped when the same dish is on the week anyway: the second
+        bullet then speaks for it.
+      * a dish they asked for on a named night nobody is home that the
+        MODEL already moved is put on that same nearest night too — traded
+        through swap_dinner_nights, the write stage 1 uses — or stays
+        where it is when that is the nearest.
+
+    Each is stamped (DAY_OUT_KEY) for the draft's line, and its words go
+    in report["moved_requests"] with no line of its own, as a late move's
+    do: the flag says it, so line one does not ("Pizza Friday Saturday, as
+    you asked."). A dish nowhere could take is left where it was, and
+    logged. Never raises.
+    """
+    placed: list[dict] = []
+    if not nobody_home:
+        return placed
+
+    def _said(derived: dict, meal: str, from_date: str) -> bool:
+        if derived.get("moved_for"):
+            return True  # "tomorrow" (typed_requests.place_day_requests): a day they named
+        return datetime.date.fromisoformat(from_date).weekday() in weekdays_named(derived, asks, meal)
+
+    def _record(derived: dict, meal: str, from_date: str, to_date: str, said: bool) -> None:
+        placed.append({"meal": meal, "from": from_date, "to": to_date, "said": said})
+        if said and report is not None:
+            report.setdefault("moved_requests", []).append(
+                {"words": str(derived.get("freeform") or "").strip(), "line": ""})
+        logger.info("Plan %s: %s was asked for on %s, when nobody is home; now on %s",
+                    plan_id, meal, from_date, to_date)
+
+    for dish in rescued or []:
+        try:
+            rows = nights(plan_id, intake, memory)
+            if any((r.get("meal") or "").strip().lower() == dish["meal"].strip().lower()
+                   and r["slot_state"] == "planned" for r in rows):
+                continue
+            minutes = _recipe_minutes(dish["meal"])
+            target, nowhere = _day_out_target(dish["meal"], minutes, dish["date"], rows)
+            if target is None:
+                logger.info("Plan %s: nowhere to put %s off %s", plan_id, dish["meal"], dish["date"])
+                continue
+            said = _said(dish["derived"], dish["meal"], dish["date"])
+            derived = {k: v for k, v in dish["derived"].items()
+                       if k not in ("links_to", "make_double_for", "constraint", "tags")}
+            derived[DAY_OUT_KEY] = {"from": dish["date"], "away": nobody_home[dish["date"]], "said": said}
+            if nowhere:
+                derived[FITS_NOWHERE_KEY] = {"from": dish["date"]}
+            _weekly_plan._replace_slot_entries(
+                plan_id, [r["id"] for r in rows if r["date"] == target], target, "dinner", dish["meal"],
+                food_groups=dish["food_groups"], reasoning=dish["reasoning"], derived_from=derived,
+            )
+            _record(dish["derived"], dish["meal"], dish["date"], target, said)
+        except Exception:
+            logger.exception("Plan %s: moving %s off a night nobody is home failed", plan_id, dish.get("meal"))
+
+    try:
+        ids = [r["id"] for r in nights(plan_id, intake, memory)]
+    except Exception:
+        logger.exception("Plan %s: reading the week for requests on nights out failed", plan_id)
+        return placed
+    for entry_id in ids:
+        try:
+            # Read afresh each time: a trade made for an earlier dish
+            # re-dated rows.
+            rows = nights(plan_id, intake, memory)
+            night = next((r for r in rows if r["id"] == entry_id), None)
+            derived = (night or {}).get("derived") or {}
+            if (night is None or night["slot_state"] != "planned" or DAY_OUT_KEY in derived
+                    or not str(derived.get("freeform") or "").strip()
+                    or (night.get("cooked_status") or "") == "done" or night.get("reheat") or night.get("source")):
+                continue
+            named = weekdays_named(derived, asks, night["meal"])
+            if datetime.date.fromisoformat(night["date"]).weekday() in named:
+                continue  # they asked for this night too
+            asked_on = sorted(d for d in nobody_home if datetime.date.fromisoformat(d).weekday() in named)
+            if not asked_on:
+                continue
+            from_date = asked_on[0]
+            target, nowhere = _day_out_target(night["meal"], night.get("minutes"), from_date, rows, here=night)
+            to_date = night["date"]
+            if target and target != night["date"]:
+                result = _weekly_plan.swap_dinner_nights(plan_id, night["date"], target)
+                if result.get("status") == "swapped":
+                    to_date = target
+                else:
+                    logger.info("Plan %s: %s and %s would not trade — %s",
+                                plan_id, night["date"], target, result.get("message") or "refused")
+            _stamp(entry_id, DAY_OUT_KEY, {"from": from_date, "away": nobody_home[from_date], "said": True})
+            if nowhere and to_date == target:
+                _stamp(entry_id, FITS_NOWHERE_KEY, {"from": night["date"]})
+            _record(derived, night["meal"], from_date, to_date, True)
+        except ValueError as exc:
+            logger.info("Plan %s: could not move entry %s off a night out — %s", plan_id, entry_id, exc)
+        except Exception:
+            logger.exception("Plan %s: placing entry %s off a night out failed", plan_id, entry_id)
+    return placed
+
+
+def _recipe_minutes(meal: str) -> int | None:
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            "SELECT prep_time_minutes, cook_time_minutes FROM recipes WHERE household_id = ? "
+            "AND lower(name) = lower(?) ORDER BY id DESC LIMIT 1",
+            (household_id(), meal),
+        ).fetchone()
+    finally:
+        conn.close()
+    return _minutes(dict(row)) if row else None
 
 
 def rearrange(plan_id: int, intake: dict | None, memory: dict | None) -> list[dict]:
@@ -1166,7 +1431,10 @@ def enforce_minutes_caps(plan_id: int, intake: dict | None, memory: dict | None,
     # were kept — but in a try of its OWN, so a failure writing the flags
     # can never swallow that warning. See tools/draft_flags.py.
     try:
-        flagged = _draft_flags.flags_for_kept_over_cap(read_back) + _draft_flags.flags_for_late_requests(plan_id)
+        # A move off a night nobody is home first (rule 8): it says why the
+        # dish is where it is, which any time line about it then builds on.
+        flagged = (_draft_flags.flags_for_days_out(plan_id) + _draft_flags.flags_for_kept_over_cap(read_back)
+                   + _draft_flags.flags_for_late_requests(plan_id))
         _draft_flags.record(plan_id, flagged)
     except Exception:
         logger.exception("Plan %s: recording the draft's time-cap flags failed", plan_id)
