@@ -5728,7 +5728,7 @@ def _write_one_pending_recipe(recipe: dict, slot: str, shared: dict, avoidances:
         # not an outage and stays the plain failure it always was.
         logger.warning("Recipe pass could not reach Claude for %r; it stays pending: %s", name, e)
         return {"name": name, "ok": False, "clash": [],
-                "unreachable": not isinstance(e, AIConsentRequiredError)}
+                "unreachable": not isinstance(e, (AIConsentRequiredError, AssistantAnswerUnusableError))}
     except Exception:
         logger.exception("Recipe pass failed for %r; it stays pending", name)
         return {"name": name, "ok": False, "clash": []}
@@ -5955,7 +5955,11 @@ def _fill_claimed_recipes(weekly_plan_id: int, pending: list[dict], *, sweep_cla
     # approval writes it again (told the clash) and re-picks there, as it
     # did before the background pass existed. The same for a label dish
     # held above ("Dairy-Free Pancakes"): pending until Approve sweeps it.
-    if known_clashes and sweep_clashes:
+    # Not while Claude is unreachable: approval is about to refuse and
+    # write nothing (weekly_plan.approve_weekly_plan), and the sweep's
+    # re-pick would rewrite the draft — or open the slot when its own
+    # picker can't reach Claude either — under a week that wasn't approved.
+    if known_clashes and sweep_clashes and not result["unreachable"]:
         # The sweep re-picks a clashing dish through the swap's own gated
         # picker, or opens the slot — the same last line of defence a
         # finished draft gets. It is told the clash, because the pending
@@ -11958,7 +11962,11 @@ def run_agent_turn(
                 # Railway; this row is what lets the morning report say it.
                 # Tool name and exception class only — the arguments carry
                 # household detail and stay out of the table.
-                tools.record_error("tool", where=block.name, detail=type(e).__name__)
+                # Not when the AI layer already filed it (a tool whose own
+                # model call gave up — generate_weekly_plan in an outage):
+                # one failure, one row.
+                if not getattr(e, AI_FILED, False):
+                    tools.record_error("tool", where=block.name, detail=type(e).__name__)
                 content = json.dumps({"error": str(e)})
                 is_error = True
             tool_results.append(

@@ -221,3 +221,68 @@ def test_an_empty_chat_reply_is_plain_and_filed(signed_in, anthropic_answers):
     assert ("ai", "run_agent_turn", "empty reply") in {
         (r["kind"], r["where_"], r["detail"]) for r in _rows()
     }
+
+
+# ---------- review round (2026-10-25) ----------
+
+
+def test_an_outage_at_approve_leaves_an_allergy_labelled_dish_as_it_was(
+    household, menu_model, monkeypatch,
+):
+    """The recipe pass's allergen sweep re-picks (or opens) a dish whose
+    name names a must-avoid. Under an outage approval refuses, so the
+    sweep must not rewrite the draft underneath that refusal."""
+    tools.set_member_dietary_restrictions("Ana", ["dairy allergy"])
+    week = _week_start()
+    days = _menu_week(week)
+    first = next(d for d in days if d["slot"] == "dinner")
+    first.update(meal_name="Dairy-Free Alfredo", main_protein="", cuisine="Italian",
+                 dish_note="cashew cream sauce over fettuccine")
+    menu_model(days)
+    plan = agent.generate_weekly_plan(week)
+    conn = get_conn()
+    before = [dict(r) for r in conn.execute(
+        "SELECT id, date, slot, slot_state, recipe_id, open_reason FROM meal_plan_entries "
+        "WHERE weekly_plan_id = ? ORDER BY id", (plan["weekly_plan_id"],))]
+    conn.close()
+    swept = []
+    monkeypatch.setattr(agent._allergen_gate, "sweep_plan", lambda *a, **k: swept.append(a))
+    monkeypatch.setattr(agent, "generate_recipe_details_llm", _unreachable_writer)
+
+    with pytest.raises(agent.AssistantUnavailableError):
+        tools.approve_weekly_plan(plan["weekly_plan_id"])
+
+    assert swept == [], "no re-pick under a refused approval"
+    conn = get_conn()
+    after = [dict(r) for r in conn.execute(
+        "SELECT id, date, slot, slot_state, recipe_id, open_reason FROM meal_plan_entries "
+        "WHERE weekly_plan_id = ? ORDER BY id", (plan["weekly_plan_id"],))]
+    conn.close()
+    assert after == before
+
+
+def test_a_chat_tool_whose_model_call_gave_up_is_one_row_not_two(signed_in, anthropic_answers, monkeypatch):
+    tool_call = types.SimpleNamespace(type="tool_use", id="toolu_1", name="list_members", input={})
+    usage = _reply("").usage
+    answers = iter([
+        types.SimpleNamespace(content=[tool_call], stop_reason="tool_use", usage=usage),
+        _reply("I couldn't reach the planner just now."),
+    ])
+
+    class _Scripted:
+        def create(self, **kwargs):
+            if kwargs.get("max_tokens") == 0:
+                return _reply("")
+            return next(answers)
+
+    monkeypatch.setattr(agent, "_client", lambda: types.SimpleNamespace(messages=_Scripted()))
+
+    def _gives_up(**kwargs):
+        raise agent._gave_up("generate_weekly_plan_llm", _connection_error())
+    monkeypatch.setitem(agent.TOOL_FUNCTIONS, "list_members", _gives_up)
+    _forget_rows()
+
+    res = signed_in.post("/api/chat", json={"message": "who lives here?"})
+
+    assert res.status_code == 200
+    assert [(r["kind"], r["where_"]) for r in _rows()] == [("ai", "generate_weekly_plan_llm")]
