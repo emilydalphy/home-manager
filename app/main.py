@@ -6005,6 +6005,10 @@ def step_inventory_expiration_view(item_id: int, req: InventoryExpirationStepReq
     return result
 
 
+# The What we know tabs a fact can be shown on (schema.sql's facts.category).
+FACT_CATEGORIES = ("people", "taste", "rhythm")
+
+
 class FactAddRequest(BaseModel):
     category: str
     text: str
@@ -6124,6 +6128,11 @@ def get_facts_view(category: str | None = None):
 @app.post("/api/facts/add")
 def add_fact_view(req: FactAddRequest):
     """Add one freeform fact — What We Know's '+ Add something to this list'."""
+    # One of the three tabs, or nowhere (defect hunt 2026-10-25): a fact
+    # filed under any other word was drawn on no tab — so nothing could edit
+    # or delete it — while the planner and the allergy check still read it.
+    if (req.category or "") not in FACT_CATEGORIES:
+        raise HTTPException(status_code=400, detail="Put it under People, Taste or Rhythm.")
     try:
         result = tools.add_fact(req.category, req.text, hard=req.hard, author=req.author)
     except Exception as e:

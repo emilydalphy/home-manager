@@ -13,6 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **What we know keeps a thing said twice as one thing** (2026-10-25; branch
+  `overnight/what-we-know-hunt`; tests `tests/test_what_we_know_said_once.py`).
+  `add_fact` answers a same-tab fact differing only by capitals/spacing/closing
+  full stop with the existing row (`already_known`; a hard re-say hardens it,
+  never the reverse) — a repeated allergy had made two rows, doubled
+  must_not_contain and "a clash with two things Sam can't have".
+  `preferences.one_of_each` dedupes dislikes/cuisines/kitchen kit on every
+  door (edit_preference, add_food_dislikes, onboarding, the cuisine write);
+  protein names trimmed, a blank one refused. `/api/facts/add` refuses a
+  category that is no tab (it was drawn nowhere but read by the planner).
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

@@ -20,6 +20,34 @@ from . import memory as _memory
 DEFAULT_SNACKS_PER_DAY = 2
 
 
+def same_words_key(text: str) -> str:
+    """The identity two list entries share when a person would call them
+    the same thing: any capitals, any spacing. "Olives", "olives " and
+    " OLIVES" are one Won't eat chip, not three (defect hunt 2026-10-25)."""
+    return " ".join(str(text).split()).lower()
+
+
+def one_of_each(items) -> list:
+    """`items` stripped, blanks dropped, and each thing kept once — in the
+    first spelling it arrived in, inner spacing as typed — by same_words_key. Anything that isn't a
+    list is handed back untouched for the caller's own check to judge."""
+    if not isinstance(items, list):
+        return items
+    seen: set[str] = set()
+    out = []
+    for item in items:
+        if not isinstance(item, str):
+            out.append(item)
+            continue
+        cleaned = item.strip()
+        key = same_words_key(cleaned)
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        out.append(cleaned)
+    return out
+
+
 def resolve_snacks_per_day(memory: dict | None = None) -> int:
     """
     How many DISTINCT snacks a day this household's week should plan.
@@ -120,8 +148,10 @@ def add_food_dislikes(items: list[str]) -> dict:
         existing = conn.execute(
             "SELECT dislikes_json FROM meal_preferences WHERE household_id = ?", (household_id(),)
         ).fetchone()
-        current = json.loads(existing["dislikes_json"]) if existing else []
-        merged = list(dict.fromkeys(current + [i.strip() for i in items if i.strip()]))
+        current = _memory._as_str_list(json.loads(existing["dislikes_json"])) if existing else []
+        # Once each whatever the capitals (one_of_each): chat saying
+        # "olives" beside a saved "Olives" is the dislike already there.
+        merged = one_of_each(current + [i for i in items if isinstance(i, str)])
         conn.execute(
             """
             INSERT INTO meal_preferences (household_id, dislikes_json, updated_at)
@@ -370,7 +400,13 @@ def _checked_protein_ratings(ratings: dict) -> dict:
             raise ValueError(
                 f"{protein!s} needs a rating from {PROTEIN_RATING_MIN} to {PROTEIN_RATING_MAX}, not {number}."
             )
-        checked[protein] = number
+        # Saved under its words as typed, less stray spaces: "chicken " is
+        # the chip's "chicken", and a blank name is no protein at all (it
+        # stored as "" and drew an empty chip).
+        name = " ".join(str(protein).split())
+        if not name:
+            raise ValueError("Say which protein that rating is for.")
+        checked[name] = number
     return checked
 
 
@@ -461,6 +497,8 @@ def set_household_meal_preferences(
         )
     if protein_preferences:
         protein_preferences = _checked_protein_ratings(protein_preferences)
+    # The same cuisine twice in other capitals is one cuisine (one_of_each).
+    cuisine_preferences = one_of_each(cuisine_preferences)
     if dinners_per_week is not None:
         dinners_per_week = checked_meal_count("dinners_per_week", dinners_per_week)
     if breakfasts_per_week is not None:
@@ -735,7 +773,7 @@ def save_onboarding_answers(
             VALUES (?, ?, datetime('now'))
             ON CONFLICT(household_id) DO UPDATE SET dislikes_json = excluded.dislikes_json, updated_at = datetime('now')
             """,
-            (household_id(), json.dumps(wont_eat)),
+            (household_id(), json.dumps(one_of_each(wont_eat))),
         )
         conn.commit()
     _household._log_preference_event("onboarding_wont_eat", "write")
