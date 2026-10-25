@@ -13,6 +13,17 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A told staple rhythm lasts until the household shows a new one; a
+  top-up two days later is the same restock** (2026-10-25, defect hunt over
+  eight simulated weeks; branch `overnight/staples-weeks-hunt`; tests
+  `tests/test_staple_rhythm_over_weeks.py`). `staples._relearn` learned from
+  every bought date ever, so "paper towels every two months" went back to
+  "about every month" on the next purchase; now only gaps ending after the
+  newest `told` event (new `staple_events` kind; legacy rows use the staple's
+  created day) can replace a told cadence. And purchases under
+  `MIN_CADENCE_DAYS` apart count as one restock, because weekly milk plus one
+  top-up learned [7, 2] → "about every 4 days" at the first learning.
+
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

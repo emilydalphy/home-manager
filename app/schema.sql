@@ -1306,7 +1306,7 @@ CREATE TABLE IF NOT EXISTS staple_events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     household_id INTEGER NOT NULL REFERENCES households(id),
     staple_id INTEGER NOT NULL REFERENCES staples(id),
-    kind TEXT NOT NULL, -- added | bought | plenty | skipped | paused | resumed
+    kind TEXT NOT NULL, -- added | told | bought | plenty | skipped | paused | resumed
     source TEXT NOT NULL DEFAULT '',
     on_date TEXT NOT NULL, -- ISO date the fact is about
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
