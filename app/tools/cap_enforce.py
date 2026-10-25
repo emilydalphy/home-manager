@@ -495,7 +495,8 @@ FITS_NOWHERE_KEY = "fits_nowhere"
 # A day their words named: full names, every short form a person types
 # ("Wed", "thu", "Tues"), and the words that name a day without a weekday
 # in them. A short form directly followed by a hyphen is not a day —
-# "sun-dried" — though a range ("Mon-Thu") still names its far end. "sat"
+# "sun-dried" — though a range ("Mon-Thu") still names its far end, and
+# "Friday-ish" names Friday (review of rule 1, 2026-10-25). "sat"
 # the verb and "sun" the noun standing alone are rare in a dinner request
 # and are ACCEPTED as days, deliberately: when unsure, a named day
 # outranks a time limit, so the dish stays where they put it (scenario 3)
@@ -503,7 +504,7 @@ FITS_NOWHERE_KEY = "fits_nowhere"
 _NAMED_DAY_RE = re.compile(
     r"\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday"
     r"|mon|tue|tues|wed|weds|thu|thur|thurs|fri|sat|sun"
-    r"|today|tonight|tomorrow|weekend|weekends)\b(?!-)",
+    r"|today|tonight|tomorrow|weekend|weekends)\b(?!-(?!ish\b))",
     re.IGNORECASE,
 )
 _SENTENCE_SPLIT_RE = re.compile(r"[.;!?\n]+")
@@ -1063,13 +1064,42 @@ NO_MEAL_NO_DAY_KEY = "no_meal_no_day"
 _MEAL_OR_DAY_HINT_RE = re.compile(
     r"\b(?:nights?|evenings?|weeknights?|weekdays?|mornings?|afternoons?|noon)\b", re.IGNORECASE)
 
+# ANY timing or occasion in the dish's own clause (review, 2026-10-25):
+# "midweek", "at the end of the week", "next week", a date ("the 31st"), a
+# holiday or an occasion ("for Halloween", "for the barbecue", "when
+# grandma visits"), or a course ("for dessert"). None of those is "no day,
+# no meal" — and rule 1 then says a line about where it went, so unsure
+# leans to False.
+_TIMING_RE = re.compile(
+    r"\d|\b(?:mid-?week|end|start|beginning|middle|early|late|later|soon|next|last|first"
+    r"|holidays?|halloween|christmas|xmas|thanksgiving|easter|diwali|hanukkah|eid|passover"
+    r"|birthdays?|anniversary|party|parties|bbq|barbecue|potluck|picnic|game|visits?|visiting|guests?|company"
+    r"|desserts?|sides?|appetizers?|starters?|treats?|baking)\b",
+    re.IGNORECASE)
+# A "for …" / "when …" / "at …" that is not one of the harmless ones ("for a
+# meal", "for us", "for the family", "for a change") ties the dish to an
+# occasion or a time.
+_OCCASION_RE = re.compile(
+    r"\b(?:for|when|while|during|before|after|until|by|around|at|on)\s+"
+    r"(?!(?:a\s+|one\s+)?meal\b|us\b|me\b|everyone\b|the\s+(?:family|kids)\b|a\s+change\b"
+    r"|once\b|this\s+week\b)\w",
+    re.IGNORECASE)
+
+
+def _head_stem(meal: str | None) -> str | None:
+    """The dish's head noun — the last word of its name that _name_stems
+    keeps: "pancake" of Korean Chicken Pancake."""
+    words = [w for w in _WORD_RE.findall((meal or "").lower()) if len(w) >= 3 and w not in _NOT_A_NAME_WORD]
+    return _stem(words[-1]) if words else None
+
 
 def asked_no_meal_no_day(derived: dict, asks: tuple[str | None, ...] = (), meal: str | None = None) -> bool:
     """
     Whether their words for THIS dish positively named no meal and no day:
     there IS a clause asking for the dish (strict, with most of its name),
-    and neither it nor any clause the lenient
-    reading counts names a meal, a day or a part of one. Unsure is False:
+    nothing they said about it turns it down, and neither it nor any clause
+    the lenient reading counts names a meal, a day, a part of one, or any
+    timing or occasion at all. Unsure is False:
     rule 1 says a line, and a line about a request they didn't make is
     worse than none.
     """
@@ -1077,16 +1107,30 @@ def asked_no_meal_no_day(derived: dict, asks: tuple[str | None, ...] = (), meal:
     if derived.get("moved_for"):
         return False
     strict, stems = _clauses_about(derived, asks, meal, strict=True)
-    # A request FOR THIS DISH: a clause with most of its name in it. "Something
-    # quick" or "something Mexican" cited on a Mexican Rice Bowl is a mood,
-    # not a dish they asked for, and is not told where it went.
-    if not stems or not any(2 * len(stems & {_stem(w) for w in _WORD_RE.findall(c.lower())}) > len(stems)
-                            for c in strict):
+    # A request FOR THIS DISH: a clause with most of its name in it, its
+    # head noun among them. "Something quick" or "something Mexican" cited
+    # on a Mexican Rice Bowl is a mood, and "Korean chicken" is not the
+    # pancake — neither is told where it went.
+    head = _head_stem(meal)
+
+    def _asks_for_it(c: str) -> bool:
+        words = {_stem(w) for w in _WORD_RE.findall(c.lower())}
+        return head in words and 2 * len(stems & words) > len(stems)
+
+    if not stems or not any(_asks_for_it(c) for c in strict):
         return False
+    from . import draft_flags as _draft_flags  # lazy: it imports this module
     lenient, _ = _clauses_about(derived, asks, meal)
+    # Their whole sentences about the dish too, for a no that sits in a
+    # clause of its own ("We had tacos last week, so not again").
+    sentences = [t for text in asks or () for t in _SENTENCE_SPLIT_RE.split(text or "") if _asks_for_it(t)]
+    for c in set(strict) | set(lenient) | set(sentences):
+        if _draft_flags._TURNED_DOWN_RE.search(c.replace("’", "'")):
+            return False  # turned down, not asked for (rule 9's own vocabulary)
     for c in set(strict) | set(lenient):
         rest = _outside_the_dish(c, stems)
-        if _NAMED_DAY_RE.search(rest) or _MEAL_OR_DAY_HINT_RE.search(rest) or _meals_in(c, stems):
+        if (_NAMED_DAY_RE.search(rest) or _MEAL_OR_DAY_HINT_RE.search(rest) or _meals_in(c, stems)
+                or _TIMING_RE.search(rest) or _OCCASION_RE.search(rest)):
             return False
     return True
 

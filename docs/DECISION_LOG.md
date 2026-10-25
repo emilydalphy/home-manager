@@ -28,7 +28,15 @@ why*, not duplicating the diff.
   suits": the app has no meal-suitability record, so it stays at the meal
   the model chose (dinner, or a lunch it's already at); no cross-meal move,
   no breakfast. No line when another already speaks for it (over time:
-  scenario 3 / rule 5; rule 9's swap; rule 8's said move).
+  scenario 3 / rule 5; rule 9's swap; rule 8's said move). Review round:
+  any timing or occasion in the dish's clause is not "no day" ("midweek",
+  "end of the week", "the 31st", "for Halloween", "when grandma visits",
+  "for dessert"), and "Friday-ish" now names Friday for every rule; a dish
+  turned down ("No tacos this week", "I hate tacos" — rule 9's vocabulary,
+  widened) is neither moved nor lined; the clause must hold the dish's head
+  noun; four or more such dishes get two lines plus "Your other four asks
+  are on the plan too, each on a day with the time for it." (Pomona's
+  wording, Emily's to approve).
 - **A dish they asked for that someone can't have is replaced, and the
   draft says why** (2026-10-25, snag rule 9; branch
   `overnight/snag-rule-9-allergy-says-why`, on top of rules 5, 8 and 2;

@@ -122,3 +122,68 @@ def test_only_positive_evidence_of_no_meal_and_no_day_counts():
     assert not asked({"freeform": "Korean chicken pancake tonight"}, (), DISH)
     assert not asked({"freeform": "Something Asian, and tacos"}, (), DISH)
     assert not asked({"freeform": "Something Mexican"}, (), "Mexican Rice Bowl")
+
+
+# ---------------------------------------------------------------- review, 2026-10-25
+
+def test_any_timing_or_occasion_in_their_words_is_not_no_day():
+    """CATCH (review: "Tacos Friday-ish" and "Tacos midweek" were moved and
+    lined as no-day requests). Any timing, date, occasion or course in the
+    dish's clause leans to False; "Friday-ish" names Friday for every rule."""
+    asked = cap_enforce.asked_no_meal_no_day
+    for said in ("Tacos Friday-ish", "Tacos midweek", "Tacos at the end of the week",
+                 "Tacos early in the week", "Tacos on the 31st", "Tacos for Halloween",
+                 "Tacos when grandma visits", "Tacos for the barbecue", "Tacos for dessert",
+                 "Tacos next week"):
+        assert not asked({"freeform": said}, (said,), "Tacos"), said
+    assert asked({"freeform": "Tacos for a change"}, (), "Tacos")
+    assert cap_enforce.weekdays_named({"freeform": "Tacos Friday-ish"}, (), "Tacos") == {4}
+    assert not cap_enforce.named_a_day({"freeform": "Sun-dried tomato pasta"}, (), "Pasta")
+
+
+def test_half_the_name_is_not_the_dish():
+    """Nit (review): "Korean chicken" doesn't vouch for the pancake — the
+    head noun has to be there."""
+    assert not cap_enforce.asked_no_meal_no_day({"freeform": "Something Korean chicken"}, (), DISH)
+
+
+def test_a_dish_they_turned_down_is_not_told_where_it_went(capped, stub_model, run):
+    """CATCH (review: "No tacos this week please" cited on tacos the model
+    planned anyway gave "Tacos is Tuesday dinner…")."""
+    week = _monday()
+    dates = tools._week_dates(week)
+    _seed(("Tacos", 15))
+    said = "No tacos this week please"
+    tools.save_week_intake(week, freeform=said)
+    dinners = list(_OTHERS)
+    dinners[1] = "Tacos"
+    stub_model(_week(dates, dinners, **{f"{dates[1]}:dinner": _asked(said)}))
+
+    plan_id, _ = run(week, None)
+
+    assert _lines(plan_id) == []
+    for no in ("We don't want tacos", "I hate tacos", "Tacos were great last week"):
+        assert not cap_enforce.asked_no_meal_no_day({"freeform": no}, (no,), "Tacos"), no
+
+
+def test_six_dishes_in_one_sentence_are_three_lines_not_six(capped, stub_model, run):
+    """CATCH (review: one sentence naming six dishes gave six lines). The
+    first two are said; one line stands for the rest."""
+    week = _monday()
+    dates = tools._week_dates(week)
+    names = ["Tacos", "Lentil Soup", "Beef Stew", "Korean Chicken Pancake", "Pad Thai", "Fish Curry"]
+    _seed(*[(n, 15) for n in names])
+    said = "We'd like tacos, lentil soup, beef stew, korean chicken pancake, pad thai and fish curry"
+    tools.save_week_intake(week, freeform=said)
+    dinners = list(_OTHERS)
+    for i, n in enumerate(names):
+        dinners[i] = n
+    stub_model(_week(dates, dinners, **{f"{dates[i]}:dinner": _asked(said) for i in range(6)}))
+
+    plan_id, _ = run(week, None)
+
+    assert _lines(plan_id) == [
+        "Tacos is Monday dinner. It takes about 15 minutes.",
+        "Lentil Soup is Tuesday dinner. It takes about 15 minutes.",
+        "Your other four asks are on the plan too, each on a day with the time for it.",
+    ]

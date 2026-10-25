@@ -133,6 +133,15 @@ ALLERGY_REQUEST = "allergy_request"
 # cap_enforce.place_meal_requests had to move it for time. No fixes: the
 # row's own Move or Swap is the way out.
 NO_MEAL_NO_DAY = "no_meal_no_day"
+# ...and, past NO_MEAL_NO_DAY_LINES of them, the one line that stands for
+# the rest (review, 2026-10-25: one sentence naming six dishes gave six
+# lines). Hangs on the first dish it stands for, and lives while that dish
+# is still on the plan uncooked — it names no day, so a move can't make it
+# false.
+NO_MEAL_NO_DAY_MORE = "no_meal_no_day_more"
+# Up to three are each said; four or more, the first two and one line for
+# the rest — a summary that replaced only one line would save nothing.
+NO_MEAL_NO_DAY_LINES = 3
 
 # What a fix does. Each is an existing write; see the module docstring.
 FIX_PREP_AHEAD = "prep_ahead"
@@ -193,6 +202,15 @@ def no_meal_no_day_text(dish: str, meal_date: str, slot: str, minutes: int | Non
     """
     where = f"{dish} is {_weekday(meal_date)} {slot}."
     return f"{where} It takes about {int(minutes)} minutes." if minutes else where
+
+
+def no_meal_no_day_more_text(count: int) -> str:
+    """"Your other four asks are on the plan too, each on a day with the
+    time for it." Pomona's sentence, not Emily's — hers to approve."""
+    from .draft_opener import number_word  # lazy: keeps this module's imports light
+    if count == 1:
+        return "Your other ask is on the plan too, on a day with the time for it."
+    return f"Your other {number_word(count)} asks are on the plan too, each on a day with the time for it."
 
 
 def allergy_request_text(asked: str, food: str, who: list[str], dish: str,
@@ -469,6 +487,11 @@ def plan_flags(weekly_plan_id: int, intake: dict | None = None,
     live = []
     planned = _planned_rows(weekly_plan_id)
     for flag in flags:
+        if flag.get("kind") == NO_MEAL_NO_DAY_MORE:
+            row = planned.get(flag.get("entry_id"))
+            if row and (row["meal"] or "") == flag.get("dish") and (row["cooked_status"] or "") != "done":
+                live.append({**flag, "fixes": []})
+            continue
         if flag.get("kind") in (LATE_REQUEST, RUN_LEFT, DAY_OUT, ALLERGY_REQUEST, NO_MEAL_NO_DAY):
             # Not about a cap, so not judged by one: still about something
             # while the same dish is on the same meal, and not yet cooked.
@@ -623,7 +646,8 @@ def _their_phrase(clauses: list[str], stems: set[str]) -> str:
 # for…" is worse than no line.
 _TURNED_DOWN_RE = re.compile(
     r"\b(?:no|not|nothing|never|none|without|skip|avoid|don't|dont|do not|instead of|rather than"
-    r"|had (?:it|that|them|this|those)|last week|sick of|tired of)\b|n't\b",
+    r"|had (?:it|that|them|this|those)|last week|sick of|tired of"
+    r"|hate|hated|hates|dislike|dislikes|loathe|can't stand|enough of)\b|n't\b",
     re.IGNORECASE,
 )
 
@@ -720,6 +744,9 @@ def flags_for_no_meal_no_day(meals: list[dict], asks: tuple[str | None, ...] = (
         flags.append({"kind": NO_MEAL_NO_DAY,
                       "text": no_meal_no_day_text(dish, m["date"], m["slot"], m.get("minutes")),
                       "entry_id": m["id"], "date": m["date"], "slot": m["slot"], "dish": dish, "fixes": []})
+    if len(flags) > NO_MEAL_NO_DAY_LINES:
+        rest = flags[2:]
+        flags = flags[:2] + [{**rest[0], "kind": NO_MEAL_NO_DAY_MORE, "text": no_meal_no_day_more_text(len(rest))}]
     return flags
 
 
