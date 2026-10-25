@@ -2219,6 +2219,15 @@ def _quantity_problem(item: str, qty: str) -> str | None:
 # is a fat rather than salt. An item naming "fresh" anything is not a
 # dried spice, and _NOT_THIS_CLASS lists the vegetables that borrow a
 # class word ("sugar snap peas", "green beans").
+# The spread class's words (see its entry below). Whole words, like every
+# class word; a hyphen reads as a space ("Peanut-butter").
+_SPREAD_BUTTERS = (
+    "peanut butter", "almond butter", "cashew butter", "pecan butter", "pistachio butter",
+    "hazelnut butter", "walnut butter", "macadamia butter", "coconut butter", "nut butter",
+    "seed butter", "sunflower butter", "sesame butter", "apple butter", "pumpkin butter",
+    "cookie butter",
+)
+
 _PLAUSIBLE_PER_SERVING = (
     ("fat", ("oil", "butter", "ghee", "lard", "fat", "shortening", "margarine"),
      {"tsp": (0, 6), "g": (0, 30)}),                       # up to 2 tbsp a head
@@ -2250,17 +2259,13 @@ _PLAUSIBLE_PER_SERVING = (
         "oats", "oatmeal", "barley", "bulgur", "farro", "orzo", "polenta", "flour",
         "chickpeas", "split peas",
     ), {"tsp": (0, 96), "g": (0, 227)}),                    # up to 2 cups / 8 oz a head
-)
-
-# A nut, seed or fruit "butter" is a spread, not a cooking fat: the base
-# of a peanut sauce is measured like tahini (which this table has no class
-# for), not like the butter in a pan. Read as "butter" it was held to
-# 2 tbsp a head, and a Thai peanut bowl's "1/3 cup" for two showed as
-# 1 tbsp on the cook card (live report, 2026-10-25). "nut butter" covers
-# peanut, hazelnut, walnut and coconut butter.
-_SPREAD_BUTTERS = (
-    "nut butter", "almond butter", "cashew butter", "pecan butter", "pistachio butter",
-    "seed butter", "apple butter", "pumpkin butter", "cookie butter",
+    # A nut, seed or fruit "butter" is a spread, not a cooking fat: the
+    # base of a peanut sauce is measured like a sauce, not like the butter
+    # in a pan. Judged as "butter" it was held to 2 tbsp a head, and a Thai
+    # peanut bowl's "1/3 cup" for two showed as 1 tbsp on the cook card
+    # (live report, 2026-10-25). Its own ceiling still catches a whole jar.
+    # The longer word wins, so "peanut butter" is never the fat class.
+    ("spread", _SPREAD_BUTTERS, {"tsp": (0, 12), "g": (0, 70)}),  # up to 1/4 cup / 70 g a head
 )
 
 # Names that borrow a class word and would be judged by the wrong table:
@@ -2270,15 +2275,15 @@ _NOT_THIS_CLASS = (
     "sugar snap", "green beans", "cauliflower rice", "ginger ale", "ginger beer",
     "onion rings", "garlic bread", "garlic knots", "ginger snap", "gingerbread",
     "low-fat", "low fat", "fat-free", "fat free", "nonfat", "non-fat", "full-fat", "full fat",
-    "reduced-fat", "reduced fat",
-) + _SPREAD_BUTTERS
+    "reduced-fat", "reduced fat", "butter beans", "butter lettuce",
+)
 
 
 def _is_spread_butter(item: str) -> bool:
     """A nut, seed or fruit butter — "Peanut butter", never "Butter" or
     "Salted butter"."""
-    clean = _clean_item(item)
-    return any(phrase in clean for phrase in _SPREAD_BUTTERS)
+    klass = _ingredient_class(item)
+    return bool(klass) and klass[0] == "spread"
 
 
 # Kitchen units read into the families above, for the check only — the
@@ -2301,7 +2306,7 @@ _STICK_TBSP = 8
 def _ingredient_class(item: str) -> tuple[str, dict] | None:
     """(class name, its per-serving ranges) for an ingredient, or None when
     the table has no opinion about it."""
-    clean = _clean_item(item)
+    clean = _clean_item(item).replace("-", " ")
     if not clean:
         return None
     best: tuple[int, str, dict] | None = None
@@ -3150,8 +3155,20 @@ def _old_spread_clamp(item: str, qty: str, stored: str, servings: int | None) ->
     (cooking_quantity — what plausible_cooking_quantity substituted). A
     recipe saved at approval before 2026-10-25 carries "1 tbsp" there for a
     "1/3 cup" of peanut butter, and the cook card read it ahead of the list.
+
+    Only where the OLD rule could have written it: the line's own qty is
+    past the fat class's range at this table. A "2 tbsp" the writer gave a
+    "1/2 cup" line for four is the writer's (review, 2026-10-25), even when
+    it happens to equal the table's guess.
     """
     if not _is_spread_butter(item) or not qty or stored == qty or _quantity_problem(item, qty):
+        return False
+    parsed = _parse_cook_qty(qty)
+    family = _check_family(parsed[1], "fat") if parsed else None
+    fat_ranges = next(ranges for name, _words, ranges in _PLAUSIBLE_PER_SERVING if name == "fat")
+    if not family or family[0] not in fat_ranges:
+        return False
+    if parsed[0] * family[1] / _servings_or_base(servings) <= fat_ranges[family[0]][1]:
         return False
     return stored == cooking_quantity(item, servings=_servings_or_base(servings), shopping_qty=qty)
 

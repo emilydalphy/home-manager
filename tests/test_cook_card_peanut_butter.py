@@ -10,9 +10,10 @@ held it to the fat range, 2 tbsp a head, so the pre-save pass wrote a
 cook_qty of "1 tbsp" (the table's guess for two) onto a line whose own
 amount was right for a peanut sauce. The list and the steps said 1/3 cup;
 the cook card said 1 tbsp. Tahini, the same kind of paste, has no class and
-was never touched. The fix puts nut, seed and fruit butters beside "sugar
-snap" in _NOT_THIS_CLASS, and the cook card stops reading the old guess on
-a recipe saved before the fix.
+was never touched. The fix gives nut, seed and fruit butters a "spread"
+class of their own (up to 1/4 cup / 70 g a head, so a whole jar is still
+caught), and the cook card stops reading the old guess on a recipe saved
+before the fix — only where the old fat range could have written it.
 """
 from __future__ import annotations
 
@@ -31,7 +32,7 @@ STEPS = [
 ]
 
 
-def _bowl(peanut: dict):
+def _bowl(peanut: dict, servings: int = 2, steps: list[str] = STEPS):
     tools.add_member("Alex")
     tools.add_member("Sam")
     tools.add_recipe(
@@ -42,8 +43,8 @@ def _bowl(peanut: dict):
             {"item": "Rice", "qty": "1 cup"},
             {"item": "Butter", "qty": "1 stick"},
         ],
-        default_servings=2,
-        instructions=STEPS,
+        default_servings=servings,
+        instructions=steps,
     )
 
 
@@ -107,3 +108,29 @@ def test_the_morning_report_has_no_line_for_it():
     assert _recipes.check_steps_ingredients_consistency(
         entry["ingredients"][:1], STEPS, 2,
     )["amount_mismatches"] == []
+
+
+def test_a_cook_amount_the_writer_gave_a_line_the_old_rule_passed_is_kept():
+    """Review, 2026-10-25 (repro C): "1/2 cup" for four is 2 tbsp a head,
+    inside the old fat range, so a "2 tbsp" cook_qty on it is the writer's
+    — even though it equals the table's guess — and cooked for two it is
+    the 1 tbsp the step says."""
+    _bowl({"item": "Peanut butter", "qty": "1/2 cup", "cook_qty": "2 tbsp"}, servings=4,
+          steps=["Stir 2 tbsp peanut butter into the noodles.", "Cook the chicken thighs with the rice."])
+
+    assert _card()["Peanut butter"] == "1 tbsp"
+
+
+def test_a_spread_still_has_a_ceiling():
+    """A whole jar of peanut butter for celery sticks is still caught —
+    spreads are judged by their own range, not none."""
+    assert _recipes.plausible_cooking_quantity("Peanut butter", "16 oz", 4) != "16 oz"
+    assert _recipes.plausible_cooking_quantity("Peanut butter", "2 cups", 2) != "2 cups"
+    assert _recipes.plausible_cooking_quantity("Peanut butter", "1/3 cup", 2) == "1/3 cup"
+
+
+def test_other_spellings_are_spreads_and_butter_beans_are_beans():
+    for name in ("Peanut-butter", "Sunflower butter", "Sesame butter", "Natural peanut butter"):
+        assert _recipes.plausible_cooking_quantity(name, "1/3 cup", 2) == "1/3 cup", name
+    assert _recipes.plausible_cooking_quantity("Butter beans", "1 lb", 2) == "1 lb"
+    assert _recipes.plausible_cooking_quantity("Butter", "1/3 cup", 2) == "1 tbsp"

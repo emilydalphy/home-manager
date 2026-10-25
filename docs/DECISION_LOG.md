@@ -18,10 +18,13 @@ why*, not duplicating the diff.
   `tests/test_cook_card_peanut_butter.py`). `_PLAUSIBLE_PER_SERVING` read the
   "butter" in "Peanut butter" as the fat class (2 tbsp a head), so a Thai peanut
   bowl's "1/3 cup" for two got a cook_qty of "1 tbsp" and the cook card
-  disagreed with the list and steps. Nut/seed/fruit butters (`_SPREAD_BUTTERS`)
-  joined `_NOT_THIS_CLASS`, like tahini; `cooking_ingredients` ignores a saved
-  cook_qty that is exactly the old guess on such a line. Real butter and oils
-  are still clamped — the open "trust the library's own amounts / frying oil"
+  disagreed with the list and steps. Nut/seed/fruit butters (`_SPREAD_BUTTERS`,
+  hyphens read as spaces) are now their own "spread" class, up to 1/4 cup /
+  70 g a head, so a whole jar is still caught; `cooking_ingredients` ignores a
+  saved cook_qty that is exactly the old guess only where the old fat range
+  flagged the line's own qty. "Butter beans" / "butter lettuce" joined
+  `_NOT_THIS_CLASS` (a pound of butter beans for two showed "1 tbsp"). Real
+  butter and oils are still clamped — the open "trust the library's own amounts / frying oil"
   card is a different question and is untouched.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
