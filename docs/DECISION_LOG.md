@@ -13,6 +13,21 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A dish they asked for that fits no night goes on the longest one, and
+  the draft says so** (2026-10-25, snag rule 5; branch
+  `overnight/snag-rule-5-fits-nowhere`; tests
+  `tests/test_draft_fits_no_night.py`). `cap_enforce.place_fits_nowhere`,
+  run before the free trade, trades a typed request that named no day and
+  is over every night's cap onto the longest night (already on one: stays;
+  a tie: the earliest), via `swap_dinner_nights`; `draft_flags.FITS_NOWHERE`
+  says "{Dish} takes {N} minutes, and your longest night is {Day}, so it's
+  there." with no buttons. Why: on main it stayed where the model put it
+  and the draft said "…Wednesday is short on time." about a night nobody
+  chose. A day named in their words (span or the sentence it came from)
+  keeps scenario 3; a longest night it can't reach (out, theirs, vetoed)
+  also leaves scenario 3, which is true of where it is. Not built: a second
+  such dish when the longest night is already taken stays put with
+  scenario 3's line rather than going to the next-longest.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

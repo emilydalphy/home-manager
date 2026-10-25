@@ -61,11 +61,12 @@ and re-dated by half a dozen paths, and a read-time rule is the one place
 that covers every one of them, past and future.
 
 DELIBERATELY NOT BUILT HERE, so nobody reports them as missing:
-  * Scenario 5 (a requested dish that fits NO night goes on the night with
-    the most time, and Pomona says so) and scenarios 1/2 (where a request
-    with no day named should land) are the PLACEMENT half of the card.
-    They want a pass that runs before the flags exist; this file is only
-    the record and the one rule whose data was already sitting there.
+  * Scenarios 1/2 (where a request with no day named should land) are the
+    PLACEMENT half of the card and want a pass that runs before the flags
+    exist. Scenario 5 — a requested dish that fits NO night goes on the
+    night with the most time, and Pomona says so — is built
+    (2026-10-25): cap_enforce.place_fits_nowhere places it, and
+    `FITS_NOWHERE` below is the line, with no fixes.
   * A chain end — a cook that feeds a later night, or the reheat itself —
     is never flagged. cap_enforce's own docstring names the over-cap
     chain source as its biggest open hole and Emily's call; widening into
@@ -96,6 +97,12 @@ LATE_REQUEST = "late_request"
 # nothing fit the meal's time (dinner_gaps.break_long_runs). Said, never
 # silent (review, 2026-09-27). No fixes: the row's own Swap is the way out.
 RUN_LEFT = "run_left"
+
+# Emily's rule 5 (2026-09-23): a dish they asked for, naming no day, that
+# fits no night of the week — cap_enforce.place_fits_nowhere has put it on
+# the longest night, and this is the line that says so. No fixes: none
+# were decided, and the row's own Swap is the way out.
+FITS_NOWHERE = "fits_nowhere"
 
 # What a fix does. Each is an existing write; see the module docstring.
 FIX_PREP_AHEAD = "prep_ahead"
@@ -128,6 +135,14 @@ def over_cap_text(dish: str, minutes: int, meal_date: str) -> str:
     takes 60 minutes, and Wednesday is short on time."
     """
     return f"{dish} takes {int(minutes)} minutes, and {_weekday(meal_date)} is short on time."
+
+
+def fits_nowhere_text(dish: str, minutes: int, meal_date: str) -> str:
+    """
+    Emily's own sentence, word for word off the decided page: "The braise
+    takes 90 minutes, and your longest night is Sunday, so it's there."
+    """
+    return f"{dish} takes {int(minutes)} minutes, and your longest night is {_weekday(meal_date)}, so it's there."
 
 
 def late_text(dish: str, meal_date: str, slot: str, moved: bool = False) -> str:
@@ -407,6 +422,16 @@ def plan_flags(weekly_plan_id: int, intake: dict | None = None,
             continue  # the work is done; the producer's own rule, asked again here
         if not night.get("over"):
             continue  # it fits now — somebody solved it another way
+        if flag.get("kind") == FITS_NOWHERE:
+            if _on_longest_night(night, nights):
+                live.append({**flag, "fixes": []})
+                continue
+            # The week changed under it (a night freed up, a tag came
+            # off): "your longest night is Sunday" is no longer true, but
+            # the dish is still over the night it is on — so it is said
+            # the way scenario 3 says it, with that scenario's fixes.
+            flag = {**flag, "kind": OVER_CAP_REQUEST,
+                    "text": over_cap_text(flag.get("dish") or night.get("meal") or "", night["minutes"], night["date"])}
         live.append({**flag, "fixes": fixes_for(night, nights)})
     return live
 
@@ -593,6 +618,20 @@ def flags_for_kept_over_cap(nights: list[dict]) -> list[dict]:
         minutes = night.get("minutes")
         if not dish or not minutes:
             continue
+        if derived.get(_FITS_NOWHERE_KEY) and _on_longest_night(night, nights):
+            # Rule 5, decided off the live week like everything else here:
+            # placed by cap_enforce.place_fits_nowhere, and still on a
+            # longest night of a week it fits nowhere in.
+            flags.append({
+                "kind": FITS_NOWHERE,
+                "text": fits_nowhere_text(dish, minutes, night["date"]),
+                "entry_id": night["id"],
+                "date": night["date"],
+                "slot": "dinner",
+                "dish": dish,
+                "fixes": [],
+            })
+            continue
         flags.append({
             "kind": OVER_CAP_REQUEST,
             "text": over_cap_text(dish, minutes, night["date"]),
@@ -646,6 +685,22 @@ def fixes_for(night: dict, nights: list[dict]) -> list[dict]:
     return fixes
 
 
+# cap_enforce.FITS_NOWHERE_KEY, spelled here: that module imports this one.
+_FITS_NOWHERE_KEY = "fits_nowhere"
+
+
+def _on_longest_night(night: dict, nights: list[dict]) -> bool:
+    """Whether this dish fits no night of the week and sits on one of the
+    longest — cap_enforce's own reading (lazily imported; it imports this
+    module), so the line and the placement can't disagree."""
+    try:
+        from . import cap_enforce as _cap_enforce
+        return night["date"] in (_cap_enforce.longest_nights(night, nights) or [])
+    except Exception:
+        logger.exception("Reading the longest night for %s failed", night.get("meal"))
+        return False
+
+
 def _theirs(derived: dict) -> bool:
     # Lazy, and through meal_variety rather than a second reading of the
     # same keys: "the household spoke for this night" is one rule, and two
@@ -692,7 +747,7 @@ def refresh(weekly_plan_id: int, moved_ids: list[int] | None = None) -> None:
     stored = _stored(weekly_plan_id)
     kept = []
     for flag in stored:
-        if flag.get("kind") == OVER_CAP_REQUEST and flag.get("entry_id") in moved:
+        if flag.get("kind") in (OVER_CAP_REQUEST, FITS_NOWHERE) and flag.get("entry_id") in moved:
             continue  # re-derived below
         if flag.get("kind") == RUN_LEFT and not _still_in_a_long_run(weekly_plan_id, flag):
             continue

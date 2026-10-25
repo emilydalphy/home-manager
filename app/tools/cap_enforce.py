@@ -476,6 +476,209 @@ def _note_move(moved: list[dict], caps: dict[str, int | None]) -> None:
         conn.close()
 
 
+# ---------- a dish they asked for that fits no night (Emily's rule 5) ----------
+#
+# "A requested dish that fits no night goes on the night with the most
+# time, and Pomona says so. It's never dropped silently." (2026-09-23.)
+# Before this, such a dish stayed wherever the MODEL had put it — `theirs`
+# makes it untouchable to both stages below — and the draft said
+# scenario 3's "Braise takes 90 minutes, and Wednesday is short on time."
+# about a Wednesday nobody chose, with no move to offer (no night fits).
+# Telling the generator is not the same as preventing it, so this is code.
+#
+# What is stamped on the row: that it was placed by this rule, and the
+# night it was on before. The draft's line is still decided off the live
+# week (draft_flags.flags_for_kept_over_cap); the stamp only answers the
+# one question the week can't — did their words name a day?
+FITS_NOWHERE_KEY = "fits_nowhere"
+
+# A day their words named. Full names and the unambiguous short forms only
+# — "sun", "sat", "mon" and "wed" are left out because "sun-dried" reads
+# as a day to a regex — plus the words that name a day without a weekday
+# in them. Erring toward "a day was named" is the safe direction: that
+# dish keeps scenario 3's behaviour, which is to stay where it is.
+_NAMED_DAY_RE = re.compile(
+    r"\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday|tues|weds|thurs|fri"
+    r"|today|tonight|tomorrow|weekend|weekends)\b",
+    re.IGNORECASE,
+)
+_SENTENCE_SPLIT_RE = re.compile(r"[.;!?\n]+")
+
+
+def named_a_day(derived: dict, asks: tuple[str | None, ...] = ()) -> bool:
+    """
+    Did the household's own words for this dish name a day? Read off the
+    span the model cited (derived_from.freeform) AND every sentence of
+    their words that span came from — the model often quotes half a
+    sentence ("a braise" out of "a braise on Sunday please"), and the half
+    it dropped is the half that matters here. A dish moved onto a day
+    their words named (`moved_for`, typed_requests.place_day_requests)
+    always named one.
+    """
+    derived = derived if isinstance(derived, dict) else {}
+    if derived.get("moved_for"):
+        return True
+    span = str(derived.get("freeform") or "").strip()
+    if _NAMED_DAY_RE.search(span):
+        return True
+    from . import draft_opener as _draft_opener  # lazy: it reaches back through meal_variety
+    for text in asks or ():
+        for sentence in _SENTENCE_SPLIT_RE.split(text or ""):
+            if sentence.strip() and _draft_opener._cited(sentence, span) and _NAMED_DAY_RE.search(sentence):
+                return True
+    return False
+
+
+def longest_nights(night: dict, rows: list[dict]) -> list[str] | None:
+    """
+    The week's longest nights, earliest first, when this dish fits NONE of
+    its nights; None when it fits one (or its minutes are unknown).
+
+    "The week's nights" are the dinners someone is home for that are still
+    to come: a `planned_empty` night is not a night (CLAUDE.md, "a meal
+    slot is never absent"), and a night already gone is not somewhere a
+    dinner can go. An `open` night counts — it is a night they're home —
+    so a longer open night makes "your longest night is Sunday" false
+    rather than quietly skipped; place_fits_nowhere can't reach it and
+    leaves the dish where it is. The dish's own night always counts. An
+    uncapped night has all the time there is, so the dish fits it.
+    """
+    minutes = night.get("minutes")
+    if not minutes:
+        return None
+    caps: dict[str, int] = {}
+    for row in rows:
+        if row.get("slot_state") == "planned_empty":
+            continue
+        if row["date"] != night["date"] and _weekly_plan.night_has_gone(row["date"]):
+            continue
+        cap = row.get("cap")
+        if not cap or minutes <= cap:
+            return None
+        caps[row["date"]] = cap
+    if not caps:
+        return None
+    most = max(caps.values())
+    return sorted(d for d, cap in caps.items() if cap == most)
+
+
+def fits_nowhere_candidate(night: dict, asks: tuple[str | None, ...] = ()) -> bool:
+    """A dinner they TYPED (rule 5 is about a dish they asked for, not one
+    brought over or a frozen portion), naming no day, still to cook, and
+    not either end of a chain (see the module docstring on chains)."""
+    derived = night.get("derived") or {}
+    return (
+        night.get("slot_state") == "planned"
+        and bool((night.get("meal") or "").strip())
+        and (night.get("cooked_status") or "") != "done"
+        and bool(str(derived.get("freeform") or "").strip())
+        and not night.get("reheat") and not night.get("source")
+        and not named_a_day(derived, asks)
+    )
+
+
+def _stamp(entry_id: int, key: str, value) -> None:
+    """One key onto one row's derived_from, in its own connection — after
+    any swap's transaction has committed (see _note_move)."""
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            "SELECT derived_from_json FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+            (entry_id, household_id()),
+        ).fetchone()
+        if row is None:
+            return
+        try:
+            derived = json.loads(row["derived_from_json"] or "{}") or {}
+        except (TypeError, ValueError):
+            derived = {}
+        derived[key] = value
+        conn.execute(
+            "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?",
+            (json.dumps(derived), entry_id, household_id()),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def place_fits_nowhere(plan_id: int, intake: dict | None, memory: dict | None,
+                       asks: tuple[str | None, ...] = ()) -> list[dict]:
+    """
+    Rule 5: put each dish they asked for, naming no day, that fits none of
+    the week's nights on the longest one — by TRADING it with that night's
+    dinner through swap_dinner_nights, the write stage 1 uses (rows
+    re-dated in place, so groceries, sides and defrosts ride along and the
+    week's dish count is unchanged). Runs BEFORE stage 1, so the dish that
+    comes back to the short night is the app's to trade on or re-pick.
+
+    THE TIE-BREAK, and why: when the dish is already on one of the longest
+    nights it stays — nothing needs to move, and the model's placement is
+    as good as any equal night. Otherwise it goes to the EARLIEST of the
+    tied longest nights: deterministic, so a test can name the answer, and
+    of two equal nights the earlier is nearer the shop, so a long cook
+    gets the freshest ingredients.
+
+    A longest night it cannot reach — someone there has said no to the
+    dish, that night's dinner is theirs, cooked or half of a chain, it is
+    an open night, or the swap refuses — is skipped for the next tied one.
+    When none is reachable the dish stays where it was, UNSTAMPED, and the
+    draft says scenario 3's line instead, which is true of where it is.
+    Allergens cannot change under a move (module docstring). Never raises.
+    """
+    placed: list[dict] = []
+    done: set[int] = set()
+    for _ in range(_MAX_TRADES):
+        try:
+            rows = nights(plan_id, intake, memory)
+        except Exception:
+            logger.exception("Plan %s: reading the week for a dish that fits no night failed", plan_id)
+            break
+        night, longest = None, None
+        for row in rows:
+            if row["id"] in done or not fits_nowhere_candidate(row, asks):
+                continue
+            longest = longest_nights(row, rows)
+            if longest:
+                night = row
+                break
+        if night is None:
+            break
+        done.add(night["id"])
+        try:
+            if night["date"] in longest:
+                _stamp(night["id"], FITS_NOWHERE_KEY, {"from": night["date"]})
+                placed.append({"meal": night["meal"], "from": night["date"], "to": night["date"]})
+                continue
+            by_date = {r["date"]: r for r in rows}
+            for target in longest:
+                there = by_date.get(target)
+                if there is None or not there["movable"]:
+                    continue
+                offends = would_offend(night["meal"], target) or would_offend(there["meal"], night["date"])
+                if offends:
+                    logger.info("Plan %s: not putting %s on %s — %s", plan_id, night["meal"], target, offends)
+                    continue
+                try:
+                    result = _weekly_plan.swap_dinner_nights(plan_id, night["date"], target)
+                except ValueError as exc:
+                    logger.info("Plan %s: %s and %s would not trade — %s", plan_id, night["date"], target, exc)
+                    continue
+                if result.get("status") != "swapped":
+                    logger.info("Plan %s: %s and %s would not trade — %s",
+                                plan_id, night["date"], target, result.get("message") or "refused")
+                    continue
+                _note_move(result.get("moved") or [], {r["date"]: r["cap"] for r in rows})
+                _stamp(night["id"], FITS_NOWHERE_KEY, {"from": night["date"]})
+                placed.append({"meal": night["meal"], "from": night["date"], "to": target})
+                logger.info("Plan %s: %s (%s min) fits no night; moved %s -> %s, the longest",
+                            plan_id, night["meal"], night["minutes"], night["date"], target)
+                break
+        except Exception:
+            logger.exception("Plan %s: putting %s on its longest night failed", plan_id, night["meal"])
+    return placed
+
+
 def rearrange(plan_id: int, intake: dict | None, memory: dict | None) -> list[dict]:
     """
     Trade the week's own dinners between its own nights until no trade
@@ -856,8 +1059,17 @@ def enforce_minutes_caps(plan_id: int, intake: dict | None, memory: dict | None,
     moved: list[dict] = []
     repicked: list[dict] = []
     stood: dict[int, str] = {}  # meals a re-pick never tried, and why
+    # Rule 5 first: a dish they asked for that fits no night goes on the
+    # longest one, so the dinner it trades onto the short night is there
+    # in time for stage 1 and 2 to put right.
     try:
-        moved = rearrange(plan_id, intake, memory)
+        moved = [{"from": p["from"], "to": p["to"], "fits_nowhere": True,
+                  "moved": [{"meal": p["meal"], "from": p["from"], "to": p["to"]}]}
+                 for p in place_fits_nowhere(plan_id, intake, memory, asks) if p["from"] != p["to"]]
+    except Exception:
+        logger.exception("Plan %s: placing a dish that fits no night failed", plan_id)
+    try:
+        moved += rearrange(plan_id, intake, memory)
     except Exception:
         logger.exception("Plan %s: re-arranging the week around its time caps failed", plan_id)
     try:
