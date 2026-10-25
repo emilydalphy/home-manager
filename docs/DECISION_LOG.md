@@ -23,6 +23,8 @@ why*, not duplicating the diff.
   created day) can replace a told cadence. And purchases under
   `MIN_CADENCE_DAYS` apart count as one restock, because weekly milk plus one
   top-up learned [7, 2] → "about every 4 days" at the first learning.
+  Review round: the told-day filter applies whatever the source, so a year of
+  monthly gaps can't pull a learned-since-telling 60 back to 30.
 
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests

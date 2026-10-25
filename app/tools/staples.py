@@ -617,10 +617,12 @@ def _relearn(conn, staple_id: int) -> None:
     pairs = list(zip(restocks, restocks[1:]))
     cadence = r["cadence_days"]
     source = r["cadence_source"]
-    if source == "told":
-        told_on = _told_on(conn, r)
-        if told_on is not None:
-            pairs = [(a, b) for a, b in pairs if b > told_on]
+    # Measured from the newest telling whatever the source now says: once
+    # two gaps since it have made the rhythm "learned", the gaps from
+    # before it must not pull it back on the next purchase (review round).
+    told_on = _told_on(conn, r, fallback=(source == "told"))
+    if told_on is not None:
+        pairs = [(a, b) for a, b in pairs if b > told_on]
     intervals = [(b - a).days for a, b in pairs if (b - a).days > 0]
     if len(intervals) >= INTERVALS_TO_LEARN:
         cadence = _clamp(round(statistics.median(intervals)))
@@ -635,15 +637,19 @@ def _relearn(conn, staple_id: int) -> None:
     )
 
 
-def _told_on(conn, r) -> date | None:
+def _told_on(conn, r, fallback: bool = True) -> date | None:
     """The day the household last told this staple's cadence: its newest
-    'told' event, or — for a staple told before that event was written —
-    the day the staple was made, which is when most cadences are told."""
+    'told' event, or — with `fallback`, for a staple still on a cadence
+    told before that event was written — the day the staple was made,
+    which is when most cadences are told. None when never told."""
     row = conn.execute(
         "SELECT MAX(on_date) AS d FROM staple_events WHERE household_id = ? AND staple_id = ? AND kind = 'told'",
         (household_id(), r["id"]),
     ).fetchone()
-    return _parse(row["d"] if row else None) or _parse(r["created_at"])
+    told = _parse(row["d"] if row else None)
+    if told is None and fallback:
+        told = _parse(r["created_at"])
+    return told
 
 
 def _seed_history(conn, staple_id: int, item: str, except_line_id: int | None = None) -> int:
@@ -757,7 +763,7 @@ def add_staple(
             params.append(_clamp(every_days))
             # When it was told is what _relearn measures against: only
             # purchases after this can overrule it.
-            _event(conn, staple_id, "told", "chat")
+            _event(conn, staple_id, "told", "chat", today)
         if quantity:
             fields.append("quantity = ?")
             params.append(quantity)
@@ -789,7 +795,7 @@ def add_staple(
         staple_id = cur.lastrowid
         _event(conn, staple_id, "added", "chat")
         if every_days:
-            _event(conn, staple_id, "told", "chat")
+            _event(conn, staple_id, "told", "chat", today)
         seeded = _seed_history(conn, staple_id, name)
         if seeded >= INTERVALS_TO_LEARN + 1:
             # Enough history to learn from: let the learned cadence and

@@ -83,6 +83,29 @@ def test_a_told_rhythm_outlives_the_next_purchase():
         assert (s["cadence_source"], s["cadence_days"]) == ("learned", 60)
 
 
+def test_a_year_of_old_gaps_does_not_pull_a_told_rhythm_back_once_learned():
+    """Review round. Twelve monthly buys, then "every two months": once two
+    gaps since make it learned at 60, the next buys must not relearn from
+    the whole year and fall back to 30."""
+    with on(0):
+        tools.add_staple("Paper towels", category="household")
+    for n in range(30, 361, 30):
+        with on(n):
+            buy("Paper towels")
+    with on(361):
+        assert staple("Paper towels")["cadence_days"] == 30
+        tools.add_staple("Paper towels", every_days=60)
+    seen = []
+    for n in (420, 480, 540, 600):
+        with on(n):
+            buy("Paper towels")
+            s = staple("Paper towels")
+            seen.append((s["cadence_source"], s["cadence_days"]))
+    assert seen == [("told", 60), ("learned", 60), ("learned", 60), ("learned", 60)]
+    with on(600):
+        assert staple("Paper towels")["next_due_at"] == iso(660)
+
+
 def test_purchases_after_the_telling_still_overrule_it():
     """Told every two months, still bought monthly: the shopping wins once it
     has shown two gaps since — the told number is not a lock."""
