@@ -28,6 +28,11 @@ why*, not duplicating the diff.
   also leaves scenario 3, which is true of where it is. Not built: a second
   such dish when the longest night is already taken stays put with
   scenario 3's line rather than going to the next-longest.
+  Review round: short day forms ("Wed", "thu") count as a named day
+  ("sun-dried" does not); only the clause about THIS dish counts ("tacos on
+  Friday" no longer pins the braise), and a day inside the dish's name
+  ("Sunday Roast") is not one; `POST /swap-nights` and its undo now
+  re-say the draft's lines (`draft_flags.refresh`), as Move already did.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

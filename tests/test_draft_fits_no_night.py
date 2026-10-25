@@ -175,3 +175,76 @@ def test_moved_off_its_longest_night_by_hand_it_is_said_as_scenario_3(capped, st
 
     texts = [f["text"] for f in draft_flags.plan_flags(plan_id)]
     assert texts == ["Long Braise takes 90 minutes, and Tuesday is short on time."]
+
+
+# ---------------------------------------------------------------- review, 2026-10-25
+
+def test_a_day_typed_short_is_still_a_day_named(capped, stub_model, run):
+    """CATCH (review: "Long braise Wed please" moved the braise to
+    Saturday). A short form is a day; a named day outranks a time limit."""
+    week = _monday()
+    dates = tools._week_dates(week)
+    _filler()
+    _recipe("Long Braise", 90)
+    _recipe("Quick Eggs", 10)
+    _busy_week(week, dates, freeform="Long braise Wed please")
+    stub_model(_week(dates, ["Quick Eggs"] * 2 + ["Long Braise"] + ["Quick Eggs"] * 4,
+                     **{dates[2]: _asked("Long braise")}))
+
+    plan_id, _ = run(week, None)
+
+    assert _by_date(plan_id)[dates[2]]["meal"] == "Long Braise"
+    assert [f["text"] for f in draft_flags.plan_flags(plan_id)] == [
+        "Long Braise takes 90 minutes, and Wednesday is short on time."
+    ]
+
+
+def test_a_day_named_for_another_dish_does_not_pin_this_one(capped, stub_model, run):
+    """CATCH (review: Friday was the tacos', and it kept the braise off
+    rule 5). Only the clause about this dish counts."""
+    week = _monday()
+    dates = tools._week_dates(week)
+    _filler()
+    _recipe("Long Braise", 90)
+    _recipe("Quick Eggs", 10)
+    said = "A long braise sometime, and tacos on Friday"
+    _busy_week(week, dates, freeform=said)
+    stub_model(_week(dates, ["Quick Eggs"] * 2 + ["Long Braise"] + ["Quick Eggs"] * 4,
+                     **{dates[2]: _asked("A long braise sometime")}))
+
+    plan_id, _ = run(week, None)
+
+    assert _by_date(plan_id)[dates[5]]["meal"] == "Long Braise"
+    assert [f["text"] for f in draft_flags.plan_flags(plan_id)] == [
+        "Long Braise takes 90 minutes, and your longest night is Saturday, so it's there."
+    ]
+
+
+def test_a_day_inside_the_dish_name_is_not_a_day_named():
+    """GUARD on the name carve-out, and on "sun-dried"."""
+    from app.tools.cap_enforce import named_a_day
+    assert not named_a_day({"freeform": "Sunday roast please"}, (), "Sunday Roast")
+    assert named_a_day({"freeform": "Sunday roast on Sunday"}, (), "Sunday Roast")
+    assert not named_a_day({"freeform": "sun-dried tomato pasta"}, (), "Tomato Pasta")
+    assert named_a_day({"freeform": "braise on thu"}, (), "Long Braise")
+
+
+def test_swapping_nights_by_hand_re_says_the_line(capped, stub_model, run, signed_in):
+    """CATCH (review: the swap-nights route never refreshed the flags, so a
+    swap that put the braise on a short night said nothing until Undo)."""
+    week = _monday()
+    dates = tools._week_dates(week)
+    _filler()
+    _recipe("Long Braise", 90)
+    _recipe("Quick Eggs", 10)
+    _busy_week(week, dates, out=dates[5], freeform="A long braise this week")
+    stub_model(_week(dates, ["Quick Eggs"] * 6 + ["Long Braise"],
+                     **{dates[6]: _asked("A long braise this week")}))
+    plan_id, _ = run(week, None)
+
+    res = signed_in.post(f"/api/week/{week}/swap-nights", json={"date_a": dates[6], "date_b": dates[1]})
+    assert res.status_code == 200 and res.json()["status"] == "swapped", res.text
+
+    assert [f["text"] for f in draft_flags.plan_flags(plan_id)] == [
+        "Long Braise takes 90 minutes, and Tuesday is short on time."
+    ]

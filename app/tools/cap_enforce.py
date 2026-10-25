@@ -492,41 +492,82 @@ def _note_move(moved: list[dict], caps: dict[str, int | None]) -> None:
 # one question the week can't — did their words name a day?
 FITS_NOWHERE_KEY = "fits_nowhere"
 
-# A day their words named. Full names and the unambiguous short forms only
-# — "sun", "sat", "mon" and "wed" are left out because "sun-dried" reads
-# as a day to a regex — plus the words that name a day without a weekday
-# in them. Erring toward "a day was named" is the safe direction: that
-# dish keeps scenario 3's behaviour, which is to stay where it is.
+# A day their words named: full names, every short form a person types
+# ("Wed", "thu", "Tues"), and the words that name a day without a weekday
+# in them. A short form directly followed by a hyphen is not a day —
+# "sun-dried" — though a range ("Mon-Thu") still names its far end. "sat"
+# the verb and "sun" the noun standing alone are rare in a dinner request
+# and are ACCEPTED as days, deliberately: when unsure, a named day
+# outranks a time limit, so the dish stays where they put it (scenario 3)
+# rather than being moved.
 _NAMED_DAY_RE = re.compile(
-    r"\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday|tues|weds|thurs|fri"
-    r"|today|tonight|tomorrow|weekend|weekends)\b",
+    r"\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday"
+    r"|mon|tue|tues|wed|weds|thu|thur|thurs|fri|sat|sun"
+    r"|today|tonight|tomorrow|weekend|weekends)\b(?!-)",
     re.IGNORECASE,
 )
 _SENTENCE_SPLIT_RE = re.compile(r"[.;!?\n]+")
+# One request inside a sentence: "a long braise sometime, and tacos on
+# Friday" is two, and Friday belongs to the tacos.
+_CLAUSE_SPLIT_RE = re.compile(r"[,;:\n]+|\band\b|\bbut\b|\bplus\b", re.IGNORECASE)
+_WORD_RE = re.compile(r"[a-z]+")
+_NOT_A_NAME_WORD = {"with", "and", "the", "for", "from", "into", "over", "style"}
 
 
-def named_a_day(derived: dict, asks: tuple[str | None, ...] = ()) -> bool:
+def _stem(word: str) -> str:
+    word = word.lower()
+    return word[:-1] if len(word) > 3 and word.endswith("s") else word
+
+
+def _name_stems(meal: str | None) -> set[str]:
+    return {_stem(w) for w in _WORD_RE.findall((meal or "").lower())
+            if len(w) >= 3 and w not in _NOT_A_NAME_WORD}
+
+
+def _names_a_day_outside_the_dish(clause: str, stems: set[str]) -> bool:
+    """A day word in this clause that is not part of the dish's own name —
+    "Sunday Roast" and "Taco Tuesday" are dishes, not days. Each name word
+    is taken out ONCE, so "Sunday roast on Sunday" still names Sunday."""
+    # Hyphenated words stay whole, so "sun-dried" never loses the hyphen
+    # that tells _NAMED_DAY_RE it is not a day.
+    words = re.findall(r"[a-z]+(?:-[a-z]+)*", clause.lower())
+    for stem in stems:
+        for i, w in enumerate(words):
+            if _stem(w) == stem:
+                del words[i]
+                break
+    return bool(_NAMED_DAY_RE.search(" ".join(words)))
+
+
+def named_a_day(derived: dict, asks: tuple[str | None, ...] = (), meal: str | None = None) -> bool:
     """
-    Did the household's own words for this dish name a day? Read off the
+    Did the household's own words for THIS dish name a day? Read off the
     span the model cited (derived_from.freeform) AND every sentence of
     their words that span came from — the model often quotes half a
-    sentence ("a braise" out of "a braise on Sunday please"), and the half
-    it dropped is the half that matters here. A dish moved onto a day
-    their words named (`moved_for`, typed_requests.place_day_requests)
-    always named one.
+    sentence ("a braise" out of "a braise Wed please"), and the half it
+    dropped is the half that matters here. A dish moved onto a day their
+    words named (`moved_for`, typed_requests.place_day_requests) always
+    named one.
+
+    Only the CLAUSE about this dish counts (review, 2026-10-25): "a long
+    braise sometime, and tacos on Friday" names Friday for the tacos, not
+    the braise. A clause is about the dish when it shares a word with the
+    dish's name; when no clause does, every clause counts — unsure leans
+    to "a day was named", which leaves the dish where they put it.
     """
     derived = derived if isinstance(derived, dict) else {}
     if derived.get("moved_for"):
         return True
     span = str(derived.get("freeform") or "").strip()
-    if _NAMED_DAY_RE.search(span):
-        return True
     from . import draft_opener as _draft_opener  # lazy: it reaches back through meal_variety
-    for text in asks or ():
-        for sentence in _SENTENCE_SPLIT_RE.split(text or ""):
-            if sentence.strip() and _draft_opener._cited(sentence, span) and _NAMED_DAY_RE.search(sentence):
-                return True
-    return False
+    texts = [span] + [
+        sentence for text in asks or () for sentence in _SENTENCE_SPLIT_RE.split(text or "")
+        if sentence.strip() and _draft_opener._cited(sentence, span)
+    ]
+    clauses = [c for t in texts for c in _CLAUSE_SPLIT_RE.split(t) if c and c.strip()]
+    stems = _name_stems(meal)
+    mine = [c for c in clauses if stems & {_stem(w) for w in _WORD_RE.findall(c.lower())}]
+    return any(_names_a_day_outside_the_dish(c, stems) for c in (mine or clauses))
 
 
 def longest_nights(night: dict, rows: list[dict]) -> list[str] | None:
@@ -573,7 +614,7 @@ def fits_nowhere_candidate(night: dict, asks: tuple[str | None, ...] = ()) -> bo
         and (night.get("cooked_status") or "") != "done"
         and bool(str(derived.get("freeform") or "").strip())
         and not night.get("reheat") and not night.get("source")
-        and not named_a_day(derived, asks)
+        and not named_a_day(derived, asks, night.get("meal"))
     )
 
 
