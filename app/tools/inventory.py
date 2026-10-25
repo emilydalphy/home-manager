@@ -143,13 +143,24 @@ def _freezer_door_date(row: dict, to_location: str) -> str | None:
     was = _quantities._display_location(row).strip().lower()
     today = _today()
     if to_location == "freezer" and was != "freezer":
+        # Food already past its date stays past it: a freezer does not
+        # unspoil salmon, and re-dating it took the "past" warning away
+        # (review, 2026-10-25). Coming OUT, a past date is re-dated all
+        # the same: on a freezer row it is almost always the fridge
+        # estimate it was bought with, passing while it sat frozen — the
+        # bug this rule exists for — and nothing on the row tells the two
+        # apart.
+        if (row.get("expiration_date") or "9999") < today.isoformat():
+            return None
         frozen = (today + timedelta(days=_quantities._DEFAULT_SHELF_LIFE_DAYS["frozen"])).isoformat()
         return None if (row.get("expiration_date") or "") > frozen else frozen
     if was == "freezer" and to_location != "freezer":
         days = _quantities._item_shelf_life_match(row.get("item") or "")
         if days is None:
             category = row.get("category") or "other"
-            days = THAWED_KEEPS_DAYS if category == "frozen" else _quantities._DEFAULT_SHELF_LIFE_DAYS.get(category, THAWED_KEEPS_DAYS)
+            # "other" too: its 14 days is a guess for an unknown thing on a
+            # shelf, not for a thawed lasagna (review, 2026-10-25).
+            days = THAWED_KEEPS_DAYS if category in ("frozen", "other") else _quantities._DEFAULT_SHELF_LIFE_DAYS.get(category, THAWED_KEEPS_DAYS)
         return (today + timedelta(days=days)).isoformat()
     return None
 
@@ -290,7 +301,16 @@ def _find_row_by_name(conn, item: str, location: str | None, columns: str):
     ).fetchone()
 
 
-def _new_row_category(item: str, category: str | None) -> str:
+# Names whose fresh-sounding word is not the food on the shelf: canned
+# tuna is not fresh fish, cream of mushroom soup is not cream, chicken
+# nuggets and leftover chili are cooked food (review, 2026-10-25).
+_NOT_FRESH_WORDS_RE = re.compile(
+    r"\b(canned|can|cans|tinned|tin|tins|jar|jarred|soup|soups|nuggets?|leftovers?|"
+    r"dried|powder(ed)?|broth|stock|sauce|instant|boxed|mix)\b"
+)
+
+
+def _new_row_category(item: str, category: str | None, location: str | None = None) -> str:
     """
     The category a NEW inventory row is written with when nobody gave one.
 
@@ -303,14 +323,36 @@ def _new_row_category(item: str, category: str | None) -> str:
     frozen; its fallback for a name it does not know is "pantry", and a
     pantry row is dated six months out, so an unknown name stays "other"
     (two weeks) as before.
+
+    And only a read that agrees with the shelf the household chose (the
+    form always sends one). "Canned tuna" read as meat/seafood went in the
+    pantry dated three days out and was "turning soon" by the weekend
+    (_GUESS_SHELVES). A name with a not-fresh word in it
+    (_NOT_FRESH_WORDS_RE) is never guessed.
     """
     if category:
         return category
+    name = (item or "").strip().lower()
+    if not name or _NOT_FRESH_WORDS_RE.search(name):
+        return "other"
     # Imported here: recipe_import imports the tools package.
     from .. import recipe_import as _recipe_import
 
-    guess = _recipe_import.guess_category(item or "")
-    return guess if guess in ("produce", "dairy", "meat/seafood", "frozen") else "other"
+    guess = _recipe_import.guess_category(name)
+    if guess not in ("produce", "dairy", "meat/seafood", "frozen"):
+        return "other"
+    where = (location or "").strip().lower()
+    if where and where not in _GUESS_SHELVES[guess]:
+        return "other"
+    return guess
+
+
+# Where each guessed category may be kept for the guess to stand. Meat is
+# frozen as often as not; produce or dairy in the pantry is a can or a box.
+_GUESS_SHELVES = {
+    "produce": {"fridge"}, "dairy": {"fridge"},
+    "meat/seafood": {"fridge", "freezer"}, "frozen": {"freezer"},
+}
 
 
 def _estimated_date(category: str, item: str, location: str) -> str:
@@ -324,6 +366,15 @@ def _estimated_date(category: str, item: str, location: str) -> str:
     """
     if (location or "").strip().lower() == "freezer":
         return (_today() + timedelta(days=_quantities._DEFAULT_SHELF_LIFE_DAYS["frozen"])).isoformat()
+    name = (item or "").strip().lower()
+    if _NOT_FRESH_WORDS_RE.search(name):
+        # The item table matches substrings, so "cream of mushroom soup"
+        # took mushrooms' five days and "chicken broth" chicken's two
+        # (review, 2026-10-25). Cooked leftovers keep a leftover's days;
+        # anything else canned, jarred or dried keeps its category's.
+        days = THAWED_KEEPS_DAYS if re.search(r"\bleftovers?\b", name) else \
+            _quantities._DEFAULT_SHELF_LIFE_DAYS.get(category, _quantities._DEFAULT_SHELF_LIFE_DAYS["other"])
+        return (_today() + timedelta(days=days)).isoformat()
     return _quantities._estimate_expiration_date(category, item)
 
 
@@ -379,7 +430,7 @@ def _add_to_inventory(
         item_id = existing["id"]
     else:
         before = None
-        item_category = _new_row_category(item, category)
+        item_category = _new_row_category(item, category, location)
         item_location = _quantities._resolve_location(location, item_category)
         cur = conn.execute(
             "INSERT INTO inventory_items (household_id, item, quantity, source, expiration_date, category, location) VALUES (?, ?, ?, ?, ?, ?, ?)",
@@ -520,7 +571,7 @@ def update_inventory(
             conn.commit()
             item_id = existing["id"]
         else:
-            item_category = _new_row_category(item, category)
+            item_category = _new_row_category(item, category, location)
             item_location = _quantities._resolve_location(location, item_category)
             cur = conn.execute(
                 "INSERT INTO inventory_items (household_id, item, quantity, source, category, expiration_date, location) VALUES (?, ?, ?, ?, ?, ?, ?)",

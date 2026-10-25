@@ -201,3 +201,57 @@ def test_one_bad_shelf_in_a_batch_does_not_fail_the_rest():
     assert [bool(r.get("error")) for r in out["updated"]] == [False, True, False]
     names = {r["item"] for r in tools.get_inventory()}
     assert names == {"rice", "oats"}
+
+
+# ---------- review round, 2026-10-25 ----------
+
+@pytest.mark.parametrize("name,location", [
+    ("Canned tuna", "pantry"),
+    ("Cream of mushroom soup", "pantry"),
+    ("Chicken nuggets", "freezer"),
+    ("Leftover chili", "fridge"),
+])
+def test_a_name_guess_that_is_not_the_food_on_the_shelf_stays_other(signed_in, name, location):
+    signed_in.post("/api/inventory/update", json={"item": name, "action": "add", "quantity": "2 cans", "location": location})
+    row = _ids(signed_in)[name]
+    assert row["category"] == "other"
+    if location == "pantry":
+        # Category "other"'s 14 days — not mushrooms' 5 or fish's 2.
+        assert row["expiration_date"] == (household_today() + timedelta(days=14)).isoformat()
+        assert not tools.get_expiring_soon()
+        assert name not in {r["item"] for r in tools.get_fresh_perishable_inventory(near_expiring_days=0)}
+
+
+def test_food_already_past_its_date_is_not_re_dated_by_the_freezer(signed_in):
+    client = signed_in
+    past = (household_today() - timedelta(days=5)).isoformat()
+    client.post("/api/inventory/update", json={"item": "salmon", "action": "add", "quantity": "1 lb",
+                                               "location": "fridge", "expiration_date": past})
+    salmon = _ids(client)["salmon"]
+    res = client.post(f"/api/inventory/{salmon['id']}/location", json={"location": "freezer"}).json()
+    assert "expiration_date" not in res
+    assert _row(salmon["id"])["expiration_date"] == past
+    assert {e["item"]: e["status"] for e in tools.get_expiring_soon()}.get("salmon") in (None, "expired")
+
+
+def test_a_thawed_other_row_keeps_three_days_not_fourteen(signed_in):
+    client = signed_in
+    client.post("/api/inventory/update", json={"item": "Lasagna", "action": "add", "quantity": "1 pan", "location": "freezer"})
+    lasagna = _ids(client)["Lasagna"]
+    assert lasagna["category"] == "other"
+    client.post(f"/api/inventory/{lasagna['id']}/location", json={"location": "fridge"})
+    assert _row(lasagna["id"])["expiration_date"] == (household_today() + timedelta(days=inventory.THAWED_KEEPS_DAYS)).isoformat()
+
+
+def test_octopus_turns_soon(signed_in):
+    tomorrow = (household_today() + timedelta(days=1)).isoformat()
+    signed_in.post("/api/inventory/update", json={"item": "octopus", "action": "add", "quantity": "1",
+                                                  "location": "fridge", "expiration_date": tomorrow})
+    assert [n["title"] for n in tools.get_active_notifications() if n["type"] == "expiring_soon"] == ["Your octopus turns soon"]
+
+
+def test_chicken_broth_in_the_pantry_is_not_dated_like_chicken(signed_in):
+    signed_in.post("/api/inventory/update", json={"item": "chicken broth", "action": "add", "quantity": "1 carton", "location": "pantry"})
+    broth = _ids(signed_in)["chicken broth"]
+    assert broth["category"] == "other"
+    assert broth["expiration_date"] == (household_today() + timedelta(days=14)).isoformat()

@@ -27,7 +27,15 @@ why*, not duplicating the diff.
   Kitchen). Compatible with `overnight/hunt-digest-2026-10-22`'s read-side
   freezer exclusion. A fridge→freezer→fridge mis-tap re-dates the row.
   The bell / morning text said "Your chicken thighs turns soon": the verb now
-  agrees (`typed_requests._is_plural_dish_noun`).
+  agrees (`typed_requests._is_plural_dish_noun`; a Latin -us is one thing).
+  Review round: the name guess stands only on a shelf that fits it
+  (`_GUESS_SHELVES`) and never for a canned/soup/broth/leftover name — canned
+  tuna in the pantry was meat dated 3 days; such names also skip the item
+  table (cream of mushroom soup had mushrooms' 5 days). Spoiled food going
+  INTO the freezer keeps its past date; a past date coming OUT is still
+  re-dated (can't tell it from a bought-fresh fridge estimate). Thawed
+  "other" gets 3 days, not 14. Open: a same-day freezer mis-tap still
+  restarts the date — the original isn't stored.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

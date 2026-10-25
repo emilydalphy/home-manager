@@ -161,7 +161,10 @@ def get_active_notifications() -> list[dict]:
                 # title (defect hunt, 2026-10-25).
                 from .typed_requests import _is_plural_dish_noun
 
-                verb = "turn" if _is_plural_dish_noun(it["item"].strip()) else "turns"
+                name = it["item"].strip()
+                # A Latin -us ("octopus", "asparagus", "hummus") is one thing.
+                plural = _is_plural_dish_noun(name) and not name.lower().endswith("us")
+                verb = "turn" if plural else "turns"
                 title = f"Your {it['item'].strip().lower()} {verb} soon"
                 body = (
                     f"{it['quantity']} — I’ll work it into this week if you’d like."
