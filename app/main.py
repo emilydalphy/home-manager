@@ -9193,10 +9193,27 @@ def _session_adult_id() -> int | None:
     return member["id"] if member else None
 
 
+def _you_are_the_main_person(you_id: int | None) -> bool:
+    """Is the session's adult this household's main person?"""
+    return you_id is not None and tools.primary_member_id() == you_id
+
+
 @app.get("/api/household/invites")
 def household_invites():
-    """Every adult here, and whether each has joined — Preferences' and setup's invite rows."""
-    return {"adults": invites.household_adults_status(tools.household_id(), _session_adult_id())}
+    """
+    Every adult here, and whether each has joined — Preferences' and setup's
+    invite rows. `can_remove` (2026-10-21) is true on every OTHER adult's
+    row, helpers included, when the person looking is the main person and
+    the household can be changed from inside Pomona: that row carries
+    "Take <name> out". The route below checks all of it again.
+    """
+    household = tools.household_id()
+    you_id = _session_adult_id()
+    adults = invites.household_adults_status(household, you_id)
+    main = _you_are_the_main_person(you_id) and not household_deletion.is_protected(household)
+    for a in adults:
+        a["can_remove"] = bool(main and a["id"] != you_id)
+    return {"adults": adults}
 
 
 class InviteRequest(BaseModel):
@@ -9648,6 +9665,64 @@ def remove_me_from_household(request: Request):
             detail="That didn't go through, and nothing was changed. Try again in a moment.",
         )
     return _signed_out({"removed": True, "goodbye": "/goodbye?left=1"}, request)
+
+
+class RemoveMemberRequest(BaseModel):
+    member_id: int = Field(..., ge=1, le=2**63 - 1)  # SQLite binds 64-bit ints only
+
+
+@app.post("/api/household/members/remove")
+def remove_household_member(req: RemoveMemberRequest):
+    """
+    The main person takes another adult — a helper, a former nanny, an
+    ex-partner — out of the household, from that person's row in Who's here
+    (Loop Board, 2026-10-21).
+
+    Only the main person (Emily's open question; this is the default until
+    she answers it): any other adult, or a device that hasn't said who it
+    is, gets 403. Taking yourself out is "Remove me", not this. The person
+    must be an adult in THIS household — anyone else, another household's
+    member included, is 404 and nothing is touched.
+
+    What goes and what stays is exactly "Remove me"
+    (household_deletion.remove_member): their row, their sign-in email and
+    invite links (so a link already sent stops working), their phone's
+    notification rows — and with the row gone every device they were signed
+    in on is signed out at its next request (households.session_still_holds).
+    What they added to the house stays. The person asking stays signed in.
+    """
+    household = tools.household_id()
+    you_id = _session_adult_id()
+    if not _you_are_the_main_person(you_id):
+        raise HTTPException(status_code=403, detail="Only the main person can take someone out of the household.")
+    if req.member_id == you_id:
+        raise HTTPException(status_code=400, detail="To leave yourself, use Remove me.")
+    if household_deletion.is_protected(household):
+        raise HTTPException(status_code=403, detail="This household can't be changed that way from inside Pomona.")
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            "SELECT name FROM members WHERE id = ? AND household_id = ? "
+            "AND LOWER(TRIM(age_group)) = 'adult'",
+            (req.member_id, household),
+        ).fetchone()
+    finally:
+        conn.close()
+    if row is None:
+        raise HTTPException(status_code=404, detail="That person isn't one of the adults here.")
+    try:
+        household_deletion.remove_member(household, req.member_id, by_member_id=you_id)
+    except household_deletion.ProtectedHousehold as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except household_deletion.DeletionRefused as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        logger.exception("Removing member %s from household %s failed", req.member_id, household)
+        raise HTTPException(
+            status_code=500,
+            detail="That didn't go through, and nothing was changed. Try again in a moment.",
+        )
+    return {"removed": True, "name": row["name"]}
 
 
 @app.get("/goodbye")
