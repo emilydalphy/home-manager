@@ -300,6 +300,18 @@ why*, not duplicating the diff.
   SHOPPING qty ("1 bottle" olive oil, butter "6 tbsp" for "1/4 cup + 2 tbsp");
   it now serves `cooking_ingredients` (as the stepper at the recipe's own
   size), `shopping_qty` beside it, nothing stored changed.
+- **Marking a meal nobody-home keeps a cooked dinner, and hands back no
+  meal the household plans none of** (2026-10-22; branch
+  `overnight/hunt-meals-2026-10-22`; tests
+  `tests/test_away_keeps_cooked_and_unplanned.py`). `set_slot_need('away')`
+  deleted a dinner already ticked cooked (or started) and reversed its
+  groceries — every other door keeps one (`cook_begun`); now the need is
+  recorded and the row left. `_reopen_away_slot` turned a lunch under
+  "lunches per week: 0" (or a usual-week off) back into an OPEN "tell me
+  what you'd like" question; it now goes back to `planned_empty` in
+  generation's own words. Past uncooked nights still convert: Emily's call.
+  The week menu drops the away badge and "nothing bought" line off a kept
+  cooked meal.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
