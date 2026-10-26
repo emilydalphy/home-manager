@@ -207,6 +207,15 @@ why*, not duplicating the diff.
   after. `parse_duration_minutes` read "P0Y0M0DT0H35M0.000S" as no time,
   "1 1/2 hours" as 120 and "1h30m" as 30; the ISO date part is read in full
   and the text path takes fractions and "1h30m".
+- **Onboarding refuses a made-up age group; an inside-out away stretch says
+  so in words** (2026-10-21, overnight defect hunt; branch
+  `overnight/onboarding-and-away-guards`; tests
+  `tests/test_onboarding_and_away_guards.py`). `/api/onboarding/household`
+  now holds `age_group` to Settings' list (`_SETTINGS_AGE_GROUPS`, blank
+  still allowed) — it stored "bogus", which drops a person out of every adult
+  check. `set_away_stretch` compares the dates before the slot lookup, which
+  had answered "('…', 'dinner') is not in list". Both were API-only; the UI
+  never sends either.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

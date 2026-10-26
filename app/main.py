@@ -1501,6 +1501,12 @@ def onboarding_household(req: HouseholdOnboardingRequest, request: Request):
     for m in req.members:
         if m.age_years is not None and not 0 <= m.age_years <= tools.household.MAX_AGE_YEARS:
             raise HTTPException(status_code=400, detail=f"{m.name.strip() or 'That'}'s age must be 0 to 120 years.")
+        # Same list Settings' chips are held to (defect hunt 2026-10-21):
+        # this route stored "bogus", which is no age stage anywhere and
+        # drops the person out of every adult check — "Who's this?",
+        # approval credit, the main person. Blank still means "not said".
+        if m.age_group and m.age_group.strip().lower() not in _SETTINGS_AGE_GROUPS:
+            raise HTTPException(status_code=400, detail="Pick Adult, Teen or Child.")
     try:
         saved_ids = []
         # (id, name) for each member this request saved, in the order they
