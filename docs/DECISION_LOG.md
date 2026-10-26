@@ -360,6 +360,25 @@ why*, not duplicating the diff.
   before the first committed and MAX(revision) after: it wrote revision+2 on
   the stale base, dropping the first adult's answer and leaving two live
   rows (6 rounds in 40). Each attempt now opens with `BEGIN IMMEDIATE`.
+- **Guests (or someone out) after approval resize the list IN PLACE**
+  (2026-10-22; branch `overnight/guests-resize-in-place`; tests
+  `tests/test_guests_resize_in_place.py`). `attendance.resize_for_new_headcount`
+  runs the recipe-week's unbuy+rebuy inside a SAVEPOINT only to read the new
+  ledger shares, rolls back, rewrites the existing `meal_plan_grocery_links` rows,
+  and re-reads each line (`grocery._restate_lines_for_new_shares`: plan line from
+  its ledger, standing want restated). Ids never change; dropped/removed/excluded/
+  freezer lines keep their status (remembered amount resized). The rebuy-only cut
+  (`e0de6e35`) was pulled: new ids every tap, dropped lines came back. Left alone:
+  drafts, past/cooked nights (incl. a reheat whose cook night moved), holiday
+  menus, any week with a line in cart/bought, component plates, and
+  `clear_slot_attendance` (usual_week.py, holidays.py — it skips the write hook).
+  Review fixes: `quantities._ledger_buckets` snaps each sum to 9 significant
+  figures (12-figure ledger strings re-read 18 oz as 18.00000000003 and broke an
+  exact quarter tie the other way — "1 lb" came back "1.25 lbs"); the simulation
+  reads with the kitchen's stock blanked and matches rows per (meal, item, unit
+  family), so a line inventory flipped is left (logged) while the rest resize.
+  A share re-converted between units can differ in its 12th figure from what
+  approval wrote (display unaffected).
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
