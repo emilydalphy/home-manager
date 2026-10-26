@@ -128,6 +128,19 @@ def _id_params(name):
     return out
 
 
+# Chat wrappers whose **kwargs land somewhere other than a same-module
+# function of the same name. agent.add_recipe_from_chat (chat on Haiku,
+# 2026-10-26) hands a dictated recipe's arguments to
+# tools.add_recipe_for_chat, and builds the writer's own call from the rest;
+# its update_recipe_details and set_big_meal_dish doors hand theirs to the
+# tools of those names.
+_ARGUMENTS_LAND_ON = {
+    "add_recipe_from_chat": lambda: tools.add_recipe_for_chat,
+    "update_recipe_details_from_chat": lambda: tools.update_recipe_details,
+    "set_big_meal_dish_from_chat": lambda: tools.set_big_meal_dish,
+}
+
+
 def _real_function(fn):
     """The function a chat tool's arguments actually land on. The
     `*_for_chat(*args, **kwargs)` wrappers (plan_meal, add_recipe,
@@ -138,6 +151,8 @@ def _real_function(fn):
     params = inspect.signature(fn).parameters.values()
     if not any(p.kind is p.VAR_KEYWORD for p in params):
         return fn
+    if fn.__name__ in _ARGUMENTS_LAND_ON:
+        return _real_function(_ARGUMENTS_LAND_ON[fn.__name__]())
     module = sys.modules[fn.__module__]
     real = getattr(module, fn.__name__.removesuffix("_for_chat"), None)
     assert real is not None and real is not fn, (
