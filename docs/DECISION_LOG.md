@@ -184,6 +184,23 @@ why*, not duplicating the diff.
   "doesn't eat here": net nothing). Snacks are not resized (no attendance).
   `set_member_dietary_restrictions(replace=True)` now dedupes case-blind as
   the merge always did. Why: guests already resize in place; people should too.
+- **Chat runs on Haiku; recipes from chat are written by the recipe writer**
+  (2026-10-25, Emily's call, Option A; branch `overnight/chat-on-haiku`; tests
+  `tests/test_chat_on_haiku.py`). `agent.CHAT_MODEL` (Haiku 4.5, env
+  `CHAT_MODEL`) for every chat round and the warm-up; `CHAT_FALLBACK_MODEL`
+  is now `MODEL` (Sonnet). `add_recipe` / `update_recipe_details(change=…)` /
+  `propose_plan_changes` / `set_big_meal_dish` take a name + `brief` and hand
+  the ingredients and steps to `generate_recipe_details_llm` via
+  `_write_dish_for_chat` (allergen check + one retry, as Approve); a list the
+  person dictated is still saved as given. `_fit_request_to_model` drops
+  `output_config.effort` for Haiku 4.5, which refuses it — so the old Haiku
+  fallback was very likely 400ing too. Seconds per tool now logged beside
+  seconds per round. Why: most of chat's time was the model writing recipes
+  as tool input. Review fixes: "save it anyway" saves the exact refused
+  draft (or, for a refused name, re-writes with only that avoidance lifted);
+  a steps rewrite is gated on the list its steps complete; the card writes
+  nothing past its limits or for a missing plan/slot; `chat_turns.model`
+  (NULL = pre-switch Sonnet) prices chat per row, an unknown model unpriced.
 - **Second 200 library recipes: Emily's three calls** (2026-10-25; branch
   `recipe-library-200b`; doc `docs/RECIPE_LIBRARY_SPOTCHECK_200B.md`).
   Bistec a la Mexicana is two dishes (the rated slow simmer, plus "Quick

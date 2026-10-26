@@ -57,7 +57,8 @@ _RATES_PER_MTOK = {
     "claude-sonnet-5": {
         "input": 2.00, "cache_read": 0.20, "cache_write": 2.50, "output": 10.00,
     },
-    # The chat-fallback model (agent.CHAT_FALLBACK_MODEL) -- keyed to the
+    # The chat model (agent.CHAT_MODEL since 2026-10-25; before that the
+    # chat-fallback model, agent.CHAT_FALLBACK_MODEL) -- keyed to the
     # exact dated snapshot it's pinned to, since that's the literal string
     # api_calls.model records for a fallback call. $1/$5 per MTok, verified
     # 2026-09-03 against Anthropic's published Claude Haiku 4.5 rate (same
@@ -77,6 +78,12 @@ _RATES_PER_MTOK = {
 # and pins that a rate exists for it, so swapping the model fails loudly
 # instead of quietly billing the new model at the old one's prices.
 _PRICED_MODEL = "claude-sonnet-5"
+
+# What a chat_turns row with no `model` was spent on. The column arrived
+# with chat moving to Haiku (2026-10-25); every turn before it ran on
+# MODEL, so an old row is priced at Sonnet and a new one at the model the
+# row names (agent.run_agent_turn records it).
+_CHAT_LEGACY_MODEL = _PRICED_MODEL
 
 
 def price_tokens(tokens: dict, model: str = _PRICED_MODEL) -> dict:
@@ -114,6 +121,22 @@ def price_tokens(tokens: dict, model: str = _PRICED_MODEL) -> dict:
     )
     costs["model"] = model
     return costs
+
+
+def price_tokens_soft(tokens: dict, model: str) -> dict:
+    """price_tokens for a REPORT: a model with no rate row is priced at
+    nothing and said so (`unpriced`), and logged, rather than raising and
+    taking /api/usage and the morning report down with it — the realistic
+    way here is CHAT_MODEL repointed by env var to a model this table
+    doesn't have yet (review, 2026-10-25)."""
+    try:
+        return price_tokens(tokens, model=model)
+    except ValueError:
+        import logging
+        logging.getLogger("home_manager").warning(
+            "No token rate for %r; its usage is reported unpriced -- add it to _RATES_PER_MTOK", model)
+        zero = {field: 0.0 for field in ("input", "cache_read", "cache_write", "output")}
+        return {**zero, "total": 0.0, "model": model, "unpriced": True}
 
 
 # Chat tools that ALSO exist as a tap somewhere in the app. The point of
@@ -196,10 +219,13 @@ def record_chat_turn(usage: dict | None = None) -> int | None:
             # Rows written before that column existed carry 0, and the
             # difference is the whole point -- see schema.sql.
             "INSERT INTO chat_turns (household_id, rounds, input_tokens, cache_read_tokens, "
-            "cache_write_tokens, output_tokens, seconds, tools_called_json, tools_recorded) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)",
+            "cache_write_tokens, output_tokens, seconds, tools_called_json, tools_recorded, model) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)",
             (household_id(), *(values.get(f, 0) for f in _TURN_FIELDS),
-             _tool_names_json(values.get("tools_called"))),
+             _tool_names_json(values.get("tools_called")),
+             # The model the turn ran on, so its cost is priced at that
+             # model's rate (_chat_cost_by_model). None from an older caller.
+             values.get("model") if isinstance(values.get("model"), str) else None),
         )
         conn.commit()
         return cur.lastrowid
@@ -360,7 +386,7 @@ def _cost_breakdown(conn, hid: int, since_sql: str) -> dict:
             "input": r["input_tokens"], "cache_read": r["cache_read_tokens"],
             "cache_write": r["cache_write_tokens"], "output": r["output_tokens"],
         }
-        cost = price_tokens(tokens, model=r["model"] or _PRICED_MODEL)
+        cost = price_tokens_soft(tokens, r["model"] or _PRICED_MODEL)
         # Web searches are a fee per request, not tokens: folded into this
         # row's total so the month-to-date line is the real bill.
         searches = int(r["web_search_requests"] or 0)
@@ -434,7 +460,7 @@ def _plan_generation_stats(conn, hid: int, since_sql: str) -> dict:
             "input": r["input_tokens"], "cache_read": r["cache_read_tokens"],
             "cache_write": r["cache_write_tokens"], "output": r["output_tokens"],
         }
-        cost = price_tokens(tokens, model=r["model"] or _PRICED_MODEL)
+        cost = price_tokens_soft(tokens, r["model"] or _PRICED_MODEL)
         for k in total_cost:
             total_cost[k] += cost[k]
 
@@ -639,6 +665,33 @@ def _pre_shop_counts(conn, hid: int, since: str) -> dict:
     }
 
 
+def _chat_cost_by_model(conn, hid: int, since: str) -> dict:
+    """Chat-only cost, each row priced at the model it ran on (old rows,
+    which carry none, at _CHAT_LEGACY_MODEL). Same keys as price_tokens;
+    `model` is the one model when there was one, else "mixed"."""
+    rows = conn.execute(
+        "SELECT COALESCE(model, ?) AS model, "
+        "COALESCE(SUM(input_tokens), 0) AS input, COALESCE(SUM(cache_read_tokens), 0) AS cache_read, "
+        "COALESCE(SUM(cache_write_tokens), 0) AS cache_write, COALESCE(SUM(output_tokens), 0) AS output "
+        f"FROM chat_turns WHERE household_id = ? AND created_at >= datetime('now', '{since}') "
+        "GROUP BY COALESCE(model, ?)",
+        (_CHAT_LEGACY_MODEL, hid, _CHAT_LEGACY_MODEL),
+    ).fetchall()
+    total = {"input": 0.0, "cache_read": 0.0, "cache_write": 0.0, "output": 0.0, "total": 0.0}
+    models = []
+    unpriced = False
+    for r in rows:
+        cost = price_tokens_soft(dict(r), r["model"])
+        unpriced = unpriced or bool(cost.get("unpriced"))
+        models.append(r["model"])
+        for k in total:
+            total[k] = round(total[k] + cost[k], 6)
+    total["model"] = models[0] if len(models) == 1 else ("mixed" if models else _CHAT_LEGACY_MODEL)
+    if unpriced:
+        total["unpriced"] = True
+    return total
+
+
 def _summarize(conn, hid: int, days: int, since: str) -> dict:
     def _count(sql: str) -> int:
         return conn.execute(sql, (hid,)).fetchone()[0]
@@ -741,7 +794,7 @@ def _summarize(conn, hid: int, days: int, since: str) -> dict:
     # what already reads this key. The all-in figure below (every call
     # site, from api_calls) is the one the $1/household/month target is
     # judged against.
-    summary["cost"] = price_tokens(summary["tokens"])
+    summary["cost"] = _chat_cost_by_model(conn, hid, since)
 
     # All-in, every call site, this calendar month -- see get_month_to_date_cost.
     summary["month_to_date_cost"] = _cost_breakdown(

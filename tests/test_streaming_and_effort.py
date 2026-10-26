@@ -320,5 +320,10 @@ def test_chat_loop_passes_the_chat_effort_route(monkeypatch):
         )
 
     monkeypatch.setattr(agent, "_client", lambda: fake)
+    # On a model that takes effort (MODEL — what chat ran on before
+    # 2026-10-25, and what it falls back to now), the chat route's level
+    # arrives. On CHAT_MODEL (Haiku 4.5, which refuses effort) it is
+    # dropped — tests/test_chat_on_haiku.py covers that half.
+    monkeypatch.setattr(agent, "CHAT_MODEL", agent.MODEL)
     agent.run_agent_turn([], "hello")
     assert captured.get("output_config") == {"effort": "medium"}

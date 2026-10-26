@@ -442,7 +442,11 @@ def test_a_candidate_without_ingredients_is_dropped_unless_the_recipe_exists(wee
     only = tools.propose_plan_changes(week, [
         {"date": DAY4, "slot": "dinner", "action": "change", "candidates": [_cand("Mystery Bowl", ingredients=[])]},
     ])
-    assert "ingredients" in only["rows"][0]["problem"]
+    # Since 2026-10-25 the chat's recipe writer fills a new dish in before
+    # the card sees it, so this is the writer having failed: the model is
+    # told to offer it again, never to write the ingredients itself.
+    assert "couldn’t be written up" in only["rows"][0]["problem"]
+    assert "ingredients" not in only["rows"][0]["problem"]
 
 
 def test_another_avoids_everything_ever_offered_even_past_the_visible_four(week):

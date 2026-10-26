@@ -168,8 +168,10 @@ def propose_plan_changes(weekly_plan_id: int, rows: list[dict], line: str = "") 
             # A dish with no ingredients and no saved recipe would land as a
             # freeform entry — nothing to cook from, nothing for the list —
             # which is the opposite of what the card promises. Dropped, and
-            # said so, so the model fills it in rather than the household
-            # finding out on approval.
+            # said so. Since 2026-10-25 the chat's recipe writer fills a new
+            # dish in before this runs (agent.propose_plan_changes_from_chat),
+            # so reaching here means the writer failed: the model is told to
+            # offer it again, never to write the ingredients itself.
             shoppable = [c for c in cands if c["ingredients"] or _recipe_exists(c["meal_name"])]
             dropped = [c["meal_name"] for c in cands if c not in shoppable]
             # A dish somebody at the table can't have is not an option
@@ -209,7 +211,7 @@ def propose_plan_changes(weekly_plan_id: int, rows: list[dict], line: str = "") 
                                       " — offer something without it, outside the cuisine if that’s what it takes")
                 else:
                     row["problem"] = ("no dish was offered for this slot" if not dropped else
-                                      f"{', '.join(dropped)} came without ingredients — a new dish needs them to be cookable and shoppable")
+                                      f"{', '.join(dropped)} couldn’t be written up just now — offer it again, or a different dish")
             else:
                 if dropped:
                     row["dropped"] = dropped
