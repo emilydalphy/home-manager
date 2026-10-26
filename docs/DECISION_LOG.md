@@ -108,6 +108,22 @@ why*, not duplicating the diff.
   servings", Tantanmen "4 portions", ginger "1 knob", Parmesan "1 wedge
   with rind" were the recipes' own lines. Why: a hard gate that lets a bun
   through, or blocks a lettuce, is one a household stops trusting.
+- **Two seams in the 2026-10-25 batch merge** (2026-10-26; branch
+  `overnight/hunt-after-big-merge-1026`; tests
+  `tests/test_integration_hunt_2026_10_26.py`). Found driving signup ->
+  two weeks -> re-plan over HTTP. (1) `bring_over.bought_items` treats an
+  ingredient with a PENDING fridge move for the brought-over meal as frozen:
+  "Yes, freezing it" writes only the move, so the kitchen row sat in the
+  fridge past its use-by and the chicken was bought again. (2)
+  `grocery._merge_target`'s cross-week exception is the spice rack only
+  again: the 2026-10-19 pantry work widened it (`is_spice` -> `is_assumed`)
+  to sauces/pantry staples, which carry amounts, so next week approved on
+  Sunday summed its noodles onto this week's waiting line ("3 boxes" for one
+  lasagna, never swept). Why: each branch assumed the other's old model.
+  A pending move counts only if dated at most 2 days ago (an older unticked
+  one may have been done untold: re-bought). Open: (2) brings back a one-day
+  duplicate row — "Soy sauce 3 tbsp" twice on the Sunday both weeks are live,
+  until Monday's sweep; reviewer's follow-up: group by name at display time.
 - **Second 200 library recipes: Emily's three calls** (2026-10-25; branch
   `recipe-library-200b`; doc `docs/RECIPE_LIBRARY_SPOTCHECK_200B.md`).
   Bistec a la Mexicana is two dishes (the rated slow simmer, plus "Quick
