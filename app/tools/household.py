@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import json
 from ..db import _ADULT_COLORS, get_conn, write
-from ._shared import EATS_HERE_SQL, current_member, household_id, household_initials
+from ._shared import EATS_HERE_SQL, current_member, find_member_row, household_id, household_initials
 
 
 # Junk "no answer" values that sometimes get written into a restrictions
@@ -142,6 +142,10 @@ def add_member(name: str) -> dict:
         raise ValueError(BLANK_MEMBER_NAME)
     conn = get_conn()
     member_id = _get_or_create_member(conn, name)
+    # Said back as stored: "Emile" for an Émile already here is Émile.
+    name = conn.execute(
+        "SELECT name FROM members WHERE id = ? AND household_id = ?", (member_id, household_id())
+    ).fetchone()["name"]
     conn.close()
     # A new person is present at every meal by default (nobody said they
     # were away), which can make a slot previously marked 'away' — because
@@ -252,10 +256,11 @@ def remove_member_dietary_restriction(name: str, restriction: str) -> dict:
     target = (restriction or "").strip().lower()
     with write() as conn:
         conn.execute("BEGIN IMMEDIATE")
+        found = find_member_row(conn, name)
         row = conn.execute(
-            "SELECT id, dietary_restrictions_json FROM members WHERE household_id = ? AND LOWER(name) = LOWER(?)",
-            (household_id(), name),
-        ).fetchone()
+            "SELECT id, dietary_restrictions_json FROM members WHERE id = ? AND household_id = ?",
+            (found["id"], household_id()),
+        ).fetchone() if found else None
         if row is None:
             return {"name": name, "dietary_restrictions": []}
         current = json.loads(row["dietary_restrictions_json"] or "[]")
@@ -422,10 +427,7 @@ def set_member_age(name: str, age_years=None, include_in_meals: bool | None = No
     conn = get_conn()
     try:
         if must_exist:
-            row = conn.execute(
-                "SELECT id FROM members WHERE household_id = ? AND LOWER(name) = LOWER(?)",
-                (household_id(), name),
-            ).fetchone()
+            row = find_member_row(conn, name)
             if not row:
                 raise LookupError(f"{name} isn't someone in this household.")
             member_id = row["id"]
@@ -540,11 +542,11 @@ def _get_or_create_member(conn, name: str) -> int:
     # was counted at every meal. Every member write by name comes here.
     if not (name or "").strip():
         raise ValueError(BLANK_MEMBER_NAME)
-    row = conn.execute(
-        "SELECT id FROM members WHERE household_id = ? AND LOWER(name) = LOWER(?)", (household_id(), name)
-    ).fetchone()
+    # Accent-, space- and case-blind (find_member_row): "zoe" said in chat
+    # about Zoé is Zoé, not a second child (defect hunt 2026-10-24).
+    row = find_member_row(conn, name)
     if row:
         return row["id"]
-    cur = conn.execute("INSERT INTO members (household_id, name) VALUES (?, ?)", (household_id(), name))
+    cur = conn.execute("INSERT INTO members (household_id, name) VALUES (?, ?)", (household_id(), name.strip()))
     conn.commit()
     return cur.lastrowid

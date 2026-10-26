@@ -56,7 +56,7 @@ from contextlib import contextmanager
 from datetime import date, timedelta
 
 from ..db import get_conn, write
-from ._shared import IN_MEALS_SQL, household_id
+from ._shared import IN_MEALS_SQL, find_member_row, household_id
 from . import weekly_plan as _weekly_plan
 from . import quantities as _quantities
 
@@ -122,14 +122,16 @@ def resolve_member_ids(members: list | None) -> list[int]:
     if not members:
         return [r["id"] for r in rows]
 
-    by_lower_name = {r["name"].strip().lower(): r["id"] for r in rows}
     valid_ids = {r["id"] for r in rows}
     resolved: list[int] = []
     for m in members:
         # A NAME always wins over an id-shaped reading of the same string,
         # so a household member called "2" is still addressable by name.
-        if isinstance(m, str) and str(m).strip().lower() in by_lower_name:
-            resolved.append(by_lower_name[str(m).strip().lower()])
+        # Matched accent-, space- and case-blind (find_member_row), so
+        # "zoe's out tonight" about Zoé is Zoé, not a refusal.
+        named = find_member_row(None, m, rows=rows) if isinstance(m, str) else None
+        if named is not None:
+            resolved.append(named["id"])
             continue
         if isinstance(m, int) or (isinstance(m, str) and m.isdigit()):
             mid = int(m)
@@ -137,11 +139,8 @@ def resolve_member_ids(members: list | None) -> list[int]:
                 raise ValueError(f"No household member with id {mid}.")
             resolved.append(mid)
             continue
-        key = str(m).strip().lower()
-        if key not in by_lower_name:
-            known = ", ".join(r["name"] for r in rows) or "nobody yet"
-            raise ValueError(f"No household member named {m!r}. Members are: {known}.")
-        resolved.append(by_lower_name[key])
+        known = ", ".join(r["name"] for r in rows) or "nobody yet"
+        raise ValueError(f"No household member named {m!r}. Members are: {known}.")
     # Preserve household order and drop duplicates, so two spellings of the
     # same person don't count as two travelers.
     return [r["id"] for r in rows if r["id"] in set(resolved)]
