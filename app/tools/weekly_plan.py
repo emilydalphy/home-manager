@@ -7786,7 +7786,16 @@ _CHECK_FAILED_NOTE = (
 )
 
 
-def _write_pending_recipes(weekly_plan_id: int) -> None:
+# Said when approval stops because Claude couldn't be reached to write the
+# week's new recipes (2026-10-25). Plain, with its way out, and the fact the
+# household most needs: nothing was approved and the list is untouched.
+RECIPES_UNREACHABLE_LINE = (
+    "I couldn’t write up this week’s new recipes just now, so I haven’t approved it "
+    "yet — your list is as it was. Try again in a minute."
+)
+
+
+def _write_pending_recipes(weekly_plan_id: int) -> dict:
     """
     Approval's first move since 2026-09-21: any dish the menu pass left
     unwritten gets its ingredients and steps now, before the grocery list
@@ -7796,7 +7805,8 @@ def _write_pending_recipes(weekly_plan_id: int) -> None:
     real. Never raises — a recipe that could not be written stays pending
     (the Cook screen fills it when it's needed) and the approval goes
     ahead with what it has; a lost approval over one recipe is the worse
-    outcome.
+    outcome. Returns the pass's own account; approve_weekly_plan stops on
+    its `unreachable` (Claude not answering at all), not on a bad recipe.
 
     Since 2026-09-30 the draft's background pass has usually written them
     already (agent.start_background_recipe_pass), so this finds nothing
@@ -7806,9 +7816,10 @@ def _write_pending_recipes(weekly_plan_id: int) -> None:
     """
     try:
         from .. import agent as _agent
-        _agent.fill_pending_recipes_for_plan(weekly_plan_id)
+        return _agent.fill_pending_recipes_for_plan(weekly_plan_id) or {}
     except Exception:
         logger.exception("Writing the pending recipes for plan %s failed; approving with what is written", weekly_plan_id)
+        return {}
 
 
 def approve_weekly_plan(
@@ -7932,7 +7943,20 @@ def approve_weekly_plan(
     # ingredients, and a dish the menu pass chose has none until this
     # writes them. Skipped for a re-approval, which adds nothing anyway.
     if not was_already_approved:
-        _write_pending_recipes(weekly_plan_id)
+        written = _write_pending_recipes(weekly_plan_id)
+        # One recipe that came back wrong still approves (above). Claude
+        # not answering at all is different (2026-10-25): every dish it
+        # couldn't write would be approved with nothing on the list for
+        # it, and the toast would say "Week approved." over a list missing
+        # the week. So nothing is approved, nothing is written, and the
+        # household is told to try again — the recipes that WERE written
+        # are kept, so the retry only asks for the rest. Already filed in
+        # the morning report by the calls that gave up.
+        if written.get("unreachable"):
+            from .. import agent as _agent
+            err = _agent.AssistantUnavailableError(RECIPES_UNREACHABLE_LINE)
+            setattr(err, _agent.AI_FILED, True)
+            raise err
 
     # Run before the approval work, so the warning (and the confirmation
     # gate just below) describe the plan that was actually approved, and a

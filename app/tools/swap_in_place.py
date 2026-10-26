@@ -90,6 +90,11 @@ REFUSAL = (
     "Nothing changed — tell me what you’d like instead."
 )
 
+# Said when the picker came back with no dish at all (2026-10-25). Not
+# REFUSAL: nothing clashed, so blaming "what you can't have" would tell the
+# household something untrue about their own allergies.
+NO_PICK = "I couldn’t come up with another dish just now. Nothing changed — try Swap again in a moment."
+
 # What the model may not put in an entry. Anything else it sends back is
 # ignored rather than trusted into the database.
 _INGREDIENT_CATEGORIES = ("produce", "dairy", "meat/seafood", "pantry", "frozen", "other")
@@ -830,7 +835,9 @@ def swap_meal_in_place(
         name = (pick.get("meal_name") or "").strip()
         if not name:
             logger.warning("swap_in_place came back with no dish (attempt %d)", attempt)
-            return {"status": "refused", "message": REFUSAL, "avoid": tried}
+            from .. import agent as _agent
+            _agent.record_ai_failure("swap_in_place", why="no dish in the answer")
+            return {"status": "refused", "message": NO_PICK, "avoid": tried}
         pick["meal_name"] = name
         clash = _hard_clash(pick)
         if not clash:

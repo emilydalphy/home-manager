@@ -154,6 +154,22 @@ def _refused_for_consent(exc: BaseException | None) -> bool:
     return isinstance(exc.__cause__ or exc.__context__, agent.AIConsentRequiredError)
 
 
+def _filed_by_ai_layer(exc: BaseException | None) -> bool:
+    """
+    Was this failure an AI call that agent.record_ai_failure already filed
+    (kind "ai", where = the call)? The exception itself or the one it was
+    raised from/while handling, one link — the same reach as
+    _refused_for_consent. Filing the route's 5xx as well would count one
+    outage twice in the morning report.
+    """
+    if exc is None:
+        return False
+    return any(
+        getattr(e, agent.AI_FILED, False)
+        for e in (exc, exc.__cause__, exc.__context__) if e is not None
+    )
+
+
 def _consent_refusal_response() -> JSONResponse:
     return JSONResponse({"detail": ai_consent.REFUSAL_LINE, "ai_consent_required": True}, status_code=503)
 
@@ -205,7 +221,7 @@ async def record_server_errors(request: Request, exc: StarletteHTTPException):
         return _consent_refusal_response()
     if exc.status_code >= 500 and _number_too_big(exc):
         return JSONResponse({"detail": NUMBER_TOO_BIG_LINE}, status_code=400)
-    if exc.status_code >= 500 and _has_bound_household(request):
+    if exc.status_code >= 500 and _has_bound_household(request) and not _filed_by_ai_layer(exc):
         # The status code, never the message. 83 routes build their detail
         # as f"Server error: {e}", and {e} is unbounded application text —
         # 27 places in app/tools raise exceptions that interpolate
@@ -288,7 +304,7 @@ async def record_unhandled_errors(request: Request, exc: Exception):
     # not recorded, rather than recorded against whoever household 1 is.
     where = _route_pattern(request)
     household = None
-    if _has_bound_household(request):
+    if _has_bound_household(request) and not _filed_by_ai_layer(exc):
         try:
             parts = security.read_session_parts(request.cookies.get(security.COOKIE_NAME))
             household = parts[1] if parts else None
@@ -5636,6 +5652,10 @@ def approve_week(week_start: str, req: WeekApproveRequest):
         )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except AssistantUnavailableError as e:
+        # Claude couldn't write the week's new recipes: nothing approved,
+        # nothing written (approve_weekly_plan), and the sentence says so.
+        raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         logger.exception("Week approval failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")

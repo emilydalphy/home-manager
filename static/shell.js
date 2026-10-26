@@ -22494,7 +22494,14 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(withPlanId({ approved_by: approvedBy, confirm_hard_conflicts: !!confirmHardConflicts }, data.weekly_plan_id))
       });
-      if (!res.ok) throw new Error('approve failed');
+      if (!res.ok) {
+        // A refusal the server wrote for the household (a 503 when Claude
+        // couldn't write the week's new recipes: nothing approved, the list
+        // as it was) is the sentence to show, not our generic one.
+        var failed = new Error('approve failed');
+        try { failed.detail = ((await res.json()) || {}).detail || ''; } catch (e) { failed.detail = ''; }
+        throw failed;
+      }
       // The approve endpoint answers with the dietary check it ran on the
       // way through (app/main.py's approve route, tools.approve_weekly_plan).
       // This used to throw that answer away and show a fixed line, so a
@@ -22564,7 +22571,9 @@
     } catch (err) {
       console.warn('Week approval failed:', err);
       if (btn) { btn.disabled = false; btn.textContent = restoreLabel; }
-      alert('Could not approve the week right now — try again in a moment.');
+      var said = (err && typeof err.detail === 'string' && err.detail.trim()) ? err.detail.trim()
+        : 'Could not approve the week right now — try again in a moment.';
+      showToast(said, null, 9000);
     }
   }
 
