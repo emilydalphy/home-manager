@@ -1,0 +1,48 @@
+{
+ "dish_name": "Butadon",
+ "cuisine": "Japanese",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 45,
+ "ingredients": [
+  {"item": "Short-grain white rice", "qty": "3 cups", "category": "pantry"},
+  {"item": "Thinly sliced pork loin", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "6 tbsp"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "6 tbsp"},
+  {"item": "Sake", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Vegetable oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce"},
+  {"item": "Pickled red ginger", "qty": "1 jar", "category": "pantry"}
+ ],
+ "instructions": [
+  "Rinse the 3 cups rice in a strainer under cold water until the water runs mostly clear. Cook it in a rice cooker or pot with the water the package calls for, about 45 minutes. That should be about 9 cups cooked.",
+  "Meanwhile, thinly slice 4 of the green onions on a slant.",
+  "Make 3 or 4 small cuts through the strip of white connective tissue between the fat and the meat on each slice of pork. This keeps the slices flat in the pan.",
+  "Boil a kettle and measure out 1/2 cup boiling water. Keep it next to the stove.",
+  "Put the 6 tbsp sugar and 2 tbsp water in a heavy, high-sided saucepan. Set it over medium heat and stir until the sugar dissolves.",
+  "Once it bubbles, stop stirring. Swirl the pan now and then for 4 to 6 minutes, until the syrup turns a deep amber and smells of caramel. Watch it closely. It goes from amber to burnt quickly.",
+  "Turn off the heat. Hold the pot lid in front of you like a shield and pour in the 1/2 cup boiling water. Stand back. It spatters hard.",
+  "When it settles, turn the heat back to medium and stir until any hard bits of caramel melt.",
+  "Add the 6 tbsp soy sauce and 1/4 cup sake and bring it to a simmer. Turn off the heat. Pour about 1/3 cup of the sauce into a small bowl for the rice.",
+  "Heat a large skillet over medium-high heat until it's hot, then add 1 tbsp of the oil. Lay in as many pork slices as fit in a single layer without overlapping.",
+  "Leave them for 1 to 2 minutes, until the undersides are browned. Flip them and brown the other side for about 1 minute. Transfer them to a plate. They finish cooking in the sauce.",
+  "Add the last 1 tbsp oil and brown the rest of the pork the same way.",
+  "Return all the pork to the skillet and pour in the sauce from the saucepan. Turn the slices in the bubbling sauce for 1 to 2 minutes, until they're glossy and there's no pink left when you cut into one.",
+  "Taste a piece. If it's flat, add a splash of the soy sauce.",
+  "Divide the rice between 4 large bowls and drizzle the reserved sauce over the rice. Layer the pork on top and spoon over any sauce left in the pan.",
+  "Sprinkle the 1/4 tsp pepper and the green onions over the bowls.",
+  "Serve with the pickled red ginger."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions sear thin pork slices first, then coat them in a sweet soy sauce and lay them over rice. Just One Cookbook (the lead) caramelizes sugar first and loosens it with boiling water before adding soy and sake, then serves it with pepper, white leek and red pickled ginger; The Chef Dojo cooks sugar, sake and mirin down to a caramel with thicker pork belly, and The Subversive Table makes a quick butter, soy and mirin glaze and adds shredded cabbage. This one follows the lead's caramel sauce and pork loin, doubled for 4, and uses green onions in place of the Tokyo negi, which the lead also allows.",
+ "sources": [
+  {"name": "Just One Cookbook", "title": "Butadon (Pork Donburi)", "url": "https://www.justonecookbook.com/butadon/", "rating": 4.75, "rating_count": 55, "read": true, "lead": true},
+  {"name": "The Chef Dojo", "title": "Obihiro Buta Don: Hokkaido's Pork Rice Bowl", "url": "https://thechefdojo.com/obihiro-buta-don", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "The Subversive Table", "title": "Japanese Butadon (Pork Donburi) Rice Bowl", "url": "https://thesubversivetable.com/japanese-butadon-pork-donburi-rice-bowl/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

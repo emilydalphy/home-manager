@@ -1,0 +1,35 @@
+{
+ "dish_name": "Natto Gohan",
+ "cuisine": "Japanese",
+ "main_protein": "tofu",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 45,
+ "ingredients": [
+  {"item": "Short-grain white rice", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Natto", "qty": "4 packs (with sauce and mustard)", "category": "dairy"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce"},
+  {"item": "Nori sheets", "qty": "1 package", "category": "pantry"},
+  {"item": "Kimchi", "qty": "1 jar", "category": "other"}
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups rice in a bowl of cold water, swishing it with your hand and pouring off the cloudy water, until the water runs almost clear. Cook it in a rice cooker or pot with the water the package calls for, about 45 minutes. That should be about 4 1/2 cups cooked. If you'd like it ready when you wake up, do this the night before and set the cooker's timer.",
+  "Meanwhile, thinly slice 2 of the green onions. Cut 1 nori sheet into thin strips with scissors.",
+  "Open the natto packs and set the little sauce and mustard packets aside. Transfer the natto into a bowl.",
+  "Stir the natto hard with chopsticks for about 30 seconds, until it turns sticky and stringy and looks a little foamy.",
+  "Squeeze in the sauce packets and stir for about 20 seconds, until the sauce disappears into the beans.",
+  "Divide the hot rice between 4 bowls and spoon the natto over the top.",
+  "Scatter the green onion and nori over each bowl.",
+  "Serve with the mustard packets and the kimchi on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Every version stirs the natto until it's stringy, seasons it, and spoons it over a bowl of hot rice with toppings. Chef JA Cooks (the lead) and Just One Cookbook use the sauce and karashi mustard packed with the natto, while Pure Indian Foods uses a splash of soy sauce; green onion is the topping all three name, with nori, kimchi and many others offered. This one uses the packed sauce, tops each bowl with green onion and nori, and keeps the mustard and kimchi on the side for anyone who wants heat. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Japanese) has no version, so the only rated version leads.",
+ "sources": [
+  {"name": "Chef JA Cooks", "title": "Natto Rice Bowl with 8 Toppings", "url": "https://chefjacooks.com/en/natto-gohan-recipe", "rating": 5.0, "rating_count": 11, "read": true, "lead": true},
+  {"name": "Just One Cookbook", "title": "Natto: The Superfood You Need to Know", "url": "https://www.justonecookbook.com/natto/", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Pure Indian Foods", "title": "Natto Gohan (Natto with Rice)", "url": "https://www.pureindianfoods.com/blogs/recipes/natto-gohan-natto-with-rice", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
