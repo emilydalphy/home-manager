@@ -4250,7 +4250,7 @@
       console.warn('Today lookup failed:', err);
       // Signed out (a 401): api.js is already taking the phone to sign in,
       // and "Couldn't check just now" would say the app was broken.
-      if (Api.signingIn()) return;
+      if (Api.signingIn && Api.signingIn()) return;
       renderTodayMovesError(panel);
     }
   }
@@ -15929,7 +15929,7 @@
       // week already on screen is a better answer than an error in its
       // place; the next real load tries again.
       if (opts && opts.quiet) return;
-      if (Api.signingIn()) return; // signed out: on the way to sign in
+      if (Api.signingIn && Api.signingIn()) return; // signed out: on the way to sign in
       panel.querySelector('#week-steps').innerHTML = '<div class="menu-loading">Couldn\'t load your week right now.</div>';
     }
   }
@@ -19748,7 +19748,7 @@
       } catch (err) {
         console.warn('Chores list lookup failed:', err);
         // Signed out: api.js is taking the phone to sign in — no trouble line.
-        if (!Api.signingIn()) weekState.choresTrouble = true;
+        if (!(Api.signingIn && Api.signingIn())) weekState.choresTrouble = true;
       } finally {
         planChoresFetching = null;
       }
@@ -30830,7 +30830,7 @@
     } catch (err) {
       console.warn('Recipes lookup failed:', err);
       // Signed out: api.js is taking the phone to sign in — no "Couldn't check".
-      if (!Api.signingIn()) recipesState.failed = true;
+      if (!(Api.signingIn && Api.signingIn())) recipesState.failed = true;
     }
     if (prefsState.open) renderPrefsRows();
     if (recipesSheetEl && !recipesSheetEl.hidden && recipesState.view === 'list') renderRecipesSheet();

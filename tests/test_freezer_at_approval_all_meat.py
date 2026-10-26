@@ -578,6 +578,10 @@ def _prelude() -> str:
         + "var weekState = { days: [], data: null, selectedIndex: 0, step: 'week' };\n"
         + "var defrostAskState = { planId: null, items: null, selected: {} };\n"
         + _extract_var("WK_ICONS", SHELL_JS) + "\n"
+        # The lookup's own time limit: without it the timer's executor threw,
+        # the race lost to a rejected promise, and the tests passed only
+        # while Api.fetch returned fetch's promise as is.
+        + _extract_var("DEFROST_ASK_WAIT_MS", SHELL_JS) + "\n"
         + _extract("isSnackSlot", SHELL_JS) + "\n"
         + _extract("slotWord", SHELL_JS) + "\n"
         + _extract("defrostAskChipHtml", SHELL_JS) + "\n"
