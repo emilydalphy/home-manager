@@ -78,7 +78,7 @@ def test_a_reheat_night_gets_no_tweak_as_it_gets_no_change_recipe():
 
 def test_the_meal_step_puts_tweak_beside_change_recipe_as_one_unit():
     body = _extract("mealIngredientsHtml", SHELL_JS)
-    assert "'<span class=\"recipe-change-pair\">' + change + recipeTweakBtnHtml(cookMeal, 'wk-ing-add')" in body
+    assert "'<span class=\"recipe-change-pair\">' + recipeTweakBtnHtml(cookMeal, 'wk-ing-add') + change + '</span>'" in body
 
 
 def test_settings_recipes_page_has_no_tweak():

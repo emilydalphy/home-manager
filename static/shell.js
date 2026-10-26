@@ -19073,12 +19073,12 @@
     // has no cook in it (recipeIsChangeable). Offered on a past day too:
     // the recipe is still the thing they cook from, and the sheet's own
     // paths refuse what the plan will not take.
-    // "Tweak" beside it, small (Emily, 2026-10-25): the same meals. The
+    // "Tweak" just left of it, small (Emily, 2026-10-25): the same meals. The
     // two are one unit in the row, so a narrow phone wraps them together
     // under "Add something" rather than leaving Tweak alone on a line.
     var change = canAdd || (isCook && cookMeal.has_full_recipe)
       ? recipeChangeBtnHtml(cookMeal) : '';
-    if (change) change = '<span class="recipe-change-pair">' + change + recipeTweakBtnHtml(cookMeal, 'wk-ing-add') + '</span>';
+    if (change) change = '<span class="recipe-change-pair">' + recipeTweakBtnHtml(cookMeal, 'wk-ing-add') + change + '</span>';
     if (!card && !canAdd && !change) return '';
     return '<section class="wk-whatsin" aria-label="Ingredients">' + card +
       '<div class="wk-ing-acts">' +
