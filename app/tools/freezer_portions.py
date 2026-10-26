@@ -232,15 +232,40 @@ def portions_to_plan(dates: list[str] | None = None, conn=None) -> list[dict]:
     _claimed_item_ids). [] for a household that has never taken a night
     off, which is nearly all of them.
     """
+    from . import cooker as _cooker
+
     own = conn is None
     if own:
         conn = get_conn()
     try:
         claimed = _claimed_item_ids(conn, set(dates or []))
-        return [p for p in _frozen_rows(conn) if p["inventory_item_id"] not in claimed]
+        today = _cooker.household_today(conn=conn).isoformat()
+        # Not one already past its use-by (the row's expiration_date,
+        # tonight.FROZEN_COOKED_KEEPS_DAYS after the cook). Measured
+        # 2026-10-24 (hunt-leftovers-1024): a portion a month past it was
+        # planned as "this is the night to eat it", with a thaw booked, and
+        # the use-soon note called it "worth eating soon". The row stays in
+        # the freezer — what to do with it is the household's call — but
+        # Pomona does not put it on a plate. Also why sweep_use_soon, which
+        # reads this, settles a pending note about one.
+        return [
+            p for p in _frozen_rows(conn)
+            if p["inventory_item_id"] not in claimed and not _past_use_by(p, today)
+        ]
     finally:
         if own:
             conn.close()
+
+
+def _past_use_by(portion: dict, on: str) -> bool:
+    """Is this portion past its use-by on `on` (ISO date)? A row with no
+    use-by, or one that can't be read, is not — the food-safety date is
+    the only thing this refuses on."""
+    use_by = (portion.get("expiration_date") or "").strip()[:10]
+    try:
+        return bool(use_by) and date.fromisoformat(use_by) < date.fromisoformat(on)
+    except ValueError:
+        return False
 
 
 # ---------- placing them ----------
@@ -313,10 +338,14 @@ def choose_nights(
     )
     placed, missed = [], []
     for portion in portions:
-        if len(placed) >= MAX_PORTIONS_PER_WEEK or not order:
+        # The busiest night that is still inside the portion's use-by: one
+        # that keeps until Tuesday is not this week's Friday.
+        night = next((d for d in order if not _past_use_by(portion, d)), None)
+        if len(placed) >= MAX_PORTIONS_PER_WEEK or night is None:
             missed.append(portion)
             continue
-        placed.append({**portion, "on": order.pop(0)})
+        order.remove(night)
+        placed.append({**portion, "on": night})
     if missed:
         logger.info(
             "Freezer portions: %s left in the freezer this week",

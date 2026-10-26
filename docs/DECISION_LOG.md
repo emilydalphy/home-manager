@@ -718,6 +718,11 @@ why*, not duplicating the diff.
   sauce/staple is not asked about again (`spices._answered_by_own_line`, so
   Before you shop step 2 too), and a stale tick on it is refused rather than
   buying the food twice.
+- **A frozen portion is never planned past its use-by** (2026-10-24; branch
+  `overnight/hunt-leftovers-1024`; tests `tests/test_freezer_portion_use_by.py`).
+  `freezer_portions` ignored the row's own use-by: a portion a month past it
+  was drafted as "the night to eat it" and nudged "worth eating soon" — now
+  skipped, and placed only on a night inside its use-by.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
