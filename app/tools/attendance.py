@@ -498,7 +498,14 @@ def list_follows_membership():
     depth = _MEMBERSHIP_CHANGE_DEPTH.get()
     token = _MEMBERSHIP_CHANGE_DEPTH.set(depth + 1)
     try:
-        before = _upcoming_headcounts() if depth == 0 else {}
+        before = {}
+        if depth == 0:
+            # A snapshot that can't be read must not stop the person being
+            # added or removed: the list just doesn't follow this once.
+            try:
+                before = _upcoming_headcounts()
+            except Exception:
+                logging.getLogger("home_manager").exception("Couldn't read headcounts before a membership change")
         yield
     finally:
         _MEMBERSHIP_CHANGE_DEPTH.reset(token)

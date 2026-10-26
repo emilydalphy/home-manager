@@ -91,3 +91,13 @@ def test_a_helper_invited_who_does_not_eat_here_leaves_the_list_alone():
     before = _list()
     invites.add_adult(1, "Nina", eats_here=False)
     assert _list() == before
+
+
+def test_a_snapshot_that_fails_does_not_block_the_change(monkeypatch):
+    # The list following is a courtesy; adding the person is the job.
+    from app.tools import attendance
+    def boom():
+        raise RuntimeError("locked")
+    monkeypatch.setattr(attendance, "_upcoming_headcounts", boom)
+    tools.add_member("Zed")
+    assert any(m["name"] == "Zed" for m in tools.list_members())
