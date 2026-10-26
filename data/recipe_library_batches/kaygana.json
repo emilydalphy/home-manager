@@ -1,0 +1,115 @@
+{
+ "dish_name": "Kaygana",
+ "cuisine": "Turkish",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "6",
+   "category": "dairy"
+  },
+  {
+   "item": "Whole milk",
+   "qty": "1 1/2 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Dill",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Feta cheese",
+   "qty": "1 block (7 oz)",
+   "category": "dairy",
+   "cook_qty": "about 1 1/2 cups crumbled"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Paprika",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Crack the 6 eggs into a large bowl and beat them well. Whisk in the 1 1/2 cups milk.",
+  "Whisk in the 1 cup flour a little at a time, until the batter is smooth with no lumps left.",
+  "Thinly slice 6 of the green onions. Finely chop about 1/4 cup of the parsley and about 1/4 cup of the dill. Crumble the feta. That should be about 1 1/2 cups.",
+  "Stir the green onions, parsley, dill and feta into the batter with the 1/2 tsp salt, 1/4 tsp pepper and 3/4 tsp paprika.",
+  "Heat a nonstick frying pan over medium low and add about 1/2 tbsp of the olive oil. Pour in a ladle of batter, enough to cover the bottom, and tilt the pan so it spreads into a thin, even layer.",
+  "Cook it for about 2 minutes, until the top has set and the edges are golden. Flip it and cook the other side for about 1 minute.",
+  "Slide it onto a plate and cover it loosely with foil. Make the rest the same way, adding a little of the remaining olive oil to the pan each time. You'll get about 8.",
+  "Fold or roll each one up. Serve warm, two each, with the red pepper flakes on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "None of the versions found had a rating count of 20 or more, and RecipeTin Eats, the trusted cook for this cuisine, has no kaygana, so Cooking Gorgeous (5.0 from 2 votes) leads. All three whisk eggs with flour and milk into a thin batter full of parsley and green onion and cook it in a lightly greased pan like a thick crepe, flipping once. Cooking Gorgeous adds dill, paprika and feta and cooks slowly over medium low; Özlem Warren makes thinner crepes in butter over medium high with no cheese; Almost Turkish Recipes stirs in feta and red pepper flakes. This one follows the lead scaled up to 6 eggs so four people get two each, and moves the red pepper flakes to the table.",
+ "sources": [
+  {
+   "name": "Cooking Gorgeous",
+   "title": "Kaygana - Turkish Omelette",
+   "url": "https://cookingorgeous.com/blog/kaygana-turkish-omelette/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Ozlem's Turkish Table",
+   "title": "Kaygana Crêpes with Parsley and Spring Onions",
+   "url": "https://ozlemsturkishtable.com/2025/03/kaygana-crepes-with-parsley-and-spring-onions/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Almost Turkish Recipes",
+   "title": "Turkish Omelette (Kaygana)",
+   "url": "https://almostturkishrecipes.com/2007/01/turkish-omelette-kaygana.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
