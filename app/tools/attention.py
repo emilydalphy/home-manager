@@ -269,6 +269,9 @@ def get_attention_items() -> list[dict]:
     from . import freezer_portions as _freezer_portions
 
     _freezer_portions.sweep_use_soon()
+    # A "no frozen portion for Tuesday" question whose cook was ticked
+    # cooked after all, or whose night has changed, no longer stands (#32).
+    _freezer_portions.settle_missing_portions()
     items = []
     nudge = _coordination.get_feedback_nudge()
     if nudge.get("has_nudge"):

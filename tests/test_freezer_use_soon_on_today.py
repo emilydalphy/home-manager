@@ -83,7 +83,7 @@ var slot = { innerHTML: '', querySelectorAll: function () {
 } };
 var panel = { querySelector: function () { return slot; } };
 """ % json.dumps(items)
-    script += _function("isFreezerUseSoon") + "  var useSoonState = { items: [] };\n"
+    script += _function("isFreezerUseSoon") + _function("isMissingPortion") + "  var useSoonState = { items: [] };\n"
     script += _function("loadUseSoon") + _function("renderUseSoon") + _function("resolveUseSoon")
     script += """
 loadUseSoon(panel).then(function () {

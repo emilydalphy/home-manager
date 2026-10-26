@@ -3528,6 +3528,28 @@ def resolve_attention(item_id: int, req: ResolveAttentionRequest):
     return {"items": items}
 
 
+@app.post("/api/attention/{item_id}/replan-night")
+def replan_missing_portion_night(item_id: int):
+    """
+    "Plan something else" on the "no frozen portion for Tuesday" question
+    (Emily's pick #32, 2026-10-26): that night gets a dinner through the
+    swap's own picker, and the question is resolved. A 200 can say no
+    (`status` 'refused', with the sentence to show). Answers with the queue.
+    """
+    from .tools import freezer_portions as _freezer_portions
+    try:
+        result = _freezer_portions.replan_missing_portion(item_id)
+        items = tools.get_attention_items()
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except AssistantUnavailableError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        logger.exception("Re-planning a missing-portion night failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return {**result, "items": items}
+
+
 @app.get("/api/chores/today")
 def chores_today():
     """
@@ -4719,6 +4741,25 @@ def week_fill_day(week_start: str, req: FillDayRequest):
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
+@app.post("/api/week/{week_start}/in-after-all")
+def week_in_after_all(week_start: str, req: FillDayRequest):
+    """
+    "We're in after all" on a night the week's answers marked Out (Emily's
+    pick #31, 2026-10-26): the tag comes off and the night gets a dinner
+    (swap_in_place.in_after_all). A 200 can say no (`status` 'refused',
+    with the sentence to show), like fill-day.
+    """
+    _route_date(req.date, "date")
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
+    try:
+        return tools.in_after_all(plan_id, req.date)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("We're in after all failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
 class SwapOptionsRequest(BaseModel):
     """One tap on the Week 1 screen's Swap: which slot, and what this
     sitting has already turned down for it."""
@@ -5736,6 +5777,10 @@ def approve_week(week_start: str, req: WeekApproveRequest):
         # approving now lands on the list instead, so the toast carries it
         # (weekly_plan.batched_line) — "" when nothing was batched.
         "batched_line": _weekly_plan.batched_line(result["weekly_plan_id"]),
+        # A new dish approval couldn't write up (#27/#75, 2026-10-26): the
+        # week still approves, and the toast says which dish isn't ready.
+        "recipes_not_ready": result.get("recipes_not_ready") or [],
+        "recipes_not_ready_line": result.get("recipes_not_ready_line"),
     }
 
 
