@@ -274,6 +274,15 @@ why*, not duplicating the diff.
   approval and never cleared; the reader falls back to `approved_at`.
   Startup's `_backfill_list_built_at` copies `approved_at` into plans that
   predate the column, so the week running on deploy day is covered too.
+- **Solo-night taste learning reads the cook, not its leftovers** (2026-10-21,
+  defect hunt; branch `overnight/hunt-taste-2026-10-21b`; tests
+  `tests/test_solo_taste_skips_reheats.py`). A dinner both adults ate plus a
+  leftover lunch only one was home for: rating the dish credited it to that
+  one person, because the reheat was the newest ticked row.
+  `_maybe_auto_attribute_solo_night` now reads a newest-ticked reheat
+  (`cooker._is_leftovers_night`, the cook counter's rule) as the cook its
+  `links_to` names, ticked or not — never as licence to search back to an
+  older solo cook, which credited a three-week-old solo bowl.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

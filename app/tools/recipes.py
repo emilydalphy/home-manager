@@ -4208,6 +4208,8 @@ def _maybe_auto_attribute_solo_night(recipe_id: int, recipe_name: str, rating: s
     Same trick household.py uses for the same reason.
     """
     from . import attendance as _attendance
+    from . import cooker as _cooker  # deferred for the same reason
+    from . import weekly_plan as _weekly_plan  # and again
 
     # try/finally on both connections, and the second one is why. The INSERT
     # below writes into member_recipe_feedback.rating, which carries
@@ -4224,16 +4226,41 @@ def _maybe_auto_attribute_solo_night(recipe_id: int, recipe_name: str, rating: s
     # could not see. mark_recipe_feedback's vocabulary guard closes today's
     # trigger; this is what makes the NEXT unexpected failure in here visible
     # instead of silent.
+    #
+    # A reheat is not a cook (defect hunt 2026-10-21): the dinner both ate
+    # Monday and the leftover lunch only Emily was home for are ticked
+    # together, and the lunch — newest by id — was read as the "last
+    # cooked", so "Chili wasn't a hit" became Emily's own verdict. A ticked
+    # leftover / made-ahead night (cooker._is_leftovers_night, the rule the
+    # cook counter uses) stands for the cook it eats from: its links_to is
+    # resolved within its own plan, ticked or not, and that cook's table is
+    # the one the verdict is about. It never lets the search fall back to an
+    # older cook — "Not a hit" about this week's chili is not about a solo
+    # bowl three weeks ago — and a claim that doesn't resolve teaches nobody.
     conn = get_conn()
     try:
         entry = conn.execute(
             """
-            SELECT date, slot FROM meal_plan_entries
+            SELECT id, date, slot, weekly_plan_id, derived_from_json FROM meal_plan_entries
             WHERE household_id = ? AND recipe_id = ? AND cooked_status = 'done'
             ORDER BY COALESCE(cooked_at, created_at) DESC, id DESC LIMIT 1
             """,
             (household_id(), recipe_id),
         ).fetchone()
+        if entry and _cooker._is_leftovers_night(entry["derived_from_json"]):
+            plan_rows = conn.execute(
+                "SELECT id, date, slot, weekly_plan_id, derived_from_json FROM meal_plan_entries "
+                "WHERE household_id = ? AND weekly_plan_id IS ?",
+                (household_id(), entry["weekly_plan_id"]),
+            ).fetchall()
+            links_to = str(json.loads(entry["derived_from_json"]).get("links_to") or "").strip()
+            entry = _weekly_plan._resolve_leftover_source(
+                links_to,
+                {(r["date"], r["slot"]): r for r in plan_rows},
+                {r["id"]: r for r in plan_rows},
+            )
+            if entry is not None and _cooker._is_leftovers_night(entry["derived_from_json"]):
+                entry = None  # a reheat of a reheat: no cook of its own to point at
     finally:
         conn.close()
     if not entry:
