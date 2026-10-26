@@ -780,6 +780,15 @@ why*, not duplicating the diff.
   via `_ledger_totals` + `_restate_standing_want`. Tests clear
   `inventory_items` after ticking — the inventory beta's "already have" hid
   the bug.
+- **A house with Chores off is no longer sent the chores half of the system
+  prompt** (2026-10-25; branch `overnight/chores-prompt-only-when-on`; tests
+  in `tests/test_chores_switch.py` §3c). The chores onboarding walk-through
+  and the three day-to-day chores rules moved word for word into
+  `agent.CHORES_PROMPT`; `system_prompt_for(chores_on)` appends it only when
+  the switch is on, and the turn and the warm-up read the switch once and
+  build tools and system text from that one read. Why: ~3,600 chars (~900
+  tokens) per turn re-written to cache for a feature the house can't see.
+  The "chores isn't switched on" sentence stays in the base on purpose.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

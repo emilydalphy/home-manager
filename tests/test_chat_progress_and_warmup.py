@@ -221,8 +221,10 @@ def test_the_warmup_is_a_max_tokens_zero_call_with_the_chats_cached_prefix(monke
     (kw,) = sent
     assert kw["max_tokens"] == 0
     assert "tool_choice" not in kw  # refused alongside max_tokens 0, as in the recipe warm-up
-    assert kw["system"] == [{"type": "text", "text": agent.SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}}]
-    assert kw["tools"] == agent.tools_for_request()
+    chores_on = agent.tools.chores_enabled()
+    assert kw["system"] == [{"type": "text", "text": agent.system_prompt_for(chores_on),
+                             "cache_control": {"type": "ephemeral"}}]
+    assert kw["tools"] == agent.tools_for_request(chores_on)
     assert kw["output_config"] == agent._effort_config("chat")
 
 

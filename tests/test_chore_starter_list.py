@@ -538,10 +538,12 @@ def test_the_chat_tool_is_registered_and_gated():
 
 
 def test_the_system_prompt_sends_the_model_to_the_starter_list():
-    assert "get_starter_chore_list" in agent.SYSTEM_PROMPT
-    assert "never ask for them again" in agent.SYSTEM_PROMPT
-    assert "Never type out a list of your own instead" in agent.SYSTEM_PROMPT
-    assert "Offer common examples" not in agent.SYSTEM_PROMPT
+    # The chores walk-through is CHORES_PROMPT, sent only with Chores on.
+    prompt = agent.system_prompt_for(True)
+    assert "get_starter_chore_list" in prompt
+    assert "never ask for them again" in prompt
+    assert "Never type out a list of your own instead" in prompt
+    assert "Offer common examples" not in prompt
 
 
 # --- 9. the empty state is a blank -------------------------------------------
