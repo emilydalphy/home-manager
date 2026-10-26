@@ -2314,12 +2314,24 @@ def get_week_planning_nudge() -> dict:
     if covering is None:
         # Nothing covers today, full stop — offer the suggested period,
         # which is the current one until PLAN_AHEAD_FROM_WEEKDAY and the
-        # next one from there. See the docstring above for why there's no
-        # additional "already filed this week" guard for the current
-        # period; a shifted-to suggestion IS checked, because "plan next
-        # week" to a household that already has is an offer to undo it.
+        # next one from there — unless a live plan already holds any of
+        # its days, because offering days the household has planned is an
+        # offer to undo them.
+        #
+        # That check used to be skipped for the CURRENT period (Loop Board
+        # "Today doesn't ask to plan a week I've already planned", tester,
+        # 2026-10-25): a Sunday-start household with next week approved
+        # from Mon 26 opened Today on Sun 25, nothing covered the Sunday,
+        # the suggestion ran Oct 25–31, and the card offered six approved
+        # days again — "Shall I put Oct 25–31 together?" — with "Let's
+        # plan the week" in the dock. The uncovered day is tonight's
+        # dinner card's to ask about ("Tonight needs a dinner"), not the
+        # week card's. Checking the current period too does not bring back
+        # the guard the docstring says went on 2026-09-05: the suggestion
+        # never starts before today, so a plan that ran out early is not
+        # in its window and still leaves the nudge asking every morning.
         target, is_current = date.fromisoformat(suggestion["start_date"]), suggestion["is_current_period"]
-        if not is_current and _plan_covers_any(target.isoformat(), target_days) is not None:
+        if _plan_covers_any(target.isoformat(), target_days) is not None:
             target = None
     elif covering is not None:
         # A period ends on some day E; the offer for what follows opens
