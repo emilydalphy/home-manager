@@ -43,11 +43,12 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from ..db import get_conn
 from ._shared import household_id
+from . import freezer_portions as _freezer_portions
 from . import notifications as _notifications
 from . import week_intake as _week_intake
 from . import plan_undo as _plan_undo
@@ -171,6 +172,27 @@ def _night_off_row(row) -> bool:
     return derived.get("constraint") == NIGHT_OFF_CONSTRAINT
 
 
+def _evening_over(now: datetime) -> bool:
+    """
+    Whether tonight's question has closed: past the evening nudge's late
+    window — EVENING_NUDGE_LATE_WINDOW_MINUTES after its clock for the
+    household's dinner_window (digest.evening_nudge_clock). That is the
+    app's one existing answer to "the night has moved on", and this card
+    already goes quiet where the nudge does (the 'cooking' reason,
+    2026-10-14). It ends 30–60 minutes after dinner lands
+    (defrost._DINNER_CLOCK_BY_WINDOW) for every window, so a household
+    running late can still say "we're going out" at the table's own time;
+    a cutoff AT the landing clock would close the night off at the moment
+    it is most wanted. The long-cook early nudge (planned_start) is not
+    read: it moves when the text goes, not when the night is over.
+    """
+    from . import digest as _digest  # lazily: digest reaches most of the package
+    clock = _digest.evening_nudge_clock(_digest._household_dinner_window())
+    closes = datetime.combine(now.date(), clock) + timedelta(
+        minutes=_digest.EVENING_NUDGE_LATE_WINDOW_MINUTES)
+    return now.replace(tzinfo=None) > closes
+
+
 def tonight_check(now: datetime | None = None) -> dict:
     """
     What Now's top card should say about tonight, and what "Something
@@ -186,12 +208,14 @@ def tonight_check(now: datetime | None = None) -> dict:
                                 #   the plan, so it is reported whatever
                                 #   the plan lookup finds (2026-09-15)
         "week_start": str|None, # the plan's week_start_date, for the swap route
+        "weekly_plan_id": int|None, # that plan, sent with it (two can share a key)
         "dinner": {"entry_id", "meal", "is_leftovers", "leftovers_from"} | None,
         "options": [{"entry_id", "date", "weekday", "meal", "is_leftovers",
                      "leftovers_from"}],   # up to TONIGHT_OPTION_LIMIT
       }
 
-    `ask` is True only when every one of these holds: it is the afternoon;
+    `ask` is True only when every one of these holds: it is the afternoon
+    and the evening is not over (_evening_over);
     a plan covers today and tonight's dinner on it is a real, planned,
     not-yet-cooked, not-yet-started dish; and nobody has said "Yes" today. `answered` is
     NOT one of those conditions read backwards: it is a fact about the
@@ -199,7 +223,7 @@ def tonight_check(now: datetime | None = None) -> dict:
     alongside every `reason` rather than only the ones that get far
     enough to look. `reason` names the first condition that fails —
     'morning', 'no_plan', 'components', 'unplanned', 'away', 'open',
-    'cooked', 'cooking', 'answered', 'night_off' — so a screen (or a test) can tell a
+    'cooked', 'cooking', 'evening_over', 'answered', 'night_off' — so a screen (or a test) can tell a
     quiet card from a broken one. 'night_off' is the one quiet reason the
     screen still draws something for: `night_off` is True, `use_soon`
     lists anything already bought for the dropped dish that won't keep,
@@ -234,6 +258,9 @@ def tonight_check(now: datetime | None = None) -> dict:
     out: dict = {
         "date": today, "ask": False, "reason": "", "afternoon": afternoon,
         "answered": False, "week_start": None, "dinner": None, "options": [],
+        # The plan itself, sent beside week_start on the swap route: two
+        # plans can share one week key (overnight/plan-id-over-week-key).
+        "weekly_plan_id": None,
         # Set only by a night the household called off (tonight_night_off):
         # whether tonight is one, and anything already bought for a dropped
         # dish that won't keep.
@@ -284,6 +311,7 @@ def tonight_check(now: datetime | None = None) -> dict:
             out["reason"] = "no_plan"
             return out
         out["week_start"] = plan["week_start_date"]
+        out["weekly_plan_id"] = plan["id"]
         if plan["planning_mode"] == "component_based":
             out["reason"] = "components"
             return out
@@ -355,6 +383,11 @@ def tonight_check(now: datetime | None = None) -> dict:
         return out
     if not afternoon:
         out["reason"] = "morning"
+    elif _evening_over(now):
+        # Past the dinner window the night has moved on: at nine, "Still
+        # good?" about a dinner nobody started is not a question anyone can
+        # act on (overnight, 2026-10-21). See _evening_over for the clock.
+        out["reason"] = "evening_over"
     elif answered:
         out["reason"] = "answered"
     else:
@@ -693,6 +726,10 @@ def _night_off_plan(conn, plan, rows, tonight_row, today: str,
                         untouched; a side the replaced leftovers night
                         carried comes off the list with it (2026-09-30).
       - 'drop'          feeds nobody, nowhere to move — comes off the week.
+      - 'cooking'       tonight's cook has started (cook_started_at) and
+                        is not ticked: refused in a sentence, nothing moves
+                        and nothing comes off. Decided before 'move' and
+                        'drop', not only for a chain source — see below.
 
     `line` is the row's sub-line, a statement of what the tap will do (§8
     rule 7). `conn` may be the tap's own transaction or a plain read
@@ -715,6 +752,21 @@ def _night_off_plan(conn, plan, rows, tonight_row, today: str,
             "line": f"The {dish} leftovers go in the freezer.",
         }
 
+    if _weekly_plan.cook_begun(tonight_row):
+        # The cook has started (overnight 2026-10-14): it stays on tonight,
+        # whatever it feeds. Moving it onto a fed night would carry tonight's
+        # start stamp there ("cooking since yesterday"); the swap already
+        # refuses a started cook, so no free night is ever found for it.
+        # This used to be asked only of a chain source, so a started dinner
+        # feeding nobody fell through to 'drop' — "Salmon Bowls is off the
+        # week", the pot on the stove deleted and its unbought groceries
+        # reversed — from the chat's take_the_night_off, or a second phone
+        # still showing the card from before the start (defect hunt,
+        # 2026-10-22). The Review stepper's "−" already refuses the same
+        # dinner (drop_dish_from_day). "Mark not cooked" clears the start.
+        return {"kind": "cooking", "dish": dish,
+                "line": f"The {dish} is already cooking, so it stays on tonight."}
+
     free = _next_free_night(plan, rows, today, conn=conn)
     if free is not None:
         return {
@@ -727,13 +779,6 @@ def _night_off_plan(conn, plan, rows, tonight_row, today: str,
     # stepper's "−" reads too so the two can never disagree about which
     # night a cook with nowhere free to go lands on.
     targets = _weekly_plan.fed_nights_in_eating_order(source, today)
-    if targets and _weekly_plan.cook_begun(tonight_row):
-        # The cook has started (overnight 2026-10-14): moving it onto the
-        # fed night would carry tonight's start stamp there ("cooking since
-        # yesterday"), and dropping it would leave that night's leftovers
-        # with no cook. It stays; the tap is refused in a sentence.
-        return {"kind": "cooking", "dish": dish,
-                "line": f"The {dish} is already cooking, so it stays on tonight."}
     if targets:
         first = targets[0]
         return {
@@ -1050,7 +1095,7 @@ def tonight_night_off(day: str | None = None, now: datetime | None = None,
             return {**out, **asked, "said": asked["message"]}
 
         if kind == "cooking":
-            # See _night_off_plan: a started cook feeding later nights stays.
+            # See _night_off_plan: a started, unticked cook is never dropped or moved.
             conn.rollback()
             return {"status": "refused", "date": today, "message": step["line"]}
 
@@ -1072,6 +1117,9 @@ def tonight_night_off(day: str | None = None, now: datetime | None = None,
                 out["can_undo"] = True
                 out["freezer_nights_dropped"] = dropped
             else:
+                # Tonight's cook carried portions an earlier night off put
+                # in the freezer: with no cook, there are none.
+                _freezer_portions.release_uncooked_extra(conn, tonight_row["id"])
                 _settle_night_off(plan_id, today, use_soon, conn)
             conn.commit()
             # The weekdays the dish is still planned on after tonight — the
@@ -1096,7 +1144,9 @@ def tonight_night_off(day: str | None = None, now: datetime | None = None,
     # night as unsettled — it is already off.
     out["use_soon"] = use_soon
     if use_soon:
-        _queue_use_soon(dish, use_soon)
+        queued = _queue_use_soon(dish, use_soon)
+        if out.get("can_undo") and queued:
+            _remember_use_soon_note(plan_id, today, queued)
     # And the week's fridge moves, for the same reason and in the same
     # breath (Loop Board "Thaw reminders follow a meal when it's swapped or
     # moved by hand"). A night off moves a dinner — 'move' through the very
@@ -1340,6 +1390,7 @@ def tonight_night_off_undo(day: str | None = None, now: datetime | None = None) 
                 (inv["id"], household_id()),
             )
 
+        use_soon_note = record.get("use_soon_note_id")
         _plan_undo.restore(conn, record, holder["id"])
         conn.commit()
     except Exception:
@@ -1348,6 +1399,8 @@ def tonight_night_off_undo(day: str | None = None, now: datetime | None = None) 
     finally:
         conn.close()
     dish = record.get("dish") or ""
+    if use_soon_note:
+        _unqueue_use_soon(use_soon_note)
     return {
         "status": "restored", "date": today, "dish": dish or None,
         # The good version is the one above; the fallback says the same
@@ -1357,27 +1410,86 @@ def tonight_night_off_undo(day: str | None = None, now: datetime | None = None) 
     }
 
 
-def _queue_use_soon(dish: str, items: list[str]) -> None:
+def _queue_use_soon(dish: str, items: list[str]) -> int | None:
     """
     Put "use these soon" on the attention queue — the app's existing place
     for something the household should look at rather than have guessed at
     for them. It reaches Cook's fold and the morning text from there, so
     the note outlives the one card on Now that first said it.
 
+    Returns the note's id when THIS call made it pending (a new row, or one
+    reopened), else None: the same note already pending — the dish dropped
+    off another night first — belongs to that earlier answer, and an Undo
+    of this one must leave it standing.
+
     Never allowed to fail the answer: the night is already off, and a
     reminder that didn't queue must not report the night as unsettled.
     """
     from . import attention as _attention
 
-    said = _weekly_plan._join_with_and(items)
     try:
-        _attention.add_attention_item(
-            USE_SOON_KIND,
-            f"Use the {said} soon — {dish} came off the plan.",
-            {"items": items, "dish": dish},
+        res = _attention.add_attention_item(
+            USE_SOON_KIND, _use_soon_summary(dish, items), {"items": items, "dish": dish},
         )
     except Exception:
         logger.exception("Could not queue the use-soon note for %s", dish)
+        return None
+    return res["id"] if (res.get("created") or res.get("reopened")) else None
+
+
+def _remember_use_soon_note(plan_id: int, today: str, note_id: int) -> None:
+    """Add the note this tap queued to its Undo record, so Undo takes back
+    that one and no other. After the commit (the queue opens its own
+    connection); the holder's derived_from is outside the fingerprint, so
+    the record can grow without Undo reading the night as changed."""
+    try:
+        conn = get_conn()
+        try:
+            for r in _tonight_holder(conn, plan_id, today):
+                rec = _plan_undo.read(r, NIGHT_OFF_UNDO_KEY)
+                if rec:
+                    rec["use_soon_note_id"] = note_id
+                    _plan_undo.stamp(conn, r["id"], NIGHT_OFF_UNDO_KEY, rec)
+                    conn.commit()
+                    break
+        finally:
+            conn.close()
+    except Exception:
+        logger.exception("Could not record the use-soon note on the night-off undo")
+
+
+def _use_soon_summary(dish: str, items: list[str]) -> str:
+    return f"Use the {_weekly_plan._join_with_and(items)} soon — {dish} came off the plan."
+
+
+def _unqueue_use_soon(note_id: int) -> None:
+    """
+    Undo's half of _queue_use_soon. The note says the dish came off the
+    plan; once Undo has put it back on tonight that is no longer true, and
+    left pending it was the next morning's text — "use the turkey soon"
+    for a chili still planned for tonight — and every new chat's opener
+    until somebody found it in Cook's fold (defect hunt 2026-10-23).
+
+    Only the note THIS night off made pending (its id, on the undo record):
+    the same sentence already pending from an earlier answer is still true
+    and stays. One already answered since is left as answered. Resolved,
+    not deleted — the shape freezer_portions.sweep_use_soon settles a note
+    that stopped being true. Never allowed to fail the Undo, which has
+    already committed.
+    """
+    try:
+        conn = get_conn()
+        try:
+            conn.execute(
+                "UPDATE attention_items SET status = 'resolved', resolved_at = datetime('now') "
+                "WHERE id = ? AND household_id = ? AND kind = ? AND status = 'pending'",
+                (note_id, household_id(), USE_SOON_KIND),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+    except Exception:
+        logger.exception("Could not take back the use-soon note %s", note_id)
 
 
 __all__ = [

@@ -588,7 +588,9 @@ def _approved_users_of(conn, recipe_id: int) -> dict[int, list[int]]:
     the night already cooked this week must not be bought again onto the
     live list. That holds for the meal the household opened too: fixing
     the recipe of a night already cooked changes the recipe and leaves the
-    list alone.
+    list alone — which is why a night ticked done (cooked_status, set by
+    check_off_meal) is not a user either, even dated today (review,
+    2026-10-24: tonight's eaten Fried Rice bought a dozen eggs).
     """
     today = _grocery._household_today(conn=conn).isoformat()
     out: dict[int, list[int]] = {}
@@ -596,7 +598,7 @@ def _approved_users_of(conn, recipe_id: int) -> dict[int, list[int]]:
         "SELECT mpe.id, mpe.weekly_plan_id FROM meal_plan_entries mpe "
         "JOIN weekly_plans wp ON wp.id = mpe.weekly_plan_id "
         "WHERE mpe.recipe_id = ? AND mpe.household_id = ? AND wp.status = 'approved' "
-        "AND mpe.date >= ? AND mpe.slot_state = 'planned' "
+        "AND mpe.date >= ? AND mpe.slot_state = 'planned' AND mpe.cooked_status != 'done' "
         "ORDER BY mpe.date ASC, mpe.id ASC",
         (int(recipe_id), household_id(), today),
     ).fetchall():
@@ -625,6 +627,101 @@ def _rebuy_users(conn, users: dict[int, list[int]]) -> dict:
     for plan_id, ids in users.items():
         after = _rebuy(conn, plan_id, ids)
     return after
+
+
+def _rebuy_after_edit(conn, users: dict[int, list[int]]) -> None:
+    """
+    update_recipe_details' resync: buy for these nights from the recipe as
+    it now stands, less what the shopper has already put in the cart or
+    bought for them.
+
+    _unbuy/_rebuy take the whole ledger off and buy the whole recipe again,
+    and a ticked line is left as it is — so a serving count raised after
+    the chicken was ticked bought the full new amount on top: 1 lb bought,
+    "2 lbs" needed, for a 2 lb need (review, 2026-10-24). Here only the
+    ledger rows on UNTICKED lines are reversed; a ticked line keeps its
+    rows (bring_over.bought_items reads them next week), and each night's
+    new share of that food is cut by what its ticked rows already hold.
+    Nothing is bought when that covers it.
+    """
+    hid = household_id()
+    _done = ("in_cart", "purchased")
+    for plan_id, ids in users.items():
+        marks = ",".join("?" * len(ids))
+        links = conn.execute(
+            "SELECT l.id, l.meal_plan_entry_id, l.item, l.quantity, g.status "
+            "FROM meal_plan_grocery_links l LEFT JOIN grocery_items g ON g.id = l.grocery_item_id "
+            f"WHERE l.household_id = ? AND l.meal_plan_entry_id IN ({marks})",
+            [hid, *ids],
+        ).fetchall()
+        bought: dict[tuple[int, str], list[str]] = {}
+        undone: dict[int, list[int]] = {}
+        for link in links:
+            if link["status"] in _done:
+                key = (int(link["meal_plan_entry_id"]), _grocery._merge_key(link["item"] or ""))
+                bought.setdefault(key, []).append(link["quantity"] or "")
+            else:
+                undone.setdefault(int(link["meal_plan_entry_id"]), []).append(int(link["id"]))
+        old_ids = {int(link["id"]) for link in links}
+        for eid, link_ids in undone.items():
+            _grocery._reverse_meal_grocery_contributions(eid, conn=conn, only_link_ids=link_ids)
+        _rebuy(conn, plan_id, ids)
+        if not bought:
+            continue
+        fresh = conn.execute(
+            "SELECT l.id, l.meal_plan_entry_id, l.item, l.quantity, l.grocery_item_id, g.status, "
+            "g.quantity AS line_qty, g.source_weekly_plan_id "
+            "FROM meal_plan_grocery_links l JOIN grocery_items g ON g.id = l.grocery_item_id "
+            f"WHERE l.household_id = ? AND l.meal_plan_entry_id IN ({marks})",
+            [hid, *ids],
+        ).fetchall()
+        touched: set[int] = set()
+        for link in fresh:
+            if int(link["id"]) in old_ids or link["status"] in _done:
+                continue
+            had = bought.get((int(link["meal_plan_entry_id"]), _grocery._merge_key(link["item"] or "")))
+            if not had:
+                continue
+            left, gone = link["quantity"] or "", False
+            for qty in had:
+                left, gone = _grocery._subtract_quantity(left, qty)
+                if gone:
+                    break
+            if link["source_weekly_plan_id"] is None:
+                # A person's own line the share was added onto: the ledger
+                # can't restate it, so the bought part comes off its words.
+                line_left, line_gone = link["line_qty"] or "", False
+                for qty in had:
+                    line_left, line_gone = _grocery._subtract_quantity(line_left, qty)
+                    if line_gone:
+                        break
+                if not line_gone and line_left != (link["line_qty"] or ""):
+                    conn.execute("UPDATE grocery_items SET quantity = ? WHERE id = ? AND household_id = ?",
+                                 (line_left, link["grocery_item_id"], hid))
+            if gone:
+                conn.execute("DELETE FROM meal_plan_grocery_links WHERE id = ? AND household_id = ?", (link["id"], hid))
+            elif left != (link["quantity"] or ""):
+                conn.execute("UPDATE meal_plan_grocery_links SET quantity = ? WHERE id = ? AND household_id = ?",
+                             (left, link["id"], hid))
+            else:
+                continue
+            touched.add(int(link["grocery_item_id"]))
+        for item_id in touched:
+            still = conn.execute(
+                "SELECT 1 FROM meal_plan_grocery_links WHERE household_id = ? AND grocery_item_id = ? LIMIT 1",
+                (hid, item_id),
+            ).fetchone()
+            if still:
+                _grocery._recompute_plan_line_from_ledger(item_id, conn=conn)
+            else:
+                # Every share on it is already bought: a plan line with no
+                # meal left wanting it goes (a person's own line never does).
+                conn.execute(
+                    "DELETE FROM grocery_items WHERE id = ? AND household_id = ? "
+                    "AND source_weekly_plan_id IS NOT NULL AND status IN ('needed', 'spice') "
+                    "AND COALESCE(kept_amount, '') = ''",
+                    (item_id, hid),
+                )
 
 
 def _unbuy(conn, entry_ids: list[int]) -> None:

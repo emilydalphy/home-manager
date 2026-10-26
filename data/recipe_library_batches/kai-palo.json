@@ -1,0 +1,48 @@
+{
+ "dish_name": "Kai Palo",
+ "cuisine": "Thai",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 95,
+ "ingredients": [
+  {"item": "Eggs", "qty": "6", "category": "dairy"},
+  {"item": "Pork belly", "qty": "1 1/2 lb", "category": "meat/seafood"},
+  {"item": "Garlic", "qty": "4 cloves", "category": "produce"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"},
+  {"item": "Ground white pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Five spice powder", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Brown sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Star anise", "qty": "2 pods", "category": "pantry"},
+  {"item": "Cinnamon sticks", "qty": "1 stick", "category": "pantry"},
+  {"item": "Dark soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Fish sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Fried tofu puffs", "qty": "1 package", "category": "dairy", "cook_qty": "8"},
+  {"item": "Jasmine rice", "qty": "1 1/2 cups", "category": "pantry"}
+ ],
+ "instructions": [
+  "Put the 6 eggs in a small pot, cover them with cold water and bring it to a boil over high heat. Once it boils, turn the heat to medium and cook them for 9 minutes. Drain them, run cold water over them until they're cool enough to handle, and peel them.",
+  "Meanwhile, cut the 1 1/2 lb pork belly into chunks about 1 1/2 inches across and pat them dry.",
+  "Finely chop the 4 garlic cloves and enough cilantro stems to make about 2 tbsp. Mix them with the 1/2 tsp white pepper on the board and keep chopping until it's almost a paste. Pick a handful of cilantro leaves for the end.",
+  "Heat the 2 tbsp oil in a heavy pot over medium. Add the garlic paste and stir it for about 30 seconds, until it smells fragrant. Don't let it brown.",
+  "Add the pork and the 2 tsp five spice powder. Turn the heat to medium high and stir fry for 6 to 8 minutes, until the outside of the pork has no pink left and the fatty edges start to brown.",
+  "Add the 3 tbsp brown sugar, the 2 star anise and the cinnamon stick. Stir for 1 to 2 minutes, until the sugar melts and coats the pork in a dark, sticky glaze.",
+  "Pour in 6 cups water, the 3 tbsp dark soy sauce, 2 tbsp soy sauce and 1 tbsp fish sauce. Bring it to a boil, then turn the heat down so it simmers gently. Partly cover the pot and cook for 45 minutes. Skim off any foam that rises.",
+  "Add the peeled eggs and 8 tofu puffs and push them under the broth. Simmer for about 30 minutes, until a fork slides easily into the pork and the eggs are brown all over. Turn the eggs once or twice so they color evenly.",
+  "While it simmers, rinse the 1 1/2 cups jasmine rice and get it cooking.",
+  "Fish out the star anise and the cinnamon stick. Taste the broth. If it's flat, add a splash more fish sauce.",
+  "Halve the eggs and spoon the pork, eggs, tofu and plenty of broth into bowls. Scatter the cilantro leaves on top. Serve with the jasmine rice."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three fry a paste of garlic, cilantro root and white pepper, brown pork belly with five spice and palm sugar, simmer it in a soy seasoned broth with hard boiled eggs until the pork is tender, and serve it with jasmine rice. Kavey Eats adds fried tofu and wilts greens in at the end, Hungry in Thailand melts the sugar with whole star anise and cinnamon before adding water, and Kvalifood builds on stock with a spice bag and tofu puffs and says it's better the next day. This one follows the lead's paste, pork and tofu, takes the whole spices and sugar step from Hungry in Thailand, leaves out the greens, and uses brown sugar for palm sugar. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Thai) has no version, so the version with the most ratings leads.",
+ "sources": [
+  {"name": "Kavey Eats", "title": "Thai Recipe | Kai Pa Lo (Braised Pork, Eggs and Kale)", "url": "https://www.kaveyeats.com/thai-recipe-kai-pa-lo-braised-pork-eggs-and-kale", "rating": 5.0, "rating_count": 2, "read": true, "lead": true},
+  {"name": "Hungry in Thailand", "title": "Moo Palo Recipe (Thai Braised Pork Belly and Egg)", "url": "https://www.hungryinthailand.com/moo-palo/", "rating": 5.0, "rating_count": 1, "read": true, "lead": false},
+  {"name": "Kvalifood", "title": "Five-Spice Soup with Eggs and Pork Belly (Kai Palo)", "url": "https://kvalifood.com/posts/five-spice-soup-with-eggs-pork-belly-kai-palo/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

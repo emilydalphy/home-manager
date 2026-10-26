@@ -1,0 +1,45 @@
+{
+ "dish_name": "Fagioli all'Uccelletto",
+ "cuisine": "Italian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 95,
+ "ingredients": [
+  {"item": "Dried cannellini beans", "qty": "1 lb", "category": "pantry"},
+  {"item": "Whole peeled tomatoes", "qty": "1 can (14.5 oz)", "category": "pantry"},
+  {"item": "Garlic", "qty": "4 cloves", "category": "produce"},
+  {"item": "Fresh sage", "qty": "1 bunch", "category": "produce", "cook_qty": "9 leaves"},
+  {"item": "Olive oil", "qty": "5 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "2 1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Red pepper flakes", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Crusty bread", "qty": "1 loaf", "category": "other"}
+ ],
+ "instructions": [
+  "The night before, or at least 8 hours ahead: put the 1 lb beans in a large bowl and cover them with cold water by about 3 inches. Leave them to soak on the counter.",
+  "Drain and rinse the beans. Put them in a large pot with 2 of the garlic cloves, lightly crushed with the skins on, 3 of the sage leaves, 1 tbsp of the olive oil and 10 cups of cold water.",
+  "Bring it to a boil over high heat, then turn it down to low so the beans barely bubble. Skim off the foam that rises and partly cover the pot.",
+  "Keep it at a gentle simmer for 1 to 1 1/4 hours in all, stirring in 2 tsp of the salt after the first 30 minutes. Don't let it boil hard, or the beans will split. They're done when a bean squashes easily against the roof of your mouth but still holds its shape.",
+  "Near the end of the beans' cooking, thinly slice the last 2 garlic cloves. Transfer the tomatoes and their juice into a bowl and crush them with your hands until there are no big pieces left.",
+  "Scoop out 2 cups of the bean cooking water, then drain the beans. Pick out and throw away the garlic and sage from the pot.",
+  "Heat 3 tbsp of the olive oil in a large, deep skillet over medium low. Add the sliced garlic and the last 6 sage leaves and cook for 1 to 2 minutes, until the sage is crisp and the garlic is pale golden.",
+  "Add the tomatoes and the remaining 1/2 tsp salt. Simmer for about 10 minutes, stirring now and then, until the sauce has thickened.",
+  "Add the beans and 1 cup of the saved bean water and stir gently. Simmer for about 15 minutes, until the sauce is thick enough to coat the beans. Add more of the bean water a splash at a time if it gets too thick.",
+  "While the beans simmer, slice the bread and toast it until it's golden and crisp at the edges.",
+  "Take the pan off the heat. Drizzle the last 1 tbsp olive oil over the beans and add the 1/4 tsp black pepper.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the toasted bread, and the red pepper flakes on the side."
+ ],
+ "advance_prep_notes": "soak the dried beans overnight, the night before",
+ "advance_prep_step_indices": [1],
+ "method_notes": "None of the meatless versions read had 20 or more ratings, and RecipeTin Eats (the trusted cook for Italian) has no version, so this leads with Manu's Menu. All three cook cannellini (or borlotti) until tender, fry garlic and sage in olive oil, simmer tomato in it and then let the beans sit in the sauce with some of their cooking water; Manu's Menu and Fontana Forni start from dried beans soaked overnight and serve it with toasted bread, while Visit Tuscany uses tomato paste and adds sausage. GialloZafferano's well-rated English version also adds sausage, so it wasn't used for this meatless dish; red pepper flakes from Fontana Forni go on the side."
+,
+ "sources": [
+  {"name": "Manu's Menu", "title": "Fagioli all'Uccelletto", "url": "https://www.manusmenu.com/fagioli-all-uccelletto", "rating": null, "rating_count": 0, "read": true, "lead": true},
+  {"name": "Fontana Forni", "title": "Fagioli all'Uccelletto", "url": "https://fontanaforniusa.com/blogs/news/fagioli-alluccelletto", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Visit Tuscany", "title": "Fagioli all'uccelletto", "url": "https://visittuscany.com/en/recipes/fagioli-uccelletto", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

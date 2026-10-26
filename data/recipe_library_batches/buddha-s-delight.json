@@ -1,0 +1,156 @@
+{
+ "dish_name": "Buddha's Delight",
+ "cuisine": "Chinese",
+ "main_protein": "tofu",
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Fried tofu puffs",
+   "qty": "8 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Dried shiitake mushrooms",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "8 mushrooms"
+  },
+  {
+   "item": "Bean thread noodles",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "4 oz"
+  },
+  {
+   "item": "Napa cabbage",
+   "qty": "1 small head",
+   "category": "produce",
+   "cook_qty": "half the head"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Snow peas",
+   "qty": "6 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Baby bok choy",
+   "qty": "4 heads",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece",
+   "category": "produce",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tamari (gluten-free)",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Dry sherry",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "White pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the dried shiitake in a heatproof bowl and cover them with 2 cups of boiling water. Set a small plate on top to keep them under. Leave them for 20 minutes.",
+  "Meanwhile, rinse the rice in a sieve until the water runs mostly clear. Add it to a medium pot with 2 1/4 cups of water, bring it to a boil over high heat, then cover, turn the heat to low and cook for 15 minutes. Leave the lid on and take the pot off the heat until you serve.",
+  "Put the bean thread noodles in a large bowl, cover them with hot tap water and leave them for 10 minutes, until soft. Drain them and cut them in a few places with scissors so they're easier to eat.",
+  "Slice the carrots thinly on an angle. Cut half the napa cabbage into 2-inch pieces. Trim the snow peas. Quarter the bok choy lengthwise. Mince the garlic, grate the ginger until you have 1 tbsp, and halve the tofu puffs.",
+  "Lift the shiitake out of the soaking water, squeeze them gently, cut off the stems and slice the caps. Pour the soaking water through a fine sieve into a measuring cup, leaving any grit behind. You need 1 cup.",
+  "Make the sauce. Stir the cornstarch into the tamari in a small bowl until it dissolves, then stir in the sherry, sugar, sesame oil, white pepper and the 1 cup of shiitake water.",
+  "Heat the oil in a large skillet or wok over medium-high heat. Add the ginger and the sliced shiitake and stir for 1 minute, until they smell toasty. Add the garlic and stir for 15 seconds.",
+  "Add the carrots and cook for 2 minutes. Add the cabbage, snow peas and bok choy and stir for 2 minutes, until the bok choy turns bright green.",
+  "Give the sauce a quick stir, then pour it into the pan. Add the tofu puffs, cover and cook for 3 minutes, until the vegetables are crisp-tender.",
+  "Add the noodles and toss for 1 minute, until they've taken up the sauce.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Fluff the rice with a fork. Serve the vegetables and noodles with the rice."
+ ],
+ "method_notes": "Buddha's delight is a mix of mushrooms, cabbage, tofu and bean thread noodles braised in a light savory sauce, and the sources agree on dried shiitake, napa cabbage, fried tofu puffs and bean threads. They differ in how many dried ingredients go in (wood ears, lily flowers, bean curd sheets) and in the seasoning. The lead uses red fermented bean curd and Shaoxing wine, and the second version uses vegetarian oyster sauce and dark soy; this version uses tamari, dry sherry and the shiitake soaking water instead, so it is gluten-free and vegan and fits in 45 minutes. The long-simmered 2.5 hour version was not used.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Buddha's Delight (Vegetarian Lo Han Jai)",
+   "url": "https://thewoksoflife.com/buddhas-delight-lo-han-jai/",
+   "rating": 4.93,
+   "rating_count": 28,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Takes Two Eggs",
+   "title": "Buddha's Delight (Lo Han Jai)",
+   "url": "https://takestwoeggs.com/buddhas-delight/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  },
+  {
+   "name": "Wok & Kin",
+   "title": "Lo Han Jai (Buddha's Delight)",
+   "url": "https://www.wokandkin.com/lo-han-jai-buddhas-delight-%e7%bd%97%e6%b1%89%e6%96%8b/",
+   "rating": 5.0,
+   "rating_count": 9,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

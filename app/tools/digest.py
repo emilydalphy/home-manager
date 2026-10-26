@@ -63,8 +63,9 @@ from datetime import datetime, time, timedelta, timezone
 from typing import Callable
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from ..db import get_conn
-from ._shared import PUBLIC_BASE_URL, household_id, use_household
+from ..db import get_conn, write
+from ._shared import PUBLIC_BASE_URL, current_member, household_id, use_household
+from ._shared import member_id as _session_member_id
 from . import attendance as _attendance
 from . import attention as _attention
 from . import cooker as _cooker
@@ -74,6 +75,7 @@ from . import quantities as _quantities
 from . import rhythm as _rhythm
 from . import slot_needs as _slot_needs
 from . import weekly_plan as _weekly_plan
+from . import usage as _usage
 
 logger = logging.getLogger("home_manager")
 
@@ -287,7 +289,12 @@ def normalise_phone(raw: str | None) -> str:
     if not text:
         return ""
     digits = re.sub(r"\D", "", text)
-    if text.startswith("+") and 8 <= len(digits) <= 15:
+    # A "+" number outside North America is taken as written. A "+1" one is
+    # held to the same rule as a bare one below: "+1 416 555 010" (a digit
+    # dropped) and "+1 041 655 5010" used to be stored as given, and then
+    # failed at Twilio every morning with nothing on the screen to say so
+    # (defect hunt, 2026-10-22).
+    if text.startswith("+") and not digits.startswith("1") and 8 <= len(digits) <= 15:
         return "+" + digits
     if len(digits) == 11 and digits.startswith("1"):
         digits = digits[1:]
@@ -406,6 +413,22 @@ def _resolve_member(conn, name: str | None, phone: str) -> int:
         for r in adults:
             if r["phone"] == phone:
                 return r["id"]
+    # "Text me" from a phone whose adult is known is that adult — the rule
+    # every other write follows (_shared.acting_name: the session fills in
+    # a name nobody gave). It asked "Which of you is this for?" of a
+    # two-adult house that had already said, at "Who's this?" — and the
+    # model, told to pass a name it cannot know, could guess the wrong one
+    # (defect hunt 2026-10-22).
+    member = current_member()
+    if member and any(r["id"] == member["id"] for r in adults):
+        return member["id"]
+    # A device that picked someone who no longer checks out (re-marked a
+    # Teen, say) is NOT "the only adult" — that inference is for a device
+    # with no pick, and here it overwrote the remaining adult's number
+    # (review, 2026-10-22). Ask rather than guess; current_member() above
+    # is None for exactly this case.
+    if _session_member_id() is not None:
+        raise ValueError("I'm not sure who's on this phone right now — whose texts are these?")
     if len(adults) == 1:
         return adults[0]["id"]
     if not adults:
@@ -429,8 +452,8 @@ def set_morning_text(
     optional and only what's given changes: a number, the household's hour,
     on/off, (rarely) the household's time zone, and what the message
     includes. `name` says whose number it is; left out, it resolves to the
-    only adult, or to the adult already holding that number, and otherwise
-    asks.
+    adult already holding that number, else to the adult using this device
+    ("text me"), else to the only adult, and otherwise asks.
 
     Turning it on with no number on record is refused rather than stored
     as a promise nothing can keep. Turning it off is always accepted, and
@@ -474,72 +497,67 @@ def set_morning_text_for_member(
 
     `parts` / `add_parts` / `drop_parts` are the household's, not this
     member's; see set_morning_text.
+
+    Under db.write(): a refusal part-way through (a time it can't read —
+    "noon", "half seven" — or a part it doesn't know, from the chat) used
+    to raise past a bare close with the number's UPDATE already begun, so
+    the connection was left holding SQLite's write lock and the household's
+    next save anywhere waited out the busy timeout and 500'd (defect hunt,
+    2026-10-21). Now a refusal changes nothing and leaves the lock free.
     """
-    conn = get_conn()
-    if not any(r["id"] == member_id for r in _adult_rows(conn)):
-        conn.close()
-        raise ValueError("I don't have that person down as an adult here.")
-    new_phone = normalise_phone(phone) if phone is not None else None
-    if new_phone is not None:
-        conn.execute(
-            "UPDATE members SET phone = ? WHERE id = ? AND household_id = ?",
-            (new_phone, member_id, household_id()),
-        )
-        if new_phone == "":
+    with write() as conn:
+        if not any(r["id"] == member_id for r in _adult_rows(conn)):
+            raise ValueError("I don't have that person down as an adult here.")
+        new_phone = normalise_phone(phone) if phone is not None else None
+        if new_phone is not None:
             conn.execute(
-                "UPDATE members SET morning_text_on = 0 WHERE id = ? AND household_id = ?",
-                (member_id, household_id()),
+                "UPDATE members SET phone = ? WHERE id = ? AND household_id = ?",
+                (new_phone, member_id, household_id()),
             )
-    if on is not None:
-        if on:
-            current = conn.execute(
-                "SELECT phone FROM members WHERE id = ? AND household_id = ?",
-                (member_id, household_id()),
-            ).fetchone()["phone"]
-            if not current:
-                conn.close()
-                raise ValueError("I need a mobile number before I can text you — which number should it go to?")
-        conn.execute(
-            "UPDATE members SET morning_text_on = ? WHERE id = ? AND household_id = ?",
-            (1 if on else 0, member_id, household_id()),
-        )
-    if time is not None:
-        conn.execute(
-            "UPDATE households SET morning_text_time = ? WHERE id = ?",
-            (normalise_time(time), household_id()),
-        )
-    if timezone is not None:
-        # rhythm.checked_timezone is the column's one validator; a zone
-        # chosen here is an answer, so the was-it-ever-answered flag goes
-        # with it (households.timezone_set, 2026-10-13).
-        from . import rhythm as _rhythm
-        try:
+            if new_phone == "":
+                conn.execute(
+                    "UPDATE members SET morning_text_on = 0 WHERE id = ? AND household_id = ?",
+                    (member_id, household_id()),
+                )
+        if on is not None:
+            if on:
+                current = conn.execute(
+                    "SELECT phone FROM members WHERE id = ? AND household_id = ?",
+                    (member_id, household_id()),
+                ).fetchone()["phone"]
+                if not current:
+                    raise ValueError("I need a mobile number before I can text you — which number should it go to?")
+            conn.execute(
+                "UPDATE members SET morning_text_on = ? WHERE id = ? AND household_id = ?",
+                (1 if on else 0, member_id, household_id()),
+            )
+        if time is not None:
+            conn.execute(
+                "UPDATE households SET morning_text_time = ? WHERE id = ?",
+                (normalise_time(time), household_id()),
+            )
+        if timezone is not None:
+            # rhythm.checked_timezone is the column's one validator; a zone
+            # chosen here is an answer, so the was-it-ever-answered flag goes
+            # with it (households.timezone_set, 2026-10-13).
+            from . import rhythm as _rhythm
             zone = _rhythm.checked_timezone(timezone)
-        except ValueError:
-            conn.close()
-            raise
-        conn.execute("UPDATE households SET timezone = ?, timezone_set = 1 WHERE id = ?", (zone, household_id()))
-    if parts is not None or add_parts is not None or drop_parts is not None:
-        # Composed off what is STORED rather than off the defaults, so a
-        # delta on a household that has never answered adds to the three
-        # the card switches on rather than replacing them with one part.
-        row = conn.execute(
-            "SELECT morning_text_parts FROM households WHERE id = ?", (household_id(),)
-        ).fetchone()
-        chosen = list(_read_parts(row["morning_text_parts"] if row else ""))
-        if parts is not None:
-            chosen = _checked_parts(parts)
-        chosen = [k for k in chosen + _checked_parts(add_parts) if k not in set(_checked_parts(drop_parts))]
-        try:
+            conn.execute("UPDATE households SET timezone = ?, timezone_set = 1 WHERE id = ?", (zone, household_id()))
+        if parts is not None or add_parts is not None or drop_parts is not None:
+            # Composed off what is STORED rather than off the defaults, so a
+            # delta on a household that has never answered adds to the three
+            # the card switches on rather than replacing them with one part.
+            row = conn.execute(
+                "SELECT morning_text_parts FROM households WHERE id = ?", (household_id(),)
+            ).fetchone()
+            chosen = list(_read_parts(row["morning_text_parts"] if row else ""))
+            if parts is not None:
+                chosen = _checked_parts(parts)
+            chosen = [k for k in chosen + _checked_parts(add_parts) if k not in set(_checked_parts(drop_parts))]
             stored = _write_parts(chosen)
-        except ValueError:
-            conn.close()
-            raise
-        conn.execute(
-            "UPDATE households SET morning_text_parts = ? WHERE id = ?", (stored, household_id())
-        )
-    conn.commit()
-    conn.close()
+            conn.execute(
+                "UPDATE households SET morning_text_parts = ? WHERE id = ?", (stored, household_id())
+            )
     settings = get_morning_text_settings()
     me = next((a for a in settings["adults"] if a["member_id"] == member_id), None)
     return {
@@ -568,6 +586,14 @@ def _app_link(tab: str = "") -> str:
 
 def _tidy(text: str) -> str:
     return re.sub(r"\s+", " ", (text or "").replace(" · ", ", ")).strip().rstrip(".?!")
+
+
+def _allergy_clause(move: dict) -> str:
+    """" It has peanut, which Theo can’t have — swap it on Plan." for a
+    move carrying an allergy saved since approval (moves.py's
+    allergy_note), else ''."""
+    note = (move.get("allergy_note") or "").strip()
+    return f" {note}" if note else ""
 
 
 def _takeout_tonight(payload: dict) -> str:
@@ -630,11 +656,16 @@ def _digest_parts(now_local: datetime, included) -> list[tuple[str, str]]:
     # is where the rest of what you're eating today belongs.
     if "meals" in want:
         dinner_reheat = next((m for m in by_kind.get("reheat", []) if m["slot"] == "dinner"), None)
+        # An allergy saved since the week was approved, which tonight's dish
+        # has (allergen_gate.clashes_since_approval), rides ON the "Tonight:"
+        # line: the first line of a part is the one _trim_to_budget always
+        # keeps, so the warning can never be trimmed away from the dish it
+        # is about on a busy morning (review, 2026-10-24).
         if dinner_cook:
-            parts.append(("meals", f"Tonight: {_tidy(dinner_cook['title'])}."))
+            parts.append(("meals", f"Tonight: {_tidy(dinner_cook['title'])}.{_allergy_clause(dinner_cook)}"))
         elif dinner_reheat:
             provenance = _tidy(dinner_reheat["detail"]).split(",")[0]
-            parts.append(("meals", f"Tonight: {_tidy(dinner_reheat['title'])}, {provenance}."))
+            parts.append(("meals", f"Tonight: {_tidy(dinner_reheat['title'])}, {provenance}.{_allergy_clause(dinner_reheat)}"))
         elif _takeout_tonight(payload):
             # A takeout night is no move (moves._cook_and_reheat_moves), so
             # it is read off Today's own meals row: named, never a start.
@@ -1182,11 +1213,15 @@ def run_morning_texts_once(
             try:
                 for item in _run_household(now_utc, sender):
                     results.append({"household_id": hid, **item})
-            except Exception:
+            except Exception as e:
                 # One household's bad morning must not cost the next one
                 # theirs. Nothing was recorded for it, so the next pass
                 # tries again.
                 logger.exception("Morning text pass failed for household %s", hid)
+                # And the morning report hears of it, against this
+                # household: a log line is something the report cannot read
+                # (2026-10-25). Class name only, as every server row.
+                _usage.record_error("background", where="morning_text", detail=type(e).__name__)
     return results
 
 
@@ -1562,8 +1597,9 @@ def run_evening_nudges_once(
             try:
                 for item in _run_household_evening(now_utc, sender):
                     results.append({"household_id": hid, **item})
-            except Exception:
+            except Exception as e:
                 logger.exception("Evening nudge pass failed for household %s", hid)
+                _usage.record_error("background", where="evening_nudge", detail=type(e).__name__)
     return results
 
 

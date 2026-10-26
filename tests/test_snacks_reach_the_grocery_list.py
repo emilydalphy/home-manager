@@ -22,6 +22,9 @@ from app import agent, tools
 from app.db import get_conn
 from app.tools import meal_variety
 
+# Its own snack names stand (conftest.snacks_as_the_model_sent_them).
+pytestmark = pytest.mark.usefixtures("snacks_as_the_model_sent_them")
+
 APPLE = "Apple Slices with Almond Butter"
 RICE_CAKES = "Rice Cakes with Turkey Slices"
 

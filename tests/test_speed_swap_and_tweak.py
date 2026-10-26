@@ -26,7 +26,7 @@ from app import tools
 from app.db import get_conn
 from app.tools import plate_parts as pp
 
-sop = importlib.import_module("app.tools.swap_options")
+sop = importlib.import_module("app.tools.swap_option_picks")
 
 REPO = Path(__file__).resolve().parent.parent
 SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")

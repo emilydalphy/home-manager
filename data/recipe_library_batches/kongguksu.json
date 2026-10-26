@@ -1,0 +1,38 @@
+{
+ "dish_name": "Kongguksu",
+ "cuisine": "Korean",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {"item": "Dried soybeans", "qty": "1 bag", "category": "pantry", "cook_qty": "1 cup"},
+  {"item": "Pine nuts", "qty": "1 bag", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Sesame seeds", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "to taste", "category": "pantry"},
+  {"item": "Somyeon noodles", "qty": "1 lb", "category": "pantry"},
+  {"item": "Kirby cucumber", "qty": "1", "category": "produce"},
+  {"item": "Tomato", "qty": "1", "category": "produce"}
+ ],
+ "instructions": [
+  "The night before, or at least 6 hours ahead: rinse 1 cup of the soybeans, put them in a bowl and cover them with plenty of cold water. Leave them to soak. They'll swell to about 2 cups.",
+  "At least 2 hours before you eat: drain the beans, put them in a pot and cover them with fresh water by about an inch. Bring it to a boil over high heat and boil for 3 to 4 minutes. Keep it to 4 minutes at most.",
+  "Drain the beans and cover them with cold water. Rub handfuls of them between your palms to loosen the skins. The skins float, so pour them off with the water, add fresh water and rub again. Repeat until most of the skins are gone.",
+  "Put half the beans in a blender with 2 tbsp of the pine nuts, 1 tsp of the sesame seeds and 2 cups cold water. Blend for about 2 minutes, until it's completely smooth, and transfer it to a large jug. Blend the rest of the beans with the other 2 tbsp pine nuts, another 1 tsp sesame seeds and 2 cups cold water, and add it to the jug.",
+  "For a silkier soy milk, push it through a fine strainer. Stir in 1/2 tsp salt. If it's too thick to pour easily, stir in up to 1 cup more cold water. Cover and refrigerate for at least 1 1/2 hours, until it's very cold.",
+  "When you're ready to eat, bring a large pot of water to a boil. Meanwhile, cut the cucumber into thin matchsticks and the tomato into thin wedges.",
+  "Add the 1 lb somyeon to the boiling water and stir so the strands don't clump. Cook for about 3 minutes, or as the package says, until they're tender.",
+  "Drain the noodles and rinse them under very cold running water, rubbing them with your hands, until they're cold all the way through. Divide them among 4 bowls, twisting each portion into a neat mound.",
+  "Stir the soy milk well, since it settles. Taste it. If it's flat, add a pinch more salt.",
+  "Pour the soy milk over the noodles and top with the cucumber, the tomato and the last 1 tsp sesame seeds. Serve very cold, with a few ice cubes in each bowl if you like."
+ ],
+ "advance_prep_notes": "Soak the soybeans the night before, then make and chill the soy milk at least 2 hours before eating. It keeps in the fridge for 3 to 4 days.",
+ "advance_prep_step_indices": [1, 2, 3, 4, 5],
+ "method_notes": "Korean Bapsang makes the broth the traditional way: soaked soybeans boiled for only a few minutes, skinned, blended with pine nuts and sesame, salted lightly and chilled. Beyond Kimchee skips the soak with a shortcut of tofu, store-bought soy milk and peanuts blended together, and adds a hard-boiled egg on top. This one follows Korean Bapsang's version for 4, with somyeon, cucumber and tomato on top, and keeps the strain as an option.",
+ "sources": [
+  {"name": "Korean Bapsang", "title": "Kongguksu (Chilled Soy Milk Noodle Soup)", "url": "https://www.koreanbapsang.com/kongguksu-chilled-soy-milk-noodle-soup/", "rating": 4.79, "rating_count": 32, "read": true, "lead": true},
+  {"name": "Beyond Kimchee", "title": "Easy Kongguksu (Korean Cold Soy Milk Noodles)", "url": "https://www.beyondkimchee.com/kongguksu-soy-milk-noodle-soup", "rating": 4.2, "rating_count": 5, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

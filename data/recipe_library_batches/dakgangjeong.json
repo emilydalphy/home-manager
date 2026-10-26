@@ -1,0 +1,50 @@
+{
+ "dish_name": "Dakgangjeong",
+ "cuisine": "Korean",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 50,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {"item": "Boneless skinless chicken thighs", "qty": "2 lbs", "category": "meat/seafood"},
+  {"item": "Milk", "qty": "1 cup", "category": "dairy"},
+  {"item": "Potato starch", "qty": "1 box", "category": "pantry", "cook_qty": "2/3 cup"},
+  {"item": "Vegetable oil", "qty": "4 cups", "category": "pantry"},
+  {"item": "Garlic", "qty": "4 cloves", "category": "produce"},
+  {"item": "Ginger", "qty": "1 piece (2 inches)", "category": "produce"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Mirin", "qty": "1 bottle", "category": "pantry", "cook_qty": "6 tbsp"},
+  {"item": "Rice vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Gochujang", "qty": "1 tub", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Honey", "qty": "1 bottle", "category": "pantry", "cook_qty": "6 tbsp"},
+  {"item": "Brown sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Sesame oil", "qty": "4 tsp", "category": "pantry"},
+  {"item": "Roasted peanuts", "qty": "1 bag", "category": "pantry", "cook_qty": "1/4 cup"}
+ ],
+ "instructions": [
+  "First, trim any thick pieces of fat off the 2 lbs chicken thighs and cut them into 1 1/2 inch pieces. Put them in a bowl, pour the 1 cup milk over them, cover and put the bowl in the fridge for 30 minutes.",
+  "Meanwhile, make the glaze. In a small saucepan, off the heat, stir together 2 tbsp soy sauce, 6 tbsp mirin, 1/4 cup rice vinegar, 2 tbsp gochujang, 6 tbsp honey, 1/4 cup brown sugar and the 4 tsp sesame oil. Mince 2 of the garlic cloves and grate 2 tsp of the ginger into the pan, then add a pinch of the pepper.",
+  "Bring the glaze to a boil over medium high. Turn the heat to medium low and let it simmer for 3 to 4 minutes, until it's a little thicker and coats a spoon. Turn off the heat and leave it in the pan.",
+  "Coarsely chop 1/4 cup of the peanuts and set them aside.",
+  "Drain the chicken in a colander, pat it dry with paper towels and put it back in the dry bowl. Mince the last 2 garlic cloves and grate 1 tsp of the ginger over it. Add the 1/2 tsp salt and the rest of the pepper, toss until every piece is coated and leave it for 20 minutes.",
+  "Meanwhile, pour the 4 cups vegetable oil into a heavy, deep pot. It should be about 1 inch deep. Heat it over medium to 330°F. If you have a thermometer, check it there. No thermometer? Stand a wooden chopstick in the oil. When small bubbles stream up steadily around it, it's ready.",
+  "Put the 2/3 cup potato starch in a shallow bowl. Roll the chicken in it a handful at a time, pressing so every piece is coated all over.",
+  "Lower half the chicken into the oil one piece at a time. Stand back a little. It'll spatter. Fry for about 3 minutes, turning the pieces once, until they're pale golden. Transfer them to a rack or a plate lined with paper towels.",
+  "Let the oil come back to 330°F and fry the rest of the chicken the same way.",
+  "Bring the oil back to 330°F again. Fry all the chicken a second time for 1 to 2 minutes, until it's deep golden and sounds crisp when you tap it with tongs. Do it in two batches if the pot looks crowded. You're cooking it to 175°F in the thickest piece, so if you have a thermometer, check it there. No thermometer? Cut the biggest piece open. It's done when there's no pink left. Transfer it to the rack.",
+  "Warm the glaze over medium low until it bubbles at the edges, about 1 minute. Add the chicken and toss for about 1 minute, until every piece is glossy.",
+  "Taste a piece. If it's flat, sprinkle a pinch more salt over the chicken.",
+  "Transfer it to a platter and scatter the chopped peanuts over the top. Serve it right away."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions soak bite-sized boneless thigh in milk, coat it in starch, fry it and toss it in a simmered glaze of soy, rice wine, vinegar, gochujang, honey, brown sugar, sesame oil, garlic and ginger, finished with chopped peanuts. Korean Bapsang soaks for 30 minutes, seasons the chicken with garlic and ginger, and double-fries at 330°F; Chocolates and Chai soaks for 2 hours, seasons the starch with dried spices, and makes the second fry optional. This one follows Korean Bapsang's glaze ratios doubled for 2 lbs of chicken so it's a full dinner for four, and keeps its double fry. The Korean Bapsang rating is the one shown on the page's recipe card; the page text I read didn't show the JSON-LD block itself.",
+ "sources": [
+  {"name": "Korean Bapsang", "title": "Dakgangjeong (Sweet Crispy Korean Fried Chicken)", "url": "https://www.koreanbapsang.com/dakgangjeong-sweet-crispy-chicken/", "rating": 4.64, "rating_count": 321, "read": true, "lead": true},
+  {"name": "Chocolates and Chai", "title": "Dakgangjeong (Korean Fried Chicken)", "url": "https://www.chocolatesandchai.com/dakgangjeong/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

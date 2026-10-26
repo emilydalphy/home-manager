@@ -1,0 +1,143 @@
+{
+ "dish_name": "Tofu Bhurji",
+ "cuisine": "Indian",
+ "main_protein": "tofu",
+ "ingredients": [
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mild chili powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kasuri methi (dried fenugreek leaves)",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Extra-firm tofu",
+   "qty": "1 block (14 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Serrano chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put 1 1/2 cups of the basmati rice in a fine strainer and rinse it under cold water until the water runs mostly clear. Transfer it to a medium saucepan with 2 1/4 cups water and a pinch of salt.",
+  "Bring the rice to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on for 5 minutes, then fluff it with a fork.",
+  "Meanwhile, wrap the tofu in a clean kitchen towel and press it gently with your palms to squeeze out the water. Crumble it into small, uneven crumbles.",
+  "Finely chop the onion, dice the bell pepper, mince the garlic and ginger, and chop the tomatoes. Thinly slice the serrano and set it in a small bowl for the table.",
+  "Heat the oil in a large skillet over medium heat. Add the cumin seeds. After about 20 seconds they'll sizzle and smell toasty.",
+  "Add the onion and bell pepper. Cook for 5 minutes, stirring now and then, until soft.",
+  "Add the garlic and ginger and stir for 1 minute.",
+  "Add the tomatoes, turmeric and the salt. Cook for 4 minutes, until the tomatoes break down into a jammy paste.",
+  "Add the crumbled tofu and spread it out. Cook for 6 minutes, stirring only every minute or so, until the tofu is dry and golden in spots.",
+  "Add the chili powder and the garam masala. Crush the kasuri methi between your palms over the pan and stir for 1 minute. Take the pan off the heat.",
+  "Stir in the juice of half the lemon and 1/4 cup of chopped cilantro.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of the lemon.",
+  "Serve over the rice, with the sliced serrano on the side."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 22,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree on the base: cumin seeds, onion, tomato, turmeric and garam masala, with crumbled tofu going in near the end. They differ on pressing (one presses 15 to 20 minutes, one just drains and crumbles) and on extras like yogurt or gram flour and milk. This version drains and crumbles the tofu to stay within 45 minutes, browns it in the pan for texture, and skips the yogurt, gram flour and milk so it is vegan and gluten-free. Heat goes on the side as sliced serrano.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Tofu Bhurji",
+   "url": "https://www.indianhealthyrecipes.com/tofu-bhurji-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Indian Veggie Delight",
+   "title": "Tofu Bhurji (Scrambled Tofu Indian Style)",
+   "url": "https://www.indianveggiedelight.com/tofu-bhurji-scrambled-tofu-indian-style/",
+   "rating": 4.79,
+   "rating_count": 14,
+   "read": true
+  },
+  {
+   "name": "Yummy Tummy",
+   "title": "Scrambled Tofu Recipe, Tofu Bhurji",
+   "url": "https://www.yummytummyaarthi.com/scrambled-tofu-recipe-tofu-bhurji-recipe/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

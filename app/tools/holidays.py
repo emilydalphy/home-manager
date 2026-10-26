@@ -56,7 +56,7 @@ import logging
 import re
 from datetime import date, timedelta
 
-from ..db import get_conn
+from ..db import get_conn, name_key
 from ._shared import acting_name, household_id
 from . import week_intake as _week_intake
 
@@ -246,6 +246,25 @@ _CALENDAR_NAMES = {_normalise_title(n) for n in CALENDAR_HOLIDAY_NAMES}
 def looks_like_holiday(title: str) -> bool:
     """True only when the title IS a holiday's name, not when it mentions one."""
     return _normalise_title(title) in _CALENDAR_NAMES
+
+
+# Days this module knows by name that are an occasion, not a day off: the
+# shops keep their ordinary hours. A store saved as "Closed on holidays"
+# (stores.open_window) must not read as shut on them — it did, so Farm Boy
+# was "closed for the holiday" on Halloween (a Saturday shop day in 2026),
+# Mother's Day and Father's Day. Only days nobody's grocery store closes
+# for; anything less certain stays a holiday until Emily says otherwise.
+_SHOPS_OPEN_ON = frozenset(_normalise_title(n) for n in (
+    "halloween", "mother's day", "mothers day", "father's day", "fathers day",
+    "valentine's day", "valentines day",
+    "st. patrick's day", "st patrick's day", "st patricks day", "saint patrick's day",
+    "christmas eve", "new year's eve", "new years eve",
+))
+
+
+def shops_close_for(name: str) -> bool:
+    """Whether a holiday by this name can shut a store that closes on holidays."""
+    return _normalise_title(name) not in _SHOPS_OPEN_ON
 
 
 def _calendar_holidays(dates: list[str]) -> list[dict]:
@@ -472,10 +491,10 @@ ANSWER_ACKS = {
 
 
 def _recipe_named(dish: str) -> tuple[str, int | None]:
-    """A saved recipe matching the dish, by name (case-insensitive), or the dish as typed."""
+    """A saved recipe matching the dish, by name (db.name_key: case, accents, spacing), or the dish as typed."""
     conn = get_conn()
     row = conn.execute(
-        "SELECT id, name FROM recipes WHERE household_id = ? AND lower(name) = lower(?)",
+        "SELECT id, name FROM recipes WHERE household_id = ? AND name_key(name) = name_key(?) ORDER BY id LIMIT 1",
         (household_id(), dish.strip()),
     ).fetchone()
     conn.close()

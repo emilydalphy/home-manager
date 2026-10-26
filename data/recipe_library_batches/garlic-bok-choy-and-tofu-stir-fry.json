@@ -1,0 +1,145 @@
+{
+  "dish_name": "Garlic Bok Choy and Tofu Stir-Fry",
+  "cuisine": "Chinese",
+  "main_protein": "tofu",
+  "prep_time_minutes": 15,
+  "cook_time_minutes": 25,
+  "ingredients": [
+    {
+      "item": "Extra-firm tofu",
+      "qty": "2 blocks (14 oz each)",
+      "category": "dairy"
+    },
+    {
+      "item": "Jasmine rice",
+      "qty": "1 bag",
+      "category": "pantry",
+      "cook_qty": "1 1/2 cups"
+    },
+    {
+      "item": "Baby bok choy",
+      "qty": "1.5 lbs",
+      "category": "produce"
+    },
+    {
+      "item": "Cremini mushrooms",
+      "qty": "8 oz",
+      "category": "produce"
+    },
+    {
+      "item": "Garlic",
+      "qty": "6 cloves",
+      "category": "produce"
+    },
+    {
+      "item": "Fresh ginger",
+      "qty": "1 piece",
+      "category": "produce",
+      "cook_qty": "1 tbsp"
+    },
+    {
+      "item": "Scallions",
+      "qty": "1 bunch",
+      "category": "produce",
+      "cook_qty": "3 scallions"
+    },
+    {
+      "item": "Cornstarch",
+      "qty": "1 box",
+      "category": "pantry",
+      "cook_qty": "3 tbsp"
+    },
+    {
+      "item": "Vegetable oil",
+      "qty": "3 tbsp",
+      "category": "pantry"
+    },
+    {
+      "item": "Tamari (gluten-free)",
+      "qty": "1 bottle",
+      "category": "pantry",
+      "cook_qty": "3 tbsp"
+    },
+    {
+      "item": "Rice vinegar",
+      "qty": "1 bottle",
+      "category": "pantry",
+      "cook_qty": "1 tbsp"
+    },
+    {
+      "item": "Maple syrup",
+      "qty": "1 bottle",
+      "category": "pantry",
+      "cook_qty": "1 tsp"
+    },
+    {
+      "item": "Toasted sesame oil",
+      "qty": "1 bottle",
+      "category": "pantry",
+      "cook_qty": "1 tsp"
+    },
+    {
+      "item": "Sesame seeds",
+      "qty": "1 jar",
+      "category": "pantry",
+      "cook_qty": "1 tbsp"
+    },
+    {
+      "item": "Red pepper flakes",
+      "qty": "1/2 tsp",
+      "category": "pantry"
+    },
+    {
+      "item": "Salt",
+      "qty": "1/4 tsp",
+      "category": "pantry"
+    }
+  ],
+  "instructions": [
+    "Rinse the rice in a sieve until the water runs mostly clear. Add it to a medium pot with 2 1/4 cups of water, bring it to a boil over high heat, then cover, turn the heat to low and cook for 15 minutes. Leave the lid on and take the pot off the heat until you serve.",
+    "Meanwhile, drain the tofu and cut each block into 3/4-inch cubes. Spread them on a clean kitchen towel, fold the towel over and press down gently for 5 minutes.",
+    "Make the sauce in a small bowl. Stir 1 tbsp of the cornstarch into the tamari until it dissolves, then stir in the rice vinegar, maple syrup, sesame oil and 1/2 cup of water.",
+    "Cut the bok choy stems from the leaves. Slice the stems into 1-inch pieces and roughly chop the leaves, keeping the two in separate piles. Slice the mushrooms. Mince the garlic, grate the ginger until you have 1 tbsp, and slice the scallions.",
+    "Toss the tofu in a large bowl with the remaining 2 tbsp cornstarch and 1/4 tsp of the salt, until every cube is coated.",
+    "Heat 1 tbsp of the oil in a large nonstick skillet over medium-high heat. Add half the tofu in a single layer and cook for 6 to 8 minutes, turning it every 2 minutes, until all sides are golden and crisp. Transfer it to a plate. Add another 1 tbsp of oil and cook the rest of the tofu the same way.",
+    "Add the last 1 tbsp of oil to the same skillet over medium-high heat. Add the mushrooms in a single layer and leave them alone for 3 minutes, until the underside is browned. Stir and cook for 2 minutes.",
+    "Add the bok choy stems and the ginger. Stir for 2 minutes, until the stems turn bright green and start to soften.",
+    "Add the garlic and stir for 20 seconds, until it smells fragrant. Add the bok choy leaves and cook for 1 minute, until they wilt.",
+    "Give the sauce a quick stir, then pour it into the skillet. Let it bubble for about 1 minute, until it turns glossy. Add the tofu and toss to coat.",
+    "Taste it. If it's flat, add a pinch more salt or a splash of the rice vinegar.",
+    "Fluff the rice with a fork. Serve the stir-fry over the rice, topped with the scallions and the sesame seeds, with the red pepper flakes on the table."
+  ],
+  "method_notes": "The sources agree on the order: tofu coated in cornstarch and fried until crisp and set aside, then bok choy stems before the leaves, garlic and ginger, and a quick cornstarch-thickened sauce stirred in at the end. America's Test Kitchen's sauce uses soy sauce and sherry; this uses tamari and rice vinegar so it stays gluten-free, with maple syrup for balance. Browned mushrooms add the savory depth, and vegetable oil and sesame oil keep it vegan. Heat is kept on the table as red pepper flakes. No version has 20 or more ratings, so the best-rated one leads.",
+  "sources": [
+    {
+      "name": "America's Test Kitchen",
+      "title": "Stir-Fried Tofu and Bok Choy",
+      "url": "https://www.americastestkitchen.com/recipes/11999-stir-fried-tofu-and-bok-choy",
+      "rating": 4.5,
+      "rating_count": 9,
+      "read": true,
+      "lead": true
+    },
+    {
+      "name": "AislePrompt",
+      "title": "Stir-Fried Tofu with Ginger, Garlic, and Bok Choy",
+      "url": "https://aisleprompt.com/recipes/stir-fried-tofu-with-ginger-garlic-and-bok-choy-121631",
+      "rating": null,
+      "rating_count": null,
+      "read": true
+    },
+    {
+      "name": "PETA",
+      "title": "Garlic-Ginger Tofu Stir-Fry",
+      "url": "https://www.peta.org/recipes/garlic-ginger-tofu-stir-fry/",
+      "rating": 3.0,
+      "rating_count": 4,
+      "read": true
+    }
+  ],
+  "fallback_used": true,
+  "default_servings": 4,
+  "origin": "seed",
+  "advance_prep_notes": "",
+  "advance_prep_step_indices": []
+}

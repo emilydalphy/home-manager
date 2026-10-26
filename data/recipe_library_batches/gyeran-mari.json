@@ -1,0 +1,37 @@
+{
+ "dish_name": "Gyeran Mari",
+ "cuisine": "Korean",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {"item": "Eggs", "qty": "8", "category": "dairy"},
+  {"item": "Scallions", "qty": "1 bunch", "category": "produce", "cook_qty": "2"},
+  {"item": "Carrots", "qty": "1", "category": "produce"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "a pinch", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Ketchup", "qty": "1 bottle", "category": "pantry"}
+ ],
+ "instructions": [
+  "Finely chop 2 of the scallions. That should be about 3 tbsp. Peel the carrot and finely chop about a third of it, so you have about 3 tbsp of that too.",
+  "Crack the 8 eggs into a bowl and beat them until the yolks and whites are completely blended, with no streaks of white left. Stir in the 1/2 tsp salt, the pinch of black pepper, the scallions and the carrot.",
+  "Rub 1 tsp of the oil over a 9 or 10 inch nonstick pan with a paper towel. Set it over medium low heat for about a minute, until you can feel the warmth with your hand held a couple of inches above it.",
+  "Pour in about a quarter of the egg, roughly 1/2 cup, and swirl the pan so it covers the bottom. Cook for about 1 minute, until the bottom has set and the top is still a little wet.",
+  "Lift the near edge with a spatula, fold about 1 1/2 inches of it over, and keep folding the roll over on itself until you reach the far side. If the bottom is browning, turn the heat down or lift the pan off the burner for a few seconds.",
+  "Pour another quarter of the egg into the empty part of the pan, lifting the roll so some egg runs underneath it. Cook for about 1 minute, until it has set but the top is still a little wet, then roll the log back across over the new layer.",
+  "Transfer the roll to a cutting board. Wipe out the pan, rub it with the other 1 tsp oil and make a second roll the same way with the rest of the egg.",
+  "Let both rolls rest for 5 minutes. They slice more cleanly once they've firmed up. Cut them into slices 3/4 to 1 inch thick.",
+  "Serve warm or at room temperature, with ketchup on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions beat the eggs until fully blended, add finely chopped scallion and carrot, cook thin layers in a lightly oiled pan over medium low heat, roll each layer up while the top is still wet, and rest the log about 5 minutes before slicing. Korean Bapsang adds a pinch of pepper and builds the roll in several pours; Tara's Multicultural Table adds a spoonful of water and serves it with ketchup. This one follows Korean Bapsang's ratio scaled to 8 eggs and makes two rolls, since one 8 egg roll is too thick for an ordinary pan.",
+ "sources": [
+  {"name": "Korean Bapsang", "title": "Gyeran Mari (Korean Rolled Omelette)", "url": "https://www.koreanbapsang.com/gyeran-mari-korean-rolled-omelette/", "rating": 4.96, "rating_count": 46, "read": true, "lead": true},
+  {"name": "Tara's Multicultural Table", "title": "Gyeran Mari (Korean Rolled Omelette)", "url": "https://tarasmulticulturaltable.com/gyeran-mari-korean-rolled-omelette/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

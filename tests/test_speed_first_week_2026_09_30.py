@@ -558,7 +558,7 @@ def _snacks(plan_id, day):
     return [m for m in tools.get_weekly_plan(plan_id)["meals"] if m["date"] == day and m["slot"] == "snack"]
 
 
-def test_two_snacks_on_one_day_that_come_back_the_same_are_told_apart(emilys_house, monkeypatch):
+def test_two_snacks_on_one_day_that_come_back_the_same_are_told_apart(emilys_house, monkeypatch, snacks_as_the_model_sent_them):
     day = DAYS[2]
     monkeypatch.setattr(agent, "generate_weekly_plan_llm", lambda ctx: _two_held_snacks_on(day))
     lock = threading.Lock()

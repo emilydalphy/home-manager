@@ -429,8 +429,7 @@ UNPROTECTED_WRITERS: dict[str, list[str]] = {
         "defrost_task_from_ready_made", "mark_defrost_asked"
     ],
     "app/tools/digest.py": [
-        "_run_household_evening", "set_evening_nudge_for_member",
-        "set_morning_text_for_member"
+        "_run_household_evening", "set_evening_nudge_for_member"
     ],
     "app/tools/draft_flags.py": [
         "add", "dismiss", "record", "refresh"

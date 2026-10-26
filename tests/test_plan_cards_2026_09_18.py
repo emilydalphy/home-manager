@@ -443,7 +443,9 @@ def test_the_after_approve_hand_off_lands_on_the_list_and_says_approved_not_draf
     landing = build[build.index("if (afterApprove && weekState.data && weekPlanState(weekState.data) === 'set') {"):]
     landing = landing[:landing.index("\n    }\n")]
     assert "ensureDefrostAskItems" not in landing and "goMealsStep('freezer'" not in landing
-    assert "goGroceryList();\n      showToast(weekApprovedLine(new URLSearchParams(window.location.search).get('added')));" in landing
+    # The count is read before the URL is scrubbed (approvedAdded); see
+    # tests/test_reveal_handoff_keeps_count.py (defect hunt, 2026-10-24).
+    assert "goGroceryList();\n      showToast(weekApprovedLine(approvedAdded));" in landing
 
 
 # ---------------------------------------------------------------------------
@@ -610,7 +612,7 @@ def test_the_move_view_draws_the_servers_days_dimming_the_ones_that_cannot_take_
 
 
 def test_the_swap_sheet_is_a_sheet_and_the_picks_go_through_week_ones_routes():
-    """The three picks are the Week 1 screen's (app/tools/swap_options.py):
+    """The three picks are the Week 1 screen's (app/tools/swap_option_picks.py):
     POST /swap-options to ask, POST /swap-choose with the pick's index to
     take one — the Plan sheet and the first-week screen are one feature."""
     sheet = SHELL_CSS[SHELL_CSS.index("#wk-swap-sheet, #wk-tweak-sheet {"):SHELL_CSS.index("}", SHELL_CSS.index("#wk-swap-sheet, #wk-tweak-sheet {"))]

@@ -63,6 +63,7 @@ import re
 import logging
 import time
 
+from ..db import name_key
 from ._shared import household_id
 from . import model_shapes as _model_shapes
 from . import plates as _plates
@@ -950,14 +951,15 @@ def _variant_name(proposed: str, current: str, choice: str) -> str:
     proposed = (proposed or "").strip()
     if not proposed:
         proposed = current
-    taken = {(r.get("name") or "").strip().lower() for r in _recipes_list()}
-    if proposed.lower() != current.strip().lower() and proposed.lower() not in taken:
+    # By db.name_key, the rule add_recipe refuses a name on.
+    taken = {name_key(r.get("name")) for r in _recipes_list()}
+    if name_key(proposed) != name_key(current) and name_key(proposed) not in taken:
         return proposed
-    base = proposed if proposed.lower() != current.strip().lower() else current.strip()
+    base = proposed if name_key(proposed) != name_key(current) else current.strip()
     candidate = f"{base} with {choice.strip().lower()}"
-    if candidate.lower() in taken:
+    if name_key(candidate) in taken:
         n = 2
-        while f"{candidate} {n}".lower() in taken:
+        while name_key(f"{candidate} {n}") in taken:
             n += 1
         candidate = f"{candidate} {n}"
     return candidate
@@ -1144,7 +1146,7 @@ def change_part(weekly_plan_id: int, entry_id: int, role: str, choice: str, aske
     # The amounts were asked for `serves`; the recipe is saved at it, so
     # "Cooking for" reads the batch and never the model's own guess.
     pick["default_servings"] = serves
-    # Every day's table is its own gate (swap_options._gate_all) — the
+    # Every day's table is its own gate (swap_option_picks._gate_all) — the
     # Friday table can be different people from Thursday's.
     # No time cap here: the household picked this part themselves, and
     # their own pick is never refused for time (swap_in_place.over_cap_said

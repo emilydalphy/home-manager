@@ -1,0 +1,111 @@
+{
+ "dish_name": "Batata Harra",
+ "cuisine": "Lebanese",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "3 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "6 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "8 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh cilantro",
+   "qty": "2 bunches",
+   "category": "produce"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Red pepper paste",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red chili flakes",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 425°F with racks in the upper and lower thirds.",
+  "Peel the 3 lbs potatoes and cut them into 1 inch cubes. Rinse them in a colander under cold water, then spread them on a clean kitchen towel and pat them very dry.",
+  "Split the potatoes between two baking sheets. Toss them with 3 tbsp of the olive oil and 1 tsp of the salt, and spread them out in a single layer with room between the pieces.",
+  "Roast them for 15 minutes. Flip the cubes with a spatula and swap the sheets between the racks.",
+  "Roast them for 10 to 15 minutes, until they're golden and crisp at the edges and a fork slides into the middle easily.",
+  "Meanwhile, mince the 8 garlic cloves. Chop the leaves and tender stems of the cilantro until you have about 1 1/2 cups loosely packed, and keep a small handful aside for the top.",
+  "Juice the 2 lemons. That should be about 6 tbsp.",
+  "When the potatoes have about 5 minutes left, heat the last 3 tbsp olive oil in your largest skillet over medium-low. Add the garlic and stir for about 1 minute, until it smells fragrant and is pale gold. Don't let it brown, or it turns bitter.",
+  "Add the 1 1/2 tbsp red pepper paste, 3/4 tsp cumin, 3/4 tsp black pepper and the last 1/2 tsp salt. Stir for 30 seconds.",
+  "Add the 1 1/2 cups cilantro and stir for about 30 seconds, until it wilts. Pour in the lemon juice.",
+  "Add the hot potatoes to the skillet, turn the heat up to medium and toss them for about 2 minutes, until every piece is coated.",
+  "Taste one. If it's flat, add a pinch more salt.",
+  "Transfer the potatoes to a serving dish and scatter the cilantro you kept aside over the top. Put the 1 tsp chili flakes in a small bowl.",
+  "Serve warm, with the chili flakes on the side for anyone who wants them hot."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All of these crisp cubed potatoes and toss them in garlic and cilantro cooked in oil, with lemon at the end. Cookin' with Mima, the lead, fries the potatoes (or roasts them at 400°F as an option) and builds the sauce with mild red pepper paste, cumin, black pepper and chili flakes; Paint the Kitchen Red air fries or roasts them and uses cayenne and paprika, and The Matbakh parboils and deep fries them and adds the garlic and cilantro in the last minute. No version with 20 or more ratings could be read (Feel Good Foodie's rated version returned 403), and RecipeTin Eats, the trusted cook for Lebanese, has no version. This one follows the lead's oven method at 425°F and scales it to 3 lbs for a lunch, keeps the pot mild with the pepper paste, and puts the chili flakes on the side.",
+ "sources": [
+  {
+   "name": "Cookin' with Mima",
+   "title": "Batata Harra (Lebanese Spicy Potatoes)",
+   "url": "https://www.cookinwithmima.com/lebanese-spicy-potatoes-batata-harra/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Paint the Kitchen Red",
+   "title": "Batata Harra (Lebanese Spicy Potatoes)",
+   "url": "https://www.paintthekitchenred.com/batata-harra-lebanese-spicy-potatoes/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "The Matbakh",
+   "title": "Batata Harra (Lebanese Fried Potato Chunks)",
+   "url": "https://thematbakh.com/batata-harra-lebanese-spicy-potatoes-with-cilantro/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

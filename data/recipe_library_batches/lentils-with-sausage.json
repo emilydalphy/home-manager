@@ -1,0 +1,44 @@
+{
+ "dish_name": "Lentils with Sausage",
+ "cuisine": "French",
+ "main_protein": "lentils",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 55,
+ "ingredients": [
+  {"item": "Puy lentils", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Pork sausages", "qty": "8", "category": "meat/seafood"},
+  {"item": "Shallots", "qty": "4", "category": "produce"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Carrots", "qty": "4", "category": "produce"},
+  {"item": "Cumin seeds", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Low-sodium chicken broth", "qty": "3 cups", "category": "pantry"},
+  {"item": "Olive oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "3/4 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Heat the oven to 400°F. You'll need a metal roasting pan about 9 by 13 inches that can go on the stove, or a wide ovenproof pot.",
+  "Meanwhile, cut a sheet of parchment paper big enough to cover the pan. Fold it in half and cut 4 slits about 4 inches long through the fold, for the steam.",
+  "Halve the 4 shallots and slice them thinly. Mince the 3 garlic cloves. Peel the 4 carrots and dice them into 1/3 inch cubes. Rinse the 1 1/2 cups lentils in a sieve and pick out any small stones.",
+  "Set the pan on the stove over medium high heat with the 3 tbsp olive oil. Add the shallots and cook, stirring, until they're soft, about 3 minutes.",
+  "Turn the heat to medium. Add the garlic and the 1 tbsp cumin seeds and stir for 1 minute, until the seeds smell toasty.",
+  "Stir in the lentils, the carrots, the 1 tsp salt, the 3/4 tsp pepper and the 3 cups broth. Bring it up to a simmer.",
+  "Lay the 8 sausages on top of the lentils. Don't push them under the liquid. Lay the parchment over the pan and press it down gently so it sits on the liquid.",
+  "Bake on the middle shelf for 25 minutes.",
+  "Take off the parchment and bake uncovered for 20 minutes, until the sausages are browned and the lentils are tender and have soaked up most of the liquid. You're cooking the sausages to 160°F, so if you have a thermometer, check the middle of one. No thermometer? Cut one open: it's done when there's no pink left.",
+  "Let the pan sit on the counter for 5 minutes.",
+  "Taste the lentils. If they're flat, add a pinch more salt.",
+  "Spoon the lentils and their juices onto plates and set 2 sausages on each."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three cook Puy lentils with onion or shallot, carrot or greens and stock, with the sausages cooked alongside so their juices season the lentils. RecipeTin Eats bakes everything in one pan, with the sausages sitting on the lentils under a sheet of baking paper and then uncovered to brown, and adds toasted cumin seeds. America's Test Kitchen simmers the lentils with chard and thyme and browns the sausages in a separate skillet, and The Good Life France simmers the sausages right in the lentils on the stove. This one follows the lead's one pan oven method and its amounts, and cooks the shallots for a few minutes before the garlic goes in so the garlic doesn't burn.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "One-pan baked sausage & lentils", "url": "https://www.recipetineats.com/one-pan-baked-sausage-and-lentils/", "rating": 4.9, "rating_count": 58, "read": true, "lead": true},
+  {"name": "America's Test Kitchen", "title": "Lentils with Sausage", "url": "https://www.americastestkitchen.com/recipes/5714-lentils-with-sausage", "rating": 4.0, "rating_count": 1, "read": true, "lead": false},
+  {"name": "The Good Life France", "title": "Recipe for Sausage and Lentil Stew", "url": "https://thegoodlifefrance.com/recipe-for-sausage-and-lentil-stew/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

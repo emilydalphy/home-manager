@@ -1,0 +1,52 @@
+{
+ "dish_name": "Ebi Chili",
+ "cuisine": "Japanese",
+ "main_protein": "shrimp",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "Large shrimp", "qty": "1.25 lb", "category": "meat/seafood"},
+  {"item": "Cornstarch", "qty": "1 box", "category": "pantry", "cook_qty": "6 tbsp"},
+  {"item": "Kosher salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Ground white pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Sake", "qty": "1 bottle", "category": "pantry", "cook_qty": "4 tbsp"},
+  {"item": "Ginger", "qty": "1 piece (2 inch)", "category": "produce"},
+  {"item": "Garlic", "qty": "4 cloves", "category": "produce"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce"},
+  {"item": "Doubanjiang", "qty": "1 jar", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Ketchup", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Chicken broth", "qty": "1 cup", "category": "pantry"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Toasted sesame oil", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Short-grain white rice", "qty": "2 cups", "category": "pantry"}
+ ],
+ "instructions": [
+  "Rinse the 2 cups rice in a strainer under cold water until the water runs mostly clear. Put it in a saucepan with 2 1/4 cups water and bring it to a boil over high heat. Turn the heat to low, cover the pan and cook for 15 minutes. Take it off the heat and keep the lid on until you're ready to serve.",
+  "Meanwhile, peel and devein the 1.25 lb shrimp if they aren't already. Run a knife along the back of each one to make a shallow cut.",
+  "Toss the shrimp in a bowl with 2 tbsp of the cornstarch and a splash of water, and rub them gently for a few seconds. Rinse them well under cold water, then pat them very dry with paper towels.",
+  "Return them to the dry bowl and toss them with the 1/2 tsp salt, the 1/4 tsp white pepper, 2 tbsp of the sake and 2 tbsp of the cornstarch.",
+  "Peel a 2 inch piece of ginger and mince it together with the 4 garlic cloves. Slice the white parts of 2 green onions into thin rounds, and thinly slice their green tops for the end.",
+  "In a measuring cup, stir together the 1 cup chicken broth, the last 2 tbsp sake and the 1 tbsp sugar. In a small cup, stir the last 2 tbsp cornstarch into 4 tbsp water.",
+  "Heat 2 tbsp of the vegetable oil in a large nonstick skillet over medium-high heat until it shimmers. Lay in the shrimp in one layer, in two batches if they don't fit. Cook for about 1 minute, until the undersides turn pink.",
+  "Flip them and cook the other side for about 1 minute. They don't need to be cooked through yet. Transfer them to a plate.",
+  "Wipe out the pan with a paper towel. Add the last 1 tbsp vegetable oil and set it over medium heat. Add the ginger and garlic and stir for about 30 seconds, until they smell fragrant.",
+  "Turn the heat to low and add the 2 tsp doubanjiang and the 1/4 cup ketchup. Stir for about 1 minute, until the oil turns red and the ketchup darkens a shade.",
+  "Pour in the broth mixture, turn the heat to medium and let it simmer for 2 minutes.",
+  "Add the shrimp and the green onion whites. Cook for about 2 minutes, turning them in the sauce, until they're opaque all the way through and curled into a loose C.",
+  "Stir the cornstarch mix again and pour it in while you stir. Cook for about 30 seconds, until the sauce is thick and glossy. Turn off the heat and stir in the 2 tsp sesame oil.",
+  "Taste the sauce. If it's flat, add a pinch more salt.",
+  "Fluff the rice and divide it among 4 bowls. Spoon the shrimp and sauce over the top and scatter the green onion tops over it."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions coat peeled shrimp in starch, sear them until just pink and set them aside, then fry ginger, garlic and green onion with doubanjiang and ketchup before the shrimp go back in. Just One Cookbook (the lead) cleans the shrimp with starch, adds broth, sake and sugar and thickens the sauce with a slurry, finishing with sesame oil; Japanese Cooking 101 does much the same with a little soy sauce, and Norecipes brines the shrimp in baking soda and makes a thicker glaze with sake and rice vinegar and no broth. This one doubles the lead for four but uses 2 tsp doubanjiang instead of 4 so the sauce stays mild, and serves it over rice as the lead suggests.",
+ "sources": [
+  {"name": "Just One Cookbook", "title": "Spicy Shrimp Stir-Fry (Ebi Chili)", "url": "https://www.justonecookbook.com/ebi-chili/", "rating": 4.7, "rating_count": 22, "read": true, "lead": true},
+  {"name": "Japanese Cooking 101", "title": "Shrimp in Chili Sauce Recipe", "url": "https://japanesecooking101.com/?p=7509", "rating": 5.0, "rating_count": 1, "read": true, "lead": false},
+  {"name": "Norecipes", "title": "Chili Shrimp (Ebi Chili)", "url": "https://norecipes.com/chili-shrimp-ebi-chili/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

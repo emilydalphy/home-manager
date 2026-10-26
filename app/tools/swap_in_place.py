@@ -58,7 +58,7 @@ import logging
 import re
 import uuid
 
-from ..db import get_conn
+from ..db import get_conn, name_key
 from ._shared import household_id
 from . import attendance as _attendance
 from . import coordination as _coordination
@@ -90,9 +90,80 @@ REFUSAL = (
     "Nothing changed — tell me what you’d like instead."
 )
 
+# Said when the picker came back with no dish at all (2026-10-25). Not
+# REFUSAL: nothing clashed, so blaming "what you can't have" would tell the
+# household something untrue about their own allergies.
+NO_PICK = "I couldn’t come up with another dish just now. Nothing changed — try Swap again in a moment."
+
 # What the model may not put in an entry. Anything else it sends back is
 # ignored rather than trusted into the database.
 _INGREDIENT_CATEGORIES = ("produce", "dairy", "meat/seafood", "pantry", "frozen", "other")
+
+
+# ---------- the prep a swap takes away, and Undo puts back ----------
+#
+# A swap releases the old meal's prep rows (weekly_plan._release_prep_rows):
+# "Cut up romaine" is no use to Fish Tacos. But Undo brings the Chicken
+# Bowls back, and until 2026-10-22 it brought them back with no prep — a
+# cut the household had added on a prep day, ticked or not, was simply
+# gone, where Undo on a nights swap, a Move and a night off all put prep
+# back as it was. So the first swap of a slot keeps the meal's prep cuts on
+# its undo note, and Undo writes them back onto the restored meal, status
+# and all. Prep cuts only: fridge moves are re-booked by defrost's own sync
+# from the meal, and a ticked one became a held thing at the swap.
+
+
+def _prep_cuts_of(entry_id: int) -> list[dict]:
+    from . import prep_sessions as _prep_sessions  # lazy: keeps the import graph as it was
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT task_date, description, status FROM prep_tasks "
+        "WHERE household_id = ? AND task_type = ? AND meal_plan_entry_id = ? ORDER BY id",
+        (household_id(), _prep_sessions.PREP_CUT_TASK_TYPE, entry_id),
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def _put_back_prep_cuts(weekly_plan_id: int, entry_id: int, meal: str, cuts) -> None:
+    from . import prep_sessions as _prep_sessions  # lazy: keeps the import graph as it was
+    from ..db import write
+    if not cuts:
+        return
+    with write() as conn:
+        # The dinner may have moved since the swap (its undo note rides
+        # along), so a cut goes back on or before the dinner's day as it is
+        # NOW, and a pending one never on a day already past — the rules
+        # add_prep_cut and the Move's _shift_late_prep_cuts keep (review).
+        row = conn.execute(
+            "SELECT date FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+            (entry_id, household_id()),
+        ).fetchone()
+        meal_day = row["date"] if row else None
+        today = _weekly_plan._household_today(conn).isoformat()
+        for cut in cuts:
+            if not isinstance(cut, dict) or not cut.get("description"):
+                continue
+            day = cut.get("task_date")
+            if day and (cut.get("status") or "pending") == "pending" and day < today:
+                day = today
+            if day and meal_day and day > meal_day:
+                day = meal_day
+            exists = conn.execute(
+                "SELECT 1 FROM prep_tasks WHERE household_id = ? AND weekly_plan_id = ? AND task_type = ? "
+                "AND task_date IS ? AND description = ? AND meal_plan_entry_id = ?",
+                (household_id(), weekly_plan_id, _prep_sessions.PREP_CUT_TASK_TYPE,
+                 day, cut["description"], entry_id),
+            ).fetchone()
+            if exists:
+                continue
+            conn.execute(
+                "INSERT INTO prep_tasks (household_id, weekly_plan_id, task_date, description, "
+                "related_meal, status, task_type, meal_plan_entry_id, quantity) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, '')",
+                (household_id(), weekly_plan_id, day, cut["description"], meal or "",
+                 cut.get("status") or "pending", _prep_sessions.PREP_CUT_TASK_TYPE, entry_id),
+            )
 
 
 # ---------- reading the slot ----------
@@ -209,9 +280,9 @@ def _hard_exclusions() -> list[str]:
     from . import member_needs as _member_needs
     for name in _member_needs.nut_free_member_names():
         out.append(f"{name}: no nuts or peanuts (nut-free lunch) — in any dish, since leftovers and snacks reach the lunchbox")
-    for fact in _memory.get_facts():
-        if fact.get("hard") and (fact.get("text") or "").strip():
-            out.append(fact["text"].strip())
+    # Each must-avoid sentence once, whichever tabs it is filed under.
+    for fact in _memory.hard_facts():
+        out.append(fact["text"].strip())
     return out
 
 
@@ -764,7 +835,9 @@ def swap_meal_in_place(
         name = (pick.get("meal_name") or "").strip()
         if not name:
             logger.warning("swap_in_place came back with no dish (attempt %d)", attempt)
-            return {"status": "refused", "message": REFUSAL, "avoid": tried}
+            from .. import agent as _agent
+            _agent.record_ai_failure("swap_in_place", why="no dish in the answer")
+            return {"status": "refused", "message": NO_PICK, "avoid": tried}
         pick["meal_name"] = name
         clash = _hard_clash(pick)
         if not clash:
@@ -1024,7 +1097,7 @@ def honest_meal_name(pick: dict) -> str:
         pick.get("meal_name") or "",
         pick.get("ingredients") or [],
         pick.get("instructions") or [],
-        taken={(r.get("name") or "").strip().lower() for r in _recipes.list_recipes()},
+        taken={name_key(r.get("name")) for r in _recipes.list_recipes()},
     )
 
 
@@ -1112,7 +1185,10 @@ def apply_pick(weekly_plan_id: int, entry: dict, pick: dict, carry_sides: bool =
     if correct_title:
         pick["meal_name"] = honest_meal_name(pick)
     _save_recipe_if_new(pick, serves)
-    sides = _plates.get_sides(entry["entry_id"]) if carry_sides else []
+    # Read before the swap below deletes the row they hang off: carried
+    # onto the new entry, or recorded for Undo (_with_outgoing_sides).
+    outgoing_sides = _plates.get_sides(entry["entry_id"])
+    sides = outgoing_sides if carry_sides else []
     # Read before the swap unlinks it: the chain this cook fed, so Undo
     # can put it back (undo_meal_swap -> weekly_plan.restore_leftover_chain).
     #
@@ -1125,6 +1201,9 @@ def apply_pick(weekly_plan_id: int, entry: dict, pick: dict, carry_sides: bool =
     # just made a model call, and because a future door that hands
     # `group=[entry]` for a real chain would want it; no test drives it.
     chain = None if entry["derived_from"].get("swapped_from") else _chain_record(weekly_plan_id, entry)
+    # Read before the swap releases them, and only on the first swap: the
+    # undo note is written once (below), and so is what it puts back.
+    cuts = [] if entry["derived_from"].get("swapped_from") else _prep_cuts_of(entry["entry_id"])
     result = _weekly_plan.swap_meal_in_plan(
         weekly_plan_id, entry["date"], pick["meal_name"], slot=entry["slot"],
         food_groups=[g for g in (pick.get("food_groups") or []) if g in _plates.ALL_GROUPS],
@@ -1146,6 +1225,9 @@ def apply_pick(weekly_plan_id: int, entry: dict, pick: dict, carry_sides: bool =
     }
     if chain:
         swapped_from = dict(swapped_from, chain=chain)
+    if cuts:
+        swapped_from = dict(swapped_from, prep_cuts=cuts)
+    swapped_from = _with_outgoing_sides(swapped_from, entry, carry_sides, outgoing_sides)
     derived = dict(entry["derived_from"])
     # A day swapped on its own after its dish was swapped as a whole
     # (apply_pick_to_days) leaves that group: its Undo is its own now.
@@ -1266,8 +1348,9 @@ def undo_meal_swap(weekly_plan_id: int, entry_id: int) -> dict:
     if (entry["derived_from"] or {}).get("swap_group"):
         return _undo_dish_swap(weekly_plan_id, entry)
 
-    # A change that carried the plate's sides forward carries them back.
-    sides = _plates.get_sides(entry_id) if (entry["derived_from"] or {}).get("carry_sides") else []
+    # A change that carried the plate's sides forward carries them back;
+    # a swap that left them behind puts back the ones it left.
+    sides = _sides_to_put_back(entry)
     result = _weekly_plan.swap_meal_in_plan(
         weekly_plan_id, entry["date"], name, slot=entry["slot"],
         food_groups=previous.get("food_groups") or [],
@@ -1281,6 +1364,7 @@ def undo_meal_swap(weekly_plan_id: int, entry_id: int) -> dict:
     # the ones still as the swap left them (restore_leftover_chain).
     if previous.get("chain"):
         _weekly_plan.restore_leftover_chain(weekly_plan_id, result["entry_id"], previous["chain"])
+    _put_back_prep_cuts(weekly_plan_id, result["entry_id"], name, previous.get("prep_cuts"))
     return {
         "status": "restored",
         "entry_id": result["entry_id"],
@@ -1289,6 +1373,49 @@ def undo_meal_swap(weekly_plan_id: int, entry_id: int) -> dict:
         "meal": name,
         "day": _refreshed_day(weekly_plan_id, entry["date"]),
     }
+
+
+def _with_outgoing_sides(swapped_from: dict, entry: dict, carry_sides: bool,
+                         outgoing: list[dict]) -> dict:
+    """
+    The undo note with the outgoing plate's sides on it, when this swap
+    leaves them behind. A swap to another dish drops the old entry's sides
+    (the potatoes went with the chops), and Undo used to put the chops back
+    with nothing beside them: the Crusty bread the household had added, and
+    the side the plate pass chose, were gone from the meal and their lines
+    from the list — Swap, then Undo, measured on an approved week.
+
+    Recorded once, like the rest of the note: a second swap of the slot
+    keeps the ORIGINAL's sides. One case writes them late on purpose — a
+    Change (carry_sides) then a Swap: the Change's note has no sides of its
+    own because the entry carried them, so the sides on the entry NOW are
+    the original's, and those are the ones recorded. `outgoing` is the
+    entry's sides, read by the caller BEFORE the swap deletes its row.
+    """
+    if carry_sides or "sides" in swapped_from:
+        return swapped_from
+    if swapped_from is not entry["derived_from"].get("swapped_from") \
+            or entry["derived_from"].get("carry_sides"):
+        sides = [{k: v for k, v in s.items() if k != "grocery_link_ids"}
+                 for s in outgoing or [] if isinstance(s, dict) and s.get("name")]
+        if sides:
+            return dict(swapped_from, sides=sides)
+    return swapped_from
+
+
+def _sides_to_put_back(entry: dict) -> list[dict]:
+    """What Undo puts beside the restored dish: the ORIGINAL's sides where
+    the note recorded them (_with_outgoing_sides — a Swap, then a Change on
+    top, still goes back to the first dish's plate), else the entry's own
+    when every change since carried them. carry_sides re-buys them on an
+    approved week."""
+    derived = entry["derived_from"] or {}
+    recorded = (derived.get("swapped_from") or {}).get("sides")
+    if recorded:
+        return list(recorded)
+    if derived.get("carry_sides"):
+        return _plates.get_sides(entry["entry_id"])
+    return []
 
 
 # What a swap writes on derived_from about itself, and what an undo takes
@@ -1849,7 +1976,8 @@ def apply_pick_to_days(weekly_plan_id: int, entries: list[dict], pick: dict,
         pick["meal_name"] = honest_meal_name(pick)
     _save_recipe_if_new(pick, serves or _table_for(first["date"], first["slot"])["serves"])
     # Read before the write: the rows they hang off are about to go.
-    sides_by_entry = {e["entry_id"]: _plates.get_sides(e["entry_id"]) for e in entries} if carry_sides else {}
+    outgoing_sides = {e["entry_id"]: _plates.get_sides(e["entry_id"]) for e in entries}
+    sides_by_entry = outgoing_sides if carry_sides else {}
     token = uuid.uuid4().hex
     now = datetime.datetime.now().isoformat(timespec="seconds")
     reason = (pick.get("reason") or "").strip()
@@ -1875,6 +2003,12 @@ def apply_pick_to_days(weekly_plan_id: int, entries: list[dict], pick: dict,
             "food_groups": entry["food_groups"],
             "reasoning": entry["reasoning"],
         }
+        if not entry["derived_from"].get("swapped_from"):
+            cuts = _prep_cuts_of(entry["entry_id"])
+            if cuts:
+                swapped_from = dict(swapped_from, prep_cuts=cuts)
+        swapped_from = _with_outgoing_sides(swapped_from, entry, carry_sides,
+                                            outgoing_sides.get(entry["entry_id"]) or [])
         if instead:
             # The chain this row is in NOW, recorded so Undo can put it
             # back: these rows leave the chain, so by undo time there is
@@ -1993,12 +2127,14 @@ def _undo_dish_swap(weekly_plan_id: int, entry: dict) -> dict:
     members = [m for m in members if m["entry_id"] == entry["entry_id"] or not _weekly_plan.night_has_gone(m["date"])]
     items = []
     carried = []  # each item's sides, when the change carried them (change_part)
+    cut_lists = []  # each item's prep cuts from before the swap, for Undo to put back
     for m in members:
         previous = m["derived_from"].get("swapped_from") or {}
         name = (previous.get("meal") or "").strip()
         if not name:
             continue
-        carried.append(_plates.get_sides(m["entry_id"]) if m["derived_from"].get("carry_sides") else [])
+        carried.append(_sides_to_put_back(m))
+        cut_lists.append(previous.get("prep_cuts") or [])
         item = {
             "old_entry_id": m["entry_id"], "date": m["date"], "slot": m["slot"], "new_meal": name,
             "food_groups": previous.get("food_groups") or [],
@@ -2019,6 +2155,8 @@ def _undo_dish_swap(weekly_plan_id: int, entry: dict) -> dict:
     for sides, new_id in zip(carried, result["entry_ids"]):
         if sides:
             _plates.carry_sides(sides, new_id)
+    for cuts, item, new_id in zip(cut_lists, items, result["entry_ids"]):
+        _put_back_prep_cuts(weekly_plan_id, new_id, item["new_meal"], cuts)
     dates = [i["date"] for i in items]
     days = _refreshed_days(weekly_plan_id, dates)
     mine = next((d for d in days if d.get("date") == entry["date"]), days[0] if days else None)

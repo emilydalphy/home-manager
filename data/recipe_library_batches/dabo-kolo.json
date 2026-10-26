@@ -1,0 +1,37 @@
+{
+ "dish_name": "Dabo Kolo",
+ "cuisine": "Ethiopian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {"item": "Unsalted butter", "qty": "4 tbsp", "category": "dairy"},
+  {"item": "All-purpose flour", "qty": "2 cups", "category": "pantry"},
+  {"item": "Berbere", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Cut the 4 tbsp butter into small pieces and leave it on the counter to soften while you measure everything else.",
+  "In a large bowl, whisk the 2 cups flour, 2 tsp of the berbere, the 1 tbsp sugar and the 1 tsp salt.",
+  "Stir in 1/2 cup water a little at a time, until it comes together into a stiff, shaggy dough. Add a spoonful more water only if there's dry flour that won't pick up.",
+  "Add the soft butter and knead it in for about 5 minutes, until the dough is smooth and no longer greasy. Cover the bowl and let the dough rest for 10 minutes.",
+  "Cut the dough in half. Knead the last 1 tsp berbere into one half for anyone who likes it hotter, and keep the two halves apart from here on.",
+  "Roll each half into ropes about as thick as your little finger, then cut the ropes into 1/2 inch pieces.",
+  "Heat a large dry cast iron or heavy skillet over medium heat for 2 minutes. Add the mild pieces in one layer.",
+  "Cook them for 12 to 15 minutes, stirring every minute or two, until they're golden brown on all sides and rattle when you shake the pan. Transfer them to a plate and toast the spicy pieces the same way.",
+  "Let them cool completely. They get crunchier as they cool. Leftovers keep in an airtight container for up to a week.",
+  "Serve the mild and the spicy bites in separate bowls."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three make a stiff flour and water dough with a little sugar, salt and fat, cut it into small pieces and toast them in a dry skillet, stirring, until crisp on every side. Food.com (the lead) seasons the dough with berbere and kneads in soft butter; Fork and Salt adds ground warm spices, honey and niter kibbeh, and The Foreign Fork uses cayenne and oil. This follows the lead, but with 1 tbsp of berbere in place of its 2 tbsp, and only a third of that kneaded into half the dough so there's a mild bowl and a spicy one. No version had ratings to speak of (the lead shows 2 reviews and no rating count) and RecipeTin Eats has no dabo kolo, so the lead is the classic berbere and butter version among those read.",
+ "sources": [
+  {"name": "Food.com", "title": "Dabo Kolo", "url": "https://www.food.com/recipe/dabo-kolo-134978", "rating": null, "rating_count": null, "read": true, "lead": true},
+  {"name": "Fork and Salt", "title": "Dabo Kolo Ethiopian Spiced Snack Recipe", "url": "https://forkandsalt.com/recipes/ethiopian/yetsom-dabo-kolo", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "The Foreign Fork", "title": "Dabo Kolo Recipe at Home", "url": "https://foreignfork.com/dabo-kolo/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

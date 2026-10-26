@@ -34,6 +34,11 @@ def _monday() -> datetime.date:
 
 # Approval buys only from the household's today on: run on the seeded week's Monday.
 ON_MONDAY = on_the_weeks_monday(_monday())
+# And the whole file, not only the approving tests: since 2026-10-24 a side
+# on a night that has gone by is refused (plates.add_component, the rule
+# Swap and Change keep), and every test here adds to Monday's dinner — on
+# any other weekday that is a past night and the add is, rightly, refused.
+pytestmark = ON_MONDAY
 
 
 def _day(offset: int) -> str:

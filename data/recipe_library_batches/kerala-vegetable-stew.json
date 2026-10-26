@@ -1,0 +1,142 @@
+{
+ "dish_name": "Kerala Vegetable Stew",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Coconut oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1 (2 inches)",
+   "category": "pantry"
+  },
+  {
+   "item": "Green cardamom pods",
+   "qty": "4",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole cloves",
+   "qty": "4",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Serrano chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Green beans",
+   "qty": "6 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Cauliflower",
+   "qty": "1 small head",
+   "category": "produce",
+   "cook_qty": "half the head"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "1/2 cup",
+   "category": "frozen"
+  },
+  {
+   "item": "Curry leaves",
+   "qty": "1 sprig",
+   "category": "produce"
+  },
+  {
+   "item": "Coconut milk",
+   "qty": "2 cans (13.5 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put 1 1/2 cups of the basmati rice in a fine strainer and rinse it under cold water until the water runs mostly clear. Transfer it to a medium saucepan with 2 1/4 cups water and a pinch of salt.",
+  "Bring the rice to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on for 5 minutes, then fluff it with a fork.",
+  "Meanwhile, cut the potatoes into 3/4 inch cubes, slice the carrots into thin rounds, cut the green beans into 1 inch pieces and break half the cauliflower into small florets. Thinly slice the onion, julienne the ginger and slit the serrano lengthwise.",
+  "Heat the coconut oil in a large pot over medium heat. Add the cinnamon, cardamom and cloves and stir for 30 seconds, until they smell warm.",
+  "Add the onion, ginger and serrano. Cook for 4 minutes, stirring, until the onion is soft but not browned.",
+  "Add the potatoes, carrots, green beans, cauliflower, curry leaves and the salt. Stir for 1 minute, then add 1/2 cup water. Cover and cook for 6 minutes.",
+  "Shake one can of the coconut milk and stir it in with another 1/2 cup water. Bring it to a gentle bubble, cover and cook on medium-low for 8 minutes, until the vegetables are nearly tender.",
+  "Press a few of the potato cubes against the side of the pot with your spoon to thicken the stew.",
+  "Add the peas, the second can of coconut milk (shaken) and the black pepper. Simmer for 3 minutes. Take the pot off the heat.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 29,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree on whole spices (cloves, cinnamon, cardamom), a mild onion and ginger base, root vegetables and green beans, and coconut milk finished at the end. They differ on pressure cooking or steaming first and on thin versus thick coconut milk; the lead uses thin milk to cook and thick milk to finish. This version uses one can with water to cook and the second can to finish, with coconut oil. It is vegan and gluten-free as written, and is served over rice instead of the traditional appam or idiyappam.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Vegetable Stew Recipe (Kerala Style Vegetable Stew)",
+   "url": "https://hebbarskitchen.com/veg-stew-kerala-style-vegetable-stew/",
+   "rating": 4.99,
+   "rating_count": 309,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Sailu's Food",
+   "title": "Vegetable Stew Recipe, Kerala",
+   "url": "https://www.sailusfood.com/vegetable-stew-recipe-kerala",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Archana's Kitchen",
+   "title": "Kerala Style Vegetable Stew Recipe with Coconut Milk",
+   "url": "https://archanaskitchen.com/kerala-style-vegetable-stew-with-coconut-milk",
+   "rating": null,
+   "rating_count": 19706,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,118 @@
+{
+ "dish_name": "Canh Ga Chien Nuoc Mam",
+ "cuisine": "Vietnamese",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Chicken wings",
+   "qty": "2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "5 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Thai chilies",
+   "qty": "2",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "If the wings are whole, cut them at the joints into flats and drumettes and throw away the tips. Pat them very dry with paper towels.",
+  "In a large bowl, toss the wings with 3/4 tsp salt, 1/2 tsp pepper and 3/4 tsp garlic powder.",
+  "Pour the 5 cups oil into a heavy pot. It should come at least 2 inches up the side and no more than halfway. Heat it over medium high. You're heating it to 350°F, so if you have a thermometer, clip it to the side. No thermometer? Stand the handle of a wooden spoon in the oil. It's ready when small bubbles stream steadily off it.",
+  "Meanwhile, mince the 3 garlic cloves and juice the lime. That should be about 2 tbsp.",
+  "Off the heat, stir 2 tbsp fish sauce, 2 tbsp water, the lime juice, 3 tbsp sugar and the garlic together in a small saucepan.",
+  "Set a wire rack over a tray, or line a tray with paper towels.",
+  "Sprinkle 3 tbsp cornstarch over the wings and toss until each one has a thin, even coat. Shake off any extra.",
+  "Lower a third of the wings into the oil one at a time. Stand back a little. They'll spatter.",
+  "Fry them for 8 to 10 minutes, turning them now and then, until they're deep golden and crisp. You're cooking them to 175°F, so if you have a thermometer, check the thickest one next to the bone. No thermometer? Cut one open at the bone: it's done when there's no pink.",
+  "Lift them out with a slotted spoon and transfer them to the rack. Fry the rest in two more batches, letting the oil come back to temperature between them.",
+  "Put the glaze over medium heat and let it bubble for 3 to 4 minutes, stirring, until it's thick and glossy like a thin syrup.",
+  "Put the wings in a large bowl, pour the glaze over and toss until every wing is coated.",
+  "Thinly slice the 2 chilies and put them in a little bowl.",
+  "Serve the wings hot with the chilies on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three fry the wings until crisp and toss them in a sticky glaze of fish sauce, sugar and garlic. Bun Bo Bae and Vicky Pham season the wings, coat them in cornstarch and deep fry them at 350°F, then toss them in a quick fish sauce, sugar and lime glaze; MM Bon Appetit marinates the wings in fish sauce, garlic, ginger and shallot, pan fries them and finishes them covered in the sauce with honey. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Vietnamese) only has grilled lemongrass wings, a different dish, so the first read version leads. This one follows the lead for 2 lb of wings, which is a snack for 4 rather than the lead's 3 lb, and keeps the chilies out of the glaze and on the side.",
+ "sources": [
+  {
+   "name": "Bun Bo Bae",
+   "title": "Vietnamese Fish Sauce Glazed Chicken Wings (Canh Ga Chien Nuoc Mam)",
+   "url": "https://bunbobae.com/vietnamese-fish-sauce-glazed-chicken-wings-canh-ga-chien-nuoc-mam/",
+   "rating": 4.73,
+   "rating_count": 11,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Vicky Pham",
+   "title": "Vietnamese Fish Sauce Fried Chicken Wings (Ga Chien Nuoc Mam)",
+   "url": "https://vickypham.com/blog/vietnamese-fried-chicken-with-fish-sauce-ga-chien-nuoc-mam/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "MM Bon Appetit",
+   "title": "Canh ga chien nuoc mam (Fish sauce wings)",
+   "url": "https://mmbonappetit.com/canh-ga-chien-nuoc-mam/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

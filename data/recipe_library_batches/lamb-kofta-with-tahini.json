@@ -1,0 +1,155 @@
+{
+ "dish_name": "Lamb Kofta with Tahini",
+ "cuisine": "Lebanese",
+ "main_protein": "lamb",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Wooden skewers",
+   "qty": "1 package",
+   "category": "other",
+   "cook_qty": "8"
+  },
+  {
+   "item": "Ground lamb",
+   "qty": "1 1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tahini",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub (16 oz)",
+   "category": "dairy",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Persian cucumbers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh mint",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Pita bread",
+   "qty": "1 package",
+   "category": "other",
+   "cook_qty": "4"
+  },
+  {
+   "item": "Aleppo pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put 8 wooden skewers in a dish of water to soak for at least 30 minutes.",
+  "Meanwhile, grate the onion on the large holes of a box grater. Finely chop the parsley leaves. That should be about 1/2 cup.",
+  "Put the lamb in a large bowl with the onion and any juice, the parsley, the 1 1/2 tsp coriander, the 1/4 tsp cinnamon, the 3/4 tsp pepper and 1 1/2 tsp of the salt. Mix it with your hands until the spices are spread through. Stop as soon as there are no streaks left. Any longer and the kofta come out tough.",
+  "Divide the mixture into 8 even portions. Squeeze each one around a skewer into a log about 6 inches long. Lay them on a tray and put them in the fridge while you make the sauce.",
+  "Squeeze the lemons. That should be about 1/4 cup. Grate the garlic clove.",
+  "In a bowl, whisk the 1/2 cup tahini with the lemon juice, the 1 tbsp olive oil, the garlic and the last 1/2 tsp salt. It'll turn thick and grainy at first. Keep whisking and it turns smooth.",
+  "Whisk in the 1/2 cup yogurt. If it's too thick to drizzle, whisk in cold water a spoonful at a time.",
+  "Slice the cucumbers into thin rounds and pick the leaves off the mint.",
+  "Heat a grill or a grill pan over medium-high. Brush the kofta all over with the 1 tbsp vegetable oil.",
+  "Lay the kofta on the grill and leave them alone until they're browned underneath and let go, about 3 minutes. Turn them and keep cooking, turning every 3 minutes or so, until they're browned all over, 10 to 12 minutes in all.",
+  "You're cooking them to 160°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut into the thickest one: it's done when there's no pink left.",
+  "Lift the kofta onto a plate to rest for a few minutes. Warm the 4 pitas on the grill for about 1 minute on each side.",
+  "Taste the tahini sauce. If it's flat, add a pinch more salt.",
+  "Put the 1 tsp Aleppo pepper in a small bowl for the table.",
+  "Serve the kofta with the tahini sauce, the warm pita, the cucumbers and the mint, with the Aleppo pepper on the side."
+ ],
+ "method_notes": "All three mix ground lamb with warm spices and grill or bake it in long logs, with a tahini sauce of lemon, garlic and salt. Savor the Best grinds Aleppo pepper, coriander seed, peppercorns and cinnamon into the lamb with onion and parsley and stirs yogurt into the tahini, Foodess bakes cumin and cinnamon kofta and pours the sauce over them in the dish, and Eat This adds za'atar and smoked paprika. This follows Savor the Best's kofta and sauce on skewers, with ground spices in place of whole ones, and serves them with the pita, cucumber and mint from that recipe; the Aleppo pepper goes to the table so the kofta stay mild. Savor the Best serves them as wraps with a separate garlic sauce and lettuce, which this leaves out.",
+ "sources": [
+  {
+   "name": "Savor the Best",
+   "title": "Grilled Lamb Kofta Sandwiches",
+   "url": "https://savorthebest.com/grilled-lamb-kofta-kabab-sandwiches/",
+   "rating": 5,
+   "rating_count": 25,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Foodess",
+   "title": "Lamb Kofta in Tahini Sauce",
+   "url": "https://foodess.com/lamb-kofta-in-tahini-sauce/",
+   "rating": 5,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Eat This, Not That!",
+   "title": "Lamb Kofte Kebabs with Tahini Garlic Sauce",
+   "url": "https://www.eatthis.com/lamb-kofte-kebabs-tahini-garlic-sauce-recipe/",
+   "rating": 2.8,
+   "rating_count": 26,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

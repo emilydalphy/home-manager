@@ -439,7 +439,7 @@ def test_wrong_household_id_and_a_made_up_id_look_identical(client, beta_househo
     # Checked again on a differently-shaped endpoint (facts, not grocery)
     # so the property isn't just true for one hand-picked route.
     _sign_in(client, BETA_PASSPHRASE)
-    client.post("/api/facts/add", json={"category": "preferences", "text": "beta likes tacos"})
+    client.post("/api/facts/add", json={"category": "taste", "text": "beta likes tacos"})
     with tools.use_household(beta_household):
         beta_fact_id = tools.get_facts()[0]["id"]
     never_existed_fact_id = beta_fact_id + 999_000
