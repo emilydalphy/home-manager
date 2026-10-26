@@ -494,11 +494,19 @@ def _slot_nights(dishes: list[dict], chains: dict) -> list[dict]:
             derived = json.loads(e.get("derived_from_json") or "{}") or {}
             reheat = chains["leftovers"].get(e["id"])
             frozen = derived.get(_leftovers.FROM_FREEZER_KEY) if isinstance(derived.get(_leftovers.FROM_FREEZER_KEY), dict) else None
+            reheat_of = reheat["source"]["entry_id"] if reheat else (_ref_id(frozen.get("cook")) if frozen else None)
+            if frozen and reheat_of is None:
+                # A portion already in the freezer (freezer_portions, from a
+                # night off in an earlier week) names no cook in this plan,
+                # but it is a reheat all the same: 0 marks it one that feeds
+                # nobody. Read as a cook, a later night of the same dish was
+                # linked to it and ate two frozen servings three nights
+                # running, with nothing cooked and nothing bought.
+                reheat_of = 0
             out.append({
                 "entry": e, "id": e["id"], "date": e["date"], "slot": e.get("slot"), "dish": dish,
                 "meal": e["meal"], "derived": derived,
-                "reheat_of": reheat["source"]["entry_id"] if reheat else (
-                    _ref_id(frozen.get("cook")) if frozen else None),
+                "reheat_of": reheat_of,
                 "source": e["id"] in chains["sources"],
                 "targets": list((chains["sources"].get(e["id"]) or {}).get("targets") or []),
                 "done": (e.get("cooked_status") or "") == "done",

@@ -170,10 +170,11 @@ def _frozen_rows(conn) -> list[dict]:
         "ORDER BY created_at ASC, id ASC",
         (household_id(), _tonight.NIGHT_OFF_FROZEN_SOURCE),
     ).fetchall()
+    uncooked = _skipped_cooks_portion_ids(conn)
     out = []
     for r in rows:
         dish = _tonight.frozen_portion_dish(r["item"])
-        if not dish:
+        if not dish or r["id"] in uncooked:
             continue
         out.append({
             "inventory_item_id": r["id"], "item": r["item"], "dish": dish,
@@ -181,6 +182,33 @@ def _frozen_rows(conn) -> list[dict]:
             "frozen_on": (r["created_at"] or "")[:10],
             "expiration_date": r["expiration_date"] or "",
         })
+    return out
+
+
+def _skipped_cooks_portion_ids(conn) -> set[int]:
+    """
+    The freezer rows a night off wrote for a cook that was then answered
+    "We skipped it" and is still not ticked cooked (2026-10-25). A
+    `cook_on_fed` night off writes its portion when tapped, ahead of the
+    cook; skipped, the cook made none, so the planner must not put a night
+    on it ("You froze a portion of Pasta Primavera"). Read at plan time
+    rather than deleted on the skip: the skip has no Undo, and the cooked
+    tick that corrects it (which clears skipped_at) brings the portion
+    straight back with nothing to restore.
+    """
+    from . import leftovers as _leftovers
+
+    out: set[int] = set()
+    for r in conn.execute(
+        "SELECT derived_from_json FROM meal_plan_entries WHERE household_id = ? "
+        "AND skipped_at IS NOT NULL AND COALESCE(cooked_status, '') != 'done' "
+        "AND derived_from_json LIKE ?",
+        (household_id(), f'%{_leftovers.FREEZER_EXTRA_KEY}%'),
+    ).fetchall():
+        extra = _derived(r["derived_from_json"]).get(_leftovers.FREEZER_EXTRA_KEY)
+        if isinstance(extra, dict):
+            out |= {i for i in extra.get("inventory_item_ids") or []
+                    if isinstance(i, int) and not isinstance(i, bool)}
     return out
 
 
@@ -622,6 +650,73 @@ def portion_eaten(entry_id: int) -> dict | None:
         "result": {"item_id": item["id"], "item": item["item"],
                    "removed": True, "units_reconciled": True},
     }
+
+
+def release_uncooked_extra(conn, entry_id: int) -> list[str]:
+    """
+    A cook that a night off loaded with portions for the freezer
+    (leftovers.FREEZER_EXTRA_KEY, tonight._shrink_chain_into_freezer) has
+    come off the week without being cooked — a night off on the night it
+    landed on, which deletes the cook (no Undo, no cooked tick left to
+    correct it). "We skipped it" is NOT this: that cook can still be ticked
+    cooked, so its portions are only ignored while it stays skipped
+    (_skipped_cooks_portion_ids). The night off wrote those portions into the freezer
+    when it was tapped, ahead of the cook; with no cook there are no
+    portions. Each inventory row the night off wrote for this cook is
+    deleted, and the cook stops carrying them, so next week's draft does
+    not plan a night around food nobody made ("You froze a portion of
+    Pasta Primavera — this is the night to eat it").
+
+    Left alone: a row that is not a night off's freezer row any more (moved,
+    edited into something else), and a row a live plan already stands a
+    night on from today on — taking that one away would leave that night
+    with nothing to eat, which is a re-plan, not this. Runs on the caller's
+    connection and transaction. Returns the items released.
+    """
+    from . import leftovers as _leftovers
+    from . import tonight as _tonight
+
+    row = conn.execute(
+        "SELECT derived_from_json FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+        (entry_id, household_id()),
+    ).fetchone()
+    if row is None:
+        return []
+    derived = _derived(row["derived_from_json"])
+    extra = derived.get(_leftovers.FREEZER_EXTRA_KEY)
+    ids = [i for i in ((extra or {}).get("inventory_item_ids") or [])
+           if isinstance(i, int) and not isinstance(i, bool)] if isinstance(extra, dict) else []
+    if not ids:
+        return []
+    claimed = _claimed_item_ids(conn)
+    released, kept = [], []
+    for inv_id in ids:
+        item = conn.execute(
+            "SELECT id, item FROM inventory_items WHERE id = ? AND household_id = ? "
+            "AND location = 'freezer' AND source = ?",
+            (inv_id, household_id(), _tonight.NIGHT_OFF_FROZEN_SOURCE),
+        ).fetchone()
+        if item is None:
+            continue  # gone already, or no longer this night off's row
+        if inv_id in claimed:
+            kept.append(inv_id)
+            continue
+        conn.execute("DELETE FROM inventory_items WHERE id = ? AND household_id = ?",
+                     (inv_id, household_id()))
+        released.append(item["item"])
+    if kept:
+        extra = dict(extra, inventory_item_ids=kept)
+        derived[_leftovers.FREEZER_EXTRA_KEY] = extra
+    else:
+        derived.pop(_leftovers.FREEZER_EXTRA_KEY, None)
+    conn.execute(
+        "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?",
+        (json.dumps(derived), entry_id, household_id()),
+    )
+    if released:
+        logger.info("Took %s out of the freezer: its cook (entry %s) came off uncooked",
+                    ", ".join(released), entry_id)
+    return released
 
 
 # ---------- the nudge ----------

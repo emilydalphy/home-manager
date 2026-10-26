@@ -48,6 +48,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from ..db import get_conn
 from ._shared import household_id
+from . import freezer_portions as _freezer_portions
 from . import notifications as _notifications
 from . import week_intake as _week_intake
 from . import plan_undo as _plan_undo
@@ -1116,6 +1117,9 @@ def tonight_night_off(day: str | None = None, now: datetime | None = None,
                 out["can_undo"] = True
                 out["freezer_nights_dropped"] = dropped
             else:
+                # Tonight's cook carried portions an earlier night off put
+                # in the freezer: with no cook, there are none.
+                _freezer_portions.release_uncooked_extra(conn, tonight_row["id"])
                 _settle_night_off(plan_id, today, use_soon, conn)
             conn.commit()
             # The weekdays the dish is still planned on after tonight — the

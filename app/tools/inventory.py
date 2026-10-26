@@ -416,6 +416,18 @@ def _add_to_inventory(
         fields = "quantity = ?, source = ?, updated_at = datetime('now')"
         params = [merged_qty, source]
         resolved_exp = _quantities._resolved_expiration_update(expiration_date, category, existing["category"], existing["expiration_date"], item)
+        old_use_by = (existing["expiration_date"] or "").strip()
+        if (not expiration_date and old_use_by and (category or existing["category"])
+                and (location or _quantities._display_location(dict(existing))).strip().lower() != "freezer"
+                and old_use_by < _grocery._household_today(conn=conn).isoformat()):
+            # Fresh food bought onto a row already past its use-by
+            # (2026-10-25): what was there has gone off, so the row becomes
+            # the new food — its amount and its date — rather than the old
+            # date on the sum (fresh pasta read as expired the day it was
+            # bought) or the new date on the sum (3 lb "in date" of which
+            # 2 lb had turned). The untick's receipt still restores the row.
+            params[0] = quantity
+            resolved_exp = _quantities._estimate_expiration_date(category or existing["category"], item)
         if resolved_exp:
             fields += ", expiration_date = ?"
             params.append(resolved_exp)

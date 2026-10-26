@@ -1220,6 +1220,28 @@ why*, not duplicating the diff.
   re-dated (can't tell it from a bought-fresh fridge estimate). Thawed
   "other" gets 3 days, not 14. Open: a same-day freezer mis-tap still
   restarts the date — the original isn't stored.
+- **Week 2 seams: a freezer night is never a cook; a night off's portion
+  with no cook comes back out; food past its use-by is not stock**
+  (2026-10-25; branch `overnight/second-week-hunt`; tests
+  `tests/test_second_week_seams.py`). Found living week 1 over HTTP and
+  drafting week 2: the count fold (`meal_variety._slot_nights`) read a
+  `freezer_portions` night as its dish's cook and linked two later nights
+  to it ("Leftovers — Monday's Leftovers from the freezer — Pasta"), and
+  `repair_leftover_chains` accepted such a link; both now refuse. A
+  `cook_on_fed` night off writes its portion before the cook happens. After
+  "We skipped it" the planner ignores that portion while the cook stays
+  skipped (`freezer_portions._skipped_cooks_portion_ids`) — read lazily, not
+  deleted, because a skip has no Undo and the cooked tick that corrects it
+  must find the row (review). A `drop` night off deletes the cook, so there
+  the night off's own rows are deleted (`release_uncooked_extra`) — not one
+  a live plan already stands on, not on `drop_with_freezer`. `_KitchenStock`
+  skips rows past `expiration_date` and `bring_over.bought_items` re-buys an
+  ingredient whose every kitchen row is past it (8-day-old beef was "already
+  have") — FREEZER rows exempt, their date is a fridge estimate (review). A
+  purchase onto a non-freezer row past its use-by replaces it: the new
+  amount and date (`inventory._add_to_inventory` kept the old date on the
+  sum). Also "One new dish" / "No new dishes" and "lunches" in two reasons.
+
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
