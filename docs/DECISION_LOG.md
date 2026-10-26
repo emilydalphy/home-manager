@@ -1146,6 +1146,13 @@ why*, not duplicating the diff.
   `_shared.find_member_row` (exact case-blind first, accent-folded only when
   unique) now backs get-or-create, attendance, lunch facts, share links and
   per-person taste.
+- **Quarts of stock are quarts on the cook card, not pounds** (2026-10-24,
+  defect hunt; branch `overnight/kitchen-hunt-quarts`; tests
+  `tests/test_cook_card_quarts_of_stock.py`). "quarts"/"qt"/"gallons" weren't
+  unit aliases, so the line read unmeasured and the table's longest key
+  ("chicken", 1.5 lb) replaced "1 ½ quarts chicken stock". Aliases + plurals
+  added, the stocks get their own table keys, and the stepper scales a bare
+  "1 ½ quarts" line (steps still leave quarts alone: a "6 quart pot").
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

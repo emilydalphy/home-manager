@@ -175,6 +175,11 @@ _UNIT_ALIASES = {
     # The Canadian/British spelling — "1 litre" read as no unit at all, so
     # the cook card put the table's guess in its place (2026-10-20).
     "millilitre": "ml", "millilitres": "ml", "litre": "l", "litres": "l",
+    # "1 ½ quarts chicken stock" read its unit as "quarts", which no table
+    # knows, so the cook card called it unmeasured and showed the table's
+    # guess instead — "1.5 lb" of stock (defect hunt, 2026-10-24).
+    "quart": "quart", "quarts": "quart", "qt": "quart", "qts": "quart",
+    "gallon": "gallon", "gallons": "gallon", "gal": "gallon",
     # Size descriptors ("1 large" onion) aren't real units of measure — map
     # them to "" (normalized to None below) so "1 large" and "1/2" (no
     # unit) are recognized as the same kind of quantity and merge into a
@@ -609,7 +614,7 @@ def _parse_quantity(qty: str) -> tuple[float, str | None] | None:
     return amount, unit
 
 
-_UNIT_PLURALS = {"cup": "cups", "lb": "lbs", "egg": "eggs", "dozen": "dozen"}
+_UNIT_PLURALS = {"cup": "cups", "lb": "lbs", "egg": "eggs", "dozen": "dozen", "quart": "quarts", "gallon": "gallons"}
 
 
 def _plain_number(amount: float, sig: int = 6) -> str:

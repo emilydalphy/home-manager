@@ -1053,6 +1053,22 @@ def _scaled_count_range(qty_text: str, ratio: float) -> str | None:
     return amount + (m.group("rest") or "")
 
 
+def _scaled_plain_measure(qty_text: str, ratio: float, keep_spoons: bool = False) -> str | None:
+    """A bare "amount unit" the step scaler has no word for, scaled the way
+    the parsed route scales it: "1 ½ quarts" x2 -> "3 quarts". The steps
+    leave quart/pint alone on purpose (a "6 quart pot" is a pot), but on the
+    ingredient list it is always food — and it stayed "1 ½ quarts" at every
+    size while the water beside it doubled (defect hunt, 2026-10-24). None
+    for anything with more than an amount and one unit word."""
+    ascii_text = _ascii_fractions(qty_text or "").strip()
+    if not re.fullmatch(r"(?:" + _NUM + r")\s*[a-z]+\.?", ascii_text, re.IGNORECASE):
+        return None
+    parsed = _parse_cook_qty(ascii_text)
+    if not parsed or parsed[1] not in _measured_units():
+        return None
+    return _measure_terms_qty(_scaled_measure(parsed[0], ratio, parsed[1], keep_spoons=keep_spoons))
+
+
 def _qty_words_after_amount(qty_text: str, parsed: tuple) -> str:
     """The words a qty carries after its amount and unit, as written —
     "grated" in "1/3 cup grated", "small" in "1 small". _parse_quantity
@@ -1120,7 +1136,11 @@ def scale_recipe(recipe_name: str, target_servings: int) -> dict:
             # so the list and the steps agree and nothing written is lost.
             rescaled = scale_steps([qty_text], ratio)[0] if abs(ratio - 1) > 1e-9 else qty_text
             if rescaled == qty_text and abs(ratio - 1) > 1e-9:
-                rescaled = _scaled_count_range(qty_text, ratio) or qty_text
+                rescaled = (
+                    _scaled_count_range(qty_text, ratio)
+                    or _scaled_plain_measure(qty_text, ratio, keep_spoons)
+                    or qty_text
+                )
             # "½" lemon, "1 ½" onions, "½ medium" (defect hunt, 2026-10-22):
             # a COUNT written with a glyph. scale_steps only scales a bare
             # count with a food word after it, which a qty column has not,
@@ -1213,8 +1233,12 @@ _STEP_NICE_FRACTIONS = (
 
 # Measuring words a step's amount can carry, as written -> (canonical unit
 # for scale_recipe's rules, singular form, plural form). Abbreviations keep
-# their one spelling. Deliberately NOT here: pint/quart/inch (pots and
-# pieces far more often than food), "c" and "pinch"/"dash" (freeform).
+# their one spelling. Deliberately NOT here: pint/inch (pots and pieces far
+# more often than food), "c" and "pinch"/"dash" (freeform). Quart and gallon
+# ARE here since 2026-10-24 (review of overnight/kitchen-hunt-quarts: the
+# list said "3 quarts" of stock over a step still saying "1 ½ quarts"); a
+# pot's size is still left alone by the "a/an before it" rule, a vessel word
+# after it ("6 quart pot", "5 quart Dutch oven"), or a dash ("8-qt").
 _STEP_UNIT_WORDS: dict[str, tuple[str, str, str]] = {}
 for _canon, _sing, _plur in (
     ("cup", "cup", "cups"),
@@ -1237,11 +1261,15 @@ for _canon, _sing, _plur in (
     ("head", "head", "heads"),
     ("bunch", "bunch", "bunches"),
     ("handful", "handful", "handfuls"),
+    ("quart", "quart", "quarts"),
+    ("gallon", "gallon", "gallons"),
 ):
     _STEP_UNIT_WORDS[_sing] = (_canon, _sing, _plur)
     _STEP_UNIT_WORDS[_plur] = (_canon, _sing, _plur)
 for _abbr in ("tbsp", "tsp", "oz", "g", "kg", "ml", "l", "fl oz"):
     _STEP_UNIT_WORDS[_abbr] = (_abbr, _abbr, _abbr)
+for _abbr, _canon in (("qt", "quart"), ("gal", "gallon")):
+    _STEP_UNIT_WORDS[_abbr] = (_canon, _abbr, _abbr)
 
 # A measure followed by one of these sizes the container, not the food.
 _STEP_VESSEL_WORDS = {
@@ -1249,6 +1277,7 @@ _STEP_VESSEL_WORDS = {
     "bag", "bags", "box", "boxes", "bottle", "bottles", "carton", "cartons",
     "container", "containers", "tub", "tubs", "block", "blocks", "pan", "pans",
     "pot", "pots", "saucepan", "skillet", "dish", "casserole", "sheet", "tray",
+    "stockpot", "stockpots", "dutch", "slow", "crockpot", "kettle", "roaster", "bowl",
 }
 _STEP_SIZE_WORDS = ("large", "medium", "small", "whole")
 # A number after one of these is a count of pieces or portions, not an
@@ -1902,6 +1931,10 @@ COOKING_QUANTITIES_PER_4 = {
     # liquids and canned goods
     "broth": "4 cups", "chicken broth": "4 cups", "vegetable broth": "4 cups",
     "beef broth": "4 cups", "stock": "4 cups", "white wine": "1/2 cup",
+    # Their own keys, because the longest key wins and "chicken" is longer
+    # than "stock": "chicken stock" came out as "1.5 lb" (2026-10-24).
+    "chicken stock": "4 cups", "beef stock": "4 cups", "vegetable stock": "4 cups",
+    "turkey stock": "4 cups", "fish stock": "4 cups",
     "coconut milk": "1 can (14 oz)", "crushed tomatoes": "1 can (28 oz)",
     "diced tomatoes": "1 can (14 oz)", "tomato sauce": "1 can (14 oz)",
     "black beans": "1 can (15 oz)", "chickpeas": "1 can (15 oz)",
