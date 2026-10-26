@@ -1140,7 +1140,6 @@ def _household_edit_columns(conn, row, new_quantity: str) -> dict | None:
 
 def _restate_standing_want(
     current_qty: str, total_before: float, total_after: float, unit: str | None,
-    typed: bool = False,
 ) -> tuple[str, bool] | None:
     """
     Write a household's own standing want back out with the plan's share
@@ -1198,15 +1197,7 @@ def _restate_standing_want(
     The household's own amount is also floored at nothing, which is load-
     bearing rather than defensive: hand-edit an 8 down to 2 mid-week and
     the plan's share is bigger than the whole line, so without the floor
-    the next removal blanks something the household typed. And the floor
-    alone is not enough: once the LAST of the plan's share comes off a
-    line edited below it, own (0) + plan (0) is nothing, so a line that
-    would restate to nothing is left as it reads — the household's typed
-    number, never a blank — when it is known to be typed: `typed` (the
-    caller's row has edited_to, recorded by update_grocery_item for an
-    edit below the plan's share), or it
-    reads strictly less than the plan's share, which no line the plan
-    added to does on its own.
+    the next removal blanks something the household typed.
     """
     note = _quantities._quantity_note(current_qty or "")
     parsed = _quantities._parse_quantity(current_qty or "")
@@ -1224,24 +1215,6 @@ def _restate_standing_want(
     if snapped > 0 or households_own <= 0:
         households_own = snapped
     total = households_own + plan_after
-    if total <= 0 and (typed or current_amount < plan_before - 1e-9):
-        # The line was typed down below what the plan put on it, so
-        # "the household's own" can't be derived — it floors at nothing —
-        # and with the meals all gone that left nothing at all: a typed "1"
-        # onion on a line the plan wanted 2 of went blank when the week
-        # was cleared. With no meals left the line is the household's
-        # alone, and what they typed is their number (Emily 2026-10-12: an
-        # edit below what the plan needs is kept). Left exactly as it reads.
-        # Known typed: update_grocery_item marks a standing want it edits
-        # below the plan's share (edited_to), because one removal of
-        # several already hands the line back at the plan's remaining
-        # share — after that it reads exactly that share, and so does a
-        # want with no amount of its own ("carrots" + the plan's 2), which
-        # goes back to no amount. Without the mark (a line edited before it
-        # existed), reading STRICTLY below the plan's share is the tell: an
-        # unedited line only does that by display drift, and there keeping
-        # the amount is the upward bias this module takes.
-        return current_qty, False
     if total <= 0:
         return "", True
     if line_unit in _quantities._VOLUME_TO_TSP:
@@ -1524,10 +1497,7 @@ def _reverse_meal_grocery_contributions(entry_id: int, conn=None, only_items=Non
                 )
                 restated = (
                     None if totals is None
-                    else _restate_standing_want(
-                        grocery_row["quantity"] or "", *totals,
-                        typed=is_standing_want and bool((grocery_row["edited_to"] or "").strip()),
-                    )
+                    else _restate_standing_want(grocery_row["quantity"] or "", *totals)
                 )
                 if restated is None:
                     new_qty, fully_removed = _subtract_quantity(
@@ -3671,22 +3641,6 @@ def mark_grocery_item(item_id: int, status: str = "purchased") -> dict:
     return result
 
 
-def _typed_below_plan_share(conn, item_id: int, typed: str) -> bool:
-    """Whether a household's own line, typed to `typed`, now reads less
-    than the plan's meals put on it — their ledger's total, rounded the way
-    the ingest rounded it (as _restate_standing_want reads it)."""
-    parsed = _quantities._parse_quantity(typed)
-    if not parsed:
-        return False
-    totals = _quantities._ledger_totals(_ledger_quantities(item_id, conn), [])
-    if totals is None:
-        return False
-    total, _none, unit = totals
-    rounded, rounded_unit = _quantities._shopping_round(total, unit)
-    share = _quantities._convert_to_unit(rounded, rounded_unit, parsed[1])
-    return share is not None and parsed[0] < share - 1e-9
-
-
 def update_grocery_item(item_id: int, quantity: str | None = None, category: str | None = None) -> dict:
     """
     Directly edit an already-listed grocery item's quantity and/or category
@@ -3727,15 +3681,6 @@ def update_grocery_item(item_id: int, quantity: str | None = None, category: str
     edit = None
     if quantity is not None and row["source_weekly_plan_id"] is not None:
         edit = _household_edit_columns(conn, row, new_quantity or "")
-    elif quantity is not None:
-        # A household's own line typed BELOW the plan's share on it: marked
-        # (edited_to), so the plan's meals all coming off it leave the line
-        # standing rather than blank (_restate_standing_want's `typed`).
-        # Only below: a merge's Undo comes through here too, sending back
-        # the line as it read before — never under the plan's share — and
-        # must record nothing (tests/test_part_cups_read_as_cups.py).
-        mark = (new_quantity or "").strip() if _typed_below_plan_share(conn, item_id, new_quantity or "") else ""
-        edit = {"kept_amount": "", "short_amount": "", "edited_to": mark}
     conn.execute(
         "UPDATE grocery_items SET quantity = ?, category = ? WHERE id = ? AND household_id = ?",
         (new_quantity, new_category, item_id, household_id()),
