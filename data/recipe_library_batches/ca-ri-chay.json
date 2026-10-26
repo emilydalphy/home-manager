@@ -55,8 +55,9 @@
   },
   {
    "item": "Curry powder (gluten-free)",
-   "qty": "2 tbsp",
-   "category": "pantry"
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
   },
   {
    "item": "Tamari (gluten-free)",

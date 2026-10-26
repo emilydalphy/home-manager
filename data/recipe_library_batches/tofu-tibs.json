@@ -40,8 +40,9 @@
   },
   {
    "item": "Berbere (gluten-free)",
-   "qty": "1 tbsp",
-   "category": "pantry"
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
   },
   {
    "item": "Tomatoes",
