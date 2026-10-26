@@ -7422,6 +7422,7 @@ def _generate_weekly_plan(
             },
             cap_for=lambda d, slot: _meal_minutes_cap(d, slot, intake, effective_memory),
             taken={(p["on"], p["slot"]) for p in brought_over},
+            guest_nights=_freezer_portions.guest_nights(period),
         )
         if frozen_portions and isinstance(context.get("intake"), dict):
             context["intake"]["frozen_portions"] = _freezer_portions.prompt_lines(frozen_portions)

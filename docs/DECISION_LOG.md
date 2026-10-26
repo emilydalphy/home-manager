@@ -321,6 +321,17 @@ why*, not duplicating the diff.
   two recipes' spellings are one line; the line keeps the name as written.
   Review fixes: "0,500 kg" and a 3-digit group before kg/l stay decimals
   (were 1000x too big); only marks on Latin letters fold (ごま is not こま).
+- **A frozen portion is never planned onto a guest night** (2026-10-22,
+  overnight hunt; branch `overnight/hunt-guests-leftovers-2026-10-22`; tests
+  `tests/test_freezer_portion_not_on_a_guest_night.py`). `freezer_portions.choose_nights`
+  skipped out/left/away/holiday nights but not guests, so "3 servings" from a night
+  off could be the whole (unbought, freeform) dinner for 7. Now skips a `guests`
+  tag, an intake guest count, and `guest_nights` (attendance guests, read by agent).
+- **Guests after approval do NOT yet change the list — tried and pulled**
+  (2026-10-22, overnight). A rebuy-on-headcount via `recipe_change._unbuy/_rebuy`
+  got the arithmetic right but brought back lines the household dropped,
+  removed or excluded, and re-minted every plan line's id on each tap. Needs an
+  in-place resize; see the Loop Board card. `recipes.py`'s KNOWN LIMITATION stands.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
