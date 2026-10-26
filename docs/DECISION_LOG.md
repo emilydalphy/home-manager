@@ -454,6 +454,20 @@ why*, not duplicating the diff.
   prep-sessions; /discard keeps its own id handling; slot-recommendation
   never used the key. Start over's "this week's answers" also counts a
   same-key plan as sharing them (week_intake is keyed by week_start).
+- **An ended week's share on a household's own grocery line is asked about,
+  not carried forward** (2026-10-22, overnight; branch
+  `overnight/hunt-listedit-2026-10-22b`; tests `tests/test_own_line_week_ends.py`).
+  A typed "Onion 2" that a week's curries added 4 onto read 6; only PLAN lines
+  were set aside when the week ended, so the next week's 4 landed on top: 2 → 6
+  → 10, a week at a time, never asked about. `_set_aside_ended_shares` (run by
+  `set_aside_carried_over_items`, so at approval and on the Monday read) takes
+  each ended plan's part off on its own (`_restate_standing_want` on that plan's
+  shares alone — each approval added its own rounded total, and restating ended
+  + live together still crept a unit a week on fractional shares, review) and
+  makes it that plan's own 'carried' line, ledger rows moved onto it. A borrowed
+  package/spice and an unreadable line are left as before. NOT covered: a
+  staple's line (`staple_id` set) a plan's share landed on is still excluded and
+  can still carry an ended week's share.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
