@@ -2782,6 +2782,22 @@ def recipe_detail(recipe_id: int):
             "citation", "photo_urls", "details_pending",
         )
     }
+    # The amounts a cook reads, the ones cook mode and the servings stepper
+    # show (defect hunt, 2026-10-22): the stored qty is the SHOPPING amount,
+    # so this page said "1 bottle olive oil" over a method using 2 tbsp, and
+    # "6 tbsp" butter for a page's own "1/4 cup + 2 tbsp". The buying amount
+    # rides along as shopping_qty; the stored row is not touched.
+    try:
+        out["ingredients"] = [
+            {k: v for k, v in ing.items() if k != "cook_qty"} if isinstance(ing, dict) else ing
+            for ing in tools.cooking_ingredients(
+                recipe.get("ingredients") or [],
+                servings=tools.positive_servings(recipe.get("default_servings")) or 4,
+                instructions=recipe.get("instructions"),
+            )
+        ]
+    except Exception:
+        logger.exception("Reading a recipe's cooking amounts failed; showing it as stored")
     # The recipe page's Sources tab and "Changed for your household" row
     # (research-first writing, 2026-10-06). Never the reason this route
     # fails: a recipe with no research reads as research None.
