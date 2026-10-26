@@ -620,6 +620,12 @@ why*, not duplicating the diff.
   tins"), so the cook card swapped the household's line for the table's "1 can
   (15 oz)" (½ can for two) under a step saying 2. `recipes._parse_cook_qty`
   now reads that shape; the grocery parser is untouched.
+- **Test gaps, second pass: valid-body isolation on six more routes**
+  (2026-10-24; branch `overnight/test-gaps-1024`; tests
+  `tests/test_untested_routes_2026_10_24.py`). GET /api/needs-you had no
+  HTTP test; the isolation attack only ever got 400s from slot-by-plan-id,
+  move owner, primary member, age group and memory edit/delete (its bodies
+  are built from types), so their scoping was unproven. Pinned; no defect.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
