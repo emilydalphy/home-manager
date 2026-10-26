@@ -1080,6 +1080,25 @@ why*, not duplicating the diff.
   over 2000 characters, the rate limit and a revoked link. Any 4xx with a
   string detail is shown; a 500 or a parser 422 keeps the generic line.
   Plain text in alert(), so nothing becomes markup. Checked in Chromium at 375px.
+- **A phone whose adult was re-marked Teen/Child is nobody, not the adult left**
+  (2026-10-22; branch `overnight/hunt-adults-2026-10-22b`; tests
+  `tests/test_two_adults_two_phones.py`). `current_member()` now returns None
+  when the cookie's pick fails the adult check, instead of falling through to
+  the one-adult inference. Why: Emily marking Vic a Teen left his phone signed
+  in (he is still a member) and acting AS Emily — his adds and approval
+  credited to her, her sign-in email his to change. Holds for the life of
+  the current session only: his next sign-in finds the device answer spent
+  (`device_member_for_login`), the new session has no pick, and a one-adult
+  house reads it as its only adult again — by design; keeping a re-marked
+  member's device answer is a design change, not built.
+- **"Text me" in chat is the adult on this phone** (2026-10-22; same branch
+  and tests file). `digest._resolve_member` uses the verified session adult
+  before asking "Which of you is this for?"; the tool description tells the
+  model to leave `name` out for "me" and never guess it. Why: a two-adult
+  house was asked who it was after answering "Who's this?", and the model,
+  told to pass a name it cannot know, could set the other adult's texts.
+  A session whose pick no longer checks out is asked, never handed the
+  only adult left (review, same day: it overwrote Emily's number).
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
