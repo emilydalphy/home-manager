@@ -1,0 +1,107 @@
+{
+ "dish_name": "Chicken Yakitori",
+ "cuisine": "Japanese",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 45,
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Green onions",
+   "qty": "2 bunches",
+   "category": "produce"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Sake",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "6 tbsp"
+  },
+  {
+   "item": "Light brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Bamboo skewers",
+   "qty": "1 package",
+   "category": "other",
+   "cook_qty": "24"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Short-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Shichimi togarashi",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put 24 bamboo skewers in a tray of water to soak for 30 minutes.",
+  "Cut the dark green tops off both bunches of green onions and keep them for the sauce. Cut the white and light green parts into pieces about 1 1/4 inches long.",
+  "For the tare, put the 3/4 cup soy sauce, 3/4 cup mirin, 6 tbsp sake, 6 tbsp water, 1 tbsp brown sugar and the green onion tops in a small saucepan. Bring it to a boil over high heat.",
+  "Turn the heat down to low and simmer it uncovered for about 30 minutes, stirring now and then, until it has cooked down to about a third and is syrupy. That should be about 3/4 cup.",
+  "Meanwhile, rinse the 1 1/2 cups rice in cold water until the water runs mostly clear, then cook it in a rice cooker or a covered pot.",
+  "Meanwhile, cut the 2 lbs chicken thighs into 1 1/4 inch squares. Keep the pieces about the same size so they cook evenly.",
+  "Thread 3 pieces of chicken and 2 pieces of green onion onto each skewer, alternating them. Push them snug together without squashing them.",
+  "When the tare is ready, lift out the green onion tops with tongs and throw them away. Pour 1/4 cup of the tare into a small bowl for the table and keep the rest in the pan for brushing.",
+  "Put an oven rack about 8 inches below the broiler and heat the broiler to high. Line a baking sheet with foil, set a wire rack on it and brush the rack with half the 1 tbsp oil. Lay half the skewers on the rack in one layer.",
+  "Broil them for 6 minutes, until the tops are browned in spots.",
+  "Brush the tops with tare, flip the skewers and broil the other side for 3 to 4 minutes.",
+  "Brush them with tare again, flip them back and broil for 1 to 2 minutes, until the glaze bubbles and catches at the edges. You're cooking it to 175°F in the middle, so if you have a thermometer, check a thick piece there. No thermometer? Cut into the thickest piece: it's done when there's no pink left and the juices run clear. Transfer them to a platter.",
+  "Brush the rack with the rest of the oil and cook the second batch the same way.",
+  "Taste a piece of chicken. If it's flat, brush the skewers with a little more of the tare from the pan.",
+  "Serve the skewers with the rice, the bowl of tare for drizzling and the shichimi togarashi at the table."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions thread bite-size pieces of chicken thigh between pieces of green onion, cook them under a hot broiler or on a grill, and brush them with a tare of soy sauce, mirin, sake and brown sugar as they cook. Just One Cookbook, the lead, simmers the tare with the green onion tops until it's down to a third, broils the skewers for 6 minutes before the first brush and then glazes them twice, and serves them with shichimi togarashi. Once Upon a Chef adds ginger and garlic to the tare, thickens it with a cornstarch slurry and keeps some back for the table (its 5.0 rating comes from 5 reviews, and the page shows no separate rating count). This one scales the lead to 2 lbs of chicken and 1 1/2 times the tare, broils it in two batches, keeps a little tare back for the table as Once Upon a Chef does and serves it with rice.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Yakitori Recipe with Homemade Sauce",
+   "url": "https://www.justonecookbook.com/yakitori/",
+   "rating": 4.79,
+   "rating_count": 228,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Once Upon a Chef",
+   "title": "Yakitori (Japanese Chicken Skewers with Tare Sauce)",
+   "url": "https://www.onceuponachef.com/recipes/yakitori.html",
+   "rating": 5.0,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
