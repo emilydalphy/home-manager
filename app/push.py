@@ -30,7 +30,7 @@ Three pieces:
       APNS_KEY_ID     the key's 10-character id (Apple Developer › Keys)
       APNS_TEAM_ID    the team id
       APNS_KEY_P8     the .p8 file's contents (PEM; "\\n" escapes accepted)
-      APNS_TOPIC      the app's bundle id (com.pomona.app today)
+      APNS_TOPIC      the app's bundle id (com.heypomona.app today)
       APNS_SANDBOX    "1" to send to the development gateway (builds run
                       from Xcode); anything else, the production one
                       (TestFlight and the App Store)

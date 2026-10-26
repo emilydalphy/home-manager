@@ -73,7 +73,7 @@ def apns(monkeypatch):
     monkeypatch.setenv("APNS_KEY_ID", "ABC123DEFG")
     monkeypatch.setenv("APNS_TEAM_ID", "TEAM123456")
     monkeypatch.setenv("APNS_KEY_P8", _PEM)
-    monkeypatch.setenv("APNS_TOPIC", "com.pomona.app")
+    monkeypatch.setenv("APNS_TOPIC", "com.heypomona.app")
     stub = _Apns()
     monkeypatch.setattr(push, "_transport", stub)
     push._forget_provider_token()
@@ -201,7 +201,7 @@ def test_the_morning_note_goes_by_push_instead_of_text(apns, monkeypatch):
     body = call["body"]["aps"]["alert"]["body"]
     assert body.startswith("Tonight: Chicken Skewers.")
     assert "pomona.example" not in body, "no web address in a notification"
-    assert call["headers"]["apns-topic"] == "com.pomona.app"
+    assert call["headers"]["apns-topic"] == "com.heypomona.app"
     assert call["headers"]["apns-push-type"] == "alert"
     assert call["headers"]["authorization"].startswith("bearer ")
     row = _rows()[0]

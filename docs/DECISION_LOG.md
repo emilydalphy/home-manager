@@ -13,6 +13,11 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The iPhone app's id is `com.heypomona.app`** (2026-10-25, Emily's pick
+  to match her heypomona domain; branch `overnight/bundle-id-heypomona`).
+  Replaced the `com.pomona.app` placeholder in `capacitor.config.json`, the
+  Xcode project, `codemagic.yaml`, `APNS_TOPIC` docs and the push tests, so it
+  lands before she registers the App ID with Apple. `npm run sync` passes.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

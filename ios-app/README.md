@@ -21,7 +21,7 @@ It uses Capacitor 8 (the tool that wraps a website in a real iOS app).
 
 | File | What it holds |
 |---|---|
-| `capacitor.config.json` | The app's settings. `server.url` is **the one place the Pomona address is written.** Also the app id (`com.pomona.app`), the user-agent tag and the launch screen timing. |
+| `capacitor.config.json` | The app's settings. `server.url` is **the one place the Pomona address is written.** Also the app id (`com.heypomona.app`), the user-agent tag and the launch screen timing. |
 | `package.json` | The app version (`1.0.0`) and the exact Capacitor versions. |
 | `www/offline.html` | The screen shown when the phone has no signal and Pomona can't open. |
 | `www/index.html` | Required by Capacitor; never normally seen. |
@@ -57,14 +57,14 @@ Two steps at a time, so you can stop between any pair.
    (US$99 a year; Apple can take a day or two to approve it).
 2. In developer.apple.com > Certificates, Identifiers & Profiles >
    Identifiers, add an App ID: "Pomona", Bundle ID **explicit**
-   `com.pomona.app`, and tick **Push Notifications**. (If Apple says the id
+   `com.heypomona.app`, and tick **Push Notifications**. (If Apple says the id
    is taken, pick another, e.g. `com.yourname.pomona`, and tell Claude: it
    is written in `capacitor.config.json`, the Xcode project and
    `codemagic.yaml`.)
 
 **3 and 4 — the app's page and the key.**
 3. In appstoreconnect.apple.com > Apps > **+** > New App: iOS, name
-   "Pomona", language English, Bundle ID `com.pomona.app`, SKU `pomona`.
+   "Pomona", language English, Bundle ID `com.heypomona.app`, SKU `pomona`.
 4. In App Store Connect > Users and Access > Integrations > App Store
    Connect API, make a **Team key** with the **App Manager** role. Download
    the `.p8` file (Apple lets you download it once) and copy the **Issuer
@@ -90,7 +90,7 @@ Two steps at a time, so you can stop between any pair.
 **Apple Push Notifications service (APNs)** ticked, download its `.p8`,
 and in Railway set `APNS_KEY_ID`, `APNS_TEAM_ID` (your Team ID, top right
 of the developer site), `APNS_KEY_P8` (the whole text of the file) and
-`APNS_TOPIC` = `com.pomona.app`. Until then the morning note goes by text.
+`APNS_TOPIC` = `com.heypomona.app`. Until then the morning note goes by text.
 
 Keys and `.p8` files go into Codemagic and Railway only, never into the
 repo or a chat.
@@ -101,7 +101,7 @@ repo or a chat.
   on first launch), and Preferences has an On/Off row. The server sends
   through Apple with a key that lives only in Railway: `APNS_KEY_ID`,
   `APNS_TEAM_ID`, `APNS_KEY_P8` (the .p8 file's text), `APNS_TOPIC`
-  (`com.pomona.app`), and `APNS_SANDBOX=1` only while testing a build run
+  (`com.heypomona.app`), and `APNS_SANDBOX=1` only while testing a build run
   from Xcode. Until those are set, the morning note and the dinner nudge go
   by text, as before. The Push Notifications capability is in
   `ios/App/App/App.entitlements`; `npm run sync` checks it's switched on.
@@ -137,7 +137,8 @@ repo or a chat.
   same way the home-screen version starts below it. So the website needed
   no changes for the notch or Dynamic Island.
 - **Links to other sites** open in Safari, not inside the app.
-- **App id** `com.pomona.app` is a placeholder until the Apple Developer
-  account exists; Emily confirms it then. It's set in `capacitor.config.json`
-  and in the Xcode project (`PRODUCT_BUNDLE_IDENTIFIER`).
+- **App id** `com.heypomona.app`, Emily's pick on 2026-10-25 to match the
+  heypomona domain she owns (it replaced the `com.pomona.app` placeholder).
+  It's set in `capacitor.config.json`, the Xcode project
+  (`PRODUCT_BUNDLE_IDENTIFIER`), `codemagic.yaml` and `APNS_TOPIC`.
 - **Icons:** `npm run assets` redraws them. Commit the PNGs it writes.
