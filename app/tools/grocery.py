@@ -2702,22 +2702,21 @@ def _ended_share_splits(conn, ended: set) -> list[tuple]:
         by_plan: dict[int, list] = {}
         for r in ended_links:
             by_plan.setdefault(r["plan_id"], []).append(r)
-        # One ended plan at a time, each restated from ITS shares alone
-        # (before = that plan's, after = nothing). Each week's approval
-        # added its own rounded total, so that is what comes back off.
-        # Restating all the line's shares at once (ended + live, before vs
-        # live after) took off ceil(ended + live) - ceil(live), less than
-        # was added whenever shares are fractional: the household's own
-        # line still climbed a unit a week (review, 2026-10-22: Onion 0.5
-        # x 3 nights, own 4 -> 5 -> 6 -> 7).
-        restated = (line["quantity"] or "", False)
-        for plan_links in by_plan.values():
-            if restated[1]:
-                break  # nothing left on the line for a later plan to take
-            totals =_quantities._ledger_totals([r["share"] or "" for r in plan_links], [])
-            restated = None if totals is None else _restate_standing_want(restated[0], *totals)
-            if restated is None:
-                break
+        # All of the line's shares at once: before = every plan's on it,
+        # after = the live plans' alone. An add onto a standing want puts
+        # on what the rounded ledger total moved
+        # (_restate_standing_want_after_add, own-line-undo-no-creep), so the
+        # line holds own + ceil(all shares), and taking an ended week off
+        # must move it by the same arithmetic: ceil(all) - ceil(live).
+        # (On the branch that first built this, adds were still each rounded
+        # on their own, so it took each ended plan's rounded total off one at
+        # a time; merged with the joint add, that took off too much and the
+        # household's own line fell 4 -> 3 -> 2 -> 1. Merge 2026-10-25.)
+        totals = _quantities._ledger_totals(
+            [r["share"] or "" for r in links],
+            [r["share"] or "" for r in links if r["plan_id"] not in ended],
+        )
+        restated = None if totals is None else _restate_standing_want(line["quantity"] or "", *totals)
         if restated is None:
             continue
         parts = [

@@ -11548,10 +11548,12 @@ def result_changed_nothing(content) -> bool:
         return False
     if not isinstance(result, dict):
         return False
-    if result.get("already_known") is True and not result.get("made_hard"):
+    if result.get("already_known") is True:
         # add_fact answering with the fact already on file (2026-10-25):
-        # saying it again saved nothing, so it draws no "Remembered" card.
-        return True
+        # saying it again saved nothing, so it draws no "Remembered" card —
+        # unless it made the fact hard, which is a change ("added" is False
+        # either way, so this answers before _NOTHING_CHANGED_FLAGS).
+        return not result.get("made_hard")
     return (
         result.get("status") in _NOTHING_CHANGED_STATUSES
         or result.get("found") is False

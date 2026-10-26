@@ -54,7 +54,6 @@ KNOWN_AMOUNT_LOOKS = {
     ("cochinita-pibil", "Limes"),
     ("grilled-cheese-and-tomato-soup", "Unsalted butter"),
     ("hash-browns-and-eggs", "Unsalted butter"),
-    ("homemade-granola-bars", "Creamy peanut butter"),
     ("idli-with-coconut-chutney", "Curry leaves"),
     ("lamb-rogan-josh", "Plain yogurt"),
     ("leek-and-potato-soup", "Heavy cream"),

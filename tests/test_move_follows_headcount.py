@@ -143,11 +143,15 @@ def test_a_move_between_same_size_tables_leaves_a_drifted_list_alone_and_undo_is
     tools.set_guest_count(THU, "dinner", 0)  # both tables are three now
     tools.update_recipe_details("Bulgogi Wraps", default_servings=6)
     rows, ledger = _rows(), _ledger()
-    assert _list()["beef"] == "1 lb"
+    # Since recipes-edit-reaches-list (2026-10-24) the edit itself re-sizes
+    # the approved week's lines (6 servings -> half for three), so the
+    # list is no longer drifted here; the move must still leave it exactly
+    # as it is, and Undo put it back exactly.
+    assert _list()["beef"] == "8 oz"
 
     out = meal_move.move_meal(plan_id, ids[WED], THU)
     assert out["status"] == "moved" and out["list_changed"] is False
-    assert _rows() == rows and _ledger() == ledger, "FAILED ON THE FIRST CUT: beef went to 8 oz"
+    assert _rows() == rows and _ledger() == ledger, "a same-size move changed the list"
 
     meal_move.undo_meal_move(plan_id, out["move_id"])
     assert _rows() == rows and _ledger() == ledger

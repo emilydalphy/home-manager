@@ -163,7 +163,8 @@ def test_two_ended_weeks_pooled_at_one_approval_each_come_off_whole():
     tools.add_grocery_item("Onion", "4", category="produce")
     tools.approve_weekly_plan(_dal_week(0), approved_by="Emily")
     tools.approve_weekly_plan(_dal_week(1), approved_by="Emily")
-    assert _onions() == [("8", "needed", True)]
+    # own 4 + the two weeks' 3 onions rounded once (own-line-undo-no-creep).
+    assert _onions() == [("7", "needed", True)]
     plan = _dal_week(2)
     with _on(2):
         tools.approve_weekly_plan(plan, approved_by="Emily")

@@ -23,8 +23,11 @@ from app.db import get_conn
 from app.tools import digest
 from app.tools import notifications as _notifications
 
-D = household_today()
-MON = D - dt.timedelta(days=D.weekday())
+# This week's Wednesday, so "tomorrow" (T1) is inside the seeded week on every
+# day the suite runs — on a Sunday it was next Monday, outside the plan.
+_TODAY = household_today()
+MON = _TODAY - dt.timedelta(days=_TODAY.weekday())
+D = MON + dt.timedelta(days=2)
 T = D.isoformat()
 T1 = (D + dt.timedelta(days=1)).isoformat()
 

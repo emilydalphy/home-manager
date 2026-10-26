@@ -16,8 +16,12 @@ import pytest
 
 from app import agent, tools
 from app.db import get_conn
-from conftest import household_today
+from conftest import household_today, on_the_weeks_monday
 from test_tool_args_read_as_schema import _tool_turn
+
+# Friday's dinner has to be ahead of the household, or a swap of it is
+# refused as gone: red on Friday evening through Sunday.
+pytestmark = on_the_weeks_monday()
 
 
 def _week_with_a_dinner():
