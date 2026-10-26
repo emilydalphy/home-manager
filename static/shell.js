@@ -22160,10 +22160,10 @@
   // after the household has tapped the "Approve anyway" button that
   // showApproveConfirm renders below — never inferred, never set on the
   // first tap.
-  // "Week approved · 3 things to buy." — one sentence for every way a
-  // week gets approved (Plan's button here, and the onboarding reveal's,
-  // which hands `added` over in its ?after=approve URL). A week that added
-  // nothing says the first half alone rather than "0 things".
+  // "Week approved · 3 things to buy." — the onboarding reveal's approve
+  // sentence (it hands `added` over in its ?after=approve URL). Plan's own
+  // button says "Meals for the week are saved" instead (Emily, 2026-10-25).
+  // A week that added nothing says the first half alone rather than "0 things".
   function weekApprovedLine(added) {
     var n = Number(added) || 0;
     return 'Week approved' + (n > 0 ? ' · ' + n + (n === 1 ? ' thing' : ' things') + ' to buy' : '') + '.';
