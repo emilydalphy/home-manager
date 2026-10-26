@@ -69,3 +69,16 @@ def test_remove_matches_trimmed_and_case_blind_and_refuses_a_stranger(signed_in)
                               json={"name": "Sam", "restriction": "vegetarian"})
     assert stranger.status_code == 404
     assert [m["name"] for m in tools.list_members()] == ["Priya"]
+
+
+def test_a_whole_list_that_says_one_allergy_twice_is_stored_once(signed_in):
+    """CATCH (defect hunt 2026-10-26). replace=True stored the list as sent,
+    so the onboarding chip "Sesame" plus a typed "sesame " read back as two
+    allergies — and a remove of either left the other. The add path has
+    always deduplicated case-blind; the replace path now does the same."""
+    tools.add_member("Priya")
+    res = signed_in.post("/api/memory/member/restrictions",
+                         json={"name": "Priya", "restrictions": ["Sesame", "sesame ", "vegetarian"],
+                               "replace": True})
+    assert res.status_code == 200
+    assert _priya() == ["Sesame", "vegetarian"]

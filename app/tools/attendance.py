@@ -53,6 +53,7 @@ import logging
 import math
 import threading
 from contextlib import contextmanager
+from contextvars import ContextVar
 from datetime import date, timedelta
 
 from ..db import get_conn, write
@@ -451,6 +452,72 @@ def resize_for_new_headcount(date_str: str, slot: str) -> list[int]:
         logging.getLogger("home_manager").exception(
             "The list could not follow the headcount change for %s %s", date_str, slot)
         return []
+
+
+_MEMBERSHIP_CHANGE_DEPTH: ContextVar[int] = ContextVar("membership_change_depth", default=0)
+
+
+def _upcoming_headcounts() -> dict[tuple[str, str], int]:
+    """Each approved meal still ahead that a resize could touch, and how
+    many sit at it now — read before a membership write, compared after."""
+    from . import grocery as _grocery  # deferred, as resize_for_new_headcount
+
+    conn = get_conn()
+    try:
+        today = _grocery._household_today(conn=conn).isoformat()
+        rows = conn.execute(
+            "SELECT DISTINCT mpe.date, mpe.slot FROM meal_plan_entries mpe "
+            "JOIN weekly_plans wp ON wp.id = mpe.weekly_plan_id "
+            "WHERE mpe.household_id = ? AND wp.status = 'approved' AND mpe.slot_state = 'planned' "
+            "AND mpe.recipe_id IS NOT NULL AND mpe.component_category IS NULL AND mpe.date >= ? "
+            "AND mpe.slot != 'snack'",
+            (household_id(), today),
+        ).fetchall()
+        return {(r["date"], r["slot"]): get_slot_attendance(r["date"], r["slot"], conn=conn)["headcount"]
+                for r in rows}
+    finally:
+        conn.close()
+
+
+@contextmanager
+def list_follows_membership():
+    """
+    Wrap a write that changes who the household counts at meals — a person
+    added or taken out, an infant's "Include in meals?", an age group — so
+    an approved week's shopping follows every table that changed size, the
+    way guests do (resize_for_new_headcount). Before this, Cook re-counted
+    at read time and the list stayed at what approval bought (defect hunt
+    2026-10-26: a third person added mid-week, Cook "for 3", beef for 2).
+
+    Only the OUTERMOST wrap resizes: an invite adds a person and then marks
+    them as not eating here, and the list must see only the net change.
+    The same guards as an attendance write: a table going to or from
+    nobody is the away conversion's, never a resize. Never raises over
+    the list — the membership write has already happened.
+    """
+    depth = _MEMBERSHIP_CHANGE_DEPTH.get()
+    token = _MEMBERSHIP_CHANGE_DEPTH.set(depth + 1)
+    try:
+        before = {}
+        if depth == 0:
+            # A snapshot that can't be read must not stop the person being
+            # added or removed: the list just doesn't follow this once.
+            try:
+                before = _upcoming_headcounts()
+            except Exception:
+                logging.getLogger("home_manager").exception("Couldn't read headcounts before a membership change")
+        yield
+    finally:
+        _MEMBERSHIP_CHANGE_DEPTH.reset(token)
+    if depth:
+        return
+    try:
+        for (date_str, slot), was in sorted(before.items()):
+            now = get_slot_attendance(date_str, slot)
+            if was > 0 and now["headcount"] > 0 and now["headcount"] != was and not now["nobody_home"]:
+                resize_for_new_headcount(date_str, slot)
+    except Exception:
+        logging.getLogger("home_manager").exception("The list could not follow a membership change")
 
 
 def resize_after_redate(moved_from) -> list[int]:
