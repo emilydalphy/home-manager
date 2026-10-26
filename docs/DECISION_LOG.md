@@ -264,6 +264,16 @@ why*, not duplicating the diff.
   has a hand-booked move for that item (any status, plural-tolerant) — the
   check the ask and Shop's "freezing it" already make.
 
+- **Reopening the week keeps this week's ticks on Shop** (2026-10-21, defect
+  hunt; branch `overnight/hunt-trip-2026-10-21b`; tests
+  `tests/test_reopen_keeps_this_weeks_ticks.py`). Shop's ticked rows are
+  those bought since the list was built (`grocery.list_built_at`), read off
+  `approved_at` — which reopen clears and re-approval re-stamps, so Tuesday's
+  ticks vanished on Wednesday's reopen+approve (and last week's showed while
+  reopened). New `weekly_plans.list_built_at`, stamped on a plan's first
+  approval and never cleared; the reader falls back to `approved_at`.
+  Startup's `_backfill_list_built_at` copies `approved_at` into plans that
+  predate the column, so the week running on deploy day is covered too.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

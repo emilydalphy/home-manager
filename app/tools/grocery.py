@@ -1851,9 +1851,9 @@ def add_grocery_items(items: list, category: str = "other", added_by: str = "use
 def list_built_at() -> str:
     """
     When the household's list was last BUILT, as the UTC timestamp the
-    grocery_items stamps compare against: the most recent approval of a
-    week (weekly_plans.approved_at — approving is what writes the list,
-    see approve_weekly_plan), or seven days ago for a household that has
+    grocery_items stamps compare against: the most recent FIRST approval
+    of a week (weekly_plans.list_built_at — approving is what writes the
+    list, see approve_weekly_plan), or seven days ago for a household that has
     never approved one and shops from a hand-made list.
 
     This is the window the Shop tab's checklist reads its BOUGHT rows in
@@ -1863,10 +1863,20 @@ def list_built_at() -> str:
     off the status alone; it is the rows ticked since the list was last
     built. The next approval moves the window, and last week's ticks stop
     being drawn as this week's.
+
+    A RE-approval is not a new list (2026-10-21, defect hunt): reopening a
+    week clears its approved_at and approving it again re-stamps it, so
+    Tuesday's ticks vanished from the checklist when Thursday's dinner was
+    changed on Wednesday — under a toast saying "Nothing has come off your
+    shopping list" — and while it sat reopened, last week's ticks came
+    back instead. A plan's first approval (weekly_plans.list_built_at,
+    never cleared) is when its list was built; approved_at stands in for a
+    plan approved before that column existed.
     """
     conn = get_conn()
     row = conn.execute(
-        "SELECT MAX(approved_at) AS at FROM weekly_plans WHERE household_id = ? AND approved_at IS NOT NULL",
+        "SELECT MAX(COALESCE(list_built_at, approved_at)) AS at FROM weekly_plans "
+        "WHERE household_id = ? AND COALESCE(list_built_at, approved_at) IS NOT NULL",
         (household_id(),),
     ).fetchone()
     fallback = conn.execute("SELECT datetime('now', '-7 days') AS at").fetchone()["at"]

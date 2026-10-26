@@ -662,6 +662,14 @@ _MIGRATIONS = [
     # nothing for THIS plan and every other plan is untouched. Set through
     # set_prep_days(this_week_only=True).
     ("weekly_plans", "skip_prep_this_week", "INTEGER NOT NULL DEFAULT 0"),
+    # When this plan's approval FIRST built the shopping list (2026-10-21,
+    # defect hunt). approved_at is cleared by a reopen and re-stamped by the
+    # re-approval, and Shop's ticked rows are the ones bought since the list
+    # was built (grocery.list_built_at): reopening Wednesday to change
+    # Thursday's dinner made Tuesday's ticks vanish off the checklist. Set
+    # once, never cleared. NULL on plans approved before it existed — the
+    # reader falls back to approved_at for those.
+    ("weekly_plans", "list_built_at", "TEXT"),
     # Loop Board "A browser error tells us nothing" (Emily, 2026-09-10). The
     # whole record of a real tester's crash was kind=client, where=/,
     # detail='browser error' — true, and impossible to find in the code. So
@@ -1300,6 +1308,22 @@ def _backfill_snack_dishes_set(conn):
     )
 
 
+def _backfill_list_built_at(conn):
+    """
+    A plan approved before list_built_at existed (2026-10-21) gets its
+    approval time, so the week running on deploy day is covered too: left
+    NULL, its first reopen cleared approved_at and the re-approval stamped
+    list_built_at = now — the very ticks-vanish bug the column fixes.
+    Idempotent: from then on every approval sets both columns, and only a
+    NULL is ever filled. A week already reopened at deploy has nothing to
+    copy and stays as it was.
+    """
+    conn.execute(
+        "UPDATE weekly_plans SET list_built_at = approved_at "
+        "WHERE list_built_at IS NULL AND approved_at IS NOT NULL"
+    )
+
+
 def _run_migrations(conn):
     for table, column, coltype in _MIGRATIONS:
         existing = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
@@ -1331,6 +1355,7 @@ def _run_migrations(conn):
     _backfill_snack_dishes(conn)
     _backfill_snack_dishes_set(conn)
     _backfill_timezone_set(conn)
+    _backfill_list_built_at(conn)
     _migrate_chore_modes(conn)
     _backfill_chore_done_on(conn)
     _backfill_primary_member(conn)
