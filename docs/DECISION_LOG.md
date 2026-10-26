@@ -13,6 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Signed out goes to sign in, not "Couldn't check just now"** (2026-10-26;
+  branch `overnight/signed-out-goes-to-sign-in`; tests
+  `tests/test_signed_out_goes_to_sign_in.py`). Any 401 through `Api.fetch`
+  (so `Api.json` too) now `location.replace`s to `/login?next=<path+query+hash>`,
+  once per page; Today, Plan's week/chores and Settings' recipes check
+  `Api.signingIn()` before drawing their failure line, and `Api.json` toasts
+  nothing on the way out. Why: the gate's 401 means only "no session", and
+  every screen read it as a failed lookup. Not on /login, /join, /goodbye
+  (loop), and not with `Api.setBase` (the App Store build has no /login of
+  its own). 500s and dropped connections are unchanged.
 - **Second 200 library recipes: Emily's three calls** (2026-10-25; branch
   `recipe-library-200b`; doc `docs/RECIPE_LIBRARY_SPOTCHECK_200B.md`).
   Bistec a la Mexicana is two dishes (the rated slow simmer, plus "Quick

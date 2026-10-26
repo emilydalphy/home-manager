@@ -16,7 +16,9 @@
  *
  *   Api.fetch('/api/x', init)   EXACTLY fetch: same arguments, same Response,
  *                               same rejection. Only the address is prefixed
- *                               and cookies are sent. Use it for streaming
+ *                               and cookies are sent — and a 401 (signed
+ *                               out) also sends the page to sign in; see
+ *                               goToSignIn. Use it for streaming
  *                               (/api/chat/stream reads res.body itself), and
  *                               for any call site that already handles its
  *                               own failure — which is every call shell.js
@@ -84,7 +86,49 @@ var Api = (function () {
       }
     }
     if (!opts.credentials) opts.credentials = 'include';
-    return fetch(url(path), opts);
+    return fetch(url(path), opts).then(function (res) {
+      if (res && res.status === 401) goToSignIn();
+      return res;
+    });
+  }
+
+  // ---------- Signed out: go and sign in ----------
+  //
+  // A 401 is the auth gate's answer for one thing only — this phone has no
+  // session (expired, signed out elsewhere, a security reset); see
+  // app/security.py's auth_middleware. Every screen used to read it as
+  // "the lookup failed" and say "Couldn't check just now — pull to
+  // refresh", which sends someone pulling forever at an app that is fine
+  // (Loop Board, "Signed out: Today sends you to sign in", 2026-10-26).
+  // So any 401 through here takes the page to the sign-in screen, with
+  // where they were (path, query, hash) as ?next=, and /login brings them
+  // back there. The Response still goes to the caller as it is — the
+  // grocery copy's own 401 handling (groForgetOffline) still runs — and a
+  // caller that would draw a "couldn't check" line asks Api.signingIn()
+  // first, so the line never shows on the way out.
+  //
+  // Not on the pages that are themselves the way in (/login, /join,
+  // /goodbye): a 401 there is the page's own business, and sending /login
+  // to /login is a loop. Not with a base set either: the App Store build
+  // serves its screens from the phone, where "/login" is not a page, so
+  // it decides for itself. Once per page — six reads failing at once is
+  // one trip, not six.
+  var SIGN_IN_PAGES = ['/login', '/join', '/goodbye', '/logout'];
+  var signingIn = false;
+
+  function goToSignIn() {
+    if (signingIn || base) return;
+    try {
+      if (typeof location === 'undefined' || !location.pathname) return;
+      if (SIGN_IN_PAGES.indexOf(location.pathname) !== -1) return;
+      var here = location.pathname + (location.search || '') + (location.hash || '');
+      signingIn = true;
+      location.replace('/login?next=' + encodeURIComponent(here));
+    } catch (err) { /* no location (a test harness): stay put */ }
+  }
+
+  function isSigningIn() {
+    return signingIn;
   }
 
   // ---------- Api.json: the default for new code ----------
@@ -212,7 +256,8 @@ var Api = (function () {
       // A caller that cancelled its own request (its AbortController) asked
       // for that; it is not a failure to tell anyone about.
       var aborted = err && err.name === 'AbortError';
-      if (!opts.quiet && !aborted && errorHandler) {
+      // On the way to sign in: no "Couldn't load that" over the top of it.
+      if (!opts.quiet && !aborted && !signingIn && errorHandler) {
         try { errorHandler(said, err); } catch (e) { /* a toast must never break the caller */ }
       }
       throw err;
@@ -253,5 +298,6 @@ var Api = (function () {
     setBase: setBase,
     getBase: getBase,
     onError: onError,
+    signingIn: isSigningIn,
   };
 })();
