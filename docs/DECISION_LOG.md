@@ -146,6 +146,15 @@ why*, not duplicating the diff.
   and emails stay placeholders until Emily supplies them; the no-blanks
   test in `tests/test_legal_pages.py` skips naming them, and fails on any
   other unlisted blank.
+- **TestFlight words drafted; App Review notes match the email-first sign-in**
+  (2026-10-26; branch `overnight/testflight-words-reviewer-notes`; doc
+  `docs/APP_STORE_LISTING.md` §9 and §11; tests `tests/test_app_store_listing.py`,
+  `tests/test_demo_household.py`). Notes now say: tap "Sign in with a household
+  passphrase", "Come in", pick "Maya"; deleting the demo household is undone
+  by re-running `create_demo_household.py` (new id, same passphrase). Why: the
+  old notes predated the email front door, and the script's banner pointed at
+  a missing APP_REVIEW_NOTES.md and its docstring described a `--reset` that
+  never existed.
 - **Second 200 library recipes: Emily's three calls** (2026-10-25; branch
   `recipe-library-200b`; doc `docs/RECIPE_LIBRARY_SPOTCHECK_200B.md`).
   Bistec a la Mexicana is two dishes (the rated slow simmer, plus "Quick

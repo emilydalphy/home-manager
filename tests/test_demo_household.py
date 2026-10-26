@@ -263,3 +263,32 @@ def test_demo_week_is_a_finished_week_not_a_half_filled_one():
         assert len(chains["leftovers"]) == 1
         beef = [i for i in tools.list_grocery_list() if i["item"] == "ground beef"]
         assert [i["quantity"] for i in beef] == ["1 lb"]
+
+
+# ---------- a reviewer deleting it ----------
+
+def test_deleting_the_demo_household_is_undone_by_running_again():
+    """App Review notes promise the demo household can be put back after a
+    reviewer deletes it from Preferences: re-running the script must
+    create it afresh, and the same passphrase must sign in to it."""
+    from app import household_deletion
+
+    demo.main()
+    first = demo._find_demo_household()
+    household_deletion.delete_household(first["id"])
+    assert demo._find_demo_household() is None
+    assert households.resolve_passphrase(PASSPHRASE) is None
+
+    demo.main()
+    again = demo._find_demo_household()
+    assert again is not None
+    assert households.resolve_passphrase(PASSPHRASE) == again["id"]
+    assert _counts_for("members", again["id"]) == 2
+
+
+def test_banner_points_at_review_notes_that_exist():
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    path = os.path.join(root, demo.REVIEW_NOTES_DOC)
+    assert os.path.exists(path)
+    with open(path, encoding="utf-8") as f:
+        assert "App Review notes" in f.read()

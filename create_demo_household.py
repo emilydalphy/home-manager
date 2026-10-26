@@ -61,11 +61,16 @@ NOT `railway run` — see create_household.py's module docstring for why;
 the same mismatch applies here and the same guard (misplaced_db_path_error)
 refuses to run into it.
 
---reset does the same rebuild as a plain run (rebuilding IS the reset —
-the point of idempotency is that there is no separate "first create" vs.
-"reset" data path to keep in sync) but skips printing the passphrase
-banner, since after the first run nobody needs to see it again unless it
-changed.
+There is no separate reset flag: a plain run IS the reset (rebuilding is
+the point of idempotency — no separate "first create" vs. "reset" data
+path to keep in sync). Any arguments are ignored, and the banner prints
+on every run. (This paragraph used to describe a --reset that skipped
+the banner; no such flag was ever built.)
+
+If a reviewer deletes the demo household from Preferences ("Delete your
+household"), that removes the household and its passphrase. Running this
+script again creates a fresh one (a new id) under the same
+DEMO_PASSPHRASE, so the sign-in in App Store Connect works again.
 
 AI consent
 ----------
@@ -98,6 +103,9 @@ from app.tools._shared import DEFAULT_HOUSEHOLD_ID, use_household
 DEMO_HOUSEHOLD_NAME = "The Demo Household (App Store review)"
 
 DEMO_PASSPHRASE_ENV = "DEMO_PASSPHRASE"
+
+# Where the App Review notes (sign-in steps, who to pick) live.
+REVIEW_NOTES_DOC = "docs/APP_STORE_LISTING.md"
 
 # Names for the two adults: an Emily & Vineeth-style pair (first names,
 # a couple running a household) but deliberately not them.
@@ -329,8 +337,8 @@ def _print_banner(household_id: int, passphrase: str, created: bool) -> None:
     print()
     print("  This is the App Store review household — a planned week, a")
     print("  grocery list, and a few recipes are already in place. Give this")
-    print("  passphrase to App Store Connect's review-notes field (see")
-    print("  APP_REVIEW_NOTES.md), not the passphrase for any real household.")
+    print("  passphrase to App Store Connect's sign-in fields (see")
+    print(f"  {REVIEW_NOTES_DOC} §9), not the passphrase for any real household.")
     print()
 
 
