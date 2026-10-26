@@ -388,6 +388,9 @@ _MIGRATIONS = [
     # The draft's own account of what it had to bend, with the fixes
     # already worked out (2026-09-27, the decided snag rules); see schema.sql.
     ("weekly_plans", "draft_flags_json", "TEXT NOT NULL DEFAULT ''"),
+    # The allergies and must-avoids on file when the week was approved
+    # (2026-10-24); see schema.sql.
+    ("weekly_plans", "avoidances_at_approval_json", "TEXT NOT NULL DEFAULT ''"),
     ("meal_plan_entries", "slot_state", "TEXT NOT NULL DEFAULT 'planned'"),
     ("meal_plan_entries", "open_reason", "TEXT NOT NULL DEFAULT ''"),
     ("meal_plan_entries", "derived_from_json", "TEXT NOT NULL DEFAULT '{}'"),

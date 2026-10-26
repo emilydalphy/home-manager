@@ -830,6 +830,11 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 /* An open slot's line is the app's sentence for why the meal is the
    household's to fill (moves._open_slot_moves) — cut off, it says nothing. */
 .day-node.is-open-slot .day-node-meta { white-space: normal; }
+/* The quiet line under a cook or reheat (dayNodeWhyHtml) can carry an
+   allergy saved since the week was approved — "Has peanut, which Theo
+   can't have — swap it on Plan" (allergen_gate.clashes_since_approval).
+   Cut off after "Has peanut, …" it says nothing, so it wraps too. */
+.day-node-why { white-space: normal; }
 
 /* ---- The tag: which part of the day, in the eyebrow face ---- */
 .day-node-tag {
