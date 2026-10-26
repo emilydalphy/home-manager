@@ -68,6 +68,24 @@ why*, not duplicating the diff.
   you eat to the Snacks row ("Emily 2 · Sam 1 · 2 different"). Why: Emily,
   2026-10-25 — "2 snacks a day" was quietly becoming five snack recipes.
   The 2026-10-19 variety tests now set 5 themselves.
+- **Monday after the week turns: three small fixes** (2026-10-26, overnight
+  defect hunt walking Mon Oct 26 at 7:30/12:00/18:00; branch
+  `overnight/hunt-monday-walk-1026`; tests
+  `tests/test_monday_after_the_week_turns.py`). (1) Tins got fresh-food shelf
+  life off the name (canned diced tomatoes = 7 days):
+  `quantities._lookup_item_shelf_life_days` lets a canned/frozen category, or
+  a canned name (`pantry.is_canned`), win. (2) With no new week approved,
+  Shop drew last week's ticks as this list's ("11 of 17"):
+  `grocery.list_built_at` starts no earlier than the household midnight after
+  the LATEST period end of any non-retired plan with a built list (latest
+  end, not latest approval). (3) Cooking a "1 lb" recipe took nothing off a
+  "12 oz" shelf row, so next week's approval read it as on hand and left that
+  chicken off the list: `inventory._try_subtract_quantity` converts within a
+  unit family (odd remainders in the finer unit, never rounded up). Dropped
+  as duplicates of branches merged first: expired food in "things to use this
+  week" (2026-10-22 hunt) and Pantry/Sauces spice totals
+  (`overnight/defect-hunt-2026-10-21`). For Emily: Today hides "Shop for
+  tonight" on a non-shop day (tests pin "second week = usual day line").
 
 - **Second 200 library recipes: Emily's three calls** (2026-10-25; branch
   `recipe-library-200b`; doc `docs/RECIPE_LIBRARY_SPOTCHECK_200B.md`).

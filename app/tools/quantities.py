@@ -113,6 +113,18 @@ def _item_shelf_life_match(item: str) -> int | None:
 
 
 def _lookup_item_shelf_life_days(item: str, category: str | None) -> int:
+    # A tin or a freezer bag keeps however long its KIND keeps, whatever
+    # food is in it. The name table is fresh food, so "diced tomatoes" in
+    # the canned aisle matched "tomato" and got a week, and the Monday
+    # walk's morning text (2026-10-26) said a can bought last Monday
+    # "turns soon"; coconut milk read as milk, canned salmon as salmon.
+    if category in ("canned", "frozen"):
+        return _DEFAULT_SHELF_LIFE_DAYS[category]
+    # ...and a tin added by chat, a scan or the form, filed under pantry or
+    # meat ("canned salmon"), is still a tin: the name says so.
+    from . import pantry as _pantry  # lazy: pantry imports grocery, which imports this
+    if _pantry.is_canned(item or ""):
+        return _DEFAULT_SHELF_LIFE_DAYS["canned"]
     matched = _item_shelf_life_match(item)
     if matched is not None:
         return matched

@@ -251,10 +251,25 @@ def _try_subtract_quantity(existing_qty: str, minus_qty: str) -> tuple[str | Non
         # precise math, so treat any explicit "used some" as using it all
         # rather than leaving a stale, unreconciled line behind.
         return None, True
-    if minus_parsed and existing_parsed[1] == minus_parsed[1]:
-        remaining = existing_parsed[0] - minus_parsed[0]
+    # The same unit, or one family apart (lb and oz, cups and tbsp):
+    # quantities._convert_to_unit. The grocery line rounds to whichever unit
+    # reads best, so a recipe's "1 lb" chicken came home as "12 oz" (three
+    # eaters of four) and cooking it took nothing off — the Monday walk,
+    # 2026-10-26: last Monday's chicken sat in the fridge as on hand, and
+    # approving this week left Saturday's stir-fry chicken off the list.
+    used = (_quantities._convert_to_unit(minus_parsed[0], minus_parsed[1], existing_parsed[1])
+            if minus_parsed else None)
+    if used is not None:
+        remaining = existing_parsed[0] - used
         if remaining <= 0:
             return None, True
+        if minus_parsed[1] != existing_parsed[1] and abs(remaining * 4 - round(remaining * 4)) > 1e-9:
+            # Across units the difference can be an odd fraction ("0.9375
+            # cup", "0.99375 lb"): say it in the finer unit instead (15 tbsp,
+            # 15.9 oz). Never rounded up — a tbsp off a cup must come off.
+            finer = _quantities._convert_to_unit(remaining, existing_parsed[1], minus_parsed[1])
+            if finer is not None:
+                return _quantities._format_quantity(round(finer, 1), minus_parsed[1]), True
         return _quantities._format_quantity(remaining, existing_parsed[1]), True
     return existing_qty, False
 

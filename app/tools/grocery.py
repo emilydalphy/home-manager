@@ -2038,16 +2038,47 @@ def list_built_at() -> str:
     back instead. A plan's first approval (weekly_plans.list_built_at,
     never cleared) is when its list was built; approved_at stands in for a
     plan approved before that column existed.
+
+    And the END of the last week with a list, when no approval follows it.
+    Monday walk, 2026-10-26: a household with this week still a draft (or
+    nothing planned) opened Shop to "11 of 17", last Monday's shop struck
+    through as if it were this list's. Once the LAST day any non-retired
+    plan with a built list covers has gone by on the household's clock, the
+    window starts no earlier than the household's midnight after it. The
+    latest END, not the latest approval's: re-approving last week on Sunday
+    after next week was approved on Saturday must not end the window on
+    last week's Sunday and hide next week's Sunday shop (review, 2026-10-26).
     """
+    from datetime import datetime, time, timedelta, timezone
+    from . import cooker as _cooker  # lazy: cooker imports this module
+
     conn = get_conn()
-    row = conn.execute(
-        "SELECT MAX(COALESCE(list_built_at, approved_at)) AS at FROM weekly_plans "
-        "WHERE household_id = ? AND COALESCE(list_built_at, approved_at) IS NOT NULL",
-        (household_id(),),
-    ).fetchone()
-    fallback = conn.execute("SELECT datetime('now', '-7 days') AS at").fetchone()["at"]
-    conn.close()
-    return (row["at"] if row and row["at"] else None) or fallback
+    try:
+        rows = conn.execute(
+            "SELECT COALESCE(list_built_at, approved_at) AS built, status, week_start_date, "
+            "content_start_date, day_count FROM weekly_plans "
+            "WHERE household_id = ? AND COALESCE(list_built_at, approved_at) IS NOT NULL",
+            (household_id(),),
+        ).fetchall()
+        fallback = conn.execute("SELECT datetime('now', '-7 days') AS at").fetchone()["at"]
+        if not rows:
+            return fallback
+        at = max(r["built"] for r in rows)
+        ends = []
+        for r in rows:
+            if r["status"] == "retired":
+                continue
+            start, days = _weekly_plan.plan_period(r)
+            if days > 0:
+                ends.append(_weekly_plan.period_end_date(start, days))
+        end = max(ends) if ends else None
+        if end and end < _household_today(conn=conn).isoformat():
+            turned = datetime.combine(date.fromisoformat(end) + timedelta(days=1), time(0, 0))
+            turned = turned.replace(tzinfo=_cooker.household_zone(conn=conn)).astimezone(timezone.utc)
+            at = max(at, turned.strftime("%Y-%m-%d %H:%M:%S"))
+        return at
+    finally:
+        conn.close()
 
 
 def list_grocery_list(status: str = "needed") -> list[dict]:
