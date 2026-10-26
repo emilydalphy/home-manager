@@ -792,7 +792,7 @@
   {"dish_name": "Shrimp and Egg Stir-Fry", "dish_key": "shrimp and egg stir fry", "cuisine": "Chinese", "meal": "dinner", "main_protein": "shrimp", "why": "Silky eggs and shrimp in ten minutes."},
   {"dish_name": "Moo Ping", "dish_key": "moo ping", "cuisine": "Thai", "meal": "dinner", "main_protein": "pork", "why": "Sweet garlic pork skewers."},
   {"dish_name": "Kai Palo", "dish_key": "kai palo", "cuisine": "Thai", "meal": "dinner", "main_protein": "eggs", "why": "Eggs and pork in a five-spice broth."},
-  {"dish_name": "Pad Prik Gaeng", "dish_key": "pad prik gaeng", "cuisine": "Thai", "meal": "dinner", "main_protein": "pork", "why": "Pork and green beans stir-fried in red curry paste."},
+  {"dish_name": "Pad Makheua Yao", "dish_key": "pad makheua yao", "cuisine": "Thai", "meal": "dinner", "main_protein": "vegetarian", "why": "Stir-fried eggplant with Thai basil."},
   {"dish_name": "Kuay Teow Kua Gai", "dish_key": "kuay teow kua gai", "cuisine": "Thai", "meal": "dinner", "main_protein": "chicken", "why": "Wide noodles fried with chicken and egg."},
   {"dish_name": "Butadon", "dish_key": "butadon", "cuisine": "Japanese", "meal": "dinner", "main_protein": "pork", "why": "A sweet soy pork rice bowl."},
   {"dish_name": "Ochazuke", "dish_key": "ochazuke", "cuisine": "Japanese", "meal": "lunch", "main_protein": "fish", "why": "Rice and salmon in hot tea or broth."},
