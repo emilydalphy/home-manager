@@ -287,7 +287,12 @@ def normalise_phone(raw: str | None) -> str:
     if not text:
         return ""
     digits = re.sub(r"\D", "", text)
-    if text.startswith("+") and 8 <= len(digits) <= 15:
+    # A "+" number outside North America is taken as written. A "+1" one is
+    # held to the same rule as a bare one below: "+1 416 555 010" (a digit
+    # dropped) and "+1 041 655 5010" used to be stored as given, and then
+    # failed at Twilio every morning with nothing on the screen to say so
+    # (defect hunt, 2026-10-22).
+    if text.startswith("+") and not digits.startswith("1") and 8 <= len(digits) <= 15:
         return "+" + digits
     if len(digits) == 11 and digits.startswith("1"):
         digits = digits[1:]
