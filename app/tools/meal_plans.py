@@ -215,6 +215,9 @@ def plan_meal(
     # insert raised with the write lock held and the week stopped halfway
     # (census audit, 2026-10-21). A null "why" is no "why".
     reasoning = reasoning or ""
+    # And a day is a YYYY-MM-DD string: a row dated "Friday" or
+    # "2026-10-23T00:00" is saved and shown nowhere (validate_meal_date).
+    _weekly_plan.validate_meal_date(meal_date)
 
     own_conn = conn is None
     if own_conn:

@@ -90,6 +90,34 @@ def validate_slot(slot: str) -> None:
         )
 
 
+_ISO_DAY = re.compile(r"\d{4}-\d{2}-\d{2}")
+
+
+def validate_meal_date(meal_date) -> None:
+    """
+    Refuse a meal_date that is not a plain YYYY-MM-DD day. Call it ABOVE
+    get_conn, beside validate_slot.
+
+    Every screen finds a meal by its day string, so a row dated
+    "2026-10-23T00:00", "tomorrow" or "Friday" was saved and then drawn
+    nowhere: the chat said the dinner was planned, Plan still showed the
+    old one, and a swap wrote a second row beside the meal it was meant to
+    replace (it compares dates as strings, and that one sorts inside the
+    week). date.fromisoformat alone is not the check — on 3.11 it also
+    takes "20261023", which is a real day stored in a shape nothing reads.
+    """
+    ok = isinstance(meal_date, str) and bool(_ISO_DAY.fullmatch(meal_date))
+    if ok:
+        try:
+            date.fromisoformat(meal_date)
+        except ValueError:
+            ok = False
+    if not ok:
+        raise ValueError(
+            f"{meal_date!r} isn't a day I can plan on — give the date as YYYY-MM-DD."
+        )
+
+
 def _household_today(conn=None) -> date:
     """
     Today where the household lives, not where the container runs.
@@ -8799,6 +8827,7 @@ def swap_meal_in_plan(
         raise ValueError(
             f"'{slot}' is not a slot a day has — expected one of {', '.join(DAY_SLOTS)}."
         )
+    validate_meal_date(meal_date)
 
     conn = get_conn()
     old_entries = conn.execute(
