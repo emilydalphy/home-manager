@@ -13,6 +13,11 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The iPhone app's id is `com.heypomona.app`** (2026-10-25, Emily's pick
+  to match her heypomona domain; branch `overnight/bundle-id-heypomona`).
+  Replaced the `com.pomona.app` placeholder in `capacitor.config.json`, the
+  Xcode project, `codemagic.yaml`, `APNS_TOPIC` docs and the push tests, so it
+  lands before she registers the App ID with Apple. `npm run sync` passes.
 - **Second 200 library recipes: Emily's three calls** (2026-10-25; branch
   `recipe-library-200b`; doc `docs/RECIPE_LIBRARY_SPOTCHECK_200B.md`).
   Bistec a la Mexicana is two dishes (the rated slow simmer, plus "Quick

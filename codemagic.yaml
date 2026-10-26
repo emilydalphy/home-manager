@@ -23,7 +23,7 @@ workflows:
     environment:
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: com.pomona.app
+        bundle_identifier: com.heypomona.app
       node: 22
       xcode: latest
       vars:
