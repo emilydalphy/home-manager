@@ -1,0 +1,48 @@
+{
+ "dish_name": "Godeungeo Jorim",
+ "cuisine": "Korean",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {"item": "Whole mackerel", "qty": "2, cleaned (about 2 lbs)", "category": "meat/seafood"},
+  {"item": "Korean radish", "qty": "1 lb", "category": "produce"},
+  {"item": "Onion", "qty": "1", "category": "produce", "cook_qty": "1/2"},
+  {"item": "Scallions", "qty": "1 bunch", "category": "produce", "cook_qty": "4"},
+  {"item": "Green chili", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Ginger", "qty": "1 piece (1 inch)", "category": "produce"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Gochujang", "qty": "1 tub", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Gochugaru", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Mirin", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Black pepper", "qty": "a pinch", "category": "pantry"},
+  {"item": "Salt", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Short-grain white rice", "qty": "1.5 cups", "category": "pantry"}
+ ],
+ "instructions": [
+  "Rinse the 1.5 cups rice in a few changes of water until the water runs mostly clear. Cook it in a rice cooker, or in a covered pot with 1 3/4 cups water over low heat for 18 minutes, then leave it covered off the heat for 10 minutes.",
+  "Meanwhile, cut each mackerel across into 3 pieces. Stir the 2 tbsp salt into 4 cups cold water in a bowl. Swish the fish pieces through it quickly, then drain them and pat them dry. Don't leave them soaking. A quick rinse is all they need.",
+  "In a small bowl, stir together 1/4 cup soy sauce, 1 tbsp gochujang, the 1 tsp gochugaru, 2 tbsp mirin, 1 tbsp sugar and the pinch of pepper. Mince the 3 garlic cloves and grate 1 tsp of the ginger into the bowl, then stir again.",
+  "Peel the 1 lb radish, cut it into 3/4 inch rounds and cut each round in half. Slice half the onion. Cut 4 of the scallions into 2 inch lengths. Slice the green chili and put it in a small bowl for the table.",
+  "Lay the radish in a single layer in a wide, shallow pan with a lid, off the heat. Scatter the onion over it and spoon half the sauce over the top.",
+  "Lay the fish on the radish, skin side up. Spoon the rest of the sauce over the fish and scatter the scallions on top. Swirl 1 1/2 cups water around the sauce bowl and pour it in at the edge of the pan.",
+  "Bring it to a boil over high heat and let it boil for 5 minutes.",
+  "Turn the heat to medium low, cover the pan and cook for 20 minutes. Spoon the sauce over the fish every 5 minutes or so. The radish is ready when a knife slides through it and the edges look see-through.",
+  "Uncover the pan and cook for about 5 minutes, spooning the sauce over the fish, until the sauce is thick and glossy at the bottom of the pan. The fish is done when the thickest piece flakes easily and is opaque right to the bone.",
+  "Taste the sauce. If it's flat, add a pinch more salt.",
+  "Serve with the rice, with the green chili on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version read had 20 or more ratings and the trusted Korean cook on the list (RecipeTin Eats) has no godeungeo jorim, so this leads with Crazy Korean Cooking, the fullest method read. All three lay thick radish on the bottom of a shallow pan, set the fish on top, spoon a soy, gochujang, gochugaru, garlic and sugar sauce over it and braise until the radish is soft. Crazy Korean Cooking uses a lot of soy, gochujang and gochugaru; the Korea Herald version uses far less, and Beyond Kimchee soaks the fish in rice water and leaves out gochujang. This one follows the lead's layering and timing for 2 mackerel, uses the Korea Herald's milder sauce amounts, and keeps the fresh chili for the table.",
+ "sources": [
+  {"name": "Crazy Korean Cooking", "title": "Braised Mackerel, Godeungeo Jorim", "url": "https://crazykoreancooking.com/recipe/braised-mackerel", "rating": null, "rating_count": null, "read": true, "lead": true},
+  {"name": "Beyond Kimchee", "title": "Korean Braised Mackerel and Radish (Godeungeo Jorim)", "url": "https://www.beyondkimchee.com/braised-korean-mackerel/", "rating": 5.0, "rating_count": 3, "read": true, "lead": false},
+  {"name": "The Korea Herald (Korean Food Promotion Institute)", "title": "Godeungeo jorim", "url": "https://www.koreaherald.com/article/10617274", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

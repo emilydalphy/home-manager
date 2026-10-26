@@ -116,6 +116,32 @@ _WHEAT_WORDS = {
     "rigatoni", "ravioli", "tortellini", "fusilli", "farfalle", "ziti", "pappardelle",
     "gnocchi", "dough", "tempura", "wonton", "pastry", "phyllo", "filo", "roux", "beer",
     "sourdough", "focaccia", "brioche", "challah", "lo mein",
+    # Third audit (2026-10-21, snacks builder): the bought wheat foods whose
+    # flour is never written as an ingredient. "Apple slices with cheddar and
+    # pretzels" passed the gate for a gluten-free child. A "gluten-free
+    # pretzels" / "GF crackers" line is still believed (_GLUTEN_FREE_SEGMENT_RE).
+    # Not "tortilla" (corn ones are the gluten-free kind; "flour tortilla" is
+    # caught on "flour"), "bun" (Vietnamese bún is rice noodle), "cookie" or
+    # "cake" (often flourless, and their lists say flour when they have it).
+    # Not "graham" either: it is a person's name, and big_meal keeps a food
+    # word in a guest note, so "no nuts for Graham" became the phrase "nuts
+    # graham" and found no nuts (review). Graham crackers trip on "cracker".
+    "pretzel", "cracker", "baguette", "ciabatta", "matzo", "matzah",
+    # The shared recipe library's breads, wrappers and shapes (defect hunt,
+    # 2026-10-23): a library dish is COPIED for a household with no writer
+    # told about its gluten, so this table is all that stands between a
+    # celiac child and Smash Burgers on hamburger buns, a Philly on hoagie
+    # rolls or Banh Mi on a baguette — all of which passed. Shaoxing wine
+    # is brewed with wheat; doubanjiang and gochujang are made with it.
+    # "buns" is matched as written (_VERBATIM_ALIASES): its singular would
+    # hold Bun Cha, which is rice noodles. Vermicelli is wheat unless it
+    # says rice (_COMPOUND_EXCEPTIONS).
+    "baguette", "ciabatta", "hoagie", "telera", "bolillo", "dinner roll", "crusty roll",
+    "kaiser roll", "sub roll", "hamburger bun", "burger bun", "hot dog bun", "english muffin",
+    "paratha", "roti", "chapati", "yufka", "pie crust", "spring roll wrapper",
+    "egg roll wrapper", "dumpling wrapper", "gyoza wrapper", "muffin mix", "bucatini",
+    "ditalini", "orecchiette", "tagliatelle", "rotini", "cavatappi", "capellini",
+    "vermicelli", "shaoxing", "doubanjiang", "gochujang",
 }
 _ALLERGEN_ALIASES: dict[str, set[str]] = {
     "nut": {"peanut", "walnut", "almond", "cashew", "pecan", "hazelnut",
@@ -178,7 +204,11 @@ _ALLERGEN_ALIASES: dict[str, set[str]] = {
             "lemon curd", "zabaglione", "sabayon", "clafoutis", "crepe", "french toast",
             "dutch baby", "albumen", "tamagoyaki", "yorkshire pudding"},
     "soy": {"soya", "tofu", "tempeh", "edamame", "soy sauce", "miso", "tamari", "shoyu",
-            "natto", "teriyaki", "hoisin", "ponzu", "yuba", "okara"},
+            "natto", "teriyaki", "hoisin", "ponzu", "yuba", "okara",
+            # Pastes made of fermented soybeans (library defect hunt,
+            # 2026-10-23: Kimchi Fried Rice's gochujang passed a soy allergy).
+            "gochujang", "doenjang", "ssamjang", "fermented black bean", "black bean sauce",
+            "douchi"},
     "sesame": {"tahini", "hummus", "halva", "halvah", "zaatar", "za atar", "gomasio", "benne"},
     # Mustard is one of Canada's priority allergens, and the jar on the line
     # is usually named for the town: "mustard allergy" let "Dijon" through
@@ -228,6 +258,7 @@ _PHRASE_FAMILIES: dict[tuple[str, ...], set[str]] = {
 _VERBATIM_ALIASES: dict[str, set[str]] = {
     "egg": {"whites"}, "eggs": {"whites"},
     "nut": {"florentines"}, "nuts": {"florentines"},
+    "gluten": {"buns"}, "wheat": {"buns"}, "celiac": {"buns"}, "coeliac": {"buns"},
 }
 _ALLERGEN_ALIASES["nuts"] = _ALLERGEN_ALIASES["nut"]
 _ALLERGEN_ALIASES["peanuts"] = _ALLERGEN_ALIASES["peanut"]
@@ -385,7 +416,18 @@ _COMPOUND_EXCEPTIONS: tuple[tuple, ...] = (
         r"\b(?:rice|almond|chickpea|buckwheat|corn|oat|coconut|tapioca)\s+flours?\b"
     )),
     (frozenset({"noodle", "noodles"}), re.compile(
-        r"\b(?:rice|glass|soba|buckwheat)\s+noodles?\b"
+        r"\b(?:rice|glass|soba|buckwheat|rice\s+vermicelli|bean\s+thread|mung\s+bean)\s+noodles?\b"
+    )),
+    # Vermicelli is wheat unless it says what else it is (review, 2026-10-23).
+    # A dish NAMED "Vermicelli Bowl" with no qualifier is still held on its
+    # name even over a rice list — over-safe, as every name is.
+    (frozenset({"vermicelli", "vermicellis"}), re.compile(
+        r"\b(?:rice(?:\s+stick)?|glass|bean\s+thread|mung\s+bean)\s+vermicellis?\b"
+        r"|\bvermicelli\s+rice\s+noodles?\b"
+    )),
+    # Rice-paper spring roll wrappers are rice, however the line says it.
+    (frozenset({"spring roll wrapper", "spring roll wrappers"}), re.compile(
+        r"\brice\s+paper\s+spring\s+roll\s+wrappers?\b|\bspring\s+roll\s+wrappers?\s+rice\s+paper\b"
     )),
     (frozenset({"pasta", "pastas"}), re.compile(
         r"\b(?:chickpea|lentil|rice)\s+pastas?\b"
@@ -1045,9 +1087,9 @@ def _avoidances() -> list[dict]:
     # is parsed out of the sentence when one of them is named in it
     # ("Emily is allergic to pineapple"); otherwise the fact stands for the
     # whole household ("no shellfish in this house").
-    for fact in _memory.get_facts():
-        if not fact.get("hard"):
-            continue
+    # hard_facts: each sentence once, so one dish is never "a clash with
+    # two things" because the same rule sits under two tabs.
+    for fact in _memory.hard_facts():
         text = fact.get("text") or ""
         named = _named_member(text, member_names)
         phrases, excepted = _fact_keywords(text, drop=_name_words(named))
@@ -1216,6 +1258,10 @@ def _clash_sentence(c: dict) -> str:
     # own name doesn't already say. "Pineapple Salsa has pineapple" is
     # noise; "Pineapple Salsa" plus the person is the whole fact.
     term = terms[0] if terms else ""
+    # A condition is not an ingredient: "has celiac" names the person's
+    # restriction, not what is in the dish. Said as the food it stands for
+    # ("has gluten") — the same mapping the gate matched it by.
+    term = _WHOLE_WORD_FAMILIES.get(term.lower(), term)
     # Always a full sentence, even when the dish name already says it:
     # "Pineapple Salsa Bowls has pineapple, which Emily is allergic to."
     # A fragment is the wrong shape for the one card about someone's allergy.
@@ -1732,11 +1778,26 @@ def get_feedback_nudge() -> dict:
     notes don't count, and a note on another dish never reaches this one.
     member_recipe_feedback.rating is NOT NULL, so a per-person note always
     arrives on a row that already counts as a verdict.
+
+    A REHEAT IS NOT ASKED ABOUT (overnight 2026-10-22). "Mark eaten" on a
+    leftovers / made-ahead night, or on a portion out of the freezer, is
+    the same check_off_meal tick and stamps cooked_at, so the newest "cook"
+    could be a night nobody cooked. Cook's own toast already treats that
+    tick as eaten, not cooked (no "Rate it"), off the cook view's
+    is_leftovers — and this skips the same nights by the same two facts
+    that set it: a confirmed chain (leftovers.plan_leftover_chains) or a
+    freezer portion (leftovers.frozen_portion_on). The third way a night
+    reads as leftovers, by name, has no recipe and is excluded below
+    already. Skipped, not stopped: the cook a reheat eats from is still
+    asked about.
     """
+    from . import leftovers as _leftovers  # deferred: the domains are circular
+
     conn = get_conn()
-    row = conn.execute(
+    rows = conn.execute(
         """
-        SELECT COALESCE(r.name, mpe.freeform_meal) AS meal, mpe.recipe_id, mpe.cooked_at
+        SELECT COALESCE(r.name, mpe.freeform_meal) AS meal, mpe.recipe_id, mpe.cooked_at,
+               mpe.id, mpe.weekly_plan_id, mpe.derived_from_json
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
         WHERE mpe.household_id = ? AND mpe.cooked_status = 'done' AND mpe.cooked_at IS NOT NULL
@@ -1753,11 +1814,24 @@ def get_feedback_nudge() -> dict:
               WHERE rn.household_id = mpe.household_id AND rn.recipe_id = mpe.recipe_id
                 AND rn.note_type = 'feedback' AND TRIM(rn.note) != ''
           )
-        ORDER BY mpe.cooked_at DESC LIMIT 1
+        ORDER BY mpe.cooked_at DESC, mpe.id DESC
         """,
         (household_id(),),
-    ).fetchone()
+    ).fetchall()
     conn.close()
+    chains_by_plan: dict = {}
+    row = None
+    for r in rows:
+        if _leftovers.frozen_portion_on(r["derived_from_json"]):
+            continue
+        plan_id = r["weekly_plan_id"]
+        if plan_id is not None:
+            if plan_id not in chains_by_plan:
+                chains_by_plan[plan_id] = _leftovers.plan_leftover_chains(plan_id)["leftovers"]
+            if r["id"] in chains_by_plan[plan_id]:
+                continue
+        row = r
+        break
     if not row:
         return {"has_nudge": False}
     return {"has_nudge": True, "meal": row["meal"], "cooked_at": row["cooked_at"]}

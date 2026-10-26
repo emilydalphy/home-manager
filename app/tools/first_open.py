@@ -215,6 +215,69 @@ def _dinner_title(row) -> str:
     return ((row["recipe_name"] or row["freeform_meal"] or "")).strip()
 
 
+def _soonest_upcoming_plan(conn, today: date):
+    """
+    (plan, its dinners) for the live plan starting soonest after today that
+    has a dinner to name, or (None, []). A later plan whose every dinner is
+    open or nobody-home is passed over for the next one: named with nothing
+    under it, the welcome said "No more dinners on this week's plan" and
+    "Next week's a draft" in one breath. A zero-day plan (content_start_date
+    set, day_count 0) is no plan, as first_plan_start reads it.
+    """
+    from . import weekly_plan as _wp
+
+    for plan in conn.execute(
+        "SELECT * FROM weekly_plans WHERE household_id = ? AND status != 'retired' "
+        "AND NOT (content_start_date != '' AND day_count = 0) "
+        f"AND date({_wp._SQL_PERIOD_START}) > date(?) "
+        f"ORDER BY date({_wp._SQL_PERIOD_START}) ASC, {_wp._SQL_APPROVED_FIRST}, "
+        "created_at DESC, id DESC",
+        (household_id(), today.isoformat()),
+    ).fetchall():
+        dinners = _next_dinners(conn, plan, today)
+        if dinners:
+            return plan, dinners
+    return None, []
+
+
+def _next_dinners(conn, plan, today: date) -> list[dict]:
+    """Up to PREVIEW_DINNERS planned dinners on `plan`, from today on."""
+    from . import weekly_plan as _wp
+
+    start, day_count = _wp.plan_period(plan)
+    last = (
+        date.fromisoformat(start) + timedelta(days=max(day_count, 1) - 1)
+    ).isoformat()
+    rows = conn.execute(
+        "SELECT mpe.date, mpe.freeform_meal, r.name AS recipe_name "
+        "FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id "
+        "WHERE mpe.household_id = ? AND mpe.weekly_plan_id = ? AND mpe.slot = 'dinner' "
+        "AND mpe.component_category IS NULL AND mpe.slot_state = 'planned' "
+        "AND mpe.date >= ? AND mpe.date <= ? "
+        "ORDER BY mpe.date ASC, mpe.id ASC",
+        (household_id(), plan["id"], today.isoformat(), last),
+    ).fetchall()
+    dinners: list[dict] = []
+    seen_dates: set[str] = set()
+    for r in rows:
+        title = _dinner_title(r)
+        if not title or r["date"] in seen_dates:
+            continue
+        seen_dates.add(r["date"])
+        day = date.fromisoformat(r["date"])
+        offset = (day - today).days
+        dinners.append({
+            "date": r["date"],
+            "title": title,
+            "is_tonight": offset == 0,
+            "is_tomorrow": offset == 1,
+            "weekday": day.strftime("%A"),
+        })
+        if len(dinners) >= PREVIEW_DINNERS:
+            break
+    return dinners
+
+
 def first_open_preview() -> dict:
     """
     What the welcome shows under the greeting (option A): the live week's
@@ -233,40 +296,24 @@ def first_open_preview() -> dict:
     conn = get_conn()
     try:
         plan = _wp._live_plan_covering(conn, today.isoformat())
-        dinners: list[dict] = []
+        dinners = _next_dinners(conn, plan, today) if plan is not None else []
+        if not dinners:
+            # Nothing left to name on a plan covering today — or no such
+            # plan — is not "no week planned" when the NEXT period is
+            # already drafted or approved. Setup's "This week or next?"
+            # answered "next" (and any Friday-on plan) files the household's
+            # first week to start later, so the partner opening Pomona that
+            # weekend was told "No week planned yet. Plan one from Today."
+            # over a week waiting on Plan — and invited to plan it twice
+            # (defect hunt 2026-10-23). The soonest one to start, then.
+            upcoming, upcoming_dinners = _soonest_upcoming_plan(conn, today)
+            if upcoming is not None:
+                plan, dinners = upcoming, upcoming_dinners
         week_state = "none"
+        starts_later = False
         if plan is not None:
             week_state = "approved" if plan["status"] == "approved" else "draft"
-            start, day_count = _wp.plan_period(plan)
-            last = (
-                date.fromisoformat(start) + timedelta(days=max(day_count, 1) - 1)
-            ).isoformat()
-            rows = conn.execute(
-                "SELECT mpe.date, mpe.freeform_meal, r.name AS recipe_name "
-                "FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id "
-                "WHERE mpe.household_id = ? AND mpe.weekly_plan_id = ? AND mpe.slot = 'dinner' "
-                "AND mpe.component_category IS NULL AND mpe.slot_state = 'planned' "
-                "AND mpe.date >= ? AND mpe.date <= ? "
-                "ORDER BY mpe.date ASC, mpe.id ASC",
-                (household_id(), plan["id"], today.isoformat(), last),
-            ).fetchall()
-            seen_dates: set[str] = set()
-            for r in rows:
-                title = _dinner_title(r)
-                if not title or r["date"] in seen_dates:
-                    continue
-                seen_dates.add(r["date"])
-                day = date.fromisoformat(r["date"])
-                offset = (day - today).days
-                dinners.append({
-                    "date": r["date"],
-                    "title": title,
-                    "is_tonight": offset == 0,
-                    "is_tomorrow": offset == 1,
-                    "weekday": day.strftime("%A"),
-                })
-                if len(dinners) >= PREVIEW_DINNERS:
-                    break
+            starts_later = _wp.plan_period(plan)[0] > today.isoformat()
         list_count = conn.execute(
             "SELECT COUNT(*) AS n FROM grocery_items WHERE household_id = ? "
             "AND status = 'needed' AND excluded_from_list = 0",
@@ -290,6 +337,9 @@ def first_open_preview() -> dict:
 
     return {
         "week_state": week_state,
+        # The plan named here hasn't started yet (next week's), so the
+        # welcome says "Next week's a draft" rather than "This week's".
+        "starts_later": starts_later,
         "dinners": dinners,
         "list_count": int(list_count or 0),
         "decisions": decisions,

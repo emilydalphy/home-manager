@@ -1,0 +1,128 @@
+{
+ "dish_name": "Kisir",
+ "cuisine": "Turkish",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Fine bulgur",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Mint",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Turkish red pepper paste",
+   "qty": "1 jar (mild)",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Extra virgin olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Pomegranate molasses",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Persian cucumbers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Romaine lettuce",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the 1 cup bulgur in a large bowl and pour 3/4 cup boiling water over it. Stir, cover the bowl with a plate and leave it for 15 to 20 minutes, until the water has soaked in and the grains are soft.",
+  "Meanwhile, thinly slice the green onions and finely dice the red onion. Chop about 2/3 cup of the parsley and about 1/4 cup of the mint leaves.",
+  "Squeeze the lemons. That should be about 1/4 cup.",
+  "Fluff the bulgur with a fork. Add the 2 tsp tomato paste, 2 tsp pepper paste, the 1/4 cup olive oil, the lemon juice, the 2 tbsp pomegranate molasses, the 1 tsp salt and the 1/4 tsp pepper. Mix well with a spoon until the bulgur is evenly red with no streaks of paste left.",
+  "Stir in the green onions, red onion, parsley and mint.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Slice the tomatoes and the cucumbers. Pull the lettuce into leaves.",
+  "Serve the kisir with the tomatoes, cucumbers and lettuce leaves, and the red pepper flakes on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "None of the versions found had 20 or more ratings, and RecipeTin Eats, the trusted cook for this cuisine, has no kisir, so Cooking Gorgeous (5.0 from 3 votes) leads. Both soak fine bulgur in boiling water and dress it with tomato paste, Turkish pepper paste, olive oil, lemon and pomegranate molasses, with parsley and green onion folded through. Cooking Gorgeous mixes the pastes in raw and adds mint and red onion; Local Difference fries a yellow onion with the pastes first and adds dill, cumin and sumac. This one follows the lead's no-cook method, uses the mild (tatlı) pepper paste and moves the chili flakes to the table. The Mediterranean Dish blocked the reader and Kitchen Stories' page is gone, so only two versions were read.",
+ "sources": [
+  {
+   "name": "Cooking Gorgeous",
+   "title": "Traditional Kisir Recipe (Spicy Turkish Bulgur Salad)",
+   "url": "https://cookingorgeous.com/blog/kisir-turkish-bulgur-salad/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Local Difference",
+   "title": "Kisir: Turkish Bulgur Salad",
+   "url": "https://www.localdifference.org/blog/kisir-turkish-bulgur-salad/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

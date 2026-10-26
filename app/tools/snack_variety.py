@@ -21,8 +21,9 @@ Two things made that week, and only one of them was the model:
 
 What it does: a snack on more than its cap of days keeps that many days,
 spread across the week, and each other day is re-picked — from the week's
-own snacks with room first (nothing new to buy), then from SNACK_POOL, a
-short code-side list of simple snacks with real per-person amounts. A pool
+own snacks with room first (nothing new to buy), then from SNACK_POOL, the
+household's everyday snack list (everyday_snacks) with real per-person
+amounts. A pool
 snack is held to the same allergen and taste gate a swap is
 (swap_in_place.pick_gate, plus the ingredients a bought item hides —
 tahini in hummus), skips a standing dislike, last fortnight's snacks and
@@ -35,7 +36,8 @@ for the week or a standing note that say repeats are fine ("same snack
 every day is fine"); and, per dish, a snack they asked for by name or one
 carried in on purpose (meal_variety.theirs / asked_for_by_name). A house
 with an eating style (keto, a list of allowed foods) gets no pool snack —
-the pool cannot be judged against a style — only the week's own reshuffle.
+the pool cannot be judged against a style — only the week's own reshuffle
+(a style that is only "vegetarian"/"vegan" is read by everyday_snacks).
 Never raises.
 """
 from __future__ import annotations
@@ -47,6 +49,7 @@ import re
 
 from ..db import get_conn, write
 from ._shared import household_id
+from . import everyday_snacks as _everyday
 
 logger = logging.getLogger("home_manager")
 
@@ -91,45 +94,20 @@ def asks_for_same_snacks(*texts: str | None) -> bool:
     return False
 
 
-# The pool. Nut-free on purpose: a nut-free lunch rule reaches snacks
-# (swap_in_place._hard_exclusions) and is not a matcher avoidance, so the
-# pool never needs it checked. Each line is (item, amount PER PERSON, unit,
-# category, key) — `key` is the word the week's own food is searched for;
-# `contains` is what a bought item is made of, matched for allergies only —
-# and spelled the ways a restriction is written ("milk", "lactose", "corn",
-# "citrus", "legumes"), because the shared matcher knows some foods only
-# as a family word (review, 2026-10-19: a "milk allergy" house was offered
-# the yogurt and the cheddar). The pool protects itself rather than waiting
-# on the matcher.
-SNACK_POOL: list[dict] = [
-    {"name": "Carrot Sticks with Hummus", "groups": ["vegetable", "protein"],
-     "lines": [("carrots", 1, "", "produce", "carrot"), ("hummus", 3, "tbsp", "other", "hummus")],
-     "contains": ["chickpeas", "legumes", "tahini", "sesame"]},
-    {"name": "Apple Slices with Cheddar", "groups": ["protein"],
-     "lines": [("apples", 1, "", "produce", "apple"), ("cheddar cheese", 1, "oz", "dairy", "cheddar")], "contains": ["milk", "dairy", "lactose"]},
-    {"name": "Greek Yogurt with Berries", "groups": ["protein"],
-     "lines": [("plain Greek yogurt", 0.75, "cup", "dairy", "yogurt"), ("berries", 0.5, "cup", "produce", "berr")], "contains": ["milk", "dairy", "lactose"]},
-    {"name": "Hard-Boiled Egg with Cherry Tomatoes", "groups": ["protein", "vegetable"],
-     "lines": [("eggs", 1, "", "dairy", "egg"), ("cherry tomatoes", 0.5, "cup", "produce", "tomato")]},
-    {"name": "Cucumber Rounds with Tzatziki", "groups": ["vegetable"],
-     "lines": [("cucumber", 0.5, "", "produce", "cucumber"), ("tzatziki", 3, "tbsp", "dairy", "tzatziki")],
-     "contains": ["yogurt", "milk", "dairy", "lactose"]},
-    {"name": "Bell Pepper Strips with Hummus", "groups": ["vegetable", "protein"],
-     "lines": [("bell pepper", 0.5, "", "produce", "pepper"), ("hummus", 3, "tbsp", "other", "hummus")],
-     "contains": ["chickpeas", "legumes", "tahini", "sesame"]},
-    {"name": "Cottage Cheese with Pear", "groups": ["protein"],
-     "lines": [("cottage cheese", 0.5, "cup", "dairy", "cottage"), ("pears", 1, "", "produce", "pear")], "contains": ["milk", "dairy", "lactose"]},
-    {"name": "Banana with Sunflower Seed Butter", "groups": ["carb"],
-     "lines": [("bananas", 1, "", "produce", "banana"), ("sunflower seed butter", 1, "tbsp", "pantry", "sunflower")]},
-    {"name": "Grapes and Cheese Cubes", "groups": ["protein"],
-     "lines": [("grapes", 1, "cup", "produce", "grape"), ("cheddar cheese", 1, "oz", "dairy", "cheddar")], "contains": ["milk", "dairy", "lactose"]},
-    {"name": "Rice Cakes with Avocado", "groups": ["carb"],
-     "lines": [("rice cakes", 2, "", "pantry", "rice cake"), ("avocado", 0.5, "", "produce", "avocado")]},
-    {"name": "Air-Popped Popcorn", "groups": ["carb"],
-     "lines": [("popcorn kernels", 2, "tbsp", "pantry", "popcorn")], "contains": ["corn"]},
-    {"name": "Clementines", "groups": [],
-     "lines": [("clementines", 2, "", "produce", "clementine")], "contains": ["citrus"]},
-]
+# The pool is the household's everyday snack list (data/everyday_snacks.json,
+# 2026-10-21), as everyday_snacks.eligible filters it for this house —
+# allergens the list names, a nut-free lunch (a nut butter becomes its
+# nut-free swap), vegetarian/vegan, dislikes. It replaced a twelve-snack
+# list written here (2026-10-19). Each pool line is (item, amount PER
+# PERSON, unit, category, key) — `key` is the word the week's own food is
+# searched for; `contains` is the list's allergens in the words a
+# restriction is written in, matched for allergies only (review,
+# 2026-10-19: a "milk allergy" house was offered yogurt and cheddar). The
+# pool protects itself rather than waiting on the matcher.
+# SNACK_POOL is the whole list, UNFILTERED (nut snacks included), in that
+# shape — for reading only; anything that picks from it goes through
+# everyday_snacks.eligible, as _pool_pick below does.
+SNACK_POOL: list[dict] = [_everyday.as_pool(s) for s in _everyday.load_list()]
 
 
 def _amount(value: float, serves: int) -> str:
@@ -145,8 +123,18 @@ def pool_ingredients(pool: dict, serves: int) -> list[dict]:
     out = []
     for item, value, unit, category, _key in pool["lines"]:
         qty = _amount(value, serves)
-        out.append({"item": item, "qty": f"{qty} {unit}".strip(), "category": category})
+        out.append({"item": _list_name(item), "qty": f"{qty} {unit}".strip(), "category": category})
     return out
+
+
+def _list_name(item: str) -> str:
+    """The pool's item as the shopping list shows it: a capital first letter,
+    like every line a recipe writes ("Carrots", "Plain Greek yogurt"). The
+    pool is spelled lower case for matching, and the list prints a line's
+    name as saved — so a new household's first list read "hummus" and
+    "carrots" among "Avocados" and "Bread" (overnight e2e hunt,
+    2026-10-23)."""
+    return item[:1].upper() + item[1:]
 
 
 def _rescale_pool_recipe(recipe_id: int, pool: dict, saved: list[dict], serves: int) -> None:
@@ -163,7 +151,12 @@ def _rescale_pool_recipe(recipe_id: int, pool: dict, saved: list[dict], serves: 
                            (recipe_id, household_id())).fetchone()
         old = int(row["default_servings"] or 0) if row else 0
         pairs = lambda lines: [((l.get("item") or "").strip().lower(), (l.get("qty") or "").strip()) for l in lines]
-        if row and old != serves and old > 0 and pairs(saved) == pairs(pool_ingredients(pool, old)):
+        # Also rewritten at the same table when only the spelling differs:
+        # a pool recipe saved before _list_name went in keeps putting
+        # "hummus" on the list otherwise.
+        same_list = old > 0 and pairs(saved) == pairs(pool_ingredients(pool, old))
+        respelled = [(l.get("item") or "").strip() for l in saved] != [l["item"] for l in pool_ingredients(pool, old)]
+        if row and same_list and (old != serves or respelled):
             conn.execute("UPDATE recipes SET ingredients_json = ?, default_servings = ? "
                          "WHERE id = ? AND household_id = ?",
                          (json.dumps(pool_ingredients(pool, serves)), serves, recipe_id, household_id()))
@@ -201,12 +194,13 @@ def _week_text(plan_id: int) -> str:
 
 
 def _overlap(pool: dict, week_text: str) -> int:
-    return sum(1 for line in pool["lines"] if line[4] in week_text)
+    # From the start of a word: "pea" (snap peas) is not in "chickpea".
+    return sum(1 for line in pool["lines"]
+               if line[4] and re.search(rf"\b{re.escape(line[4])}", week_text))
 
 
 def _disliked(pool: dict, dislikes: list[str]) -> bool:
-    words = " ".join([pool["name"]] + [l[0] for l in pool["lines"]]).lower()
-    return any(d and d.strip().lower() in words for d in dislikes or [])
+    return _everyday.disliked(" ".join([pool["name"]] + [l[0] for l in pool["lines"]]), dislikes)
 
 
 def _spread(n: int, keep: int) -> list[int]:
@@ -276,7 +270,8 @@ def enforce_snack_variety(plan_id: int, dates: list[str], memory: dict, period_s
         day_food = _meal_variety._day_food(plan_id, sorted(in_scope))
         recent = {_meal_variety.repeat_key(n) for n in
                   ((_draft_opener.recent_dish_names(period_start, plan_id) or ()) if period_start else ())}
-        use_pool = not str(memory.get("eating_style") or "").strip()
+        use_pool = not _everyday.style_stands_down(memory)
+        household_pool = [_everyday.as_pool(v) for v in _everyday.eligible(memory)] if use_pool else []
         week_text = _week_text(plan_id) if use_pool else ""
         avoid_hard = _allergen_gate.hard_avoidances()
         dislikes = memory.get("dislikes") or []
@@ -306,7 +301,7 @@ def enforce_snack_variety(plan_id: int, dates: list[str], memory: dict, period_s
                 return None
             on_day = set(day_food.get(date, {}))
             ranked = []
-            for i, pool in enumerate(SNACK_POOL):
+            for i, pool in enumerate(household_pool):
                 key = pool["name"].lower()
                 if key in dishes or key in on_day or key in pool_refused or _echoes(pool["name"], date):
                     continue

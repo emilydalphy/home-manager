@@ -20,6 +20,34 @@ from . import memory as _memory
 DEFAULT_SNACKS_PER_DAY = 2
 
 
+def same_words_key(text: str) -> str:
+    """The identity two list entries share when a person would call them
+    the same thing: any capitals, any spacing. "Olives", "olives " and
+    " OLIVES" are one Won't eat chip, not three (defect hunt 2026-10-25)."""
+    return " ".join(str(text).split()).lower()
+
+
+def one_of_each(items) -> list:
+    """`items` stripped, blanks dropped, and each thing kept once — in the
+    first spelling it arrived in, inner spacing as typed — by same_words_key. Anything that isn't a
+    list is handed back untouched for the caller's own check to judge."""
+    if not isinstance(items, list):
+        return items
+    seen: set[str] = set()
+    out = []
+    for item in items:
+        if not isinstance(item, str):
+            out.append(item)
+            continue
+        cleaned = item.strip()
+        key = same_words_key(cleaned)
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        out.append(cleaned)
+    return out
+
+
 def resolve_snacks_per_day(memory: dict | None = None) -> int:
     """
     How many DISTINCT snacks a day this household's week should plan.
@@ -120,8 +148,10 @@ def add_food_dislikes(items: list[str]) -> dict:
         existing = conn.execute(
             "SELECT dislikes_json FROM meal_preferences WHERE household_id = ?", (household_id(),)
         ).fetchone()
-        current = json.loads(existing["dislikes_json"]) if existing else []
-        merged = list(dict.fromkeys(current + [i.strip() for i in items if i.strip()]))
+        current = _memory._as_str_list(json.loads(existing["dislikes_json"])) if existing else []
+        # Once each whatever the capitals (one_of_each): chat saying
+        # "olives" beside a saved "Olives" is the dislike already there.
+        merged = one_of_each(current + [i for i in items if isinstance(i, str)])
         conn.execute(
             """
             INSERT INTO meal_preferences (household_id, dislikes_json, updated_at)
@@ -142,13 +172,20 @@ def add_usual_stores(items: list[str]) -> dict:
     in the grocery list view. Call this whenever the user mentions where
     they usually shop, even mid-conversation. Merges with anything already
     saved rather than replacing it.
+
+    One spelling per store (stores.store_key): "costco" or "Costco " added
+    beside "Costco" is the store already there, and a new name the
+    household already files things under ("costco" when the list says
+    "Costco") is saved in that first spelling.
     """
+    from . import stores as _stores  # call time: stores reaches back into this module
     with write() as conn:
         existing = conn.execute(
             "SELECT usual_stores_json FROM meal_preferences WHERE household_id = ?", (household_id(),)
         ).fetchone()
         current = json.loads(existing["usual_stores_json"]) if existing else []
-        merged = list(dict.fromkeys(current + [i.strip() for i in items if i.strip()]))
+        added = [_stores.canonical_store_name(conn, i) for i in items]
+        merged = _stores.one_spelling_each(current + added)
         conn.execute(
             """
             INSERT INTO meal_preferences (household_id, usual_stores_json, updated_at)
@@ -217,11 +254,15 @@ def add_store_typical_items(
     sets it when it calls back in here, so a chat/grocery-triage write
     can't bounce back and forth with this function forever).
     """
+    from . import stores as _stores  # call time: see the note at the foot
     with write() as conn:
         existing = conn.execute(
             "SELECT store_typical_items_json FROM meal_preferences WHERE household_id = ?", (household_id(),)
         ).fetchone()
         current = json.loads(existing["store_typical_items_json"]) if existing else {}
+        # "costco" is the household's "Costco": one key in this map, the
+        # same name the item's remembered store will carry.
+        store = _stores.canonical_store_name(conn, store)
         cleaned = [i.strip() for i in items if i.strip()]
         store_items = list(dict.fromkeys(current.get(store, []) + cleaned))
         current[store] = store_items
@@ -244,10 +285,9 @@ def add_store_typical_items(
     if log_event:
         _household._log_preference_event("store_typical_items", "write")
     if sync_preference:
-        # Local import: see the matching note in stores.set_item_store —
-        # these two modules call each other, which is only safe resolved
-        # at call time, not at module load time.
-        from . import stores as _stores
+        # Local import (above): see the matching note in
+        # stores.set_item_store — these two modules call each other, which
+        # is only safe resolved at call time, not at module load time.
         for item in cleaned:
             _stores.set_item_store(item, store, log_event=False, sync_typical=False)
     return {"store": store, "typical_items": store_items}
@@ -281,6 +321,11 @@ def remove_store_typical_item(store: str, item: str, log_event: bool = True) -> 
             "SELECT store_typical_items_json FROM meal_preferences WHERE household_id = ?", (household_id(),)
         ).fetchone()
         current = json.loads(existing["store_typical_items_json"]) if existing else {}
+        # The list saved under this store whatever its capitals or spacing
+        # (stores.store_key) — an exact key missed it and wrote an empty
+        # second entry beside it.
+        from . import stores as _stores
+        store = next((k for k in current if _stores.store_key(k) == _stores.store_key(store)), store)
         store_items = [i for i in current.get(store, []) if i.lower() != (item or "").lower()]
         current[store] = store_items
         conn.execute(
@@ -294,7 +339,7 @@ def remove_store_typical_item(store: str, item: str, log_event: bool = True) -> 
     item_key = _merge_key(item)
     prefs_map = _stores.get_item_store_preferences()
     current_pref = next((s for i, s in prefs_map.items() if _merge_key(i) == item_key), None)
-    if current_pref and current_pref.lower() == (store or "").lower():
+    if current_pref and _stores.store_key(current_pref) == _stores.store_key(store):
         _stores.set_item_store(item, "", log_event=False)
     return {"store": store, "typical_items": store_items}
 
@@ -370,7 +415,13 @@ def _checked_protein_ratings(ratings: dict) -> dict:
             raise ValueError(
                 f"{protein!s} needs a rating from {PROTEIN_RATING_MIN} to {PROTEIN_RATING_MAX}, not {number}."
             )
-        checked[protein] = number
+        # Saved under its words as typed, less stray spaces: "chicken " is
+        # the chip's "chicken", and a blank name is no protein at all (it
+        # stored as "" and drew an empty chip).
+        name = " ".join(str(protein).split())
+        if not name:
+            raise ValueError("Say which protein that rating is for.")
+        checked[name] = number
     return checked
 
 
@@ -461,6 +512,8 @@ def set_household_meal_preferences(
         )
     if protein_preferences:
         protein_preferences = _checked_protein_ratings(protein_preferences)
+    # The same cuisine twice in other capitals is one cuisine (one_of_each).
+    cuisine_preferences = one_of_each(cuisine_preferences)
     if dinners_per_week is not None:
         dinners_per_week = checked_meal_count("dinners_per_week", dinners_per_week)
     if breakfasts_per_week is not None:
@@ -735,7 +788,7 @@ def save_onboarding_answers(
             VALUES (?, ?, datetime('now'))
             ON CONFLICT(household_id) DO UPDATE SET dislikes_json = excluded.dislikes_json, updated_at = datetime('now')
             """,
-            (household_id(), json.dumps(wont_eat)),
+            (household_id(), json.dumps(one_of_each(wont_eat))),
         )
         conn.commit()
     _household._log_preference_event("onboarding_wont_eat", "write")

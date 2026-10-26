@@ -1,0 +1,160 @@
+{
+ "dish_name": "Bun Ga Nuong",
+ "cuisine": "Vietnamese",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Lemongrass",
+   "qty": "1 stalk",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "6 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Rice vermicelli",
+   "qty": "1 package (8 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "English cucumber",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Iceberg lettuce",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Bean sprouts",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Mint",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Roasted peanuts",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Thai chilies",
+   "qty": "2",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "At least 1 hour ahead, or the night before: trim the lemongrass to the pale bottom part, bruise it with the back of a knife and cut it into 2 inch pieces. Mince 2 of the garlic cloves. Juice 1 of the limes. That should be about 2 tbsp.",
+  "In a large bowl, stir together the lemongrass, the minced garlic, the lime juice, 2 tbsp fish sauce, 1 tbsp soy sauce, 2 tbsp brown sugar and 1 tbsp of the oil until the sugar dissolves. Add the chicken and turn it to coat. Cover and refrigerate.",
+  "When you're ready to cook, bring a large pot of water to a boil.",
+  "Meanwhile, make the nuoc cham. Juice 2 more limes. That should be about 3 tbsp. Mince the last 2 garlic cloves. In a jar or bowl, stir 1/4 cup fish sauce, 1/4 cup rice vinegar, 2 tbsp sugar and 1/2 cup water until the sugar dissolves. Stir in the lime juice and the garlic.",
+  "Peel the carrots and cut them into thin matchsticks. Cut the cucumber into thin matchsticks. Finely shred half the lettuce. Rinse the bean sprouts. Pick the leaves off the mint and the cilantro. Roughly chop the peanuts. Slice the chilies into a small dish for the table. Cut the last lime into wedges.",
+  "Add the vermicelli to the boiling water and cook for 3 to 4 minutes, until soft. Drain it, rinse it under cold water and shake it well.",
+  "Heat the remaining 1 tbsp oil in a large skillet over medium-high heat. Lift the chicken out of the marinade and shake off the lemongrass. Add half the thighs and cook until the underside is dark golden, 3 to 4 minutes. If the pan starts to smoke, turn the heat down a little.",
+  "Flip them and cook the other side for 3 to 4 minutes. You're cooking them to 175°F, so if you have a thermometer, check the thickest one. No thermometer? Cut into it: it's done when the juices run clear and there's no pink. Transfer them to a board and cook the rest of the thighs the same way.",
+  "Let the chicken rest for 5 minutes, then slice it thin.",
+  "Divide the noodles between 4 bowls. Add the lettuce, carrots, cucumber, bean sprouts, mint and cilantro, then the chicken. Scatter the peanuts on top.",
+  "Taste the nuoc cham. If it's flat, add a splash more fish sauce.",
+  "Serve with the nuoc cham, the lime wedges and the chilies on the side."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "Marinate the chicken at least 1 hour ahead, or the night before.",
+ "advance_prep_step_indices": [
+  1,
+  2
+ ],
+ "method_notes": "The sources agree on boneless thighs marinated in fish sauce, sugar, garlic and lemongrass, cooked until dark and caramelised, sliced over cold vermicelli with lettuce, cucumber, herbs and nuoc cham. This follows the lead (RecipeTin Eats) for the marinade, the 1 hour minimum and the nuoc cham ratio; the crushed peanuts come from Cooking Therapy. The chili is left out of the nuoc cham and served on the side, so the base stays mild. Cooking Therapy and Red Boat both use honey and shallot in the marinade; the lead does not, so this one does not either.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Vietnamese Noodles with Lemongrass Chicken",
+   "url": "https://www.recipetineats.com/vietnamese-chicken-noodle-bowl/",
+   "rating": 4.98,
+   "rating_count": 254,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cooking Therapy",
+   "title": "Vietnamese Noodle Bowls with Lemongrass Chicken (Bun Ga Nuong)",
+   "url": "https://www.cooking-therapy.com/bun-ga-nuong/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true
+  },
+  {
+   "name": "Red Boat Fish Sauce",
+   "title": "Bun Ga Nuong (Rice Vermicelli with Grilled Chicken)",
+   "url": "https://redboatfishsauce.com/blogs/recipes/bun-ga-nuong-rice-vermicelli-with-grilled-chicken",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

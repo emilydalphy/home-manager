@@ -152,6 +152,10 @@ def test_the_same_dish_in_two_slots_is_two_separate_repeats(signed_in):
     ]
 
 
+# On the seeded Monday: from Tuesday on, Monday's chain is behind the
+# household and the mornings still ahead are a fresh repeat the receipt
+# rightly offers (red on 2026-10-21, a Wednesday).
+@ON_MONDAY
 def test_a_dish_that_already_cooks_ahead_is_not_offered_again(signed_in):
     """The Cook card's picker owns a chain once it exists — re-offering the
     same dish here would let two screens argue about the same batch."""

@@ -1,0 +1,44 @@
+{
+ "dish_name": "Quick Bistec a la Mexicana",
+ "cuisine": "Mexican",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Top sirloin steak", "qty": "1.5 lbs", "category": "meat/seafood"},
+  {"item": "Salt", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Ground cumin", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "White onion", "qty": "1", "category": "produce"},
+  {"item": "Roma tomatoes", "qty": "5", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Jalapeños", "qty": "2", "category": "produce"},
+  {"item": "Vegetable oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Corn tortillas", "qty": "12", "category": "other"}
+ ],
+ "instructions": [
+  "Slice the 1 1/2 lbs sirloin across the grain into strips about 1/4 inch thick and 2 inches long. Pat them dry with paper towels. Toss them in a bowl with 1 tsp of the salt, the 1/2 tsp pepper and the 1/2 tsp cumin.",
+  "Slice the onion into thin strips. Chop the 5 tomatoes into 1/2 inch pieces. Mince the 2 garlic cloves.",
+  "Stem and seed 1 jalapeño and chop it finely. Slice the other jalapeño into thin rounds and transfer them to a small bowl for the table.",
+  "Heat 1 tbsp of the oil in a large skillet over high heat until it shimmers. Add half the beef in one layer and leave it for about 1 minute, until the underside is browned. Flip the strips and cook the other side for about 1 minute. Transfer them to a plate.",
+  "Add 1 tbsp of the oil and brown the rest of the beef the same way. Transfer it to the plate.",
+  "Turn the heat to medium and add the last 1 tbsp oil. Add the onion, the chopped jalapeño and the last 1/2 tsp salt. Cook, stirring now and then, for about 5 minutes, until the onion is soft and starting to brown at the edges.",
+  "Add the garlic and stir for about 30 seconds, until it smells fragrant.",
+  "Add the tomatoes and 1/4 cup water, and scrape up the browned bits from the bottom of the pan. Cook, stirring now and then, for about 6 minutes, until the tomatoes have softened into a chunky sauce.",
+  "Meanwhile, warm the 12 tortillas in a dry skillet over medium heat, about 30 seconds a side, and stack them in a clean kitchen towel.",
+  "Add the beef and the juices from the plate back to the pan. Stir and cook for about 3 minutes, until the beef is hot through and coated in the sauce.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the warm tortillas and the sliced jalapeño on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions cook thin beef strips with onion, chile and tomato in one skillet in about half an hour and serve them with tortillas. Mama Maggie's Kitchen (the lead) seasons the strips with salt, pepper and cumin, cooks them with diced onion, jalapeño, garlic and tomato, then adds a blended tomato sauce and covers it for 15 minutes; Thrift and Spice sears ribeye strips hard in batches and cooks chopped tomatoes down briefly before the beef goes back in, and Mexican Food Journal uses serranos in a blended, peeled tomato sauce. No version with 20 or more ratings could be read (Cookidoo's 4.7 from 278 is a Thermomix recipe whose method is behind a sign-in, and Mexico in My Kitchen returned 403), and RecipeTin Eats, the trusted cook for Mexican, has no version, so the best rated version read leads. This keeps the lead's cumin seasoning but follows Thrift and Spice's hard sear and chopped tomatoes so it stays a 35 minute dish, with one seeded jalapeño in the pan and the other sliced for the table.",
+ "sources": [
+  {"name": "Mama Maggie's Kitchen", "title": "Bistec a la Mexicana", "url": "https://inmamamaggieskitchen.com/bistec-a-la-mexicana/", "rating": 5.0, "rating_count": 10, "read": true, "lead": true},
+  {"name": "Thrift and Spice", "title": "Bistec a La Mexicana (Mexican Style Steak)", "url": "https://thriftandspice.com/bistec-a-la-mexicana/", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Mexican Food Journal", "title": "Bistec a la Mexicana", "url": "https://mexicanfoodjournal.com/bistec-a-la-mexicana/", "rating": 3.58, "rating_count": 14, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

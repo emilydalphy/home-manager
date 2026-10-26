@@ -108,13 +108,14 @@ def test_guard_a_cooked_dinner_reserves_nothing(tacos):
     assert set(res["already_have_skipped"]) == {"Ground beef", "Tortillas"}
 
 
-def test_guard_a_past_dinner_nobody_ticked_reserves_nothing(tacos):
-    # Yesterday's tacos were never ticked cooked: whether they were eaten is
-    # unknown, so the shelf is read the way it always was.
+def test_a_past_dinner_nobody_ticked_counts_as_eaten(tacos):
+    # Yesterday's tacos were never ticked cooked. Since 2026-10-21 a past
+    # night is taken as eaten (tests/test_past_dinner_counts_as_eaten.py),
+    # so its beef and tortillas are not spare for next week.
     _this_week_with_tacos(household_today() - datetime.timedelta(days=1))
     _shop_everything()
     res = _approve_next_week_with_tacos()
-    assert set(res["already_have_skipped"]) == {"Ground beef", "Tortillas"}
+    assert res["already_have_skipped"] == []
 
 
 def test_reservation_is_per_meal_share_not_the_whole_line(tacos):

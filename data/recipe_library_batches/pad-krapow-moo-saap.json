@@ -1,0 +1,130 @@
+{
+ "dish_name": "Pad Krapow Moo Saap",
+ "cuisine": "Thai",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Jasmine rice",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground pork",
+   "qty": "1.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Garlic",
+   "qty": "8 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Thai chilies",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Holy basil",
+   "qty": "1 large bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Light soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Dark soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "6 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "to taste",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse 2 cups of jasmine rice under cold water until it runs mostly clear. Transfer it to a medium pot with 3 cups of water and bring it to a boil. Cover, turn the heat to the lowest setting and cook for 15 minutes. Take it off the heat and leave the lid on until you serve.",
+  "Meanwhile, peel the garlic and pound it in a mortar to a rough paste. No mortar? Chop it as finely as you can.",
+  "Slice the Thai chilies thinly into a small bowl for the table. Pick the basil leaves off the stems. That should be about 2 cups, loosely packed.",
+  "In a small bowl, stir together 3 tbsp light soy sauce, 3 tbsp oyster sauce, 1 tbsp fish sauce, 2 tsp dark soy sauce, 2 tbsp sugar and 2 tbsp of water until the sugar dissolves.",
+  "Heat 2 tbsp of the oil in a wok or large skillet over medium high heat. Add the garlic and stir for about 20 seconds, until it smells toasty and just starts to turn golden.",
+  "Turn the heat to high and add the pork. Press it into an even layer and leave it alone for 2 minutes, until the underside is browned.",
+  "Break the pork into small crumbles and stir fry for 3 to 4 minutes, until some bits are crisp at the edges. You're cooking it to 160°F, so if you have a thermometer, check a thick clump. No thermometer? Break a piece open. It's done when there's no pink left.",
+  "Pour in the sauce and stir for about 1 minute, until it bubbles and coats the pork with no liquid pooling in the pan.",
+  "Take the pan off the heat. Add the basil and stir for about 30 seconds, until it wilts.",
+  "Taste it. If it's flat, add a pinch of salt. Cover the pan while you fry the eggs.",
+  "Heat the remaining 1/4 cup oil in a small nonstick skillet over medium high heat until it shimmers. Crack in 2 of the eggs. Stand back a little. They'll spatter.",
+  "Spoon the hot oil over the whites and cook for about 2 minutes, until the edges are brown and crisp and the whites are set but the yolks are still runny. Transfer them to a plate lined with paper towel.",
+  "Fry the last 2 eggs the same way.",
+  "Serve the pork over the rice with a fried egg on each plate and the sliced chilies on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions fry pounded garlic (and chilies) in oil, cook ground pork over high heat, add a sauce of light soy, oyster sauce, fish sauce and sugar, and stir the holy basil in off the heat, with a crisp fried egg on top. Hungry in Thailand (the lead) adds Rosdee seasoning powder, which is left out here; Chloe Ting adds green beans and onion, and Takes Two Eggs adds shallots and a splash of broth. This one follows the lead's ratios, adds a little dark soy for color like the other two, and moves all the chilies to the table so the pan stays mild. Thai basil works if holy basil can't be found.",
+ "sources": [
+  {
+   "name": "Hungry in Thailand",
+   "title": "Pad Kra Pao Recipe (Authentic Thai Basil Pork)",
+   "url": "https://hungryinthailand.com/pad-kra-pao/",
+   "rating": 4.96,
+   "rating_count": 21,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Chloe Ting",
+   "title": "Pad Kra Pao (Spicy Holy Basil Stir-Fry)",
+   "url": "https://chloeting.com/recipes/pad-kra-pao-spicy-holy-basil-stir-fry",
+   "rating": 4.1,
+   "rating_count": 34,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Takes Two Eggs",
+   "title": "Pad Kra Pao (Thai Basil Minced Pork)",
+   "url": "https://takestwoeggs.com/pad-kra-pao/",
+   "rating": 5.0,
+   "rating_count": 11,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

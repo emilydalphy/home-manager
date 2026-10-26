@@ -1,0 +1,47 @@
+{
+ "dish_name": "Firinda Tavuk",
+ "cuisine": "Turkish",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 55,
+ "ingredients": [
+  {"item": "Bone-in chicken thighs", "qty": "2.5 lbs", "category": "meat/seafood"},
+  {"item": "Yukon gold potatoes", "qty": "1.5 lbs", "category": "produce"},
+  {"item": "Cubanelle peppers", "qty": "4", "category": "produce"},
+  {"item": "Roma tomatoes", "qty": "3", "category": "produce"},
+  {"item": "Tomato paste", "qty": "1 can (6 oz)", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Vegetable oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Ground cumin", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Dried thyme", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Sweet paprika", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Red pepper flakes", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Pita bread", "qty": "1 package", "category": "other"}
+ ],
+ "instructions": [
+  "Turn the oven to 425°F (220°C) with a rack in the middle.",
+  "Peel the 1.5 lbs potatoes and cut them into slices about 1/2 inch thick. Rinse them and drain well, then pat them dry.",
+  "Pat the 2.5 lbs chicken thighs dry with paper towels. In a small bowl, mix the 1 tsp cumin, 1 tsp thyme, 1 tsp paprika, 1 1/2 tsp of the salt and the 1/2 tsp black pepper.",
+  "In a large bowl, toss the potatoes with 2 tbsp of the oil and half the spice mix. Spread them in one layer in a large roasting pan or on a rimmed baking sheet.",
+  "In the same bowl, rub the chicken all over with the remaining 2 tbsp oil and the rest of the spice mix. Lay the thighs skin side up on top of the potatoes.",
+  "Stir the 1 tbsp tomato paste and the last 1/2 tsp salt into 1 1/2 cups hot water until it dissolves. Pour it around the chicken over the potatoes, keeping it off the skin.",
+  "Roast for 25 minutes, until the skin is starting to brown.",
+  "Meanwhile, cut the 3 tomatoes into quarters. Cut the stems off the 4 peppers and pull out the seeds, leaving the peppers whole.",
+  "Take the pan out and tuck the tomatoes and peppers in around the chicken. Roast for about 25 minutes, until the skin is deep golden, the potatoes are tender and the peppers are blistered. You're cooking the chicken to 175°F, so if you have a thermometer, check it in the thickest thigh away from the bone. No thermometer? Cut into one next to the bone: it's done when the juices run clear and there's no pink left.",
+  "Let it rest in the pan for 5 minutes. Put the red pepper flakes in a small bowl for the table.",
+  "Taste the pan juices. If they're flat, add a pinch more salt.",
+  "Serve the chicken and vegetables with the pan juices spooned over. Serve with the pita and the red pepper flakes on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions roast chicken in one pan with potatoes and tomato, seasoned with tomato paste and dried spices. Yemek.com, the lead, lays sliced potatoes under chicken pieces tossed with cumin, thyme, chilli flakes and oil, pours tomato paste dissolved in hot water over the top, and adds tomatoes and long green peppers halfway through; Theodehlicious bakes chicken breast, potato, pepper and tomato under foil and then browns it under the broiler, and Özlem's Turkish Table poaches a whole chicken before roasting it with a tomato paste and yogurt rub. This one follows the lead's layering and timing but uses bone-in thighs instead of wings, keeps the tomato water off the skin so it crisps at 425°F, adds sweet paprika from Theodehlicious, and moves the chilli flakes to the table. No version had 20 or more ratings and RecipeTin Eats has no version, so the lead is the version closest to the dish as named.",
+ "sources": [
+  {"name": "Yemek.com", "title": "Fırında Patatesli Baharatlı Tavuk", "url": "https://yemek.com/tarif/firinda-patatesli-baharatli-tavuk/", "rating": null, "rating_count": null, "read": true, "lead": true},
+  {"name": "Theodehlicious", "title": "Chicken Tava (Tavuk Tava)", "url": "https://theodehlicious.com/?p=7690", "rating": 4.75, "rating_count": 12, "read": true, "lead": false},
+  {"name": "Özlem's Turkish Table", "title": "Roast Chicken with Vegetables (Fırında Sebzeli Tavuk)", "url": "https://ozlemsturkishtable.com/2011/02/roast-chicken-with-vegetables-firinda-sebzeli-tavuk/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

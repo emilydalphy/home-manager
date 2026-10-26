@@ -1,0 +1,52 @@
+{
+ "dish_name": "Bossam",
+ "cuisine": "Korean",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 75,
+ "ingredients": [
+  {"item": "Skinless pork belly", "qty": "2 lbs", "category": "meat/seafood"},
+  {"item": "Doenjang", "qty": "1 tub", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Onion", "qty": "1", "category": "produce", "cook_qty": "1/2"},
+  {"item": "Scallions", "qty": "1 bunch", "category": "produce", "cook_qty": "2"},
+  {"item": "Garlic", "qty": "13 cloves", "category": "produce"},
+  {"item": "Ginger", "qty": "1 piece (1 inch)", "category": "produce"},
+  {"item": "Black peppercorns", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Instant coffee", "qty": "1 jar", "category": "pantry", "cook_qty": "1 tsp"},
+  {"item": "Bay leaves", "qty": "2", "category": "pantry"},
+  {"item": "Salt", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Daikon radish", "qty": "1 lb", "category": "produce"},
+  {"item": "Gochugaru", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Fish sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 tsp"},
+  {"item": "Gochujang", "qty": "1 tub", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Sesame oil", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Red leaf lettuce", "qty": "1 head", "category": "produce"},
+  {"item": "Green chilies", "qty": "2", "category": "produce"}
+ ],
+ "instructions": [
+  "Pour 6 cups water into a large pot and whisk in 1 tbsp of the doenjang until it dissolves. Add half the onion, the white parts of 2 scallions, 6 of the garlic cloves, lightly smashed, the ginger cut into thin slices, the 1 tsp peppercorns, the 1 tsp instant coffee, 1 tsp of the salt and the 2 bay leaves.",
+  "Bring it to a boil over medium high and let it boil for 5 minutes.",
+  "Add the 2 lbs pork belly. Bring it back to a boil and boil it uncovered for 5 minutes.",
+  "Turn the heat to medium, cover the pot and cook for 45 to 50 minutes, until the pork is very tender. Check it at 40 minutes. A chopstick should slide into the thickest part with no push.",
+  "Meanwhile, peel the 1 lb daikon and cut it into thin matchsticks. Toss them in a bowl with the last 1 tsp salt and leave them for 15 minutes.",
+  "Meanwhile, make the ssamjang. In a small bowl, stir together the remaining 3 tbsp doenjang, the 1 tbsp gochujang, 2 of the garlic cloves, minced, the 2 tsp sesame oil and 1 tbsp water.",
+  "Separate the lettuce leaves, wash them and dry them well. Thinly slice 4 of the garlic cloves and the 2 green chilies, and put each in its own small bowl.",
+  "Squeeze the daikon a handful at a time to get out as much water as you can, and transfer it to a dry bowl. Add the 1 tbsp gochugaru, 1 tbsp fish sauce, 1 tsp sugar, the last garlic clove, minced, and the green parts of the 2 scallions, chopped. Mix it with your hands until the radish is evenly red.",
+  "When the pork is tender, turn off the heat and leave it in the liquid for 10 minutes. It stays moist that way.",
+  "Transfer the pork to a cutting board and slice it across into 1/4 inch slices.",
+  "Taste a slice. If it's flat, sprinkle a pinch more salt over the platter.",
+  "Arrange the pork on a platter. Serve with the lettuce, the ssamjang, the radish salad, the sliced garlic and the chilies."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Every version simmers the belly whole with doenjang and aromatics until it's tender, slices it thin and serves it with leaves to wrap. Korean Bapsang boils it in a doenjang, coffee, garlic, ginger and bay brine for about an hour and cools it in the liquid; Beyond Kimchee steams it over onion and apple in a little rice wine instead; Food Network simmers it with kombu for 1 1/2 hours. This one follows Korean Bapsang's brine and timing scaled to 2 lbs, uses lettuce as the wrap, and makes the ssamjang and quick radish salad from the Beyond Kimchee and Food Network versions, with the green chilies on the side. Korean Bapsang's rating is the one on its recipe card; the JSON-LD block wasn't in the text I read.",
+ "sources": [
+  {"name": "Korean Bapsang", "title": "Bossam (Boiled Pork Wraps)", "url": "https://www.koreanbapsang.com/bossam-boiled-pork-wraps/", "rating": 4.57, "rating_count": 71, "read": true, "lead": true},
+  {"name": "Beyond Kimchee", "title": "Easy Bossam (Korean Pork Wraps)", "url": "https://www.beyondkimchee.com/bossam-korean-boiled-pork", "rating": 5.0, "rating_count": 6, "read": true, "lead": false},
+  {"name": "Food Network", "title": "Bossam", "url": "https://www.foodnetwork.com/recipes/food-network-kitchen/bossam-3630293", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

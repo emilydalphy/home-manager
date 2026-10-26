@@ -1,0 +1,131 @@
+{
+ "dish_name": "Fatayer bi Sabanekh",
+ "cuisine": "Lebanese",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 50,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Whole milk",
+   "qty": "1/2 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Active dry yeast",
+   "qty": "1 packet",
+   "category": "pantry",
+   "cook_qty": "3/4 tsp"
+  },
+  {
+   "item": "Bread flour",
+   "qty": "1 3/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh spinach",
+   "qty": "1 bag (10 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sumac",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lebanese seven spices",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "At least 2 1/2 hours before you want them: warm 1/4 cup of the milk until it feels warm on your wrist, not hot. Stir in the 1 1/2 tsp sugar and 3/4 tsp yeast in a large bowl and leave it for about 10 minutes, until it's foamy.",
+  "Add 1/2 tsp of the salt and 3/4 cup of the flour and mix. Add the 3 tbsp vegetable oil, the last 1/4 cup milk and another 3/4 cup flour. Knead it with a stand mixer's dough hook for about 6 minutes, or by hand for 8 to 10, until it's smooth and soft.",
+  "Shape it into a ball, cover the bowl with a kitchen towel and leave it somewhere warm for about 1 hour, until it's doubled.",
+  "Cut the dough into 10 equal pieces and roll each into a ball. Cover them with the towel and let them rest for 30 minutes.",
+  "Meanwhile, chop the spinach finely. Put it in a large bowl, sprinkle the last 1/2 tsp salt over it and rub it in with your hands. Leave it for 10 minutes.",
+  "Heat the oven to 400°F and line a baking sheet with parchment. Chop the onion very finely.",
+  "Squeeze the spinach a handful at a time, as hard as you can, and transfer it to a dry bowl. Get out as much water as you can, or the pies come out soggy.",
+  "Add the onion, 1 tbsp of the olive oil, the 1 tbsp sumac, 1/4 tsp black pepper and 1/4 tsp seven spices. Mix it well.",
+  "Right before you shape the pies, squeeze in the juice of half the lemon and stir. Taste a little and add the juice of the other half if you'd like it sharper.",
+  "Dust the counter with the last 1/4 cup flour. Roll a ball into a circle about 4 1/2 inches across and put about 2 tbsp of the filling in the middle.",
+  "Bring two sides up over the filling and pinch them together. Lift the third side up and pinch all the seams firmly into a triangle. Pinch hard, or they open in the oven. Put it on the sheet and do the same with the rest.",
+  "Brush the tops with the last 1 tbsp olive oil. Bake for 12 to 15 minutes, until they're golden. Start checking at 10 minutes.",
+  "Let them cool on a rack for a few minutes. Serve warm or at room temperature."
+ ],
+ "advance_prep_notes": "Make the dough at least 2 1/2 hours ahead so it can rise",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4
+ ],
+ "method_notes": "All three salt the chopped spinach, squeeze it hard, mix it raw with onion, sumac and lemon, and fold it into triangles of yeasted dough. Simply Lebanese, the lead, makes the dough with milk and vegetable oil, adds seven spices to the filling, keeps the lemon until right before shaping and bakes at 400°F for about 12 minutes; Mission Food uses water and olive oil and bakes for longer, and Tara's Multicultural Table adds paprika, pine nuts and pomegranate molasses. This one halves the lead for 10 pies, leaves out its optional tomato and egg wash, and brushes the tops with olive oil instead, the way the other two do.",
+ "sources": [
+  {
+   "name": "Simply Lebanese",
+   "title": "Spinach Fatayer",
+   "url": "https://www.simplyleb.com/recipe/spinach-fatayer/",
+   "rating": 4.64,
+   "rating_count": 57,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Mission Food",
+   "title": "Spinach Fatayer (Lebanese Spinach Pies)",
+   "url": "https://mission-food.com/spinach-fatayer-lebanese-spinach-pies/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Tara's Multicultural Table",
+   "title": "Fatayer bi Sabanekh (Lebanese Spinach Pies)",
+   "url": "https://tarasmulticulturaltable.com/fatayer-bi-sabanekh-lebanese-spinach-turnovers/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

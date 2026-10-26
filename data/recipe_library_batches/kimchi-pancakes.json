@@ -1,0 +1,117 @@
+{
+ "dish_name": "Kimchi Pancakes",
+ "cuisine": "Korean",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Kimchi",
+   "qty": "1 jar (about 16 oz)",
+   "category": "other",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "a pinch",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Make the dipping sauce first. In a small bowl, stir together 2 tbsp soy sauce, 2 tbsp water, 2 tsp rice vinegar, 1 tsp sugar and the pinch of black pepper until the sugar dissolves.",
+  "Lift 1 1/2 cups of kimchi out of the jar and thinly slice it. Measure out 1/4 cup of the juice from the jar.",
+  "Cut 3 scallions into 2 inch pieces. Thinly slice half the onion.",
+  "In a large bowl, whisk the 1 1/2 cups flour and 1/4 cup cornstarch together.",
+  "Add the 1/4 cup kimchi juice, the egg and 1 1/4 cups ice cold water. Stir gently until there's no dry flour left. A few lumps are fine. The batter should run easily off a spoon.",
+  "Fold in the kimchi, scallions and onion.",
+  "Heat 1 tbsp vegetable oil in a 10 inch nonstick skillet over medium heat until it shimmers. Add a quarter of the batter and spread it into a thin round, about 1/4 inch thick.",
+  "Cook for about 3 minutes, until the edges are light golden and the underside is set.",
+  "Flip it, then drizzle 1 tbsp vegetable oil around the edge and swirl the pan. Press the pancake flat with your spatula and cook the other side for 2 to 3 minutes, until it's crisp and golden.",
+  "Transfer it to a cutting board. Make the other three the same way, with 2 tbsp of the oil for each one.",
+  "Cut the pancakes into wedges. Serve hot with the dipping sauce."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions stir chopped, well fermented kimchi and its juice into a loose flour batter with scallions and fry it thin in a hot oiled pan until both sides are crisp. Korean Bapsang adds an egg, sliced onion and a little starch, keeps the flour to liquid about one to one, and offers gochujang, gochugaru or meat as extras; The Woks of Life uses half potato starch and no egg, and Two Plaid Aprons adds baking powder. This follows Korean Bapsang scaled up for four, with cornstarch for the starch and without the optional gochujang, gochugaru or meat so the heat is only what the kimchi brings. Most kimchi has fish sauce or salted shrimp in it, so buy a vegan kimchi if that matters.",
+ "sources": [
+  {
+   "name": "Korean Bapsang",
+   "title": "Kimchijeon (Kimchi Pancake)",
+   "url": "https://www.koreanbapsang.com/kimchi-jeon-kimchi-pancake/",
+   "rating": 4.69,
+   "rating_count": 158,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Woks of Life",
+   "title": "Kimchi Pancake (Kimchijeon)",
+   "url": "https://thewoksoflife.com/kimchi-pancake/",
+   "rating": 4.74,
+   "rating_count": 15,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Two Plaid Aprons",
+   "title": "Kimchijeon (Kimchi Pancake)",
+   "url": "https://twoplaidaprons.com/kimchijeon-kimchi-pancake/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

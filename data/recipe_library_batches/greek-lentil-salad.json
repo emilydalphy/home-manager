@@ -1,0 +1,48 @@
+{
+ "dish_name": "Greek Lentil Salad",
+ "cuisine": "Greek",
+ "main_protein": "lentils",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {"item": "Brown lentils", "qty": "1 cup", "category": "pantry"},
+  {"item": "Bay leaves", "qty": "1", "category": "pantry"},
+  {"item": "Red bell peppers", "qty": "2", "category": "produce"},
+  {"item": "Olive oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Red wine vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Garlic", "qty": "1 clove", "category": "produce"},
+  {"item": "Sweet paprika", "qty": "a pinch", "category": "pantry"},
+  {"item": "Red onion", "qty": "1", "category": "produce"},
+  {"item": "Cherry tomatoes", "qty": "1 pint", "category": "produce"},
+  {"item": "Kalamata olives", "qty": "1 jar", "category": "pantry", "cook_qty": "12 olives"},
+  {"item": "Feta cheese", "qty": "4 oz", "category": "dairy"},
+  {"item": "Fresh parsley", "qty": "1 bunch", "category": "produce"},
+  {"item": "Fresh mint", "qty": "1 bunch", "category": "produce"},
+  {"item": "Salt", "qty": "to taste", "category": "pantry"},
+  {"item": "Black pepper", "qty": "to taste", "category": "pantry"}
+ ],
+ "instructions": [
+  "Heat the oven to 425°F. Halve the 2 peppers and pull out the seeds and white ribs. Lay them cut side up on a baking sheet, drizzle with 1 tbsp of the olive oil and sprinkle with a pinch of salt.",
+  "Roast the peppers for about 20 minutes, until they're soft and starting to char at the edges.",
+  "Meanwhile, rinse the 1 cup lentils in a sieve and pick out any small stones. Put them in a medium saucepan with the bay leaf and 1/2 tsp salt, and cover with cold water by about 2 inches. Bring it to a boil over high heat.",
+  "Turn the heat down so it simmers gently and cook for 20 to 25 minutes. Start tasting at 15 minutes. They're done when they're tender but still hold their shape, with a little bite.",
+  "While the lentils cook, make the dressing in a large bowl. Grate in the garlic clove, then whisk in the remaining 3 tbsp olive oil, the 3 tbsp vinegar, the pinch of paprika, 1/2 tsp salt and a few grinds of pepper.",
+  "Finely chop half the red onion. Halve the cherry tomatoes. Pit 12 olives and slice them.",
+  "Drain the lentils and take out the bay leaf. Rinse them under cold water until they're cool, then shake the sieve well to get the water off.",
+  "Add the lentils to the dressing and toss until every lentil is coated.",
+  "Once the peppers are cool enough to handle, slice them into thin strips. Add them to the bowl with the onion, tomatoes and olives. Crumble in the 4 oz feta and toss gently.",
+  "Pick the leaves from half the parsley and half the mint and chop them. That should be about 1/2 cup together. Stir them in just before you eat it.",
+  "Taste it. If it's flat, add a pinch more salt or a splash more of the vinegar.",
+  "It keeps in a covered container in the fridge for up to 4 days. If you're packing it for the week, keep the chopped herbs in their own container and stir a spoonful into each portion when you pack it."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions simmer small brown or green lentils for 20 to 25 minutes until tender but firm, rinse them cool, and toss them with red onion, tomato, peppers and a sharp red wine vinegar dressing. My Greek Dish (the lead) roasts the peppers, dresses the lentils first, adds feta, olives, parsley and mint, and keeps the herbs until just before serving; Diane Kochilas uses raw pepper, scallions, a mustard and balsamic dressing and hard boiled eggs instead of feta. This follows the lead at half its size, with its equal parts oil and vinegar dressing. The lead's 503 is a reviewCount, not a ratingCount, and Kochilas's page shows no rating.",
+ "sources": [
+  {"name": "My Greek Dish", "title": "Delicious Greek Lentil Salad Recipe with Feta cheese (Fakes Salata)", "url": "https://www.mygreekdish.com/recipe/greek-lentil-salad/", "rating": 4.8, "rating_count": 503, "read": true, "lead": true},
+  {"name": "Diane Kochilas", "title": "Lentil Salad with Herbs and Grated Eggs", "url": "https://www.dianekochilas.com/lentil-salad-with-herbs-and-grated-eggs/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -136,6 +136,8 @@ from .cooker import (  # noqa: F401
     _use_inventory_row_by_id,
     MEAL_COOKED_STATUSES,
     InvalidMealStatus,
+    PREP_TASK_STATUSES,
+    InvalidPrepStatus,
     check_off_meal,
     check_off_prep_step,
     deplete_inventory_for_meal,
@@ -392,12 +394,16 @@ from .household import (  # noqa: F401
     list_pets,
     set_household_goals,
     set_member_age_group,
+    set_member_age_group_for_chat,
+    last_adult_leaving,
+    MemberRefused,
     set_member_age,
     age_stage,
     set_member_dietary_restrictions,
     remove_member_dietary_restriction,
 )
 from .inventory import (  # noqa: F401
+    InvalidInventoryLocation,
     _LEADING_NUM_RE,
     _add_to_inventory,
     _step_quantity_text,
@@ -703,6 +709,7 @@ from .slot_needs import (  # noqa: F401
     get_week_slot_needs,
     set_away_stretch,
     set_slot_need,
+    set_slot_need_for_chat,
     set_slot_recommendation,
 )
 from .staples import (  # noqa: F401
@@ -886,7 +893,7 @@ from .swap_in_place import _hard_exclusions as swap_hard_exclusions  # noqa: F40
 # reveal's Swap and the Plan tab's Swap sheet (2026-09-18; the two were
 # built apart and reconciled onto this one module). A screen's own read
 # and write, not agent tools.
-from .swap_options import (  # noqa: F401
+from .swap_option_picks import (  # noqa: F401
     choose_swap_option,
     swap_options,
 )
@@ -912,7 +919,7 @@ from .proposals import (  # noqa: F401
 )
 # Today's "Did you have it?" card, the morning after (Emily, 2026-09-25):
 # a screen's own read and one answer per row. Not agent tools.
-from .yesterday_check import (  # noqa: F401
+from .yesterday_ask import (  # noqa: F401
     NotAskedAbout,
     answer_yesterday,
     undo_skipped_move,

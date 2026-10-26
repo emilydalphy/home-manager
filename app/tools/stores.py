@@ -19,6 +19,102 @@ from . import quantities as _quantities
 MAX_BULK_STORE_ASSIGNMENTS = 500
 
 
+# ---------- one store, one name ----------
+#
+# "Costco" and "costco " are the same shop. Until 2026-10-22 every writer
+# below stored the store exactly as typed, so Sort grew a second Costco
+# group, usual_stores held both, and hours saved under one were looked up
+# under the other. These are the ONE place a store name's identity is
+# decided; every writer of a store name goes through canonical_store_name,
+# and every comparison through store_key.
+
+def tidy_store_name(name) -> str:
+    """The name as typed, with the spaces tidied: ends trimmed, runs of
+    spaces made one. Capitals are kept — they are the household's own."""
+    return " ".join(str(name or "").split())
+
+
+def store_key(name) -> str:
+    """What makes two store names the same store: tidied and case-folded.
+    A matching key only — never stored or shown."""
+    return tidy_store_name(name).casefold()
+
+
+def one_spelling_each(names) -> list[str]:
+    """A list of store names with each store once, in its first spelling,
+    tidied; blanks dropped. What usual_stores is saved as."""
+    by_key: dict[str, str] = {}
+    for name in names or []:
+        name = tidy_store_name(name)
+        if name:
+            by_key.setdefault(store_key(name), name)
+    return list(by_key.values())
+
+
+def _known_store_names(conn) -> list[str]:
+    """Every spelling of a store this household already has, earliest
+    first: its usual stores in their own order (the names it chose), then
+    the stores on its grocery lines oldest line first, then remembered
+    item stores and the Kitchen sheet's typical-items stores."""
+    hid = household_id()
+    names: list[str] = []
+    row = conn.execute(
+        "SELECT usual_stores_json, store_typical_items_json FROM meal_preferences WHERE household_id = ?", (hid,)
+    ).fetchone()
+    typical: dict = {}
+    if row:
+        try:
+            usual = json.loads(row["usual_stores_json"] or "[]")
+        except (TypeError, ValueError):
+            usual = []
+        if isinstance(usual, list):
+            names += [n for n in usual if isinstance(n, str)]
+        try:
+            typical = json.loads(row["store_typical_items_json"] or "{}")
+        except (TypeError, ValueError):
+            typical = {}
+    names += [r["store"] for r in conn.execute(
+        "SELECT store FROM grocery_items WHERE household_id = ? AND store != '' ORDER BY id", (hid,)
+    ).fetchall()]
+    names += [r["store"] for r in conn.execute(
+        "SELECT store FROM item_store_preferences WHERE household_id = ? AND store != '' ORDER BY id", (hid,)
+    ).fetchall()]
+    if isinstance(typical, dict):
+        names += [k for k in typical if isinstance(k, str)]
+    return names
+
+
+def canonical_store_name(conn, name) -> str:
+    """
+    The spelling to store for a store name somebody typed: the household's
+    first spelling of that store when it already has one (any capitals, any
+    spacing), otherwise the typed name tidied. '' stays '' (no store).
+    """
+    return _canonical_among(_known_store_names(conn), name)
+
+
+def _canonical_among(known: list[str], name) -> str:
+    wanted = store_key(name)
+    if not wanted:
+        return ""
+    for spelling in known:
+        if store_key(spelling) == wanted:
+            return tidy_store_name(spelling)
+    return tidy_store_name(name)
+
+
+def store_namer():
+    """canonical_store_name for a read that names many lines' stores at
+    once (Sort's groups, Today's shop stops): the household's spellings are
+    read once, on a connection of its own, and each call is then free."""
+    conn = get_conn()
+    try:
+        known = _known_store_names(conn)
+    finally:
+        conn.close()
+    return lambda name: _canonical_among(known, name)
+
+
 def _apply_store_to_matching_rows(conn, item: str, store: str) -> None:
     """
     Set the store on whichever line the list is actually holding.
@@ -89,6 +185,7 @@ def set_item_store(item: str, store: str, log_event: bool = True, sync_typical: 
     that's a matching key, not something to show anyone).
     """
     conn = get_conn()
+    store = canonical_store_name(conn, store)
     key = _merge_key(item)
     existing_rows = conn.execute(
         "SELECT id, item FROM item_store_preferences WHERE household_id = ?", (household_id(),)
@@ -131,6 +228,50 @@ def set_item_store(item: str, store: str, log_event: bool = True, sync_typical: 
     return {"item": item, "store": store}
 
 
+def forget_dropped_stores(conn, dropped: set[str]) -> None:
+    """
+    A usual store the household took off its list stops being where things
+    go. Called inside the same write as the usual_stores change
+    (memory.edit_preference / delete_preference), with the dropped names.
+
+    Those two already drop the store's typical-items list and its hours;
+    the per-item preference was the half left behind, so "paper towels"
+    kept being filed under Costco after Costco was removed — the Shop tab
+    grew a Costco group again, and the household read as multi-store with
+    one shop on its list. The preference goes (set_item_store's own
+    "clear" meaning), and a line still to buy that was filed there goes
+    back to unsorted with its question re-opened, exactly as clearing
+    the item's store does. A line already in the cart or bought keeps the
+    store it was bought at.
+    """
+    names = {(n or "").strip().lower() for n in dropped} - {""}
+    if not names:
+        return
+    # Matched in Python, not with SQLite's lower(): that one folds ASCII
+    # only, so "Épicerie Ô Marché" was missed and kept its items (review).
+    hid = household_id()
+    pref_ids = [
+        r["id"] for r in conn.execute(
+            "SELECT id, store FROM item_store_preferences WHERE household_id = ?", (hid,)
+        ).fetchall()
+        if (r["store"] or "").strip().lower() in names
+    ]
+    line_ids = [
+        r["id"] for r in conn.execute(
+            "SELECT id, store FROM grocery_items WHERE household_id = ? AND store != '' "
+            "AND status IN ('needed', 'carried', 'spice')", (hid,)
+        ).fetchall()
+        if (r["store"] or "").strip().lower() in names
+    ]
+    for pid in pref_ids:
+        conn.execute("DELETE FROM item_store_preferences WHERE id = ? AND household_id = ?", (pid, hid))
+    for lid in line_ids:
+        conn.execute(
+            "UPDATE grocery_items SET store = '', store_decided = 0 WHERE id = ? AND household_id = ?",
+            (lid, hid),
+        )
+
+
 def is_multi_store_household() -> bool:
     """
     Whether this household actually shops at more than one store — the
@@ -153,7 +294,8 @@ def is_multi_store_household() -> bool:
     ).fetchall()
     conn.close()
     tagged = {r["store"] for r in tagged_rows}
-    return len(usual | tagged) > 1
+    # Counted by store_key: "Costco" and "costco" are one shop, not two.
+    return len({store_key(n) for n in usual | tagged if isinstance(n, str)} - {""}) > 1
 
 
 def get_grocery_list_by_store(status: str = "needed") -> dict:
@@ -172,8 +314,13 @@ def get_grocery_list_by_store(status: str = "needed") -> dict:
         _staples.sync_due_staples()
     items = _grocery.list_grocery_list(status=status)
     by_store: dict[str, list[dict]] = {}
+    # Each group is named the household's spelling of its store
+    # (canonical_store_name), so a line filed as "costco " before
+    # 2026-10-22 joins "Costco" rather than heading — or naming — a second
+    # Costco group. Only this read is folded: the line keeps its old text.
+    namer = store_namer()
     for it in items:
-        store = it.get("store") or "Unassigned"
+        store = namer(it.get("store")) or "Unassigned"
         by_store.setdefault(store, []).append(it)
     stores = []
     for store, store_items in by_store.items():
@@ -258,6 +405,8 @@ def _stage_grocery_item_store(conn, item_id: int, store: str, remember: bool, de
     ).fetchone()
     if not row:
         return {"item_id": item_id, "found": False}
+    # "costco" files under the household's "Costco", not beside it.
+    store = canonical_store_name(conn, store)
     conn.execute(
         "UPDATE grocery_items SET store = ?, store_decided = ? "
         "WHERE id = ? AND household_id = ?",
@@ -594,14 +743,16 @@ def set_store_hours(store: str, hours: dict | None) -> dict:
         raise ValueError("That store name is too long.")
     cleaned = _clean_hours(hours)
     with write() as conn:
-        usual = {n.lower(): n for n in _usual_stores(conn)}
-        if name.lower() not in usual:
+        usual: dict[str, str] = {}
+        for n in _usual_stores(conn):
+            usual.setdefault(store_key(n), n)
+        if store_key(name) not in usual:
             raise ValueError(f"{name} isn't one of your stores yet — add it first.")
-        name = usual[name.lower()]
+        name = usual[store_key(name)]
         current = _read_store_hours(conn)
-        # One entry per store, whatever case it was saved under — the same
-        # case-insensitive identity add_usual_stores merges on.
-        current = {k: v for k, v in current.items() if k.strip().lower() != name.lower()}
+        # One entry per store, whatever case or spacing it was saved under —
+        # the same store_key identity add_usual_stores merges on.
+        current = {k: v for k, v in current.items() if store_key(k) != store_key(name)}
         if cleaned:
             current[name] = cleaned
         conn.execute(
@@ -618,12 +769,12 @@ def set_store_hours(store: str, hours: dict | None) -> dict:
 
 def hours_for(store: str, all_hours: dict | None = None) -> dict | None:
     """One store's hours, matched case-insensitively, or None."""
-    name = (store or "").strip().lower()
+    name = store_key(store)
     if not name:
         return None
     table = all_hours if all_hours is not None else get_store_hours()
     for key, value in table.items():
-        if key.strip().lower() == name and isinstance(value, dict):
+        if store_key(key) == name and isinstance(value, dict):
             return value
     return None
 
@@ -636,7 +787,10 @@ def _is_holiday(day: date, cache: dict | None = None) -> bool:
         return cache[day]
     from . import holidays as _holidays  # call time: holidays reaches back into the plan
     try:
-        found = _holidays.holiday_on(day.isoformat()) is not None
+        # An occasion like Halloween is on the holiday table but shuts no
+        # shop (holidays.shops_close_for).
+        h = _holidays.holiday_on(day.isoformat())
+        found = h is not None and _holidays.shops_close_for(h["name"])
     except Exception:
         found = False
     if cache is not None:
@@ -657,7 +811,9 @@ def open_window(store: str, day: date, all_hours: dict | None = None, cache: dic
 
     "Closed on holidays" counts on the dates the holidays module already
     knows (its rule table for the household's region, plus holiday-looking
-    events on its calendar) — no real holiday hours in this slice.
+    events on its calendar), less the occasions no shop closes for
+    (holidays.shops_close_for: Halloween, Mother's Day, …) — no real
+    holiday hours in this slice.
     """
     hours = hours_for(store, all_hours)
     if not hours:

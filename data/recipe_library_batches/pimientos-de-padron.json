@@ -1,0 +1,63 @@
+{
+ "dish_name": "Pimientos de Padron",
+ "cuisine": "Spanish",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {
+   "item": "Padrón peppers",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Flaky sea salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the peppers and dry them very well with a clean towel. Wet peppers spatter in hot oil.",
+  "Peel the 2 garlic cloves and halve them lengthwise.",
+  "Heat the oil in a large skillet over medium-high heat until it shimmers. Add the garlic and stir for about 1 minute, until it sizzles and turns pale gold.",
+  "Add the peppers in one layer. Cook, turning them every minute or so, for 5 to 7 minutes, until they're blistered with dark spots all over and soft. Stand back a little. They can pop.",
+  "Transfer the peppers and garlic to a plate and sprinkle the 1 tsp flaky salt over them.",
+  "Serve right away. Most are mild, but now and then one is hot."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Neither version read had ratings and RecipeTin Eats has no padrón peppers, so this follows Spain on a Fork. Both fry whole peppers in olive oil until they blister and soften, then finish them with flaky sea salt and serve them straight away. Spain on a Fork cooks halved garlic in the oil first and goes gently over medium heat for 7 to 8 minutes; The Australian Women's Weekly leaves out the garlic and chars them fast over high heat. This keeps the lead's garlic and meets in the middle at medium-high, and shishito peppers work if you can't find padrón.",
+ "sources": [
+  {
+   "name": "Spain on a Fork",
+   "title": "Blistered Padron Peppers - Pimientos de Padrón Recipe",
+   "url": "https://spainonafork.com/pimientos-de-padron/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Australian Women's Weekly",
+   "title": "Pimientos de Padron",
+   "url": "https://www.womensweeklyfood.com.au/recipe/quick-and-easy/pimientos-de-padron-2234/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

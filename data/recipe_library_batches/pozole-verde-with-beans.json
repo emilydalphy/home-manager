@@ -1,0 +1,138 @@
+{
+ "dish_name": "Pozole Verde with Beans",
+ "cuisine": "Mexican",
+ "main_protein": "beans",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Tomatillos",
+   "qty": "1.5 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Poblano peppers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Hominy",
+   "qty": "2 cans (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "White beans",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Gluten-free vegetable broth",
+   "qty": "6 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Radishes",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Avocados",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Hot sauce",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Remove the husks from the tomatillos, rinse them and cut them in quarters. Seed the poblanos and chop them. Seed the jalapeño and cut it in half.",
+  "Put the tomatillos, poblanos and jalapeño in a large pot with 1 cup water. Bring to a simmer over medium-high heat, cover and cook for 8 minutes, until the tomatillos are soft and dull green.",
+  "Meanwhile, chop half of the onion. Dice the other half small for the top. Peel the garlic.",
+  "Transfer everything from the pot into a blender. Add the chopped onion, the garlic, 1 cup of the cilantro leaves and 1 cup of the broth. Blend until smooth.",
+  "Heat the oil in the same pot over medium-high heat. Add the sauce. Stand back a little. It will spatter. Cook for 5 minutes, stirring often, until it's thicker and darker.",
+  "Drain and rinse the hominy and the beans. Add them to the pot with the remaining 5 cups broth, the oregano, the cumin and 1 1/2 tsp salt. Bring to a simmer and cook for 15 minutes.",
+  "Meanwhile, slice the radishes thin, dice the avocados, chop the rest of the cilantro and cut the limes into wedges.",
+  "Taste the soup. If it's flat, add a pinch more salt or a squeeze of lime.",
+  "Ladle the soup into bowls. Serve with the radishes, avocado, onion, cilantro and lime wedges, with the hot sauce on the table."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree on a green base of tomatillos, fresh chiles, onion, garlic and cilantro, blended and then cooked with broth and canned hominy. They differ on the chiles (poblano and jalapeño, or jalapeño alone), on roasting the vegetables (30 minutes) or simmering them (5 to 8), and on the protein, where pinto beans or none. The lead is Mexican Please; this version simmers the tomatillos instead of roasting them and adds white beans so it fits 45 minutes and has protein. Everything is already vegan and gluten-free, since hominy is corn, and the heat is only the jalapeño, with hot sauce at the table.",
+ "sources": [
+  {
+   "name": "Mexican Please",
+   "title": "Vegetarian Pozole Verde",
+   "url": "https://www.mexicanplease.com/vegetarian-pozole-verde/",
+   "rating": 4.13,
+   "rating_count": 31,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Always Order Dessert",
+   "title": "Vegetarian Pozole Verde (Hominy Stew)",
+   "url": "https://www.alwaysorderdessert.com/2018/10/vegetarian-pozole-verde.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Yummy Mummy Kitchen",
+   "title": "Vegetarian Pozole Verde with Pinto Beans",
+   "url": "https://www.yummymummykitchen.com/2024/01/vegetarian-pozole-verde.html",
+   "rating": 4.5,
+   "rating_count": 2,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

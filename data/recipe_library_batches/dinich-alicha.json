@@ -1,0 +1,103 @@
+{
+ "dish_name": "Dinich Alicha",
+ "cuisine": "Ethiopian",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Carrots",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Green cabbage",
+   "qty": "1 small head",
+   "category": "produce",
+   "cook_qty": "2 cups shredded"
+  },
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "1 1/2 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Serrano chili",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put 1 1/2 cups of the basmati rice in a fine strainer and rinse it under cold water until the water runs mostly clear. Transfer it to a medium saucepan with 2 1/4 cups water and a pinch of salt.",
+  "Bring the rice to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on for 5 minutes, then fluff it with a fork.",
+  "Meanwhile, finely chop the onion, mince the garlic and ginger, dice the carrots, and cut the potatoes into 3/4 inch cubes. Shred enough of the cabbage to fill 2 cups. Slice the serrano chilies and set them in a small bowl for the table.",
+  "Heat the oil in a large pot over medium heat. Add the onion and a pinch of salt. Cook for 6 minutes, stirring now and then, until soft and starting to brown.",
+  "Add the garlic and ginger and stir for 1 minute.",
+  "Stir in the turmeric with 1 tbsp water to make a thick paste. Cook for 30 seconds.",
+  "Add the carrots and cook for 3 minutes, adding a spoonful of water if the pot gets dry.",
+  "Add the potatoes, the cabbage, the remaining salt and 1/2 cup water. Stir, cover and cook on medium-low for 15 minutes, stirring every 5 minutes, until the potatoes are tender but still hold their shape. Add a splash of water if it starts to stick.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice, with the sliced serrano on the side."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 28,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree that dinich alicha is a mild turmeric stew of potatoes, carrots and cabbage built on slowly cooked onion and garlic, with no berbere. They differ on timing: the lead simmers for 40 to 45 minutes, while another version adds nutmeg, cardamom and fresh herbs. This version cuts the potatoes smaller so the stew is done in about 28 minutes (the traditional version takes over an hour), adds ginger, and puts the chili on the side. It is vegan and gluten-free as written and is served over rice rather than injera, which is often made with wheat. No cook on the trusted list for Ethiopian food has a version, so this follows the Gourmet Traveller recipe.",
+ "sources": [
+  {
+   "name": "Gourmet Traveller",
+   "title": "Dinish (Ethiopian Potato, Cabbage and Carrot Stew)",
+   "url": "https://www.gourmettraveller.com.au/recipes/chefs-recipes/dinish-19298",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "SBS Food",
+   "title": "Ethiopian stew (alicha)",
+   "url": "https://www.sbs.com.au/food/recipe/ethiopian-stew-alicha/elnpvqm2a",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,109 @@
+{
+ "dish_name": "Ca Chien Sot Ca",
+ "cuisine": "Vietnamese",
+ "main_protein": "fish",
+ "ingredients": [
+  {
+   "item": "White fish fillets",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups of jasmine rice under cold water until it runs mostly clear. Transfer it to a medium pot with 2 1/4 cups of water and bring it to a boil. Cover, turn the heat to the lowest setting and cook for 12 minutes. Take it off the heat and leave the lid on until you serve.",
+  "Meanwhile, dice the onion and mince the garlic. Cut the tomatoes into 3/4 inch pieces. Thinly slice 3 of the green onions.",
+  "In a bowl, stir the tomatoes with 1 tbsp of the cornstarch, 1 tbsp sugar, 2 tsp fish sauce and 1/2 tsp of the salt. Set it aside.",
+  "Pat the fish dry with paper towels and cut any large fillets in half. Sprinkle both sides with the remaining 1/2 tsp salt and the pepper. Put the remaining 3 tbsp cornstarch on a plate and press each piece into it so it's coated all over. Shake off the extra.",
+  "Heat 6 tbsp of the oil in a large nonstick skillet over medium-high heat until it shimmers. Lay in the fish, in two batches if it doesn't fit with room around each piece. Stand back a little. It'll spatter.",
+  "Leave it alone until the underside is golden and crisp, 3 to 4 minutes. Flip each piece and cook the other side for 3 minutes, until it's golden and the fish flakes when you press it with a fork. Transfer it to a plate lined with paper towels.",
+  "Pour the oil out of the pan into a heatproof bowl and wipe the pan with a paper towel. Add the last 2 tbsp oil and set it over medium heat. Add the onion and cook for 3 minutes, stirring, until it softens. Add the garlic and stir for 30 seconds.",
+  "Add the tomato mixture and stir for 1 minute. Add 1/2 cup water and let it bubble for 2 to 3 minutes, until the tomatoes soften but still hold their shape and the sauce turns glossy.",
+  "Taste the sauce. If it's flat, add a pinch more salt.",
+  "Put the fish on a platter and spoon the sauce over it. Scatter the green onions on top and serve with the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions fry the fish crisp first, then make a quick sauce of onion, garlic and fresh tomato seasoned with sugar and salt, thickened with starch and spooned over just before serving. The lead (Wok & Kin) fries whole flounder for about 30 minutes and seasons with chicken bouillon powder; this version uses cornstarch-coated white fish fillets, as Vicky Pham does, so it fries in 7 minutes, and uses fish sauce (also from Vicky Pham) in place of the bouillon. No source had 20 or more ratings and RecipeTin Eats has no version, so the lead is the most-rated version that could be read.",
+ "sources": [
+  {
+   "name": "Wok & Kin",
+   "title": "Cá Chiên Sốt Cà Chua (Vietnamese Fried Fish with Tomato Sauce)",
+   "url": "https://www.wokandkin.com/vietnamese-fried-fish-with-tomato-sauce/",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Vicky Pham",
+   "title": "Vietnamese Fried Fish with Tomato Sauce (Ca Chien Sot Ca Chua)",
+   "url": "https://vickypham.com/blog/vietnamese-fried-fish-with-tomato-sauce-ca-chin-sot-ca-chua/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,43 @@
+{
+ "dish_name": "Pasta al Limone",
+ "cuisine": "Italian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Salt", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Spaghetti", "qty": "1 lb", "category": "pantry"},
+  {"item": "Lemons", "qty": "3", "category": "produce"},
+  {"item": "Parmesan", "qty": "1 wedge", "category": "dairy", "cook_qty": "1 cup grated"},
+  {"item": "Unsalted butter", "qty": "6 tbsp", "category": "dairy"},
+  {"item": "Olive oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Bring a large pot of water to a boil with the 1 tbsp salt.",
+  "Meanwhile, finely zest all 3 lemons. Squeeze 2 of them. That should be about 1/4 cup of juice. Cut the third lemon into wedges.",
+  "Finely grate 1 cup of the parmesan.",
+  "Put the 6 tbsp butter and 2 tbsp olive oil in a large skillet, off the heat. Set it over medium-low heat for 1 to 2 minutes, until the butter melts and foams.",
+  "Add half the lemon zest and stir for 2 minutes, until the kitchen smells strongly of lemon. Keep the heat low so the butter doesn't brown.",
+  "Add 2 tbsp of the lemon juice and let it simmer gently for 2 minutes. Take the pan off the heat.",
+  "Add the spaghetti to the boiling water and cook it for about 8 minutes, a minute less than the package says, until it's tender with a little bite.",
+  "Scoop out 1 cup of the pasta water, then drain the spaghetti.",
+  "Put the skillet back over medium-low heat. Add the spaghetti, 1/2 cup of the pasta water, the last 2 tbsp lemon juice and the rest of the zest, keeping back a pinch for the top.",
+  "Add 1/2 cup of the parmesan and toss hard with tongs for about 30 seconds, until it melts in.",
+  "Add 1/4 cup of the parmesan and keep tossing for 1 to 2 minutes, until the sauce is glossy and creamy and clings to the pasta. If it looks thick or sticky, add the rest of the pasta water a splash at a time.",
+  "Take the pan off the heat and grind over the 1/2 tsp pepper.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of a lemon wedge.",
+  "Serve right away, with the last 1/4 cup parmesan, the pinch of zest and the lemon wedges."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three toss hot spaghetti with butter, lemon and grated cheese, loosened with starchy pasta water into a glossy sauce with no cream. Billy Parisi (the lead) warms lemon zest and juice in butter and olive oil while the pasta boils, then tosses in the rest of the zest and juice with the cheese; Well Plated starts the butter with garlic and adds the lemon at the end, and The Modern Nonna melts butter and lemon juice into pasta water off the heat. This follows the lead's method and its 1 lb of pasta, uses 3 lemons instead of 4, and uses Parmesan, as Well Plated and The Modern Nonna do, in place of the lead's Pecorino Romano for a milder, less salty sauce.",
+ "sources": [
+  {"name": "Billy Parisi", "title": "Pasta al Limone Recipe", "url": "https://www.billyparisi.com/pasta-al-limone/", "rating": 5.0, "rating_count": 48, "read": true, "lead": true},
+  {"name": "Well Plated", "title": "Lemon Pasta Recipe", "url": "https://www.wellplated.com/pasta-al-limone/", "rating": 4.92, "rating_count": 83, "read": true, "lead": false},
+  {"name": "The Modern Nonna", "title": "Pasta Limone", "url": "https://themodernnonna.com/pasta-limone/", "rating": 4.85, "rating_count": 13, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

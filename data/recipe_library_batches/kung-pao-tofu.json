@@ -1,0 +1,153 @@
+{
+ "dish_name": "Kung Pao Tofu",
+ "cuisine": "Chinese",
+ "main_protein": "tofu",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Extra-firm tofu",
+   "qty": "2 blocks (14 oz each)",
+   "category": "dairy"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tamari (gluten-free)",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Dry sherry",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Dried red chilies",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground Sichuan peppercorns",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece",
+   "category": "produce",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "4 scallions"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Roasted unsalted peanuts",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a sieve until the water runs mostly clear. Add it to a medium pot with 2 1/4 cups of water, bring it to a boil over high heat, then cover, turn the heat to low and cook for 15 minutes. Leave the lid on and take the pot off the heat until you serve.",
+  "Meanwhile, drain the tofu and cut each block into 3/4-inch cubes. Spread them on a clean kitchen towel, fold the towel over and press down gently for 5 minutes.",
+  "Make the sauce in a small bowl. Stir 1 tbsp of the cornstarch into the tamari until it dissolves, then stir in the rice vinegar, sherry, brown sugar, sesame oil and 1/3 cup of water.",
+  "Slice the scallions, keeping the white parts and the green parts in two piles. Mince the garlic. Grate the ginger until you have 1 tbsp. Cut both bell peppers into 3/4-inch pieces.",
+  "Toss the tofu in a large bowl with the remaining 2 tbsp cornstarch and 1/4 tsp of the salt, until every cube is coated.",
+  "Heat 1 tbsp of the oil in a large nonstick skillet over medium-high heat. Add half the tofu in a single layer and cook for 6 to 8 minutes, turning it every 2 minutes, until all sides are golden and crisp. Transfer it to a plate. Add another 1 tbsp of oil and cook the rest of the tofu the same way.",
+  "Add the last 1 tbsp of oil to the same skillet over medium-high heat. Add the 2 dried chilies whole, the scallion whites, the ginger and the 1/2 tsp Sichuan pepper. Stir for 20 seconds, until it smells fragrant. Add the garlic and stir for 15 seconds.",
+  "Add both bell peppers and cook for 2 minutes, stirring often, until they're bright and just starting to soften.",
+  "Give the sauce a quick stir, then pour it into the skillet. Let it bubble for about 1 minute, until it turns glossy and thick enough to coat a spoon.",
+  "Add the tofu, the peanuts and the scallion greens. Toss for 30 seconds, until everything is coated.",
+  "Taste it. If it's flat, add a pinch more salt or a splash of the rice vinegar.",
+  "Fluff the rice with a fork. Serve the tofu over the rice, with the red pepper flakes on the table."
+ ],
+ "method_notes": "Kung pao is a quick stir-fry of a protein in a sweet, sour and savory sauce with dried chilies, Sichuan pepper, scallions and peanuts, and the sources agree on that build: aromatics first, a cornstarch sauce that thickens in the pan, peanuts last. The lead version uses chicken, so this takes its sauce balance and order and swaps in cornstarch-coated tofu that is fried until crisp first. To keep it gluten-free and vegan it uses tamari instead of soy sauce, rice vinegar instead of Chinese black vinegar, and dry sherry instead of Shaoxing wine. The chilies go in whole so the dish stays mild, and the red pepper flakes go on the table.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Kung Pao Chicken",
+   "url": "https://www.recipetineats.com/kung-pao-chicken/",
+   "rating": 4.9,
+   "rating_count": 99,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Sam Does Her Best",
+   "title": "Kung Pao Tofu",
+   "url": "https://samdoesherbest.com/kung-pao-tofu/",
+   "rating": 4.84,
+   "rating_count": 6,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

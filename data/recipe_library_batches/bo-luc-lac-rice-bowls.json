@@ -1,0 +1,140 @@
+{
+ "dish_name": "Bo Luc Lac Rice Bowls",
+ "cuisine": "Vietnamese",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Top sirloin steak",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 tbsp"
+  },
+  {
+   "item": "Dark soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Watercress",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Cherry tomatoes",
+   "qty": "1 pint",
+   "category": "produce"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups of jasmine rice under cold water until it runs mostly clear. Transfer it to a medium pot with 2 1/4 cups of water and bring it to a boil. Cover, turn the heat to the lowest setting and cook for 12 minutes. Take it off the heat and leave the lid on until you serve.",
+  "Meanwhile, make the sauce. In a small bowl, stir together 1 tbsp oyster sauce, 1/2 tbsp soy sauce, 1 1/2 tbsp dark soy sauce, 1/2 tbsp fish sauce and 1 tbsp sugar until the sugar dissolves. Spoon 1 tbsp of it into a cup and set it aside for the end.",
+  "Pat the steak dry and cut it into 1 1/2 inch cubes, trimming off any thick fat. Mince the garlic. In a bowl, toss the beef with the garlic, 1/2 tsp of the pepper and the rest of the sauce. Leave it on the counter for 20 minutes while you do the rest.",
+  "Cut the onion and the bell pepper into 3/4 inch pieces. Halve the tomatoes. Rinse the watercress and pull off any thick stems. Cut the lime into wedges. Mix the salt and the remaining 1/2 tsp pepper in a small dish.",
+  "Heat 1 tbsp of the oil in your largest skillet or wok over high heat until it just starts to smoke. Add half the beef in one layer. Don't stir it. Let it brown for 1 minute.",
+  "Shake the pan and turn the cubes, and cook for 1 to 2 minutes, until they're browned all over and still pink in the middle. Transfer them to a plate. Stand back a little. It'll spatter.",
+  "Add another 1 tbsp oil and brown the rest of the beef the same way. Transfer it to the plate.",
+  "Add the last 1 tbsp oil and the onion to the pan and stir-fry for 1 minute. Add the bell pepper and stir-fry for 1 minute, until the edges start to char.",
+  "Return the beef and its juices to the pan with the reserved 1 tbsp sauce. Toss for 1 to 2 minutes, until the sauce turns glossy and coats the beef. Take the pan off the heat.",
+  "Taste a piece. If it's flat, add a splash more fish sauce.",
+  "Spoon the rice into bowls and top with the watercress, the tomatoes and the beef with its pan juices. Serve with the lime wedges and the salt and pepper dip."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions marinate cubed steak in oyster sauce, soy and fish sauce with sugar and garlic, sear it hard in batches and serve it over watercress and tomato with rice. The lead (Posh Journal) adds onion and bell pepper and finishes the beef with a spoonful of reserved sauce; Takes Two Eggs serves a lime, salt and pepper dip, which this version keeps on the side. The lead's rating comes from the page's visible vote count, as the fetched text carried no JSON-LD block. Cut down from the lead's 1 3/4 lbs for 6 to 1 1/2 lbs for 4, and less oil for the sear.",
+ "sources": [
+  {
+   "name": "Posh Journal",
+   "title": "Bo Luc Lac Recipe (Vietnamese Shaking Beef)",
+   "url": "https://poshjournal.com/bo-luc-lac-recipe/",
+   "rating": 4.83,
+   "rating_count": 35,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Takes Two Eggs",
+   "title": "Bo Luc Lac (Vietnamese Shaking Beef)",
+   "url": "https://takestwoeggs.com/bo-luc-lac/",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true
+  },
+  {
+   "name": "Food Network",
+   "title": "Shaking Beef (Bo Luc Lac)",
+   "url": "https://www.foodnetwork.com/recipes/shaking-beef-bo-luc-lac-recipe-1956011",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

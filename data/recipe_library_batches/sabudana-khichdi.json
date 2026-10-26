@@ -1,0 +1,47 @@
+{
+ "dish_name": "Sabudana Khichdi",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Sabudana", "qty": "1 bag", "category": "pantry", "cook_qty": "2 cups"},
+  {"item": "Raw peanuts", "qty": "1 bag", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "Yukon Gold potatoes", "qty": "2", "category": "produce"},
+  {"item": "Green chilies", "qty": "2", "category": "produce"},
+  {"item": "Lemon", "qty": "1", "category": "produce"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 tsp"},
+  {"item": "Ghee", "qty": "1 jar", "category": "dairy", "cook_qty": "3 tbsp"},
+  {"item": "Cumin seeds", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Curry leaves", "qty": "1 package", "category": "produce", "cook_qty": "2 sprigs"},
+  {"item": "Plain yogurt", "qty": "1 tub", "category": "dairy", "cook_qty": "1 cup"}
+ ],
+ "instructions": [
+  "The night before: put the 2 cups sabudana in a bowl and cover it with cold water. Rub the pearls between your fingers, then drain. Do this 3 or 4 times, until the water runs almost clear. Add 1 1/2 cups fresh water, cover the bowl and leave it on the counter overnight.",
+  "In the morning, press a pearl between your fingers. It should squash flat with no hard white center. If it's still hard, sprinkle over 2 tbsp water and give it 30 minutes. Drain the pearls in a colander for 10 minutes, until nothing drips.",
+  "Meanwhile, toast the 1/2 cup peanuts in a large dry nonstick skillet over medium heat for 4 to 5 minutes, stirring often, until they're golden and smell toasty. Transfer them to a plate to cool.",
+  "Peel the potatoes and cut them into 1/4 inch cubes. Slit 1 green chili down its length. Finely chop the other one and put it in a small bowl for the table.",
+  "Squeeze the lemon. That should be about 2 tbsp of juice. Chop 1/4 cup of the cilantro.",
+  "Put half the peanuts in a zip bag and crush them coarsely with a rolling pin. Toss them with the drained sabudana, 3/4 tsp of the salt and the 1 tsp sugar.",
+  "Heat the 3 tbsp ghee in the skillet over medium heat. Add the cumin seeds. After about 20 seconds they'll sizzle and smell toasty.",
+  "Add 2 sprigs of curry leaves and the slit chili and stir for 30 seconds. Stand back a little. The leaves spatter.",
+  "Add the potatoes and the last 1/4 tsp salt. Cover and cook for 6 to 8 minutes, stirring every couple of minutes, until they're tender and golden at the edges.",
+  "Turn the heat to medium low and add the sabudana. Fold it through gently for 4 to 6 minutes, until most of the pearls have turned clear. Stop when only a few still have white centers. Any longer and they turn sticky.",
+  "Take the pan off the heat. Add the lemon juice, the chopped cilantro and the whole peanuts, and toss lightly with a fork to break up any clumps. Lift out the slit chili.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve warm with the 1 cup yogurt and the chopped green chili on the side."
+ ],
+ "advance_prep_notes": "Rinse and soak the sabudana the night before.",
+ "advance_prep_step_indices": [1],
+ "method_notes": "All three rinse the pearls well, soak them until they mash between your fingers, then cook them briefly in ghee or oil with cumin, green chili, curry leaves, potato and roasted peanuts, finishing off the heat with lemon and cilantro. They differ on soaking water: Swasthi's Recipes (the lead) uses 3/4 cup per cup of pearls, Cook with Manali 1 cup and Indian Veggie Delight 2 cups, and the lead's smaller amount is followed here for separate, non-sticky pearls. The lead uses a pre-boiled potato; this dices raw potato small and cooks it covered, as Cook with Manali does, to save a pot. The chilies are kept mild: one slit chili flavors the pan and the other goes to the table chopped.",
+ "sources": [
+  {"name": "Swasthi's Recipes", "title": "Sabudana Khichdi Recipe (Fluffy & Non-Sticky)", "url": "https://www.indianhealthyrecipes.com/sabudana-khichdi-recipe/", "rating": 5.0, "rating_count": 243, "read": true, "lead": true},
+  {"name": "Cook with Manali", "title": "Sabudana Khichdi (non-sticky every time)", "url": "https://www.cookwithmanali.com/sabudana-khichdi/", "rating": 4.99, "rating_count": 62, "read": true, "lead": false},
+  {"name": "Indian Veggie Delight", "title": "Sabudana Khichdi Recipe (Fluffy & Non-Sticky)", "url": "https://www.indianveggiedelight.com/sabudana-khichdi-recipe/", "rating": 5.0, "rating_count": 6, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,38 @@
+{
+ "dish_name": "Salmorejo",
+ "cuisine": "Spanish",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 12,
+ "ingredients": [
+  {"item": "Plum tomatoes", "qty": "2.25 lb", "category": "produce"},
+  {"item": "Baguette", "qty": "1", "category": "pantry", "cook_qty": "7 oz"},
+  {"item": "Garlic", "qty": "1 clove", "category": "produce"},
+  {"item": "Olive oil", "qty": "2/3 cup", "category": "pantry"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Eggs", "qty": "2", "category": "dairy"}
+ ],
+ "instructions": [
+  "At least 2 hours ahead, or the night before: cut the cores out of the tomatoes and cut them into quarters. Blend them in batches until completely liquid, about 1 minute each.",
+  "Pour the tomato through a sieve set over a large bowl, pressing with the back of a spoon. Throw away the skins and seeds. That should be about 4 cups.",
+  "Tear 7 oz of the baguette into small pieces, about two thirds of it. Add them to the tomato, push them under and leave them to soak for 5 minutes, until soft.",
+  "Peel the garlic clove, cut it in half and pull out any green shoot from the middle. Transfer the tomato and bread back into the blender with the garlic and the 1 tsp salt. Blend until smooth.",
+  "With the blender running, pour in 1/2 cup of the oil slowly, until the soup is thick, smooth and pale orange. It should coat a spoon thickly. If it's runny, blend in a little more of the baguette.",
+  "Cover the soup and refrigerate it for at least 2 hours, until it's cold.",
+  "Before serving, put the 2 eggs in a small pot and cover them with cold water. Bring it to a boil, then cover the pot, take it off the heat and leave the eggs for 10 minutes. Transfer them into a bowl of cold water.",
+  "Peel the eggs and chop them finely.",
+  "Stir the soup and taste it. If it's flat, add a pinch more salt.",
+  "Ladle it into bowls, scatter the chopped egg on top and drizzle each bowl with the rest of the oil."
+ ],
+ "advance_prep_notes": "Make the soup at least 2 hours ahead, or the night before, so it's cold.",
+ "advance_prep_step_indices": [1, 2, 3, 4, 5, 6],
+ "method_notes": "All three blend ripe tomatoes with bread, garlic, salt and plenty of olive oil into a thick, smooth soup and serve it cold with toppings. Fascinating Spain (the lead) keeps it to those five ingredients, strains the tomato before soaking the bread in it and tops it with hard-boiled egg and Serrano ham; Pamela Salzman adds roasted peppers, onion and balsamic and chills it 8 hours, and Ina Garten on Food Network adds red pepper, onion and sherry vinegar and tops it with croutons. None had 20 ratings and RecipeTin Eats has no salmorejo, so this follows Fascinating Spain and leaves off the ham so the dish stays vegetarian.",
+ "sources": [
+  {"name": "Fascinating Spain", "title": "Salmorejo recipe", "url": "https://fascinatingspain.com/gastronomy/spanish-cuisine-recipes/salmorejo-recipe/", "rating": null, "rating_count": null, "read": true, "lead": true},
+  {"name": "Pamela Salzman", "title": "Easy Salmorejo Recipe (Spanish Cold Tomato Soup)", "url": "https://pamelasalzman.com/salmorejo-recipe/", "rating": 4.75, "rating_count": 4, "read": true, "lead": false},
+  {"name": "Food Network (Ina Garten)", "title": "Salmorejo", "url": "https://www.foodnetwork.com/fnk/recipes/salmorejo-7526391", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

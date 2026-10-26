@@ -1,0 +1,138 @@
+{
+ "dish_name": "Vegetable Paella",
+ "cuisine": "Spanish",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 33,
+ "ingredients": [
+  {
+   "item": "Spanish paella rice or Arborio rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Gluten-free vegetable broth",
+   "qty": "3 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Saffron threads",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Smoked paprika",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green beans",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "1 can (14 oz)",
+   "category": "pantry",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Chickpeas",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "1 cup",
+   "category": "frozen"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Pour the broth into a medium pot and stir in the saffron and 1/2 tsp of the salt. Bring it to a simmer over medium heat, then turn the heat to low and keep it hot.",
+  "Meanwhile, dice the onion, cut the red pepper into thin strips, trim the green beans and cut them into 1 inch pieces, and mince the garlic. Drain and rinse the chickpeas.",
+  "Set a 12 inch skillet over medium-high heat. Add 1 tbsp of the oil and the green beans and cook for 4 minutes, until blistered in spots. Transfer them to a plate.",
+  "Add 3 tbsp oil to the skillet, then the onion and the red pepper with 1/4 tsp of the salt. Cook for 4 minutes, stirring, until the onion is soft.",
+  "Add the garlic and the paprika and stir for 30 seconds.",
+  "Add 3/4 cup of the crushed tomatoes and cook for 2 minutes, until the sauce darkens and thickens a little.",
+  "Add the rice and stir for 1 minute, until every grain is coated.",
+  "Pour in the hot broth and stir once to level the rice. Add the chickpeas and the green beans. Simmer on medium for 10 minutes without stirring.",
+  "Scatter the peas over the top. Cook for 8 minutes without stirring, until the rice is tender and the liquid is gone. You may hear the bottom crackle. That's the crust you want.",
+  "Take the skillet off the heat, cover it with a lid or foil and leave it for 5 minutes. Meanwhile, cut the lemon into wedges and chop 2 tbsp of the parsley.",
+  "Taste it. If it's flat, sprinkle on the pepper. If it's flat, add a pinch more salt.",
+  "Scatter the parsley over the top and serve with the lemon wedges."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "RecipeTin Eats' paella and the vegetable versions (Archana's Kitchen, Tinned Tomatoes) agree on a sofrito of onion, pepper and tomato, paprika and saffron, rice in a thin layer, and a simmer with no stirring. They differ on the broth ratio, saffron against turmeric, and whether to rest it. This follows RecipeTin Eats' rice to broth ratio for a no seafood paella, drops the chorizo and chicken, and adds green beans and chickpeas for substance. The broth is vegetable, and nothing contains gluten. It is tight for 45 minutes but fits.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Spanish Paella",
+   "url": "https://www.recipetineats.com/spanish-paella/",
+   "rating": 4.9,
+   "rating_count": 76,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Archana's Kitchen",
+   "title": "Vegetable Paella Recipe (Spanish Style Vegetable Rice)",
+   "url": "https://archanaskitchen.com/vegetable-paella-spanish-style-vegetable-rice-recipe",
+   "rating": null,
+   "rating_count": 5664,
+   "read": true
+  },
+  {
+   "name": "Tinned Tomatoes",
+   "title": "Vegetable Paella",
+   "url": "https://www.tinnedtomatoes.com/2020/11/vegetable-paella.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

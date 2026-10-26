@@ -1,0 +1,49 @@
+{
+ "dish_name": "Shrimp Fajitas",
+ "cuisine": "Mexican",
+ "main_protein": "shrimp",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {"item": "Large shrimp", "qty": "1.5 lbs", "category": "meat/seafood"},
+  {"item": "Chili powder", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Ground cumin", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Garlic powder", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Paprika", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Dried oregano", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Olive oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Lime", "qty": "1", "category": "produce"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Bell peppers", "qty": "2", "category": "produce"},
+  {"item": "Small flour tortillas", "qty": "8", "category": "other"},
+  {"item": "Avocados", "qty": "2", "category": "produce"},
+  {"item": "Sour cream", "qty": "1 tub", "category": "dairy"},
+  {"item": "Salsa", "qty": "1 jar", "category": "pantry"}
+ ],
+ "instructions": [
+  "In a small bowl, stir together the 1 1/2 tsp chili powder, 1 1/2 tsp cumin, 1 tsp garlic powder, 1/2 tsp paprika, 1/2 tsp oregano, 1/2 tsp salt and 1/4 tsp pepper.",
+  "Peel and devein the shrimp if they aren't already, and pat them dry with paper towels. Put them in a bowl with 2 tbsp of the olive oil, the juice of half the lime and all of the spice mix, and toss until they're coated. Leave them while you cook the vegetables, but no longer than 15 minutes. Any longer and the lime turns them soft.",
+  "Meanwhile, peel the onion, cut it in half and slice it thin. Seed the 2 bell peppers and cut them into strips about 1/2 inch wide.",
+  "Heat 1 tbsp of the olive oil in a large skillet over medium high until it shimmers. Add the onion and peppers, spread them out and leave them for about 1 minute so they char.",
+  "Stir and cook for 4 to 5 minutes, stirring every minute or so, until the onion is soft and the peppers are browned at the edges but still have a little bite. Transfer them to a plate.",
+  "Wrap the 8 tortillas in a damp paper towel and microwave them for 30 to 45 seconds, until they're warm and soft. Keep them wrapped in a clean kitchen towel.",
+  "Add the last 1 tbsp olive oil to the same pan, still over medium high. Lay the shrimp in one layer, in two batches if they don't fit. Stand back a little. They'll spatter.",
+  "Cook the shrimp for about 2 minutes, until the underside is pink with a few browned spots. Flip them and cook the other side for 1 to 2 minutes, until they're opaque all the way through and curled into a loose C. Take them off as soon as they're opaque. Overcooked shrimp turn rubbery.",
+  "Put the peppers and onion back in the pan with all the shrimp and toss them together for about 30 seconds. Squeeze the other half of the lime over everything.",
+  "Halve, pit and slice the 2 avocados.",
+  "Taste a shrimp. If it's flat, add a pinch more salt.",
+  "Serve the pan at the table with the warm tortillas, avocado, sour cream and salsa."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions season peeled shrimp with a chili, paprika and garlic powder blend and lime, cook sliced peppers and onion in a hot skillet, cook the shrimp quickly until just pink, and bring the two together for tortillas. Downshiftology, the lead, adds cumin, oregano and pepper to the blend, cooks the vegetables first and sets them aside, then sears the shrimp in the same pan and finishes with more lime; The Endless Meal uses paprika and onion powder, cooks the shrimp beside the vegetables and serves a cilantro lime ranch. This one follows the lead's blend, order and toppings, with the salsa on the side as the only heat.",
+ "sources": [
+  {"name": "Downshiftology", "title": "Shrimp Fajitas", "url": "https://downshiftology.com/recipes/shrimp-fajitas/", "rating": 4.97, "rating_count": 56, "read": true, "lead": true},
+  {"name": "The Endless Meal", "title": "Shrimp Fajitas with Onions, Peppers, and Cilantro Lime Ranch", "url": "https://www.theendlessmeal.com/shrimp-fajitas/", "rating": 4.98, "rating_count": 38, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,45 @@
+{
+ "dish_name": "Salade Lyonnaise",
+ "cuisine": "French",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "Frisée", "qty": "2 heads", "category": "produce"},
+  {"item": "Thick-cut bacon", "qty": "8 oz", "category": "meat/seafood"},
+  {"item": "Sourdough bread", "qty": "1 small loaf", "category": "other", "cook_qty": "2 cups cubed"},
+  {"item": "Eggs", "qty": "4", "category": "dairy"},
+  {"item": "Shallot", "qty": "1", "category": "produce"},
+  {"item": "Red wine vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Dijon mustard", "qty": "1 jar", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Distilled white vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Olive oil", "qty": "5 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Heat the oven to 375°F. Fill a wide saucepan with about 3 inches of water, add the 1 tbsp white vinegar and set it over high heat to come to a boil for the eggs.",
+  "Cut enough bread into 1/2 inch cubes to make 2 cups. Toss them on a sheet pan with 2 tbsp of the olive oil and 1/4 tsp of the salt. Bake for 8 to 10 minutes, shaking the pan once, until they're golden and crisp.",
+  "Meanwhile, pull off and discard the tough dark green outer leaves of the frisée. Tear the pale inner leaves into bite size pieces, wash them, spin them dry and put them in a large bowl. Mince the shallot.",
+  "Cut the 8 oz bacon crosswise into 1/2 inch strips. Cook them in a skillet over medium heat for 8 to 10 minutes, stirring now and then, until they're browned and crisp at the edges but still a little chewy. Transfer them to a paper towel with a slotted spoon.",
+  "Pour off all but about 2 tbsp of the bacon fat. Add the shallot to the pan and cook it over medium low for about 1 minute, until it softens.",
+  "Take the pan off the heat. Whisk in the 2 tbsp red wine vinegar, the 1 tbsp Dijon, the remaining 3 tbsp olive oil and 1/4 tsp of the pepper. Taste it, and add a pinch of salt only if it needs it. The bacon fat is already salty. Leave the dressing in the warm pan.",
+  "Turn the boiling water down until it barely simmers. Crack each of the 4 eggs into a small cup and slide them in one at a time. Cook them for 3 to 4 minutes, until the whites are set and the yolks still jiggle when you nudge them with a spoon.",
+  "While the eggs cook, pour the warm dressing over the frisée, add the bacon and croutons, and toss with tongs until the leaves are coated and just starting to wilt.",
+  "Lift the eggs out with a slotted spoon and blot the bottoms on a paper towel.",
+  "Divide the salad among 4 plates and set an egg on top of each. Sprinkle the eggs with the last pinch of salt and the remaining 1/4 tsp pepper and serve right away."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All four versions toss frisée with crisp bacon lardons and top each plate with a soft poached egg; three of them add toasted bread croutons. Garlic and Zest (the lead) bakes sourdough croutons, uses pancetta and adds radishes with a lemon vinaigrette, while Downshiftology, Well Seasoned Studio and America's Test Kitchen all make the classic warm dressing of shallot, vinegar and Dijon in the rendered bacon fat. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for French) has no salade lyonnaise, so the read version with the most ratings (4) leads. This keeps the lead's croutons and poached eggs, uses thick-cut bacon and the warm bacon fat dressing the other three share, and leaves out the radishes."
+ ,
+ "sources": [
+  {"name": "Garlic and Zest", "title": "Frisée Salad with Lardons and Poached Eggs", "url": "https://www.garlicandzest.com/tangy-frisee-lardons-salad/", "rating": 5.0, "rating_count": 4, "read": true, "lead": true},
+  {"name": "Downshiftology", "title": "Salad Lyonnaise", "url": "https://downshiftology.com/recipes/salad-lyonnaise/", "rating": 5.0, "rating_count": 3, "read": true, "lead": false},
+  {"name": "Well Seasoned Studio", "title": "Bistro-Style Frisée Salad with Perfect Poached Eggs", "url": "https://www.wellseasonedstudio.com/frisee-salad/", "rating": 5.0, "rating_count": 3, "read": true, "lead": false},
+  {"name": "America's Test Kitchen", "title": "Salad with Bacon and Poached Egg (Salade Lyonnaise)", "url": "https://www.americastestkitchen.com/recipes/5095-salad-with-bacon-and-poached-egg-salade-lyonnaise", "rating": 5.0, "rating_count": 1, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

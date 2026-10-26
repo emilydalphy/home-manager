@@ -1,0 +1,47 @@
+{
+ "dish_name": "Kongnamul Bap",
+ "cuisine": "Korean",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "Short-grain white rice", "qty": "1.5 cups", "category": "pantry"},
+  {"item": "Soybean sprouts", "qty": "1 lb", "category": "produce"},
+  {"item": "Ground beef", "qty": "8 oz", "category": "meat/seafood"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/4 cup plus 2 tsp"},
+  {"item": "Mirin", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tsp"},
+  {"item": "Sesame oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Vegetable oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Scallions", "qty": "1 bunch", "category": "produce", "cook_qty": "3"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 tsp"},
+  {"item": "Sesame seeds", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Gochugaru", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "to taste", "category": "pantry"}
+ ],
+ "instructions": [
+  "Rinse the 1.5 cups rice in a few changes of water until the water runs mostly clear, and drain it well. Put it in a heavy pot with a tight lid, add 1.5 cups water and leave it to soak for 20 minutes.",
+  "Meanwhile, rinse the 1 lb soybean sprouts in a colander, pick out any that are mushy or brown, and leave them to drain.",
+  "In a bowl, mix the 8 oz ground beef with 2 tsp soy sauce, the 1 tsp mirin, 1 tsp of the sesame oil and 1 of the garlic cloves, minced.",
+  "Heat the 1 tbsp vegetable oil in a skillet over medium high. Add the beef, break it up with a spoon and stir it until it's browned in spots and only a little pink is left, about 3 minutes. It finishes cooking with the rice.",
+  "Spread the sprouts over the soaked rice in the pot. Spoon the beef and its juices over the sprouts.",
+  "Cover the pot and bring it to a full boil over high heat, 4 to 5 minutes. You'll hear it bubbling and see steam at the lid.",
+  "Turn the heat to medium and cook for 7 minutes. Then turn it to low and cook for 5 minutes. Don't lift the lid. The sprouts can take on a raw, beany smell if you open it early.",
+  "Meanwhile, make the sauce. Finely chop 3 of the scallions. In a small bowl, stir them together with 1/4 cup soy sauce, the remaining 2 tsp sesame oil, the 1 tsp sugar, the 1 tsp sesame seeds and the last garlic clove, minced.",
+  "Put the 1 tsp gochugaru in a small bowl for the table.",
+  "Turn off the heat and leave the pot covered for 5 minutes.",
+  "Gently fold the rice with a paddle so the sprouts and beef are spread through it.",
+  "Taste it. If it's flat, add a pinch of salt.",
+  "Serve it in bowls, with the sauce and the gochugaru on the side. Start with about 2 tsp of sauce per bowl."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions layer soybean sprouts and seasoned beef over rinsed rice with about equal water, cook it covered without lifting the lid, and serve a soy, sesame oil, garlic, scallion and gochugaru sauce on the side. Korean Bapsang also stir-fries kimchi with the meat and times the stovetop cook as high, then medium, then low; Kimchimari uses plain ground beef, salts the cooking water and cooks the beef through first. This one follows Korean Bapsang's ratios and timing but leaves the kimchi out so it stays the rice, sprouts and beef dish, and moves the gochugaru out of the sauce into its own bowl so the sauce stays mild.",
+ "sources": [
+  {"name": "Korean Bapsang", "title": "Kongnamul Bap (Soybean Sprout Rice Bowl)", "url": "https://www.koreanbapsang.com/kongnamul-bap-soybean-sprouts-rice-bowl/", "rating": 4.86, "rating_count": 35, "read": true, "lead": true},
+  {"name": "Kimchimari", "title": "Rice with Korean Soybean Sprouts (Kongnamul Bap)", "url": "https://kimchimari.com/rice-with-korean-soybean-sprouts-콩나물밥-kongnamul-bap/", "rating": 5.0, "rating_count": 6, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

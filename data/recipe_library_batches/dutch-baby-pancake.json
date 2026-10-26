@@ -1,0 +1,39 @@
+{
+ "dish_name": "Dutch Baby Pancake",
+ "cuisine": "American",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Eggs", "qty": "4", "category": "dairy"},
+  {"item": "Milk", "qty": "1/2 cup", "category": "dairy"},
+  {"item": "All-purpose flour", "qty": "2/3 cup", "category": "pantry"},
+  {"item": "Granulated sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "4 tsp"},
+  {"item": "Vanilla extract", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 1/4 tsp"},
+  {"item": "Salt", "qty": "a pinch", "category": "pantry"},
+  {"item": "Unsalted butter", "qty": "3 tbsp", "category": "dairy"},
+  {"item": "Blueberries", "qty": "1 pint", "category": "produce"},
+  {"item": "Powdered sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Maple syrup", "qty": "1 bottle", "category": "pantry"}
+ ],
+ "instructions": [
+  "Set a 10 inch cast iron or other ovenproof skillet on the middle rack and heat the oven to 425°F with the pan inside. Take the 4 eggs and the 1/2 cup milk out of the fridge while it heats.",
+  "Put the eggs, milk, 2/3 cup flour, 4 tsp sugar, 1 1/4 tsp vanilla and the pinch of salt in a blender. Blend for about 20 seconds, until smooth with no lumps. No blender? Whisk the eggs and milk hard in a bowl, then whisk in the rest until smooth.",
+  "Once the oven is fully hot, take the skillet out with an oven mitt and set it on the stove. Add the 3 tbsp butter and swirl until it melts and coats the bottom and sides.",
+  "Pour in the batter all at once and put the pan straight back in the oven.",
+  "Bake for 18 to 20 minutes, until it's puffed high at the edges and deep golden. Don't open the oven while it bakes.",
+  "Take it out and set the skillet on a heatproof surface. It'll sink a little as it cools. Scatter the blueberries over the middle and dust it with 1 tbsp of the powdered sugar through a small sieve.",
+  "Cut it into 4 wedges and serve right away with the maple syrup."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three heat the empty skillet in the oven, blend eggs, flour, milk, a little sugar, vanilla and salt, melt butter in the hot pan and bake the batter until it puffs, without opening the oven. Spend With Pennies (the lead) uses 3 eggs to 1/2 cup flour and 1/3 cup milk at 425°F for 15 to 18 minutes and serves two; Once Upon a Chef uses nearly the same batter at 400°F as a serving for four, and Plated Cravings makes a 4 egg, 1 cup flour version in the same 10 inch pan. This scales the lead up to 4 eggs so one pancake in a 10 inch skillet feeds four, and tops it with the berries, powdered sugar and maple syrup the sources serve it with.",
+ "sources": [
+  {"name": "Spend With Pennies", "title": "Dutch Baby", "url": "https://www.spendwithpennies.com/dutch-baby/", "rating": 5, "rating_count": 38, "read": true, "lead": true},
+  {"name": "Once Upon a Chef", "title": "Dutch Baby", "url": "https://www.onceuponachef.com/recipes/dutch-baby.html", "rating": 4.78, "rating_count": 99, "read": true, "lead": false},
+  {"name": "Plated Cravings", "title": "Dutch Baby Pancake", "url": "https://platedcravings.com/dutch-baby-pancake/", "rating": 5, "rating_count": 2, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

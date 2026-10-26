@@ -133,10 +133,13 @@ def test_keeping_everything_says_what_is_true_once():
 
 
 def test_the_approve_hand_off_names_what_was_approved():
-    assert SHELL_JS.count("showToast(weekApprovedLine(new URLSearchParams(window.location.search).get('added')))") == 2, (
-        "both ways in from the Week 1 approval: straight to the list, and "
-        "via the freezer step"
-    )
+    # Both ways in from the Week 1 approval: Shop's own read, and Plan's
+    # (buildWeekPanel), which is the one the hand-off actually lands on.
+    # Plan scrubs the URL before its toast, so it reads the count into
+    # approvedAdded first (defect hunt, 2026-10-24); see
+    # tests/test_reveal_handoff_keeps_count.py for the order itself.
+    assert SHELL_JS.count("showToast(weekApprovedLine(new URLSearchParams(window.location.search).get('added')))") == 1
+    assert SHELL_JS.count("showToast(weekApprovedLine(approvedAdded))") == 1
     assert "Approved. Here’s your list." not in SHELL_JS, "it restated the screen it landed on"
     # Same words as Plan's own Approve (2b = A, 2026-10-12): the reveal
     # hands the count over as ?added=N.

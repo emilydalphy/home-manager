@@ -1,0 +1,144 @@
+{
+ "dish_name": "Makloubeh",
+ "cuisine": "Lebanese",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 120,
+ "ingredients": [
+  {
+   "item": "Bone-in skin-on chicken thighs",
+   "qty": "6 (about 2 1/4 lb)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Whole allspice berries",
+   "qty": "7",
+   "category": "pantry"
+  },
+  {
+   "item": "Green cardamom pods",
+   "qty": "3",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Short-grain white rice",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Cauliflower",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground allspice",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cardamom",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Slivered almonds",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub (16 oz)",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "Pat the 6 chicken thighs dry and sprinkle 1/2 tsp of the salt over them.",
+  "Heat 1 tbsp of the olive oil in a large heavy pot that has a lid over medium-high. Lay the thighs in skin side down and leave them until the skin is golden and lets go of the pot, 5 to 6 minutes. Flip them and cook the other side for 2 minutes.",
+  "Chop the onion and add it to the pot with the allspice berries, the cardamom pods, the cinnamon stick and 6 cups water. The water should cover the chicken by about 1 1/2 inches. Bring it to a gentle boil over medium and skim off the foam.",
+  "Turn the heat down and simmer, uncovered, for about 35 minutes. You're cooking the thighs to 175°F, so if you have a thermometer, check one next to the bone. No thermometer? Cut in next to the bone: the juices should run clear with no pink.",
+  "Meanwhile, rinse the 2 cups rice until the water runs clear, then cover it with warm water and let it soak for 20 minutes. Cut the cauliflower into florets about 2 inches across.",
+  "Pour the 4 cups vegetable oil into a second heavy pot. It should be about 2 inches deep. Heat it over medium-high to 375°F. No thermometer? Drop in a small floret: it should bubble hard right away.",
+  "Fry the cauliflower in 2 or 3 batches, turning it, until it's deep golden, 6 to 8 minutes a batch. Stand back a little. It'll spatter. Lift it onto paper towels and sprinkle 1/4 tsp of the salt over it. Turn off the oil and leave it on a back burner to cool.",
+  "Lift the chicken onto a plate. Strain the broth into a large measuring cup and throw away the onion and whole spices. That should be about 5 cups. Wipe out the pot.",
+  "Drain the rice. In a small bowl, mix the 1 tsp ground allspice, the 1/2 tsp ground cinnamon, the 1/2 tsp ground cardamom and the last 2 1/4 tsp salt.",
+  "Off the heat, swirl the last 2 tbsp olive oil over the bottom of the pot. Spread about a third of the rice over it in a thin layer.",
+  "Lay the chicken on the rice skin side down and fill the gaps between the pieces with rice. Pile the cauliflower on top, then spread the rest of the rice over it. Sprinkle the spice mix over the rice.",
+  "Pour the broth in slowly down the side of the pot until it covers the rice by about 1/2 inch. That should be about 3 1/2 cups. Don't stir.",
+  "Cover the pot and cook on the lowest heat for 30 to 40 minutes, until the broth is soaked up and the rice is tender. It should steam, not boil. Don't stir it.",
+  "Take the pot off the heat and leave it covered to rest for 20 minutes. Meanwhile, toast the 1/4 cup almonds in a dry skillet over medium, stirring, until golden, 3 to 4 minutes. Chop a small handful of the parsley.",
+  "Take off the lid. Set a large platter upside down over the pot. With oven mitts on, hold the two together tightly and flip them over in one move. Leave it for 2 to 3 minutes, then lift the pot off slowly.",
+  "Taste a spoonful of rice from the edge. If it's flat, sprinkle a pinch more salt over the top.",
+  "Scatter the almonds and parsley over the top and serve with the yogurt."
+ ],
+ "method_notes": "All three cook the chicken in water with onion and whole warm spices, fry the vegetables, layer chicken, vegetables and rice in the pot, cook the rice in the strained broth until it's soaked up, rest it and turn it out onto a platter. The Daily Meal keeps it to chicken and fried cauliflower with short-grain rice, seasons the rice layers with ground allspice, cinnamon and cardamom and serves it with yogurt; Food Network also fries potato and eggplant and uses basmati and short-grain rice, and Recipes Are Simple marinates and sears the chicken first. None had 20 or more ratings and RecipeTin Eats (the trusted cook for Lebanese) has no version, so this follows The Daily Meal, with the thighs seared before they simmer the way the other two do. It's a long cook, about 2 1/2 hours start to finish, with a 20 minute rest before it's flipped.",
+ "sources": [
+  {
+   "name": "The Daily Meal",
+   "title": "Cauliflower and Chicken Makloubeh",
+   "url": "https://www.thedailymeal.com/cauliflower-and-chicken-makloubeh-recipe",
+   "rating": 4.3,
+   "rating_count": 7,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food Network",
+   "title": "Maalouba (Upside-Down Rice)",
+   "url": "https://www.foodnetwork.com/fnk/recipes/maalouba-upside-down-rice-8310417",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Recipes Are Simple",
+   "title": "Chicken Maqluba (Upside-Down Rice)",
+   "url": "https://recipesaresimple.com/recipe/chicken-maqluba-upside-down-rice/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

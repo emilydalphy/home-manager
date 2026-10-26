@@ -226,9 +226,15 @@ def _lines_for(conn, other: dict, me: dict, since: str, today: date, name_ok: bo
         "GROUP BY week_start ORDER BY at",
         (hid, key, since),
     ).fetchall()
-    monday = today - timedelta(days=today.weekday())
+    # An intake's week_start is the first day of the period it answers for —
+    # the household's own start (planning_anchor), or today when they plan
+    # the rest of a week already under way, or any day for "as we go". So
+    # the test is "has that period started?", never "is it past this
+    # calendar Monday": against Monday, answering this week's questions on a
+    # Wednesday (the suggestion starts today), or on a Sunday-start
+    # household's Sunday, read "next week's" (defect hunt 2026-10-23).
     for r in intake:
-        which = "next week’s" if r["week_start"] > monday.isoformat() else "this week’s"
+        which = "next week’s" if r["week_start"] > today.isoformat() else "this week’s"
         line(f"answered {which} questions.", r["at"])
 
     added = conn.execute(
@@ -299,4 +305,13 @@ def look(*, stamp: bool = True) -> list[dict]:
     finally:
         conn.close()
     lines.sort(key=lambda l: (not l["for_you"], l["at"]))
-    return [{"text": l["text"], "for_you": l["for_you"], "target": l["target"]} for l in lines]
+    # One sentence once. Two intakes in a week (Monday's answers, then a
+    # mid-week re-plan) are two rows that read identically now both are
+    # "this week's"; the card says it once, at its first place.
+    out, said = [], set()
+    for l in lines:
+        if l["text"] in said:
+            continue
+        said.add(l["text"])
+        out.append({"text": l["text"], "for_you": l["for_you"], "target": l["target"]})
+    return out

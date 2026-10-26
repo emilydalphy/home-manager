@@ -1127,13 +1127,13 @@ body.toast-up { padding-bottom: 260px; }
     </div>
     <p class="sheet-lede">One range covers every meal in between &mdash; no need to tag each day.</p>
 
-    <div class="field-group" id="away-who-group">
-      <span class="field-label">Who&rsquo;s going</span>
+    <div class="field-group" id="away-who-group" role="group" aria-labelledby="away-who-label">
+      <span class="field-label" id="away-who-label">Who&rsquo;s going</span>
       <div class="who-row" id="away-who"></div>
     </div>
 
-    <div class="field-group">
-      <span class="field-label">Away from</span>
+    <div class="field-group" role="group" aria-labelledby="away-from-label">
+      <span class="field-label" id="away-from-label">Away from</span>
       <div class="opt-row" id="away-from-days"></div>
       <div class="opt-row wide" id="away-from-slots"></div>
     </div>
@@ -1144,8 +1144,8 @@ body.toast-up { padding-bottom: 260px; }
       <span class="rule"></span>
     </div>
 
-    <div class="field-group">
-      <span class="field-label">Back for</span>
+    <div class="field-group" role="group" aria-labelledby="away-to-label">
+      <span class="field-label" id="away-to-label">Back for</span>
       <div class="opt-row" id="away-to-days"></div>
       <div class="opt-row wide" id="away-to-slots"></div>
     </div>
@@ -2585,6 +2585,7 @@ body.toast-up { padding-bottom: 260px; }
   var MEAL_SEQ = ['breakfast', 'lunch', 'dinner'];
   var awayRanges = [];   // ranges set this session, for the confirmation list
   var awayDraft = null;
+  var awayOpener = null;  // what had focus when the sheet opened (openAwaySheet)
 
   function nextSlot(pos) {
     var i = MEAL_SEQ.indexOf(pos.slot);
@@ -2634,14 +2635,24 @@ body.toast-up { padding-bottom: 260px; }
       fromDate: days[0], fromAfter: 'breakfast',  // away from AFTER this meal
       toDate: days.length > 1 ? days[1] : days[0], toBackFor: 'dinner'
     };
+    // Focus goes into the sheet and back to whatever opened it — before
+    // (2026-10-25) it stayed on the card behind a modal, so a keyboard or
+    // screen reader user was left outside the thing they had just opened.
+    // "Add another range" reopens it from inside: keep the first opener.
+    var from = document.activeElement;
+    if (from && !$('away-sheet').contains(from)) awayOpener = from;
     buildAwaySheet();
     $('away-sheet').hidden = false;
     document.body.style.overflow = 'hidden';
+    $('away-close').focus();
   }
 
   function closeAwaySheet() {
     $('away-sheet').hidden = true;
     document.body.style.overflow = '';
+    var back = awayOpener && document.contains(awayOpener) ? awayOpener : $('away-gate');
+    awayOpener = null;
+    if (back && back.offsetParent !== null) back.focus();
   }
 
   function buildAwaySheet() {
@@ -2715,22 +2726,29 @@ body.toast-up { padding-bottom: 260px; }
     };
   }
 
+  // Chosen is said, not only coloured: aria-pressed beside .on, or a
+  // screen reader heard "Mon, button" for the day picked and every other.
+  function pressOn(b, on) {
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+
   function paintAwaySheet() {
     $('away-who').querySelectorAll('.who-opt').forEach(function (b) {
       var name = b.dataset.who;
-      b.classList.toggle('on', name ? awayDraft.who.indexOf(name) !== -1 : awayDraft.who.length === 0);
+      pressOn(b, name ? awayDraft.who.indexOf(name) !== -1 : awayDraft.who.length === 0);
     });
     $('away-from-days').querySelectorAll('.opt').forEach(function (b) {
-      b.classList.toggle('on', b.dataset.date === awayDraft.fromDate);
+      pressOn(b, b.dataset.date === awayDraft.fromDate);
     });
     $('away-to-days').querySelectorAll('.opt').forEach(function (b) {
-      b.classList.toggle('on', b.dataset.date === awayDraft.toDate);
+      pressOn(b, b.dataset.date === awayDraft.toDate);
     });
     $('away-from-slots').querySelectorAll('.opt').forEach(function (b) {
-      b.classList.toggle('on', b.dataset.slot === awayDraft.fromAfter);
+      pressOn(b, b.dataset.slot === awayDraft.fromAfter);
     });
     $('away-to-slots').querySelectorAll('.opt').forEach(function (b) {
-      b.classList.toggle('on', b.dataset.slot === awayDraft.toBackFor);
+      pressOn(b, b.dataset.slot === awayDraft.toBackFor);
     });
 
     var bounds = awayBounds();

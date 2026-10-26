@@ -1,0 +1,55 @@
+{
+ "dish_name": "Chicken Chasseur",
+ "cuisine": "French",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 50,
+ "ingredients": [
+  {"item": "Bone-in chicken thighs", "qty": "4", "category": "meat/seafood"},
+  {"item": "Chicken drumsticks", "qty": "4", "category": "meat/seafood"},
+  {"item": "Salt", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "All-purpose flour", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Unsalted butter", "qty": "4 tbsp", "category": "dairy"},
+  {"item": "White mushrooms", "qty": "1 lb", "category": "produce"},
+  {"item": "Yellow onions", "qty": "2", "category": "produce"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Brandy", "qty": "1 small bottle", "category": "other", "cook_qty": "1/4 cup"},
+  {"item": "Dry white wine", "qty": "1 bottle", "category": "other", "cook_qty": "1/2 cup"},
+  {"item": "Tomato paste", "qty": "1 can (6 oz)", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Low-sodium beef broth", "qty": "1 carton (32 oz)", "category": "pantry", "cook_qty": "2 1/2 cups"},
+  {"item": "Fresh tarragon", "qty": "1 package", "category": "produce", "cook_qty": "1 tbsp chopped"}
+ ],
+ "instructions": [
+  "Pat the 4 thighs and 4 drumsticks very dry with paper towels. Sprinkle them all over with 3/4 tsp of the salt and 1/2 tsp of the pepper.",
+  "Meanwhile, slice the 1 lb mushrooms about 1/4 inch thick. Halve the 2 onions and slice them about 1/4 inch thick. Mince the 3 garlic cloves and chop 1 tbsp of the tarragon.",
+  "Sprinkle the 3 tbsp flour over the chicken and turn the pieces until they're lightly coated. Shake off the extra.",
+  "Heat the 2 tbsp oil and 2 tbsp of the butter in a large lidded skillet, about 12 inches, over medium high until the butter foams. Lay in the thighs skin side down. Leave them alone for about 5 minutes, until the skin is golden and lets go of the pan.",
+  "Flip the thighs and cook the other side for 1 minute, then transfer them to a plate.",
+  "Add the drumsticks and brown them on three sides, about 2 minutes a side, then transfer them to the plate with the thighs.",
+  "Turn the heat to high and add the mushrooms and onions. Cook them for about 5 minutes, stirring now and then, until the mushrooms wilt and the onions soften.",
+  "Add the garlic and stir for about 30 seconds, until it smells fragrant.",
+  "Pour in the 1/4 cup brandy and let it bubble for about 30 seconds. Stand back a little. It will steam up hard.",
+  "Add the 1/2 cup wine and let it bubble hard for about 2 minutes, scraping up the browned bits, until it's reduced by half.",
+  "Stir in the 3 tbsp tomato paste and cook for 1 minute, until it darkens a shade.",
+  "Pour in the 2 1/2 cups broth with the remaining 3/4 tsp salt and 1/4 tsp pepper, and stir.",
+  "Return the chicken to the pan skin side up, with any juices from the plate. Bring it to a simmer, then turn the heat to medium so it bubbles steadily but not hard. Cover and cook for 10 minutes.",
+  "Take off the lid and simmer for 20 minutes, until the chicken is cooked through. You're cooking it to 175°F in the thickest part of a thigh, so if you have a thermometer, check it there. No thermometer? Cut into a thigh next to the bone: it's done when the juices run clear and there's no pink left.",
+  "Transfer the chicken to a plate. Turn the heat to medium high and simmer the sauce for about 3 minutes, until it thickens a little.",
+  "Take the pan off the heat. Cut the last 2 tbsp butter into cubes and stir them in a few at a time, until the sauce is glossy.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Set the pan back over low heat, return the chicken and warm it through for about 2 minutes. Scatter the tarragon over the top and serve."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions brown floured, seasoned chicken, soften mushrooms and onion in the same pan, deglaze with wine, add tomato paste and stock, and simmer the chicken back in the sauce. RecipeTin Eats (the lead) uses bone-in thighs and drumsticks, flames off a splash of brandy, uses beef stock, finishes the sauce with cold butter and tops it with tarragon; Vikalinka uses boneless breasts, chicken stock, canned tomatoes, thyme and bay, and no brandy. This follows the lead's method and ratios. The lead serves it with mashed potato, which isn't on this list, so add a side of your own if you want one."
+ ,
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "JB's Chicken Chasseur", "url": "https://www.recipetineats.com/chicken-chasseur/", "rating": 5.0, "rating_count": 122, "read": true, "lead": true},
+  {"name": "Vikalinka", "title": "Chicken Chasseur", "url": "https://vikalinka.com/chicken-chasseur-recipe/", "rating": 4.9, "rating_count": 13, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

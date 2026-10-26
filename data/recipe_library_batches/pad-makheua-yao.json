@@ -1,0 +1,44 @@
+{
+ "dish_name": "Pad Makheua Yao",
+ "cuisine": "Thai",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "Jasmine rice", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Chinese eggplants", "qty": "2 lb", "category": "produce"},
+  {"item": "Garlic", "qty": "6 cloves", "category": "produce"},
+  {"item": "Thai chilies", "qty": "3", "category": "produce"},
+  {"item": "Thai basil", "qty": "2 bunches", "category": "produce"},
+  {"item": "Light soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Vegetarian oyster sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 1/2 tbsp"},
+  {"item": "Vegetable oil", "qty": "3 tbsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups jasmine rice and get it cooking first. The eggplant takes about 20 minutes once you start.",
+  "Trim the ends off the 2 lb eggplants. Cut each one in half lengthwise, then cut the halves across into pieces about 1 1/2 inches long.",
+  "Smash the 6 garlic cloves with the flat of your knife and chop them roughly. Slice the 3 Thai chilies into a small dish for the table.",
+  "Pick the basil leaves and flower tops off the stems until you have about 2 loosely packed cups.",
+  "In a small bowl, stir together 3 tbsp light soy sauce, 2 tbsp vegetarian oyster sauce and 1 1/2 tbsp sugar until the sugar dissolves.",
+  "Heat 1 tbsp of the oil in a wok or large skillet over medium high until it shimmers. Add half the eggplant, cut side down, in a single layer.",
+  "Leave it alone for 3 to 4 minutes, until the cut sides are golden brown. Transfer it to a plate and brown the second half the same way with another 1 tbsp of the oil.",
+  "Turn the heat down to medium and add the last 1 tbsp of oil. Add the garlic and stir it for about 30 seconds, until it smells fragrant and is just turning pale gold.",
+  "Add all the eggplant back to the pan with 1/2 cup water. Cover and cook for 4 to 5 minutes, stirring once or twice, until the eggplant is soft all the way through when you press a piece with a spoon. If the pan goes dry before then, add a splash of water.",
+  "Uncover, turn the heat to high and pour in the soy sauce mixture. Stir gently for about 1 minute, until the liquid turns glossy and coats the eggplant.",
+  "Take the pan off the heat. Fold in the basil gently so the eggplant pieces stay whole. The leaves will wilt in the heat of the pan.",
+  "Taste it. If it's flat, add a splash more soy sauce.",
+  "Serve over the jasmine rice, with the sliced Thai chilies on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three fry garlic (and chilies) in a little oil, cook long eggplant until soft, season with soy and sugar or an oyster style sauce, and fold in Thai basil off the heat to serve with jasmine rice. Thai Cookbook TV keeps it vegetarian with light soy sauce and sugar and softens the eggplant with water; Running on Real Food browns the eggplant first and adds vegetarian oyster sauce plus peppers and onion; Kvalifood deep fries the eggplant and adds pork, fermented bean paste and fish sauce. This version follows the lead's soy, sugar and basil with vegetarian oyster sauce for depth, browns the eggplant first for flavor, leaves out fish sauce and meat to stay vegetarian, and puts the Thai chilies at the table so the pan stays mild. Thai Cookbook TV shows its 4 stars from 5605 reader star ratings as page text, not JSON-LD; Running on Real Food's 5 from 11 votes is also visible text only.",
+ "sources": [
+  {"name": "Thai Cookbook TV", "title": "Vegetarian Stir-fried Eggplant with Sweet Basil (Pad Makua Yao)", "url": "https://www.thaicookbook.tv/thai-recipes/side-dishes/vegetarian-stir-fried-eggplant-with-sweet-basil/", "rating": 4.0, "rating_count": 5605, "read": true, "lead": true},
+  {"name": "Running on Real Food", "title": "Thai Basil Eggplant (Easy 30-Min Stir Fry)", "url": "https://runningonrealfood.com/thai-basil-eggplant/", "rating": 5.0, "rating_count": 11, "read": true, "lead": false},
+  {"name": "Kvalifood", "title": "Eggplant Stir-Fry with Thai Basil (Pad Makeua Yao)", "url": "https://kvalifood.com/posts/eggplant-stir-fry-with-thai-basil-pad-makeua-yao/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

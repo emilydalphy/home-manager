@@ -1,0 +1,99 @@
+{
+ "dish_name": "Ham and Cheese Sliders",
+ "cuisine": "American",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Unsalted butter",
+   "qty": "6 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Worcestershire sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Poppy seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried minced onion",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Hawaiian sweet rolls",
+   "qty": "1 package (12 rolls)",
+   "category": "pantry"
+  },
+  {
+   "item": "Sliced deli ham",
+   "qty": "3/4 lb",
+   "category": "meat/seafood",
+   "cook_qty": "12 slices"
+  },
+  {
+   "item": "Sliced Swiss cheese",
+   "qty": "8 oz",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 350°F. Melt the 6 tbsp butter in a small pan over low heat, or in the microwave in 20 second bursts.",
+  "Transfer 4 tbsp of the melted butter into a small bowl. Stir in the 1 1/2 tsp Dijon, the 1 tsp Worcestershire, the 1 tsp poppy seeds and the 1 tsp dried onion.",
+  "Keep the rolls joined together in one slab. Cut the whole slab in half through the middle with a long serrated knife, so you have one sheet of tops and one sheet of bottoms. Set the bottoms in a 9x13 baking dish.",
+  "Brush the cut sides of the tops and the bottoms with the remaining 2 tbsp melted butter.",
+  "Fold each of the 12 ham slices in half and lay them over the bottoms, one for each roll. Cover the ham with the Swiss cheese, then set the tops back on, cut side down.",
+  "Stir the butter mixture and brush it all over the tops. Spoon any seeds and onion left in the bowl onto the rolls.",
+  "Bake uncovered for about 20 minutes, until the cheese has melted down the sides and the tops are golden brown. If the tops get dark before the cheese has melted, lay a sheet of foil loosely over the dish.",
+  "Let them sit for 5 minutes. Cut along the lines between the rolls to make 12 sliders.",
+  "Serve warm, three for each person."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three slice the rolls as one connected slab, layer deli ham and Swiss inside, brush the tops with melted butter mixed with Dijon, Worcestershire and poppy seeds, and bake at 350°F for about 20 minutes. Spend With Pennies (the lead) also brushes the cut insides with butter and bakes uncovered, tenting with foil only if the tops brown too fast. Averie Cooks and Jo Cooks pour on more butter, bake covered first and uncover at the end, and Jo Cooks rests them 5 minutes before cutting. This follows the lead's amounts as written (12 sliders, three each) with Jo Cooks' short rest.",
+ "sources": [
+  {
+   "name": "Spend With Pennies",
+   "title": "Ham and Cheese Sliders",
+   "url": "https://www.spendwithpennies.com/ham-cheese-slider-bake/",
+   "rating": 5,
+   "rating_count": 72,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Averie Cooks",
+   "title": "Ham and Cheese Sliders",
+   "url": "https://www.averiecooks.com/ham-cheese-sliders/",
+   "rating": 4.57,
+   "rating_count": 885,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Jo Cooks",
+   "title": "Ham and Cheese Sliders",
+   "url": "https://www.jocooks.com/recipes/ham-and-cheese-sliders/",
+   "rating": 4.88,
+   "rating_count": 16,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -23,6 +23,9 @@ from app import agent, main as app_main, tools
 from app.db import get_conn
 from app.tools import plan_quality, preferences
 
+# Its own snack names stand (conftest.snacks_as_the_model_sent_them).
+pytestmark = pytest.mark.usefixtures("snacks_as_the_model_sent_them")
+
 
 def _week_start() -> str:
     today = datetime.date.today()
