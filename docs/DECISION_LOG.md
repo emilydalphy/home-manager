@@ -150,6 +150,16 @@ why*, not duplicating the diff.
   evening's nudge still says "Tap to start" over Cook's "still to do" — left
   for Emily. `test_thaw_follows_the_meal`'s swap catch now sees the carried
   row on Now. Not done: missed general prep rows and entry-less defrost rows.
+- **Cook mode says it right: batch line, "1 serving", the skip toast**
+  (2026-10-21, overnight defect hunt; branch
+  `overnight/cook-mode-says-it-right`; tests
+  `tests/test_cook_mode_says_it_right.py`). The batch line is no longer
+  said once "Cooking for" is stepped off the plan's count (its numbers
+  still never follow the stepper — "2 tonight, 2 tomorrow" over a pot of 6
+  described a different pot); it returns on stepping back
+  (`serves_planned_for`, set from the override's `planned_for`). Ingredient
+  headings say "1 serving". The Yesterday check's toast is `markedLine`,
+  "Marked Tacos as skipped" — a dish name is as often plural, so no was/were.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

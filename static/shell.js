@@ -2398,6 +2398,15 @@
     if (!name) return SAVED_PLAIN;
     return name + ' was ' + (verbed || 'saved');
   }
+  // "Marked Tacos as skipped" — the house line turned round for a dish,
+  // whose name is as often plural as not ("Tacos", "Chicken skewers"), so
+  // "Tacos was marked skipped" read wrong out loud (2026-10-21). Leading
+  // with the verb names the thing with no was/were to agree.
+  function markedLine(thing, how) {
+    var name = savedName(thing);
+    if (!name) return SAVED_PLAIN;
+    return 'Marked ' + name + ' as ' + how;
+  }
   // "2 things were moved" — more than one thing stays plain and
   // grammatical rather than listing names the toast has no room for.
   function savedCount(n, verbed) {
@@ -3733,7 +3742,7 @@
         refreshStaleTabsFromActions([{ tab: 'week' }, { tab: 'kitchen' }]);
         return;
       }
-      showToast(savedLine(meal.meal, answer === 'had' ? 'marked cooked' : 'marked skipped'));
+      showToast(markedLine(meal.meal, answer === 'had' ? 'cooked' : 'skipped'));
       // A cooked tick moves what Plan and Cook show (and the pantry).
       if (answer === 'had') refreshStaleTabsFromActions([{ tab: 'week' }, { tab: 'kitchen' }]);
     } catch (err) {
@@ -23842,9 +23851,21 @@
   // accent is the dock's "Start cooking". Nothing for a plain dinner, a
   // reheat, or an unhonoured chain — the field is simply absent, so this
   // is one falsy check and an older payload behaves exactly as before.
+  //
+  // ONCE THE COOK STEPS OFF THE PLAN'S COUNT, the line goes (overnight
+  // defect hunt, 2026-10-21). Its numbers are the chain's and never follow
+  // the stepper (2026-10-05), so "Double batch: 2 tonight, 2 for dinner
+  // tomorrow" over a pot the cook just made 6 — or 2 — is a sentence about
+  // a different pot. Nothing here rewrites it (the sentence stays the
+  // server's); it is simply not said while it isn't true, and comes back
+  // when the stepper does. serves_planned_for is the count the plan cooked
+  // for, set by cookApplyServesOverride from the cook's first tap.
   function recipeBatchLineHtml(meal) {
     var said = meal && meal.batch_line;
     if (!said) return '';
+    var planned = parseInt(meal.serves_planned_for, 10);
+    var shown = parseInt(cookServesShown(meal), 10);
+    if (planned && shown && shown !== planned) return '';
     return '<p class="recipe-batch">' + escapeHtml(said) + '</p>';
   }
 
@@ -23871,7 +23892,7 @@
     var count = meal.batch_line ? cookServesShown(meal) : null;
     return '<section class="card recipe-card recipe-ings" aria-label="Ingredients">' +
       '<span class="cook-eyebrow recipe-eyebrow">Ingredients' +
-        (count ? ' &middot; ' + escapeHtml(String(count)) + ' servings' : '') + '</span>' +
+        (count ? ' &middot; ' + escapeHtml(String(count)) + (String(count) === '1' ? ' serving' : ' servings') : '') + '</span>' +
       '<ul class="cook-getout">' + rows + '</ul>' +
       cookUnscaledHtml(meal, idx) +
     '</section>';
@@ -24131,7 +24152,7 @@
     var count = meal.batch_line ? cookServesShown(meal) : null;
     return '<section class="card recipe-card recipe-ings" aria-label="Ingredients">' +
       '<span class="cook-eyebrow recipe-eyebrow">Ingredients' +
-        (count ? ' &middot; ' + escapeHtml(String(count)) + ' servings' : '') + '</span>' +
+        (count ? ' &middot; ' + escapeHtml(String(count)) + (String(count) === '1' ? ' serving' : ' servings') : '') + '</span>' +
       groups.map(function (g) {
         return (g ? '<p class="recipe-ing-group">' + escapeHtml(g) + '</p>' : '') +
           '<ul class="recipe-ing-list">' + byName[g].map(function (ing) {
@@ -24842,6 +24863,9 @@
       m.default_servings = o.servings;
       m.unscaled_items = o.unscaled_items;
       m.serves_overridden = true;
+      // What the plan cooked for, so the batch line knows whether the
+      // count on the stepper is still the one its sentence is about.
+      if (o.planned_for) m.serves_planned_for = o.planned_for;
       // A batch card's `servings` is the number being cooked, so it
       // follows the cook. Its covers_note (the plan's sentence about which
       // nights the batch covers) does not — the recipe screen no longer
