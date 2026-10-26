@@ -13,6 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The recipe page has a small Tweak beside "Change recipe"** (2026-10-26,
+  Emily's 2026-10-25 decisions; branch `overnight/recipe-tweak-button`; tests
+  `tests/test_recipe_tweak_button.py`). On Plan's Meal step and Cook's recipe
+  (Today opens Cook's), Tweak opens the Tweak sheet straight on the box ("What
+  would you change? Say it your way" + Rewrite) and sends it through the Plan
+  row's own `runTweakElse` — `this_meal_only`, the allergy gate, Undo. Cook's
+  dock now holds Tweak + Change recipe as a 44px row above Start cooking:
+  three in one row squeezed the apricot to 12px at 390px. Not on Settings →
+  Recipes (decision 2). Change recipe's own "Tell Pomona what to change" row
+  still rewrites the saved recipe everywhere — untouched, a product question.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

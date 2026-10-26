@@ -481,6 +481,7 @@ def _cook_screen(meal: dict, stage: str) -> str:
         + "function cookMadeAheadLinesHtml() { return ''; }\n"
         + _var("NUMBER_WORDS") + "\n" + _var("TENS_WORDS") + "\n"
         + _var("CHANGE_RECIPE_LABEL") + "\n"
+        + "var RECIPE_TWEAK_LABEL = 'Tweak';\nvar WK_ICONS = WK_ICONS || { tweak: '<svg/>' };\n"
         # The recipe page (2026-10-06): its tabs, Sources line and cache.
         + _var("RECIPE_TABS") + "\n" + _var("RECIPE_SOURCES_LINE") + "\n"
         + "var recipeExtras = {};\n"
@@ -500,7 +501,7 @@ def _cook_screen(meal: dict, stage: str) -> str:
             # stubs: a stub returning '' would render no button and no
             # error, and the "no clock anywhere on the recipe" assertions
             # below would stop reading the screen that ships.
-            "recipeIsChangeable", "recipeChangeBtnHtml",
+            "recipeIsChangeable", "recipeChangeBtnHtml", "recipeTweakBtnHtml",
             # The recipe page (2026-10-06): cookRecipeHtml's new callees,
             # the real ones, for the same reason as the pair above.
             "recipeExtraFor", "recipeForLine", "recipeTabsHtml", "recipeCreditHtml", "recipeChangesHtml",

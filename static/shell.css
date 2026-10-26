@@ -7802,11 +7802,17 @@ button.recipe-cite:hover .recipe-cite-open { color: var(--apricot-label-hover); 
 }
 .recipe-menu > button:hover { background: var(--surface-raised); }
 .recipe-rate { display: flex; gap: 6px; padding: 4px; }
-/* Change recipe in the dock: the outline beside Start cooking (rule 5 —
-   the dock's one apricot stays Start cooking). */
-.recipe-dock-change { font-size: 15px; padding: 0 14px; }
-.dock-row .recipe-dock-change + .cook-hero-action { flex: 1 1 auto; min-width: 0; }
-.dock-row .recipe-dock-change + .cook-hero-action span { white-space: nowrap; }
+/* Change recipe in the dock: an outline above Start cooking (rule 5 —
+   the dock's one apricot stays Start cooking). Tweak (Emily, 2026-10-25)
+   is its small sibling just left of it, same outline. The two share a row of their own above Start
+   cooking (three would squeeze the apricot off its label at 390px), at
+   the 44px floor (rule 6) rather than the dock's 54, so the dock grows
+   by one short row and the apricot stays the biggest thing in it. */
+.recipe-dock-alts { gap: 8px; margin-bottom: 8px; }
+.recipe-dock-alts > button { min-height: 44px; font-size: 15px; }
+.recipe-dock-alts .recipe-dock-change { padding: 0 14px; }
+.recipe-dock-alts .recipe-dock-tweak { padding: 0 14px 0 10px; gap: 6px; }
+.recipe-dock-alts .recipe-dock-tweak svg { width: 16px; height: 16px; }
 
 /* ---------- The cooker: one step at a time ----------
    Board 14-cooking: "‹ Recipe", the dish and the step count as the
@@ -8736,6 +8742,11 @@ button.cook-badge-tap::after { content: ""; position: absolute; inset: -10px -6p
 .wk-ing-acts:empty { display: none; }
 .cook-ing-acts { margin-top: 12px; }
 .recipe-change-btn { font-size: 14px; }
+/* Tweak beside it: the same outline, a step tighter (the "small" of
+   Emily's 2026-10-25 decision). The pair wraps as one. */
+.recipe-change-pair { display: inline-flex; gap: 8px; }
+.wk-ing-add.recipe-tweak-btn { padding: 0 14px 0 10px; gap: 6px; }
+.wk-ing-add.recipe-tweak-btn svg { width: 16px; height: 16px; }
 /* Row 4 reads as a different KIND of answer — it changes the meal rather
    than the recipe — so it is set off the way the night-off row is set off
    from the swaps on the tonight sheet: its own card, a dashed edge. */

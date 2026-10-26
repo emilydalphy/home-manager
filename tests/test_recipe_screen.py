@@ -330,6 +330,8 @@ def _screen(day: dict, slot: str, cook_meals: list, ticked: list | None = None,
         # error, and these tests would then quietly assert the button's
         # absence.
         + "var CHANGE_RECIPE_LABEL = 'Change recipe';\n"
+        # 2026-10-25: and its small sibling, Tweak (recipeTweakBtnHtml).
+        + "var RECIPE_TWEAK_LABEL = 'Tweak';\nvar WK_ICONS = WK_ICONS || { tweak: '<svg/>' };\n"
         + f"var TICKED = {json.dumps(ticked or [])};\n"
         + "function cookTicked(kind, key) { return TICKED.indexOf(kind + ':' + key) !== -1; }\n"
         + "function cookStartedMinutes(m) { return m && m.cook_started_at ? 1 : null; }\n"
@@ -339,7 +341,7 @@ def _screen(day: dict, slot: str, cook_meals: list, ticked: list | None = None,
         + "".join(_extract(n) + "\n" for n in (
             "daySlotEntry", "slotWord", "isRealCook", "mealDisplayName", "cookMealForEntry",
             "mealCookUnderway", "mealRecipeFor", "mealHeroLine", "mealNoRecipeHtml",
-            "recipeIsChangeable", "recipeChangeBtnHtml", "mealIngredientsHtml",
+            "recipeIsChangeable", "recipeChangeBtnHtml", "recipeTweakBtnHtml", "mealIngredientsHtml",
             "swapStateFor", "swapLineHtml", "mealDockHtml", "mealStepHtml"))
         + f"console.log(JSON.stringify(mealStepHtml({json.dumps(day)}, {json.dumps(slot)})));\n"
     )

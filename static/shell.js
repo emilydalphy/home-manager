@@ -19073,8 +19073,12 @@
     // has no cook in it (recipeIsChangeable). Offered on a past day too:
     // the recipe is still the thing they cook from, and the sheet's own
     // paths refuse what the plan will not take.
+    // "Tweak" beside it, small (Emily, 2026-10-25): the same meals. The
+    // two are one unit in the row, so a narrow phone wraps them together
+    // under "Add something" rather than leaving Tweak alone on a line.
     var change = canAdd || (isCook && cookMeal.has_full_recipe)
       ? recipeChangeBtnHtml(cookMeal) : '';
+    if (change) change = '<span class="recipe-change-pair">' + change + recipeTweakBtnHtml(cookMeal, 'wk-ing-add') + '</span>';
     if (!card && !canAdd && !change) return '';
     return '<section class="wk-whatsin" aria-label="Ingredients">' + card +
       '<div class="wk-ing-acts">' +
@@ -20354,9 +20358,12 @@
   // does, and two lines that only show when there's something to say —
   // why it couldn't be done (the box keeps the words), and the offer to
   // remember a standing rule ("we never want cilantro").
-  function tweakElseHtml() {
-    return '<div class="wk-tweak-else" id="wk-tweak-else" hidden>' +
-      '<label class="cr-ask-label" for="wk-tweak-text">Tell me what to change</label>' +
+  // `opts` (the recipe page's Tweak, 2026-10-25): its own label and
+  // button words, and the box open from the start — that sheet IS the box.
+  function tweakElseHtml(opts) {
+    opts = opts || {};
+    return '<div class="wk-tweak-else" id="wk-tweak-else"' + (opts.open ? '' : ' hidden') + '>' +
+      '<label class="cr-ask-label" for="wk-tweak-text">' + escapeHtml(opts.label || 'Tell me what to change') + '</label>' +
       '<textarea class="snw-input cr-ask" id="wk-tweak-text" rows="3" maxlength="500" ' +
         'placeholder="Less spicy, no cilantro, all in one pan"></textarea>' +
       '<p class="cr-ask-note" id="wk-tweak-hint" role="status" hidden></p>' +
@@ -20369,7 +20376,7 @@
         '<p class="wk-tweak-remember-q">Remember this for every week?</p>' +
         '<button type="button" class="wk-swap-else" id="wk-tweak-remember-go">Remember it</button>' +
       '</div>' +
-      '<button type="button" class="cr-go" id="wk-tweak-go">Change it</button>' +
+      '<button type="button" class="cr-go" id="wk-tweak-go">' + escapeHtml(opts.go || 'Change it') + '</button>' +
     '</div>';
   }
 
@@ -20422,7 +20429,7 @@
     st.busy = true;
     st.text = text;
     if (input) input.readOnly = true;
-    if (go) { go.disabled = true; go.textContent = 'Changing it…'; }
+    if (go) { go.disabled = true; go.textContent = st.busyLabel || 'Changing it…'; }
     var data = null;
     var failed = '';
     try {
@@ -20448,7 +20455,7 @@
     var current = tweakElseState === st && !!tweakSheetEl && tweakSheetEl.classList.contains('is-open');
     if (current) {
       if (input) input.readOnly = false;
-      if (go) { go.disabled = false; go.textContent = 'Change it'; }
+      if (go) { go.disabled = false; go.textContent = st.goLabel || 'Change it'; }
     }
     if (!failed && data && data.status === 'rewritten') {
       if (typeof markRecentlyChanged === 'function') markRecentlyChanged(st.date, st.slot);
@@ -20523,11 +20530,18 @@
         });
       });
     });
-    var leave = document.getElementById('wk-tweak-leave');
-    if (leave) leave.addEventListener('click', closeTweakSheet);
     tweakElseState = { panel: panel, date: day.date, slot: slot, entryId: entry.entry_id, busy: false, text: '' };
     var elseOpen = document.getElementById('wk-tweak-else-open');
     if (elseOpen) elseOpen.addEventListener('click', openTweakElse);
+    wireTweakElse();
+    openSheet(tweakSheetEl, tweakScrimEl);
+  }
+
+  // The box's buttons and the way out, wired the same whichever door
+  // opened the sheet (a Plan row's Tweak, or the recipe page's).
+  function wireTweakElse() {
+    var leave = document.getElementById('wk-tweak-leave');
+    if (leave) leave.addEventListener('click', closeTweakSheet);
     var elseGo = document.getElementById('wk-tweak-go');
     if (elseGo) elseGo.addEventListener('click', runTweakElse);
     var elseRemember = document.getElementById('wk-tweak-remember-go');
@@ -20540,8 +20554,61 @@
         if (rid) crUndo(rid);
       });
     }
-    openSheet(tweakSheetEl, tweakScrimEl);
   }
+
+  // ---------- The recipe page's "Tweak" (Emily, 2026-10-25) ----------
+  // A small button beside "Change recipe" on the recipe page (Plan's Meal
+  // step and Cook's recipe — Today opens the same two): Tweak is a small
+  // change to this dish, Change recipe a different recipe. Its tap opens
+  // the Tweak sheet straight on the box — no rows first — and the box is
+  // the Plan row's "Something else" exactly (runTweakElse): this meal and
+  // its leftovers only (this_meal_only), the allergy and won't-eat gate
+  // before anything is saved, Undo on the toast. Not on Settings →
+  // Recipes (decision 2): that page is the book, not a meal.
+  function recipeTweakSheetBodyHtml(dish) {
+    return '<h2 class="wk-swap-title" id="wk-tweak-title">Tweak</h2>' +
+      (dish ? '<div class="wk-tweak-head"><p class="wk-tweak-dish">' + escapeHtml(dish) + '</p></div>' : '') +
+      tweakElseHtml({ label: CHANGE_RECIPE_ASK_LABEL, go: RECIPE_TWEAK_GO, open: true }) +
+      '<button type="button" class="wk-swap-quiet" id="wk-tweak-leave">Leave it as it is</button>';
+  }
+
+  var RECIPE_TWEAK_LABEL = 'Tweak';
+  var RECIPE_TWEAK_GO = 'Rewrite';
+
+  // The button. `cls` is the screen's own outline shape — .wk-ing-add
+  // beside the Meal step's "Change recipe", .cook-dock-back beside Cook's
+  // in the dock — so it is that button's small sibling and never an
+  // apricot (Rule 5).
+  function recipeTweakBtnHtml(meal, cls) {
+    if (!recipeIsChangeable(meal)) return '';
+    return '<button type="button" class="' + cls + ' recipe-tweak-btn" data-recipe-tweak="1" ' +
+      'data-entry-id="' + escapeHtml(String(meal.entry_id)) + '" ' +
+      'data-dish="' + escapeHtml(meal.meal || '') + '" ' +
+      'data-date="' + escapeHtml(meal.date || '') + '" data-slot="' + escapeHtml(meal.slot || '') + '" ' +
+      'aria-label="' + escapeHtml('Tweak — ' + (meal.meal || 'this recipe')) + '">' +
+      WK_ICONS.tweak + '<span>' + escapeHtml(RECIPE_TWEAK_LABEL) + '</span></button>';
+  }
+
+  function openRecipeTweakSheet(entryId, dish, date, slot) {
+    buildTweakSheet();
+    closeAskSheet();
+    var body = document.getElementById('wk-tweak-body');
+    body.innerHTML = recipeTweakSheetBodyHtml(dish);
+    tweakElseState = { panel: panels['week'], date: date || '', slot: slot || '', entryId: entryId,
+      busy: false, text: '', goLabel: RECIPE_TWEAK_GO, busyLabel: 'Rewriting…' };
+    wireTweakElse();
+    openSheet(tweakSheetEl, tweakScrimEl);
+    var input = document.getElementById('wk-tweak-text');
+    if (input) input.focus();
+  }
+
+  // Delegated, like "Change recipe": both screens redraw their recipe.
+  document.addEventListener('click', function (e) {
+    var t = e.target && e.target.closest && e.target.closest('[data-recipe-tweak]');
+    if (!t) return;
+    openRecipeTweakSheet(Number(t.getAttribute('data-entry-id')), t.getAttribute('data-dish') || '',
+      t.getAttribute('data-date') || '', t.getAttribute('data-slot') || '');
+  });
 
   // A save that started from a row's "Tweak" marks that row "Changed"
   // (S6) before the week re-draws under it.
@@ -24202,15 +24269,24 @@
     if (!steps.length) return cookDockHtml(cookDockCookedHtml(meal));
     var underway = meal.cooked_status !== 'done' &&
       (!!meal.cook_started_at || steps.some(function (st, i) { return cookTicked('steps', cookMealKey(meal) + ':' + i); }));
+    // "Tweak" sits beside it, small (Emily, 2026-10-25): Tweak is a small
+    // change to this recipe, Change recipe a different one.
     var change = recipeIsChangeable(meal)
-      ? '<button type="button" class="cook-dock-back recipe-dock-change" data-cr="open" ' +
+      ? recipeTweakBtnHtml(meal, 'cook-dock-back recipe-dock-tweak') +
+        '<button type="button" class="cook-dock-back recipe-dock-change" data-cr="open" ' +
           'data-entry-id="' + escapeHtml(String(meal.entry_id)) + '" data-dish="' + escapeHtml(meal.meal || '') + '">' +
           '<span>' + escapeHtml(CHANGE_RECIPE_LABEL) + '</span></button>'
       : '';
     var start = '<button type="button" class="cook-hero-action" data-cook="start-cooking">' +
       '<span>' + (underway ? 'Keep cooking' : 'Start cooking') + '</span>' + ICONS.arrow + '</button>';
+    // With Tweak there are three buttons, and three do not fit one row
+    // beside the chat button at 390px without squeezing "Start cooking"
+    // off its own label: the two ways to change the recipe sit as a row
+    // of their own above it, beside each other, and Start cooking keeps
+    // the full row it is the screen's one apricot on.
     return change
-      ? '<div class="dock cook-dock"><div class="dock-row">' + change + start + '</div></div>'
+      ? '<div class="dock cook-dock recipe-dock"><div class="dock-row recipe-dock-alts">' + change + '</div>' +
+          '<div class="dock-row">' + start + '</div></div>'
       : cookDockHtml(start);
   }
 

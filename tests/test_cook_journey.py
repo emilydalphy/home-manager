@@ -227,6 +227,8 @@ _FUNCTIONS = [
     # title" tests would go on describing a screen that no longer ships.
     "recipeIsChangeable",
     "recipeChangeBtnHtml",
+    # ADDED 2026-10-25: the dock's Tweak beside Change recipe, real too.
+    "recipeTweakBtnHtml",
     "recipeIngredientsHtml",
     "recipeIngredientRowHtml",
     "recipeStepsHtml",
@@ -288,6 +290,7 @@ def _run(body: str, state: dict | None = None) -> object:
         # the word on that button is read from here rather than duplicated.
         + _string_const("CHANGE_RECIPE_LABEL")
         + "\n"
+        + "var RECIPE_TWEAK_LABEL = 'Tweak';\nvar WK_ICONS = WK_ICONS || { tweak: '<svg/>' };\n"
         # The recipe page (2026-10-06): its tab list, the Sources line and
         # the per-recipe cache of what GET /api/recipes/{id} said.
         + _string_const("RECIPE_SOURCES_LINE")
