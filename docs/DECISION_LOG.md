@@ -764,6 +764,22 @@ why*, not duplicating the diff.
   rollback then raised and hid the refusal) — it now takes
   `close_on_miss=False` for those callers.
 
+- **Changing a batch after the shop buys only what's still missing**
+  (2026-10-24; branch `overnight/batch-buys-only-the-difference`; tests
+  `tests/test_batch_buys_only_the_difference.py`).
+  `_rescale_leftover_source_grocery` reversed the whole recipe-week (deleting
+  ledger rows on ticked lines) and re-bought it in full, so unbatching shopped
+  chili put 2 lbs of turkey back. Now ticked rows stay; the re-buy is cut by
+  what the ticked LINE says was bought (an edit to "1 lb" counts as 1 lb), less
+  other dishes' rows and kept amounts, capped at these nights' rows; a ticked
+  jar/bottle covers the week; bread/berries/butter are compared in the store
+  unit (`_store_amount`). Once a batch's cook night is ticked cooked, the
+  shares of the nights it fed are in the pot: no credit, so unbatching after
+  the cook buys Wednesday's share (review call; a gentler "already made
+  double — still cook fresh?" question is Emily's). A hand-added line under the cut is restated once
+  via `_ledger_totals` + `_restate_standing_want`. Tests clear
+  `inventory_items` after ticking — the inventory beta's "already have" hid
+  the bug.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
