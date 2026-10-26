@@ -10523,13 +10523,39 @@ def _writer_refusal(name: str, clashes: list, *, can_override: bool = True,
     must-avoid — the shape add_recipe's own gate uses, so the model reads
     a refusal it already knows how to answer. Only a door that HAS an
     override offers "save it anyway"."""
-    word = next((c.get("matched_word") for c in clashes if c.get("matched_word")), "") \
-        or _allergen_gate._food_word(clashes)
-    who = _allergen_gate._person(clashes)
-    cannot = f"{who} can’t have" if who else "this house can’t have"
+    # EVERY food and person the draft clashed on, not the first: an override
+    # answers this sentence, so a food it leaves out is one the person
+    # never agreed to (review, 2026-10-25: "without eggs" hid buttermilk).
+    words = _unique(c.get("matched_word") or c.get("matched") or c.get("restriction") for c in clashes)
+    people = _unique(c.get("member") for c in clashes)
+    word = _spoken_list(words, "or") or _allergen_gate._food_word(clashes)
+    if people and all(c.get("member") for c in clashes):
+        cannot = f"{_spoken_list(people, 'and')} can’t have"
+    else:
+        cannot = "this house can’t have"
     tail = tail or ("Pick a different dish, or ask them if it should be saved anyway." if can_override
                     else "Pick a different dish.")
     return tools.SlotRefused(f"Not saved: I couldn’t write {name} without {word}, which {cannot}. {tail}")
+
+
+def _unique(values) -> list[str]:
+    out: list[str] = []
+    for v in values:
+        v = (v or "").strip()
+        if v and v.lower() not in {o.lower() for o in out}:
+            out.append(v)
+    return out
+
+
+def _spoken_list(items: list[str], joiner: str) -> str:
+    """"eggs", "eggs or buttermilk", "eggs, nuts or buttermilk"."""
+    if len(items) <= 1:
+        return items[0] if items else ""
+    return f"{', '.join(items[:-1])} {joiner} {items[-1]}"
+
+
+def _clash_keys(clashes: list[dict]) -> set[tuple]:
+    return {((c.get("member") or "").lower(), (c.get("restriction") or "").lower()) for c in clashes}
 
 
 # A draft the writer could only write with a must-avoid, kept for the
@@ -10539,25 +10565,27 @@ def _writer_refusal(name: str, clashes: list, *, can_override: bool = True,
 # saved an egg the house had never been told about). Keyed the way the
 # refusal itself is (allergen_gate._refusal_key: door, household, name),
 # for as long as the override itself is honoured.
-_REFUSED_DRAFTS: dict[tuple, tuple[float, dict]] = {}
+_REFUSED_DRAFTS: dict[tuple, tuple[float, dict, list]] = {}
 _REFUSED_DRAFTS_LOCK = threading.Lock()
 
 
-def _keep_refused_draft(name: str, detail: dict) -> None:
+def _keep_refused_draft(name: str, detail: dict, disclosed: list[dict]) -> None:
+    """`disclosed` is the clashes the refusal sentence named — what a
+    "save it anyway" can be agreeing to, and nothing more."""
     key = _allergen_gate._refusal_key("recipe", name, [])
     with _REFUSED_DRAFTS_LOCK:
-        _REFUSED_DRAFTS[key] = (time.monotonic(), detail)
+        _REFUSED_DRAFTS[key] = (time.monotonic(), detail, list(disclosed))
 
 
-def _take_refused_draft(name: str) -> dict | None:
+def _take_refused_draft(name: str) -> tuple[dict, list] | None:
     key = _allergen_gate._refusal_key("recipe", name, [])
     with _REFUSED_DRAFTS_LOCK:
         now = time.monotonic()
-        for k, (at, _d) in list(_REFUSED_DRAFTS.items()):
+        for k, (at, _d, _c) in list(_REFUSED_DRAFTS.items()):
             if now - at > _allergen_gate.RECIPE_OVERRIDE_WINDOW_SECONDS:
                 del _REFUSED_DRAFTS[k]
         found = _REFUSED_DRAFTS.pop(key, None)
-    return found[1] if found else None
+    return (found[1], found[2]) if found else None
 
 
 def add_recipe_from_chat(name: str, ingredients: list | None = None, brief: str = "",
@@ -10596,10 +10624,20 @@ def add_recipe_from_chat(name: str, ingredients: list | None = None, brief: str 
         # and a writer call for a recipe that will not be saved is wasted.
         raise tools.DuplicateRecipeName(tools.duplicate_recipe_message(taken["name"]))
     armed = bool(override) and _allergen_gate._override_armed("recipe", name, [])
-    draft = _take_refused_draft(name) if armed else None
-    if draft:
+    kept = _take_refused_draft(name) if armed else None
+    if kept:
+        detail, disclosed = kept
+        # Re-checked against EVERY must-avoid now, not trusted: a clash the
+        # refusal never named (or an allergy added since) is not something
+        # the person said yes to, so it is refused again — naming all of
+        # it this time — and the draft kept for that answer instead.
+        clashes = _allergen_gate.hard_clashes(name, ingredients=detail["ingredients"])
+        if not _clash_keys(clashes) <= _clash_keys(disclosed):
+            logger.info("add_recipe from chat: refused draft has a clash the person wasn't told; refusing again")
+            _allergen_gate._remember_refusal("recipe", name, [])
+            _keep_refused_draft(name, detail, clashes)
+            raise _writer_refusal(name, clashes)
         logger.info("add_recipe from chat: saving the refused draft the person accepted")
-        detail = draft
     else:
         accepted = _allergen_gate.hard_clashes(name) if armed else []
         if not armed:
@@ -10616,7 +10654,7 @@ def add_recipe_from_chat(name: str, ingredients: list | None = None, brief: str 
             # anyway" next turn arms the override above — and the draft
             # beside it, so that answer saves what they were told about.
             _allergen_gate._remember_refusal("recipe", name, [])
-            _keep_refused_draft(name, written["detail"])
+            _keep_refused_draft(name, written["detail"], written["clash"])
             raise _writer_refusal(name, written["clash"])
         if not written["ok"]:
             raise ValueError(CHAT_WRITER_FAILED)

@@ -303,6 +303,40 @@ def test_save_it_anyway_on_a_refused_name_still_checks_every_other_allergy(write
     assert "Eggs" not in items and "Buttermilk" in items
 
 
+def test_a_refusal_names_every_food_and_person_it_clashed_on(writer, egg_and_dairy):
+    """R3b (review, 2026-10-25): a draft with eggs AND buttermilk was
+    refused as "without eggs" alone, so the override saved buttermilk the
+    person was never told about."""
+    writer["recipes"] = [_recipe("Flour", "Buttermilk", "Eggs")]
+    allergen_gate.begin_chat_turn()
+    with pytest.raises(tools.SlotRefused) as refused:
+        agent.TOOL_FUNCTIONS["add_recipe"](name="Thin Griddle Cakes", brief="thin")
+    said = str(refused.value).lower()
+    assert "buttermilk" in said and "egg" in said
+    assert "emily" in said and "sam" in said
+
+
+def test_save_it_anyway_refuses_a_draft_with_a_clash_it_was_not_told(writer):
+    tools.add_member("Sam")
+    tools.set_member_dietary_restrictions("Sam", ["dairy free"])
+    writer["recipes"] = [_recipe("Flour", "Buttermilk", "Eggs")]
+    allergen_gate.begin_chat_turn()
+    with pytest.raises(tools.SlotRefused) as first:
+        agent.TOOL_FUNCTIONS["add_recipe"](name="Thin Griddle Cakes", brief="thin")
+    assert "egg" not in str(first.value).lower(), "nobody here was egg-allergic yet"
+    # An egg allergy recorded between the refusal and the "save it anyway".
+    tools.add_member("Emily")
+    tools.set_member_dietary_restrictions("Emily", ["egg allergy"])
+
+    allergen_gate.begin_chat_turn()
+    with pytest.raises(tools.SlotRefused) as again:
+        agent.TOOL_FUNCTIONS["add_recipe"](name="Thin Griddle Cakes", brief="thin", override=True)
+
+    assert "egg" in str(again.value).lower()
+    assert tools.existing_recipe_named("Thin Griddle Cakes") is None
+    assert len(writer["specs"]) == 2, "re-checked, not re-written"
+
+
 def test_override_with_nothing_refused_is_not_honoured(writer, egg_and_dairy):
     writer["recipes"] = [_recipe("Flour", "Buttermilk")]
     allergen_gate.begin_chat_turn()
