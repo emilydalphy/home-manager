@@ -941,6 +941,25 @@ why*, not duplicating the diff.
   quiet skip lines are buttons; Return in the name box is Next. Why: found
   driving the pages at 390px — chosen was colour-only, Tab restarted at
   Monday after every tap, and Skip was unreachable without a finger.
+- **Now's dinner card refuses a night the plan holds empty** (2026-10-25;
+  branch `overnight/planned-empty-never-offered`; tests
+  `tests/test_planned_empty_never_offered.py`). One week with planned_empty
+  slots (away need, out night, `*_per_week:0`) beside two open ones, run
+  through every reader that offers slots (needs-you, bell, moves, cooker,
+  week menu, draft opener, audit, `get_weekly_plan`, morning text, evening
+  nudge, tonight, the slot/swap/fill/move/trade doors, approval, routes).
+  One leak: `resolve_needs_you_dinner` (POST /api/needs-you/dinner) went
+  straight to `plan_meal`, which only inserts — a second row beside the
+  empty one, and with the card's yes, groceries for a night nobody eats.
+  Now refused through `meal_plans.refuse_if_planned_empty` (chat's guard,
+  shared), read and write in one transaction. Same door, review round: it
+  now writes ONE row per slot — an open night is settled through
+  `resolve_open_slot` (buys by the plan's approved state, as Plan's own
+  pick does), the same dish on a decided night is a retry answered as done
+  with nothing written, a different dish is refused (Swap's job). Left for shell.js: the Day
+  step offers "Swap · I'll pick" and the root "Add a meal" on any
+  planned_empty that isn't an `away` need; Swap 404s.
+
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
