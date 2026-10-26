@@ -306,6 +306,8 @@ def _recipe_html(cook_meal, slot: str, plan_view: str = "undefined") -> str:
         # button). The real builder, not a stub — a stub renders nothing and
         # no error, so the assertions here would quietly stop seeing it.
         + "var CHANGE_RECIPE_LABEL = 'Change recipe';\n"
+        # 2026-10-25: and its small sibling, Tweak (recipeTweakBtnHtml).
+        + "var RECIPE_TWEAK_LABEL = 'Tweak';\nvar WK_ICONS = WK_ICONS || { tweak: '<svg/>' };\n"
         + "var RECIPE_ICONS = { minus: '<svg/>', plus: '<svg/>', chevLeft: '<svg/>' };\n"
         + "function cookIngredientLabel(i) { return ((i.qty ? i.qty + ' ' : '') + i.item).trim(); }\n"
         + "function cookMealKey(m) { return 'e' + m.entry_id; }\n"
@@ -318,7 +320,7 @@ def _recipe_html(cook_meal, slot: str, plan_view: str = "undefined") -> str:
         + "".join(_extract(n) + "\n" for n in (
             "cookUnscaledHtml", "cookIngTickId", "cookGetOutRowHtml", "recipeIngredientsHtml",
             "recipeIngredientRowHtml", "recipeStepsHtml", "mealRecipeFor", "mealNoRecipeHtml",
-            "recipeIsChangeable", "recipeChangeBtnHtml", "mealIngredientsHtml"))
+            "recipeIsChangeable", "recipeChangeBtnHtml", "recipeTweakBtnHtml", "mealIngredientsHtml"))
         + f"var meal = {json.dumps(cook_meal)};\n"
         + "var entry = meal ? { source: meal.is_leftovers ? 'leftovers' : 'plan', entry_id: meal.entry_id, state: 'planned', title: meal.meal } : null;\n"
         + f"var info = mealRecipeFor({json.dumps(slot)}, entry, meal);\n"

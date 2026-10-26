@@ -48,6 +48,16 @@ why*, not duplicating the diff.
   (`_ONLY_SAYS_FRESH`) < real variety, so "Flat-leaf parsley" wins over
   "Fresh parsley" (and over "Italian parsley") whichever lands first. Amounts add as written ("2
   bunches" + "3 bunches, small" → "5 bunches, small", the size note kept).
+- **The recipe page has a small Tweak beside "Change recipe"** (2026-10-26,
+  Emily's 2026-10-25 decisions; branch `overnight/recipe-tweak-button`; tests
+  `tests/test_recipe_tweak_button.py`). On Plan's Meal step and Cook's recipe
+  (Today opens Cook's), Tweak opens the Tweak sheet straight on the box ("What
+  would you change? Say it your way" + Rewrite) and sends it through the Plan
+  row's own `runTweakElse` — `this_meal_only`, the allergy gate, Undo. Cook's
+  dock now holds Tweak + Change recipe as a 44px row above Start cooking:
+  three in one row squeezed the apricot to 12px at 390px. Not on Settings →
+  Recipes (decision 2). Change recipe's own "Tell Pomona what to change" row
+  still rewrites the saved recipe everywhere — untouched, a product question.
 - **Second 200 library recipes: Emily's three calls** (2026-10-25; branch
   `recipe-library-200b`; doc `docs/RECIPE_LIBRARY_SPOTCHECK_200B.md`).
   Bistec a la Mexicana is two dishes (the rated slow simmer, plus "Quick
