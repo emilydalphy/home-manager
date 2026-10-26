@@ -1,0 +1,53 @@
+{
+ "dish_name": "Moghrabieh",
+ "cuisine": "Lebanese",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 75,
+ "ingredients": [
+  {"item": "Bone-in chicken thighs", "qty": "2 lb (about 6, skin on)", "category": "meat/seafood"},
+  {"item": "Salt", "qty": "2 1/2 tsp", "category": "pantry"},
+  {"item": "Lebanese seven spice", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Ground caraway", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Ground cinnamon", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Ground cumin", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Cinnamon sticks", "qty": "1", "category": "pantry"},
+  {"item": "Bay leaves", "qty": "2", "category": "pantry"},
+  {"item": "Whole cloves", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Frozen pearl onions", "qty": "1 bag (12 oz)", "category": "frozen"},
+  {"item": "Chickpeas", "qty": "1 can (15 oz)", "category": "pantry"},
+  {"item": "Moghrabieh pearl couscous", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Unsalted butter", "qty": "2 tbsp", "category": "dairy"}
+ ],
+ "instructions": [
+  "Pat the 2 lb bone-in chicken thighs dry with paper towels. Sprinkle 1 tsp of the salt and 1/4 tsp of the seven spice over both sides.",
+  "Make the spice mix in a small bowl: the 1 1/2 tsp caraway, the 3/4 tsp ground cinnamon, the rest of the seven spice (3/4 tsp), the 3/4 tsp cumin and 1/2 tsp of the pepper. Stir it together and set it aside.",
+  "Heat the 2 tbsp oil in a large Dutch oven or heavy pot over medium high heat. Lay the thighs in skin side down with room between them. If they don't all fit, do it in two batches. Leave them alone until the skin is golden and lets go of the pot, about 5 minutes. Flip them and cook the other side for 4 minutes.",
+  "Put all the chicken back in the pot and pour in 7 cups water. Add the cinnamon stick, the 2 bay leaves, the 1/2 tsp cloves, 1 tsp of the salt and the last 1/4 tsp pepper. Scrape up the browned bits from the bottom and bring it to a boil.",
+  "Turn the heat to medium low and simmer, uncovered, for 30 minutes. Skim off the foam and fat that rise to the top every so often.",
+  "Add the bag of frozen pearl onions and simmer for 15 minutes, until they're tender.",
+  "Meanwhile, bring a large pot of water to a boil for the moghrabieh and add the last 1/2 tsp salt.",
+  "Add the 1 1/2 cups moghrabieh to the boiling water and boil it uncovered, stirring now and then, for 15 to 20 minutes, until it's tender with a little bite in the middle. Drain it.",
+  "While the moghrabieh boils, lift the chicken out of the broth onto a plate. You're cooking thighs to 175°F, so if you have a thermometer, check the thickest one next to the bone. No thermometer? Cut into one near the bone: there should be no pink left.",
+  "Fish the cinnamon stick, the bay leaves and any cloves you can see out of the broth.",
+  "Drain and rinse the chickpeas and add them to the broth with three quarters of the spice mix. Simmer for 10 minutes.",
+  "When the chicken is cool enough to handle, pull the meat off the bones in big pieces. Throw away the skin and bones. Put the meat back in the broth.",
+  "Put the drained moghrabieh back in its empty pot over medium heat. Add the 2 tbsp butter and the rest of the spice mix and stir for about 3 minutes, until every pearl is coated and it smells toasty.",
+  "Ladle about 1 1/2 cups of broth from the stew into the moghrabieh. Turn the heat to low and cook for 8 minutes, stirring now and then, until the broth is soaked up.",
+  "Taste the broth. If it's flat, add a pinch more salt.",
+  "Serve the moghrabieh and the chicken stew in separate bowls at the table, with the stew and its broth ladled over the moghrabieh in each bowl."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three cook chicken in a broth with cinnamon and bay, add pearl onions and canned chickpeas, season with a caraway, cinnamon and seven spice mix, and boil the moghrabieh on its own before tossing it in butter and spice. Simply Lebanese and A Pinch of Adventure sear the chicken first and finish the pearls with a few ladles of broth, and both keep the pearls and the stew in separate pots so the pearls don't soak up all the liquid; Mediterranean Living poaches breasts without searing and stirs everything together in one pan. This follows Simply Lebanese, using bone-in thighs in place of a whole chicken for four people and frozen pearl onions so there's nothing to peel.",
+ "sources": [
+  {"name": "Simply Lebanese", "title": "Moghrabieh", "url": "https://www.simplyleb.com/recipe/moghrabieh/", "rating": 4.81, "rating_count": 46, "read": true, "lead": true},
+  {"name": "A Pinch of Adventure", "title": "Moghrabieh (Lebanese Moghrabieh with chicken)", "url": "https://apinchofadventure.com/moghrabieh-lebanese-pearl-couscous", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Mediterranean Living", "title": "Moghrabieh with Chicken (Lebanese Couscous)", "url": "https://www.mediterraneanliving.com/moghrabieh-with-chicken-lebanese-couscous/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -20,7 +20,7 @@ from __future__ import annotations
 import json
 from datetime import date, timedelta
 from ..db import get_conn
-from ._shared import household_id
+from ._shared import household_id, require_household_row
 from . import week_intake as _week_intake
 from . import weekly_plan as _weekly_plan
 
@@ -282,6 +282,16 @@ def set_slot_need(
     conn = get_conn()
     try:
         conn.execute("BEGIN IMMEDIATE")
+        # Both ids come from the model on the chat path: the schema doesn't
+        # declare them, but agent.read_tool_input passes an undeclared key
+        # through untouched. Another household's stretch or adult stored
+        # here is a row of theirs this household's screens join against
+        # (who the need is for, which trip made it). Refused the way every
+        # by-id write is, on this connection, inside the lock.
+        if away_stretch_id is not None:
+            require_household_row(conn, "away_stretches", away_stretch_id, label="away stretch", close_on_miss=False)
+        for member in set(for_member_ids or []):
+            require_household_row(conn, "members", member, label="member", close_on_miss=False)
         conn.execute(
             """
             INSERT INTO slot_needs
@@ -298,6 +308,14 @@ def set_slot_need(
              json.dumps(sorted(for_member_ids or [])), json.dumps(superseded) if superseded else ""),
         )
         plan_id = _plan_id_for_date(conn, date_str, slot) if need == "away" else None
+        # A meal already cooked (or on the stove) stays as the record it is
+        # — the night off, the Move sheet, the nights swap and the Review
+        # "−" all keep one (weekly_plan.cook_begun); this door deleted it
+        # and reversed its groceries (overnight 2026-10-22). The away need
+        # is still recorded; only the conversion is skipped.
+        kept_cooked = plan_id is not None and _cook_has_begun(conn, plan_id, date_str, slot)
+        if kept_cooked:
+            plan_id = None
         if plan_id is not None:
             if not _cook_on_the_fed_night(conn, plan_id, date_str, slot):
                 _drop_its_freezer_nights(conn, plan_id, date_str, slot)
@@ -324,8 +342,21 @@ def set_slot_need(
     return {
         "date": date_str, "slot": slot, "need": need, "reason": resolved_reason,
         "converted_existing_plan_slot": converted,
+        "kept_cooked_meal": kept_cooked,
         "for_member_ids": sorted(for_member_ids or []),
     }
+
+
+def _cook_has_begun(conn, plan_id: int, date_str: str, slot: str) -> bool:
+    """Whether the planned meal on this slot is ticked cooked or has its
+    cook started. On the caller's connection."""
+    rows = conn.execute(
+        "SELECT cooked_status, cook_started_at FROM meal_plan_entries "
+        "WHERE weekly_plan_id = ? AND household_id = ? AND date = ? AND slot = ? "
+        "AND slot_state = 'planned' AND component_category IS NULL",
+        (plan_id, household_id(), date_str, slot),
+    ).fetchall()
+    return any(_weekly_plan.cook_begun(r) for r in rows)
 
 
 def _cook_on_the_fed_night(conn, plan_id: int, date_str: str, slot: str) -> bool:
@@ -428,6 +459,14 @@ def _reopen_away_slot(date_str: str, slot: str, attendance: dict) -> bool:
     # a raise here against 0.0s and a False on main, with another writer
     # holding the lock). It fails loudly and corrupts nothing, which is the
     # ordinary price of the fix.
+    #
+    # A meal the household doesn't plan at all — a count of 0 ("None,
+    # thanks") or one their usual week has off — goes back to being
+    # deliberately empty, never a question (overnight 2026-10-22): a trip
+    # cancelled over a weekend handed a no-lunches household every lunch
+    # back as "tell me what you'd like and I'll shop for it". Asked here,
+    # before the lock: both reads open connections of their own.
+    not_planned = _not_planned_here(date_str, slot)
     conn = get_conn()
     try:
         conn.execute("BEGIN IMMEDIATE")
@@ -444,14 +483,28 @@ def _reopen_away_slot(date_str: str, slot: str, attendance: dict) -> bool:
             conn.rollback()
             return False
 
+        if not_planned is not None:
+            reason, derived = not_planned
+            _weekly_plan.clear_plan_slot(row["weekly_plan_id"], date_str, slot, conn=conn)
+            _weekly_plan.plan_slot_empty(
+                weekly_plan_id=row["weekly_plan_id"], meal_date=date_str, slot=slot,
+                reason=reason, derived_from=derived, conn=conn,
+            )
+            conn.commit()
+            return True
+
         who = attendance.get("present_names") or []
         guests = attendance.get("guest_count") or 0
         if who and guests:
             eaters = f"{_join_people(who)} plus {guests} guest{'s' if guests != 1 else ''}"
         elif who:
             eaters = _join_people(who)
-        else:
+        elif guests:
             eaters = f"{guests} guest{'s' if guests != 1 else ''}"
+        else:
+            # Nobody on record to name (a household mid-onboarding, reached
+            # from set_slot_need_for_chat): never "0 guests will be here".
+            eaters = "you"
         _weekly_plan.clear_plan_slot(row["weekly_plan_id"], date_str, slot, conn=conn)
         _weekly_plan.plan_slot_open(
             weekly_plan_id=row["weekly_plan_id"], meal_date=date_str, slot=slot,
@@ -471,6 +524,25 @@ def _reopen_away_slot(date_str: str, slot: str, attendance: dict) -> bool:
     return True
 
 
+_MEAL_PLURALS = {"breakfast": "breakfasts", "lunch": "lunches", "dinner": "dinners"}
+
+
+def _not_planned_here(date_str: str, slot: str) -> tuple[str, dict] | None:
+    """(reason, derived_from) for a slot the household doesn't plan at all —
+    a count of 0, or a meal its usual week has off that day — in the words
+    and constraint generation writes for it; None for an ordinary slot.
+    Opens its own connections, so never call it inside a write."""
+    from . import usual_week as _usual_week  # lazy: it reaches back into this module
+    if slot in _weekly_plan.unwanted_meal_slots():
+        return (
+            f"You’ve asked me not to plan {_MEAL_PLURALS.get(slot, slot + 's')} — I’ve left this to you.",
+            {"constraint": f"{slot}s_per_week:0"},
+        )
+    if (date_str, slot) in _usual_week.off_slots_on([date_str]):
+        return _usual_week.OFF_REASON, {"constraint": _usual_week.OFF_CONSTRAINT}
+    return None
+
+
 def _join_people(names: list[str]) -> str:
     from . import attendance as _attendance
     return _attendance._join_names(names)
@@ -488,6 +560,76 @@ def clear_slot_need(date_str: str, slot: str) -> dict:
     conn.commit()
     conn.close()
     return {"date": date_str, "slot": slot, "need": "normal"}
+
+
+def set_slot_need_for_chat(date_str: str, slot: str, need: str, reason: str = "") -> dict:
+    """
+    set_slot_need as the assistant reaches it — "we're out Friday", "actually
+    we're home Thursday" — keeping attendance in step, which the primitive
+    alone does not do and must not (attendance's own sync calls it).
+
+    "Away" means an empty attendance (attendance.py's docstring), and every
+    other door that writes one writes both halves: a trip, the day sheet,
+    a toggle, a holiday "out". This door wrote only the need, so the two
+    halves disagreed and the next ordinary gesture read the disagreement
+    as news (overnight 2026-10-24, measured over a real uvicorn):
+
+    - "We're out Friday" in chat, then Vineeth tapping himself out of that
+      same Friday, turned the night into an OPEN question — "This was down
+      as nobody home, but Emily will be here after all" — because the
+      tap's sync saw a stored attendance with Emily in it under an away.
+    - "Set Thursday back to normal" deleted the need and left the dinner
+      planned_empty, still saying "You're away — I've planned nothing and
+      bought nothing", with nothing on the list and no question asked.
+
+    So 'away' records nobody home as well (the holiday's order: the need
+    first, with its own sentence and what it covers, then the attendance,
+    whose sync then finds it already away). And any other need over an
+    away is the household coming home: attendance back to everyone, the
+    night handed back as the open question an attendance undo already
+    asks, and then the need asked for — 'normal' meaning normal, not a
+    trip edge the away happened to cover.
+    """
+    date.fromisoformat(date_str)
+    if need not in NEEDS:
+        raise ValueError(f"need must be one of {NEEDS}, not {need!r}.")
+    if slot == "snack":
+        raise ValueError(SNACK_NEED_REFUSAL)
+    _validate_slot(slot)
+    from . import attendance as _attendance
+
+    current = get_slot_need(date_str, slot)
+    if need == "away":
+        superseded = (
+            current.get("superseded") if current["need"] == "away"
+            else _attendance._supersede_record(current)
+        )
+        result = set_slot_need(date_str, slot, "away", reason=reason, superseded=superseded)
+        att = _attendance.get_slot_attendance(date_str, slot)
+        if att["household_size"] and not att["nobody_home"]:
+            # guest_count=0 too: guests with nobody home to host them is
+            # the day sheet's "I'll plan nothing", and a headcount left at
+            # 2 would read as somebody home and undo the away at once.
+            _attendance.set_slot_attendance(
+                date_str, slot, present_member_ids=[], guest_count=0, source="chat",
+            )
+        return result
+
+    if current["need"] == "away":
+        att = _attendance.get_slot_attendance(date_str, slot)
+        if att["household_size"] and att["nobody_home"]:
+            # Clearing the row is everyone home; its sync takes the away
+            # off and reopens the night, the same path a toggle back takes.
+            _attendance.clear_slot_attendance(date_str, slot)
+        else:
+            # The disagreeing state this door used to leave behind (an away
+            # over an attendance with people in it), or a household with
+            # nobody on record: no sync will run, so do its two steps here.
+            clear_slot_need(date_str, slot)
+            _reopen_away_slot(date_str, slot, att)
+    if need == "normal":
+        return clear_slot_need(date_str, slot)
+    return set_slot_need(date_str, slot, need, reason=reason)
 
 
 def get_slot_need(date_str: str, slot: str) -> dict:
@@ -647,6 +789,12 @@ def set_away_stretch(
     date.fromisoformat(to_date)
     _validate_slot(from_slot, allow_snack=False)
     _validate_slot(to_slot, allow_snack=False)
+    # Checked on the dates first: a start days after the end pads to a
+    # sequence that holds neither edge, and the lookup below answered with
+    # Python's own "('2026-11-20', 'dinner') is not in list" (defect hunt
+    # 2026-10-21). Same-day slot order is still the index check's job.
+    if date.fromisoformat(from_date) > date.fromisoformat(to_date):
+        raise ValueError("An away stretch's start must come before (or be) its end.")
 
     from . import attendance as _attendance
     travelers = _attendance.resolve_member_ids(member_names)

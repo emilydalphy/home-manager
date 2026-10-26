@@ -37,7 +37,7 @@ from conftest import household_today
 from app import tools
 from app.db import get_conn
 # The module, not the function tools re-exports under the same name.
-sop = importlib.import_module("app.tools.swap_options")
+sop = importlib.import_module("app.tools.swap_option_picks")
 
 
 STATIC = Path(__file__).resolve().parent.parent / "static"

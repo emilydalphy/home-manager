@@ -1,0 +1,51 @@
+{
+ "dish_name": "Tsukune",
+ "cuisine": "Japanese",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 45,
+ "ingredients": [
+  {"item": "Ground chicken", "qty": "1.5 lb", "category": "meat/seafood"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce"},
+  {"item": "Miso", "qty": "1 tub", "category": "pantry", "cook_qty": "1 1/2 tbsp"},
+  {"item": "Toasted sesame oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Coarse sea salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Sake", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Mirin", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "Brown sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Bamboo skewers", "qty": "1 pack", "category": "other", "cook_qty": "12"},
+  {"item": "Shichimi togarashi", "qty": "1 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Put 12 bamboo skewers in a dish of water to soak for at least 30 minutes.",
+  "In a small saucepan, stir together 1/4 cup water, the 1/4 cup sake, 1/2 cup mirin, 1/2 cup soy sauce and the 2 tsp brown sugar. Bring it to a boil over medium-high heat.",
+  "Turn the heat down to keep a gentle simmer and cook it for about 30 minutes, until it has reduced by half. That should be about 3/4 cup. It thickens as it cools, so take it off the heat while it's still pourable.",
+  "Meanwhile, put 1/2 lb of the ground chicken in a dry skillet over medium heat. Break it up with a spatula and cook for 4 to 5 minutes, until there's no pink left. Keep it pale. Don't let it brown.",
+  "Spread the cooked chicken on a plate and leave it for about 10 minutes, until it's completely cool.",
+  "Thinly slice 4 of the green onions.",
+  "In a large bowl, combine the cooled chicken, the remaining 1 lb raw chicken, the 1 1/2 tbsp miso and 1 1/2 tbsp of the sesame oil. Add the green onions.",
+  "Knead it with one hand, folding it over on itself, for about 2 minutes, until it turns pale and sticky. Divide it into 12 even portions.",
+  "Set an oven rack about 8 inches below the broiler and heat the broiler on high. Line a baking sheet with foil, set a wire rack on it and brush the rack with a little of the last 1/2 tbsp sesame oil.",
+  "Rub the rest of the sesame oil on your hands. Toss one portion back and forth between your palms to press out the air, then shape it into a 3 inch oval.",
+  "Push a skewer lengthwise into the oval and squeeze the meat around it into a firm, even log. Lay it on the rack. Shape the rest the same way, leaving room between them.",
+  "Sprinkle the 1/2 tsp coarse salt over the skewers. Wrap the bare ends of the skewers in small strips of foil so they don't burn.",
+  "Broil them for about 6 minutes, until browned in spots.",
+  "Flip each skewer and broil the other side for about 4 minutes. You're cooking them to 165°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut one open: it's done when there's no pink left and the juices run clear.",
+  "Brush the tops with the sauce and broil for 45 to 60 seconds, until the glaze bubbles. Watch them closely. The sugar burns fast.",
+  "Flip them, brush the other side and broil for 45 to 60 seconds.",
+  "Taste a little from the end of one. If it's flat, brush on a little more of the sauce.",
+  "Serve with the rest of the sauce and the shichimi togarashi on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions make chicken meatballs and finish them in a sweet soy glaze of mirin, soy sauce, sake and sugar. Just One Cookbook (the lead) cooks a third of the chicken first so the mix holds on the skewer, kneads it with miso and sesame oil until sticky, broils the skewers and brushes on a sauce reduced by half; Food Faith Fitness binds the mix with panko and egg and grills it with a tare simmered with aromatics, and Japanese Cooking 101 pan fries small patties without skewers and pours a quick sauce over them. This one follows the lead for 1.5 lb of chicken, using the lead's full sauce, and leaves out the shiso leaves, which are hard to find; it uses 4 green onions instead.",
+ "sources": [
+  {"name": "Just One Cookbook", "title": "Tsukune (Japanese Chicken Meatball Skewers)", "url": "https://www.justonecookbook.com/tsukune/", "rating": 4.8, "rating_count": 92, "read": true, "lead": true},
+  {"name": "Food Faith Fitness", "title": "Tsukune (Japanese Chicken Meatballs)", "url": "https://www.foodfaithfitness.com/tsukune-japanese-chicken-meatballs/", "rating": 5.0, "rating_count": 1, "read": true, "lead": false},
+  {"name": "Japanese Cooking 101", "title": "Tsukune Recipe", "url": "https://www.japanesecooking101.com/tsukune-recipe/", "rating": 5.0, "rating_count": 3, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

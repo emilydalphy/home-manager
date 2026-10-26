@@ -1,0 +1,107 @@
+{
+ "dish_name": "Baked Feta with Tomatoes and Chickpeas",
+ "cuisine": "Greek",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Feta",
+   "qty": "8 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Cherry tomatoes",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Chickpeas",
+   "qty": "2 cans (15 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 425°F/220°C with a rack in the middle.",
+  "Meanwhile, drain and rinse the chickpeas, then pat them dry with a clean towel. Thinly slice the garlic.",
+  "In a 9 by 13 inch baking dish, toss the chickpeas, the tomatoes, the garlic, 3 tbsp of the olive oil, the oregano, 1/2 tsp of the salt and the pepper. Spread them out in one layer.",
+  "Set the feta in the middle of the dish and drizzle the last 1 tbsp of oil over it.",
+  "Roast for 25 minutes, until the tomatoes have split and the feta is soft and lightly golden at the edges.",
+  "While the dish roasts, put the rice in a medium pot with 2 1/4 cups water and the remaining 1/2 tsp salt. Bring it to a boil over high heat, then cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave it covered for 5 minutes.",
+  "Meanwhile, chop 1/4 cup of the parsley and juice the lemon.",
+  "Take the dish out of the oven. Squeeze the lemon juice over it. Mash the feta with the back of a spoon and stir it through the tomatoes and chickpeas until the juices turn creamy. Scatter the parsley over the top.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Fluff the rice with a fork and serve the baked feta over it, with the red pepper flakes on the table."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three sources roast cherry tomatoes and chickpeas with garlic and olive oil in one dish with the feta set in the middle, and they differ on oven heat (425 to 450°F) and whether to broil at the end. This version follows the lead at a high roast and skips the broil to stay within 45 minutes. The sources serve it with pita or baguette; this one is served over rice so it stays gluten-free. The honey and chili in the lead are left out, and the red pepper flakes go on the table so the base stays mild.",
+ "sources": [
+  {
+   "name": "The East Coast Kitchen",
+   "title": "Baked Chickpeas with Tomatoes and Feta",
+   "url": "https://theeastcoastkitchen.com/print/baked-chickpeas-with-tomatoes-and-feta",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "DentaQuest",
+   "title": "Baked Feta & Tomato Chickpeas",
+   "url": "https://www.dentaquest.com/en/news-and-resources/oral-health-tips/healthy-recipes/baked-feta-and-tomato-chickpeas",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

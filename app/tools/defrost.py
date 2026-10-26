@@ -480,12 +480,38 @@ def sync_defrost_tasks(weekly_plan_id: int) -> dict:
         existing_by_key = {
             (r["inventory_item_id"], r["meal_plan_entry_id"], r["task_date"]): r["id"] for r in existing
         }
+        # The moves the household booked by hand (the freezer step's chips,
+        # Shop's "Yes, freezing it" — inventory_item_id NULL), by night, as
+        # the item each one thaws. Read so this door cannot book the same
+        # move a second time (2026-10-21, overnight defect hunt): chicken
+        # thighs confirmed frozen at approval, then filed in the freezer on
+        # inventory, and the next resync — a night off, a swap, a move —
+        # inserted its own "Move the chicken thighs to the fridge" beside
+        # the household's. Today and the prep session drew both, one ticked
+        # and one not. The other two doors already look across
+        # (_settled_nights, _settled_move_for_entry); this one did not.
+        # Any status: a ticked or skipped move is still the household's
+        # answer about that night, and a fresh pending twin re-asks it.
+        by_hand: dict[int, set[str]] = {}
+        for r in conn.execute(
+            "SELECT meal_plan_entry_id, description FROM prep_tasks "
+            "WHERE weekly_plan_id = ? AND household_id = ? AND task_type = 'defrost' "
+            "AND meal_plan_entry_id IS NOT NULL AND inventory_item_id IS NULL",
+            (weekly_plan_id, household_id()),
+        ).fetchall():
+            item = thawed_item(r["description"]).lower()
+            if item:
+                by_hand.setdefault(r["meal_plan_entry_id"], set()).add(item)
 
         kept_ids = set()
         inserted, updated = 0, 0
         for c in candidates:
             key = (c["inventory_item_id"], c["meal_plan_entry_id"], c["task_date"])
             existing_id = existing_by_key.get(key)
+            if not existing_id and _matches_selected_item(
+                thawed_item(c["description"]), by_hand.get(c["meal_plan_entry_id"], set())
+            ):
+                continue
             if existing_id:
                 conn.execute(
                     "UPDATE prep_tasks SET description = ?, related_meal = ?, quantity = ? "
@@ -1648,7 +1674,7 @@ def _split_off_plan_share(line_id: int, weekly_plan_id: int, entry_ids=None) -> 
     with write() as conn:
         conn.execute("BEGIN IMMEDIATE")
         row = conn.execute(
-            "SELECT id, item, quantity, category, status, store FROM grocery_items "
+            "SELECT id, item, quantity, category, status, store, edited_to FROM grocery_items "
             "WHERE id = ? AND household_id = ?",
             (line_id, household_id()),
         ).fetchone()
@@ -1670,7 +1696,9 @@ def _split_off_plan_share(line_id: int, weekly_plan_id: int, entry_ids=None) -> 
         others = [l["quantity"] or "" for l in links if l["id"] not in mine_ids]
         totals = _quantities._ledger_totals([l["quantity"] or "" for l in links], others)
         share = _quantities._ledger_totals([l["quantity"] or "" for l in mine], [])
-        restated = None if totals is None else _grocery._restate_standing_want(row["quantity"] or "", *totals)
+        restated = None if totals is None else _grocery._restate_standing_want(
+            row["quantity"] or "", *totals, typed=bool((row["edited_to"] or "").strip()),
+        )
         if share is None or restated is None:
             return None
         left, nothing_left = restated

@@ -61,7 +61,8 @@ def _render(adults: list[dict], memory: dict = MEMORY) -> str:
     block = _people_block().replace(
         "function inviteHelpersHtml() { return ''; }\n",
         "var inviteState = %s;\n" % json.dumps({"adults": adults, "newOpen": False, "busy": False, "ready": {}})
-        + _function("inviteRowHtml") + "\n" + _function("inviteHelpersHtml") + "\n",
+        + _function("inviteRowHtml") + "\n" + _function("inviteRemoveHtml") + "\n"
+        + _function("inviteHelpersHtml") + "\n",
     )
     assert "function inviteHelpersHtml() {\n" in block, "the real helpers row, not the stub"
     res = nodeharness.run_node(block + "console.log(JSON.stringify(wwkPeopleHtml(%s)));\n" % json.dumps(memory))

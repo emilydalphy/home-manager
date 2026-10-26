@@ -1,0 +1,94 @@
+{
+ "dish_name": "Shrimp and Egg Stir-Fry",
+ "cuisine": "Chinese",
+ "main_protein": "shrimp",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Large shrimp",
+   "qty": "1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "White pepper",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "10",
+   "category": "dairy"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the 1 1/2 cups rice in a pot, cover it with cold water, swish it around and drain. Do this 3 or 4 times, until the water is mostly clear.",
+  "Add 2 cups water to the rice and bring it to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on for 10 minutes.",
+  "Meanwhile, if the shrimp are frozen, thaw them in a bowl of cold water for about 10 minutes. Peel and devein them if they aren't already. That should be about 12 large shrimp. Pat them dry with paper towels.",
+  "In a bowl, toss the shrimp with 1/4 tsp of the salt, the 1 tsp sesame oil and the pinch of white pepper.",
+  "Finely chop 2 of the scallions. Set aside a spoonful of the green parts for the top.",
+  "Heat 1 tbsp of the oil in a wok or large nonstick skillet over medium. Add the shrimp in one layer and cook for about 30 seconds, until the undersides turn pink. Flip them and cook the other side for about 30 seconds, until they're pink and curled into a C. Transfer them to a plate to cool for a few minutes.",
+  "Crack the 10 eggs into a large bowl. Add 1 tbsp of the oil and the last 1/2 tsp salt, and beat until the oil is mixed in and there are no streaks of white. Stir in the scallions and the shrimp.",
+  "Wipe out the pan with a paper towel. Add the last 1 tbsp oil and heat it over medium until it shimmers.",
+  "Pour in the egg mixture and spread the shrimp out evenly. Leave it alone for 10 to 15 seconds, until the edges start to set.",
+  "With a spatula, push the set edges in toward the middle and tilt the pan so the runny egg flows onto the hot surface. Keep doing this for 1 to 2 minutes, until the eggs are mostly set but still soft and glossy. Take the pan off the heat while they still look a little wet. They finish cooking on the plate.",
+  "Taste it. If it's flat, sprinkle on a pinch more salt.",
+  "Scatter the saved scallion greens over the top. Serve over the rice, with the oyster sauce on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both cook the shrimp briefly first so they stay tender, then fold them into soft, barely set scrambled eggs with scallions, and serve it over steamed rice. Pups with Chopsticks (the lead) beats a little oil into the eggs and seasons the shrimp with salt, sesame oil and white pepper; The Woks of Life coats the shrimp in cornstarch and adds a cornstarch slurry to the eggs for an even silkier set. This one follows the lead at double its size, with 10 eggs to 1/2 lb shrimp, and puts its optional oyster sauce on the side. The stir-fry itself takes about 10 minutes; the time shown includes the rice.",
+ "sources": [
+  {
+   "name": "Pups with Chopsticks",
+   "title": "Chinese Scrambled Eggs and Shrimp",
+   "url": "https://pupswithchopsticks.com/chinese-scrambled-eggs-and-shrimp/",
+   "rating": 5.0,
+   "rating_count": 22,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Woks of Life",
+   "title": "Shrimp and Eggs Cantonese Style",
+   "url": "https://thewoksoflife.com/shrimp-and-eggs/",
+   "rating": 4.93,
+   "rating_count": 14,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

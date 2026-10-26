@@ -1,0 +1,127 @@
+{
+ "dish_name": "Pad Krapow Tofu",
+ "cuisine": "Thai",
+ "main_protein": "tofu",
+ "ingredients": [
+  {
+   "item": "Extra-firm tofu",
+   "qty": "1 block (14 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Cremini mushrooms",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Green beans",
+   "qty": "6 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresno chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Thai chilies",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Thai basil",
+   "qty": "1 large bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Tamari (gluten-free)",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups of jasmine rice under cold water until it runs mostly clear. Transfer it to a medium pot with 2 1/4 cups of water and bring it to a boil. Cover, turn the heat to the lowest setting and cook for 12 minutes. Take it off the heat and leave the lid on until you serve.",
+  "Meanwhile, pat the tofu dry and crumble it with your hands into rough pieces about 1/2 inch across. Sprinkle the salt over them.",
+  "Chop the mushrooms into small pieces and cut the green beans into 1/2 inch lengths. Mince the garlic and the Fresno chili, leaving the seeds out. Slice the green onions thinly and keep the white and green parts apart. Slice the Thai chilies into a small bowl and cut the lime into wedges. Pick the basil leaves off the stems. That should be about 2 cups, loosely packed.",
+  "In a small bowl, stir together 2 tbsp tamari, 2 tsp sugar and 1/4 cup of water.",
+  "Heat 2 tbsp of the oil in a large skillet over high heat until it shimmers. Add the tofu in a single layer and leave it alone for 3 minutes, until the underside is golden. Stir, then cook for 3 minutes. Transfer it to a plate.",
+  "Add the remaining 1 tbsp oil and the mushrooms. Spread them out and leave them alone for 3 minutes, until they're browned underneath. Stir and cook for 2 minutes.",
+  "Add the green beans and the white parts of the green onions. Stir for 2 minutes, until the beans are bright green and still crisp. Add the garlic and the Fresno chili and stir for 20 seconds.",
+  "Return the tofu to the skillet and pour in the sauce. Cook for 1 minute, until it reduces to a glossy coating.",
+  "Take the skillet off the heat. Add the green parts of the green onions and the basil and stir until the basil wilts.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice with the lime wedges and the sliced Thai chilies on the side."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Pad krapow is a fast, high-heat stir fry of garlic, chili and basil in a sauce of soy, sugar and a little oyster sauce, and the sources agree on adding the basil off the heat. The lead (RecipeTin Eats) uses chicken thigh; the tofu versions either deep-fry egg tofu or dry out mashed tofu. Here the tofu is crumbled and browned hard, and mushrooms stand in for the oyster sauce's depth. Oyster sauce and dark soy are replaced with tamari and sugar so it stays vegan and gluten-free, and the Thai chilies move to the table so the base stays mild.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Thai Chilli Basil Chicken",
+   "url": "https://www.recipetineats.com/thai-basil-chicken-stir-fry/",
+   "rating": 4.93,
+   "rating_count": 165,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Hungry in Thailand",
+   "title": "Tofu Pad Krapow Recipe (Thai Basil Tofu Stir-Fry)",
+   "url": "https://hungryinthailand.com/tofu-pad-krapow-recipe/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  },
+  {
+   "name": "Am Carmen's Kitchen",
+   "title": "Pad Krapow (Thai Basil Tofu)",
+   "url": "https://amcarmenskitchen.com/pad-krapow-thai-basil-tofu/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

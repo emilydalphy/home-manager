@@ -71,7 +71,7 @@ import statistics
 from datetime import date, timedelta
 
 from ..db import get_conn
-from ._shared import household_id
+from ._shared import household_id, require_household_row
 from . import grocery as _grocery
 from . import quantities as _quantities
 from . import recipes as _recipes
@@ -422,6 +422,21 @@ def add_grocery_item_for_chat(
     see CLAUDE.md's Decision log, 2026-09-15 ("Shop tab behaviour
     unchanged").
     """
+    # The tool's schema doesn't declare source_weekly_plan_id, but an
+    # undeclared key reaches here untouched (agent.read_tool_input), so the
+    # model can send one. Another household's plan id would stamp this
+    # household's line as that plan's ingredient — merged, cleared and
+    # recomputed by a week that isn't theirs. Checked HERE, at the one
+    # untrusted door, rather than in grocery.add_grocery_item, which the
+    # ingest calls mid-transaction with plans of its own.
+    if source_weekly_plan_id is not None:
+        conn = get_conn()
+        try:
+            require_household_row(
+                conn, "weekly_plans", source_weekly_plan_id, label="weekly plan", close_on_miss=False,
+            )
+        finally:
+            conn.close()
     result = _grocery.add_grocery_item(
         item, quantity=quantity, category=category, added_by=added_by,
         source_weekly_plan_id=source_weekly_plan_id, quantity_mode=quantity_mode,
@@ -582,6 +597,21 @@ def _relearn(conn, staple_id: int) -> None:
     holiday, a bulk buy) should not drag the rhythm with it. Nothing is
     learned from fewer than INTERVALS_TO_LEARN intervals: a told or default
     cadence stands until the household has actually shown one.
+
+    Two refinements, both from moving a clock over eight weeks of shopping
+    (defect hunt, 2026-10-25):
+
+    - Purchases fewer than MIN_CADENCE_DAYS apart are ONE restock for the
+      intervals (the clamp already says under three days is not a rhythm).
+      Milk bought on its weekly days and topped up two days after one of
+      them read intervals [7, 2] and learned "about every 4 days" — the
+      median of two is their mean — and put milk back on the list three
+      days early. The later date still anchors next_due: they did buy.
+    - A TOLD cadence is replaced only by intervals that end after it was
+      told (_told_on). Learning from the whole history meant "we buy paper
+      towels every two months" lasted until the next purchase, when the
+      monthly gaps from before the household corrected Pomona put it back
+      to "about every month".
     """
     r = _row(conn, staple_id)
     if r is None:
@@ -594,9 +624,21 @@ def _relearn(conn, staple_id: int) -> None:
         ).fetchall()
     })
     parsed = [d for d in (_parse(s) for s in dates) if d is not None]
-    intervals = [(b - a).days for a, b in zip(parsed, parsed[1:]) if (b - a).days > 0]
+    restocks: list[date] = []
+    for d in parsed:
+        if restocks and (d - restocks[-1]).days < MIN_CADENCE_DAYS:
+            continue
+        restocks.append(d)
+    pairs = list(zip(restocks, restocks[1:]))
     cadence = r["cadence_days"]
     source = r["cadence_source"]
+    # Measured from the newest telling whatever the source now says: once
+    # two gaps since it have made the rhythm "learned", the gaps from
+    # before it must not pull it back on the next purchase (review round).
+    told_on = _told_on(conn, r, fallback=(source == "told"))
+    if told_on is not None:
+        pairs = [(a, b) for a, b in pairs if b > told_on]
+    intervals = [(b - a).days for a, b in pairs if (b - a).days > 0]
     if len(intervals) >= INTERVALS_TO_LEARN:
         cadence = _clamp(round(statistics.median(intervals)))
         source = "learned"
@@ -610,30 +652,60 @@ def _relearn(conn, staple_id: int) -> None:
     )
 
 
+def _told_on(conn, r, fallback: bool = True) -> date | None:
+    """The day the household last told this staple's cadence: its newest
+    'told' event, or — with `fallback`, for a staple still on a cadence
+    told before that event was written — the day the staple was made,
+    which is when most cadences are told. None when never told."""
+    row = conn.execute(
+        "SELECT MAX(on_date) AS d FROM staple_events WHERE household_id = ? AND staple_id = ? AND kind = 'told'",
+        (household_id(), r["id"]),
+    ).fetchone()
+    told = _parse(row["d"] if row else None)
+    if told is None and fallback:
+        told = _parse(r["created_at"])
+    return told
+
+
 def _seed_history(conn, staple_id: int, item: str, except_line_id: int | None = None) -> int:
     """
     What Pomona already knows about buying this, so a household that has
-    been shopping with it for weeks doesn't start from a default. Purchased
-    grocery lines carry no purchase timestamp — only when the line was
-    made — so each purchased line's created_at counts as ONE approximate
-    bought date. That is honest enough to learn a cadence from (it is off
-    by the few days between listing and buying, the same way every time)
-    and is never used for anything finer than "about every N weeks".
+    been shopping with it for weeks doesn't start from a default. Each
+    purchased line counts as ONE bought date: the day it was TICKED
+    (inventory_added_at, stamped by mark_grocery_item), on the household's
+    clock — or, for a line bought before that stamp existed, the day it
+    was made, which is off by the days between listing and buying and is
+    never used for anything finer than "about every N weeks".
+
+    Until 2026-10-22 it was always created_at, and that was wrong where it
+    matters most: a week's line is made at approval and bought days later,
+    so the LAST date — which _relearn anchors next_due on — was the
+    approval, not the shop. Milk bought Saturday off three weeks' lists,
+    made a staple that evening, read "last bought Sunday, due tomorrow"
+    and was back on the list the next morning.
+
     except_line_id leaves out the line being bought at this very moment —
-    its created_at and today's tick are the same purchase, and counting
-    both would teach a few-day "interval" that never happened.
+    its tick is today's purchase, which the caller records itself, and
+    counting both would teach a few-day "interval" that never happened.
     Returns how many dates were seeded.
     """
+    from . import before_shop as _before_shop  # lazy: it imports this module
+    from . import cooker as _cooker
+
+    # On the caller's connection: add_staple is mid-write when it seeds.
+    zone = _cooker.household_zone(conn)
     wanted = _grocery._merge_key(item)
     rows = conn.execute(
-        "SELECT id, item, created_at FROM grocery_items WHERE household_id = ? AND status = 'purchased'",
+        "SELECT id, item, COALESCE(inventory_added_at, created_at) AS bought_at FROM grocery_items "
+        "WHERE household_id = ? AND status = 'purchased'",
         (household_id(),),
     ).fetchall()
     seen = set()
     for row in rows:
         if row["id"] == except_line_id or _grocery._merge_key(row["item"]) != wanted:
             continue
-        d = (row["created_at"] or "")[:10]
+        day = _before_shop._household_date_of(row["bought_at"], zone)
+        d = _iso(day) if day is not None else ""
         if not d or d in seen:
             continue
         seen.add(d)
@@ -719,6 +791,30 @@ def add_staple(
         if every_days:
             fields += ["cadence_days = ?", "cadence_source = 'told'"]
             params.append(_clamp(every_days))
+            # The due date was a cadence out from the last purchase on the
+            # OLD rhythm, so it moves with the new one: "we buy coffee every
+            # week" on a 3-week default left it "about every week · due in
+            # 3 weeks". Only from a real last-bought date — a staple never
+            # bought is due already, and stays so.
+            #
+            # A due date LATER than the old rhythm put it is an answer the
+            # household gave — "We have plenty" / "Not this trip" push it
+            # out from today and leave last bought alone — and a new rhythm
+            # does not take that answer back: rebuilding from last bought
+            # alone made coffee "probably running low" right after "we have
+            # plenty". So the later of the two stands.
+            last = _parse(existing["last_bought_at"])
+            if last is not None and not due_now:
+                new_due = last + timedelta(days=_clamp(every_days))
+                current = _parse(existing["next_due_at"])
+                old_rhythm_due = last + timedelta(days=existing["cadence_days"] or 0)
+                if current is not None and current > old_rhythm_due:
+                    new_due = max(new_due, current)
+                fields.append("next_due_at = ?")
+                params.append(_iso(new_due))
+            # When it was told is what _relearn measures against: only
+            # purchases after this can overrule it.
+            _event(conn, staple_id, "told", "chat", today)
         if quantity:
             fields.append("quantity = ?")
             params.append(quantity)
@@ -749,6 +845,8 @@ def add_staple(
         )
         staple_id = cur.lastrowid
         _event(conn, staple_id, "added", "chat")
+        if every_days:
+            _event(conn, staple_id, "told", "chat", today)
         seeded = _seed_history(conn, staple_id, name)
         if seeded >= INTERVALS_TO_LEARN + 1:
             # Enough history to learn from: let the learned cadence and
@@ -761,6 +859,11 @@ def add_staple(
                     (today, staple_id, household_id()),
                 )
         created = True
+    if line is not None and on_list and line["staple_id"] is None and line["source_weekly_plan_id"] is not None:
+        # Made from a week's line: that line stays the plan's (below), and
+        # it is what covers this staple this trip — sync_due_staples reads
+        # this row, because a week's line by name alone no longer does.
+        _event(conn, staple_id, "added", "shop", grocery_item_id=line["id"])
     if line is not None and line["staple_id"] is None and line["source_weekly_plan_id"] is None:
         # The tapped line becomes the staple's line, so buying it teaches
         # this staple and sync_due_staples sees it covered by id. A line
@@ -768,7 +871,8 @@ def add_staple(
         # (grocery.set_aside_carried_over_items) only moves lines with no
         # staple_id, and the meals need it whatever the staple decides. Its
         # name on the list still covers the staple in sync, and buying it
-        # still teaches the staple by name.
+        # still teaches the staple by name (the 'added' row above is what
+        # makes the name cover it).
         conn.execute(
             "UPDATE grocery_items SET staple_id = ? WHERE id = ? AND household_id = ? AND staple_id IS NULL",
             (staple_id, line["id"], household_id()),
@@ -1508,6 +1612,16 @@ def sync_due_staples() -> dict:
     nothing. Idempotent; safe to call on every read of the list, which is
     where it is called from (get_grocery_list_by_section and
     get_grocery_list_by_store, for status 'needed').
+
+    A WEEK'S line does not cover it (defect hunt, 2026-10-24). A recipe's
+    "Milk · 1/2 cup" is what that dinner uses, not the household's weekly
+    2 L: counted as cover, the staple never came on, the list asked for
+    half a cup, and ticking it then taught the staple it had been bought.
+    The staple's line joins the week's when the amounts add up — the same
+    line the other order makes (a staple's line the approval then adds a
+    meal's share to), so "We have plenty" trims it back to the meals'
+    part — and stands beside it when they don't ("2 L" beside "1/2 cup").
+    A person's own line, or a line already this staple's, still covers it.
     """
     # The household's day and zone, read before this function's own
     # connection opens (each helper opens one of its own).
@@ -1525,11 +1639,29 @@ def sync_due_staples() -> dict:
         conn.close()
         return {"added": []}
     live = conn.execute(
-        "SELECT item, staple_id FROM grocery_items WHERE household_id = ? AND status IN ('needed', 'in_cart')",
+        "SELECT item, staple_id, source_weekly_plan_id, excluded_from_list FROM grocery_items "
+        "WHERE household_id = ? AND status IN ('needed', 'in_cart')",
         (household_id(),),
     ).fetchall()
-    live_keys = {_grocery._merge_key(row["item"]) for row in live}
+    # What covers a staple by name: a line the household's own (no week
+    # behind it), or one set aside as "getting it elsewhere" — they have
+    # said where that comes from. A week's line alone does not (docstring).
+    live_keys = {
+        _grocery._merge_key(row["item"]) for row in live
+        if row["source_weekly_plan_id"] is None or row["excluded_from_list"]
+    }
     live_staple_ids = {row["staple_id"] for row in live if row["staple_id"]}
+    # A staple made from a week's line still on the list ("Make it a
+    # staple" on a plan row, add_staple): that line is this trip's answer.
+    made_from_live = {
+        row["staple_id"]
+        for row in conn.execute(
+            "SELECT e.staple_id FROM staple_events e JOIN grocery_items g "
+            "ON g.id = e.grocery_item_id AND g.household_id = e.household_id "
+            "WHERE e.household_id = ? AND e.kind = 'added' AND g.status IN ('needed', 'in_cart')",
+            (household_id(),),
+        ).fetchall()
+    }
     # A line taken off today — by the staple buttons, ⋯ → Remove, or a
     # pre-shop drop — is this trip's answer; don't ask again until
     # tomorrow at the earliest. Older removed lines are just leftovers of
@@ -1562,7 +1694,8 @@ def sync_due_staples() -> dict:
     }
     added = []
     for s in due:
-        if s["id"] in live_staple_ids or s["id"] in answered_today or _grocery._merge_key(s["item"]) in live_keys:
+        if (s["id"] in live_staple_ids or s["id"] in answered_today or s["id"] in made_from_live
+                or _grocery._merge_key(s["item"]) in live_keys):
             continue
         # A spice waits for a recipe to want it (the "Spices this week"
         # card pre-ticks it then) — never a line of its own. Module note.
@@ -1579,7 +1712,17 @@ def sync_due_staples() -> dict:
         if not (s["item"] or "").strip():
             logger.debug("Skipping a blank staple item name for staple_id %s", s["id"])
             continue
-        added.append(_put_on_list(conn, s))
+        put = _put_on_list(conn, s)
+        if put.get("merged"):
+            # Joined a week's line: the line is now the staple's with the
+            # meals' share on it, exactly as when the staple came first —
+            # so it reads "Probably running low", and the staple's answers
+            # trim it back to the meals' part (_trim_to_the_weeks_part).
+            conn.execute(
+                "UPDATE grocery_items SET added_by = ? WHERE id = ? AND household_id = ?",
+                (ADDED_BY_STAPLE, put["item_id"], household_id()),
+            )
+        added.append(put)
     conn.commit()
     conn.close()
     return {"added": added}
@@ -1613,4 +1756,4 @@ def _put_on_list(conn, s) -> dict:
         "UPDATE grocery_items SET staple_id = ? WHERE id = ? AND household_id = ?",
         (s["id"], res["item_id"], household_id()),
     )
-    return {"item_id": res["item_id"], "item": s["item"], "staple_id": s["id"]}
+    return {"item_id": res["item_id"], "item": s["item"], "staple_id": s["id"], "merged": bool(res.get("merged"))}

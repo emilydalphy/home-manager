@@ -1,0 +1,50 @@
+{
+ "dish_name": "Thai Pineapple Fried Rice",
+ "cuisine": "Thai",
+ "main_protein": "shrimp",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {"item": "Jasmine rice", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Large shrimp", "qty": "3/4 lb", "category": "meat/seafood"},
+  {"item": "Eggs", "qty": "2", "category": "dairy"},
+  {"item": "Pineapple chunks", "qty": "1 can (20 oz)", "category": "pantry"},
+  {"item": "Raw cashews", "qty": "1/2 cup", "category": "pantry"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Red bell pepper", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Frozen peas", "qty": "1 bag", "category": "frozen", "cook_qty": "3/4 cup"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce", "cook_qty": "6"},
+  {"item": "Fish sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Oyster sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 1/2 tbsp"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 tsp"},
+  {"item": "Vegetable oil", "qty": "5 tbsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "The day before: rinse the 1 1/2 cups jasmine rice in a sieve until the water runs almost clear. Cook it with 2 1/4 cups water in a rice cooker, or in a covered pot over low heat for about 15 minutes. Spread it on a tray to cool, then cover it and refrigerate it overnight. Forgot? Spread freshly cooked rice on a tray, let it cool for 10 minutes and freeze it for 1 hour.",
+  "Pat the 3/4 lb shrimp dry with paper towels, put them in a bowl and toss them with 1 tsp of the fish sauce.",
+  "Meanwhile, finely chop the onion, dice the red bell pepper and mince the 3 garlic cloves. Thinly slice 6 green onions. Drain the pineapple in a sieve. That should be about 2 cups.",
+  "Stir the sauce together in a small bowl: the rest of the fish sauce (1 tbsp plus 2 tsp), 1 1/2 tbsp oyster sauce and 1 tsp sugar.",
+  "Break up the cold rice with your hands so there are no big clumps.",
+  "Heat 1 tbsp oil in a wok or your largest skillet over medium. Add the 1/2 cup cashews and stir them for 2 to 3 minutes, until they're golden and smell toasty. Transfer them to a plate.",
+  "Turn the heat up to high and add 1 tbsp oil. Lay the shrimp in a single layer and leave them for about 1 minute, until they're pink underneath. Flip them and cook the other side for about 1 minute, until they're pink all over and curled. Transfer them to the plate with the cashews.",
+  "Beat the 2 eggs in a small bowl. Add 1 tbsp oil to the pan, pour in the eggs and let them set into a thin, messy omelette, about 1 minute. Transfer it to a cutting board and roughly chop it.",
+  "Add the last 2 tbsp oil to the pan, still on high. Add the onion and red pepper and stir fry for about 2 minutes, until the onion softens and browns at the edges.",
+  "Add the garlic and the 3/4 cup frozen peas and stir for 30 seconds, until the garlic smells fragrant.",
+  "Add the rice and pour the sauce over it. Stir and toss constantly for about 3 minutes, until every grain is hot, evenly coloured and some are catching and browning on the pan.",
+  "Add the pineapple, shrimp and chopped egg and toss for about 1 minute, until the pineapple is hot.",
+  "Take the pan off the heat and stir in the green onions and toasted cashews.",
+  "Taste it. If it's flat, add a splash more fish sauce. Serve it hot."
+ ],
+ "advance_prep_notes": "cook the rice the day before so it's cold and dry",
+ "advance_prep_step_indices": [1],
+ "method_notes": "All three versions fry cold, day-old jasmine rice with onion and garlic, season it with fish sauce, add the pineapple near the end so it only warms through, and finish with green onions. RecipeTin Eats seasons with oyster sauce, fish sauce and a little sugar, adds red pepper and peas, and suggests shrimp and a chopped omelette as add-ins; Tara's Multicultural Table toasts cashews first, sears the shrimp separately and adds curry powder, and Jet Tila's Food Network version uses shallot, ginger, soy and curry powder and serves it in the pineapple shell. This one follows the lead's sauce and order, adds the shrimp, egg and toasted cashews the way Tara's does, leaves out the curry powder, and uses canned pineapple (the lead says it works as well as fresh).",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Pineapple Fried Rice (Thai)", "url": "https://www.recipetineats.com/pineapple-fried-rice-thai/", "rating": 4.96, "rating_count": 49, "read": true, "lead": true},
+  {"name": "Tara's Multicultural Table", "title": "Khao Pad Sapparod (Thai Pineapple Fried Rice)", "url": "https://tarasmulticulturaltable.com/khao-pad-sapparot-thai-pineapple-fried-rice/", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Food Network", "title": "Pineapple Fried Rice (Khao Pad Sapparod)", "url": "https://www.foodnetwork.com/recipes/pineapple-fried-rice-khao-pad-sapparod-17195113", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

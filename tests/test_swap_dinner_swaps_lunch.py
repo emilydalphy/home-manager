@@ -149,7 +149,7 @@ from app import tools
 from app.db import get_conn
 from app.tools._shared import use_household
 
-sop = importlib.import_module("app.tools.swap_options")
+sop = importlib.import_module("app.tools.swap_option_picks")
 swap_in_place = importlib.import_module("app.tools.swap_in_place")
 
 TODAY = household_today()
@@ -963,7 +963,7 @@ def test_no_module_level_name_is_defined_twice_in_what_this_touched():
     branch adds module-level names to. Mutation: naming the new word list
     after one already in the file — this test."""
     import ast
-    for mod in ("leftovers", "swap_in_place", "swap_options", "weekly_plan", "meal_variety"):
+    for mod in ("leftovers", "swap_in_place", "swap_option_picks", "weekly_plan", "meal_variety"):
         path = Path(__file__).resolve().parent.parent / "app" / "tools" / f"{mod}.py"
         tree = ast.parse(path.read_text(encoding="utf-8"))
         names = []

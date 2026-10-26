@@ -1,0 +1,143 @@
+{
+ "dish_name": "Atkilt Wat",
+ "cuisine": "Ethiopian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 45,
+ "ingredients": [
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Green cabbage",
+   "qty": "1 small head",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small piece",
+   "category": "produce"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground fenugreek",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cardamom",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cloves",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Injera",
+   "qty": "1 package",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Peel the 4 potatoes and cut them into 3/4 inch cubes. Peel the 3 carrots and slice them into 1/4 inch rounds.",
+  "Quarter the cabbage, cut out the core, and slice the whole head as thinly as you can. That should be about 8 cups.",
+  "Finely chop the onion. Mince the 4 garlic cloves, and peel and mince the ginger until you have about 2 tsp. Slice the green chili thinly and put it in a small bowl for the table.",
+  "In a small bowl, mix the 1/2 tsp cumin, 1 tsp turmeric, 1/2 tsp fenugreek, 1/2 tsp cardamom, 1/2 tsp cinnamon, 1/4 tsp cloves and 1/4 tsp black pepper.",
+  "Heat 1 1/2 tbsp of the oil in a Dutch oven or your largest deep skillet over medium-low. Add the onion and cook for about 4 minutes, stirring now and then, until it's soft.",
+  "Add the garlic and ginger and stir for about 1 minute, until they smell fragrant.",
+  "Add the spice mix and stir for 2 to 3 minutes, until the onion turns golden yellow and the spices smell warm. If it starts to stick, add a splash of water.",
+  "Add the potatoes and carrots and stir for 1 minute to coat them. Pile the cabbage on top and sprinkle with 1/2 tsp of the salt. Cover and cook for 15 minutes, stirring once halfway through, until the cabbage has wilted down.",
+  "Add the last 1/2 tbsp oil and the last 1/2 tsp salt and stir well. If the bottom is sticking, add 2 or 3 tbsp water. Cover and cook for about 15 minutes, until a cube of potato breaks easily when you press it with a spoon.",
+  "Take the lid off and turn the heat to medium-high. Cook for 2 to 3 minutes, stirring now and then, until any liquid has cooked off and a few edges of the cabbage are lightly browned.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the injera, with the green chili on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three soften onion, garlic and ginger, fry the spices in the oil, then cover and cook potatoes, carrots and cabbage together until the potatoes are tender, and serve it with injera. Vegan Richa (the lead) seasons it with turmeric, cumin, fenugreek, cardamom, cinnamon and cloves and adds the salt and a little more oil halfway; The Wanderlust Kitchen and Yummy Tummy use berbere instead, and Yummy Tummy finishes it on high heat. This one follows the lead's spices and timing for 4, adds that last high-heat minute for a little browning, and puts the lead's green chili on the side.",
+ "sources": [
+  {
+   "name": "Vegan Richa",
+   "title": "Atakilt Wat (Ethiopian Cabbage, Potato & Carrots)",
+   "url": "https://www.veganricha.com/atakilt-wat-ethiopian-cabbage-potato/",
+   "rating": 4.87,
+   "rating_count": 69,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Wanderlust Kitchen",
+   "title": "Ethiopian Cabbage (Atakilt Wat)",
+   "url": "https://thewanderlustkitchen.com/atakilt-wat-ethiopian-spiced-cabbage-carrot-potatoes/",
+   "rating": 4.47,
+   "rating_count": 45,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Yummy Tummy Aarthi",
+   "title": "Ethiopian Cabbage Recipe (Atakilt Wat)",
+   "url": "https://www.yummytummyaarthi.com/ethiopian-cabbage-potato-carrots-atakilt-wat/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

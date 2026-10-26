@@ -214,9 +214,17 @@ def _skip(entry_id: int, meal: str, day: str, today: str) -> dict | None:
             fed = _weekly_plan.fed_nights_in_eating_order(source, day)
             if fed and not _weekly_plan.fed_night_is_cooked(conn, fed[0]):
                 target = fed[0]
+        # "We skipped it" forgets any start, the way "Mark not cooked" does
+        # (check_off_meal): "Start cooking" is also how a person gets to the
+        # steps, so a stamp on a night nobody cooked is ordinary. Left on,
+        # it is a cook still under way to every reader of cook_begun — and
+        # in the moved shape below it rode onto the fed night, so Friday's
+        # lunch read "Started 6:02" (Thursday's clock) and could not be
+        # moved, "Already cooking" (defect hunt, 2026-10-22). Undo puts it
+        # back with the rest of the snapshot.
         if target is None:
             conn.execute(
-                "UPDATE meal_plan_entries SET skipped_at = datetime('now') "
+                "UPDATE meal_plan_entries SET skipped_at = datetime('now'), cook_started_at = NULL "
                 "WHERE id = ? AND household_id = ? AND skipped_at IS NULL",
                 (entry_id, household_id()),
             )
@@ -261,13 +269,16 @@ def _skip(entry_id: int, meal: str, day: str, today: str) -> dict | None:
             derived.pop("make_double_for", None)
             derived.pop("make_double_note", None)
         conn.execute(
-            "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?",
+            "UPDATE meal_plan_entries SET derived_from_json = ?, cook_started_at = NULL "
+            "WHERE id = ? AND household_id = ?",
             (json.dumps(derived), entry_id, household_id()),
         )
-        label = _weekly_plan.fed_night_label(target)
+        # The stored reason is read on later days, so it keeps the weekday;
+        # the toast is said now, so a move onto today says "tonight".
+        label = _weekly_plan.fed_night_label(target, today=today)
         holder_id = _weekly_plan.plan_slot_empty(
             plan_id, entry["date"], entry["slot"],
-            reason=f"Skipped — the {meal} moved to {label}.",
+            reason=f"Skipped — the {meal} moved to {_weekly_plan.fed_night_label(target)}.",
             derived_from={"constraint": SKIPPED_MOVED_CONSTRAINT, "moved_entry_id": entry_id},
             conn=conn,
         )["entry_id"]

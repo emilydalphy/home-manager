@@ -1,0 +1,41 @@
+{
+ "dish_name": "Clafoutis",
+ "cuisine": "French",
+ "main_protein": "dairy",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 70,
+ "ingredients": [
+  {"item": "Unsalted butter", "qty": "1 tsp", "category": "dairy"},
+  {"item": "Cherries", "qty": "1 lb", "category": "produce"},
+  {"item": "Eggs", "qty": "3", "category": "dairy"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "All-purpose flour", "qty": "1/2 cup", "category": "pantry"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Vanilla extract", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Milk", "qty": "3/4 cup", "category": "dairy"},
+  {"item": "Heavy cream", "qty": "1/2 cup", "category": "dairy"},
+  {"item": "Powdered sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "2 tbsp"}
+ ],
+ "instructions": [
+  "Heat the oven to 350°F with a rack in the middle. Rub the 1 tsp butter all over the inside of a 9 or 10 inch pie dish or ceramic baking dish.",
+  "Pull the stems off the 1 lb cherries and take out the pits. No cherry pitter? Stand a cherry on the mouth of an empty bottle and push the pit through into the bottle with a chopstick.",
+  "Spread the cherries over the bottom of the dish in a single layer.",
+  "Crack the 3 eggs into a medium bowl and whisk until they're foamy. Add the 1/2 cup sugar and whisk for 3 minutes, until it's pale and well mixed.",
+  "Add the 1/2 cup flour, the 1/2 tsp salt and the 1 tbsp vanilla. Whisk hard until the batter is smooth with no lumps.",
+  "Pour in the 3/4 cup milk and the 1/2 cup cream a little at a time, whisking as you go. Tap the bowl on the counter a few times to knock out the bubbles.",
+  "Pour the batter over the cherries. Bake for 50 to 60 minutes, until it's puffed and lightly browned and a toothpick in the center comes out clean.",
+  "Let it cool in the dish for at least 10 minutes. It sinks as it cools. That's normal.",
+  "Dust the 2 tbsp powdered sugar over the top through a small sieve and cut it into 8 wedges. Serve it warm, at room temperature or cold. Cover the leftover wedges and keep them in the fridge."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three lay cherries in a buttered dish, pour over a thin pancake-style batter of eggs, sugar, flour, milk and vanilla, and bake it until puffed and set, then dust it with powdered sugar. Tasting Table (the lead) pits the cherries, whips the eggs and sugar first, adds cream with the milk and bakes at 350°F; Once Upon a Chef blends the batter, adds almond extract and sprinkles sugar on halfway, and Pardon Your French leaves the pits in (its 4.3 is from 60 reviews, not ratings). One dish cuts into 8 wedges, so it covers two snacks for four.",
+ "sources": [
+  {"name": "Tasting Table", "title": "Easy Cherry Clafoutis Recipe", "url": "https://www.tastingtable.com/674500/easy-cherry-clafoutis-recipe/", "rating": 5.0, "rating_count": 111, "read": true, "lead": true},
+  {"name": "Once Upon a Chef", "title": "Cherry Clafoutis", "url": "https://www.onceuponachef.com/recipes/cherry-clafoutis.html", "rating": 4.9, "rating_count": 62, "read": true, "lead": false},
+  {"name": "Pardon Your French", "title": "Classic French Cherry Clafoutis", "url": "https://www.pardonyourfrench.com/cherry-clafoutis/", "rating": 4.3, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

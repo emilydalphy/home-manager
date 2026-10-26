@@ -1,0 +1,89 @@
+{
+ "dish_name": "Ye'Kik Wat",
+ "cuisine": "Ethiopian",
+ "main_protein": "lentils",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 70,
+ "ingredients": [
+  {
+   "item": "Yellow split peas",
+   "qty": "1 lb",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Berbere",
+   "qty": "1 1/2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Injera",
+   "qty": "1 package",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Put the 1 lb split peas in a sieve and rinse them under cold water until the water runs clear. Pick out any small stones.",
+  "Put the peas in a large pot with 6 cups water and bring to a boil over high heat. Skim off the foam. Turn the heat to medium-low, partly cover, and simmer for 35 to 40 minutes, stirring now and then, until the peas are soft and starting to fall apart. If it gets thick and catches on the bottom, add a splash of water.",
+  "Meanwhile, finely chop the onion, chop the 5 garlic cloves, and cut the tomato into small cubes.",
+  "When the peas have about 15 minutes left, put the onion in a Dutch oven or heavy pot with no oil and set it over medium-high. Cook for 3 to 4 minutes, stirring, until the edges start to brown.",
+  "Add 1/2 cup water and let it bubble, stirring, until it has cooked off, about 3 minutes.",
+  "Turn the heat to medium. Add 2 tbsp of the oil and 1 tbsp of the berbere and stir for about 1 minute, until it turns dark red and smells toasty. Don't let it scorch. Burnt berbere tastes bitter.",
+  "Add the garlic and stir for about 1 minute, until it smells fragrant.",
+  "Add the tomato, cover, and cook for about 3 minutes, until it's soft.",
+  "Add the cooked peas with all their liquid and 3/4 tsp of the salt. Stir and bring it to a simmer. Turn the heat to low and simmer uncovered for 20 to 25 minutes, stirring often and scraping the bottom, until it's thick like a loose porridge. Mash some of the peas against the side of the pot as you go. Add a splash of water if it gets too thick.",
+  "Meanwhile, for anyone who wants more heat, warm the last 1 tbsp oil in a small pan over low. Stir in the last 1/2 tbsp berbere for about 30 seconds, until it smells toasty, and transfer it into a small bowl for the table.",
+  "Taste the stew. If it's flat, add the last 1/4 tsp salt.",
+  "Serve with the injera, with the berbere oil on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both cook split peas soft in water and stew them with onion, garlic and berbere or a berbere-style spice mix until thick, and serve it with injera. The Jewish Food Society (the lead) soaks green split peas overnight, cooks them separately, browns the onion in a dry pot before the oil and berbere go in, adds tomato, then simmers it all together about an hour; Tasting Table blends its own spices and cooks the peas in one pot with potatoes and carrots. This one follows the lead's dry-onion base and two-pot order, but uses yellow split peas (the usual kik in Ethiopia), which cook soft without soaking, and moves a third of the berbere to an oil on the side so the pot is milder. Neither version had 20 or more ratings and RecipeTin Eats has no Ethiopian recipes, so the lead is the first page read; mild turmeric kik alicha pages were skipped as a different dish.",
+ "sources": [
+  {
+   "name": "Jewish Food Society",
+   "title": "Split Peas with Berbere",
+   "url": "https://jewishfoodsociety.org/recipes/split-peas-with-berbere",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Tasting Table",
+   "title": "Ethiopian-Inspired Berbere Split Peas",
+   "url": "https://tastingtable.com/1521852/ethiopian-inspired-berbere-split-peas-recipe",
+   "rating": 4.9,
+   "rating_count": 17,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

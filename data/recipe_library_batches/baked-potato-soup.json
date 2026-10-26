@@ -1,0 +1,45 @@
+{
+ "dish_name": "Baked Potato Soup",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "Russet potatoes", "qty": "2 lb (about 4 medium)", "category": "produce"},
+  {"item": "Yellow onion", "qty": "1 small", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Unsalted butter", "qty": "2 tbsp", "category": "dairy"},
+  {"item": "All-purpose flour", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Vegetable broth", "qty": "1 carton (32 oz)", "category": "pantry", "cook_qty": "3 cups"},
+  {"item": "Buttermilk", "qty": "1 pint", "category": "dairy", "cook_qty": "1/2 cup"},
+  {"item": "Shredded sharp cheddar", "qty": "1 bag (8 oz)", "category": "dairy", "cook_qty": "1 1/4 cups"},
+  {"item": "Sour cream", "qty": "1 tub (8 oz)", "category": "dairy", "cook_qty": "2/3 cup"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce", "cook_qty": "2"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Scrub the potatoes and prick each one 4 or 5 times with a fork. Put them on a plate and microwave them on high for 10 to 12 minutes, turning them over halfway, until a knife slides into the middle easily.",
+  "Meanwhile, dice the onion, mince the 2 garlic cloves and finely chop 2 of the green onions.",
+  "Melt the 2 tbsp butter in a large pot over medium low heat. Add the onion and cook it for 5 to 7 minutes, stirring now and then, until it's soft and see-through.",
+  "Add the garlic and the 2 tbsp flour and stir for 1 minute.",
+  "Slowly whisk in the 3 cups broth. Turn the heat up to medium high and bring it to a boil, then turn it down and simmer for 5 minutes.",
+  "Meanwhile, cut the potatoes in half and scoop the insides into a bowl. Mash them with a fork or masher until they're mostly smooth. That should be about 3 cups.",
+  "Stir the potatoes into the pot with the 1/2 tsp salt and the 1/4 tsp pepper. Simmer for 5 minutes, stirring so the bottom doesn't catch.",
+  "Stir in the 1/2 cup buttermilk and heat it until it just starts to bubble.",
+  "Take the pot off the heat. Stir in 1 cup of the cheddar and 1/3 cup of the sour cream until the cheese melts.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Ladle it into bowls and top with the remaining 1/4 cup cheddar, the remaining 1/3 cup sour cream and the green onions."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions build a roux with garlic, thicken it with broth or milk, stir in mashed potato, then finish off the heat with cheddar and sour cream and top it with bacon, cheese and green onions. Spend With Pennies (the lead) starts from 3 cups of ready mashed potato, softens onion in bacon fat, uses chicken broth and a little buttermilk and is done in about 30 minutes, while Averie Cooks bakes russets for an hour and uses 6 cups of milk for a richer, thicker soup. To keep it vegetarian this softens the onion in butter, uses vegetable broth and leaves the bacon off the top. It cooks the potatoes in the microwave so the soup fits a lunch, which neither source does."
+,
+ "sources": [
+  {"name": "Spend With Pennies", "title": "Baked Potato Soup", "url": "https://www.spendwithpennies.com/baked-potato-soup/", "rating": 4.96, "rating_count": 65, "read": true, "lead": true},
+  {"name": "Averie Cooks", "title": "Loaded Baked Potato Soup", "url": "https://www.averiecooks.com/loaded-baked-potato-soup/", "rating": 4.67, "rating_count": 9, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

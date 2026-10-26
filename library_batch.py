@@ -126,6 +126,18 @@ def check_one(path: Path) -> list[str]:
         # cloves" (2026-10-20), so it is a look, not a failure.
         print(f"  look {path.name}: steps use {m['in_steps']} of {m['item']}, list says {m['listed']}"
               " (often a misread; fix only if the sum is really off)")
+    for ing in e["ingredients"]:
+        if ing.get("category") not in CATEGORIES:
+            problems.append(f"{ing.get('item')}: category must be one of {', '.join(CATEGORIES)}")
+    steps_n = len(e["instructions"])
+    if any(not isinstance(i, int) or not 1 <= i <= steps_n for i in e.get("advance_prep_step_indices") or []):
+        problems.append(f"advance_prep_step_indices must be step numbers 1 to {steps_n}")
+    for item in meat_in_a_meatless_dish(e):
+        # A look, not a failure: the library's main_protein is a variety
+        # word nobody's copy carries, and the dish may be right (Green
+        # Papaya Salad has fish sauce). What a vegetarian is served is the
+        # writer's job — agent._copy_from_library never copies for one.
+        print(f"  look {path.name}: main_protein is {e['main_protein']} but the list has {item}")
     for n, step in enumerate(e["instructions"], 1):
         if DASH.search(step):
             problems.append(f"step {n} has a dash")
@@ -134,6 +146,29 @@ def check_one(path: Path) -> list[str]:
     if SERVE_WHY.search(e["instructions"][-1]):
         problems.append("serving line explains itself")
     return problems
+
+
+CATEGORIES = ("produce", "dairy", "meat/seafood", "pantry", "frozen", "other")
+MEATLESS = ("vegetarian", "vegan")
+# What a meatless dish can't have, read by the allergy matcher itself (so
+# "Vegetable broth" isn't beef, "Vegetarian oyster sauce" isn't shellfish
+# and "Fish sauce" is fish).
+MEAT_WORDS = ("fish", "shellfish", "pork", "beef", "chicken", "lamb", "turkey", "veal",
+              "duck", "goat", "gelatin", "lard")
+
+
+def meat_in_a_meatless_dish(e: dict) -> list[str]:
+    """The lines of a dish tagged vegetarian/vegan that are meat or fish."""
+    if (e.get("main_protein") or "").lower() not in MEATLESS:
+        return []
+    from app.tools import allergen_gate, coordination
+    avoid = [{"member": None, "label": w, "source": "dietary_restriction", "severity": "hard",
+              "terms": coordination._match_terms(coordination._conflict_phrases(w))} for w in MEAT_WORDS]
+    # A line that says it's the meatless kind is ("Vegetarian oyster sauce");
+    # the gate holds it for a shellfish allergy, rightly, but it's no meat.
+    return [ing["item"] for ing in e.get("ingredients") or []
+            if not re.search(r"\b(?:vegetarian|vegan|plant[\s-]based)\b", ing["item"].lower())
+            and allergen_gate.hard_clashes(ing["item"], [ing], avoidances=avoid)]
 
 
 def cmd_check(args) -> int:

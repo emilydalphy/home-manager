@@ -830,6 +830,11 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 /* An open slot's line is the app's sentence for why the meal is the
    household's to fill (moves._open_slot_moves) — cut off, it says nothing. */
 .day-node.is-open-slot .day-node-meta { white-space: normal; }
+/* The quiet line under a cook or reheat (dayNodeWhyHtml) can carry an
+   allergy saved since the week was approved — "Has peanut, which Theo
+   can't have — swap it on Plan" (allergen_gate.clashes_since_approval).
+   Cut off after "Has peanut, …" it says nothing, so it wraps too. */
+.day-node-why { white-space: normal; }
 
 /* ---- The tag: which part of the day, in the eyebrow face ---- */
 .day-node-tag {
@@ -5166,7 +5171,7 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   padding: 0 12px;
 }
 .gro-stores-prompt-input::placeholder { color: var(--ink-placeholder); }
-.gro-stores-prompt-add .gro-linkbtn { min-height: 44px; padding: 0 4px; font-size: 13px; }
+.gro-stores-prompt-add .gro-linkbtn { min-height: 44px; min-width: 44px; padding: 0 4px; font-size: 13px; }
 /* How many shops are picked, said in words rather than left to be counted
    off the chips — a thumb covers the chip it just tapped. */
 .gro-stores-prompt-count {
@@ -5899,6 +5904,11 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   cursor: pointer;
 }
 .toast-action:hover { color: var(--apricot); }
+/* Rule 6: the word is 17px tall and "Undo" 34px wide — measured on the
+   phone walk, 2026-10-25. The toast's own 14px padding is room enough to
+   take the target out to 45×54 without the dark pill growing a pixel. */
+.toast-action { position: relative; }
+.toast-action::before { content: ""; position: absolute; inset: -14px -10px; }
 
 /* =====================================================================
    KITCHEN — the native hub (Stage 2 slice 3, built to InnKitchen)
@@ -6500,6 +6510,35 @@ button.cook-ready-row { cursor: pointer; }
 }
 .wwk-invite-again:hover { color: var(--apricot-label-hover); }
 .wwk-invite-new { padding-top: 6px; }
+.wwk-invite-open { display: flex; flex-direction: column; gap: 8px; }
+/* Take someone out of the household (2026-10-21): the main person's quiet
+   line on another adult's row, in the secondary ink rather than the
+   apricot label — it isn't an invitation to tap. The confirm opens in
+   place (the grocery list's "Take carrots off the list?" shape) and its
+   yes is the same outline button as Invite: nothing in this sheet is
+   urgent, and Rule 3 keeps --urgent for things that are. 44px (Rule 6). */
+.wwk-remove-link {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: 0;
+  min-height: 44px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-secondary);
+  cursor: pointer;
+  text-align: left;
+}
+.wwk-remove-link:hover { color: var(--ink); }
+.wwk-remove-confirm { display: flex; flex-direction: column; gap: 4px; }
+.wwk-remove-q {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
 .wwk-invite.wwk-input-row { flex-wrap: nowrap; }
 .wwk-store-count {
   font-weight: 500;
@@ -10434,6 +10473,11 @@ button.cook-badge-tap::after { content: ""; position: absolute; inset: -10px -6p
    'week' — see renderMealsStep), so is-review-layout is named for "this
    is reviewStepHtml", not for the 'review' step name alone. */
 .tab-panel.is-review-layout #week-plan-view { flex: 1 0 auto; }
+/* The Meal step is the third screen with that bug (phone walk, 2026-10-25):
+   a dish with no saved recipe is a title, one plate row and a note, so
+   "Done — on the table" sat 330px up a 844px phone with ground under it.
+   Same cure, same scoping — the Day step and the plain root are not this. */
+.tab-panel.is-meal-layout #week-plan-view { flex: 1 0 auto; }
 
 .rv-body { display: flex; flex-direction: column; gap: 18px; padding: 0 20px; }
 /* On --ground, where --ink-secondary is 4.44:1 — just under AA. */

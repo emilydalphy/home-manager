@@ -1,0 +1,40 @@
+{
+ "dish_name": "Pasta con Zucchine",
+ "cuisine": "Italian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Fusilli", "qty": "1 lb", "category": "pantry", "cook_qty": "12 oz"},
+  {"item": "Zucchini", "qty": "3 medium (about 1 1/2 lbs)", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Olive oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Parmesan cheese", "qty": "1 wedge (4 oz)", "category": "dairy", "cook_qty": "3/4 cup grated, plus more to serve"},
+  {"item": "Fresh basil", "qty": "1 bunch", "category": "produce", "cook_qty": "a small handful of leaves"},
+  {"item": "Salt", "qty": "1 tbsp plus 1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Fill a large pot with water, add 1 tbsp of the salt and bring it to a boil over high heat.",
+  "Meanwhile, trim the zucchini and grate them on the large holes of a box grater. Lightly crush the 2 garlic cloves with the side of a knife and peel them. Finely grate the Parmesan, keeping 3/4 cup for the pan and the rest for the table.",
+  "Heat 2 tbsp of the olive oil in a large, deep skillet over medium low. Add the garlic and let it sizzle gently for about 2 minutes, until it's pale golden and the oil smells of garlic.",
+  "Turn the heat to medium. Add the zucchini, the remaining 1/2 tsp salt and the 1/4 tsp black pepper. Cook for 8 to 10 minutes, stirring now and then, until the zucchini is very soft, most of its water has cooked off and a few strands are turning golden. Pick out the garlic and throw it away.",
+  "While the zucchini cooks, add 12 oz of the fusilli to the boiling water and cook it until it's al dente, following the package time. Scoop out 1 cup of the cooking water, then drain the fusilli.",
+  "Add the fusilli to the zucchini with a splash of the cooking water and toss for about 1 minute over medium heat.",
+  "Take the pan off the heat. Add the 3/4 cup Parmesan and another splash of the cooking water and toss until the cheese melts into a creamy sauce that clings to the pasta. Add more of the water if it looks dry.",
+  "Tear in a small handful of basil leaves and drizzle over the last 1 tbsp olive oil. Toss again.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the rest of the Parmesan on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions cook zucchini in olive oil with garlic while the pasta boils, then toss them together with some pasta water. GialloZafferano (the lead) grates the zucchini and cooks it soft in oil flavored with a whole garlic clove, finishing with basil and suggesting Parmesan as an option, while The Clever Meal browns sliced zucchini, adds minced garlic and makes it creamy with Parmesan and cream cheese or ricotta. This follows the lead's grated, soft zucchini and garlic-scented oil, and makes the Parmesan a real part of the sauce as The Clever Meal does, leaving out the cream cheese."
+,
+ "sources": [
+  {"name": "GialloZafferano", "title": "Pasta and Zucchini", "url": "https://www.giallozafferano.com/recipes/pasta-and-zucchini.html", "rating": 4.2, "rating_count": 541, "read": true, "lead": true},
+  {"name": "The Clever Meal", "title": "Pasta with Zucchini", "url": "https://theclevermeal.com/pasta-with-zucchini/", "rating": 5.0, "rating_count": 10, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

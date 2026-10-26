@@ -1,0 +1,46 @@
+{
+ "dish_name": "Sopa de Picadillo",
+ "cuisine": "Spanish",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {"item": "Boneless skinless chicken thighs", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Carrots", "qty": "2", "category": "produce"},
+  {"item": "Leek", "qty": "1", "category": "produce"},
+  {"item": "Chicken broth", "qty": "6 cups", "category": "pantry"},
+  {"item": "Eggs", "qty": "3", "category": "dairy"},
+  {"item": "Serrano ham", "qty": "4 oz", "category": "meat/seafood"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Olive oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Fideo noodles", "qty": "3 oz", "category": "pantry"},
+  {"item": "Fresh mint", "qty": "1 bunch", "category": "produce"}
+ ],
+ "instructions": [
+  "Sprinkle the 1/2 tsp salt over the chicken thighs. Peel the 2 carrots and cut them in half. Trim the leek, cut it in half lengthwise and rinse out any grit between the layers.",
+  "Put the chicken, carrots and leek in a large pot and add the 6 cups broth. Bring it to a boil over medium-high heat and skim off the foam that rises.",
+  "Turn the heat down so the broth barely bubbles. Partly cover the pot and simmer for about 20 minutes, until the chicken is tender. You're cooking it to 175°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest piece: it's done when there's no pink left.",
+  "Meanwhile, put the 3 eggs in a small pot and cover them with cold water. Bring it to a boil over high heat, then turn the heat to medium and cook for 10 minutes.",
+  "While the eggs cook, finely dice the ham and thinly slice the 3 garlic cloves.",
+  "Transfer the eggs into a bowl of cold water. Once they're cool enough to hold, peel and chop them.",
+  "Lift the chicken out of the broth onto a plate. Lift out the carrots and leek and discard them. Shred the chicken into small pieces with two forks.",
+  "Heat 1 tbsp olive oil in a small skillet over low heat. Add the ham and garlic and cook, stirring now and then, until the garlic is soft and pale gold, about 5 minutes. Don't let the garlic brown.",
+  "Add the ham and garlic, with their oil, to the broth and bring it back to a simmer over medium heat.",
+  "Add the 3 oz noodles and simmer, stirring once or twice, for about 3 minutes, until they're tender.",
+  "Meanwhile, pick the mint leaves and chop 2 tbsp of them.",
+  "Add the shredded chicken and simmer for about 1 minute, until it's hot.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Ladle it into bowls and top with the chopped egg and the mint."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version had 20 or more ratings (Directo al Paladar shows 117 votes but no score) and RecipeTin Eats has no sopa de picadillo, so this leads with Directo al Paladar's traditional Andalusian version. Both agree on the finish: a clear chicken broth with diced ham, chopped hard boiled egg, fine noodles and mint. Directo al Paladar makes the broth over an hour or more from chicken, ham and beef bones with carrot and leek, then chills it to lift off the fat; Gourmet Traveller (from MoVida) starts with good bought stock and softens the ham and garlic in olive oil first. For a lunch this simmers chicken thighs, carrot and leek in bought broth for 20 minutes and borrows the softened ham and garlic.",
+ "sources": [
+  {"name": "Directo al Paladar", "title": "Sopa de picadillo tradicional andaluza", "url": "https://www.directoalpaladar.com/recetas-de-sopas-y-cremas/sopa-picadillo-tradicional-andaluza-plato-cuchara-para-iniciar-cenas-navidenas", "rating": null, "rating_count": null, "read": true, "lead": true},
+  {"name": "Gourmet Traveller", "title": "Jamón and pasta soup with mint (Sopa de picadillo)", "url": "https://www.gourmettraveller.com.au/recipe/mains/jamon-and-pasta-soup-with-mint-sopa-de-picadillo-11161/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

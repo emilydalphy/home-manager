@@ -53,7 +53,7 @@ import secrets
 from datetime import datetime, timedelta, timezone
 
 from .db import get_conn
-from .tools._shared import _ADULT_SQL, use_household
+from .tools._shared import _ADULT_SQL, AmbiguousMemberName, find_member_row, use_household
 
 logger = logging.getLogger("home_manager")
 
@@ -136,12 +136,21 @@ def add_adult(household_id: int, name: str, eats_here: bool = True) -> int:
         raise InviteError("Add their first name first.")
     if len(clean) > MAX_NAME_LENGTH:
         raise InviteError("That name's a bit long — just their first name is fine.")
+    # The tools' own matching (find_member_row: case-, space- and
+    # accent-blind), because add_member below lands through it — so "Zoe"
+    # for a child saved as Zoé is that child, refused here, rather than a
+    # check that misses her and a write that then promotes her to adult
+    # (review of the 2026-10-24 accent fix).
     conn = get_conn()
     try:
-        row = conn.execute(
-            "SELECT id, age_group FROM members WHERE household_id = ? AND LOWER(name) = LOWER(?)",
-            (int(household_id), clean),
-        ).fetchone()
+        rows = conn.execute(
+            "SELECT id, name, age_group FROM members WHERE household_id = ? ORDER BY id",
+            (int(household_id),),
+        ).fetchall()
+        try:
+            row = find_member_row(conn, clean, rows=rows)
+        except AmbiguousMemberName as e:
+            raise InviteError(str(e))
     finally:
         conn.close()
     if row is not None:

@@ -1,0 +1,43 @@
+{
+ "dish_name": "Coban Salatasi",
+ "cuisine": "Turkish",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {"item": "Roma tomatoes", "qty": "4", "category": "produce"},
+  {"item": "Persian cucumbers", "qty": "4", "category": "produce"},
+  {"item": "Cubanelle peppers", "qty": "2", "category": "produce"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce"},
+  {"item": "Flat-leaf parsley", "qty": "1 bunch", "category": "produce"},
+  {"item": "Mint", "qty": "1 bunch", "category": "produce"},
+  {"item": "Lemon", "qty": "1", "category": "produce"},
+  {"item": "Olive oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Sumac", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Crusty bread", "qty": "1 loaf", "category": "other"}
+ ],
+ "instructions": [
+  "Cut the 4 tomatoes into 1/2 inch pieces and put them in a large bowl.",
+  "Peel the 4 cucumbers in stripes, leaving some skin on. Cut them into 1/2 inch pieces and add them to the bowl.",
+  "Sprinkle 1/2 tsp of the salt over the tomatoes and cucumbers and leave them while you chop the rest.",
+  "Cut the stems off the 2 peppers, pull out the seeds and cut them into 1/2 inch pieces. Thinly slice 4 of the green onions. Add both to the bowl.",
+  "Pick the leaves from the parsley and finely chop about 1/2 cup. Pick the leaves from a few sprigs of the mint and finely chop about 2 tbsp. Add them to the bowl.",
+  "Squeeze the lemon into a small bowl. That should be about 3 tbsp. Whisk in the 1/4 cup olive oil, the remaining 1/2 tsp salt and the 1/4 tsp black pepper.",
+  "Pour the dressing over the salad and toss it gently.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Sprinkle the 1 tsp sumac over the top. Serve right away with the bread."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions chop tomato, cucumber, green pepper and onion into small even pieces, add plenty of parsley and some mint, and dress it with olive oil, lemon juice and salt. Vidar Bergum, the lead, uses spring onions, salts the tomatoes and cucumbers first and says to dress it just before serving; Turkeys for Life uses a chopped onion rubbed with sumac and adds a splash of apple vinegar, and the Turkish Ministry of Culture and Tourism cuts everything into 1 cm pieces with spring onions. This one follows the lead's ratios scaled up for a lunch, with sumac from Turkeys for Life sprinkled on top and bread on the side as the lead suggests. No version had 20 or more ratings and RecipeTin Eats has no version, so the lead is the best-rated version read.",
+ "sources": [
+  {"name": "Vidar Bergum", "title": "Turkish Shepherd Salad (Çoban Salatası)", "url": "https://vidarbergum.com/recipe/turkish-shepherd-salad-coban-salatasi", "rating": 4.9, "rating_count": 8, "read": true, "lead": true},
+  {"name": "Turkeys for Life", "title": "Shepherd's Salad Recipe (Turkish Çoban Salatası)", "url": "https://www.turkeysforlife.com/2020/04/shepherds-salad-coban-salatasi.html", "rating": 5.0, "rating_count": 1, "read": true, "lead": false},
+  {"name": "Turkish Ministry of Culture and Tourism", "title": "Shepherd's Salad", "url": "https://www.ktb.gov.tr/EN-99014/shepherds-salad.html", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

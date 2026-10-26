@@ -1,0 +1,44 @@
+{
+ "dish_name": "Dakjuk",
+ "cuisine": "Korean",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 55,
+ "ingredients": [
+  {"item": "Short-grain white rice", "qty": "1 cup", "category": "pantry"},
+  {"item": "Chicken stock", "qty": "1 carton (48 oz)", "category": "pantry", "cook_qty": "6 cups"},
+  {"item": "Boneless skinless chicken thighs", "qty": "3/4 lb", "category": "meat/seafood"},
+  {"item": "Carrots", "qty": "1", "category": "produce"},
+  {"item": "Celery", "qty": "1 bunch", "category": "produce", "cook_qty": "1 stalk"},
+  {"item": "Shiitake mushrooms", "qty": "4", "category": "produce"},
+  {"item": "Garlic", "qty": "1 clove", "category": "produce"},
+  {"item": "Scallions", "qty": "1 bunch", "category": "produce", "cook_qty": "2"},
+  {"item": "Sesame oil", "qty": "2 1/2 tbsp", "category": "pantry"},
+  {"item": "Sesame seeds", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "to taste", "category": "pantry"},
+  {"item": "Black pepper", "qty": "a pinch", "category": "pantry"}
+ ],
+ "instructions": [
+  "The night before, or at least 1 hour ahead: rinse the 1 cup rice in a few changes of water, then cover it with cold water and leave it to soak. If it's soaking overnight, put it in the fridge.",
+  "Pour the 6 cups chicken stock into a medium pot and add the 3/4 lb chicken thighs. Bring it to a boil over high heat, then turn it down so it barely bubbles. Simmer for about 15 minutes, until the chicken is cooked through. You're cooking it to 175°F in the thickest part, so if you have a thermometer, check it there. No thermometer? Cut into the thickest piece: it's done when there's no pink left.",
+  "Meanwhile, finely chop the carrot and 1 stalk of the celery. Pull the stems off the 4 shiitake mushrooms and finely chop the caps. Mince the garlic clove and drain the rice.",
+  "Lift the chicken out onto a plate and pour the stock into a large jug or bowl.",
+  "Set the same pot over medium heat and add 2 tbsp of the sesame oil. Add the rice and stir it around for about 3 minutes, until the grains look a little see-through at the edges.",
+  "Pour the stock back in and bring it to a boil. Turn the heat to medium low and simmer for 20 to 25 minutes, until the grains are soft and starting to break up. Stir it now and then, and more often as it thickens so it doesn't catch on the bottom.",
+  "While it simmers, shred the chicken with two forks. Toss it with the garlic, the last 1/2 tbsp sesame oil, 1/4 tsp salt and the pinch of black pepper. Thinly slice 2 of the scallions.",
+  "Stir the carrot, celery and mushrooms into the porridge. Cover and simmer on low for 10 to 15 minutes, until the carrot is tender. If it's thicker than you like, stir in a splash of water.",
+  "Stir in most of the chicken, keeping a little back for the top, and cook for 2 to 3 minutes, until it's hot through.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Ladle it into bowls and top with the rest of the chicken, the scallions and the 1 tsp sesame seeds. Serve hot."
+ ],
+ "advance_prep_notes": "Soak the rice the night before, or at least 1 hour ahead.",
+ "advance_prep_step_indices": [1],
+ "method_notes": "Both versions soak short-grain rice, toast it in sesame oil until it turns translucent, then simmer it in chicken stock and stir in pulled chicken near the end. Korean Bapsang adds finely chopped carrot, celery and mushroom and seasons the chicken with garlic, sesame oil, salt and pepper; Kimchi Mari makes it from leftover baeksuk broth and bones and tops it with perilla and scallion. This one follows Korean Bapsang's option of poaching boneless chicken in store-bought stock, which is why the morning runs close to an hour.",
+ "sources": [
+  {"name": "Korean Bapsang", "title": "Dakjuk (Korean Chicken Porridge)", "url": "https://www.koreanbapsang.com/dakjuk-korean-chicken-porridge/", "rating": 4.82, "rating_count": 105, "read": true, "lead": true},
+  {"name": "Kimchi Mari", "title": "DakJuk (Korean Chicken Rice Porridge)", "url": "https://kimchimari.com/dakjuk-chicken-rice-porridge/", "rating": 5.0, "rating_count": 3, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

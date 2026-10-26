@@ -1,0 +1,47 @@
+{
+ "dish_name": "Horiatiki Pita Wraps",
+ "cuisine": "Greek",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {"item": "Boneless skinless chicken thighs", "qty": "1 1/2 lbs", "category": "meat/seafood"},
+  {"item": "Olive oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Garlic", "qty": "4 cloves", "category": "produce"},
+  {"item": "Lemon", "qty": "1", "category": "produce"},
+  {"item": "Paprika", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Dried oregano", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "English cucumber", "qty": "1", "category": "produce"},
+  {"item": "Cherry tomatoes", "qty": "1 pint", "category": "produce"},
+  {"item": "Red onion", "qty": "1", "category": "produce"},
+  {"item": "Kalamata olives", "qty": "1 jar", "category": "pantry", "cook_qty": "1/3 cup"},
+  {"item": "Red wine vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Feta cheese", "qty": "4 oz", "category": "dairy"},
+  {"item": "Tzatziki", "qty": "1 tub (8 oz)", "category": "dairy"},
+  {"item": "Pita bread", "qty": "1 package", "category": "other", "cook_qty": "4"}
+ ],
+ "instructions": [
+  "Cut the 1 1/2 lbs chicken thighs into 1 inch pieces and put them in a bowl. Grate in the 4 garlic cloves and squeeze in the juice of the lemon. Add 3 tbsp of the olive oil, the 3/4 tsp paprika, 1 tsp of the oregano, 3/4 tsp of the salt and 1/4 tsp of the pepper. Toss until every piece is coated and leave it for 15 minutes while you make the salad.",
+  "Dice the cucumber and halve the cherry tomatoes. Finely chop half the red onion. Pit and halve 1/3 cup of the olives.",
+  "Put them all in a bowl with the last 1 tbsp olive oil, the 1 tbsp vinegar, the rest of the oregano, the rest of the salt and the rest of the pepper. Toss it and set it aside.",
+  "Heat a large skillet over medium high heat until a drop of water sizzles. Add half the chicken in a single layer and leave it alone for about 3 minutes, until the underside is golden and lets go of the pan.",
+  "Turn the pieces and cook for 3 to 4 minutes, until they're browned all over. You're cooking thighs to 175°F, so if you have a thermometer, check the thickest piece. No thermometer? Cut one open: it's done when there's no pink left. Transfer it to a plate and cook the second half the same way.",
+  "Warm the 4 pitas, one at a time, in a dry skillet over medium heat for about 30 seconds a side, until soft and bendy.",
+  "Spread 2 tbsp of the tzatziki down the middle of each pita. Add a quarter of the chicken and a big spoonful of the salad, then crumble a quarter of the 4 oz feta over each.",
+  "Fold the pita up around the filling and wrap the bottom half tightly in foil.",
+  "If you're packing them, let the chicken cool before you build the wraps and keep them cold until lunch. For the freshest wrap, pack the chicken, salad and pitas in separate containers and build it at lunch.",
+  "Serve with the rest of the tzatziki on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions fill pita with Greek chicken and a horiatiki style salad of tomato, cucumber, red onion and feta; Munchies by Mallory (the lead) marinates thigh pieces in olive oil, garlic, lemon, paprika and oregano, sears them, and adds store-bought tzatziki, while Fit Men Cook uses rotisserie chicken and dresses the salad with red wine vinegar, oregano, olive oil and Kalamata olives. RecipeTin Eats (the trusted cook for Greek) has no version of this dish, and Budget Bytes' Greek Chicken Wraps (4.91 from 32 ratings) blocked the reader, so the first read version leads on a single rating that is a reviewCount. This follows the lead's chicken with a shorter 15 minute marinade and dresses the salad Fit Men Cook's way so it tastes of a real horiatiki, and folds the pita around the filling as a wrap rather than cutting it into pockets.",
+ "sources": [
+  {"name": "Munchies by Mallory", "title": "Easy Greek Chicken Pita Pockets (High-Protein, Meal Prep Friendly!)", "url": "https://munchiesbymallory.com/recipe/chicken-pita-pockets/", "rating": 5, "rating_count": 1, "read": true, "lead": true},
+  {"name": "Fit Men Cook", "title": "Greek Salad Pita with Chicken – 10-Minute Meal", "url": "https://fitmencook.com/recipes/greek-salad-pita-chicken-recipe/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

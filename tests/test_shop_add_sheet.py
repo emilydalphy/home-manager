@@ -613,6 +613,9 @@ groAddItem().then(function () {
     assert out["offline"]["posts"] == 0
     assert out["offline"]["toast"]["msg"] == "cilantro was added" and out["offline"]["toast"]["action"] == "Undo"
     assert out["offline"]["offlineFlag"] is True
+    # Every add carries its own client_id (2026-10-22, app/grocery_add_once.py),
+    # so a resend after a lost reply is answered rather than added twice.
+    assert out["sent"][0][1].pop("client_id")
     assert out["sent"] == [["/api/grocery-list/add", {
         "item": "cilantro", "quantity": "", "category": "other", "store": "Costco", "remember": True}]]
     assert out["left"] == 0
@@ -677,6 +680,7 @@ again.replay(function (url, body) { sent.push([url, body]); return Promise.resol
     assert out["pending"] == ["status", "add"], "the add waits behind the tick, across a reload"
     assert out["loose"] == [["cilantro", 1, True]], "Anywhere, decided, drawn as pending"
     assert out["bought"] == ["Orzo"]
+    assert out["sent"][1][1].pop("client_id"), "the add carries its client_id (app/grocery_add_once.py)"
     assert out["sent"] == [
         ["/api/grocery-list/3/status", {"status": "purchased"}],
         ["/api/grocery-list/add", {"item": "cilantro", "quantity": "", "category": "produce", "store": "", "remember": True}],

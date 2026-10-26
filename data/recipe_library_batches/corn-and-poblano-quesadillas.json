@@ -1,0 +1,109 @@
+{
+ "dish_name": "Corn and Poblano Quesadillas",
+ "cuisine": "Mexican",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 24,
+ "ingredients": [
+  {
+   "item": "Poblano peppers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Frozen corn",
+   "qty": "1 bag",
+   "category": "frozen",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Shredded Monterey Jack cheese",
+   "qty": "8 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Corn tortillas (100% corn)",
+   "qty": "1 pack",
+   "category": "pantry",
+   "cook_qty": "8"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sour cream",
+   "qty": "1 small tub",
+   "category": "dairy",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Hot sauce",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Seed the poblanos and cut them into thin strips. Slice the onion thin.",
+  "Heat 1 tbsp of the oil in a large skillet over medium-high heat. Add the onion and cook for 4 minutes, until it starts to soften.",
+  "Add the poblanos and 1/4 tsp salt. Cook for 4 minutes, until they're soft. Add the cumin and stir for 30 seconds.",
+  "Add the corn in an even layer. Leave it alone for 3 minutes, until you see brown spots. Transfer everything to a bowl and wipe out the pan.",
+  "Chop the cilantro. For the crema, stir the sour cream, the juice of 1 lime, 1 tbsp of the cilantro and 1/4 tsp salt together in a small bowl. Cut the other lime into wedges.",
+  "Taste the vegetable mixture. If it's flat, add 1/4 tsp salt.",
+  "Heat 1 tbsp oil in the pan over medium heat. Lay down 2 of the tortillas side by side. Sprinkle a quarter of the cheese over each, then a quarter of the vegetable mixture. Cover each with another tortilla.",
+  "Cook for 3 minutes, until the underside is golden and crisp. Flip them and cook the other side for 3 minutes, until the cheese has melted. Transfer them to a cutting board.",
+  "Repeat with the last 1 tbsp oil, the remaining tortillas, the remaining cheese and the remaining vegetables.",
+  "Cut the quesadillas in half. Serve with the crema, the rest of the cilantro and the lime wedges, with the hot sauce on the table."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree on sautéed poblano, onion and corn with melting cheese pressed between tortillas and cooked on a griddle until crisp. They differ on the cheese (Monterey Jack with cotija, or a melting blend), on flour or corn tortillas, and on the crema. The lead's filling method of cooking the onion first and then the peppers is used here. This version uses corn tortillas, sandwiched whole so they don't crack, and Monterey Jack only, so it stays gluten-free and simple. The crema is the cilantro and lime sour cream from the Simply Scratch version.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Quesadilla (Beef, Vegetable or Chicken)",
+   "url": "https://www.recipetineats.com/quesadilla/",
+   "rating": 5,
+   "rating_count": 112,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Simply Scratch",
+   "title": "Sweet Corn, Poblano and Onion Yellow Corn Quesadillas",
+   "url": "https://www.simplyscratch.com/corn-poblano-quesadillas/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

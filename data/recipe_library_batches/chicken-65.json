@@ -1,0 +1,143 @@
+{
+ "dish_name": "Chicken 65",
+ "cuisine": "Indian",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh curry leaves",
+   "qty": "1 package",
+   "category": "produce"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "2 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Rice flour",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Serrano chilies",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "At least 1 hour ahead, or the night before: cut the chicken into 1 inch pieces and put them in a large bowl. Grate the ginger and 3 of the garlic cloves over the chicken. Finely chop the leaves from 2 curry leaf sprigs and add them.",
+  "Add 1/2 tsp of the salt, the turmeric, 1 1/2 tsp of the chili powder, the garam masala and 1/4 cup of the yogurt. Squeeze in 1 tsp of juice from half the lemon. Mix until every piece is coated, then cover and refrigerate.",
+  "When you're ready to cook, chop the remaining 3 garlic cloves. Slit the serranos lengthwise and scrape out the seeds. Pat 3 more curry leaf sprigs and the serranos completely dry. Slice the red onion into thin rings and cut the rest of the lemon into wedges.",
+  "In a small bowl, stir together the remaining 1/4 cup yogurt, the remaining 1 tsp chili powder, the sugar and the remaining 1/4 tsp salt. Set it aside.",
+  "Heat the oil in a heavy deep pot over medium heat. You're heating it to 350°F, so if you have a thermometer, check it. No thermometer? Drop in a small bit of the coated chicken once it's mixed. It should rise to the top and sizzle right away.",
+  "Separate the egg and add only the white to the chicken, with 1/4 cup of the cornstarch and 2 tbsp of the rice flour. Mix until every piece is coated. It should be sticky, not runny. If it looks dry, sprinkle in a spoonful of water.",
+  "Add a third of the chicken to the oil, one piece at a time. Stand back a little. It'll spatter. Leave it alone for 2 minutes so the coating sets.",
+  "Stir the pieces and fry for about 3 minutes, until they're deep golden and crisp. You're cooking them to 175°F in the middle, so if you have a thermometer, check a thick piece. No thermometer? Cut one open: it's done when there's no pink left. Transfer them with a slotted spoon to a paper towel lined tray, then fry the rest the same way.",
+  "Turn the heat to low. Add 2 of the patted dry curry leaf sprigs and fry for about 20 seconds, until crisp. Transfer them to the tray.",
+  "Add the serranos and fry for about 30 seconds, until blistered. Transfer them into a small bowl for the table.",
+  "Heat 2 tbsp of the frying oil in a large skillet over medium heat. Add the chopped garlic and the leaves from the last patted dry curry leaf sprig. Stir for about 30 seconds, until the leaves are crisp and the garlic is pale gold. Don't let the garlic brown.",
+  "Turn the heat to its lowest setting and add the yogurt mixture. Stir for 1 to 2 minutes, until it thickens into a glossy paste. Keep the heat low, or the yogurt will split.",
+  "Take the skillet off the heat. Add the fried chicken and toss until every piece is coated.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of the lemon.",
+  "Scatter the fried curry leaves over the top. Serve with the lemon wedges, the sliced red onion and the fried serranos on the side."
+ ],
+ "advance_prep_notes": "Marinate the chicken at least 1 hour ahead, or the night before.",
+ "advance_prep_step_indices": [
+  1,
+  2
+ ],
+ "method_notes": "Both versions coat bite size chicken in a yogurt, chili and curry leaf marinade with cornstarch and rice flour, fry it crisp, then toss it in a quick garlic, curry leaf and chili seasoning. Swasthi marinates for at least an hour and finishes with an optional chili garlic paste, which this version makes with yogurt as she suggests, while All Ways Delicious marinates for under an hour and uses a yogurt chili paste sauce. The fried green chilies go on the side instead of in the toss to keep the chicken mild, and it's served with lemon and sliced onion as the lead does. Yogurt is listed as 1/2 cup used, split between the marinade and the finish.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Chicken 65 Recipe (Restaurant Style)",
+   "url": "https://www.indianhealthyrecipes.com/chicken-65-recipe/",
+   "rating": 5.0,
+   "rating_count": 341,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "All Ways Delicious",
+   "title": "Best Homemade Chicken 65",
+   "url": "https://allwaysdelicious.com/chicken-65/",
+   "rating": 5.0,
+   "rating_count": 17,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
