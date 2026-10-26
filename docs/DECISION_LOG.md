@@ -675,6 +675,17 @@ why*, not duplicating the diff.
   row with another dish (`weekly_plan.moved_dish_changed`). Same row renamed
   (freezer night re-said, recipe edited) still undoes; so does a swap already
   undone. Tokens written before this carry neither and are not checked.
+- **"We're out Friday" in chat records nobody home, and "back to normal"
+  reopens the night** (2026-10-24, overnight hunt; branch
+  `overnight/hunt-attendance-1024`; tests
+  `tests/test_chat_away_keeps_attendance.py`). Chat's `set_slot_need` wrote
+  only the need, so an adult then tapping himself out reopened the night as
+  "…Emily will be here after all", and `normal` left it planned_empty saying
+  "You're away" for ever. Chat now goes through
+  `slot_needs.set_slot_need_for_chat`, which writes attendance with the need
+  (the holiday "out" order); the bare primitive is unchanged because
+  attendance's own sync calls it.
+
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
