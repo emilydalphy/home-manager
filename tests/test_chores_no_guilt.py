@@ -619,7 +619,7 @@ def test_unticking_brings_back_the_one_row_not_the_pile(emily):
 def test_the_assistant_is_told_a_slipped_chore_is_due_not_overdue():
     """The words a person reads come from the model, so the rule has to be
     in the prompt, not only in the data."""
-    blob = agent.system_prompt_for(True).lower()  # CHORES_PROMPT: Chores-on houses only
+    blob = agent.SYSTEM_PROMPT.lower()
     assert "due, not overdue" in blob
     assert "you missed" in blob, "the forbidden phrasings are named, so they can't be re-invented"
     assert "what did we miss" in blob, "the one question that IS answered, plainly and once"

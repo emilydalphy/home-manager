@@ -960,6 +960,32 @@ adult/teen/child — a toddler or a baby is a child) via add_member + set_member
 whether they have any pets (name + type — pets affect chores like litter/walks and grocery \
 items like food/litter) via add_pet, and what they're hoping this app helps with, via \
 set_household_goals. Keep it brief and conversational — don't re-ask what's already saved.
+
+Chores onboarding (do this first if chores aren't set up yet):
+- If onboarding_complete (from get_household_setup_status) is false, first call \
+get_chores_profile silently. The onboarding wizard's chores step may have already saved \
+context there (home type, bed/bath count, yard, cleanliness standard, who's in the \
+rotation, existing help like a cleaning service, notes on what to include/exclude) even \
+though no actual chores were created yet. If has_profile is true, use that context instead \
+of re-asking those questions — go straight to get_starter_chore_list and let the household \
+adjust. If has_profile is false, ask only what isn't already known, one or two questions at a \
+time (don't dump a giant form). The people and any pets are already on file from \
+get_household_setup_status — never ask for them again. Home type, bedrooms, bathrooms and yard \
+are only known once a chores profile exists, so ask those if it doesn't; then the genuinely new \
+ones — how they'd describe the upkeep they want (relaxed / standard / meticulous), whether \
+anyone comes in to help and how often, anything they specifically want tracked or left out. \
+Then:
+  1. Save the answers with set_chores_profile, call get_starter_chore_list, and read the list \
+back grouped (the rooms, the laundry and bins, the yard, the pets, the seasonal things) with \
+each row's proposed owner and its rhythm in the household's words (frequency_label — say \
+'every two weeks', never 'biweekly'). Never type out a list of your own instead: the starter \
+list is built from their facts and is the same one the setup screen shows. Let them drop rows, \
+change who or how often, or say their cleaner does one (mode 'outsourced'). Nothing is saved \
+until they say they're happy with it.
+  2. Then add_chore each row they kept — with its mode, owner_name (or outsourced_to), \
+frequency and category as agreed — and call generate_chore_schedule so the next two weeks are \
+on Now and Plan | Chores straight away. Tell them what's on deck.
+- If onboarding_complete is true, skip straight to helping with whatever they asked.
 - If chores_enabled (from get_household_setup_status) is false, Chores isn't switched on \
 for this house: never offer to set up or track chores, never call the chores tools, and \
 never mention that chores exist as a feature. If they ask about chores outright, say plainly \
@@ -1396,65 +1422,6 @@ guessing, but don't over-ask — use sensible defaults for a typical household o
 times_cooked so you can favor familiar favorites) before proposing something brand new.
 - Today's date is used for "this week" / "today" type requests; use the list/get tools \
 to check actual state before answering rather than assuming.
-- Confirm destructive actions (removing items, marking things done, deactivating chores) \
-happened, briefly.
-
-HOLDING THINGS — "noted" must never note nothing (Emily, 2026-09-15; the reason this app \
-exists is so a person can put a thing down and stop carrying it). When a message carries \
-something you can't turn into a grocery line, a plan change, who's home or away (that's \
-set_member_attendance, never a hold), a staple, a preference or fact about the household, or \
-a question for the week — "we ate at the in-laws last night", "Nana's \
-coming on the 28th", "ask the dentist about the retainer" — call hold_thing with their words \
-(one call per thing) rather than replying as if you'd acted or saying "noted" on its own. \
-Then reply with exactly the tool's one line: "Holding that. I'll bring it up when it's \
-useful." One line, no paragraph, no separate confirm — the line IS the review, and the thing \
-shows up on Now and under What we know. Two exceptions: (1) if you CAN act on part of it, act \
-on that part with the usual tools and hold only the rest; (2) small talk, thanks, "never \
-mind" and things with nothing in them to hold get a plain human answer, not a hold. When \
-something held bears on what's being planned or asked ("that's the Monday Nana's here"), \
-bring it up in one line; "done with that" / "you can drop it" is resolve_held_thing.
-"""
-
-# The chores-only half of the briefing, sent only to a house with Chores
-# switched on (Loop Board "Chat: slim the 37K-token briefing", the card's
-# found-not-fixed after item 3). tools_for_request already stopped sending
-# the thirteen chores schemas to a paused house; this walk-through and the
-# day-to-day rules beside it went on being sent to every household on
-# every turn, describing tools that house is never shown. Moved here word
-# for word — nothing in it was rewritten, only where it sits — and
-# appended after SYSTEM_PROMPT by system_prompt_for. What a paused house
-# DOES need, the sentence on answering a chores question with Chores off,
-# stays in SYSTEM_PROMPT: it is wanted exactly when this block is not sent.
-# Passing mentions of chores in general rules (pets, destructive actions,
-# chore rotations) also stay — they are not chores guidance, and cutting
-# them would be rewriting general rules to save a few words.
-CHORES_PROMPT = """Chores onboarding (do this first if chores aren't set up yet):
-- If onboarding_complete (from get_household_setup_status) is false, first call \
-get_chores_profile silently. The onboarding wizard's chores step may have already saved \
-context there (home type, bed/bath count, yard, cleanliness standard, who's in the \
-rotation, existing help like a cleaning service, notes on what to include/exclude) even \
-though no actual chores were created yet. If has_profile is true, use that context instead \
-of re-asking those questions — go straight to get_starter_chore_list and let the household \
-adjust. If has_profile is false, ask only what isn't already known, one or two questions at a \
-time (don't dump a giant form). The people and any pets are already on file from \
-get_household_setup_status — never ask for them again. Home type, bedrooms, bathrooms and yard \
-are only known once a chores profile exists, so ask those if it doesn't; then the genuinely new \
-ones — how they'd describe the upkeep they want (relaxed / standard / meticulous), whether \
-anyone comes in to help and how often, anything they specifically want tracked or left out. \
-Then:
-  1. Save the answers with set_chores_profile, call get_starter_chore_list, and read the list \
-back grouped (the rooms, the laundry and bins, the yard, the pets, the seasonal things) with \
-each row's proposed owner and its rhythm in the household's words (frequency_label — say \
-'every two weeks', never 'biweekly'). Never type out a list of your own instead: the starter \
-list is built from their facts and is the same one the setup screen shows. Let them drop rows, \
-change who or how often, or say their cleaner does one (mode 'outsourced'). Nothing is saved \
-until they say they're happy with it.
-  2. Then add_chore each row they kept — with its mode, owner_name (or outsourced_to), \
-frequency and category as agreed — and call generate_chore_schedule so the next two weeks are \
-on Now and Plan | Chores straight away. Tell them what's on deck.
-- If onboarding_complete is true, skip straight to helping with whatever they asked.
-
-Chores, day to day:
 - If a chore's upcoming schedule looks thin or someone asks "what's coming up," call \
 generate_chore_schedule to make sure instances exist that far out before listing them.
 - A chore that slipped is DUE, not overdue. Never say "overdue", "you missed", "behind", \
@@ -1473,24 +1440,24 @@ day; don't describe it as cancelling or rescheduling from scratch. "Can you take
 tonight?"/"Vineeth's doing the bathrooms this week" is hand_chore — one occurrence, whoever \
 owns it still owns it; only "the bathrooms are Vineeth's now" is update_chore. None of the \
 three is a favour anybody owes anybody, so say it back plainly and leave it there.
+- Confirm destructive actions (removing items, marking things done, deactivating chores) \
+happened, briefly.
+
+HOLDING THINGS — "noted" must never note nothing (Emily, 2026-09-15; the reason this app \
+exists is so a person can put a thing down and stop carrying it). When a message carries \
+something you can't turn into a grocery line, a plan change, who's home or away (that's \
+set_member_attendance, never a hold), a staple, a preference or fact about the household, or \
+a question for the week — "we ate at the in-laws last night", "Nana's \
+coming on the 28th", "ask the dentist about the retainer" — call hold_thing with their words \
+(one call per thing) rather than replying as if you'd acted or saying "noted" on its own. \
+Then reply with exactly the tool's one line: "Holding that. I'll bring it up when it's \
+useful." One line, no paragraph, no separate confirm — the line IS the review, and the thing \
+shows up on Now and under What we know. Two exceptions: (1) if you CAN act on part of it, act \
+on that part with the usual tools and hold only the rest; (2) small talk, thanks, "never \
+mind" and things with nothing in them to hold get a plain human answer, not a hold. When \
+something held bears on what's being planned or asked ("that's the Monday Nana's here"), \
+bring it up in one line; "done with that" / "you can drop it" is resolve_held_thing.
 """
-
-
-def system_prompt_for(chores_on: bool) -> str:
-    """
-    The cached system text for one chat request: SYSTEM_PROMPT, plus
-    CHORES_PROMPT when this house has Chores switched on.
-
-    Takes the switch rather than reading it, so run_agent_turn and
-    warm_chat_cache read chores_enabled() once and hand the same answer to
-    this and to tools_for_request — the system text and the tool block can
-    never be built from two different reads, and the warm-up writes
-    exactly the prefix the turn will read. Two cached variants, one per
-    switch setting, the same split the tool block already has.
-    """
-    if chores_on:
-        return SYSTEM_PROMPT + "\n" + CHORES_PROMPT
-    return SYSTEM_PROMPT
 
 TOOL_DEFINITIONS = [
     {
@@ -10621,7 +10588,7 @@ def read_tool_input(tool_name: str, tool_input):
     return out
 
 
-def tools_for_request(chores_on: bool | None = None) -> list[dict]:
+def tools_for_request() -> list[dict]:
     """
     The tool definitions THIS request carries — the whole catalogue, less
     any paused module's.
@@ -10651,9 +10618,9 @@ def tools_for_request(chores_on: bool | None = None) -> list[dict]:
     the correct half, and it covers what this cannot — a conversation
     whose history was built while the switch was on, a retried request,
     a household that flips the switch off mid-turn, and a model that
-    names a tool it was never shown (a history built while the switch was
-    on still shows it chores calls, though a paused house is no longer
-    sent CHORES_PROMPT). Delete the gate and a stale conversation half-works instead of
+    names a tool it was never shown (which SYSTEM_PROMPT's own chores
+    walk-through still describes at length; shortening that is a separate
+    card). Delete the gate and a stale conversation half-works instead of
     saying one plain sentence.
 
     Switched on, this returns TOOL_DEFINITIONS itself rather than a copy
@@ -10666,14 +10633,8 @@ def tools_for_request(chores_on: bool | None = None) -> list[dict]:
     being written rather than read anyway — but a future module gated the
     same way multiplies the number of distinct prefixes rather than
     lengthening any one of them.
-
-    `chores_on` is the switch as the caller already read it (run_agent_turn
-    and warm_chat_cache read it once, for this and system_prompt_for
-    both); None reads it here.
     """
-    if chores_on is None:
-        chores_on = tools.chores_enabled()
-    if chores_on:
+    if tools.chores_enabled():
         return TOOL_DEFINITIONS
     return [d for d in TOOL_DEFINITIONS if d["name"] not in CHORES_TOOLS]
 
@@ -11751,18 +11712,14 @@ def warm_chat_cache() -> bool:
     claim is released then so the next open may try again. Never raises.
     """
     try:
-        # One read of the switch for both halves of the prefix, exactly as
-        # run_agent_turn does — a warm-up built from the other variant
-        # would pay for a cache entry no turn of this house ever reads.
-        chores_on = tools.chores_enabled()
         _create_with_retry(
             _client(),
             label="run_agent_turn.warm",
             max_attempts=1,
             model=MODEL,
             max_tokens=0,
-            system=[{"type": "text", "text": system_prompt_for(chores_on), "cache_control": {"type": "ephemeral"}}],
-            tools=tools_for_request(chores_on),
+            system=[{"type": "text", "text": SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}}],
+            tools=tools_for_request(),
             messages=[{"role": "user", "content": "warmup"}],
             output_config=_effort_config("chat"),
         )
@@ -11830,17 +11787,8 @@ def run_agent_turn(
     # This block sits AFTER the cache_control breakpoint, so changing what it
     # says never touches the cached prefix.
     today = tools.cooker.household_today()
-    # Which of the tools, and which system text, this turn carries — see
-    # tools_for_request and system_prompt_for. The switch is read once
-    # here rather than inside the round loop below: it cannot meaningfully
-    # change part-way through one turn, and chores_enabled() opens a
-    # connection of its own, so a read per round would be a SQLite
-    # connection per round for an answer that has not moved. The dispatch
-    # gate further down re-reads it per call regardless, which is what
-    # covers the switch being flipped while a turn is in flight.
-    chores_on = tools.chores_enabled()
     system_blocks = [
-        {"type": "text", "text": system_prompt_for(chores_on), "cache_control": {"type": "ephemeral"}},
+        {"type": "text", "text": SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}},
         {
             "type": "text",
             "text": (
@@ -11866,7 +11814,15 @@ def run_agent_turn(
     if context_block:
         system_blocks.append(context_block)
 
-    request_tools = tools_for_request(chores_on)
+    # Which of the tools this turn actually carries — see
+    # tools_for_request. Resolved once here rather than inside the round
+    # loop below: the switch cannot meaningfully change part-way through
+    # one turn, and chores_enabled() opens a connection of its own, so a
+    # read per round would be a SQLite connection per round for an answer
+    # that has not moved. The dispatch gate further down re-reads it per
+    # call regardless, which is what covers the switch being flipped while
+    # a turn is in flight.
+    request_tools = tools_for_request()
 
     # Safety cap on tool-calling rounds within a single turn. Without this,
     # a model that keeps calling tools (e.g. retrying a tool that keeps
