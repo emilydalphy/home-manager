@@ -661,7 +661,9 @@ def test_the_promise_on_the_draft_screen_counts_the_side_too(recipes, stub_week,
     delivered = tools.approve_weekly_plan(plan["weekly_plan_id"])["groceries_added_count"]
 
     assert promised == delivered
-    assert promised == 4, "beans, chicken thighs, romaine, rice"
+    # Rice waits unticked in "Pantry staples this week" — not a thing to
+    # buy (tests/test_approve_count_is_to_buy.py).
+    assert promised == 3, "beans, chicken thighs, romaine"
 
 
 def test_clearing_the_week_takes_the_sides_shopping_back_off_again(

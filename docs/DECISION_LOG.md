@@ -182,6 +182,14 @@ why*, not duplicating the diff.
   domain stored the forgery beside the real cookie, both went out, and the
   server read the real one. The app was right all along (the forgery reads as
   None); the test now clears the jar first and asserts a single cookie.
+- **"Week approved · N things to buy" counts only what is to buy**
+  (2026-10-21, defect hunt; branch `overnight/hunt-onboarding-plan-2026-10-21b`;
+  tests `tests/test_approve_count_is_to_buy.py`). `approve_weekly_plan`'s
+  `groceries_added_count` (the toast, the reveal's hand-off, chat's "N items
+  ready to shop") leaves out lines that landed as status 'spice' (spices,
+  sauces, pantry staples waiting unticked); `preview_plan_grocery_impact`
+  matches. Why: a first week said "10 things to buy" over a list of nine, the
+  oats in "Pantry staples this week"; the receipt and Today already said nine.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
