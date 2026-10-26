@@ -170,7 +170,8 @@ def test_the_two_controls_are_the_cards_two_and_only_the_build_is_apricot():
     assert len(buttons) == 1, buttons
     assert "btn-primary" in buttons[0].split() and "q-next" in buttons[0].split()
     assert ">Build my first week</button>" in MARKUP
-    quiet = re.search(r'<span class="([^"]*)" id="anything-else-quiet">(.*?)</span>', MARKUP)
+    # A button since 2026-10-25 (a span was unreachable from a keyboard).
+    quiet = re.search(r'<button type="button" class="([^"]*)" id="anything-else-quiet">(.*?)</button>', MARKUP)
     assert quiet, "there is no quiet way past the question"
     assert quiet.group(1) == "skip-link", quiet.group(1)
     assert quiet.group(2) == "Nothing else"
