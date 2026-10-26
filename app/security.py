@@ -189,6 +189,9 @@ _PUBLIC_EXACT = frozenset({
     "/static/service-worker.js",
 })
 
+# Set on auth_middleware's "not signed in" 401 and nowhere else — see there.
+SIGNED_OUT_HEADER = "X-Pomona-Signed-Out"
+
 _LOCAL_HOSTS = frozenset({"127.0.0.1", "::1", "localhost", "testclient"})
 
 
@@ -638,7 +641,21 @@ async def auth_middleware(request, call_next):
             target = f"{path}?{query}"
         response = RedirectResponse(url=f"/login?next={quote(_safe_next(target), safe='/')}", status_code=303)
     else:
-        response = JSONResponse({"detail": "Please sign in again."}, status_code=401)
+        # The marker static/api.js keys its "go to sign-in" on (2026-10-26:
+        # a phone signed out by a security reset showed Today's "Couldn't
+        # check just now" instead of the sign-in screen). A header, not the
+        # status alone, so a 401 that ever comes to mean something else — a
+        # wrong code on a sign-in step — never bounces a page to /login.
+        # Exposed so a screen loaded from another origin (Api.setBase) can
+        # read it too.
+        response = JSONResponse(
+            {"detail": "Please sign in again."},
+            status_code=401,
+            headers={
+                SIGNED_OUT_HEADER: "1",
+                "Access-Control-Expose-Headers": SIGNED_OUT_HEADER,
+            },
+        )
     if stale_cookie:
         # Clear it the same way /logout does — otherwise the browser keeps
         # sending a cookie that will fail this same check forever.

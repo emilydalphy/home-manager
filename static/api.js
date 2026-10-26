@@ -21,7 +21,10 @@
  *                               for any call site that already handles its
  *                               own failure — which is every call shell.js
  *                               moved onto this file, so moving them changed
- *                               nothing a person can see.
+ *                               nothing a person can see. One exception:
+ *                               a "you're signed out" answer sends the
+ *                               page to sign-in and never settles (see
+ *                               goSignIn below).
  *
  *   Api.json('/api/x', opts)    the one NEW code should reach for. Sends a
  *                               plain object as JSON (or a FormData upload
@@ -84,7 +87,65 @@ var Api = (function () {
       }
     }
     if (!opts.credentials) opts.credentials = 'include';
-    return fetch(url(path), opts);
+    return fetch(url(path), opts).then(function (res) {
+      // Signed out: the page is on its way to sign-in, so the caller is
+      // never answered — a promise that never settles. Answering would let
+      // every screen draw its own failure ("Couldn't check just now") in
+      // the moment before the page goes, which is the thing this exists
+      // to stop. A page that stays (sign-in itself, a share link) gets the
+      // 401 exactly as fetch gave it.
+      if (isSignedOut(res) && goSignIn()) return new Promise(function () {});
+      return res;
+    });
+  }
+
+  // ---------- Signed out → the sign-in screen ----------
+  //
+  // 2026-10-26: a security reset signed a phone out, and Today said
+  // "Couldn't check just now — pull to refresh." for every read — which
+  // reads as the app or the connection being broken, not "sign back in".
+  // The server's page routes already 303 to /login; this is the same for
+  // the screens' own reads, once, here, for every screen.
+  //
+  // Keyed on the server's own marker (app/security.py SIGNED_OUT_HEADER,
+  // set only on auth_middleware's "not signed in" answer), never on 401
+  // alone. Pages that are themselves the way in, or public, never leave.
+  var SIGNED_OUT_HEADER = 'X-Pomona-Signed-Out';
+  var STAY_PAGES = /^\/(login|logout|join|goodbye|privacy|terms|support)(\/|$)|^\/(share|member-share)\//;
+  var signedOutHandler = null;
+  var leaving = false;
+
+  // Something the page must do before it goes — shell.js forgets this
+  // device's offline grocery copy here, as a 401 has always made it do.
+  function onSignedOut(fn) {
+    signedOutHandler = typeof fn === 'function' ? fn : null;
+  }
+
+  function isSignedOut(res) {
+    try {
+      return !!res && res.status === 401 && !!res.headers &&
+        typeof res.headers.get === 'function' && res.headers.get(SIGNED_OUT_HEADER) === '1';
+    } catch (err) { return false; }
+  }
+
+  // Starts the trip to sign-in, once. True when the page is leaving (this
+  // call or an earlier one), false when it stays — no page to leave (a test
+  // harness), or a page that is never sent away.
+  function goSignIn() {
+    if (leaving) return true;
+    var loc = typeof location !== 'undefined' ? location : null;
+    if (!loc || typeof loc.replace !== 'function') return false;
+    var here = String(loc.pathname || '/');
+    if (STAY_PAGES.test(here)) return false;
+    leaving = true;
+    if (signedOutHandler) {
+      try { signedOutHandler(); } catch (err) { /* never stop the trip */ }
+    }
+    // `next` is this screen, so signing in lands back on it (Today is "/").
+    // replace, not assign: Back after signing in should not return to a
+    // screen that was already signed out.
+    loc.replace(url('/login') + '?next=' + encodeURIComponent(here + (loc.search || '')));
+    return true;
   }
 
   // ---------- Api.json: the default for new code ----------
@@ -253,5 +314,6 @@ var Api = (function () {
     setBase: setBase,
     getBase: getBase,
     onError: onError,
+    onSignedOut: onSignedOut,
   };
 })();
