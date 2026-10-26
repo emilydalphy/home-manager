@@ -37,6 +37,26 @@ why*, not duplicating the diff.
   `can_remove` per row. Open for Emily: main person only (built), or any
   adult? Household 1 stays protected, so Emily's own household can't use
   it yet — same rule as Remove me.
+- **A household's own line typed below the plan's share is never blanked**
+  (2026-10-21, overnight; branch `overnight/typed-line-never-blanked`, built on
+  `overnight/own-line-undo-no-creep` and to merge after it and
+  `overnight/defect-hunt-2-2026-10-21`; tests
+  `tests/test_typed_line_never_blanked.py`). 1 onion hand-added + two dinners =
+  3, typed down to "1", Clear the week -> "" (blank): `_restate_standing_want`
+  floors own at 0, and 0 + no meals wrote nothing, against its own "a line
+  somebody typed is never blanked" and Emily's 2026-10-12 "an edit below what
+  the plan needs is kept". `update_grocery_item` now marks a standing want typed
+  BELOW the plan's rounded share (`edited_to`, unused on those lines until now;
+  only below, because a merge's Undo uses the same call and must record
+  nothing); a marked line, or one reading strictly below the plan's share
+  (lines edited before the mark), is left as it reads when the last meal comes
+  off. "carrots" + the plan's 2 still goes back to no amount. Same flag in
+  defrost's `_split_off_plan_share` (the typed line stays to buy, the plan's
+  share is set aside as frozen). Open for Emily: typed to EXACTLY the plan's
+  share is indistinguishable from an Undo and from an amount-less want, so it
+  still blanks on a clear; and a removal never puts a line up, so typed "1"
+  under two dinners stays 1 throughout (not raised back).
+
 - **A household's own line comes back to the same number after Swap then Undo**
   (2026-10-21, overnight; branch `overnight/own-line-undo-no-creep`, built on
   `overnight/defect-hunt-2-2026-10-21` and to merge after it; tests

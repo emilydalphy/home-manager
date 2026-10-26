@@ -1648,7 +1648,7 @@ def _split_off_plan_share(line_id: int, weekly_plan_id: int, entry_ids=None) -> 
     with write() as conn:
         conn.execute("BEGIN IMMEDIATE")
         row = conn.execute(
-            "SELECT id, item, quantity, category, status, store FROM grocery_items "
+            "SELECT id, item, quantity, category, status, store, edited_to FROM grocery_items "
             "WHERE id = ? AND household_id = ?",
             (line_id, household_id()),
         ).fetchone()
@@ -1670,7 +1670,9 @@ def _split_off_plan_share(line_id: int, weekly_plan_id: int, entry_ids=None) -> 
         others = [l["quantity"] or "" for l in links if l["id"] not in mine_ids]
         totals = _quantities._ledger_totals([l["quantity"] or "" for l in links], others)
         share = _quantities._ledger_totals([l["quantity"] or "" for l in mine], [])
-        restated = None if totals is None else _grocery._restate_standing_want(row["quantity"] or "", *totals)
+        restated = None if totals is None else _grocery._restate_standing_want(
+            row["quantity"] or "", *totals, typed=bool((row["edited_to"] or "").strip()),
+        )
         if share is None or restated is None:
             return None
         left, nothing_left = restated
