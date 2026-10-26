@@ -13,6 +13,17 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Fresh herbs under two names are one grocery line** (2026-10-26; branch
+  `overnight/fresh-herbs-one-line`; tests `tests/test_grocery_same_purchase.py`).
+  `grocery._SAME_PURCHASE` gains explicit pairs: flat-leaf / Italian / fresh
+  parsley → parsley; fresh cilantro / fresh coriander / coriander leaves →
+  cilantro; fresh basil, mint, dill, thyme, ginger (and ginger root) → the
+  plain name. "fresh" is still not stripped, so dried herbs, bare
+  "coriander" (the seed) and "ground ginger" stay their own lines. The
+  merged line's name now ranks plain < "only says fresh"
+  (`_ONLY_SAYS_FRESH`) < real variety, so "Flat-leaf parsley" wins over
+  "Fresh parsley" whichever lands first. Amounts add as written ("2
+  bunches" + "3 bunches, small" → "5 bunches, small", the size note kept).
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

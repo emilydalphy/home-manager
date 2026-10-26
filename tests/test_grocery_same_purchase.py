@@ -249,6 +249,22 @@ def test_units_that_do_not_reconcile_stay_honest_on_one_plan_line():
     ("Rice", "White rice"),
     ("Flour", "All-purpose flour"),
     ("Sugar", "Granulated sugar"),
+    # Fresh herbs (Loop Board, "Flat-leaf parsley and Fresh parsley are one line").
+    ("Parsley", "Flat-leaf parsley"),
+    ("Parsley", "flat leaf parsley"),
+    ("Parsley", "Italian parsley"),
+    ("Parsley", "Fresh parsley"),
+    ("Fresh parsley", "Flat-leaf parsley"),
+    ("Cilantro", "Fresh cilantro"),
+    ("Cilantro", "Fresh coriander"),
+    ("Cilantro", "Coriander leaves"),
+    ("Basil", "Fresh basil"),
+    ("Basil", "Fresh basil leaves"),
+    ("Mint", "Fresh mint"),
+    ("Dill", "Fresh dill"),
+    ("Thyme", "Fresh thyme"),
+    ("Ginger", "Fresh ginger"),
+    ("Ginger", "Ginger root"),
 ])
 def test_the_plain_name_and_its_variety_share_a_key(plain, variety):
     assert grocery._merge_key(plain) == grocery._merge_key(variety)
@@ -274,6 +290,17 @@ def test_the_plain_name_and_its_variety_share_a_key(plain, variety):
     ("Icing sugar", "Granulated sugar"),
     ("Onion powder", "Onions"),
     ("Rice vinegar", "Rice"),
+    # A dried herb is the jar on the rack, not the bunch.
+    ("Dried parsley", "Parsley"),
+    ("Dried parsley", "Fresh parsley"),
+    ("Dried thyme", "Fresh thyme"),
+    ("Dried basil", "Basil"),
+    # Bare coriander is the ground seed; ground ginger is a jar.
+    ("Coriander", "Cilantro"),
+    ("Ground coriander", "Fresh coriander"),
+    ("Ground ginger", "Ginger"),
+    ("Ground ginger", "Fresh ginger"),
+    ("Thai basil", "Basil"),
 ])
 def test_things_bought_separately_stay_apart(a, b):
     assert grocery._merge_key(a) != grocery._merge_key(b)
@@ -336,3 +363,45 @@ def test_the_startup_sweep_does_not_delete_a_store_choice_for_the_variety():
     conn.close()
     # Both rice choices kept; the plural duplicate still swept (newest wins).
     assert rows == [("long grain white rice", "Walmart"), ("onions", "Walmart"), ("rice", "Costco")]
+
+
+# ---------- fresh herbs (Loop Board, "Flat-leaf parsley and Fresh parsley are one line") ----------
+
+
+@pytest.mark.parametrize("first,second", [
+    ("Fresh parsley", "Flat-leaf parsley"),
+    ("Flat-leaf parsley", "Fresh parsley"),
+    ("Parsley", "Flat-leaf parsley"),
+])
+@ON_MONDAY
+def test_parsley_from_two_recipes_is_one_line_named_flat_leaf_with_bunches_added(first, second):
+    """
+    CATCH: main lists "Fresh parsley 2 bunches" and "Flat-leaf parsley 3
+    bunches, small". One line, the variety's name whichever lands first,
+    the bunches added as written, and filed under Produce.
+    """
+    _household()
+    tools.add_recipe("Tabbouleh", ingredients=[{"item": first, "qty": "2 bunches", "category": "produce"}],
+                     default_servings=4)
+    tools.add_recipe("Chimichurri", ingredients=[{"item": second, "qty": "3 bunches, small", "category": "produce"}],
+                     default_servings=4)
+    plan_id = tools.create_weekly_plan(_monday().isoformat())["weekly_plan_id"]
+    tools.plan_meal(MON, "Tabbouleh", slot="dinner", weekly_plan_id=plan_id)
+    tools.plan_meal(WED, "Chimichurri", slot="dinner", weekly_plan_id=plan_id)
+    tools.approve_weekly_plan(plan_id, "Emily")
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT item, quantity, category FROM grocery_items WHERE household_id = 1 AND status = 'needed'"
+    ).fetchall()
+    conn.close()
+    assert [tuple(r) for r in rows] == [("Flat-leaf parsley", "5 bunches, small", "produce")]
+
+
+def test_fresh_coriander_joins_cilantro_and_the_ground_seed_stays_its_own_line():
+    pid = _plan()
+    tools.add_grocery_item("Cilantro", quantity="1 bunch", source_weekly_plan_id=pid)
+    tools.add_grocery_item("Fresh coriander", quantity="1 bunch", source_weekly_plan_id=pid)
+    tools.add_grocery_item("Ground coriander", quantity="1 tsp", source_weekly_plan_id=pid)
+    lines = sorted((r["item"], r["quantity"]) for r in _needed())
+    assert ("Fresh coriander", "2 bunches") in lines
+    assert len(lines) == 2, lines
