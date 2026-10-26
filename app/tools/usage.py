@@ -28,6 +28,7 @@ are beta questions first and cost questions second:
 from __future__ import annotations
 
 import json
+import os
 import statistics
 import time
 
@@ -57,7 +58,8 @@ _RATES_PER_MTOK = {
     "claude-sonnet-5": {
         "input": 2.00, "cache_read": 0.20, "cache_write": 2.50, "output": 10.00,
     },
-    # The chat-fallback model (agent.CHAT_FALLBACK_MODEL) -- keyed to the
+    # The chat model (agent.CHAT_MODEL since 2026-10-25; before that the
+    # chat-fallback model, agent.CHAT_FALLBACK_MODEL) -- keyed to the
     # exact dated snapshot it's pinned to, since that's the literal string
     # api_calls.model records for a fallback call. $1/$5 per MTok, verified
     # 2026-09-03 against Anthropic's published Claude Haiku 4.5 rate (same
@@ -77,6 +79,12 @@ _RATES_PER_MTOK = {
 # and pins that a rate exists for it, so swapping the model fails loudly
 # instead of quietly billing the new model at the old one's prices.
 _PRICED_MODEL = "claude-sonnet-5"
+
+# The model chat_turns' tokens were spent on: chat runs on agent.CHAT_MODEL
+# (Haiku since 2026-10-25), not MODEL, so its chat-only cost is priced at
+# that rate. Read from the same env var agent.CHAT_MODEL reads, for the
+# import-cycle reason above; tests/test_chat_on_haiku.py pins the two equal.
+_CHAT_PRICED_MODEL = os.environ.get("CHAT_MODEL", "claude-haiku-4-5-20251001")
 
 
 def price_tokens(tokens: dict, model: str = _PRICED_MODEL) -> dict:
@@ -741,7 +749,7 @@ def _summarize(conn, hid: int, days: int, since: str) -> dict:
     # what already reads this key. The all-in figure below (every call
     # site, from api_calls) is the one the $1/household/month target is
     # judged against.
-    summary["cost"] = price_tokens(summary["tokens"])
+    summary["cost"] = price_tokens(summary["tokens"], model=_CHAT_PRICED_MODEL)
 
     # All-in, every call site, this calendar month -- see get_month_to_date_cost.
     summary["month_to_date_cost"] = _cost_breakdown(

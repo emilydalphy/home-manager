@@ -690,7 +690,10 @@ def test_the_other_add_recipe_callers_are_not_gated(dairy_free):
 
 
 def test_the_agent_tool_points_at_the_gated_twin_and_describes_override():
-    assert agent.TOOL_FUNCTIONS["add_recipe"] is tools.add_recipe_for_chat
+    # Since 2026-10-25 the chat tool is agent.add_recipe_from_chat, which
+    # hands a dictated list to the gated twin and a name-only recipe to the
+    # recipe writer (tests/test_chat_on_haiku.py covers that half).
+    assert agent.TOOL_FUNCTIONS["add_recipe"] is agent.add_recipe_from_chat
     schema = next(t for t in agent.TOOL_DEFINITIONS if t["name"] == "add_recipe")
     assert "override" in schema["input_schema"]["properties"]
     assert "never on a first call" in schema["input_schema"]["properties"]["override"]["description"]

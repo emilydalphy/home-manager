@@ -13,6 +13,19 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Chat runs on Haiku; recipes from chat are written by the recipe writer**
+  (2026-10-25, Emily's call, Option A; branch `overnight/chat-on-haiku`; tests
+  `tests/test_chat_on_haiku.py`). `agent.CHAT_MODEL` (Haiku 4.5, env
+  `CHAT_MODEL`) for every chat round and the warm-up; `CHAT_FALLBACK_MODEL`
+  is now `MODEL` (Sonnet). `add_recipe` / `update_recipe_details(change=…)` /
+  `propose_plan_changes` / `set_big_meal_dish` take a name + `brief` and hand
+  the ingredients and steps to `generate_recipe_details_llm` via
+  `_write_dish_for_chat` (allergen check + one retry, as Approve); a list the
+  person dictated is still saved as given. `_fit_request_to_model` drops
+  `output_config.effort` for Haiku 4.5, which refuses it — so the old Haiku
+  fallback was very likely 400ing too. Seconds per tool now logged beside
+  seconds per round. Why: most of chat's time was the model writing recipes
+  as tool input.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

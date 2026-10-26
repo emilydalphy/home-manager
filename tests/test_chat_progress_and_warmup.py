@@ -223,7 +223,12 @@ def test_the_warmup_is_a_max_tokens_zero_call_with_the_chats_cached_prefix(monke
     assert "tool_choice" not in kw  # refused alongside max_tokens 0, as in the recipe warm-up
     assert kw["system"] == [{"type": "text", "text": agent.SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}}]
     assert kw["tools"] == agent.tools_for_request()
-    assert kw["output_config"] == agent._effort_config("chat")
+    # Warmed on the model chat runs on (caches are per model), and sent
+    # exactly as a chat round would be: Haiku 4.5 refuses effort, so the
+    # chat effort is dropped for it (agent._fit_request_to_model).
+    assert kw["model"] == agent.CHAT_MODEL
+    assert kw.get("output_config") == agent._fit_request_to_model(
+        {"model": agent.CHAT_MODEL, "output_config": agent._effort_config("chat")}).get("output_config")
 
 
 def test_a_refused_warmup_returns_false_and_keeps_the_claim_for_a_backoff(monkeypatch, fresh_warm_clock):

@@ -261,16 +261,49 @@ with a splash of water, then re-finished with fresh herbs or a squeeze of someth
 ingredients include that finish."""
 
 
+# The model interactive chat runs on (Emily, 2026-10-25, Option A: "chat
+# runs on Haiku"). Chat was on MODEL, and most of its seconds were the model
+# WRITING — a turn that saved a recipe wrote its ingredients and steps as
+# tool input. Those are now written by the recipe writer on MODEL (the
+# _write_dish_for_chat seam below, the same writer Approve uses), so what
+# chat itself does is choose a tool, pass a name and a brief, and reply —
+# work a smaller, faster model does well. Every other call site stays on
+# MODEL. Pinned to the dated snapshot the fallback already used, and
+# env-overridable so production can put chat back on MODEL without a
+# deploy (usage.py's _CHAT_PRICED_MODEL reads the same variable).
+CHAT_MODEL = os.environ.get("CHAT_MODEL", "claude-haiku-4-5-20251001")
+
 # The model interactive chat falls back to, once, after the primary model's
 # retries exhaust on an overload-shaped error (see _OVERLOADED_STATUS_CODES
-# and _create_with_retry's fallback_model parameter). Pinned to an exact
-# dated snapshot rather than a rolling alias — a fallback should behave the
-# same way every time it's actually needed, not drift underneath this app
-# whenever Anthropic moves the alias. Env-overridable so production can
-# repoint it without a code change; keep app/tools/usage.py's
-# _RATES_PER_MTOK in sync with whatever this resolves to, or cost reporting
-# on a fallback call raises (see price_tokens).
-CHAT_FALLBACK_MODEL = os.environ.get("CHAT_FALLBACK_MODEL", "claude-haiku-4-5-20251001")
+# and _create_with_retry's fallback_model parameter). With chat on Haiku
+# this is MODEL: the fallback was Haiku because chat was on Sonnet, and a
+# fallback has to be a DIFFERENT model to help with that model's overload.
+# Env-overridable so production can repoint it without a code change; keep
+# app/tools/usage.py's _RATES_PER_MTOK in sync with whatever this resolves
+# to, or cost reporting on a fallback call raises (see price_tokens).
+CHAT_FALLBACK_MODEL = os.environ.get("CHAT_FALLBACK_MODEL", MODEL)
+
+# Models that refuse output_config.effort (a 400). Haiku 4.5 takes no
+# effort parameter at all, and chat sends one on every round, so without
+# this every chat round on Haiku — and, before CHAT_MODEL existed, every
+# overload fallback to it — failed on the request shape rather than on
+# anything the model did. Prefixes, so a re-pinned snapshot still matches.
+_MODELS_WITHOUT_EFFORT = ("claude-haiku-4-5",)
+
+
+def _fit_request_to_model(kwargs: dict) -> dict:
+    """The request as `kwargs["model"]` accepts it: output_config's effort
+    is dropped for a model that refuses it (and output_config with it,
+    when that was all it carried). Everything else is sent as given."""
+    model = kwargs.get("model") or MODEL
+    config = kwargs.get("output_config")
+    if not config or not model.startswith(_MODELS_WITHOUT_EFFORT):
+        return kwargs
+    rest = {k: v for k, v in config.items() if k != "effort"}
+    fitted = {k: v for k, v in kwargs.items() if k != "output_config"}
+    if rest:
+        fitted["output_config"] = rest
+    return fitted
 
 # Status codes worth silently retrying — Anthropic's own transient blips
 # (overloaded, rate-limited, brief 5xx) rather than anything wrong with the
@@ -421,7 +454,7 @@ def _create_with_retry(
     for attempt in range(1, max_attempts + 1):
         try:
             started = time.perf_counter()
-            response = client.messages.create(**kwargs)
+            response = client.messages.create(**_fit_request_to_model(kwargs))
             seconds = time.perf_counter() - started
             _log_llm_call_timing(label, seconds, response)
             # Every Anthropic call in the app goes through this one
@@ -470,7 +503,7 @@ def _create_with_retry(
         )
         try:
             started = time.perf_counter()
-            response = client.messages.create(**{**kwargs, "model": fallback_model})
+            response = client.messages.create(**_fit_request_to_model({**kwargs, "model": fallback_model}))
             seconds = time.perf_counter() - started
             _log_llm_call_timing(label, seconds, response)
             _record_api_call(label, fallback_model, response, seconds)
@@ -1027,10 +1060,10 @@ staying silent about it; if new_recipe_count is 0, there's no need to call that 
 placeholder ("leftovers," "takeout," "whatever's in the fridge" stay freeform — there's no real \
 dish to flesh out) — e.g. "let's do Greek chicken skewers with tomato and cucumber tonight," "I \
 want to try stuffed peppers this week" — don't just pass that string straight to plan_meal as a \
-freeform_meal. Build it into a real recipe first with add_recipe (ingredients, ordered \
-instructions, tags, food_groups, cuisine, main_protein — same as generating a new recipe for a \
-weekly plan), using exactly what the user described as the concept/name and filling in a \
-reasonable full version around it, then call plan_meal with that saved recipe's exact name. This \
+freeform_meal. Build it into a real recipe first with add_recipe — the name, a short brief of \
+exactly what the user described, tags, food_groups, cuisine, main_protein; the recipe writer \
+writes the ingredients and steps, so don't write them yourself — then call plan_meal with that \
+saved recipe's exact name. This \
 is what makes the meal actually cookable from the Cooker view afterward instead of showing "no \
 saved recipe detail, ask in chat" — the user gave you the idea once and shouldn't have to ask \
 again just to get the actual recipe.
@@ -1134,9 +1167,9 @@ give a complete, cookable breakdown — ingredients AND step-by-step instruction
 no exceptions. Use get_recipe for full detail (ingredients, instructions, timing) rather than \
 digging through list_recipes yourself. If get_recipe comes back with empty instructions (common \
 for recipes saved before this was tracked), do NOT just tell the user nothing's saved and ask if \
-they want you to add it — write a reasonable step-by-step yourself, from your own knowledge of \
-the dish and the recipe's existing ingredients, present it as the answer, and call \
-update_recipe_details in that same turn to save it so it's there next time. The user should never \
+they want you to add it — call update_recipe_details with change "write the steps" in that same \
+turn (the recipe writer writes and saves them) and present the steps it comes back with as the \
+answer. The user should never \
 have to ask twice or explicitly request that you fill it in.
 - Cooking for more or fewer people than the plan assumed ("we've got guests, need this for 6 \
 not 4")? Use scale_recipe rather than doing the math yourself.
@@ -1720,7 +1753,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "add_recipe",
-        "description": "Save a recipe with its ingredients, for reuse in meal planning. When you're building this out from the user's own dish idea (see the weekly-planning guidance on one-off meals), fill in instructions/default_servings/prep_time_minutes/cook_time_minutes/advance_prep_notes too in this same call rather than leaving them for a separate update_recipe_details call — a recipe with no instructions saved shows in the Cooker view as 'no saved recipe detail,' which defeats the point of building it out. If the dish names a specific regional cuisine or style, give it real depth — the actual spice/aromatic blend and technique that style is known for, not a generic dish with one token ingredient bolted on; use a broader cuisine label instead if you don't know the named style well enough to do it justice. Write each instruction so a person can cook from it at the stove: the pan and heat, what goes in, roughly how long, and what done looks like ('medium-high until deep brown and it lets go of the pan, 4-5 minutes'), one action per step, in the order they'd actually do it — longest thing first, 'meanwhile' for what happens alongside.",
+        "description": "Save a recipe for reuse in meal planning. For a dish idea (theirs or yours), pass the name and a short `brief` and leave ingredients and instructions OUT: Pomona's recipe writer writes the full recipe — ingredients in store-bought units, steps, timings — with the household's allergies and kitchen, and the result comes back for you to plan or show. Pass `ingredients` (and `instructions`) ONLY when the person gave you the recipe's lines themselves (read out, typed, or from a cookbook): those are saved as they gave them. If the dish names a specific regional style, say so in the brief.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -1741,6 +1774,8 @@ TOOL_DEFINITIONS = [
                         "required": ["item"],
                     },
                 },
+                "brief": {"type": "string", "description": "What the dish is, in a sentence, for the recipe writer: what they asked for and anything that makes it this dish ('Greek chicken skewers with tomato and cucumber, weeknight-quick'). Used when ingredients are left out."},
+                "slot": {"type": "string", "enum": ["breakfast", "lunch", "dinner", "snack"], "description": "Which meal it's for, so the writer sizes it right. Defaults to dinner."},
                 "notes": {"type": "string"},
                 "tags": {
                     "type": "array",
@@ -1757,7 +1792,7 @@ TOOL_DEFINITIONS = [
                 "instructions": {
                     "type": "array",
                     "items": {"type": "string"},
-                    "description": "Ordered cooking steps — fill in whenever you can so the recipe is actually cookable from the Cooker view, not just a shopping list.",
+                    "description": "Ordered cooking steps, ONLY as the person gave them. Leave out otherwise — the recipe writer writes them.",
                 },
                 "default_servings": {"type": "integer", "description": "What the ingredient quantities are scaled for. Defaults to 4 if omitted."},
                 "prep_time_minutes": {"type": "integer"},
@@ -1776,7 +1811,7 @@ TOOL_DEFINITIONS = [
                     "description": "Defaults to false. A recipe with something someone in the household can't have is NOT saved: the call comes back as an error naming the dish and the word ('Not saved: … has buttermilk …') — write it again without that ingredient, or pick a different dish. Set this ONLY when the person said in their own words in this conversation to save it anyway, after the tool declined once and you told them why. Never on your own initiative, never on a first call.",
                 },
             },
-            "required": ["name", "ingredients"],
+            "required": ["name"],
         },
     },
     {
@@ -1857,12 +1892,13 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "update_recipe_details",
-        "description": "Backfill or correct a saved recipe's instructions/servings/timing/advance-prep notes. Use this right after get_recipe comes back with empty instructions: work out a reasonable step-by-step yourself and save it here in the same turn, rather than telling the user nothing's saved. Only pass the fields you're setting.",
+        "description": "Write, re-write or correct a saved recipe's steps/servings/timing/advance-prep notes. To have steps WRITTEN (get_recipe came back with none) or CHANGED ('do it in the air fryer', 'make the method simpler'), pass `change` saying what's wanted and leave instructions out: Pomona's recipe writer writes them and the saved recipe comes back for you to show. The ingredient list is never changed here. Pass `instructions` only when the person dictated the steps themselves. Only pass the fields you're setting.",
         "input_schema": {
             "type": "object",
             "properties": {
                 "recipe_name": {"type": "string"},
-                "instructions": {"type": "array", "items": {"type": "string"}},
+                "change": {"type": "string", "description": "What the steps should be: 'write the steps' for a recipe with none, or the change asked for, in a few words."},
+                "instructions": {"type": "array", "items": {"type": "string"}, "description": "Only steps the person gave you themselves."},
                 "default_servings": {"type": "integer"},
                 "prep_time_minutes": {"type": "integer"},
                 "cook_time_minutes": {"type": "integer"},
@@ -1985,7 +2021,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "propose_plan_changes",
-        "description": "Offer changes to the week as a CARD the household saves — nothing is written until they tap Save changes. Use this INSTEAD of swap_meal_in_plan/plan_meal whenever the subject block says the turn is about the week (kind weekly_plan). One row per slot: action 'change' with one candidate (a plain change: what was → what would be), 'change' with two to four candidates (things to tap — use this when they said 'something else' or asked for options), or 'keep' (a night they told you to leave, shown as Kept). Each candidate is a full dish the way submit_swap/add_recipe would write it — meal_name, a one-line reason (under ten words, warm, plain, why it fits), ingredients in store-bought units, instructions, food_groups, main_protein, prep/cook minutes — so it is cookable and shoppable the moment it is saved. The result echoes the card; reply with ONE line that matches it (the consequence if there is one), never a list of the rows. A row's `problem` means that slot has nothing to change: use plan_meal for an open or empty night instead. A candidate with a listed allergen or must-avoid in its ingredients is never shown: it comes back under `unsafe` (or as the row's `problem` when none survived) naming the dish and the ingredient — call again with a dish that doesn't have it, outside the cuisine they asked for if that's what it takes, and say so in your line. A row can be for a slot that was already proposed this conversation: a new call replaces the old card.",
+        "description": "Offer changes to the week as a CARD the household saves — nothing is written until they tap Save changes. Use this INSTEAD of swap_meal_in_plan/plan_meal whenever the subject block says the turn is about the week (kind weekly_plan). One row per slot: action 'change' with one candidate (a plain change: what was → what would be), 'change' with two to four candidates (things to tap — use this when they said 'something else' or asked for options), or 'keep' (a night they told you to leave, shown as Kept). Each candidate is meal_name, a one-line reason (under ten words, warm, plain, why it fits), a short `brief` of the dish, food_groups and main_protein — leave ingredients and instructions OUT: Pomona's recipe writer writes every new dish before the card is drawn, so it is cookable and shoppable the moment it is saved (a saved recipe's name is used as it is). The result echoes the card; reply with ONE line that matches it (the consequence if there is one), never a list of the rows. A row's `problem` means that slot has nothing to change: use plan_meal for an open or empty night instead. A candidate with a listed allergen or must-avoid in its ingredients is never shown: it comes back under `unsafe` (or as the row's `problem` when none survived) naming the dish and the ingredient — call again with a dish that doesn't have it, outside the cuisine they asked for if that's what it takes, and say so in your line. A row can be for a slot that was already proposed this conversation: a new call replaces the old card.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -2005,25 +2041,14 @@ TOOL_DEFINITIONS = [
                                     "properties": {
                                         "meal_name": {"type": "string"},
                                         "reason": {"type": "string", "description": "One short line the household reads on the card: why this fits. Under ten words, no exclamation mark. Plain words, never planner terms: the real minutes (\'Quicker than 45 minutes\'), not \'under the time cap\'; \'Not chicken again this week\', not \'no overlap with the week\'s chicken\'."},
-                                        "ingredients": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object",
-                                                "properties": {
-                                                    "item": {"type": "string"},
-                                                    "qty": {"type": "string"},
-                                                    "category": {"type": "string", "enum": ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"]},
-                                                },
-                                                "required": ["item"],
-                                            },
-                                        },
-                                        "instructions": {"type": "array", "items": {"type": "string"}},
+                                        # No ingredients/instructions here on purpose (2026-10-25):
+                                        # the recipe writer writes each new dish —
+                                        # propose_plan_changes_from_chat. A caller that still
+                                        # sends a list is honoured.
+                                        "brief": {"type": "string", "description": "The dish in a sentence, for the recipe writer: what it is and what makes it this dish."},
                                         "food_groups": {"type": "array", "items": {"type": "string", "enum": ["protein", "carb", "vegetable"]}},
                                         "cuisine": {"type": "string"},
                                         "main_protein": {"type": "string"},
-                                        "prep_time_minutes": {"type": "integer"},
-                                        "cook_time_minutes": {"type": "integer"},
-                                        "default_servings": {"type": "integer"},
                                     },
                                     "required": ["meal_name", "reason"],
                                 },
@@ -2672,13 +2697,14 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "set_big_meal_dish",
-        "description": "Add a dish to the big meal or swap one out: 'swap the dessert for a pumpkin pie', 'add roasted carrots', 'make the main a ham instead'. role is side | sweet | main. A sweet with no `replaces` takes the place of the current sweet; a side is added unless `replaces` names the one it replaces; a main replaces the main (a saved recipe by that name is used, else give ingredients). Ingredients are required for anything new, written for the whole table. Refuses a dish that clashes with the household's restrictions or the guests' notes. Shopping and the prep days follow.",
+        "description": "Add a dish to the big meal or swap one out: 'swap the dessert for a pumpkin pie', 'add roasted carrots', 'make the main a ham instead'. role is side | sweet | main. A sweet with no `replaces` takes the place of the current sweet; a side is added unless `replaces` names the one it replaces; a main replaces the main (a saved recipe by that name is used). For anything new, give a short `brief` and leave ingredients and instructions out: Pomona's recipe writer writes it for the whole table, around the guests' notes. Pass ingredients only when the person gave you the dish's own lines. Refuses a dish that clashes with the household's restrictions or the guests' notes. Shopping and the prep days follow.",
         "input_schema": {
             "type": "object",
             "properties": {
                 "date_str": {"type": "string"},
                 "name": {"type": "string"},
                 "role": {"type": "string", "enum": ["main", "side", "sweet"]},
+                "brief": {"type": "string", "description": "The dish in a sentence, for the recipe writer."},
                 "ingredients": {"type": "array", "items": {"type": "object", "properties": {"item": {"type": "string"}, "qty": {"type": "string"}, "category": {"type": "string", "enum": ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"]}}, "required": ["item", "qty"]}},
                 "instructions": {"type": "array", "items": {"type": "string"}},
                 "minutes": {"type": "integer", "description": "Hands-on minutes."},
@@ -10377,6 +10403,315 @@ def tools_for_request() -> list[dict]:
     return [d for d in TOOL_DEFINITIONS if d["name"] not in CHORES_TOOLS]
 
 
+# ---------- chat hands recipe writing to the recipe writer (2026-10-25) ----------
+#
+# Emily's Option A: chat runs on CHAT_MODEL (Haiku) and anything that WRITES
+# a recipe — its ingredients or its steps — is written by the recipe writer
+# on MODEL, the same generate_recipe_details_llm Approve uses, with the same
+# household facts (_shared_recipe_details_context) and the same allergen
+# check on what comes back. The chat model now passes intent: a dish name
+# and a short brief, or the change wanted. The four chat tools that took
+# whole recipes from the model (add_recipe, update_recipe_details,
+# propose_plan_changes, set_big_meal_dish) go through the wrappers below.
+#
+# A model-sent list is still honoured — that is a person dictating their
+# own recipe (or a book's), which is transcription rather than writing, and
+# it keeps every existing caller working. The schemas say to leave the
+# lines out otherwise.
+
+# Said when the writer came back with nothing usable twice. Written for the
+# model to relay; nothing was saved.
+CHAT_WRITER_FAILED = "Couldn't write that recipe just now — nothing was saved. Try again in a moment."
+
+
+def _write_dish_for_chat(name: str, *, brief: str = "", slot: str = "dinner",
+                         serves: int | None = None, extra: dict | None = None,
+                         check_allergens: bool = True, shared: dict | None = None,
+                         avoidances: list[dict] | None = None) -> dict:
+    """
+    Write one dish with the recipe writer. Returns {"ok", "clash", "detail"}:
+    detail carries ingredients (completed from the steps), instructions,
+    default_servings, prep/cook minutes and advance prep. Never raises for
+    a bad answer — `ok` False with an empty `clash` is "nothing usable".
+
+    The allergen check is Approve's (_write_one_pending_recipe): the list
+    the steps complete is the list judged, and a clash is written again
+    once with the food named before it is given up on — being told is not
+    being prevented. `check_allergens=False` is only for a person's own
+    "save it anyway", which already answered a refusal.
+    """
+    shared = dict(shared if shared is not None else _shared_recipe_details_context())
+    if serves:
+        shared["serves"] = serves
+    if not check_allergens:
+        shared.pop("must_not_contain", None)
+        avoidances = []
+    elif avoidances is None:
+        avoidances = _allergen_gate.hard_avoidances()
+    spec = _recipe_details_spec({"name": name, "dish_note": (brief or "").strip()}, slot or "dinner", shared)
+    spec.update(extra or {})
+    started = time.perf_counter()
+    clashes: list = []
+    ingredients: list = []
+    for attempt in (1, 2):
+        detail = generate_recipe_details_llm(spec)
+        servings = tools.positive_servings(detail.get("default_servings")) or shared.get("serves") or 4
+        instructions = [s for s in (detail.get("instructions") or []) if isinstance(s, str) and s.strip()]
+        ingredients = [
+            i for i in (detail.get("ingredients") or [])
+            if isinstance(i, dict) and (i.get("item") or "").strip()
+        ]
+        if not ingredients or not instructions:
+            logger.warning("Chat recipe writer for %r came back without %s (attempt %d)",
+                           name, "ingredients" if not ingredients else "steps", attempt)
+            continue
+        ingredients = tools.complete_ingredient_list(ingredients, instructions, servings)
+        clashes = (_allergen_gate.hard_clashes(name, ingredients=ingredients, avoidances=avoidances)
+                   if avoidances else [])
+        if clashes:
+            food = _allergen_gate._food_word(clashes)
+            logger.warning("Chat recipe writer for %r wrote in a must-avoid (%s); %s",
+                           name, food, "retrying once" if attempt == 1 else "giving up")
+            if attempt == 1:
+                spec = {**spec, "previous_attempt_included": food,
+                        "note": "Your previous attempt included something on must_not_contain. "
+                                "Write it again without it."}
+                continue
+            break
+        instructions, ingredients, consistency = _settle_recipe_amounts(name, ingredients, instructions, servings)
+        if not consistency["ok"]:
+            logger.warning("Recipe %s quality [steps_match_ingredients/info]: %s",
+                           name, plan_quality.steps_ingredients_message(consistency))
+        logger.info("Chat recipe writer wrote %r in %.2fs (attempt %d)",
+                    name, time.perf_counter() - started, attempt)
+        return {"ok": True, "clash": [], "detail": {
+            "ingredients": ingredients,
+            "instructions": instructions,
+            "default_servings": servings,
+            "prep_time_minutes": detail.get("prep_time_minutes"),
+            "cook_time_minutes": detail.get("cook_time_minutes"),
+            "advance_prep_notes": detail.get("advance_prep_notes") or "",
+            "advance_prep_step_indices": detail.get("advance_prep_step_indices") or [],
+        }}
+    logger.info("Chat recipe writer gave up on %r after %.2fs", name, time.perf_counter() - started)
+    return {"ok": False, "clash": clashes, "detail": {"ingredients": ingredients} if clashes else {}}
+
+
+def _writer_refusal(name: str, clashes: list) -> "tools.SlotRefused":
+    """The sentence for a dish the writer could not write without a
+    must-avoid — the same words add_recipe's own gate uses, so the model
+    reads the refusal it already knows how to answer."""
+    word = next((c.get("matched_word") for c in clashes if c.get("matched_word")), "") \
+        or _allergen_gate._food_word(clashes)
+    who = _allergen_gate._person(clashes)
+    cannot = f"{who} can’t have" if who else "this house can’t have"
+    return tools.SlotRefused(
+        f"Not saved: I couldn’t write {name} without {word}, which {cannot}. "
+        f"Pick a different dish, or ask them if it should be saved anyway."
+    )
+
+
+def add_recipe_from_chat(name: str, ingredients: list | None = None, brief: str = "",
+                         slot: str = "dinner", override: bool = False, **kwargs) -> dict:
+    """
+    Chat's add_recipe. With `ingredients` (a person's own recipe, read out
+    or from a book) it is tools.add_recipe_for_chat exactly as before.
+    Without, the recipe writer writes it from the name and `brief`, and it
+    is saved through the same add_recipe every other door uses.
+
+    The name is gated before anything is written (a "Buttermilk Pancakes"
+    in a dairy-free house costs no writer call), and the written list by
+    the writer's own check. `override` works as it always has: honoured
+    only as an answer to this door's refusal of this recipe in an earlier
+    turn — and then the writer is not told the must-avoids either, since
+    "save it anyway" is the person accepting them.
+    """
+    if ingredients:
+        return tools.add_recipe_for_chat(name, ingredients, override=override, **kwargs)
+    # Only the lines the model may not write itself are dropped here: a
+    # model that sent steps but no list has written a recipe, and the
+    # writer writes the two together.
+    for key in ("instructions", "advance_prep_step_indices"):
+        kwargs.pop(key, None)
+    name = (name or "").strip()
+    if not name:
+        raise ValueError("A recipe needs a name.")
+    servings = kwargs.get("default_servings")
+    if servings is not None and tools.positive_servings(servings) is None:
+        raise ValueError(f"A recipe has to serve at least 1 — {servings!r} isn't a number of servings.")
+    taken = tools.existing_recipe_named(name)
+    if taken:
+        # Before the writer runs: add_recipe refuses the duplicate anyway,
+        # and a writer call for a recipe that will not be saved is wasted.
+        raise tools.DuplicateRecipeName(tools.duplicate_recipe_message(taken["name"]))
+    accepted = bool(override) and _allergen_gate._override_armed("recipe", name, [])
+    if not accepted:
+        _allergen_gate.refuse_recipe_if_clashing(name, None)
+    written = _write_dish_for_chat(
+        name, brief=brief or kwargs.get("notes") or "", slot=slot, serves=tools.positive_servings(servings),
+        extra={k: kwargs[k] for k in ("cuisine", "main_protein", "tags", "food_groups") if kwargs.get(k)},
+        check_allergens=not accepted,
+    )
+    if written["clash"]:
+        # Remembered under the name alone, so the person's "save it anyway"
+        # next turn arms the override above.
+        _allergen_gate._remember_refusal("recipe", name, [])
+        raise _writer_refusal(name, written["clash"])
+    if not written["ok"]:
+        raise ValueError(CHAT_WRITER_FAILED)
+    detail = written["detail"]
+    saved = tools.add_recipe(
+        name, detail["ingredients"],
+        instructions=detail["instructions"],
+        default_servings=tools.positive_servings(servings) or detail["default_servings"],
+        prep_time_minutes=kwargs.pop("prep_time_minutes", None) or detail["prep_time_minutes"],
+        cook_time_minutes=kwargs.pop("cook_time_minutes", None) or detail["cook_time_minutes"],
+        advance_prep_notes=kwargs.pop("advance_prep_notes", None) or detail["advance_prep_notes"],
+        advance_prep_step_indices=detail["advance_prep_step_indices"],
+        measure_spices=True,
+        **{k: v for k, v in kwargs.items() if k != "default_servings"},
+    )
+    saved["ingredients"] = detail["ingredients"]
+    saved["written_by"] = "recipe writer"
+    return saved
+
+
+def update_recipe_details_from_chat(recipe_name: str, instructions: list[str] | None = None,
+                                    change: str = "", **kwargs) -> dict:
+    """
+    Chat's update_recipe_details. Steps the person dictated (`instructions`)
+    and plain field corrections (servings, minutes, advance prep) save as
+    they always did. `change` hands the STEPS to the recipe writer: a
+    recipe with none is filled in by fill_in_recipe (the Cook screen's own
+    writer), and one with steps is re-written to the change asked for —
+    the ingredient list kept exactly as it is, since this door has never
+    changed what a dish is made of.
+    """
+    change = (change or "").strip()
+    if instructions or not change:
+        return tools.update_recipe_details(recipe_name, instructions=instructions or None, **kwargs)
+    recipe = tools.get_recipe(recipe_name)
+    if not recipe.get("instructions"):
+        filled = fill_in_recipe(recipe["name"])
+        if kwargs:
+            filled = tools.update_recipe_details(recipe["name"], **kwargs)
+        return filled
+    lines = [
+        {k: v for k, v in i.items() if k not in ("cook_qty", "verbatim", "qty_as_written")}
+        if isinstance(i, dict) else i
+        for i in recipe.get("ingredients") or []
+    ]
+    spec = _recipe_details_spec(recipe, "dinner", _shared_recipe_details_context())
+    spec.update({
+        "change_requested": change,
+        "current_recipe": {"ingredients": lines, "instructions": recipe["instructions"]},
+        "note": ("Rewrite this recipe's STEPS the way change_requested asks. The ingredient list "
+                 "stays exactly as it is — same items, same amounts — so write steps that cook "
+                 "from it."),
+    })
+    started = time.perf_counter()
+    detail = generate_recipe_details_llm(spec)
+    steps = [s for s in (detail.get("instructions") or []) if isinstance(s, str) and s.strip()]
+    logger.info("Chat recipe writer rewrote the steps of %r in %.2fs", recipe["name"], time.perf_counter() - started)
+    if not steps:
+        raise ValueError(CHAT_WRITER_FAILED)
+    fields = {
+        "prep_time_minutes": detail.get("prep_time_minutes"),
+        "cook_time_minutes": detail.get("cook_time_minutes"),
+        "advance_prep_notes": detail.get("advance_prep_notes"),
+        "advance_prep_step_indices": detail.get("advance_prep_step_indices"),
+    }
+    fields = {k: v for k, v in fields.items() if v not in (None, "", [])}
+    fields.update(kwargs)
+    return tools.update_recipe_details(recipe["name"], instructions=steps, **fields)
+
+
+def _in_parallel(fn, items: list) -> list:
+    """fn over items abreast, each in a copy of this thread's context (the
+    household is a contextvar — see _fill_claimed_recipes)."""
+    if len(items) <= 1:
+        return [fn(i) for i in items]
+    tasks = [(contextvars.copy_context(), i) for i in items]
+    with concurrent.futures.ThreadPoolExecutor(max_workers=min(len(items), _RECIPE_DETAILS_WORKERS)) as pool:
+        return list(pool.map(lambda t: t[0].run(fn, t[1]), tasks))
+
+
+def propose_plan_changes_from_chat(weekly_plan_id: int, rows: list[dict], line: str = "") -> dict:
+    """
+    Chat's change card. A candidate that names a saved recipe, or came with
+    its own list, is as before; any other new dish is written by the recipe
+    writer first — all of the card's at once — so the card's own gates
+    (tools.proposals: the allergen and Won't-eat checks, on name and list)
+    judge what was written. A dish the writer could only write with a
+    must-avoid keeps that list, which is exactly what makes the card report
+    it under `unsafe` in the words the model already acts on.
+    """
+    rows = copy.deepcopy(rows or [])
+    todo = []
+    for row in rows:
+        if not isinstance(row, dict) or str(row.get("action") or "").strip().lower() == "keep":
+            continue
+        for cand in row.get("candidates") or []:
+            if not isinstance(cand, dict) or cand.get("ingredients"):
+                continue
+            name = (cand.get("meal_name") or cand.get("name") or "").strip()
+            if name and not tools.existing_recipe_named(name):
+                todo.append((cand, name, (row.get("slot") or "dinner")))
+    if todo:
+        shared = _shared_recipe_details_context()
+        avoidances = _allergen_gate.hard_avoidances()
+        written = _in_parallel(
+            lambda t: _write_dish_for_chat(
+                t[1], brief=t[0].get("brief") or t[0].get("reason") or "", slot=t[2],
+                extra={k: t[0][k] for k in ("cuisine", "main_protein", "food_groups") if t[0].get(k)},
+                shared=shared, avoidances=avoidances),
+            todo,
+        )
+        for (cand, _name, _slot), out in zip(todo, written):
+            detail = out["detail"]
+            cand["ingredients"] = detail.get("ingredients") or []
+            if out["ok"]:
+                cand["instructions"] = detail["instructions"]
+                cand["default_servings"] = detail["default_servings"]
+                for key in ("prep_time_minutes", "cook_time_minutes"):
+                    if isinstance(detail.get(key), int):
+                        cand[key] = detail[key]
+    return tools.propose_plan_changes(weekly_plan_id, rows, line=line)
+
+
+def set_big_meal_dish_from_chat(date_str: str, name: str, role: str = "side",
+                                ingredients: list[dict] | None = None, brief: str = "", **kwargs) -> dict:
+    """
+    Chat's set_big_meal_dish. A dish with its own list, or a main that is a
+    saved recipe, is as before. Any other new dish is written by the recipe
+    writer for the whole table (the big meal's eaters), told the guests'
+    notes, and then goes through set_big_meal_dish — whose guest check and
+    shopping run on what was written.
+    """
+    role_l = (role or "side").strip().lower()
+    if not ingredients and not (role_l == "main" and tools.existing_recipe_named(name or "")):
+        meal = tools.get_big_meal(date_str) or {}
+        if meal.get("hosting"):
+            extra = {"course": {"main": "the main", "sweet": "the dessert"}.get(role_l, "a side dish")}
+            if meal.get("guest_notes"):
+                extra["guests_cannot_have"] = meal["guest_notes"]
+            written = _write_dish_for_chat(name, brief=brief, slot="dinner",
+                                           serves=meal.get("eaters") or None, extra=extra)
+            if written["clash"]:
+                raise _writer_refusal(name, written["clash"])
+            if not written["ok"]:
+                raise ValueError(CHAT_WRITER_FAILED)
+            detail = written["detail"]
+            ingredients = detail["ingredients"]
+            if not kwargs.get("instructions"):
+                kwargs["instructions"] = detail["instructions"]
+            if kwargs.get("minutes") is None and isinstance(detail.get("prep_time_minutes"), int):
+                kwargs["minutes"] = detail["prep_time_minutes"]
+            if kwargs.get("cook_minutes") is None and isinstance(detail.get("cook_time_minutes"), int):
+                kwargs["cook_minutes"] = detail["cook_time_minutes"]
+    return tools.set_big_meal_dish(date_str, name, role=role, ingredients=ingredients, **kwargs)
+
+
 TOOL_FUNCTIONS = {
     "get_household_setup_status": tools.get_household_setup_status,
     "add_member": tools.add_member,
@@ -10406,10 +10741,10 @@ TOOL_FUNCTIONS = {
     "skip_chore": tools.skip_chore,
     "move_chore": tools.move_chore,
     "hand_chore": tools.hand_chore,
-    "add_recipe": tools.add_recipe_for_chat,
+    "add_recipe": add_recipe_from_chat,
     "list_recipes": tools.list_recipes,
     "get_recipe": tools.get_recipe,
-    "update_recipe_details": tools.update_recipe_details,
+    "update_recipe_details": update_recipe_details_from_chat,
     "scale_recipe": tools.scale_recipe,
     "mark_recipe_feedback": tools.mark_recipe_feedback,
     "attribute_recipe_feedback": tools.attribute_recipe_feedback,
@@ -10430,7 +10765,7 @@ TOOL_FUNCTIONS = {
     # night that is over, and the week generator (which composes the bare
     # one) must still be able to. See weekly_plan.swap_meal_in_plan.
     "swap_meal_in_plan": tools.swap_meal_in_plan_for_chat,
-    "propose_plan_changes": tools.propose_plan_changes,
+    "propose_plan_changes": propose_plan_changes_from_chat,
     "swap_component_in_plan": tools.swap_component_in_plan,
     "swap_dinner_nights": tools.swap_dinner_nights,
     "take_the_night_off": tools.tonight_night_off,
@@ -10503,7 +10838,7 @@ TOOL_FUNCTIONS = {
     "get_upcoming_holidays": tools.get_upcoming_holidays,
     "set_holiday_region": tools.set_holiday_region,
     "get_big_meal": tools.get_big_meal,
-    "set_big_meal_dish": tools.set_big_meal_dish,
+    "set_big_meal_dish": set_big_meal_dish_from_chat,
     "remove_big_meal_dish": tools.remove_big_meal_dish,
     "set_big_meal_prep_day": tools.set_big_meal_prep_day,
     "propose_big_meal": tools.propose_big_meal,
@@ -11435,7 +11770,7 @@ def warm_chat_cache() -> bool:
             _client(),
             label="run_agent_turn.warm",
             max_attempts=1,
-            model=MODEL,
+            model=CHAT_MODEL,  # caches are per model: warm the one chat reads
             max_tokens=0,
             system=[{"type": "text", "text": SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}}],
             tools=tools_for_request(),
@@ -11600,16 +11935,15 @@ def run_agent_turn(
         try:
             response = _create_with_retry(client,
                 label="run_agent_turn",
-                model=MODEL,
+                model=CHAT_MODEL,
                 fallback_model=CHAT_FALLBACK_MODEL,  # interactive chat only — see _create_with_retry's docstring
-                # Was 1024, then 4096, then 8192 — a turn that rebuilds several
-                # full recipes (add_recipe's ingredients/instructions/etc, built
-                # out in full per SYSTEM_PROMPT/the tool's own instructions) AND
-                # reassigns a week's worth of meal slots in the same round can
-                # still outrun 8192. Matches generate_weekly_plan_llm's cap
-                # below, which does comparably large output. The stop_reason ==
-                # "max_tokens" branch further down retries instead of bailing
-                # out if even this isn't enough for a given turn.
+                # Was 1024, then 4096, then 8192, then 16000 because a turn
+                # wrote several full recipes as tool input. The recipe writer
+                # does that now (_write_dish_for_chat), but a person can still
+                # dictate a whole recipe, or a week's slots can be reassigned
+                # in one round, so the cap stays — a cap costs nothing unless
+                # it is reached. The stop_reason == "max_tokens" branch further
+                # down retries instead of bailing out if even this isn't enough.
                 max_tokens=16000,
                 system=system_blocks,
                 tools=request_tools,
@@ -11637,9 +11971,12 @@ def run_agent_turn(
         # which restarts its five-minute clock — so no warm-up is due for a while.
         _stamp_chat_cache_warm()
 
+        # The model is on the line so a before/after of CHAT_MODEL (and a
+        # round the overload fallback answered) can be told apart in the logs.
         logger.info(
-            "run_agent_turn round %d took %.2fs, usage: input=%d cache_read=%d cache_creation=%d output=%d",
-            rounds, round_seconds, response.usage.input_tokens, response.usage.cache_read_input_tokens,
+            "run_agent_turn round %d took %.2fs (%s), usage: input=%d cache_read=%d cache_creation=%d output=%d",
+            rounds, round_seconds, getattr(response, "model", None) or CHAT_MODEL,
+            response.usage.input_tokens, response.usage.cache_read_input_tokens,
             response.usage.cache_creation_input_tokens, response.usage.output_tokens,
         )
         # Same numbers as the line above, kept as a running total for the
@@ -11790,6 +12127,11 @@ def run_agent_turn(
                     }
                 )
                 continue
+            # Seconds per tool, not only per round: a round's tool time was
+            # one number, so a slow tool (a recipe the writer is writing, a
+            # week regenerating) could not be told from ten quick lookups.
+            # Logged just below the try, which every outcome reaches.
+            tool_started = time.perf_counter()
             try:
                 # Read as the tool's schema declares (read_tool_input):
                 # a null optional, "7" for 7, "false" for false and a bare
@@ -11870,6 +12212,12 @@ def run_agent_turn(
                 tools.record_error("tool", where=block.name, detail=type(e).__name__)
                 content = json.dumps({"error": str(e)})
                 is_error = True
+            # The tool's name and its seconds only — never its arguments,
+            # for the reason the failure log above gives.
+            logger.info(
+                "run_agent_turn tool %s took %.2fs (round %d%s)",
+                block.name, time.perf_counter() - tool_started, rounds, ", error" if is_error else "",
+            )
             tool_results.append(
                 {
                     "type": "tool_result",

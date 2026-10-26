@@ -110,10 +110,13 @@ def test_temperatures_ride_beside_the_cue_never_instead_of_it():
 
 def test_the_chat_path_carries_the_same_step_standard():
     """A recipe built from the user's own idea in chat goes through add_recipe,
-    not the planners. It gets one sentence of the same bar."""
-    add_recipe = next(t for t in agent.TOOL_DEFINITIONS if t["name"] == "add_recipe")
-    assert "Write each instruction so a person can cook from it" in add_recipe["description"]
-    assert "longest thing first" in add_recipe["description"]
+    and since 2026-10-25 add_recipe hands the writing to the recipe writer
+    (agent.add_recipe_from_chat -> generate_recipe_details_llm), whose
+    instructions carry the whole WRITE_IT_DOWN bar rather than one sentence
+    of it. The chat tool itself no longer writes steps, so it no longer
+    needs the sentence."""
+    assert agent.WRITE_IT_DOWN in agent.RECIPE_DETAILS_INSTRUCTIONS
+    assert agent.TOOL_FUNCTIONS["add_recipe"] is agent.add_recipe_from_chat
 
 
 # --------------------------------------------------------------------------
