@@ -155,6 +155,13 @@ why*, not duplicating the diff.
   old notes predated the email front door, and the script's banner pointed at
   a missing APP_REVIEW_NOTES.md and its docstring described a `--reset` that
   never existed.
+- **A sized can of broth is its size on the Cook screen** (2026-10-26; branch
+  `overnight/hunt-backend-1026b`; tests `tests/test_sized_can_cook_amount.py`).
+  "1 (14 oz) can" of stock showed the table's "4 cups" for four and "6 cups"
+  for six. Why: broth is measured in cups, so its can counts as a package word
+  and the size was dropped. `_stated_package_amount` now reads can/tin for a
+  non-canned good the table measures in bulk (cups/weight; never tomato
+  paste's spoons), and reads "1 (8 oz) package" (typed order) as well.
 - **Second 200 library recipes: Emily's three calls** (2026-10-25; branch
   `recipe-library-200b`; doc `docs/RECIPE_LIBRARY_SPOTCHECK_200B.md`).
   Bistec a la Mexicana is two dishes (the rated slow simmer, plus "Quick

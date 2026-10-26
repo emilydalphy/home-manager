@@ -3133,6 +3133,36 @@ _SIZED_PACKAGE_RE = re.compile(
 )
 
 
+# "1 (8 oz) package" — the same line with the size written first.
+_SIZE_FIRST_RE = re.compile(
+    r"^(?P<n>\d+(?:\.\d+)?(?:\s+\d+/\d+)?|\d+/\d+)\s*\((?P<size>[^()]*)\)\s*(?P<word>[a-z]+)$",
+    re.IGNORECASE,
+)
+_SIZED_CAN_WORDS = {"can", "cans", "tin", "tins"}
+
+
+# The table's own amount in one of these means the thing goes in by the
+# cupful or the pound — a can of it is poured in whole. In spoons (tomato
+# paste, 2 tbsp) the can is drawn on, and the table's spoons stand.
+_BULK_UNITS = {"cup", "oz", "lb", "g", "kg", "ml", "l"}
+
+
+def _can_used_whole(item: str) -> bool:
+    """Whether a sized can of `item` is what goes in the pan: not a canned
+    good (whose "1 can (14 oz)" is never flagged and needs nothing), and
+    measured by the table in bulk — broth, corn, evaporated milk; never
+    tomato paste, which the table measures in tablespoons (review,
+    2026-10-26: "1 can (6 oz)" of paste read "6 oz" where main said 2 tbsp)."""
+    if _is_canned_good(item):
+        return False
+    base = _table_lookup(item)
+    if base is None:
+        clean = _clean_item(item)
+        base = next((d for words, d in _CLASS_DEFAULTS if any(_item_matches(clean, w) for w in words)), None)
+    parsed = _quantities._parse_quantity(base) if base else None
+    return bool(parsed and parsed[1] in _BULK_UNITS)
+
+
 def _stated_package_amount(item: str, shopping_qty: str, servings: int | None = None) -> str | None:
     """
     "8 oz" for "1 package (8 oz)" cream cheese, "16 oz" for "2 packages
@@ -3157,10 +3187,22 @@ def _stated_package_amount(item: str, shopping_qty: str, servings: int | None = 
     # The line as written first: the note splitter files a bracket it
     # can't read ("8 oz each", "8-oz") as a note, which is the size.
     raw = (shopping_qty or "").strip()
+    # "1 (8 oz) package", "1 (14 oz) can": the size BEFORE the container,
+    # the way a recipe typed in (the add sheet, the chat) is written. Only
+    # the link importer turns it round to "1 package (8 oz)", so a typed
+    # cream cheese showed the table's 4 oz (defect hunt, 2026-10-26).
+    raw = _SIZE_FIRST_RE.sub(r"\g<n> \g<word> (\g<size>)", raw)
     m = _SIZED_PACKAGE_RE.match(_ascii_fractions(raw)) or _SIZED_PACKAGE_RE.match(
         _ascii_fractions(_quantities._split_quantity_note(raw)[0])
     )
-    if not m or m.group("word").lower() not in _PER_USE_PACKAGE_WORDS:
+    word = m.group("word").lower() if m else ""
+    # A can is per-use too — you open it and pour it — but it only reaches
+    # here for a thing the table measures some other way (broth, in cups):
+    # a canned good's "1 can (14 oz)" is already its own measure and never
+    # flagged. Read as a package word, "1 (14 oz) can" of stock became the
+    # table's 4 cups for four and 6 for six — more than three cans' worth.
+    if not m or (word not in _PER_USE_PACKAGE_WORDS
+                 and not (word in _SIZED_CAN_WORDS and _can_used_whole(item))):
         return None
     count = _step_number(m.group("n"))
     size_text = re.sub(r"\b(?:each|about|approx\.?|approximately)\b", " ", m.group("size"), flags=re.IGNORECASE)
