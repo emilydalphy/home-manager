@@ -942,6 +942,9 @@ class OnboardingRhythmRequest(BaseModel):
     dinner_window: str = ""
     planning_anchor: str = ""
     leftovers_stance: str = ""
+    # Breakfast made fresh or on the prep day (Emily, 2026-10-26):
+    # 'fresh' | 'make_ahead'; '' leaves it alone.
+    breakfast_prep: str = ""
     # The seventh, skippable question (Loop Board "Prep days", Emily
     # 2026-09-04/09-08): a list of {"weekday": 'sunday'..., "minutes":
     # int|null, "note": str|null} — any number of distinct weekdays since
@@ -1900,6 +1903,7 @@ def onboarding_rhythm(req: OnboardingRhythmRequest):
             dinner_window=req.dinner_window,
             planning_anchor=req.planning_anchor,
             leftovers_stance=req.leftovers_stance,
+            breakfast_prep=req.breakfast_prep,
             prep_days=req.prep_days,
             shop_day=req.shop_day,
             top_up_shop_day=req.top_up_shop_day,

@@ -2998,6 +2998,15 @@ TOOL_DEFINITIONS = [
         },
     },
     {
+        "name": "set_breakfast_prep",
+        "description": "Set (or correct) how breakfast gets made, household-level: 'fresh' (made each morning) or 'make_ahead' (made on the prep day — egg bites, overnight oats, chia pudding, things that keep in the fridge). \"We make breakfast in the morning\" is 'fresh'.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"value": {"type": "string", "enum": ["fresh", "make_ahead"]}},
+            "required": ["value"],
+        },
+    },
+    {
         "name": "set_prep_days",
         "description": (
             "Set (or correct) the days the household preps ahead on, household-level: any number of days, each "
@@ -3797,6 +3806,16 @@ tag asks for one. It does not overrule the counts: when dinners_per_week is less
 nights you are planning, the household chose fewer dinners than nights, and the extra nights \
 are leftovers of a batch cooked within the three days before (see the counts rule below). \
 Blank means unknown — use your normal judgement.
+- household_memory's `rhythm.breakfast_prep` is how breakfast gets made, and it decides what \
+kind of breakfast to plan. "make_ahead" means breakfast is made on the prep day and eaten over \
+the next few mornings, so every breakfast must be something that keeps in the fridge and is \
+good cold or quickly reheated — egg bites, a frittata or egg muffins, overnight oats, chia \
+pudding, baked oatmeal, breakfast burritos, muffins — and a repeated breakfast is one batch. \
+"fresh" means breakfast is made that morning: quick dishes (15 minutes or less), and a \
+repeated breakfast is cooked again each morning, never batched. Either way, NEVER plan a \
+breakfast that only works fresh (toast, scrambled, fried or poached eggs, pancakes, a \
+smoothie) as a make-ahead batch — those are made the morning they're eaten. Blank means \
+unknown: lean make-ahead when the household has prep days, fresh when it doesn't.
 - household_memory's `weeknight_max_minutes`, when non-zero, is a real cap on Monday-Friday \
 dinners in prep+cook minutes. A `rush` tag never raises it: a rush weeknight is {rush_max} \
 minutes or this cap, whichever is lower. An `unrushed` tag lifts it for that one night. Nothing \
@@ -11272,6 +11291,7 @@ TOOL_FUNCTIONS = {
     "set_dinner_window": tools.set_dinner_window,
     "set_planning_anchor": tools.set_planning_anchor,
     "set_leftovers_stance": tools.set_leftovers_stance,
+    "set_breakfast_prep": tools.set_breakfast_prep,
     "set_prep_days": tools.set_prep_days,
     "get_household_rhythm": tools.get_household_rhythm,
     # Held things (2026-09-15) — see app/tools/held.py.

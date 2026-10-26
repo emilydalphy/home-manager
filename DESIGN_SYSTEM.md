@@ -213,6 +213,19 @@ run rather than a vibe. They apply to every screen, mockup or built.*
   attendance, holiday and away saves). Still open: a Save button under the open-slot
   options (they apply on tap today). Start cooking records the real start since 2026-09-13
   (branch `worktree-real-start-time`) and says so once, only when the clock moved.
+- **S11 · Seamless: never send someone to go find something.** *(Emily, 2026-10-26,
+  Tier 2 — "Everything with design should be thinking about making a seamless
+  experience.")* When a screen points at something somewhere else — "from Monday", "made
+  Sunday", "on the Shop list", "in Settings" — the pointer is the way there: one tap takes
+  you to that exact thing (the day, the recipe, the row), and back (S8) returns you where you
+  were. Better still, bring what you need here, so the trip isn't needed: a made-ahead
+  breakfast shows what to do with it this morning on the day it's eaten, not only on the day
+  it was cooked. A pointer with no tap behind it is a dead end, and a dead end is a bug.
+  *Why (Emily): clicking into a cook day that "points me to go find the other day where the
+  recipe lives is not a good experience… I envision maybe there's a button on that part of the
+  screen I can push to even just bring me there."* **Test:** for every line on a screen that
+  names another day, screen or list, tap it — does it land on that exact thing? And: could
+  the person finish what they came to do without leaving this screen?
 
 ---
 

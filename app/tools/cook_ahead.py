@@ -391,8 +391,11 @@ def apply_prep_day_batches(weekly_plan_id: int) -> dict:
     from . import rhythm as _rhythm
     from . import batch_components as _batch_components
     from . import batch_undo as _batch_undo
+    from . import breakfast_prep as _breakfast_prep
 
-    prep_days = _rhythm.get_household_rhythm().get("prep_days") or []
+    rhythm = _rhythm.get_household_rhythm()
+    prep_days = rhythm.get("prep_days") or []
+    breakfast_prep = rhythm.get("breakfast_prep")
     applied: list[dict] = []
     refused: list[dict] = []
     components: list[dict] = []
@@ -409,6 +412,12 @@ def apply_prep_day_batches(weekly_plan_id: int) -> dict:
         no_batch_days = _batch_undo.declined_dish_entry_ids(weekly_plan_id)
         no_batch_keys = _batch_undo.declined_component_keys(weekly_plan_id)
         for item in cook_ahead_repeats(weekly_plan_id):
+            # A breakfast made fresh is cooked each morning (Emily,
+            # 2026-10-26: "Fresh eggs and toast cannot be made on a prep
+            # day") — breakfast_prep.may_batch_breakfast.
+            if item["slot"] == "breakfast" and not _breakfast_prep.may_batch_breakfast(item["dish"], breakfast_prep):
+                declined.append({"kind": "fresh_breakfast", "dish": item["dish"]})
+                continue
             # A day the household un-batched cooks fresh, so it leaves the
             # dish's leftover days BEFORE they are cut into three-day
             # batches (both rules, merged 2026-09-24).

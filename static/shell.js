@@ -11800,6 +11800,10 @@
     { key: 'thursday', label: 'Thu' }, { key: 'friday', label: 'Fri' }, { key: 'saturday', label: 'Sat' },
     { key: 'sunday', label: 'Sun' }, { key: 'as_we_go', label: 'As we go' }
   ];
+  var WWK_BREAKFAST_PREP = [
+    { key: 'fresh', label: 'Made fresh each morning' },
+    { key: 'make_ahead', label: 'Made ahead on prep day' }
+  ];
   var WWK_LEFTOVERS = [
     { key: 'love_them', label: 'Love them — cook once, eat twice' },
     { key: 'fine_sometimes', label: 'Fine now and then' },
@@ -13552,7 +13556,8 @@
       return;
     }
     var body = {}; body[field] = value;
-    wwkSaveRhythm(field === 'leftovers_stance' ? 'taste' : 'rhythm', body, function () {
+    var section = field === 'leftovers_stance' ? 'taste' : field === 'breakfast_prep' ? 'prep-days' : 'rhythm';
+    wwkSaveRhythm(section, body, function () {
       var r = wwkMem().rhythm || (wwkMem().rhythm = {});
       if (field === 'cooking_role') { r.cooking_role = { value: value, who: null }; wwkState.pendingCookWho = false; }
       else r[field] = value;
@@ -13871,6 +13876,16 @@
       WWK_PREP_DAYS.map(function (o) { return wwkChip(o.label, 'data-wwk="prep-day" data-value="' + o.key + '"', keys.indexOf(o.key) !== -1 ? 'on' : ''); }).join('') + '</div>';
     // No "How long?" (2026-10-06): one line says what every prep day is.
     if (keys.length) html += wwkNote('Each prep day is planned for up to 2 hours.');
+    // Breakfast fresh or made ahead (Emily, 2026-10-26): only a household
+    // that preps has the choice, so it sits under the prep days.
+    // app/tools/breakfast_prep.py has the rule it sets.
+    if (keys.length) {
+      var bp = (mem.rhythm || {}).breakfast_prep || '';
+      html += wwkLead('Breakfast') + '<div class="wwk-chips">' +
+        WWK_BREAKFAST_PREP.map(function (o) { return wwkChip(o.label, 'data-wwk="rhythm" data-field="breakfast_prep" data-value="' + o.key + '"', bp === o.key ? 'on' : ''); }).join('') + '</div>';
+      if (bp) html += wwkNote(bp === 'make_ahead' ? 'Things that keep in the fridge, like egg bites and overnight oats.'
+        : 'Quick breakfasts, made each morning.');
+    }
     return html;
   }
 
