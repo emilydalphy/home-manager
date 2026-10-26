@@ -1140,7 +1140,9 @@ def tonight_night_off(day: str | None = None, now: datetime | None = None,
     # night as unsettled — it is already off.
     out["use_soon"] = use_soon
     if use_soon:
-        _queue_use_soon(dish, use_soon)
+        queued = _queue_use_soon(dish, use_soon)
+        if out.get("can_undo") and queued:
+            _remember_use_soon_note(plan_id, today, queued)
     # And the week's fridge moves, for the same reason and in the same
     # breath (Loop Board "Thaw reminders follow a meal when it's swapped or
     # moved by hand"). A night off moves a dinner — 'move' through the very
@@ -1384,6 +1386,7 @@ def tonight_night_off_undo(day: str | None = None, now: datetime | None = None) 
                 (inv["id"], household_id()),
             )
 
+        use_soon_note = record.get("use_soon_note_id")
         _plan_undo.restore(conn, record, holder["id"])
         conn.commit()
     except Exception:
@@ -1392,6 +1395,8 @@ def tonight_night_off_undo(day: str | None = None, now: datetime | None = None) 
     finally:
         conn.close()
     dish = record.get("dish") or ""
+    if use_soon_note:
+        _unqueue_use_soon(use_soon_note)
     return {
         "status": "restored", "date": today, "dish": dish or None,
         # The good version is the one above; the fallback says the same
@@ -1401,27 +1406,86 @@ def tonight_night_off_undo(day: str | None = None, now: datetime | None = None) 
     }
 
 
-def _queue_use_soon(dish: str, items: list[str]) -> None:
+def _queue_use_soon(dish: str, items: list[str]) -> int | None:
     """
     Put "use these soon" on the attention queue — the app's existing place
     for something the household should look at rather than have guessed at
     for them. It reaches Cook's fold and the morning text from there, so
     the note outlives the one card on Now that first said it.
 
+    Returns the note's id when THIS call made it pending (a new row, or one
+    reopened), else None: the same note already pending — the dish dropped
+    off another night first — belongs to that earlier answer, and an Undo
+    of this one must leave it standing.
+
     Never allowed to fail the answer: the night is already off, and a
     reminder that didn't queue must not report the night as unsettled.
     """
     from . import attention as _attention
 
-    said = _weekly_plan._join_with_and(items)
     try:
-        _attention.add_attention_item(
-            USE_SOON_KIND,
-            f"Use the {said} soon — {dish} came off the plan.",
-            {"items": items, "dish": dish},
+        res = _attention.add_attention_item(
+            USE_SOON_KIND, _use_soon_summary(dish, items), {"items": items, "dish": dish},
         )
     except Exception:
         logger.exception("Could not queue the use-soon note for %s", dish)
+        return None
+    return res["id"] if (res.get("created") or res.get("reopened")) else None
+
+
+def _remember_use_soon_note(plan_id: int, today: str, note_id: int) -> None:
+    """Add the note this tap queued to its Undo record, so Undo takes back
+    that one and no other. After the commit (the queue opens its own
+    connection); the holder's derived_from is outside the fingerprint, so
+    the record can grow without Undo reading the night as changed."""
+    try:
+        conn = get_conn()
+        try:
+            for r in _tonight_holder(conn, plan_id, today):
+                rec = _plan_undo.read(r, NIGHT_OFF_UNDO_KEY)
+                if rec:
+                    rec["use_soon_note_id"] = note_id
+                    _plan_undo.stamp(conn, r["id"], NIGHT_OFF_UNDO_KEY, rec)
+                    conn.commit()
+                    break
+        finally:
+            conn.close()
+    except Exception:
+        logger.exception("Could not record the use-soon note on the night-off undo")
+
+
+def _use_soon_summary(dish: str, items: list[str]) -> str:
+    return f"Use the {_weekly_plan._join_with_and(items)} soon — {dish} came off the plan."
+
+
+def _unqueue_use_soon(note_id: int) -> None:
+    """
+    Undo's half of _queue_use_soon. The note says the dish came off the
+    plan; once Undo has put it back on tonight that is no longer true, and
+    left pending it was the next morning's text — "use the turkey soon"
+    for a chili still planned for tonight — and every new chat's opener
+    until somebody found it in Cook's fold (defect hunt 2026-10-23).
+
+    Only the note THIS night off made pending (its id, on the undo record):
+    the same sentence already pending from an earlier answer is still true
+    and stays. One already answered since is left as answered. Resolved,
+    not deleted — the shape freezer_portions.sweep_use_soon settles a note
+    that stopped being true. Never allowed to fail the Undo, which has
+    already committed.
+    """
+    try:
+        conn = get_conn()
+        try:
+            conn.execute(
+                "UPDATE attention_items SET status = 'resolved', resolved_at = datetime('now') "
+                "WHERE id = ? AND household_id = ? AND kind = ? AND status = 'pending'",
+                (note_id, household_id(), USE_SOON_KIND),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+    except Exception:
+        logger.exception("Could not take back the use-soon note %s", note_id)
 
 
 __all__ = [
