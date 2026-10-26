@@ -1,0 +1,103 @@
+{
+ "dish_name": "Labneh Wraps",
+ "cuisine": "Lebanese",
+ "main_protein": "dairy",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Pita bread",
+   "qty": "1 package",
+   "category": "other",
+   "cook_qty": "4 large"
+  },
+  {
+   "item": "Labneh",
+   "qty": "1 tub (16 oz)",
+   "category": "dairy",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Za'atar",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Flaky sea salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Persian cucumbers",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Grape tomatoes",
+   "qty": "1 pint",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh mint",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Pitted green olives",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "20"
+  }
+ ],
+ "instructions": [
+  "Rinse the 4 cucumbers, the tomatoes and the mint and dry them well.",
+  "Slice the cucumbers into thin rounds. Cut 20 of the tomatoes in half. Pull about 60 leaves off the mint.",
+  "Cut 20 olives in half and check each one for stray pits.",
+  "Lay the 4 pitas flat on the counter. If yours are pocket pitas, split each one open and use the thicker half, rough side up.",
+  "Spread about 6 tbsp labneh down the middle of each pita, leaving the edges bare.",
+  "Scatter 1 tbsp za'atar and a little flaky salt over the labneh on each one. Drizzle about 2 tsp olive oil over each.",
+  "Lay a line of tomatoes, cucumber, mint leaves and olives down the middle of each pita, over the labneh.",
+  "Fold the bottom edge up over the filling, fold in one side, then roll it up tightly from there.",
+  "Serve right away, or wrap each one tightly in foil or parchment to pack. They keep in a cool lunch bag for up to 5 hours."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The Matbakh, the lead, rolls a large thin pita around labneh, za'atar, olive oil, Persian cucumber, grape tomatoes, mint and green olives, and says it holds at room temperature for a packed lunch. The Lemon Bowl also starts from labneh, za'atar and tomato but adds scrambled eggs and warms the pita, and Sunset rolls lavash around a herbed Greek yogurt with carrots, cucumber and onion, so both confirm the spread-then-vegetables build rather than lead it. No version had 20 or more ratings and RecipeTin Eats, the trusted cook for Lebanese, has none. This one scales the lead from one wrap to four and keeps it no-cook.",
+ "sources": [
+  {
+   "name": "The Matbakh",
+   "title": "Labneh Pita Sandwich",
+   "url": "https://thematbakh.com/labneh-sandwich/",
+   "rating": 4.34,
+   "rating_count": 6,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Lemon Bowl",
+   "title": "Lebanese Breakfast Pita with Labneh",
+   "url": "https://thelemonbowl.com/lebanese-breakfast-pita-with-labneh/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Sunset",
+   "title": "Mediterranean Garden Wraps",
+   "url": "https://sunset.com/?p=11423",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
