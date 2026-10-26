@@ -1,0 +1,44 @@
+{
+ "dish_name": "Patatesli Yumurta",
+ "cuisine": "Turkish",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {"item": "Russet potatoes", "qty": "2 large", "category": "produce"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Butter", "qty": "3 tbsp", "category": "dairy"},
+  {"item": "Olive oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Eggs", "qty": "8", "category": "dairy"},
+  {"item": "Milk", "qty": "1/2 cup", "category": "dairy"},
+  {"item": "Sweet paprika", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Flat-leaf parsley", "qty": "1 bunch", "category": "produce", "cook_qty": "1/4 cup chopped"},
+  {"item": "Red pepper flakes", "qty": "1/2 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Peel the 2 potatoes and slice them very thin, about 1/8 inch. Rinse the slices in cold water and pat them dry in a clean towel. Slice the onion into thin half moons.",
+  "Melt the 3 tbsp butter with the 1 tbsp oil in a 12 inch nonstick skillet with a lid over medium heat. Add the potatoes and onion, spread them out in an even layer and sprinkle with 3/4 tsp of the salt.",
+  "Cover and cook for 10 to 12 minutes, turning them with a spatula a couple of times, until a knife slides into the slices easily.",
+  "Take the lid off and turn the heat up to medium high. Cook for 3 to 4 minutes without stirring, until the potatoes underneath turn golden in spots.",
+  "Meanwhile, whisk the 8 eggs with the 1/2 cup milk, the last 3/4 tsp salt, the 1 tsp paprika and the 1/2 tsp pepper until no streaks of white are left.",
+  "Turn the heat down to low. Pour the eggs evenly over the potatoes and tilt the pan so they fill the gaps.",
+  "Cover and cook for 8 to 10 minutes, until the eggs are puffed and set at the edges and only just set in the middle. Give the pan a gentle shake. If the center still looks liquid, cover it and check again in a minute.",
+  "Meanwhile, chop 1/4 cup of the parsley.",
+  "Taste a corner. If it's flat, add a pinch more salt.",
+  "Scatter the parsley over the top and cut it into wedges in the pan. Serve hot, with the red pepper flakes on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions soften potatoes in fat, pour beaten eggs over them in the same pan and cook them gently until just set. Yemek.com (the lead) slices the potatoes thin, cooks them covered in butter and oil on low heat and then sets the eggs whisked with milk and red pepper under the lid; Cumhuriyet fries diced potatoes golden with onion before the eggs go in, and Food.com uses frozen hash browns with onion, garlic and parsley. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Turkish) has no version, so the most rated one leads; Food.com's page shows only 4 reviews (a reviewCount, no ratingCount). This follows the lead's butter, milk and lidded eggs for four, adds Cumhuriyet's onion and a few minutes uncovered so the potatoes brown, uses sweet paprika in the eggs and puts the red pepper flakes on the side."
+ ,
+ "sources": [
+  {"name": "Yemek.com", "title": "Tereyağlı Patatesli Yumurta", "url": "https://yemek.com/tarif/tereyagli-patatesli-yumurta/", "rating": 4.4, "rating_count": 8, "read": true, "lead": true},
+  {"name": "Cumhuriyet", "title": "Hafta sonu kahvaltıları için patatesli enfes tarif: Leziz patatesli yumurta", "url": "https://www.cumhuriyet.com.tr/gurme/hafta-sonu-kahvaltilari-icin-patatesli-enfes-tarif-leziz-patatesli-2240763", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Food.com", "title": "Turkish Potatoes and Eggs (Patatesli Yumurta)", "url": "https://www.food.com/recipe/turkish-potatoes-and-eggs-patatesli-yumurta-233422", "rating": 4.0, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
