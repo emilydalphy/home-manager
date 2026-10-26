@@ -110,6 +110,11 @@ def _lookup_item_shelf_life_days(item: str, category: str | None) -> int:
     # "turns soon"; coconut milk read as milk, canned salmon as salmon.
     if category in ("canned", "frozen"):
         return _DEFAULT_SHELF_LIFE_DAYS[category]
+    # ...and a tin added by chat, a scan or the form, filed under pantry or
+    # meat ("canned salmon"), is still a tin: the name says so.
+    from . import pantry as _pantry  # lazy: pantry imports grocery, which imports this
+    if _pantry.is_canned(item or ""):
+        return _DEFAULT_SHELF_LIFE_DAYS["canned"]
     name = item.strip().lower()
     best_match: tuple[str, int] | None = None
     for key, days in _ITEM_SHELF_LIFE_DAYS.items():

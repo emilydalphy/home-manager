@@ -152,6 +152,13 @@ def _try_subtract_quantity(existing_qty: str, minus_qty: str) -> tuple[str | Non
         remaining = existing_parsed[0] - used
         if remaining <= 0:
             return None, True
+        if minus_parsed[1] != existing_parsed[1] and abs(remaining * 4 - round(remaining * 4)) > 1e-9:
+            # Across units the difference can be an odd fraction ("0.9375
+            # cup", "0.99375 lb"): say it in the finer unit instead (15 tbsp,
+            # 15.9 oz). Never rounded up — a tbsp off a cup must come off.
+            finer = _quantities._convert_to_unit(remaining, existing_parsed[1], minus_parsed[1])
+            if finer is not None:
+                return _quantities._format_quantity(round(finer, 1), minus_parsed[1]), True
         return _quantities._format_quantity(remaining, existing_parsed[1]), True
     return existing_qty, False
 
