@@ -22,7 +22,7 @@ why*, not duplicating the diff.
   "coriander" (the seed) and "ground ginger" stay their own lines. The
   merged line's name now ranks plain < "only says fresh"
   (`_ONLY_SAYS_FRESH`) < real variety, so "Flat-leaf parsley" wins over
-  "Fresh parsley" whichever lands first. Amounts add as written ("2
+  "Fresh parsley" (and over "Italian parsley") whichever lands first. Amounts add as written ("2
   bunches" + "3 bunches, small" → "5 bunches, small", the size note kept).
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests

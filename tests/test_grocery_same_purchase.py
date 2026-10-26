@@ -372,6 +372,8 @@ def test_the_startup_sweep_does_not_delete_a_store_choice_for_the_variety():
     ("Fresh parsley", "Flat-leaf parsley"),
     ("Flat-leaf parsley", "Fresh parsley"),
     ("Parsley", "Flat-leaf parsley"),
+    ("Italian parsley", "Flat-leaf parsley"),
+    ("Flat-leaf parsley", "Italian parsley"),
 ])
 @ON_MONDAY
 def test_parsley_from_two_recipes_is_one_line_named_flat_leaf_with_bunches_added(first, second):

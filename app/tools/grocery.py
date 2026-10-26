@@ -330,17 +330,24 @@ def _plain_name_key(name: str) -> str:
     return " ".join(words)
 
 
-def _names_the_variety(name: str) -> bool:
-    """True when `name` is a variety in _SAME_PURCHASE ("Yellow onion"), not the plain name ("Onions")."""
-    return _plain_name_key(name) in _SAME_PURCHASE
-
-
 def _specificity(name: str) -> int:
-    """0 for a plain name, 1 for one that only says fresh, 2 for a real variety."""
+    """
+    0 for a plain name, 1 for one that only says fresh, 2 for a real
+    variety, 3 for flat-leaf parsley.
+
+    The 3 is a tie-break the card asks for: "Italian parsley" and
+    "Flat-leaf parsley" are the same bunch under two names, and the list
+    should read "Flat-leaf parsley" whichever recipe landed first --
+    it is the name on the shelf tag here.
+    """
     key = _plain_name_key(name)
     if key not in _SAME_PURCHASE:
         return 0
-    return 1 if key in _ONLY_SAYS_FRESH else 2
+    if key in _ONLY_SAYS_FRESH:
+        return 1
+    if _SAME_PURCHASE[key] == "parsley" and "flat" in key:
+        return 3
+    return 2
 
 
 def _refold_quantity_segments(qty: str, families: bool = False) -> str:
