@@ -1822,7 +1822,8 @@ def add_grocery_item(
     if source_weekly_plan_id is None:
         # A person's "24 pack" is one pack of 24, not 24 packs.
         quantity = _quantities.typed_multipack(quantity)
-    quantity = _quantities._normalize_grocery_quantity(quantity)
+    half = _quantities.typed_half_pack(quantity) if source_weekly_plan_id is None else None
+    quantity = half or _quantities._normalize_grocery_quantity(quantity)
     # A recipe's "light soy sauce", "dark soy sauce" and "tamari" are one
     # bottle on the list (Emily, 2026-10-18) — renamed before the merge key
     # is taken, so they meet on one line. A person's own words are kept.
@@ -1893,6 +1894,25 @@ def add_grocery_item(
         # next generation deletes -- so a plan can add quantity to a
         # hand-added item, but it cannot take ownership of it.
         keep_standing = existing["source_weekly_plan_id"] is None
+        # A person's add joining a plan's own line ("1 onion" onto the
+        # plan's "Onion 2") leaves it the plan's line, with the added amount
+        # recorded beside it the way an edit up is (_household_edit_columns'
+        # kept_amount) — Emily 2026-10-26. Made the household's own line, a
+        # merge's Undo put back "2" as a standing want, and when the meals
+        # went (a swap, a night off) their 2 came off it and left a blank
+        # "Onion". Kept the plan's, Undo's "2" equals what the meals want and
+        # clears the edit, and the line follows its meals from then on.
+        # Only a plain needed line of a plain food: a spice, sauce or pantry
+        # staple the rack assumes (spices.is_assumed — its tick and untick
+        # read a household's own line as theirs) still becomes theirs, as
+        # does a staple's add (the staple owns that line's rhythm), and a
+        # "max" add is a caller's, not a person's.
+        from . import spices as _spices_mod
+        plan_line_edit = None
+        if (not keep_standing and source_weekly_plan_id is None
+                and existing["status"] == "needed" and quantity_mode != "max"
+                and (added_by or "") != "staple" and not _spices_mod.is_assumed(existing["item"])):
+            plan_line_edit = _household_edit_columns(conn, existing, merged_qty)
         # A plan's line takes the more specific of the two names when a
         # plan's add joins it ("Onions" + "Yellow onion" reads "Yellow
         # onion"); see _more_specific_name. A person's own line, or a
@@ -1926,9 +1946,17 @@ def add_grocery_item(
             # overwriting one already chosen for this line.
             "store = CASE WHEN store = '' THEN ? ELSE store END "
             "WHERE id = ? AND household_id = ?",
-            (line_name, merged_qty, filed, 1 if keep_standing else 0, source_weekly_plan_id,
+            (line_name, merged_qty, filed, 1 if keep_standing else 0,
+             existing["source_weekly_plan_id"] if plan_line_edit is not None else source_weekly_plan_id,
              preferred_store, existing["id"], household_id()),
         )
+        if plan_line_edit is not None:
+            conn.execute(
+                "UPDATE grocery_items SET kept_amount = ?, short_amount = ?, edited_to = ? "
+                "WHERE id = ? AND household_id = ?",
+                (plan_line_edit["kept_amount"], plan_line_edit["short_amount"],
+                 plan_line_edit["edited_to"], existing["id"], household_id()),
+            )
         # A person asking for a spice by name wants it bought: their add
         # ticks the pending line onto the list. A plan's add leaves it in
         # the section, unticked, whatever the quantity now reads.

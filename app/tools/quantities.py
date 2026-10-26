@@ -1248,6 +1248,42 @@ def typed_multipack(qty: str) -> str:
     return f"{int(match.group(1))}-pack" + (f" {match.group(2).strip()}" if match.group(2) else "")
 
 
+# Units a store really sells by the half (Emily 2026-10-26): a half-dozen
+# carton, a half-gallon jug. A person's typed "1/2 dozen" or "½ gallon"
+# stays a half — it was being rounded up to "1 dozen" / "1 gallon". A
+# plan's amounts still round up to whole packs (_shopping_round).
+_HALF_SOLD_UNITS = frozenset({"dozen", "gallon"})
+
+
+def _is_half_sold(amount: float, unit: str | None) -> bool:
+    """A half (or one and a half, …) of a unit sold by the half."""
+    return (
+        unit in _HALF_SOLD_UNITS and amount > 0
+        and abs(amount * 2 - round(amount * 2)) < 1e-9
+        and abs(amount - round(amount)) > 1e-9
+    )
+
+
+def _half_text(amount: float, unit: str) -> str:
+    whole = int(math.floor(amount + 1e-9))
+    return f"{whole} 1/2 {_UNIT_PLURALS.get(unit, unit)}" if whole else f"1/2 {unit}"
+
+
+def typed_half_pack(qty: str) -> str | None:
+    """
+    A person's typed half-dozen / half-gallon, tidied but kept a half:
+    "1/2 dozen" and "0.5 dozen" -> "1/2 dozen", "1 1/2 gallons" ->
+    "1 1/2 gallon". None for anything else, which then goes through the
+    usual rounding. For a person's own words only (add_grocery_item's
+    standing add); a plan's amount is not read this way.
+    """
+    core, note = _split_quantity_note((qty or "").strip())
+    parsed = _parse_quantity(core)
+    if not parsed or not _is_half_sold(*parsed):
+        return None
+    return _with_note(_half_text(*parsed), note)
+
+
 def _normalize_grocery_quantity(qty: str) -> str:
     """
     Reformat a raw quantity string for shopper-friendly display (see
@@ -1310,6 +1346,8 @@ def _pounds_each(item: str) -> float | None:
 
 
 def _tidy_one(amount: float, unit: str | None) -> str:
+    if _is_half_sold(amount, unit):
+        return _half_text(amount, unit)  # a half-dozen / half-gallon, as typed
     if unit == "cup":
         return _cups_text(_volume_step(amount))
     if unit in _VOLUME_UNITS:

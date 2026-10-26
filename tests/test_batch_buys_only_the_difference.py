@@ -101,7 +101,19 @@ def test_unbatching_after_the_double_was_cooked_buys_wednesdays_share():
     _plan_id, ids = _chili_week()
     _tick_all()
     tools.check_off_meal(ids[MON])
-    result = batch_undo.unbatch("chili")
+    # Asked first (Emily 2026-10-26): nothing is written until they say yes.
+    before = _rows()
+    asked = batch_undo.unbatch("chili")
+    assert asked["status"] == "needs_confirmation"
+    assert asked["said"] == (
+        "Monday’s Turkey Chili was already cooked double, so Wednesday’s share is made. "
+        "Cook it fresh on Wednesday and buy for it again?"
+    )
+    assert asked["undo"] is None and asked["list_changed"] is False
+    assert _rows() == before
+    assert batch_undo.batches_on_plan(_plan_id), "still batched"
+    result = batch_undo.unbatch("chili", confirm_rebuy=True)
+    assert result["status"] == "unbatched"
     assert _needed() == {"Ground turkey": "1 lb", "Black beans": "1 can"}
     assert result["list_changed"] is True
 

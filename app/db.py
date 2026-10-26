@@ -1058,6 +1058,54 @@ def _delete_blank_grocery_items(conn):
     conn.execute("DELETE FROM grocery_items WHERE TRIM(item) = ''")
 
 
+def _respell_grocery_stores_as_usual(conn):
+    """
+    One-off cleanup (Emily 2026-10-26, Loop Board "costco" spelling card):
+    before 2026-10-22 a grocery line kept its store exactly as typed, so an
+    old line could read "costco" or "COSTCO " while the household's usual
+    store is "Costco". Readers already treat them as one store
+    (stores.store_key), but the line itself still showed the old spelling.
+
+    Every line whose store is one of the household's usual stores spelled
+    differently (case or spacing) is rewritten to the usual store's own
+    spelling. A store that isn't a usual store is left exactly as it is —
+    there is no household spelling to pick. Idempotent: once a line matches
+    its usual store's spelling nothing touches it again, so this runs every
+    startup and does nothing after the first.
+    """
+    rows = conn.execute(
+        "SELECT household_id, usual_stores_json FROM meal_preferences "
+        "WHERE usual_stores_json IS NOT NULL AND usual_stores_json NOT IN ('', '[]')"
+    ).fetchall()
+    for row in rows:
+        try:
+            usual = json.loads(row["usual_stores_json"] or "[]")
+        except (TypeError, ValueError):
+            continue
+        if not isinstance(usual, list):
+            continue
+        # Same rule as stores.store_key / tidy_store_name (not imported:
+        # db.py sits below the tools package).
+        spelling: dict[str, str] = {}
+        for name in usual:
+            if isinstance(name, str) and name.strip():
+                tidy = " ".join(name.split())
+                spelling.setdefault(tidy.casefold(), tidy)
+        if not spelling:
+            continue
+        lines = conn.execute(
+            "SELECT id, store FROM grocery_items WHERE household_id = ? AND TRIM(store) != ''",
+            (row["household_id"],),
+        ).fetchall()
+        for line in lines:
+            own = spelling.get(" ".join(line["store"].split()).casefold())
+            if own is not None and own != line["store"]:
+                conn.execute(
+                    "UPDATE grocery_items SET store = ? WHERE id = ? AND household_id = ?",
+                    (own, line["id"], row["household_id"]),
+                )
+
+
 _REPEATS_TOLERANCE_TO_LEFTOVERS_STANCE = {
     "cook_once_eat_twice": "love_them",
     "one_a_week": "fine_sometimes",
@@ -1372,6 +1420,7 @@ def _run_migrations(conn):
     _backfill_member_colors(conn)
     _merge_duplicate_item_store_preferences(conn)
     _delete_blank_grocery_items(conn)
+    _respell_grocery_stores_as_usual(conn)
     _migrate_repeats_tolerance_to_leftovers_stance(conn)
     _migrate_planning_anchor_values(conn)
     _backfill_allergy_notes_from_facts(conn)

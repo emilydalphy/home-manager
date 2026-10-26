@@ -1161,8 +1161,8 @@ and wait; pass confirm_cooked only once they say yes.
 - "Don\u2019t batch the rice" / "cook the chili fresh on Thursday" / "no batch cooking this \
 week" is `unbatch`. Pomona batches on its own when the household preps ahead, so this is the \
 only way back out \u2014 never answer it with a swap, and never say it can\u2019t be undone. Say its \
-`said` back as the one line and nothing else; if the status is \u2018ambiguous\u2019, ask `said` and \
-wait.
+`said` back as the one line and nothing else; if the status is \u2018ambiguous\u2019 or \
+\u2018needs_confirmation\u2019, ask `said` and wait (pass confirm_rebuy only once they say yes).
 - Every meal in a plan carries a slot_state, and it decides how you may talk about that slot:
   * 'planned' — a real meal. Normal.
   * 'planned_empty' — DELIBERATELY empty, and its reasoning says why (nobody is home that \
@@ -2181,12 +2181,13 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "unbatch",
-        "description": "\"Don't batch the rice\" / \"cook the chili fresh on Thursday\" / \"no batch cooking this week\" \u2014 take apart a batch the app made on its own. Pomona batches automatically when the household preps ahead: a dish on two days is cooked once on the first (a second time if the later days run past three days of leftovers), and a component two dishes both make (the eggs a breakfast and a salad both boil) is made once. This is the way back out. `what` names the dish or the thing being cooked as they said it (\"the rice\", \"the chili\", \"the eggs\"); leave it out entirely for \"no batch cooking this week\". `day` (YYYY-MM-DD) is for \"cook it fresh on Thursday\" \u2014 it frees that one day and leaves the rest of the batch alone. Say the result's `said` back as the whole reply, one line, no list of what changed. A status of 'ambiguous' means more than one batch answers to those words and `said` is the question to ask \u2014 ask it and stop. 'nothing' means there is no such batch, and `said` says so; don't retry with different words. 'refused' means nothing changed and `said` is why. The choice is remembered for this plan, so approving the week again will not put it back \u2014 don't promise otherwise. Not for changing WHAT is eaten (swap_meal_in_plan) or for moving a dinner to another night (swap_dinner_nights).",
+        "description": "\"Don't batch the rice\" / \"cook the chili fresh on Thursday\" / \"no batch cooking this week\" \u2014 take apart a batch the app made on its own. Pomona batches automatically when the household preps ahead: a dish on two days is cooked once on the first (a second time if the later days run past three days of leftovers), and a component two dishes both make (the eggs a breakfast and a salad both boil) is made once. This is the way back out. `what` names the dish or the thing being cooked as they said it (\"the rice\", \"the chili\", \"the eggs\"); leave it out entirely for \"no batch cooking this week\". `day` (YYYY-MM-DD) is for \"cook it fresh on Thursday\" \u2014 it frees that one day and leaves the rest of the batch alone. Say the result's `said` back as the whole reply, one line, no list of what changed. A status of 'ambiguous' means more than one batch answers to those words and `said` is the question to ask \u2014 ask it and stop. 'nothing' means there is no such batch, and `said` says so; don't retry with different words. 'refused' means nothing changed and `said` is why. 'needs_confirmation' means NOTHING changed yet: the batch's cook night is already cooked, so the freed night's share is in that pot and cooking it fresh buys its groceries again \u2014 ask `said` and stop; only if they say yes in this conversation, call again with confirm_rebuy true. The choice is remembered for this plan, so approving the week again will not put it back \u2014 don't promise otherwise. Not for changing WHAT is eaten (swap_meal_in_plan) or for moving a dinner to another night (swap_dinner_nights).",
         "input_schema": {
             "type": "object",
             "properties": {
                 "what": {"type": "string", "description": "The dish or the thing being cooked, in their words. Omit for every batch on the week."},
                 "day": {"type": "string", "description": "YYYY-MM-DD, only when they named one day to cook fresh."},
+                "confirm_rebuy": {"type": "boolean", "description": "Defaults to false. The household's explicit yes to cooking fresh after the batch was already cooked, which buys that night's groceries again \u2014 never set this on your own initiative and never on the first call. Only after a needs_confirmation answer, and only if they said yes."},
             },
             "required": [],
         },

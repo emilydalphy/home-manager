@@ -453,7 +453,7 @@ def _said_for(results: list[dict], swept: bool) -> str:
 
 # ---------- the tool ----------
 
-def unbatch(what: str = "", day: str = "") -> dict:
+def unbatch(what: str = "", day: str = "", confirm_rebuy: bool = False) -> dict:
     """
     Undo a batch the household didn't want — one repeated dish, one shared
     component, one day of either, or everything on the week.
@@ -472,6 +472,12 @@ def unbatch(what: str = "", day: str = "") -> dict:
                    which of the two it is.
       'refused'    the write declined (a day that has moved under the
                    request); `said` is its own sentence.
+      'needs_confirmation'
+                   nothing was written: the batch's cook night is already
+                   cooked, so the freed night's share is in that pot and
+                   cooking it fresh buys it again. `said` is the question;
+                   the same call with `confirm_rebuy` goes ahead (Emily,
+                   2026-10-26: ask before re-buying).
     """
     conn = get_conn()
     plan = _weekly_plan._current_weekly_plan_row(conn)
@@ -498,6 +504,11 @@ def unbatch(what: str = "", day: str = "") -> dict:
 
     before = _grocery_lines(plan_id)
     approved = _weekly_plan._weekly_plan_is_approved(plan_id)
+    if approved and not confirm_rebuy:
+        question = _rebuy_question(hits, day)
+        if question:
+            return {"status": "needs_confirmation", "said": question, "undo": None,
+                    "list_changed": False}
     results: list[dict] = []
     undo: dict = {"weekly_plan_id": plan_id, "dishes": [], "components": []}
 
@@ -552,6 +563,48 @@ def unbatch(what: str = "", day: str = "") -> dict:
     if list_changed:
         said = f"{said} Your list has changed to match."
     return {"status": "unbatched", "said": said, "undo": undo, "list_changed": list_changed}
+
+
+def _cooked_entry_ids(entry_ids: list[int]) -> set[int]:
+    ids = [int(i) for i in entry_ids if i]
+    if not ids:
+        return set()
+    conn = get_conn()
+    try:
+        marks = ",".join("?" * len(ids))
+        return {
+            int(r["id"]) for r in conn.execute(
+                f"SELECT id FROM meal_plan_entries WHERE household_id = ? AND id IN ({marks}) "
+                "AND cooked_status = 'done'",
+                [household_id(), *ids],
+            ).fetchall()
+        }
+    finally:
+        conn.close()
+
+
+def _rebuy_question(hits: list[dict], day: str) -> str:
+    """
+    The question to ask before un-batching a dish whose cook night is
+    already cooked, or '' when there is nothing to ask. That pot holds the
+    freed nights' share, so cooking them fresh puts their groceries back on
+    the list (weekly_plan._eaten_ids) — Emily 2026-10-26: ask first.
+    A component batch, or a dish not yet cooked, buys nothing again.
+    """
+    dishes = [b for b in hits if b["kind"] == "dish"]
+    cooked = _cooked_entry_ids([b["source_entry_id"] for b in dishes])
+    for batch in dishes:
+        if int(batch["source_entry_id"]) not in cooked:
+            continue
+        freed = [c for c in batch["covered"] if day and c["date"] == day] or list(batch["covered"])
+        if not freed:
+            continue
+        days = _leftovers._join_days([_day_word(c["date"]) for c in freed])
+        cook_day = _day_word(batch["cook_date"])
+        share = f"{days}’s share" if len(freed) == 1 else f"the share for {days}"
+        return (f"{cook_day}’s {batch['label']} was already cooked double, so {share} is made. "
+                f"Cook it fresh on {days} and buy for it again?")
+    return ""
 
 
 def rebatch(undo: dict) -> dict:

@@ -1646,9 +1646,66 @@ def _set_aside_own_lines(lines: list[dict], weekly_plan_id: int, entry_ids=None)
             if split != row["id"]:
                 out.append(split)
                 continue
+        else:
+            # A plan line carrying the household's own amount on top
+            # (kept_amount: a person's add onto it, or an edit up — since
+            # 2026-10-26 a typed "2 lbs" onto the plan's salmon stays the
+            # plan's line): their amount moves to a line of its own, still
+            # to buy, and the plan's line is set aside as always.
+            _split_off_kept_amount(row["id"])
         _pre_shop.drop_grocery_item_pre_shop(row["id"], author=FREEZER_REMOVED_BY)
         out.append(row["id"])
     return out
+
+
+def _split_off_kept_amount(line_id: int) -> int | None:
+    """
+    Move the household's own amount on a plan line (kept_amount) onto a
+    line of its own — theirs (source_weekly_plan_id NULL), still to buy —
+    and leave the plan's line holding only what its meals want. Returns the
+    new line's id, or None when there is nothing kept, the meals' part
+    can't be read, or the kept amount is a "Keep" on last week's leftover
+    (another line's kept_into_item_id: that Keep's Undo takes it back off
+    this very row, so it stays). One transaction.
+    """
+    from . import grocery as _grocery
+
+    with write() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            "SELECT id, item, quantity, category, status, store, kept_amount, short_amount, edited_to, "
+            "source_weekly_plan_id FROM grocery_items WHERE id = ? AND household_id = ?",
+            (line_id, household_id()),
+        ).fetchone()
+        kept = (row["kept_amount"] or "").strip() if row is not None else ""
+        if not kept or row["source_weekly_plan_id"] is None or row["status"] not in _STILL_TO_BUY_STATUSES:
+            return None
+        if conn.execute(
+            "SELECT 1 FROM grocery_items WHERE household_id = ? AND kept_into_item_id = ?",
+            (household_id(), line_id),
+        ).fetchone():
+            return None
+        ledger = [
+            r["quantity"] or "" for r in conn.execute(
+                "SELECT quantity FROM meal_plan_grocery_links WHERE household_id = ? AND grocery_item_id = ?",
+                (household_id(), line_id),
+            ).fetchall()
+        ]
+        meals = _grocery._plan_or_rack_amount(
+            row["item"], ledger, "", row["short_amount"] or "", row["edited_to"] or "",
+        ) if ledger else None
+        if not meals:
+            return None
+        cur = conn.execute(
+            "INSERT INTO grocery_items (household_id, item, quantity, category, added_by, status, store) "
+            "VALUES (?, ?, ?, ?, 'user', 'needed', ?)",
+            (household_id(), row["item"], kept, row["category"], row["store"] or ""),
+        )
+        conn.execute(
+            "UPDATE grocery_items SET quantity = ?, kept_amount = '' WHERE id = ? AND household_id = ?",
+            (meals, line_id, household_id()),
+        )
+        return cur.lastrowid
 
 
 def _split_off_plan_share(line_id: int, weekly_plan_id: int, entry_ids=None) -> int | None:

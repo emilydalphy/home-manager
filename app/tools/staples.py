@@ -1466,6 +1466,17 @@ def remove_staple_by_id(staple_id: int) -> dict:
     return remove_staple(name)
 
 
+def _paused_by_skips(conn, staple_id: int) -> bool:
+    """True when the staple's latest pause was the automatic one three
+    skips bring (_skip), not one a person tapped (pause_staple)."""
+    last = conn.execute(
+        "SELECT source FROM staple_events WHERE household_id = ? AND staple_id = ? "
+        "AND kind = 'paused' ORDER BY id DESC LIMIT 1",
+        (household_id(), staple_id),
+    ).fetchone()
+    return last is not None and last["source"] == "auto"
+
+
 def record_staple_purchase(
     item: str, source: str = "grocery", staple_id: int | None = None,
     grocery_item_id: int | None = None, category: str = "other",
@@ -1520,6 +1531,16 @@ def record_staple_purchase(
         "WHERE id = ? AND household_id = ?",
         (today, r["id"], household_id()),
     )
+    if r["paused"] and _paused_by_skips(conn, r["id"]):
+        # Bought by hand after three "Not this trip"s paused it (Emily
+        # 2026-10-26): the household still buys it, so Pomona suggests it
+        # again. A pause the household set itself (Staples' Pause) stays.
+        # paused is one of _RHYTHM_FIELDS, so an untick of this line puts
+        # the pause back with the rest of the rhythm.
+        conn.execute(
+            "UPDATE staples SET paused = 0 WHERE id = ? AND household_id = ?",
+            (r["id"], household_id()),
+        )
     _relearn(conn, r["id"])
     after_row = _row(conn, r["id"])
     if event_id is not None:

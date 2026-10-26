@@ -4154,9 +4154,10 @@
       var out = await res.json();
       var backOn = dish ? dish + ' is back on tonight.' : 'It’s back on tonight.';
       showToast(out.status === 'restored' ? (out.said || backOn) : (out.message || TONIGHT_SWAP_TROUBLE));
-      // Nothing an undoable night off did touched the list, so Shop is left
-      // alone; Kitchen (the freezer row) is re-read by the kitchen branch.
-      afterTonightSwap(panel);
+      // Shop is re-read only when the dish's lines followed it back to
+      // tonight's table (a move onto a different-size table, `list_changed`);
+      // Kitchen (the freezer row) is re-read by the kitchen branch.
+      afterTonightSwap(panel, { listMoved: !!(out && out.list_changed) });
     } catch (err) {
       console.warn('Undoing tonight’s night off failed:', err);
       showToast(TONIGHT_SWAP_TROUBLE);

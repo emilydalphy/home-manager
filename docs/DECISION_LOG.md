@@ -13,6 +13,36 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Grocery small calls: Emily went with the picks** (2026-10-26, branch
+  `calls-1026/grocery`; tests `tests/test_calls_1026_grocery.py`, plus edits in
+  `test_staples.py`, `test_batch_buys_only_the_difference.py`,
+  `test_own_line_week_ends.py`).
+  - Remembrance Day, Civic Holiday, Easter Monday and Good Friday shut no store
+    saved as "Closed on holidays" (`holidays._SHOPS_OPEN_ON`).
+  - Diwali, Eid (all spellings), Hanukkah/Chanukah and Lunar/Chinese New Year
+    shut no store either.
+  - Old grocery lines whose store is a usual store spelled differently
+    ("costco") take the household's spelling — idempotent startup backfill
+    `db._respell_grocery_stores_as_usual`; a store that isn't a usual one is left.
+  - A person's add onto a plan's own line ("1 onion" onto "Onion 2") keeps it
+    the plan's line with the added amount as `kept_amount` (the edit-up rule),
+    so Undo's "2" clears it and a later swap leaves no blank "Onion". At week
+    end that line is set aside whole, like an edited-up line. The freezer step
+    moves a plan line's kept amount onto a line of its own before setting the
+    plan's part aside (`defrost._split_off_kept_amount`), so "it's in the
+    freezer" never takes her amount. Rack items (spices.is_assumed) and a
+    staple's add keep the old rule (the line becomes theirs).
+  - A typed "1/2 dozen" / "1/2 gallon" stays a half (`quantities.typed_half_pack`,
+    `_tidy_one`); a plan's eggs still round up to whole dozens.
+  - Today's night off that MOVES a dish to a different-size table resizes its
+    lines (`attendance.resize_after_redate`) and its Undo resizes them back;
+    both answer `list_changed`.
+  - Un-batching after the cook night is ticked cooked asks first
+    (`unbatch` → `needs_confirmation`, `confirm_rebuy`) before re-buying the
+    freed night's share.
+  - Ticking a staple bought lifts a pause that three "Not this trip"s brought;
+    a pause the household tapped stays (`staples._paused_by_skips`).
+
 - **The iPhone app's id is `com.heypomona.app`** (2026-10-25, Emily's pick
   to match her heypomona domain; branch `overnight/bundle-id-heypomona`).
   Replaced the `com.pomona.app` placeholder in `capacitor.config.json`, the
