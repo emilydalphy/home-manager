@@ -534,11 +534,63 @@ def parse_servings(value) -> int | None:
         return None
     if isinstance(value, (int, float)):
         return int(value) if value > 0 else None
+    # "1 pie, serves 8": the number beside the serving word, not the first.
+    match = re.search(
+        r"\b(?:serves?|servings?(?:\s+of)?|feeds)\s*:?\s*(\d+)|(\d+)\s*(?:servings?|people|persons?|portions?|guests?)\b",
+        str(value), re.IGNORECASE,
+    )
+    if match:
+        n = int(match.group(1) or match.group(2))
+        return n if 0 < n < 1000 else None
     match = re.search(r"\d+", str(value))
     if not match:
         return None
     n = int(match.group(0))
     return n if 0 < n < 1000 else None
+
+
+# A yield that names a whole thing rather than people: "1 pie", "1 loaf",
+# "2 dozen", "one 9x13 pan". Read as servings, "1 pie" was 1 and the
+# planner multiplied every amount by four for a family of four (Loop Board,
+# Emily 2026-10-26: servings are unknown then, and the review sheet says so).
+_WHOLE_THING_YIELD_RE = re.compile(
+    r"\b(?:pies?|loa(?:f|ves)|dozen|cakes?|tarts?|quiches?|batch(?:es)?|"
+    r"pans?|trays?|rounds?|rings?|jars?|pints?|quarts?|gallons?|"
+    r"litres?|liters?|cups?|bundts?|galettes?|cobblers?)\b",
+    re.IGNORECASE,
+)
+_PEOPLE_YIELD_RE = re.compile(r"\b(?:serv(?:es?|ings?)|people|persons?|portions?|guests?)\b", re.IGNORECASE)
+
+
+def yield_names_a_whole_thing(value) -> str:
+    """The yield's own words ("1 pie") when it says what the recipe makes
+    instead of how many it serves, else "". A yield that also gives a
+    serving count ("1 pie, serves 8", or ["8", "1 pie"]) is a serving
+    count."""
+    items = value if isinstance(value, list) else [value]
+    texts = [v.strip() for v in items if isinstance(v, str) and v.strip()]
+    if not texts or any(isinstance(v, (int, float)) and v > 1 for v in items):
+        return ""
+    if any(_PEOPLE_YIELD_RE.search(t) for t in texts):
+        return ""
+    if any(re.fullmatch(r"\d+", t) and int(t) > 1 for t in texts):
+        return ""
+    for t in texts:
+        if _WHOLE_THING_YIELD_RE.search(t):
+            # The review sheet says 'makes "1 pie"', so a page's own
+            # "Yield:" / "Makes" in front goes.
+            return re.sub(r"^(?:yields?|makes)\s*:?\s*", "", _clean_text(t), flags=re.IGNORECASE)
+    return ""
+
+
+def _servings_and_makes(raw_yield) -> tuple[int, str]:
+    """(default_servings, makes). makes is the yield's words when the
+    servings are unknown: default_servings is then the planner's 4 and the
+    review sheet asks the household to set it."""
+    makes = yield_names_a_whole_thing(raw_yield)
+    if makes:
+        return 4, makes
+    return parse_servings(raw_yield) or 4, ""
 
 
 def _text_of(value) -> str:
@@ -1080,6 +1132,7 @@ def guess_category(item: str, qty: str = "") -> str:
 DRAFT_FIELDS = (
     "name", "default_servings", "prep_time_minutes", "cook_time_minutes",
     "ingredients", "instructions", "cuisine", "main_protein", "source_url", "read_by",
+    "servings_unknown_makes",
 )
 
 
@@ -1114,6 +1167,7 @@ def draft_from_json_ld(node: dict, source_url: str) -> dict:
                 parsed["category"] = guess_category(parsed["item"], parsed["qty"])
                 ingredients.append(parsed)
 
+    servings, makes = _servings_and_makes(node.get("recipeYield"))
     prep = parse_duration_minutes(node.get("prepTime"))
     cook = parse_duration_minutes(node.get("cookTime"))
     total = parse_duration_minutes(node.get("totalTime"))
@@ -1124,7 +1178,10 @@ def draft_from_json_ld(node: dict, source_url: str) -> dict:
 
     return {
         "name": _first_string(node.get("name")) or _first_string(node.get("headline")),
-        "default_servings": parse_servings(node.get("recipeYield")) or 4,
+        "default_servings": servings,
+        # The yield's words when it only says what the recipe makes ("1
+        # pie"): servings unknown, and the review sheet asks for them.
+        "servings_unknown_makes": makes,
         "prep_time_minutes": prep,
         "cook_time_minutes": cook,
         "ingredients": ingredients,
@@ -1169,6 +1226,12 @@ def draft_from_model(detail: dict | None, source_url: str, fallback_name: str = 
     draft = {
         "name": _clean_text(detail.get("name") or "") or _clean_text(fallback_name),
         "default_servings": parse_servings(detail.get("default_servings")) or 4,
+        # The reader gives `makes` when the page only says what it makes.
+        "servings_unknown_makes": (
+            _clean_text(str(detail.get("makes") or ""))
+            if detail.get("makes") and not parse_servings(detail.get("default_servings"))
+            else ""
+        ),
         "prep_time_minutes": parse_duration_minutes(detail.get("prep_time_minutes")),
         "cook_time_minutes": parse_duration_minutes(detail.get("cook_time_minutes")),
         "ingredients": ingredients,

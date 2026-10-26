@@ -8754,6 +8754,14 @@ def _replace_slot_entries(
             (weekly_plan_id, household_id()),
         ).fetchone()
         approved = bool(plan_row) and plan_row["status"] == "approved"
+        # The freezer step's answer on the outgoing nights, read before
+        # their moves are released below. When the outgoing night was the
+        # only one with that item, the release leaves no move anywhere to
+        # say the household answered "in the freezer", and a new dish
+        # using the same item bought it again (Loop Board card
+        # 4031f4c0…, Emily 2026-10-26: carry the answer over to the new
+        # dish). Handed to _carry_freezer_answer at the tail.
+        carried_answer = _freezer_answer_on_entries(conn, weekly_plan_id, old_entry_ids) if approved else set()
         # Asked before anything is torn down, on the transaction's own
         # connection: once the old entry is deleted there is nothing left
         # to ask whether it used to feed other nights' leftovers.
@@ -8874,18 +8882,40 @@ def _replace_slot_entries(
     # household already said is in the freezer joins that answer instead of
     # buying the salmon again (defrost.carry_freezer_answer_to_nights).
     if approved and result.get("entry_id"):
-        _carry_freezer_answer(weekly_plan_id, [result["entry_id"]])
+        _carry_freezer_answer(weekly_plan_id, [result["entry_id"]], also_answered=carried_answer)
     return result
 
 
-def _carry_freezer_answer(weekly_plan_id: int, entry_ids: list) -> None:
+def _freezer_answer_on_entries(conn, weekly_plan_id: int, entry_ids: list) -> set[str]:
+    """The items the freezer step booked a still-pending fridge move for on
+    `entry_ids` (lowercased), read on the caller's connection. Pending only:
+    a move already ticked is a thawed thing the release HOLDS ("Pomona,
+    hold this"), and booking a second move to thaw it again would be
+    wrong."""
+    from . import defrost as _defrost
+
+    ids = [int(i) for i in entry_ids or [] if i]
+    if not ids:
+        return set()
+    marks = ",".join("?" * len(ids))
+    rows = conn.execute(
+        f"SELECT description FROM prep_tasks WHERE household_id = ? AND weekly_plan_id = ? "
+        f"AND task_type = 'defrost' AND inventory_item_id IS NULL AND status = 'pending' "
+        f"AND meal_plan_entry_id IN ({marks}) "
+        f"AND COALESCE(json_extract(detail_json, '$.kind'), '') != ?",
+        (household_id(), weekly_plan_id, *ids, _defrost.OWN_PORTION_KIND),
+    ).fetchall()
+    return {_defrost.thawed_item(r["description"]).lower() for r in rows} - {""}
+
+
+def _carry_freezer_answer(weekly_plan_id: int, entry_ids: list, also_answered: set | None = None) -> None:
     """defrost.carry_freezer_answer_to_nights, imported where it is called
     (the same cycle as _defrost_resync). Never raises: the swap is written,
     and a reminder pass that failed must not say otherwise."""
     from . import defrost as _defrost
 
     try:
-        _defrost.carry_freezer_answer_to_nights(weekly_plan_id, entry_ids)
+        _defrost.carry_freezer_answer_to_nights(weekly_plan_id, entry_ids, also_answered=also_answered)
     except Exception:
         logger.exception(
             "Carrying the freezer answer onto swapped-in nights %s failed; the list may ask "
@@ -10154,7 +10184,7 @@ def _shift_defrost_tasks(conn, weekly_plan_id: int, entry_id: int, old_date: str
     delta = (date.fromisoformat(new_date) - date.fromisoformat(old_date)).days
     old_wd, new_wd = _weekday_of(old_date), _weekday_of(new_date)
     tasks = conn.execute(
-        "SELECT id, task_date, description FROM prep_tasks "
+        "SELECT id, task_date, description, status FROM prep_tasks "
         "WHERE household_id = ? AND weekly_plan_id = ? AND task_type = 'defrost' "
         "AND meal_plan_entry_id = ?",
         (household_id(), weekly_plan_id, entry_id),
@@ -10169,7 +10199,46 @@ def _shift_defrost_tasks(conn, weekly_plan_id: int, entry_id: int, old_date: str
             "UPDATE prep_tasks SET task_date = ?, description = ? WHERE id = ? AND household_id = ?",
             (moved_to, said, t["id"], household_id()),
         )
+        if t["status"] == "done":
+            # A ticked move is food already out of the freezer, and the
+            # shift above moves its day with the dinner. The night it was
+            # thawed FOR is kept, once, so a second move still counts the
+            # fridge time from it (defrost.thawed_wait_sentence).
+            conn.execute(
+                "UPDATE prep_tasks SET detail_json = json_set(COALESCE(NULLIF(detail_json, ''), '{}'), '$.thawed_for', ?) "
+                "WHERE id = ? AND household_id = ? "
+                "AND json_extract(COALESCE(NULLIF(detail_json, ''), '{}'), '$.thawed_for') IS NULL",
+                (old_date, t["id"], household_id()),
+            )
     return len(tasks)
+
+
+def thawed_waits_for_entry(conn, weekly_plan_id: int, entry_id: int, cook_date: str) -> list[str]:
+    """
+    defrost.thawed_wait_sentence for each fridge move already ticked done
+    on `entry_id`, read on the caller's connection AFTER its rows moved:
+    the line said at a move when thawed food's dinner now lands past how
+    long it keeps. The night it was thawed for is the row's thawed_for,
+    which _shift_defrost_tasks keeps on a ticked row. For a
+    door that moves a cook without _redate_plan_rows (the night off's
+    cook-on-the-fed-night).
+    """
+    from . import cooker as _cooker_mod
+    from . import defrost as _defrost_mod  # lazy: defrost imports us
+
+    today = _cooker_mod.household_today().isoformat()
+    out: list[str] = []
+    for t in conn.execute(
+        "SELECT task_date, description, "
+        "json_extract(COALESCE(NULLIF(detail_json, ''), '{}'), '$.thawed_for') AS thawed_for "
+        "FROM prep_tasks WHERE household_id = ? AND weekly_plan_id = ? AND task_type = 'defrost' "
+        "AND meal_plan_entry_id = ? AND status = 'done'",
+        (household_id(), weekly_plan_id, entry_id),
+    ).fetchall():
+        said = _defrost_mod.thawed_wait_sentence(t["description"], t["thawed_for"] or cook_date, cook_date, today)
+        if said and said not in out:
+            out.append(said)
+    return out
 
 
 def _redate_plan_rows(
@@ -10303,6 +10372,7 @@ def _redate_plan_rows(
             )
     prep_moved = 0
     thaw: list[dict] = []
+    thawed_waits: list[str] = []
     for r in moving:
         before = {
             t["id"]: t["task_date"] for t in conn.execute(
@@ -10313,17 +10383,32 @@ def _redate_plan_rows(
         }
         prep_moved += _shift_defrost_tasks(conn, weekly_plan_id, r["id"], r["date"], new_date[r["id"]])
         for t in conn.execute(
-            "SELECT id, task_date, description, status FROM prep_tasks WHERE household_id = ? AND id IN (%s)"
+            "SELECT id, task_date, description, status, "
+            "json_extract(COALESCE(NULLIF(detail_json, ''), '{}'), '$.thawed_for') AS thawed_for "
+            "FROM prep_tasks WHERE household_id = ? AND id IN (%s)"
             % ",".join("?" * len(before)), (household_id(), *before),
         ).fetchall() if before else []:
             thaw.append({"prep_task_id": t["id"], "entry_id": r["id"], "from": before[t["id"]],
                          "to": t["task_date"], "description": t["description"], "status": t["status"]})
+            # Thawed food whose dinner now lands past how long it keeps
+            # (Emily 2026-10-26: warn, a plain line at the move). Both move
+            # doors read this: the Move sheet's thaw_notes, the nights
+            # swap's thaw_now.
+            if t["status"] == "done" and new_date[r["id"]] > r["date"]:
+                from . import cooker as _cooker_mod
+                from . import defrost as _defrost_mod  # lazy: defrost imports us
+                said = _defrost_mod.thawed_wait_sentence(
+                    t["description"], t["thawed_for"] or r["date"], new_date[r["id"]],
+                    _cooker_mod.household_today().isoformat(),
+                )
+                if said and said not in thawed_waits:
+                    thawed_waits.append(said)
         if move_prep_cuts:
             prep_moved += _shift_late_prep_cuts(conn, weekly_plan_id, r["id"], r["date"], new_date[r["id"]])
     # A "double a batch of X" suggestion whose X now comes on or after the
     # meal it covers is recomputed — keyed by entry id, it rode along.
     _recheck_ready_made_after_redate(conn, [r["id"] for r in moving])
-    return {"prep_moved": prep_moved, "thaw": thaw, "after": after}
+    return {"prep_moved": prep_moved, "thaw": thaw, "after": after, "thawed_waits": thawed_waits}
 
 
 def _frozen_portion_cook_id(derived: dict) -> int | None:
@@ -10691,6 +10776,7 @@ def _apply_dinner_nights_swap(
         from . import meal_move as _meal_move
         _meal_move._resay_freezer_nights(conn, {"rows": [dict(r) for r in rows]}, new_date)
         prep_moved = done["prep_moved"]
+        thawed_waits = done.get("thawed_waits") or []
         for cuts in cut_moves.values():
             for tid, m in cuts.items():
                 conn.execute(
@@ -10729,6 +10815,8 @@ def _apply_dinner_nights_swap(
         "prep_tasks_moved": prep_moved,
         "can_undo": not undo,
     }
+    if thawed_waits:
+        out["thaw_now"] = list(thawed_waits)
     if not own_conn:
         # See the docstring: both of the fields below are reads, and the
         # caller's transaction is still open. The thaw recomputation below
@@ -10754,7 +10842,7 @@ def _apply_dinner_nights_swap(
     # all, under a result saying only `prep_tasks_moved: 1`.
     said = _defrost_resync(weekly_plan_id, [m["entry_id"] for m in moved])
     if said:
-        out["thaw_now"] = said
+        out["thaw_now"] = said + [w for w in out.get("thaw_now", []) if w not in said]
     # Both changed days in get_week_menu's own shape, so the screen
     # splices them in exactly as it does after an in-place swap.
     out["days"] = _menu_days_for(weekly_plan_id, [date_a, date_b])

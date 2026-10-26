@@ -817,7 +817,7 @@ def move_meal(weekly_plan_id: int, entry_id: int, to_date: str) -> dict:
         "said": _said(snap, placement, planned["members"], entry_id),
         "moved": moved,
         "move_id": move_id,
-        "thaw_notes": _thaw_notes(done["thaw"], today, still_owed),
+        "thaw_notes": _thaw_notes(done["thaw"], today, [*still_owed, *(done.get("thawed_waits") or [])]),
         "prep_tasks_moved": done["prep_moved"],
         "days": _weekly_plan._menu_days_for(weekly_plan_id, dates),
         "can_undo": True,
