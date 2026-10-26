@@ -2232,10 +2232,19 @@ def _grocery_line_meals(conn, item_id: int) -> list[dict]:
         "ORDER BY e.date ASC, e.id ASC",
         (household_id(), item_id, household_id()),
     ).fetchall()
+    # Nor a night that REHEATS a batch (a cook-ahead day, a planner's
+    # leftovers night): its ledger share is kept on purpose (cook_ahead's
+    # docstring), but the pack goes in the pot on the source night. Defect
+    # hunt 2026-10-26: Monday's chili cooked ahead for Wednesday, and Shop
+    # still asked "Freezing it?" for Wednesday — a yes booked a 3 lb
+    # fridge move for a night that only reheats.
+    reheats: set[int] = set()
+    for plan_id in {row["weekly_plan_id"] for row in rows}:
+        reheats |= set(_leftovers.plan_leftover_chains(plan_id, conn=conn)["leftovers"])
     return [{
         "entry_id": row["entry_id"], "weekly_plan_id": row["weekly_plan_id"],
         "date": row["date"], "meal": row["meal"] or "dinner", "item": (row["link_item"] or "").strip(),
-    } for row in rows]
+    } for row in rows if row["entry_id"] not in reheats]
 
 
 def _grocery_line_first_meal(conn, item_id: int, line_item: str, today: date,

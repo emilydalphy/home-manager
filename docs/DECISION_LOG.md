@@ -13,6 +13,15 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Shop's "Freezing it?" is never about a night that reheats a batch**
+  (2026-10-26, defect hunt; branch `overnight/hunt-cookahead-1026`; tests
+  `tests/test_freezing_offer_skips_reheat_nights.py`). Chili Mon/Wed/Fri,
+  Monday cooked ahead for Wed+Fri: the turkey line still asked about
+  Wednesday, and a yes put "Move the ground turkey to the fridge — for
+  Wednesday's Turkey Chili" (3 lbs) on Today for meat going in tonight's pot.
+  Why: cook-ahead keeps each night's ledger share, and
+  `defrost._grocery_line_meals` read a reheat as a cook night; it now skips
+  `plan_leftover_chains` reheats (offer, yes and keep-fresh label).
 - **Second 200 library recipes: Emily's three calls** (2026-10-25; branch
   `recipe-library-200b`; doc `docs/RECIPE_LIBRARY_SPOTCHECK_200B.md`).
   Bistec a la Mexicana is two dishes (the rated slow simmer, plus "Quick
