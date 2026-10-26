@@ -808,10 +808,12 @@ def move_meal(weekly_plan_id: int, entry_id: int, to_date: str) -> dict:
     by_id = {r["id"]: r for r in snap["rows"]}
     moved = [{"entry_id": i, "meal": by_id[i]["meal"], "slot": by_id[i]["slot"],
               "from": by_id[i]["date"], "to": d} for i, d in placement.items()]
+    list_changed = _list_follows_the_tables({i: by_id[i]["date"] for i in placement})
     still_owed = _after_move(weekly_plan_id, list(placement))
     dates = sorted({m["from"] for m in moved} | {m["to"] for m in moved})
     return {
         "status": "moved",
+        "list_changed": list_changed,
         "said": _said(snap, placement, planned["members"], entry_id),
         "moved": moved,
         "move_id": move_id,
@@ -946,6 +948,8 @@ def undo_meal_move(weekly_plan_id: int, move_id: str) -> dict:
                 continue
             if token.get("to") != r["date"]:
                 raise ValueError("That meal has moved again since, so there’s nothing to put back.")
+            if _weekly_plan.moved_dish_changed(r, token):
+                raise ValueError("That meal has changed since, so there’s nothing to put back.")
             begun = _weekly_plan.cook_begun(r)
             if begun == "cooked":
                 raise ValueError("That meal has been cooked since, so it stays where it is.")
@@ -1018,8 +1022,9 @@ def undo_meal_move(weekly_plan_id: int, move_id: str) -> dict:
     # the next bug. No screen reads this one yet (shell.js reads
     # thaw_notes on the move's own toast only) — the chat tool and the
     # sheet's undo line are the follow-up on this card.
-    still_owed = _after_move(weekly_plan_id, list(placement))
     by_id = {r["id"]: r for r in snap["rows"]}
+    list_changed = _list_follows_the_tables({i: by_id[i]["date"] for i in placement})
+    still_owed = _after_move(weekly_plan_id, list(placement))
     dates = sorted(set(placement.values()) | {by_id[i]["date"] for i in placement})
     src = by_id.get(source_id) if source_id in placement else None
     said = (f"{_cap(short_name(src['meal']))} was moved back to {_weekday(placement[source_id])}"
@@ -1027,6 +1032,7 @@ def undo_meal_move(weekly_plan_id: int, move_id: str) -> dict:
     out = {
         "status": "restored",
         "said": said,
+        "list_changed": list_changed,
         "moved": [{"entry_id": i, "meal": by_id[i]["meal"], "from": by_id[i]["date"], "to": d}
                   for i, d in placement.items()],
         "days": _weekly_plan._menu_days_for(weekly_plan_id, dates),
@@ -1034,6 +1040,16 @@ def undo_meal_move(weekly_plan_id: int, move_id: str) -> dict:
     if still_owed:
         out["thaw_notes"] = still_owed
     return out
+
+
+def _list_follows_the_tables(moved_from: dict[int, str]) -> bool:
+    """The shopping follows each moved meal's table on its new day — and
+    back again on Undo (attendance.resize_after_redate: only where the
+    table changed size, all in one transaction). After the move's commit.
+    True when a line changed, so the screen knows to re-read Shop. Lazy
+    import: attendance imports weekly_plan at load."""
+    from . import attendance as _attendance
+    return bool(_attendance.resize_after_redate(moved_from))
 
 
 def _after_move(weekly_plan_id: int, moved_ids: list[int]) -> list[str]:

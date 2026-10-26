@@ -114,6 +114,38 @@ function escapeHtml(s) {
   }[c]));
 }
 
+// When a note was left, on this phone's clock. The server stamps notes with
+// SQLite's datetime('now') — UTC, with no zone on it — and this page used to
+// print that string as it came: a note left at 9pm in Toronto read
+// "2026-10-23 01:00:00", tomorrow at 1am (defect hunt, 2026-10-22). Read as
+// UTC, shown in the app's date style ("Oct 22, 9:00 PM").
+function noteWhen(stamp) {
+  if (!stamp) return '';
+  const d = new Date(String(stamp).replace(' ', 'T') + 'Z');
+  if (isNaN(d)) return '';
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ', ' +
+    d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+}
+
+// The line to show when a save is refused. The server's own sentence when
+// it sent one — a note over the cap, the rate limit, a link revoked while
+// this page was open — because "try again" is false for all three; the
+// generic line otherwise. Only a 4xx with a string detail: a 500's detail
+// is "Server error: …", which is not a sentence for a person, and a 422
+// from the field parser is a list. alert() draws plain text, so the
+// sentence can never become markup here.
+async function saveFailedLine(res) {
+  const generic = "Couldn't save that — try again.";
+  if (!res || res.status < 400 || res.status >= 500) return generic;
+  try {
+    const body = await res.json();
+    const detail = body && typeof body.detail === 'string' ? body.detail.trim() : '';
+    return detail || generic;
+  } catch (e) {
+    return generic;
+  }
+}
+
 function getToken() {
   return window.location.pathname.split('/').filter(Boolean).pop();
 }
@@ -140,7 +172,7 @@ function render(view) {
       <p class="hint">Anything you'd like factored in — a preference, feedback on a recent meal, anything.</p>
       <textarea id="note-input" placeholder="e.g. I'd love more vegetarian nights"></textarea>
       <button class="action" id="note-btn">Save note</button>
-      ${notes.length ? `<div style="margin-top:14px">${notes.map(n => `<div class="note-item">${escapeHtml(n.note)}<div class="note-date">${escapeHtml(n.created_at || '')}</div></div>`).join('')}</div>` : ''}
+      ${notes.length ? `<div style="margin-top:14px">${notes.map(n => `<div class="note-item">${escapeHtml(n.note)}<div class="note-date">${escapeHtml(noteWhen(n.created_at))}</div></div>`).join('')}</div>` : ''}
     </div>
     <p class="footer-note">This link is just for you — it only edits your own restrictions and notes, nothing else in the household.</p>
   `;
@@ -157,7 +189,11 @@ function render(view) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ restriction: val }),
       });
-      if (!res.ok) throw new Error('failed');
+      if (!res.ok) {
+        btn.disabled = false;
+        alert(await saveFailedLine(res));
+        return;
+      }
       render(await res.json());
     } catch (err) {
       btn.disabled = false;
@@ -177,7 +213,11 @@ function render(view) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ note: val }),
       });
-      if (!res.ok) throw new Error('failed');
+      if (!res.ok) {
+        btn.disabled = false;
+        alert(await saveFailedLine(res));
+        return;
+      }
       render(await res.json());
     } catch (err) {
       btn.disabled = false;

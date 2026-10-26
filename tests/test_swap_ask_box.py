@@ -20,7 +20,7 @@ import pytest
 
 import nodeharness
 from app import tools
-sop = importlib.import_module("app.tools.swap_options")
+sop = importlib.import_module("app.tools.swap_option_picks")
 from test_week1_carousel import DAY1, WEEK_START, _asker, _entry_id, _pick, week  # noqa: F401
 from test_week_seven_tiles import _extract, _extract_async, _extract_var
 
@@ -145,6 +145,7 @@ def _run_ask(first_options, fetch_outs, typed, shown_before=None):
         + "var st = { entryId: 5, weekStart: '2026-10-05', wholeDish: false, busy: false, view: 'picks', trouble: '',"
           " options: " + json.dumps(first_options) + ", shown: " + json.dumps(shown_before or []) + " };\n"
         + "var swapSheetState = st;\n"
+        + _extract("withPlanId", SHELL_JS) + "\n"
         + _extract_async("fetchSwapPicks", SHELL_JS) + "\n" + _extract_async("askSwapAgain", SHELL_JS) + "\n"
         + "(async function () { await askSwapAgain(st, " + json.dumps(typed) + ");"
           " console.log(JSON.stringify({ calls: calls, st: { options: st.options, shown: st.shown, draft: st.draft } })); })();"

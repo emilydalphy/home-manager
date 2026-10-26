@@ -80,7 +80,7 @@ def test_swap_picks_that_come_back_as_a_string_still_reach_the_sheet(monkeypatch
     # instead": the model had answered, as a string, and list("...") is a
     # list of characters that the gate silently skipped.
     import importlib
-    so = importlib.import_module("app.tools.swap_options")
+    so = importlib.import_module("app.tools.swap_option_picks")
     picks = [{"meal_name": "Lemon chicken", "reason": "quick", "ingredients": [{"item": "chicken"}]},
              {"meal_name": "Black bean tacos", "reason": "meatless", "ingredients": [{"item": "beans"}]}]
 
@@ -101,6 +101,6 @@ def test_every_forced_list_reader_goes_through_the_guard():
     src = open("app/agent.py", encoding="utf-8").read()
     bare = re.findall(r'return block\.input\.get\("(\w+)", \[\]\)', src)
     assert bare == [], f"unguarded list readers: {bare}"
-    for path in ("app/tools/swap_options.py", "app/tools/plate_parts.py"):
+    for path in ("app/tools/swap_option_picks.py", "app/tools/plate_parts.py"):
         s = open(path, encoding="utf-8").read()
         assert 'list((block.input or {}).get("options") or [])' not in s, path

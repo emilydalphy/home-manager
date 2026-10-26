@@ -15,6 +15,7 @@ import create_demo_household as demo
 from app import households, tools
 from app.db import get_conn
 from app.tools._shared import DEFAULT_HOUSEHOLD_ID, use_household
+from conftest import on_the_weeks_monday
 
 
 PASSPHRASE = "demo-review-passphrase-123"
@@ -244,6 +245,10 @@ def test_demo_household_has_already_allowed_sharing_with_claude():
     assert ai_consent.has_consent(hid)
 
 
+# On the demo week's Monday: approval buys only for meals on or after the
+# household's today (2026-10-18), so from Thursday on — Wednesday's chili
+# cook gone by — the ground beef was correctly left off the list.
+@on_the_weeks_monday()
 def test_demo_week_is_a_finished_week_not_a_half_filled_one():
     """2026-10-15, seen at phone width: the reviewer's Plan showed "Nothing
     yet · Pick" for breakfast and lunch on every day, and Thursday's

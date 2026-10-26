@@ -12,7 +12,7 @@ SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
 ONBOARDING = (REPO / "static" / "onboarding.html").read_text(encoding="utf-8")
 PLAN_WEEK = (REPO / "static" / "plan-week.html").read_text(encoding="utf-8")
 AGENT = (REPO / "app" / "agent.py").read_text(encoding="utf-8")
-SWAP_OPTIONS = (REPO / "app" / "tools" / "swap_options.py").read_text(encoding="utf-8")
+SWAP_OPTIONS = (REPO / "app" / "tools" / "swap_option_picks.py").read_text(encoding="utf-8")
 SWAP_IN_PLACE = (REPO / "app" / "tools" / "swap_in_place.py").read_text(encoding="utf-8")
 
 

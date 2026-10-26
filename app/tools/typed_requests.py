@@ -500,8 +500,12 @@ def place_day_requests(plan_id: int, requests: list[dict], report: dict | None =
                 # you asked — its usual time had already gone by."), so it
                 # is not said again by the opener. Its words still ride
                 # along, with no line, so line one does not repeat them.
+                # `to` and `meal` are for draft_opener.settle_report, which
+                # drops the line if a later pass takes the dish off that
+                # meal; record_plan_requests stores only words and line.
                 report.setdefault("moved_requests", []).append(
-                    {"words": request["words"], "line": "" if request.get("late") else line})
+                    {"words": request["words"], "line": "" if request.get("late") else line,
+                     "to": f"{target[0]}:{target[1]}", "meal": dish["meal"]})
     except Exception:
         logger.exception("Placing today/tonight/tomorrow requests failed for plan %s; the week stands", plan_id)
     if out["moved"] or out["missing"]:
@@ -1121,6 +1125,7 @@ def attach_named_sides(plan_id: int, moved: list[dict], context: dict | None = N
     can't, the side goes on as named so nothing they were shown
     disappears. Returns how many were attached. Never raises.
     """
+    from . import weekly_plan as _weekly_plan
     attached = 0
     if not moved:
         return attached
@@ -1151,6 +1156,11 @@ def attach_named_sides(plan_id: int, moved: list[dict], context: dict | None = N
                     )
                     if result.get("status") == "added":
                         attached += 1
+                except _weekly_plan.SlotRefused as e:
+                    # An expected answer, not a fault: the side clashes with
+                    # someone at the table (or the night has gone), so it
+                    # stays off and the dish stands without it. Quiet.
+                    logger.info("Left the named side %r off %s %s: %s", side, m.get("date"), m.get("slot"), e)
                 except Exception:
                     logger.exception("Attaching %r as a side of %s %s failed", side, m.get("date"), m.get("slot"))
     except Exception:

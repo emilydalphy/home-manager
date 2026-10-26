@@ -51,7 +51,7 @@ from email.message import EmailMessage
 
 from . import legal
 from .db import get_conn
-from .tools._shared import _ADULT_SQL
+from .tools._shared import _ADULT_SQL, UNNAMED_HOUSEHOLD
 
 logger = logging.getLogger("home_manager")
 
@@ -64,7 +64,7 @@ CHANGE = "change"
 # What a new household is called until somebody names it. Nothing asks for
 # a household name today (create_household.py was the only writer), and
 # the column is NOT NULL.
-NEW_HOUSEHOLD_NAME = "Your household"
+NEW_HOUSEHOLD_NAME = UNNAMED_HOUSEHOLD
 
 # The one answer to "send me a code", whatever happened (see module doc).
 SENT_LINE = "We've sent a code if that email can be used. It works for 10 minutes."

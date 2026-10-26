@@ -26,7 +26,8 @@ rather than by the model, written after generation whatever the model sent):
       and a portion that only needs reheating fits any cap, so the cap
       RANKS here rather than filtering as it does for bring_over), never a
       night the household is out, away, reheating already, left out of the
-      plan or holding a holiday. The model is then told the slot is taken.
+      plan, holding a holiday or hosting guests. The model is then told the
+      slot is taken.
 
   apply_to_plan — writes them after generation, clearing whatever the model
       sent there (telling is not preventing — the rule every pass in
@@ -169,10 +170,11 @@ def _frozen_rows(conn) -> list[dict]:
         "ORDER BY created_at ASC, id ASC",
         (household_id(), _tonight.NIGHT_OFF_FROZEN_SOURCE),
     ).fetchall()
+    uncooked = _skipped_cooks_portion_ids(conn)
     out = []
     for r in rows:
         dish = _tonight.frozen_portion_dish(r["item"])
-        if not dish:
+        if not dish or r["id"] in uncooked:
             continue
         out.append({
             "inventory_item_id": r["id"], "item": r["item"], "dish": dish,
@@ -180,6 +182,33 @@ def _frozen_rows(conn) -> list[dict]:
             "frozen_on": (r["created_at"] or "")[:10],
             "expiration_date": r["expiration_date"] or "",
         })
+    return out
+
+
+def _skipped_cooks_portion_ids(conn) -> set[int]:
+    """
+    The freezer rows a night off wrote for a cook that was then answered
+    "We skipped it" and is still not ticked cooked (2026-10-25). A
+    `cook_on_fed` night off writes its portion when tapped, ahead of the
+    cook; skipped, the cook made none, so the planner must not put a night
+    on it ("You froze a portion of Pasta Primavera"). Read at plan time
+    rather than deleted on the skip: the skip has no Undo, and the cooked
+    tick that corrects it (which clears skipped_at) brings the portion
+    straight back with nothing to restore.
+    """
+    from . import leftovers as _leftovers
+
+    out: set[int] = set()
+    for r in conn.execute(
+        "SELECT derived_from_json FROM meal_plan_entries WHERE household_id = ? "
+        "AND skipped_at IS NOT NULL AND COALESCE(cooked_status, '') != 'done' "
+        "AND derived_from_json LIKE ?",
+        (household_id(), f'%{_leftovers.FREEZER_EXTRA_KEY}%'),
+    ).fetchall():
+        extra = _derived(r["derived_from_json"]).get(_leftovers.FREEZER_EXTRA_KEY)
+        if isinstance(extra, dict):
+            out |= {i for i in extra.get("inventory_item_ids") or []
+                    if isinstance(i, int) and not isinstance(i, bool)}
     return out
 
 
@@ -231,15 +260,40 @@ def portions_to_plan(dates: list[str] | None = None, conn=None) -> list[dict]:
     _claimed_item_ids). [] for a household that has never taken a night
     off, which is nearly all of them.
     """
+    from . import cooker as _cooker
+
     own = conn is None
     if own:
         conn = get_conn()
     try:
         claimed = _claimed_item_ids(conn, set(dates or []))
-        return [p for p in _frozen_rows(conn) if p["inventory_item_id"] not in claimed]
+        today = _cooker.household_today(conn=conn).isoformat()
+        # Not one already past its use-by (the row's expiration_date,
+        # tonight.FROZEN_COOKED_KEEPS_DAYS after the cook). Measured
+        # 2026-10-24 (hunt-leftovers-1024): a portion a month past it was
+        # planned as "this is the night to eat it", with a thaw booked, and
+        # the use-soon note called it "worth eating soon". The row stays in
+        # the freezer — what to do with it is the household's call — but
+        # Pomona does not put it on a plate. Also why sweep_use_soon, which
+        # reads this, settles a pending note about one.
+        return [
+            p for p in _frozen_rows(conn)
+            if p["inventory_item_id"] not in claimed and not _past_use_by(p, today)
+        ]
     finally:
         if own:
             conn.close()
+
+
+def _past_use_by(portion: dict, on: str) -> bool:
+    """Is this portion past its use-by on `on` (ISO date)? A row with no
+    use-by, or one that can't be read, is not — the food-safety date is
+    the only thing this refuses on."""
+    use_by = (portion.get("expiration_date") or "").strip()[:10]
+    try:
+        return bool(use_by) and date.fromisoformat(use_by) < date.fromisoformat(on)
+    except ValueError:
+        return False
 
 
 # ---------- placing them ----------
@@ -254,6 +308,7 @@ def choose_nights(
     zero_slots: set[str] | frozenset = frozenset(),
     cap_for=None,
     taken: set[tuple[str, str]] | frozenset = frozenset(),
+    guest_nights: set[str] | frozenset = frozenset(),
 ) -> tuple[list[dict], list[dict]]:
     """
     Where each portion goes: (placed, not_placed). Each placed row is the
@@ -266,6 +321,14 @@ def choose_nights(
     (bring_over's, which runs first). At most MAX_PORTIONS_PER_WEEK are
     placed; the rest wait for next week and sweep_use_soon says so if they
     wait too long.
+
+    Never a night with guests (defect hunt, 2026-10-22): the portion is
+    the household's own share ("3 servings") and a freeform night buys
+    nothing, so the Friday the intake tagged "Hosting guests" for 4 was
+    being handed three reheated servings for seven. A guest night is the
+    intake's `guests` tag or a guest count on it, plus `guest_nights` —
+    dates attendance already holds guests for (chat's set_guest_count),
+    which the caller reads; this function stays pure.
     """
     portions = [p for p in (portions or []) if isinstance(p, dict) and p.get("dish")]
     if not portions or SLOT in zero_slots:
@@ -280,11 +343,15 @@ def choose_nights(
     for h in holidays or []:
         if ((h.get("answer") or {}).get("answer")) in ("out", "hosting"):
             blocked.add((h.get("date"), "dinner"))
+    guests = set(guest_nights or ())
+    for d, extras in (intake.get("guest_counts") or {}).items():
+        if _guest_total(extras):
+            guests.add(d)
 
     def open_night(d: str) -> bool:
-        if (d, SLOT) in blocked or d in skipped:
+        if (d, SLOT) in blocked or d in skipped or d in guests:
             return False
-        return not any(t in (tags.get(d) or []) for t in _NO_COOK_TAGS)
+        return not any(t in (tags.get(d) or []) for t in _NO_COOK_TAGS + ("guests",))
 
     # A night with a cap on it is a night the household said is short on
     # time (time_caps.minutes_cap: a rush tag, or their own weeknight
@@ -299,16 +366,42 @@ def choose_nights(
     )
     placed, missed = [], []
     for portion in portions:
-        if len(placed) >= MAX_PORTIONS_PER_WEEK or not order:
+        # The busiest night that is still inside the portion's use-by: one
+        # that keeps until Tuesday is not this week's Friday.
+        night = next((d for d in order if not _past_use_by(portion, d)), None)
+        if len(placed) >= MAX_PORTIONS_PER_WEEK or night is None:
             missed.append(portion)
             continue
-        placed.append({**portion, "on": order.pop(0)})
+        order.remove(night)
+        placed.append({**portion, "on": night})
     if missed:
         logger.info(
             "Freezer portions: %s left in the freezer this week",
             ", ".join(str(m.get("dish")) for m in missed),
         )
     return placed, missed
+
+
+def _guest_total(extras) -> int:
+    """Adults + children in one intake guest_counts entry (week_intake's
+    shape); 0 for anything unreadable or a bare number."""
+    from . import week_intake as _week_intake
+    return _week_intake._guest_total(extras)
+
+
+def guest_nights(dates: list[str]) -> set[str]:
+    """The dates whose dinner attendance already holds guests — what the
+    planner hands choose_nights. Never raises: an unreadable night is
+    simply not known to have guests."""
+    from . import attendance as _attendance
+    out = set()
+    for d in dates:
+        try:
+            if _attendance.get_slot_attendance(d, SLOT)["guest_count"]:
+                out.add(d)
+        except Exception:
+            continue
+    return out
 
 
 def prompt_lines(placed: list[dict]) -> list[dict]:
@@ -557,6 +650,73 @@ def portion_eaten(entry_id: int) -> dict | None:
         "result": {"item_id": item["id"], "item": item["item"],
                    "removed": True, "units_reconciled": True},
     }
+
+
+def release_uncooked_extra(conn, entry_id: int) -> list[str]:
+    """
+    A cook that a night off loaded with portions for the freezer
+    (leftovers.FREEZER_EXTRA_KEY, tonight._shrink_chain_into_freezer) has
+    come off the week without being cooked — a night off on the night it
+    landed on, which deletes the cook (no Undo, no cooked tick left to
+    correct it). "We skipped it" is NOT this: that cook can still be ticked
+    cooked, so its portions are only ignored while it stays skipped
+    (_skipped_cooks_portion_ids). The night off wrote those portions into the freezer
+    when it was tapped, ahead of the cook; with no cook there are no
+    portions. Each inventory row the night off wrote for this cook is
+    deleted, and the cook stops carrying them, so next week's draft does
+    not plan a night around food nobody made ("You froze a portion of
+    Pasta Primavera — this is the night to eat it").
+
+    Left alone: a row that is not a night off's freezer row any more (moved,
+    edited into something else), and a row a live plan already stands a
+    night on from today on — taking that one away would leave that night
+    with nothing to eat, which is a re-plan, not this. Runs on the caller's
+    connection and transaction. Returns the items released.
+    """
+    from . import leftovers as _leftovers
+    from . import tonight as _tonight
+
+    row = conn.execute(
+        "SELECT derived_from_json FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+        (entry_id, household_id()),
+    ).fetchone()
+    if row is None:
+        return []
+    derived = _derived(row["derived_from_json"])
+    extra = derived.get(_leftovers.FREEZER_EXTRA_KEY)
+    ids = [i for i in ((extra or {}).get("inventory_item_ids") or [])
+           if isinstance(i, int) and not isinstance(i, bool)] if isinstance(extra, dict) else []
+    if not ids:
+        return []
+    claimed = _claimed_item_ids(conn)
+    released, kept = [], []
+    for inv_id in ids:
+        item = conn.execute(
+            "SELECT id, item FROM inventory_items WHERE id = ? AND household_id = ? "
+            "AND location = 'freezer' AND source = ?",
+            (inv_id, household_id(), _tonight.NIGHT_OFF_FROZEN_SOURCE),
+        ).fetchone()
+        if item is None:
+            continue  # gone already, or no longer this night off's row
+        if inv_id in claimed:
+            kept.append(inv_id)
+            continue
+        conn.execute("DELETE FROM inventory_items WHERE id = ? AND household_id = ?",
+                     (inv_id, household_id()))
+        released.append(item["item"])
+    if kept:
+        extra = dict(extra, inventory_item_ids=kept)
+        derived[_leftovers.FREEZER_EXTRA_KEY] = extra
+    else:
+        derived.pop(_leftovers.FREEZER_EXTRA_KEY, None)
+    conn.execute(
+        "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?",
+        (json.dumps(derived), entry_id, household_id()),
+    )
+    if released:
+        logger.info("Took %s out of the freezer: its cook (entry %s) came off uncooked",
+                    ", ".join(released), entry_id)
+    return released
 
 
 # ---------- the nudge ----------

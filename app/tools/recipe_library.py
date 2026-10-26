@@ -41,7 +41,7 @@ import threading
 
 from ..db import get_conn, write
 from . import recipes as _recipes
-from ._shared import household_id
+from ._shared import household_display_name, household_id
 from .recipe_research import dish_key
 
 logger = logging.getLogger("home_manager")
@@ -120,7 +120,10 @@ def _household_words() -> list[str]:
             words |= _words_of(r["name"])
         row = conn.execute("SELECT name FROM households WHERE id = ?", (hid,)).fetchone()
         if row:
-            words |= _words_of(row["name"]) - _HOUSEHOLD_NAME_STOP
+            # Through household_display_name: every email sign-up is called
+            # "Your household", and "your" would keep "Build-Your-Own Tacos"
+            # out of the shared library for all of them (2026-10-21).
+            words |= _words_of(household_display_name(row["name"])) - _HOUSEHOLD_NAME_STOP
         typed = [r["text"] for r in conn.execute(
             "SELECT text FROM facts WHERE household_id = ? AND hard = 1", (hid,)).fetchall()]
         typed += [r["guest_notes"] for r in conn.execute(
