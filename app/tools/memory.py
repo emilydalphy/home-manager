@@ -58,10 +58,13 @@ def _coerce_str_list(field: str, value) -> list[str]:
     item in the list with no blank-check of their own). Caught while
     adversarially testing this exact fix, 2026-09-13.
     """
+    # Each thing once, whatever its capitals or spacing (defect hunt
+    # 2026-10-25): ["Olives", "olives "] was two Won't eat chips, and
+    # "Thai, thai" two cuisines the planner was told about twice.
     if isinstance(value, str):
-        return [v.strip() for v in value.split(",") if v.strip()]
+        return _preferences.one_of_each(value.split(","))
     if isinstance(value, list) and all(isinstance(v, str) for v in value):
-        return [v.strip() for v in value if v.strip()]
+        return _preferences.one_of_each(value)
     raise ValueError(
         f"{field} must be a list of text (or one comma-separated string), not {value!r}."
     )
@@ -130,6 +133,10 @@ tonight today tomorrow mornings evenings nights
 """.split())
 
 
+# The What we know tabs a fact can be shown on (schema.sql's facts.category).
+FACT_CATEGORIES = ("people", "taste", "rhythm")
+
+
 def household_wont_eat_items(category: str, text: str) -> list[str]:
     """The foods a household-wide "we don't eat X" names, or [] when the
     sentence is anything else (a person's rule, a routine, a taste note)."""
@@ -156,6 +163,14 @@ def add_fact_from_chat(category: str, text: str, hard: bool = False, author: str
     is not a freeform fact: it is routed to the household's Won't eat list,
     and a protein it names has its Settings chip put to "skip". Only the chat
     routes: the Settings box's own "Something else" keeps what was typed."""
+    # A fact goes on one of the three What we know tabs or nowhere
+    # (2026-10-25): filed under any other word it was drawn on no tab —
+    # nothing could edit or delete it — while the planner still read it.
+    # Checked here, the chat's door, and in /api/facts/add; add_fact itself
+    # stays open for internal callers.
+    if (category or "") not in FACT_CATEGORIES:
+        return {"added": False, "category": category,
+                "reason": "A fact goes under people, taste or rhythm — nothing was saved."}
     items = household_wont_eat_items(category, (text or "").strip())
     if items:
         saved = _preferences.add_food_dislikes(items)
@@ -169,12 +184,61 @@ def add_fact_from_chat(category: str, text: str, hard: bool = False, author: str
     return add_fact(category, text, hard=hard, author=author)
 
 
+def hard_facts() -> list[dict]:
+    """The household's must-avoid facts, each sentence once (2026-10-25).
+    The same sentence filed under two tabs is one rule, not two: read
+    twice it went into must_not_contain twice and made one sesame dish "a
+    clash with two things Sam can't have". The first one filed is kept."""
+    seen: set[str] = set()
+    out = []
+    for fact in get_facts():
+        text = (fact.get("text") or "").strip()
+        if not fact.get("hard") or not text:
+            continue
+        key = _fact_key(text)
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(fact)
+    return out
+
+
+def _fact_key(text: str) -> str:
+    """Two facts are the same fact when only capitals, spacing or the
+    closing punctuation differ."""
+    return _preferences.same_words_key(text).rstrip(" .!")
+
+
 def add_fact(category: str, text: str, hard: bool = False, author: str = "") -> dict:
     """Add one freeform fact to a What We Know tab. An empty/whitespace-only text is refused — the UI's own rule is that an abandoned empty fact never persists."""
     text = (text or "").strip()
     if not text:
         return {"added": False, "reason": "There's nothing to add — the text was empty."}
     with write() as conn:
+        # Said twice is still one thing we know (defect hunt 2026-10-25).
+        # Chat telling us "Sam is allergic to sesame" a second time wrote a
+        # second row: two lines on What we know, the allergy twice in every
+        # must_not_contain, and a dish with sesame "a clash with two things
+        # Sam can't have". The same words in the same tab — any capitals,
+        # spacing or closing full stop — answer with the row already there.
+        # Saying it as a must-avoid makes the one row hard; saying it
+        # without never softens a hard one.
+        key = _fact_key(text)
+        for row in conn.execute(
+            "SELECT id, text, hard FROM facts WHERE household_id = ? AND category = ? ORDER BY id",
+            (household_id(), category),
+        ).fetchall():
+            if _fact_key(row["text"]) != key:
+                continue
+            made_hard = bool(hard and not row["hard"])
+            if made_hard:
+                conn.execute(
+                    "UPDATE facts SET hard = 1, updated_at = datetime('now') WHERE id = ? AND household_id = ?",
+                    (row["id"], household_id()),
+                )
+            return {"added": False, "already_known": True, "made_hard": made_hard,
+                    "id": row["id"], "category": category,
+                    "text": row["text"], "hard": bool(hard or row["hard"])}
         cur = conn.execute(
             "INSERT INTO facts (household_id, category, text, hard, author) VALUES (?, ?, ?, ?, ?)",
             (household_id(), category, text, 1 if hard else 0, author),

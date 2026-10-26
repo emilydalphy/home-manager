@@ -1254,6 +1254,21 @@ why*, not duplicating the diff.
   Review round: the told-day filter applies whatever the source, so a year of
   monthly gaps can't pull a learned-since-telling 60 back to 30.
 
+- **What we know keeps a thing said twice as one thing** (2026-10-25; branch
+  `overnight/what-we-know-hunt`; tests `tests/test_what_we_know_said_once.py`).
+  `add_fact` answers a same-tab fact differing only by capitals/spacing/closing
+  full stop with the existing row (`already_known`; a hard re-say hardens it,
+  never the reverse) — a repeated allergy had made two rows, doubled
+  must_not_contain and "a clash with two things Sam can't have".
+  `preferences.one_of_each` dedupes dislikes/cuisines/kitchen kit on every
+  door (edit_preference, add_food_dislikes, onboarding, the cuisine write);
+  protein names trimmed, a blank one refused. `/api/facts/add` refuses a
+  category that is no tab (it was drawn nowhere but read by the planner).
+  Review round: What we know drops its typed line when the server answers
+  `already_known` ("I already have that one."), since two rows under one id
+  let X delete the real fact; hard rules are deduped where READ
+  (`memory.hard_facts`, used by must_not_contain and the clash check);
+  `add_fact_from_chat` refuses a non-tab category; a repeat draws no card.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

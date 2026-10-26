@@ -44,6 +44,7 @@ from . import tools
 from .tools import household as _household_tools
 from .tools import _shared as _tools_shared
 from .tools._shared import AmbiguousMemberName, find_member_row
+from .tools import memory as _memory_tools
 from .tools import feedback as _feedback
 from .tools import draft_flags as _draft_flags
 from .tools import meal_move as _meal_move
@@ -6377,6 +6378,11 @@ def get_facts_view(category: str | None = None):
 @app.post("/api/facts/add")
 def add_fact_view(req: FactAddRequest):
     """Add one freeform fact — What We Know's '+ Add something to this list'."""
+    # One of the three tabs, or nowhere (defect hunt 2026-10-25): a fact
+    # filed under any other word was drawn on no tab — so nothing could edit
+    # or delete it — while the planner and the allergy check still read it.
+    if (req.category or "") not in _memory_tools.FACT_CATEGORIES:
+        raise HTTPException(status_code=400, detail="Put it under People, Taste or Rhythm.")
     try:
         result = tools.add_fact(req.category, req.text, hard=req.hard, author=req.author)
     except Exception as e:
