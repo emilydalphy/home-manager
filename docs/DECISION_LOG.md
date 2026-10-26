@@ -134,6 +134,18 @@ why*, not duplicating the diff.
   so no screen draws its failure line first. Why: a security reset signed a
   phone out and Today read as broken. Keyed on the header, not on 401, and
   /login, /join, share and the other public pages never leave.
+- **The privacy page matches Apple's label; "Sharing with Claude" reads
+  more at `/privacy#claude`** (2026-10-26; branch
+  `overnight/privacy-page-matches-apple`). "No analytics" became "No
+  third-party analytics" plus "Pomona counts its own use (chat turns, meals
+  cooked)", on privacy and support; the consent link went from Anthropic's
+  help article to Pomona's own policy, label "Pomona's privacy policy" (not
+  a substance change, so no CONSENT_VERSION bump). Why: the label and
+  PrivacyInfo.xcprivacy declare Product Interaction for Analytics
+  (`app/tools/usage.py`), and the page has to agree. Company name, address
+  and emails stay placeholders until Emily supplies them; the no-blanks
+  test in `tests/test_legal_pages.py` skips naming them, and fails on any
+  other unlisted blank.
 - **Second 200 library recipes: Emily's three calls** (2026-10-25; branch
   `recipe-library-200b`; doc `docs/RECIPE_LIBRARY_SPOTCHECK_200B.md`).
   Bistec a la Mexicana is two dishes (the rated slow simmer, plus "Quick

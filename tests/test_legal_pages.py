@@ -124,3 +124,101 @@ def test_the_backup_days_are_the_ones_the_backups_keep(monkeypatch, tmp_path):
         backup.prune_backups(now=taken + timedelta(days=days_later))
         return Path(name).exists()
     assert survives(backup.RETENTION_DAYS) and not survives(backup.RETENTION_DAYS + 1)
+
+
+# --- The privacy page matches Apple (Loop Board B3, 2026-10-26) -------------
+
+import html as _html
+import re as _re
+
+# The blanks only Emily can fill: who runs Pomona and how to reach them. The
+# no-blanks test below SKIPS while exactly these remain, naming them, and
+# goes quiet on its own the day they're filled in.
+COMPANY_BLANKS = {
+    "[Company legal name]",
+    "[registered address]",
+    "[privacy contact email]",
+    "[support email]",
+}
+# The lawyer's notes, which stay in the draft on purpose: anything starting
+# "[Lawyer", plus these. A new bracket that is neither of these lists is a
+# blank somebody forgot, and fails.
+DRAFT_NOTES = {
+    "[Confirm the hosting region.]",
+    "[Name the provider.]",
+    "[18, or the age of majority where you live]",
+    "[Pricing and subscription terms go here once a price is set: what it costs, how billing works through Apple, cancelling, and refunds.]",
+    "[amount, for example what you paid us in the last 12 months]",
+}
+SERVED = PAGES + ["/login"]
+
+
+def _visible_text(page_html: str) -> str:
+    page_html = _re.sub(r"(?is)<(script|style)\b.*?</\1>", " ", page_html)
+    page_html = _re.sub(r"(?s)<!--.*?-->", " ", page_html)
+    return _html.unescape(_re.sub(r"(?s)<[^>]+>", "", page_html))
+
+
+def _blanks(page_html: str) -> list[str]:
+    return _re.findall(r"\[[^\[\]]+\]", _visible_text(page_html))
+
+
+def test_no_company_blank_is_left_in_the_served_pages():
+    """CATCH. A reviewer never reads "[Company legal name]". Skips (naming
+    what Emily must supply) while only the known company blanks remain;
+    fails on any other blank, and on any blank not drawn as a legal-fill."""
+    waiting: dict[str, list[str]] = {}
+    for path in SERVED:
+        raw = _remote().get(path).text
+        found = _blanks(raw)
+        unknown = [b for b in found
+                   if b not in COMPANY_BLANKS and b not in DRAFT_NOTES
+                   and not b.startswith("[Lawyer")]
+        assert not unknown, (path, unknown)
+        # Every blank is drawn as one, so nobody mistakes it for real copy.
+        filled = _html.unescape(" ".join(_re.findall(r'<span class="legal-fill">(\[[^<]*\])</span>', raw)))
+        assert sorted(found) == sorted(_re.findall(r"\[[^\[\]]+\]", filled)), path
+        left = sorted({b for b in found if b in COMPANY_BLANKS})
+        if left:
+            waiting[path] = left
+    if waiting:
+        pytest.skip("Waiting on Emily for who runs Pomona: "
+                    + "; ".join(f"{p} {', '.join(b)}" for p, b in waiting.items()))
+
+
+def test_the_no_blanks_check_fails_on_a_blank_nobody_listed():
+    """GUARD. The skip above is for the company blanks only, not any bracket."""
+    page = '<p>Ask <span class="legal-fill">[Pet name]</span>.</p><script>a[i]</script>'
+    assert _blanks(page) == ["[Pet name]"]
+    assert "[Pet name]" not in COMPANY_BLANKS | DRAFT_NOTES
+
+
+def test_privacy_and_support_say_what_the_app_store_label_declares():
+    """CATCH. The label and the manifest declare Product Interaction for
+    Analytics (app/tools/usage.py's counts), so the pages say "No
+    third-party analytics", never "No analytics", and say what's counted."""
+    for path in ("/privacy", "/support"):
+        text = _visible_text(_remote().get(path).text)
+        assert "no third-party analytics" in text.lower(), path
+        assert not _re.search(r"(?i)\bno analytics\b", text), path
+    privacy = _visible_text(_remote().get("/privacy").text)
+    assert "Pomona counts its own use (chat turns, meals cooked) to see what’s working." in privacy
+
+    manifest = (ROOT / "ios-app" / "ios" / "App" / "App" / "PrivacyInfo.xcprivacy").read_text()
+    pi = manifest.index("NSPrivacyCollectedDataTypeProductInteraction</string>")
+    assert "NSPrivacyCollectedDataTypePurposeAnalytics" in manifest[pi:pi + 500]
+    assert _re.search(r"<key>NSPrivacyTracking</key>\s*<false/>", manifest)
+    listing = (ROOT / "docs" / "APP_STORE_LISTING.md").read_text()
+    assert "| Usage Data | Product Interaction | Counts of chat turns and meals cooked" in listing
+    assert listing.split("| Usage Data | Product Interaction |", 1)[1].split("\n", 1)[0].rstrip().endswith("| Analytics |")
+
+
+def test_the_consent_screens_read_more_lands_on_the_claude_section():
+    """CATCH. "Sharing with Claude" points at Pomona's own policy, at the
+    section about Anthropic — both copies (shell and onboarding)."""
+    for f, decl in (("shell.js", "var AI_CONSENT_COPY = "), ("onboarding.html", "const AI_CONSENT_COPY = ")):
+        src = (ROOT / "static" / f).read_text(encoding="utf-8")
+        block = src[src.index(decl):src.index("};", src.index(decl))]
+        assert "linkUrl: '/privacy#claude'," in block, f
+        assert "privacy.claude.com" not in block, f
+    assert '<h3 id="claude">Anthropic (the AI)</h3>' in _remote().get("/privacy").text
