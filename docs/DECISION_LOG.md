@@ -13,6 +13,12 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A sized can of broth is its size on the Cook screen** (2026-10-26; branch
+  `overnight/hunt-backend-1026b`; tests `tests/test_sized_can_cook_amount.py`).
+  "1 (14 oz) can" of stock showed the table's "4 cups" for four and "6 cups"
+  for six. Why: broth is measured in cups, so its can counts as a package word
+  and the size was dropped. `_stated_package_amount` now reads can/tin for a
+  non-canned good, and reads "1 (8 oz) package" (typed order) as well.
 - **Second 200 library recipes: Emily's three calls** (2026-10-25; branch
   `recipe-library-200b`; doc `docs/RECIPE_LIBRARY_SPOTCHECK_200B.md`).
   Bistec a la Mexicana is two dishes (the rated slow simmer, plus "Quick

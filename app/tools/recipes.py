@@ -3133,6 +3133,14 @@ _SIZED_PACKAGE_RE = re.compile(
 )
 
 
+# "1 (8 oz) package" — the same line with the size written first.
+_SIZE_FIRST_RE = re.compile(
+    r"^(?P<n>\d+(?:\.\d+)?(?:\s+\d+/\d+)?|\d+/\d+)\s*\((?P<size>[^()]*)\)\s*(?P<word>[a-z]+)$",
+    re.IGNORECASE,
+)
+_SIZED_CAN_WORDS = {"can", "cans", "tin", "tins"}
+
+
 def _stated_package_amount(item: str, shopping_qty: str, servings: int | None = None) -> str | None:
     """
     "8 oz" for "1 package (8 oz)" cream cheese, "16 oz" for "2 packages
@@ -3157,10 +3165,22 @@ def _stated_package_amount(item: str, shopping_qty: str, servings: int | None = 
     # The line as written first: the note splitter files a bracket it
     # can't read ("8 oz each", "8-oz") as a note, which is the size.
     raw = (shopping_qty or "").strip()
+    # "1 (8 oz) package", "1 (14 oz) can": the size BEFORE the container,
+    # the way a recipe typed in (the add sheet, the chat) is written. Only
+    # the link importer turns it round to "1 package (8 oz)", so a typed
+    # cream cheese showed the table's 4 oz (defect hunt, 2026-10-26).
+    raw = _SIZE_FIRST_RE.sub(r"\g<n> \g<word> (\g<size>)", raw)
     m = _SIZED_PACKAGE_RE.match(_ascii_fractions(raw)) or _SIZED_PACKAGE_RE.match(
         _ascii_fractions(_quantities._split_quantity_note(raw)[0])
     )
-    if not m or m.group("word").lower() not in _PER_USE_PACKAGE_WORDS:
+    word = m.group("word").lower() if m else ""
+    # A can is per-use too — you open it and pour it — but it only reaches
+    # here for a thing the table measures some other way (broth, in cups):
+    # a canned good's "1 can (14 oz)" is already its own measure and never
+    # flagged. Read as a package word, "1 (14 oz) can" of stock became the
+    # table's 4 cups for four and 6 for six — more than three cans' worth.
+    if not m or (word not in _PER_USE_PACKAGE_WORDS
+                 and not (word in _SIZED_CAN_WORDS and not _is_canned_good(item))):
         return None
     count = _step_number(m.group("n"))
     size_text = re.sub(r"\b(?:each|about|approx\.?|approximately)\b", " ", m.group("size"), flags=re.IGNORECASE)
