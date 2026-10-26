@@ -146,13 +146,15 @@ def get_active_notifications() -> list[dict]:
     # 2. Expiring soon (NOTIFICATIONS.md #2) — 2-day window per spec (the
     # Kitchen/Inventory badge itself uses 4 days; this notification is
     # deliberately tighter, matching the spec's own trigger).
-    # Not what has already gone by. get_expiring_soon includes it (that is
-    # its job for the planner and the Inventory page), and this card read it
-    # as "use this week": the Monday walk's morning text, 2026-10-26, said
-    # "3 things to use this week" for chicken and ground beef five days past
-    # their date. "I'll work them into this week" is not an offer to make
-    # about meat that should be thrown out.
-    expiring = [e for e in _inventory.get_expiring_soon(days=2) if e["status"] != "expired"]
+    # Only food still INSIDE its date. get_expiring_soon also returns
+    # everything already past it, with no lower bound, and every inventory
+    # row gets an estimated date — so a carton of milk added three weeks ago
+    # and never cleared read "Your milk turns soon — I'll work it into this
+    # week" here, and "Your milk turns soon." in the morning text (digest's
+    # kitchen part reads this title), every day for ever (defect hunt,
+    # 2026-10-22). The spec's trigger is food REACHING two days from its
+    # date (NOTIFICATIONS.md #2); food already past it is Kitchen's to show.
+    expiring = [e for e in _inventory.get_expiring_soon(days=2) if e["status"] == "expiring_soon"]
     if expiring:
         today_iso = _today().isoformat()
         key = f"expiring:{today_iso}"
@@ -162,7 +164,16 @@ def get_active_notifications() -> list[dict]:
                 # COPY.md's use-it-up rewrite: name what's happening and
                 # what I'll do about it, rather than reporting a date and
                 # leaving the household to work out the implication.
-                title = f"Your {it['item'].lower()} turns soon"
+                # "Your chicken thighs turns soon" — the verb agrees with
+                # the name, here and in the morning text, which reads this
+                # title (defect hunt, 2026-10-25).
+                from .typed_requests import _is_plural_dish_noun
+
+                name = it["item"].strip()
+                # A Latin -us ("octopus", "asparagus", "hummus") is one thing.
+                plural = _is_plural_dish_noun(name) and not name.lower().endswith("us")
+                verb = "turn" if plural else "turns"
+                title = f"Your {it['item'].strip().lower()} {verb} soon"
                 body = (
                     f"{it['quantity']} — I’ll work it into this week if you’d like."
                     if it["quantity"] else "I’ll work it into this week if you’d like."

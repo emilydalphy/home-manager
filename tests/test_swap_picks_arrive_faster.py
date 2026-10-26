@@ -7,7 +7,7 @@ Railway's log had the Swap sheet's `swap_options` call at 10.5–13 s for
 COMPLETE recipes — every ingredient with its store quantity and category,
 every step — and the sheet drew a name, a line and the minutes from each.
 
-What changed (app/tools/swap_options.py):
+What changed (app/tools/swap_option_picks.py):
   * the options schema is what the sheet shows plus what the gate needs:
     meal_name, reason, the main ingredients as plain names (the allergen
     gate matches items, so it needs them; no quantities), minutes. No
@@ -37,7 +37,7 @@ from app import agent, tools
 from app.db import get_conn
 from app.tools import swap_in_place as _swap
 
-sop = importlib.import_module("app.tools.swap_options")
+sop = importlib.import_module("app.tools.swap_option_picks")
 from test_week1_carousel import DAY1, _asker, _entry_id, week  # noqa: F401
 
 

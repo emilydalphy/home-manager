@@ -1,0 +1,50 @@
+{
+ "dish_name": "Pollo en Pepitoria",
+ "cuisine": "Spanish",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 60,
+ "ingredients": [
+  {"item": "Eggs", "qty": "2", "category": "dairy"},
+  {"item": "Bone-in skin-on chicken thighs", "qty": "2 lbs", "category": "meat/seafood"},
+  {"item": "Salt", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Olive oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Blanched almonds", "qty": "1 bag (4 oz)", "category": "pantry", "cook_qty": "1/3 cup"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Saffron", "qty": "a pinch", "category": "pantry"},
+  {"item": "Chicken broth", "qty": "1 cup", "category": "pantry"},
+  {"item": "Yellow onions", "qty": "2", "category": "produce"},
+  {"item": "Bay leaves", "qty": "2", "category": "pantry"},
+  {"item": "Dry white wine", "qty": "1 bottle", "category": "other", "cook_qty": "3/4 cup"},
+  {"item": "Flat-leaf parsley", "qty": "1 bunch", "category": "produce"}
+ ],
+ "instructions": [
+  "Put the 2 eggs in a small pot and cover them with cold water. Bring it to a boil over high, then turn the heat down and simmer for 10 minutes. Transfer the eggs into a bowl of cold water.",
+  "Meanwhile, pat the chicken thighs dry with paper towels. Sprinkle 1 tsp of the salt and the 1/4 tsp pepper over both sides.",
+  "Heat 2 tbsp of the olive oil in a large deep skillet or Dutch oven over medium high. Lay the thighs in skin side down, in two batches if they don't all fit with room between them. Stand back a little. They'll spatter.",
+  "Cook the chicken for 6 to 7 minutes without moving it, until the skin is deep golden and lets go of the pan. Flip the thighs and cook the other side for 3 minutes. Transfer them to a plate.",
+  "Turn the heat to medium. Add the 1/3 cup almonds and the 3 whole peeled garlic cloves to the fat in the pan and stir for about 2 minutes, until they're light golden. Transfer them into a blender.",
+  "Crumble the pinch of saffron into the blender and pour in 1/2 cup of the broth.",
+  "Chop the 2 onions. Add the remaining 2 tbsp olive oil to the pan, then the onions, the 2 bay leaves and the last 1/2 tsp salt. Cook for 8 to 10 minutes, stirring now and then and scraping up the browned bits, until the onions are soft and golden.",
+  "Pour in 3/4 cup of the wine. Let it bubble for about 2 minutes, scraping the bottom of the pan, until the sharp wine smell is gone.",
+  "Peel the eggs and cut them in half. Add the yolks to the blender and chop the whites. Blend until the almond sauce is smooth, about 1 minute.",
+  "Stir the almond sauce and the rest of the broth, 1/2 cup, into the pan. Put the chicken back in skin side up, with any juices from the plate.",
+  "Bring it to a gentle simmer, then turn the heat to low. Partly cover the pan and cook for 35 to 40 minutes, stirring the sauce now and then, until the chicken is very tender and the sauce has thickened. If it gets too thick before then, add a splash of water.",
+  "You're cooking the thighs to 175°F in the thickest part, so if you have a thermometer, check it there. No thermometer? Cut into one next to the bone: it's done when there's no pink left and the juices run clear.",
+  "Fish out the bay leaves. Chop a handful of the parsley.",
+  "Taste the sauce. If it's flat, add a pinch more salt.",
+  "Serve the chicken with the sauce spooned over, with the chopped egg whites and the parsley on top."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Every version browns chicken pieces, softens onion with bay leaf, adds white wine, and thickens the braise with a paste of almonds, garlic, saffron and hard-boiled egg yolks, with the chopped whites on top. Cookidoo, the lead, is a Thermomix version for bone-in skin-on thighs with toasted almonds, two eggs, saffron, onion, garlic and white wine, and no bread or stock; Mission Food and Fascinating Spain add fried bread to the paste and braise in chicken stock, Mission Food for 45 to 50 minutes and Fascinating Spain for about 30. This one keeps the lead's ingredients and ratios scaled to four, cooks it on the stovetop the way Mission Food does, adds a cup of broth so there's enough liquid for a pan braise, and finishes with Fascinating Spain's parsley.",
+ "sources": [
+  {"name": "Cookidoo", "title": "Pollo en pepitoria", "url": "https://cookidoo.international/recipes/recipe/en/r55705", "rating": 4.2, "rating_count": 402, "read": true, "lead": true},
+  {"name": "Mission Food", "title": "Pollo en Pepitoria (Chicken Braised in Saffron, Almond, and Egg Yolk Sauce)", "url": "https://mission-food.com/chicken-braised-in-saffron-almond-and/", "rating": 5.0, "rating_count": 6, "read": true, "lead": false},
+  {"name": "Fascinating Spain", "title": "Pollo en Pepitoria Recipe (Chicken in Almond Sauce)", "url": "https://fascinatingspain.com/gastronomy/spanish-cuisine-recipes/pollo-pepitoria-recipe-chicken-almond/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

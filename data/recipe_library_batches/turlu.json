@@ -1,0 +1,156 @@
+{
+ "dish_name": "Turlu",
+ "cuisine": "Turkish",
+ "main_protein": "beans",
+ "ingredients": [
+  {
+   "item": "Eggplant",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Zucchini",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Green beans",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 small can",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Diced tomatoes",
+   "qty": "1 can (14 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "White beans",
+   "qty": "2 cans (15 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Dill",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Aleppo pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a fine strainer until the water runs mostly clear. Add it to a medium pot with 2 1/4 cups water and 1/2 tsp salt, and bring it to a boil over high heat. Cover, turn the heat to low, and cook for 15 minutes.",
+  "Cut the eggplant into 1 inch cubes. Toss them with 1 tsp of the salt in a colander and set them over the sink.",
+  "Cut the zucchini into 1/2 inch half moons. Halve the green beans. Cut the pepper into 1 inch pieces and the onions into thin wedges. Mince the garlic. Drain and rinse the white beans.",
+  "Pat the eggplant dry with paper towels. Heat 3 tbsp of the oil in a large wide pot over medium-high heat. Add the eggplant and cook for 6 minutes, stirring only now and then, until it's browned in places. Transfer it into a bowl.",
+  "Add the remaining 1 tbsp oil to the pot, then the onions and pepper. Cook over medium heat for 5 minutes, stirring now and then, until the onions are soft.",
+  "Add the tomato paste and stir for 1 minute, until it darkens a shade.",
+  "Add the garlic, oregano and cumin. Stir for 30 seconds, until you can smell them.",
+  "Add the diced tomatoes, 1 cup water, the green beans, the sugar, 1/2 tsp of the salt and the pepper. Return the eggplant to the pot. Cover and simmer over medium-low heat for 8 minutes.",
+  "Add the zucchini and the white beans, and stir gently. Cover and simmer for 8 minutes, until the green beans are tender.",
+  "Take the rice off the heat and leave it covered for 5 minutes. Then fluff it with a fork.",
+  "Take the pot off the heat. Chop 1/4 cup of the dill and stir it in along with the juice of the lemon.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice, with the Aleppo pepper on the table."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Turlu is a mixed summer vegetable stew in olive oil and tomato, and the sources agree on eggplant, zucchini, green beans, peppers, onion and tomato, finished with herbs and lemon. They differ on method: the Turkish Ministry of Culture version cooks everything in one pot with dill, mint and sugar, and Ozlem's Turkish Table roasts the vegetables and adds chickpeas. This version cooks on the stove to fit 45 minutes, browns the eggplant first, and uses white beans as the bean. No source had 20 or more ratings, so the lead is the best-read version. It is vegan and gluten-free, served with rice.",
+ "sources": [
+  {
+   "name": "Ozlem's Turkish Table",
+   "title": "Baked vegetables with chickpeas (Firinda Sebzeli, Nohutlu Turlu)",
+   "url": "https://ozlemsturkishtable.com/2021/09/baked-vegetables-with-chickpeas-firinda-sebzeli-nohutlu-turlu/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cooking Gorgeous",
+   "title": "Turlu - Mediterranean Roasted Vegetables",
+   "url": "https://cookingorgeous.com/blog/turlu-mediterranean-roasted-vegetables/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  },
+  {
+   "name": "Turkish Ministry of Culture and Tourism",
+   "title": "Mixed Vegetable Stew",
+   "url": "https://www.ktb.gov.tr/EN-99185/mixed-vegetable-stew.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

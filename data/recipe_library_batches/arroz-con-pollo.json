@@ -1,0 +1,51 @@
+{
+ "dish_name": "Arroz con Pollo",
+ "cuisine": "Spanish",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 45,
+ "ingredients": [
+  {"item": "Boneless skinless chicken thighs", "qty": "1.5 lb", "category": "meat/seafood"},
+  {"item": "Olive oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Red bell pepper", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "6 cloves", "category": "produce"},
+  {"item": "Tomatoes", "qty": "2", "category": "produce"},
+  {"item": "Saffron", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Smoked paprika", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Dried thyme", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Bay leaves", "qty": "2", "category": "pantry"},
+  {"item": "Short-grain rice", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Frozen peas", "qty": "1 bag", "category": "frozen", "cook_qty": "1/2 cup"},
+  {"item": "Lemon", "qty": "1", "category": "produce"},
+  {"item": "Salt", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "to taste", "category": "pantry"}
+ ],
+ "instructions": [
+  "Finely chop the onion and the red pepper. Roughly chop the 6 garlic cloves.",
+  "Cut the 2 tomatoes in half. Grate the cut sides on the large holes of a box grater into a bowl until only the skins are left in your hand, then throw the skins away. Crumble the 1/4 tsp saffron into the tomato.",
+  "Pat the 1.5 lb chicken thighs dry and cut them into 1 1/2 inch pieces. Sprinkle them with 1/2 tsp of the salt and a few grinds of pepper.",
+  "Heat the 1/4 cup oil in a large, deep frying pan with a lid over medium high heat. Add the chicken in a single layer, in two batches if it's crowded. Leave it alone until the underside is golden and lets go of the pan, 3 to 4 minutes.",
+  "Turn the pieces and brown the other side for 3 to 4 minutes. It doesn't need to be cooked through yet. Transfer the chicken to a plate.",
+  "Turn the heat to medium and add the onion and red pepper to the same pan. Cook, stirring now and then, until soft, about 5 minutes. Scrape up the browned bits as you go.",
+  "Add the garlic and stir for about 1 minute, until it smells good.",
+  "Stir in the 1/2 tsp smoked paprika and 1/2 tsp thyme for about 20 seconds. Add the tomato and saffron with a pinch of the salt. Simmer, stirring now and then, until it thickens and darkens a little, about 4 minutes.",
+  "Return the chicken and its juices to the pan. Add 4 cups of water, the 2 bay leaves and 1 tsp of the salt. Turn the heat to high and bring it to a boil.",
+  "Stir in the 1 1/2 cups rice and spread it out evenly. Cover, turn the heat to low and cook for 15 minutes. Don't stir it.",
+  "Uncover and scatter the 1/2 cup peas over the top. Cover and cook for about 4 minutes, until the rice is tender and the water is absorbed. You're cooking the chicken to 175°F, so if you have a thermometer, check a thick piece. No thermometer? Cut one open: it's done when there's no pink left.",
+  "Take the pan off the heat. Cut the lemon in half and squeeze one half over the rice. That should be about 2 tsp of juice. Pick out the bay leaves and fluff the rice gently with a fork.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of the lemon.",
+  "Cut the other lemon half into wedges. Serve from the pan with the lemon wedges."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three brown the chicken first, soften onion, pepper and garlic in the same pan, add tomato with saffron and paprika, then cook short-grain rice in the liquid with the chicken on top and add peas near the end. Spain on a Fork (the lead) uses grated fresh tomato, thyme, bay leaves and water and finishes with lemon; Simply Delicious uses tomato paste, cumin and stock, and The Glamorous Gourmet blooms the saffron in white wine and bakes it covered. None had 20 ratings and RecipeTin Eats has no arroz con pollo, so this follows Spain on a Fork, with thighs instead of breast (the lead says either works) and the rice raised from 1 cup to 1 1/2 cups with 4 cups of water so it fills four plates.",
+ "sources": [
+  {"name": "Spain on a Fork", "title": "The FAMOUS Spanish Chicken and Rice | Authentic Arroz con Pollo Recipe", "url": "https://spainonafork.com/spanish-chicken-and-rice-authentic-arroz-con-pollo-recipe/", "rating": 5.0, "rating_count": 2, "read": true, "lead": true},
+  {"name": "Simply Delicious", "title": "Arroz con Pollo", "url": "https://simply-delicious-food.com/arroz-con-pollo/", "rating": 4.72, "rating_count": 7, "read": true, "lead": false},
+  {"name": "The Glamorous Gourmet", "title": "Arroz con Pollo | AKA Spanish Chicken & Rice", "url": "https://www.theglamorousgourmet.com/blog/arroz-con-pollo-aka-spanish-chicken-rice", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

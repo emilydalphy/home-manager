@@ -102,6 +102,16 @@ _ITEM_SHELF_LIFE_DAYS = {
 }
 
 
+def _item_shelf_life_match(item: str) -> int | None:
+    """The item-level shelf life for this name, or None when no key matches."""
+    name = item.strip().lower()
+    best_match: tuple[str, int] | None = None
+    for key, days in _ITEM_SHELF_LIFE_DAYS.items():
+        if key in name and (best_match is None or len(key) > len(best_match[0])):
+            best_match = (key, days)
+    return best_match[1] if best_match else None
+
+
 def _lookup_item_shelf_life_days(item: str, category: str | None) -> int:
     # A tin or a freezer bag keeps however long its KIND keeps, whatever
     # food is in it. The name table is fresh food, so "diced tomatoes" in
@@ -115,13 +125,9 @@ def _lookup_item_shelf_life_days(item: str, category: str | None) -> int:
     from . import pantry as _pantry  # lazy: pantry imports grocery, which imports this
     if _pantry.is_canned(item or ""):
         return _DEFAULT_SHELF_LIFE_DAYS["canned"]
-    name = item.strip().lower()
-    best_match: tuple[str, int] | None = None
-    for key, days in _ITEM_SHELF_LIFE_DAYS.items():
-        if key in name and (best_match is None or len(key) > len(best_match[0])):
-            best_match = (key, days)
-    if best_match:
-        return best_match[1]
+    matched = _item_shelf_life_match(item)
+    if matched is not None:
+        return matched
     return _DEFAULT_SHELF_LIFE_DAYS.get(category, _DEFAULT_SHELF_LIFE_DAYS["other"])
 
 
@@ -187,6 +193,11 @@ _UNIT_ALIASES = {
     # The Canadian/British spelling — "1 litre" read as no unit at all, so
     # the cook card put the table's guess in its place (2026-10-20).
     "millilitre": "ml", "millilitres": "ml", "litre": "l", "litres": "l",
+    # "1 ½ quarts chicken stock" read its unit as "quarts", which no table
+    # knows, so the cook card called it unmeasured and showed the table's
+    # guess instead — "1.5 lb" of stock (defect hunt, 2026-10-24).
+    "quart": "quart", "quarts": "quart", "qt": "quart", "qts": "quart",
+    "gallon": "gallon", "gallons": "gallon", "gal": "gallon",
     # Size descriptors ("1 large" onion) aren't real units of measure — map
     # them to "" (normalized to None below) so "1 large" and "1/2" (no
     # unit) are recognized as the same kind of quantity and merge into a
@@ -401,6 +412,7 @@ def _split_quantity_note(qty: str) -> tuple[str, str]:
     """
     if not qty:
         return "", ""
+    qty = _number_commas(qty)  # "(14,5 oz)" is a size, not a note
     notes: list[str] = []
 
     def _take_paren(match: re.Match) -> str:
@@ -525,7 +537,39 @@ def _strip_prep_descriptor(qty: str) -> str:
     """
     if not qty:
         return qty
-    return qty.split(",", 1)[0].strip()
+    return _number_commas(qty).split(",", 1)[0].strip()
+
+
+def _number_commas(qty: str) -> str:
+    """
+    A comma BETWEEN DIGITS is part of the number, not the start of a prep
+    note: "1,000 g" is a thousand grams and "1,5 kg" (how a French-Canadian
+    writes it) is one and a half kilos. Split at that comma, both read as
+    "1" — the list showed Flour "1" for a typed "1,000 g" and "1 + 500 g"
+    after the next add (defect hunt, 2026-10-22). Exactly three digits
+    after the comma is a thousands separator; anything else is a decimal.
+    "3, diced" has a space after its comma and is untouched.
+
+    Except where a thousand can't be meant: "0,500 kg" is half a kilo, and
+    "1,250 kg" / "0,750 l" are a French writer's decimals, not a 1250 kg
+    shop — read as thousands they came out 1000x too big (review, same
+    night).
+    """
+    if not qty or "," not in qty:
+        return qty
+
+    def _group(match: re.Match) -> str:
+        whole, frac, gap, unit = match.groups()
+        decimal = whole.lstrip("0") == "" or unit.lower() in _BIG_METRIC_UNITS
+        return f"{whole}{'.' if decimal else ''}{frac}{gap}{unit}"
+
+    qty = re.sub(r"(\d+),(\d{3})(?!\d)(\s*)([A-Za-z]*)", _group, qty)
+    return re.sub(r"(?<=\d),(?=\d)", ".", qty)
+
+
+# Units where "1,250" can only be a decimal comma: nobody buys 1250 kg.
+_BIG_METRIC_UNITS = {"kg", "kgs", "kilo", "kilos", "kilogram", "kilograms",
+                     "l", "litre", "litres", "liter", "liters"}
 
 
 def _parse_quantity(qty: str) -> tuple[float, str | None] | None:
@@ -588,7 +632,7 @@ def _parse_quantity(qty: str) -> tuple[float, str | None] | None:
     return amount, unit
 
 
-_UNIT_PLURALS = {"cup": "cups", "lb": "lbs", "egg": "eggs", "dozen": "dozen"}
+_UNIT_PLURALS = {"cup": "cups", "lb": "lbs", "egg": "eggs", "dozen": "dozen", "quart": "quarts", "gallon": "gallons"}
 
 
 def _plain_number(amount: float, sig: int = 6) -> str:
@@ -1056,7 +1100,23 @@ def _ledger_buckets(qty_strings: list[str]) -> dict | None:
             key = ("discrete", unit)
             bucket = totals.setdefault(key, [0.0, unit])
             bucket[0] += amount
+    # Rows are written at twelve significant figures (recipes._LEDGER_SIG),
+    # so three thirds of 18 oz read back as 18.00000000003 — and the
+    # quarter rounding, which breaks an exact tie one way, broke this one
+    # the other: a line approved at "1 lb" re-read as "1.25 lbs" with the
+    # ledger untouched (2026-10-22, a headcount resized and resized back).
+    # Nine figures is far below anything a list shows and far above the
+    # twelve-figure writing noise.
+    for bucket in totals.values():
+        bucket[0] = _snap_sig(bucket[0], 9)
     return totals
+
+
+def _snap_sig(value: float, sig: int) -> float:
+    """value rounded to `sig` significant figures (0 stays 0)."""
+    if not value:
+        return value
+    return round(value, sig - 1 - int(math.floor(math.log10(abs(value)))))
 
 
 def _sum_ledger_quantities(qty_strings: list[str]) -> str | None:
@@ -1150,6 +1210,33 @@ def _ledger_totals(
     if set(after) - {key}:
         return None
     return total_before, (after[key][0] if key in after else 0.0), unit
+
+
+# "24 pack", "12pk", "6 pack (355 ml)": the size of ONE multipack, as a
+# shopper writes it — a number of two or more and the SINGULAR word. Read as
+# a count, "24 pack" of water became "24 packs" on the list and "48 packs"
+# when it was added again (defect hunt, 2026-10-24).
+_MULTIPACK_RE = re.compile(r"^(\d+)\s*-?\s*(?:pack|pk)\.?(\s*\([^()]*\))?$", re.IGNORECASE)
+
+
+def typed_multipack(qty: str) -> str:
+    """
+    A household's typed "24 pack" written the way the shelf says it,
+    "24-pack" — one pack of 24 — so it is never read as twenty-four packs.
+    Anything else comes back unchanged, "1 pack" and "24 packs" included.
+
+    "24-pack" is the spelling this module already leaves alone ("6-pack"
+    never parsed), so the line reads as typed and a second add of the same
+    pack counts up as "24-pack ×2" (grocery._repeat_or_concatenate). For a
+    person's own words only (add_grocery_item's standing add,
+    update_grocery_item): a plan's amount is written by _format_quantity,
+    which never puts a singular "pack" after a number above one.
+    """
+    raw = (qty or "").strip()
+    match = _MULTIPACK_RE.match(raw)
+    if not match or int(match.group(1)) < 2:
+        return qty
+    return f"{int(match.group(1))}-pack" + (f" {match.group(2).strip()}" if match.group(2) else "")
 
 
 def _normalize_grocery_quantity(qty: str) -> str:

@@ -1,0 +1,51 @@
+{
+ "dish_name": "Kotopoulo Kokkinisto",
+ "cuisine": "Greek",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 75,
+ "ingredients": [
+  {"item": "Bone-in skin-on chicken thighs", "qty": "2.5 lbs", "category": "meat/seafood"},
+  {"item": "All-purpose flour", "qty": "1 bag", "category": "pantry", "cook_qty": "1/3 cup"},
+  {"item": "Kosher salt", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Olive oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Yellow onion", "qty": "1 large", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Cinnamon stick", "qty": "1", "category": "pantry"},
+  {"item": "Allspice berries", "qty": "5", "category": "pantry"},
+  {"item": "Bay leaves", "qty": "2", "category": "pantry"},
+  {"item": "Dry white wine", "qty": "1 bottle", "category": "other", "cook_qty": "2/3 cup"},
+  {"item": "Tomato passata", "qty": "1 jar (24 oz)", "category": "pantry", "cook_qty": "2 cups"},
+  {"item": "Long-grain white rice", "qty": "1 bag (2 lbs)", "category": "pantry", "cook_qty": "1 1/2 cups"},
+  {"item": "Flat-leaf parsley", "qty": "1 bunch", "category": "produce"}
+ ],
+ "instructions": [
+  "Pat the chicken thighs dry. In a wide bowl, mix the 1/3 cup flour, 1 tsp of the salt and 1/4 tsp of the pepper.",
+  "Finely chop the onion and mince the garlic.",
+  "Heat the 3 tbsp olive oil in a large, deep, lidded pan or Dutch oven over medium high until it shimmers. Turn half the thighs in the flour, shake off the extra and lay them in skin side down. Leave them alone for about 5 minutes, until the skin is golden and lets go of the pan.",
+  "Flip them and cook the other side for 3 minutes. Transfer them to a plate and brown the rest of the thighs the same way.",
+  "If there's more than about 2 tbsp of fat in the pan, spoon off the extra. Turn the heat to medium, add the onion and cook, stirring now and then, for 6 to 8 minutes, until it's soft and see-through.",
+  "Add the garlic, cinnamon stick, allspice berries and bay leaves and stir for 30 seconds, until you can smell the cinnamon.",
+  "Add the 2/3 cup white wine and scrape up the browned bits from the bottom of the pan. Let it boil for 2 to 3 minutes, until the sharp smell of alcohol is gone.",
+  "Stir in the 2 cups passata, 1/2 tsp of the salt and the last 1/4 tsp pepper. Bring it to a boil, then turn the heat down and simmer for 10 minutes, until it thickens a little.",
+  "Return the thighs to the pan skin side up, with any juices from the plate. Add water until the chicken is almost covered, about 1 1/2 cups. Cover and simmer on low for about 35 minutes. You're cooking the thighs to 175°F, so if you have a thermometer, check one near the bone. No thermometer? Cut into one next to the bone: it's done when the juices run clear and there's no pink left.",
+  "Meanwhile, when the chicken has about 25 minutes left, rinse the 1 1/2 cups rice in a sieve until the water runs mostly clear. Bring 3 cups water and the last 1/2 tsp salt to a boil in a saucepan. Add the rice, cover, turn the heat to low and cook for 15 minutes.",
+  "Take the rice off the heat and leave it covered for 10 minutes.",
+  "Uncover the chicken, turn the heat to medium high and let the sauce bubble for 5 to 10 minutes, until it's thick enough to coat a spoon. Fish out the cinnamon stick, bay leaves and allspice berries.",
+  "Chop 1/4 cup of the parsley. Fluff the rice with a fork and stir in half the chopped parsley.",
+  "Taste the sauce. If it's flat, add a pinch more salt.",
+  "Serve the chicken and sauce over the rice, with the rest of the chopped parsley on top."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three brown the chicken, soften onion and a little garlic in the same pan, and braise the chicken covered in tomato with a cinnamon stick, allspice and bay until it's tender. Kopiaste (the lead) dredges the pieces in seasoned flour, uses white wine and puréed tomato, reduces the sauce uncovered at the end and serves it with a parsley rice pilaf; Olive Tomato skips the wine and flour for a simpler stovetop version, and Super Golden Bakes uses red wine, carrot, celery, leek and cloves and braises in the oven. The lead uses a whole cut up chicken; this uses bone-in thighs, ground pepper instead of whole peppercorns, and leaves out the chopped omelet the lead stirs into its rice. No version had 20 ratings and RecipeTin Eats has no kokkinisto, so the top rated version read leads.",
+ "sources": [
+  {"name": "Kopiaste", "title": "Kotopoulo Kokkinisto (Stewed Chicken)", "url": "https://www.kopiaste.org/?p=42759", "rating": 5.0, "rating_count": 2, "read": true, "lead": true},
+  {"name": "Olive Tomato", "title": "Greek Chicken Cooked in Tomato (Kotopoulo Kokkinisto)", "url": "https://www.olivetomato.com/greek-chicken-cooked-in-tomato-kotopoulo-kokkinisto/", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Super Golden Bakes", "title": "Greek Chicken In Tomato and Wine Sauce (Kotopoulo Kokkinisto)", "url": "https://www.supergoldenbakes.com/chicken-in-tomato-sauce/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

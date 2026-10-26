@@ -1,0 +1,43 @@
+{
+ "dish_name": "Tarte Flambee",
+ "cuisine": "French",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {"item": "All-purpose flour", "qty": "4 1/4 cups", "category": "pantry"},
+  {"item": "Olive oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Salt", "qty": "1 1/4 tsp", "category": "pantry"},
+  {"item": "Crème fraîche", "qty": "1 tub (8 oz)", "category": "dairy", "cook_qty": "1 cup"},
+  {"item": "Ground nutmeg", "qty": "a pinch", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Yellow onions", "qty": "2", "category": "produce"},
+  {"item": "Thick-cut bacon", "qty": "8 oz", "category": "meat/seafood"},
+  {"item": "Fresh chives", "qty": "1 package", "category": "produce", "cook_qty": "2 tbsp chopped"}
+ ],
+ "instructions": [
+  "Heat the oven to 500°F, or as high as it goes, with a rack in the lower middle. Line 2 sheet pans with parchment paper.",
+  "In a large bowl, stir together 4 cups of the flour, 1 tsp of the salt, 1 cup water and the 1/4 cup olive oil until it's a shaggy dough.",
+  "Turn it out onto the counter and knead for about 5 minutes, until it's smooth and soft. If it sticks to your hands, work in a spoonful of the remaining flour. Cut it in half, cover both halves with a clean towel and leave them on the counter for 15 minutes.",
+  "While the dough rests, slice the 2 onions as thin as you can. Cut the 8 oz bacon crosswise into 1/4 inch strips. Chop 2 tbsp of the chives.",
+  "In a small bowl, stir the 1 cup crème fraîche with the pinch of nutmeg, the remaining 1/4 tsp salt and the 1/4 tsp pepper.",
+  "Dust the counter with a little of the remaining flour. Roll one half of the dough out very thin, to about 10 by 14 inches. Roll it loosely around the rolling pin and unroll it onto one of the lined pans.",
+  "Spread half the crème fraîche over the dough, leaving a 1/2 inch border. Scatter half the onions and half the bacon evenly over the top.",
+  "Bake it for 14 to 18 minutes, until the edges are crisp and browned in spots and the bacon is starting to brown.",
+  "While the first one bakes, roll out the second half of the dough with the last of the flour, put it on the second pan and top it the same way with the rest of the crème fraîche, onions and bacon.",
+  "Slide the first tart onto a cutting board and put the second one in to bake the same way. Scatter half the chives over the first one and cut it into squares with a sharp chef's knife.",
+  "When the second tart is done, scatter the rest of the chives over it, cut it into squares and serve both hot."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions spread a very thin crust with seasoned crème fraîche, scatter sliced onion and bacon over it raw or lightly cooked, and bake it as hot as the oven goes until the edges are crisp. Mission Food (the lead) makes a quick unleavened dough of flour, water, olive oil and salt, seasons the crème fraîche with nutmeg, salt and pepper, and bakes at 500°F for 14 to 18 minutes; Tasting Table makes a yeasted dough with an hour's rise and softens the onions in bacon fat first, and TwoSleevers uses store pizza dough and adds Gruyère. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for French) has no tarte flambée, so the read version with the most ratings leads. This doubles the lead into two tarts for a dinner for four, baked one after the other so each gets the hot oven."
+ ,
+ "sources": [
+  {"name": "Mission Food", "title": "Flammkuchen / Tarte Flambée (German Pizza with Bacon and Onions)", "url": "https://mission-food.com/flammkuchen-tarte-flambee-german-pizza/", "rating": 5.0, "rating_count": 7, "read": true, "lead": true},
+  {"name": "Tasting Table", "title": "Tarte Flambée (French Bacon And Onion Tart)", "url": "https://www.tastingtable.com/1351962/tarte-flambee-french-bacon-and-onion-tart-recipe", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "TwoSleevers", "title": "Tarte Flambée Recipe | Bacon Onion Tart", "url": "https://twosleevers.com/tarte-flambee-recipe/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

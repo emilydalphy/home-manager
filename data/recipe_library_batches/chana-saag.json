@@ -1,0 +1,131 @@
+{
+ "dish_name": "Chana Saag",
+ "cuisine": "Indian",
+ "main_protein": "chickpeas",
+ "ingredients": [
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mild chili powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chickpeas",
+   "qty": "2 cans (15 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Baby spinach",
+   "qty": "10 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Coconut milk",
+   "qty": "1 can (13.5 oz)",
+   "category": "pantry",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put 1 1/2 cups of the basmati rice in a fine strainer and rinse it under cold water until the water runs mostly clear. Transfer it to a medium saucepan with 2 1/4 cups water and a pinch of salt.",
+  "Bring the rice to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on for 5 minutes, then fluff it with a fork.",
+  "Meanwhile, finely chop the onion, mince the garlic, grate the ginger and chop the tomatoes. Drain and rinse the chickpeas.",
+  "Heat the oil in a large deep skillet over medium heat. Add the cumin seeds. After about 20 seconds they'll sizzle and smell toasty.",
+  "Add the onion and a big pinch of salt. Cook for 6 minutes, stirring now and then, until soft and lightly golden.",
+  "Add the garlic and ginger and stir for 1 minute.",
+  "Add the tomatoes, turmeric, ground cumin, chili powder and 1 tsp salt. Cook for 5 minutes, stirring, until the tomatoes break down and the oil shows at the edges of the pan.",
+  "Add the chickpeas and 1/2 cup water. Cook for 3 minutes, pressing a few of the chickpeas against the side of the pan to thicken the sauce.",
+  "Add the spinach a handful at a time, stirring as it shrinks. Cook for about 2 minutes, until it's wilted.",
+  "Pour in 3/4 cup of the coconut milk and simmer for 3 minutes. Take the pan off the heat.",
+  "Stir in the garam masala and the juice of half the lemon.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of the lemon.",
+  "Serve over the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 28,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree on cumin seeds, an onion and tomato masala, canned chickpeas and spinach added last. They differ on the finish: ghee and amchoor in the lead, coconut milk and lemon in the other. This version uses vegetable oil in place of ghee so it stays vegan, uses coconut milk for body and lemon in place of amchoor, and keeps the chili mild. Everything is gluten-free as written.",
+ "sources": [
+  {
+   "name": "Ministry of Curry",
+   "title": "Chana Saag (Chickpeas and Spinach Cooked in Warm Spices)",
+   "url": "https://ministryofcurry.com/chana-saag-chickpeas-and-spinach-cooked-in-warm-spices/",
+   "rating": 4.56,
+   "rating_count": 87,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cook with Manali",
+   "title": "Chana Saag (Vegan Spinach and Chickpea Curry)",
+   "url": "https://cookwithmanali.com/chana-saag",
+   "rating": 4.82,
+   "rating_count": 11,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

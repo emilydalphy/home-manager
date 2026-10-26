@@ -1,0 +1,121 @@
+{
+ "dish_name": "Ye'Duba Wat",
+ "cuisine": "Ethiopian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 45,
+ "ingredients": [
+  {
+   "item": "Butternut squash",
+   "qty": "1 (about 2.5 lbs)",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Ghee",
+   "qty": "1 jar",
+   "category": "dairy",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Berbere",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cardamom",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Injera",
+   "qty": "1 package",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Peel the squash, cut it in half and scoop out the seeds. Cut it into 1 inch cubes. That should be about 6 cups.",
+  "Finely chop the onion and dice the 2 tomatoes. Mince the 3 garlic cloves. Peel and finely grate the ginger. That should be about 1 tbsp.",
+  "Put the onion in a heavy pot over medium heat with no fat at all. Cook it for 5 to 6 minutes, stirring often, until it's soft and translucent. If it catches, add a splash of water.",
+  "Add the 3 tbsp ghee and cook for 5 minutes, stirring now and then, until the onion is golden at the edges.",
+  "Add the garlic and ginger and stir for 1 minute, until they smell fragrant.",
+  "Stir in the 1 tbsp berbere, 1/2 tsp cardamom and 1 tbsp tomato paste. Cook, stirring all the time, for 2 minutes, until the paste darkens and it smells toasty. If it starts to catch, add a splash of water. Burnt berbere tastes bitter.",
+  "Add the tomatoes and 1/2 tsp of the salt. Cook for 3 to 4 minutes, stirring, until they break down into a thick sauce.",
+  "Add the squash and the remaining 1 tsp salt and stir for 2 minutes, until every piece is coated in the sauce.",
+  "Pour in 2 cups water and bring it to a bubble. Turn the heat to low, set the lid on slightly ajar, and simmer for 20 to 25 minutes, stirring gently now and then, until a knife slides easily into the squash but the cubes still hold their shape. Start checking at 15 minutes.",
+  "Meanwhile, chop a small handful of the cilantro. That should be about 2 tbsp.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Turn off the heat and scatter the cilantro over the top.",
+  "Serve with injera."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three soften onion, add garlic and berbere, coat cubed pumpkin or squash in the spices, add water and simmer about 20 minutes until tender but still whole. Wellbeing cooks the onion with no oil and adds fresh tomato and tomato paste, A Bowl of Sugar uses oil, cardamom and a cilantro garnish, and the Heirloom Vegetable Archive uses spiced butter with ginger, cardamom and black pepper. None of the pages showed any ratings and the trusted cook for the cuisine has no Ethiopian recipes, so this follows Wellbeing's order (dry onion, tomato, paste) with ghee, ginger and cardamom from the other two. Butternut is the squash one source names as best, and the berbere is kept to 1 tbsp so the stew stays mild.",
+ "sources": [
+  {
+   "name": "Wellbeing",
+   "title": "Duba Wat",
+   "url": "https://www.wellbeing.com.au/recipes/duba-wat.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "A Bowl of Sugar",
+   "title": "Spicy Pumpkin Stew (Duba Wat)",
+   "url": "https://www.abowlofsugar.com/post/spicy-pumpkin-stew-duba-wat",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Heirloom Vegetable Archive",
+   "title": "Spicy Pumpkin Stew (Yedubba Wat)",
+   "url": "https://sci.muni.cz/botany/nekola/kitchen/ethiopia/squash.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

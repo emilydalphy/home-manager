@@ -1,0 +1,41 @@
+{
+ "dish_name": "Dubu Kimchi",
+ "cuisine": "Korean",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {"item": "Kimchi", "qty": "1 jar (32 oz)", "category": "other", "cook_qty": "4 cups"},
+  {"item": "Pork belly", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Firm tofu", "qty": "2 packages (16 oz each)", "category": "dairy"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Scallions", "qty": "1 bunch", "category": "produce", "cook_qty": "4"},
+  {"item": "Ginger", "qty": "1 small piece", "category": "produce", "cook_qty": "2 tsp grated"},
+  {"item": "Garlic", "qty": "6 cloves", "category": "produce"},
+  {"item": "Gochujang", "qty": "1 tub", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Sesame oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Sesame seeds", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "a pinch", "category": "pantry"}
+ ],
+ "instructions": [
+  "Cut 4 cups of the kimchi into bite size pieces. Cut the 1 lb pork belly into thin bite size pieces. Thinly slice the onion and 4 of the scallions. Grate 2 tsp of the ginger and mince the 6 garlic cloves.",
+  "In a large bowl, mix the kimchi, pork, onion, scallions, ginger and garlic with the 1/4 cup gochujang, 2 tbsp soy sauce, 2 tbsp sugar, 2 tbsp sesame oil, 1 tsp of the sesame seeds and the pinch of black pepper. Leave it to sit for 15 minutes.",
+  "Meanwhile, bring about 8 cups water to a boil in a large pot. Cut each block of tofu in half. Turn the heat to medium high, lower the tofu in gently and boil for 5 minutes, until it's hot all the way through. Leave it in the hot water off the heat until you're ready to plate.",
+  "Heat your largest skillet over medium high heat for a minute or two. Add the kimchi and pork mixture and spread it out. Stir fry for 6 to 8 minutes, until the kimchi is soft, the pork has no pink left and most of the liquid has cooked off. Let it sit without stirring for the last minute so the edges start to brown.",
+  "Lift the tofu out into a colander to drain, then cut each piece into slices about 1/2 inch thick.",
+  "Taste the stir fry. If it's flat, add a small splash more soy sauce.",
+  "Arrange the tofu slices around the edge of a platter and pile the kimchi and pork in the middle. Scatter over the last 1 tsp sesame seeds and serve hot."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions pair warm boiled firm tofu slices with sour, well fermented kimchi stir fried with thin pork and finished with sesame oil and seeds. Korean Bapsang mixes the kimchi and pork with gochujang, soy, sugar, ginger, garlic and sesame oil and lets it sit 15 minutes before stir frying it all at once; Beyond Kimchee sears the pork first, adds the kimchi, and uses chili flakes in place of gochujang. This one follows Korean Bapsang doubled for 4, with 1/4 cup gochujang (the low end of its range) and a last minute without stirring for some browning.",
+ "sources": [
+  {"name": "Korean Bapsang", "title": "Dubu Kimchi (Tofu with Stir-fried Kimchi and Pork)", "url": "https://www.koreanbapsang.com/dubu-kimchi-tofu-with-stir-fried-kimchi/", "rating": 4.85, "rating_count": 40, "read": true, "lead": true},
+  {"name": "Beyond Kimchee", "title": "Quick Dubu Kimchi (Tofu with Kimchi and Pork)", "url": "https://www.beyondkimchee.com/dubu-kimchi/", "rating": 5.0, "rating_count": 2, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

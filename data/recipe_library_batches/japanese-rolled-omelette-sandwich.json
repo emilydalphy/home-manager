@@ -1,0 +1,49 @@
+{
+ "dish_name": "Japanese Rolled Omelette Sandwich",
+ "cuisine": "Japanese",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Instant dashi granules", "qty": "1 jar", "category": "pantry", "cook_qty": "1/2 tsp"},
+  {"item": "Potato starch", "qty": "1 bag", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Eggs", "qty": "8", "category": "dairy"},
+  {"item": "Kewpie mayonnaise", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Honey", "qty": "1 jar", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Vegetable oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Japanese milk bread", "qty": "1 loaf", "category": "other"},
+  {"item": "Japanese hot mustard", "qty": "1 tube", "category": "pantry"}
+ ],
+ "instructions": [
+  "Stir the 1/2 tsp dashi granules into 2/3 cup hot water in a large bowl until they dissolve. Leave it for 5 minutes to cool. Hot dashi starts to cook the eggs.",
+  "Whisk the 2 tsp potato starch and the 1/2 tsp salt into the dashi until there are no lumps.",
+  "Crack in the 8 eggs and beat them with chopsticks or a fork for about 1 minute, until the color is even and you can't see any streaks of white. Cut through the eggs rather than whipping them, so they don't turn foamy.",
+  "In a small bowl, stir the 2 tbsp mayonnaise and the 2 tsp honey together.",
+  "Set a 10 inch nonstick skillet over medium-low heat. Add a little of the oil and wipe it around with a folded paper towel, so there's a thin film and no puddles. Keep the oily towel on a plate by the stove.",
+  "Pour in about 1/3 cup of the egg and tilt the pan so it covers the bottom. Cook it for about 1 minute, until the bottom has set but the top is still a little wet.",
+  "Starting from the far side, roll the egg toward you with a spatula into a loose log. Don't worry if the first roll is messy. It ends up in the middle.",
+  "Push the log back to the far side. Wipe the empty part of the pan with the oily towel.",
+  "Pour in another 1/3 cup of egg. Lift the log with the spatula so the new egg runs underneath it. When the new layer has set on the bottom, roll the log toward you again, wrapping the new layer around it.",
+  "Do the same with 2 more pours, until half of the egg is used. You'll have a thick log about 8 inches long.",
+  "Transfer the log to a cutting board. While it's warm, press the sides and top with the flat of the spatula to square it into a neat block.",
+  "Wipe the pan with more of the oil and make a second log the same way with the rest of the egg.",
+  "Lay out 4 slices of the bread. Spread the honey mayonnaise over one side of each slice.",
+  "Trim the rounded ends off each log and cut it in half crosswise. Lay the two pieces from one log side by side on a slice of bread, mayonnaise side up.",
+  "Top with a second slice, mayonnaise side down. Make the second sandwich the same way.",
+  "Set a flat plate on the sandwiches and leave it for 1 minute, so the bread and egg press together.",
+  "Cut the crusts off if you like, then cut each sandwich in half.",
+  "Serve with the hot mustard on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No Recipes (the lead) beats eggs with a lot of dashi, a little potato starch and salt, cooks it into a soft dashimaki omelette shaped to the bread, and spreads the bread with mayonnaise, honey and Japanese mustard. I Am a Food Blog seasons the eggs with mirin, sugar and light soy instead and builds the omelette in thin rolled layers, and Not Quite Nigella's version is a dashi omelette baked in a loaf tin with truffle. This one keeps the lead's dashi, starch and salt seasoning and its honey mayonnaise, but rolls the omelette in layers as I Am a Food Blog does, using about half the lead's dashi per egg so the layers hold their shape. The hot mustard goes on the side instead of in the spread to keep it mild. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Japanese) has no rolled omelette sandwich, so the lead is the closest version of this dish read; Not Quite Nigella has more ratings but is a truffle, oven-baked take.",
+ "sources": [
+  {"name": "No Recipes", "title": "Japanese Egg Sandwich (Tamagoyaki Sando)", "url": "https://norecipes.com/dashimaki-tamago-sando-japanese-egg-sandwich/", "rating": 5.0, "rating_count": 3, "read": true, "lead": true},
+  {"name": "I Am a Food Blog", "title": "Tamagoyaki Sando: Japanese Egg Omelet Sandwich", "url": "https://iamafoodblog.com/tamagoyaki-sando-japanese-egg-omelet-sandwich-recipe/", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Not Quite Nigella", "title": "Tamagoyaki Sando Truffle Egg Sandwich", "url": "https://www.notquitenigella.com/2021/08/20/tamagoyaki-sando-egg-sandwich/", "rating": 5.0, "rating_count": 12, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

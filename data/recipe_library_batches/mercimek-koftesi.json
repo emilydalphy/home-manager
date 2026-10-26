@@ -1,0 +1,114 @@
+{
+ "dish_name": "Mercimek Koftesi",
+ "cuisine": "Turkish",
+ "main_protein": "lentils",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 50,
+ "ingredients": [
+  {
+   "item": "Red lentils",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Fine bulgur",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sweet paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Romaine lettuce",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Put the 1 cup lentils in a sieve and rinse them under cold water until it runs clear.",
+  "Put the lentils in a medium pot with 2 1/2 cups water. Bring it to a boil over high, then turn it down to medium and simmer for about 15 minutes, stirring now and then, until the lentils have fallen apart into a loose purée. If the pot looks dry before then, add up to 1/2 cup hot water. There should still be a little liquid left.",
+  "Take the pot off the heat and stir in the 3/4 cup bulgur. Cover and leave it for 30 minutes, until the bulgur has soaked up the liquid and is soft.",
+  "Meanwhile, chop the onion finely. Heat the 1/4 cup olive oil in a frying pan over medium and add the onion. Cook for about 7 minutes, stirring now and then, until it's soft and see-through.",
+  "Add 2 tbsp of the tomato paste, the 1 tbsp cumin and the 1 tsp paprika. Stir for about 2 minutes, until the paste darkens and smells toasty. Take the pan off the heat.",
+  "Meanwhile, finely chop about 1 cup of the parsley leaves and slice 4 of the green onions.",
+  "Transfer the onion mixture into the lentil pot and add the parsley, green onions and 1 1/2 tsp salt. Mix it with your hands for a couple of minutes, until it holds together like a soft dough.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Wet your hands. Take a piece about the size of a walnut, squeeze it in your fist and shape it into a small oval. Do the same with the rest. That should be about 20 pieces.",
+  "Pull the lettuce leaves off the head, rinse them and pat them dry. Cut the lemon into wedges and put the red pepper flakes in a small bowl.",
+  "Serve the köfte on the lettuce leaves with the lemon wedges and the red pepper flakes on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions cook red lentils soft, soak fine bulgur in the hot lentils or water, mix in onion cooked with tomato paste and cumin, add green onions and parsley, and shape small ovals eaten in lettuce. My Cooking Journey, the lead, simmers the lentils in about 3 cups of water, stirs the bulgur in off the heat for 30 minutes and seasons the onion with cumin and 2 tsp crushed red pepper; Turkeys for Life adds paprika, dill and dried mint and serves lemon. This one follows the lead's ratios, adds sweet paprika from Turkeys for Life for colour, and moves the red pepper to a bowl on the side so the köfte stay mild. They keep in the fridge for a few days, so they pack well for lunch.",
+ "sources": [
+  {
+   "name": "My Cooking Journey",
+   "title": "Mercimek Koftesi | Red Lentil and Bulgur Koftesi | Turkish Lentil Balls",
+   "url": "https://www.mycookingjourney.com/mercimek-koftesi-turkish-red-lentil-and/",
+   "rating": 5.0,
+   "rating_count": 48,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Turkeys for Life",
+   "title": "Lentil Köfte Recipe (Turkish Mercimek Köftesi)",
+   "url": "https://www.turkeysforlife.com/2020/03/lentil-kofte-recipe-mercimek.html",
+   "rating": 4.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

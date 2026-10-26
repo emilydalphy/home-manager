@@ -1,0 +1,107 @@
+{
+ "dish_name": "Japanese Potato Salad",
+ "cuisine": "Japanese",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {
+   "item": "Russet potatoes",
+   "qty": "1.5 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Kosher salt",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Carrot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Frozen corn",
+   "qty": "1 bag",
+   "category": "frozen",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Persian cucumbers",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Sliced ham",
+   "qty": "3 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kewpie mayonnaise",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  }
+ ],
+ "instructions": [
+  "Peel the 1.5 lbs potatoes and cut them into chunks about 1 1/2 inches across, all close to the same size so they cook evenly.",
+  "Put the potatoes in a medium pot and add cold water to cover them by 1 inch. Add 2 tsp of the salt. Set the lid on slightly ajar and bring it to a boil over medium-high heat.",
+  "Take the lid off, turn the heat to medium and keep it at a gentle boil for about 15 minutes, until a skewer slides into a chunk with no push back.",
+  "Meanwhile, put the 2 eggs in a small pot, cover them with cold water by 1 inch and bring it to a boil over medium heat. Turn it down to a gentle simmer and set a timer for 11 minutes.",
+  "While the eggs cook, peel the carrot and cut a 3 inch piece off it. Quarter that piece lengthwise and slice it as thinly as you can.",
+  "When the egg timer has 5 minutes left, add the carrot slices and 1/3 cup of the corn to the egg pot.",
+  "When the timer goes, drain everything into a sieve and run cold water over it. Set the eggs in a bowl of cold water to cool.",
+  "Peel the cucumber in stripes, leaving some of the skin on, and slice it into thin rounds. Toss the slices with 1/2 tsp of the salt, rub them with your fingers and leave them for 5 minutes.",
+  "Squeeze the cucumber hard in your hands, a handful at a time, and get out as much water as you can. Any water left in them makes the salad runny.",
+  "Cut the 3 oz ham into thin strips about 1 inch long.",
+  "Drain the potatoes well. Set the empty pot back over medium heat, return the potatoes and shake the pot for 1 to 2 minutes, until the last of the water steams off and the edges look dry and floury. Take it off the heat.",
+  "Mash the potatoes lightly with a masher or fork, leaving some small chunks. Transfer them to a large bowl.",
+  "While they're still hot, sprinkle the 1 tbsp rice vinegar and the 1/4 tsp pepper over the potatoes and stir them in. Spread the potatoes out in the bowl and leave them to cool for about 20 minutes, until they're barely warm. Wait for them to cool before the mayonnaise goes in. On hot potatoes it turns oily.",
+  "Peel the eggs and chop them into small pieces.",
+  "Add the carrot, corn, cucumber, ham and egg to the potatoes. Add 6 tbsp of the mayonnaise and fold everything together until it's evenly coated.",
+  "Taste it. If it's flat, add a pinch of the remaining salt, and if you'd like it creamier, fold in the last 2 tbsp mayonnaise.",
+  "Serve it cold, or pack it into the lunch boxes. It keeps in the fridge for up to 3 days."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions boil starchy potatoes, mash them only partly so some chunks stay, and fold in salted and squeezed cucumber, carrot, ham, boiled egg and Kewpie mayonnaise once the potatoes have cooled. Just One Cookbook (the lead) seasons the hot potatoes with rice vinegar and pepper and adds corn; RecipeTin Japan adds thinly sliced salted onion and a little Dijon instead and skips the vinegar. This one follows the lead, with the carrot and corn cooked in the egg pot to save a pan, and the amounts scaled from its 6 servings up to a fuller 4 for a packed lunch.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Japanese Potato Salad",
+   "url": "https://www.justonecookbook.com/japanese-potato-salad/",
+   "rating": 4.69,
+   "rating_count": 256,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Japan",
+   "title": "Japanese Potato Salad",
+   "url": "https://japan.recipetineats.com/japanese-potato-salad/",
+   "rating": 4.86,
+   "rating_count": 14,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

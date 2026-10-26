@@ -1,0 +1,47 @@
+{
+ "dish_name": "Chicken Gyros",
+ "cuisine": "Greek",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Boneless skinless chicken thighs", "qty": "1.5 lbs", "category": "meat/seafood"},
+  {"item": "Lemons", "qty": "2", "category": "produce"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Greek yogurt", "qty": "1 tub (16 oz)", "category": "dairy", "cook_qty": "1 1/2 cups"},
+  {"item": "Red wine vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Olive oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Dried oregano", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 1/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Persian cucumbers", "qty": "4", "category": "produce"},
+  {"item": "Roma tomatoes", "qty": "3", "category": "produce"},
+  {"item": "Red onion", "qty": "1", "category": "produce"},
+  {"item": "Flat-leaf parsley", "qty": "1 bunch", "category": "produce"},
+  {"item": "Pita bread", "qty": "1 package", "category": "other", "cook_qty": "4"}
+ ],
+ "instructions": [
+  "The night before, or at least 2 hours ahead: juice 1 of the lemons into a large bowl. That should be about 3 tbsp. Mince 2 of the garlic cloves and add them to the bowl with 1/4 cup of the Greek yogurt, the 1 tbsp red wine vinegar, 1 tbsp olive oil, the 1 tbsp oregano, 3/4 tsp of the salt and the 1/4 tsp pepper. Stir it until it's smooth.",
+  "Add the 1.5 lbs chicken thighs and turn them over in the marinade until every piece is coated. Cover the bowl and put it in the fridge.",
+  "On the night, make the tzatziki first. Halve 2 of the cucumbers lengthwise, scrape out the seeds with a teaspoon, and grate them on the large holes of a box grater.",
+  "Squeeze the grated cucumber a handful at a time in a clean kitchen towel until no more water comes out. Squeeze hard, or the tzatziki will be runny.",
+  "Grate the last garlic clove into a bowl. Add the squeezed cucumber, the remaining 1 1/4 cups Greek yogurt, 1 tbsp olive oil, 1 tbsp juice from the second lemon and 1/4 tsp of the salt. Stir it together and put it in the fridge for at least 20 minutes.",
+  "Meanwhile, dice the 3 tomatoes and the other 2 cucumbers. Finely chop half the red onion and chop 1/4 cup of the parsley. Toss them together in a bowl with the last 1/4 tsp salt.",
+  "Heat a large skillet or grill pan over medium-high heat with the last 1 tbsp olive oil until it shimmers. Lift half the chicken out of the marinade, let the extra drip off, and lay it in the pan in one layer.",
+  "Leave it alone for 4 to 5 minutes, until the underside is golden with dark spots and lets go of the pan. Flip the pieces and cook the other side for 4 to 5 minutes. You're cooking it to 175°F, so if you have a thermometer, check the thickest piece. No thermometer? Cut into the thickest piece: it's done when there's no pink left and the juices run clear.",
+  "Transfer the chicken to a plate and cook the second half the same way. Throw away the leftover marinade. Cover the plate loosely with foil and let the chicken rest for 5 minutes.",
+  "While it rests, wipe out the pan and warm the 4 pitas in it over medium heat, about 30 seconds on each side, until they're soft and warm.",
+  "Slice the chicken into strips. Taste a piece. If it's flat, add a pinch more salt or a squeeze of the lemon.",
+  "Serve the chicken in the warm pitas with the tomato salad and the tzatziki."
+ ],
+ "advance_prep_notes": "Marinate the chicken at least 2 hours ahead, ideally the night before.",
+ "advance_prep_step_indices": [1, 2],
+ "method_notes": "Both versions marinate boneless thighs in Greek yogurt, lemon, garlic and dried oregano, then wrap the sliced chicken in warm pita with a cucumber tzatziki and fresh vegetables. RecipeTin Eats (the lead) adds a splash of vinegar, marinates 2 to 12 hours and cooks the thighs fast in a hot pan, with a chopped tomato, cucumber and onion salad; Kristine's Kitchen adds cumin and coriander, bakes the thighs at 425°F and uses lettuce and dill. This follows the lead at 4 servings, cooked in two batches so the chicken browns, and gives the thighs 4 to 5 minutes a side since thighs here are usually thicker than the lead's.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Greek Chicken Gyros with Tzatziki", "url": "https://www.recipetineats.com/greek-chicken-gyros-with-tzatziki/", "rating": 5.0, "rating_count": 489, "read": true, "lead": true},
+  {"name": "Kristine's Kitchen", "title": "Greek Chicken Gyros", "url": "https://kristineskitchenblog.com/greek-chicken-gyros/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

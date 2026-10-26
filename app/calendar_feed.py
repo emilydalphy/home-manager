@@ -431,12 +431,21 @@ def _occurrences(start: datetime, rule: dict, is_date: bool, zone, window_end: d
 
     if freq == "WEEKLY":
         days = rule.get("BYDAY") or [start.weekday()]
-        week0 = start - timedelta(days=start.weekday())
+        # Weeks begin on WKST (Monday unless the rule says otherwise), and
+        # with INTERVAL > 1 that decides which days share a week. Google
+        # writes WKST=SU, so "every other weekend, Sat and Sun" is the
+        # Sunday and the Saturday of ONE Sunday-start week — read as Monday
+        # weeks (as it was until 2026-10-23) it came out a week off from
+        # what Google itself shows, on exactly the custody-weekend kind of
+        # rule the planner reads to know who is around.
+        wkst = _WEEKDAYS.get(str(rule.get("WKST", "MO")).upper(), 0)
+        offsets = sorted((wd - wkst) % 7 for wd in days)
+        week0 = start - timedelta(days=(start.weekday() - wkst) % 7)
         n = 0
         while True:
             base = week0 + timedelta(weeks=n * interval)
-            for wd in days:
-                cand = base + timedelta(days=wd)
+            for off in offsets:
+                cand = base + timedelta(days=off)
                 if cand < start:
                     continue
                 if past_until(cand) or cand.date() > window_end or (count is not None and produced >= count):
@@ -529,15 +538,29 @@ def _split_components(lines: list[str]) -> tuple[dict, list[list[tuple[str, dict
 def resolve_display_zone(calendar_props: dict, event_zones: list) -> tuple[object, str]:
     """The clock event times are read in, and where it came from:
     the feed's own declared zone (Google always sets X-WR-TIMEZONE), else
-    the zone most of its timed events are written in, else the
-    HOUSEHOLD_TIMEZONE environment variable, else the server's local zone.
-    There is no per-household timezone setting yet (see the card)."""
+    the zone most of its timed events are written in, else the household's
+    own zone (households.timezone), else the HOUSEHOLD_TIMEZONE environment
+    variable, else the server's local zone.
+
+    The household's zone comes before the env var and the server because a
+    feed that names no zone at all — every time written in UTC ("Z"), the
+    way team and school apps publish — used to land on the server's clock,
+    and the server is UTC: a 6pm Toronto practice read as 22:00, outside
+    the dinner window, and the planner was told the evening was free.
+    households.timezone is the clock every screen already reads "today"
+    off (2026-10-13), so it is the right clock for "is dinner squeezed"."""
     declared = _zone(calendar_props.get("X-WR-TIMEZONE"))
     if declared is not None:
         return declared, "feed"
     named = Counter(str(z.key) for z in event_zones if isinstance(z, ZoneInfo))
     if named:
         return ZoneInfo(named.most_common(1)[0][0]), "events"
+    try:
+        # Deferred: tools/__init__ pulls this module in via week_intake.
+        from .tools.cooker import household_zone
+        return household_zone(), "household"
+    except Exception:
+        pass  # no readable household row (a bare script): the old fallbacks
     env_zone = _zone(os.environ.get("HOUSEHOLD_TIMEZONE"))
     if env_zone is not None:
         return env_zone, "env"
@@ -673,7 +696,7 @@ def parse_ics(text: str, window_start: date, window_end: date) -> dict:
                 if all_day:
                     d = max(s.date(), window_start)
                     last = min((s + duration - timedelta(days=1)).date(), window_end)
-                    while d <= last and len(out) < MAX_EVENTS_PER_WINDOW and expanded < MAX_EXPANDED_PER_FEED:
+                    while d <= last and expanded < MAX_EXPANDED_PER_FEED:
                         out.append({"date": d.isoformat(), "title": ev["summary"], "all_day": True, "start": None, "end": None})
                         d += timedelta(days=1)
                         expanded += 1
@@ -687,7 +710,7 @@ def parse_ics(text: str, window_start: date, window_end: date) -> dict:
                         last_date = b.date() - timedelta(days=1)  # ends at midnight: nothing on the next day
                     d = max(a.date(), window_start)
                     last_date = min(last_date, window_end)
-                    while d <= last_date and len(out) < MAX_EVENTS_PER_WINDOW and expanded < MAX_EXPANDED_PER_FEED:
+                    while d <= last_date and expanded < MAX_EXPANDED_PER_FEED:
                         day_start = a.strftime("%H:%M") if d == a.date() else "00:00"
                         day_end = b.strftime("%H:%M") if d == b.date() else "23:59"
                         out.append({
@@ -696,17 +719,29 @@ def parse_ics(text: str, window_start: date, window_end: date) -> dict:
                         })
                         d += timedelta(days=1)
                         expanded += 1
-                if len(out) >= MAX_EVENTS_PER_WINDOW or expanded >= MAX_EXPANDED_PER_FEED:
+                if expanded >= MAX_EXPANDED_PER_FEED:
                     break
         except (OverflowError, ValueError):
             # A date arithmetic overflow (a duration or offset past year
             # 9999) is that event's problem, not the feed's: skip it.
             skipped += 1
             continue
-        if len(out) >= MAX_EVENTS_PER_WINDOW or expanded >= MAX_EXPANDED_PER_FEED:
+        if expanded >= MAX_EXPANDED_PER_FEED:
             break
 
     out.sort(key=lambda e: (e["date"], e["start"] or "", e["title"]))
+    # MAX_EVENTS_PER_WINDOW is applied AFTER the sort, and at a day's
+    # edge. Applied during the walk (as it was until 2026-10-23) it kept
+    # whichever events the feed happened to list first: a calendar with a
+    # few daily work series ahead of a one-off "Soccer practice" filled
+    # the eight-week window with standups and dropped this Tuesday's
+    # practice altogether. Cut here, what goes is the far end of the
+    # window, and no day is left half-read — a day with only some of its
+    # events would tell the planner an evening is freer than it is.
+    if len(out) > MAX_EVENTS_PER_WINDOW:
+        first_dropped = out[MAX_EVENTS_PER_WINDOW]["date"]
+        whole_days = [e for e in out[:MAX_EVENTS_PER_WINDOW] if e["date"] < first_dropped]
+        out = whole_days or out[:MAX_EVENTS_PER_WINDOW]
     tz_name = getattr(display_tz, "key", None) or str(display_tz)
     return {
         "events": out,

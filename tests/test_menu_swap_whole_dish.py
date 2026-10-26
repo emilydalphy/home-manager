@@ -34,7 +34,7 @@ from app.tools._shared import use_household
 from test_week_seven_tiles import _extract, _extract_var
 from conftest import approving_on
 
-sop = importlib.import_module("app.tools.swap_options")
+sop = importlib.import_module("app.tools.swap_option_picks")
 
 TODAY = household_today()
 START = (TODAY - datetime.timedelta(days=1)).isoformat()

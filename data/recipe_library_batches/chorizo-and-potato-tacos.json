@@ -1,0 +1,40 @@
+{
+ "dish_name": "Chorizo and Potato Tacos",
+ "cuisine": "Mexican",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {"item": "Yukon Gold potatoes", "qty": "1.5 lbs", "category": "produce"},
+  {"item": "Salt", "qty": "1 1/4 tsp", "category": "pantry"},
+  {"item": "White onion", "qty": "1", "category": "produce"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce", "cook_qty": "1/4 cup chopped"},
+  {"item": "Jalapeño", "qty": "1", "category": "produce"},
+  {"item": "Mexican chorizo", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Vegetable oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Corn tortillas", "qty": "16", "category": "other"},
+  {"item": "Mexican crema", "qty": "1 tub", "category": "dairy"},
+  {"item": "Tomato salsa", "qty": "1 jar", "category": "pantry"}
+ ],
+ "instructions": [
+  "Peel the 1 1/2 lbs potatoes and cut them into 3/4 inch cubes. Add them to a pot with 8 cups cold water and 1 tsp of the salt.",
+  "Bring the potatoes to a boil over high heat, then turn the heat down to a steady simmer. Cook for 8 to 10 minutes, until a fork slides in but they still hold their shape. Drain them.",
+  "Meanwhile, finely chop the onion and chop 1/4 cup of the cilantro. Slice the jalapeño into thin rounds and transfer them to a small bowl for the table.",
+  "Squeeze the 1 lb chorizo out of its casings into a large cast iron skillet, off the heat. Set it over medium high and break it up with a wooden spoon as it heats. Cook, stirring now and then, for 10 to 12 minutes, until it's browned and crisp in spots.",
+  "Add the onion. If the pan looks dry, add the 1 tbsp oil. Cook, stirring, for 6 to 8 minutes, until the onion is soft and see-through.",
+  "Add the potatoes and the last 1/4 tsp salt. Cook for about 8 minutes, stirring now and then and pressing some of the potatoes with the back of the spoon, until they're hot through, a little crushed and stained red from the chorizo.",
+  "Meanwhile, warm the 16 tortillas in a dry skillet over medium heat, about 30 seconds a side, and stack them in a clean kitchen towel.",
+  "Taste the filling. If it's flat, add a pinch more salt.",
+  "Serve the filling in the warm tortillas with the crema, the cilantro, the salsa and the jalapeño on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions boil the potatoes first, brown fresh Mexican chorizo out of its casing, then fry the potatoes in the chorizo fat with onion. The lead, Roberto Santibáñez's recipe on The Splendid Table, starts the chorizo in a cold pan, softens onion and chile in its fat and mashes some of the potatoes in, served with crema, cilantro and salsa; Confessions of a Grocery Addict lifts the chorizo out, crisps the potatoes and onion on their own and finishes with lime. No version found had 20 or more ratings and RecipeTin Eats has no version, so the Splendid Table recipe leads as the first one read. This scales it from 12 to 16 tacos for a dinner for four, cubes the potatoes before boiling rather than after, and moves the lead's serrano out of the pan to a sliced jalapeño on the side.",
+ "sources": [
+  {"name": "The Splendid Table", "title": "Potato and Chorizo Tacos", "url": "https://www.splendidtable.org/story/2012/12/11/potato-and-chorizo-tacos", "rating": null, "rating_count": null, "read": true, "lead": true},
+  {"name": "Confessions of a Grocery Addict", "title": "Spicy Potato Soft Tacos with Chorizo", "url": "https://confessionsofagroceryaddict.com/sausage-potato-tacos/", "rating": 5.0, "rating_count": 8, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

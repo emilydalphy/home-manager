@@ -77,6 +77,7 @@ from datetime import date, datetime, time, timedelta
 # (_view_for_day) only hands it to weekly_plan._live_plan_covering, which
 # scopes its own query.
 from ..db import get_conn
+from . import allergen_gate as _allergen_gate
 from . import cooker as _cooker
 from . import day_meals as _day_meals
 from . import defrost as _defrost
@@ -296,12 +297,32 @@ def is_takeout_night(meal: dict) -> bool:
     return not meal.get("recipe_id") and _weekly_plan.written_in_not_a_cook(meal.get("meal")) == "takeout"
 
 
+def _with_allergy_line(reason: str, clashes: list[dict] | None) -> str:
+    """A row's quiet line (`reason`), with an allergy saved since approval
+    (allergen_gate.clashes_since_approval) ahead of the batch or reheat
+    note. On Today the screen puts a cook's "Start by" chip before the
+    whole reason (shell.js dayNodeWhyHtml), so the line reads "Start by
+    7:35 · Has peanut, …" — first in the reason, second on the row.
+    Leading the row needs shell.js; noted for Emily (review, 2026-10-24)."""
+    if not clashes:
+        return reason
+    line = _allergen_gate.since_approval_line(clashes)
+    return f"{line} · {reason}" if reason else line
+
+
 def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[dict]:
     day_str = day.isoformat()
     moves: list[dict] = []
+    # Only this day's dishes are matched: the check reads every allergy
+    # and each dish's ingredients, and Today asks about one day at a time.
+    new_allergies = _allergen_gate.clashes_since_approval({
+        "weekly_plan_id": view.get("weekly_plan_id"),
+        "meals": [m for m in (view.get("meals") or []) if m.get("date") == day_str],
+    })
     for meal in view.get("meals") or []:
         if meal.get("date") != day_str:
             continue
+        allergy = new_allergies.get(meal.get("entry_id"))
         slot = meal.get("slot") or "dinner"
         at = _slot_dt(day, slot, dinner_clock)
         done = meal.get("cooked_status") == "done"
@@ -332,7 +353,8 @@ def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[di
                 "kind": "reheat",
                 "title": meal.get("meal") or headline or "Leftovers",
                 "detail": f"{provenance}{how} · {_clock(at.time())}",
-                "reason": meal.get("reheat_note") or "",
+                "reason": _with_allergy_line(meal.get("reheat_note") or "", allergy),
+                "allergy_note": _allergen_gate.since_approval_line(allergy, sentence=True) if allergy else "",
                 "date": day_str,
                 "slot": slot,
                 "window_start": at.isoformat(),
@@ -383,7 +405,8 @@ def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[di
                 "kind": "reheat",
                 "title": meal.get("meal") or slot.capitalize(),
                 "detail": f"{prepped_line} · {_clock(at.time())}",
-                "reason": "",
+                "reason": _with_allergy_line("", allergy),
+                "allergy_note": _allergen_gate.since_approval_line(allergy, sentence=True) if allergy else "",
                 "date": day_str,
                 "slot": slot,
                 "window_start": at.isoformat(),
@@ -445,7 +468,10 @@ def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[di
             # own `reasoning` used to be the fallback and was cut on
             # 2026-09-11 (copy cleanse) — it read as the planner explaining
             # itself, not as something a person would say across the table.
-            "reason": meal.get("covers_note") or "",
+            "reason": _with_allergy_line(meal.get("covers_note") or "", allergy),
+            # Its own field too, for the morning text (digest.py), which
+            # says it on a line of its own rather than inside the reason.
+            "allergy_note": _allergen_gate.since_approval_line(allergy, sentence=True) if allergy else "",
             "date": day_str,
             "slot": slot,
             "window_start": start.isoformat(),
@@ -561,6 +587,75 @@ def _open_slot_moves(view: dict, day: date, dinner_clock: time) -> list[dict]:
     return moves
 
 
+def _missed_fridge_moves(view: dict, day: date, now: datetime) -> set[int]:
+    """
+    Fridge moves dated on an EARLIER day and never ticked, whose meal is
+    still ahead: the ids _prep_moves carries onto today as "still to do".
+
+    A fridge move is dated one or two days before its cook (defrost.
+    _move_date), and _prep_moves used to read only rows dated today — so a
+    move missed on Monday vanished on Tuesday from Now, the morning text
+    and the evening nudge, while the meat stayed in the freezer. Only Cook's
+    Tonight card, on the cook day itself, still said "— still to do"
+    (overnight hunt, 2026-10-21). The meal has to be in this view, on a
+    LATER day, and not already ticked cooked. Not on the cook day itself:
+    by then it is too late to thaw in the fridge, and Now stays quiet about
+    it (tests/test_own_freezer_portion_thaw.py) — Cook's card still says
+    "still to do" there. Only on the real today (the tomorrow look-ahead
+    must not repeat today's rows), and only pending rows ('skipped' is the
+    household's decline).
+    """
+    if day != now.date():
+        return set()
+    day_str = day.isoformat()
+    meals: dict[int, dict] = {}
+    for meal in view.get("meals") or []:
+        for i in (meal.get("entry_ids") or [meal.get("entry_id")]):
+            if i:
+                meals[i] = meal
+    carried: set[int] = set()
+    for task in view.get("prep_tasks") or []:
+        if (task.get("task_type") != "defrost" or task.get("status") != "pending"
+                or not task.get("task_date") or task["task_date"] >= day_str):
+            continue
+        meal = meals.get(task.get("meal_plan_entry_id"))
+        if meal is None or (meal.get("date") or "") <= day_str or meal.get("cooked_status") == "done":
+            continue
+        carried.add(task["id"])
+    return carried
+
+
+def _without_moot_prep(moves: list[dict], view: dict) -> list[dict]:
+    """
+    Today's moves less any fridge/prep step nobody ticked whose meal is
+    already cooked. The dinner is eaten, so "Marinate the chicken · still
+    to do" stood as Today's next-up card until midnight and kept "That's
+    today handled" and tomorrow's first move off the screen (defect hunt,
+    2026-10-22). Dropped, not shown ticked — nobody did it, and a tick
+    would have nothing behind it to flip. A step the household DID tick or
+    skip stays, as the record it is.
+
+    Applied in today_moves (the screen, and the texts that read it), NOT in
+    moves_for_day: move_credits looks the move up there at tick time, while
+    it is still pending, and a step ticked after its cook must still find
+    the move it credits.
+    """
+    cooked: set[int] = set()
+    for meal in view.get("meals") or []:
+        if meal.get("cooked_status") == "done":
+            cooked.update(i for i in (meal.get("entry_ids") or [meal.get("entry_id")]) if i)
+    if not cooked:
+        return moves
+    # A batch step rides on its FIRST cook's entry but feeds later meals
+    # ("Grill extra chicken for tomorrow's Fish Tacos too"), so tonight's
+    # tick doesn't make it moot — it stays (review, same night).
+    batch = {t.get("id") for t in view.get("prep_tasks") or []
+             if t.get("task_type") == "batch_component"}
+    return [m for m in moves
+            if not (m["kind"] in ("fridge", "prep") and not m["done"]
+                    and m.get("entry_id") in cooked and m.get("task_id") not in batch)]
+
+
 def _prep_moves(view: dict, day: date, now: datetime, dinner_clock: time) -> list[dict]:
     """
     Fridge moves (task_type='defrost') and the rest of the day's prep.
@@ -593,9 +688,10 @@ def _prep_moves(view: dict, day: date, now: datetime, dinner_clock: time) -> lis
     window_end = datetime.combine(day, time(22, 0))
     evening = datetime.combine(day, dinner_clock)
     open_from = datetime.combine(day, time(0, 0))
+    carried = _missed_fridge_moves(view, day, now)
     moves = []
     for task in view.get("prep_tasks") or []:
-        if task.get("task_date") != day_str:
+        if task.get("task_date") != day_str and task.get("id") not in carried:
             continue
         is_fridge = task.get("task_type") == "defrost"
         # A holiday's shop row (big_meal.SHOP_MARK) is a shop, not a prep:
@@ -613,7 +709,9 @@ def _prep_moves(view: dict, day: date, now: datetime, dinner_clock: time) -> lis
         # and the Today tile used to offer it — so it counts as handled,
         # not as still waiting.
         done = task.get("status") in ("done", "skipped")
-        overdue = (not done) and evening < now
+        # A move carried from an earlier day is late from the moment the
+        # day starts: its own day has already gone by.
+        overdue = (not done) and (evening < now or task.get("id") in carried)
         when = "still to do" if overdue else "by tonight"
         reason = reason or (task.get("related_meal") and f"for {task['related_meal']}") or ""
         # What it's for, first; "still to do" only once it's running late —
@@ -673,8 +771,12 @@ def _shop_stops(needed: list[dict], named: set[int] | None = None) -> list[dict]
     """
     by_store: dict[str, list[str]] = {}
     counts: dict[str, int] = {}
+    # One stop per store under the household's spelling: a line still
+    # saved as "costco" from before 2026-10-22 is part of the Costco stop
+    # (stores.store_namer), not a second one.
+    namer = _stores.store_namer()
     for row in needed:
-        store = (row.get("store") or "").strip()
+        store = namer(row.get("store"))
         if store == "Unassigned":
             store = ""
         counts[store] = counts.get(store, 0) + 1
@@ -833,8 +935,10 @@ def _standing_list_move(day: date, needed: list[dict]) -> list[dict]:
     disagreeing about what is on the list, which is its own card.
     """
     count = len(needed)
-    stops = len({(r.get("store") or "").strip() for r in needed} - {"", "Unassigned"})
     stop_rows = _shop_stops(needed)
+    # Counted off the stops themselves, so "Costco" and an old "costco"
+    # line are one stop here too (see _shop_stops).
+    stops = len([s for s in stop_rows if s["store"]])
     return [{
         "id": f"shop:{day.isoformat()}",
         "kind": "shop",
@@ -916,6 +1020,16 @@ def _shop_move(view: dict, day: date, now: datetime, dinner_clock: time) -> list
     a_cook_at_all = False
     soonest = None
     soonest_meal = None
+    # A cook of TODAY's whose time has gone by, still not started or cooked
+    # and still waiting on the list. The cook card stays on Today all
+    # evening, so the shop it is waiting on has to as well — `now <= at`
+    # alone dropped the move at 6:31 with the chili's things still unbought
+    # while "Start by 5:55" stayed (overnight, 2026-10-21). Used only when
+    # no cook still AHEAD is waiting: a 7am breakfast nobody ticked must not
+    # take the deadline from tonight's dinner. The latest one wins — at nine
+    # it is dinner's shop, not breakfast's.
+    passed = None
+    passed_meal = None
     for meal in view.get("meals") or []:
         # A cook already STARTED is out for the same reason a cooked one is:
         # it is on the stove, so whatever of its is still on the list is
@@ -930,20 +1044,28 @@ def _shop_move(view: dict, day: date, now: datetime, dinner_clock: time) -> list
             at = _slot_dt(date.fromisoformat(meal["date"]), meal.get("slot") or "dinner", dinner_clock)
         except (KeyError, ValueError):
             continue
-        if not (now <= at <= horizon):
-            continue
-        a_cook_at_all = True
         # entry_ids for a component-based plan's merged card, entry_id for
         # every other — the same reading cooker.start_cooking makes of one.
         ids = [i for i in (meal.get("entry_ids") or [meal.get("entry_id")]) if i]
+        if at < now:
+            if at.date() == now.date() and any(i in waiting for i in ids):
+                if passed is None or at > passed:
+                    passed = at
+                    passed_meal = meal
+            continue
+        if at > horizon:
+            continue
+        a_cook_at_all = True
         if not any(i in waiting for i in ids):
             continue
         if soonest is None or at < soonest:
             soonest = at
             soonest_meal = meal
-    if not a_cook_at_all:
+    if soonest is None and passed is not None:
+        soonest, soonest_meal = passed, passed_meal
+    elif not a_cook_at_all:
         return []
-    if soonest is None:
+    elif soonest is None:
         return _standing_list_move(day, needed)
 
     # The deadline is when the bags need to be back, not when the plate
@@ -1101,8 +1223,9 @@ def _stores_closed_on(shop_day: str, needed: list[dict]) -> list[str]:
     all_hours, first_store = _hours_context()
     if not all_hours:
         return []
+    namer = _stores.store_namer()  # one name per store, however a line spelled it
     names = list(dict.fromkeys(
-        (r.get("store") or "").strip() for r in needed
+        namer(r.get("store")) for r in needed
         if (r.get("store") or "").strip() not in ("", "Unassigned")
     ))
     if not names and first_store:
@@ -1391,7 +1514,8 @@ def today_moves(day: str | date | None = None, now: datetime | None = None) -> d
     # read of the rhythm and the members table however many moves it holds.
     rhythm = _household_rhythm()
     owners = _move_owner.resolve(view, rhythm)
-    moves = moves_for_day(target, now=now, view=view, owners=owners, rhythm=rhythm)
+    moves = _without_moot_prep(
+        moves_for_day(target, now=now, view=view, owners=owners, rhythm=rhythm), view)
     featured = featured_move_id(moves, now=now)
     # The day's meals, top of the screen (day_meals.for_day) — read off the
     # SAME cooker view the moves are, so Today's meals row and its Cook row
@@ -1406,8 +1530,8 @@ def today_moves(day: str | date | None = None, now: datetime | None = None) -> d
         next_day = target + timedelta(days=1)
         ahead_view = _view_for_day(view, next_day)
         ahead_owners = owners if ahead_view is view else _move_owner.resolve(ahead_view, rhythm)
-        ahead = moves_for_day(next_day, now=now, view=ahead_view,
-                              owners=ahead_owners, rhythm=rhythm)
+        ahead = _without_moot_prep(moves_for_day(next_day, now=now, view=ahead_view,
+                                                 owners=ahead_owners, rhythm=rhythm), ahead_view)
         # An open slot tomorrow is not tomorrow's first move: tomorrow's
         # open slots keep the treatment they had (the needs-you band's
         # "Tomorrow needs a dinner", Plan's own Pick) — the row is today's.

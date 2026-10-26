@@ -147,7 +147,7 @@ def test_the_prompt_states_each_count_as_a_target_not_a_ceiling():
 
 # ---------- Emily's four-day draft ----------
 
-def test_emilys_four_day_draft_lands_on_her_numbers(emilys_counts, stub_model, picker):
+def test_emilys_four_day_draft_lands_on_her_numbers(emilys_counts, stub_model, picker, snacks_as_the_model_sent_them):
     week = _monday()
     dates = tools._week_dates(week)[1:5]  # Tue–Fri
     stub_model(_days(

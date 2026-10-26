@@ -1,0 +1,48 @@
+{
+ "dish_name": "Ground Beef Stroganoff",
+ "cuisine": "American",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "Salt", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Cremini mushrooms", "qty": "8 oz", "category": "produce"},
+  {"item": "Yellow onion", "qty": "1 small", "category": "produce"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Parsley", "qty": "1 bunch", "category": "produce", "cook_qty": "2 tbsp chopped"},
+  {"item": "Olive oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Unsalted butter", "qty": "3 tbsp", "category": "dairy"},
+  {"item": "Lean ground beef", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Egg noodles", "qty": "1 bag (12 oz)", "category": "pantry"},
+  {"item": "All-purpose flour", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Worcestershire sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Dijon mustard", "qty": "1 jar", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Beef broth", "qty": "1 cup", "category": "pantry"},
+  {"item": "Sour cream", "qty": "1 tub (8 oz)", "category": "dairy", "cook_qty": "1/2 cup"}
+ ],
+ "instructions": [
+  "Fill a large pot with water, add 2 tsp of the salt and bring it to a boil over high heat for the noodles.",
+  "Meanwhile, slice the 8 oz mushrooms, chop the onion and mince the 3 garlic cloves. Chop 2 tbsp of the parsley.",
+  "Heat the 1 tbsp olive oil and 1 tbsp of the butter in a large skillet over medium high heat. Add the mushrooms and onion with 1/4 tsp salt. Cook, stirring now and then, for 7 to 10 minutes, until the liquid from the mushrooms has cooked off and they're browned at the edges. Transfer them to a bowl.",
+  "Add the 1 lb beef to the same skillet with 1/2 tsp salt and the 1/4 tsp pepper. Break it up with a spoon and cook for about 6 minutes, until there's no pink left and it's browning in places. Don't stir it constantly. Let it brown. If there's a lot of fat, spoon most of it out.",
+  "When the water boils, add the 12 oz noodles and cook them for 6 to 8 minutes, until tender.",
+  "Meanwhile, add the garlic to the beef and stir for about 30 seconds, until it smells fragrant.",
+  "Sprinkle the 2 tbsp flour over the beef and stir for about 1 minute, until you can't see any dry flour.",
+  "Add 1 tbsp of the Worcestershire sauce, 1 tbsp of the Dijon mustard and the 1 cup broth. Stir and scrape up the browned bits from the bottom of the pan. Let it bubble for about 2 minutes, until the sauce thickens.",
+  "Stir the mushrooms and onion back in. Take the skillet off the heat and stir in 1/2 cup of the sour cream until the sauce is smooth. Don't let it boil after this, or the sour cream can split.",
+  "Drain the noodles and toss them in the pot with the remaining 2 tbsp butter.",
+  "Taste the sauce. If it's flat, add a pinch more salt. Serve the stroganoff over the buttered noodles with the parsley on top."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three brown the mushrooms and onion, brown the beef, add garlic, thicken with flour, add Worcestershire and broth and finish with sour cream. Salt and Lavender (the lead) browns the mushrooms first and sets them aside, adds Dijon and stirs the sour cream in off the heat; Dinner at the Zoo adds paprika and Italian seasoning and parsley on top, and Dinners, Dishes and Desserts cooks the noodles right in the broth. This follows the lead's ratios for 1 lb of beef, served over 12 oz of buttered egg noodles with parsley as Dinner at the Zoo does.",
+ "sources": [
+  {"name": "Salt and Lavender", "title": "Ground Beef Stroganoff", "url": "https://www.saltandlavender.com/ground-beef-stroganoff/", "rating": 4.71, "rating_count": 95, "read": true, "lead": true},
+  {"name": "Dinners, Dishes and Desserts", "title": "Ground Beef Stroganoff", "url": "https://dinnersdishesanddesserts.com/one-pot-beef-stroganoff-recipe/", "rating": 4.53, "rating_count": 90, "read": true, "lead": false},
+  {"name": "Dinner at the Zoo", "title": "Ground Beef Stroganoff", "url": "https://www.dinneratthezoo.com/ground-beef-stroganoff/", "rating": 5.0, "rating_count": 10, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

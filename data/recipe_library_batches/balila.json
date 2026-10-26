@@ -1,0 +1,43 @@
+{
+ "dish_name": "Balila",
+ "cuisine": "Lebanese",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "Chickpeas", "qty": "2 cans (15 oz)", "category": "pantry"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Lemons", "qty": "1", "category": "produce"},
+  {"item": "Ground cumin", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Sweet paprika", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Extra-virgin olive oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Flat-leaf parsley", "qty": "1 bunch", "category": "produce", "cook_qty": "2 tbsp chopped"},
+  {"item": "Radishes", "qty": "1 bunch", "category": "produce"},
+  {"item": "Pita bread", "qty": "1 package", "category": "other", "cook_qty": "4"}
+ ],
+ "instructions": [
+  "Drain and rinse the chickpeas. Put them in a saucepan and cover them with about 1 inch of water. Bring it to a boil over medium high heat.",
+  "Turn the heat to medium low and simmer for 20 minutes, until the chickpeas are very soft and one squashes easily between your fingers.",
+  "Meanwhile, peel the 2 garlic cloves and chop them on a board with 1/2 tsp of the salt. Press and scrape them with the flat of the knife until they turn into a paste.",
+  "Juice the lemon. That should be about 3 tbsp.",
+  "In a serving bowl, stir together the garlic paste, the lemon juice, 1/2 tsp of the cumin and the 1/4 tsp paprika.",
+  "Pick the leaves off the parsley and chop 2 tbsp. Trim the radishes and cut them in half.",
+  "Warm a dry frying pan over medium heat. Lay in a pita and warm it for about 30 seconds. Flip it and warm the other side for 30 seconds. Do the other 3 the same way and stack them under a clean towel.",
+  "Scoop out about 1/3 cup of the chickpea cooking water, then drain the chickpeas. Add the hot chickpeas, the cooking water and the last 1/2 tsp salt to the bowl and stir. Press a few chickpeas against the side with the back of the spoon, until the liquid turns a little creamy.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Drizzle the 3 tbsp olive oil over the top and sprinkle on the last 1/2 tsp cumin and the parsley.",
+  "Serve warm with the pita and radishes."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three start from soft, hot chickpeas, keep some of their cooking water, and dress them in the bowl with olive oil and cumin. Plant Based Folk simmers canned chickpeas for 20 minutes and seasons them with cumin, sweet paprika and a little chili powder, with no garlic or lemon; Hadia's Lebanese Cuisine and The Salt and Sweet both dress them with mashed garlic and lemon, and Hadia's starts from dried chickpeas soaked overnight. This follows Plant Based Folk's method and adds the garlic and lemon the Lebanese versions use, since the dish is known for them. The chili powder is left out so it stays mild.",
+ "sources": [
+  {"name": "Plant Based Folk", "title": "Balila", "url": "https://plantbasedfolk.com/balila/", "rating": 5, "rating_count": 84, "read": true, "lead": true},
+  {"name": "Hadia's Lebanese Cuisine", "title": "Balila, Hummus Balila", "url": "https://hadiaslebanesecuisine.com/blog/balila-hummus-balila/", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "The Salt and Sweet", "title": "Lebanese Lemon Garlic Chickpeas- Msabaha", "url": "https://thesaltandsweet.com/lebanese-lemon-garlic-chickpeas-msabaha/", "rating": 5, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -6,10 +6,11 @@ from __future__ import annotations
 import json
 import logging
 import re
+import unicodedata
 from fractions import Fraction
 from urllib.parse import urlsplit
-from ..db import get_conn, write
-from ._shared import household_id
+from ..db import get_conn, name_key, write
+from ._shared import find_member_row, household_id
 from . import grocery as _grocery
 from . import household as _household
 from . import quantities as _quantities
@@ -157,7 +158,9 @@ def add_recipe(
     # the query and the INSERT stored the name as typed, so a recipe saved
     # with a stray space was invisible to it and the reported bug came
     # straight back through the other door — found by review, measured.
-    name = (name or "").strip()
+    # NFC as well: the same words pasted from a Mac arrive decomposed and
+    # would look identical on screen while comparing unequal as text.
+    name = unicodedata.normalize("NFC", (name or "").strip())
     # The planner's items can carry an explicit null for any of these
     # (2026-09-28: `"cuisine": null` hit recipes.cuisine NOT NULL and failed
     # the whole week's draft). The columns are NOT NULL DEFAULT '' — a
@@ -340,7 +343,7 @@ def existing_recipe_named(name: str, conn=None) -> dict | None:
     conn = conn or get_conn()
     try:
         row = conn.execute(
-            "SELECT id, name FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?) "
+            "SELECT id, name FROM recipes WHERE household_id = ? AND name_key(name) = name_key(?) "
             "ORDER BY id LIMIT 1",
             (household_id(), (name or "").strip()),
         ).fetchone()
@@ -442,7 +445,7 @@ def update_recipe_details(
     conn = get_conn()
     existing = conn.execute(
         "SELECT id, instructions_json, advance_prep_step_indices_json, ingredients_json, default_servings FROM recipes "
-        "WHERE household_id = ? AND LOWER(name) = LOWER(?)",
+        "WHERE household_id = ? AND name_key(name) = name_key(?)",
         (household_id(), recipe_name),
     ).fetchone()
     if not existing:
@@ -503,6 +506,30 @@ def update_recipe_details(
             # had; the old ones were settled when they were saved.
             n = len(old_ingredients)
             completed = completed[:n] + settle_cooking_quantities(completed[n:], servings_now)
+            # What the new steps add is bought for an approved week below,
+            # so it gets the gate add_recipe_for_chat gives a new recipe: an
+            # egg the household can't have is refused, not shopped for.
+            from . import allergen_gate as _allergen_gate
+            # Matched with the recipe's name (the matcher needs one) but kept
+            # to what the ADDED lines carry, so a name that already names a
+            # food doesn't lock the recipe against every edit.
+            added_text = " ".join(str(ing.get("item") or "") for ing in completed[n:]).lower()
+            clashes = [
+                c for c in _allergen_gate.hard_clashes(recipe_name, ingredients=completed[n:])
+                if c.get("source") == "check_failed"
+                or ((c.get("matched_word") or c.get("matched") or "").lower() or "\0") in added_text
+            ]
+            if clashes:
+                conn.close()
+                foods = ", ".join(w for w in dict.fromkeys(
+                    (c.get("matched_word") or c.get("matched") or "").strip() for c in clashes
+                ) if w) or "something"
+                who = next((c.get("member") for c in clashes if c.get("member")), None)
+                cannot = f"{who} can’t have" if who else "this house can’t have"
+                raise _allergen_gate._weekly_plan.SlotRefused(
+                    f"Not saved: the new steps for {recipe_name} use {foods}, which {cannot}. "
+                    "Write the steps again without it."
+                )
             fields.append("ingredients_json = ?")
             params.append(json.dumps(completed))
     if default_servings is not None:
@@ -523,11 +550,35 @@ def update_recipe_details(
 
     if fields:
         params.extend([existing["id"], household_id()])
-        conn.execute(
-            f"UPDATE recipes SET {', '.join(fields)} WHERE id = ? AND household_id = ?",
-            params,
+        # A changed list or serving count changes what an approved week
+        # buys for this dish. The steps' new eggs used to reach the recipe
+        # and never the shopping list (2026-10-24): the list is taken back
+        # off for every night still ahead and uncooked on this recipe and
+        # bought again from the row as it now stands, less what is already
+        # ticked (recipe_change._rebuy_after_edit), in the same transaction
+        # as the edit. Cooked nights, drafts and past weeks are left alone
+        # (_approved_users_of).
+        from . import recipe_change as _recipe_change   # circular at module scope
+        # Only when something the list is bought from really changed: a
+        # same-value servings call rebuilt every line under new ids, which
+        # an open Shop screen or a queued offline tick still points at.
+        reprices_the_list = any(f.startswith("ingredients_json") for f in fields) or (
+            default_servings is not None and default_servings != existing["default_servings"]
         )
-        conn.commit()
+        try:
+            users = _recipe_change._approved_users_of(conn, existing["id"]) if reprices_the_list else {}
+            conn.execute(
+                f"UPDATE recipes SET {', '.join(fields)} WHERE id = ? AND household_id = ?",
+                params,
+            )
+            if users:
+                # Less what is already in the cart or bought for those nights.
+                _recipe_change._rebuy_after_edit(conn, users)
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            conn.close()
+            raise
     conn.close()
     return get_recipe(recipe_name)
 
@@ -573,7 +624,7 @@ def fill_recipe_details(
     try:
         conn.execute("BEGIN IMMEDIATE")
         row = conn.execute(
-            "SELECT id, details_pending FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?)",
+            "SELECT id, details_pending FROM recipes WHERE household_id = ? AND name_key(name) = name_key(?)",
             (household_id(), recipe_name),
         ).fetchone()
         if not row:
@@ -620,6 +671,17 @@ def fill_recipe_details(
         raise
     finally:
         conn.close()
+    # Written AFTER its week was approved (the recipe pass failed at
+    # approval, then Cook's fill-in wrote it): approval bought nothing for
+    # it, so its ingredients go on the list now. Only on this, the one call
+    # that cleared details_pending. A failure here is logged, not raised —
+    # the recipe is saved, and losing the shopping is what this was
+    # already doing (weekly_plan.buy_for_late_written_recipe).
+    try:
+        from . import weekly_plan as _weekly_plan
+        _weekly_plan.buy_for_late_written_recipe(row["id"])
+    except Exception:
+        logger.exception("Buying for %r on an approved week after it was written failed", recipe_name)
     return get_recipe(recipe_name)
 
 
@@ -630,7 +692,7 @@ def planned_slot_for_recipe(recipe_name: str) -> str | None:
     try:
         row = conn.execute(
             "SELECT mpe.slot FROM meal_plan_entries mpe JOIN recipes r ON r.id = mpe.recipe_id "
-            "WHERE r.household_id = ? AND LOWER(r.name) = LOWER(?) ORDER BY mpe.id DESC LIMIT 1",
+            "WHERE r.household_id = ? AND name_key(r.name) = name_key(?) ORDER BY mpe.id DESC LIMIT 1",
             (household_id(), recipe_name),
         ).fetchone()
     finally:
@@ -860,11 +922,11 @@ def saved_ingredients(name: str) -> list[dict]:
     "Tropical Fruit Cup" on its name alone while its list held pineapple.
     One helper, so the three cannot drift apart again.
     """
-    wanted = (name or "").strip().lower()
+    wanted = name_key(name)
     if not wanted:
         return []
     for r in list_recipes():
-        if (r.get("name") or "").strip().lower() == wanted:
+        if name_key(r.get("name")) == wanted:
             return list(r.get("ingredients") or [])
     return []
 
@@ -876,7 +938,7 @@ def get_recipe(recipe_name: str) -> dict:
     a specific recipe in full (e.g. "show me the recipe for the chicken
     stir fry") rather than filtering list_recipes yourself.
     """
-    matches = [r for r in list_recipes() if r["name"].lower() == recipe_name.lower()]
+    matches = [r for r in list_recipes() if name_key(r["name"]) == name_key(recipe_name)]
     if not matches:
         raise ValueError(f"No recipe named '{recipe_name}'.")
     return matches[0]
@@ -991,6 +1053,22 @@ def _scaled_count_range(qty_text: str, ratio: float) -> str | None:
     return amount + (m.group("rest") or "")
 
 
+def _scaled_plain_measure(qty_text: str, ratio: float, keep_spoons: bool = False) -> str | None:
+    """A bare "amount unit" the step scaler has no word for, scaled the way
+    the parsed route scales it: "1 ½ quarts" x2 -> "3 quarts". The steps
+    leave quart/pint alone on purpose (a "6 quart pot" is a pot), but on the
+    ingredient list it is always food — and it stayed "1 ½ quarts" at every
+    size while the water beside it doubled (defect hunt, 2026-10-24). None
+    for anything with more than an amount and one unit word."""
+    ascii_text = _ascii_fractions(qty_text or "").strip()
+    if not re.fullmatch(r"(?:" + _NUM + r")\s*[a-z]+\.?", ascii_text, re.IGNORECASE):
+        return None
+    parsed = _parse_cook_qty(ascii_text)
+    if not parsed or parsed[1] not in _measured_units():
+        return None
+    return _measure_terms_qty(_scaled_measure(parsed[0], ratio, parsed[1], keep_spoons=keep_spoons))
+
+
 def _qty_words_after_amount(qty_text: str, parsed: tuple) -> str:
     """The words a qty carries after its amount and unit, as written —
     "grated" in "1/3 cup grated", "small" in "1 small". _parse_quantity
@@ -1058,11 +1136,28 @@ def scale_recipe(recipe_name: str, target_servings: int) -> dict:
             # so the list and the steps agree and nothing written is lost.
             rescaled = scale_steps([qty_text], ratio)[0] if abs(ratio - 1) > 1e-9 else qty_text
             if rescaled == qty_text and abs(ratio - 1) > 1e-9:
-                rescaled = _scaled_count_range(qty_text, ratio) or qty_text
-            scaled_ingredients.append(_with_item_label({**ing, "qty": rescaled}))
-            if rescaled == qty_text and abs(ratio - 1) > 1e-9:
-                unscaled_items.append(ing["item"])
-            continue
+                rescaled = (
+                    _scaled_count_range(qty_text, ratio)
+                    or _scaled_plain_measure(qty_text, ratio, keep_spoons)
+                    or qty_text
+                )
+            # "½" lemon, "1 ½" onions, "½ medium" (defect hunt, 2026-10-22):
+            # a COUNT written with a glyph. scale_steps only scales a bare
+            # count with a food word after it, which a qty column has not,
+            # so these stayed "½" at every size and were listed as "eyeball
+            # these" while "1/2" lime beside them scaled and the step above
+            # said "Squeeze 1 lemon". Read as "1/2" and scaled as one.
+            ascii_text = _ascii_fractions(qty_text)
+            glyph_count_left = (
+                rescaled == qty_text and abs(ratio - 1) > 1e-9 and ascii_text != qty_text
+                and not _QTY_NEEDS_TEXT_SCALING.search(ascii_text)
+            )
+            if not glyph_count_left:
+                scaled_ingredients.append(_with_item_label({**ing, "qty": rescaled}))
+                if rescaled == qty_text and abs(ratio - 1) > 1e-9:
+                    unscaled_items.append(ing["item"])
+                continue
+            qty_text = ascii_text
         parsed = _parse_cook_qty(qty_text)
         if parsed:
             amount, unit = parsed
@@ -1138,8 +1233,12 @@ _STEP_NICE_FRACTIONS = (
 
 # Measuring words a step's amount can carry, as written -> (canonical unit
 # for scale_recipe's rules, singular form, plural form). Abbreviations keep
-# their one spelling. Deliberately NOT here: pint/quart/inch (pots and
-# pieces far more often than food), "c" and "pinch"/"dash" (freeform).
+# their one spelling. Deliberately NOT here: pint/inch (pots and pieces far
+# more often than food), "c" and "pinch"/"dash" (freeform). Quart and gallon
+# ARE here since 2026-10-24 (review of overnight/kitchen-hunt-quarts: the
+# list said "3 quarts" of stock over a step still saying "1 ½ quarts"); a
+# pot's size is still left alone by the "a/an before it" rule, a vessel word
+# after it ("6 quart pot", "5 quart Dutch oven"), or a dash ("8-qt").
 _STEP_UNIT_WORDS: dict[str, tuple[str, str, str]] = {}
 for _canon, _sing, _plur in (
     ("cup", "cup", "cups"),
@@ -1162,11 +1261,15 @@ for _canon, _sing, _plur in (
     ("head", "head", "heads"),
     ("bunch", "bunch", "bunches"),
     ("handful", "handful", "handfuls"),
+    ("quart", "quart", "quarts"),
+    ("gallon", "gallon", "gallons"),
 ):
     _STEP_UNIT_WORDS[_sing] = (_canon, _sing, _plur)
     _STEP_UNIT_WORDS[_plur] = (_canon, _sing, _plur)
 for _abbr in ("tbsp", "tsp", "oz", "g", "kg", "ml", "l", "fl oz"):
     _STEP_UNIT_WORDS[_abbr] = (_abbr, _abbr, _abbr)
+for _abbr, _canon in (("qt", "quart"), ("gal", "gallon")):
+    _STEP_UNIT_WORDS[_abbr] = (_canon, _abbr, _abbr)
 
 # A measure followed by one of these sizes the container, not the food.
 _STEP_VESSEL_WORDS = {
@@ -1174,6 +1277,7 @@ _STEP_VESSEL_WORDS = {
     "bag", "bags", "box", "boxes", "bottle", "bottles", "carton", "cartons",
     "container", "containers", "tub", "tubs", "block", "blocks", "pan", "pans",
     "pot", "pots", "saucepan", "skillet", "dish", "casserole", "sheet", "tray",
+    "stockpot", "stockpots", "dutch", "slow", "crockpot", "kettle", "roaster", "bowl",
 }
 _STEP_SIZE_WORDS = ("large", "medium", "small", "whole")
 # A number after one of these is a count of pieces or portions, not an
@@ -1212,8 +1316,12 @@ _STEP_CONTAINER_PLURAL = {
     "tub": "tubs", "block": "blocks",
 }
 _STEP_CONTAINER_SINGULAR = {v: k for k, v in _STEP_CONTAINER_PLURAL.items()}
+# "2 x 400g tins" is the same shape with the size after an "x" (review of
+# overnight/kitchen-hunt, 2026-10-24: the list scaled it, the step didn't).
+# The size must be a weight or volume, so "9 x 13 inch dish" never matches.
 _STEP_COUNT_FIRST_CONTAINER = re.compile(
-    r"(?<![\w.\-–/])(?P<n>" + _STEP_NUM + r")(?P<mid>\s*\([^)]*\)\s*)(?P<word>"
+    r"(?<![\w.\-–/])(?P<n>" + _STEP_NUM + r")"
+    r"(?P<mid>\s*\([^)]*\)\s*|\s*[x×]\s*\d+(?:\.\d+)?\s*(?:g|kg|ml|l|oz|lb)\s+)(?P<word>"
     + "|".join(sorted(list(_STEP_CONTAINER_PLURAL) + list(_STEP_CONTAINER_PLURAL.values()), key=len, reverse=True))
     + r")\b",
     re.IGNORECASE,
@@ -1823,6 +1931,10 @@ COOKING_QUANTITIES_PER_4 = {
     # liquids and canned goods
     "broth": "4 cups", "chicken broth": "4 cups", "vegetable broth": "4 cups",
     "beef broth": "4 cups", "stock": "4 cups", "white wine": "1/2 cup",
+    # Their own keys, because the longest key wins and "chicken" is longer
+    # than "stock": "chicken stock" came out as "1.5 lb" (2026-10-24).
+    "chicken stock": "4 cups", "beef stock": "4 cups", "vegetable stock": "4 cups",
+    "turkey stock": "4 cups", "fish stock": "4 cups",
     "coconut milk": "1 can (14 oz)", "crushed tomatoes": "1 can (28 oz)",
     "diced tomatoes": "1 can (14 oz)", "tomato sauce": "1 can (14 oz)",
     "black beans": "1 can (15 oz)", "chickpeas": "1 can (15 oz)",
@@ -1861,8 +1973,17 @@ def _measured_units() -> set[str]:
 
 def _clean_item(item: str) -> str:
     """The ingredient name lowercased and stripped of the prep descriptor
-    the grocery layer already ignores ("Baby spinach, chopped")."""
-    return (item or "").split(",", 1)[0].strip().lower()
+    the grocery layer already ignores ("Baby spinach, chopped"), and of
+    what it is packed in: "Tuna in olive oil" is tuna, not olive oil — read
+    as the oil, the cook card showed "2 tbsp" for Salade Nicoise's two cans
+    (recipe library defect hunt, 2026-10-23)."""
+    clean = (item or "").split(",", 1)[0].strip().lower()
+    return _PACKED_IN_RE.sub("", clean).strip() or clean
+
+
+_PACKED_IN_RE = re.compile(
+    r"\s+(?:packed\s+)?in\s+(?:extra[\s-]virgin\s+)?(?:(?:olive|sunflower|vegetable|canola)\s+)?(?:oil|water|brine)$"
+)
 
 
 def _item_matches(text: str, word: str) -> bool:
@@ -2094,10 +2215,50 @@ _NUM = r"\d+(?:\.\d+)?(?:\s+\d+/\d+)?|\d+/\d+"
 _RANGE_RE = re.compile(r"^\s*(" + _NUM + r")\s*(?:-|–|—|to)\s*(?:" + _NUM + r")(\s.*)?$", re.IGNORECASE)
 
 
+# "2 (15 oz) cans", "1 (14.5-ounce) can", "2 x 400g tins": the COUNT first,
+# then the size of ONE container, then the container word — the way most
+# recipes write a canned good. quantities._parse_quantity reads none of
+# these (or reads "1 (28-ounce) can" with the size dropped), so the cook
+# card called the household's own "2 (15 oz) cans chickpeas" unmeasured
+# and put the table's "1 can (15 oz)" in its place, under a step that
+# still said "Drain 2 (15 oz) cans" (defect hunt, 2026-10-24).
+_COUNT_FIRST_SIZED_RE = re.compile(
+    r"^\s*(?P<n>" + _NUM + r")\s*"
+    r"(?:\(\s*(?P<bracket>[^)]*?)\s*\)|[x×]\s*(?P<times>\d+(?:\.\d+)?\s*-?\s*[a-z]+))"
+    r"\s*(?P<word>[a-z]+)\b",
+    re.IGNORECASE,
+)
+
+
+def _count_first_sized(ascii_text: str):
+    """(2.0, "can (15 oz)") for "2 (15 oz) cans" / "2 x 15 oz cans", the
+    shape quantities writes "2 cans (15 oz)" back as — or None when the
+    text is not a count of same-sized containers."""
+    m = _COUNT_FIRST_SIZED_RE.match(ascii_text or "")
+    if not m:
+        return None
+    word = m.group("word").lower()
+    container = _quantities._CONTAINER_UNIT_SINGULARS.get(word, word)
+    if container not in _quantities._CONTAINER_UNIT_PLURALS:
+        return None
+    size_text = re.sub(r"(?<=\d)\s*-\s*(?=[a-z])", " ", m.group("bracket") or m.group("times") or "", flags=re.I)
+    size = _quantities._parse_quantity(size_text)
+    if not size or not size[1] or size[1] not in _quantities._measure_units():
+        return None
+    count = _quantities._parse_quantity(m.group("n"))
+    if not count or count[1] or count[0] <= 0:
+        return None
+    return count[0], _quantities._sized_package_unit(container, size[0], size[1])
+
+
 def _parse_cook_qty(text: str):
-    """_quantities._parse_quantity, reading ½-style fractions as 1/2 and a
-    range by its low end ("2-3 cloves" → 2 clove)."""
+    """_quantities._parse_quantity, reading ½-style fractions as 1/2, a
+    range by its low end ("2-3 cloves" → 2 clove) and a count of sized
+    containers ("2 (15 oz) cans" → 2 can (15 oz))."""
     ascii_text = _ascii_fractions(text)
+    sized = _count_first_sized(ascii_text)
+    if sized:
+        return sized
     parsed = _quantities._parse_quantity(ascii_text)
     if parsed:
         return _measure_before_a_word(parsed)
@@ -2219,6 +2380,15 @@ def _quantity_problem(item: str, qty: str) -> str | None:
 # is a fat rather than salt. An item naming "fresh" anything is not a
 # dried spice, and _NOT_THIS_CLASS lists the vegetables that borrow a
 # class word ("sugar snap peas", "green beans").
+# The spread class's words (see its entry below). Whole words, like every
+# class word; a hyphen reads as a space ("Peanut-butter").
+_SPREAD_BUTTERS = (
+    "peanut butter", "almond butter", "cashew butter", "pecan butter", "pistachio butter",
+    "hazelnut butter", "walnut butter", "macadamia butter", "coconut butter", "nut butter",
+    "seed butter", "sunflower butter", "sesame butter", "apple butter", "pumpkin butter",
+    "cookie butter",
+)
+
 _PLAUSIBLE_PER_SERVING = (
     ("fat", ("oil", "butter", "ghee", "lard", "fat", "shortening", "margarine"),
      {"tsp": (0, 6), "g": (0, 30)}),                       # up to 2 tbsp a head
@@ -2250,6 +2420,13 @@ _PLAUSIBLE_PER_SERVING = (
         "oats", "oatmeal", "barley", "bulgur", "farro", "orzo", "polenta", "flour",
         "chickpeas", "split peas",
     ), {"tsp": (0, 96), "g": (0, 227)}),                    # up to 2 cups / 8 oz a head
+    # A nut, seed or fruit "butter" is a spread, not a cooking fat: the
+    # base of a peanut sauce is measured like a sauce, not like the butter
+    # in a pan. Judged as "butter" it was held to 2 tbsp a head, and a Thai
+    # peanut bowl's "1/3 cup" for two showed as 1 tbsp on the cook card
+    # (live report, 2026-10-25). Its own ceiling still catches a whole jar.
+    # The longer word wins, so "peanut butter" is never the fat class.
+    ("spread", _SPREAD_BUTTERS, {"tsp": (0, 12), "g": (0, 70)}),  # up to 1/4 cup / 70 g a head
 )
 
 # Names that borrow a class word and would be judged by the wrong table:
@@ -2259,8 +2436,16 @@ _NOT_THIS_CLASS = (
     "sugar snap", "green beans", "cauliflower rice", "ginger ale", "ginger beer",
     "onion rings", "garlic bread", "garlic knots", "ginger snap", "gingerbread",
     "low-fat", "low fat", "fat-free", "fat free", "nonfat", "non-fat", "full-fat", "full fat",
-    "reduced-fat", "reduced fat",
+    "reduced-fat", "reduced fat", "butter beans", "butter lettuce",
 )
+
+
+def _is_spread_butter(item: str) -> bool:
+    """A nut, seed or fruit butter — "Peanut butter", never "Butter" or
+    "Salted butter"."""
+    klass = _ingredient_class(item)
+    return bool(klass) and klass[0] == "spread"
+
 
 # Kitchen units read into the families above, for the check only — the
 # app's own unit arithmetic (quantities._UNIT_CONVERSION_GROUPS) never
@@ -2282,7 +2467,7 @@ _STICK_TBSP = 8
 def _ingredient_class(item: str) -> tuple[str, dict] | None:
     """(class name, its per-serving ranges) for an ingredient, or None when
     the table has no opinion about it."""
-    clean = _clean_item(item)
+    clean = _clean_item(item).replace("-", " ")
     if not clean:
         return None
     best: tuple[int, str, dict] | None = None
@@ -3122,6 +3307,33 @@ def validate_measured_quantities(ingredients: list[dict], field: str = "qty", se
     return {"ok": not problems, "problems": problems}
 
 
+def _old_spread_clamp(item: str, qty: str, stored: str, servings: int | None) -> bool:
+    """
+    True for a saved cook_qty that is the old fat-range correction of a
+    nut/seed/fruit butter, not an amount anyone wrote: the item is a
+    spread (_SPREAD_BUTTERS), its qty measures something, the cook_qty
+    differs from it and is exactly the table's guess for this table
+    (cooking_quantity — what plausible_cooking_quantity substituted). A
+    recipe saved at approval before 2026-10-25 carries "1 tbsp" there for a
+    "1/3 cup" of peanut butter, and the cook card read it ahead of the list.
+
+    Only where the OLD rule could have written it: the line's own qty is
+    past the fat class's range at this table. A "2 tbsp" the writer gave a
+    "1/2 cup" line for four is the writer's (review, 2026-10-25), even when
+    it happens to equal the table's guess.
+    """
+    if not _is_spread_butter(item) or not qty or stored == qty or _quantity_problem(item, qty):
+        return False
+    parsed = _parse_cook_qty(qty)
+    family = _check_family(parsed[1], "fat") if parsed else None
+    fat_ranges = next(ranges for name, _words, ranges in _PLAUSIBLE_PER_SERVING if name == "fat")
+    if not family or family[0] not in fat_ranges:
+        return False
+    if parsed[0] * family[1] / _servings_or_base(servings) <= fat_ranges[family[0]][1]:
+        return False
+    return stored == cooking_quantity(item, servings=_servings_or_base(servings), shopping_qty=qty)
+
+
 def cooking_ingredients(
     ingredients: list[dict], servings: int | None = None, instructions: list[str] | None = None,
 ) -> list[dict]:
@@ -3169,6 +3381,12 @@ def cooking_ingredients(
             written = (ing.get("qty_as_written") or "").strip()
             out.append({**row, "qty": written, "shopping_qty": qty} if written else row)
             continue
+        if stored and _old_spread_clamp(item, qty, stored, servings):
+            # The pre-save pass's guess from when a peanut butter was held
+            # to the butter range (before 2026-10-25), on a line whose own
+            # qty already measures: the recipe's amount, as the list says.
+            stored = ""
+            ing = {k: v for k, v in ing.items() if k != "cook_qty"}
         if stored and not _quantity_problem(item, stored):
             sane = plausible_cooking_quantity(item, stored, servings, shopping_qty=qty)
             out.append({**ing, "qty": sane, "shopping_qty": qty})
@@ -3277,7 +3495,7 @@ def save_cooking_quantities(recipe_name: str, cook_quantities: dict[str, str]) -
     """
     conn = get_conn()
     row = conn.execute(
-        "SELECT id, ingredients_json, default_servings FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?)",
+        "SELECT id, ingredients_json, default_servings FROM recipes WHERE household_id = ? AND name_key(name) = name_key(?)",
         (household_id(), recipe_name),
     ).fetchone()
     if not row:
@@ -3393,6 +3611,12 @@ _CHECK_MAX_COUNT = 36
 # whole stance.
 _CHECK_AMOUNT_REACH = 48
 
+# A word in an ingredient's name that says what SORT it is, not what it is:
+# "Whole chicken" was credited with the "2 whole garlic cloves" in its
+# cavity, and "Large shrimp" would be with "2 large eggs" (library audit,
+# 2026-10-25). The rest of the name still finds it.
+_CHECK_NOT_A_NAME_WORD = {"whole", "fresh", "large", "small", "medium"}
+
 _CHECK_CLAUSE_BREAK_RE = re.compile(r"[,;.:()\n]|\bthen\b|\buntil\b|\bwhile\b")
 
 # Its own pattern rather than scale_steps' _STEP_AMOUNT_RE, because the two
@@ -3400,8 +3624,14 @@ _CHECK_CLAUSE_BREAK_RE = re.compile(r"[,;.:()\n]|\bthen\b|\buntil\b|\bwhile\b")
 # ("2-3 cloves") in named groups it substitutes a rescaled number into,
 # and never looks at the word afterwards; this one wants the number and
 # the measuring word right after it, and a range would read as one amount.
+# Not a pan's size either: "a 9x13 inch baking dish and stir in the onion"
+# was 9 onions to Gigantes Plaki's 1 (library audit, 2026-10-25) — the "x"
+# read as the word after the number. The (?!\d) stops "13x9" backing off
+# to a lone "1". Only number-by-number with no weight on the second: "2 x
+# 400g cans" is two cans, and stays counted (review, same day).
 _CHECK_AMOUNT_RE = re.compile(
-    r"(?<![\w./])(\d+\s+\d+/\d+|\d+/\d+|\d+(?:\.\d+)?)\s*°?\s*([a-z]+)?"
+    r"(?<![\w./])(\d+\s+\d+/\d+|\d+/\d+|\d+(?:\.\d+)?)(?!\d)"
+    r"(?!\s*[x×]\s*\d+(?![\d.]*\s*(?:g|kg|oz|ml|l|lb|lbs)\b))\s*°?\s*([a-z]+)?"
 )
 
 # A model writes "1½ cups" as often as "1 1/2 cups", and a fraction this
@@ -3644,7 +3874,10 @@ def _amount_mismatches(ingredients: list[dict], instructions: list[str], serving
     item_words = []
     for ing in lines:
         name = (ing.get("item") or "").strip() if isinstance(ing, dict) else ""
-        item_words.append([w for w in re.findall(r"[a-z]+", _clean_item(name)) if len(w) > 2])
+        item_words.append([
+            w for w in re.findall(r"[a-z]+", _clean_item(name))
+            if len(w) > 2 and w not in _CHECK_NOT_A_NAME_WORD
+        ])
     by_index: dict[int, list[tuple[float, str | None]]] = {}
     strays: list[tuple[float, str | None]] = []
     for step in instructions or []:
@@ -3997,6 +4230,10 @@ _GENERIC_STEP_WORDS = {
     "egg whites": ("egg",),
     "corn": ("tortilla", "chip", "cornmeal", "polenta", "cornstarch"),
     "green onions": ("scallion", "spring onion"),
+    # A bottle named for its maker is the hot sauce the step pours: Buffalo
+    # Wings' "Frank's RedHot sauce" was "hot sauce isn't on the list"
+    # (library audit, 2026-10-25).
+    "hot sauce": ("redhot", "tabasco", "cholula", "valentina", "sriracha"),
 }
 
 _STEP_NUMBER_WORDS = {
@@ -4150,7 +4387,7 @@ def mark_recipe_feedback(recipe_name: str, rating: str | None = None, notes: str
     # commit at the end of the block is a no-op.
     with write() as conn:
         recipe = conn.execute(
-            "SELECT id, feedback_notes FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?) "
+            "SELECT id, feedback_notes FROM recipes WHERE household_id = ? AND name_key(name) = name_key(?) "
             "ORDER BY id LIMIT 1",
             (household_id(), recipe_name),
         ).fetchone()
@@ -4208,6 +4445,8 @@ def _maybe_auto_attribute_solo_night(recipe_id: int, recipe_name: str, rating: s
     Same trick household.py uses for the same reason.
     """
     from . import attendance as _attendance
+    from . import cooker as _cooker  # deferred for the same reason
+    from . import weekly_plan as _weekly_plan  # and again
 
     # try/finally on both connections, and the second one is why. The INSERT
     # below writes into member_recipe_feedback.rating, which carries
@@ -4224,16 +4463,41 @@ def _maybe_auto_attribute_solo_night(recipe_id: int, recipe_name: str, rating: s
     # could not see. mark_recipe_feedback's vocabulary guard closes today's
     # trigger; this is what makes the NEXT unexpected failure in here visible
     # instead of silent.
+    #
+    # A reheat is not a cook (defect hunt 2026-10-21): the dinner both ate
+    # Monday and the leftover lunch only Emily was home for are ticked
+    # together, and the lunch — newest by id — was read as the "last
+    # cooked", so "Chili wasn't a hit" became Emily's own verdict. A ticked
+    # leftover / made-ahead night (cooker._is_leftovers_night, the rule the
+    # cook counter uses) stands for the cook it eats from: its links_to is
+    # resolved within its own plan, ticked or not, and that cook's table is
+    # the one the verdict is about. It never lets the search fall back to an
+    # older cook — "Not a hit" about this week's chili is not about a solo
+    # bowl three weeks ago — and a claim that doesn't resolve teaches nobody.
     conn = get_conn()
     try:
         entry = conn.execute(
             """
-            SELECT date, slot FROM meal_plan_entries
+            SELECT id, date, slot, weekly_plan_id, derived_from_json FROM meal_plan_entries
             WHERE household_id = ? AND recipe_id = ? AND cooked_status = 'done'
             ORDER BY COALESCE(cooked_at, created_at) DESC, id DESC LIMIT 1
             """,
             (household_id(), recipe_id),
         ).fetchone()
+        if entry and _cooker._is_leftovers_night(entry["derived_from_json"]):
+            plan_rows = conn.execute(
+                "SELECT id, date, slot, weekly_plan_id, derived_from_json FROM meal_plan_entries "
+                "WHERE household_id = ? AND weekly_plan_id IS ?",
+                (household_id(), entry["weekly_plan_id"]),
+            ).fetchall()
+            links_to = str(json.loads(entry["derived_from_json"]).get("links_to") or "").strip()
+            entry = _weekly_plan._resolve_leftover_source(
+                links_to,
+                {(r["date"], r["slot"]): r for r in plan_rows},
+                {r["id"]: r for r in plan_rows},
+            )
+            if entry is not None and _cooker._is_leftovers_night(entry["derived_from_json"]):
+                entry = None  # a reheat of a reheat: no cook of its own to point at
     finally:
         conn.close()
     if not entry:
@@ -4298,7 +4562,7 @@ def attribute_recipe_feedback(
     # to leak the connection holding the write lock.
     with write() as conn:
         recipe = conn.execute(
-            "SELECT id, rating FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?)",
+            "SELECT id, rating FROM recipes WHERE household_id = ? AND name_key(name) = name_key(?)",
             (household_id(), recipe_name),
         ).fetchone()
         if not recipe:
@@ -4331,10 +4595,7 @@ def attribute_recipe_feedback(
         # adding someone is add_member's job, asked for in so many words.
         # The refusal names who IS here so the model can retry with the
         # right name, or keep a guest's opinion as a note on the recipe.
-        member = conn.execute(
-            "SELECT id FROM members WHERE household_id = ? AND LOWER(name) = LOWER(?)",
-            (household_id(), (member_name or "").strip()),
-        ).fetchone()
+        member = find_member_row(conn, member_name)
         if not member:
             names = [r["name"] for r in conn.execute(
                 "SELECT name FROM members WHERE household_id = ? ORDER BY id", (household_id(),),
@@ -4376,10 +4637,7 @@ def get_member_taste(member_name: str) -> dict:
     knowledge than actually exists yet.
     """
     conn = get_conn()
-    member = conn.execute(
-        "SELECT id FROM members WHERE household_id = ? AND LOWER(name) = LOWER(?)",
-        (household_id(), member_name),
-    ).fetchone()
+    member = find_member_row(conn, member_name)
     if not member:
         conn.close()
         raise ValueError(f"No household member named '{member_name}'.")
@@ -4415,7 +4673,7 @@ def log_recipe_note(recipe_name: str, note: str) -> dict:
     """
     conn = get_conn()
     recipe = conn.execute(
-        "SELECT id FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?) ORDER BY id LIMIT 1",
+        "SELECT id FROM recipes WHERE household_id = ? AND name_key(name) = name_key(?) ORDER BY id LIMIT 1",
         (household_id(), (recipe_name or "").strip()),
     ).fetchone()
     if not recipe:
@@ -4443,7 +4701,7 @@ def log_cooking_deviation(recipe_name: str, note: str) -> dict:
     """
     conn = get_conn()
     recipe = conn.execute(
-        "SELECT id FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?) ORDER BY id LIMIT 1",
+        "SELECT id FROM recipes WHERE household_id = ? AND name_key(name) = name_key(?) ORDER BY id LIMIT 1",
         (household_id(), (recipe_name or "").strip()),
     ).fetchone()
     if not recipe:
@@ -4470,7 +4728,7 @@ def flag_recipe_temporary(recipe_name: str, excluded: bool = True) -> dict:
     """
     conn = get_conn()
     recipe = conn.execute(
-        "SELECT id FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?) ORDER BY id LIMIT 1",
+        "SELECT id FROM recipes WHERE household_id = ? AND name_key(name) = name_key(?) ORDER BY id LIMIT 1",
         (household_id(), (recipe_name or "").strip()),
     ).fetchone()
     if not recipe:
@@ -4684,13 +4942,24 @@ class _KitchenStock:
         self._on_hand: dict[str, list[tuple[float, str | None]]] = {}
         self._unreadable: set[str] = set()
         self._claimed: dict[str, list[tuple[float, str | None]]] = {}
+        # Food past its use-by is not stock (2026-10-25): last week's beef,
+        # bought for a dinner that was skipped and dated to keep three days,
+        # took next week's beef off the list eight days later. Read on the
+        # household's clock; a row with no date is kept, as it always was,
+        # and so is anything in the FREEZER — its date is the category's
+        # fridge estimate (meat: two days), not how long frozen food keeps.
+        today = _grocery._household_today(conn=conn).isoformat()
         rows = conn.execute(
-            "SELECT item, quantity, category, location, source FROM inventory_items "
+            "SELECT item, quantity, category, location, source, expiration_date FROM inventory_items "
             "WHERE household_id = ? AND TRIM(quantity) != ''",
             (household_id(),),
         ).fetchall()
         for row in rows:
             if exclude_sources and (row["source"] or "") in exclude_sources:
+                continue
+            use_by = (row["expiration_date"] or "").strip()
+            if (use_by and use_by < today
+                    and _quantities._display_location(dict(row)).strip().lower() != "freezer"):
                 continue
             if locations is not None:
                 where = _quantities._display_location(dict(row)).strip().lower()
@@ -4727,12 +4996,31 @@ class _KitchenStock:
         What is reserved is each such meal's own ledger share
         (meal_plan_grocery_links.quantity) of a line that reached the shelf
         (inventory_added_at set), for an entry not cooked, not depleted, not
-        on a retired plan and dated today or later. A past meal nobody
-        ticked is left out on purpose: whether it was eaten is unknown, and
-        guessing "not yet" would put a line on every week's list forever.
-        `exclude_plan_id` leaves one plan's own meals out: a caller asking
-        about THAT plan (defrost's thaw question) must not have the food
-        bought for its own dinners hidden from it.
+        on a retired plan and dated today or later. `exclude_plan_id`
+        leaves one plan's own meals out: a caller asking about THAT plan
+        (defrost's thaw question) must not have the food bought for its own
+        dinners hidden from it.
+
+        A PAST MEAL IS CLAIMED TOO, AS EATEN (Loop Board, 2026-10-21): its
+        night has gone, nothing took its food off the shelf (no depletion
+        stamp — never ticked, or ticked with nothing reconciled), and the
+        household did not say "We skipped it" (skipped_at). Until then a
+        past dinner nobody ticked was left out, so last week's bought
+        tortillas and beef read as at home and this week's tacos got
+        neither. The default is "it was eaten" — Emily's open question
+        whether that is right. A moved dinner carries its ledger to its new
+        date, so it is the "still to come" case above, not this one. Only
+        while the shelf row its tick wrote (inventory_receipt_json's
+        inventory_id) still exists, and that row has not been COUNTED by the
+        household (inventory_items.counted_on: a "set", a partial "use", the
+        Kitchen stepper) on a day after the meal. A tick merges into the
+        same row, so the row alone bounds nothing — every past meal that
+        ever bought into it would keep its claim for ever, and the first
+        honest count would then have every one of them subtracted from a
+        figure that already reflects them. A count on the meal's own day
+        still claims (the dinner may not have happened yet; buying is the
+        safe side). The past branch ignores `exclude_plan_id` on purpose:
+        a past dinner of that same plan really ate its food.
         A share in a unit that will not convert makes the claim unreadable,
         and covers() then buys — the safe direction, as everywhere here.
         """
@@ -4744,9 +5032,13 @@ class _KitchenStock:
             "JOIN meal_plan_entries e ON e.id = l.meal_plan_entry_id AND e.household_id = l.household_id "
             "LEFT JOIN weekly_plans w ON w.id = e.weekly_plan_id AND w.household_id = e.household_id "
             "WHERE l.household_id = ? AND g.status = 'purchased' AND g.inventory_added_at IS NOT NULL "
-            "AND e.cooked_status = 'pending' AND e.inventory_depleted_at IS NULL AND e.date >= ? "
-            "AND COALESCE(w.status, '') != 'retired' AND COALESCE(e.weekly_plan_id, -1) != ?",
-            (household_id(), today, -1 if exclude_plan_id is None else exclude_plan_id),
+            "AND e.inventory_depleted_at IS NULL AND COALESCE(w.status, '') != 'retired' "
+            "AND ((e.cooked_status = 'pending' AND e.date >= ? AND COALESCE(e.weekly_plan_id, -1) != ?) "
+            "  OR (e.date < ? AND e.skipped_at IS NULL AND EXISTS ("
+            "        SELECT 1 FROM inventory_items i WHERE i.household_id = l.household_id "
+            "        AND i.id = json_extract(g.inventory_receipt_json, '$.inventory_id') "
+            "        AND (i.counted_on IS NULL OR e.date >= i.counted_on))))",
+            (household_id(), today, -1 if exclude_plan_id is None else exclude_plan_id, today),
         ).fetchall()
         for row in rows:
             key = (row["item"] or "").strip().lower()
@@ -4960,13 +5252,36 @@ class WeekGroceryBuffer:
             qty = _quantities._with_note(_quantities._format_quantity(rounded, unit), line["note"])
             add_result = _grocery.add_grocery_item(
                 line["item"], quantity=qty, category=line["category"], added_by="ai",
-                source_weekly_plan_id=self.weekly_plan_id, conn=self.conn,
+                source_weekly_plan_id=self.weekly_plan_id, conn=self.conn, report_previous=True,
             )
+            # A plan's share that joined a household's own line (a standing
+            # want) is restated off the ledger's rounded total once its links
+            # are in — grocery._restate_standing_want_after_add, the mirror of
+            # what every removal does to that line. Not a spice (one jar,
+            # _rack_quantity) or a store-unit line (_store_amount).
+            restate_own = (
+                add_result.get("merged") and add_result.get("standing")
+                and add_result.get("status") == "needed" and self.weekly_plan_id is not None
+                and not _grocery._store_kind(line["item"]) and not _spices.is_spice(line["item"])
+            )
+            prior_ledger = None
+            if restate_own:
+                read_conn = self.conn or get_conn()
+                try:
+                    prior_ledger = _grocery._ledger_quantities(add_result["item_id"], read_conn)
+                finally:
+                    if self.conn is None:
+                        read_conn.close()
             for entry_id, share in zip(entry_ids, shares):
                 _record_grocery_link(
                     entry_id, line["item"], add_result["item_id"],
                     _ledger_share(share, line["unit"], unit), conn=self.conn,
                     measure=line["measures"].get(entry_id),
+                )
+            if prior_ledger is not None:
+                _grocery._restate_standing_want_after_add(
+                    add_result["item_id"], add_result["previous_quantity"], prior_ledger,
+                    add_result["quantity"], conn=self.conn,
                 )
             # A counted pack that landed on a line the plan already had is
             # re-read from the whole ledger, so two passes' cartons don't
@@ -4978,23 +5293,27 @@ class WeekGroceryBuffer:
             # PLAN-owned line is re-read; a household's standing want never
             # takes a different-unit plan share in the first place
             # (_merge_target), so its own amount is never re-rounded.
-            if _grocery._store_kind(line["item"]) or _spices.is_spice(line["item"]):
+            #
+            # And so is EVERY share that merged onto a plan's line (defect
+            # hunt 2026-10-21). add_grocery_item sums this pass's ROUNDED
+            # amount onto the line's rounded amount, so one meal's 0.75
+            # onion went on as a whole one: Swap then Undo on an approved
+            # week read 21 onions over a ledger adding up to exactly 20.
+            # The ledger holds the unrounded shares, so the line is re-read
+            # and rounded once, as approval and every removal already do;
+            # a line the household edited down keeps their number
+            # (_with_household_edit, Emily 2026-10-12). Still plan-owned
+            # lines only: a merge onto a household's own line leaves it
+            # theirs (source_weekly_plan_id NULL), and the re-read skips it.
+            if (
+                add_result["merged"]
+                or _grocery._store_kind(line["item"]) or _spices.is_spice(line["item"])
+            ):
                 # Bread, berries, yogurt…: the line is written in the
                 # store's unit, read off the whole ledger once
                 # (grocery._store_amount) — merged or new alike. A spice
                 # too: its line buys one jar (grocery._rack_quantity).
                 _grocery._recompute_plan_line_from_ledger(add_result["item_id"], conn=self.conn)
-            elif add_result["merged"] and (
-                _quantities._pack_group(unit)
-                or (_quantities._measurable_unit(unit) and not add_result.get("units_reconciled", True))
-            ):
-                _grocery._recompute_plan_line_from_ledger(add_result["item_id"], conn=self.conn)
-            elif add_result["merged"]:
-                # A line the household edited down keeps their number
-                # (Emily, 2026-10-12) — see grocery._with_household_edit.
-                _grocery._recompute_plan_line_from_ledger(
-                    add_result["item_id"], conn=self.conn, only_if_edited_down=True,
-                )
         self._lines.clear()
 
 
@@ -5134,16 +5453,14 @@ def _add_recipe_ingredients_for_entries(
     ingredients land on the list identically whether it was planned
     one-off in chat or arrived with an approved week.
 
-    KNOWN LIMITATION: this runs when ingredients are ADDED to the list, so
-    it reflects attendance as it stood at approval. Changing a meal's
-    headcount after the week is approved does not re-quantify what's
-    already on the list — the line stays at the number it was bought for.
-    (The away path is different, and does reverse post-approval: an away
-    slot's ingredients are taken back off, because "nothing bought" is a
-    promise rather than an estimate.) Re-scaling an approved line means
-    reversing and re-adding a partial contribution, which is the
-    swap-a-meal machinery, not this function's. Worth doing; deliberately
-    not smuggled into this change.
+    This runs when ingredients are ADDED to the list, so it reflects
+    attendance as it stands at that moment. A headcount that changes after
+    approval (guests, one person out or back) is followed by
+    attendance.resize_for_new_headcount (2026-10-22): it runs this ingest
+    inside a savepoint only to read each meal's new share, rolls back, and
+    rewrites the existing ledger rows and lines in place — never once any
+    of the recipe-week's lines is in a cart or bought. (The away path
+    reverses on its own: "nothing bought" is a promise.)
 
     `conn` is for one caller and is not part of the assistant-facing API:
     swap_meal_in_plan takes the old meal off the plan and the list and puts

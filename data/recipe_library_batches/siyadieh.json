@@ -1,0 +1,122 @@
+{
+ "dish_name": "Siyadieh",
+ "cuisine": "Lebanese",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 50,
+ "ingredients": [
+  {
+   "item": "Basmati rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2 large",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Slivered almonds",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lebanese seven spice",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cod fillets",
+   "qty": "1 1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups rice in a strainer under cold water until the water runs clear. Leave it in the strainer to drain.",
+  "Cut the onions in half and slice them thin into half moons.",
+  "Heat 1/4 cup of the oil in a deep skillet that has a lid over medium heat. Add the 1/4 cup almonds and stir until they're golden, 2 to 3 minutes. Lift them out with a slotted spoon onto paper towels.",
+  "Add the onions to the same oil. Cook them, stirring often, until they're soft and light golden, 10 to 12 minutes. Transfer half of them to a plate.",
+  "Keep cooking the onions left in the pan, stirring, until they're deep brown, 5 to 8 minutes. Transfer them to a small bowl for the top.",
+  "Put the light golden onions back in the skillet. Add the rice, 1/2 tsp of the turmeric, 3/4 tsp of the cumin, the 3/4 tsp seven spice, 1 1/4 tsp of the salt and 1/2 tsp of the pepper. Stir for about 2 minutes, until the rice is coated and the spices smell toasty.",
+  "Pour in 2 1/4 cups water and bring it to a boil. Let it bubble until the water drops to the level of the rice, 3 to 4 minutes. Turn the heat to the lowest setting, cover and cook for 15 minutes. Take it off the heat and keep the lid on.",
+  "Meanwhile, pat the cod fillets dry and cut them into 4 pieces. On a plate, mix the 1/2 cup flour with the last 1/4 tsp turmeric, the last 3/4 tsp cumin, the last 3/4 tsp salt and the last 1/4 tsp pepper.",
+  "Press each piece of fish into the flour on both sides and shake off the extra.",
+  "Heat the rest of the oil in a large skillet over medium-high until it shimmers. Lay the fish in and leave it alone until it's golden underneath and lets go of the pan, 3 to 4 minutes. Stand back a little. It'll spatter.",
+  "Flip the fish and cook the other side for 3 to 4 minutes. Push a fork into the thickest piece: it's done when it's white all the way through and flakes apart.",
+  "Chop a small handful of the parsley.",
+  "Fluff the rice with a fork. Taste it, and if it's flat, add a pinch more salt.",
+  "Spread the rice on a platter and lay the fish on top. Scatter the deep brown onions, the almonds and the parsley over it and serve."
+ ],
+ "method_notes": "All three fry flour coated white fish and serve it on rice cooked with fried onions and warm spices, topped with toasted nuts and parsley. Simply Lebanese fries the fish first, then the nuts and onions in the same oil, sets half the onions aside to brown deeper for the top and cooks the rice with the rest in water with turmeric, cumin and seven spice; Hungry Paprikas coats the onions and fish in cornstarch and adds cardamom and ginger, and Munaty Cooking cooks the rice in stock. None had 20 or more ratings and RecipeTin Eats (the trusted cook for Lebanese) has no version, so this follows Simply Lebanese, but fries the fish in a second skillet while the rice cooks so it reaches the table hot. None of the three serves a sauce with it, so this one has none.",
+ "sources": [
+  {
+   "name": "Simply Lebanese",
+   "title": "Sayadieh (Lebanese Rice & Fish)",
+   "url": "https://www.simplyleb.com/recipe/sayadieh-lebanese-rice-fish/",
+   "rating": 4.75,
+   "rating_count": 12,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Hungry Paprikas",
+   "title": "Sayadieh (Middle Eastern Fish And Rice)",
+   "url": "https://www.hungrypaprikas.com/sayadieh",
+   "rating": 5,
+   "rating_count": 9,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Munaty Cooking",
+   "title": "Sayadieh Fish Pilaf",
+   "url": "https://www.munatycooking.com/sayyadieh/",
+   "rating": 4.67,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

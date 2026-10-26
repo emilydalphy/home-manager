@@ -1,0 +1,41 @@
+{
+ "dish_name": "Chicken Soboro Don",
+ "cuisine": "Japanese",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {"item": "Short-grain white rice", "qty": "2 cups", "category": "pantry"},
+  {"item": "Fresh ginger", "qty": "1 piece (2 inch)", "category": "produce"},
+  {"item": "Ground chicken", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Sake", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Mirin", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/4 cup + 1 tbsp"},
+  {"item": "Eggs", "qty": "6", "category": "dairy"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Frozen peas", "qty": "1 bag", "category": "frozen", "cook_qty": "1/2 cup"}
+ ],
+ "instructions": [
+  "Rinse the 2 cups rice in a strainer under cold water until the water runs mostly clear. Put it in a saucepan with 2 1/4 cups water and bring it to a boil over high heat. Turn the heat to low, cover and cook for 15 minutes, then leave it off the heat with the lid on for 10 minutes.",
+  "Meanwhile, peel and grate the ginger. That should be about 2 tsp, with its juice.",
+  "Off the heat, put the ginger, the 1 lb ground chicken, 2 tbsp sake, 2 tbsp mirin, 2 tbsp of the sugar and the 1/4 cup plus 1 tbsp soy sauce into a medium saucepan. Mix it with a fork or a bundle of chopsticks.",
+  "Turn the heat to medium-low. Stir constantly, breaking the meat into fine crumbs, for about 4 minutes, until there's no pink left.",
+  "Keep stirring for 3 to 4 minutes, until most of the liquid has cooked off and the chicken looks glossy. Keep the heat low enough that it doesn't brown. Transfer it into a bowl.",
+  "Put the 1/2 cup peas in a small saucepan, cover them with water and bring it to a boil. Cook for 2 minutes, then drain them.",
+  "Off the heat, crack the 6 eggs into a clean medium saucepan. Add the last 2 tbsp sugar and the 1/2 tsp salt and beat until the sugar dissolves.",
+  "Put the pan over medium-low heat and stir constantly, scraping the bottom and sides, for 3 to 4 minutes, until the egg forms small curds that are just set but still moist. Transfer it straight onto a plate so it stops cooking.",
+  "Divide the rice among 4 bowls or lunch boxes. Spoon the chicken over one half of each and the egg over the other half, then lay a line of peas down the middle.",
+  "Serve warm or at room temperature. To pack it for lunch, let it cool before you close the box, keep it cold with an ice pack and eat it the same day. The chicken and egg keep in the fridge for 3 days, so you can cook them ahead and pack them over fresh rice."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both simmer ground chicken with ginger, sake, soy sauce and sugar until the liquid is gone, scramble sweetened eggs into small curds in a separate pan, and lay the two side by side over rice. Just One Cookbook stirs the chicken constantly over medium-low with no oil so it stays pale and fine, adds mirin, and lines green peas down the middle for the third color; No Recipes starts it over low heat, then boils it dry over high so the chicken browns, and finishes with chopped scallion. This one follows Just One Cookbook, with a little more peas than its 2 tbsp per two bowls so the green shows in a lunch box.",
+ "sources": [
+  {"name": "Just One Cookbook", "title": "Soboro Don (Ground Chicken Bowl)", "url": "https://www.justonecookbook.com/tori-soboro-donburi/", "rating": 4.79, "rating_count": 162, "read": true, "lead": true},
+  {"name": "No Recipes", "title": "Soboro Don (Chicken Rice Bowl)", "url": "https://norecipes.com/soboro-don/", "rating": 5, "rating_count": 3, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

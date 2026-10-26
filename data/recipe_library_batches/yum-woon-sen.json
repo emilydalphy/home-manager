@@ -1,0 +1,49 @@
+{
+ "dish_name": "Yum Woon Sen",
+ "cuisine": "Thai",
+ "main_protein": "shrimp",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {"item": "Bean thread noodles", "qty": "7 oz", "category": "pantry"},
+  {"item": "Large shrimp", "qty": "3/4 lb", "category": "meat/seafood"},
+  {"item": "Limes", "qty": "3", "category": "produce"},
+  {"item": "Fish sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Brown sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Garlic", "qty": "5 cloves", "category": "produce"},
+  {"item": "Red onion", "qty": "1 small", "category": "produce"},
+  {"item": "Cherry tomatoes", "qty": "1 pint", "category": "produce"},
+  {"item": "Red bell pepper", "qty": "1", "category": "produce"},
+  {"item": "Celery", "qty": "1 bunch", "category": "produce", "cook_qty": "2 ribs"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce", "cook_qty": "1/2 cup chopped"},
+  {"item": "Roasted peanuts", "qty": "1/2 cup", "category": "pantry"},
+  {"item": "Thai chilies", "qty": "2", "category": "produce"},
+  {"item": "Vegetable oil", "qty": "1 tbsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Make the dressing in your largest bowl. Squeeze the 3 limes. That should be about 1/4 cup. Stir in the 1/4 cup fish sauce and 2 tbsp brown sugar until the sugar dissolves.",
+  "Mince the 5 garlic cloves. Stir 4 cloves' worth into the dressing and keep the last clove's worth aside for the shrimp.",
+  "Slice the red onion as thin as you can and add it to the dressing to soak while you do everything else.",
+  "Bring a kettle or a pot of water to a boil.",
+  "Meanwhile, halve the cherry tomatoes and thinly slice the red bell pepper. Thinly slice 2 celery ribs on an angle. Chop 1/2 cup of the cilantro, leaves and tender stems. Roughly crush the 1/2 cup peanuts.",
+  "Put the 7 oz noodles in a heatproof bowl and pour the boiling water over them. Soak them for about 4 minutes, until they're clear and soft.",
+  "Drain the noodles, rinse them under cold water and drain them well. Snip them a few times with kitchen scissors into roughly 3 inch lengths.",
+  "Pat the 3/4 lb shrimp dry. Heat the 1 tbsp oil in a skillet over low and add the reserved garlic. Stir it for about 1 minute, until it's pale golden and fragrant.",
+  "Turn the heat up to medium and add the shrimp in a single layer. Cook them for about 2 minutes, until they're pink underneath. Flip them and cook the other side for about 2 minutes, until they're pink all over and curled.",
+  "Transfer the shrimp and all the garlic oil to a plate and let them cool for a few minutes.",
+  "Add the noodles, shrimp and garlic oil, tomatoes, red pepper, celery and cilantro to the dressing bowl. Toss everything with tongs until the noodles are coated and the onion is spread through.",
+  "Taste it. If it's flat, add a splash more fish sauce.",
+  "Thinly slice the 2 Thai chilies into a small dish. Scatter the peanuts over the salad and serve it at room temperature or cold, with the chilies on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions soften bean thread noodles, cut them shorter, and toss them with shrimp, shallot or red onion, tomatoes, cilantro and a dressing of fish sauce, lime and palm sugar, topped with peanuts. Pups with Chopsticks soaks the noodles in boiling water, fries the shrimp in garlic oil and adds celery and red pepper; Beyond Kimchee and Takes Two Eggs poach the shrimp and add ground pork, and Beyond Kimchee pounds the chilies into the dressing. This one follows the lead with shrimp only, uses brown sugar (which the lead names as a swap for palm sugar) and regular celery, leaves out the optional dried shrimp, and puts the chilies on the side. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Thai) has no yum woon sen, so the first read version leads; it has 19 ratings.",
+ "sources": [
+  {"name": "Pups with Chopsticks", "title": "Yum Woon Sen (Thai Glass Noodle Salad)", "url": "https://pupswithchopsticks.com/yum-woon-sen-thai-glass-noodle-salad/", "rating": 5.0, "rating_count": 19, "read": true, "lead": true},
+  {"name": "Beyond Kimchee", "title": "Thai Glass Noodle Salad (Yum Woon Sen)", "url": "https://www.beyondkimchee.com/thai-glass-noodle-salad", "rating": 5.0, "rating_count": 3, "read": true, "lead": false},
+  {"name": "Takes Two Eggs", "title": "Thai Glass Noodle Salad (Yum Woon Sen)", "url": "https://takestwoeggs.com/thai-glass-noodle-salad/", "rating": 5.0, "rating_count": 1, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

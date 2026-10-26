@@ -10,6 +10,7 @@ existed when this shipped. See app/tools/first_open.py for the rule.
 """
 from __future__ import annotations
 
+import json
 import sqlite3
 from datetime import timedelta
 from pathlib import Path
@@ -22,6 +23,7 @@ from app import security, tools
 from app.db import get_conn
 from app.main import app
 from app.tools import weekly_plan as _wp
+import nodeharness
 
 REPO = Path(__file__).resolve().parent.parent
 SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
@@ -312,6 +314,98 @@ def test_preview_says_a_draft_is_a_draft(client):
     body = client.get("/api/first-open").json()
     assert body["week_state"] == "draft"
     assert [d["title"] for d in body["dinners"]] == ["Pasta"]
+
+
+def test_preview_names_next_weeks_plan_when_nothing_covers_today(client):
+    """
+    Setup's "This week or next?" answered "next" files the first week to
+    start later. The partner opening Pomona before it began was told "No
+    week planned yet. Plan one from Today." over a draft waiting on Plan
+    (defect hunt 2026-10-23). The soonest plan to start is the one named,
+    and it says it hasn't started.
+    """
+    today = _wp._household_today()
+    start = today + timedelta(days=3)
+    retired = _plan("retired", today + timedelta(days=1))
+    _dinner(retired, today + timedelta(days=1), "Old Soup")
+    plan = _plan("draft", start)
+    _dinner(plan, start, "Chili")
+    _dinner(plan, start + timedelta(days=1), "Tacos")
+    _sign_in(client)
+    body = client.get("/api/first-open").json()
+    assert body["week_state"] == "draft"
+    assert body["starts_later"] is True
+    assert [d["title"] for d in body["dinners"]] == ["Chili", "Tacos"]
+    assert body["dinners"][0]["is_tonight"] is False
+
+
+def test_preview_moves_on_from_a_week_with_no_dinners_left_to_the_next(client):
+    """
+    The last evening of an approved week with its dinners eaten read "No
+    more dinners on this week's plan — plan the next one" while the next
+    one was already approved. A plan covering today with dinners still to
+    come is never passed over for a later one.
+    """
+    today = _wp._household_today()
+    ending = _plan("approved", today - timedelta(days=6))
+    _dinner(ending, today - timedelta(days=1), "Yesterday's Soup")
+    following = _plan("approved", today + timedelta(days=1))
+    _dinner(following, today + timedelta(days=1), "Salmon")
+    _sign_in(client)
+    body = client.get("/api/first-open").json()
+    assert body["week_state"] == "approved"
+    assert body["starts_later"] is True
+    assert [d["title"] for d in body["dinners"]] == ["Salmon"]
+    assert body["dinners"][0]["is_tomorrow"] is True
+
+    _dinner(ending, today, "Pasta")
+    body = client.get("/api/first-open").json()
+    assert body["starts_later"] is False
+    assert [d["title"] for d in body["dinners"]] == ["Pasta"]
+
+
+def test_an_upcoming_plan_with_no_dinners_to_name_is_passed_over(client):
+    """
+    A later plan whose every dinner is still open (or nobody-home) named
+    with nothing under it read "No more dinners on this week's plan" beside
+    "Next week's a draft". The next plan WITH dinners is the one named; a
+    zero-day plan is no plan at all; with neither, it is "No week planned".
+    """
+    today = _wp._household_today()
+    empty = _plan("draft", today + timedelta(days=1))
+    _dinner(empty, today + timedelta(days=1), "", state="open")
+    _dinner(empty, today + timedelta(days=2), "", state="planned_empty")
+    _plan("draft", today + timedelta(days=2), days=0)
+    _sign_in(client)
+    body = client.get("/api/first-open").json()
+    assert body["week_state"] == "none" and body["dinners"] == [], body
+
+    later = _plan("approved", today + timedelta(days=8))
+    _dinner(later, today + timedelta(days=8), "Chili")
+    body = client.get("/api/first-open").json()
+    assert body["week_state"] == "approved" and body["starts_later"] is True
+    assert [d["title"] for d in body["dinners"]] == ["Chili"]
+
+
+def test_the_welcome_says_next_weeks_draft_is_next_weeks():
+    start = SHELL_JS.index("  function firstOpenDayWord(d) {")
+    end = SHELL_JS.index("  function firstOpenRowHtml(r) {", start)
+    script = SHELL_JS[start:end] + (
+        "\nvar base = {week_state: 'draft', dinners: [], list_count: 0, decisions: []};"
+        "\nfunction said(p) { return firstOpenRows(Object.assign({}, base, p)).map(function (r) { return r.body; }).join(' | '); }"
+        "\nfunction titles(p) { return firstOpenRows(Object.assign({}, base, p)).map(function (r) { return r.title; }).join(' | '); }"
+        "\nconsole.log(JSON.stringify([said({starts_later: true}), said({starts_later: false}), said({}), titles({starts_later: true})]));"
+    )
+    res = nodeharness.run_node(script, timeout=30)
+    assert res.returncode == 0, res.stderr
+    later, now, unsaid, later_titles = json.loads(res.stdout.strip().splitlines()[-1])
+    # A plan that hasn't started, with no dinners to name, is never "this
+    # week's plan" and never asks for "the next one".
+    assert "this week’s plan" not in later_titles and "Plan the next one" not in later
+    assert "No dinners on next week’s plan yet" in later_titles
+    assert "Next week’s a draft, waiting for a yes on Plan." in later
+    assert "This week’s a draft, waiting for a yes on Plan." in now
+    assert "This week’s a draft" in unsaid
 
 
 # ---------- the shell ----------

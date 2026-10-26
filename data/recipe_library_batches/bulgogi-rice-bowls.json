@@ -1,0 +1,157 @@
+{
+ "dish_name": "Bulgogi Rice Bowls",
+ "cuisine": "Korean",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Ribeye steak",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Asian pear",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 1/2 inch piece",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "6 tbsp"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bean sprouts",
+   "qty": "1 bag",
+   "category": "produce",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Red cabbage",
+   "qty": "1 small head",
+   "category": "produce",
+   "cook_qty": "1 1/2 cups shredded"
+  },
+  {
+   "item": "Zucchini",
+   "qty": "2 small",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "4"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the ribeye in the freezer for 20 minutes. Firm beef is much easier to slice thin.",
+  "Meanwhile, peel the Asian pear and grate half of it into a large bowl. Peel one onion, cut it in half, and grate one half into the bowl. Grate in the ginger and the 3 garlic cloves.",
+  "Add 6 tbsp soy sauce, 1/4 cup brown sugar, 1 1/2 tbsp mirin and the 1 tbsp toasted sesame oil to the bowl. Whisk until the sugar dissolves.",
+  "Slice the ribeye as thin as you can across the grain, about 1/8 inch. Add it to the marinade and toss until every slice is coated. Leave it on the counter for 25 minutes while you do the rest.",
+  "Bring a large pot of water to a boil. Add the 2 cups of jasmine rice and boil for 10 to 12 minutes, stirring now and then, until a grain is tender when you bite it.",
+  "Meanwhile, slice the other onion half and the second onion into thin half moons. Shred about a quarter of the cabbage. That should be about 1 1/2 cups.",
+  "Trim the zucchini and run a vegetable peeler down them to make long ribbons. Thinly slice 4 scallions.",
+  "When the rice is tender, add 1 1/2 cups of the bean sprouts to the pot for 30 seconds. Drain the rice and sprouts in a sieve and spread them on a tray to cool.",
+  "Heat 1 tbsp vegetable oil in a wok or large skillet over medium high heat. Add the sliced onions and cook, stirring, for 2 to 3 minutes, until they're soft and starting to brown at the edges. Transfer them to a plate.",
+  "Add 1 tbsp vegetable oil and turn the heat to high. Lift half the beef out of the marinade and spread it in one layer. Leave it alone for 1 minute, until it's browned underneath, then stir and cook for 1 to 2 minutes, until there's no pink left. Transfer it to the plate with the onions.",
+  "Add the last 1 tbsp vegetable oil and cook the rest of the beef the same way.",
+  "Return all the beef and onions to the pan and pour in the marinade left in the bowl. Let it bubble, stirring, for 2 to 3 minutes, until the liquid is gone and the beef looks glossy.",
+  "Taste a piece. If it's flat, add a splash of soy sauce.",
+  "Divide the rice and sprouts among 4 lunch containers. Top with the beef and onions, and lay the zucchini ribbons and cabbage alongside.",
+  "Scatter the scallions and the 2 tbsp sesame seeds over the top.",
+  "Let the bowls cool, then put the lids on and keep them in the fridge for up to 3 days. Eat them cold or warmed through."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All the versions marinate thin ribeye or sirloin in soy, brown sugar, garlic, ginger and a grated pear, sear it fast over high heat and serve it on rice. Tasting Table adds mirin and onion to the marinade, marinates for only 25 minutes, and serves the beef with sauteed onion and raw red cabbage, zucchini and bean sprouts; The Woks of Life and Baking by Yuka marinate an hour to overnight, and RecipeTin Eats uses ground beef. This follows Tasting Table's marinade scaled to 1.5 lbs for four lunches, leaves out its 1/4 tsp chile flakes to keep it mild, and drops the sprouts into the rice pot for 30 seconds so nothing raw sits in a packed lunch.",
+ "sources": [
+  {
+   "name": "Tasting Table",
+   "title": "Beef Bulgogi Rice Bowl",
+   "url": "https://www.tastingtable.com/1867908/beef-bulgogi-rice-bowl-recipe/",
+   "rating": 5.0,
+   "rating_count": 26,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "Korean Beef Bulgogi Rice Bowls (the easy way)",
+   "url": "https://www.recipetineats.com/korean-beef-bulgogi-rice-bowls-the-easy-way/",
+   "rating": 4.92,
+   "rating_count": 75,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "The Woks of Life",
+   "title": "Beef Bulgogi Bowls",
+   "url": "https://thewoksoflife.com/bulgogi-bowls/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Baking by Yuka",
+   "title": "Bulgogi Rice Bowls",
+   "url": "https://bakingbyyuka.substack.com/p/bulgogi-rice-bowls",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

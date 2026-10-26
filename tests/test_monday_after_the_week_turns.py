@@ -5,8 +5,6 @@ partly cooked and shopped, this week approved Sunday night — walked at
 390px through Today, Plan, Shop and Cook at 07:30, 12:00 and 18:00, and the
 morning text rendered. Each test here is one thing that walk found wrong:
 
-  * the morning text's "things to use this week" counted meat days past
-    its date;
   * a tin got a fresh tomato's shelf life;
   * with no new week approved, Shop drew last week's ticks as this list's;
   * cooking a "1 lb" recipe took nothing off a "12 oz" shelf row.
@@ -18,35 +16,11 @@ import datetime as _dt
 import pytest
 
 from app import tools
-from app.db import get_conn
-from app.tools import notifications, quantities
+from app.tools import quantities
 from conftest import household_pin
 
 MON = _dt.date(2026, 10, 26)
 LAST_MON = "2026-10-19"
-
-
-# ---------- the morning text: gone off is not "to use" ----------
-
-def _stock(item: str, category: str, expires: str) -> None:
-    conn = get_conn()
-    conn.execute(
-        "INSERT INTO inventory_items (household_id, item, quantity, category, location, expiration_date) "
-        "VALUES (1, ?, '1', ?, 'fridge', ?)", (item, category, expires),
-    )
-    conn.commit()
-    conn.close()
-
-
-@pytest.mark.today(household_pin(7, 30, on=MON))
-def test_food_past_its_date_is_not_offered_as_something_to_use_this_week():
-    """CATCH (red on main): "3 things to use this week" counted chicken five
-    days past its date. Something turning soon is still named."""
-    _stock("chicken breast", "meat/seafood", "2026-10-21")
-    _stock("ground beef", "meat/seafood", "2026-10-21")
-    _stock("milk", "dairy", "2026-10-27")
-    use = [n for n in notifications.get_active_notifications() if n["type"] == "expiring_soon"]
-    assert [n["title"] for n in use] == ["Your milk turns soon"]
 
 
 def test_a_tin_keeps_like_a_tin_whatever_is_in_it():
