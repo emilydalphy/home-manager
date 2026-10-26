@@ -42,6 +42,7 @@ from .db import get_conn, init_db
 from .agent import run_agent_turn, trim_conversation, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo, scan_pantry_photo, scan_grocery_list_image, AssistantUnavailableError
 from . import tools
 from .tools import household as _household_tools
+from .tools import _shared as _tools_shared
 from .tools import feedback as _feedback
 from .tools import draft_flags as _draft_flags
 from .tools import meal_move as _meal_move
@@ -8052,7 +8053,7 @@ def member_share_page(token: str):
 # ---------- Sign-in (see app/security.py for why this exists) ----------
 
 
-def _render_login(next_path: str, error: str = "") -> HTMLResponse:
+def _render_login(next_path: str, error: str = "", status_code: int | None = None) -> HTMLResponse:
     html = open(os.path.join(static_dir, "login.html"), encoding="utf-8").read()
     # The template carries a placeholder rather than building the markup in
     # Python, so the page stays editable as a normal static file.
@@ -8063,7 +8064,12 @@ def _render_login(next_path: str, error: str = "") -> HTMLResponse:
     # quote, and /login?next=/"><script>… ran its script on the sign-in
     # page, where the passphrase and the email code are typed.
     html = html.replace("__NEXT__", html_escape(security.sanitize_next(next_path), quote=True))
-    return HTMLResponse(html, status_code=401 if error else 200)
+    return HTMLResponse(html, status_code=status_code or (401 if error else 200))
+
+
+# What the passphrase form says once the "login" bucket is full — the email
+# steps' own line for a 429 (static/login.html, failureLine), word for word.
+LOGIN_TOO_MANY_LINE = "That\u2019s a lot of tries. Wait a few minutes, then try again."
 
 
 def _is_https(request: Request) -> bool:
@@ -8102,7 +8108,17 @@ def _household_for_password(password: str) -> int | None:
 
 @app.post("/login")
 def login_submit(request: Request, password: str = Form(""), next: str = Form("/")):
-    _enforce_rate_limit(request, "login")
+    try:
+        _enforce_rate_limit(request, "login")
+    except HTTPException as e:
+        if e.status_code != 429:
+            raise
+        # The passphrase form is a plain form post, so the browser shows
+        # whatever comes back as the page: the ninth try in five minutes
+        # was a bare JSON blob with no way back to the form (defect hunt,
+        # 2026-10-21) — in the iPhone app's web view, a dead end. The
+        # sign-in page again, with the refusal in its banner and next kept.
+        return _render_login(next, LOGIN_TOO_MANY_LINE, status_code=429)
     household_id = _household_for_password(password)
     if household_id is None:
         # Deliberately does not say whether the passphrase was wrong or
@@ -9569,7 +9585,10 @@ def _leave_state() -> dict:
     you = tools.current_member()
     protected = household_deletion.is_protected(household)
     return {
-        "household_name": row["name"] if row else "",
+        # Lowercase for a household with no name of its own, so the dialog
+        # reads "Delete your household?" / "Remove yourself from your
+        # household?" — never "Your household" mid-sentence.
+        "household_name": _tools_shared.household_display_name(row["name"] if row else "") or "your household",
         "protected": protected,
         # Any adult may delete the household (Emily's default, 2026-09-27).
         # A house with adults but nobody picked on this device has to say

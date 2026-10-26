@@ -6,7 +6,7 @@ from __future__ import annotations
 import json
 import secrets
 from ..db import get_conn
-from ._shared import household_id, use_household, _absolute_url
+from ._shared import household_display_name, household_id, use_household, _absolute_url
 from . import cooker as _cooker
 from . import household as _household
 from . import weekly_plan as _weekly_plan
@@ -103,7 +103,9 @@ def get_shared_weekly_plan(token: str) -> dict | None:
     shared["menu"] = [
         {key: day.get(key) for key in _SHARED_MENU_DAY_KEYS} for day in plan.get("menu") or []
     ]
-    shared["household_name"] = household["name"] if household else ""
+    # "" for an email household's placeholder: share.html then keeps its
+    # own "This week's meals" rather than "Your household's meals".
+    shared["household_name"] = household_display_name(household["name"] if household else "")
     return shared
 
 
