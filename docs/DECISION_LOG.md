@@ -17,8 +17,9 @@ why*, not duplicating the diff.
   `calls-1026/grocery`; tests `tests/test_calls_1026_grocery.py`, plus edits in
   `test_staples.py`, `test_batch_buys_only_the_difference.py`,
   `test_own_line_week_ends.py`).
-  - Remembrance Day, Civic Holiday, Easter Monday and Good Friday shut no store
-    saved as "Closed on holidays" (`holidays._SHOPS_OPEN_ON`).
+  - Remembrance Day, Civic Holiday and Easter Monday shut no store saved as
+    "Closed on holidays" (`holidays._SHOPS_OPEN_ON`). Good Friday stays closed:
+    it is a legal retail holiday under Ontario's Retail Business Holidays Act.
   - Diwali, Eid (all spellings), Hanukkah/Chanukah and Lunar/Chinese New Year
     shut no store either.
   - Old grocery lines whose store is a usual store spelled differently

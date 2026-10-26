@@ -1,7 +1,7 @@
 """
 Emily's answers to the small grocery calls, 2026-10-26 ("go with your picks").
 
-- Remembrance Day, Civic Holiday, Easter Monday, Good Friday, Diwali, Eid,
+- Remembrance Day, Civic Holiday, Easter Monday, Diwali, Eid,
   Hanukkah and Lunar New Year no longer shut a store saved as "Closed on
   holidays" (holidays._SHOPS_OPEN_ON).
 - Old grocery lines spelled "costco" are rewritten to the household's own
@@ -26,12 +26,14 @@ from conftest import approving_on, household_today, on_the_weeks_monday
 # ---------- 3 + 4: holidays most Ontario grocers open on ----------
 
 def test_civic_and_religious_holidays_shut_no_shop():
-    for name in ("Remembrance Day", "Civic Holiday", "Easter Monday", "Good Friday",
+    for name in ("Remembrance Day", "Civic Holiday", "Easter Monday",
                  "Diwali", "Eid", "Eid al-Fitr", "Eid al-Adha", "Hanukkah", "Chanukah",
                  "Lunar New Year", "Chinese New Year"):
         assert not _holidays.shops_close_for(name), name
     # Real days off still close a store that closes on holidays.
-    for name in ("Christmas Day", "Thanksgiving", "Canada Day", "Labour Day", "Family Day"):
+    # Good Friday is a legal retail holiday in Ontario: it still closes one.
+    for name in ("Christmas Day", "Thanksgiving", "Canada Day", "Labour Day", "Family Day",
+                 "Good Friday"):
         assert _holidays.shops_close_for(name), name
 
 
@@ -46,6 +48,11 @@ def test_a_store_closed_on_holidays_is_open_on_remembrance_day():
     civic = datetime.date(2026, 8, 3)
     assert _stores.open_window("Farm Boy", civic)["opens"] == datetime.datetime.combine(civic, datetime.time(8, 0))
     assert _stores.open_window("Farm Boy", datetime.date(2026, 12, 25)) == {"closed": True, "holiday": True}
+    good_friday = datetime.date(2027, 3, 26)
+    assert _stores.open_window("Farm Boy", good_friday) == {"closed": True, "holiday": True}
+    easter_monday = datetime.date(2027, 3, 29)
+    assert _stores.open_window("Farm Boy", easter_monday)["opens"] == datetime.datetime.combine(
+        easter_monday, datetime.time(8, 0))
 
 
 # ---------- 5: old "costco" lines take the household's spelling ----------

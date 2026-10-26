@@ -260,8 +260,10 @@ _SHOPS_OPEN_ON = frozenset(_normalise_title(n) for n in (
     "st. patrick's day", "st patrick's day", "st patricks day", "saint patrick's day",
     "christmas eve", "new year's eve", "new years eve",
     # Emily 2026-10-26: most Ontario grocers open on these, so a store
-    # saved as "Closed on holidays" stays open on them.
-    "remembrance day", "civic holiday", "easter monday", "good friday",
+    # saved as "Closed on holidays" stays open on them. Good Friday is NOT
+    # here: it is a legal retail holiday under Ontario's Retail Business
+    # Holidays Act, so a store that closes on holidays closes on it.
+    "remembrance day", "civic holiday", "easter monday",
     "diwali", "eid", "eid al-fitr", "eid ul-fitr", "eid al-adha", "eid ul-adha",
     "hanukkah", "chanukah", "lunar new year", "chinese new year",
 ))
