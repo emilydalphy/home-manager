@@ -686,6 +686,17 @@ why*, not duplicating the diff.
   (the holiday "out" order); the bare primitive is unchanged because
   attendance's own sync calls it.
 
+- **First week: the reveal's toast keeps its count; a dish written after
+  approval is bought** (2026-10-24, defect hunt; branch
+  `overnight/hunt-onboard-approve-1024`; tests
+  `tests/test_reveal_handoff_keeps_count.py`,
+  `tests/test_late_written_recipe_is_bought.py`). Plan's `buildWeekPanel`
+  scrubbed the URL before reading `?added=`, so every first week said
+  "Week approved." with no count; it reads `added` first now. And a recipe
+  still pending at approval (writer down) bought nothing, and stayed off the
+  list when Cook's fill-in wrote it; `fill_recipe_details` now buys that
+  recipe's meals on approved weeks, today on, once
+  (`weekly_plan.buy_for_late_written_recipe`).
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

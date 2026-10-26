@@ -15604,6 +15604,11 @@
     // is nothing to ask. Read up here because it also decides the toast
     // below: an approved week is past "before you approve it".
     var afterApprove = window.location.search.indexOf('after=approve') !== -1;
+    // The reveal's count (`added`, the approve answer's groceries_added),
+    // read NOW: the replaceState below scrubs the URL before the toast is
+    // shown, and reading it there said "Week approved." with the count
+    // gone on every first week (defect hunt, 2026-10-24).
+    var approvedAdded = new URLSearchParams(window.location.search).get('added');
 
     await loadWeekMenu(panel);
 
@@ -15639,7 +15644,7 @@
       // step first (2b = A, 2026-10-12): the reveal's button says
       // "Approve the week", and the question waits on Plan's freezer row.
       goGroceryList();
-      showToast(weekApprovedLine(new URLSearchParams(window.location.search).get('added')));
+      showToast(weekApprovedLine(approvedAdded));
     }
     // The first-open tour (Emily, 2026-10-18): right after "Here's your
     // week." on the household's first draft. Not on the approve hand-off —
