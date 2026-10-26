@@ -852,6 +852,10 @@ def edit_preference(field: str, value) -> dict:
             )
         return {"dislikes": value}
     if field == "usual_stores":
+        # One spelling per store, the first given ("Costco" and "costco "
+        # are one shop — stores.store_key), tidied of stray spaces.
+        from . import stores as _stores
+        value = _stores.one_spelling_each(value)
         with write() as conn:
             before = conn.execute(
                 "SELECT usual_stores_json, store_typical_items_json, store_hours_json FROM meal_preferences WHERE household_id = ?",
@@ -878,7 +882,7 @@ def edit_preference(field: str, value) -> dict:
             # doesn't require the store to be a usual store first, so a list
             # taught in chat for somewhere that was never picked here is not
             # this write's to throw away.
-            kept = {str(s).strip().lower() for s in (value or [])}
+            kept = {_stores.store_key(s) for s in (value or [])}
             # _as_str_list, not a raw json.loads: "before" can still be a
             # legacy bad row (a bare string, written before edit_preference's
             # own write-side coercion existed) — without this guard, iterating
@@ -886,11 +890,13 @@ def edit_preference(field: str, value) -> dict:
             # letters that never matches a real store name, so the pruning
             # below silently no-ops instead of dropping the stale
             # store_typical_items entry. Caught adversarially, 2026-09-13.
-            was = {str(s).strip().lower() for s in _as_str_list(json.loads(before["usual_stores_json"]))} if before else set()
+            was = {_stores.store_key(s) for s in _as_str_list(json.loads(before["usual_stores_json"]))} if before else set()
             dropped = was - kept
             if dropped and before:
                 store_items = json.loads(before["store_typical_items_json"])
-                pruned = {k: v for k, v in store_items.items() if k.strip().lower() not in dropped}
+                # store_key throughout, as `value` was tidied by it: "Farm  Boy" saved
+                # with two spaces is the kept "Farm Boy", not a dropped store.
+                pruned = {k: v for k, v in store_items.items() if _stores.store_key(k) not in dropped}
                 if pruned != store_items:
                     conn.execute(
                         "UPDATE meal_preferences SET store_typical_items_json = ? WHERE household_id = ?",
@@ -898,7 +904,7 @@ def edit_preference(field: str, value) -> dict:
                     )
                 # The dropped store's hours with it (see delete_preference).
                 store_hours = _store_hours_payload(before)
-                kept_hours = {k: v for k, v in store_hours.items() if k.strip().lower() not in dropped}
+                kept_hours = {k: v for k, v in store_hours.items() if _stores.store_key(k) not in dropped}
                 if kept_hours != store_hours:
                     conn.execute(
                         "UPDATE meal_preferences SET store_hours_json = ? WHERE household_id = ?",
