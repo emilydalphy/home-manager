@@ -946,6 +946,8 @@ def undo_meal_move(weekly_plan_id: int, move_id: str) -> dict:
                 continue
             if token.get("to") != r["date"]:
                 raise ValueError("That meal has moved again since, so there’s nothing to put back.")
+            if _weekly_plan.moved_dish_changed(r, token):
+                raise ValueError("That meal has changed since, so there’s nothing to put back.")
             begun = _weekly_plan.cook_begun(r)
             if begun == "cooked":
                 raise ValueError("That meal has been cooked since, so it stays where it is.")
