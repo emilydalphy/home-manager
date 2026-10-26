@@ -1227,7 +1227,11 @@ class InventoryUpdateRequest(BaseModel):
     item: str
     action: str = "set"  # add | use | remove | set
     quantity: str = ""
-    category: str = "other"
+    # None, not "other": the Kitchen form sends no category, and an "other"
+    # default re-filed an existing row's dairy/meat under Other on every add
+    # (defect hunt, 2026-10-25). A new row with none is read from its name
+    # (tools.inventory._new_row_category).
+    category: str | None = None
     expiration_date: str | None = None
     location: str | None = None  # fridge | freezer | pantry — falls back to a category-based guess if unset
 
@@ -6231,6 +6235,10 @@ def set_inventory_location_view(item_id: int, req: InventoryLocationRequest):
     """Move an inventory item to a different storage location — the item detail sheet's location picker (design_handoff_home_manager §6)."""
     try:
         result = tools.set_inventory_location(item_id, req.location)
+    except tools.InvalidInventoryLocation as e:
+        # Before the 404 below: it IS a ValueError, and a shelf that isn't
+        # one is a bad request, not a missing item.
+        raise HTTPException(status_code=400, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:

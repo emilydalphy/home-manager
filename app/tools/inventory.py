@@ -34,21 +34,49 @@ def _today() -> date:
 
 
 _LEADING_NUM_RE = re.compile(r"^\s*(\d+\s+\d+/\d+|\d+/\d+|[\d.]+)\s*(.*)$")
+# "½ cup", "1½ cups", "1 ½ cups" — a glyph is not a \d, so _LEADING_NUM_RE
+# alone read "½ cup" as no number at all and "1½ cups" as "1".
+_FRACTION_GLYPHS = {"¼": 0.25, "½": 0.5, "¾": 0.75, "⅓": 1 / 3, "⅔": 2 / 3, "⅛": 0.125}
+_LEADING_GLYPH_RE = re.compile(r"^(\d+)?\s*([¼½¾⅓⅔⅛])\s*(.*)$")
+# "1,5 kg" — a decimal comma, which _LEADING_NUM_RE read as "1".
+_LEADING_COMMA_DECIMAL_RE = re.compile(r"^(\d+),(\d+)(?![\d/])\s*(.*)$")
 
 
 def _step_quantity_text(quantity: str, delta: float) -> str:
     """
     Nudge a freeform inventory quantity string by delta, e.g. "3 gal" -1 ->
     "2 gal". If there's no leading number to step (a bare descriptor like
-    "some" or "a bag"), a '+' tap starts a count at 1 and keeps the
-    descriptor as a suffix ("a bag" -> "1 a bag" is odd but rare — most
-    inventory rows already carry a numeric quantity from the grocery
+    "some" or "a bag", or nothing at all), a '+' tap starts a count at 1 and
+    keeps the descriptor as a suffix ("a bag" -> "1 a bag" is odd but rare —
+    most inventory rows already carry a numeric quantity from the grocery
     checkoff or chat capture that created them); a '-' tap on a
     non-numeric quantity is a no-op. Floors at 0, never goes negative.
+
+    A blank quantity is the common case of that, not a rare one: the
+    Kitchen form's amount box is optional. Its "+" answered 500 until
+    2026-10-25 — `parsed` was only assigned on the numeric path and read on
+    both. A fraction glyph ("½ cup", "1½ cups") and a decimal comma
+    ("1,5 kg") step as the amounts they are and keep their own writing.
     """
     quantity = (quantity or "").strip()
-    m = _LEADING_NUM_RE.match(quantity)
-    if m and m.group(1):
+    parsed = None
+    comma = False
+    glyph = _LEADING_GLYPH_RE.match(quantity)
+    comma_match = None if glyph else _LEADING_COMMA_DECIMAL_RE.match(quantity)
+    m = None if (glyph or comma_match) else _LEADING_NUM_RE.match(quantity)
+    if glyph:
+        amount = float(glyph.group(1) or 0) + _FRACTION_GLYPHS[glyph.group(2)]
+        parsed = (amount, None)
+        suffix = glyph.group(3).strip()
+    elif comma_match:
+        whole, frac, suffix = comma_match.group(1), comma_match.group(2), comma_match.group(3).strip()
+        # "1,000 g" is a thousand grams; "1,5 kg", "0,500 kg" and "1,250 l"
+        # are decimals — nobody keeps 1250 litres (the same reading as
+        # quantities' own, review 2026-10-22).
+        unit = (suffix.split() or [""])[0].lower()
+        comma = len(frac) != 3 or whole.strip("0") == "" or unit in ("kg", "l", "litre", "litres", "liter", "liters")
+        amount = float(f"{whole}.{frac}") if comma else float(whole + frac)
+    elif m and m.group(1):
         # A bought cup reads "2/3 cup" since 2026-10-19 (part cups read as
         # cups); reading only the "2" stepped it to "1 /3 cup".
         parsed = _quantities._parse_quantity(m.group(1)) if "/" in m.group(1) else None
@@ -64,6 +92,8 @@ def _step_quantity_text(quantity: str, delta: float) -> str:
         suffix = quantity
     amount = max(0.0, amount + delta)
     amount_str = (_quantities._kitchen_number(amount) if parsed else None) or f"{amount:g}"
+    if comma:
+        amount_str = amount_str.replace(".", ",")
     return f"{amount_str} {suffix}".strip() if suffix else amount_str
 
 
@@ -85,14 +115,94 @@ def step_inventory_quantity(item_id: int, delta: float) -> dict:
     return {"item_id": item_id, "found": True, "quantity": new_qty}
 
 
+class InvalidInventoryLocation(ValueError):
+    """A shelf that is not one of fridge / freezer / pantry — its own type
+    so the route can answer 400 for it and keep 404 for a missing row."""
+
+
+# A thawed thing with no shelf life of its own (a cooked portion, a bag of
+# frozen peas): three days in the fridge, the leftovers rule of thumb.
+THAWED_KEEPS_DAYS = 3
+
+
+def _normalised_location(location: str | None) -> str:
+    where = (location or "").strip().lower()
+    if where not in _quantities._LOCATION_ORDER:
+        raise InvalidInventoryLocation(
+            f"'{location}' isn't a place this keeps food — fridge, freezer or pantry."
+        )
+    return where
+
+
+def _freezer_door_date(row: dict, to_location: str) -> str | None:
+    """
+    The date a row moving to `to_location` should carry, or None to leave
+    its date alone. `row` needs item, category, location, expiration_date.
+    See set_inventory_location for the rule. (update_inventory never moves
+    a row: a write naming a shelf only matches a row already on it.)
+    """
+    was = _quantities._display_location(row).strip().lower()
+    today = _today()
+    if to_location == "freezer" and was != "freezer":
+        # Food already past its date stays past it: a freezer does not
+        # unspoil salmon, and re-dating it took the "past" warning away
+        # (review, 2026-10-25). Coming OUT, a past date is re-dated all
+        # the same: on a freezer row it is almost always the fridge
+        # estimate it was bought with, passing while it sat frozen — the
+        # bug this rule exists for — and nothing on the row tells the two
+        # apart.
+        if (row.get("expiration_date") or "9999") < today.isoformat():
+            return None
+        frozen = (today + timedelta(days=_quantities._DEFAULT_SHELF_LIFE_DAYS["frozen"])).isoformat()
+        return None if (row.get("expiration_date") or "") > frozen else frozen
+    if was == "freezer" and to_location != "freezer":
+        days = _quantities._item_shelf_life_match(row.get("item") or "")
+        if days is None:
+            category = row.get("category") or "other"
+            # "other" too: its 14 days is a guess for an unknown thing on a
+            # shelf, not for a thawed lasagna (review, 2026-10-25).
+            days = THAWED_KEEPS_DAYS if category in ("frozen", "other") else _quantities._DEFAULT_SHELF_LIFE_DAYS.get(category, THAWED_KEEPS_DAYS)
+        return (today + timedelta(days=days)).isoformat()
+    return None
+
+
 def set_inventory_location(item_id: int, location: str) -> dict:
-    """Move one inventory item to a different storage location (fridge/freezer/pantry) — re-groups it immediately."""
+    """
+    Move one inventory item to a different storage location (fridge/freezer/pantry) — re-groups it immediately.
+
+    Crossing the freezer door restarts the date (defect hunt, 2026-10-25).
+    Every estimated date is a fridge or pantry shelf life, so chicken
+    ticked off the list, frozen that night and taken out a fortnight later
+    read "12 days past" the moment it reached the fridge — and the
+    assistant's start-of-session check told the household so — while the
+    same chicken sat in the freezer as "use soon". Into the freezer: the
+    frozen shelf life from today, never shortening a later date already
+    on the row. Out of it: the item's own fridge/pantry life from today
+    (thawed), THAWED_KEEPS_DAYS for food with none of its own. A move
+    between fridge and pantry leaves the date alone.
+    """
+    location = _normalised_location(location)
     conn = get_conn()
     require_household_row(conn, "inventory_items", item_id, label="inventory item")
-    conn.execute("UPDATE inventory_items SET location = ?, updated_at = datetime('now') WHERE id = ? AND household_id = ?", (location, item_id, household_id()))
+    row = conn.execute(
+        "SELECT item, category, location, expiration_date FROM inventory_items WHERE id = ? AND household_id = ?",
+        (item_id, household_id()),
+    ).fetchone()
+    new_date = _freezer_door_date(dict(row), location)
+    if new_date:
+        conn.execute(
+            "UPDATE inventory_items SET location = ?, expiration_date = ?, updated_at = datetime('now') "
+            "WHERE id = ? AND household_id = ?",
+            (location, new_date, item_id, household_id()),
+        )
+    else:
+        conn.execute("UPDATE inventory_items SET location = ?, updated_at = datetime('now') WHERE id = ? AND household_id = ?", (location, item_id, household_id()))
     conn.commit()
     conn.close()
-    return {"item_id": item_id, "location": location}
+    result = {"item_id": item_id, "location": location}
+    if new_date:
+        result["expiration_date"] = new_date
+    return result
 
 
 def step_inventory_expiration(item_id: int, delta_days: int) -> dict:
@@ -192,6 +302,83 @@ def _find_row_by_name(conn, item: str, location: str | None, columns: str):
     ).fetchone()
 
 
+# Names whose fresh-sounding word is not the food on the shelf: canned
+# tuna is not fresh fish, cream of mushroom soup is not cream, chicken
+# nuggets and leftover chili are cooked food (review, 2026-10-25).
+_NOT_FRESH_WORDS_RE = re.compile(
+    r"\b(canned|can|cans|tinned|tin|tins|jar|jarred|soup|soups|nuggets?|leftovers?|"
+    r"dried|powder(ed)?|broth|stock|sauce|instant|boxed|mix)\b"
+)
+
+
+def _new_row_category(item: str, category: str | None, location: str | None = None) -> str:
+    """
+    The category a NEW inventory row is written with when nobody gave one.
+
+    The Kitchen screen's add form has no category box, so every row it
+    created was "other" — milk under Other, chicken thighs that the meal
+    planner's "favour what's on hand" list (get_fresh_perishable_inventory,
+    which reads produce/dairy/meat) never saw (defect hunt, 2026-10-25).
+    recipe_import.guess_category reads the name the way the grocery list
+    does. Only a positive read is taken — produce, dairy, meat/seafood,
+    frozen; its fallback for a name it does not know is "pantry", and a
+    pantry row is dated six months out, so an unknown name stays "other"
+    (two weeks) as before.
+
+    And only a read that agrees with the shelf the household chose (the
+    form always sends one). "Canned tuna" read as meat/seafood went in the
+    pantry dated three days out and was "turning soon" by the weekend
+    (_GUESS_SHELVES). A name with a not-fresh word in it
+    (_NOT_FRESH_WORDS_RE) is never guessed.
+    """
+    if category:
+        return category
+    name = (item or "").strip().lower()
+    if not name or _NOT_FRESH_WORDS_RE.search(name):
+        return "other"
+    # Imported here: recipe_import imports the tools package.
+    from .. import recipe_import as _recipe_import
+
+    guess = _recipe_import.guess_category(name)
+    if guess not in ("produce", "dairy", "meat/seafood", "frozen"):
+        return "other"
+    where = (location or "").strip().lower()
+    if where and where not in _GUESS_SHELVES[guess]:
+        return "other"
+    return guess
+
+
+# Where each guessed category may be kept for the guess to stand. Meat is
+# frozen as often as not; produce or dairy in the pantry is a can or a box.
+_GUESS_SHELVES = {
+    "produce": {"fridge"}, "dairy": {"fridge"},
+    "meat/seafood": {"fridge", "freezer"}, "frozen": {"freezer"},
+}
+
+
+def _estimated_date(category: str, item: str, location: str) -> str:
+    """
+    The date a new row with none given is written with: the item's fridge
+    or pantry shelf life — or, on a row going straight into the freezer,
+    the frozen one. Chicken thighs added "in the freezer" were dated two
+    days out, the fridge's number, and Kitchen showed them as "use soon"
+    (defect hunt, 2026-10-25). set_inventory_location applies the same
+    rule when a row crosses the freezer door.
+    """
+    if (location or "").strip().lower() == "freezer":
+        return (_today() + timedelta(days=_quantities._DEFAULT_SHELF_LIFE_DAYS["frozen"])).isoformat()
+    name = (item or "").strip().lower()
+    if _NOT_FRESH_WORDS_RE.search(name):
+        # The item table matches substrings, so "cream of mushroom soup"
+        # took mushrooms' five days and "chicken broth" chicken's two
+        # (review, 2026-10-25). Cooked leftovers keep a leftover's days;
+        # anything else canned, jarred or dried keeps its category's.
+        days = THAWED_KEEPS_DAYS if re.search(r"\bleftovers?\b", name) else \
+            _quantities._DEFAULT_SHELF_LIFE_DAYS.get(category, _quantities._DEFAULT_SHELF_LIFE_DAYS["other"])
+        return (_today() + timedelta(days=days)).isoformat()
+    return _quantities._estimate_expiration_date(category, item)
+
+
 def _add_to_inventory(
     item: str,
     quantity: str = "",
@@ -244,11 +431,11 @@ def _add_to_inventory(
         item_id = existing["id"]
     else:
         before = None
-        item_category = category or "other"
+        item_category = _new_row_category(item, category, location)
         item_location = _quantities._resolve_location(location, item_category)
         cur = conn.execute(
             "INSERT INTO inventory_items (household_id, item, quantity, source, expiration_date, category, location) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (household_id(), item, quantity, source, expiration_date or _quantities._estimate_expiration_date(item_category, item), item_category, item_location),
+            (household_id(), item, quantity, source, expiration_date or _estimated_date(item_category, item, item_location), item_category, item_location),
         )
         item_id = cur.lastrowid
     after = _receipt_snapshot(conn, item_id)
@@ -331,7 +518,8 @@ def update_inventory(
     unset otherwise rather than guessing. category should be one of:
     produce, dairy, meat/seafood, pantry, frozen, other — same taxonomy as
     the grocery list — so the Inventory view stays organized; pick whichever
-    matches the item, defaults to 'other' if omitted. location (fridge,
+    matches the item; if omitted, a new row is filed by its name
+    (_new_row_category), 'other' when the name says nothing. location (fridge,
     freezer, or pantry) is where it's physically stored, which can diverge
     from category (an opened sauce is category='pantry' by food type but
     location='fridge' once opened) — set it explicitly whenever the person
@@ -348,6 +536,15 @@ def update_inventory(
     does not, and today that is one: a photo review, which knows which
     photo it was (see scan_source above and /api/inventory/confirm-scan).
     """
+    # A blank name was saved as a nameless row, and a location outside the
+    # three shelves as a row Kitchen never drew (defect hunt, 2026-10-25).
+    item = (item or "").strip()
+    if not item:
+        raise ValueError("Name the item to keep track of.")
+    if location is not None and location.strip():
+        location = _normalised_location(location)
+    else:
+        location = None
     if action == "add":
         # The receipt fields (fresh/before/after) are mark_grocery_item's
         # business, not the chat agent's — keep this tool's answer as it was.
@@ -376,11 +573,11 @@ def update_inventory(
             conn.commit()
             item_id = existing["id"]
         else:
-            item_category = category or "other"
+            item_category = _new_row_category(item, category, location)
             item_location = _quantities._resolve_location(location, item_category)
             cur = conn.execute(
                 "INSERT INTO inventory_items (household_id, item, quantity, source, category, expiration_date, location, counted_on) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                (household_id(), item, quantity, source, item_category, expiration_date or _quantities._estimate_expiration_date(item_category, item), item_location, _today().isoformat()),
+                (household_id(), item, quantity, source, item_category, expiration_date or _estimated_date(item_category, item, item_location), item_location, _today().isoformat()),
             )
             conn.commit()
             item_id = cur.lastrowid
@@ -457,8 +654,14 @@ def update_inventory_items(items: list, action: str = "add", source: str = "chat
             src = source
         if not name:
             continue
-        results.append(update_inventory(name, act, quantity=qty, expiration_date=exp,
-                                        category=cat, location=loc, source=src))
+        try:
+            results.append(update_inventory(name, act, quantity=qty, expiration_date=exp,
+                                            category=cat, location=loc, source=src))
+        except InvalidInventoryLocation as e:
+            # One entry's bad shelf is that entry's answer, not the batch's:
+            # raising here would leave the entries before it written, and a
+            # retried batch would add those twice.
+            results.append({"item": name, "error": str(e)})
     return {"updated": results}
 
 
@@ -510,8 +713,11 @@ def get_inventory_by_location() -> dict:
     items = get_inventory()
     buckets: dict[str, list[dict]] = {loc: [] for loc in _quantities._LOCATION_ORDER}
     for it in items:
-        loc = it["location"]
-        buckets.setdefault(loc, [])
+        # Folded and defaulted: a row saved as "Freezer" or "counter" (the
+        # route never checked) used to get a bucket of its own here, which
+        # the screen — it draws only fridge/freezer/pantry — never showed,
+        # so the item vanished from Kitchen (defect hunt, 2026-10-25).
+        loc = (it["location"] or "").strip().lower()
         buckets[loc if loc in buckets else "pantry"].append(it)
     return {"locations": [{"location": loc, "items": buckets[loc]} for loc in _quantities._LOCATION_ORDER if buckets[loc]]}
 

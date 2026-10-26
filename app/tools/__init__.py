@@ -403,6 +403,7 @@ from .household import (  # noqa: F401
     remove_member_dietary_restriction,
 )
 from .inventory import (  # noqa: F401
+    InvalidInventoryLocation,
     _LEADING_NUM_RE,
     _add_to_inventory,
     _step_quantity_text,
