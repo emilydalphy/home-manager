@@ -947,6 +947,14 @@ _MIGRATIONS = [
     # (recipes._KitchenStock.reserve_bought_for_meals_ahead). NULL = never
     # counted.
     ("inventory_items", "counted_on", "TEXT"),
+    # A cook claim's meal slot (2026-10-26: "I've got Sunday" means the
+    # night, not the dish) — see move_owner.MoveOwners.override. '' on
+    # existing rows: they keep today's exact-dish match.
+    ("move_owner_overrides", "slot", "TEXT NOT NULL DEFAULT ''"),
+    # The age group this member's phone was last told about, once they
+    # stopped being an adult (2026-10-26, tools.age_change_note). '' = never
+    # told, or an adult again since.
+    ("members", "age_note_shown_for", "TEXT NOT NULL DEFAULT ''"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people

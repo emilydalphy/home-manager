@@ -13,6 +13,23 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2026-10-26 — Household & people small calls** (Emily: "go with your
+  picks"; branch `calls-1026/household`).
+  - Chat refuses "make me a teen" like Settings: one rule,
+    `tools.own_age_leaving_adult`, same sentence on both doors.
+  - A Teen's phone stays theirs: `security.device_member_for_login` keeps a
+    member who is still here (adult or not), so signing in again reads as
+    nobody, never as the adult left. Made an adult again, it's them again.
+  - That phone gets one note, once (`tools.age_change_note`, whoami
+    `age_note`, a held toast); `members.age_note_shown_for` remembers it.
+  - "I've got Sunday" means the night: `move_owner_overrides.slot` is kept on
+    a cook claim, and a dish swapped on the same night and slot (the only
+    cook there) takes it. Setting or clearing that night takes the carried row.
+  - An adult who leaves takes a "Nobody yet" they set (`set_by`) with them.
+  - Not built: the passphrase prompt after taking someone out. There's no
+    in-app way to change a passphrase (only `create_household.py
+    --reset-passphrase`), so the button would have nowhere to go.
+
 - **The iPhone app's id is `com.heypomona.app`** (2026-10-25, Emily's pick
   to match her heypomona domain; branch `overnight/bundle-id-heypomona`).
   Replaced the `com.pomona.app` placeholder in `capacitor.config.json`, the

@@ -396,6 +396,8 @@ from .household import (  # noqa: F401
     set_member_age_group,
     set_member_age_group_for_chat,
     last_adult_leaving,
+    own_age_leaving_adult,
+    age_change_note,
     MemberRefused,
     set_member_age,
     age_stage,

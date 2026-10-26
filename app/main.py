@@ -2603,19 +2603,12 @@ def _refuse_last_adult_leaving(name: str, age_group: str) -> None:
 
 def _refuse_own_age_leaving_adult(name: str, age_group: str) -> None:
     """A signed-in adult can't move THEIR OWN age group off Adult here —
-    another adult still can (Emily, 2026-10-20). Marking yourself Teen in a
-    two-adult home quietly made the phone act as the other adult
-    (current_member reads a re-marked pick as no pick). No pick on this
-    device (shared passphrase, nobody chosen) keeps today's behaviour.
+    another adult still can (Emily, 2026-10-20). The rule and its sentence
+    live in tools.own_age_leaving_adult, shared with chat since 2026-10-26.
     Runs after _refuse_last_adult_leaving, so a lone adult still hears that."""
-    if age_group == "adult" or tools.member_id() is None:
-        return
-    me = tools.current_member()
-    if me and (me.get("name") or "").strip().lower() == (name or "").strip().lower():
-        raise HTTPException(
-            status_code=400,
-            detail="Your own age stays Adult here. Another adult can change it.",
-        )
+    refusal = tools.own_age_leaving_adult(name, age_group)
+    if refusal:
+        raise HTTPException(status_code=400, detail=refusal)
 
 
 @app.post("/api/memory/member/age-group")
@@ -9352,6 +9345,9 @@ def whoami(request: Request):
         # See `picked_here` above: what the SESSION carries, not what the
         # household happens to resolve to.
         "picked_on_this_device": picked_here,
+        # A phone whose own member was re-marked a Teen: one short note,
+        # once (tools.age_change_note). '' every other time.
+        "age_note": tools.age_change_note(),
         "chores_enabled": bool(row and row["chores_enabled"]),
         # The other adult's first open (tools/first_open.py): true once, for
         # an adult who didn't set the household up, until they leave the

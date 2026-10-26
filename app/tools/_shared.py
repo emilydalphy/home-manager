@@ -365,12 +365,11 @@ def current_member() -> dict | None:
         # marking Vic a Teen (still a member, so his phone stays signed in)
         # left Vic's phone acting AS Emily: his adds and his approval
         # credited to her, her sign-in email his to change (defect hunt
-        # 2026-10-22). This holds for the life of the current session
-        # only: his next sign-in finds the device's remembered answer spent
-        # (security.device_member_for_login), the new session has no pick,
-        # and a one-adult house then reads that phone as its only adult by
-        # design — keeping a re-marked person's answer would be a design
-        # change, not made here.
+        # 2026-10-22). Since 2026-10-26 it outlives the session too (Emily
+        # went with the pick): his next sign-in finds the device still
+        # remembers HIM (security.device_member_for_login keeps a member
+        # who is still here, adult or not), so the new session carries his
+        # id and reads as nobody here again — never as the adult left.
         return _member_row_dict(row) if row is not None else None
     rows = conn.execute(
         f"SELECT id, name, color FROM members WHERE household_id = ? AND {_ADULT_SQL} ORDER BY id ASC LIMIT 2",

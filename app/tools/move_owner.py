@@ -84,6 +84,12 @@ cooking_role says. Two rules about what a row reaches:
 - A row is keyed by the day the move sat on when it was claimed. A dish
   later swapped onto another night leaves its row behind, rather than
   carrying "Vineeth's got it" onto a night he never said.
+- A cook's claim means the NIGHT, not the dish (Emily, 2026-10-26: went
+  with the pick). A swap writes a new entry, so the claim's `cook:<entry>`
+  id no longer matches anything; the row also keeps the slot it was
+  claimed on, and the one cook now sitting on that same day and slot takes
+  it (MoveOwners.override). Before, "I've got Sunday" then a swap to Tacos
+  put Sunday back on the usual cook.
 
 A SHOP can carry an owner now, but only one somebody SAID. The no-"who
 shops"-answer reasoning above still holds for the default; a person
@@ -144,7 +150,7 @@ def _overrides() -> dict[tuple[str, str], tuple[int | None, str | None]]:
     try:
         rows = conn.execute(
             f"""
-            SELECT o.move_id, o.on_date, o.member_id, m.name
+            SELECT o.move_id, o.on_date, o.member_id, m.name, o.slot, o.set_at
             FROM move_owner_overrides o
             LEFT JOIN members m
               ON m.id = o.member_id AND m.household_id = o.household_id
@@ -155,13 +161,28 @@ def _overrides() -> dict[tuple[str, str], tuple[int | None, str | None]]:
         ).fetchall()
     finally:
         conn.close()
-    out: dict[tuple[str, str], tuple[int | None, str | None]] = {}
+    out: dict = {}
+    nights: dict[tuple[str, str], list[tuple[str, str, tuple[int | None, str | None]]]] = {}
     for r in rows:
         if r["member_id"] is None:
-            out[(r["move_id"], r["on_date"])] = (None, None)
+            said = (None, None)
         elif r["name"] and r["name"].strip():
-            out[(r["move_id"], r["on_date"])] = (r["member_id"], r["name"].strip())
+            said = (r["member_id"], r["name"].strip())
+        else:
+            continue
+        out[(r["move_id"], r["on_date"])] = said
+        slot = (r["slot"] or "").strip()
+        if slot and (r["move_id"] or "").startswith("cook:"):
+            nights.setdefault((r["on_date"], slot), []).append((r["set_at"] or "", r["move_id"], said))
+    # The night a cook claim was made on, for a dish swapped on it since —
+    # see MoveOwners.override. Rides on the same dict so resolve() still
+    # makes one read; the key cannot collide with a (move_id, on_date) pair.
+    out[_NIGHTS_KEY] = nights
     return out
+
+
+# Where _overrides() files its by-night index (see MoveOwners.override).
+_NIGHTS_KEY = ("#nights", "")
 
 
 def _is_a_cook(meal: dict) -> bool:
@@ -200,6 +221,12 @@ class MoveOwners:
         # card carries `entry_ids` and every other carries `entry_id` —
         # the same reading cooker.start_cooking makes of one.
         self._cook_date_by_entry: dict[int, str] = {}
+        # (day, slot) -> the cook move ids sitting there now, so a claim on
+        # a night whose dish was swapped finds the dish that took its place.
+        self._overrides = dict(self._overrides)
+        self._nights = self._overrides.pop(_NIGHTS_KEY, None) or {}
+        self._cooks_on_night: dict[tuple[str, str], list[str]] = {}
+        self._night_of_move: dict[str, tuple[str, str]] = {}
         cook_days: set[str] = set()
         floor = ((view or {}).get("period_start_date") or "") if view else ""
         for meal in (view or {}).get("meals") or []:
@@ -211,6 +238,11 @@ class MoveOwners:
                     self._cook_date_by_entry[entry_id] = day
                     if meal.get("entry_id") is not None:
                         self._cook_move_by_entry[entry_id] = f"cook:{meal['entry_id']}"
+            if meal.get("entry_id") is not None:
+                night = (day, (meal.get("slot") or "dinner"))
+                move = f"cook:{meal['entry_id']}"
+                self._cooks_on_night.setdefault(night, []).append(move)
+                self._night_of_move[move] = night
             # A cook day from BEFORE the plan's period is a leftover of an
             # earlier week (get_cooker_view folds loose meals in beside the
             # plan's own); counting it would move the rotation's anchor
@@ -300,7 +332,25 @@ class MoveOwners:
         """
         if not move_id or not day:
             return None
-        return self._overrides.get((move_id, day))
+        said = self._overrides.get((move_id, day))
+        if said is not None or not move_id.startswith("cook:"):
+            return said
+        # "I've got Sunday" means the night, not the dish (2026-10-26). A
+        # swap wrote a new entry, so the claim's own cook id is gone; the
+        # newest claim made on this same day and slot by a cook that is no
+        # longer sitting there carries over — only when this is the one cook
+        # on that night, so a night with two dishes never guesses.
+        night = self._night_of_move.get(move_id)
+        if night is None or night[0] != day:
+            return None
+        here = self._cooks_on_night.get(night, [])
+        if len(here) != 1:
+            return None
+        left_behind = sorted(
+            (c for c in self._nights.get(night, []) if c[1] not in here),
+            key=lambda c: c[0],
+        )
+        return left_behind[-1][2] if left_behind else None
 
     def for_task(self, task: dict) -> tuple[int | None, str | None]:
         """
@@ -432,6 +482,27 @@ def _said_line(title: str, name: str | None) -> str:
     return f"Nobody’s on {title} yet"
 
 
+def _carried_claims(conn, move: dict, day_moves: list[dict]) -> list:
+    """The rows MoveOwners.override would carry onto this cook from a dish
+    swapped off its night, oldest first; [] for anything else. Same test as
+    the read: same day and slot, a cook id no longer on that night, and
+    this the one cook there."""
+    if move.get("kind") != "cook":
+        return []
+    slot = (move.get("slot") or "").strip()
+    here = [m.get("id") for m in day_moves
+            if m.get("kind") == "cook" and (m.get("slot") or "").strip() == slot]
+    if not slot or len(here) != 1:
+        return []
+    rows = conn.execute(
+        "SELECT move_id, member_id, set_at FROM move_owner_overrides "
+        "WHERE household_id = ? AND on_date = ? AND slot = ? AND move_id LIKE 'cook:%' "
+        "ORDER BY set_at",
+        (household_id(), move.get("date"), slot),
+    ).fetchall()
+    return [r for r in rows if r["move_id"] not in here]
+
+
 def set_move_owner(move_id: str, member_id: int | None = None, day: str | None = None,
                    clear: bool = False) -> dict:
     """
@@ -447,7 +518,8 @@ def set_move_owner(move_id: str, member_id: int | None = None, day: str | None =
     """
     on_date = _day_iso(day)
     move_id = (move_id or "").strip()
-    move = next((m for m in _moves.moves_for_day(on_date) if m.get("id") == move_id), None)
+    day_moves = _moves.moves_for_day(on_date)
+    move = next((m for m in day_moves if m.get("id") == move_id), None)
     if move is None:
         raise MoveOwnerRefused("That isn’t on the day any more.")
     if move.get("kind") not in OWNABLE_KINDS:
@@ -467,6 +539,18 @@ def set_move_owner(move_id: str, member_id: int | None = None, day: str | None =
             "WHERE household_id = ? AND move_id = ? AND on_date = ?",
             (household_id(), move_id, on_date),
         ).fetchone()
+        # A claim this night carried over from a dish swapped off it
+        # (MoveOwners.override) is this move's word now: it counts as the
+        # prior answer for Undo, and it goes, so this write is the one that
+        # stands — a clear really does bring the default back.
+        carried = _carried_claims(conn, move, day_moves)
+        if prior is None and carried:
+            prior = carried[-1]
+        if carried:
+            conn.executemany(
+                "DELETE FROM move_owner_overrides WHERE household_id = ? AND move_id = ? AND on_date = ?",
+                [(household_id(), r["move_id"], on_date) for r in carried],
+            )
         if clear:
             conn.execute(
                 "DELETE FROM move_owner_overrides "
@@ -474,12 +558,16 @@ def set_move_owner(move_id: str, member_id: int | None = None, day: str | None =
                 (household_id(), move_id, on_date),
             )
         else:
+            # A cook keeps its slot, so the claim stays on the night if the
+            # dish is swapped (MoveOwners.override).
+            slot = (move.get("slot") or "").strip() if move.get("kind") == "cook" else ""
             conn.execute(
-                "INSERT INTO move_owner_overrides (household_id, move_id, on_date, member_id, set_by) "
-                "VALUES (?, ?, ?, ?, ?) "
+                "INSERT INTO move_owner_overrides (household_id, move_id, on_date, member_id, set_by, slot) "
+                "VALUES (?, ?, ?, ?, ?, ?) "
                 "ON CONFLICT (household_id, move_id, on_date) DO UPDATE SET "
-                "member_id = excluded.member_id, set_by = excluded.set_by, set_at = datetime('now')",
-                (household_id(), move_id, on_date, member_id, _shared.member_id()),
+                "member_id = excluded.member_id, set_by = excluded.set_by, slot = excluded.slot, "
+                "set_at = datetime('now')",
+                (household_id(), move_id, on_date, member_id, _shared.member_id(), slot),
             )
         conn.commit()
     finally:
