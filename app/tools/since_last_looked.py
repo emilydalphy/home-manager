@@ -226,9 +226,13 @@ def _lines_for(conn, other: dict, me: dict, since: str, today: date, name_ok: bo
         "GROUP BY week_start ORDER BY at",
         (hid, key, since),
     ).fetchall()
-    monday = today - timedelta(days=today.weekday())
+    # "Next" is a period that starts after today, not after this calendar
+    # week's Monday (defect hunt 2026-10-26): every period the app offers
+    # starts no earlier than today, so a Sunday-start household answering
+    # on its Sunday — or anyone answering mid-week for the rest of this
+    # week — was told it was next week's.
     for r in intake:
-        which = "next week’s" if r["week_start"] > monday.isoformat() else "this week’s"
+        which = "next week’s" if r["week_start"] > today.isoformat() else "this week’s"
         line(f"answered {which} questions.", r["at"])
 
     added = conn.execute(

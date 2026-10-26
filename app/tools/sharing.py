@@ -120,8 +120,13 @@ def get_shared_weekly_plan(token: str) -> dict | None:
 # written to the household goes out either (2026-10-20): `is_first_plan` and
 # `new_recipe_count` fed "Here's your first week" and "N new recipes this
 # week", which are notes to the household, not part of a shared menu.
+# `period_start_date` is the first day the week actually covers: the filing
+# key (`week_start_date`) can be a day the plan never reaches — a part-week
+# filed under its period's start — and "Week of Saturday, Oct 24" over a
+# Mon–Fri menu named a day the sitter was never given (defect hunt
+# 2026-10-26, week anchors).
 _SHARED_PLAN_KEYS = (
-    "weekly_plan_id", "week_start_date", "planning_mode",
+    "weekly_plan_id", "week_start_date", "period_start_date", "planning_mode",
     "menu_is_suggested", "components",
 )
 _SHARED_MEAL_KEYS = ("date", "slot", "meal")
