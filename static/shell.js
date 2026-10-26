@@ -13556,7 +13556,7 @@
       return;
     }
     var body = {}; body[field] = value;
-    var section = field === 'leftovers_stance' ? 'taste' : field === 'breakfast_prep' ? 'prep-days' : 'rhythm';
+    var section = field === 'breakfast_prep' ? 'prep-days' : (field === 'leftovers_stance' ? 'taste' : 'rhythm');
     wwkSaveRhythm(section, body, function () {
       var r = wwkMem().rhythm || (wwkMem().rhythm = {});
       if (field === 'cooking_role') { r.cooking_role = { value: value, who: null }; wwkState.pendingCookWho = false; }

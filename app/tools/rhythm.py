@@ -26,7 +26,7 @@ import json
 from functools import lru_cache
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError, available_timezones
 
-from ..db import get_conn
+from ..db import get_conn, write
 from ._shared import EATS_HERE_SQL, find_member_row, household_id
 from . import household as _household
 
@@ -484,10 +484,8 @@ def set_breakfast_prep(value: str, source: str = "onboarding") -> dict:
     """
     if value not in BREAKFAST_PREP_OPTIONS:
         raise ValueError(f"value must be one of {BREAKFAST_PREP_OPTIONS}, not {value!r}.")
-    conn = get_conn()
-    _upsert(conn, "", "", "breakfast_prep", value, "", source)
-    conn.commit()
-    conn.close()
+    with write() as conn:
+        _upsert(conn, "", "", "breakfast_prep", value, "", source)
     _household._log_preference_event("rhythm:breakfast_prep", "write")
     return {"breakfast_prep": value}
 
