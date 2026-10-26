@@ -1,0 +1,157 @@
+{
+ "dish_name": "Chicken Fatteh",
+ "cuisine": "Lebanese",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 55,
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken breasts",
+   "qty": "1 1/4 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Bay leaf",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Black peppercorns",
+   "qty": "6",
+   "category": "pantry"
+  },
+  {
+   "item": "Green cardamom pods",
+   "qty": "3",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole cloves",
+   "qty": "3",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Pita bread",
+   "qty": "1 package",
+   "category": "other",
+   "cook_qty": "3 pitas"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub (32 oz)",
+   "category": "dairy",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Tahini",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Butter",
+   "qty": "1 package",
+   "category": "dairy",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Pine nuts",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  }
+ ],
+ "instructions": [
+  "Pat the chicken breasts dry and sprinkle 1/2 tsp of the salt over both sides.",
+  "Heat 1 tbsp of the oil in a large pot over medium-high. Lay the chicken in and cook until the underside is golden, about 3 minutes. Flip it and cook the other side for about 3 minutes.",
+  "Peel the onion and cut it in half. Add it to the pot with the bay leaf, cinnamon stick, peppercorns, cardamom pods, cloves, the 1/4 tsp turmeric, 1 tsp of the salt and 4 cups water. Bring it to a boil, then turn it down to a gentle simmer, partly cover the pot and cook for 20 to 25 minutes.",
+  "You're cooking the chicken to 160°F in the middle, so if you have a thermometer, check the thickest part. No thermometer? Cut into the thickest part: it's done when there's no pink left.",
+  "Meanwhile, cut the 3 pitas into 1 inch squares. Crush the 2 garlic cloves to a paste with a pinch of the salt.",
+  "Make the sauce. In a bowl, stir together the 2 cups yogurt, the 3 tbsp tahini, the juice of the lemon, the garlic and 1/4 tsp of the salt until smooth. Put it in the fridge.",
+  "Lift the chicken onto a board. Strain the broth into a large measuring cup and throw away the onion and spices. That should be about 3 cups.",
+  "Rinse the 1 cup rice in a strainer until the water runs clear and shake it dry.",
+  "Heat 1 tbsp of the oil in a medium saucepan over medium. Add the rice and stir for 1 to 2 minutes, until the grains look glossy and smell toasty.",
+  "Pour in 1 1/2 cups of the broth and the last 1/4 tsp salt and bring it to a boil. Turn the heat to low, cover and cook for 15 minutes. Take it off the heat and keep the lid on.",
+  "Meanwhile, shred the chicken into bite-size pieces with two forks. Spoon a little of the broth over it and cover it.",
+  "Heat the rest of the oil in a large nonstick skillet over medium-high. Add half the pita squares in a single layer and fry them, turning them often, until they're golden and crisp, 3 to 4 minutes. Lift them onto paper towels and fry the second half the same way.",
+  "Stir a few spoonfuls of the broth into the yogurt sauce, until it pours slowly off the spoon.",
+  "Wipe out the skillet. Melt the 3 tbsp butter with the 1/4 cup pine nuts over low heat, swirling the pan, until the butter foams and the nuts turn golden brown, 3 to 4 minutes. Take it off the heat right away. It goes from brown to burnt quickly.",
+  "Taste the yogurt sauce. If it's flat, add a pinch more salt.",
+  "Spread the rice over a wide serving dish. Top it with the crisp pita, then the chicken. Spoon the yogurt sauce over the chicken and pour the butter and pine nuts over the top. Serve right away."
+ ],
+ "method_notes": "All three build it from crisp pita, cooked chicken, a garlicky yogurt sauce and toasted pine nuts, layered just before serving. Zaatar and Zaytoun poaches seared chicken with onion and whole warm spices, cooks rice in that broth, puts tahini and lemon in the yogurt and pours brown butter with the pine nuts over the top; Simply Lebanese uses chickpeas in place of rice and air fries the pita, and the Syrian Druze version from ASIF Kitchen fries diced chicken with baharat and makes a thick tahini yogurt. None had 20 or more ratings and RecipeTin Eats (the trusted cook for Lebanese) has no version, so this follows Zaatar and Zaytoun, with the pita shallow fried in a skillet as that page allows. Feel Good Foodie and The Mediterranean Dish were blocked.",
+ "sources": [
+  {
+   "name": "Zaatar and Zaytoun",
+   "title": "Chicken Fatteh (Fattet Djaj)",
+   "url": "https://zaatarandzaytoun.com/chicken-fatteh/",
+   "rating": 5,
+   "rating_count": 7,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Simply Lebanese",
+   "title": "Chicken Fatteh",
+   "url": "https://www.simplyleb.com/recipe/chicken-fatteh/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "ASIF Kitchen",
+   "title": "Chicken Fatte",
+   "url": "https://asif.org/en/recipes/chicken-fatte/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

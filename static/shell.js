@@ -362,6 +362,52 @@
     setTimeout(finish, motionMs('--motion-base') + 50);
   }
 
+  // Escape for the tab-level sheets (phone walk, 2026-10-25). Settings and
+  // every sheet reached from it close on Escape; these ten — the ones a tab
+  // opens directly — had only their scrim, handle and x, so on the desktop
+  // "phone in the room" a keyboard had no way out of Cook's More but the
+  // mouse. Escape does exactly what a tap outside does: it clicks the
+  // scrim, so a sheet that holds itself open mid-write (the swap's
+  // dismissSwapSheet) holds against the key too. Listed innermost first —
+  // a swap opened from the whole-week sheet closes before the week does.
+  var ESCAPE_CLOSES_SCRIMS = [
+    'wk-swap-scrim', 'wk-tweak-scrim', 'wk-add-scrim', 'gro-scan-scrim',
+    'gro-add-scrim', 'tonight-scrim', 'cook-more-scrim', 'meals-more-scrim',
+    'week-sheet-scrim', 'notif-scrim'
+  ];
+  //
+  // Two courtesies a tap outside doesn't need. A field in the sheet with
+  // words typed in keeps the sheet open — Escape is a reflex, and Shop's
+  // "Add something" forgets its draft on close, so "oat milk" went with it
+  // (review of this branch, 2026-10-25). And focus goes back to whatever
+  // had it before the sheet opened, the last thing focused outside any
+  // dialog, so a keyboard lands where it left rather than on <body>.
+  var escapeOpener = null;
+  function escapeClosesTabSheet(e) {
+    if (!e || e.key !== 'Escape' || e.defaultPrevented) return false;
+    var active = document.activeElement;
+    if (active && /^(INPUT|TEXTAREA)$/.test(active.tagName) && active.closest &&
+        active.closest('[role="dialog"]') && String(active.value || '').trim()) return false;
+    for (var i = 0; i < ESCAPE_CLOSES_SCRIMS.length; i++) {
+      var scrim = document.getElementById(ESCAPE_CLOSES_SCRIMS[i]);
+      if (scrim && !scrim.hidden && scrim.classList.contains('is-open')) {
+        scrim.click();
+        if (escapeOpener && escapeOpener.isConnected && escapeOpener.focus) {
+          escapeOpener.focus({ preventScroll: true });
+        }
+        return true;
+      }
+    }
+    return false;
+  }
+  if (typeof document !== 'undefined' && document.addEventListener) {
+    document.addEventListener('keydown', escapeClosesTabSheet);
+    document.addEventListener('focusin', function (e) {
+      var t = e.target;
+      if (t && t.closest && !t.closest('[role="dialog"]')) escapeOpener = t;
+    });
+  }
+
   // ---------- One level at a time: the sheet stack (2026-10-05) ----------
   //
   // Gowthami's household, 2026-10-04: "Everytime you click x on the top it
@@ -2398,6 +2444,15 @@
     if (!name) return SAVED_PLAIN;
     return name + ' was ' + (verbed || 'saved');
   }
+  // "Marked Tacos as skipped" — the house line turned round for a dish,
+  // whose name is as often plural as not ("Tacos", "Chicken skewers"), so
+  // "Tacos was marked skipped" read wrong out loud (2026-10-21). Leading
+  // with the verb names the thing with no was/were to agree.
+  function markedLine(thing, how) {
+    var name = savedName(thing);
+    if (!name) return SAVED_PLAIN;
+    return 'Marked ' + name + ' as ' + how;
+  }
   // "2 things were moved" — more than one thing stays plain and
   // grammatical rather than listing names the toast has no room for.
   function savedCount(n, verbed) {
@@ -2442,6 +2497,32 @@
     showToast(said || SAVED_PLAIN, action || null, holdMs);
   }
 
+  // The dock at the foot of the tab on screen, when one is there — Shop's
+  // "Add something", Cook's "Start cooking", Now's plan-the-week. The toast's
+  // usual spot (72px up) is the middle of that strip, so for its 2–6 seconds
+  // it covered the one button the screen exists for (found on the phone walk,
+  // 2026-10-25: "Logged — that'll steer next week. Rate it" sat on top of
+  // "Start cooking"). Only a dock STUCK at the foot counts: .dock is sticky,
+  // so on a short page it just sits after the content (the approved Plan
+  // root's at 541px of 844), and lifting over that one put the toast on the
+  // "Anything in the freezer?" row instead of over empty ground. Stuck means
+  // its bottom is the scroller's visible bottom (#shell-scroll, which ends
+  // at the tab bar), give or take a pixel of rounding. None while a sheet is
+  // up, whose own content is what the toast is over.
+  function toastDockBelow() {
+    if (document.querySelector('[id$="scrim"].is-open')) return null;
+    var panel = document.querySelector('.tab-panel.active');
+    if (!panel) return null;
+    var scroller = document.getElementById('shell-scroll');
+    var foot = scroller ? scroller.getBoundingClientRect().bottom : window.innerHeight;
+    var docks = panel.querySelectorAll('.dock');
+    for (var i = 0; i < docks.length; i++) {
+      if (docks[i].offsetParent === null) continue;
+      if (Math.abs(docks[i].getBoundingClientRect().bottom - foot) <= 2) return docks[i];
+    }
+    return null;
+  }
+
   function showToast(message, action, holdMs, opts) {
     // holdMs: for the rare toast that is a sentence rather than a
     // confirmation — an allergy warning after approval — 2.2 seconds is not
@@ -2477,9 +2558,10 @@
     var sheetOpen = typeof askSheet !== 'undefined' && askSheet && !askSheet.hidden;
     toastEl.classList.toggle('is-over-sheet', !!sheetOpen);
     // In cook mode the Back / Next dock sits where the toast usually does.
-    // Sit just above whichever dock is on screen, so the buttons stay tappable.
+    // Sit just above whichever dock is on screen, so the buttons stay tappable
+    // — cook mode's, or a tab root's (toastDockBelow).
     toastEl.style.bottom = '';
-    var dockEl = !sheetOpen && document.querySelector('.cook-focus .cook-dock');
+    var dockEl = !sheetOpen && (document.querySelector('.cook-focus .cook-dock') || toastDockBelow());
     if (dockEl && dockEl.offsetParent !== null) {
       var dockTop = dockEl.getBoundingClientRect().top;
       toastEl.style.bottom = Math.max(0, Math.round(window.innerHeight - dockTop + 12)) + 'px';
@@ -3271,6 +3353,10 @@
       });
     });
     panel.querySelectorAll('[data-move-action]').forEach(function (btn) {
+      // The dock's button is in the panel too, and renderTodayDock (above)
+      // has already bound it: a second listener ran one tap twice, so a
+      // dock "Done" ticked and unticked at once (overnight hunt, 2026-10-21).
+      if (btn.closest && btn.closest('#today-dock')) return;
       btn.addEventListener('click', function () {
         runTodayMoveAction(panel, btn.getAttribute('data-move-action'));
       });
@@ -3729,7 +3815,7 @@
         refreshStaleTabsFromActions([{ tab: 'week' }, { tab: 'kitchen' }]);
         return;
       }
-      showToast(savedLine(meal.meal, answer === 'had' ? 'marked cooked' : 'marked skipped'));
+      showToast(markedLine(meal.meal, answer === 'had' ? 'cooked' : 'skipped'));
       // A cooked tick moves what Plan and Cook show (and the pantry).
       if (answer === 'had') refreshStaleTabsFromActions([{ tab: 'week' }, { tab: 'kitchen' }]);
     } catch (err) {
@@ -3865,7 +3951,8 @@
 
   // One tap: tonight and the chosen night trade dinners (POST
   // /api/week/{week}/swap-nights — the rows are re-dated, groceries and
-  // defrost reminders ride along, the list is untouched). Then every
+  // defrost reminders ride along; a dish landing on a different-size table
+  // is resized, `list_changed`). Then every
   // surface that reads the plan by date is told: Now's own strip and this
   // card, Plan, and Cook.
   async function runTonightSwap(panel, otherDate) {
@@ -3879,7 +3966,7 @@
       var res = await Api.fetch('/api/week/' + encodeURIComponent(data.week_start) + '/swap-nights', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date_a: tonightDate, date_b: otherDate })
+        body: JSON.stringify(withPlanId({ date_a: tonightDate, date_b: otherDate }, data.weekly_plan_id))
       });
       if (!res.ok) throw new Error('swap failed (' + res.status + ')');
       var out = await res.json();
@@ -3902,7 +3989,7 @@
           return undoTonightSwap(panel, tonightDate, otherDate, away && away.meal);
         }
       }, tradeToast.ms);
-      afterTonightSwap(panel);
+      afterTonightSwap(panel, { listMoved: !!out.list_changed });
     } catch (err) {
       console.warn('Swapping tonight failed:', err);
       showToast(TONIGHT_SWAP_TROUBLE);
@@ -3950,10 +4037,13 @@
       }
       closeTonightSheet();
       if (out.status !== 'night_off') {
-        // A 200 that says no — only a night with no plan covering it now,
-        // which a sheet left open across midnight can reach. The sentence
-        // is the server's, the sheet is closed so the toast is the only
-        // thing saying it, and the card is re-read.
+        // A 200 that says no. Usually one of two things: a sheet left open
+        // across midnight (no plan covers the new "tonight"), or the dish
+        // is already cooking — someone started it on another phone and the
+        // cook feeds later nights, so it stays (tonight_night_off's
+        // `cooking` refusal). The sentence is the server's, the sheet is
+        // closed so the toast is the only thing saying it, and the card is
+        // re-read.
         showToast(out.message || TONIGHT_SWAP_TROUBLE, null, 6000);
         afterTonightSwap(panel);
         return;
@@ -3964,9 +4054,9 @@
         label: 'Undo',
         onClick: function () { return undoTonightNightOff(panel, tonightDate, out.dish); }
       } : null, offToast.ms);
-      // listMoved: the one thing a night off can change that a nights swap
-      // never does — a dropped dish puts back whatever it had put on the
-      // list that nobody has bought yet. This used to be a
+      // listMoved: a dropped dish puts back whatever it had put on the
+      // list that nobody has bought yet (a nights swap moves it only when
+      // a dish lands on a different-size table — its `list_changed`). This used to be a
       // refreshGroceryPanel() of its own, directly under this sentence;
       // once the `week` branch started re-reading Shop too that was a
       // second reload of the same panel on one tap (measured: 2), so the
@@ -4083,13 +4173,14 @@
       var res = await Api.fetch('/api/week/' + encodeURIComponent(data.week_start) + '/swap-nights-undo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date_a: tonightDate, date_b: otherDate })
+        body: JSON.stringify(withPlanId({ date_a: tonightDate, date_b: otherDate }, data.weekly_plan_id))
       });
       if (!res.ok) throw new Error('undo failed (' + res.status + ')');
+      var undone = await res.json().catch(function () { return {}; });
       showToast(wasTonights
         ? wasTonights + ' is back on tonight.'
         : 'Tonight and ' + dayName(otherDate, { weekday: 'long' }) + ' are back as they were.');
-      afterTonightSwap(panel);
+      afterTonightSwap(panel, { listMoved: !!(undone && undone.list_changed) });
     } catch (err) {
       console.warn('Undoing tonight’s swap failed:', err);
       showToast(TONIGHT_SWAP_TROUBLE);
@@ -4103,13 +4194,13 @@
   //
   // `opts.listMoved` is the one thing this caller knows that a chat action
   // never can, and it is why the second argument exists (2026-09-17, on
-  // review). A NIGHTS SWAP leaves the grocery list alone — swap_dinner_-
-  // nights re-dates the rows in place, ids kept, so the grocery links ride
-  // along: same dishes, same lines, nothing to re-read (worktree-week-
-  // tiles, 2026-09-13). A NIGHT OFF does move it: a dropped dish puts back
-  // whatever it had put on the list that nobody has bought yet. So Shop is
-  // left alone for the first and re-read for the second, rather than both
-  // paying the chat door's "the client cannot tell" price.
+  // review). A NIGHTS SWAP keeps the same lines — swap_dinner_nights
+  // re-dates the rows in place, ids kept — but resizes a dish that lands on
+  // a different-size table, and says so in `list_changed` (2026-10-24); the
+  // caller passes that through. A NIGHT OFF does move it: a dropped dish
+  // puts back whatever it had put on the list that nobody has bought yet.
+  // So Shop is re-read only when the server says the list moved, rather
+  // than paying the chat door's "the client cannot tell" price.
   function afterTonightSwap(panel, opts) {
     loadTonightAsk(panel);
     loadNeedsYou(panel);
@@ -5263,8 +5354,14 @@
   var GRO_CAUGHT_UP_TOAST = "Back online — your ticks are saved.";
   // Ticks the server refused on replay: the row is gone (a partner removed
   // it, or bought it and finished the stop) and the fresh list is the truth.
-  function groTicksDroppedToast(n) {
-    return (n === 1 ? "One tick" : n + " ticks") + " couldn’t be saved — the list is up to date now.";
+  // `adds`: how many of the n were things added, not ticks — an add the
+  // server refused is not a tick, and the toast used to call it one.
+  function groTicksDroppedToast(n, adds) {
+    adds = adds || 0;
+    var what = !adds ? (n === 1 ? "One tick" : n + " ticks")
+      : adds === n ? (n === 1 ? "Something you added" : n + " things you added")
+      : n + " changes";
+    return what + " couldn’t be saved — the list is up to date now.";
   }
   // No signal and no copy to show (this device hasn't heard which household
   // is signed in, or was just signed out): a calm empty state, not an error.
@@ -5386,12 +5483,15 @@
     return groOffline.replay(groPostJson).then(function (result) {
       if (!result) return result;
       if (result.kept > 0) {
-        groSetOffline(true);
+        // `waiting`: the server answered, it is just still finishing an
+        // add this phone sent before (a 409 — see grocery-offline.js
+        // replay). That is not "no signal"; the timer sends it again.
+        if (!result.waiting) groSetOffline(true);
         return result;
       }
       groSetOffline(false);
       if (groReplayTimer) { clearInterval(groReplayTimer); groReplayTimer = null; }
-      if (result.dropped > 0) showToast(groTicksDroppedToast(result.dropped));
+      if (result.dropped > 0) showToast(groTicksDroppedToast(result.dropped, result.droppedAdds));
       else if (result.sent > 0) showToast(GRO_CAUGHT_UP_TOAST);
       renderGroceryOfflineLine();
       if (result.sent > 0 || result.dropped > 0) return loadGrocery().then(function () { return result; });
@@ -8484,13 +8584,18 @@
     'lb', 'lbs', 'pound', 'pounds', 'oz', 'ounce', 'ounces', 'kg', 'g', 'gram',
     'grams', 'cup', 'cups', 'tbsp', 'tsp', 'can', 'cans', 'bag', 'bags', 'box',
     'boxes', 'bunch', 'bunches', 'head', 'heads', 'dozen', 'pack', 'packs',
-    'jar', 'jars', 'bottle', 'bottles', 'loaf', 'loaves', 'l', 'ml'
+    'pk', 'pks', 'jar', 'jars', 'bottle', 'bottles', 'loaf', 'loaves', 'l', 'ml'
   ];
+  // A multipack is written "24-pack" as often as "24 pack" (and "12pk"), so
+  // a hyphen may sit between the number and its unit word: "24-pack water"
+  // sends quantity "24 pack", which the server keeps as one 24-pack
+  // (quantities.typed_multipack). Without it the whole text was the name.
+  var GRO_ADD_NUM_UNIT = '(\\d+(?:[.\\/]\\d+)?)(?:\\s*-\\s*(?=[a-zA-Z])|\\s*)([a-zA-Z]*)';
   function groParseAddInput(text) {
     var raw = String(text || '').trim();
     if (!raw) return { item: '', quantity: '' };
     // "2 lb carrots" / "3 apples" / "1.5 cups rice"
-    var lead = raw.match(/^(\d+(?:[.\/]\d+)?)\s*([a-zA-Z]*)\s+(.+)$/);
+    var lead = raw.match(new RegExp('^' + GRO_ADD_NUM_UNIT + '\\s+(.+)$'));
     if (lead) {
       var leadUnit = lead[2].toLowerCase();
       if (!leadUnit || GRO_ADD_UNIT_WORDS.indexOf(leadUnit) !== -1) {
@@ -8498,7 +8603,7 @@
       }
     }
     // "milk 2" / "eggs 12"
-    var trail = raw.match(/^(.+?)\s+(\d+(?:[.\/]\d+)?)\s*([a-zA-Z]*)$/);
+    var trail = raw.match(new RegExp('^(.+?)\\s+' + GRO_ADD_NUM_UNIT + '$'));
     if (trail) {
       var trailUnit = trail[3].toLowerCase();
       if (!trailUnit || GRO_ADD_UNIT_WORDS.indexOf(trailUnit) !== -1) {
@@ -8546,6 +8651,11 @@
   // A write the server refused reopens the sheet with the typing in it.
   function groAddLine(line) {
     var payload = { item: line.item, quantity: line.quantity || '', category: line.category };
+    // Named ONCE, before the first send, and carried into the queue when
+    // that send fails: a reply lost in a store's dead zone gets the add
+    // re-sent under the same name, and the server answers the repeat
+    // instead of adding "2 milk" a second time (app/grocery_add_once.py).
+    if (window.PomonaGroceryOffline) payload.client_id = window.PomonaGroceryOffline.newClientId();
     if (line.store !== null && line.store !== undefined) {
       payload.store = line.store;
       payload.remember = true;
@@ -12371,6 +12481,7 @@
           wwkAddChip('data-wwk="add" data-kind="restriction" data-member="' + escapeHtml(name) + '"') +
         '</div>' +
         moveMain +
+        inviteRemoveHtml(inviteAdultNamed(name)) +
       '</div>';
     });
     if (!(mem.members || []).length) html += '<p class="wwk-empty">Nobody yet — set up the household first.</p>';
@@ -12478,13 +12589,16 @@
   // (a laptop): the link is copied and the toast says so. Once they've
   // joined the row reads "Joined Sep 27" with a quiet "Send a new link"
   // (a new phone, a lost message). Under the people, "+ Invite another
-  // adult" asks for a first name only and adds them as an adult.
+  // adult" asks for a first name and setup's choice — eats here, or
+  // "Someone not eating here" (2026-10-21) — and adds them as an adult.
   //
   // The link is /join#<token> — the token in the fragment, which never
   // reaches the server's logs (static/join.html POSTs it).
   var inviteState = {
     adults: null,     // GET /api/household/invites — adults + joined
     newOpen: false,   // "+ Invite another adult" turned into its field
+    newEatsHere: true, // that field's "Eats here" / "Doesn't eat here" pick
+    removeAsk: null,  // member id whose "Take <name> out?" is showing
     busy: false,
     ready: {}         // member id -> link made, waiting for a second tap to share
   };
@@ -12546,6 +12660,68 @@
     '</div>';
   }
 
+  // Take someone out of the household (Loop Board, 2026-10-21): a former
+  // nanny, an ex-partner. Only the main person sees it, on every OTHER
+  // adult's row and every helper's (`can_remove`, which the server works
+  // out and checks again on POST /api/household/members/remove). One quiet
+  // line, then a confirm in place that names them — the grocery list's
+  // "Take carrots off the list?" shape. What goes is "Remove me"'s: they
+  // are signed out on every device and their link stops working; what
+  // they added to the house stays.
+  function inviteRemoveHtml(adult) {
+    if (!adult || !adult.can_remove) return '';
+    var id = String(adult.id);
+    var name = escapeHtml(adult.name);
+    if (String(inviteState.removeAsk) !== id) {
+      return '<button type="button" class="wwk-remove-link" data-invite="remove-ask" data-member-id="' + id + '">' +
+        'Take ' + name + ' out of the household</button>';
+    }
+    return '<div class="wwk-remove-confirm" role="group" aria-label="Take ' + name + ' out of the household?">' +
+      '<p class="wwk-remove-q">Take ' + name + ' out of the household?</p>' +
+      '<p class="wwk-note">I’ll sign ' + name + ' out on every device, and their link stops working. What they added stays. If ' + name + ' knows the household passphrase, they could still sign back in with it.</p>' +
+      '<div class="wwk-invite">' +
+        '<button type="button" class="wwk-invite-btn" data-invite="remove-yes" data-member-id="' + id + '">Take ' + name + ' out</button>' +
+        '<button type="button" class="wwk-invite-again" data-invite="remove-no">Keep ' + name + '</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  async function inviteRemove(id) {
+    if (inviteState.busy) return;
+    var adult = (inviteState.adults || []).filter(function (a) { return String(a.id) === String(id); })[0];
+    var name = adult ? adult.name : '';
+    inviteState.busy = true;
+    try {
+      var res = await Api.fetch('/api/household/members/remove', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ member_id: parseInt(id, 10) })
+      });
+      var data = null;
+      try { data = await res.json(); } catch (e) { /* below */ }
+      if (!res.ok) {
+        showToast((data && typeof data.detail === 'string') ? data.detail : 'That didn’t go through, and nothing changed. Try again in a moment.');
+        return;
+      }
+      inviteState.removeAsk = null;
+      delete inviteState.ready[String(id)];
+      showToast(((data && data.name) || name) + '’s out of the household');
+      // Who's here loses a person (and anything keyed to them), so the
+      // answers are re-read, the invite rows with them.
+      prefsInvalidate();
+      // Tonight's cook, who's home and the moves can name them on the
+      // tabs already built (a cook answer naming them is cleared), and
+      // tabs build once per page load — so those are re-read too.
+      refreshStaleTabsFromActions([{ tab: 'week' }, { tab: 'kitchen' }], { listMoved: false });
+      await loadInviteAdults();
+      inviteRerender();
+    } catch (err) {
+      console.warn('Remove failed:', err);
+      showToast('That didn’t go through, and nothing changed. Try again in a moment.');
+    } finally {
+      inviteState.busy = false;
+    }
+  }
+
   // The helpers (2026-10-20): an adult added as "Someone not eating here"
   // (a nanny, a grandparent who helps with dinners — members.eats_here = 0)
   // signs in like anyone, but the people above are the ones meals are
@@ -12563,6 +12739,7 @@
           ' <span class="pill pill-neutral wwk-person-main">Helps out</span></p>' +
         '<p class="wwk-note">Sees the plan and the list. I don’t plan meals for them.</p>' +
         inviteRowHtml(a) +
+        inviteRemoveHtml(a) +
       '</div>';
     }).join('');
   }
@@ -12574,7 +12751,16 @@
         wwkAddChip('data-invite="new-open"', 'Invite another adult') +
       '</div>';
     }
-    return '<div class="wwk-invite-new">' +
+    // The same choice setup asks (2026-10-21): somebody who eats here, or
+    // "Someone not eating here" — a helper who signs in but is never
+    // planned for (members.eats_here = 0; app/invites.add_adult).
+    var eats = inviteState.newEatsHere !== false;
+    return '<div class="wwk-invite-new wwk-invite-open">' +
+      '<div class="wwk-chips" role="group" aria-label="Do they eat here?">' +
+        wwkChip('Eats here', 'data-invite="new-eats" data-value="1"', eats ? 'on' : '') +
+        wwkChip('Someone not eating here', 'data-invite="new-eats" data-value="0"', eats ? '' : 'on') +
+      '</div>' +
+      (eats ? '' : wwkNote('They see the plan and the list. I won’t plan meals for them.')) +
       '<div class="wwk-input-row">' +
         '<input type="text" class="snw-input wwk-text" id="invite-new-name" maxlength="40" autocomplete="off" ' +
           'placeholder="Their first name" aria-label="Their first name">' +
@@ -12640,6 +12826,7 @@
       if (body.name) {
         // A new adult: Who's here gains a person, so the answers are re-read.
         inviteState.newOpen = false;
+        inviteState.newEatsHere = true;
         prefsInvalidate();
       }
       await loadInviteAdults();
@@ -12680,6 +12867,27 @@
         var field = document.querySelector('[data-invite-link="' + id + '"]');
         if (field) { field.focus(); field.select(); }
       });
+    } else if (what === 'remove-ask') {
+      inviteState.removeAsk = id;
+      inviteRerender();
+    } else if (what === 'remove-no') {
+      inviteState.removeAsk = null;
+      inviteRerender();
+    } else if (what === 'remove-yes') {
+      inviteRemove(id);
+    } else if (what === 'new-eats') {
+      // Keep what's typed: the field is drawn again with the pick.
+      var typed = document.getElementById('invite-new-name');
+      var keep = typed ? typed.value : '';
+      inviteState.newEatsHere = target.getAttribute('data-value') !== '0';
+      inviteRerender();
+      var again = document.getElementById('invite-new-name');
+      if (again) {
+        again.value = keep;
+        again.focus();
+        var sendBtn = again.parentNode && again.parentNode.querySelector('[data-invite="new-send"]');
+        if (sendBtn) sendBtn.textContent = keep.trim() ? 'Invite ' + keep.trim() : 'Invite';
+      }
     } else if (what === 'new-open') {
       inviteState.newOpen = true;
       inviteRerender();
@@ -12689,7 +12897,18 @@
       var field = document.getElementById('invite-new-name');
       var name = field ? field.value.trim() : '';
       if (!name) { if (field) field.focus(); return; }
-      inviteSend({ name: name }, name);
+      var helper = inviteState.newEatsHere === false;
+      // An adult already here under that name is invited as they are
+      // (invites.add_adult never re-marks someone), so a helper pick for
+      // somebody who eats here would quietly not take. Say so instead.
+      var already = (inviteState.adults || []).filter(function (a) {
+        return String(a.name || '').trim().toLowerCase() === name.toLowerCase();
+      })[0];
+      if (helper && already && already.eats_here !== false) {
+        showToast(already.name + ' is already here, eating with you. Pick Eats here to send their link.');
+        return;
+      }
+      inviteSend({ name: name, eats_here: !helper }, name);
     }
   });
 
@@ -14434,18 +14653,41 @@
 
   // ---------- freeform facts ----------
 
-  function wwkAddFact(category, text) {
+  async function wwkAddFact(category, text) {
     var section = { people: 'people', rhythm: 'rhythm', taste: 'taste' }[category];
     var temp = { id: 'new-' + Date.now(), category: category, text: text };
-    wwkCommit(section, function () {
+    var known = false;
+    var saved = await wwkCommit(section, function () {
       wwkState.facts = (wwkState.facts || []).concat([temp]);
     }, function () {
       return wwkPost('/api/facts/add', { category: category, text: text });
     }, function (result) {
+      if (result && result.already_known) {
+        // Said before (2026-10-25): the server answers with the row it
+        // already has. The typed line goes — keeping it under that id drew
+        // two rows for one fact, and an X on the copy deleted the real one.
+        // The row already on screen shows the server's words and flag; if
+        // it isn't on screen yet (chat added it since this opened), the
+        // server's copy takes the typed line's place.
+        known = true;
+        var facts = wwkState.facts || [];
+        var mine = facts.filter(function (f) { return String(f.id) === String(result.id); })[0];
+        if (mine) {
+          mine.text = result.text;
+          mine.hard = result.hard ? 1 : 0;
+          wwkState.facts = facts.filter(function (f) { return f !== temp; });
+        } else {
+          temp.id = result.id;
+          temp.text = result.text;
+          temp.hard = result.hard ? 1 : 0;
+        }
+        return;
+      }
       if (result && result.id) {
         (wwkState.facts || []).forEach(function (f) { if (f.id === temp.id) f.id = result.id; });
       }
     });
+    if (saved && known) showToast('I already have that one.');
   }
 
   function wwkUpdateFact(id, text) {
@@ -15458,6 +15700,11 @@
     // is nothing to ask. Read up here because it also decides the toast
     // below: an approved week is past "before you approve it".
     var afterApprove = window.location.search.indexOf('after=approve') !== -1;
+    // The reveal's count (`added`, the approve answer's groceries_added),
+    // read NOW: the replaceState below scrubs the URL before the toast is
+    // shown, and reading it there said "Week approved." with the count
+    // gone on every first week (defect hunt, 2026-10-24).
+    var approvedAdded = new URLSearchParams(window.location.search).get('added');
 
     await loadWeekMenu(panel);
 
@@ -15493,12 +15740,13 @@
       // step first (2b = A, 2026-10-12): the reveal's button says
       // "Approve the week", and the question waits on Plan's freezer row.
       goGroceryList();
-      showToast(weekApprovedLine(new URLSearchParams(window.location.search).get('added')));
+      showToast(weekApprovedLine(approvedAdded));
     }
     // The first-open tour (Emily, 2026-10-18): right after "Here's your
     // week." on the household's first draft. Not on the approve hand-off —
-    // that household has an approved week, which the server says no to
-    // anyway — and see maybeStartFirstTour for everything else it waits on.
+    // that goes on to Shop; the tour waits for their first visit to Plan
+    // (activateTab), approved or not (Emily, 2026-10-25) — and see
+    // maybeStartFirstTour for everything else it waits on.
     if (!afterApprove) maybeStartFirstTour();
   }
 
@@ -15551,13 +15799,19 @@
   // (goTab('week') before the POST lands) from starting it again.
   var tourStartedThisLoad = false;
   var tourAsking = false;
+  // A "no" holds for the page load: an approved week now asks too, and every
+  // household already using the app would otherwise ask on every Plan visit.
+  var tourDeclinedThisLoad = false;
 
   function maybeStartFirstTour() {
-    if (!window.PomonaTour || window.PomonaTour.isOpen() || tourStartedThisLoad || tourAsking) return;
-    if (weekState.step !== 'week' || weekPlanState(weekState.data) !== 'draft') return;
+    if (!window.PomonaTour || window.PomonaTour.isOpen() || tourStartedThisLoad || tourAsking || tourDeclinedThisLoad) return;
+    // A draft, or the approved week the setup's "Approve the week" made: the
+    // server decides whether this household is new enough (app/tools/tour.py).
+    var planState = weekPlanState(weekState.data);
+    if (weekState.step !== 'week' || (planState !== 'draft' && planState !== 'set')) return;
     tourAsking = true;
     Api.json('/api/tour', { quiet: true }).then(function (st) {
-      if (!st || !st.show) { tourAsking = false; return; }
+      if (!st || !st.show) { tourAsking = false; if (st) tourDeclinedThisLoad = true; return; }
       // A beat for "Here's your week." to land first.
       setTimeout(function () {
         tourAsking = false;
@@ -16273,7 +16527,7 @@
       var res = await Api.fetch('/api/week/' + encodeURIComponent(weekStart) + '/flag-fix', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entry_id: entryId, action: action })
+        body: JSON.stringify(withPlanId({ entry_id: entryId, action: action }, planIdForSwap()))
       });
       if (!res.ok) throw new Error('flag fix failed');
       var data = await res.json();
@@ -17860,9 +18114,9 @@
     var call = Api.fetch('/api/week/' + encodeURIComponent(job.weekStart) + '/swap-options', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(job.wholeDish
+      body: JSON.stringify(withPlanId(job.wholeDish
         ? { entry_id: job.entryId, avoid: [], whole_dish: true }
-        : { entry_id: job.entryId, avoid: [] })
+        : { entry_id: job.entryId, avoid: [] }, job.planId))
     }).catch(function () { /* the sheet asks again itself */ }).then(function () {
       st.running = false;
       delete st.inflight[jobKey];
@@ -17895,7 +18149,7 @@
     if (st.asked[key]) return;
     st.asked[key] = true;
     st.count += 1;
-    st.queue.push({ weekStart: weekStart, entryId: entry.entry_id, wholeDish: wholeDish });
+    st.queue.push({ weekStart: weekStart, planId: planIdForSwap(), entryId: entry.entry_id, wholeDish: wholeDish });
     prefetchSwapRun();
   }
 
@@ -17936,6 +18190,7 @@
       ? { entry_id: st.entryId, avoid: ask.avoid || [], whole_dish: true }
       : { entry_id: st.entryId, avoid: ask.avoid || [] };
     if (ask.request) body.request = ask.request;
+    withPlanId(body, st.planId);
     try {
       var res = await Api.fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/swap-options', {
         method: 'POST',
@@ -18002,7 +18257,7 @@
     closeAskSheet();
     swapSheetState = {
       panel: panel, day: day, date: day.date, slot: slot, entry: entry, entryId: entry.entry_id,
-      name: mealDisplayName(entry), weekStart: weekStart, options: null, trouble: '', busy: false, view: 'picks',
+      name: mealDisplayName(entry), weekStart: weekStart, planId: planIdForSwap(), options: null, trouble: '', busy: false, view: 'picks',
       holdHeight: 0, wholeDish: !!opts.wholeDish, dates: opts.wholeDish && opts.dates ? opts.dates : [day.date],
       pending: null
     };
@@ -18056,7 +18311,7 @@
       var res = await Api.fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/swap-choose', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entry_id: st.entryId, option: picked.index, whole_dish: !!st.wholeDish, meal: picked.meal })
+        body: JSON.stringify(withPlanId({ entry_id: st.entryId, option: picked.index, whole_dish: !!st.wholeDish, meal: picked.meal }, st.planId))
       });
       if (res.status === 404) {
         stopWorking();
@@ -18180,7 +18435,7 @@
       var res = await Api.fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/move-options', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entry_id: st.entryId })
+        body: JSON.stringify(withPlanId({ entry_id: st.entryId }, st.planId))
       });
       var out = res.ok ? await res.json() : null;
       if (swapSheetState !== st) return;
@@ -18205,7 +18460,7 @@
     closeAskSheet();
     swapSheetState = {
       panel: panel, day: day, date: day.date, slot: slot, entry: entry, entryId: entry.entry_id,
-      name: mealDisplayName(entry), weekStart: weekStart, view: 'move', move: null, trouble: '',
+      name: mealDisplayName(entry), weekStart: weekStart, planId: planIdForSwap(), view: 'move', move: null, trouble: '',
       busy: false, holdHeight: 0, dates: [day.date], pending: null
     };
     var thisOpen = swapSheetState;
@@ -18243,13 +18498,13 @@
     var st = swapSheetState;
     if (!st || st.busy || st.view !== 'move' || !toDate) return;
     st.busy = true;
-    var panel = st.panel, weekStart = st.weekStart;
+    var panel = st.panel, weekStart = st.weekStart, planId = st.planId;
     drawSwapSheet();
     try {
       var res = await Api.fetch('/api/week/' + encodeURIComponent(weekStart) + '/move-meal', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entry_id: st.entryId, to_date: toDate })
+        body: JSON.stringify(withPlanId({ entry_id: st.entryId, to_date: toDate }, planId))
       });
       if (!res.ok) {
         st.busy = false;
@@ -18269,10 +18524,13 @@
       renderMealsStep(panel);
       var thaw = (out.thaw_notes || []).join(' ');
       toastSaved(out.said + (thaw ? '. ' + thaw : ''),
-        { label: 'Undo', onClick: function () { runMoveMealUndo(panel, weekStart, out.move_id, out.said); } },
+        { label: 'Undo', onClick: function () { runMoveMealUndo(panel, weekStart, out.move_id, out.said, planId); } },
         thaw ? MOVE_THAW_TOAST_MS : MOVE_TOAST_MS);
       await loadWeekMenu(panel);
       refreshTodayMoves();
+      // A meal that moved onto a different-size table is bought for it now
+      // (2026-10-24): Shop builds once per page load, so tell it.
+      if (out.list_changed) refreshGroceryPanel();
     } catch (err) {
       console.warn('Moving a meal failed:', err);
       if (swapSheetState === st) {
@@ -18283,12 +18541,12 @@
     }
   }
 
-  async function runMoveMealUndo(panel, weekStart, moveId, said) {
+  async function runMoveMealUndo(panel, weekStart, moveId, said, planId) {
     try {
       var res = await Api.fetch('/api/week/' + encodeURIComponent(weekStart) + '/move-meal-undo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ move_id: moveId })
+        body: JSON.stringify(withPlanId({ move_id: moveId }, planId))
       });
       if (!res.ok) {
         showToast(swapRouteMessage(await res.json().catch(function () { return null; })) || SWAP_TROUBLE);
@@ -18304,6 +18562,7 @@
       showToast(out.said || 'Back as it was');
       await loadWeekMenu(panel);
       refreshTodayMoves();
+      if (out.list_changed) refreshGroceryPanel();
     } catch (err) {
       console.warn('Undoing a meal move failed:', err);
       showToast(SWAP_TROUBLE);
@@ -19687,6 +19946,9 @@
     // not one step name. Day/Meal steps and the plain week root untouched.
     var usesReviewLayout = weekState.step === 'review' || (weekState.step === 'week' && draft);
     panel.classList.toggle('is-review-layout', usesReviewLayout);
+    // And the Meal step's dock (mealDockHtml), for the same reason: one
+    // freeform dish is a short page (shell.css, is-meal-layout).
+    panel.classList.toggle('is-meal-layout', weekState.step === 'meal');
 
     // Chores is a state of the ROOT (a sibling of the week, not a step
     // under it): it keeps the band and the gear, and has no crumb of its
@@ -20067,6 +20329,23 @@
     return (weekState.data && weekState.data.week_start_date) || null;
   }
 
+  // The plan on screen, sent beside its week key on every week-scoped call
+  // that writes to one plan (overnight/plan-id-over-week-key). The key is
+  // not unique — a plan whose front days were taken over keeps its old
+  // start, and a later plan starting that day shares it — and the server
+  // resolves a bare key to the newest. /discard has always sent it.
+  function planIdForSwap() {
+    var d = weekState.data;
+    return (d && d.weekly_plan_id !== null && d.weekly_plan_id !== undefined) ? d.weekly_plan_id : null;
+  }
+
+  // `body` with the plan id added when there is one; untouched otherwise,
+  // so a screen with no plan id makes exactly the call it always made.
+  function withPlanId(body, planId) {
+    if (planId !== null && planId !== undefined) body.weekly_plan_id = planId;
+    return body;
+  }
+
   async function runSwapInPlace(panel, day, slot) {
     var entry = daySlotEntry(day, slot);
     var weekStart = weekStartForSwap();
@@ -20084,9 +20363,9 @@
         headers: { 'Content-Type': 'application/json' },
         // On a Meal step opened as a whole dish, every day the row stood
         // for (the server works them out, swap_in_place.batch_days).
-        body: JSON.stringify(weekState.step === 'meal' && weekState.mealWholeDish
+        body: JSON.stringify(withPlanId(weekState.step === 'meal' && weekState.mealWholeDish
           ? { entry_id: entry.entry_id, avoid: carried, whole_dish: true }
-          : { entry_id: entry.entry_id, avoid: carried })
+          : { entry_id: entry.entry_id, avoid: carried }, planIdForSwap()))
       });
       if (!res.ok) throw new Error('swap failed');
       var data = await res.json();
@@ -20165,7 +20444,7 @@
       var res = await Api.fetch('/api/week/' + encodeURIComponent(weekStart) + '/fill-day', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: day.date })
+        body: JSON.stringify(withPlanId({ date: day.date }, planIdForSwap()))
       });
       if (!res.ok) throw new Error('fill-day failed');
       var data = await res.json();
@@ -20562,7 +20841,7 @@
     var source = (part && part.source) || '';
     var mode = (role === 'protein' || source === 'dish') ? 'change' : 'add';
     mealAddState = {
-      panel: panel, date: day.date, slot: slot, entryId: entry.entry_id, weekStart: weekStart, busy: false,
+      panel: panel, date: day.date, slot: slot, entryId: entry.entry_id, weekStart: weekStart, planId: planIdForSwap(), busy: false,
       mode: mode, role: role, roleWord: PART_WORDS[role] || '', side: (part && part.side) || '',
       selected: null, offer: null, markRow: !!(part && part.markRow)
     };
@@ -20588,6 +20867,8 @@
           // before its six-row cap — a low-carb house tapping "Add a
           // carb" must see the carbs, not one of them (Emily, 2026-09-15).
           (role && PART_COVERS[role] ? '&role=' + encodeURIComponent(PART_COVERS[role]) : '');
+      // The plan on screen, beside its week key (planIdForSwap).
+      if (planIdForSwap() !== null) url += '&weekly_plan_id=' + encodeURIComponent(planIdForSwap());
       var res = await Api.fetch(url);
       if (!res.ok) throw new Error('options failed (' + res.status + ')');
       offer = await res.json();
@@ -20672,7 +20953,7 @@
       var res = await Api.fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/remove-component', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entry_id: st.entryId, name: name })
+        body: JSON.stringify(withPlanId({ entry_id: st.entryId, name: name }, st.planId))
       });
       if (!res.ok) throw new Error('remove failed (' + res.status + ')');
       closeMealAddSheet();
@@ -20706,7 +20987,7 @@
       var res = await Api.fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/change-part', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entry_id: st.entryId, role: st.role || 'protein', choice: choice })
+        body: JSON.stringify(withPlanId({ entry_id: st.entryId, role: st.role || 'protein', choice: choice }, st.planId))
       });
       var out = await res.json().catch(function () { return null; });
       // A failed request gets the swap's own line (SWAP_TROUBLE), never
@@ -20768,6 +21049,22 @@
 
   var MEAL_ADD_TROUBLE = 'That didn’t go on — try again.';
 
+  // A side the server refused for a reason the household should read — a
+  // night that has gone by, or something someone at the table can't have
+  // (plates.add_component, 2026-10-24) — arrives as a 409 whose `detail` is
+  // the sentence: "I left it off — Orzo clashes with gluten." Read here so
+  // the toast says that and not "try again", which would never work. ''
+  // for any other answer, and for a 409 without a sentence.
+  async function mealAddRefusal(res) {
+    if (!res || res.status !== 409) return '';
+    try {
+      var data = await res.json();
+      return data && typeof data.detail === 'string' ? data.detail.trim() : '';
+    } catch (err) {
+      return '';
+    }
+  }
+
   async function runMealAdd(pick) {
     var st = mealAddState;
     if (!st || st.busy) return;
@@ -20779,8 +21076,14 @@
       var res = await Api.fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/add-component', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entry_id: st.entryId, key: pick.key || null, text: pick.text || null })
+        body: JSON.stringify(withPlanId({ entry_id: st.entryId, key: pick.key || null, text: pick.text || null }, st.planId))
       });
+      var refused = await mealAddRefusal(res);
+      if (refused) {
+        // Nothing went on. The sheet stays open so another pick is one tap.
+        showToast(refused);
+        return;
+      }
       if (!res.ok) throw new Error('add failed (' + res.status + ')');
       var out = await res.json();
       closeMealAddSheet();
@@ -20797,7 +21100,7 @@
           await Api.fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/remove-component', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ entry_id: st.entryId, name: st.side })
+            body: JSON.stringify(withPlanId({ entry_id: st.entryId, name: st.side }, st.planId))
           });
         } catch (err) {
           console.warn('Taking the old side off failed:', err);
@@ -20843,15 +21146,24 @@
       var res = await Api.fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/remove-component', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entry_id: st.entryId, name: name })
+        body: JSON.stringify(withPlanId({ entry_id: st.entryId, name: name }, st.planId))
       });
       if (!res.ok) throw new Error('undo failed (' + res.status + ')');
       if (replaced) {
         var back = await Api.fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/add-component', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ entry_id: st.entryId, key: null, text: replaced })
+          body: JSON.stringify(withPlanId({ entry_id: st.entryId, key: null, text: replaced }, st.planId))
         });
+        // The new side DID come off; the old one is refused now (an
+        // allergy saved since, say). Say both, not "couldn't take that off".
+        var notBack = await mealAddRefusal(back);
+        if (notBack) {
+          delete recentlyChanged[st.date + ':' + st.slot];
+          await loadWeekMenu(panel);
+          showToast('Taken back off. ' + notBack);
+          return;
+        }
         if (!back.ok) throw new Error('put back failed (' + back.status + ')');
       }
       // Undone, so the row no longer wears "Changed".
@@ -20875,7 +21187,7 @@
       var res = await Api.fetch('/api/week/' + encodeURIComponent(weekStart) + '/swap-undo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entry_id: entry.entry_id })
+        body: JSON.stringify(withPlanId({ entry_id: entry.entry_id }, planIdForSwap()))
       });
       if (!res.ok) throw new Error('undo failed');
       var data = await res.json();
@@ -21087,7 +21399,7 @@
       var res = await Api.fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/slot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: date, slot: slot, choice: choice })
+        body: JSON.stringify(withPlanId({ date: date, slot: slot, choice: choice }, data.weekly_plan_id))
       });
       if (!res.ok) throw new Error('slot resolve failed');
       var settled = await res.json();
@@ -21340,7 +21652,8 @@
       var res;
       try {
         res = await Promise.race([
-          Api.fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/defrost-items'), waited]);
+          Api.fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/defrost-items' +
+            (data.weekly_plan_id ? '?weekly_plan_id=' + encodeURIComponent(data.weekly_plan_id) : '')), waited]);
       } finally { clearTimeout(waitTimer); }
       if (!res.ok) throw new Error('defrost items lookup failed');
       var body = await res.json();
@@ -21398,7 +21711,7 @@
       var res = await Api.fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/defrost-confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: items }),
+        body: JSON.stringify(withPlanId({ items: items }, data.weekly_plan_id)),
       });
       if (!res.ok) throw new Error('defrost confirm failed');
       var body = await res.json();
@@ -21627,7 +21940,11 @@
 
   async function reopenWeek(panel, data) {
     try {
-      var res = await Api.fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/reopen', { method: 'POST' });
+      var res = await Api.fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/reopen', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(withPlanId({}, data.weekly_plan_id))
+      });
       if (!res.ok) throw new Error('reopen failed');
       await res.json();
       showToast('Open again. Nothing has come off your shopping list.');
@@ -22182,9 +22499,16 @@
       var res = await Api.fetch('/api/week/' + encodeURIComponent(data.week_start_date) + '/approve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ approved_by: approvedBy, confirm_hard_conflicts: !!confirmHardConflicts })
+        body: JSON.stringify(withPlanId({ approved_by: approvedBy, confirm_hard_conflicts: !!confirmHardConflicts }, data.weekly_plan_id))
       });
-      if (!res.ok) throw new Error('approve failed');
+      if (!res.ok) {
+        // A refusal the server wrote for the household (a 503 when Claude
+        // couldn't write the week's new recipes: nothing approved, the list
+        // as it was) is the sentence to show, not our generic one.
+        var failed = new Error('approve failed');
+        try { failed.detail = ((await res.json()) || {}).detail || ''; } catch (e) { failed.detail = ''; }
+        throw failed;
+      }
       // The approve endpoint answers with the dietary check it ran on the
       // way through (app/main.py's approve route, tools.approve_weekly_plan).
       // This used to throw that answer away and show a fixed line, so a
@@ -22254,7 +22578,9 @@
     } catch (err) {
       console.warn('Week approval failed:', err);
       if (btn) { btn.disabled = false; btn.textContent = restoreLabel; }
-      alert('Could not approve the week right now — try again in a moment.');
+      var said = (err && typeof err.detail === 'string' && err.detail.trim()) ? err.detail.trim()
+        : 'Could not approve the week right now — try again in a moment.';
+      showToast(said, null, 9000);
     }
   }
 
@@ -22798,10 +23124,27 @@
       .filter(function (x) { return x.m.date === iso; })
       .sort(function (a, b) { return cookSlotRank(a.m) - cookSlotRank(b.m); });
     if (!todays.length) return null;
-    var fromNow = todays.filter(function (x) { return cookSlotRank(x.m) >= from; });
+    // A snack is eaten in the afternoon — Today files it there, "Start by
+    // 3:00" — even though COOK_SLOT_ORDER lists it last. Ranked last here,
+    // the evening's "dinner onwards" took in the 3pm snack, and once dinner
+    // was cooked the Cook card offered that snack to start, at 11pm
+    // (overnight e2e hunt, 2026-10-23). From dinner on a snack has gone by
+    // and the card stays on dinner, cooked. Earlier in the day it still
+    // ranks after dinner, as it always has.
+    var fromNow = todays.filter(function (x) {
+      if (x.m.slot === 'snack' && from >= 2) return false;
+      return cookSlotRank(x.m) >= from;
+    });
     var uncooked = fromNow.filter(function (x) { return x.m.cooked_status !== 'done'; });
     if (uncooked.length) return uncooked[0].i;
     if (fromNow.length) return fromNow[0].i;
+    // No dinner today (nobody home): the same rule holds — the evening
+    // falls back to the day's last meal that isn't a snack, and with none
+    // to nothing pinned, never to the 3pm snack.
+    if (from >= 2) {
+      var notSnacks = todays.filter(function (x) { return x.m.slot !== 'snack'; });
+      return notSnacks.length ? notSnacks[notSnacks.length - 1].i : null;
+    }
     return todays[todays.length - 1].i;
   }
 
@@ -23729,9 +24072,21 @@
   // accent is the dock's "Start cooking". Nothing for a plain dinner, a
   // reheat, or an unhonoured chain — the field is simply absent, so this
   // is one falsy check and an older payload behaves exactly as before.
+  //
+  // ONCE THE COOK STEPS OFF THE PLAN'S COUNT, the line goes (overnight
+  // defect hunt, 2026-10-21). Its numbers are the chain's and never follow
+  // the stepper (2026-10-05), so "Double batch: 2 tonight, 2 for dinner
+  // tomorrow" over a pot the cook just made 6 — or 2 — is a sentence about
+  // a different pot. Nothing here rewrites it (the sentence stays the
+  // server's); it is simply not said while it isn't true, and comes back
+  // when the stepper does. serves_planned_for is the count the plan cooked
+  // for, set by cookApplyServesOverride from the cook's first tap.
   function recipeBatchLineHtml(meal) {
     var said = meal && meal.batch_line;
     if (!said) return '';
+    var planned = parseInt(meal.serves_planned_for, 10);
+    var shown = parseInt(cookServesShown(meal), 10);
+    if (planned && shown && shown !== planned) return '';
     return '<p class="recipe-batch">' + escapeHtml(said) + '</p>';
   }
 
@@ -23758,7 +24113,7 @@
     var count = meal.batch_line ? cookServesShown(meal) : null;
     return '<section class="card recipe-card recipe-ings" aria-label="Ingredients">' +
       '<span class="cook-eyebrow recipe-eyebrow">Ingredients' +
-        (count ? ' &middot; ' + escapeHtml(String(count)) + ' servings' : '') + '</span>' +
+        (count ? ' &middot; ' + escapeHtml(String(count)) + (String(count) === '1' ? ' serving' : ' servings') : '') + '</span>' +
       '<ul class="cook-getout">' + rows + '</ul>' +
       cookUnscaledHtml(meal, idx) +
     '</section>';
@@ -24018,7 +24373,7 @@
     var count = meal.batch_line ? cookServesShown(meal) : null;
     return '<section class="card recipe-card recipe-ings" aria-label="Ingredients">' +
       '<span class="cook-eyebrow recipe-eyebrow">Ingredients' +
-        (count ? ' &middot; ' + escapeHtml(String(count)) + ' servings' : '') + '</span>' +
+        (count ? ' &middot; ' + escapeHtml(String(count)) + (String(count) === '1' ? ' serving' : ' servings') : '') + '</span>' +
       groups.map(function (g) {
         return (g ? '<p class="recipe-ing-group">' + escapeHtml(g) + '</p>' : '') +
           '<ul class="recipe-ing-list">' + byName[g].map(function (ing) {
@@ -24157,7 +24512,13 @@
       await cookPost('/api/recipe-feedback', { recipe_name: meal.meal, rating: el.getAttribute('data-rating'), notes: '' });
       cookState.recipeMenuOpen = false;
       cookState.recipeRateOpen = false;
+      // The rating answers "How did it go?" for this dish too — re-read the
+      // attention list the way cookRateMeal does, or the banner keeps
+      // asking about a dish just rated until the page reloads.
+      // refreshCookAttention renders on success; the render here covers a
+      // failed re-read, so the menu still closes.
       renderCook();
+      await refreshCookAttention();
       showToast('Noted — that’ll steer next week.');
     } catch (err) {
       el.disabled = false;
@@ -24729,6 +25090,9 @@
       m.default_servings = o.servings;
       m.unscaled_items = o.unscaled_items;
       m.serves_overridden = true;
+      // What the plan cooked for, so the batch line knows whether the
+      // count on the stepper is still the one its sentence is about.
+      if (o.planned_for) m.serves_planned_for = o.planned_for;
       // A batch card's `servings` is the number being cooked, so it
       // follows the cook. Its covers_note (the plan's sentence about which
       // nights the batch covers) does not — the recipe screen no longer
@@ -28443,6 +28807,16 @@
         title: 'No week planned yet',
         body: 'Plan one from Today. I’ll draft the dinners, and the list builds from them.'
       });
+    } else if (preview.starts_later) {
+      // A plan that hasn't started isn't "this week's", and there's no
+      // "next one" to plan: its dinners are still to settle. The server
+      // passes such a plan over for one with dinners (first_open.
+      // _soonest_upcoming_plan); this is the guard if it ever doesn't.
+      rows.push({
+        icon: 'pot',
+        title: 'No dinners on next week’s plan yet',
+        body: 'They’re still to decide, on Plan.'
+      });
     } else {
       rows.push({
         icon: 'pot',
@@ -28459,7 +28833,11 @@
       });
     }
     var decide = (preview.decisions || []).map(function (t) { return t + '.'; });
-    if (preview.week_state === 'draft') decide.push('This week’s a draft, waiting for a yes on Plan.');
+    // starts_later: the week named is next week's (the first one setup
+    // filed to start later), so it isn't "this week" that's waiting.
+    if (preview.week_state === 'draft') {
+      decide.push((preview.starts_later ? 'Next' : 'This') + ' week’s a draft, waiting for a yes on Plan.');
+    }
     if (decide.length) {
       rows.push({ icon: 'ask', title: 'Still to decide', body: decide.join(' ') });
     }

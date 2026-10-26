@@ -116,7 +116,11 @@ def use_household(value: int) -> Iterator[int]:
 # A household with exactly one adult never sees the question, and
 # current_member() answers with that adult without a pick. That is a
 # deliberate inference rather than a stored fact: there is no one else it
-# could be, and asking would be an extra step for nothing.
+# could be, and asking would be an extra step for nothing. It holds only
+# for a session with NO pick: a session that picked someone who has since
+# stopped being an adult here is a different person, not the one left.
+# (A fresh sign-in on that device carries no pick, so in a one-adult house
+# it is read as that adult again — by design, see current_member.)
 #
 # Default None: scripts, tests and the chat agent's tool calls run with no
 # adult picked unless a request set one, and every write below falls back
@@ -150,6 +154,21 @@ def use_member(value: int | None) -> Iterator[int | None]:
 
 
 _ADULT_SQL = "LOWER(TRIM(age_group)) = 'adult'"
+
+# The name an email sign-up's household is created with (app/account_email.py,
+# 2026-10-05). Nothing asks for a real one yet, so it is a placeholder, not a
+# name: said as one it read "Delete Your household?" in Preferences and "Your
+# household's meals this week" to the babysitter holding the share link
+# (defect hunt, 2026-10-21).
+UNNAMED_HOUSEHOLD = "Your household"
+
+
+def household_display_name(name: str | None) -> str:
+    """The household's name for a sentence, or "" when it has none of its own."""
+    clean = (name or "").strip()
+    return "" if clean == UNNAMED_HOUSEHOLD else clean
+
+
 # The people meals are planned for (2026-09-30). A helper added as
 # "Someone not eating here" (members.eats_here = 0) signs in and sees the
 # plan and the list, but is left out of everything that decides who eats:
@@ -178,6 +197,55 @@ def _fold_for_compare(name: str) -> str:
     return "".join(
         ch for ch in unicodedata.normalize("NFKD", name) if not unicodedata.combining(ch)
     ).lower()
+
+
+class AmbiguousMemberName(ValueError):
+    """A typed name that fits more than one person here (find_member_row)."""
+
+
+def _member_name_key(name: str | None) -> str:
+    """A person's name as it is compared, not shown: trimmed, inner spaces
+    collapsed, case and accents folded. "Zoe", "zoé " and "ZOÉ" are all Zoé."""
+    return " ".join(_fold_for_compare((name or "").strip()).split())
+
+
+def find_member_row(conn, name: str | None, rows=None):
+    """
+    The household's member called `name`, or None — how a name the
+    household (or the chat model) typed is matched to a person.
+
+    SQLite's LOWER() folds only A-Z and nothing trimmed the name, so a
+    parent's "zoe is allergic to nuts" (member saved as Zoé), "émile" for
+    Émile, or a stray trailing space matched nobody — and the get-or-create
+    behind the chat's member tools then ADDED a second person carrying the
+    allergy, counted at every meal, while the real child's list stayed
+    empty (defect hunt 2026-10-24). Exact (trimmed, case-blind) wins first,
+    so two people whose names differ only by an accent are still told
+    apart; the folded match is used only when exactly one person has it.
+    When it fits more than one ("Rêne" with a Rene and a René here) it is
+    nobody in particular, and AmbiguousMemberName says so, naming them —
+    never None, which every get-or-create would read as "add a new person".
+    `rows` (each with id and name) may be passed by a caller that already
+    read the members it wants to choose from.
+    """
+    wanted = (name or "").strip()
+    if not wanted:
+        return None
+    if rows is None:
+        rows = conn.execute(
+            "SELECT id, name FROM members WHERE household_id = ? ORDER BY id", (household_id(),)
+        ).fetchall()
+    exact = [r for r in rows if (r["name"] or "").strip().lower() == wanted.lower()]
+    if exact:
+        return exact[0]
+    key = _member_name_key(wanted)
+    folded = [r for r in rows if _member_name_key(r["name"]) == key]
+    if len(folded) > 1:
+        names = [r["name"] for r in folded]
+        raise AmbiguousMemberName(
+            f"\"{wanted}\" could be {', '.join(names[:-1])} or {names[-1]} — which one do you mean?"
+        )
+    return folded[0] if folded else None
 
 
 def display_initials(names: list[str]) -> list[str]:
@@ -275,8 +343,11 @@ def current_member() -> dict | None:
 
     Verified means: the claimed id names an adult in THIS household right
     now. Anything else — a removed member, one re-marked as a child, an id
-    from some other household — reads as no pick. A household with exactly
-    one adult resolves to that adult with no pick at all.
+    from some other household — reads as nobody. A household with exactly
+    one adult resolves to that adult only when the session has NO pick; a
+    pick that fails the check never resolves to whoever is left — for the
+    life of that session (a fresh sign-in carries no pick, and the
+    one-adult inference applies again, by design).
     """
     from ..db import get_conn
 
@@ -287,9 +358,20 @@ def current_member() -> dict | None:
             f"SELECT id, name, color FROM members WHERE id = ? AND household_id = ? AND {_ADULT_SQL}",
             (claimed, household_id()),
         ).fetchone()
-        if row is not None:
-            conn.close()
-            return _member_row_dict(row)
+        conn.close()
+        # A pick that no longer checks out is nobody — never the lone adult
+        # below. That inference is for a device nobody was ever picked on;
+        # this one named a person, and it was not them. Without this, Emily
+        # marking Vic a Teen (still a member, so his phone stays signed in)
+        # left Vic's phone acting AS Emily: his adds and his approval
+        # credited to her, her sign-in email his to change (defect hunt
+        # 2026-10-22). This holds for the life of the current session
+        # only: his next sign-in finds the device's remembered answer spent
+        # (security.device_member_for_login), the new session has no pick,
+        # and a one-adult house then reads that phone as its only adult by
+        # design — keeping a re-marked person's answer would be a design
+        # change, not made here.
+        return _member_row_dict(row) if row is not None else None
     rows = conn.execute(
         f"SELECT id, name, color FROM members WHERE household_id = ? AND {_ADULT_SQL} ORDER BY id ASC LIMIT 2",
         (household_id(),),
@@ -349,7 +431,9 @@ def _absolute_url(path: str) -> str:
     return f"{PUBLIC_BASE_URL}{path}" if PUBLIC_BASE_URL else path
 
 
-def require_household_row(conn, table: str, id_value: int, *, label: str, id_column: str = "id") -> None:
+def require_household_row(
+    conn, table: str, id_value: int, *, label: str, id_column: str = "id", close_on_miss: bool = True,
+) -> None:
     """
     Confirm a row exists **in the caller's own household** before writing to
     it, or raise ``ValueError``.
@@ -378,6 +462,12 @@ def require_household_row(conn, table: str, id_value: int, *, label: str, id_col
         # Close on the caller's behalf — every call site is about to bail
         # out via the exception below, matching the existing
         # close-then-raise idiom the rest of this package already uses
-        # (see e.g. move_grocery_item_to_inventory).
-        conn.close()
+        # (see e.g. move_grocery_item_to_inventory). `close_on_miss=False`
+        # is for a caller that does NOT own the connection, or holds it in
+        # a transaction it must roll back itself: closing it here took a
+        # caller's connection away mid-transaction (held.hold_thing with
+        # the conn weekly_plan passes; slot_needs.set_slot_need's rollback
+        # then raised on a closed database and hid the refusal).
+        if close_on_miss:
+            conn.close()
         raise ValueError(f"No {label} with id {id_value}.")

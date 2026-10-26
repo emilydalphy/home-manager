@@ -1,0 +1,100 @@
+{
+  "dish_name": "Gyeranjjim with Rice",
+  "cuisine": "Korean",
+  "main_protein": "eggs",
+  "prep_time_minutes": 10,
+  "cook_time_minutes": 25,
+  "ingredients": [
+    {
+      "item": "Eggs",
+      "qty": "8",
+      "category": "dairy"
+    },
+    {
+      "item": "Jasmine rice",
+      "qty": "1 bag",
+      "category": "pantry",
+      "cook_qty": "1 1/2 cups"
+    },
+    {
+      "item": "Dried kombu",
+      "qty": "1 package",
+      "category": "pantry",
+      "cook_qty": "1 piece (4 inches)"
+    },
+    {
+      "item": "Scallions",
+      "qty": "1 bunch",
+      "category": "produce",
+      "cook_qty": "4 scallions"
+    },
+    {
+      "item": "Tamari (gluten-free)",
+      "qty": "1 bottle",
+      "category": "pantry",
+      "cook_qty": "2 tsp"
+    },
+    {
+      "item": "Toasted sesame oil",
+      "qty": "1 bottle",
+      "category": "pantry",
+      "cook_qty": "2 tsp"
+    },
+    {
+      "item": "Sesame seeds",
+      "qty": "1 jar",
+      "category": "pantry",
+      "cook_qty": "1 tbsp"
+    },
+    {
+      "item": "Salt",
+      "qty": "3/4 tsp",
+      "category": "pantry"
+    }
+  ],
+  "instructions": [
+    "Rinse the rice in a sieve until the water runs mostly clear. Add it to a medium pot with 2 1/4 cups of water, bring it to a boil over high heat, then cover, turn the heat to low and cook for 15 minutes. Leave the lid on and take the pot off the heat until you serve.",
+    "Meanwhile, put the kombu and 1 cup of water in a small saucepan over medium heat. When small bubbles start to rise at the edges, after about 4 minutes, take the kombu out. Don't let it boil. Pour the kombu water into a bowl and stir in 1 cup of cold water. That should be about 2 cups.",
+    "Slice the scallions, keeping a small handful of the green parts aside for the top.",
+    "Crack the eggs into a large bowl and beat them with a fork until no streaks of white are left. Pour them through a fine sieve into a second bowl. Stir in the cooled kombu water, the salt, the tamari and the sliced scallions.",
+    "Brush the inside of a 2-quart heavy pot or a deep 10-inch skillet with a lid with 1 tsp of the sesame oil. Pour in the egg mixture and set it over medium-low heat.",
+    "Stir slowly with a spatula, scraping the bottom and sides toward the middle, for 6 to 7 minutes, until the eggs form large soft curds and the top is still wet.",
+    "Stop stirring, smooth the top, and cover the pot. Turn the heat to low and cook for 8 to 10 minutes, until the eggs are set and the middle doesn't jiggle. If you have a thermometer, you're cooking it to 160°F in the middle. No thermometer? Cut into the center: it's done when there's no liquid left.",
+    "Drizzle the remaining 1 tsp sesame oil over the top and scatter on the reserved scallion greens and the sesame seeds.",
+    "Taste it. If it's flat, add a pinch more salt.",
+    "Fluff the rice with a fork. Serve the eggs with the rice, spooning them straight from the pot."
+  ],
+  "method_notes": "Gyeranjjim is eggs steamed or gently simmered in a light liquid until soft and set. The sources agree on straining the eggs, mixing them with about an equal amount of broth or water, and keeping the heat low and the pot covered, and they differ on the liquid (anchovy broth, stock or water), the salting (salted shrimp or salt) and on stirring in a pot or steaming in a bowl. This version uses kombu water instead of anchovy broth or salted shrimp so it is vegetarian, and tamari for the savory note that the anchovy sauce usually gives. No version with 20 or more ratings turned up, so it follows the Korean Bapsang stovetop pot method.",
+  "sources": [
+    {
+      "name": "Korean Bapsang",
+      "title": "Gyeranjjim (Korean Steamed Eggs)",
+      "url": "https://www.koreanbapsang.com/?p=15196",
+      "rating": null,
+      "rating_count": null,
+      "read": true,
+      "lead": true
+    },
+    {
+      "name": "Pickled Plum",
+      "title": "Korean Steamed Egg (Gyeran Jjim)",
+      "url": "https://pickledplum.com/korean-steamed-egg-gyeran-jjim/",
+      "rating": null,
+      "rating_count": null,
+      "read": true
+    },
+    {
+      "name": "From Our Place",
+      "title": "Korean Steamed Eggs (Gyeran-jjim)",
+      "url": "https://fromourplace.com/blogs/recipe/korean-steamed-eggs-gyeran-jjim",
+      "rating": null,
+      "rating_count": null,
+      "read": true
+    }
+  ],
+  "fallback_used": true,
+  "default_servings": 4,
+  "origin": "seed",
+  "advance_prep_notes": "",
+  "advance_prep_step_indices": []
+}

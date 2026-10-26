@@ -1,0 +1,45 @@
+{
+ "dish_name": "Ensalada Mixta",
+ "cuisine": "Spanish",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {"item": "Eggs", "qty": "4", "category": "dairy"},
+  {"item": "Extra virgin olive oil", "qty": "1/3 cup", "category": "pantry"},
+  {"item": "Sherry vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Romaine lettuce", "qty": "1 head", "category": "produce"},
+  {"item": "Tomatoes", "qty": "2", "category": "produce"},
+  {"item": "English cucumber", "qty": "1", "category": "produce"},
+  {"item": "Carrots", "qty": "1", "category": "produce"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce"},
+  {"item": "Tuna in olive oil", "qty": "2 cans (5 oz)", "category": "pantry"},
+  {"item": "Sweet corn", "qty": "1 can (8.5 oz)", "category": "pantry"},
+  {"item": "Pitted green olives", "qty": "1 jar", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "Crusty bread", "qty": "1 loaf", "category": "other"}
+ ],
+ "instructions": [
+  "Put the 4 eggs in a small pot and cover them with cold water by about an inch. Bring it to a boil over high heat, then turn the heat to medium and cook for 10 minutes.",
+  "Meanwhile, whisk the 1/3 cup olive oil, 3 tbsp sherry vinegar, 1/2 tsp salt and 1/2 tsp pepper together in a small bowl.",
+  "Wash the romaine and dry it well. Wet leaves make the dressing slide off. Cut it into bite size pieces and spread it over a large platter.",
+  "Cut the tomatoes into wedges and slice the cucumber into thin rounds, skin on. Peel the carrot and grate it.",
+  "Thinly slice the white and pale green parts of 2 of the green onions.",
+  "Transfer the eggs into a bowl of cold water and leave them for 5 minutes. Peel them and cut each one into quarters.",
+  "Drain the tuna, the corn and 1/2 cup of the olives.",
+  "Lay the tomato, cucumber and carrot over the lettuce. Scatter the corn, olives and green onion on top. Put the tuna in the middle in big flakes and set the egg quarters around it.",
+  "Whisk the dressing again and pour it over the salad just before it goes to the table.",
+  "Serve with the crusty bread."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version had 20 or more ratings, Spanish Sabores blocked the page and RecipeTin Eats has no ensalada mixta, so this leads with Recipes From Europe (5.0 from 5 votes, shown on the page). Both read versions build it on chopped romaine with tomato, carrot, corn, olives and canned tuna, dressed at the table with olive oil and salt. Recipes From Europe adds cucumber, spring onion, quartered hard boiled eggs and a sherry vinegar dressing; Spain on a Fork leaves out the egg, adds anchovies and serves it with crusty bread. This follows Recipes From Europe, scaled up to a lunch for four with 4 eggs and 2 cans of tuna, and takes the bread from Spain on a Fork.",
+ "sources": [
+  {"name": "Recipes From Europe", "title": "Ensalada Mixta (Spanish Mixed Green Salad)", "url": "https://www.recipesfromeurope.com/?p=8797", "rating": 5.0, "rating_count": 5, "read": true, "lead": true},
+  {"name": "Spain on a Fork", "title": "Ensalada Mixta (Typical Spanish Salad)", "url": "https://spainonafork.com/?p=249", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

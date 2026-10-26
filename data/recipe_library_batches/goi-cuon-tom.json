@@ -1,0 +1,44 @@
+{
+ "dish_name": "Goi Cuon Tom",
+ "cuisine": "Vietnamese",
+ "main_protein": "shrimp",
+ "default_servings": 4,
+ "prep_time_minutes": 35,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {"item": "Large shrimp", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Salt", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Rice vermicelli", "qty": "1 package", "category": "pantry", "cook_qty": "4 oz"},
+  {"item": "Rice paper sheets", "qty": "1 package", "category": "pantry", "cook_qty": "12 sheets"},
+  {"item": "Butter lettuce", "qty": "1 head", "category": "produce"},
+  {"item": "Bean sprouts", "qty": "8 oz", "category": "produce"},
+  {"item": "Mint", "qty": "1 bunch", "category": "produce"},
+  {"item": "Peanut butter", "qty": "1 jar", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Hoisin sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Limes", "qty": "2", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Sriracha", "qty": "1 bottle", "category": "pantry"}
+ ],
+ "instructions": [
+  "Bring a large pot of water to a boil over high heat and add 1 tbsp salt. Meanwhile, peel and devein the 1 lb shrimp.",
+  "Add the shrimp to the boiling water and cook them for about 2 minutes, until they're pink and curled. Lift them out with a slotted spoon, rinse them under cold water and leave them to drain. Keep the water boiling.",
+  "Add 4 oz vermicelli to the same pot and cook it for 3 minutes, or as long as the package says. Drain it, rinse it under cold water and shake it well.",
+  "Make the dipping sauce. Juice the limes. That should be about 3 tbsp. Mince the 2 garlic cloves. In a small saucepan off the heat, whisk 2 tbsp peanut butter, 1/4 cup hoisin, the lime juice, the garlic and 2/3 cup water.",
+  "Set the pan over low heat and stir for 1 to 2 minutes, until it's smooth and just warm. Transfer it to a bowl. Taste it, and add a little more hoisin if it's flat. Thin it with a spoonful of water if it has thickened as it cools.",
+  "Slice each shrimp in half lengthwise. Pull 12 soft leaves off the lettuce and cut out the thick cores. Pick about 36 mint leaves off the stems.",
+  "Fill a wide shallow dish with warm water. Dip a rice paper sheet in for about 2 seconds, until it's just pliable, then lay it flat on a damp cutting board. It keeps softening as you fill it.",
+  "Lay 4 shrimp halves in a row, cut side up, across the upper third of the sheet, with 3 mint leaves between them. Lay a lettuce leaf below them and fill it with a small handful of vermicelli and some bean sprouts.",
+  "Fold the bottom edge up over the lettuce, fold in both sides and roll it up firmly toward the shrimp. Set it seam side down on a plate. Make 11 more the same way, and cover the finished rolls with a damp towel while you work.",
+  "Serve the rolls with the peanut sauce and the sriracha on the side. If you're packing them for lunch, keep the sauce in a separate container and eat them the same day."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Every version wraps cold cooked shrimp, rice vermicelli, soft lettuce and herbs in a quickly dipped rice paper sheet and serves it with a peanut hoisin sauce. RecipeTin Eats, the lead, halves the shrimp lengthwise and lays them on the far end of the sheet, adds bean sprouts and mint, and makes a small warm sauce of peanut butter, hoisin, vinegar or lime and garlic. Whiskey and Booch boils the shrimp in salted water and adds cilantro and chives and sriracha to the sauce; Food.com adds pork and shows only a review count, not a rating count. This one cooks raw shrimp in salted water, uses lime and water in the sauce and keeps the sriracha on the side.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Vietnamese Rice Paper Rolls (Spring Rolls)", "url": "https://www.recipetineats.com/vietnamese-rice-paper-rolls-spring-rolls/", "rating": 4.88, "rating_count": 132, "read": true, "lead": true},
+  {"name": "Whiskey and Booch", "title": "Goi Cuon: How To Make Fresh Vietnamese Summer Rolls With Shrimp + Peanut Hoisin Dipping Sauce", "url": "https://www.whiskeyandbooch.com/blog/goi-cuon-how-to-make-fresh-vietnamese-summer-rolls-with-shrimp", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Food.com", "title": "Goi Cuon - Vietnamese Soft Shrimp Rolls", "url": "https://www.food.com/recipe/goi-cuon-vietnamese-soft-shrimp-rolls-34464", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

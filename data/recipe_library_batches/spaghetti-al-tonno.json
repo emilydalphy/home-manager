@@ -1,0 +1,46 @@
+{
+ "dish_name": "Spaghetti al Tonno",
+ "cuisine": "Italian",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Spaghetti", "qty": "1 lb", "category": "pantry", "cook_qty": "12 oz"},
+  {"item": "Tuna in olive oil", "qty": "2 cans (5 oz each)", "category": "pantry"},
+  {"item": "Whole peeled tomatoes", "qty": "1 can (28 oz)", "category": "pantry"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce", "cook_qty": "half"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Capers", "qty": "1 jar", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Olive oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Fresh basil", "qty": "1 bunch", "category": "produce", "cook_qty": "a small handful of leaves"},
+  {"item": "Salt", "qty": "1 tbsp plus 1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Red pepper flakes", "qty": "1/4 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Fill a large pot with water, add 1 tbsp of the salt and bring it to a boil over high heat.",
+  "Meanwhile, drain the tuna well. Thinly slice half the onion and mince the 2 garlic cloves. Rinse 1 tbsp of the capers.",
+  "Transfer the tomatoes and their juice into a bowl and crush them with a fork or your hands until there are no big pieces left.",
+  "Heat 2 tbsp of the olive oil in a large, deep skillet over medium low. Add the onion and cook it for 5 to 6 minutes, stirring often, until it's soft and see-through but not brown.",
+  "Add the garlic and the capers and stir for about 30 seconds, until you can smell the garlic.",
+  "Turn the heat up to medium. Break the tuna into chunks with your fingers, add it to the pan and stir it gently for about 2 minutes, until it's lightly toasted at the edges.",
+  "Add the tomatoes and the remaining 1/2 tsp salt. Let it bubble gently for about 10 minutes, stirring now and then, until the sauce has thickened and the oil starts to pool at the edges.",
+  "While the sauce simmers, add 12 oz of the spaghetti to the boiling water and cook it until it's al dente, following the package time. Scoop out 1 cup of the pasta water, then drain the spaghetti.",
+  "Add the spaghetti to the sauce and toss it for about 1 minute over medium heat. If it looks dry, add the pasta water a splash at a time until the sauce coats every strand.",
+  "Take the pan off the heat. Tear in a small handful of basil leaves, add the 1/4 tsp black pepper and the last 1 tbsp olive oil, and toss again.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the red pepper flakes on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions cook a soft base in olive oil, simmer canned tomatoes for about 10 to 15 minutes, add oil-packed tuna and toss the drained spaghetti through the sauce with some pasta water. GialloZafferano (the lead) softens onion, toasts the flaked tuna in the pan before the tomatoes and finishes with basil off the heat, while Cooking with Curls and Carolyn's Cooking use shallot, garlic and capers, add the tuna at the end and finish with parsley (Curls also melts in anchovies). This follows the lead's order but uses two cans of tuna for a dinner portion, adds the garlic and capers the other two share, and keeps the red pepper flakes on the side."
+,
+ "sources": [
+  {"name": "GialloZafferano", "title": "Tuna Spaghetti", "url": "https://www.giallozafferano.com/recipes/Tuna-Spaghetti.html", "rating": 4.2, "rating_count": 314, "read": true, "lead": true},
+  {"name": "Cooking with Curls", "title": "Pasta al Tonno (Pasta with Tuna)", "url": "https://cookingwithcurls.com/2016/07/13/pasta-al-tonno/", "rating": 5.0, "rating_count": 4, "read": true, "lead": false},
+  {"name": "Carolyn's Cooking", "title": "Spaghetti with Tuna and Tomatoes (Spaghetti al Tonno)", "url": "https://www.carolynscooking.com/spaghetti-with-tuna-and-tomatoes-spaghetti-al-tonno/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

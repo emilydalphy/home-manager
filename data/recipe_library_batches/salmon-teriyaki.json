@@ -1,0 +1,90 @@
+{
+ "dish_name": "Salmon Teriyaki",
+ "cuisine": "Japanese",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Skinless salmon fillets",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood",
+   "cook_qty": "4 fillets (6 oz each)"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Light brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2"
+  },
+  {
+   "item": "Short-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups rice in cold water until the water runs mostly clear, then cook it in a rice cooker or a covered pot.",
+  "In a shallow dish wide enough to hold the fillets in one layer, stir together the 1/4 cup soy sauce, 1/4 cup mirin and 1/4 cup brown sugar until the sugar has dissolved.",
+  "Pat the 4 salmon fillets dry with paper towels. Lay them in the dish and turn them once so both sides are coated. Leave them for 10 minutes.",
+  "Meanwhile, thinly slice the dark green parts of 2 of the green onions.",
+  "Heat your largest nonstick skillet over medium-high for 1 minute, with no oil. Lift each fillet out of the dish, let the extra marinade drip back in, and lay it in the pan with the rounded side down. Keep the marinade.",
+  "Cook them without moving for 2 to 3 minutes, until the underside is deep brown and glazed. Watch them closely. The sugar in the marinade burns quickly.",
+  "Flip them and turn the heat down to medium. Pour the marinade and 1/2 cup water into the pan around the fish.",
+  "Let it bubble for 3 to 5 minutes, spooning the sauce over the fillets, until the fish flakes when you press the thickest part with a fork and is opaque all the way through. If the sauce gets thick before the fish is done, add a few spoonfuls of water.",
+  "Transfer the salmon to plates.",
+  "If the sauce in the pan is still thin, let it bubble over medium for 1 to 2 minutes, until it's syrupy and coats a spoon. Take the pan off the heat and stir in the 1 tbsp rice vinegar.",
+  "Taste the sauce. If it's flat, add a splash of soy sauce.",
+  "Spoon the sauce over the salmon and scatter the green onions on top. Serve with the rice."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions glaze the salmon in a pan with a sauce of soy sauce, mirin and sugar rather than baking it. Once Upon a Chef, the lead, marinates skinless fillets briefly, sears them in a dry nonstick pan, then simmers them in the marinade with water and finishes the sauce with rice vinegar and green onions. Just One Cookbook flours skin-on fillets, sears them in oil and butter, steams them with sake under a lid and glazes them in a sauce with sake added. This one follows the lead's method and ratios for four fillets and serves it with short-grain rice, which Just One Cookbook suggests.",
+ "sources": [
+  {
+   "name": "Once Upon a Chef",
+   "title": "Teriyaki Salmon",
+   "url": "https://www.onceuponachef.com/recipes/teriyaki-salmon.html",
+   "rating": 4.92,
+   "rating_count": 73,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Just One Cookbook",
+   "title": "Teriyaki Salmon",
+   "url": "https://www.justonecookbook.com/teriyaki-salmon-recipe/",
+   "rating": 4.84,
+   "rating_count": 403,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

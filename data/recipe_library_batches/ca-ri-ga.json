@@ -1,0 +1,157 @@
+{
+ "dish_name": "Ca Ri Ga",
+ "cuisine": "Vietnamese",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Chicken drumsticks",
+   "qty": "8 (about 2 1/2 lbs)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Sweet potatoes",
+   "qty": "1 1/2 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Lemongrass",
+   "qty": "2 stalks",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small piece",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Curry powder",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Coconut milk",
+   "qty": "1 can (13.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Thai chilies",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Thai basil",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Baguette",
+   "qty": "1",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Pat the drumsticks dry with paper towels. In a large bowl, toss them with 1 tbsp of the curry powder, the turmeric and 1 tsp of the salt until they're evenly yellow. Leave them on the counter while you get everything else ready.",
+  "Peel the sweet potatoes and cut them into 1 1/2 inch chunks. Peel the carrots and cut them into 1 inch pieces. Cut the onion into thin wedges. Trim the lemongrass to the pale bottom part, bruise it with the back of a knife and cut it into 3 inch pieces. Slice the ginger into 4 coins and smash them flat. Mince the garlic.",
+  "Heat 2 tbsp of the oil in a large Dutch oven over medium-high heat. Add the sweet potatoes in a single layer and cook, turning now and then, until they're browned on a couple of sides, 5 to 6 minutes. They won't be cooked through yet. Transfer them to a plate.",
+  "Add the remaining 1 tbsp oil and the drumsticks to the pot, in two batches if they don't all fit in one layer. Leave them alone until they let go of the pan, then turn them. Brown them all over, about 8 minutes, and transfer them to the plate.",
+  "Turn the heat to medium. Add the onion and cook for 3 minutes, stirring, until it softens. Add the lemongrass and ginger and stir for 1 minute. Add the garlic and stir for 30 seconds.",
+  "Add the remaining 2 tbsp curry powder and stir for 30 seconds, until it smells toasty.",
+  "Pour in the broth and scrape up the browned bits from the bottom. Set aside 1/4 cup of the coconut milk, and add the rest to the pot with 1 tbsp fish sauce, 2 tsp sugar and the bay leaves. Return the drumsticks. Bring it to a boil, then turn the heat down so it bubbles gently. Partly cover and cook for 15 minutes.",
+  "Add the sweet potatoes and the carrots. Simmer uncovered for 15 minutes, until a knife slides easily into the sweet potatoes and the sauce has thickened a little. You're cooking the chicken to 175°F, so if you have a thermometer, check a drumstick near the bone. No thermometer? Cut into one at the bone: it's done when the juices run clear and there's no pink.",
+  "Meanwhile, make the chili salt. Finely chop the chili and mix it with the remaining 1 tsp salt in a small dish. Pick the leaves off the Thai basil, cut the lime into wedges and slice the baguette.",
+  "Take the pot off the heat. Stir in the reserved 1/4 cup coconut milk and lift out the lemongrass, ginger and bay leaves. Taste it. If it's flat, add a pinch more salt or a squeeze of the lime.",
+  "Serve in bowls with the baguette, the Thai basil, the lime wedges and the chili salt on the side."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 50,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree on Vietnamese curry powder and turmeric on bone-in chicken, lemongrass, ginger and garlic, a thin coconut broth, and sweet potato browned before it goes in, served with baguette. The lead (Wok & Kin) is a 10-person family pot with taro, condensed milk and a long marinade; this version keeps its drumsticks, fried sweet potato and lemongrass but uses a short dry rub, broth and a little sugar in place of condensed milk, and adds carrots as Grantourismo does. The chili salt for dipping comes from Delightful Plate and keeps the heat at the table. No source had 20 or more ratings and RecipeTin Eats has no version, so the lead is the most-rated version that could be read (Wandercooks blocked the fetch).",
+ "sources": [
+  {
+   "name": "Wok & Kin",
+   "title": "Cà Ri Gà (Vietnamese Chicken Curry)",
+   "url": "https://www.wokandkin.com/vietnamese-chicken-curry-ca-ri-ga/",
+   "rating": 5.0,
+   "rating_count": 18,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Grantourismo",
+   "title": "Easy Vietnamese Chicken Curry Recipe – How to Make Cà Ri Gà",
+   "url": "https://grantourismotravels.com/vietnamese-chicken-curry-recipe/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true
+  },
+  {
+   "name": "Delightful Plate",
+   "title": "Cà Ri Gà (Vietnamese Chicken Curry)",
+   "url": "https://delightfulplate.com/vietnamese-chicken-curry-ca-ri-ga/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

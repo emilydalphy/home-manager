@@ -666,6 +666,15 @@ CREATE TABLE IF NOT EXISTS weekly_plans (
     -- requests_json, which record_plan_requests rewrites wholesale after
     -- generation and would clobber it. See app/tools/draft_flags.py.
     draft_flags_json TEXT NOT NULL DEFAULT '',
+    -- The household's allergies and must-avoids as they stood at approval
+    -- (allergen_gate.avoidance_key, a JSON list). An allergy added AFTER
+    -- approval is not in it, so Today and the morning text can say which
+    -- planned dish now has it (allergen_gate.clashes_since_approval) — and
+    -- a clash the household confirmed at approval is not raised again.
+    -- '' on a week approved before this existed until the next startup,
+    -- which records the allergies of that moment on it
+    -- (allergen_gate.snapshot_unrecorded_approvals).
+    avoidances_at_approval_json TEXT NOT NULL DEFAULT '',
     constraints_notes TEXT NOT NULL DEFAULT '', -- freeform per-week asks, e.g. "out Thu/Fri, keep it under 30 min"
     -- Snapshotted from meal_preferences.planning_mode at creation time, so a
     -- past plan stays interpretable even if the household later switches
@@ -756,7 +765,7 @@ CREATE TABLE IF NOT EXISTS meal_plan_entries (
     -- column, which is not backfilled. See check_off_meal.
     inventory_depleted_at TEXT,
     -- When the household answered "We skipped it" on Today's "Did you have
-    -- it?" card (tools/yesterday_check.py). cooked_status stays 'pending'
+    -- it?" card (tools/yesterday_ask.py). cooked_status stays 'pending'
     -- on a skipped meal on purpose, so nothing that asks "is it done?"
     -- needs a third value, and bring_over still offers it next week. Its
     -- only reader is the card: a stamped row is answered and never asked
@@ -1306,7 +1315,7 @@ CREATE TABLE IF NOT EXISTS staple_events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     household_id INTEGER NOT NULL REFERENCES households(id),
     staple_id INTEGER NOT NULL REFERENCES staples(id),
-    kind TEXT NOT NULL, -- added | bought | plenty | skipped | paused | resumed
+    kind TEXT NOT NULL, -- added | told | bought | plenty | skipped | paused | resumed
     source TEXT NOT NULL DEFAULT '',
     on_date TEXT NOT NULL, -- ISO date the fact is about
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -2398,3 +2407,21 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_move_credits_meal
 CREATE UNIQUE INDEX IF NOT EXISTS idx_move_credits_task
     ON move_credits (household_id, prep_task_id) WHERE prep_task_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_move_credits_week ON move_credits (household_id, move_date);
+
+-- One row per grocery add that carried a client id (2026-10-22, branch
+-- overnight/rate-refresh-and-offline-once): the Shop tab's add sheet names
+-- each add once, and the offline queue re-sends it under the same name
+-- when the reply was lost in a store's dead zone. A repeat is answered
+-- with `result_json` — the first answer — and adds nothing. A table, not
+-- an in-memory map, because that resend can come minutes or days later,
+-- across a redeploy. `result_json` NULL = the first request is still
+-- adding. Rows older than 30 days are swept on the way in. See
+-- app/grocery_add_once.py.
+CREATE TABLE IF NOT EXISTS grocery_add_receipts (
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    client_id TEXT NOT NULL,
+    result_json TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (household_id, client_id)
+);
+CREATE INDEX IF NOT EXISTS idx_grocery_add_receipts_age ON grocery_add_receipts (created_at);

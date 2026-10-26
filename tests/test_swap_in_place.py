@@ -29,7 +29,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import household_today
+from conftest import household_pin, household_today
 
 from app import agent, tools
 from app.db import get_conn
@@ -58,6 +58,11 @@ from app.tools._shared import use_household
 # to 35, on a matrix whose entire purpose is catching exactly this. The one
 # test that needs a Monday-to-Friday night names WEEKNIGHT below.
 TODAY = household_today()
+# The whole file runs ON TODAY, at the household's 10:00. TODAY is read once,
+# at collection; unpinned, a run that crossed the household's midnight
+# between collection and these tests met an app that (rightly) treated
+# "TODAY" as gone by — 59 failures across four files, 2026-10-21.
+pytestmark = pytest.mark.today(household_pin(10, on=TODAY))
 WEEK_START = TODAY.isoformat()
 DAYS = [(datetime.date.fromisoformat(WEEK_START) + datetime.timedelta(days=i)).isoformat()
         for i in range(7)]

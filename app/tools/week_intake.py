@@ -698,9 +698,21 @@ def save_week_intake(
     # loser's answers on top of the winner's — which is what "the second
     # adult joins the first one's intake" has to mean when they arrive
     # together rather than an hour apart.
+    #
+    # The read happens under the write lock (BEGIN IMMEDIATE), and that is
+    # the half the UNIQUE index cannot do on its own (defect hunt,
+    # 2026-10-22). Read outside a transaction, the loser could read the
+    # current revision BEFORE the winner committed and the highest revision
+    # number AFTER it — so it wrote revision+2 cleanly, built on the stale
+    # base: the winner's answer vanished from the week, and the winner's row
+    # stayed live beside it (two unsuperseded revisions). Measured at 6
+    # rounds in 40 of two threads saving different halves. Holding the lock
+    # from the read to the commit makes the second save wait and then read
+    # what the first one left.
     for attempt in range(5):
         conn = get_conn()
         try:
+            conn.execute("BEGIN IMMEDIATE")
             current = _current_intake_row(conn, week_start)
             base = _intake_row_to_dict(current) if current else {
                 "night_tags": {}, "guest_counts": {}, "packed_lunch_days": [],

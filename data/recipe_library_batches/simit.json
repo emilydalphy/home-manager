@@ -1,0 +1,104 @@
+{
+ "dish_name": "Simit",
+ "cuisine": "Turkish",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 40,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  },
+  {
+   "item": "Active dry yeast",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "4 cups (500 g)",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Grape molasses",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Feta cheese",
+   "qty": "1 block (7 oz)",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "About 1 1/2 hours before you want to eat, start the dough. Stir the 1/4 tsp sugar into 1/4 cup lukewarm water in a large bowl. Sprinkle the 1 tbsp yeast over the top and leave it for about 8 minutes, until it's foamy.",
+  "Add 1 1/4 cups lukewarm water to the yeast. In another large bowl, mix the 4 cups flour with the 2 tsp salt and make a well in the middle. Pour the yeast mixture into the well and stir it into a rough, shaggy dough.",
+  "Turn the dough out onto the counter and knead it for about 5 minutes, until it's smooth and springs back when you poke it.",
+  "Rub the 1 tbsp olive oil around a clean bowl, put the dough in and cover it with a towel. Leave it somewhere warm for 45 minutes to 1 hour, until it's doubled in size.",
+  "About 15 minutes before the dough is ready, heat the oven to 425°F (220°C) and line two baking sheets with parchment paper.",
+  "Stir 1/2 cup of the grape molasses with 1/4 cup water in a shallow bowl. Spread the 1 cup sesame seeds on a large plate.",
+  "Press the air out of the dough and cut it into 8 even pieces. Roll one piece under your palms into a rope about 24 inches long. Fold it in half, twist the two strands around each other and pinch the ends together firmly to make a ring. Shape the rest the same way.",
+  "Dip a ring into the molasses mixture and let the extra drip off. Press both sides into the sesame seeds until they're well coated. Set it on a baking sheet and stretch it gently into a neat circle. Do the rest the same way, leaving room between them.",
+  "Leave the rings for about 10 minutes, until they look a little puffy.",
+  "Bake for 17 to 20 minutes, until they're deep golden brown all over. Check them at 15 minutes. Sesame burns fast once it's dark.",
+  "Cool them on a rack for about 5 minutes. Serve warm with the feta."
+ ],
+ "advance_prep_notes": "Make the dough about 1 1/2 hours before breakfast so it has time to rise.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4
+ ],
+ "method_notes": "None of the versions found had 20 or more ratings, and RecipeTin Eats, the trusted cook for this cuisine, has no simit, so Özlem Warren's version (The Happy Foodie, from her book Sebze) leads. All three make a plain yeast dough of flour, water, yeast and salt, dip the shaped rings in molasses thinned with water and coat them in sesame before a hot bake. Özlem twists each rope into a two-strand ring and bakes at 425°F; This Healthy Table adds a little oil and sugar to the dough and bakes hotter, and Lezzet uses fresh yeast and plain molasses. This one follows Özlem's dough and twist and uses grape molasses (pomegranate or regular molasses also work); the feta on the side is how Lezzet and This Healthy Table serve it. The Mediterranean Dish and Silk Road Recipes blocked the reader, and Milk Street's recipe is members only.",
+ "sources": [
+  {
+   "name": "The Happy Foodie",
+   "title": "Simit: Sesame-Encrusted Turkish Bread Rings (Özlem Warren)",
+   "url": "https://thehappyfoodie.co.uk/recipes/simit-sesame-encrusted-turkish-bread-rings/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "This Healthy Table",
+   "title": "Turkish Simit Recipe",
+   "url": "https://thishealthytable.com/blog/turkish-simit-recipe/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Lezzet",
+   "title": "Simit (Turkish Sesame Bread Rings)",
+   "url": "https://lezzet.com.tr/en/amp/recipe/simit-turkish-sesame-bread-rings",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

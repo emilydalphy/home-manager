@@ -1,0 +1,99 @@
+{
+ "dish_name": "Gyeranbap",
+ "cuisine": "Korean",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Short-grain white rice",
+   "qty": "1 1/3 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Roasted seaweed snacks",
+   "qty": "1 pack",
+   "category": "pantry"
+  },
+  {
+   "item": "Kimchi",
+   "qty": "1 jar",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/3 cups rice in a few changes of cold water until the water runs almost clear. Cook it the way you usually do, in a rice cooker or a pot. That should be about 4 cups. Leftover rice works too if you heat it until it's steaming hot. If you'd like the rice ready when you wake up, do this the night before and set the cooker's timer.",
+  "Divide the hot rice among 4 bowls and put 1/2 tbsp of the butter on each one.",
+  "Heat the 2 tbsp vegetable oil in a large nonstick skillet over medium heat. Crack in the 4 eggs and fry them for 2 to 3 minutes, until the whites are set and the edges are crisp and brown, with the yolks still runny.",
+  "Slide an egg onto each bowl of rice.",
+  "Drizzle each egg with 1 1/2 tsp soy sauce and 1 1/2 tsp toasted sesame oil, and sprinkle 1 1/2 tsp sesame seeds over each.",
+  "Break the yolk and stir everything together right before you eat.",
+  "Serve with the seaweed and the kimchi on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version had 20 or more ratings and RecipeTin Eats has no gyeranbap, so this leads with Beyond Kimchee, the best rated of the versions read. All three put hot short or medium grain rice in a bowl with a pat of butter, top it with a fried egg with a runny yolk, and season it with soy sauce, sesame oil and sesame seeds; Takes Two Eggs uses two eggs a bowl, and the others one. This follows Beyond Kimchee with one egg each and kimchi and seaweed on the side, which all three serve.",
+ "sources": [
+  {
+   "name": "Beyond Kimchee",
+   "title": "5-Minute Gyeran Bap (Korean Egg Rice Bowl)",
+   "url": "https://www.beyondkimchee.com/express-egg-rice/",
+   "rating": 4.93,
+   "rating_count": 13,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Takes Two Eggs",
+   "title": "Gyeran Bap (Korean Egg Rice)",
+   "url": "https://takestwoeggs.com/gyeran-bap-korean-egg-rice/",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Carmyy",
+   "title": "Gyeran Bap (Korean Egg Rice)",
+   "url": "https://carmyy.com/gyeran-bap-korean-egg-rice",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

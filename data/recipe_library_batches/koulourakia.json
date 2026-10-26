@@ -1,0 +1,41 @@
+{
+ "dish_name": "Koulourakia",
+ "cuisine": "Greek",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 45,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {"item": "Unsalted butter", "qty": "1/2 cup", "category": "dairy"},
+  {"item": "Granulated sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "3/4 cup"},
+  {"item": "Milk", "qty": "1/4 cup", "category": "dairy"},
+  {"item": "Baking powder", "qty": "1 1/4 tsp", "category": "pantry"},
+  {"item": "Eggs", "qty": "3", "category": "dairy"},
+  {"item": "Vanilla extract", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 1/2 tsp"},
+  {"item": "Orange", "qty": "1", "category": "produce"},
+  {"item": "All-purpose flour", "qty": "4 cups", "category": "pantry"}
+ ],
+ "instructions": [
+  "Take the 1/2 cup butter out of the fridge about an hour ahead so it's soft enough to press with a finger.",
+  "Put the butter and 3/4 cup sugar in a large bowl and beat them with an electric mixer on medium high for 5 to 8 minutes, until pale and fluffy.",
+  "Warm the 1/4 cup milk in a small pan over low heat until it's just lukewarm, then take it off the heat. Whisk in the 1 1/4 tsp baking powder.",
+  "Beat 2 of the eggs into the butter one at a time, letting each one mix in before the next. Finely grate in the zest of the orange, then add the 1 1/2 tsp vanilla and the milk. Beat until it's smooth.",
+  "On low speed, add 3 1/2 cups of the flour a little at a time. Then work in as much of the last 1/2 cup as you need, until the dough is soft and doesn't stick to your hands. Stop when it gets there. Too much flour makes dry cookies.",
+  "Cover the bowl and let the dough rest for 30 minutes.",
+  "Near the end of the rest, heat the oven to 375°F with a rack in the middle. Separate the last egg and whisk the yolk with 1 tbsp water in a small bowl. You won't need the white.",
+  "Pinch off a piece of dough about the size of a walnut and roll it on the counter into a rope about 6 inches long. Fold it in half and twist the two strands around each other. Repeat with the rest of the dough. You should get about 36.",
+  "Set them on two baking sheets about an inch apart. They puff as they bake.",
+  "Brush the tops with the yolk glaze.",
+  "Bake one sheet at a time for 15 to 18 minutes, until they're golden brown and glossy.",
+  "Let them cool completely on a rack. Serve with coffee. They keep in an airtight container for up to 3 weeks."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions cream butter and sugar, beat in eggs, citrus zest and a little milk, add flour until the dough is soft and not sticky, rest it, roll ropes into twists and brush them with egg before baking until golden. My Greek Dish (the lead) uses orange zest, vanilla and baking ammonia dissolved in warm milk and makes 80; it says baking powder works in its place, so this uses baking powder, which is easier to find. Olive Tomato uses lemon zest, rests the dough 2 hours and bakes at 350°F; this follows the lead's 30 minute rest and bakes at 375°F, a touch under the lead's 400°F fan setting for an ordinary oven, at about half the lead's size (around 36 cookies). The lead's 922 is a reviewCount, not a ratingCount, and Olive Tomato's page shows no rating.",
+ "sources": [
+  {"name": "My Greek Dish", "title": "Koulourakia recipe (Greek Easter cookies)", "url": "https://www.mygreekdish.com/recipe/koulourakia-recipe-greek-easter-cookies/", "rating": 4.5, "rating_count": 922, "read": true, "lead": true},
+  {"name": "Olive Tomato", "title": "Greek Easter Cookies – Koulourakia", "url": "https://www.olivetomato.com/greek-easter-cookies-koulourakia/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -27,7 +27,7 @@ def test_it_is_the_last_household_question():
     assert steps[steps.index("who-cooks") + 1] == "meals-days"
     markup = _step_markup("step-who-cooks")
     assert '<h1 class="q-title">Who usually cooks dinner?</h1>' in markup
-    assert 'id="who-cooks-skip">Skip</span>' in markup
+    assert 'id="who-cooks-skip">Skip</button>' in markup
 
 
 @_needs_node

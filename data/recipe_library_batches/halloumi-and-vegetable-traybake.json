@@ -1,0 +1,129 @@
+{
+ "dish_name": "Halloumi and Vegetable Traybake",
+ "cuisine": "Greek",
+ "main_protein": "cheese",
+ "ingredients": [
+  {
+   "item": "Zucchini",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell peppers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Chickpeas",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cherry tomatoes",
+   "qty": "1 pint",
+   "category": "produce"
+  },
+  {
+   "item": "Halloumi",
+   "qty": "2 packages (8 oz each)",
+   "category": "dairy",
+   "cook_qty": "12 oz"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 425°F with two racks in the middle.",
+  "Cut the zucchini and red peppers into 1 1/2 inch pieces. Cut the red onion into wedges. Leave the garlic cloves in their skins and smash them lightly. Drain and rinse the chickpeas, then pat them dry.",
+  "Toss the zucchini, peppers, onion, garlic, chickpeas, oregano, salt and pepper with 3 tbsp of the oil. Spread them in a single layer over two sheet pans. Leave room between the pieces.",
+  "Roast for 15 minutes, until the edges are starting to brown.",
+  "While the vegetables roast, rinse the rice in a fine strainer until the water runs mostly clear. Add it to a medium pot with 2 1/4 cups water and 1/2 tsp salt, and bring it to a boil over high heat. Cover, turn the heat to low, and cook for 15 minutes.",
+  "Pat the halloumi dry and cut it into slabs about 1/2 inch thick. You need 12 oz, which is about 1 1/2 packages.",
+  "Take the pans out. Add the cherry tomatoes to the vegetables, lay all the halloumi slabs on top of the vegetables on one pan, and drizzle the remaining 1 tbsp oil over the halloumi.",
+  "Roast for 10 minutes, until the tomatoes start to burst. Take the pan without halloumi out. Turn the oven to broil, move the halloumi pan to the upper rack and cook for 2 minutes, watching closely, until the halloumi is golden brown in spots.",
+  "While that cooks, chop 1/4 cup of the parsley.",
+  "Take the rice off the heat and leave it covered for 5 minutes. Then fluff it with a fork.",
+  "Take the halloumi pan out. Squeeze the garlic cloves out of their skins and mash them into the oil on the pans.",
+  "Squeeze the juice of the lemon over the pans off the heat and scatter the parsley on top. Taste a vegetable. If it's flat, add a pinch more salt.",
+  "Serve over the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree that vegetables roast first and halloumi goes on top for the last 10 to 15 minutes, finished with lemon and herbs. One uses oregano, thyme and sesame seeds, another leaves the garlic in its skin and mashes it into the pan juices, and one adds chickpeas. This version uses Greek flavors (oregano, lemon, parsley), the skin-on garlic from the second, and chickpeas to make it a full dinner. It is served over basmati rice instead of flatbread, so it stays vegetarian and gluten-free. No source had 20 or more ratings, so the lead is the best-read version.",
+ "sources": [
+  {
+   "name": "Family Friends Food",
+   "title": "Mediterranean vegetable and halloumi tray bake",
+   "url": "https://family-friends-food.com/mediterranean-vegetable-and-halloumi-tray-bake/",
+   "rating": 5.0,
+   "rating_count": 9,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Felly Bull",
+   "title": "Halloumi and Mediterranean Veg Traybake",
+   "url": "https://www.fellybull.com/halloumi-and-mediterranean-veg-traybake",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Aisle Prompt",
+   "title": "Herb-Roasted Vegetable & Halloumi Sheet Pan",
+   "url": "https://aisleprompt.com/recipes/herb-roasted-vegetable-halloumi-sheet-pan-28140",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

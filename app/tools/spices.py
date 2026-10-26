@@ -92,6 +92,14 @@ _SPICES = {
     "msg", "bouillon", "bouillon cube", "stock cube", "vanilla extract",
     "vanilla", "almond extract", "baking soda", "baking powder", "cream of tartar",
     "bay leaf",
+    # The shared recipe library's cuisines (defect hunt, 2026-10-23): these
+    # sat in a store aisle reading "½ tsp" — a Kashmiri chili powder line on
+    # 46 of its dishes — where cumin beside them read "1 jar".
+    "kasuri methi", "asafoetida", "hing", "ajwain", "carom seed", "amchur", "amchoor",
+    "mango powder", "chaat masala", "pav bhaji masala", "sambar powder", "rasam powder",
+    "tandoori masala", "chana masala powder", "gochugaru", "shichimi togarashi",
+    "togarashi", "aleppo pepper", "urfa biber", "pul biber", "mustard powder",
+    "dried mustard", "ground fennel", "annatto seed", "achiote seed", "tajin", "tajín",
     # dried herbs (dried by default when written bare)
     "oregano", "marjoram", "dried basil", "dried cilantro", "dried parsley",
     "dried mint", "dried dill", "dried chive", "dried rosemary", "dried thyme",
@@ -115,10 +123,15 @@ _DESCRIPTORS = {
     "ground", "whole", "smoked", "sweet", "hot", "mild", "flaked", "crushed",
     "kosher", "sea", "fine", "coarse", "powdered", "cracked", "freshly", "grated",
     "spanish", "hungarian", "organic", "toasted", "thai", "indian",
+    "kashmiri", "chinese", "sichuan", "korean", "black",
     # a bouillon cube's flavour, a chili powder's chili
     "beef", "chicken", "vegetable", "fish", "chipotle", "ancho", "guajillo",
 }
 _DRIED_WORDS = {"dried", "dry"}
+# A spice's name in another language, said in brackets after it — only ever
+# a second name for what is outside them, never a spice on its own ("methi"
+# bare is the fresh leaves).
+_ALSO_CALLED = {"methi", "jeera", "saunf", "kalonji", "rai", "elaichi", "haldi", "dalchini"}
 
 
 def is_spice(name: str) -> bool:
@@ -136,6 +149,11 @@ def is_spice(name: str) -> bool:
     # oil for frying" and "Canola oil, for frying" are one kind of line
     # (review, 2026-10-19 — punctuation decided it).
     raw = _FOR_RE.sub("", raw).strip() or raw
+    # What it is packed in is not what it is: "Tuna in olive oil" is tuna,
+    # bought in an aisle — read as oil, it went to Spices this week, assumed
+    # at home, and Salade Nicoise's tuna was never bought (review, 2026-10-23).
+    if _PACKED_IN_RE.search(raw):
+        return False
     if _is_spice_name(raw):
         return True
     # Fresh anywhere is bought fresh: "Oregano (fresh)", "Bay leaves (fresh)".
@@ -148,7 +166,10 @@ def is_spice(name: str) -> bool:
     opened = raw.replace("(", " ").replace(")", " ")
     inside = re.findall(r"[a-z]+", " ".join(_PAREN_RE.findall(raw)))
     candidates = [opened, opened.split(",", 1)[0]]
-    if all(w in _DESCRIPTORS or w in _DRIED_WORDS for w in inside):
+    # Or brackets giving the same spice's other name: "Asafoetida (hing)",
+    # "Ajwain (carom seeds)", "Fenugreek seeds (methi)" (library, 2026-10-23).
+    if all(w in _DESCRIPTORS or w in _DRIED_WORDS for w in inside) or (
+            inside and (_is_spice_name(" ".join(inside)) or set(inside) <= _ALSO_CALLED)):
         candidates.append(_PAREN_RE.sub(" ", raw).split(",", 1)[0].strip())
     if any(c != raw and _is_spice_name(c) for c in candidates):
         return True
@@ -159,6 +180,9 @@ def is_spice(name: str) -> bool:
 
 _PAREN_RE = re.compile(r"\([^()]*\)")
 _FOR_RE = re.compile(r",?\s+for\s+[a-z ,'-]+$")
+_PACKED_IN_RE = re.compile(
+    r"\S\s+(?:packed\s+)?in\s+(?:extra[\s-]virgin\s+)?(?:(?:olive|sunflower|vegetable|canola)\s+)?(?:oil|water|brine)$"
+)
 
 
 def _is_spice_name(name: str) -> bool:
@@ -556,6 +580,51 @@ def _a_lot(section: str | None, quantity: str) -> bool:
     return ml >= _A_LOT_ML[section] or g >= _A_LOT_G[section]
 
 
+# What "answered" holds for a key: the household's own line is on the list.
+_ON_THE_LIST = "on the list"
+
+
+def _answered_by_own_line(conn) -> dict[str, str]:
+    """
+    Merge key -> how the household has already answered a waiting sauce or
+    staple with a line of its OWN (no plan behind it): _ON_THE_LIST while
+    that line is live, or the moment they said "Already have" on it.
+
+    A typed "1 bag" of rice beside the recipes' "2 cups" stays two lines
+    when the amounts don't add up (grocery._merge_target). While theirs is
+    on the list they are buying it; once they tapped Already have on it
+    they have it. Either way asking "Check you have this" about the
+    recipes' share as well is the question twice, and a tick would buy
+    both. The waiting line itself stays (it leaves with its week).
+    """
+    out: dict[str, str] = {}
+    for r in conn.execute(
+        "SELECT item, status, removed_at FROM grocery_items WHERE household_id = ? "
+        "AND source_weekly_plan_id IS NULL AND excluded_from_list = 0 AND ("
+        "status IN ('needed', 'in_cart') OR (status = 'removed' AND removed_by = 'already_have'))",
+        (household_id(),),
+    ).fetchall():
+        key = _grocery._merge_key(r["item"])
+        if r["status"] != "removed":
+            out[key] = _ON_THE_LIST
+        elif out.get(key) != _ON_THE_LIST and (r["removed_at"] or "") > out.get(key, ""):
+            out[key] = r["removed_at"] or ""
+    return out
+
+
+def _waiting_is_answered(row, section: str | None, answered: dict[str, str]) -> bool:
+    """Whether a waiting ('spice') sauce or staple row is already answered by
+    the household's own line — see _answered_by_own_line. An Already have
+    answers only a row that was waiting when it was said: next week's
+    recipes put a fresh row, and that one is asked again."""
+    if row["status"] != "spice" or section not in (SECTION_SAUCES, SECTION_PANTRY):
+        return False
+    how = answered.get(_grocery._merge_key(row["item"]))
+    if how is None:
+        return False
+    return how == _ON_THE_LIST or how >= (row["created_at"] or "")
+
+
 def list_spices_this_week() -> dict:
     """
     The list's three "assumed at home" sections — "Spices this week",
@@ -582,16 +651,20 @@ def list_spices_this_week() -> dict:
     known = _known_sauces(conn)
     today = _staples._today()
     rows = conn.execute(
-        "SELECT id, item, quantity, category, status, store, staple_id, source_weekly_plan_id FROM grocery_items "
+        "SELECT id, item, quantity, category, status, store, staple_id, source_weekly_plan_id, created_at "
+        "FROM grocery_items "
         "WHERE household_id = ? AND status IN ('spice', 'needed', 'in_cart') AND excluded_from_list = 0 "
         "ORDER BY item",
         (household_id(),),
     ).fetchall()
     items, left_out = [], []
     by_section: dict[str, list[str]] = {k: [] for k in ASSUMED_SECTIONS}
+    answered = _answered_by_own_line(conn)
     for r in rows:
         section = assumed_section(r["item"])
         if r["status"] != "spice" and section is None:
+            continue
+        if _waiting_is_answered(r, section, answered):
             continue
         staple = rack.get(_grocery._merge_key(r["item"]))
         if (r["status"] != "spice" and section != SECTION_SPICES and r["source_weekly_plan_id"] is None
@@ -625,12 +698,17 @@ def list_spices_this_week() -> dict:
         due = bool(ticked and linked and staple is not None and _due(staple, today))
         # The week's measured amount, off the meals that put it here
         # (week_total). `quantity` stays what the line buys — one store
-        # unit — and the row shows `total` where there is one.
+        # unit — and the row shows `total` where there is one. Only for a
+        # rack thing (is_spice): that is the line the ingest measures in
+        # teaspoons and writes as one store unit. A sauce or pantry staple
+        # that isn't one (rice, pasta, soy sauce, flour) already carries the
+        # week's amount on its line; read as a spice, "2 cups" of rice
+        # showed "32 tbsp" and "1 box" of pasta "about ¼ tsp".
         links = conn.execute(
             "SELECT quantity, measure_tsp, measure_about FROM meal_plan_grocery_links "
             "WHERE household_id = ? AND grocery_item_id = ?",
             (household_id(), r["id"]),
-        ).fetchall()
+        ).fetchall() if is_spice(r["item"]) else []
         items.append({
             "id": r["id"], "item": r["item"], "quantity": r["quantity"] or "",
             "total": week_total(r["item"], links)["text"] if links else "",
@@ -657,13 +735,23 @@ def tick_spice(item_id: int, ticked: bool = True) -> dict:
     """
     conn = get_conn()
     row = conn.execute(
-        "SELECT id, item, status, staple_id, source_weekly_plan_id FROM grocery_items "
+        "SELECT id, item, status, staple_id, source_weekly_plan_id, created_at FROM grocery_items "
         "WHERE id = ? AND household_id = ?",
         (item_id, household_id()),
     ).fetchone()
     if row is None:
         conn.close()
         raise ValueError(f"No grocery list item with id {item_id}.")
+    # A tick on a waiting sauce or staple the household's own line already
+    # covers (a stale screen — the section no longer shows it, see
+    # _answered_by_own_line) would put the recipes' amount on the list
+    # beside theirs: the same food bought twice. Their line is the answer.
+    if (ticked and row["status"] == "spice"
+            and _answered_by_own_line(conn).get(_grocery._merge_key(row["item"])) == _ON_THE_LIST
+            and assumed_section(row["item"]) in (SECTION_SAUCES, SECTION_PANTRY)):
+        conn.close()
+        return {"item_id": item_id, "item": row["item"], "ticked": False, "unchanged": True,
+                "said": "You already have this on the list. Change the amount there."}
     # A line a person added to themselves and a recipe's amount joined is
     # theirs (no plan behind it — grocery's keep_standing). Unticking it
     # back into the section would take THEIR amount off the list with the

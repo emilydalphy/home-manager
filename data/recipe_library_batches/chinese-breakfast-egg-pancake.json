@@ -1,0 +1,37 @@
+{
+ "dish_name": "Chinese Breakfast Egg Pancake",
+ "cuisine": "Chinese",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "All-purpose flour", "qty": "1 1/4 cups (150 g)", "category": "pantry"},
+  {"item": "Eggs", "qty": "5", "category": "dairy"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce", "cook_qty": "4"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "White pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Chili oil", "qty": "1 jar", "category": "pantry"}
+ ],
+ "instructions": [
+  "Put the 1 1/4 cups flour in a large bowl and whisk in 1 1/2 cups water until it's smooth, with no lumps.",
+  "Thinly slice 4 of the green onions. Crack the 5 eggs into the batter and add the 1/2 tsp salt, 1/4 tsp white pepper and the green onions. Whisk until smooth. It should be thin and pour easily off the whisk. If you'd like, mix the batter the night before and keep it covered in the fridge. Stir it well before you cook.",
+  "Heat a 10 inch nonstick skillet over medium heat. Dip a folded paper towel in the oil and wipe a thin film over the pan.",
+  "Pour in about 1/3 cup of the batter and straight away tilt and swirl the pan so it spreads into a thin, even round.",
+  "Cook for about 1 minute, until the top no longer looks wet and the pancake slides when you shake the pan.",
+  "Flip it and cook the other side for 30 to 60 seconds, until it has a few light golden spots. Transfer it to a plate.",
+  "Cook the rest of the batter the same way, wiping the pan with the oiled towel every couple of pancakes. Stack them as they're done. You'll get about 12.",
+  "Serve them warm, three each, rolled or folded, with the chili oil on the side for anyone who wants heat."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three whisk eggs, flour, liquid, chopped scallion and salt into a thin batter, swirl a little into a hot nonstick pan, set it in about a minute and flip it once. Red House Spice (the lead) mixes the flour and water first, then whisks in the eggs, seasons with Sichuan or white pepper and serves the crepes with chili oil; Shuangy's Kitchen Sink uses more flour for a slightly chewier pancake, and Woks of Love swaps the water for milk and adds minced ham. This is the lead's batter at one and a half times, with white pepper to keep it mild and the chili oil at the table. Shuangy's Kitchen Sink and Woks of Love show no rating on their pages.",
+ "sources": [
+  {"name": "Red House Spice", "title": "Egg and scallion crepe (Ji Dan Bing)", "url": "https://redhousespice.com/egg-scallion-crepe/", "rating": 5.0, "rating_count": 39, "read": true, "lead": true},
+  {"name": "Shuangy's Kitchen Sink", "title": "Mom's Easy Chinese Egg Pancakes (Ji Dan Bing)", "url": "https://shuangyskitchensink.com/easy-chinese-egg-pancake/", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Woks of Love", "title": "Savory Chinese Breakfast Pancakes (Milk & Egg Soft Pancakes)", "url": "https://woksoflove.com/savory-chinese-breakfast-pancakes-milk-egg-soft-pancakes/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,94 @@
+{
+  "dish_name": "Arnabeet Mekleh",
+  "cuisine": "Lebanese",
+  "main_protein": "vegetarian",
+  "ingredients": [
+    {
+      "item": "Cauliflower",
+      "qty": "2 medium heads",
+      "category": "produce"
+    },
+    {
+      "item": "Olive oil",
+      "qty": "1/4 cup",
+      "category": "pantry"
+    },
+    {
+      "item": "Salt",
+      "qty": "1 3/4 tsp",
+      "category": "pantry"
+    },
+    {
+      "item": "Ground cumin",
+      "qty": "1 tsp",
+      "category": "pantry"
+    },
+    {
+      "item": "Tahini",
+      "qty": "1 jar",
+      "category": "pantry",
+      "cook_qty": "1/2 cup"
+    },
+    {
+      "item": "Lemon",
+      "qty": "1",
+      "category": "produce"
+    },
+    {
+      "item": "Garlic",
+      "qty": "1 clove",
+      "category": "produce"
+    },
+    {
+      "item": "Flat-leaf parsley",
+      "qty": "1 bunch",
+      "category": "produce",
+      "cook_qty": "2 tbsp"
+    },
+    {
+      "item": "Basmati rice",
+      "qty": "1 1/2 cups",
+      "category": "pantry"
+    }
+  ],
+  "instructions": [
+    "Heat the oven to 425°F with two racks in the middle. Cut the cauliflower into florets about 1 1/2 inches wide.",
+    "Toss the florets with the oil and 1 tsp of the salt, then spread them in a single layer over two sheet pans. Leave room between the pieces.",
+    "Put the pans in the oven and roast for 12 minutes.",
+    "While the cauliflower roasts, rinse the rice in a fine strainer until the water runs mostly clear. Add it to a medium pot with 2 1/4 cups water and 1/2 tsp salt, and bring it to a boil over high heat. Cover, turn the heat to low, and cook for 15 minutes.",
+    "Take the pans out, turn the florets with a spatula, and switch the pans between the racks. Roast for 12 minutes, until they're deep golden brown at the edges.",
+    "Make the tarator while the cauliflower finishes. Mash the garlic with 1/4 tsp of the salt on a cutting board with the back of a fork until it's a paste. Transfer it into a bowl.",
+    "Add the tahini and juice of the lemon, then whisk in 1/2 cup water a splash at a time. It will turn stiff before it loosens. Keep whisking until it is thick but pourable. Add a splash more water if it's too thick.",
+    "Chop the parsley. Sprinkle the cumin over the hot cauliflower on the pans and toss.",
+    "Take the rice off the heat and leave it covered for 5 minutes. Then fluff it with a fork.",
+    "Taste the tarator. If it's flat, add a pinch more salt.",
+    "Serve the cauliflower over the rice with the tarator spooned over it and the parsley on top."
+  ],
+  "default_servings": 4,
+  "prep_time_minutes": 15,
+  "cook_time_minutes": 30,
+  "advance_prep_notes": "",
+  "advance_prep_step_indices": [],
+  "method_notes": "Both sources serve crisp cauliflower with tarator, a tahini, lemon, garlic and water sauce. The traditional way deep-fries the florets (the SBS version parboils first); the lead cooks them in an air fryer. This version roasts them at 425°F in a single layer, so there is no deep-frying and it stays within 45 minutes. Cumin is sprinkled on the hot florets as in the SBS version. It is served over basmati rice, not pita, so it stays gluten-free and vegan.",
+  "sources": [
+    {
+      "name": "Plant Based Folk",
+      "title": "Air Fryer Lebanese Cauliflower With Tahini",
+      "url": "https://plantbasedfolk.com/lebanese-cauliflower-tahini-air-fried-arnabeet-mekle/",
+      "rating": 5.0,
+      "rating_count": 40,
+      "read": true,
+      "lead": true
+    },
+    {
+      "name": "SBS Food",
+      "title": "Fried cauliflower with tarator (arnabeet mekleh)",
+      "url": "https://www.sbs.com.au/food/recipe/fried-cauliflower-with-tarator-arnabeet-mekleh/a3ay6kp6r",
+      "rating": null,
+      "rating_count": null,
+      "read": true
+    }
+  ],
+  "fallback_used": false,
+  "origin": "seed"
+}

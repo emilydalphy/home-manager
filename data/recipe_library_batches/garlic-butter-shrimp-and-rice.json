@@ -1,0 +1,121 @@
+{
+ "dish_name": "Garlic Butter Shrimp and Rice",
+ "cuisine": "American",
+ "main_protein": "shrimp",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Large shrimp",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "8 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "1 can (14 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Chicken stock",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "3 cups"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "1 bag (10 oz)",
+   "category": "frozen",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "to taste",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Finely chop the onion. Mince all 8 garlic cloves and keep them in two piles of 4.",
+  "Heat 1 tbsp of the olive oil in a large, deep sauté pan with a lid over medium heat. Add the onion and cook it for about 5 minutes, stirring now and then, until it's soft and see-through.",
+  "Add the first 4 garlic cloves and stir for about 30 seconds, until you can smell them.",
+  "Add the 1 1/2 cups rice and stir for 1 minute, until every grain is coated in the oil.",
+  "Add the crushed tomatoes, 2 1/2 cups of the stock, the 1 1/2 cups peas, 1 tsp of the salt and a pinch of pepper. Stir and bring it to a boil over medium high heat.",
+  "Turn the heat to low, cover the pan and cook for 15 minutes, until the rice is just tender and has soaked up the liquid. No peeking.",
+  "Meanwhile, if the shrimp aren't peeled and deveined, do that now. Pat them dry with paper towels and sprinkle them with the last 1/2 tsp salt and a pinch of pepper.",
+  "Heat the remaining 2 tbsp olive oil in a large skillet over high heat until it shimmers. Lay the shrimp in a single layer and leave them for 1 minute, until they're golden underneath.",
+  "Flip them and cook the other side for 1 minute. They don't need to be cooked through yet. Transfer them to a plate.",
+  "Turn the heat to medium low. Add the 2 tbsp butter and the other 4 garlic cloves and stir for about 30 seconds, until the garlic smells sweet. Don't let it brown.",
+  "Squeeze half the lemon. That should be about 1 tbsp of juice. Add it to the skillet with the remaining 1/2 cup stock and scrape up the browned bits. Let it bubble for 3 to 5 minutes, until it's reduced by about a third, then take it off the heat.",
+  "When the rice is done, take the pan off the heat. Lay the shrimp on top of the rice, put the lid back on and leave it for 5 minutes, until the shrimp are pink and opaque all the way through. Cut one in half to check.",
+  "Meanwhile, chop 2 tbsp of the parsley and cut the other lemon half into wedges.",
+  "Spoon the garlic butter sauce over the shrimp and rice and scatter the parsley on top.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of the lemon.",
+  "Serve with the lemon wedges."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Simply Delicious (the lead) cooks the rice in the pan with onion, garlic, crushed tomatoes, stock and peas, sears the shrimp hard in a separate pan, makes a garlic butter sauce with wine, stock and lemon there, and lets the shrimp finish by steaming on the rice. Cook.me (the Diethood recipe, whose own page blocked reading; it shows 13 reviews, a reviewCount, not a ratingCount) is quicker, stirring instant rice into garlic butter with the shrimp, Parmesan and a splash of milk. This follows the lead with stock in place of the wine and 1 1/2 cups rice instead of 2 1/2 so it suits four plates. Done honestly it takes about 40 minutes, not 20.",
+ "sources": [
+  {
+   "name": "Simply Delicious",
+   "title": "Easy garlic butter shrimp and rice",
+   "url": "https://simply-delicious-food.com/easy-garlic-butter-shrimp-and-rice/",
+   "rating": 4.46,
+   "rating_count": 121,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cook.me",
+   "title": "Garlic Butter Shrimp and Rice",
+   "url": "https://cook.me/recipe/garlic-butter-shrimp-rice/",
+   "rating": 5.0,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

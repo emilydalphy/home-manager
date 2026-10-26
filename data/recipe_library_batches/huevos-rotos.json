@@ -1,0 +1,86 @@
+{
+ "dish_name": "Huevos Rotos",
+ "cuisine": "Spanish",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "2 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Serrano ham",
+   "qty": "4 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Smoked paprika",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Peel the potatoes and cut them into 1/4 inch slices, then cut the slices into thin strips like fries. Put them in a bowl of cold water and leave them for 10 minutes.",
+  "Drain the potatoes and spread them on a clean kitchen towel. Pat them as dry as you can. Wet potatoes make the oil spatter.",
+  "Pour the oil into a large, deep skillet and set it over medium-high heat. It's ready when a potato strip dropped in sizzles straight away.",
+  "Add half the potatoes and fry them, turning them now and then, for 10 to 12 minutes, until they're golden at the edges and tender in the middle.",
+  "Lift them out with a slotted spoon onto a plate lined with paper towels and sprinkle 1/2 tsp of the salt over them. Fry the rest of the potatoes the same way and salt them with the last 1/2 tsp.",
+  "Meanwhile, tear the ham into bite-size pieces.",
+  "Carefully pour all but about 2 tbsp of the oil into a heatproof bowl and set it aside to cool. Put the pan back over medium heat.",
+  "Crack in 2 of the eggs and cook them for 2 to 3 minutes, spooning a little of the hot oil over the whites, until the whites are set and lacy at the edges and the yolks are still runny. Transfer them to a plate and cook the other 2 eggs the same way.",
+  "Pile the potatoes on a platter and lay the eggs on top. Scatter the ham over them and dust the 1/2 tsp smoked paprika over the eggs.",
+  "Serve right away. Break the yolks with a knife at the table and mix them through the potatoes and ham."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version had 20 or more ratings and RecipeTin Eats has no huevos rotos, so this leads with Food and Drink Destinations, the only rated version read. All three fry thin potato strips in plenty of olive oil until golden and top them with eggs fried so the yolks stay runny, which get broken over the potatoes at the table. Food and Drink Destinations and Fascinating Spain add jamón, Devour Tours keeps it to potatoes and eggs with a dusting of smoked paprika; this uses serrano ham and the paprika both. The potatoes go in two batches so they fry rather than steam, and the cooled frying oil can be strained and used again.",
+ "sources": [
+  {
+   "name": "Food and Drink Destinations",
+   "title": "Huevos Rotos Recipe - Spanish Broken Eggs With Jamón",
+   "url": "https://fooddrinkdestinations.com/huevos-rotos-recipe-spanish-broken-eggs-with-jamon/",
+   "rating": 4.5,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Devour Tours",
+   "title": "Huevos Rotos Recipe: Spanish Broken Eggs",
+   "url": "https://devourtours.com/blog/huevos-rotos-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Fascinating Spain",
+   "title": "Spanish huevos rotos recipe (Eggs with ham and potatoes)",
+   "url": "https://www.fascinatingspain.com/articulo/spanish-cuisine-recipes/spanish-huevos-rotos-recipe/20200528105634070723.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

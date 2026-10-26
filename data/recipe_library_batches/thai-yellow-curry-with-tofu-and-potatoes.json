@@ -1,0 +1,149 @@
+{
+ "dish_name": "Thai Yellow Curry with Tofu and Potatoes",
+ "cuisine": "Thai",
+ "main_protein": "tofu",
+ "ingredients": [
+  {
+   "item": "Extra-firm tofu",
+   "qty": "1 block (14 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Vegan gluten-free yellow curry paste",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Coconut milk",
+   "qty": "1 can (13.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Gluten-free vegetable broth",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Yukon gold potatoes",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Bamboo shoots",
+   "qty": "1 can (8 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Thai basil",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Tamari (gluten-free)",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Chili garlic sauce",
+   "qty": "1 jar",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups of jasmine rice under cold water until it runs mostly clear. Transfer it to a medium pot with 2 1/4 cups of water and bring it to a boil. Cover, turn the heat to the lowest setting and cook for 12 minutes. Take it off the heat and leave the lid on until you serve.",
+  "Meanwhile, cut the tofu into 3/4 inch cubes and pat them very dry with paper towels. Sprinkle 1/4 tsp of the salt over them.",
+  "Cut the potatoes into 3/4 inch pieces, slice the carrot into 1/4 inch coins and slice the onion thinly. Mince the garlic and drain the bamboo shoots. Juice half the lime and cut the other half into wedges. Pick the basil leaves off the stems.",
+  "Heat 1 tbsp of the oil in a large pot over medium-high heat for 1 minute. Add the tofu in a single layer and leave it alone for 3 minutes, until the underside is golden.",
+  "Turn the cubes and cook for 4 minutes, until they're golden on most sides. Transfer them to a plate.",
+  "Turn the heat down to medium. Add the remaining 2 tbsp oil, the onion and the remaining 1/4 tsp salt. Cook for 4 minutes, stirring now and then, until the onion is soft and the edges are brown.",
+  "Add the curry paste and the turmeric and stir for 1 minute, until it smells toasty. Add the garlic and stir for 30 seconds.",
+  "Add the broth, the coconut milk, 2 tsp tamari, 2 tsp sugar, the potatoes and the carrot. Scrape up anything stuck to the bottom of the pot. Bring it to a boil, then turn the heat down so it bubbles gently.",
+  "Partly cover the pot and cook for 12 minutes, until a knife slides easily into a potato.",
+  "Add the tofu and the bamboo shoots and cook for 3 minutes. Take the pot off the heat.",
+  "Stir in the basil and the juice of half the lime. Taste it, and add a pinch more salt if it's flat.",
+  "Serve over the rice with the lime wedges and the chili garlic sauce on the side."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree on a short simmer of potatoes in curry paste and coconut milk, with the tofu added near the end so it stays firm. The lead (RecipeTin Eats) makes its own paste with shrimp paste and uses prawns, fish sauce and chicken stock. This version uses a store-bought vegan, gluten-free yellow paste, tofu, a little tamari and sugar in place of fish sauce, and vegetable broth. Check the paste label for shrimp paste and wheat before you buy it.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Thai Yellow Curry (from scratch!)",
+   "url": "https://www.recipetineats.com/thai-yellow-curry/",
+   "rating": 4.95,
+   "rating_count": 59,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cinnamon Snail",
+   "title": "Vegan Yellow Curry",
+   "url": "https://cinnamonsnail.com/vegan-yellow-curry/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  },
+  {
+   "name": "Plants Rule",
+   "title": "Thai Vegan Yellow Potato Tofu Curry",
+   "url": "https://plants-rule.com/thai-vegan-yellow-potato-tofu-curry/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

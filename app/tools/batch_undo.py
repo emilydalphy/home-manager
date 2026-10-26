@@ -522,7 +522,9 @@ def unbatch(what: str = "", day: str = "") -> dict:
                 # The whole recipe-week, re-derived from the chain as it now
                 # stands. Nothing is excluded — the freed day is back in the
                 # group and buys its own portion again. See the module note.
-                _weekly_plan._rescale_leftover_source_grocery(batch["source_entry_id"], 0)
+                _weekly_plan._rescale_leftover_source_grocery(
+                    batch["source_entry_id"], 0, freed_entry_ids=free_ids,
+                )
             # A freed day cooks for itself now, so a "yes, it's in the
             # freezer" for the batch is a yes for that day's own move too —
             # and the rescale above must not put that food back on the list.

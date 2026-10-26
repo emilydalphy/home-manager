@@ -1,0 +1,100 @@
+{
+ "dish_name": "Sogogi Muguk",
+ "cuisine": "Korean",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {
+   "item": "Short-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Beef brisket",
+   "qty": "3/4 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Korean radish",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Korean soup soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kimchi",
+   "qty": "1 jar",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups rice in a strainer under cold water until the water runs mostly clear. Put it in a saucepan with 1 3/4 cups water and bring it to a boil over high heat. Turn the heat to low, cover the pan and cook for 15 minutes. Take it off the heat and keep the lid on until you're ready to serve.",
+  "Meanwhile, slice the beef thin against the grain, then cut the slices into bite-size pieces about 1 inch across. Mince the 3 garlic cloves and keep them in two piles: 1 clove's worth for the beef and the other 2 for the end.",
+  "Put the beef in a bowl with 1 tbsp of the soup soy sauce, the garlic from 1 clove, the 1 tsp sesame oil and a pinch of the pepper. Toss it with your hands and leave it while you cut the radish.",
+  "Peel the radish and cut about 12 oz of it into thin squares, about 1 1/2 inches across and 1/4 inch thick. That's roughly a third of a big one. Cut 2 of the green onions into 1 1/2 inch lengths.",
+  "Heat a large pot over medium-high. Add the beef with everything in the bowl and cook, stirring now and then, until it's no longer red and the edges start to brown, 3 to 4 minutes.",
+  "Pour in 8 cups water and bring it to a boil. Skim off the gray foam that rises to the top with a big spoon.",
+  "Turn the heat to medium, cover the pot and let it boil gently for 10 minutes.",
+  "Add the radish. Cover and cook until the radish turns see-through and a fork slides into it easily, 10 to 15 minutes.",
+  "Stir in the remaining garlic, the green onions, the last 1 tbsp soup soy sauce, the 1/2 tsp salt and the rest of the pepper. Simmer it uncovered for about 5 minutes.",
+  "Taste the broth. If it's flat, add a pinch more salt.",
+  "Ladle the soup into bowls and serve with the rice and the kimchi."
+ ],
+ "method_notes": "Both versions brown thin pieces of beef in a little oil, add water and radish, skim the foam, simmer until the radish turns see-through and season with garlic, Korean soup soy sauce and green onion at the end. Korean Bapsang seasons the beef with soup soy sauce, garlic and sesame oil before it goes in and gives the broth 10 minutes before the radish, while Beyond Kimchee adds kelp to the water and uses twice the radish. This follows Korean Bapsang's order and seasoning, with the 3/4 lb of beef Beyond Kimchee uses so it eats as dinner, and the rice and kimchi Beyond Kimchee serves it with. Maangchi's version was blocked; daikon works if there's no Korean radish.",
+ "sources": [
+  {
+   "name": "Korean Bapsang",
+   "title": "Korean Radish Soup (Muguk)",
+   "url": "https://www.koreanbapsang.com/korean-radish-soup-mu-gukmoo-guk/",
+   "rating": 4.71,
+   "rating_count": 51,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Beyond Kimchee",
+   "title": "Korean Beef Radish Soup (Sogogi Muguk)",
+   "url": "https://www.beyondkimchee.com/korean-beef-radish-soup-sogogi-muguk/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

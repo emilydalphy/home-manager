@@ -1,0 +1,106 @@
+{
+ "dish_name": "Trout Amandine",
+ "cuisine": "French",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Rainbow trout fillets",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood",
+   "cook_qty": "4 fillets"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "8 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Sliced almonds",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 200°F and put a large plate in it to warm. You'll keep the first fillets warm there while the second batch cooks.",
+  "Pat the 4 trout fillets dry with paper towels. Sprinkle both sides with 3/4 tsp of the salt and the 1/2 tsp pepper.",
+  "The sauce comes together in a few minutes, so get it ready before any pan goes on. Finely grate the zest of the lemon, then cut it in half and squeeze the juice into a small bowl. That should be about 2 tbsp. Chop 2 tbsp of the parsley.",
+  "Spread the 1/2 cup flour on a plate. Press each fillet into it on both sides and shake off the extra.",
+  "Heat 1 tbsp of the olive oil and 1 tbsp of the butter in a 12 inch skillet over medium high until the butter foams. Lay in 2 fillets skin side down. Leave them alone for about 3 minutes, until the edges are golden and the skin lets go of the pan.",
+  "Flip them and cook the other side for 2 to 3 minutes, until the flesh is opaque all the way through and flakes when you press it with a fork. Transfer them to the warm plate in the oven.",
+  "Wipe out the pan with a paper towel. Cook the last 2 fillets the same way, with the last 1 tbsp olive oil and 1 tbsp of the butter, and add them to the plate in the oven.",
+  "Wipe the pan again and turn the heat down to medium. Add the remaining 6 tbsp butter and swirl the pan as it melts and foams. After about 2 minutes the foam will turn light golden and smell nutty.",
+  "Add the 1/2 cup almonds and stir for about 2 minutes, until they're deep golden. Watch them closely. They go from golden to burnt quickly.",
+  "Take the pan off the heat and stir in the lemon zest, 4 tsp of the lemon juice, the parsley and the last 1/4 tsp salt. It will sizzle.",
+  "Taste it. If it's flat, add a pinch more salt or the rest of the lemon juice.",
+  "Put a fillet on each plate and spoon the almonds and brown butter over the top. Serve right away."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Every version dredges the trout in seasoned flour, pan fries it skin side down in oil and butter, then browns butter with sliced almonds in the same pan and finishes it with lemon and parsley. Tasting Table (the lead) sears lemon rounds first and adds only zest to the sauce; Savor the Best uses both zest and juice and keeps the fish warm in a low oven, and Peel with Zeal toasts the almonds dry and adds capers and spices to the flour. No version had 20 or more ratings (Tasting Table has 19) and RecipeTin Eats (the trusted cook for French) has no trout amandine, so the read version with the most ratings leads. This one scales the lead to four, cooks the fish in two batches and keeps them warm in the oven as Savor the Best does, and uses the lemon's zest and juice in the sauce instead of seared lemon rounds.",
+ "sources": [
+  {
+   "name": "Tasting Table",
+   "title": "Classic Trout Amandine Recipe",
+   "url": "https://www.tastingtable.com/1638244/classic-trout-amandine-recipe/",
+   "rating": 4.9,
+   "rating_count": 19,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Peel with Zeal",
+   "title": "Trout Almondine",
+   "url": "https://www.peelwithzeal.com/trout-almondine/",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Savor the Best",
+   "title": "Classic Trout Amandine Recipe",
+   "url": "https://savorthebest.com/trout-amandine/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

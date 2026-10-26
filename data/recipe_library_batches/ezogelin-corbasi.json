@@ -1,0 +1,139 @@
+{
+ "dish_name": "Ezogelin Corbasi",
+ "cuisine": "Turkish",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 50,
+ "ingredients": [
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Red lentils",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Turkish red pepper paste",
+   "qty": "1 jar (mild)",
+   "category": "pantry",
+   "cook_qty": "1/2 tbsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Coarse bulgur",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Short-grain rice",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "6 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "1 1/2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried mint",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Chop the onion and the 2 garlic cloves. Rinse the 1/2 cup lentils in a sieve until the water runs clear.",
+  "Heat the 1 tbsp olive oil in a large heavy pot over medium. Add the onion and cook for 6 to 8 minutes, stirring now and then, until it's soft and starting to brown at the edges.",
+  "Add the garlic and cook for about 1 minute, until it smells fragrant.",
+  "Turn the heat to low and stir in 1 tbsp of the tomato paste and 1/2 tbsp of the pepper paste. Cook for 2 to 3 minutes, stirring, until the paste turns a shade darker.",
+  "Add the 1/4 tsp pepper, the 1 tsp salt and the lentils. Stir for about 2 minutes, then stir in the 1/2 cup bulgur and the 1/4 cup rice.",
+  "Pour in the 6 cups broth, stir well and bring it to a boil over high heat. Turn the heat to low, partly cover the pot and simmer for 30 to 35 minutes, stirring now and then so nothing sticks. It's ready when the lentils have broken down and the bulgur and rice are soft.",
+  "Take the pot off the heat. Blend it briefly with a stick blender, so it's thick but still a little grainy. If it's thicker than you like, stir in a splash of water.",
+  "Melt the 1 1/2 tbsp butter in a small pan over low heat. Add the 1/2 tsp paprika and 1/2 tsp dried mint and stir for about 30 seconds, until the butter turns red and smells of mint. Don't let the mint go dark.",
+  "Cut the lemon into wedges.",
+  "Pour the spiced butter into the soup and stir it through. Taste it. If it's flat, add a pinch more salt or a squeeze of one of the lemon wedges.",
+  "Serve hot with the rest of the lemon wedges and the red pepper flakes on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "None of the versions found had 20 or more ratings, and RecipeTin Eats, the trusted cook for this cuisine, has no ezogelin, so Cooking Gorgeous (5.0 from 13 votes) leads. All three cook red lentils and bulgur with onion, tomato or pepper paste and dried mint and serve it with lemon. Cooking Gorgeous fries the pastes before adding the lentils, bulgur, rice and stock, then blends it coarsely and pours over a mint and chili butter; the Turkish Ministry of Culture and Tourism version simmers the lentils and bulgur in water first and stirs in a fried flour, tomato and mint paste at the end; Lezzet cooks it in water with no blending. This one follows the lead with vegetable broth, uses paprika in the butter and leaves the chili flakes out of the pot so they go on the table. Use the mild (tatlı) pepper paste. Unicorns in the Kitchen blocked the reader.",
+ "sources": [
+  {
+   "name": "Cooking Gorgeous",
+   "title": "Ezogelin Çorbası (Ezogelin Soup)",
+   "url": "https://cookingorgeous.com/blog/ezogelin-soup/",
+   "rating": 5.0,
+   "rating_count": 13,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Turkish Ministry of Culture and Tourism",
+   "title": "Red Lentil-Bulgur Soup",
+   "url": "https://ktb.gov.tr/EN-99033/red-lentil-bulgur-soup.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Lezzet",
+   "title": "Ezogelin Soup",
+   "url": "https://www.lezzet.com.tr/en/amp/recipe/ezogelin-soup",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

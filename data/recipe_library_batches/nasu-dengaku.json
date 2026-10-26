@@ -1,0 +1,128 @@
+{
+ "dish_name": "Nasu Dengaku",
+ "cuisine": "Japanese",
+ "main_protein": "vegetarian",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Japanese eggplants",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "White miso (gluten-free)",
+   "qty": "1 tub",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Sake",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece",
+   "category": "produce",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3 scallions"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the broiler with a rack about 6 inches below it, and line a baking sheet with foil.",
+  "Rinse the rice in a sieve until the water runs mostly clear. Add it to a medium pot with 2 1/4 cups of water, bring it to a boil over high heat, then cover, turn the heat to low and cook for 15 minutes. Leave the lid on and take the pot off the heat until you serve.",
+  "Make the miso glaze in a small saucepan, off the heat. Stir together the miso, sake, mirin, sugar, rice vinegar and the grated ginger (1/2 tsp) until smooth. Set it over medium-low heat and stir for 3 minutes, until it thickens to the texture of mayonnaise and the sugar has dissolved. Take it off the heat and stir in the sesame oil.",
+  "Trim the stems off the eggplants and halve them lengthwise. Score the cut sides in a crosshatch pattern about 1/2 inch deep, without cutting through the skin. Slice the scallions.",
+  "Heat 2 tbsp of the vegetable oil in a large nonstick skillet over medium heat. Put half the eggplant in cut side down. Cook for 4 minutes, until the cut sides are deep golden brown. Flip them, cover the skillet and cook for 4 minutes, until the flesh is soft. Transfer them to the baking sheet, cut side up. Cook the rest of the eggplant the same way with the remaining 2 tbsp oil.",
+  "Sprinkle the cut sides with the salt. Spread the miso glaze over the cut sides, dividing all the glaze among the 8 halves, about 1 tbsp each.",
+  "Broil for 3 to 4 minutes, until the glaze is bubbling and has brown spots. Watch it closely. The sugar burns fast.",
+  "Taste a piece. If it's flat, add a pinch more salt.",
+  "Sprinkle the eggplant with the sesame seeds and the scallions. Fluff the rice with a fork. Serve the eggplant with the rice."
+ ],
+ "method_notes": "Nasu dengaku is eggplant cooked until soft with a sweet miso glaze browned on top, and the sources agree on the glaze of miso, sake, mirin and sugar. They differ on how the eggplant is cooked: the lead bakes it for 35 to 45 minutes, which does not fit a 45 minute dinner, so this pan-fries the scored halves and then broils them with the glaze, as the other two do. The glaze is simmered like the lead's, but without the egg yolk some versions add, so it stays vegan. White miso is labeled gluten-free here, since some miso is made with barley.",
+ "sources": [
+  {
+   "name": "Not Quite Nigella",
+   "title": "Japanese Miso Eggplant Nasu Dengaku",
+   "url": "https://www.notquitenigella.com/2020/06/10/japanese-eggplant-miso-nasu-dengaku/",
+   "rating": 5.0,
+   "rating_count": 22,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Pickled Plum",
+   "title": "Nasu Dengaku, Miso Glazed Eggplant",
+   "url": "https://pickledplum.com/nasu-dengaku-recipe",
+   "rating": 4.9,
+   "rating_count": 53,
+   "read": true
+  },
+  {
+   "name": "RecipeTin Japan",
+   "title": "Miso Glazed Eggplant (Nasu Dengaku)",
+   "url": "https://japan.recipetineats.com/miso-glazed-eggplant-nasu-dengaku/",
+   "rating": 4.75,
+   "rating_count": 4,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

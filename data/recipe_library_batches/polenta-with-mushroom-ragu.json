@@ -1,0 +1,133 @@
+{
+  "dish_name": "Polenta with Mushroom Ragu",
+  "cuisine": "Italian",
+  "main_protein": "vegetarian",
+  "default_servings": 4,
+  "prep_time_minutes": 12,
+  "cook_time_minutes": 33,
+  "ingredients": [
+    {
+      "item": "Polenta (coarse cornmeal)",
+      "qty": "1 cup",
+      "category": "pantry"
+    },
+    {
+      "item": "Gluten-free vegetable broth",
+      "qty": "2 1/2 cups",
+      "category": "pantry"
+    },
+    {
+      "item": "Cremini mushrooms",
+      "qty": "1 1/2 lb",
+      "category": "produce"
+    },
+    {
+      "item": "Yellow onion",
+      "qty": "1",
+      "category": "produce"
+    },
+    {
+      "item": "Garlic",
+      "qty": "3 cloves",
+      "category": "produce"
+    },
+    {
+      "item": "Tomato paste",
+      "qty": "1 small can",
+      "category": "pantry",
+      "cook_qty": "2 tbsp"
+    },
+    {
+      "item": "Dry white wine (vegan)",
+      "qty": "1 bottle",
+      "category": "pantry",
+      "cook_qty": "1/2 cup"
+    },
+    {
+      "item": "Tamari (gluten-free)",
+      "qty": "1 bottle",
+      "category": "pantry",
+      "cook_qty": "1 tbsp"
+    },
+    {
+      "item": "Balsamic vinegar",
+      "qty": "1 bottle",
+      "category": "pantry",
+      "cook_qty": "1 tsp"
+    },
+    {
+      "item": "Nutritional yeast",
+      "qty": "1/4 cup",
+      "category": "pantry"
+    },
+    {
+      "item": "Olive oil",
+      "qty": "1/2 cup",
+      "category": "pantry"
+    },
+    {
+      "item": "Dried thyme",
+      "qty": "1 tsp",
+      "category": "pantry"
+    },
+    {
+      "item": "Dried rosemary",
+      "qty": "1/2 tsp",
+      "category": "pantry"
+    },
+    {
+      "item": "Flat-leaf parsley",
+      "qty": "1 bunch",
+      "category": "produce",
+      "cook_qty": "2 tbsp chopped"
+    },
+    {
+      "item": "Salt",
+      "qty": "1 1/2 tsp",
+      "category": "pantry"
+    },
+    {
+      "item": "Black pepper",
+      "qty": "1/2 tsp",
+      "category": "pantry"
+    }
+  ],
+  "instructions": [
+    "In a medium, heavy pot, bring 2 cups water, 1 1/2 cups of the broth and 3/4 tsp of the salt to a boil over high heat.",
+    "Pour in the polenta in a thin stream, whisking as you go. Turn the heat to low and whisk for 1 minute. Cover and cook for 25 minutes, stirring every 5 minutes. If it gets too thick, whisk in a splash of water.",
+    "Meanwhile, slice the mushrooms 1/4 inch thick, dice the onion and mince the garlic.",
+    "Set a large skillet over medium-high heat. Add 2 tbsp of the oil, then half the mushrooms in one layer. Leave them alone for 3 minutes until browned, then stir and cook for 2 minutes. Transfer them to a bowl. Repeat with 2 tbsp more oil and the rest of the mushrooms.",
+    "Turn the heat to medium and add 1 tbsp more oil, the onion and 1/4 tsp of the salt. Cook for 4 minutes, until soft.",
+    "Add the tomato paste, thyme and rosemary and stir for 1 minute, until the paste darkens. Add the garlic and stir for 30 seconds.",
+    "Pour in the wine and scrape up the browned bits from the bottom of the pan. Let it bubble for 1 minute.",
+    "Add 1 tbsp of tamari, the remaining 1 cup broth and the mushrooms with any juices. Simmer for 8 minutes, until the sauce is thick enough to coat a spoon.",
+    "Take the skillet off the heat. Stir in 1 tsp of balsamic vinegar, the parsley, the pepper and 1/4 tsp of the salt.",
+    "Take the polenta off the heat. Stir in the nutritional yeast, 3 tbsp olive oil and the last 1/4 tsp salt. Keep it covered.",
+    "Taste both. If either is flat, add a pinch more salt.",
+    "Spoon the polenta into bowls and top with the ragu."
+  ],
+  "advance_prep_notes": "",
+  "advance_prep_step_indices": [],
+  "method_notes": "Both sources brown mushrooms hard in batches, then add wine and herbs and simmer briefly over creamy polenta. They use vegan Parmesan and coconut milk; this uses nutritional yeast and olive oil in the polenta so it is vegan without extra shopping. A spoonful of tomato paste and tamari give the ragu depth, and Vegan Huggs' cornstarch is dropped because the ragu reduces on its own. Tamari instead of soy sauce keeps it gluten-free.",
+  "sources": [
+    {
+      "name": "Vegan Huggs",
+      "title": "Creamy Polenta with Mushroom Ragu",
+      "url": "https://veganhuggs.com/creamy-polenta-mushroom-ragu/",
+      "rating": 5.0,
+      "rating_count": 13,
+      "read": true,
+      "lead": true
+    },
+    {
+      "name": "Oliver's Market",
+      "title": "Vegan Polenta with Mushroom Ragu",
+      "url": "https://www.oliversmarket.com/recipe/vegan-polenta-with-mushroom-ragu/",
+      "rating": null,
+      "rating_count": null,
+      "read": true
+    }
+  ],
+  "fallback_used": false,
+  "origin": "seed"
+}

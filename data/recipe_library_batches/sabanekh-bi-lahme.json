@@ -1,0 +1,45 @@
+{
+ "dish_name": "Sabanekh bi Lahme",
+ "cuisine": "Lebanese",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {"item": "Long-grain white rice", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Olive oil", "qty": "5 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Spinach", "qty": "2 lbs", "category": "produce"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "5 cloves", "category": "produce"},
+  {"item": "Lemon", "qty": "1", "category": "produce"},
+  {"item": "Pine nuts", "qty": "1 bag (2 oz)", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Ground beef", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Ground allspice", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups rice in a sieve under cold water until the water runs mostly clear. Add it to a medium saucepan with 2 1/4 cups water, 1 tbsp of the oil and 1/2 tsp of the salt.",
+  "Bring the rice to a boil over high heat. Cover it, turn the heat to low and cook for 15 minutes. Take the pan off the heat and leave the lid on for 10 minutes.",
+  "Meanwhile, wash the spinach in a sink of cold water and lift it out, so the grit stays at the bottom. Cut off the thick stems and chop the leaves into wide strips, about 2 inches.",
+  "Dice the onion and thinly slice the 5 garlic cloves. Squeeze the lemon. That should be about 3 tbsp.",
+  "Add 1 tbsp of the oil and the 1/4 cup pine nuts to a large, deep pot off the heat. Set it over medium low and stir often for 3 to 4 minutes, until the nuts are golden. Watch them closely. They go from golden to burnt quickly. Transfer them to a plate.",
+  "Add the remaining 3 tbsp oil to the same pot and set it over medium heat. Add the onion and 1/2 tsp of the salt and cook, stirring now and then, for 6 to 8 minutes, until the onion is soft and golden at the edges.",
+  "Turn the heat up to medium high. Add the 1 lb beef, break it up with a wooden spoon and spread it out. Leave it for 3 minutes so the underside browns. Stir and cook for about 5 minutes, until there's no pink left and it's browned in spots.",
+  "Add the 1/2 tsp allspice, the 1/2 tsp pepper and the last 1/2 tsp salt. Stir for 30 seconds, until it smells warm and fragrant. Add the garlic and cook for 1 minute, stirring, until it softens.",
+  "Add the spinach a big handful at a time, stirring each one in until it collapses before you add the next. Once it's all in, cook for 3 to 5 minutes, until it's wilted and dark green and there's a little juice in the bottom of the pot.",
+  "Take the pot off the heat and stir in the 3 tbsp lemon juice.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Fluff the rice with a fork. Serve the stew over the rice with the pine nuts on top."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions brown ground beef with a warm spice (allspice or Lebanese seven spice), wilt a large amount of spinach into it, finish with lemon and serve it with rice and toasted pine nuts. The Salt and Sweet softens onion and garlic first and wilts fresh spinach for a few minutes, while Simply Lebanese and Sea of Knowledge add cilantro and plenty of garlic and simmer the spinach in water for 15 to 25 minutes. No version had 20 or more ratings (The Salt and Sweet shows 100 reviews, but its recipe data has only a reviewCount, no ratingCount) and RecipeTin Eats has no version, so The Salt and Sweet leads as the first one read. This follows its quick fresh spinach method but doubles the beef to 1 lb with 2 lbs spinach so it carries a dinner for four, and browns the beef rather than only cooking it through.",
+ "sources": [
+  {"name": "The Salt and Sweet", "title": "Lebanese Spinach Stew (Sabanekh w Riz)", "url": "https://thesaltandsweet.com/lebanese-spinach-stew/", "rating": 5.0, "rating_count": null, "read": true, "lead": true},
+  {"name": "Simply Lebanese", "title": "Lebanese Spinach Stew", "url": "https://www.simplyleb.com/recipe/lebanese-spinach-stew/", "rating": 4.84, "rating_count": 12, "read": true, "lead": false},
+  {"name": "Sea of Knowledge", "title": "Sabanekh Recipe Lebanese Spinach Stew", "url": "https://www.seaofknowledge.org/sabanekh-recipe-lebanese-spinach-stew/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -58,10 +58,13 @@ def _coerce_str_list(field: str, value) -> list[str]:
     item in the list with no blank-check of their own). Caught while
     adversarially testing this exact fix, 2026-09-13.
     """
+    # Each thing once, whatever its capitals or spacing (defect hunt
+    # 2026-10-25): ["Olives", "olives "] was two Won't eat chips, and
+    # "Thai, thai" two cuisines the planner was told about twice.
     if isinstance(value, str):
-        return [v.strip() for v in value.split(",") if v.strip()]
+        return _preferences.one_of_each(value.split(","))
     if isinstance(value, list) and all(isinstance(v, str) for v in value):
-        return [v.strip() for v in value if v.strip()]
+        return _preferences.one_of_each(value)
     raise ValueError(
         f"{field} must be a list of text (or one comma-separated string), not {value!r}."
     )
@@ -130,6 +133,10 @@ tonight today tomorrow mornings evenings nights
 """.split())
 
 
+# The What we know tabs a fact can be shown on (schema.sql's facts.category).
+FACT_CATEGORIES = ("people", "taste", "rhythm")
+
+
 def household_wont_eat_items(category: str, text: str) -> list[str]:
     """The foods a household-wide "we don't eat X" names, or [] when the
     sentence is anything else (a person's rule, a routine, a taste note)."""
@@ -156,6 +163,14 @@ def add_fact_from_chat(category: str, text: str, hard: bool = False, author: str
     is not a freeform fact: it is routed to the household's Won't eat list,
     and a protein it names has its Settings chip put to "skip". Only the chat
     routes: the Settings box's own "Something else" keeps what was typed."""
+    # A fact goes on one of the three What we know tabs or nowhere
+    # (2026-10-25): filed under any other word it was drawn on no tab —
+    # nothing could edit or delete it — while the planner still read it.
+    # Checked here, the chat's door, and in /api/facts/add; add_fact itself
+    # stays open for internal callers.
+    if (category or "") not in FACT_CATEGORIES:
+        return {"added": False, "category": category,
+                "reason": "A fact goes under people, taste or rhythm — nothing was saved."}
     items = household_wont_eat_items(category, (text or "").strip())
     if items:
         saved = _preferences.add_food_dislikes(items)
@@ -169,12 +184,61 @@ def add_fact_from_chat(category: str, text: str, hard: bool = False, author: str
     return add_fact(category, text, hard=hard, author=author)
 
 
+def hard_facts() -> list[dict]:
+    """The household's must-avoid facts, each sentence once (2026-10-25).
+    The same sentence filed under two tabs is one rule, not two: read
+    twice it went into must_not_contain twice and made one sesame dish "a
+    clash with two things Sam can't have". The first one filed is kept."""
+    seen: set[str] = set()
+    out = []
+    for fact in get_facts():
+        text = (fact.get("text") or "").strip()
+        if not fact.get("hard") or not text:
+            continue
+        key = _fact_key(text)
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(fact)
+    return out
+
+
+def _fact_key(text: str) -> str:
+    """Two facts are the same fact when only capitals, spacing or the
+    closing punctuation differ."""
+    return _preferences.same_words_key(text).rstrip(" .!")
+
+
 def add_fact(category: str, text: str, hard: bool = False, author: str = "") -> dict:
     """Add one freeform fact to a What We Know tab. An empty/whitespace-only text is refused — the UI's own rule is that an abandoned empty fact never persists."""
     text = (text or "").strip()
     if not text:
         return {"added": False, "reason": "There's nothing to add — the text was empty."}
     with write() as conn:
+        # Said twice is still one thing we know (defect hunt 2026-10-25).
+        # Chat telling us "Sam is allergic to sesame" a second time wrote a
+        # second row: two lines on What we know, the allergy twice in every
+        # must_not_contain, and a dish with sesame "a clash with two things
+        # Sam can't have". The same words in the same tab — any capitals,
+        # spacing or closing full stop — answer with the row already there.
+        # Saying it as a must-avoid makes the one row hard; saying it
+        # without never softens a hard one.
+        key = _fact_key(text)
+        for row in conn.execute(
+            "SELECT id, text, hard FROM facts WHERE household_id = ? AND category = ? ORDER BY id",
+            (household_id(), category),
+        ).fetchall():
+            if _fact_key(row["text"]) != key:
+                continue
+            made_hard = bool(hard and not row["hard"])
+            if made_hard:
+                conn.execute(
+                    "UPDATE facts SET hard = 1, updated_at = datetime('now') WHERE id = ? AND household_id = ?",
+                    (row["id"], household_id()),
+                )
+            return {"added": False, "already_known": True, "made_hard": made_hard,
+                    "id": row["id"], "category": category,
+                    "text": row["text"], "hard": bool(hard or row["hard"])}
         cur = conn.execute(
             "INSERT INTO facts (household_id, category, text, hard, author) VALUES (?, ?, ?, ?, ?)",
             (household_id(), category, text, 1 if hard else 0, author),
@@ -852,6 +916,10 @@ def edit_preference(field: str, value) -> dict:
             )
         return {"dislikes": value}
     if field == "usual_stores":
+        # One spelling per store, the first given ("Costco" and "costco "
+        # are one shop — stores.store_key), tidied of stray spaces.
+        from . import stores as _stores
+        value = _stores.one_spelling_each(value)
         with write() as conn:
             before = conn.execute(
                 "SELECT usual_stores_json, store_typical_items_json, store_hours_json FROM meal_preferences WHERE household_id = ?",
@@ -878,7 +946,7 @@ def edit_preference(field: str, value) -> dict:
             # doesn't require the store to be a usual store first, so a list
             # taught in chat for somewhere that was never picked here is not
             # this write's to throw away.
-            kept = {str(s).strip().lower() for s in (value or [])}
+            kept = {_stores.store_key(s) for s in (value or [])}
             # _as_str_list, not a raw json.loads: "before" can still be a
             # legacy bad row (a bare string, written before edit_preference's
             # own write-side coercion existed) — without this guard, iterating
@@ -886,11 +954,13 @@ def edit_preference(field: str, value) -> dict:
             # letters that never matches a real store name, so the pruning
             # below silently no-ops instead of dropping the stale
             # store_typical_items entry. Caught adversarially, 2026-09-13.
-            was = {str(s).strip().lower() for s in _as_str_list(json.loads(before["usual_stores_json"]))} if before else set()
+            was = {_stores.store_key(s) for s in _as_str_list(json.loads(before["usual_stores_json"]))} if before else set()
             dropped = was - kept
             if dropped and before:
                 store_items = json.loads(before["store_typical_items_json"])
-                pruned = {k: v for k, v in store_items.items() if k.strip().lower() not in dropped}
+                # store_key throughout, as `value` was tidied by it: "Farm  Boy" saved
+                # with two spaces is the kept "Farm Boy", not a dropped store.
+                pruned = {k: v for k, v in store_items.items() if _stores.store_key(k) not in dropped}
                 if pruned != store_items:
                     conn.execute(
                         "UPDATE meal_preferences SET store_typical_items_json = ? WHERE household_id = ?",
@@ -898,12 +968,16 @@ def edit_preference(field: str, value) -> dict:
                     )
                 # The dropped store's hours with it (see delete_preference).
                 store_hours = _store_hours_payload(before)
-                kept_hours = {k: v for k, v in store_hours.items() if k.strip().lower() not in dropped}
+                kept_hours = {k: v for k, v in store_hours.items() if _stores.store_key(k) not in dropped}
                 if kept_hours != store_hours:
                     conn.execute(
                         "UPDATE meal_preferences SET store_hours_json = ? WHERE household_id = ?",
                         (json.dumps(kept_hours), household_id()),
                     )
+            if dropped:
+                # And what is filed under it (see stores.forget_dropped_stores).
+                from . import stores as _stores
+                _stores.forget_dropped_stores(conn, dropped)
         return {"usual_stores": value}
     if field == "cuisine_preferences":
         return _preferences.set_household_meal_preferences(cuisine_preferences=value, mark_complete=False)
@@ -991,22 +1065,38 @@ def delete_preference(field: str, item: str | None = None) -> dict:
                 (json.dumps(updated), household_id()),
             )
         elif field == "cuisine_preferences":
-            updated = [c for c in _as_str_list(json.loads(existing["cuisine_preferences_json"])) if c.lower() != (item or "").lower()]
+            before = _as_str_list(json.loads(existing["cuisine_preferences_json"]))
+            updated = [c for c in before if c.lower() != (item or "").lower()]
+            removed_listed = len(updated) < len(before)
             conn.execute(
                 "UPDATE meal_preferences SET cuisine_preferences_json = ?, updated_at = datetime('now') WHERE household_id = ?",
                 (json.dumps(updated), household_id()),
             )
         elif field == "usual_stores":
-            updated = [s for s in _as_str_list(json.loads(existing["usual_stores_json"])) if s.lower() != (item or "").lower()]
+            before = _as_str_list(json.loads(existing["usual_stores_json"]))
+            updated = [s for s in before if s.lower() != (item or "").lower()]
+            removed_listed = len(updated) < len(before)
+            if removed_listed:
+                # Only a store that WAS a usual one — the same narrow rule
+                # edit_preference's un-pick follows. Its per-item filing goes
+                # with it (stores.forget_dropped_stores).
+                from . import stores as _stores
+                _stores.forget_dropped_stores(conn, {(item or "").strip().lower()})
             # Drop that store's typical-items list along with it — an orphaned
             # entry would keep surfacing "usually get here" suggestions in the
             # grocery list for a store the household no longer shops at.
             store_items = json.loads(existing["store_typical_items_json"])
+            items_before = len(store_items)
             store_items = {k: v for k, v in store_items.items() if k.lower() != (item or "").lower()}
             # Its hours go too, for the same reason: a store nobody shops at
             # must not keep putting "closes at 5:30" on Today.
             store_hours = _store_hours_payload(existing)
+            hours_before = len(store_hours)
             store_hours = {k: v for k, v in store_hours.items() if k.lower() != (item or "").lower()}
+            # Its typical items or hours going is a removal too, even for a
+            # store no longer in the list itself.
+            removed_listed = (removed_listed or len(store_items) < items_before
+                              or len(store_hours) < hours_before)
             conn.execute(
                 "UPDATE meal_preferences SET usual_stores_json = ?, store_typical_items_json = ?, store_hours_json = ?, updated_at = datetime('now') WHERE household_id = ?",
                 (json.dumps(updated), json.dumps(store_items), json.dumps(store_hours), household_id()),
@@ -1101,4 +1191,8 @@ def delete_preference(field: str, item: str | None = None) -> dict:
         return {"field": field, "item": item, "deleted": bool(removed_proteins), "removed": removed_proteins}
     if field == "dislikes":
         return {"field": field, "item": item, "deleted": removed_dislikes}
+    if field in ("cuisine_preferences", "usual_stores"):
+        # Said back the same way: "stop going to Costco" when Costco was
+        # never one of the stores removed nothing (defect hunt 2026-10-24).
+        return {"field": field, "item": item, "deleted": removed_listed}
     return {"field": field, "item": item, "deleted": True}

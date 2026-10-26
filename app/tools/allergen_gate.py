@@ -256,6 +256,46 @@ def _person(clashes: list[dict]) -> str | None:
     return names[0] if names else None
 
 
+# The few allergen words the matcher keeps singular that a person says in
+# the plural: "Sam can't have peanuts", never "…can't have peanut". Mass
+# words (dairy, gluten, shellfish, pork, pineapple) read right as they are.
+_PLURAL_FOOD = {
+    "peanut": "peanuts", "nut": "nuts", "tree nut": "tree nuts", "egg": "eggs",
+    "almond": "almonds", "cashew": "cashews", "walnut": "walnuts", "pecan": "pecans",
+    "hazelnut": "hazelnuts", "pistachio": "pistachios", "strawberry": "strawberries",
+    "mushroom": "mushrooms", "tomato": "tomatoes",
+}
+
+
+def plain_food(word: str) -> str:
+    """A matched allergen word the way a person says it ("peanut" ->
+    "peanuts"); anything not on the short list is left as it is."""
+    word = (word or "").strip().lower()
+    return _PLURAL_FOOD.get(word, word)
+
+
+def repick_stamp(dropped: str, clashes: list[dict]) -> dict:
+    """
+    What a re-picked slot records about the dish it replaced: the dish,
+    the food it had (`avoided`, as _food_word reads it), and for the
+    draft's line the food as the MATCHER named it (`food`, plain_food; ""
+    when no clash carried a matched word — a restriction's whole label is
+    not a food to put in a sentence) and WHO can't have it — every member
+    whose clash matched that food, or [] when it is a household-wide hard
+    no (a hard What-we-know fact naming nobody). The draft's "You asked for
+    peanut noodles, but Sam can't have peanuts…" (draft_flags.
+    flags_for_allergy_requests, snag rule 9) is built from this record and
+    nothing else, so it can only name a person and a food this gate
+    actually matched.
+    """
+    food = next((plain_food(c["matched"]) for c in clashes if (c.get("matched") or "").strip()), "")
+    who = []
+    for c in clashes:
+        if food and plain_food(c.get("matched") or "") == food and c.get("member") and c["member"] not in who:
+            who.append(c["member"])
+    return {"dropped": dropped, "avoided": _food_word(clashes), "food": food, "who": who}
+
+
 def open_reason(slot: str, clashes: list[dict]) -> str:
     """
     The open slot's own sentence when nothing safe could be found: plain
@@ -317,6 +357,153 @@ def refusal_sentence(name: str, clashes: list[dict]) -> str:
     who = _person(clashes)
     cannot = f"{who} can’t have" if who else "this house can’t have"
     return f"{name} has {food}, which {cannot}{CHAT_ASK}"
+
+
+# ---------- an allergy added after the week was approved ----------
+#
+# Defect hunt 2026-10-24: Theo's peanut allergy saved in Preferences, with
+# Peanut Noodles on the approved week that night, and nothing anywhere
+# said so. The gate above guards every door that WRITES a dish; a week
+# already written was checked once, at approval, against the allergies on
+# file then, and never again: Today read "Cook · Peanut Noodles", the
+# morning text "Tonight: Peanut Noodles." The decision log's rule for a
+# clash is "warn, never block — the app is merely never silent". So the
+# week is not changed here; it is SAID, on the dish's row.
+#
+# Only an allergy that was NOT on file at approval: a clash the household
+# confirmed with "Approve anyway — I've seen the clash" is a decision made
+# (tests/test_allergy_safety.py, "not nagged"), and stays quiet.
+
+
+def avoidance_key(avoidance: dict) -> str:
+    """One allergy or must-avoid as a stable string: where it lives, whose
+    it is, and its words. Re-saving the same allergy is the same key;
+    rewording it is a new one, and is told as new."""
+    return "|".join(
+        (avoidance.get(k) or "").strip().lower() for k in ("source", "member", "label")
+    )
+
+
+def avoidance_keys_now() -> list[str]:
+    """The household's hard avoidances right now, as keys — what approval
+    records on the week (weekly_plans.avoidances_at_approval_json)."""
+    return sorted({avoidance_key(a) for a in hard_avoidances()})
+
+
+def snapshot_unrecorded_approvals() -> int:
+    """
+    Give every approved week that has no record yet ('' — approved before
+    the column existed) the household's avoidances as they are NOW, so a
+    week in flight when this shipped starts quiet: a clash the household
+    already approved past with "Approve anyway" is not raised on Today the
+    morning after a deploy (review, 2026-10-24). Only allergies added after
+    this runs are new. Run at startup (main.startup); idempotent — a week
+    with a record, even '[]', is never touched. Returns weeks recorded.
+    """
+    from ..db import get_conn
+    conn = get_conn()
+    try:
+        rows = conn.execute(
+            "SELECT id, household_id FROM weekly_plans "
+            "WHERE status = 'approved' AND avoidances_at_approval_json = ''"
+        ).fetchall()
+    finally:
+        conn.close()
+    by_household: dict[int, list[int]] = {}
+    for r in rows:
+        by_household.setdefault(int(r["household_id"]), []).append(int(r["id"]))
+    done = 0
+    for hid, plan_ids in by_household.items():
+        with _shared.use_household(hid):
+            keys = json.dumps(avoidance_keys_now())
+            conn = get_conn()
+            try:
+                for pid in plan_ids:
+                    conn.execute(
+                        "UPDATE weekly_plans SET avoidances_at_approval_json = ? "
+                        "WHERE id = ? AND household_id = ? AND avoidances_at_approval_json = ''",
+                        (keys, pid, hid),
+                    )
+                    done += 1
+                conn.commit()
+            finally:
+                conn.close()
+    return done
+
+
+def _keys_at_approval(weekly_plan_id) -> set[str] | None:
+    """The keys the week was approved with — an empty set if none were
+    recorded (snapshot_unrecorded_approvals fills those at startup, so this
+    only happens if that failed: then every allergy counts as new, the one
+    thing better said twice than not at all); None when the plan isn't an
+    approved one of this household's."""
+    from ..db import get_conn
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            "SELECT status, avoidances_at_approval_json FROM weekly_plans WHERE id = ? AND household_id = ?",
+            (weekly_plan_id, _shared.household_id()),
+        ).fetchone()
+    finally:
+        conn.close()
+    if row is None or row["status"] != "approved":
+        return None
+    try:
+        keys = json.loads(row["avoidances_at_approval_json"] or "[]")
+    except (TypeError, ValueError):
+        keys = []
+    return {str(k) for k in keys} if isinstance(keys, list) else set()
+
+
+def clashes_since_approval(view: dict) -> dict[int, list[dict]]:
+    """
+    {entry_id: hard clashes} for the dishes still to eat on an APPROVED
+    week (cooker.get_cooker_view's payload) that trip an allergy or
+    must-avoid saved after the week was approved. {} for a draft (the gate
+    above already keeps a clash off it), for a week with nothing new, and
+    if the check itself breaks — Today must still render.
+    """
+    try:
+        if not view or view.get("weekly_plan_id") is None:
+            return {}
+        seen = _keys_at_approval(view["weekly_plan_id"])
+        if seen is None:
+            return {}
+        fresh = [a for a in hard_avoidances() if avoidance_key(a) not in seen]
+        if not fresh:
+            return {}
+        out: dict[int, list[dict]] = {}
+        for meal in view.get("meals") or []:
+            name = (meal.get("meal") or "").strip()
+            if (not name or meal.get("entry_id") is None or meal.get("cooked_status") == "done"
+                    or meal.get("slot_state") in ("planned_empty", "open")):
+                continue
+            hits = hard_clashes(name, ingredients=_lines(meal.get("ingredients")),
+                                sides=meal.get("sides"), avoidances=fresh)
+            # A matcher that could not run is the write gates' reason to
+            # hold a dish back; on a row it would be a warning about
+            # nothing, so only a real match is said.
+            hits = [h for h in hits if h.get("source") != "check_failed"]
+            if hits:
+                out[meal["entry_id"]] = hits
+        return out
+    except Exception:
+        logger.exception("Checking the approved week against new allergies failed")
+        return {}
+
+
+def since_approval_line(clashes: list[dict], sentence: bool = False) -> str:
+    """Today's line under the dish: "Has peanut, which Theo can’t have —
+    swap it on Plan". The thing, and its way out (DESIGN_SYSTEM §8).
+    `sentence=True` is the morning text's, said straight after "Tonight:
+    Peanut Noodles.": "It has peanut, which Theo can’t have — swap it on
+    Plan." """
+    food = _food_word(clashes)
+    who = _person(clashes)
+    cannot = f"{who} can’t have" if who else "this house can’t have"
+    if sentence:
+        return f"It has {food}, which {cannot} — swap it on Plan."
+    return f"Has {food}, which {cannot} — swap it on Plan"
 
 
 def refuse_if_clashing(name: str, ingredients: list[dict] | None = None, override: bool = False) -> None:
@@ -580,7 +767,7 @@ def repick_slot(
         reasoning=(pick.get("reason") or "").strip(),
         derived_from={
             **(item.get("derived_from") or {}),
-            "allergen_repick": {"dropped": dropped, "avoided": _food_word(clashes)},
+            "allergen_repick": repick_stamp(dropped, clashes),
         },
     )
     logger.info("Allergen re-pick: %s %s %r -> %r", meal_date, slot, dropped, pick["meal_name"])
@@ -990,7 +1177,7 @@ def _write_group(weekly_plan_id: int, group: list[dict], pick: dict | None, on_f
             reasoning=(pick.get("reason") or "").strip(),
             derived_from={
                 **(item.get("derived_from") or {}),
-                "allergen_repick": {"dropped": dropped, "avoided": _food_word(held["clashes"])},
+                "allergen_repick": repick_stamp(dropped, held["clashes"]),
             },
         )
         logger.info("Allergen re-pick: %s %s %r -> %r", meal_date, slot, dropped, pick["meal_name"])
@@ -1137,7 +1324,7 @@ def replace_unwritten_clash(recipe_name: str, clashes: list[dict]) -> int:
         rows = conn.execute(
             "SELECT DISTINCT mpe.weekly_plan_id FROM meal_plan_entries mpe "
             "JOIN recipes r ON r.id = mpe.recipe_id "
-            "WHERE r.household_id = ? AND LOWER(r.name) = LOWER(?) AND mpe.weekly_plan_id IS NOT NULL",
+            "WHERE r.household_id = ? AND name_key(r.name) = name_key(?) AND mpe.weekly_plan_id IS NOT NULL",
             (_shared.household_id(), recipe_name),
         ).fetchall()
     finally:

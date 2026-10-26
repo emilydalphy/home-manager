@@ -1,0 +1,48 @@
+{
+ "dish_name": "Taze Fasulye",
+ "cuisine": "Turkish",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 80,
+ "ingredients": [
+  {"item": "Green beans", "qty": "2 lbs", "category": "produce"},
+  {"item": "Yellow onions", "qty": "2", "category": "produce"},
+  {"item": "Garlic", "qty": "4 cloves", "category": "produce"},
+  {"item": "Tomatoes", "qty": "2 lbs", "category": "produce"},
+  {"item": "Olive oil", "qty": "1/3 cup", "category": "pantry"},
+  {"item": "Tomato paste", "qty": "1 can", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Salt", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Lemon", "qty": "1", "category": "produce"},
+  {"item": "Feta", "qty": "8 oz", "category": "dairy"},
+  {"item": "Crusty bread", "qty": "1 loaf", "category": "other"},
+  {"item": "Aleppo pepper", "qty": "1 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Trim the ends off the 2 lbs beans and pull off any strings. Cut them into 2 inch pieces. If they're the wide flat kind, split them down the middle first.",
+  "Finely chop the 2 onions and the 4 garlic cloves.",
+  "Cut the 2 lbs tomatoes in half and grate the cut sides on the large holes of a box grater into a bowl, until only the skins are left in your hand. Throw away the skins.",
+  "Heat the 1/3 cup oil in a large, wide pot with a lid over medium low heat. Add the onions and cook, stirring now and then, until they're soft and see-through, about 8 minutes. Don't rush them.",
+  "Add the garlic and stir for 1 minute, until you can smell it.",
+  "Add 2 tbsp tomato paste and stir for 1 minute, until it turns a shade darker. Add the grated tomatoes and cook for 3 to 4 minutes, until they start to thicken.",
+  "Turn the heat up to medium. Add the beans, 2 tsp salt, 2 tsp sugar and 1/2 tsp pepper, and stir until the beans are coated. Add 1/4 cup water.",
+  "Bring it to a boil, then turn the heat down to low, cover, and simmer for 45 to 60 minutes, until the beans are very soft and the sauce has thickened. Stir it a couple of times. If it looks dry, add a splash of water.",
+  "Take it off the heat and leave it in the pan, uncovered, for 15 minutes.",
+  "Meanwhile, cut the lemon into wedges, crumble the 8 oz feta and slice the bread.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of the lemon.",
+  "Serve warm with the feta, the bread and the lemon wedges, with the Aleppo pepper on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions soften onion and garlic in plenty of olive oil, add tomato, beans, a little sugar and salt with a splash of water, and cook them covered until tender, finished with lemon. Cooking Orgeous (the lead) adds tomato paste and grated fresh tomatoes and simmers for about an hour until the beans are very soft, then rests it in the pan; Fethiye Times uses canned tomatoes and 35 minutes, and Cinnamon Snail cooks the beans only a few minutes and adds parsley and pul biber. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Turkish) has no version, so the best rated one leads. This doubles the lead's beans for a vegetarian dinner and serves it with Fethiye Times's feta and crusty bread, with Cinnamon Snail's Aleppo pepper on the side; it takes about 1 hour 40 minutes, mostly unattended simmering."
+ ,
+ "sources": [
+  {"name": "Cooking Orgeous", "title": "Zeytinyagli Taze Fasulye (Turkish Green Beans in Olive Oil)", "url": "https://cookingorgeous.com/blog/mediterranean-green-beans-taze-fasulye/", "rating": 5.0, "rating_count": 9, "read": true, "lead": true},
+  {"name": "Cinnamon Snail", "title": "Zeytinyağlı Taze Fasulye (Turkish-style runner beans)", "url": "https://cinnamonsnail.com/zeytinyagli-taze-fasulye-tarifi/", "rating": 5.0, "rating_count": 2, "read": true, "lead": false},
+  {"name": "Fethiye Times", "title": "Recipe: Green beans cooked in olive oil – zeytinyağlı taze fasulye", "url": "https://fethiyetimes.com/?p=6011", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

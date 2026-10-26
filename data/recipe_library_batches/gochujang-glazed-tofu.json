@@ -1,0 +1,132 @@
+{
+  "dish_name": "Gochujang Glazed Tofu",
+  "cuisine": "Korean",
+  "main_protein": "tofu",
+  "prep_time_minutes": 15,
+  "cook_time_minutes": 25,
+  "ingredients": [
+    {
+      "item": "Extra-firm tofu",
+      "qty": "2 blocks (14 oz each)",
+      "category": "dairy"
+    },
+    {
+      "item": "Jasmine rice",
+      "qty": "1 bag",
+      "category": "pantry",
+      "cook_qty": "1 1/2 cups"
+    },
+    {
+      "item": "Broccoli",
+      "qty": "2 crowns",
+      "category": "produce"
+    },
+    {
+      "item": "Gluten-free gochujang",
+      "qty": "1 tub",
+      "category": "pantry",
+      "cook_qty": "3 tbsp"
+    },
+    {
+      "item": "Tamari (gluten-free)",
+      "qty": "1 bottle",
+      "category": "pantry",
+      "cook_qty": "2 tbsp"
+    },
+    {
+      "item": "Maple syrup",
+      "qty": "1 bottle",
+      "category": "pantry",
+      "cook_qty": "2 tbsp"
+    },
+    {
+      "item": "Rice vinegar",
+      "qty": "1 bottle",
+      "category": "pantry",
+      "cook_qty": "1 tbsp"
+    },
+    {
+      "item": "Tomato paste",
+      "qty": "1 small can",
+      "category": "pantry",
+      "cook_qty": "1 tbsp"
+    },
+    {
+      "item": "Garlic",
+      "qty": "4 cloves",
+      "category": "produce"
+    },
+    {
+      "item": "Scallions",
+      "qty": "1 bunch",
+      "category": "produce",
+      "cook_qty": "3 scallions"
+    },
+    {
+      "item": "Cornstarch",
+      "qty": "1 box",
+      "category": "pantry",
+      "cook_qty": "3 tbsp"
+    },
+    {
+      "item": "Vegetable oil",
+      "qty": "3 tbsp",
+      "category": "pantry"
+    },
+    {
+      "item": "Toasted sesame oil",
+      "qty": "1 bottle",
+      "category": "pantry",
+      "cook_qty": "1 tsp"
+    },
+    {
+      "item": "Sesame seeds",
+      "qty": "1 jar",
+      "category": "pantry",
+      "cook_qty": "1 tbsp"
+    },
+    {
+      "item": "Salt",
+      "qty": "1/2 tsp",
+      "category": "pantry"
+    }
+  ],
+  "instructions": [
+    "Rinse the rice in a sieve until the water runs mostly clear. Add it to a medium pot with 2 1/4 cups of water, bring it to a boil over high heat, then cover, turn the heat to low and cook for 15 minutes. Leave the lid on and take the pot off the heat until you serve.",
+    "Meanwhile, drain the tofu and cut each block into 3/4-inch cubes. Spread them on a clean kitchen towel, fold the towel over and press down gently for 5 minutes.",
+    "Make the glaze. In a small bowl, whisk 1 tbsp of the cornstarch with the gochujang, tamari, maple syrup, rice vinegar, tomato paste, sesame oil and 1/2 cup of water until no lumps are left. Crush or mince the garlic and stir it in.",
+    "Cut the broccoli into bite-size florets. Slice the scallions.",
+    "Toss the tofu in a large bowl with the remaining 2 tbsp cornstarch and the salt, until every cube is coated.",
+    "Heat 1 tbsp of the oil in a large nonstick skillet over medium-high heat. Add half the tofu in a single layer and cook for 6 to 8 minutes, turning it every 2 minutes, until all sides are golden and crisp. Transfer it to a plate. Add another 1 tbsp of oil and cook the rest of the tofu the same way.",
+    "Add the last 1 tbsp of oil to the same skillet over medium-high heat. Add the broccoli and cook for 2 minutes, stirring once or twice. Add 1/4 cup of water, cover and cook for 3 minutes, until the broccoli is bright green and just tender. Uncover and cook for 1 minute, until the water has cooked off.",
+    "Turn the heat to low and push the broccoli to the sides of the skillet. Give the glaze a quick stir, then pour it into the middle. Stir for 1 to 2 minutes, until it thickens and coats the back of a spoon. If it gets too thick, add a splash of water.",
+    "Add the tofu and toss for 30 seconds, until every piece is glazed.",
+    "Taste it. If it's flat, add a pinch more salt or a splash of the rice vinegar.",
+    "Fluff the rice with a fork. Serve the tofu and broccoli over the rice, topped with the scallions and sesame seeds."
+  ],
+  "method_notes": "The sources agree on cornstarch-coated tofu cooked until crisp, then coated in a glaze of gochujang, soy, a sweetener, vinegar and garlic that thickens at the end. They differ on baking or pan-frying and on honey or maple syrup; this one pan-fries as Plant Based Jess does and uses maple syrup so it stays vegan. No version with 20 or more ratings turned up, so the Milk Street page (the only one with a rating) leads. It uses gluten-free gochujang and tamari, since regular gochujang and soy sauce often contain wheat. The glaze is mild, and nothing hot is added.",
+  "sources": [
+    {
+      "name": "Milk Street",
+      "title": "Gochujang-Glazed Tofu and Bok Choy Traybake",
+      "url": "https://prod.177milkstreet.com/recipes/gochujang-glazed-tofu-bok-choy-traybake",
+      "rating": 4.0,
+      "rating_count": null,
+      "read": true,
+      "lead": true
+    },
+    {
+      "name": "Plant Based Jess",
+      "title": "Gochujang Tofu",
+      "url": "https://plantbasedjess.com/gochujang-tofu/",
+      "rating": null,
+      "rating_count": null,
+      "read": true
+    }
+  ],
+  "fallback_used": true,
+  "default_servings": 4,
+  "origin": "seed",
+  "advance_prep_notes": "",
+  "advance_prep_step_indices": []
+}

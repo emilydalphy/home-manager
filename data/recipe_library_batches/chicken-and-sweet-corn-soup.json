@@ -1,0 +1,41 @@
+{
+ "dish_name": "Chicken and Sweet Corn Soup",
+ "cuisine": "Chinese",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "Chicken broth", "qty": "1 carton (32 oz)", "category": "pantry", "cook_qty": "4 cups"},
+  {"item": "Boneless skinless chicken breasts", "qty": "3/4 lb", "category": "meat/seafood"},
+  {"item": "Creamed corn", "qty": "2 cans (15 oz)", "category": "pantry"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Shaoxing wine", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Ginger", "qty": "1 small piece", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Cornstarch", "qty": "1 box", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Eggs", "qty": "2", "category": "dairy"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "White pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Scallions", "qty": "1 bunch", "category": "produce"}
+ ],
+ "instructions": [
+  "Pour the 4 cups chicken broth into a medium pot and add the 3/4 lb chicken breast whole. Bring it to a simmer over medium high, then turn the heat down so it barely bubbles. Poach it for 12 to 15 minutes, until it's cooked through. You're cooking it to 160°F in the thickest part, so if you have a thermometer, check it there. No thermometer? Cut into the thickest part: it's done when there's no pink left.",
+  "Meanwhile, mince 2 tsp of the ginger and the 2 garlic cloves. Thinly slice 3 of the scallions. Beat the 2 eggs in a measuring cup. In a small cup, stir the 2 tsp cornstarch with 2 tbsp cold water.",
+  "Transfer the chicken to a cutting board, leaving the broth in the pot. Shred it with two forks.",
+  "Add the 2 cans creamed corn, the 2 tsp soy sauce, the 2 tbsp Shaoxing wine, the ginger, the garlic and the cornstarch mixture to the broth. Bring it to a boil over medium high, stirring, then turn it down to medium and simmer for 5 minutes, stirring now and then, until it's slightly thickened.",
+  "Stir in the shredded chicken and the 1/2 tsp salt and let it heat through for about 1 minute.",
+  "Turn off the heat. Stir the soup slowly in one direction and pour in the eggs in a thin stream as you stir, so they set into soft ribbons. That takes about 30 seconds.",
+  "Stir in the 1/4 tsp white pepper. Taste it. If it's flat, add a pinch more salt.",
+  "Ladle it into bowls and scatter the scallions on top."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions simmer chicken broth with a can of creamed corn, add soy sauce and shredded cooked chicken, and stir in egg so it sets into ribbons, finished with scallions. RecipeTin Eats (the lead) adds Chinese cooking wine, ginger, garlic and a little cornstarch, simmers it 5 minutes, and pours the egg in off the heat; The Stush Kitchen uses egg whites only, ground ginger and an optional chili oil. The lead calls for cooked chicken and doesn't say where it comes from, so this poaches a chicken breast in the soup's own broth first; using leftover or rotisserie chicken instead (about 2 cups shredded) cuts the time to about 15 minutes. Amounts are the lead's doubled for 4 lunch bowls.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Chinese Corn Soup with Chicken", "url": "https://www.recipetineats.com/chinese-chicken-corn-soup/", "rating": 4.96, "rating_count": 196, "read": true, "lead": true},
+  {"name": "The Stush Kitchen", "title": "Chicken and Sweet Corn Egg Drop Soup", "url": "https://thestushkitchen.com/chicken-sweet-corn-egg-drop-soup/", "rating": 5.0, "rating_count": 4, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,43 @@
+{
+ "dish_name": "Ochazuke",
+ "cuisine": "Japanese",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "Salmon fillets", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Kosher salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Short-grain white rice", "qty": "2 cups", "category": "pantry"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce"},
+  {"item": "Roasted nori sheets", "qty": "1 pack", "category": "pantry", "cook_qty": "1 sheet"},
+  {"item": "Rice crackers", "qty": "1 bag", "category": "pantry", "cook_qty": "a small handful"},
+  {"item": "Sesame seeds", "qty": "1 jar", "category": "pantry", "cook_qty": "1 tsp"},
+  {"item": "Sencha green tea bags", "qty": "1 box", "category": "pantry", "cook_qty": "4 tea bags"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Wasabi", "qty": "1 tube", "category": "pantry"}
+ ],
+ "instructions": [
+  "Heat the oven to 425°F. Pat the 1 lb salmon dry and sprinkle the 1 tsp kosher salt over both sides. Leave it on a plate for 10 minutes.",
+  "Meanwhile, rinse the 2 cups rice in a strainer under cold water until the water runs mostly clear. Put it in a saucepan with 2 1/4 cups water and bring it to a boil over high heat. Turn the heat to low, cover the pan and cook for 15 minutes. Take it off the heat and keep the lid on until you're ready to serve.",
+  "Line a baking sheet with foil. Pat the salmon dry again and lay it skin side down on the sheet.",
+  "Bake for 15 to 20 minutes, until the top is lightly golden at the edges. Push a fork into the thickest part: it's done when it flakes apart and is opaque all the way through.",
+  "While it bakes, thinly slice 2 of the green onions. Cut the nori sheet into thin strips with scissors. Put a small handful of rice crackers in a bag and crush them with a rolling pin into pieces about the size of peppercorns.",
+  "When the salmon is out, let it cool for a few minutes. Pull off the skin and any bones, then break the fish into large flakes with two forks.",
+  "Bring 4 cups water to a boil, then take it off the heat and leave it for 2 minutes. Boiling water makes green tea bitter.",
+  "Put the 4 tea bags in a teapot or a large measuring cup and pour the hot water over them. Leave them for 1 to 2 minutes, then lift them out.",
+  "Fluff the rice and divide it among 4 bowls. Pile the salmon on top, then scatter the crushed crackers, the nori strips and the 1 tsp sesame seeds over the four bowls.",
+  "Pour the hot tea around the edge of each bowl until the rice is about halfway covered. Spoon the 2 tsp soy sauce over the bowls, 1/2 tsp each, and scatter the green onions over the top.",
+  "Serve right away with the wasabi on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions top warm short-grain rice with flaked salted salmon, crisp rice crackers, nori and sesame, then pour hot green tea over it at the last moment. Just One Cookbook (the lead) bakes salted salmon at 425°F, offers either tea or a light dashi broth, and adds a little soy sauce to the tea version; Chloe Ting does the same with a quick salt rub and sencha; Norecipes rinses the rice in hot water first and serves the tea in a pot at the table. This one uses the tea version with a 10 minute salt on regular salmon, as the lead suggests when you don't have home-cured salmon, and green onion in place of mitsuba, which the lead lists as the swap.",
+ "sources": [
+  {"name": "Just One Cookbook", "title": "Ochazuke (Green Tea Over Rice)", "url": "https://www.justonecookbook.com/ochazuke/", "rating": 4.8, "rating_count": 107, "read": true, "lead": true},
+  {"name": "Chloe Ting", "title": "Salmon Ochazuke", "url": "https://chloeting.com/recipes/salmon-ochazuke", "rating": 4.4, "rating_count": 35, "read": true, "lead": false},
+  {"name": "Norecipes", "title": "Salmon Ochazuke (Sake Chazuke)", "url": "https://norecipes.com/salmon-ochazuke/", "rating": 5.0, "rating_count": 3, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

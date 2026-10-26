@@ -1,0 +1,156 @@
+{
+ "dish_name": "Cassoulet",
+ "cuisine": "French",
+ "main_protein": "beans",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 225,
+ "ingredients": [
+  {
+   "item": "Great Northern beans",
+   "qty": "1 bag (1 lb)",
+   "category": "pantry"
+  },
+  {
+   "item": "Pork belly",
+   "qty": "1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Pork sausages",
+   "qty": "4 (about 1 lb)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Celery",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 ribs"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1 bottle",
+   "category": "other",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "2 cartons (32 oz)",
+   "category": "pantry",
+   "cook_qty": "6 cups"
+  },
+  {
+   "item": "Fresh thyme",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "6 sprigs"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "a handful of stems and 1/4 cup chopped leaves"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Plain bread crumbs",
+   "qty": "1 container (15 oz)",
+   "category": "pantry",
+   "cook_qty": "3/4 cup"
+  }
+ ],
+ "instructions": [
+  "The night before, or at least 12 hours ahead: Put the 1 lb beans in a large bowl and pick out any small stones. Cover them with cold water by about 4 inches and leave them on the counter.",
+  "Cut the 1/2 lb pork belly into 1 inch cubes. Dice the onion, the carrot and 2 of the celery ribs. Mince the 6 garlic cloves and chop the 2 tomatoes.",
+  "Heat 1 tbsp of the olive oil in a large Dutch oven over medium heat. Add the pork belly and cook for 12 to 15 minutes, stirring now and then, until it's lightly browned and has given up some of its fat. Move it to a plate with a slotted spoon.",
+  "Turn the heat to medium-high and add the 4 sausages. Brown them for 3 to 4 minutes, then turn them and brown the other side for 3 to 4 minutes. They don't need to cook through. Move them to the plate.",
+  "Turn the heat to medium-low and add the onion with 1/2 tsp of the salt. Cook it for 20 minutes, stirring every few minutes, until it's soft and well browned. Don't rush the onions. That's where the flavor starts.",
+  "Add the carrot and celery and cook for 3 minutes, until they start to soften.",
+  "Add the garlic and stir for 1 minute, until it smells fragrant. Add the tomatoes and cook for 1 minute.",
+  "Pour in the 1/2 cup wine and scrape up the browned bits. Let it bubble for 3 to 4 minutes, until only a few spoonfuls of liquid are left.",
+  "Drain the beans and add them to the pot with the pork belly, the 6 cups broth, 6 thyme sprigs, a small handful of parsley stems, the bay leaf, 1 tsp of the salt and the 1/2 tsp pepper.",
+  "Bring it to a boil over high heat, then cover, turn the heat to low and simmer for about 1 hour, until the beans are tender all the way through. Bite a few to check.",
+  "About 15 minutes before the beans are done, heat the oven to 375°F with a rack in the lower third.",
+  "Fish out the thyme stems, parsley stems and bay leaf. Taste the beans and broth. If they're flat, add the remaining 1/2 tsp salt.",
+  "Cut each sausage in half and press the pieces down into the beans so they're mostly covered.",
+  "In a small bowl, mix 3/4 cup of the bread crumbs with the remaining 2 tbsp olive oil. Scatter them evenly over the top.",
+  "Bake it uncovered for 1 1/2 hours, until the top is deep golden and crusty and the edges are bubbling. If it looks dry before then, pour a splash of water down the side of the pot.",
+  "Let it rest for 10 minutes. Meanwhile, chop 1/4 cup of the parsley leaves.",
+  "Serve it from the pot, with the parsley scattered over the top."
+ ],
+ "advance_prep_notes": "Soak the dried beans the night before (at least 12 hours).",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "The cassoulets read agree on white beans cooked with browned pork and sausage, aromatics and herbs, then baked until the top browns. Chef Billy Parisi (the lead) soaks dried Great Northern beans overnight, browns pork belly and sausages, caramelizes the onions, simmers the beans in stock with herbs for an hour, then bakes everything uncovered at 375°F; Ariane Daguin's version layers the beans with duck confit and sausage and bakes it low for 2 hours, and Savory Experiments uses canned beans with a bread crumb top and a short bake. This follows the lead without its duck confit, so it's the beans and sausage version, and takes the bread crumb crust from Savory Experiments. Mashed's 15-minute version has the most ratings (5 from 29) but is a stovetop sausage and bean stew, not baked, so it wasn't used; RecipeTin Eats' Poor Man's Cassoulet is only in her cookbook, so the lead is the best rated baked version read, at 5 from 9 votes.",
+ "sources": [
+  {
+   "name": "Chef Billy Parisi",
+   "title": "Duck Cassoulet Recipe (Cassoulet de Canard)",
+   "url": "https://www.billyparisi.com/duck-cassoulet/",
+   "rating": 5.0,
+   "rating_count": 9,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Savory Experiments",
+   "title": "Sausage & White Bean Cassoulet",
+   "url": "https://www.savoryexperiments.com/sausage-white-bean-cassoulet/",
+   "rating": 4.5,
+   "rating_count": 12,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Food Network (Ariane Daguin)",
+   "title": "Cassoulet",
+   "url": "https://www.foodnetwork.com/recipes/cassoulet-2047056",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

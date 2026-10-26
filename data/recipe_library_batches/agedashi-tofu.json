@@ -1,0 +1,118 @@
+{
+ "dish_name": "Agedashi Tofu",
+ "cuisine": "Japanese",
+ "main_protein": "tofu",
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Firm tofu",
+   "qty": "2 blocks (14 oz each)",
+   "category": "dairy"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Dried kombu",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "2 pieces (4 inches each)"
+  },
+  {
+   "item": "Tamari (gluten-free)",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Potato starch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Daikon",
+   "qty": "1 small",
+   "category": "produce",
+   "cook_qty": "a 3-inch piece"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece",
+   "category": "produce",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3 scallions"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut each block of tofu in half lengthwise, then cut each half into 3 pieces, so you have 12 pieces in all. Lay them on a clean kitchen towel, cover with another towel and set a cutting board on top. Leave them for 15 minutes.",
+  "Meanwhile, rinse the rice in a sieve until the water runs mostly clear. Add it to a medium pot with 2 1/4 cups of water, bring it to a boil over high heat, then cover, turn the heat to low and cook for 15 minutes. Leave the lid on and take the pot off the heat until you serve.",
+  "Put the kombu and 2 1/2 cups of water in a medium saucepan over medium heat. When small bubbles start to rise at the edges, after about 8 minutes, take the kombu out. Don't let it boil.",
+  "Add the tamari and mirin to the kombu water and bring it to a simmer. Turn the heat to the lowest setting and keep it warm. That should be about 2 cups.",
+  "Peel the daikon and grate a 3-inch piece. Squeeze it gently in a sieve to remove the extra water. Grate the ginger until you have 1 tsp, and slice the scallions.",
+  "Pat the tofu dry. Put the potato starch on a plate and sprinkle the salt over it.",
+  "Pour the oil into a 12-inch skillet, which should come about 1/4 inch up the side. Heat it over medium-high heat for about 3 minutes. To check it's hot enough, drop in a pinch of starch. It should sizzle right away.",
+  "Coat 6 pieces of tofu in the starch, shake off the extra and lower them into the oil, laying them away from you. Cook for 2 to 3 minutes, until the underside is light golden and crisp. Flip them and cook the other side for 2 to 3 minutes. Transfer them to a paper towel. Coat and cook the other 6 pieces the same way.",
+  "Put 3 pieces of tofu in each of 4 shallow bowls. Pour the hot broth around the tofu, not over it. Top each bowl with a small mound of the daikon, a little ginger and the scallions.",
+  "Taste the broth. If it's flat, add a pinch more salt.",
+  "Fluff the rice with a fork. Serve the tofu in its broth with the rice."
+ ],
+ "method_notes": "Agedashi tofu is tofu dusted in starch, fried until crisp and served in a warm dashi, soy and mirin broth with grated daikon, ginger and scallions. The sources agree on that, on a broth of roughly 5 to 8 parts dashi to 1 part each of soy and mirin, and on coating the tofu only just before frying. They differ on soft or firm tofu and on deep or shallow frying. Every well-known version has fewer than 20 ratings, so it follows RecipeTin Japan. This version uses kombu dashi with no bonito so it is vegan, tamari instead of soy sauce, and potato starch, and shallow-fries to avoid a pot of hot oil.",
+ "sources": [
+  {
+   "name": "RecipeTin Japan",
+   "title": "Japanese Fried Tofu (Agedashi Tofu)",
+   "url": "https://japan.recipetineats.com/agedashi-tofu-deep-fried-tofu-in-sauce/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "NoRecipes",
+   "title": "Agedashi Tofu",
+   "url": "https://norecipes.com/agedashi-tofu/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true
+  },
+  {
+   "name": "Japanese Cooking 101",
+   "title": "Agedashi Tofu Recipe",
+   "url": "https://japanesecooking101.com/agedashi-tofu-recipe/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

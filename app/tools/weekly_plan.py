@@ -9,12 +9,14 @@ import re
 from datetime import date, datetime, timedelta
 from ..db import get_conn, write
 from ._shared import acting_member_id_for, acting_name, household_id, require_household_row
+from . import bring_over as _bring_over
 from . import coordination as _coordination
 from . import grocery as _grocery
 from . import meal_plans as _meal_plans
 from . import notifications as _notifications
 from . import plan_undo as _plan_undo
 from . import plates as _plates
+from . import quantities as _quantities
 from .quantities import format_duration as _quantities_fmt_duration
 from . import plate_parts as _plate_parts_mod
 from . import recipes as _recipes
@@ -86,6 +88,34 @@ def validate_slot(slot: str) -> None:
     if slot not in DAY_SLOTS:
         raise InvalidSlot(
             f"{slot!r} isn't a meal of the day. Use one of: {', '.join(DAY_SLOTS)}."
+        )
+
+
+_ISO_DAY = re.compile(r"\d{4}-\d{2}-\d{2}")
+
+
+def validate_meal_date(meal_date) -> None:
+    """
+    Refuse a meal_date that is not a plain YYYY-MM-DD day. Call it ABOVE
+    get_conn, beside validate_slot.
+
+    Every screen finds a meal by its day string, so a row dated
+    "2026-10-23T00:00", "tomorrow" or "Friday" was saved and then drawn
+    nowhere: the chat said the dinner was planned, Plan still showed the
+    old one, and a swap wrote a second row beside the meal it was meant to
+    replace (it compares dates as strings, and that one sorts inside the
+    week). date.fromisoformat alone is not the check — on 3.11 it also
+    takes "20261023", which is a real day stored in a shape nothing reads.
+    """
+    ok = isinstance(meal_date, str) and bool(_ISO_DAY.fullmatch(meal_date))
+    if ok:
+        try:
+            date.fromisoformat(meal_date)
+        except ValueError:
+            ok = False
+    if not ok:
+        raise ValueError(
+            f"{meal_date!r} isn't a day I can plan on — give the date as YYYY-MM-DD."
         )
 
 
@@ -1210,6 +1240,16 @@ def drop_dish_from_day(weekly_plan_id: int, entry_id: int, open_reason: str | No
             snap = _plan_undo.snapshot(conn, touched)
         rescale_source_id = _unlink_leftover_target(weekly_plan_id, entry_id, conn=conn)
         _grocery._reverse_meal_grocery_contributions(entry_id, conn=conn)
+        # Its prep rows go with it, as every swap door's do (overnight hunt,
+        # 2026-10-24). This door alone left them: chicken said frozen at
+        # approval for Tuesday's skewers, the "−" on Tuesday, and "what do I
+        # need to defrost?" still answered "Move the Chicken Thighs to the
+        # fridge — for Tuesday's Chicken Skewers", a dinner the week no
+        # longer has (the Cook tab's prep session showed it too). A thaw
+        # already ticked is held, not lost (_release_prep_rows). The
+        # freezer-night Undo above snapshotted these rows first, so its
+        # restore puts them back.
+        held_thawed = _release_prep_rows(conn, [entry_id])
         _release_ready_made_recommendations(conn, [entry_id])
         conn.execute(
             "DELETE FROM meal_plan_entries WHERE id = ? AND household_id = ?",
@@ -1229,6 +1269,9 @@ def drop_dish_from_day(weekly_plan_id: int, entry_id: int, open_reason: str | No
                 "weekly_plan_id": weekly_plan_id, **snap, "invented": invented,
                 "after": _plan_undo.fingerprint(conn, touched | set(invented), holder_id),
                 "grocery": _plan_undo.lines_changed(conn, snap),
+                # The holds a ticked thaw just became: Undo puts the move
+                # back as done, so the hold would promise the same meat twice.
+                "held_ids": [h["held_id"] for h in held_thawed],
             })
         conn.commit()
     except Exception:
@@ -1262,12 +1305,17 @@ def drop_dish_from_day(weekly_plan_id: int, entry_id: int, open_reason: str | No
                 rescale_source_id, entry_id,
             )
         _keep_freezer_answer_after_rescale(weekly_plan_id, rescale_source_id, entry_id)
+    # Only when there is something to say, the swap's own key. No screen or
+    # chat tool reads it off this door yet (the "−" is reached through its
+    # route and the allergen sweep); the hold itself shows on Today.
+    held = {"held_thawed": held_thawed} if held_thawed else {}
     if dropped_freezer:
         days = [_weekday_of(meal_date)]
         for d in dropped_freezer:
             if fed_night_label(d) not in days:
                 days.append(fed_night_label(d))
         return {
+            **held,
             "status": "dropped", "date": meal_date, "slot": slot, "dish": dish,
             "open_reason": open_reason,
             # The freezer nights that went with the cook, each now `open`.
@@ -1278,6 +1326,7 @@ def drop_dish_from_day(weekly_plan_id: int, entry_id: int, open_reason: str | No
             "day": _day_of(weekly_plan_id, meal_date),
         }
     return {
+        **held,
         "status": "dropped",
         "date": meal_date,
         "slot": slot,
@@ -1531,6 +1580,18 @@ def drop_dish_undo(weekly_plan_id: int, entry_id: int) -> dict:
             }
         meal_date, slot = holder["date"], holder["slot"]
         _plan_undo.restore(conn, record, holder["id"])
+        # A ticked thaw the "−" turned into a hold is back as its done move
+        # (restore reinserts the prep rows), so the hold goes: left, it said
+        # "came out of the freezer — the dinner it was for has changed" about
+        # a dinner that is back (review, 2026-10-24). Only one still open —
+        # a hold the household already ticked off is theirs.
+        held_ids = [int(i) for i in record.get("held_ids") or []]
+        if held_ids:
+            conn.execute(
+                f"DELETE FROM held_things WHERE household_id = ? AND resolved_at IS NULL "
+                f"AND id IN ({','.join('?' * len(held_ids))})",
+                (household_id(), *held_ids),
+            )
         conn.commit()
     except Exception:
         conn.rollback()
@@ -2599,7 +2660,7 @@ def resolve_open_slot(weekly_plan_id: int, meal_date: str, slot: str, choice: st
     if row["slot_state"] == "planned_empty":
         raise ValueError(
             f"That {slot} is deliberately empty — nothing is planned or bought for it. "
-            "Change the night's answer if you're in after all."
+            "Change the night’s answer if you’re in after all."
         )
 
     # The same strict allergen check chat and the needs-you card run, asked
@@ -3143,6 +3204,10 @@ def repair_leftover_chains(weekly_plan_id: int) -> dict:
             issue = "a meal that hasn’t happened yet"
         elif source["slot_state"] != "planned" or not (source["recipe_id"] or source["freeform_meal"]):
             issue = "a night nothing was actually cooked"
+        elif _leftovers.frozen_portion_on(source["derived_from_json"]):
+            # A night eating a portion out of the freezer cooks nothing:
+            # the portion is that night's and no more.
+            issue = "a night eating from the freezer, not an actual cook"
         elif source["slot"] not in ("lunch", "dinner") and not derived.get("cook_ahead"):
             # A household's own cook-ahead (cook_ahead.set_cook_ahead) is
             # the one chain that legitimately runs breakfast -> breakfast:
@@ -3490,7 +3555,9 @@ def _unlink_leftover_target(weekly_plan_id: int, entry_id: int, conn=None) -> in
     return None
 
 
-def _rescale_leftover_source_grocery(source_entry_id: int, unlinked_entry_id: int, conn=None) -> None:
+def _rescale_leftover_source_grocery(
+    source_entry_id: int, unlinked_entry_id: int, conn=None, freed_entry_ids=(),
+) -> None:
     """
     Redo an already-approved leftover SOURCE's grocery contribution — and
     every OTHER already-approved entry in the plan that cooks the SAME
@@ -3533,6 +3600,11 @@ def _rescale_leftover_source_grocery(source_entry_id: int, unlinked_entry_id: in
     A no-op for a freeform source: nothing structured to rescale, and a
     freeform meal never reaches the grocery list to begin with (see
     plan_meal).
+
+    `freed_entry_ids` are the nights batch_undo.unbatch just took off this
+    source's batch. Only read when the source is already cooked: their
+    share went into that pot, so what was bought for them is not on the
+    shelf for them to cook fresh (_bought_toward).
 
     `conn` is for one caller (swap_meal_in_plan, through
     _replace_slot_entries) and is not part of the assistant-facing API.
@@ -3587,6 +3659,22 @@ def _rescale_leftover_source_grocery(source_entry_id: int, unlinked_entry_id: in
         return
 
     shared = None if own_conn else conn
+    group_ids = [int(e["id"]) for e in entries]
+    # What the shopper already has in the cart or bought for these nights,
+    # read before anything is reversed (the night going away still holds
+    # its rows then). Reversing the whole recipe-week deleted the ledger
+    # rows on ticked lines and bought the batch again in full: "cook the
+    # chili fresh on Wednesday" after the shop put 2 lbs of turkey back on
+    # the list (Loop Board, 2026-10-24). A ticked line's rows now stay, and
+    # what it says was bought comes off the re-buy (_take_bought_off_rebuy).
+    read_conn = conn if shared is not None else get_conn()
+    try:
+        gone_ids = [unlinked_entry_id] if unlinked_entry_id else []
+        cooked_ids, eaten_ids = _eaten_ids(read_conn, source_entry_id, group_ids, [*gone_ids, *freed_entry_ids])
+        bought, ticked_rows, last_link_id = _bought_toward(read_conn, group_ids, gone_ids, eaten_ids)
+    finally:
+        if shared is None:
+            read_conn.close()
     if unlinked_entry_id:
         # Excluded means OFF the ledger, not just out of the re-ingest. Its
         # rows left standing are counted by every recompute below, and the
@@ -3601,10 +3689,348 @@ def _rescale_leftover_source_grocery(source_entry_id: int, unlinked_entry_id: in
         # caller's own reversal a no-op: its ledger rows are already gone.
         _grocery._reverse_meal_grocery_contributions(unlinked_entry_id, conn=shared)
     for entry in entries:
-        _grocery._reverse_meal_grocery_contributions(entry["id"], conn=shared)
+        mine = ticked_rows.get(int(entry["id"]))
+        if not mine:
+            _grocery._reverse_meal_grocery_contributions(entry["id"], conn=shared)
+            continue
+        # Only the rows on lines still to buy. The ticked rows are what was
+        # bought for this night, and stay (bring_over.bought_items reads them).
+        rest = _ledger_link_ids(entry["id"], exclude=mine, conn=shared)
+        if rest:
+            _grocery._reverse_meal_grocery_contributions(entry["id"], conn=shared, only_link_ids=rest)
     buffer = _recipes.WeekGroceryBuffer(source["weekly_plan_id"], conn=shared)
     _ingest_recipe_group_and_sides(entries, source["weekly_plan_id"], buffer)
     buffer.flush()
+    if bought and shared is not None:
+        _take_bought_off_rebuy(shared, group_ids, last_link_id, bought, cooked_ids)
+    elif bought:
+        with write() as write_conn:
+            _take_bought_off_rebuy(write_conn, group_ids, last_link_id, bought, cooked_ids)
+
+
+def _eaten_ids(conn, source_entry_id: int, group_ids: list[int], freed_ids: list[int]):
+    """
+    (the nights ticked cooked, the nights whose share of a ticked line is
+    already in a pot). The second: the nights whose share of a ticked line is already in a pot: every
+    night ticked cooked, and — once the batch's own cook night is cooked —
+    every night that batch was made for: the ones it still covers, the one
+    being taken away and the ones unbatch just freed.
+
+    Without this, unbatching after Monday's double was cooked credited
+    the bought turkey to Wednesday's fresh cook a second time, and
+    Wednesday had nothing to cook with (review, 2026-10-24).
+    """
+    ids = list(dict.fromkeys([int(source_entry_id), *group_ids]))
+    marks = ",".join("?" * len(ids))
+    cooked = {
+        int(r["id"]) for r in conn.execute(
+            f"SELECT id FROM meal_plan_entries WHERE household_id = ? AND id IN ({marks}) "
+            "AND cooked_status = 'done'",
+            [household_id(), *ids],
+        ).fetchall()
+    }
+    if int(source_entry_id) not in cooked:
+        return cooked, cooked
+    from . import leftovers as _leftovers   # circular at module scope
+    plan = conn.execute(
+        "SELECT weekly_plan_id FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+        (source_entry_id, household_id()),
+    ).fetchone()
+    covered = set()
+    if plan and plan["weekly_plan_id"]:
+        chains = _leftovers.plan_leftover_chains(plan["weekly_plan_id"], conn=conn)
+        covered = {
+            int(eid) for eid, info in chains["leftovers"].items()
+            if int(info["source"]["entry_id"]) == int(source_entry_id)
+        }
+    return cooked, cooked | covered | {int(i) for i in freed_ids if i}
+
+
+def _ledger_link_ids(entry_id: int, exclude: set[int], conn=None) -> list[int]:
+    """This entry's ledger row ids, less `exclude`."""
+    own = conn is None
+    c = get_conn() if own else conn
+    try:
+        return [
+            int(r["id"]) for r in c.execute(
+                "SELECT id FROM meal_plan_grocery_links WHERE household_id = ? AND meal_plan_entry_id = ?",
+                (household_id(), entry_id),
+            ).fetchall()
+            if int(r["id"]) not in exclude
+        ]
+    finally:
+        if own:
+            c.close()
+
+
+def _amount_in(qty: str, unit: str | None) -> float | None:
+    """`qty` read as a number in `unit`; None when it can't be."""
+    parsed = _quantities._parse_quantity(_quantities._split_quantity_note((qty or "").strip())[0])
+    if not parsed:
+        return None
+    return _quantities._convert_to_unit(parsed[0], parsed[1], unit)
+
+
+# _ticked_line_credit's answer for a sealed package or a spice's jar.
+WHOLE_PACKAGE = "whole package"
+
+
+def _store_credit(row, ours_live: list[str], ours_eaten: list[str], others: list[str]):
+    """
+    _ticked_line_credit for bread, berries, butter and the other foods the
+    store sells in its own unit (grocery._store_kind): the line says "1
+    loaf" and the rows say slices, which no unit conversion reads. Every
+    side is read in the store unit through grocery._store_amount — which
+    rounds up, so the credit errs small and the safe side is buying.
+    ("store", amount, unit) or None.
+    """
+    item = row["line_item"] or ""
+    bought = _quantities._parse_quantity(_quantities._split_quantity_note((row["line_qty"] or "").strip())[0])
+    if not bought:
+        return None
+    amount, unit = bought
+
+    def _in_store_unit(qtys):
+        if not [q for q in qtys if (q or "").strip()]:
+            return 0.0
+        text = _grocery._store_amount(item, qtys)
+        return None if not text else _amount_in(text, unit)
+
+    others_amt, eaten_amt = _in_store_unit(others), _in_store_unit(ours_eaten)
+    kept = _amount_in(row["kept_amount"], unit) if (row["kept_amount"] or "").strip() else 0.0
+    if others_amt is None or eaten_amt is None or kept is None or not ours_live:
+        return None
+    return ("store", max(0.0, amount - others_amt - eaten_amt - kept), unit)
+
+
+def _ticked_line_credit(conn, row, ours: list[str], entry_ids: list[int], eaten: list[str] = ()):
+    """
+    How much of one in-cart/bought line counts toward these nights, in the
+    line's own unit — or None when it can't be read in one unit with its
+    rows (nothing is credited, and the food is bought as it always was).
+
+    What the LINE says was bought, not what its rows say was wanted: a
+    shopper who edits "2 lbs" to "1 lb" and ticks it bought one pound, and
+    update_grocery_item leaves the rows saying two. Off that comes what
+    the line was bought for besides these nights — other dishes' rows and a
+    kept amount — and it is capped at what these nights' rows asked of it,
+    so turkey bought for Friday's tacos is never spent on the chili. The
+    rows of nights already eaten (`eaten`, see _eaten_ids) come off too,
+    and are no part of the cap: that food is in a pot. On a
+    household's own line the person's part is on no row; it is read as
+    whatever the line holds above its meals' rounded total, so an untouched
+    line credits exactly its meals and one edited down credits the meals
+    first.
+    """
+    hid = household_id()
+    if not ours:
+        return None   # every night it was bought for is eaten: nothing left to credit
+    if _grocery._holds_one_package(row["line_item"] or "", row["line_qty"] or ""):
+        # A jar of chili powder or a bottle of oil is the week's, however
+        # many nights name it (grocery._holds_one_package): one bought is
+        # all of it, and buying it again is a second jar.
+        return WHOLE_PACKAGE
+    parsed = _quantities._parse_quantity(_quantities._split_quantity_note((row["line_qty"] or "").strip())[0])
+    if not parsed:
+        return None
+    amount, unit = parsed
+    marks = ",".join("?" * len(entry_ids))
+    others = [
+        r["quantity"] or "" for r in conn.execute(
+            "SELECT quantity FROM meal_plan_grocery_links WHERE household_id = ? AND grocery_item_id = ? "
+            f"AND meal_plan_entry_id NOT IN ({marks})",
+            [hid, row["grocery_item_id"], *entry_ids],
+        ).fetchall()
+    ]
+    eaten = list(eaten)
+    if _grocery._store_kind(row["line_item"] or ""):
+        return _store_credit(row, ours, eaten, others)
+    ours_amt = [_amount_in(x, unit) for x in ours]
+    others_amt = [_amount_in(x, unit) for x in others + eaten]
+    kept = _amount_in(row["kept_amount"], unit) if (row["kept_amount"] or "").strip() else 0.0
+    if None in ours_amt or None in others_amt or kept is None:
+        return None
+    have = amount - sum(others_amt) - kept
+    if row["source_weekly_plan_id"] is None:
+        meals = _quantities._ledger_totals(ours + others + eaten, [])
+        if meals is None:
+            return None
+        r_amt, r_unit = _quantities._shopping_round(meals[0], meals[2])
+        meals_in_line = _quantities._convert_to_unit(r_amt, r_unit, unit)
+        if meals_in_line is None:
+            return None
+        have -= max(0.0, amount - meals_in_line)
+    return max(0.0, min(have, sum(ours_amt))), unit
+
+
+def _bought_toward(conn, group_ids: list[int], gone_ids: list[int], eaten_ids: set[int] = frozenset()):
+    """
+    What the in-cart and bought lines already hold for a recipe-week about
+    to be re-bought: ({merge key: (amount, unit), WHOLE_PACKAGE, or None
+    where it can't be read}, {entry id: its ticked ledger row ids}, the
+    highest ledger row id on file before the re-buy). `gone_ids` is the
+    night being taken away: what was bought for it is still in the kitchen
+    (unless its batch was cooked — `eaten_ids`), so it counts too.
+    """
+    hid = household_id()
+    last = conn.execute(
+        "SELECT COALESCE(MAX(id), 0) AS m FROM meal_plan_grocery_links WHERE household_id = ?", (hid,),
+    ).fetchone()["m"]
+    ids = [*group_ids, *gone_ids]
+    if not ids:
+        return {}, {}, last
+    marks = ",".join("?" * len(ids))
+    rows = conn.execute(
+        "SELECT l.id, l.meal_plan_entry_id, l.grocery_item_id, l.quantity, g.item AS line_item, "
+        "g.quantity AS line_qty, g.kept_amount, g.source_weekly_plan_id "
+        "FROM meal_plan_grocery_links l JOIN grocery_items g ON g.id = l.grocery_item_id "
+        f"WHERE l.household_id = ? AND l.meal_plan_entry_id IN ({marks}) "
+        "AND g.status IN ('in_cart', 'purchased') ORDER BY l.id",
+        [hid, *ids],
+    ).fetchall()
+    in_group = set(group_ids)
+    ticked: dict[int, set[int]] = {}
+    lines: dict[int, tuple] = {}
+    for row in rows:
+        if int(row["meal_plan_entry_id"]) in in_group:
+            ticked.setdefault(int(row["meal_plan_entry_id"]), set()).add(int(row["id"]))
+        _first, ours, eaten = lines.setdefault(int(row["grocery_item_id"]), (row, [], []))
+        (eaten if int(row["meal_plan_entry_id"]) in eaten_ids else ours).append(row["quantity"] or "")
+    bought: dict = {}
+    for row, ours, eaten in lines.values():
+        key = _grocery._merge_key(row["line_item"] or "")
+        credit = _ticked_line_credit(conn, row, ours, ids, eaten)
+        if key not in bought:
+            bought[key] = credit
+            continue
+        prev = bought[key]
+        if WHOLE_PACKAGE in (prev, credit):
+            bought[key] = WHOLE_PACKAGE
+        elif prev is None or credit is None:
+            bought[key] = None
+        elif isinstance(prev, tuple) and len(prev) == 3 or len(credit) == 3:
+            same = len(prev) == 3 and len(credit) == 3 and prev[2] == credit[2]
+            bought[key] = ("store", prev[1] + credit[1], prev[2]) if same else None
+        else:
+            more = _quantities._convert_to_unit(credit[0], credit[1], prev[1])
+            bought[key] = None if more is None else (prev[0] + more, prev[1])
+    # A key whose credit is None (unreadable, or all of it eaten) stays in:
+    # a cooked night's fresh rows of that food are still cut (_take_bought_off_rebuy).
+    return {
+        k: v for k, v in bought.items()
+        if v is None or v == WHOLE_PACKAGE or (v[1] if len(v) == 3 else v[0]) > 1e-9
+        or eaten_ids
+    }, ticked, last
+
+
+def _take_bought_off_rebuy(
+    conn, group_ids: list[int], last_link_id: int, bought: dict, cooked_ids: set[int] = frozenset(),
+) -> None:
+    """
+    Cut the rows a recipe-week's re-buy just wrote (ledger ids above
+    `last_link_id`) by what _bought_toward found already ticked for it,
+    and put each line they sit on back to what its rows now say.
+
+    A plan's line is re-read off its ledger, and goes when no meal on it
+    wants anything any more. A household's own line is restated in ONE
+    step from its rows before and after the cut (quantities._ledger_totals
+    + grocery._restate_standing_want), never by subtracting row by row: the
+    ingest added one rounded total to it, and taking back less than that
+    leaves a remainder the ceil pushes up again on every unbatch.
+
+    A night already cooked buys nothing of a food that was ticked for it:
+    its fresh rows go without spending any credit. A store-unit food
+    (_store_credit) is all-or-nothing — covered when the re-buy, read in
+    the store unit, is no more than what is left of what was bought;
+    otherwise it is bought as before.
+    """
+    hid = household_id()
+    marks = ",".join("?" * len(group_ids))
+    fresh = conn.execute(
+        "SELECT l.id, l.item, l.quantity, l.grocery_item_id, l.meal_plan_entry_id FROM meal_plan_grocery_links l "
+        "JOIN grocery_items g ON g.id = l.grocery_item_id "
+        f"WHERE l.household_id = ? AND l.id > ? AND l.meal_plan_entry_id IN ({marks}) "
+        "AND g.status IN ('needed', 'spice') ORDER BY l.id",
+        [hid, last_link_id, *group_ids],
+    ).fetchall()
+    left = {k: v for k, v in bought.items() if v is not None}
+    cuts: dict[int, dict[int, str]] = {}   # line id -> {ledger row id: its new quantity, "" = gone}
+    live = []
+    for link in fresh:
+        key = _grocery._merge_key(link["item"] or "")
+        if key in bought and int(link["meal_plan_entry_id"]) in cooked_ids:
+            cuts.setdefault(int(link["grocery_item_id"]), {})[int(link["id"])] = ""
+        else:
+            live.append(link)
+    store_rows: dict[str, list] = {}
+    for link in live:
+        key = _grocery._merge_key(link["item"] or "")
+        if isinstance(left.get(key), tuple) and len(left[key]) == 3:
+            store_rows.setdefault(key, []).append(link)
+    for key, links in store_rows.items():
+        _tag, have, unit = left[key]
+        text = _grocery._store_amount(links[0]["item"] or "", [l["quantity"] or "" for l in links])
+        need = _amount_in(text, unit) if text else None
+        if need is not None and need <= have + 1e-9:
+            for link in links:
+                cuts.setdefault(int(link["grocery_item_id"]), {})[int(link["id"])] = ""
+    for link in live:
+        key = _grocery._merge_key(link["item"] or "")
+        if key in store_rows:
+            continue
+        if left.get(key) == WHOLE_PACKAGE:
+            cuts.setdefault(int(link["grocery_item_id"]), {})[int(link["id"])] = ""
+            continue
+        if key not in left or left[key][0] <= 1e-9:
+            continue
+        credit_amt, credit_unit = left[key]
+        parsed = _quantities._parse_quantity(_quantities._split_quantity_note((link["quantity"] or "").strip())[0])
+        credit_here = _quantities._convert_to_unit(credit_amt, credit_unit, parsed[1]) if parsed else None
+        if credit_here is None:
+            continue   # can't be read against what was bought: bought in full, as before
+        take = min(parsed[0], credit_here)
+        spent = _quantities._convert_to_unit(take, parsed[1], credit_unit) or 0.0
+        left[key] = (max(0.0, credit_amt - spent), credit_unit)
+        remaining = parsed[0] - take
+        cuts.setdefault(int(link["grocery_item_id"]), {})[int(link["id"])] = (
+            "" if remaining <= 1e-9 else _quantities._format_quantity(remaining, parsed[1])
+        )
+    for item_id, changed in cuts.items():
+        line = conn.execute(
+            "SELECT quantity, source_weekly_plan_id, kept_amount FROM grocery_items WHERE id = ? AND household_id = ?",
+            (item_id, hid),
+        ).fetchone()
+        rows = conn.execute(
+            "SELECT id, quantity FROM meal_plan_grocery_links WHERE household_id = ? AND grocery_item_id = ? ORDER BY id",
+            (hid, item_id),
+        ).fetchall()
+        before = [r["quantity"] or "" for r in rows]
+        after = [q for q in (changed.get(int(r["id"]), r["quantity"] or "") for r in rows) if q]
+        for link_id, qty in changed.items():
+            if qty:
+                conn.execute("UPDATE meal_plan_grocery_links SET quantity = ? WHERE id = ? AND household_id = ?",
+                             (qty, link_id, hid))
+            else:
+                conn.execute("DELETE FROM meal_plan_grocery_links WHERE id = ? AND household_id = ?", (link_id, hid))
+        if line is None:
+            continue
+        if line["source_weekly_plan_id"] is not None:
+            if after or (line["kept_amount"] or "").strip():
+                _grocery._recompute_plan_line_from_ledger(item_id, conn=conn)
+            else:
+                conn.execute("DELETE FROM grocery_items WHERE id = ? AND household_id = ?", (item_id, hid))
+            continue
+        # The person's own line, read once and restated once.
+        totals = _quantities._ledger_totals(before, after)
+        restated = None if totals is None else _grocery._restate_standing_want(line["quantity"] or "", *totals)
+        if restated is None:
+            continue   # can't be measured in one unit: it keeps what it says, as a re-buy left it
+        new_qty, _gone = restated
+        if new_qty:
+            new_qty = _grocery._no_more_than(new_qty, line["quantity"] or "")
+        if new_qty != (line["quantity"] or ""):
+            conn.execute("UPDATE grocery_items SET quantity = ? WHERE id = ? AND household_id = ?",
+                         (new_qty, item_id, hid))
 
 
 def _dedupe_duplicate_slots(weekly_plan_id: int, duplicated: list[dict]) -> None:
@@ -4118,6 +4544,20 @@ def _finish_takeover_result(result: dict, new_plan_id: int) -> dict:
     return result
 
 
+# What a takeover does to a plan's grocery line, by its status — the
+# rule _grocery._reverse_meal_grocery_contributions applies, said once for
+# the two readers that describe it before and after (preview_approved_
+# takeover's question, _release_plan_days' `grocery_kept_bought`). 'spice'
+# is a recipe's spice, sauce or pantry staple assumed at home (pantry.py):
+# never bought, reversed like a needed line. Both readers used to say
+# "anything not 'needed' is bought", so a re-plan over nights whose lines
+# were pasta and stock was told "it's all bought already" and then took
+# both off the list (defect hunt 2026-10-22). Anything else — a line set
+# aside, a carried-over line — is neither, and is counted as neither.
+_TAKEOVER_LIVE_STATUSES = ("needed", "spice")
+_TAKEOVER_BOUGHT_STATUSES = ("in_cart", "purchased")
+
+
 def preview_approved_takeover(period_start: str, day_count: int) -> dict | None:
     """
     What APPROVING a draft of this period would take away from an APPROVED
@@ -4189,17 +4629,34 @@ def preview_approved_takeover(period_start: str, day_count: int) -> dict | None:
     bought_line_count = 0
     if entry_ids:
         entry_placeholders = ",".join("?" * len(entry_ids))
-        counts = conn.execute(
-            f"SELECT "
-            f"COUNT(DISTINCT CASE WHEN g.status = 'needed' THEN g.id END) AS needed, "
-            f"COUNT(DISTINCT CASE WHEN g.status != 'needed' THEN g.id END) AS bought "
+        links = conn.execute(
+            f"SELECT l.id, l.quantity, g.id AS line_id, g.item, g.status "
             f"FROM meal_plan_grocery_links l "
             f"JOIN grocery_items g ON g.id = l.grocery_item_id "
             f"WHERE l.household_id = ? AND l.meal_plan_entry_id IN ({entry_placeholders})",
             (household_id(), *entry_ids),
-        ).fetchone()
-        grocery_line_count = counts["needed"]
-        bought_line_count = counts["bought"]
+        ).fetchall()
+        live_lines: dict[int, dict] = {}
+        bought_lines = set()
+        for link in links:
+            if link["status"] in _TAKEOVER_BOUGHT_STATUSES:
+                bought_lines.add(link["line_id"])
+            elif link["status"] in _TAKEOVER_LIVE_STATUSES:
+                line = live_lines.setdefault(link["line_id"], {"item": link["item"], "ids": [], "qtys": []})
+                line["ids"].append(link["id"])
+                line["qtys"].append(link["quantity"])
+        # A live line is counted only if the reversal will really change
+        # it: a jar or bottle that a surviving night still names stays on
+        # the list untouched (grocery.reversal_changes_line).
+        for line_id, line in live_lines.items():
+            others_left = conn.execute(
+                "SELECT COUNT(*) AS n FROM meal_plan_grocery_links WHERE household_id = ? "
+                f"AND grocery_item_id = ? AND id NOT IN ({','.join('?' * len(line['ids']))})",
+                (household_id(), line_id, *line["ids"]),
+            ).fetchone()["n"]
+            if _grocery.reversal_changes_line(line["item"], line["qtys"], others_left):
+                grocery_line_count += 1
+        bought_line_count = len(bought_lines)
     conn.close()
 
     meals_by_date: dict[str, list[dict]] = {}
@@ -4437,7 +4894,7 @@ def _release_plan_days(plan_id: int, dates: list[str], include_components: bool 
                     f"SELECT DISTINCT g.item FROM meal_plan_grocery_links l "
                     f"JOIN grocery_items g ON g.id = l.grocery_item_id "
                     f"WHERE l.household_id = ? AND l.meal_plan_entry_id IN ({entry_placeholders}) "
-                    f"AND g.status != 'needed'",
+                    f"AND g.status IN {_TAKEOVER_BOUGHT_STATUSES!r}",
                     (household_id(), *entry_ids),
                 ).fetchall()
             ]
@@ -6430,7 +6887,12 @@ def _decorate_with_needs(days: list[dict], week_start: str) -> str:
                 day[slot] = entry
             if entry is None:
                 continue
-            if info:
+            # A meal already cooked (or cooking) stays on the plan when the
+            # household is then marked away for it (slot_needs keeps it,
+            # 2026-10-22), so the away mustn't badge it "Away" or call it
+            # "nothing planned, nothing bought" — it was eaten.
+            begun = entry.get("cooked") or entry.get("cooking")
+            if info and not begun:
                 entry["need"] = info["need"]
                 entry["need_reason"] = info["reason"]
                 entry["need_for_names"] = info["for_member_names"]
@@ -6441,7 +6903,8 @@ def _decorate_with_needs(days: list[dict], week_start: str) -> str:
                 entry["away_names"] = att["absent_names"]
                 entry["present_names"] = att["present_names"]
                 entry["guest_count"] = att["guest_count"]
-                entry["attendance_summary"] = _attendance.summary_line(att)
+                if not begun:
+                    entry["attendance_summary"] = _attendance.summary_line(att)
 
     if not away_dates:
         return ""
@@ -6760,10 +7223,57 @@ def resolve_needs_you_dinner(
     from . import allergen_gate as _allergen_gate
     _allergen_gate.refuse_if_clashing(meal)
     weekly_plan_id = get_plan_id_for_date(meal_date)
-    result = _meal_plans.plan_meal(
-        meal_date, meal, slot="dinner", weekly_plan_id=weekly_plan_id,
-        add_ingredients_to_grocery_list=add_ingredients_to_grocery_list,
-    )
+    # ONE row for the slot, whatever the card saw (overnight, 2026-10-25).
+    # plan_meal only inserts, so a card drawn before the night changed — a
+    # trip marked, the week generated, a pick in another tab — or a retried
+    # POST wrote a second row beside what was there: planned_empty plus a
+    # dinner (and, with the card's yes, groceries for a night nobody eats),
+    # open plus planned, or two dinners and the shop bought twice. So the
+    # door reads the slot first, under the write lock:
+    #   - planned_empty: refused (the chat door's own guard and words);
+    #   - a dinner already there: the same dish is the retry, answered as
+    #     done with nothing written — a second tap of one pick must not read
+    #     as a failure — and a different dish is refused: replacing a
+    #     decided dinner is Swap's job, not a "needs a dinner" card's;
+    #   - open: settled in place through resolve_open_slot, the slot API's
+    #     own write (its stale check rolls back if the row moved after
+    #     this read). It buys by the plan's approved state, as every open
+    #     slot answered on Plan does, not by the card's flag;
+    #   - nothing: planned here, as it always was.
+    # Loose rows (no plan covers the day) are read the same way, `IS ?`.
+    conn = get_conn()
+    open_row = False
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        rows = conn.execute(
+            "SELECT mpe.slot_state, mpe.derived_from_json, COALESCE(r.name, mpe.freeform_meal) AS meal "
+            "FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id "
+            "WHERE mpe.weekly_plan_id IS ? AND mpe.household_id = ? AND mpe.date = ? AND mpe.slot = 'dinner'",
+            (weekly_plan_id, household_id(), meal_date),
+        ).fetchall()
+        _meal_plans.refuse_if_planned_empty(rows, "dinner")
+        planned = [r for r in rows if r["slot_state"] == "planned"]
+        open_row = weekly_plan_id is not None and bool(rows) and not planned
+        if planned:
+            there = (planned[0]["meal"] or "").strip()
+            if there.casefold() != meal.strip().casefold():
+                raise SlotRefused(
+                    f"That dinner’s already decided — {there}. Swap it on Plan if you’d like something else."
+                )
+            result = {"groceries_added": [], "already_have_skipped": []}
+        elif not open_row:
+            result = _meal_plans.plan_meal(
+                meal_date, meal, slot="dinner", weekly_plan_id=weekly_plan_id,
+                add_ingredients_to_grocery_list=add_ingredients_to_grocery_list, conn=conn,
+            )
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+    if open_row:
+        result = resolve_open_slot(weekly_plan_id, meal_date, "dinner", meal)
     return {
         "items": get_needs_you_items(),
         "groceries_added": result["groceries_added"],
@@ -7056,6 +7566,55 @@ def _reingest_unlinked_entries(weekly_plan_id: int, conn=None) -> dict:
     return result
 
 
+def buy_for_late_written_recipe(recipe_id: int) -> list[str]:
+    """
+    Put a just-written recipe's ingredients on the list for every meal of
+    it on an APPROVED week that is still ahead — the meals approval could
+    not buy for, because the recipe was still pending then (defect hunt,
+    2026-10-24).
+
+    Approval writes the week's pending recipes first and goes ahead when
+    one fails (_write_pending_recipes: "a lost approval over one recipe is
+    the worse outcome"). That dish was approved with no ingredients, so it
+    bought nothing and left no ledger row — and when Cook's "Fill in this
+    recipe" (or a later pass) wrote it, nothing went back to the list. The
+    household shopped for the week without Tuesday's curry. Called by
+    recipes.fill_recipe_details on the one call that clears
+    details_pending, so this runs once per recipe.
+
+    Only this recipe's entries, not every unlinked one: an entry whose
+    every ingredient was skipped as already in the kitchen also has no
+    ledger row, and approval's guard is that nothing re-buys it later.
+    The same query approval buys from (_plan_grocery_candidate_entries —
+    today on, no ledger row yet), the same grouped ingest, and under the
+    write lock from the first read, so an approval landing at the same
+    moment and this can't both buy the same meal. A draft is left alone:
+    its approval buys it.
+    """
+    added: list[str] = []
+    with write() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        plan_ids = [
+            row["weekly_plan_id"] for row in conn.execute(
+                "SELECT DISTINCT mpe.weekly_plan_id FROM meal_plan_entries mpe "
+                "JOIN weekly_plans wp ON wp.id = mpe.weekly_plan_id AND wp.household_id = mpe.household_id "
+                "WHERE mpe.household_id = ? AND mpe.recipe_id = ? AND wp.status = 'approved'",
+                (household_id(), recipe_id),
+            ).fetchall()
+        ]
+        for plan_id in plan_ids:
+            entries = [
+                e for e in _plan_grocery_candidate_entries(conn, plan_id)
+                if e["recipe_id"] == recipe_id
+            ]
+            if not entries:
+                continue
+            buffer = _recipes.WeekGroceryBuffer(plan_id, conn=conn)
+            added += _ingest_recipe_group_and_sides(entries, plan_id, buffer)["groceries_added"]
+            buffer.flush()
+    return added
+
+
 def _entry_shopping_ingredients(row) -> list[dict]:
     """
     Everything one plan entry puts on the shopping list: its recipe's own
@@ -7212,6 +7771,7 @@ def preview_plan_grocery_impact(weekly_plan_id: int, today: str | None = None) -
         ).fetchall()
     }
     conn.close()
+    from . import spices as _spices
 
     would_add: set[str] = set()
     already_have: set[str] = set()
@@ -7227,7 +7787,9 @@ def preview_plan_grocery_impact(weekly_plan_id: int, today: str | None = None) -
             name = ing["item"].strip()
             if name.lower() in have_names:
                 already_have.add(name.lower())
-            else:
+            elif not _spices.is_assumed(name):
+                # What approval counts as to buy (approve_weekly_plan): a
+                # spice, sauce or pantry staple waits in its own section.
                 would_add.add(name.lower())
     return {
         "weekly_plan_id": weekly_plan_id,
@@ -7244,7 +7806,16 @@ _CHECK_FAILED_NOTE = (
 )
 
 
-def _write_pending_recipes(weekly_plan_id: int) -> None:
+# Said when approval stops because Claude couldn't be reached to write the
+# week's new recipes (2026-10-25). Plain, with its way out, and the fact the
+# household most needs: nothing was approved and the list is untouched.
+RECIPES_UNREACHABLE_LINE = (
+    "I couldn’t write up this week’s new recipes just now, so I haven’t approved it "
+    "yet — your list is as it was. Try again in a minute."
+)
+
+
+def _write_pending_recipes(weekly_plan_id: int) -> dict:
     """
     Approval's first move since 2026-09-21: any dish the menu pass left
     unwritten gets its ingredients and steps now, before the grocery list
@@ -7254,7 +7825,8 @@ def _write_pending_recipes(weekly_plan_id: int) -> None:
     real. Never raises — a recipe that could not be written stays pending
     (the Cook screen fills it when it's needed) and the approval goes
     ahead with what it has; a lost approval over one recipe is the worse
-    outcome.
+    outcome. Returns the pass's own account; approve_weekly_plan stops on
+    its `unreachable` (Claude not answering at all), not on a bad recipe.
 
     Since 2026-09-30 the draft's background pass has usually written them
     already (agent.start_background_recipe_pass), so this finds nothing
@@ -7264,9 +7836,10 @@ def _write_pending_recipes(weekly_plan_id: int) -> None:
     """
     try:
         from .. import agent as _agent
-        _agent.fill_pending_recipes_for_plan(weekly_plan_id)
+        return _agent.fill_pending_recipes_for_plan(weekly_plan_id) or {}
     except Exception:
         logger.exception("Writing the pending recipes for plan %s failed; approving with what is written", weekly_plan_id)
+        return {}
 
 
 def approve_weekly_plan(
@@ -7390,7 +7963,20 @@ def approve_weekly_plan(
     # ingredients, and a dish the menu pass chose has none until this
     # writes them. Skipped for a re-approval, which adds nothing anyway.
     if not was_already_approved:
-        _write_pending_recipes(weekly_plan_id)
+        written = _write_pending_recipes(weekly_plan_id)
+        # One recipe that came back wrong still approves (above). Claude
+        # not answering at all is different (2026-10-25): every dish it
+        # couldn't write would be approved with nothing on the list for
+        # it, and the toast would say "Week approved." over a list missing
+        # the week. So nothing is approved, nothing is written, and the
+        # household is told to try again — the recipes that WERE written
+        # are kept, so the retry only asks for the rest. Already filed in
+        # the morning report by the calls that gave up.
+        if written.get("unreachable"):
+            from .. import agent as _agent
+            err = _agent.AssistantUnavailableError(RECIPES_UNREACHABLE_LINE)
+            setattr(err, _agent.AI_FILED, True)
+            raise err
 
     # Run before the approval work, so the warning (and the confirmation
     # gate just below) describe the plan that was actually approved, and a
@@ -7447,7 +8033,18 @@ def approve_weekly_plan(
     # so it is computed out here instead, exactly where `approved_by`
     # itself already is.
     approved_by_member_id = acting_member_id_for(approved_by)
-    result = _settle_weekly_plan_approval(weekly_plan_id, approved_by, approved_by_member_id, conflicts, conflicts_note)
+    # The allergies on file at this yes, so an allergy added later is told
+    # apart from one the household approved past (allergen_gate.
+    # clashes_since_approval). Read out here for the same reason as the
+    # conflict check: its own connections, nothing slow inside the lock.
+    try:
+        from . import allergen_gate as _allergen_gate  # lazy: it imports this module
+        avoidance_keys = _allergen_gate.avoidance_keys_now()
+    except Exception:
+        logger.exception("Reading the allergies at approval failed for plan %s", weekly_plan_id)
+        avoidance_keys = None
+    result = _settle_weekly_plan_approval(weekly_plan_id, approved_by, approved_by_member_id, conflicts, conflicts_note,
+                                          avoidance_keys=avoidance_keys)
 
     # A hosted holiday's big meal on this plan gets its prep spread now —
     # approval is the moment the week becomes real (app/tools/big_meal.py).
@@ -7481,6 +8078,7 @@ def approve_weekly_plan(
 def _settle_weekly_plan_approval(
     weekly_plan_id: int, approved_by: str, approved_by_member_id: int | None,
     conflicts: list[dict], conflicts_note: str | None,
+    avoidance_keys: list[str] | None = None,
 ) -> dict:
     """
     The write behind a genuine transition into 'approved' — one connection,
@@ -7517,10 +8115,16 @@ def _settle_weekly_plan_approval(
         # built the list.
         flipped = conn.execute(
             "UPDATE weekly_plans SET status = 'approved', updated_at = datetime('now'), "
-            "approved_by = ?, approved_by_member_id = ?, approved_at = datetime('now') "
+            "approved_by = ?, approved_by_member_id = ?, approved_at = datetime('now'), "
+            "list_built_at = COALESCE(list_built_at, datetime('now')) "
             "WHERE id = ? AND household_id = ? AND status != 'approved'",
             (approved_by.strip(), approved_by_member_id, weekly_plan_id, household_id()),
         ).rowcount
+        if flipped and avoidance_keys is not None:
+            conn.execute(
+                "UPDATE weekly_plans SET avoidances_at_approval_json = ? WHERE id = ? AND household_id = ?",
+                (json.dumps(avoidance_keys), weekly_plan_id, household_id()),
+            )
         if flipped:
             # The household has said yes to a week at least once — kept on
             # the household because reopening a week clears approved_at, and
@@ -7660,6 +8264,12 @@ def _settle_weekly_plan_approval(
                 (weekly_plan_id, household_id()),
             ).fetchone()["approved_at"]
 
+            # A meal brought over from last week is this week's to buy now,
+            # so its share comes off last week's unbought lines first —
+            # otherwise the one dish is on the list twice, or asked about
+            # as last week's (bring_over.release_last_weeks_share).
+            _bring_over.release_last_weeks_share(conn, weekly_plan_id)
+
             # Before a single ingredient lands: whatever is still unbought
             # from an EARLIER week is set aside, so this week's amounts go
             # on clean lines and the Shop tab can ask "still on the list
@@ -7757,7 +8367,24 @@ def _settle_weekly_plan_approval(
             # reports are the same number rather than two different ways of
             # counting the same groceries. Persisted because neither is
             # recoverable later — see schema.sql on approved_grocery_added.
-            added_count = len({n.strip().lower() for n in added_items})
+            #
+            # And counted as what is to BUY (defect hunt, 2026-10-21): a line
+            # the list assumes is at home — a spice, sauce or pantry staple
+            # waiting unticked in its own section, status 'spice' (spices.py,
+            # pantry.py) — is not one. The toast said "Week approved · 10
+            # things to buy." over a list of nine, the oats in "Pantry
+            # staples this week", while Today's count and the receipt
+            # ('needed' only) said nine. Read off the lines as they landed,
+            # so the household's own oats a plan merged onto still count.
+            assumed = {
+                _grocery._merge_key(r["item"]) for r in conn.execute(
+                    "SELECT item FROM grocery_items WHERE household_id = ? AND status = 'spice'",
+                    (household_id(),),
+                ).fetchall()
+            }
+            added_count = len({
+                n.strip().lower() for n in added_items if _grocery._merge_key(n) not in assumed
+            })
             skipped_count = len({n.strip().lower() for n in already_have})
             # A rebuild that put nothing back (every line now skipped as
             # already-have, say) keeps the first approval's receipt: a 0
@@ -8255,6 +8882,7 @@ def swap_meal_in_plan(
         raise ValueError(
             f"'{slot}' is not a slot a day has — expected one of {', '.join(DAY_SLOTS)}."
         )
+    validate_meal_date(meal_date)
 
     conn = get_conn()
     old_entries = conn.execute(
@@ -9040,6 +9668,25 @@ def _taste_verdict_for_slot(meal: str, meal_date: str, slot: str) -> dict | None
 NIGHTS_MOVED_KEY = "moved_from"
 
 
+def moved_dish_changed(row, token: dict) -> bool:
+    """True when the row holding a move's Undo token no longer holds the
+    dish that move moved. A swap deletes the row and writes a NEW one, and
+    copies derived_from onto it, the token with it (swap_in_place.
+    apply_pick), so without this an Undo carried a dish it never moved —
+    move Tacos to Thursday, swap Thursday to Beef Bulgogi, Undo the move:
+    Bulgogi went back to Tuesday (overnight 2026-10-24). Both Undos ask it:
+    undo_meal_move and the nights swap's.
+
+    Changed means a different row AND a different dish. The same row is the
+    same dish even if its name was re-said since (a freezer night naming
+    its cook's new day, a recipe edited in place); the same dish on a new
+    row is a swap the household has already undone. A token written before
+    either was recorded says nothing."""
+    if not isinstance(token, dict) or "entry" not in token or "meal" not in token:
+        return False
+    return token["entry"] != row["id"] and (token["meal"] or "") != (row["meal"] or "")
+
+
 def _weekday_of(date_str: str) -> str:
     return date.fromisoformat(date_str).strftime("%A")
 
@@ -9114,10 +9761,18 @@ def delete_plan_entry(conn, entry_id: int) -> None:
     )
 
 
-def fed_night_label(target: dict) -> str:
+def fed_night_label(target: dict, today: str | None = None) -> str:
     """"Wednesday", or "Wednesday’s lunch" for a night a chain feeds at
     another meal — the one way this app names a fed night, read by the
-    night off's sub-line and toast and by the Review stepper's "−"."""
+    night off's sub-line and toast and by the Review stepper's "−".
+
+    `today` (the household's ISO date) is for a line said NOW about a move
+    that can land on today: "tonight", or "today’s lunch", rather than the
+    weekday it is (Today toasted "Weeknight Chili moved to Thursday." on a
+    Thursday — overnight, 2026-10-21). Never pass it for text that is
+    stored and read on a later day."""
+    if today and target["date"] == today:
+        return "tonight" if target["slot"] == "dinner" else f"today’s {target['slot']}"
     return _weekday_of(target["date"]) if target["slot"] == "dinner" \
         else f"{_weekday_of(target['date'])}’s {target['slot']}"
 
@@ -9460,7 +10115,10 @@ def _redate_plan_rows(
             if token_for is None:
                 derived.pop(NIGHTS_MOVED_KEY, None)
             else:
-                derived[NIGHTS_MOVED_KEY] = token_for(r)
+                # The row and dish it moved, so an Undo can tell when the
+                # row has been swapped to another dish since
+                # (moved_dish_changed).
+                derived[NIGHTS_MOVED_KEY] = {**token_for(r), "entry": r["id"], "meal": r["meal"]}
             changed = True
         after.append({
             "id": r["id"], "date": new_date.get(r["id"], r["date"]), "slot": r["slot"],
@@ -9659,8 +10317,16 @@ def _shift_late_prep_cuts(conn, weekly_plan_id: int, entry_id: int, old_date: st
     same number of days the meal did. Either way a weekday the sentence
     names is re-said. (The nights swap no longer uses this: it carries
     every cut with its dinner — _nights_swap_prep_cut_moves, 2026-10-20.)
+
+    A carried day that would be in the past lands on today, never after the
+    meal — the nights swap's own rule (2026-10-22). Moving Saturday's bowls
+    to tonight carried Friday's "Cut up romaine" to Thursday, yesterday:
+    Today lists only today's prep and the Kitchen root drops a past prep
+    day, so the cut for tonight's dinner showed nowhere. Undo still puts it
+    back on its own day (meal_move keeps the original date on the token).
     """
     from . import prep_sessions as _prep_sessions  # lazy: it imports this module
+    today = _household_today(conn).isoformat()
     delta = (date.fromisoformat(new_date) - date.fromisoformat(old_date)).days
     old_wd, new_wd = _weekday_of(old_date), _weekday_of(new_date)
     tasks = conn.execute(
@@ -9673,6 +10339,8 @@ def _shift_late_prep_cuts(conn, weekly_plan_id: int, entry_id: int, old_date: st
         task_date = t["task_date"]
         if task_date and task_date > new_date:
             task_date = (date.fromisoformat(task_date) + timedelta(days=delta)).isoformat()
+            if task_date < today:
+                task_date = min(today, new_date)
             moved += 1
         said = (t["description"] or "").replace(f"for {old_wd}", f"for {new_wd}")
         if task_date != t["task_date"] or said != t["description"]:
@@ -9851,6 +10519,8 @@ def _apply_dinner_nights_swap(
                 other = date_b if r["date"] == date_a else date_a
                 if token.get("date") != other:
                     raise ValueError("Those nights haven’t just been moved, so there’s nothing to put back.")
+                if moved_dish_changed(r, token):
+                    raise ValueError("That dinner has changed since, so there’s nothing to put back.")
 
         new_date = {r["id"]: (date_b if r["date"] == date_a else date_a) for r in moving}
         mapping = {f"{date_a}:dinner": f"{date_b}:dinner", f"{date_b}:dinner": f"{date_a}:dinner"}
@@ -10003,7 +10673,7 @@ def swap_dinner_nights(weekly_plan_id: int, date_a: str, date_b: str) -> dict:
     Trade the dinners on two nights of a plan — "move Thursday's dinner to
     Friday" — keeping each dish's groceries, cooked tick and leftover
     chain with it, and moving its defrost reminders by the same number of
-    days. The grocery list is not touched: same dishes, same lines.
+    days. Same dishes, same lines — each resized for its new night's table in an approved week.
 
     Returns `status` 'swapped' with `moved` (each entry's id, dish, from
     and to), `prep_tasks_moved`, both changed `days` in get_week_menu's
@@ -10024,7 +10694,8 @@ def swap_dinner_nights(weekly_plan_id: int, date_a: str, date_b: str) -> dict:
     week that was standing.
     """
     today = _household_today().isoformat()
-    return _apply_dinner_nights_swap(weekly_plan_id, date_a, date_b, undo=False, today=today)
+    return _resize_after_nights_swap(
+        _apply_dinner_nights_swap(weekly_plan_id, date_a, date_b, undo=False, today=today))
 
 
 def undo_dinner_nights_swap(weekly_plan_id: int, date_a: str, date_b: str) -> dict:
@@ -10035,7 +10706,21 @@ def undo_dinner_nights_swap(weekly_plan_id: int, date_a: str, date_b: str) -> di
     night); raises ValueError otherwise, so an Undo tapped after a second
     move can never quietly move the wrong dish.
     """
-    return _apply_dinner_nights_swap(weekly_plan_id, date_a, date_b, undo=True)
+    return _resize_after_nights_swap(
+        _apply_dinner_nights_swap(weekly_plan_id, date_a, date_b, undo=True))
+
+
+def _resize_after_nights_swap(out: dict) -> dict:
+    """Same dishes, same lines — but each is bought for the table on the
+    night it is on now (attendance.resize_after_redate). After the swap's
+    own commit, both nights in one transaction; a no-op on a draft or when
+    both tables are the same size. `list_changed` tells the screen to
+    re-read Shop."""
+    if out.get("status") in ("swapped", "restored") and out.get("moved"):
+        from . import attendance as _attendance  # lazy: attendance imports this module
+        out["list_changed"] = bool(_attendance.resize_after_redate(
+            {m["entry_id"]: m["from"] for m in out["moved"]}))
+    return out
 
 
 def swap_component_in_plan(
