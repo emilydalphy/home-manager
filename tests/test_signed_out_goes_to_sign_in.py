@@ -86,6 +86,23 @@ console.log(JSON.stringify({ went, status: res.status, signingIn: Api.signingIn(
 
 
 @_needs_node
+def test_a_page_leaving_for_goodbye_is_not_pulled_to_sign_in():
+    # Delete household / remove me: the server clears the cookie, the page
+    # calls Api.leaving() and goes to /goodbye; a read still in flight then
+    # comes back 401 and must not replace /goodbye with /login.
+    out = _run("""
+answer = () => Promise.resolve(makeRes(401, '{}'));
+Api.leaving();
+await Api.fetch('/api/today/moves');
+console.log(JSON.stringify({ went }));
+""")
+    assert out["went"] == []
+    leave = SHELL_JS[SHELL_JS.index("groForgetOffline();   // the grocery copy on this phone was the household's"):]
+    leave = leave[:leave.index("/goodbye')")]
+    assert "Api.leaving()" in leave
+
+
+@_needs_node
 def test_a_server_error_or_no_connection_stays_put():
     out = _run("""
 answer = () => Promise.resolve(makeRes(500, 'Internal Server Error'));

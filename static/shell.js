@@ -30159,6 +30159,9 @@
       var out = {};
       try { out = await res.json(); } catch (err) { /* the address below still stands */ }
       groForgetOffline();   // the grocery copy on this phone was the household's
+      // The cookie is gone now, so a read still in flight comes back 401;
+      // tell Api we're leaving, or that 401 sends us to /login over /goodbye.
+      if (typeof Api !== 'undefined' && Api.leaving) Api.leaving();
       window.location.replace(out.goodbye || '/goodbye');
       return;
     }

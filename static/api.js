@@ -131,6 +131,12 @@ var Api = (function () {
     return signingIn;
   }
 
+  // The page is leaving on purpose (delete household / remove me goes to
+  // /goodbye after the server cleared the cookie): later 401s stand down.
+  function leaving() {
+    signingIn = true;
+  }
+
   // ---------- Api.json: the default for new code ----------
   //
   // What a failure looks like, everywhere, so screens stop drifting (some
@@ -299,5 +305,6 @@ var Api = (function () {
     getBase: getBase,
     onError: onError,
     signingIn: isSigningIn,
+    leaving: leaving,
   };
 })();
