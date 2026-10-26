@@ -127,6 +127,21 @@ _WHEAT_WORDS = {
     # word in a guest note, so "no nuts for Graham" became the phrase "nuts
     # graham" and found no nuts (review). Graham crackers trip on "cracker".
     "pretzel", "cracker", "baguette", "ciabatta", "matzo", "matzah",
+    # The shared recipe library's breads, wrappers and shapes (defect hunt,
+    # 2026-10-23): a library dish is COPIED for a household with no writer
+    # told about its gluten, so this table is all that stands between a
+    # celiac child and Smash Burgers on hamburger buns, a Philly on hoagie
+    # rolls or Banh Mi on a baguette — all of which passed. Shaoxing wine
+    # is brewed with wheat; doubanjiang and gochujang are made with it.
+    # "buns" is matched as written (_VERBATIM_ALIASES): its singular would
+    # hold Bun Cha, which is rice noodles. Vermicelli is wheat unless it
+    # says rice (_COMPOUND_EXCEPTIONS).
+    "baguette", "ciabatta", "hoagie", "telera", "bolillo", "dinner roll", "crusty roll",
+    "kaiser roll", "sub roll", "hamburger bun", "burger bun", "hot dog bun", "english muffin",
+    "paratha", "roti", "chapati", "yufka", "pie crust", "spring roll wrapper",
+    "egg roll wrapper", "dumpling wrapper", "gyoza wrapper", "muffin mix", "bucatini",
+    "ditalini", "orecchiette", "tagliatelle", "rotini", "cavatappi", "capellini",
+    "vermicelli", "shaoxing", "doubanjiang", "gochujang",
 }
 _ALLERGEN_ALIASES: dict[str, set[str]] = {
     "nut": {"peanut", "walnut", "almond", "cashew", "pecan", "hazelnut",
@@ -189,7 +204,11 @@ _ALLERGEN_ALIASES: dict[str, set[str]] = {
             "lemon curd", "zabaglione", "sabayon", "clafoutis", "crepe", "french toast",
             "dutch baby", "albumen", "tamagoyaki", "yorkshire pudding"},
     "soy": {"soya", "tofu", "tempeh", "edamame", "soy sauce", "miso", "tamari", "shoyu",
-            "natto", "teriyaki", "hoisin", "ponzu", "yuba", "okara"},
+            "natto", "teriyaki", "hoisin", "ponzu", "yuba", "okara",
+            # Pastes made of fermented soybeans (library defect hunt,
+            # 2026-10-23: Kimchi Fried Rice's gochujang passed a soy allergy).
+            "gochujang", "doenjang", "ssamjang", "fermented black bean", "black bean sauce",
+            "douchi"},
     "sesame": {"tahini", "hummus", "halva", "halvah", "zaatar", "za atar", "gomasio", "benne"},
     # Mustard is one of Canada's priority allergens, and the jar on the line
     # is usually named for the town: "mustard allergy" let "Dijon" through
@@ -239,6 +258,7 @@ _PHRASE_FAMILIES: dict[tuple[str, ...], set[str]] = {
 _VERBATIM_ALIASES: dict[str, set[str]] = {
     "egg": {"whites"}, "eggs": {"whites"},
     "nut": {"florentines"}, "nuts": {"florentines"},
+    "gluten": {"buns"}, "wheat": {"buns"}, "celiac": {"buns"}, "coeliac": {"buns"},
 }
 _ALLERGEN_ALIASES["nuts"] = _ALLERGEN_ALIASES["nut"]
 _ALLERGEN_ALIASES["peanuts"] = _ALLERGEN_ALIASES["peanut"]
@@ -396,7 +416,18 @@ _COMPOUND_EXCEPTIONS: tuple[tuple, ...] = (
         r"\b(?:rice|almond|chickpea|buckwheat|corn|oat|coconut|tapioca)\s+flours?\b"
     )),
     (frozenset({"noodle", "noodles"}), re.compile(
-        r"\b(?:rice|glass|soba|buckwheat)\s+noodles?\b"
+        r"\b(?:rice|glass|soba|buckwheat|rice\s+vermicelli|bean\s+thread|mung\s+bean)\s+noodles?\b"
+    )),
+    # Vermicelli is wheat unless it says what else it is (review, 2026-10-23).
+    # A dish NAMED "Vermicelli Bowl" with no qualifier is still held on its
+    # name even over a rice list — over-safe, as every name is.
+    (frozenset({"vermicelli", "vermicellis"}), re.compile(
+        r"\b(?:rice(?:\s+stick)?|glass|bean\s+thread|mung\s+bean)\s+vermicellis?\b"
+        r"|\bvermicelli\s+rice\s+noodles?\b"
+    )),
+    # Rice-paper spring roll wrappers are rice, however the line says it.
+    (frozenset({"spring roll wrapper", "spring roll wrappers"}), re.compile(
+        r"\brice\s+paper\s+spring\s+roll\s+wrappers?\b|\bspring\s+roll\s+wrappers?\s+rice\s+paper\b"
     )),
     (frozenset({"pasta", "pastas"}), re.compile(
         r"\b(?:chickpea|lentil|rice)\s+pastas?\b"

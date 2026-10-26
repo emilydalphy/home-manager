@@ -92,6 +92,14 @@ _SPICES = {
     "msg", "bouillon", "bouillon cube", "stock cube", "vanilla extract",
     "vanilla", "almond extract", "baking soda", "baking powder", "cream of tartar",
     "bay leaf",
+    # The shared recipe library's cuisines (defect hunt, 2026-10-23): these
+    # sat in a store aisle reading "½ tsp" — a Kashmiri chili powder line on
+    # 46 of its dishes — where cumin beside them read "1 jar".
+    "kasuri methi", "asafoetida", "hing", "ajwain", "carom seed", "amchur", "amchoor",
+    "mango powder", "chaat masala", "pav bhaji masala", "sambar powder", "rasam powder",
+    "tandoori masala", "chana masala powder", "gochugaru", "shichimi togarashi",
+    "togarashi", "aleppo pepper", "urfa biber", "pul biber", "mustard powder",
+    "dried mustard", "ground fennel", "annatto seed", "achiote seed", "tajin", "tajín",
     # dried herbs (dried by default when written bare)
     "oregano", "marjoram", "dried basil", "dried cilantro", "dried parsley",
     "dried mint", "dried dill", "dried chive", "dried rosemary", "dried thyme",
@@ -115,10 +123,15 @@ _DESCRIPTORS = {
     "ground", "whole", "smoked", "sweet", "hot", "mild", "flaked", "crushed",
     "kosher", "sea", "fine", "coarse", "powdered", "cracked", "freshly", "grated",
     "spanish", "hungarian", "organic", "toasted", "thai", "indian",
+    "kashmiri", "chinese", "sichuan", "korean", "black",
     # a bouillon cube's flavour, a chili powder's chili
     "beef", "chicken", "vegetable", "fish", "chipotle", "ancho", "guajillo",
 }
 _DRIED_WORDS = {"dried", "dry"}
+# A spice's name in another language, said in brackets after it — only ever
+# a second name for what is outside them, never a spice on its own ("methi"
+# bare is the fresh leaves).
+_ALSO_CALLED = {"methi", "jeera", "saunf", "kalonji", "rai", "elaichi", "haldi", "dalchini"}
 
 
 def is_spice(name: str) -> bool:
@@ -136,6 +149,11 @@ def is_spice(name: str) -> bool:
     # oil for frying" and "Canola oil, for frying" are one kind of line
     # (review, 2026-10-19 — punctuation decided it).
     raw = _FOR_RE.sub("", raw).strip() or raw
+    # What it is packed in is not what it is: "Tuna in olive oil" is tuna,
+    # bought in an aisle — read as oil, it went to Spices this week, assumed
+    # at home, and Salade Nicoise's tuna was never bought (review, 2026-10-23).
+    if _PACKED_IN_RE.search(raw):
+        return False
     if _is_spice_name(raw):
         return True
     # Fresh anywhere is bought fresh: "Oregano (fresh)", "Bay leaves (fresh)".
@@ -148,7 +166,10 @@ def is_spice(name: str) -> bool:
     opened = raw.replace("(", " ").replace(")", " ")
     inside = re.findall(r"[a-z]+", " ".join(_PAREN_RE.findall(raw)))
     candidates = [opened, opened.split(",", 1)[0]]
-    if all(w in _DESCRIPTORS or w in _DRIED_WORDS for w in inside):
+    # Or brackets giving the same spice's other name: "Asafoetida (hing)",
+    # "Ajwain (carom seeds)", "Fenugreek seeds (methi)" (library, 2026-10-23).
+    if all(w in _DESCRIPTORS or w in _DRIED_WORDS for w in inside) or (
+            inside and (_is_spice_name(" ".join(inside)) or set(inside) <= _ALSO_CALLED)):
         candidates.append(_PAREN_RE.sub(" ", raw).split(",", 1)[0].strip())
     if any(c != raw and _is_spice_name(c) for c in candidates):
         return True
@@ -159,6 +180,9 @@ def is_spice(name: str) -> bool:
 
 _PAREN_RE = re.compile(r"\([^()]*\)")
 _FOR_RE = re.compile(r",?\s+for\s+[a-z ,'-]+$")
+_PACKED_IN_RE = re.compile(
+    r"\S\s+(?:packed\s+)?in\s+(?:extra[\s-]virgin\s+)?(?:(?:olive|sunflower|vegetable|canola)\s+)?(?:oil|water|brine)$"
+)
 
 
 def _is_spice_name(name: str) -> bool:
