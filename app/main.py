@@ -4857,6 +4857,25 @@ class SwapNightsRequest(BaseModel):
     weekly_plan_id: int | None = None
 
 
+def _refresh_draft_flags(plan_id: int, result: dict) -> None:
+    """
+    Re-say the draft's lines for the dinners a night swap just re-dated —
+    what meal_move._after_move does for the Move sheet. Without it a swap
+    that put a dish they asked for onto a short-on-time night said nothing
+    until Undo brought the old line back (review, 2026-10-25). Here at the
+    route, not inside swap_dinner_nights: cap_enforce trades through that
+    function mid-generation and writes the whole flag set itself after.
+    Never fails the swap — it is written.
+    """
+    if (result or {}).get("status") not in ("swapped", "restored"):
+        return
+    try:
+        from .tools import draft_flags as _draft_flags
+        _draft_flags.refresh(plan_id, [m["entry_id"] for m in result.get("moved") or [] if m.get("entry_id")])
+    except Exception:
+        logger.exception("Refreshing the draft's flags after a night swap failed (plan %s)", plan_id)
+
+
 @app.post("/api/week/{week_start}/swap-nights")
 def week_swap_nights(week_start: str, req: SwapNightsRequest):
     """
@@ -4870,7 +4889,9 @@ def week_swap_nights(week_start: str, req: SwapNightsRequest):
     """
     plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
-        return tools.swap_dinner_nights(plan_id, req.date_a, req.date_b)
+        result = tools.swap_dinner_nights(plan_id, req.date_a, req.date_b)
+        _refresh_draft_flags(plan_id, result)
+        return result
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -4883,7 +4904,9 @@ def week_swap_nights_undo(week_start: str, req: SwapNightsRequest):
     """Put the two nights' dinners back where the last move found them."""
     plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
-        return tools.undo_dinner_nights_swap(plan_id, req.date_a, req.date_b)
+        result = tools.undo_dinner_nights_swap(plan_id, req.date_a, req.date_b)
+        _refresh_draft_flags(plan_id, result)
+        return result
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
