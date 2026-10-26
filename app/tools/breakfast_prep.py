@@ -37,8 +37,8 @@ BREAKFAST_PREP_OPTIONS = ("fresh", "make_ahead")
 # Made on a prep day and eaten cold or reheated over the next few days.
 MAKE_AHEAD_WORDS = (
     "bite", "egg muffin", "egg cup", "frittata", "quiche", "strata",
-    "breakfast casserole", "breakfast bake", "egg bake",
-    "overnight oat", "baked oat", "oatmeal cup", "oat cup", "oat bar",
+    "casserole", "breakfast bake", "egg bake", "overnight",
+    "overnight oat", "baked oat", "baked oatmeal", "oatmeal cup", "oat cup", "oat bar",
     "chia", "pudding", "parfait", "bircher",
     "muffin", "banana bread", "zucchini bread", "loaf", "scone",
     "breakfast burrito", "burrito", "breakfast sandwich", "wrap",

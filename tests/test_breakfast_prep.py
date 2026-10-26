@@ -25,7 +25,7 @@ from test_batch_from_prep_days import (
     "Egg White Bites", "Spinach Feta Egg Muffins", "Overnight Oats with Berries",
     "Chocolate Chia Pudding", "Baked Oatmeal Cups", "Freezer Breakfast Burritos",
     "Breakfast Burrito with Scrambled Egg", "Sweet Potato Frittata", "Banana Bread",
-    "Greek Yogurt Parfait", "Hard-Boiled Eggs",
+    "Greek Yogurt Parfait", "Hard-Boiled Eggs", "Overnight French Toast Casserole", "Baked Oatmeal",
 ])
 def test_make_ahead_breakfasts_keep(name):
     assert breakfast_keeps(name) is True
