@@ -1,0 +1,53 @@
+{
+ "dish_name": "Moo Goo Gai Pan",
+ "cuisine": "Chinese",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {"item": "Jasmine rice", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Boneless skinless chicken breasts", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Vegetable oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Cornstarch", "qty": "1 box", "category": "pantry", "cook_qty": "2 tsp plus 1 1/2 tbsp"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "White pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "White mushrooms", "qty": "8 oz", "category": "produce"},
+  {"item": "Sliced bamboo shoots", "qty": "1 can (8 oz)", "category": "pantry"},
+  {"item": "Sliced water chestnuts", "qty": "1 can (8 oz)", "category": "pantry"},
+  {"item": "Baby bok choy", "qty": "4", "category": "produce"},
+  {"item": "Ginger", "qty": "1 small piece", "category": "produce"},
+  {"item": "Scallions", "qty": "1 bunch", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Chicken broth", "qty": "1 carton (32 oz)", "category": "pantry", "cook_qty": "1 cup"},
+  {"item": "Oyster sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1/4 tsp"},
+  {"item": "Sesame oil", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Shaoxing wine", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp"}
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups rice in a sieve until the water runs mostly clear. Put it in a pot with 2 1/4 cups water and bring it to a boil. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave it covered for 10 minutes.",
+  "Meanwhile, cut the 1 lb chicken breasts in half lengthwise, then slice them across the grain into 1/4 inch slices. In a bowl, add 3 tbsp water and massage it into the chicken with your fingers until it's soaked up.",
+  "Add 1 tbsp of the vegetable oil, 2 tsp of the cornstarch, 1/4 tsp of the salt and 1/8 tsp of the white pepper to the chicken and mix well. Set it aside for about 20 minutes while you prep everything else.",
+  "Slice the 8 oz mushrooms. Drain and rinse the bamboo shoots and water chestnuts. Trim the bok choy and cut it into 1 by 2 inch pieces, keeping the stems and leaves in separate piles.",
+  "Cut 6 thin slices from the ginger and thinly slice the 2 garlic cloves. Cut the white parts of 3 scallions into 1/2 inch pieces and thinly slice their green parts for the top.",
+  "In a measuring cup, stir together 1 cup chicken broth, the 2 tsp oyster sauce, the 1/4 tsp sugar, the 1/2 tsp sesame oil, the remaining 1/4 tsp salt and the remaining 1/8 tsp white pepper. In a small cup, stir the remaining 1 1/2 tbsp cornstarch with 2 tbsp cold water.",
+  "Heat a wok or large skillet over high heat until it just starts to smoke. Add 2 tbsp of the vegetable oil, then the chicken in one layer. Leave it alone for about 1 minute, until it's golden underneath. Flip the pieces and cook the other side for about 30 seconds. It should still be a little pink inside. Transfer it to a plate.",
+  "Add the last 1 tbsp vegetable oil to the pan and add the mushrooms. Cook them for 3 to 4 minutes, stirring now and then, until they're golden at the edges and their liquid has cooked off.",
+  "Add the ginger, scallion whites and garlic and stir for about 30 seconds, until they smell fragrant.",
+  "Add the bamboo shoots, water chestnuts and bok choy stems and stir them for about 1 minute. Add the bok choy leaves, pour the 1 tbsp Shaoxing wine around the edge of the pan and stir for about 30 seconds, until the leaves start to wilt.",
+  "Return the chicken and any juices on the plate, pour in the broth mixture and let it bubble for 1 to 2 minutes, stirring, until the chicken is cooked through. You're cooking it to 160°F in the thickest piece, so if you have a thermometer, check it there. No thermometer? Cut into a thick piece: it's done when there's no pink left.",
+  "Stir the cornstarch mixture and pour in about half, stirring. Keep adding it a little at a time until the sauce is thick enough to coat a spoon. If it gets there before the cup is empty, leave the rest out.",
+  "Taste it. If it's flat, add a pinch more salt. Take it off the heat and scatter the scallion greens on top.",
+  "Fluff the rice with a fork. Serve the moo goo gai pan over the rice."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions marinate thin slices of chicken in cornstarch, sear them quickly and set them aside, stir-fry mushrooms with bamboo shoots and water chestnuts, then bring it together in a light chicken broth sauce thickened with cornstarch and serve it over rice. The Woks of Life (the lead) massages water into the chicken first, builds the sauce in the wok with hot stock, oyster sauce, sugar and sesame oil, and uses bok choy and straw mushrooms; Omnivore's Cookbook premixes a soy and oyster sauce with the cornstarch and uses snow peas and carrot. This follows the lead, scaled to 1 lb chicken for 4, with 8 oz of fresh white mushrooms browned hard in place of the canned straw mushrooms and a little more oyster sauce. It uses breast as both sources do, sliced thin so it cooks evenly.",
+ "sources": [
+  {"name": "The Woks of Life", "title": "Moo Goo Gai Pan: Mushroom Chicken Stir Fry", "url": "https://thewoksoflife.com/moo-goo-gai-pan/", "rating": 4.95, "rating_count": 58, "read": true, "lead": true},
+  {"name": "Omnivore's Cookbook", "title": "Moo Goo Gai Pan", "url": "https://omnivorescookbook.com/moo-goo-gai-pan/", "rating": 5.0, "rating_count": 11, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
