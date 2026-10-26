@@ -66,6 +66,7 @@ number this enforces is the number the household sees.
 from __future__ import annotations
 
 import datetime
+import itertools
 import json
 import logging
 import math
@@ -113,6 +114,10 @@ VARIETY_WINDOW_WEEKS = 2
 #   PRORATE_ROUNDING — round() makes 4-over-4-days 2 again.
 PRORATE_TO_DAYS_PLANNED = True
 PRORATE_ROUNDING = math.ceil
+
+# How many other choices of dish to drop enforce_distinct_count tries when
+# its first choice would leave a dropped dish standing (see there).
+MAX_DROP_CHOICES = 64
 
 # The slots a per-week count applies to, with its household_memory field.
 COUNT_FIELDS = {"dinner": "dinners_per_week", "lunch": "lunches_per_week", "breakfast": "breakfasts_per_week"}
@@ -335,6 +340,19 @@ def distinct_dishes(plan_id: int, slot: str) -> list[str]:
     ignore = _dinner_fed_lunch_ids(plan_id, chains) if slot == "lunch" else set()
     return [d["name"] for d in _group_dishes(
         [e for e in _load_slot_entries(plan_id, slot) if e["id"] not in ignore], chains)]
+
+
+def replacing_adds_a_dish(plan_id: int, slot: str, entry_id: int) -> bool:
+    """Whether putting a NEW dish on this one night raises the slot's
+    count under distinct_dishes: it does unless the night is its dish's
+    only night (one dish out, one in). A lunch eating a dinner is not a
+    lunch dish today, so a new dish there is one more."""
+    chains = _leftovers.plan_leftover_chains(plan_id)
+    ignore = _dinner_fed_lunch_ids(plan_id, chains) if slot == "lunch" else set()
+    for dish in _group_dishes([e for e in _load_slot_entries(plan_id, slot) if e["id"] not in ignore], chains):
+        if any(n["id"] == entry_id for n in dish["nights"]):
+            return len(dish["nights"]) > 1
+    return True
 
 
 def asked_for_ids(plan_id: int, slot: str) -> list[int]:
@@ -977,18 +995,61 @@ def enforce_distinct_count(
         if nights_total <= target:
             # As many recipes as meals (or more): nothing to batch.
             return result
-        surplus_keys = {_key(d["name"]) for d in surplus}
-        kept = [d for d in dishes if _key(d["name"]) not in surplus_keys]
         nights = _slot_nights(dishes, chains)
-        outside = _outside_cooks(plan_id, slot, kept, chains)
         run_keys = _leftovers.run_keys(plan_id)
-        decisions, unresolved = _plan_batches(nights, kept, caps, slot, outside, relay=False,
-                                              run_keys=run_keys, pinned=pinned)
-        if any(d["kind"] in ("freezer", "stand") for d in decisions):
-            relaid, missed = _plan_batches(nights, kept, caps, slot, outside, relay=True,
-                                           run_keys=run_keys, pinned=pinned)
-            if not missed:
-                decisions = relaid
+
+        def decide(drop) -> tuple[int, list[dict]]:
+            """What the week becomes when `drop` goes, and how many of its
+            nights would still hold a dropped dish ("stand")."""
+            drop_keys = {_key(d["name"]) for d in drop}
+            kept = [d for d in dishes if _key(d["name"]) not in drop_keys]
+            outside = _outside_cooks(plan_id, slot, kept, chains)
+            decided, _unresolved = _plan_batches(nights, kept, caps, slot, outside, relay=False,
+                                                 run_keys=run_keys, pinned=pinned)
+            if any(d["kind"] in ("freezer", "stand") for d in decided):
+                relaid, missed = _plan_batches(nights, kept, caps, slot, outside, relay=True,
+                                               run_keys=run_keys, pinned=pinned)
+                if not missed:
+                    decided = relaid
+            left = sum(1 for d in decided
+                       if d["kind"] == "stand" and _key(d["night"]["dish"]["name"]) in drop_keys)
+            return left, decided
+
+        left, decisions = decide(surplus)
+        if left:
+            # Tester Home, the week of 2026-10-19 (two dinners and two
+            # lunches; three of each in the morning report). The dish picked
+            # to go held the slot's FIRST night, before any kept dish was
+            # cooked, so nothing earlier could feed it — not the fridge, not
+            # the freezer — and with the kept dishes in chains the model
+            # wrote, re-laying had nothing it was free to move. The night
+            # "stood", and the dish the count dropped stayed on the week.
+            # A different dish of the same number may go cleanly, so every
+            # other choice is tried (a handful of dishes, no model call),
+            # in _pick_surplus' own order of preference, before one stands.
+            # Never, as an alternative, a dish whose cook feeds a meal in
+            # ANOTHER slot (Thursday's dinner made double for Friday's
+            # lunch): this fold rewrites only its own slot, so that lunch
+            # would be left a fresh cook of the dish just dropped (review,
+            # 2026-10-23). And a bounded search: a 28-day plan's every
+            # combination was thousands of _plan_batches calls.
+            def feeds_another_slot(dish):
+                return any(
+                    t.get("slot") != slot
+                    for n in dish["nights"]
+                    for t in (chains["sources"].get(n["id"]) or {}).get("targets") or []
+                )
+
+            droppable = [d for d in _pick_surplus(dishes, 0, caps) if not feeds_another_slot(d)]
+            first = [_key(d["name"]) for d in surplus]
+            for combo in itertools.islice(itertools.combinations(droppable, len(surplus)), MAX_DROP_CHOICES):
+                if [_key(d["name"]) for d in combo] == first:
+                    continue
+                tried_left, tried = decide(combo)
+                if tried_left < left:
+                    left, decisions, surplus = tried_left, tried, list(combo)
+                    if not left:
+                        break
         written = _write_batches(plan_id, slot, decisions, target)
         result["replaced"] = written["replaced"]
         result["batched"] = written["batched"]
