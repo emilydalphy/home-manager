@@ -13,6 +13,32 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Planning-the-week small calls: Emily went with the picks** (2026-10-26,
+  "go with your picks"; branch `calls-1026/planning-a`; tests
+  `tests/test_calls_1026_planning_a.py`, `tests/test_usual_week.py`,
+  `tests/test_calendar_feed.py`).
+  - A night a cook-ahead turns into a reheat loses its pending prep-cut steps
+    (nothing to prep); a ticked step stays; releasing the night puts them back
+    (`cook_ahead.set_cook_ahead`, stash on `derived_from.cook_ahead_prep`).
+  - "Cut it to four dinners" in chat is this week's only: new chat tool
+    `set_week_dish_count` saves `week_answers.dishes` on the week's intake;
+    `edit_preference` is the usual count only when they say so.
+  - The week's newest answers govern everywhere: `usual_week.week_answers_on`
+    / `plan_week_answers` / `live_week_answers` read the week's current intake
+    revision, not the one drafted from; the Meals headline only names an "out"
+    night that has no dinner on the week.
+  - A past night nobody ticked cooked can't be marked nobody home (day sheet,
+    toggle, chat): refused with the Review "−"'s "That night’s already gone."
+  - A child's cold packed lunch wins over the lunch count, and the week says
+    so: "Three lunch dishes this week, not two, because Maya needs a cold
+    packed lunch." (`draft_rules.cold_lunch_count_line`).
+  - A first week whose count is already met fills gaps by repeating its own
+    dishes first; a new dish only when no repeat fits.
+  - A household that set its time zone reads its calendar on its own clock,
+    ahead of the feed's zone; an unanswered (default) zone keeps the old order.
+  - Chat's "back to normal" keeps a member's own earlier "I'm out" for that
+    meal; only the out chat set is undone.
+
 - **The iPhone app's id is `com.heypomona.app`** (2026-10-25, Emily's pick
   to match her heypomona domain; branch `overnight/bundle-id-heypomona`).
   Replaced the `com.pomona.app` placeholder in `capacitor.config.json`, the

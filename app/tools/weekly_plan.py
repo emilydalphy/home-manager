@@ -2610,8 +2610,15 @@ def _week_headline(plan: dict, days: list[dict], intake: dict | None) -> str:
     # is the case DECISIONS.md #1 is actually about. A household that set
     # its own counts to zero already knows; being told about it is not news.
     night_tags = (intake or {}).get("night_tags") or {}
+    # Only a night the week really left uncooked is a reason (Emily
+    # 2026-10-26, "use the newest answers everywhere"): a night tagged out
+    # in a re-plan that was never drafted still has its dinner, and "you're
+    # out Wednesday" over a Wednesday dinner is the contradiction this fixes.
+    planned_dinner = {d["date"] for d in days if (d.get("dinner") or {}).get("state") == "planned"}
     because = []
     for day, tags in sorted(night_tags.items()):
+        if day in planned_dinner:
+            continue
         weekday = date.fromisoformat(day).strftime("%A")
         if "out" in tags:
             because.append(f"you’re out {weekday}")

@@ -535,6 +535,20 @@ def _split_components(lines: list[str]) -> tuple[dict, list[list[tuple[str, dict
     return calendar, events
 
 
+def _answered_household_zone():
+    """The household's zone when somebody set it (timezone_set = 1), else
+    None — a missing row or an unreadable name included."""
+    try:
+        # Deferred: tools/__init__ pulls this module in via week_intake.
+        from .tools.rhythm import household_clock
+        clock = household_clock()
+    except Exception:
+        return None
+    if not clock.get("timezone_set"):
+        return None
+    return _zone(clock.get("timezone"))
+
+
 def resolve_display_zone(calendar_props: dict, event_zones: list) -> tuple[object, str]:
     """The clock event times are read in, and where it came from:
     the feed's own declared zone (Google always sets X-WR-TIMEZONE), else
@@ -548,7 +562,20 @@ def resolve_display_zone(calendar_props: dict, event_zones: list) -> tuple[objec
     and the server is UTC: a 6pm Toronto practice read as 22:00, outside
     the dinner window, and the planner was told the evening was free.
     households.timezone is the clock every screen already reads "today"
-    off (2026-10-13), so it is the right clock for "is dinner squeezed"."""
+    off (2026-10-13), so it is the right clock for "is dinner squeezed".
+
+    A household that ANSWERED its zone (households.timezone_set) goes
+    first of all, ahead of the feed's own zone (Emily 2026-10-26, "go with
+    your picks"): a calendar set to Toronto in a family that lives in
+    Vancouver is read on Vancouver's clock, because whether dinner is
+    squeezed is a question about the household's evening. The instant of
+    each event is unchanged — a TZID'd 18:00 Toronto event still converts
+    correctly — only the clock it is read on moves. A zone nobody answered
+    is Toronto by default, not a choice, so it keeps its old place after
+    the feed's and the events'."""
+    answered = _answered_household_zone()
+    if answered is not None:
+        return answered, "household"
     declared = _zone(calendar_props.get("X-WR-TIMEZONE"))
     if declared is not None:
         return declared, "feed"

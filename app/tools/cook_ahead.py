@@ -579,6 +579,75 @@ def _save_derived(entry_id: int, derived: dict) -> None:
     conn.close()
 
 
+# The prep a night had before a cook-ahead turned it into a reheat, kept on
+# its derived_from so releasing the night (unbatch, a re-answered picker)
+# puts it back.
+PREP_STASH_KEY = "cook_ahead_prep"
+
+
+def _take_prep_off(entry_id: int) -> list[dict]:
+    """
+    A night a cook-ahead now covers reheats the batch, so there is nothing
+    to prep for it (Emily 2026-10-26, "go with your picks"): its pending
+    prep-cut steps come off ("Cut up romaine · for Thursday's bowls" stayed
+    on its date before this). A step already ticked is a record and stays.
+    Returns what was taken, for _put_prep_back.
+    """
+    from .prep_sessions import PREP_CUT_TASK_TYPE
+
+    conn = get_conn()
+    try:
+        rows = conn.execute(
+            "SELECT id, task_date, description, related_meal, quantity FROM prep_tasks "
+            "WHERE household_id = ? AND meal_plan_entry_id = ? AND task_type = ? AND status = 'pending'",
+            (household_id(), entry_id, PREP_CUT_TASK_TYPE),
+        ).fetchall()
+        for r in rows:
+            conn.execute("DELETE FROM prep_tasks WHERE id = ? AND household_id = ?", (r["id"], household_id()))
+        conn.commit()
+    finally:
+        conn.close()
+    return [
+        {"task_date": r["task_date"], "description": r["description"],
+         "related_meal": r["related_meal"] or "", "quantity": r["quantity"] or ""}
+        for r in rows
+    ]
+
+
+def _put_prep_back(plan_id: int, entry_id: int, meal_date: str, stashed: list[dict]) -> None:
+    """The prep _take_prep_off took, back on a night that cooks for itself
+    again — never after its meal, and skipped when the same step is
+    already there."""
+    from .prep_sessions import PREP_CUT_TASK_TYPE
+
+    if not stashed:
+        return
+    conn = get_conn()
+    try:
+        for task in stashed:
+            description = (task.get("description") or "").strip()
+            if not description:
+                continue
+            task_date = min(task.get("task_date") or meal_date, meal_date)
+            exists = conn.execute(
+                "SELECT 1 FROM prep_tasks WHERE household_id = ? AND weekly_plan_id = ? AND task_type = ? "
+                "AND task_date = ? AND description = ? AND meal_plan_entry_id IS ?",
+                (household_id(), plan_id, PREP_CUT_TASK_TYPE, task_date, description, entry_id),
+            ).fetchone()
+            if exists:
+                continue
+            conn.execute(
+                "INSERT INTO prep_tasks (household_id, weekly_plan_id, task_date, description, "
+                "related_meal, status, task_type, meal_plan_entry_id, quantity) "
+                "VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?)",
+                (household_id(), plan_id, task_date, description, task.get("related_meal") or "",
+                 PREP_CUT_TASK_TYPE, entry_id, task.get("quantity") or ""),
+            )
+        conn.commit()
+    finally:
+        conn.close()
+
+
 def set_cook_ahead(source_entry_id: int, covered_entry_ids: list[int]) -> dict | str:
     """
     Record "cook this one batch for these days" — or, on a refusal, return
@@ -678,12 +747,16 @@ def set_cook_ahead(source_entry_id: int, covered_entry_ids: list[int]) -> dict |
         if entry_id in chosen_ids:
             derived["links_to"] = _source_ref(source_row)
             derived[COOK_AHEAD_FLAG] = True
+            stashed = _take_prep_off(entry_id)
+            if stashed:
+                derived[PREP_STASH_KEY] = list(derived.get(PREP_STASH_KEY) or []) + stashed
         elif derived.get("links_to"):
             # Released: it cooks for itself again. The flag goes with the
             # link — a day with no source has nothing to have been made
-            # ahead of.
+            # ahead of — and so does the prep it had before it reheated.
             derived.pop("links_to", None)
             derived.pop(COOK_AHEAD_FLAG, None)
+            _put_prep_back(plan_id, entry_id, row["date"], derived.pop(PREP_STASH_KEY, None) or [])
         else:
             continue
         _save_derived(entry_id, derived)

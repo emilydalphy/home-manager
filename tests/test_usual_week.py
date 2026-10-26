@@ -731,8 +731,10 @@ def test_a_first_week_dinner_on_several_nights_is_cooked_once_and_eaten_again(st
     dates = tools._week_dates(_monday())
     stub_model(_days(dates, breakfasts=["Oats"] * 7, lunches=["Wrap"] * 7, dinners=["Chili"] * 7))
     plan_id = agent.generate_weekly_plan(_monday())["weekly_plan_id"]
-    # Tuesday and Wednesday dinners open, as one group (dinners number 1).
-    tools.set_household_meal_preferences(dinners_per_week=1)
+    # Tuesday and Wednesday dinners open, as one group (dinners number 2,
+    # the week has one: a new dish is still wanted — with the number met it
+    # would repeat Chili instead, Emily 2026-10-26).
+    tools.set_household_meal_preferences(dinners_per_week=2)
     for d in dates[1:3]:
         tools.clear_plan_slot(plan_id, d, "dinner")
         tools.plan_slot_open(weekly_plan_id=plan_id, meal_date=d, slot="dinner", open_reason="Still deciding",
@@ -742,6 +744,44 @@ def test_a_first_week_dinner_on_several_nights_is_cooked_once_and_eaten_again(st
     chains = tools.plan_leftover_chains(plan_id)
     wednesday = [e for e in chains["leftovers"].values() if e["date"] == dates[2] and e["slot"] == "dinner"]
     assert wednesday and wednesday[0]["source"]["date"] == dates[1]
+
+
+def test_a_first_week_with_its_lunch_number_met_repeats_its_own_lunch_before_a_new_one(stub_model, picker):
+    """Emily 2026-10-26 ("go with your picks"): a first-week gap repeats one
+    of the week's own dishes first — less shopping — and only picks a new
+    one when that doesn't work. Before this every meal with a gap got at
+    least one new dish, even with its number already met."""
+    tools.set_household_meal_preferences(lunches_per_week=1, mark_complete=False)
+    dates = tools._week_dates(_monday())
+    stub_model(_days(dates, breakfasts=["Oats"] * 7, lunches=["Wrap"] * 7, dinners=["Chili", "Tacos"] * 3 + ["Stew"]))
+    plan_id = agent.generate_weekly_plan(_monday())["weekly_plan_id"]
+    for d in dates[1:]:
+        tools.clear_plan_slot(plan_id, d, "lunch")
+        tools.plan_slot_open(weekly_plan_id=plan_id, meal_date=d, slot="lunch", open_reason="Still deciding",
+                             derived_from={"constraint": "generation_gap"})
+    before = len(picker)
+    out = usual_week.fill_first_plan_gaps(plan_id, dates)
+    assert out["left"] == [] and out["filled"] == []
+    assert len(picker) == before, "no new lunch was picked"
+    lunches = {m["date"]: m["meal"] for m in _meals(plan_id) if m["slot"] == "lunch" and m["slot_state"] == "planned"}
+    assert set(lunches) == set(dates) and set(lunches.values()) == {"Wrap"}
+
+
+def test_a_first_week_with_its_dinner_number_met_reuses_its_own_dinner(stub_model, picker):
+    dates = tools._week_dates(_monday())
+    stub_model(_days(dates, breakfasts=["Oats"] * 7, lunches=["Wrap"] * 7, dinners=["Chili"] * 7))
+    plan_id = agent.generate_weekly_plan(_monday())["weekly_plan_id"]
+    tools.set_household_meal_preferences(dinners_per_week=1)
+    for d in dates[1:3]:
+        tools.clear_plan_slot(plan_id, d, "dinner")
+        tools.plan_slot_open(weekly_plan_id=plan_id, meal_date=d, slot="dinner", open_reason="Still deciding",
+                             derived_from={"constraint": "generation_gap"})
+    before = len(picker)
+    out = usual_week.fill_first_plan_gaps(plan_id, dates[1:3])
+    assert out["left"] == [] and out["filled"] == []
+    assert len(picker) == before
+    dinners = {m["date"]: m["meal"] for m in _meals(plan_id) if m["slot"] == "dinner" and m["date"] in dates[1:3]}
+    assert set(dinners) == set(dates[1:3]) and all("chili" in (v or "").lower() for v in dinners.values())
 
 
 def test_no_test_can_reach_the_anthropic_api():
