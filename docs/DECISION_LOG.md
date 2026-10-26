@@ -18,7 +18,8 @@ why*, not duplicating the diff.
   "1 (14 oz) can" of stock showed the table's "4 cups" for four and "6 cups"
   for six. Why: broth is measured in cups, so its can counts as a package word
   and the size was dropped. `_stated_package_amount` now reads can/tin for a
-  non-canned good, and reads "1 (8 oz) package" (typed order) as well.
+  non-canned good the table measures in bulk (cups/weight; never tomato
+  paste's spoons), and reads "1 (8 oz) package" (typed order) as well.
 - **Second 200 library recipes: Emily's three calls** (2026-10-25; branch
   `recipe-library-200b`; doc `docs/RECIPE_LIBRARY_SPOTCHECK_200B.md`).
   Bistec a la Mexicana is two dishes (the rated slow simmer, plus "Quick

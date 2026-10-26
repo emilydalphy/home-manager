@@ -57,6 +57,9 @@ def test_the_stepper_scales_the_cans_size_not_the_tables_guess(signed_in):
     ("diced tomatoes", "1 (14 oz) can", "1 (14 oz) can"),   # a canned good: the can is the measure
     ("coconut milk", "1 can (14 oz)", "1 can (14 oz)"),
     ("olive oil", "1 (14 oz) can", "2 tbsp"),                # never used whole
+    ("tomato paste", "1 can (6 oz)", "2 tbsp"),              # the table's spoons: a can is drawn on
+    ("tomato paste", "1 (6 oz) can", "2 tbsp"),
+    ("tomato paste", "2 (15 oz) cans", "2 tbsp"),
 ])
 def test_canned_goods_and_substances_are_unchanged(item, qty, shows):
     assert tools.cooking_ingredients([{"item": item, "qty": qty}], servings=4)[0]["qty"] == shows
@@ -66,3 +69,15 @@ def test_the_recipe_fill_fallback_keeps_a_canned_goods_can():
     """cooking_quantity is also the recipe-fill's fallback: a can of
     tomatoes stays a can there, never "14 oz" of tomatoes."""
     assert tools.recipes.cooking_quantity("diced tomatoes", 4, shopping_qty="1 (14 oz) can") == "1 can (14 oz)"
+
+
+@pytest.mark.parametrize("servings, shows", [(2, "1 tbsp"), (4, "2 tbsp"), (8, "4 tbsp")])
+def test_the_recipe_fill_fallback_keeps_tomato_paste_in_spoons(servings, shows):
+    """Review, 2026-10-26: a can the table measures in spoons is not used
+    whole — the fallback said "6 oz" at every size."""
+    assert tools.recipes.cooking_quantity("tomato paste", servings, shopping_qty="1 can (6 oz)") == shows
+
+
+@pytest.mark.parametrize("item", ["corn", "evaporated milk"])
+def test_other_bulk_measured_cans_are_their_size(item):
+    assert tools.cooking_ingredients([{"item": item, "qty": "1 can (12 oz)"}], servings=4)[0]["qty"] == "12 oz"
