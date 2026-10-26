@@ -1188,6 +1188,15 @@ why*, not duplicating the diff.
   by. Why: approved on the Sunday, Shop showed the tikka for both weeks;
   approved Monday it was asked "keep?" as last week's; planned at 9:45pm on
   the first day it went on that gone dinner.
+- **A date at the edge of the calendar is refused, not a 500** (2026-10-25;
+  branch `overnight/edge-dates-refused`; tests
+  `tests/test_edge_of_calendar_dates.py`). `main._route_date` is now the one
+  "<name> must be an ISO date" check for the routes that had it, plus
+  today/moves (GET and a tick's day, checked before the tick), POST intake,
+  both generate routes' period check and away-stretch, and refuses a year
+  outside 1900–2999 with a 400. Why: 9999-12-31 / 0001-01-01 are valid
+  ISO, so they reached the date maths and overflowed; 1900 (not 2000)
+  because tests use 1999 for "no plan".
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
