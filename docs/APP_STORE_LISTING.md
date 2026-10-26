@@ -105,9 +105,10 @@ merged before then.
 
 1. In Railway, open the Pomona service → **Settings** → **Networking** →
    **Custom Domain**, and add `app.heypomona.com`.
-2. Railway shows you one DNS record to add (usually a CNAME named `app`
-   pointing at an address ending in `.up.railway.app`). Add exactly that
-   record at the company you bought heypomona.com from.
+2. Railway shows you the DNS records to add (usually a CNAME named `app`
+   pointing at an address ending in `.up.railway.app`, and sometimes a TXT
+   record that proves you own the domain). Add every record it shows,
+   exactly as shown, at the company you bought heypomona.com from.
 3. Wait until Railway shows the domain as active with a green tick (it gets
    the security certificate itself; minutes to a few hours). Check
    `https://app.heypomona.com` opens the sign-in page with a padlock.
