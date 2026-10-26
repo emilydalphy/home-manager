@@ -187,10 +187,10 @@ def _evening_over(now: datetime) -> bool:
     read: it moves when the text goes, not when the night is over.
     """
     from . import digest as _digest  # lazily: digest reaches most of the package
-    clock = _digest.evening_nudge_clock(_digest._household_dinner_window())
-    closes = datetime.combine(now.date(), clock) + timedelta(
-        minutes=_digest.EVENING_NUDGE_LATE_WINDOW_MINUTES)
-    return now.replace(tzinfo=None) > closes
+    from . import moves as _moves
+    # The rule itself lives in moves.evening_over since 2026-10-26, so
+    # Today's shop reminder and "Start by" chip close at this same moment.
+    return _moves.evening_over(now, _digest._household_dinner_window())
 
 
 def tonight_check(now: datetime | None = None) -> dict:

@@ -4378,6 +4378,18 @@
         var moveName = savedName(updated.title || move.title);
         if (done) showToast(savedLine(moveName, 'ticked off'));
         else showToast(moveName ? moveName + ' is back on the list' : 'Back on the list');
+      } else if (!updated && done && move.tickable !== false &&
+                 (move.kind === 'fridge' || move.kind === 'prep')) {
+        // A move carried from an earlier day (moves._missed_fridge_moves)
+        // leaves the timeline once it's ticked — it's only carried while
+        // pending — so there is no row left to show it done, and it went
+        // with no word and no way back (Emily, 2026-10-26, "go with your
+        // picks"). The house toast and its Undo, which unticks it and
+        // brings the row back.
+        showToast(savedLine(savedName(move.title), 'ticked off'), {
+          label: 'Undo',
+          onClick: function () { return undoCarriedTodayMove(panel, moveId); }
+        }, 6000);
       }
       // The same rows are the Cook screen's check-offs and Plan's "Done" —
       // keep the three from showing different answers to the same question.
@@ -4387,6 +4399,25 @@
       console.warn('Could not save that tick:', err);
       move.done = was;
         renderTodayMoves(panel, data);
+      showToast('That didn’t save — try again.');
+    }
+  }
+
+  // Undo for a carried move's tick (toggleTodayMove): untick it, and the
+  // server's timeline brings the row back as it was.
+  async function undoCarriedTodayMove(panel, moveId) {
+    try {
+      var res = await Api.fetch('/api/today/moves/' + encodeURIComponent(moveId) + '/done', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ done: false })
+      });
+      if (!res.ok) throw new Error('move untick failed');
+      renderTodayMoves(panel, await res.json());
+      refreshKitchenPanel();
+      refreshWeekPanel({ kitchenFresh: true });
+    } catch (err) {
+      console.warn('Could not undo that tick:', err);
       showToast('That didn’t save — try again.');
     }
   }
@@ -11094,6 +11125,10 @@
     var pending = function (t) { return t.status !== 'done' && t.status !== 'skipped'; };
     var thaws = tasks.filter(function (t) { return t.task_type === 'defrost'; });
     var thawToDo = thaws.filter(pending)[0];
+    // Missed, and too late for the fridge: the server's one rule
+    // (moves.fridge_move_too_late, stamped as too_late_note), the same
+    // words Today's row says — never "still to do" beside Today's "too late".
+    if (thawToDo && thawToDo.too_late_note) return thawToDo.too_late_note;
     if (thawToDo) return cookThawTitle(thawToDo) + ' — still to do.';
     var prepToDo = tasks.filter(function (t) { return t.task_type !== 'defrost' && pending(t); });
     if (prepToDo.length === 1) return 'Still to do: ' + prepToDo[0].description.replace(/\.$/, '') + '.';

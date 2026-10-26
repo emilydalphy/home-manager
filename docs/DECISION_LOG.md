@@ -13,6 +13,25 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Today & Cook timing: Emily's small calls, "go with your picks"**
+  (2026-10-26; branch `calls-1026/today-a`; tests
+  `tests/test_today_cook_timing_calls_2026_10_26.py`).
+  - A missed fridge move the fridge can't thaw in time says "too late to thaw
+    in the fridge" + the freezer step's own note, not "still to do"; the texts
+    skip it. One rule: `moves.fridge_move_too_late`.
+  - The cook day carries a missed move too; Cook's Tonight card reads the same
+    rule (`too_late_note` on the cooker view's prep task), so both say too late.
+  - Ticking a carried move (which then leaves the timeline) toasts "… was
+    ticked off" with Undo.
+  - "Shop for tonight" for a cook whose time has passed, and a cook's "Start
+    by" chip, go once the evening is over — `moves.evening_over`, the same
+    cutoff "Still good?" already used (nudge clock + 90 min; 7:00pm default).
+  - Tonight's dinner (needs-you band, both shapes) and Today's open-slot rows
+    stop asking at 9pm household time (`weekly_plan.TONIGHT_QUESTION_CLOSES`).
+  - A prep step for one of today's cooks is late at the cook's start time,
+    not dinner time; fridge moves and prep for later meals keep the evening.
+  - Tomorrow's card read on the source day says "leftovers from tonight"
+    (`day_meals.provenance_note(meal, today=…)`).
 - **The iPhone app's id is `com.heypomona.app`** (2026-10-25, Emily's pick
   to match her heypomona domain; branch `overnight/bundle-id-heypomona`).
   Replaced the `com.pomona.app` placeholder in `capacitor.config.json`, the

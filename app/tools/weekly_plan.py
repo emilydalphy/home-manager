@@ -6,7 +6,7 @@ from __future__ import annotations
 import json
 import logging
 import re
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from ..db import get_conn, write
 from ._shared import acting_member_id_for, acting_name, household_id, require_household_row
 from . import bring_over as _bring_over
@@ -6991,7 +6991,20 @@ def _suggest_quick_dinners(limit: int = 2) -> list[dict]:
     return out
 
 
-def get_needs_you_items() -> list[dict]:
+# When tonight stops being a question (Emily, 2026-10-26, "go with your
+# picks"): at 9:30pm and 11:55pm Now still asked "Tonight's dinner needs
+# your call … 6:30 tonight". From 9pm on the household's clock tonight's
+# dinner isn't asked about (the band moves on to tomorrow's) and Today's
+# own open-slot rows for the day go (moves._open_slot_moves).
+TONIGHT_QUESTION_CLOSES = time(21, 0)
+
+
+def tonight_question_closed(now: datetime) -> bool:
+    """Past TONIGHT_QUESTION_CLOSES on the household's clock (`now` is it)."""
+    return now.time() >= TONIGHT_QUESTION_CLOSES
+
+
+def get_needs_you_items(now: datetime | None = None) -> list[dict]:
     """
     The Today screen's needs-you band (design_handoff_shell/README.md §4,
     §9 Step 5) — 0-3 cards for things that need a decision right now.
@@ -7090,7 +7103,20 @@ def get_needs_you_items() -> list[dict]:
         usual_week_off_dinners = set(_window)
     else:
         usual_week_off_dinners = {d for (d, s) in _usual_week.off_slots_on(_window) if s == "dinner"}
+    # `now` is for tests; the screen reads the household's own clock. Only
+    # when it is the same day as `today` — a test that moves this module's
+    # date alone (see _household_today) is not asking about the hour.
+    if now is None:
+        try:
+            from . import cooker as _cooker
+            now = _cooker.household_now()
+        except Exception:
+            logger.exception("Couldn't read the household's clock; tonight's dinner stays askable")
+            now = None
+    tonight_closed = now is not None and now.date() == today and tonight_question_closed(now)
     for offset in (0, 1):
+        if offset == 0 and tonight_closed:
+            continue
         candidate = (today + timedelta(days=offset)).isoformat()
         when = "Tonight" if offset == 0 else "Tomorrow"
         row = dinner_by_date.get(candidate)

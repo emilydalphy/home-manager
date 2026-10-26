@@ -112,10 +112,16 @@ def test_friday_shows_it_on_today_the_morning_text_and_the_evening_nudge():
     assert (digest.build_evening_nudge(now_local=evening, link=False) or "").startswith(
         "Move the Soup to the fridge for Saturday's lunch. Tonight:")
 
-    # Nothing on Saturday itself: by then it is too late to thaw.
+    # Saturday itself: by then it is too late to thaw. Today says so, as
+    # Cook's card does (Emily, 2026-10-26), and the morning text sends no
+    # job that can't be done in time.
     saturday = dates[5]
-    sat_moves = moves.today_moves(day=saturday, now=datetime.datetime.fromisoformat(f"{saturday}T08:00:00"))
-    assert not [m for m in sat_moves["moves"] if m["kind"] == "fridge"]
+    sat_now = datetime.datetime.fromisoformat(f"{saturday}T08:00:00")
+    sat_moves = moves.today_moves(day=saturday, now=sat_now)
+    [late] = [m for m in sat_moves["moves"] if m["kind"] == "fridge"]
+    assert late["time_label"] == "too late to thaw in the fridge"
+    assert late["too_late_note"].startswith("Too late to thaw safely for today's lunch")
+    assert "Move the Soup" not in (digest.build_morning_text(now_local=sat_now, link=False) or "")
 
 
 def test_a_resync_keeps_done_and_sweeps_a_lunch_that_is_no_longer_frozen():
