@@ -132,6 +132,22 @@ why*, not duplicating the diff.
   (bún), cookie, cake, and graham (a name: "no nuts for Graham" lost its nuts). Still open: "vegetarian" / "vegan" / "no meat"
   restrictions hold back nothing (see the celiac entry below).
 
+- **Today and Cook small truths: three lines Today said that weren't true**
+  (2026-10-21, overnight; branch `overnight/today-small-truths`, stacked on
+  and merging AFTER `overnight/defect-hunt-3-2026-10-21`; tests
+  `tests/test_today_small_truths.py`). (1) "Still good?" asked at 9pm:
+  `tonight_check` now goes quiet (`'evening_over'`) past the evening nudge's
+  late window (its clock + `EVENING_NUDGE_LATE_WINDOW_MINUTES`) — chosen over
+  the dinner-landing clock because this card already goes quiet where the
+  nudge does (`'cooking'`, 2026-10-14), and the nudge's window ends 30–60 min
+  after dinner lands, so "we're going out" survives a late table. (2) The
+  shop move vanished at 6:31 (`now <= at`) while the cook card stayed; a
+  cook of today's past its time, unstarted and still waiting on the list,
+  now keeps it ("still to do") — only when no cook still ahead is waiting.
+  (3) Skipping yesterday's double cook toasted "moved to Thursday" on
+  Thursday: `fed_night_label(target, today=)` says "tonight"; the stored
+  reason keeps the weekday. Not changed: the cook card's "Start by 5:55"
+  at 9pm, and `drop_dish_from_day`'s "moved to" (same label, no `today`).
 - **One tap on Today's dock runs its action once** (2026-10-21, overnight
   hunt; branch `overnight/defect-hunt-3-2026-10-21`; tests
   `tests/test_today_dock_fires_once.py`). renderTodayMoves bound every
