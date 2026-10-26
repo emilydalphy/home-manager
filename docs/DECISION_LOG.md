@@ -21,7 +21,9 @@ why*, not duplicating the diff.
   Wednesday's Turkey Chili" (3 lbs) on Today for meat going in tonight's pot.
   Why: cook-ahead keeps each night's ledger share, and
   `defrost._grocery_line_meals` read a reheat as a cook night; it now skips
-  `plan_leftover_chains` reheats (offer, yes and keep-fresh label).
+  a reheat only when the same line also has a link on its source (offer, yes
+  and keep-fresh label). Review: a side cooked fresh on the reheat night
+  (`reheat_buys_it`) is bought under the reheat's id and still gets asked.
 - **Second 200 library recipes: Emily's three calls** (2026-10-25; branch
   `recipe-library-200b`; doc `docs/RECIPE_LIBRARY_SPOTCHECK_200B.md`).
   Bistec a la Mexicana is two dishes (the rated slow simmer, plus "Quick

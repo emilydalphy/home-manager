@@ -86,3 +86,32 @@ def test_the_offer_moves_past_the_reheat_to_the_next_real_cook(signed_in):
     # Tonight's batch is the share that stays fresh; Wednesday's reheat is
     # not a night of its own to keep a share back for.
     assert offer["keep_fresh_label"] == "today’s"
+
+
+def test_a_meat_side_cooked_fresh_on_the_reheat_night_is_still_asked_about(signed_in):
+    """Review 2026-10-26: the first version dropped the reheat from EVERY
+    line. A side cooked on the reheat night is bought under the reheat's own
+    id (reheat_buys_it) and has no share on the source, so its thaw is
+    still the household's to book — or it gets one nowhere."""
+    from app.tools import plates as _plates
+
+    tools.add_member("Alex")
+    tools.add_member("Sam")
+    tools.add_recipe("Veggie Lasagna", ingredients=[{"item": "Lasagna noodles", "qty": "1 box", "category": "pantry"}],
+                     default_servings=2, prep_time_minutes=20, cook_time_minutes=45)
+    plan_id = tools.create_weekly_plan(TODAY.isoformat())["weekly_plan_id"]
+    cook = tools.plan_meal(_day(0), "Veggie Lasagna", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
+    reheat = tools.plan_meal(_day(4), "Veggie Lasagna", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
+    tools.approve_weekly_plan(plan_id, approved_by="Alex")
+    assert not isinstance(tools.set_cook_ahead(cook, [reheat]), str)
+    _plates.carry_sides([{
+        "name": "Grilled chicken thighs",
+        "ingredients": [{"item": "Chicken thighs", "qty": "1 lb", "category": "meat/seafood"}],
+        "covers": ["protein"],
+    }], reheat)
+
+    view = signed_in.get("/api/grocery-list").json()
+    thighs = [it for s in view["sections"] for it in s["items"] if it["item"].lower() == "chicken thighs"]
+    assert thighs, "the side is bought for the reheat night"
+    assert thighs[0]["freezing"]["entry_id"] == reheat
+    assert thighs[0]["freezing"]["cook_date"] == _day(4)

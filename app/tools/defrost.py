@@ -2233,18 +2233,35 @@ def _grocery_line_meals(conn, item_id: int) -> list[dict]:
         (household_id(), item_id, household_id()),
     ).fetchall()
     # Nor a night that REHEATS a batch (a cook-ahead day, a planner's
-    # leftovers night): its ledger share is kept on purpose (cook_ahead's
-    # docstring), but the pack goes in the pot on the source night. Defect
-    # hunt 2026-10-26: Monday's chili cooked ahead for Wednesday, and Shop
-    # still asked "Freezing it?" for Wednesday — a yes booked a 3 lb
-    # fridge move for a night that only reheats.
-    reheats: set[int] = set()
+    # leftovers night) when this same line also feeds the batch's SOURCE:
+    # the reheat's ledger share is kept on purpose (cook_ahead's
+    # docstring), but that pack goes in the source's pot. Defect hunt
+    # 2026-10-26: Monday's chili cooked ahead for Wednesday, and Shop still
+    # asked "Freezing it?" for Wednesday — a yes booked a 3 lb fridge move
+    # for a night that only reheats. Only then: a side cooked fresh on the
+    # reheat night (reheat_buys_it — chicken thighs beside Friday's
+    # lasagna) is bought under the reheat's own id and has no share on the
+    # source, so it still needs its thaw. Read against EVERY link the line
+    # has, not the rows kept above, so a source already ticked cooked
+    # still counts as the pot the pack went in.
+    linked = {
+        r["meal_plan_entry_id"] for r in conn.execute(
+            "SELECT meal_plan_entry_id FROM meal_plan_grocery_links "
+            "WHERE household_id = ? AND grocery_item_id = ?",
+            (household_id(), item_id),
+        ).fetchall()
+    }
+    in_the_pot: set[int] = set()
     for plan_id in {row["weekly_plan_id"] for row in rows}:
-        reheats |= set(_leftovers.plan_leftover_chains(plan_id, conn=conn)["leftovers"])
+        reheats = _leftovers.plan_leftover_chains(plan_id, conn=conn)["leftovers"]
+        in_the_pot |= {
+            entry_id for entry_id, chain in reheats.items()
+            if chain["source"]["entry_id"] in linked
+        }
     return [{
         "entry_id": row["entry_id"], "weekly_plan_id": row["weekly_plan_id"],
         "date": row["date"], "meal": row["meal"] or "dinner", "item": (row["link_item"] or "").strip(),
-    } for row in rows if row["entry_id"] not in reheats]
+    } for row in rows if row["entry_id"] not in in_the_pot]
 
 
 def _grocery_line_first_meal(conn, item_id: int, line_item: str, today: date,
