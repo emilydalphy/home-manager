@@ -61,9 +61,11 @@ and re-dated by half a dozen paths, and a read-time rule is the one place
 that covers every one of them, past and future.
 
 DELIBERATELY NOT BUILT HERE, so nobody reports them as missing:
-  * Scenario 1 (a request with no meal and no day: where it lands, and
-    the line saying so) is the PLACEMENT half of the card and wants a pass
-    that runs before the flags exist. Scenario 2 — a request with a meal
+  * Scenario 1 — a request with no meal and no day goes at the meal the
+    model put it at (dinner, or a lunch it is already at: the app keeps no
+    record of which meal a dish suits) on a day with the time for it, and
+    `NO_MEAL_NO_DAY` says where it went (2026-10-25,
+    cap_enforce.place_meal_requests). Scenario 2 — a request with a meal
     and no day goes at that meal with everyone home and the time for it —
     is built (2026-10-25, cap_enforce.place_meal_requests) and has no line:
     none was decided. Scenario 5 — a requested dish that fits NO night goes on the
@@ -126,6 +128,21 @@ DAY_OUT = "day_out"
 # choose.
 ALLERGY_REQUEST = "allergy_request"
 
+# Emily's rule 1 (Decision A, 2026-09-23): a dish they asked for naming no
+# meal and no day — "Pomona says where it went", whether or not
+# cap_enforce.place_meal_requests had to move it for time. No fixes: the
+# row's own Move or Swap is the way out.
+NO_MEAL_NO_DAY = "no_meal_no_day"
+# ...and, past NO_MEAL_NO_DAY_LINES of them, the one line that stands for
+# the rest (review, 2026-10-25: one sentence naming six dishes gave six
+# lines). Hangs on the first dish it stands for, and lives while that dish
+# is still on the plan uncooked — it names no day, so a move can't make it
+# false.
+NO_MEAL_NO_DAY_MORE = "no_meal_no_day_more"
+# Up to three are each said; four or more, the first two and one line for
+# the rest — a summary that replaced only one line would save nothing.
+NO_MEAL_NO_DAY_LINES = 3
+
 # What a fix does. Each is an existing write; see the module docstring.
 FIX_PREP_AHEAD = "prep_ahead"
 FIX_MOVE = "move"
@@ -175,6 +192,25 @@ def day_out_text(dish: str, from_date: str, to_date: str, away: bool = False) ->
     and set_away_stretch use for it.
     """
     return f"You're {'away' if away else 'out'} {_weekday(from_date)}, so {dish} moved to {_weekday(to_date)}."
+
+
+def no_meal_no_day_text(dish: str, meal_date: str, slot: str, minutes: int | None) -> str:
+    """
+    Emily's own line, off Decision A: "Korean chicken pancake is Saturday
+    dinner. It takes about 30 minutes." With no minutes on record the second
+    sentence would be a guess, so it is left off.
+    """
+    where = f"{dish} is {_weekday(meal_date)} {slot}."
+    return f"{where} It takes about {int(minutes)} minutes." if minutes else where
+
+
+def no_meal_no_day_more_text(count: int) -> str:
+    """"Your other four asks are on the plan too, each on a day with the
+    time for it." Pomona's sentence, not Emily's — hers to approve."""
+    from .draft_opener import number_word  # lazy: keeps this module's imports light
+    if count == 1:
+        return "Your other ask is on the plan too, on a day with the time for it."
+    return f"Your other {number_word(count)} asks are on the plan too, each on a day with the time for it."
 
 
 def allergy_request_text(asked: str, food: str, who: list[str], dish: str,
@@ -451,7 +487,12 @@ def plan_flags(weekly_plan_id: int, intake: dict | None = None,
     live = []
     planned = _planned_rows(weekly_plan_id)
     for flag in flags:
-        if flag.get("kind") in (LATE_REQUEST, RUN_LEFT, DAY_OUT, ALLERGY_REQUEST):
+        if flag.get("kind") == NO_MEAL_NO_DAY_MORE:
+            row = planned.get(flag.get("entry_id"))
+            if row and (row["meal"] or "") == flag.get("dish") and (row["cooked_status"] or "") != "done":
+                live.append({**flag, "fixes": []})
+            continue
+        if flag.get("kind") in (LATE_REQUEST, RUN_LEFT, DAY_OUT, ALLERGY_REQUEST, NO_MEAL_NO_DAY):
             # Not about a cap, so not judged by one: still about something
             # while the same dish is on the same meal, and not yet cooked.
             row = planned.get(flag.get("entry_id"))
@@ -605,7 +646,8 @@ def _their_phrase(clauses: list[str], stems: set[str]) -> str:
 # for…" is worse than no line.
 _TURNED_DOWN_RE = re.compile(
     r"\b(?:no|not|nothing|never|none|without|skip|avoid|don't|dont|do not|instead of|rather than"
-    r"|had (?:it|that|them|this|those)|last week|sick of|tired of)\b|n't\b",
+    r"|had (?:it|that|them|this|those)|last week|sick of|tired of"
+    r"|hate|hated|hates|dislike|dislikes|loathe|can't stand|enough of)\b|n't\b",
     re.IGNORECASE,
 )
 
@@ -670,6 +712,41 @@ def flags_for_allergy_requests(weekly_plan_id: int, asks: tuple[str | None, ...]
         flags.append({"kind": ALLERGY_REQUEST,
                       "text": allergy_request_text(phrase, food, who, dish, r["date"], r["slot"]),
                       "entry_id": r["id"], "date": r["date"], "slot": r["slot"], "dish": dish, "fixes": []})
+    return flags
+
+
+def flags_for_no_meal_no_day(meals: list[dict], asks: tuple[str | None, ...] = ()) -> list[dict]:
+    """
+    Rule 1: one line per dish they asked for naming no meal and no day
+    (cap_enforce.asked_no_meal_no_day), saying where it is — off the
+    dinners and lunches cap_enforce has just read back, so the line and
+    the placement read one week.
+
+    Said only where no other line is about that dish, so nothing is said
+    twice: not over its meal's time (scenario 3's line, or rule 5's, says
+    where it is and why), not a dish the allergen gate swapped in (rule 9's
+    line), not one moved off a night nobody is home on their word (rule
+    8's). Not a reheat, which is a line of its own on the screen. Once per
+    dish.
+    """
+    from . import cap_enforce as _cap_enforce  # lazy: it imports this module
+    flags, said = [], set()
+    for m in sorted(meals or [], key=lambda m: (m.get("date") or "", m.get("slot") != "lunch")):
+        derived = m.get("derived") or {}
+        dish = (m.get("meal") or "").strip()
+        if (not dish or dish.lower() in said or m.get("slot_state") != "planned"
+                or (m.get("cooked_status") or "") == "done" or m.get("over") or m.get("reheat")
+                or not str(derived.get("freeform") or "").strip()
+                or "allergen_repick" in derived or (derived.get(_cap_enforce.DAY_OUT_KEY) or {}).get("said")
+                or not _cap_enforce.asked_no_meal_no_day(derived, asks, dish)):
+            continue
+        said.add(dish.lower())
+        flags.append({"kind": NO_MEAL_NO_DAY,
+                      "text": no_meal_no_day_text(dish, m["date"], m["slot"], m.get("minutes")),
+                      "entry_id": m["id"], "date": m["date"], "slot": m["slot"], "dish": dish, "fixes": []})
+    if len(flags) > NO_MEAL_NO_DAY_LINES:
+        rest = flags[2:]
+        flags = flags[:2] + [{**rest[0], "kind": NO_MEAL_NO_DAY_MORE, "text": no_meal_no_day_more_text(len(rest))}]
     return flags
 
 

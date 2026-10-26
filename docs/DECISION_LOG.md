@@ -808,6 +808,30 @@ why*, not duplicating the diff.
   running off the calendar stays a 500 — it could be stored data gone wrong).
   `POST /api/needs-you/dinner` now refuses a non-date with a 400. Scan-fridge
   and scan-pantry pinned (no test anywhere drove them).
+- **A dish asked for with no meal and no day goes where it has the time,
+  and the draft says where** (2026-10-25, snag rule 1, Decision A; branch
+  `overnight/snag-rule-1-says-where`, on top of rules 5, 8, 2 and 9; tests
+  `tests/test_draft_request_no_meal_no_day.py`). `cap_enforce.
+  place_meal_requests` now also takes a typed dish whose words positively
+  named no meal and no day (`asked_no_meal_no_day`: a clause about the
+  dish, strict, with no day, meal word, "night", "evening", "weekday"…);
+  over its meal's time, it moves to the nearest meal of that kind it fits
+  (Move's write). `draft_flags.NO_MEAL_NO_DAY` then always says "Korean
+  Chicken Pancake is Saturday dinner. It takes about 30 minutes." — moved
+  or not — no buttons. Why: on main the model picked, `theirs` kept it on a
+  short night, and where it went was never said. "Whichever the dish
+  suits": the app has no meal-suitability record, so it stays at the meal
+  the model chose (dinner, or a lunch it's already at); no cross-meal move,
+  no breakfast. No line when another already speaks for it (over time:
+  scenario 3 / rule 5; rule 9's swap; rule 8's said move). Review round:
+  any timing or occasion in the dish's clause is not "no day" ("midweek",
+  "end of the week", "the 31st", "for Halloween", "when grandma visits",
+  "for dessert"), and "Friday-ish" now names Friday for every rule; a dish
+  turned down ("No tacos this week", "I hate tacos" — rule 9's vocabulary,
+  widened) is neither moved nor lined; the clause must hold the dish's head
+  noun; four or more such dishes get two lines plus "Your other four asks
+  are on the plan too, each on a day with the time for it." (Pomona's
+  wording, Emily's to approve).
 - **A dish they asked for that someone can't have is replaced, and the
   draft says why** (2026-10-25, snag rule 9; branch
   `overnight/snag-rule-9-allergy-says-why`, on top of rules 5, 8 and 2;

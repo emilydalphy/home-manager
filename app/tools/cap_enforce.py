@@ -495,7 +495,8 @@ FITS_NOWHERE_KEY = "fits_nowhere"
 # A day their words named: full names, every short form a person types
 # ("Wed", "thu", "Tues"), and the words that name a day without a weekday
 # in them. A short form directly followed by a hyphen is not a day —
-# "sun-dried" — though a range ("Mon-Thu") still names its far end. "sat"
+# "sun-dried" — though a range ("Mon-Thu") still names its far end, and
+# "Friday-ish" names Friday (review of rule 1, 2026-10-25). "sat"
 # the verb and "sun" the noun standing alone are rare in a dinner request
 # and are ACCEPTED as days, deliberately: when unsure, a named day
 # outranks a time limit, so the dish stays where they put it (scenario 3)
@@ -503,7 +504,7 @@ FITS_NOWHERE_KEY = "fits_nowhere"
 _NAMED_DAY_RE = re.compile(
     r"\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday"
     r"|mon|tue|tues|wed|weds|thu|thur|thurs|fri|sat|sun"
-    r"|today|tonight|tomorrow|weekend|weekends)\b(?!-)",
+    r"|today|tonight|tomorrow|weekend|weekends)\b(?!-(?!ish\b))",
     re.IGNORECASE,
 )
 _SENTENCE_SPLIT_RE = re.compile(r"[.;!?\n]+")
@@ -1026,14 +1027,112 @@ def meals_named(derived: dict, asks: tuple[str | None, ...] = (), meal: str | No
     """The meals ("dinner", "lunch", "breakfast") their words for THIS dish
     named — the clauses rule 8 reads (strict), the dish's own name taken
     out, so a "Breakfast Burrito" is not a breakfast request."""
-    from . import week_intake as _week_intake  # lazy: it reaches the whole app
     clauses, stems = _clauses_about(derived if isinstance(derived, dict) else {}, asks, meal, strict=True)
+    return {m for c in clauses for m in _meals_in(c, stems)}
+
+
+def _meals_in(clause: str, stems: set[str]) -> set[str]:
+    from . import week_intake as _week_intake  # lazy: it reaches the whole app
+    rest = _outside_the_dish(clause, stems)
     return {
         _week_intake._MEAL_OF_WORD[m.group(1).lower()]
-        for c in clauses for m in _week_intake._MEAL_WORD_RE.finditer(_outside_the_dish(c, stems))
-        if not _NOT_A_MEAL_RE.match(_outside_the_dish(c, stems)[m.end():])
-        and not _AFTER_A_MEAL_RE.search(_outside_the_dish(c, stems)[:m.start()])
+        for m in _week_intake._MEAL_WORD_RE.finditer(rest)
+        if not _NOT_A_MEAL_RE.match(rest[m.end():]) and not _AFTER_A_MEAL_RE.search(rest[:m.start()])
     }
+
+
+# ---------- a dish they asked for naming no meal and no day (Emily's rule 1) ----------
+#
+# "A request with no meal and no day goes at lunch or dinner, whichever the
+# dish suits, on a day with enough time. Pomona says where it went."
+# (Decision A, 2026-09-23; her line, "Korean chicken pancake is Saturday
+# dinner. It takes about 30 minutes.") Before this the model picked and
+# nothing checked — `theirs` kept the pancake on a 20-minute Wednesday, and
+# where it landed was never said.
+#
+# WHICH MEAL IT SUITS: the app keeps no record of that (a recipe has no
+# meal of its own), and guessing one with a second model call is not this
+# pass's to do. So dinner is the default, and a dish is a lunch only when
+# the model already put it at lunch — it stays at the meal it is on, and
+# moves only for time, in place_meal_requests below. The line is
+# draft_flags.flags_for_no_meal_no_day.
+NO_MEAL_NO_DAY_KEY = "no_meal_no_day"
+
+# Words that name a meal or a day without being either word: "one night",
+# "a weeknight", "some evening", "a weekday", "one morning". Any of them
+# and it is not a request with no meal and no day.
+_MEAL_OR_DAY_HINT_RE = re.compile(
+    r"\b(?:nights?|evenings?|weeknights?|weekdays?|mornings?|afternoons?|noon)\b", re.IGNORECASE)
+
+# ANY timing or occasion in the dish's own clause (review, 2026-10-25):
+# "midweek", "at the end of the week", "next week", a date ("the 31st"), a
+# holiday or an occasion ("for Halloween", "for the barbecue", "when
+# grandma visits"), or a course ("for dessert"). None of those is "no day,
+# no meal" — and rule 1 then says a line about where it went, so unsure
+# leans to False.
+_TIMING_RE = re.compile(
+    r"\d|\b(?:mid-?week|end|start|beginning|middle|early|late|later|soon|next|last|first"
+    r"|holidays?|halloween|christmas|xmas|thanksgiving|easter|diwali|hanukkah|eid|passover"
+    r"|birthdays?|anniversary|party|parties|bbq|barbecue|potluck|picnic|game|visits?|visiting|guests?|company"
+    r"|desserts?|sides?|appetizers?|starters?|treats?|baking)\b",
+    re.IGNORECASE)
+# A "for …" / "when …" / "at …" that is not one of the harmless ones ("for a
+# meal", "for us", "for the family", "for a change") ties the dish to an
+# occasion or a time.
+_OCCASION_RE = re.compile(
+    r"\b(?:for|when|while|during|before|after|until|by|around|at|on)\s+"
+    r"(?!(?:a\s+|one\s+)?meal\b|us\b|me\b|everyone\b|the\s+(?:family|kids)\b|a\s+change\b"
+    r"|once\b|this\s+week\b)\w",
+    re.IGNORECASE)
+
+
+def _head_stem(meal: str | None) -> str | None:
+    """The dish's head noun — the last word of its name that _name_stems
+    keeps: "pancake" of Korean Chicken Pancake."""
+    words = [w for w in _WORD_RE.findall((meal or "").lower()) if len(w) >= 3 and w not in _NOT_A_NAME_WORD]
+    return _stem(words[-1]) if words else None
+
+
+def asked_no_meal_no_day(derived: dict, asks: tuple[str | None, ...] = (), meal: str | None = None) -> bool:
+    """
+    Whether their words for THIS dish positively named no meal and no day:
+    there IS a clause asking for the dish (strict, with most of its name),
+    nothing they said about it turns it down, and neither it nor any clause
+    the lenient reading counts names a meal, a day, a part of one, or any
+    timing or occasion at all. Unsure is False:
+    rule 1 says a line, and a line about a request they didn't make is
+    worse than none.
+    """
+    derived = derived if isinstance(derived, dict) else {}
+    if derived.get("moved_for"):
+        return False
+    strict, stems = _clauses_about(derived, asks, meal, strict=True)
+    # A request FOR THIS DISH: a clause with most of its name in it, its
+    # head noun among them. "Something quick" or "something Mexican" cited
+    # on a Mexican Rice Bowl is a mood, and "Korean chicken" is not the
+    # pancake — neither is told where it went.
+    head = _head_stem(meal)
+
+    def _asks_for_it(c: str) -> bool:
+        words = {_stem(w) for w in _WORD_RE.findall(c.lower())}
+        return head in words and 2 * len(stems & words) > len(stems)
+
+    if not stems or not any(_asks_for_it(c) for c in strict):
+        return False
+    from . import draft_flags as _draft_flags  # lazy: it imports this module
+    lenient, _ = _clauses_about(derived, asks, meal)
+    # Their whole sentences about the dish too, for a no that sits in a
+    # clause of its own ("We had tacos last week, so not again").
+    sentences = [t for text in asks or () for t in _SENTENCE_SPLIT_RE.split(text or "") if _asks_for_it(t)]
+    for c in set(strict) | set(lenient) | set(sentences):
+        if _draft_flags._TURNED_DOWN_RE.search(c.replace("’", "'")):
+            return False  # turned down, not asked for (rule 9's own vocabulary)
+    for c in set(strict) | set(lenient):
+        rest = _outside_the_dish(c, stems)
+        if (_NAMED_DAY_RE.search(rest) or _MEAL_OR_DAY_HINT_RE.search(rest) or _meals_in(c, stems)
+                or _TIMING_RE.search(rest) or _OCCASION_RE.search(rest)):
+            return False
+    return True
 
 
 # A meal word that is not the meal they asked for it at: "a dinner party",
@@ -1059,6 +1158,12 @@ def place_meal_requests(plan_id: int, intake: dict | None, memory: dict | None,
     of that kind with everyone home and enough time. Runs BEFORE rule 5 and
     stage 1, so the dish it trades back onto the bad night is the app's to
     trade on or re-pick.
+
+    Rule 1 rides the same pass: a dish whose words named no meal and no
+    day (asked_no_meal_no_day) stays at the meal the model put it at and
+    moves only when it is over that meal's time — to the nearest one of
+    that kind it fits, everyone home first like rule 2's. Who's home alone
+    never moves it: rule 1 asks for "a day with enough time".
 
     The order is the card's: who's home, then time. When no meal has both,
     a dish OVER its night's time goes to the nearest meal it fits (time
@@ -1086,11 +1191,16 @@ def place_meal_requests(plan_id: int, intake: dict | None, memory: dict | None,
                 derived = row.get("derived") or {}
                 if (row["id"] in done or not fits_nowhere_candidate(row, asks)
                         or DAY_OUT_KEY in derived or FITS_NOWHERE_KEY in derived
-                        or _weekly_plan.night_has_gone(row["date"])
-                        or slot not in meals_named(derived, asks, row["meal"])):
+                        or _weekly_plan.night_has_gone(row["date"])):
                     continue
-                if out[row["date"]] or row["over"]:
-                    night = row
+                if slot in meals_named(derived, asks, row["meal"]):
+                    if out[row["date"]] or row["over"]:
+                        night, key = row, MEAL_NO_DAY_KEY
+                        break
+                elif row["over"] and asked_no_meal_no_day(derived, asks, row["meal"]):
+                    # Rule 1: no meal named, so it stays at the meal it is
+                    # on (see NO_MEAL_NO_DAY_KEY), and only time moves it.
+                    night, key = row, NO_MEAL_NO_DAY_KEY
                     break
             if night is None:
                 break
@@ -1123,7 +1233,7 @@ def place_meal_requests(plan_id: int, intake: dict | None, memory: dict | None,
                         logger.info("Plan %s: %s would not move to %s — %s", plan_id, night["meal"],
                                     target["date"], result.get("message") or "refused")
                         continue
-                    _stamp(night["id"], MEAL_NO_DAY_KEY, {"from": night["date"]})
+                    _stamp(night["id"], key, {"from": night["date"]})
                     placed.append({"meal": night["meal"], "slot": slot, "from": night["date"], "to": target["date"]})
                     logger.info("Plan %s: %s was asked for at %s with no day; moved %s -> %s", plan_id,
                                 night["meal"], slot, night["date"], target["date"])
@@ -1569,11 +1679,14 @@ def enforce_minutes_caps(plan_id: int, intake: dict | None, memory: dict | None,
     left = []
     flagged: list[dict] = []
     read_back = []
+    said_where: list[dict] = []  # the dinners and lunches rule 1's line reads
     for slot in ("dinner",) + REPICK_ONLY_SLOTS:
         try:
             rows = nights(plan_id, intake, memory, slot)
             if slot == "dinner":
                 read_back = rows
+            if slot in ("dinner", "lunch"):
+                said_where += [dict(r, slot=slot) for r in rows]
             for night in rows:
                 if not night["over"]:
                     continue
@@ -1607,7 +1720,10 @@ def enforce_minutes_caps(plan_id: int, intake: dict | None, memory: dict | None,
         # their dish is not there at all.
         flagged = (_draft_flags.flags_for_allergy_requests(plan_id, asks)
                    + _draft_flags.flags_for_days_out(plan_id) + _draft_flags.flags_for_kept_over_cap(read_back)
-                   + _draft_flags.flags_for_late_requests(plan_id))
+                   + _draft_flags.flags_for_late_requests(plan_id)
+                   # Rule 1, last: priority 6, and it says only where a dish
+                   # no other line is about went.
+                   + _draft_flags.flags_for_no_meal_no_day(said_where, asks))
         _draft_flags.record(plan_id, flagged)
     except Exception:
         logger.exception("Plan %s: recording the draft's time-cap flags failed", plan_id)

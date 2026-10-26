@@ -179,7 +179,8 @@ def test_no_night_fits_it_goes_on_the_longest_and_both_lines_are_said(capped, st
 
 def test_a_dish_already_on_the_nearest_night_stays_and_is_still_said(stub_model, run):
     """GUARD: nothing needs to move, so nothing does — but it is never
-    silent. And a request whose words named no day is not said at all."""
+    silent. And a request whose words named no day gets no "You're out"
+    line — only rule 1's, saying where it is (snag rule 1, 2026-10-25)."""
     week = _monday()
     dates = tools._week_dates(week)
     _filler()
@@ -196,7 +197,8 @@ def test_a_dish_already_on_the_nearest_night_stays_and_is_still_said(stub_model,
     rows = _by_date(plan_id)
     assert rows[dates[5]]["meal"] == "Pizza"
     assert rows[dates[0]]["meal"] == "Tacos"
-    assert _texts(plan_id) == ["You're out Friday, so Pizza moved to Saturday."]
+    assert _texts(plan_id) == ["You're out Friday, so Pizza moved to Saturday.",
+                               "Tacos is Monday dinner. It takes about 15 minutes."]
 
 
 def test_moved_by_hand_afterwards_the_line_goes(stub_model, run):
