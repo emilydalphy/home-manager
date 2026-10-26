@@ -37,6 +37,7 @@ import re
 import socket
 import ssl
 import time
+from fractions import Fraction
 from html.parser import HTMLParser
 from typing import Callable
 from urllib.parse import quote, urljoin, urlsplit
@@ -449,8 +450,11 @@ def find_recipe_json_ld(blocks: list[str]) -> dict | None:
     return None
 
 
+# The date part is read in full — years, months, weeks, days — because a
+# valid "P0Y0M0DT0H35M0.000S" (what a Java or .NET duration printer writes)
+# matched nothing and the recipe saved with no time at all.
 _DURATION_RE = re.compile(
-    r"^P(?:(?P<d>\d+(?:\.\d+)?)D)?(?:T(?:(?P<h>\d+(?:\.\d+)?)H)?(?:(?P<m>\d+(?:\.\d+)?)M)?(?:(?P<s>\d+(?:\.\d+)?)S)?)?$",
+    r"^P(?:(?P<y>\d+)Y)?(?:(?P<mo>\d+)M)?(?:(?P<w>\d+)W)?(?:(?P<d>\d+(?:\.\d+)?)D)?(?:T(?:(?P<h>\d+(?:\.\d+)?)H)?(?:(?P<m>\d+(?:\.\d+)?)M)?(?:(?P<s>\d+(?:\.\d+)?)S)?)?$",
     re.I,
 )
 
@@ -466,17 +470,31 @@ def parse_duration_minutes(value) -> int | None:
     if not text:
         return None
     match = _DURATION_RE.match(text)
-    if match and any(match.group(g) for g in ("d", "h", "m", "s")):
+    # Years and months are read past, never counted: "P30M" with no "T" is
+    # a site's thirty minutes, and the text reading below takes it so.
+    if match and any(match.group(g) for g in ("w", "d", "h", "m", "s")):
+        weeks = float(match.group("w") or 0)
         days = float(match.group("d") or 0)
         hours = float(match.group("h") or 0)
         minutes = float(match.group("m") or 0)
         seconds = float(match.group("s") or 0)
-        total = days * 1440 + hours * 60 + minutes + seconds / 60
+        total = weeks * 10080 + days * 1440 + hours * 60 + minutes + seconds / 60
         return int(round(total)) or None
-    hours = re.search(r"(\d+(?:\.\d+)?)\s*(?:h|hr|hrs|hour|hours)\b", text, re.I)
-    mins = re.search(r"(\d+(?:\.\d+)?)\s*(?:m|min|mins|minute|minutes)\b", text, re.I)
+    # "1 1/2 hours" and "1½ hrs" are an hour and a half, not two hours (the
+    # "2" of the fraction was all that matched), and "1h30m" is ninety
+    # minutes, not thirty (no word boundary between "h" and "3").
+    text = _normalise_fractions(text)
+    hours = re.search(rf"({_NUMBER})\s*(?:h|hr|hrs|hour|hours)(?![a-z])", text, re.I)
+    mins = re.search(rf"({_NUMBER})\s*(?:m|min|mins|minute|minutes)(?![a-z])", text, re.I)
     if hours or mins:
-        total = (float(hours.group(1)) if hours else 0) * 60 + (float(mins.group(1)) if mins else 0)
+        def number(found):
+            return float(sum(Fraction(part) for part in found.group(1).split())) if found else 0.0
+        try:
+            total = number(hours) * 60 + number(mins)
+        except ZeroDivisionError:
+            # "1/0 hours" — from a page or a model's answer — is no time,
+            # as it was before fractions were read, not a failed import.
+            return None
         return int(round(total)) or None
     if text.isdigit():
         return int(text) or None
@@ -561,7 +579,18 @@ def parse_instructions(value) -> list[str]:
 
     walk(value)
     # A numbered site sometimes numbers the text too ("1. Preheat…").
-    return [re.sub(r"^(?:step\s*)?\d+\s*[.):-]\s*", "", s, flags=re.I) for s in steps]
+    # Only a number that IS a step number goes: a step that opens on an
+    # amount ("1.5 kg potatoes into the pot", "2-3 minutes per side") used
+    # to lose its first number to the strip and save as "5 kg" and "3
+    # minutes" (defect hunt, 2026-10-21). So "." and ":" count only when no
+    # digit follows, and "-" only when no number does. A line that says
+    # "Step" is a step number whatever follows ("Step 2 - 3 eggs in").
+    return [
+        re.sub(r"^step\s*\d+\s*[.):-]\s*", "", s, flags=re.I)
+        if re.match(r"^step\s*\d+\s*[.):-]", s, flags=re.I)
+        else re.sub(r"^\d+\s*(?:\.(?!\d)|\)|:(?!\d)|-(?!\s*\d))\s*", "", s)
+        for s in steps
+    ]
 
 
 # ---------- ingredient lines -> {item, qty} ----------

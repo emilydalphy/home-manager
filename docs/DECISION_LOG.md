@@ -198,6 +198,15 @@ why*, not duplicating the diff.
   close, leaving SQLite's write lock held: on uvicorn the other adult's Save
   waited 5s and 500'd. It now runs under `db.write()` (off the close census).
   Why: a refusal must change nothing, and must never cost the next save.
+- **A linked recipe keeps the amount its step opens on, and its times read
+  as written** (2026-10-21, defect hunt; branch
+  `overnight/hunt-recipes-2026-10-21b`; tests
+  `tests/test_recipe_import_steps_and_times.py`). `parse_instructions`'
+  step-number strip took "1.5 kg potatoes…" to "5 kg" and "2-3 minutes…" to
+  "3 minutes"; now "."/":" count only with no digit after, "-" with no number
+  after. `parse_duration_minutes` read "P0Y0M0DT0H35M0.000S" as no time,
+  "1 1/2 hours" as 120 and "1h30m" as 30; the ISO date part is read in full
+  and the text path takes fractions and "1h30m".
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
