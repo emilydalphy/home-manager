@@ -439,6 +439,21 @@ why*, not duplicating the diff.
   Review: a jar or bottle a surviving night still names stays whole, so the
   question counts it only when no other night is left on it
   (`grocery.reversal_changes_line`).
+- **Week routes act on the plan on screen, not the newest plan under its key**
+  (2026-10-22; branch `overnight/plan-id-over-week-key`; tests
+  `tests/test_plan_id_over_week_key.py`). Approving a draft over the front of
+  a week leaves the week filed under its old start, so two live plans share
+  one key and the bare key resolved every week route to the newest. shell.js
+  now sends `weekly_plan_id` (as /discard did) and `_plan_id_for_request`
+  prefers it, 404ing another household's or a retired one. Covered: approve,
+  reopen, slot, swap-options/-choose/-in-place/-undo, defrost-items/-confirm,
+  move-options/-meal/-meal-undo, flag-fix, fill-day, part-options,
+  change-part, additions, add-/remove-component, swap-nights(+undo, via
+  tonight's new `weekly_plan_id`), add-dish-day, drop-dish-day(+undo),
+  cook-ahead-items/-confirm. Still by key only: generate, GET intake,
+  prep-sessions; /discard keeps its own id handling; slot-recommendation
+  never used the key. Start over's "this week's answers" also counts a
+  same-key plan as sharing them (week_intake is keyed by week_start).
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

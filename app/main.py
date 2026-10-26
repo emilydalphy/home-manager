@@ -3889,6 +3889,15 @@ class WeekApproveRequest(BaseModel):
     # tap — see tools.approve_weekly_plan. False on every request until the
     # confirm button (shell.js's showApproveConfirm) sends it back true.
     confirm_hard_conflicts: bool = False
+    # The plan on screen, when the screen knows it — wins over the week
+    # key, which two plans can share (see _plan_id_for_week).
+    weekly_plan_id: int | None = None
+
+
+class WeekReopenRequest(BaseModel):
+    """Optional body for /reopen: the plan on screen (see _plan_id_for_week).
+    Absent entirely is the old call, resolved by the week key."""
+    weekly_plan_id: int | None = None
 
 
 class WeekDiscardRequest(BaseModel):
@@ -4019,6 +4028,37 @@ def _plan_id_for_week(week_start: str) -> int:
     if plan_id is None:
         raise HTTPException(status_code=404, detail=f"No plan for the week of {week_start}.")
     return plan_id
+
+
+def _plan_id_for_request(week_start: str, weekly_plan_id: int | None) -> int:
+    """
+    The plan a week-scoped request means: the id the screen sent, else the
+    week key through _plan_id_for_week exactly as before.
+
+    A `weekly_plan_id` the screen sent wins over the week key
+    (overnight/plan-id-over-week-key, 2026-10-22). The key is not unique:
+    a takeover that cuts days off the FRONT of a plan leaves it filed
+    under its old start, so a later plan starting that day shares the key
+    and newest-wins hands every route the wrong one — approving, reopening
+    or swapping on the approved week landed on the draft. /discard already
+    worked this way. The id is checked against the session's household
+    here, never trusted: another household's id is a 404, not a write.
+    A retired plan is refused for the same reason get_plan_id_for_week
+    skips it (approving one brings it back to life). /discard keeps its own
+    resolution: retiring twice is its deliberate no-op, and its tool already
+    answers an unknown id with the screen's plain line.
+    """
+    if weekly_plan_id is not None:
+        conn = get_conn()
+        row = conn.execute(
+            "SELECT status FROM weekly_plans WHERE id = ? AND household_id = ?",
+            (weekly_plan_id, tools.household_id()),
+        ).fetchone()
+        conn.close()
+        if row is None or row["status"] == "retired":
+            raise HTTPException(status_code=404, detail="That plan isn't here any more.")
+        return weekly_plan_id
+    return _plan_id_for_week(week_start)
 
 
 class MealPlanningPreferenceRequest(BaseModel):
@@ -4463,10 +4503,16 @@ class SwapInPlaceRequest(BaseModel):
     # the row's own Swap does. The server works the days out
     # (swap_in_place.batch_days); the client never names them.
     whole_dish: bool = False
+    # The plan on screen, when the screen knows it — wins over the week
+    # key, which two plans can share (see _plan_id_for_week).
+    weekly_plan_id: int | None = None
 
 
 class SwapUndoRequest(BaseModel):
     entry_id: int
+    # The plan on screen, when the screen knows it — wins over the week
+    # key, which two plans can share (see _plan_id_for_week).
+    weekly_plan_id: int | None = None
 
 
 @app.post("/api/week/{week_start}/swap-in-place")
@@ -4481,7 +4527,7 @@ def week_swap_in_place(week_start: str, req: SwapInPlaceRequest):
     something the household can't have and nothing was written. That is a
     real answer, not an error, and it carries the sentence to show.
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
         if req.whole_dish:
             return tools.swap_meal_in_place(plan_id, req.entry_id, avoid=req.avoid, whole_dish=True)
@@ -4505,6 +4551,8 @@ def week_swap_in_place(week_start: str, req: SwapInPlaceRequest):
 class FillDayRequest(BaseModel):
     """"Build a plan" on a blank day card: which day."""
     date: str
+    # The plan on screen — wins over the week key (see _plan_id_for_request).
+    weekly_plan_id: int | None = None
 
 
 @app.post("/api/week/{week_start}/fill-day")
@@ -4519,7 +4567,7 @@ def week_fill_day(week_start: str, req: FillDayRequest):
         datetime.date.fromisoformat(req.date)
     except ValueError:
         raise HTTPException(status_code=400, detail="date must be an ISO date (YYYY-MM-DD).")
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
         return tools.fill_empty_day(plan_id, req.date)
     except ValueError as e:
@@ -4544,6 +4592,9 @@ class SwapOptionsRequest(BaseModel):
     # The Swap sheet's box (2026-10-05): what the household typed they'd
     # like instead. Empty / absent is the plain ask.
     request: str | None = Field(default=None, max_length=1000)
+    # The plan on screen, when the screen knows it — wins over the week
+    # key, which two plans can share (see _plan_id_for_week).
+    weekly_plan_id: int | None = None
 
 
 class SwapChooseRequest(BaseModel):
@@ -4555,6 +4606,9 @@ class SwapChooseRequest(BaseModel):
     # The dish name the sheet showed at `option`; the server refuses the tap
     # if the picks it holds have changed since.
     meal: str | None = None
+    # The plan on screen, when the screen knows it — wins over the week
+    # key, which two plans can share (see _plan_id_for_week).
+    weekly_plan_id: int | None = None
 
 
 @app.post("/api/week/{week_start}/swap-options")
@@ -4567,7 +4621,7 @@ def week_swap_options(week_start: str, req: SwapOptionsRequest):
     and `options_unavailable` true means the model call failed; the sheet
     keeps its "Ask for something else" line either way.
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
         # `request` only when there is one: the call shape of every
         # existing caller (and test double) stays as it was.
@@ -4589,7 +4643,7 @@ def week_swap_choose(week_start: str, req: SwapChooseRequest):
     (tools.choose_swap_option). Answers with the swap's own shape — the
     refreshed day, or `status` 'refused' with the sentence to show.
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
         if req.whole_dish:
             return tools.choose_swap_option(plan_id, req.entry_id, req.option, whole_dish=True, meal=req.meal)
@@ -4687,17 +4741,19 @@ class ChangePartRequest(BaseModel):
     entry_id: int
     role: str = "protein"
     choice: str
+    # The plan on screen — wins over the week key (see _plan_id_for_request).
+    weekly_plan_id: int | None = None
 
 
 @app.get("/api/week/{week_start}/part-options")
-def week_part_options(week_start: str, entry_id: int, role: str = "protein"):
+def week_part_options(week_start: str, entry_id: int, role: str = "protein", weekly_plan_id: int | None = None):
     """
     What the "Change the protein" sheet offers for THIS dish — written for
     the dish (ground meats for a burger, the cut for a pan-fry), safe for
     the house, cached for the sitting (Emily, 2026-09-13, "Shaping the
     Draft" Flow A). Household-scoped: an entry from elsewhere is a 404.
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, weekly_plan_id)
     try:
         return tools.part_options(plan_id, entry_id, role=role)
     except ValueError as e:
@@ -4717,7 +4773,7 @@ def week_change_part(week_start: str, req: ChangePartRequest):
     the swap's own (/swap-undo). A 200 can still say no (`status`
     'refused' with the sentence to show) — a real answer, not an error.
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
         return tools.change_part(plan_id, req.entry_id, req.role, req.choice)
     except tools.SlotRefused as e:
@@ -4738,7 +4794,7 @@ def week_change_part(week_start: str, req: ChangePartRequest):
 @app.post("/api/week/{week_start}/swap-undo")
 def week_swap_undo(week_start: str, req: SwapUndoRequest):
     """Put back the dish that was on this slot before it was swapped."""
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
         return tools.undo_meal_swap(plan_id, req.entry_id)
     except ValueError as e:
@@ -4753,6 +4809,8 @@ class SwapNightsRequest(BaseModel):
     days' drag (Emily, 2026-09-12) and its Undo both send this."""
     date_a: str
     date_b: str
+    # The plan on screen — wins over the week key (see _plan_id_for_request).
+    weekly_plan_id: int | None = None
 
 
 @app.post("/api/week/{week_start}/swap-nights")
@@ -4766,7 +4824,7 @@ def week_swap_nights(week_start: str, req: SwapNightsRequest):
     written. A night that isn't on this plan, the same night twice, or a
     malformed date is a 400.
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
         return tools.swap_dinner_nights(plan_id, req.date_a, req.date_b)
     except ValueError as e:
@@ -4779,7 +4837,7 @@ def week_swap_nights(week_start: str, req: SwapNightsRequest):
 @app.post("/api/week/{week_start}/swap-nights-undo")
 def week_swap_nights_undo(week_start: str, req: SwapNightsRequest):
     """Put the two nights' dinners back where the last move found them."""
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
         return tools.undo_dinner_nights_swap(plan_id, req.date_a, req.date_b)
     except ValueError as e:
@@ -4791,15 +4849,21 @@ def week_swap_nights_undo(week_start: str, req: SwapNightsRequest):
 
 class MoveOptionsRequest(BaseModel):
     entry_id: int
+    # The plan on screen — wins over the week key (see _plan_id_for_request).
+    weekly_plan_id: int | None = None
 
 
 class MoveMealRequest(BaseModel):
     entry_id: int
     to_date: str
+    # The plan on screen — wins over the week key (see _plan_id_for_request).
+    weekly_plan_id: int | None = None
 
 
 class MoveUndoRequest(BaseModel):
     move_id: str
+    # The plan on screen — wins over the week key (see _plan_id_for_request).
+    weekly_plan_id: int | None = None
 
 
 @app.post("/api/week/{week_start}/move-options")
@@ -4809,7 +4873,7 @@ def week_move_options(week_start: str, req: MoveOptionsRequest):
     day of the week with what it holds, and whether the meal can go there —
     a day that can't says why (tools/meal_move.py). No model call.
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
         return _meal_move.move_options(plan_id, req.entry_id)
     except ValueError as e:
@@ -4826,7 +4890,7 @@ def week_move_meal(week_start: str, req: MoveMealRequest):
     places with what is there. A 200 can still say no — `status` 'refused'
     with the sentence, nothing written. The grocery list is not touched.
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
         return _meal_move.move_meal(plan_id, req.entry_id, req.to_date)
     except ValueError as e:
@@ -4839,7 +4903,7 @@ def week_move_meal(week_start: str, req: MoveMealRequest):
 @app.post("/api/week/{week_start}/move-meal-undo")
 def week_move_meal_undo(week_start: str, req: MoveUndoRequest):
     """Put back everything the last Move re-dated."""
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
         return _meal_move.undo_meal_move(plan_id, req.move_id)
     except ValueError as e:
@@ -4854,6 +4918,8 @@ class DraftFlagFixRequest(BaseModel):
     # 'prep_ahead' or 'move'. The DATE is deliberately not taken from the
     # request: see week_draft_flag_fix.
     action: str
+    # The plan on screen — wins over the week key (see _plan_id_for_request).
+    weekly_plan_id: int | None = None
 
 
 @app.post("/api/week/{week_start}/flag-fix")
@@ -4873,7 +4939,7 @@ def week_draft_flag_fix(week_start: str, req: DraftFlagFixRequest):
     No model call either way. Both fixes compose a write that already
     exists — see tools/draft_flags.py.
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
         # A DRAFT's control, and the store outlives the draft on purpose
         # (reopening a week brings its flags back). get_week_menu already
@@ -4942,6 +5008,8 @@ class DropDishDayRequest(BaseModel):
     # there anyway?" — only ever true on the tap AFTER a needs_confirmation
     # answer (Emily, 2026-09-24, option B). See tools.drop_dish_from_day.
     confirm_cooked: bool | str = False
+    # The plan on screen — wins over the week key (see _plan_id_for_request).
+    weekly_plan_id: int | None = None
 
 
 @app.post("/api/week/{week_start}/drop-dish-day")
@@ -4954,7 +5022,7 @@ def week_drop_dish_day(week_start: str, req: DropDishDayRequest):
     changed day in get_week_menu's own shape, the same way the in-place
     swap does.
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
         return tools.drop_dish_from_day(plan_id, req.entry_id, confirm_cooked=req.confirm_cooked)
     except ValueError as e:
@@ -4969,6 +5037,8 @@ class DropDishDayUndoRequest(BaseModel):
     its own result. A handle rather than a date, because a "−" can land on
     any night and any slot, and a day legitimately holds two snacks."""
     entry_id: int
+    # The plan on screen — wins over the week key (see _plan_id_for_request).
+    weekly_plan_id: int | None = None
 
 
 @app.post("/api/week/{week_start}/drop-dish-day-undo")
@@ -4983,7 +5053,7 @@ def week_drop_dish_day_undo(week_start: str, req: DropDishDayUndoRequest):
     since — and it is the shape both halves of the stepper already answer a
     refusal in, so a screen needs one branch rather than three.
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
         return tools.drop_dish_undo(plan_id, req.entry_id)
     except ValueError as e:
@@ -5009,6 +5079,8 @@ class AddDishDayRequest(BaseModel):
     entry_id: int
     target_entry_id: int | None = None
     target_date: str | None = None
+    # The plan on screen — wins over the week key (see _plan_id_for_request).
+    weekly_plan_id: int | None = None
 
 
 @app.post("/api/week/{week_start}/add-dish-day")
@@ -5032,7 +5104,7 @@ def week_add_dish_day(week_start: str, req: AddDishDayRequest):
     id, or a Python exception, printed into somebody's week reports an app
     that did exactly the right thing as broken.
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
         return tools.add_dish_day(
             plan_id, req.entry_id,
@@ -5070,7 +5142,7 @@ def _addition_context() -> dict:
 
 
 @app.get("/api/week/{week_start}/additions")
-def week_additions(week_start: str, entry_id: int, role: str | None = None):
+def week_additions(week_start: str, entry_id: int, role: str | None = None, weekly_plan_id: int | None = None):
     """
     The meal screen's "Add something" sheet: the short list of things
     that make sense beside THIS dish (plates.suggest_additions — a
@@ -5079,7 +5151,7 @@ def week_additions(week_start: str, entry_id: int, role: str | None = None):
     "vegetable"), so that part's kind leads the list. A read, no model
     call.
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, weekly_plan_id)
     try:
         return tools.suggest_additions(
             entry_id, eating_style=_addition_context().get("eating_style"), weekly_plan_id=plan_id,
@@ -5095,6 +5167,8 @@ class AddComponentRequest(BaseModel):
     entry_id: int
     key: str | None = None
     text: str | None = None
+    # The plan on screen — wins over the week key (see _plan_id_for_request).
+    weekly_plan_id: int | None = None
 
 
 @app.post("/api/week/{week_start}/add-component")
@@ -5106,7 +5180,7 @@ def week_add_component(week_start: str, req: AddComponentRequest):
     timeline the next time the screen reads the cooker view. Free text is
     the one path that spends a model call; a picker row spends none.
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
         return tools.add_component(
             req.entry_id, key=req.key, text=req.text,
@@ -5122,13 +5196,15 @@ def week_add_component(week_start: str, req: AddComponentRequest):
 class RemoveComponentRequest(BaseModel):
     entry_id: int
     name: str
+    # The plan on screen — wins over the week key (see _plan_id_for_request).
+    weekly_plan_id: int | None = None
 
 
 @app.post("/api/week/{week_start}/remove-component")
 def week_remove_component(week_start: str, req: RemoveComponentRequest):
     """The Undo on an addition: the side comes off the meal and its own
     lines come off the list, the dish's shopping untouched."""
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
         return tools.remove_component(req.entry_id, req.name, weekly_plan_id=plan_id)
     except ValueError as e:
@@ -5158,7 +5234,7 @@ def resolve_week_slot(week_start: str, req: WeekSlotRequest):
     draft this leaves the shopping list alone; in an approved week it keeps
     the list in step, same rule as a swap.
     """
-    plan_id = req.weekly_plan_id if req.weekly_plan_id is not None else _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     if req.slot not in tools.WEEK_SLOTS:
         raise HTTPException(status_code=400, detail=f"slot must be one of {', '.join(tools.WEEK_SLOTS)}.")
     try:
@@ -5356,12 +5432,12 @@ def confirm_week_slot_recommendation(week_start: str, req: SlotRecommendationReq
 
 
 @app.post("/api/week/{week_start}/reopen")
-def reopen_week(week_start: str):
+def reopen_week(week_start: str, req: WeekReopenRequest | None = None):
     """
     Reopen an approved week for editing (DECISIONS.md #2). Never removes
     anything from the shopping list — re-approving only adds what's new.
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id if req else None)
     try:
         return tools.reopen_weekly_plan(plan_id)
     except ValueError as e:
@@ -5417,7 +5493,7 @@ def approve_week(week_start: str, req: WeekApproveRequest):
     because someone tapped again. `was_already_approved` is the field that
     says whether this call actually did anything.
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
         result = tools.approve_weekly_plan(
             plan_id, approved_by=req.approved_by,
@@ -5496,10 +5572,13 @@ class DefrostConfirmRequest(BaseModel):
     # Empty list is a real, complete answer ("Nothing frozen — I'm buying
     # it all"), not "nothing sent yet" — see confirm_week_defrost below.
     items: list[str] = []
+    # The plan on screen, when the screen knows it — wins over the week
+    # key, which two plans can share (see _plan_id_for_week).
+    weekly_plan_id: int | None = None
 
 
 @app.get("/api/week/{week_start}/defrost-items")
-def week_defrost_items(week_start: str):
+def week_defrost_items(week_start: str, weekly_plan_id: int | None = None):
     """
     Every meat/seafood ingredient the plan's own meals call for, each with
     the night(s) it feeds, whether it has a grocery line this week and
@@ -5513,7 +5592,7 @@ def week_defrost_items(week_start: str):
     being deferred policy. See tools.defrost.meat_items_for_plan for the
     rules, and for the one that is gone (a line still to buy).
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, weekly_plan_id)
     try:
         items = tools.meat_items_for_plan(plan_id)
     except Exception as e:
@@ -5537,7 +5616,7 @@ def confirm_week_defrost(week_start: str, req: DefrostConfirmRequest):
     tab's freezer row reopens it to change the answer, and does not depend
     on this column).
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
         result = tools.confirm_frozen_items(plan_id, req.items)
         tools.mark_defrost_asked(plan_id)
@@ -5573,10 +5652,12 @@ class WeekCookAheadConfirmRequest(BaseModel):
     # (Emily: "if there is something that is repeated it should be in the
     # same group"). Absent or empty means "leave every component alone".
     components: list[BatchComponentChoiceRequest] = []
+    # The plan on screen — wins over the week key (see _plan_id_for_request).
+    weekly_plan_id: int | None = None
 
 
 @app.get("/api/week/{week_start}/cook-ahead-items")
-def week_cook_ahead_items(week_start: str):
+def week_cook_ahead_items(week_start: str, weekly_plan_id: int | None = None):
     """
     Every dish this plan repeats in the same slot on two or more days with
     no chain on it yet — the approval-time cook-ahead card's blocks (Loop
@@ -5584,7 +5665,7 @@ def week_cook_ahead_items(week_start: str):
     computed from cook_ahead_options like the Cook card's own chips, so
     the two surfaces can't offer different days for the same dish.
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, weekly_plan_id)
     try:
         items = tools.cook_ahead_repeats(plan_id)
         # The same fold's other kind of block: one component several
@@ -5614,7 +5695,7 @@ def confirm_week_cook_ahead(week_start: str, req: WeekCookAheadConfirmRequest):
     marks asked too — re-asking stays available from the Cook view's own
     "Cooking ahead?" link, which doesn't depend on this column.
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     applied: list[dict] = []
     refused: list[dict] = []
     components_applied: list[dict] = []

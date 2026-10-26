@@ -207,6 +207,7 @@ def tonight_check(now: datetime | None = None) -> dict:
                                 #   the plan, so it is reported whatever
                                 #   the plan lookup finds (2026-09-15)
         "week_start": str|None, # the plan's week_start_date, for the swap route
+        "weekly_plan_id": int|None, # that plan, sent with it (two can share a key)
         "dinner": {"entry_id", "meal", "is_leftovers", "leftovers_from"} | None,
         "options": [{"entry_id", "date", "weekday", "meal", "is_leftovers",
                      "leftovers_from"}],   # up to TONIGHT_OPTION_LIMIT
@@ -256,6 +257,9 @@ def tonight_check(now: datetime | None = None) -> dict:
     out: dict = {
         "date": today, "ask": False, "reason": "", "afternoon": afternoon,
         "answered": False, "week_start": None, "dinner": None, "options": [],
+        # The plan itself, sent beside week_start on the swap route: two
+        # plans can share one week key (overnight/plan-id-over-week-key).
+        "weekly_plan_id": None,
         # Set only by a night the household called off (tonight_night_off):
         # whether tonight is one, and anything already bought for a dropped
         # dish that won't keep.
@@ -306,6 +310,7 @@ def tonight_check(now: datetime | None = None) -> dict:
             out["reason"] = "no_plan"
             return out
         out["week_start"] = plan["week_start_date"]
+        out["weekly_plan_id"] = plan["id"]
         if plan["planning_mode"] == "component_based":
             out["reason"] = "components"
             return out
