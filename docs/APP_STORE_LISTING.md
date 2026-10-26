@@ -123,15 +123,14 @@ identity* (it's stored against the household) and *not used for tracking*:
 | Usage Data | Product Interaction | Counts of chat turns and meals cooked, to see whether the app is used | Analytics |
 | Diagnostics | Other Diagnostic Data | The shape of a screen error (type, file, line — never the wording) | App Functionality |
 
-**One mismatch to settle before submitting.** The privacy page on
-`overnight/legal-pages` says "No analytics." The label above (and the
-privacy manifest) declares Usage Data → Product Interaction for
-Analytics, because the server counts chat turns and meals cooked per
-household (`app/tools/usage.py`) to see whether the app is used. There's
-no analytics SDK and nothing leaves the server, so either is defensible;
-pick one and make the other match. Simplest honest pair: keep the label as
-is, and have the privacy page say "No third-party analytics" plus one line
-that Pomona counts its own use (chats, meals cooked) to see what's working.
+**The privacy page agrees with this label** (settled on
+`overnight/privacy-page-matches-apple`, 2026-10-26). It used to say "No
+analytics", while the label and the manifest declare Usage Data → Product
+Interaction for Analytics (the server counts chat turns and meals cooked per
+household, `app/tools/usage.py`). The label stayed as it is; `/privacy` now
+says "No third-party analytics" plus one line that Pomona counts its own use
+(chat turns, meals cooked) to see what's working, and `/support` matches.
+`tests/test_legal_pages.py` pins the pair.
 
 **Not collected:** location, contacts, browsing/search history, financial
 info, purchases, advertising data, device ID (the push token is per-install,

@@ -103,6 +103,11 @@ body {
   letter-spacing: -0.02em;
   margin: 20px 0 6px;
 }
+/* A section a link lands on (/privacy#claude, from Sharing with Claude):
+   a little air above it, and clear of the notch in the iPhone app. */
+.legal-wrap [id] {
+  scroll-margin-top: calc(env(safe-area-inset-top, 0px) + 24px);
+}
 .legal-wrap p,
 .legal-wrap li {
   font-size: 16px;
