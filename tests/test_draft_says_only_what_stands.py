@@ -125,6 +125,7 @@ def test_a_requested_dish_cleared_off_an_out_night_is_not_as_you_asked(household
     assert _dinner(plan_id, dates[2])["slot_state"] == "planned_empty"
     opener = tools.get_week_menu(plan_id)["draft_opener"]
     assert not any("as you asked" in line and "Lasagna" in line for line in opener), opener
+    assert not any("couldn’t fit" in line for line in opener), opener
     # Snag rule 8 (2026-10-25): the dish is not dropped — it moves to the
     # nearest home night, and the draft flag says so, not the opener.
     menu = tools.get_week_menu(plan_id)
@@ -243,6 +244,7 @@ def test_two_requests_sharing_a_word_do_not_vouch_for_each_other(household, pick
     opener = tools.get_week_menu(plan_id)["draft_opener"]
     assert not any("tacos" in line.lower() and "as you asked" in line for line in opener), opener
     assert "Chicken curry Friday, as you asked" in opener[0], opener
+    assert not any("couldn’t fit" in line for line in opener), opener
     # Snag rule 8 (2026-10-25): the tacos move to Wednesday, said by the flag.
     menu = tools.get_week_menu(plan_id)
     assert _dinner(plan_id, dates[2])["meal"] == "Chicken Tacos"

@@ -2719,13 +2719,33 @@ def _ended_share_splits(conn, ended: set) -> list[tuple]:
         restated = None if totals is None else _restate_standing_want(line["quantity"] or "", *totals)
         if restated is None:
             continue
-        parts = [
-            (plan_id, plan_links,
-             _plan_or_rack_amount(line["item"], [r["share"] or "" for r in plan_links], "", "", ""))
-            for plan_id, plan_links in by_plan.items()
-        ]
+        # Each ended plan's part is what IT moved the line's rounded total
+        # by, taken off one plan at a time from the top (the later ended
+        # plans and the live ones still on): ceil(this + rest) - ceil(rest).
+        # The parts then add up to exactly what came off the line, so a Keep
+        # puts back what was taken and no more. Each plan's own rounded total
+        # here asked about more than came off, and Keep put the difference
+        # back as creep (review of the 2026-10-25 merge: Dal 0.5 x 3 nights,
+        # own 2, kept each week, went 4 -> 6 -> 8 -> 10).
+        live_shares = [r["share"] or "" for r in links if r["plan_id"] not in ended]
+        plan_shares = [[r["share"] or "" for r in pl] for pl in by_plan.values()]
+        parts = []
+        for i, (plan_id, plan_links) in enumerate(by_plan.items()):
+            rest = [q for qs in plan_shares[i + 1:] for q in qs] + live_shares
+            with_it = _plan_or_rack_amount(line["item"], plan_shares[i] + rest, "", "", "")
+            without = _plan_or_rack_amount(line["item"], rest, "", "", "") if rest else ""
+            if not with_it or without is None:
+                qty = None
+            elif not without:
+                qty = with_it
+            else:
+                left, gone = _subtract_quantity(with_it, without)
+                qty = None if gone else left
+            parts.append((plan_id, plan_links, qty))
         # Only when every ended plan's part reads as an amount: half a split
         # would take the share off the line and ask about less than it took.
+        # A part the rounding swallowed whole (nothing moved) is left where
+        # it is, on the household's line, as before this existed.
         if all(qty for _p, _l, qty in parts):
             splits.append((line, restated, parts))
     return splits

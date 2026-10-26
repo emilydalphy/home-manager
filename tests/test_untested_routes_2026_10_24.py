@@ -147,7 +147,7 @@ def test_settling_a_slot_with_another_households_plan_id_changes_nothing(two):
         "date": _today(), "slot": "dinner", "choice": "Zqn Tacos", "weekly_plan_id": a_plan,
     })
     assert res.status_code == 404, res.text  # _plan_id_for_request: another household's id is a 404
-    assert "Zqs" not in res.text
+    assert "Zqn" not in res.text
     assert _tonights_dinner_rows(a_plan) == before
     assert _count("meal_plan_entries", b_id) == 0
     # A, through the same route and body, does settle it.

@@ -155,7 +155,9 @@ def test_fractional_shares_never_creep_when_next_week_is_approved_early():
             tools.set_aside_ended_weeks()
         needed = [o for o in _onions() if o[1] == "needed"]
         assert needed == [("4", "needed", True)], (week, _onions())  # own 2 + the live week's 2
-    assert [c["quantity"] for c in tools.list_carried_over_items()] == ["2", "2", "2"]
+    # Each ended week asks about what it moved the line's rounded total by
+    # (ceil(3) - ceil(1.5) = 1), so a Keep puts back what came off and no more.
+    assert [c["quantity"] for c in tools.list_carried_over_items()] == ["1", "1", "1"]
 
 
 def test_two_ended_weeks_pooled_at_one_approval_each_come_off_whole():
@@ -170,4 +172,5 @@ def test_two_ended_weeks_pooled_at_one_approval_each_come_off_whole():
         tools.approve_weekly_plan(plan, approved_by="Emily")
     needed = [o for o in _onions() if o[1] == "needed"]
     assert needed == [("6", "needed", True)], _onions()  # own 4 + this week's 2
-    assert sorted(c["quantity"] for c in tools.list_carried_over_items()) == ["2", "2"]
+    # Together they are what came off: ceil(4 + 4.5) - ceil(4 + 1.5) = 3.
+    assert sorted(c["quantity"] for c in tools.list_carried_over_items()) == ["1", "2"]
