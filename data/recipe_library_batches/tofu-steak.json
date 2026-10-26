@@ -3,119 +3,49 @@
  "cuisine": "Japanese",
  "main_protein": "tofu",
  "default_servings": 4,
- "prep_time_minutes": 25,
- "cook_time_minutes": 20,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
  "ingredients": [
-  {
-   "item": "Firm tofu",
-   "qty": "2 blocks (14 oz each)",
-   "category": "dairy"
-  },
-  {
-   "item": "Potato starch",
-   "qty": "1 bag",
-   "category": "pantry",
-   "cook_qty": "1/2 cup"
-  },
-  {
-   "item": "Soy sauce",
-   "qty": "1 bottle",
-   "category": "pantry",
-   "cook_qty": "3 tbsp"
-  },
-  {
-   "item": "Mirin",
-   "qty": "1 bottle",
-   "category": "pantry",
-   "cook_qty": "3 tbsp"
-  },
-  {
-   "item": "Sake",
-   "qty": "1 bottle",
-   "category": "pantry",
-   "cook_qty": "3 tbsp"
-  },
-  {
-   "item": "Sugar",
-   "qty": "1 bag",
-   "category": "pantry",
-   "cook_qty": "a pinch"
-  },
-  {
-   "item": "Unsalted butter",
-   "qty": "2 tbsp",
-   "category": "dairy"
-  },
-  {
-   "item": "Garlic",
-   "qty": "2 cloves",
-   "category": "produce"
-  },
-  {
-   "item": "Green onions",
-   "qty": "1 bunch",
-   "category": "produce",
-   "cook_qty": "2"
-  },
-  {
-   "item": "Vegetable oil",
-   "qty": "6 tbsp",
-   "category": "pantry"
-  },
-  {
-   "item": "Short-grain white rice",
-   "qty": "1 1/2 cups",
-   "category": "pantry"
-  }
+  {"item": "Short-grain white rice", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Extra-firm tofu", "qty": "1 block (14 oz)", "category": "dairy"},
+  {"item": "Salt", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "All-purpose flour", "qty": "1 bag", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Eggs", "qty": "1", "category": "dairy"},
+  {"item": "White sesame seeds", "qty": "1 bag", "category": "pantry", "cook_qty": "4 tbsp"},
+  {"item": "Black sesame seeds", "qty": "1 bag", "category": "pantry", "cook_qty": "4 tbsp"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Mirin", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Sake", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce", "cook_qty": "1"},
+  {"item": "Vegetable oil", "qty": "2 tbsp", "category": "pantry"}
  ],
  "instructions": [
   "Rinse the 1 1/2 cups rice in cold water until the water runs mostly clear, then cook it in a rice cooker or a covered pot.",
-  "Drain the 2 blocks of tofu and cut each one crosswise into 4 slabs about 3/4 inch thick.",
-  "Lay the slabs on a double layer of paper towels in one layer and cover them with more paper towels. Set a baking sheet on top with a couple of cans on it. Leave them to drain for 15 to 20 minutes, and change the towels halfway if they're soaked.",
-  "Meanwhile, make the sauce. In a small bowl, stir together the 3 tbsp soy sauce, 3 tbsp mirin, 3 tbsp sake, 3 tbsp water and a pinch of sugar.",
-  "Grate or finely mince the 2 garlic cloves and add them to the sauce. Cut the 2 tbsp butter into small pieces and add it too. It doesn't need to melt.",
-  "Thinly slice 2 of the green onions.",
-  "Spread the 1/2 cup potato starch on a plate. Press each tofu slab into it on both sides and the edges, and shake off the extra. Coat them right before they go in the pan, or the starch turns sticky.",
-  "Heat 3 tbsp of the oil in a large nonstick skillet over medium until it shimmers. Lay in half the slabs with room between them. Cook them without moving for 3 to 4 minutes, until the underside is golden and crisp.",
-  "Flip them and cook the other side for 3 to 4 minutes, until it's golden too. Transfer them to a plate lined with paper towels.",
-  "Add the last 3 tbsp oil and cook the rest of the slabs the same way.",
-  "Pour off the oil left in the pan and turn the heat down to medium-low. Add the sauce and stir for about 30 seconds, until the butter melts.",
-  "Put all the tofu back in the pan. Turn the slabs in the sauce for 1 to 2 minutes, until it's thick and glossy and clings to them. There should be very little left in the pan.",
-  "Taste it. If it's flat, add a splash of soy sauce.",
-  "Put the tofu on plates, spoon any sauce left in the pan over the top and scatter the green onions on it. Serve with the rice."
+  "Meanwhile, drain the tofu. Lay the block on its widest side and cut it across into 4 flat slabs about 5/8 inch (1.5 cm) thick.",
+  "Pat the slabs dry on all sides with paper towels. Sprinkle them with the 1/4 tsp salt and 1/4 tsp pepper.",
+  "In a small jug, stir together the 2 tbsp soy sauce, 2 tbsp mirin, 2 tbsp sake and 2 tbsp water. Keep it by the stove.",
+  "Peel the 2 garlic cloves and slice them as thin as you can. Thinly slice 1 of the green onions.",
+  "Set out three shallow bowls. Put the 2 tbsp flour in the first. Crack the egg into the second and whisk it with a fork. Mix the 4 tbsp white sesame seeds and 4 tbsp black sesame seeds in the third.",
+  "Dust a slab in the flour and shake off the extra. Dip it in the egg and let the drips fall off, then press it into the sesame seeds on both sides and the edges until it's covered. Do the same with the other 3 slabs.",
+  "Heat the 2 tbsp oil in a large nonstick skillet over medium. Add the garlic and stir it for 1 to 2 minutes, until it's golden and crisp. Watch it closely. It turns from golden to burnt fast. Lift it out onto a paper towel and leave the oil in the pan.",
+  "Turn the heat up to medium-high. Lay in the tofu slabs and cook them for about 1 1/2 minutes, until the sesame smells nutty and the underside is crisp and golden.",
+  "Turn them gently with a spatula and cook the other side for about 1 1/2 minutes, until it's crisp too.",
+  "Hold each slab on its edge with tongs and sear the edges for about 30 seconds each, until they're crisp. Transfer the tofu to a plate lined with paper towels.",
+  "Turn the heat down to medium and pour the sauce into the pan. Let it bubble for about 1 minute, until it's thick and syrupy, then take the pan off the heat.",
+  "Taste the sauce. If it's flat, add a pinch more salt.",
+  "Put a slab of tofu on each plate, spoon the sauce over it and scatter the crisp garlic and green onion on top. Serve with the rice."
  ],
  "advance_prep_notes": "",
  "advance_prep_step_indices": [],
- "method_notes": "All three press firm tofu, dust it with starch or flour, fry it until golden and finish it with a soy sauce based sauce. Contemplating Sweets, the lead, mixes soy sauce, mirin, sake, water, a pinch of sugar, butter and garlic, and glazes the fried tofu in it on medium-low; Kokoro Cares fries the tofu in salted butter and stirs in mentsuyu, sweet sake and garlic off the heat, and Norecipes salts and weights its tofu for an hour and glazes it in a ketchup and soy sauce sauce with crisp garlic and mushrooms. No version of this dish had 20 or more ratings. RecipeTin Eats, the trusted cook for Japanese, has only a sesame crusted tofu steak with a teriyaki sauce and no butter, which is a different dish, so it was left out and the lead is the version closest to this dish. This one doubles the lead for 4, cuts each block into 4 thick slabs instead of 12 small pieces and fries them in two batches.",
+ "method_notes": "All four versions pan-fry slabs of firm tofu until golden and finish them with a soy sauce based sauce. RecipeTin Eats, the lead, coats the tofu in flour, egg and white and black sesame seeds, fries it for only about 1 1/2 minutes a side plus the edges, and spoons over a quick teriyaki of equal parts soy sauce, mirin, sake and water with crisp garlic on top. Contemplating Sweets and Kokoro Cares use starch or plain tofu with a soy and butter glaze, and Norecipes salts and weights its tofu and glazes it in a ketchup and soy sauce, so the sesame crust and the butterless sauce are the lead's own. This one follows the lead's amounts for 4 (four 3 1/2 oz slabs, so one 14 oz block), keeps its optional garlic chips, and adds the plain rice the lead suggests serving it with; the egg in the crust means it's vegetarian, not vegan.",
  "sources": [
-  {
-   "name": "Contemplating Sweets",
-   "title": "Soy Sauce and Butter Glazed Tofu (Tofu Steak)",
-   "url": "https://www.contemplatingsweets.com/soy-sauce-and-butter-glazed-tofu/",
-   "rating": null,
-   "rating_count": null,
-   "read": true,
-   "lead": true
-  },
-  {
-   "name": "Kokoro Cares",
-   "title": "Tofu Steaks with Garlic Butter Soy Sauce",
-   "url": "https://kokorocares.com/blogs/recipes/recipe-tofu-steaks-with-garlic-butter-soy-sauce",
-   "rating": null,
-   "rating_count": null,
-   "read": true,
-   "lead": false
-  },
-  {
-   "name": "Norecipes",
-   "title": "Tofu Steak (Japanese Tofu Steak Recipe)",
-   "url": "https://norecipes.com/tofu-steak-recipe/",
-   "rating": 5.0,
-   "rating_count": 1,
-   "read": true,
-   "lead": false
-  }
+  {"name": "RecipeTin Eats", "title": "Sesame Crusted Tofu Steaks with Teriyaki Sauce", "url": "https://www.recipetineats.com/sesame-crusted-tofu-steaks/", "rating": 4.82, "rating_count": 32, "read": true, "lead": true},
+  {"name": "Contemplating Sweets", "title": "Soy Sauce and Butter Glazed Tofu (Tofu Steak)", "url": "https://www.contemplatingsweets.com/soy-sauce-and-butter-glazed-tofu/", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Kokoro Cares", "title": "Tofu Steaks with Garlic Butter Soy Sauce", "url": "https://kokorocares.com/blogs/recipes/recipe-tofu-steaks-with-garlic-butter-soy-sauce", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Norecipes", "title": "Tofu Steak (Japanese Tofu Steak Recipe)", "url": "https://norecipes.com/tofu-steak-recipe/", "rating": 5.0, "rating_count": 1, "read": true, "lead": false}
  ],
- "fallback_used": true,
+ "fallback_used": false,
  "origin": "seed"
 }
