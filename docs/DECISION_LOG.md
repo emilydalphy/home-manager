@@ -312,6 +312,15 @@ why*, not duplicating the diff.
   generation's own words. Past uncooked nights still convert: Emily's call.
   The week menu drops the away badge and "nothing bought" line off a kept
   cooked meal.
+- **"1,000 g" is a kilo and "Jalapeño" is "jalapeno" on the grocery list**
+  (2026-10-22, overnight hunt; branch `overnight/hunt-grocery-2026-10-22`;
+  `tests/test_grocery_numbers_and_accents.py`). A comma between digits was
+  read as a "3, diced" prep comma, so a typed "1,000 g" flour showed "1" and
+  "1,5 kg" showed "1": `quantities._number_commas` (3 digits after = thousands,
+  else decimal) runs first. `grocery._plain_name_key` now folds accents, so
+  two recipes' spellings are one line; the line keeps the name as written.
+  Review fixes: "0,500 kg" and a 3-digit group before kg/l stay decimals
+  (were 1000x too big); only marks on Latin letters fold (ごま is not こま).
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
