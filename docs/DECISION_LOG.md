@@ -1163,6 +1163,20 @@ why*, not duplicating the diff.
   ("chicken", 1.5 lb) replaced "1 ½ quarts chicken stock". Aliases + plurals
   added, the stocks get their own table keys, and the stepper scales a bare
   "1 ½ quarts" line (steps still leave quarts alone: a "6 quart pot").
+- **"Add something" holds the table's rules; Swap's Undo brings the sides
+  back** (2026-10-24, overnight hunt; branch
+  `overnight/hunt-swap-plates-1024`; tests
+  `tests/test_add_something_and_swap_undo_keep_the_plate.py`). The Add
+  something sheet was the one option sheet with no `offer_gate` (a
+  gluten-free adult was offered Crusty bread/Couscous/Orzo, dairy-free
+  Garlic yogurt sauce), and `add_component` planted and bought a clashing
+  side, tapped or typed, and wrote onto a night gone by: now gated
+  (`SlotRefused` → 409 on the route, because `runMealAdd` reads any 200 as
+  added; its toast is still the generic "try again" — shell.js follow-up).
+  Swap → Undo put the dish back without the sides the swap left behind:
+  the undo note now records them (`_with_outgoing_sides`) and Undo
+  re-attaches and re-buys them. `test_meal_add_component.py` is pinned to
+  its Monday whole-file, since it adds to Monday's dinner.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

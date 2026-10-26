@@ -1178,7 +1178,10 @@ def apply_pick(weekly_plan_id: int, entry: dict, pick: dict, carry_sides: bool =
     if correct_title:
         pick["meal_name"] = honest_meal_name(pick)
     _save_recipe_if_new(pick, serves)
-    sides = _plates.get_sides(entry["entry_id"]) if carry_sides else []
+    # Read before the swap below deletes the row they hang off: carried
+    # onto the new entry, or recorded for Undo (_with_outgoing_sides).
+    outgoing_sides = _plates.get_sides(entry["entry_id"])
+    sides = outgoing_sides if carry_sides else []
     # Read before the swap unlinks it: the chain this cook fed, so Undo
     # can put it back (undo_meal_swap -> weekly_plan.restore_leftover_chain).
     #
@@ -1217,6 +1220,7 @@ def apply_pick(weekly_plan_id: int, entry: dict, pick: dict, carry_sides: bool =
         swapped_from = dict(swapped_from, chain=chain)
     if cuts:
         swapped_from = dict(swapped_from, prep_cuts=cuts)
+    swapped_from = _with_outgoing_sides(swapped_from, entry, carry_sides, outgoing_sides)
     derived = dict(entry["derived_from"])
     # A day swapped on its own after its dish was swapped as a whole
     # (apply_pick_to_days) leaves that group: its Undo is its own now.
@@ -1337,8 +1341,9 @@ def undo_meal_swap(weekly_plan_id: int, entry_id: int) -> dict:
     if (entry["derived_from"] or {}).get("swap_group"):
         return _undo_dish_swap(weekly_plan_id, entry)
 
-    # A change that carried the plate's sides forward carries them back.
-    sides = _plates.get_sides(entry_id) if (entry["derived_from"] or {}).get("carry_sides") else []
+    # A change that carried the plate's sides forward carries them back;
+    # a swap that left them behind puts back the ones it left.
+    sides = _sides_to_put_back(entry)
     result = _weekly_plan.swap_meal_in_plan(
         weekly_plan_id, entry["date"], name, slot=entry["slot"],
         food_groups=previous.get("food_groups") or [],
@@ -1361,6 +1366,49 @@ def undo_meal_swap(weekly_plan_id: int, entry_id: int) -> dict:
         "meal": name,
         "day": _refreshed_day(weekly_plan_id, entry["date"]),
     }
+
+
+def _with_outgoing_sides(swapped_from: dict, entry: dict, carry_sides: bool,
+                         outgoing: list[dict]) -> dict:
+    """
+    The undo note with the outgoing plate's sides on it, when this swap
+    leaves them behind. A swap to another dish drops the old entry's sides
+    (the potatoes went with the chops), and Undo used to put the chops back
+    with nothing beside them: the Crusty bread the household had added, and
+    the side the plate pass chose, were gone from the meal and their lines
+    from the list — Swap, then Undo, measured on an approved week.
+
+    Recorded once, like the rest of the note: a second swap of the slot
+    keeps the ORIGINAL's sides. One case writes them late on purpose — a
+    Change (carry_sides) then a Swap: the Change's note has no sides of its
+    own because the entry carried them, so the sides on the entry NOW are
+    the original's, and those are the ones recorded. `outgoing` is the
+    entry's sides, read by the caller BEFORE the swap deletes its row.
+    """
+    if carry_sides or "sides" in swapped_from:
+        return swapped_from
+    if swapped_from is not entry["derived_from"].get("swapped_from") \
+            or entry["derived_from"].get("carry_sides"):
+        sides = [{k: v for k, v in s.items() if k != "grocery_link_ids"}
+                 for s in outgoing or [] if isinstance(s, dict) and s.get("name")]
+        if sides:
+            return dict(swapped_from, sides=sides)
+    return swapped_from
+
+
+def _sides_to_put_back(entry: dict) -> list[dict]:
+    """What Undo puts beside the restored dish: the ORIGINAL's sides where
+    the note recorded them (_with_outgoing_sides — a Swap, then a Change on
+    top, still goes back to the first dish's plate), else the entry's own
+    when every change since carried them. carry_sides re-buys them on an
+    approved week."""
+    derived = entry["derived_from"] or {}
+    recorded = (derived.get("swapped_from") or {}).get("sides")
+    if recorded:
+        return list(recorded)
+    if derived.get("carry_sides"):
+        return _plates.get_sides(entry["entry_id"])
+    return []
 
 
 # What a swap writes on derived_from about itself, and what an undo takes
@@ -1921,7 +1969,8 @@ def apply_pick_to_days(weekly_plan_id: int, entries: list[dict], pick: dict,
         pick["meal_name"] = honest_meal_name(pick)
     _save_recipe_if_new(pick, serves or _table_for(first["date"], first["slot"])["serves"])
     # Read before the write: the rows they hang off are about to go.
-    sides_by_entry = {e["entry_id"]: _plates.get_sides(e["entry_id"]) for e in entries} if carry_sides else {}
+    outgoing_sides = {e["entry_id"]: _plates.get_sides(e["entry_id"]) for e in entries}
+    sides_by_entry = outgoing_sides if carry_sides else {}
     token = uuid.uuid4().hex
     now = datetime.datetime.now().isoformat(timespec="seconds")
     reason = (pick.get("reason") or "").strip()
@@ -1951,6 +2000,8 @@ def apply_pick_to_days(weekly_plan_id: int, entries: list[dict], pick: dict,
             cuts = _prep_cuts_of(entry["entry_id"])
             if cuts:
                 swapped_from = dict(swapped_from, prep_cuts=cuts)
+        swapped_from = _with_outgoing_sides(swapped_from, entry, carry_sides,
+                                            outgoing_sides.get(entry["entry_id"]) or [])
         if instead:
             # The chain this row is in NOW, recorded so Undo can put it
             # back: these rows leave the chain, so by undo time there is
@@ -2075,7 +2126,7 @@ def _undo_dish_swap(weekly_plan_id: int, entry: dict) -> dict:
         name = (previous.get("meal") or "").strip()
         if not name:
             continue
-        carried.append(_plates.get_sides(m["entry_id"]) if m["derived_from"].get("carry_sides") else [])
+        carried.append(_sides_to_put_back(m))
         cut_lists.append(previous.get("prep_cuts") or [])
         item = {
             "old_entry_id": m["entry_id"], "date": m["date"], "slot": m["slot"], "new_meal": name,
