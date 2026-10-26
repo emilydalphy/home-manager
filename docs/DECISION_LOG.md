@@ -1138,6 +1138,16 @@ why*, not duplicating the diff.
   `delete_preference` says `deleted: false` for a cuisine or store it never
   had. Why: "forget cilantro" with no cilantro saved still showed
   "Household info updated · Updated cilantro".
+- **Chat keeps one adult too** (2026-10-24, overnight test-gap pass; branch
+  `overnight/chat-keeps-one-adult`; tests `tests/test_chat_keeps_one_adult.py`).
+  Settings' age chip refused taking the only adult off Adult; chat's
+  set_member_age_group did not, so "Emily's a teen" left a one-adult home
+  with no adult. One rule now (`tools.last_adult_leaving`), read by the route
+  and by `set_member_age_group_for_chat`, which raises `tools.MemberRefused`
+  (a fourth REFUSALS_OWED_TO_A_PERSON marker: an answer, not a breakage).
+  Chat's word stays freeform; the own-age rule stays route-only. Merged
+  with `overnight/chat-tools-sig`: the person is found by `find_member_row`,
+  so "Emily " / "Émily" is still the only adult, and an ambiguous name is refused.
 - **A name said in chat finds its person whatever the accents, case or
   spaces** (2026-10-24, defect hunt; branch `overnight/chat-tools-sig`; tests
   `tests/test_member_name_accents.py`). "zoe is allergic to nuts" about Zoé

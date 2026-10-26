@@ -10374,7 +10374,10 @@ CHORES_TOOLS = frozenset({
 # MoveOwnerRefused (2026-10-07, move-owner slice 2) is the third: "I don't
 # have a Priya among the adults here" is the chat asking back, and every
 # misheard name would otherwise read as a broken tool in the morning report.
-REFUSALS_OWED_TO_A_PERSON = (tools.SlotRefused, tools.ChoreRefused, tools.MoveOwnerRefused)
+# MemberRefused (2026-10-24) is the fourth: "Emily is the only adult here"
+# is set_member_age_group keeping the household one adult, as Settings does.
+REFUSALS_OWED_TO_A_PERSON = (tools.SlotRefused, tools.ChoreRefused, tools.MoveOwnerRefused,
+                             tools.MemberRefused)
 
 
 def _chores_off_result() -> dict:
@@ -10579,7 +10582,7 @@ TOOL_FUNCTIONS = {
     "add_member": tools.add_member,
     "list_members": tools.list_members,
     "set_member_dietary_restrictions": tools.set_member_dietary_restrictions,
-    "set_member_age_group": tools.set_member_age_group,
+    "set_member_age_group": tools.set_member_age_group_for_chat,
     "set_household_goals": tools.set_household_goals,
     "set_morning_text": tools.set_morning_text,
     "add_pet": tools.add_pet,

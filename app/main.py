@@ -2553,34 +2553,13 @@ _SETTINGS_AGE_GROUPS = frozenset({"adult", "teen", "child"}) | _household_tools.
 
 def _refuse_last_adult_leaving(name: str, age_group: str) -> None:
     """
-    A household always keeps one adult (defect hunt 2026-10-20). Marking
-    the only adult Teen or Child left "Who's this?", sign-in's member pick,
-    approval credit and the main person with nobody to name — and the
-    phone that did it went on as no one. Re-marking an adult as an adult,
-    or anyone else as anything, is untouched. Same adult test as
-    current_member (LOWER(TRIM(age_group)) = 'adult').
+    A household always keeps one adult (defect hunt 2026-10-20). The rule
+    and its sentence live in tools.last_adult_leaving, shared with chat's
+    set_member_age_group since 2026-10-24; this is its 400.
     """
-    if age_group == "adult":
-        return
-    conn = get_conn()
-    try:
-        # Matched by find_member_row, the same lookup _require_member_here
-        # and the tool use, so the person checked is the row written.
-        try:
-            them = find_member_row(conn, name)
-        except AmbiguousMemberName as e:
-            raise HTTPException(status_code=400, detail=str(e))
-        adult_ids = [r["id"] for r in conn.execute(
-            "SELECT id FROM members WHERE household_id = ? AND LOWER(TRIM(age_group)) = 'adult'",
-            (tools.household_id(),),
-        )]
-    finally:
-        conn.close()
-    if them is not None and adult_ids == [them["id"]]:
-        raise HTTPException(
-            status_code=400,
-            detail=f"{name.strip()} is the only adult here. Add another adult before changing this.",
-        )
+    refusal = tools.last_adult_leaving(name, age_group)
+    if refusal:
+        raise HTTPException(status_code=400, detail=refusal)
 
 
 def _refuse_own_age_leaving_adult(name: str, age_group: str) -> None:

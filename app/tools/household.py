@@ -5,7 +5,9 @@ from __future__ import annotations
 
 import json
 from ..db import _ADULT_COLORS, get_conn, write
-from ._shared import EATS_HERE_SQL, current_member, find_member_row, household_id, household_initials
+from ._shared import (
+    EATS_HERE_SQL, AmbiguousMemberName, current_member, find_member_row, household_id, household_initials,
+)
 
 
 # Junk "no answer" values that sometimes get written into a restrictions
@@ -344,6 +346,68 @@ def set_member_age_group(name: str, age_group: str) -> dict:
     finally:
         conn.close()
     return {"name": name, "age_group": age_group}
+
+
+class MemberRefused(ValueError):
+    """
+    A member write declining in a sentence written for the household
+    ("Emily is the only adult here. ..."). The same marker
+    weekly_plan.SlotRefused is: an answer, not a breakage, so the chat
+    dispatch (agent.REFUSALS_OWED_TO_A_PERSON) hands it back without
+    recording an error.
+    """
+
+
+def last_adult_leaving(name: str, age_group: str) -> str | None:
+    """
+    The sentence that refuses taking the household's ONLY adult off Adult,
+    or None when the change is fine. A household always keeps one adult
+    (defect hunt 2026-10-20): with none, "Who's this?", sign-in's member
+    pick, approval credit and the main person have nobody to name.
+
+    One rule for both doors (2026-10-24): Settings' age chip
+    (POST /api/memory/member/age-group) and chat's set_member_age_group
+    (set_member_age_group_for_chat). Until then only the route asked, and
+    "make Emily a teen" in chat left a one-adult household with no adult.
+    Same adult test as current_member (LOWER(TRIM(age_group)) = 'adult'),
+    and the person is found by find_member_row, the lookup the write uses.
+    """
+    if (age_group or "").strip().lower() == "adult":
+        return None
+    conn = get_conn()
+    try:
+        # find_member_row (case-, space- and accent-blind) is the lookup the
+        # write itself uses, so the person checked is the row written:
+        # "Emily " or "Émily" is still Emily. A name that could be two
+        # people is refused here, before anything is written.
+        try:
+            them = find_member_row(conn, name)
+        except AmbiguousMemberName as e:
+            return str(e)
+        adult_ids = [r["id"] for r in conn.execute(
+            "SELECT id FROM members WHERE household_id = ? AND LOWER(TRIM(age_group)) = 'adult'",
+            (household_id(),),
+        )]
+    finally:
+        conn.close()
+    if them is not None and adult_ids == [them["id"]]:
+        shown = (them["name"] or "").strip() or (name or "").strip()
+        return f"{shown} is the only adult here. Add another adult before changing this."
+    return None
+
+
+def set_member_age_group_for_chat(name: str, age_group: str) -> dict:
+    """
+    set_member_age_group with the refusal a person is owed in front of it:
+    never the household's last adult (last_adult_leaving). agent.TOOL_FUNCTIONS
+    points at this; onboarding and the tests call the bare function. Raises
+    rather than answering a dict, so the turn records no write and the
+    model cannot say it made the change (see swap_meal_in_plan_for_chat).
+    """
+    refusal = last_adult_leaving(name, age_group)
+    if refusal:
+        raise MemberRefused(refusal)
+    return set_member_age_group(name, age_group)
 
 
 # Ages (Emily, 2026-10-05): "Pomona works out what it needs from the age".
