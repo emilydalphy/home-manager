@@ -246,6 +246,15 @@ has a **Phase** select property mirroring it — use it when picking work:
   code or screen under chores. If a Chores defect turns up in passing, one line in the
   summary and move on. The earlier 2026-09-11 call that Chores could run in parallel with
   the beta is superseded by this pause. The beta tester's app stays meals-only.
+  **Widened 2026-10-26 (Emily: "Anything that is chores - still leave a pause on it and
+  there shouldn't be any build"):** the pause covers code, not just cards. Whatever card
+  you are on (cost, speed, cleanup, defect hunt), never edit, move, split or tidy Chores
+  code: `app/tools/chores*.py`, chores routes, chores tools or prompt text in
+  `app/agent.py`, chores screens in `static/`, `set_chores_enabled.py`, the
+  `chores_enabled` switch, `tests/test_chore*.py`. A chat-cost card did exactly that on
+  2026-10-25 (`overnight/chores-prompt-only-when-on`) and had to be reverted. Never fix
+  failing Chores tests; list them for Emily. Before pushing or merging, check
+  `git diff origin/main...HEAD | grep -i chore` and take out any Chores change.
 - **Phase 3 — App Store** and **Phase 4 — Flywheel** are later; **Parked** tickets are
   deliberately out of rotation — don't pick them up without Emily asking.
 
