@@ -74,9 +74,9 @@ KNOWN_AMOUNT_LOOKS = {
     ("tofu-tibs", "Berbere (gluten-free)"),
     ("torrijas", "Lemon"),
 }
-# Tagged vegetarian with fish sauce on the list — left for Emily (the tag is
-# a variety word no household's copy carries; see the decision log).
-KNOWN_MEATLESS_LOOKS = {("green-papaya-salad", "Fish sauce")}
+# A dish tagged vegetarian/vegan with meat or fish on its list. None now:
+# Green Papaya Salad (fish sauce) was retagged "fish" (Emily, 2026-10-26).
+KNOWN_MEATLESS_LOOKS: set = set()
 
 _AMOUNT_LOOK = re.compile(r"look (\S+)\.json: steps use .+? of (.+?), list says")
 _MEAT_LOOK = re.compile(r"look (\S+)\.json: main_protein is \S+ but the list has (.+)$")

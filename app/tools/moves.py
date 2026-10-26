@@ -303,7 +303,9 @@ def _with_allergy_line(reason: str, clashes: list[dict] | None) -> str:
     note. On Today the screen puts a cook's "Start by" chip before the
     whole reason (shell.js dayNodeWhyHtml), so the line reads "Start by
     7:35 · Has peanut, …" — first in the reason, second on the row.
-    Leading the row needs shell.js; noted for Emily (review, 2026-10-24)."""
+    Since 2026-10-26 (Emily went with the pick) Today reads the move's own
+    `allergy_line` instead: it leads the row, in the warning style, and is
+    taken out of the reason there; the reason keeps it for other readers."""
     if not clashes:
         return reason
     line = _allergen_gate.since_approval_line(clashes)
@@ -355,6 +357,9 @@ def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[di
                 "detail": f"{provenance}{how} · {_clock(at.time())}",
                 "reason": _with_allergy_line(meal.get("reheat_note") or "", allergy),
                 "allergy_note": _allergen_gate.since_approval_line(allergy, sentence=True) if allergy else "",
+                # The line itself, so Today can lead the row with it in the warning
+                # style (shell.js dayNodeWhyHtml) rather than in the quiet grey.
+                "allergy_line": _allergen_gate.since_approval_line(allergy) if allergy else "",
                 "date": day_str,
                 "slot": slot,
                 "window_start": at.isoformat(),
@@ -407,6 +412,9 @@ def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[di
                 "detail": f"{prepped_line} · {_clock(at.time())}",
                 "reason": _with_allergy_line("", allergy),
                 "allergy_note": _allergen_gate.since_approval_line(allergy, sentence=True) if allergy else "",
+                # The line itself, so Today can lead the row with it in the warning
+                # style (shell.js dayNodeWhyHtml) rather than in the quiet grey.
+                "allergy_line": _allergen_gate.since_approval_line(allergy) if allergy else "",
                 "date": day_str,
                 "slot": slot,
                 "window_start": at.isoformat(),
@@ -472,6 +480,9 @@ def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[di
             # Its own field too, for the morning text (digest.py), which
             # says it on a line of its own rather than inside the reason.
             "allergy_note": _allergen_gate.since_approval_line(allergy, sentence=True) if allergy else "",
+            # The line itself, so Today can lead the row with it in the warning
+            # style (shell.js dayNodeWhyHtml) rather than in the quiet grey.
+            "allergy_line": _allergen_gate.since_approval_line(allergy) if allergy else "",
             "date": day_str,
             "slot": slot,
             "window_start": start.isoformat(),

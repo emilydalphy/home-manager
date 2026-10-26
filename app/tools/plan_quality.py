@@ -1868,13 +1868,11 @@ def check_week(plan_entries: list[dict], context: dict) -> list[Violation]:
     # independent, additive, and one firing never suppresses another.
     violations += _dish_named_for_an_absence(plan_entries, context)
     violations += _title_promises_an_ingredient(plan_entries, context)
-    violations += _seasoning_never_mentioned(plan_entries, context)
-    violations += _method_is_assembly(plan_entries, context)
-    # Round 2 of the floor: how the method is written, not just what it does.
-    violations += _steps_have_no_cue(plan_entries, context)
-    violations += _no_heat_named(plan_entries, context)
-    violations += _longest_thing_not_first(plan_entries, context)
-    violations += _minutes_vs_steps(plan_entries, context)
+    # The style half of the floor (seasoning, method, and round 2's how the
+    # method is written) — never on a library dish (_STYLE_RULES).
+    styled = _not_library(plan_entries)
+    for rule in _STYLE_RULES:
+        violations += rule(styled, context)
     return violations
 
 
@@ -1898,9 +1896,11 @@ def _load_plan_entries(plan_id: int) -> list[dict]:
         SELECT mpe.id, mpe.date, mpe.slot, mpe.slot_state, mpe.reasoning, mpe.food_groups_json,
                mpe.derived_from_json, COALESCE(r.name, mpe.freeform_meal) AS meal_name,
                r.main_protein, r.prep_time_minutes, r.cook_time_minutes, r.times_cooked,
-               r.ingredients_json, r.instructions_json, r.default_servings
+               r.ingredients_json, r.instructions_json, r.default_servings,
+               rl.origin AS library_origin
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
+        LEFT JOIN recipe_library rl ON rl.id = r.library_id
         WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ? AND mpe.component_category IS NULL
         ORDER BY mpe.date ASC, {_weekly_plan.slot_order_sql('mpe.slot')} ASC, mpe.id ASC
         """,
@@ -1957,6 +1957,10 @@ def _load_plan_entries(plan_id: int) -> list[dict]:
             # For _quantities_plausible: the table the amounts are written
             # for. None for a freeform meal, which has no amounts either.
             "default_servings": r["default_servings"],
+            # A dish from the shared library's researched set (see
+            # _STYLE_RULES): its method was read from real cooks' pages and
+            # checked by hand, so the style floor is not run on it.
+            "from_library": r["library_origin"] == "seed",
         })
     return entries
 
@@ -2200,6 +2204,28 @@ _RECIPE_RULES = (
 )
 
 
+# The recipe STYLE checks: how a method is written, not whether the list and
+# the steps agree. Skipped for a dish from the shared library's researched
+# set (library origin "seed"): those methods follow real cooks' pages and
+# were checked by hand before filing, and on them these fired about 150
+# times, mostly wrongly (2026-10-25 library audit; measured 2026-10-26 on
+# the 840 batch files: longest_thing_not_first 137, method_is_assembly 78).
+# Emily, 2026-10-26: skip them for library dishes. A household's own written
+# recipe, filed to the library or not, is still checked.
+_STYLE_RULES = (
+    _seasoning_never_mentioned,
+    _method_is_assembly,
+    _steps_have_no_cue,
+    _no_heat_named,
+    _longest_thing_not_first,
+    _minutes_vs_steps,
+)
+
+
+def _not_library(entries: list[dict]) -> list[dict]:
+    return [e for e in entries if not e.get("from_library")]
+
+
 def _plan_intake(plan_id: int) -> dict:
     """The intake the plan was generated from, or {} — read here rather
     than through week_intake's by-week lookup, because by approval time a
@@ -2261,8 +2287,9 @@ def check_recipes_and_log(plan_id: int, recipe_names: list[str]) -> list[Violati
             ],
         }
         violations: list[Violation] = []
+        styled = _not_library(entries)
         for rule in _RECIPE_RULES:
-            violations += rule(entries, quality_context)
+            violations += rule(styled if rule in _STYLE_RULES else entries, quality_context)
         for v in violations:
             logger.warning(
                 "Plan %s recipe quality [%s/%s]%s%s: %s",
