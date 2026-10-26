@@ -415,6 +415,18 @@ def remove_member(household_id: int, member_id: int, by_member_id: int | None = 
                 )
             name = row[0]
             _drop_their_own_trips_and_needs(conn, hid, mid, touched)
+            # "I've got tonight" said by (or about) the person leaving goes
+            # with them, back to the household's default — never nulled by
+            # the loop below, because a NULL member_id on this table is a
+            # real answer, "Nobody yet" said on purpose (move_owner.py). After
+            # Vineeth claimed tonight and left, Emily's Today said nobody was
+            # cooking a dinner the rotation gives her (defect hunt 2026-10-24).
+            n = conn.execute(
+                "DELETE FROM move_owner_overrides WHERE household_id = ? AND member_id = ?",
+                (hid, mid),
+            ).rowcount
+            if n:
+                touched["move_owner_overrides.member_id"] = n
             for table, column, not_null, is_json in _member_columns(conn):
                 where_hh = "id = ?" if table == "households" else "household_id = ?"
                 if is_json:
