@@ -6,26 +6,113 @@
  "prep_time_minutes": 20,
  "cook_time_minutes": 85,
  "ingredients": [
-  {"item": "Bone-in chicken thighs", "qty": "8 (about 3 lbs)", "category": "meat/seafood"},
-  {"item": "Salt", "qty": "1 1/2 tsp", "category": "pantry"},
-  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
-  {"item": "Piment d'Espelette", "qty": "1 tsp", "category": "pantry"},
-  {"item": "Olive oil", "qty": "2 tbsp", "category": "pantry"},
-  {"item": "Yellow onion", "qty": "1", "category": "produce"},
-  {"item": "Red bell peppers", "qty": "2", "category": "produce"},
-  {"item": "Green bell pepper", "qty": "1", "category": "produce"},
-  {"item": "Yellow bell pepper", "qty": "1", "category": "produce"},
-  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
-  {"item": "Tomato paste", "qty": "1 can (6 oz)", "category": "pantry", "cook_qty": "2 tbsp"},
-  {"item": "All-purpose flour", "qty": "2 tbsp", "category": "pantry"},
-  {"item": "Dry white wine", "qty": "1 bottle", "category": "other", "cook_qty": "3/4 cup"},
-  {"item": "Crushed tomatoes", "qty": "1 can (14.5 oz)", "category": "pantry"},
-  {"item": "Chicken broth", "qty": "1 carton (32 oz)", "category": "pantry", "cook_qty": "1 1/2 cups"},
-  {"item": "Fresh thyme", "qty": "1 bunch", "category": "produce", "cook_qty": "3 sprigs"},
-  {"item": "Fresh rosemary", "qty": "1 bunch", "category": "produce", "cook_qty": "1 sprig"},
-  {"item": "Bay leaves", "qty": "2", "category": "pantry"},
-  {"item": "Long-grain white rice", "qty": "1 1/2 cups", "category": "pantry"},
-  {"item": "Flat-leaf parsley", "qty": "1 bunch", "category": "produce", "cook_qty": "1/4 cup chopped"}
+  {
+   "item": "Bone-in chicken thighs",
+   "qty": "8 (about 3 lbs)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Piment d'Espelette",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell peppers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1 bottle",
+   "category": "other",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "1 can (14.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Fresh thyme",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3 sprigs"
+  },
+  {
+   "item": "Fresh rosemary",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 sprig"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  }
  ],
  "instructions": [
   "Pat the 8 thighs dry with paper towels. Mix 1 tsp of the salt, the 1/2 tsp pepper and 1/4 tsp of the Espelette, and season the thighs all over.",
@@ -48,9 +135,33 @@
  "advance_prep_step_indices": [],
  "method_notes": "All three brown the chicken first, soften onion and peppers in the same pan, add tomatoes, white wine and stock with herbs, and braise the chicken in it, seasoned with piment d'Espelette and served with rice. La Cuisine de Géraldine (the lead) cooks tomato paste and flour into the vegetables and simmers on the stove for 45 minutes to an hour; Taste France adds paprika and finishes in a hot oven, and Angie's Recipes bakes it with thighs and finishes with parsley. This follows the lead with bone-in thighs, cooks the garlic after the peppers rather than before, and keeps half the Espelette for the table. No version had 20 or more ratings at 4.0 or above (Taste France has 70 votes but averages 3.8) and RecipeTin Eats has no poulet basquaise, so the lead is the best rated version read, at 5 from 10 votes. If you can't find Espelette, Angie's Recipes uses paprika with a pinch of cayenne.",
  "sources": [
-  {"name": "La Cuisine de Géraldine", "title": "Poulet Basquaise (Basque Chicken with Pepper)", "url": "https://lacuisinedegeraldine.fr/en/poulet-basquaise-basque-chicken-with-pepper", "rating": 5.0, "rating_count": 10, "read": true, "lead": true},
-  {"name": "Taste France", "title": "Poulet Basquaise – Basque-style Chicken", "url": "https://www.tastefrance.com/recipes/french-classics/poulet-basquaise-basque-style-chicken", "rating": 3.8, "rating_count": 70, "read": true, "lead": false},
-  {"name": "Angie's Recipes", "title": "Poulet Basquaise (Basque-Style Chicken)", "url": "https://angiesrecipes.blogspot.com/2025/11/poulet-basquaise-basque-style-chicken.html", "rating": null, "rating_count": null, "read": true, "lead": false}
+  {
+   "name": "La Cuisine de Géraldine",
+   "title": "Poulet Basquaise (Basque Chicken with Pepper)",
+   "url": "https://lacuisinedegeraldine.fr/en/poulet-basquaise-basque-chicken-with-pepper",
+   "rating": 5.0,
+   "rating_count": 10,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Taste France",
+   "title": "Poulet Basquaise – Basque-style Chicken",
+   "url": "https://www.tastefrance.com/recipes/french-classics/poulet-basquaise-basque-style-chicken",
+   "rating": 3.8,
+   "rating_count": 70,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Angie's Recipes",
+   "title": "Poulet Basquaise (Basque-Style Chicken)",
+   "url": "https://angiesrecipes.blogspot.com/2025/11/poulet-basquaise-basque-style-chicken.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
  ],
  "fallback_used": true,
  "origin": "seed"

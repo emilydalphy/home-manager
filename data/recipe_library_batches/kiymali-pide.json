@@ -6,26 +6,110 @@
  "prep_time_minutes": 40,
  "cook_time_minutes": 35,
  "ingredients": [
-  {"item": "Instant yeast", "qty": "2 tsp", "category": "pantry"},
-  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 tsp"},
-  {"item": "Bread flour", "qty": "4 cups", "category": "pantry"},
-  {"item": "Salt", "qty": "2 tsp", "category": "pantry"},
-  {"item": "Olive oil", "qty": "3 tbsp", "category": "pantry"},
-  {"item": "Yellow onion", "qty": "1", "category": "produce"},
-  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
-  {"item": "Ground beef", "qty": "1 lb", "category": "meat/seafood"},
-  {"item": "Tomato paste", "qty": "1 can", "category": "pantry", "cook_qty": "2 tsp"},
-  {"item": "Baharat", "qty": "2 tsp", "category": "pantry"},
-  {"item": "Ground cumin", "qty": "1 tsp", "category": "pantry"},
-  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
-  {"item": "Red bell pepper", "qty": "1", "category": "produce"},
-  {"item": "Tomato", "qty": "1", "category": "produce"},
-  {"item": "Lemon", "qty": "1", "category": "produce"},
-  {"item": "Shredded mozzarella", "qty": "10 oz", "category": "dairy"},
-  {"item": "Butter", "qty": "2 tbsp", "category": "dairy"},
-  {"item": "Flat-leaf parsley", "qty": "1 bunch", "category": "produce", "cook_qty": "1/4 cup chopped"},
-  {"item": "Plain yogurt", "qty": "1 tub", "category": "dairy"},
-  {"item": "Red pepper flakes", "qty": "1 tsp", "category": "pantry"}
+  {
+   "item": "Instant yeast",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Bread flour",
+   "qty": "4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ground beef",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Baharat",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Shredded mozzarella",
+   "qty": "10 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub",
+   "category": "dairy"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
  ],
  "instructions": [
   "About 2 1/2 hours before you want to eat, make the dough. In a small bowl, stir the 2 tsp yeast and 1 tsp sugar into 1 1/2 cups plus 2 tbsp very warm water, about 104°F (40°C). It should feel warm on your wrist, not hot. Leave it for 10 minutes, until it's foamy on top.",
@@ -48,13 +132,40 @@
   "Cut each pide across into strips about 1 inch wide. Serve with the yogurt and the lemon wedges, with the red pepper flakes on the side."
  ],
  "advance_prep_notes": "start the dough about 2 1/2 hours before dinner so it can rise",
- "advance_prep_step_indices": [1, 2, 3],
- "method_notes": "All three versions roll a yeasted dough into long ovals, fill them with spiced ground meat, onion, tomato and pepper, fold the edges into a boat and bake them hot. RecipeTin Eats (the lead) cooks the filling first with tomato paste, baharat, cumin and lemon, lays cheese under it and bakes at 465°F for 15 minutes; Cooking Orgeous and Chocolates & Chai spread the meat raw with parsley and brush the crust with butter as it comes out. The lead's meat is lamb with beef as its stated swap, so this uses beef, doubles the lead for four pides, and adds the others' butter brush and parsley; Cooking Orgeous's yogurt goes alongside, and its chilli goes on the side to keep the filling mild."
- ,
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3
+ ],
+ "method_notes": "All three versions roll a yeasted dough into long ovals, fill them with spiced ground meat, onion, tomato and pepper, fold the edges into a boat and bake them hot. RecipeTin Eats (the lead) cooks the filling first with tomato paste, baharat, cumin and lemon, lays cheese under it and bakes at 465°F for 15 minutes; Cooking Orgeous and Chocolates & Chai spread the meat raw with parsley and brush the crust with butter as it comes out. The lead's meat is lamb with beef as its stated swap, so this uses beef, doubles the lead for four pides, and adds the others' butter brush and parsley; Cooking Orgeous's yogurt goes alongside, and its chilli goes on the side to keep the filling mild.",
  "sources": [
-  {"name": "RecipeTin Eats", "title": "Pide - Turkish Flat Bread / Pizza", "url": "https://www.recipetineats.com/pide-turkish-flat-bread/", "rating": 4.95, "rating_count": 36, "read": true, "lead": true},
-  {"name": "Cooking Orgeous", "title": "Turkish Pide - Kiymali", "url": "https://cookingorgeous.com/blog/pide-turkish-kiymali-pide/", "rating": 5.0, "rating_count": 12, "read": true, "lead": false},
-  {"name": "Chocolates & Chai", "title": "Turkish Pide with Beef", "url": "https://www.chocolatesandchai.com/turkish-pide-with-beef/", "rating": 5.0, "rating_count": 1, "read": true, "lead": false}
+  {
+   "name": "RecipeTin Eats",
+   "title": "Pide - Turkish Flat Bread / Pizza",
+   "url": "https://www.recipetineats.com/pide-turkish-flat-bread/",
+   "rating": 4.95,
+   "rating_count": 36,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cooking Orgeous",
+   "title": "Turkish Pide - Kiymali",
+   "url": "https://cookingorgeous.com/blog/pide-turkish-kiymali-pide/",
+   "rating": 5.0,
+   "rating_count": 12,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Chocolates & Chai",
+   "title": "Turkish Pide with Beef",
+   "url": "https://www.chocolatesandchai.com/turkish-pide-with-beef/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
  ],
  "fallback_used": false,
  "origin": "seed"

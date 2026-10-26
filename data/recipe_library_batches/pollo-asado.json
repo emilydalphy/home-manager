@@ -6,21 +6,83 @@
  "prep_time_minutes": 25,
  "cook_time_minutes": 30,
  "ingredients": [
-  {"item": "Orange", "qty": "1", "category": "produce"},
-  {"item": "Limes", "qty": "3", "category": "produce"},
-  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
-  {"item": "Olive oil", "qty": "4 tbsp", "category": "pantry"},
-  {"item": "Achiote powder", "qty": "2 tsp", "category": "pantry"},
-  {"item": "Ground cumin", "qty": "3/4 tsp", "category": "pantry"},
-  {"item": "Ground coriander", "qty": "3/4 tsp", "category": "pantry"},
-  {"item": "Dried oregano", "qty": "3/4 tsp", "category": "pantry"},
-  {"item": "Salt", "qty": "1 1/2 tsp", "category": "pantry"},
-  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
-  {"item": "Boneless skinless chicken thighs", "qty": "2 lbs", "category": "meat/seafood"},
-  {"item": "White onion", "qty": "1 small", "category": "produce"},
-  {"item": "Cilantro", "qty": "1 bunch", "category": "produce", "cook_qty": "1/2 cup chopped"},
-  {"item": "Corn tortillas", "qty": "12", "category": "other"},
-  {"item": "Tomato salsa", "qty": "1 jar", "category": "pantry"}
+  {
+   "item": "Orange",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Achiote powder",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "White onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/2 cup chopped"
+  },
+  {
+   "item": "Corn tortillas",
+   "qty": "12",
+   "category": "other"
+  },
+  {
+   "item": "Tomato salsa",
+   "qty": "1 jar",
+   "category": "pantry"
+  }
  ],
  "instructions": [
   "1 to 4 hours ahead: squeeze the orange and 2 of the limes. That should be about 1/3 cup orange juice and 3 tbsp lime juice. Mince the 3 garlic cloves.",
@@ -36,12 +98,39 @@
   "Serve with the warm tortillas, the onion, the cilantro, the lime wedges and the salsa."
  ],
  "advance_prep_notes": "marinate the chicken 1 to 4 hours ahead",
- "advance_prep_step_indices": [1, 2],
+ "advance_prep_step_indices": [
+  1,
+  2
+ ],
  "method_notes": "All three versions marinate chicken in orange and lime juice with garlic, achiote, cumin and oregano, then grill it hot until charred and rest it before slicing, with tortillas, onion, cilantro, lime and salsa alongside. Lemon Blossoms adds coriander and caps the marinade at 4 hours, Jo Cooks blends the marinade and takes thighs to 175°F, and That's Deelicious uses pounded breasts and a 1 to 4 hour marinade. This follows the lead's marinade, scaled from 3 lbs to 2 lbs of boneless thighs, and cooks them in a cast iron skillet or grill pan rather than on an outdoor grill, which Jo Cooks also gives as an option.",
  "sources": [
-  {"name": "Lemon Blossoms", "title": "Best Pollo Asado Recipe (Mexican Grilled or Roasted Chicken)", "url": "https://www.lemonblossoms.com/blog/pollo-asado-recipe/", "rating": 5.0, "rating_count": 53, "read": true, "lead": true},
-  {"name": "Jo Cooks", "title": "Pollo Asado (Chicken Asado)", "url": "https://www.jocooks.com/recipes/pollo-asado-chicken-asado/", "rating": 4.93, "rating_count": 38, "read": true, "lead": false},
-  {"name": "That's Deelicious", "title": "Easy Pollo Asado {Mexican Grilled or Roasted Chicken}", "url": "https://thatsdeelicious.com/easy-pollo-asado/", "rating": 4.89, "rating_count": 18, "read": true, "lead": false}
+  {
+   "name": "Lemon Blossoms",
+   "title": "Best Pollo Asado Recipe (Mexican Grilled or Roasted Chicken)",
+   "url": "https://www.lemonblossoms.com/blog/pollo-asado-recipe/",
+   "rating": 5.0,
+   "rating_count": 53,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Jo Cooks",
+   "title": "Pollo Asado (Chicken Asado)",
+   "url": "https://www.jocooks.com/recipes/pollo-asado-chicken-asado/",
+   "rating": 4.93,
+   "rating_count": 38,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "That's Deelicious",
+   "title": "Easy Pollo Asado {Mexican Grilled or Roasted Chicken}",
+   "url": "https://thatsdeelicious.com/easy-pollo-asado/",
+   "rating": 4.89,
+   "rating_count": 18,
+   "read": true,
+   "lead": false
+  }
  ],
  "fallback_used": false,
  "origin": "seed"
