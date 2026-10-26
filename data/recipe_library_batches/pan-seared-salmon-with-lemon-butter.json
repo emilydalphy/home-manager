@@ -1,0 +1,38 @@
+{
+ "dish_name": "Pan-Seared Salmon with Lemon Butter",
+ "cuisine": "American",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 12,
+ "ingredients": [
+  {"item": "Skin-on salmon fillets", "qty": "4 (about 1 1/2 lb)", "category": "meat/seafood"},
+  {"item": "Lemons", "qty": "2", "category": "produce"},
+  {"item": "Parsley", "qty": "1 bunch", "category": "produce", "cook_qty": "1 tbsp chopped"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Unsalted butter", "qty": "4 tbsp", "category": "dairy"}
+ ],
+ "instructions": [
+  "Take the 4 salmon fillets out of the fridge. Pat them very dry on both sides with paper towels, the skin most of all.",
+  "Grate 1 tsp of zest from one of the lemons, then juice both lemons. That should be about 1/4 cup. Chop 1 tbsp of the parsley.",
+  "Sprinkle the 1/2 tsp salt and 1/4 tsp pepper over both sides of the salmon.",
+  "Heat the 1 tbsp oil in a large skillet over medium high heat until it shimmers. Lay the fillets in skin side down, laying each one away from you. Stand back a little. They'll spatter. Press each fillet down with a spatula for about 10 seconds so the skin lies flat.",
+  "Turn the heat to medium. Leave them alone for 5 to 6 minutes, until the skin is deep golden and crisp, it lets go of the pan, and the fish looks cooked about three quarters of the way up the sides.",
+  "Flip them and add the 4 tbsp butter to the pan around the fish. Cook the other side for about 2 minutes, swirling the pan, until the butter foams, turns light brown and smells nutty.",
+  "Add the lemon zest and the 1/4 cup lemon juice. Tilt the pan and spoon the sauce over the fish for about 1 minute. You're cooking it to 145°F in the thickest part, so if you have a thermometer, check it there. No thermometer? Press it with a fork: it's done when it flakes easily.",
+  "Transfer the fillets to plates, skin side up.",
+  "Taste the sauce. If it's flat, add a pinch more salt. Spoon it over the salmon, scatter the parsley on top and serve right away."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three pat the salmon dry, season it just before it goes in, sear it hard on one side without moving it and flip it once. Natasha's Kitchen (the lead) uses skinless fillets cooked in browned butter, with lemon zest and juice added in the last 2 minutes and spooned over the fish; Jessica Gavin and Well Plated sear skin on fillets in oil, skin side first, for crisp skin. This keeps the lead's butter, lemon and parsley amounts but sears skin on fillets in oil first, as the other two do, and browns the butter once the fish is flipped so it doesn't burn during the long first side.",
+ "sources": [
+  {"name": "Natasha's Kitchen", "title": "Pan Seared Salmon with Lemon Butter Sauce", "url": "https://natashaskitchen.com/pan-seared-salmon-with-lemon-butter/", "rating": 4.98, "rating_count": 112, "read": true, "lead": true},
+  {"name": "Jessica Gavin", "title": "Pan-Seared Salmon with Lemon Garlic Sauce", "url": "https://www.jessicagavin.com/pan-seared-salmon/", "rating": 4.83, "rating_count": 78, "read": true, "lead": false},
+  {"name": "Well Plated", "title": "Pan Seared Salmon", "url": "https://www.wellplated.com/pan-seared-salmon/", "rating": 4.84, "rating_count": 71, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
