@@ -987,6 +987,26 @@ def _cook_started_map(entry_ids: list[int]) -> dict[int, str]:
     return {r["id"]: r["cook_started_at"] for r in rows}
 
 
+def _is_reheat_entry(row) -> bool:
+    """
+    Whether this night eats an earlier batch — the same three reheats
+    _apply_leftover_chains marks `is_leftovers` on the Cook card: a
+    confirmed chain's night (leftovers or a cook-ahead day, which carries
+    the dish's recipe_id), a portion out of the freezer, or a freeform
+    night NAMED as leftovers. start_cooking used to test only the last, and
+    only as a "Leftover…" prefix, so a made-ahead day took a start the card
+    itself never offers (overnight/test-gaps-1025) — and a started meal
+    reads as "cooking" to every move and swap door (weekly_plan.cook_begun).
+    `row` needs id, weekly_plan_id, recipe_id, freeform_meal and
+    derived_from_json.
+    """
+    if row["weekly_plan_id"] and row["id"] in _leftovers.plan_leftover_chains(row["weekly_plan_id"])["leftovers"]:
+        return True
+    if _leftovers.frozen_portion_on(row["derived_from_json"]):
+        return True
+    return row["recipe_id"] is None and bool(_NAMED_LEFTOVERS_RE.search(row["freeform_meal"] or ""))
+
+
 def start_cooking(entry_id: int, now_utc: datetime | None = None) -> dict:
     """
     "Start cooking" was tapped: write the real start on this entry and hand
@@ -1012,8 +1032,8 @@ def start_cooking(entry_id: int, now_utc: datetime | None = None) -> dict:
     """
     conn = get_conn()
     row = conn.execute(
-        "SELECT id, date, cook_started_at, recipe_id, freeform_meal FROM meal_plan_entries "
-        "WHERE id = ? AND household_id = ?",
+        "SELECT id, date, cook_started_at, recipe_id, freeform_meal, weekly_plan_id, derived_from_json "
+        "FROM meal_plan_entries WHERE id = ? AND household_id = ?",
         (entry_id, household_id()),
     ).fetchone()
     if row is None:
@@ -1032,7 +1052,7 @@ def start_cooking(entry_id: int, now_utc: datetime | None = None) -> dict:
         when = _weekday_word(row["date"])
         return {"status": "refused", "entry_id": entry_id,
                 "message": f"That one’s for {when}."}
-    if row["recipe_id"] is None and (row["freeform_meal"] or "").strip().lower().startswith("leftover"):
+    if _is_reheat_entry(row):
         conn.close()
         return {"status": "refused", "entry_id": entry_id, "message": "Nothing to start on a reheat night."}
     # A written-in takeout night is a meal, not a cook (moves.is_takeout_night
