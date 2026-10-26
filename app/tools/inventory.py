@@ -76,8 +76,9 @@ def step_inventory_quantity(item_id: int, delta: float) -> dict:
         return {"item_id": item_id, "found": False}
     new_qty = _step_quantity_text(row["quantity"], delta)
     conn.execute(
-        "UPDATE inventory_items SET quantity = ?, updated_at = datetime('now') WHERE id = ? AND household_id = ?",
-        (new_qty, item_id, household_id()),
+        "UPDATE inventory_items SET quantity = ?, updated_at = datetime('now'), counted_on = ? "
+        "WHERE id = ? AND household_id = ?",
+        (new_qty, _today().isoformat(), item_id, household_id()),
     )
     conn.commit()
     conn.close()
@@ -357,8 +358,9 @@ def update_inventory(
         conn = get_conn()
         existing = _find_row_by_name(conn, item, location, "id, category, expiration_date, location")
         if existing:
-            fields = "quantity = ?, updated_at = datetime('now')"
-            params = [quantity]
+            # The household's own count: see db._MIGRATIONS' counted_on.
+            fields = "quantity = ?, updated_at = datetime('now'), counted_on = ?"
+            params = [quantity, _today().isoformat()]
             resolved_exp = _quantities._resolved_expiration_update(expiration_date, category, existing["category"], existing["expiration_date"], item)
             if resolved_exp:
                 fields += ", expiration_date = ?"
@@ -377,8 +379,8 @@ def update_inventory(
             item_category = category or "other"
             item_location = _quantities._resolve_location(location, item_category)
             cur = conn.execute(
-                "INSERT INTO inventory_items (household_id, item, quantity, source, category, expiration_date, location) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (household_id(), item, quantity, source, item_category, expiration_date or _quantities._estimate_expiration_date(item_category, item), item_location),
+                "INSERT INTO inventory_items (household_id, item, quantity, source, category, expiration_date, location, counted_on) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (household_id(), item, quantity, source, item_category, expiration_date or _quantities._estimate_expiration_date(item_category, item), item_location, _today().isoformat()),
             )
             conn.commit()
             item_id = cur.lastrowid
@@ -404,10 +406,11 @@ def update_inventory(
             conn.commit()
             conn.close()
             return {"item": item, "removed": True}
+        # A partial use is the household's own count too (counted_on).
         conn.execute(
-            "UPDATE inventory_items SET quantity = ?, updated_at = datetime('now') "
+            "UPDATE inventory_items SET quantity = ?, updated_at = datetime('now'), counted_on = ? "
             "WHERE id = ? AND household_id = ?",
-            (remaining, existing["id"], household_id()),
+            (remaining, _today().isoformat(), existing["id"], household_id()),
         )
         conn.commit()
         conn.close()

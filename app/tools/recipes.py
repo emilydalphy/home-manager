@@ -4727,12 +4727,31 @@ class _KitchenStock:
         What is reserved is each such meal's own ledger share
         (meal_plan_grocery_links.quantity) of a line that reached the shelf
         (inventory_added_at set), for an entry not cooked, not depleted, not
-        on a retired plan and dated today or later. A past meal nobody
-        ticked is left out on purpose: whether it was eaten is unknown, and
-        guessing "not yet" would put a line on every week's list forever.
-        `exclude_plan_id` leaves one plan's own meals out: a caller asking
-        about THAT plan (defrost's thaw question) must not have the food
-        bought for its own dinners hidden from it.
+        on a retired plan and dated today or later. `exclude_plan_id`
+        leaves one plan's own meals out: a caller asking about THAT plan
+        (defrost's thaw question) must not have the food bought for its own
+        dinners hidden from it.
+
+        A PAST MEAL IS CLAIMED TOO, AS EATEN (Loop Board, 2026-10-21): its
+        night has gone, nothing took its food off the shelf (no depletion
+        stamp — never ticked, or ticked with nothing reconciled), and the
+        household did not say "We skipped it" (skipped_at). Until then a
+        past dinner nobody ticked was left out, so last week's bought
+        tortillas and beef read as at home and this week's tacos got
+        neither. The default is "it was eaten" — Emily's open question
+        whether that is right. A moved dinner carries its ledger to its new
+        date, so it is the "still to come" case above, not this one. Only
+        while the shelf row its tick wrote (inventory_receipt_json's
+        inventory_id) still exists, and that row has not been COUNTED by the
+        household (inventory_items.counted_on: a "set", a partial "use", the
+        Kitchen stepper) on a day after the meal. A tick merges into the
+        same row, so the row alone bounds nothing — every past meal that
+        ever bought into it would keep its claim for ever, and the first
+        honest count would then have every one of them subtracted from a
+        figure that already reflects them. A count on the meal's own day
+        still claims (the dinner may not have happened yet; buying is the
+        safe side). The past branch ignores `exclude_plan_id` on purpose:
+        a past dinner of that same plan really ate its food.
         A share in a unit that will not convert makes the claim unreadable,
         and covers() then buys — the safe direction, as everywhere here.
         """
@@ -4744,9 +4763,13 @@ class _KitchenStock:
             "JOIN meal_plan_entries e ON e.id = l.meal_plan_entry_id AND e.household_id = l.household_id "
             "LEFT JOIN weekly_plans w ON w.id = e.weekly_plan_id AND w.household_id = e.household_id "
             "WHERE l.household_id = ? AND g.status = 'purchased' AND g.inventory_added_at IS NOT NULL "
-            "AND e.cooked_status = 'pending' AND e.inventory_depleted_at IS NULL AND e.date >= ? "
-            "AND COALESCE(w.status, '') != 'retired' AND COALESCE(e.weekly_plan_id, -1) != ?",
-            (household_id(), today, -1 if exclude_plan_id is None else exclude_plan_id),
+            "AND e.inventory_depleted_at IS NULL AND COALESCE(w.status, '') != 'retired' "
+            "AND ((e.cooked_status = 'pending' AND e.date >= ? AND COALESCE(e.weekly_plan_id, -1) != ?) "
+            "  OR (e.date < ? AND e.skipped_at IS NULL AND EXISTS ("
+            "        SELECT 1 FROM inventory_items i WHERE i.household_id = l.household_id "
+            "        AND i.id = json_extract(g.inventory_receipt_json, '$.inventory_id') "
+            "        AND (i.counted_on IS NULL OR e.date >= i.counted_on))))",
+            (household_id(), today, -1 if exclude_plan_id is None else exclude_plan_id, today),
         ).fetchall()
         for row in rows:
             key = (row["item"] or "").strip().lower()
