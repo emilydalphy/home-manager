@@ -3963,10 +3963,13 @@
       }
       closeTonightSheet();
       if (out.status !== 'night_off') {
-        // A 200 that says no — only a night with no plan covering it now,
-        // which a sheet left open across midnight can reach. The sentence
-        // is the server's, the sheet is closed so the toast is the only
-        // thing saying it, and the card is re-read.
+        // A 200 that says no. Usually one of two things: a sheet left open
+        // across midnight (no plan covers the new "tonight"), or the dish
+        // is already cooking — someone started it on another phone and the
+        // cook feeds later nights, so it stays (tonight_night_off's
+        // `cooking` refusal). The sentence is the server's, the sheet is
+        // closed so the toast is the only thing saying it, and the card is
+        // re-read.
         showToast(out.message || TONIGHT_SWAP_TROUBLE, null, 6000);
         afterTonightSwap(panel);
         return;
@@ -5276,8 +5279,14 @@
   var GRO_CAUGHT_UP_TOAST = "Back online — your ticks are saved.";
   // Ticks the server refused on replay: the row is gone (a partner removed
   // it, or bought it and finished the stop) and the fresh list is the truth.
-  function groTicksDroppedToast(n) {
-    return (n === 1 ? "One tick" : n + " ticks") + " couldn’t be saved — the list is up to date now.";
+  // `adds`: how many of the n were things added, not ticks — an add the
+  // server refused is not a tick, and the toast used to call it one.
+  function groTicksDroppedToast(n, adds) {
+    adds = adds || 0;
+    var what = !adds ? (n === 1 ? "One tick" : n + " ticks")
+      : adds === n ? (n === 1 ? "Something you added" : n + " things you added")
+      : n + " changes";
+    return what + " couldn’t be saved — the list is up to date now.";
   }
   // No signal and no copy to show (this device hasn't heard which household
   // is signed in, or was just signed out): a calm empty state, not an error.
@@ -5399,12 +5408,15 @@
     return groOffline.replay(groPostJson).then(function (result) {
       if (!result) return result;
       if (result.kept > 0) {
-        groSetOffline(true);
+        // `waiting`: the server answered, it is just still finishing an
+        // add this phone sent before (a 409 — see grocery-offline.js
+        // replay). That is not "no signal"; the timer sends it again.
+        if (!result.waiting) groSetOffline(true);
         return result;
       }
       groSetOffline(false);
       if (groReplayTimer) { clearInterval(groReplayTimer); groReplayTimer = null; }
-      if (result.dropped > 0) showToast(groTicksDroppedToast(result.dropped));
+      if (result.dropped > 0) showToast(groTicksDroppedToast(result.dropped, result.droppedAdds));
       else if (result.sent > 0) showToast(GRO_CAUGHT_UP_TOAST);
       renderGroceryOfflineLine();
       if (result.sent > 0 || result.dropped > 0) return loadGrocery().then(function () { return result; });
@@ -8559,6 +8571,11 @@
   // A write the server refused reopens the sheet with the typing in it.
   function groAddLine(line) {
     var payload = { item: line.item, quantity: line.quantity || '', category: line.category };
+    // Named ONCE, before the first send, and carried into the queue when
+    // that send fails: a reply lost in a store's dead zone gets the add
+    // re-sent under the same name, and the server answers the repeat
+    // instead of adding "2 milk" a second time (app/grocery_add_once.py).
+    if (window.PomonaGroceryOffline) payload.client_id = window.PomonaGroceryOffline.newClientId();
     if (line.store !== null && line.store !== undefined) {
       payload.store = line.store;
       payload.remember = true;
@@ -24316,7 +24333,13 @@
       await cookPost('/api/recipe-feedback', { recipe_name: meal.meal, rating: el.getAttribute('data-rating'), notes: '' });
       cookState.recipeMenuOpen = false;
       cookState.recipeRateOpen = false;
+      // The rating answers "How did it go?" for this dish too — re-read the
+      // attention list the way cookRateMeal does, or the banner keeps
+      // asking about a dish just rated until the page reloads.
+      // refreshCookAttention renders on success; the render here covers a
+      // failed re-read, so the menu still closes.
       renderCook();
+      await refreshCookAttention();
       showToast('Noted — that’ll steer next week.');
     } catch (err) {
       el.disabled = false;

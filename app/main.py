@@ -36,7 +36,7 @@ from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.exception_handlers import http_exception_handler
 
-from . import account_email, agent, ai_consent, backup, calendar_feed, chat_themes, feedback_email, household_deletion, households, invites, legal, push, ratelimit, recipe_import, recipe_photos, security
+from . import account_email, agent, ai_consent, backup, calendar_feed, chat_themes, feedback_email, grocery_add_once, household_deletion, households, invites, legal, push, ratelimit, recipe_import, recipe_photos, security
 from . import db
 from .db import get_conn, init_db
 from .agent import run_agent_turn, trim_conversation, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo, scan_pantry_photo, scan_grocery_list_image, AssistantUnavailableError
@@ -1268,6 +1268,11 @@ class GroceryAddRequest(BaseModel):
     # unless remember is False.
     store: str | None = None
     remember: bool = True
+    # The add sheet's name for this one add (2026-10-22): made on the phone
+    # before the first send, and re-sent unchanged by the offline queue when
+    # the reply was lost — so a repeat is answered, not added twice. None =
+    # every other caller, which behaves as before. See app/grocery_add_once.py.
+    client_id: str | None = Field(default=None, max_length=64)
 
 
 class GroceryScanItem(BaseModel):
@@ -6846,12 +6851,24 @@ def add_grocery_list_item(req: GroceryAddRequest):
     under that store in the same request and — for a real store — the
     store is remembered as the item's usual; '' is "Anywhere".
     """
-    try:
+    def do_add():
         result = tools.add_grocery_item(req.item, quantity=req.quantity, category=req.category, added_by=req.added_by)
         if req.store is not None:
             placed = tools.set_grocery_item_store(result["item_id"], req.store, remember=req.remember)
             result["store"] = placed.get("store", "")
             result["remembered"] = bool(placed.get("remembered"))
+        return result
+
+    try:
+        # A repeat of the same client_id — the offline queue re-sending an
+        # add whose reply was lost — gets the first answer back and adds
+        # nothing, so "2 milk" stays 2.
+        result = grocery_add_once.add_once(req.client_id, do_add)
+    except grocery_add_once.AddInFlight:
+        # The phone's queue keeps the add on a 409 and tries again later
+        # (grocery-offline.js replay); a claim abandoned for a minute is
+        # taken over then, so the add still lands.
+        raise HTTPException(status_code=409, detail="That add is already on its way.")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

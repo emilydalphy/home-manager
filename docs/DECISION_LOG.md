@@ -468,6 +468,25 @@ why*, not duplicating the diff.
   package/spice and an unreadable line are left as before. NOT covered: a
   staple's line (`staple_id` set) a plan's share landed on is still excluded and
   can still carry an ended week's share.
+- **Adding "2 milk" in a dead zone puts 2 on the list, not 4** (2026-10-22;
+  branch `overnight/rate-refresh-and-offline-once`; tests
+  `tests/test_grocery_add_once.py`). The add sheet now names each add with a
+  `client_id` before its first send, and the offline queue re-sends a
+  lost-reply add under that same id; `/api/grocery-list/add` answers a repeat
+  (per household) with its first answer and adds nothing
+  (`app/grocery_add_once.py`, table `grocery_add_receipts`, 30-day sweep). A
+  table rather than an in-memory map because the resend can come days later,
+  across a redeploy. No id behaves as before. Reproduced in Chromium on main:
+  reply dropped, list read 4. Review follow-up: an answerless receipt older
+  than 60s (its request died mid-add, e.g. a redeploy) is taken over, not
+  answered 409 for 30 days; the queue keeps an add on a 409 instead of
+  dropping it, and a dropped add is no longer called "a tick" in the toast.
+- **Rating a dish from its recipe page stops "How did it go?" asking about
+  it** (2026-10-22; branch `overnight/rate-refresh-and-offline-once`; verified
+  by a Playwright drive, no new test file). `recipeRate` posted the rating and
+  re-rendered without re-reading `/api/attention`, so Kitchen's banner kept
+  asking until a reload; it now calls `refreshCookAttention()` like
+  `cookRateMeal`.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
