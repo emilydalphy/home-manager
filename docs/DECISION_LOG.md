@@ -808,6 +808,26 @@ why*, not duplicating the diff.
   running off the calendar stays a 500 — it could be stored data gone wrong).
   `POST /api/needs-you/dinner` now refuses a non-date with a 400. Scan-fridge
   and scan-pantry pinned (no test anywhere drove them).
+- **A dish asked for at a meal, naming no day, goes at that meal with
+  everyone home and the time for it** (2026-10-25, snag rule 2; branch
+  `overnight/snag-rule-2-meal-no-day`, on top of rules 5 and 8; tests
+  `tests/test_draft_request_meal_no_day.py`). `cap_enforce.
+  place_meal_requests`, first in `enforce_minutes_caps`: a typed dinner or
+  lunch whose words name that meal and no day, on a meal someone is marked
+  out of (slot_attendance) or over its cap, trades through
+  `meal_move.move_meal` (the one door that moves a lunch too) with the
+  nearest meal of that kind holding a dish Pomona chose, everyone home and
+  enough time (tie: later day). None with both: an over-time dish goes to
+  the nearest it fits; fits none: rule 5. Silent — no line was decided.
+  Why: on main a typed dish is `theirs`, untouchable to the cap pass, so it
+  stayed on Vineeth's night out or a rush night. Not built: breakfast (no
+  move door); a request the model put at the WRONG meal is not moved
+  across meals. Review round: rule 8 rescuing a dinner-named, no-day dish
+  off a night nobody is home now prefers a night everyone is home; and a
+  cited span of several clauses counts only the clauses about this dish
+  ("Pasta sometime, and tacos for dinner" no longer makes pasta a dinner
+  request — tightens rule 8's day reading too). "Dinner party", "dinner
+  rolls", "after dinner" don't name the meal.
 - **A dish asked for on a night nobody is home moves to the nearest night
   that fits its time, and the draft says so** (2026-10-25, snag rule 8;
   branch `overnight/snag-rule-8-day-out`, on top of rule 5's; tests

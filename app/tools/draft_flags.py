@@ -61,9 +61,12 @@ and re-dated by half a dozen paths, and a read-time rule is the one place
 that covers every one of them, past and future.
 
 DELIBERATELY NOT BUILT HERE, so nobody reports them as missing:
-  * Scenarios 1/2 (where a request with no day named should land) are the
-    PLACEMENT half of the card and want a pass that runs before the flags
-    exist. Scenario 5 — a requested dish that fits NO night goes on the
+  * Scenario 1 (a request with no meal and no day: where it lands, and
+    the line saying so) is the PLACEMENT half of the card and wants a pass
+    that runs before the flags exist. Scenario 2 — a request with a meal
+    and no day goes at that meal with everyone home and the time for it —
+    is built (2026-10-25, cap_enforce.place_meal_requests) and has no line:
+    none was decided. Scenario 5 — a requested dish that fits NO night goes on the
     night with the most time, and Pomona says so — is built
     (2026-10-25): cap_enforce.place_fits_nowhere places it, and
     `FITS_NOWHERE` below is the line, with no fixes. So is rule 8 — a
