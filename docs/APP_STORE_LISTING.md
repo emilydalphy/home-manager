@@ -319,7 +319,7 @@ and `static/onboarding.html`); change all three together.
 > - Cook a dinner. On Cook, open tonight's meal and tap "Start cooking".
 > Was each step clear with your hands busy?
 > - Ask Pomona. Tap Ask and say something real: "Can we swap Friday for
-> something quicker?" or "Theo's away till Sunday."
+> something quicker?" or "Sam's away till Sunday."
 >
 > When something's off, tell me right there: the gear (top right) →
 > "Something not working?". Or take a screenshot in TestFlight. Even "it
