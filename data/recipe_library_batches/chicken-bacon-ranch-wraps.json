@@ -1,0 +1,44 @@
+{
+ "dish_name": "Chicken Bacon Ranch Wraps",
+ "cuisine": "American",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "Bacon", "qty": "1 package (12 oz)", "category": "meat/seafood", "cook_qty": "8 slices"},
+  {"item": "Boneless skinless chicken breasts", "qty": "2 (about 1 1/2 lb)", "category": "meat/seafood"},
+  {"item": "Garlic powder", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Onion powder", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Paprika", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Olive oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Iceberg lettuce", "qty": "1 head", "category": "produce", "cook_qty": "1 cup chopped"},
+  {"item": "Shredded mozzarella", "qty": "1 bag (8 oz)", "category": "dairy"},
+  {"item": "Ranch dressing", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "Large flour tortillas", "qty": "1 package (8 count)", "category": "other", "cook_qty": "4"}
+ ],
+ "instructions": [
+  "Lay 8 slices of the bacon in a large cold skillet and set it over medium heat. Cook for 8 to 10 minutes, turning them now and then, until they're crisp. Transfer them to a plate lined with paper towels. Pour the fat out of the skillet and wipe it out.",
+  "Meanwhile, put the 2 chicken breasts between two sheets of plastic wrap and pound the thick ends with a rolling pin or heavy pan until they're an even 3/4 inch thick. Pat them dry.",
+  "Mix the 1/2 tsp garlic powder, 1/2 tsp onion powder, 1/4 tsp paprika, 1/4 tsp salt and 1/4 tsp pepper in a small bowl. Rub it over both sides of the chicken.",
+  "Heat the 1 tbsp olive oil in the skillet over medium heat. Add the chicken and cook for 5 to 6 minutes, until the underside is golden brown and lets go of the pan.",
+  "Flip them and cook the other side for 5 to 6 minutes. You're cooking it to 160°F in the thickest part, so if you have a thermometer, check it there. No thermometer? Cut into the center: it's done when there's no pink left. Transfer the chicken to a board and let it rest for 5 minutes.",
+  "Meanwhile, chop the bacon. Chop about a quarter of the lettuce head. That should be about 1 cup.",
+  "Shred the chicken with two forks, or chop it small, and put it in a large bowl. Add the whole bag of mozzarella, the bacon and 1/2 cup of the ranch and stir until everything is coated.",
+  "Put 4 of the tortillas on a plate and microwave them for 30 seconds, flipping them halfway.",
+  "Lay a tortilla flat and put a quarter of the lettuce down the middle. Spoon a quarter of the chicken mixture on top. Fold in the sides and roll it up tightly. Make the other 3 the same way.",
+  "Cut each wrap in half. If they're for packed lunches, wrap each one tightly in foil and keep them in the fridge until you leave."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three roll chicken, crisp bacon, lettuce and ranch into a large flour tortilla. Easy Chicken Recipes (the lead) rubs chicken breasts with garlic powder, onion powder and paprika, pan cooks and shreds them, and mixes them with mozzarella, bacon and ranch; Jo Cooks makes a ranch chicken salad with mayonnaise and celery, and Julie's Eats and Treats layers rotisserie chicken with cheddar and tomato. This follows the lead, but layers the lettuce under the filling, as the other two do, instead of mixing it in, so it stays crisp in a packed lunch.",
+ "sources": [
+  {"name": "Easy Chicken Recipes", "title": "Chicken Bacon Ranch Wrap Recipe", "url": "https://easychickenrecipes.com/chicken-ranch-wraps/", "rating": 4.8, "rating_count": 25, "read": true, "lead": true},
+  {"name": "Jo Cooks", "title": "Chicken Bacon Ranch Wraps", "url": "https://www.jocooks.com/recipes/chicken-bacon-ranch-wraps/", "rating": 5.0, "rating_count": 7, "read": true, "lead": false},
+  {"name": "Julie's Eats and Treats", "title": "Chicken Bacon Ranch Wraps", "url": "https://www.julieseatsandtreats.com/chicken-bacon-ranch-wraps/", "rating": 5.0, "rating_count": 1, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

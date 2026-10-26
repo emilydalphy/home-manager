@@ -1,0 +1,135 @@
+{
+ "dish_name": "Paneer Bhurji",
+ "cuisine": "Indian",
+ "main_protein": "paneer",
+ "ingredients": [
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mild chili powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kasuri methi (dried fenugreek leaves)",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Paneer",
+   "qty": "1 lb",
+   "category": "dairy"
+  },
+  {
+   "item": "Serrano chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put 1 1/2 cups of the basmati rice in a fine strainer and rinse it under cold water until the water runs mostly clear. Transfer it to a medium saucepan with 2 1/4 cups water and a pinch of salt.",
+  "Bring the rice to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on for 5 minutes, then fluff it with a fork.",
+  "Meanwhile, crumble the paneer into small pieces with your fingers and set it aside.",
+  "Finely chop the onion, dice the bell pepper, mince the garlic and ginger, and chop the tomatoes. Thinly slice the serrano and set it in a small bowl for the table.",
+  "Heat the oil in a large skillet over medium heat. Add the cumin seeds. After about 20 seconds they'll sizzle and smell toasty.",
+  "Add the onion and bell pepper. Cook for 5 minutes, stirring now and then, until the onion is golden.",
+  "Add the garlic and ginger and stir for 1 minute.",
+  "Add the tomatoes, turmeric and the salt. Cook for 4 minutes, until the tomatoes are soft and mushy.",
+  "Add the chili powder and the garam masala and stir for 1 minute.",
+  "Add the paneer and stir to coat it. Cook for 3 minutes, until it's heated through. If the pan looks dry, sprinkle in a spoonful of water.",
+  "Take the pan off the heat. Crush the kasuri methi between your palms over the pan, then stir in the juice of half the lemon and 1/4 cup of chopped cilantro.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of the lemon.",
+  "Serve over the rice, with the sliced serrano on the side."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 22,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree on the order: cumin seeds, onion, ginger and garlic, tomato, turmeric, chili and garam masala, then crumbled paneer for just a few minutes so it stays soft. They differ on extras like capsicum or peas and on whether kasuri methi goes in the masala or at the end. This version adds bell pepper, puts the kasuri methi at the end, and serves it over rice because roti and bread are not gluten-free. Heat goes on the side as sliced serrano.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Paneer Bhurji Recipe",
+   "url": "https://www.indianhealthyrecipes.com/paneer-bhurji-recipe/",
+   "rating": 5.0,
+   "rating_count": 178,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Sharmi's Passions",
+   "title": "Paneer Bhurji Recipe",
+   "url": "https://sharmispassions.com/paneer-bhurji-recipe",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

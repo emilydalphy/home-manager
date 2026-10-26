@@ -1,0 +1,52 @@
+{
+ "dish_name": "Bacalao a la Vizcaina",
+ "cuisine": "Spanish",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {"item": "Salt cod", "qty": "1.5 lbs", "category": "meat/seafood"},
+  {"item": "Yukon Gold potatoes", "qty": "1.5 lbs", "category": "produce"},
+  {"item": "Salt", "qty": "to taste", "category": "pantry"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "4 cloves", "category": "produce"},
+  {"item": "Roasted red peppers", "qty": "1 jar (12 oz)", "category": "pantry"},
+  {"item": "Flat-leaf parsley", "qty": "1 bunch", "category": "produce"},
+  {"item": "Olive oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Paprika", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Bay leaves", "qty": "2", "category": "pantry"},
+  {"item": "Diced tomatoes", "qty": "1 can (14 oz)", "category": "pantry"},
+  {"item": "Dry white wine", "qty": "1 bottle", "category": "other", "cook_qty": "1/2 cup"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Green olives", "qty": "1 jar", "category": "pantry", "cook_qty": "15"}
+ ],
+ "instructions": [
+  "Two days before, or at least 24 hours ahead: rinse the loose salt off the cod under cold water. Put it in a large bowl, cover it with cold water by a couple of inches, cover the bowl and put it in the fridge.",
+  "Every 8 hours or so, pour off the water and cover the cod with fresh cold water. Keep it in the fridge for 24 to 36 hours in all.",
+  "On the day, tear off a small flake of the cod and taste it. It should taste pleasantly seasoned, not harsh. If it's still very salty, soak it in fresh water for 1 to 2 hours and taste it again.",
+  "Scoop out 1 cup of the soaking water and keep it. Drain the cod and pat it dry. Pull off any skin and bones and cut it into chunks about 2 inches across.",
+  "Peel the potatoes and cut them into large chunks. Put them in a pot, cover them with cold water and add a good pinch of salt. Bring them to a boil over high, then simmer for about 15 minutes, until a knife slides in easily. Drain them and keep them covered.",
+  "Meanwhile, chop the onion and mince the 4 garlic cloves. Drain the peppers and cut them into strips. Chop a handful of the parsley.",
+  "Heat the 1/4 cup olive oil in a large deep skillet over medium. Add the onion and cook for about 5 minutes, stirring now and then, until it's soft and see-through.",
+  "Add the garlic, the 1 tsp paprika and the 2 bay leaves and stir for about 30 seconds, until it smells sweet and toasty.",
+  "Add the tomatoes with their juice and cook for about 5 minutes, stirring now and then, until they start to break down.",
+  "Add the peppers, the 1/2 cup wine, 1/2 cup of the soaking water, the 2 tsp sugar and the 1/4 tsp pepper. Simmer for about 10 minutes, until the sauce thickens a little. If it gets too thick, add some of the rest of the soaking water.",
+  "Nestle the cod into the sauce and scatter the 15 olives around it. Spoon some sauce over the fish, cover the pan and turn the heat to low.",
+  "Cook for 10 to 12 minutes, until the cod is opaque and flakes apart when you press it with a fork.",
+  "Take the pan off the heat, fish out the bay leaves and scatter the parsley over the top.",
+  "Taste the sauce. If it's flat, add a pinch of salt. Go easy. The cod is already salty.",
+  "Serve with the boiled potatoes."
+ ],
+ "advance_prep_notes": "Soak the salt cod in the fridge for 24 to 36 hours, changing the water every 8 hours. Start two days before, or at least 24 hours ahead.",
+ "advance_prep_step_indices": [1, 2],
+ "method_notes": "None of the versions found had 20 or more ratings, and RecipeTin Eats, the trusted cook for this cuisine, has no bacalao, so Laylita's Recipes leads as the most complete home version for salt cod. All three cook the cod in or over a sauce of onion, garlic, tomato and red pepper. Laylita's simmers chunks of soaked salt cod in a chunky sauce with roasted peppers, paprika, bay, white wine, a little sugar, olives and some of the soaking water, and serves it with boiled potatoes; Spain's tourism board blends a smooth sauce from dried choricero pepper pulp and fries the cod before a short simmer; Spain on a Fork uses fresh cod, dredged and fried, over a blended jarred pepper sauce. This one follows the lead, using Spain on a Fork's jarred roasted peppers for the roasted peppers and less oil.",
+ "sources": [
+  {"name": "Laylita's Recipes", "title": "Bacalao a la Vizcaína (Salted Cod Fish in Tomato and Roasted Pepper Sauce)", "url": "https://www.laylita.com/recipes/bacalao-a-la-vizcaina/", "rating": 5.0, "rating_count": 1, "read": true, "lead": true},
+  {"name": "Spain.info", "title": "'Bacalao a la vizcaína' (Biscayan style cod)", "url": "https://www.spain.info/en/recipe/cod-vizcaina/", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Spain on a Fork", "title": "Spanish Bacalao a la Vizcaina", "url": "https://spainonafork.com/the-greatest-fish-recipe-from-spain-bacalao-a-la-vizcaina/", "rating": 5.0, "rating_count": 2, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

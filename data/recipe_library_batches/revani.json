@@ -1,0 +1,122 @@
+{
+ "dish_name": "Revani",
+ "cuisine": "Turkish",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 45,
+ "ingredients": [
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 3/4 cups"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Butter",
+   "qty": "1 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Fine semolina",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1/3 cup plus 1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Baking powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Greek yogurt",
+   "qty": "1 tub (16 oz)",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Shelled pistachios",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "At least 4 hours before you want to serve it, or the day before, make the syrup. Put 1 1/2 cups of the sugar and 1 cup water in a small saucepan over high heat. Stir until the sugar dissolves and bring it to a hard boil.",
+  "Turn the heat to low and simmer the syrup for 15 to 20 minutes, until it's a little thicker.",
+  "Meanwhile, finely grate the zest from half the lemon and set it aside. Squeeze the lemon.",
+  "Take the syrup off the heat and stir in 4 tsp of the lemon juice. Leave it to cool completely.",
+  "While the syrup cools, heat the oven to 350°F (175°C). Rub the 1 tbsp butter all over the inside of an 8 inch square baking dish.",
+  "Separate the 4 eggs, with the yolks in a large bowl and the whites in a clean medium bowl. Add the remaining 1/4 cup sugar and the lemon zest to the yolks and beat for 2 to 3 minutes, until pale and frothy.",
+  "Mix the 1/2 cup semolina, 1/3 cup plus 1 tbsp flour and 1 tsp baking powder in a small bowl. Stir them into the yolks, then fold in 1 cup of the yogurt until the batter is smooth.",
+  "Add the pinch of salt to the egg whites and beat them until they hold stiff peaks. Fold them into the batter in three goes, gently, until no white streaks are left. Stop as soon as they're mixed in, or the cake will be flat and dense.",
+  "Spread the batter in the dish. Bake for 35 to 40 minutes, until it's golden on top and a toothpick pushed into the middle comes out clean.",
+  "As soon as it's out of the oven, cut it into 16 squares in the dish. Pour the cooled syrup slowly over the hot cake, a little at a time, so it soaks in.",
+  "Leave it at room temperature for at least 4 hours, until the syrup has soaked all the way in.",
+  "Chop the 1/4 cup pistachios and scatter them over the top. Serve one or two squares each. Cover the rest and keep it for up to 3 days."
+ ],
+ "advance_prep_notes": "Bake at least 4 hours ahead, or the day before, so the syrup can soak in.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  11
+ ],
+ "method_notes": "None of the versions found had any ratings, and RecipeTin Eats, the trusted cook for this cuisine, has no revani, so the Mother Earth News version (adapted from Ozcan Ozan's The Sultan's Kitchen) leads. It and Turkeys for Life make the same yogurt cake with separated eggs, lemon zest, fine semolina and a little flour, then pour a cooled lemon syrup over the hot cake; Turkeys for Life is twice the size, and ASIF's version uses whole eggs, olive oil, vanilla and a chilled vanilla syrup. This one follows the lead's 8 inch dish, which makes 16 small squares, so there's plenty left after one snack for four. It needs at least 4 hours to soak, and it's very sweet, so the squares are small. The lead's clotted cream topping is left off and the pistachios kept; Giverecipe and Unicorns in the Kitchen blocked the reader.",
+ "sources": [
+  {
+   "name": "Mother Earth News",
+   "title": "Turkish Revani (Yogurt-Semolina Cake With Lemon Syrup)",
+   "url": "https://www.motherearthnews.com/real-food/milk-recipe-turkish-revani-yogurt-semolina-cake-with-lemon-syrup-zb0z11zalt/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Turkeys for Life",
+   "title": "Revani Recipe (Zesty Turkish Semolina Cake)",
+   "url": "https://www.turkeysforlife.com/2021/02/revani-recipe-turkish-cake.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "ASIF",
+   "title": "Revani (Turkish Semolina Cake)",
+   "url": "https://asif.org/en/recipes/revani/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

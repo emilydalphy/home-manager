@@ -1,0 +1,49 @@
+{
+ "dish_name": "Soupe au Pistou",
+ "cuisine": "French",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {"item": "Fresh basil", "qty": "1 bunch", "category": "produce"},
+  {"item": "Parmesan", "qty": "1 oz", "category": "dairy"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Olive oil", "qty": "1/4 cup plus 1 tbsp", "category": "pantry"},
+  {"item": "Leek", "qty": "1", "category": "produce"},
+  {"item": "Celery", "qty": "1 bunch", "category": "produce"},
+  {"item": "Carrot", "qty": "1", "category": "produce"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Vegetable broth", "qty": "2 cups", "category": "pantry"},
+  {"item": "Orecchiette", "qty": "1/3 cup", "category": "pantry"},
+  {"item": "Green beans", "qty": "6 oz", "category": "produce"},
+  {"item": "Cannellini beans", "qty": "1 can (15 oz)", "category": "pantry"},
+  {"item": "Zucchini", "qty": "1 small", "category": "produce"},
+  {"item": "Tomato", "qty": "1", "category": "produce"}
+ ],
+ "instructions": [
+  "Make the pistou first. Pick 1/2 cup of basil leaves, grate the Parmesan (that should be about 1/3 cup) and peel 1 of the garlic cloves.",
+  "Put the basil, Parmesan, garlic and 1/4 cup of the olive oil in a food processor and blend until smooth, about 15 seconds, scraping down the sides once. No food processor? Chop the basil and garlic as finely as you can and stir in the cheese and oil. Set it aside.",
+  "Halve the leek lengthwise, slice it 1/2 inch thick and swish the slices in a bowl of cold water to wash out any grit. Lift them out with your hands. Cut 1 rib of celery into 1/2 inch pieces. Peel the carrot and slice it 1/4 inch thick. Mince the last 2 garlic cloves.",
+  "Set a large pot over medium heat with the last 1 tbsp of olive oil. When it shimmers, add the leek, celery, carrot and the 1/2 tsp salt. Cook, stirring now and then, until they're soft, 8 to 10 minutes.",
+  "Meanwhile, trim the green beans and cut them into 1/2 inch lengths. Halve the zucchini lengthwise, scoop out the seeds with a spoon and cut it into 1/4 inch pieces. Core the tomato, squeeze out the seeds and cut it into 1/4 inch pieces.",
+  "Add the garlic to the pot and stir for 30 seconds, until you can smell it.",
+  "Pour in the 2 cups broth and 2 cups of water and bring it up to a simmer.",
+  "Add the 1/3 cup orecchiette and simmer for 5 minutes, until it starts to soften.",
+  "Add the green beans and simmer until they turn bright green but still have some crunch, 3 to 5 minutes.",
+  "Add the cannellini beans with their liquid, the zucchini and the tomato. Simmer until the orecchiette and vegetables are tender, about 3 minutes.",
+  "Stir in the 1/4 tsp pepper. Taste it, and add a pinch more salt if it's flat.",
+  "Ladle the soup into bowls and top each one with a big spoonful of the pistou."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three soften leeks or onions, simmer summer vegetables with green beans and a little pasta, and finish each bowl with a basil, garlic, Parmesan and olive oil pistou. America's Test Kitchen cooks in broth and water and adds the pasta, green beans and then the cannellini, zucchini and tomato in stages so nothing overcooks, while Pinch and Swirl adds potatoes, canned tomatoes and orzo and simmers much longer, and Ina Garten uses chicken stock, saffron and spaghetti and puts tomato paste in the pistou. This one follows the lead's method and amounts scaled from six servings to four, keeps the whole can of beans, and gives a by hand option for the pistou.",
+ "sources": [
+  {"name": "America's Test Kitchen", "title": "Provençal Vegetable Soup (Soupe au Pistou)", "url": "https://www.americastestkitchen.com/recipes/8360-provencal-vegetable-soup-soupe-au-pistou", "rating": 4.5, "rating_count": 135, "read": true, "lead": true},
+  {"name": "Pinch and Swirl", "title": "Soupe au Pistou", "url": "https://pinchandswirl.com/soupe-au-pistou/", "rating": 5.0, "rating_count": 1, "read": true, "lead": false},
+  {"name": "Food Network (Ina Garten)", "title": "Provencal Vegetable Soup", "url": "https://www.foodnetwork.com/recipes/ina-garten/provencal-vegetable-soup-recipe-2040367", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

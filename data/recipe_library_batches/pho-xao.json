@@ -1,0 +1,137 @@
+{
+ "dish_name": "Pho Xao",
+ "cuisine": "Vietnamese",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Flank steak",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Baby bok choy",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Dried flat rice noodles",
+   "qty": "8 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Sriracha",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Bring a large pot of water to a boil for the noodles.",
+  "Meanwhile, slice the 1 lb flank steak across the grain into thin strips, about 1/8 inch thick.",
+  "Mince the 6 garlic cloves. In a bowl, toss the beef with the garlic, 1/2 tsp salt, 2 tsp oyster sauce and 1/4 tsp of the pepper. Leave it while you get the vegetables ready.",
+  "Peel the onion, cut it in half and slice it into thin wedges. Cut the bok choy leaves from the stems. Cut the leaves into 2 inch pieces and halve any thick stems lengthwise. Rinse it all and drain it well.",
+  "Thinly slice the scallions.",
+  "In a small bowl, whisk 4 tsp fish sauce, 4 tsp soy sauce and 1 1/2 tsp cornstarch into 2/3 cup water.",
+  "Add the 8 oz noodles to the boiling water and cook them for 1 minute less than the packet says, until they bend easily but are still a little firm in the middle. Drain them, rinse them under cold water and leave them to drain well.",
+  "Heat 1 tbsp of the oil in a large wok or skillet over high heat until it shimmers. Add half the beef in a single layer and leave it alone for about 1 minute, until the underside browns.",
+  "Stir and cook for about 30 seconds, until it's mostly brown with a little pink left. Transfer it to a plate.",
+  "Cook the rest of the beef the same way in another 1 tbsp of the oil.",
+  "Add the last 1 tbsp oil, the onion and the bok choy stems. Stir them for about 2 minutes, until the onion softens.",
+  "Add the bok choy leaves and stir for about 1 minute, until they wilt.",
+  "Add the noodles and the beef with its juices. Whisk the sauce again and pour it in.",
+  "Toss everything gently with tongs for about 2 minutes, until the sauce thickens and coats the noodles and the beef is cooked through. Lift and turn the noodles rather than stirring, so they don't break.",
+  "Take the pan off the heat. Add the scallions and the last 1/4 tsp pepper and toss once more.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the sriracha on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three sear thin strips of marinated beef first and set them aside, stir fry onion and bok choy, then toss in rice noodles cooked just short of soft with a fish sauce, soy and oyster sauce mix. Delightful Plate keeps it plain and quick with a cornstarch thickened sauce; Vicky Pham coats the beef in egg and cornstarch and adds five spice and ginger; Whiskey and Booch adds bean sprouts and serves sriracha on the side. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Vietnamese) has no pho xao, so the first read version leads. This one doubles the lead for 4, uses vegetable oil in place of olive oil for the high heat, and adds the scallions and sriracha from Whiskey and Booch.",
+ "sources": [
+  {
+   "name": "Delightful Plate",
+   "title": "Vietnamese Rice Noodles with Beef Stir-fry (Pho Xao Thit Bo)",
+   "url": "https://delightfulplate.com/stir-fried-vietnamese-pho-beef-baby-bok-choy/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Vicky Pham",
+   "title": "Vietnamese Stir-Fried Flat Rice Noodles with Beef (Pho Xao Bo)",
+   "url": "https://vickypham.com/blog/vietnamese-stir-fried-flat-rice-noodles-with-beef-pho-xao-bo/",
+   "rating": 4.2,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Whiskey and Booch",
+   "title": "Vietnamese Stir Fried Noodles with Beef (Pho Xao)",
+   "url": "https://www.whiskeyandbooch.com/blog/vietnamese-pho-xao-recipe",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

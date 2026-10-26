@@ -1,0 +1,116 @@
+{
+  "dish_name": "Black Bean Tacos with Mango Salsa",
+  "cuisine": "Mexican",
+  "main_protein": "beans",
+  "default_servings": 4,
+  "prep_time_minutes": 20,
+  "cook_time_minutes": 14,
+  "ingredients": [
+    {
+      "item": "Black beans",
+      "qty": "2 cans (15 oz)",
+      "category": "pantry"
+    },
+    {
+      "item": "Ripe mangoes",
+      "qty": "2",
+      "category": "produce"
+    },
+    {
+      "item": "Red onion",
+      "qty": "1",
+      "category": "produce"
+    },
+    {
+      "item": "Jalapeño",
+      "qty": "1",
+      "category": "produce"
+    },
+    {
+      "item": "Cilantro",
+      "qty": "1 bunch",
+      "category": "produce"
+    },
+    {
+      "item": "Limes",
+      "qty": "2",
+      "category": "produce"
+    },
+    {
+      "item": "Garlic",
+      "qty": "2 cloves",
+      "category": "produce"
+    },
+    {
+      "item": "Avocados",
+      "qty": "2",
+      "category": "produce"
+    },
+    {
+      "item": "Corn tortillas (100% corn)",
+      "qty": "1 pack",
+      "category": "pantry",
+      "cook_qty": "8"
+    },
+    {
+      "item": "Ground cumin",
+      "qty": "1 tsp",
+      "category": "pantry"
+    },
+    {
+      "item": "Smoked paprika",
+      "qty": "1 tsp",
+      "category": "pantry"
+    },
+    {
+      "item": "Olive oil",
+      "qty": "2 tbsp",
+      "category": "pantry"
+    },
+    {
+      "item": "Salt",
+      "qty": "1 tsp",
+      "category": "pantry"
+    },
+    {
+      "item": "Hot sauce",
+      "qty": "1 bottle",
+      "category": "pantry"
+    }
+  ],
+  "instructions": [
+    "Cut the mangoes into 1/2 inch pieces and put them in a bowl. Dice half of the red onion small and seed and mince the jalapeño. Add both to the mangoes.",
+    "Chop 1/2 cup of the cilantro and add it to the bowl with the juice of 1 lime and 1/4 tsp salt. Stir, and set the bowl aside.",
+    "Drain and rinse the beans, then pat them dry. Slice the other half of the onion thin and mince the garlic.",
+    "Heat the oil in a large skillet over medium-high heat. Add the sliced onion with 1/4 tsp salt and cook for 4 minutes, until soft.",
+    "Add the garlic, cumin and smoked paprika and stir for 30 seconds, until you can smell them.",
+    "Add the beans and 1/2 tsp salt. Press them with the back of a spoon so about half are broken. Cook for 5 minutes, stirring every minute, until some are crisp at the edges.",
+    "Heat a dry skillet over medium-high heat. Warm the tortillas one at a time for 20 seconds on each side and wrap them in a clean towel. Slice the avocados and cut the other lime into wedges.",
+    "Taste the beans. If they're flat, add a pinch more salt or a squeeze of lime.",
+    "Serve the beans in the warm tortillas topped with the mango mixture, the avocado and the rest of the cilantro, with the lime wedges and hot sauce on the table."
+  ],
+  "advance_prep_notes": "",
+  "advance_prep_step_indices": [],
+  "method_notes": "Both sources put a cold mango salsa with red onion, cilantro and lime over black beans in corn tortillas. They differ on the beans: Love and Lemons seasons them with spices, while Glue and Glitter crisps smashed beans in a skillet, and this version crisps the beans and seasons them with cumin and garlic. The cheese in the sources is left out to keep it vegan, and the jalapeño goes in the salsa seeded so the base stays mild.",
+  "sources": [
+    {
+      "name": "Love and Lemons",
+      "title": "Mango Habanero Black Bean Tacos",
+      "url": "https://www.loveandlemons.com/mango-habanero-black-bean-tacos/",
+      "rating": 5,
+      "rating_count": 6,
+      "read": true,
+      "lead": true
+    },
+    {
+      "name": "Glue and Glitter",
+      "title": "Mango Tacos with Black Beans",
+      "url": "https://www.glueandglitter.com/vegan-mango-tacos-with-black-beans",
+      "rating": null,
+      "rating_count": null,
+      "read": true
+    }
+  ],
+  "fallback_used": true,
+  "origin": "seed"
+}

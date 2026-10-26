@@ -1,0 +1,52 @@
+{
+ "dish_name": "Adana Kebab",
+ "cuisine": "Turkish",
+ "main_protein": "lamb",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {"item": "Ground lamb", "qty": "1 1/2 lbs", "category": "meat/seafood"},
+  {"item": "Yellow onion", "qty": "1 small", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Salt", "qty": "1 3/4 tsp", "category": "pantry"},
+  {"item": "Ground sumac", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Ground cumin", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Sweet paprika", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Smoked paprika", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Red onion", "qty": "1 large", "category": "produce"},
+  {"item": "Lemon", "qty": "1", "category": "produce"},
+  {"item": "Olive oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Flat-leaf parsley", "qty": "1 bunch", "category": "produce", "cook_qty": "1/4 cup chopped"},
+  {"item": "Long green peppers", "qty": "4", "category": "produce"},
+  {"item": "Cherry tomatoes", "qty": "1 pint", "category": "produce"},
+  {"item": "Flatbreads", "qty": "4", "category": "other"},
+  {"item": "Red pepper flakes", "qty": "1 1/2 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "At least 1 hour ahead, or the night before: grate the yellow onion on the large holes of a box grater. Squeeze it in your hands over the sink to get rid of as much juice as you can. Grate the 2 garlic cloves.",
+  "Put the 1 1/2 lbs lamb in a large bowl with the onion, garlic, 1 1/2 tsp of the salt, 1 1/2 tsp of the sumac, the 1 1/2 tsp cumin, 1 tsp sweet paprika and 1/2 tsp smoked paprika. Mix it gently with your hands until the spices are spread through. Stop there. Kneading it makes the kebabs tough.",
+  "Split the meat into 8 even pieces. Wet your hands and squeeze each piece around a flat metal skewer into a long, flat kebab about 1 inch thick. No skewers? Shape them into long flat logs the same size. Lay them on a tray, cover and refrigerate for at least 1 hour.",
+  "When you're ready to cook, slice the red onion into thin half moons and put it in a bowl. Squeeze 1 tbsp of the lemon juice over it, then add 1 tbsp of the oil, the last 1/2 tsp sumac and the last 1/4 tsp salt. Toss it and set it aside. Cut the rest of the lemon into wedges.",
+  "Chop 1/4 cup of the parsley leaves and stir them into the onion.",
+  "Heat the oven to 300°F (150°C) so you have somewhere to keep the first batch warm.",
+  "Heat a large cast iron grill pan or skillet over high heat for 2 minutes, then turn it down to medium high. Brush the kebabs all over with 1 tbsp of the oil.",
+  "Lay half the kebabs in the pan. Cook them for 4 to 5 minutes without moving them, until the underside is browned and charred in spots. Turn them and cook the other side for 4 to 5 minutes. You're cooking them to 160°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest one. It's done when there's no pink left in the center.",
+  "Move them to a baking sheet in the warm oven and cook the second batch the same way.",
+  "Toss the 4 peppers and the cherry tomatoes with the last 1 tbsp oil. Add them to the hot pan and cook, turning now and then, until the peppers are blistered and soft and the tomatoes start to split, 5 to 6 minutes.",
+  "Warm the 4 flatbreads in the pan for about 20 seconds a side.",
+  "Taste a piece of kebab. If it's flat, add a pinch more salt or a squeeze of the lemon.",
+  "Serve the kebabs on the warm flatbreads with the sumac onions, the peppers, the tomatoes and the lemon wedges. Put the red pepper flakes on the table."
+ ],
+ "advance_prep_notes": "shape the kebabs and chill them at least 1 hour ahead",
+ "advance_prep_step_indices": [1, 2, 3],
+ "method_notes": "All three versions season ground meat with paprika and red pepper, shape it around wide flat skewers and cook it hot until charred, with sumac onions, peppers and flatbread alongside. An Edible Mosaic (the lead) adds grated onion, garlic, cumin, sumac and both paprikas and grills the skewers about 15 minutes; Turkeys for Life uses lamb with parsley and garlic, chills the shaped kebabs at least an hour and cooks them on a griddle pan with the green peppers, and Headbanger's Kitchen makes it with beef and chopped peppers. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Turkish) has no Adana kebab, only a lamb kofta, so the best rated lamb version leads. This follows the lead's mix at 1 1/2 lbs, chills and pan cooks it the Turkeys for Life way, and moves the red pepper flakes from the meat to the table to keep the base mild."
+ ,
+ "sources": [
+  {"name": "An Edible Mosaic", "title": "Adana Kebab Recipe (Turkish Ground Lamb Kebabs)", "url": "https://www.anediblemosaic.com/adana-kebab-recipe/", "rating": 5.0, "rating_count": 3, "read": true, "lead": true},
+  {"name": "Turkeys for Life", "title": "Easy & Delicious Adana Kebab Recipe", "url": "https://www.turkeysforlife.com/2024/02/adana-kebab-recipe.html", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Headbanger's Kitchen", "title": "Adana Kebap (Famous Turkish Kebab)", "url": "https://www.headbangerskitchen.com/adana-kebap-famous-turkish-kebab/", "rating": 5.0, "rating_count": 5, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

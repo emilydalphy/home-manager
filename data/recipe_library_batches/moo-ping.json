@@ -1,0 +1,46 @@
+{
+ "dish_name": "Moo Ping",
+ "cuisine": "Thai",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {"item": "Boneless pork shoulder", "qty": "1 1/2 lb", "category": "meat/seafood"},
+  {"item": "Garlic", "qty": "6 cloves", "category": "produce"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"},
+  {"item": "Ground white pepper", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Brown sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1/3 cup"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Oyster sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Coconut milk", "qty": "1 can", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "Glutinous rice", "qty": "2 cups", "category": "pantry"},
+  {"item": "Bamboo skewers", "qty": "1 package", "category": "other", "cook_qty": "12"},
+  {"item": "Vegetable oil", "qty": "1 tbsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "The night before, or at least 4 hours ahead: pat the 1 1/2 lb pork dry and trim off any thick, hard fat, leaving a thin layer on. Cut it across the grain into thin slices about 1/4 inch thick and 1 inch wide. It's easier to slice when it's very cold.",
+  "Still the night before: finely chop the 6 garlic cloves and enough cilantro stems to make about 2 tbsp. In a large bowl, stir them together with the 3/4 tsp white pepper, 1/3 cup brown sugar, 3 tbsp soy sauce, 3 tbsp oyster sauce and 1/4 cup of the coconut milk until the sugar mostly dissolves. Add the pork, work the marinade into every slice with your hands, cover and refrigerate it overnight.",
+  "Also the night before: rinse the 2 cups glutinous rice in a bowl of cold water, swishing and draining, until the water runs mostly clear. Cover it with plenty of fresh cold water and leave it to soak overnight.",
+  "About an hour before dinner, put the 12 bamboo skewers in a dish of water to soak, and take the pork out of the fridge.",
+  "Drain the rice. Line a steamer basket with a damp clean kitchen towel, spread the rice on it and fold the towel over the top. Set it over a pot of boiling water, cover and steam for 10 minutes.",
+  "Flip the rice bundle over, cover and steam it for about 10 minutes, until the grains are glossy and chewy all the way through. Turn off the heat and leave it covered.",
+  "Meanwhile, thread the pork onto the skewers, weaving each slice on so it lies flat and packing the pieces close together.",
+  "Heat a grill or a grill pan over medium high. Brush the grates with the 1 tbsp oil.",
+  "Lay the skewers on the grill and cook them without moving for 3 to 4 minutes, until the underside has dark, caramelized edges. If they're blackening fast, turn the heat down a little. The sugar in the marinade scorches easily.",
+  "Brush the tops with the last 1/4 cup coconut milk, flip them and cook the other side for 3 to 4 minutes, until it's browned at the edges too.",
+  "You're cooking the pork to 145°F, so if you have a thermometer, check the thickest piece. No thermometer? Cut into the thickest piece. It's done when the juices run clear and there's no pink left in the middle.",
+  "Taste a piece. If it's flat, brush the skewers with a little more soy sauce.",
+  "Serve the skewers with the sticky rice."
+ ],
+ "advance_prep_notes": "Marinate the pork and soak the sticky rice overnight, the night before (at least 4 hours).",
+ "advance_prep_step_indices": [1, 2, 3],
+ "method_notes": "All three pound or chop garlic, cilantro root and white pepper into a sweet, salty marinade with palm sugar, slice fatty pork thin, thread it onto soaked skewers and grill it until the edges caramelize, then serve it with sticky rice. Not Quite Nigella uses pork neck with squares of back fat, soy and oyster sauce and an overnight marinade; Marion's Kitchen and Love Food add fish sauce and dark soy and baste with coconut milk at the grill, and Marion's Kitchen steams the overnight soaked sticky rice. This one follows the lead's soy, oyster and overnight marinade, uses pork shoulder in place of neck and back fat, cilantro stems for the roots, brown sugar for palm sugar, and adds the coconut milk to the marinade and the baste as the other two do. Marion's Kitchen shows 5 stars from 5 reviews, a review count rather than a rating count; no version had 20 or more ratings and RecipeTin Eats (the trusted cook for Thai) has no moo ping, so the version with the most ratings leads.",
+ "sources": [
+  {"name": "Not Quite Nigella", "title": "Moo Ping Pork Skewers Recipe", "url": "https://www.notquitenigella.com/2023/09/27/moo-ping-thai-pork-skewers/", "rating": 5.0, "rating_count": 16, "read": true, "lead": true},
+  {"name": "Marion's Kitchen", "title": "Moo Ping (Thai-style Grilled BBQ Pork)", "url": "https://www.marionskitchen.com/?p=86593", "rating": 5.0, "rating_count": null, "read": true, "lead": false},
+  {"name": "Love Food", "title": "Moo Ping pork skewers recipe", "url": "https://www.lovefood.com/recipes/56957/moo-ping-pork-skewers-recipe", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

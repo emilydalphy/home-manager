@@ -1,0 +1,86 @@
+{
+ "dish_name": "Saba Shioyaki",
+ "cuisine": "Japanese",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Mackerel fillets",
+   "qty": "1 1/4 lbs",
+   "category": "meat/seafood",
+   "cook_qty": "4 fillets"
+  },
+  {
+   "item": "Sake",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Daikon radish",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "a 2-inch piece"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Short-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups rice in cold water until the water runs mostly clear, then cook it in a rice cooker or a covered pot.",
+  "Line a baking sheet with parchment paper and lay the 4 mackerel fillets on it. Pour the 1/4 cup sake over them and turn them so both sides are wet.",
+  "Pat the fillets dry with paper towels and pour off the sake left on the sheet.",
+  "Sprinkle the 1 tsp salt evenly over both sides of the fillets. Leave them at room temperature for 20 minutes. Don't leave them much longer, or the flesh turns firm.",
+  "Meanwhile, put a rack in the middle of the oven and heat it to 425°F (218°C).",
+  "Meanwhile, peel a 2-inch piece of the daikon and grate it finely. Squeeze it gently in your hand to press out most of the liquid. Cut the lemon into 4 wedges.",
+  "When the 20 minutes are up, pat off the moisture that has come out of the fish with paper towels. Turn the fillets skin side down on the parchment.",
+  "Bake them for 15 to 20 minutes, until the tops are golden brown and the flesh flakes when you press the thickest part with a fork.",
+  "Taste a flake of the fish. If it's flat, sprinkle on a pinch more salt.",
+  "Put a fillet on each plate with a small mound of the daikon and a lemon wedge beside it. Add a few drops of the 2 tsp soy sauce to each mound of daikon. Serve with the rice."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions salt the mackerel on both sides, cook it skin side down until golden and serve it with grated daikon and a few drops of soy sauce. Just One Cookbook, the lead, rinses the fish in sake, salts it and rests it for 20 minutes, pats off the moisture and bakes it at 425°F, with a lemon wedge on the side. Japanese Cooking 101 salts the fillets and pan fries them on foil over medium heat for 4 to 5 minutes a side. This one follows the lead for four fillets and serves it with steamed rice, which the lead suggests.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Grilled Mackerel (Saba Shioyaki)",
+   "url": "https://www.justonecookbook.com/grilled-mackerel-saba-shioyaki/",
+   "rating": 4.74,
+   "rating_count": 149,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Japanese Cooking 101",
+   "title": "Grilled Mackerel (Saba Shioyaki)",
+   "url": "https://www.japanesecooking101.com/wprm_print/grilled-mackerel-recipe-saba-shioyaki",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

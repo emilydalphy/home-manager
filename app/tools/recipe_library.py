@@ -88,7 +88,7 @@ _FAMILY_WORDS = frozenset({
 _SHARED_POSSESSIVES = frozenset({
     "shepherd", "hunter", "tso", "devil", "chef", "ploughman", "plowman", "fisherman",
     "farmer", "baker", "angel", "bird", "pig", "cook", "butcher", "miner", "sailor", "beggar",
-    "monkey", "lion", "king", "queen", "cottager", "workingman",
+    "monkey", "lion", "king", "queen", "cottager", "workingman", "buddha",
 })
 _POSSESSIVE = re.compile(r"\b([a-z]+)['\u2019]s\b")
 _CAPITALISED = re.compile(r"\b[A-Z][a-zA-Z]{2,}\b")

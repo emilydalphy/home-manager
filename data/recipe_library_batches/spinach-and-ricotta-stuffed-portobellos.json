@@ -1,0 +1,110 @@
+{
+ "dish_name": "Spinach and Ricotta Stuffed Portobellos",
+ "cuisine": "Italian",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Portobello mushroom caps",
+   "qty": "4 large",
+   "category": "produce"
+  },
+  {
+   "item": "Baby spinach",
+   "qty": "1 bag (5 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Ricotta",
+   "qty": "1 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "1/2 cup grated",
+   "category": "dairy"
+  },
+  {
+   "item": "Shredded mozzarella",
+   "qty": "1/2 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Gluten-free marinara sauce",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Pine nuts",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 425°F/220°C with a rack in the middle.",
+  "Wipe the caps clean with a damp paper towel and twist out the stems. Finely chop the stems and set them aside.",
+  "Set the caps gill side up on a rimmed baking sheet. Rub them with 2 tbsp of the olive oil and sprinkle 1/4 tsp of the salt over them.",
+  "Roast the caps for 10 minutes.",
+  "Meanwhile, put the pine nuts in a large dry skillet over medium heat. Stir for about 2 minutes, until golden and toasty. Transfer them to a small bowl.",
+  "Return the skillet to medium heat. Add the last 1 tbsp of oil and the chopped stems and cook for 3 minutes, until browned. Mince the garlic, add it and stir for 30 seconds.",
+  "Add the spinach a handful at a time and stir until it has wilted, about 2 minutes. Transfer it to a bowl and press it with the back of a spoon to push out the water. Pour off the liquid.",
+  "Stir the ricotta, 1/4 cup of the Parmesan, the oregano, the remaining 1/2 tsp salt and the pepper into the spinach.",
+  "Take the caps out of the oven and pour off any liquid that has collected in them. Spoon 1/4 cup of the marinara into each cap, then divide the spinach filling among them.",
+  "Top the caps with the mozzarella, then the remaining 1/4 cup Parmesan, then the pine nuts.",
+  "Bake for 15 minutes, until the cheese is bubbling and golden in spots.",
+  "Taste a bit of the filling from one cap. If it's flat, add a pinch of salt to the rest.",
+  "Serve one cap to each person."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree on portobello caps roasted first to release their water, then filled with spinach, ricotta and Parmesan and baked at 375 to 425°F. They differ on breadcrumbs, mozzarella, an egg, and whether marinara goes underneath. This follows the lead's pre-roast, drops the breadcrumbs for gluten-free and uses toasted pine nuts on top for crunch. Marinara goes inside the caps, as in the American Cancer Society version. Check the marinara label for gluten-free.",
+ "sources": [
+  {
+   "name": "The Mediterranean Dish",
+   "title": "Stuffed Portobello Mushrooms",
+   "url": "https://themediterraneandish.com/stuffed-portobello-mushrooms",
+   "rating": 4.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Just a Pinch",
+   "title": "Spinach & Ricotta Stuffed Portobello Mushrooms",
+   "url": "https://www.justapinch.com/recipes/main-course/italian/spinach-ricotta-stuffed-portobello-mushrooms.html",
+   "rating": null,
+   "rating_count": 2,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

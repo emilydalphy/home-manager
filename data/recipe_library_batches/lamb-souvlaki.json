@@ -1,0 +1,51 @@
+{
+ "dish_name": "Lamb Souvlaki",
+ "cuisine": "Greek",
+ "main_protein": "lamb",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Boneless leg of lamb", "qty": "2 lbs", "category": "meat/seafood"},
+  {"item": "Lemons", "qty": "2", "category": "produce"},
+  {"item": "Garlic", "qty": "5 cloves", "category": "produce"},
+  {"item": "White wine vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/4 cup plus 2 tsp"},
+  {"item": "Olive oil", "qty": "4 tbsp", "category": "pantry"},
+  {"item": "Dried oregano", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Bay leaves", "qty": "2", "category": "pantry"},
+  {"item": "Kosher salt", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Wooden skewers", "qty": "8", "category": "other"},
+  {"item": "English cucumber", "qty": "1", "category": "produce"},
+  {"item": "Greek yogurt", "qty": "1 tub (16 oz)", "category": "dairy", "cook_qty": "1 cup"},
+  {"item": "Fresh dill", "qty": "1 bunch", "category": "produce"},
+  {"item": "Romaine heart", "qty": "1", "category": "produce"},
+  {"item": "Tomatoes", "qty": "2", "category": "produce"},
+  {"item": "Pita bread", "qty": "4", "category": "pantry"}
+ ],
+ "instructions": [
+  "The night before, or at least 12 hours ahead: zest one of the lemons until you have 2 tsp, then juice both lemons. That should be about 1/4 cup. Mince 4 of the garlic cloves. In a large bowl, whisk the zest, lemon juice, minced garlic, 1/4 cup of the vinegar, 3 tbsp of the olive oil, the 2 tsp oregano and 1 tsp of the salt. Add the 2 bay leaves whole.",
+  "Still the night before: trim the thick fat off the lamb and cut it into 1 inch cubes. Add them to the bowl and toss until every piece is coated. Cover and refrigerate for 12 to 24 hours.",
+  "About 30 minutes before you cook, take the lamb out of the fridge. Put the 8 wooden skewers in a dish of water to soak.",
+  "Meanwhile, make the tzatziki. Grate half the cucumber on the large holes of a grater and squeeze out as much water as you can with your hands. Squeeze hard, or the tzatziki will be runny.",
+  "Grate the last garlic clove and finely chop 3 tbsp of the dill. In a bowl, mix the cucumber with the 1 cup Greek yogurt, the grated garlic, the chopped dill, the last 2 tsp vinegar and 1/4 tsp of the salt. Keep it in the fridge until you eat.",
+  "Shred the romaine heart and slice the tomatoes.",
+  "Lift the lamb out of the marinade and thread it onto the skewers, about 5 pieces each. Throw away the marinade and the bay leaves. Sprinkle the last 3/4 tsp salt and the 1/2 tsp pepper over the meat.",
+  "Heat the last 1 tbsp olive oil in a large nonstick skillet over high until it shimmers. Lay in half the skewers and leave them alone for 3 minutes, until the underside is deep brown. Stand back a little. They'll spatter.",
+  "Turn them and cook the other side for 3 minutes. You're cooking the lamb to 140°F in the middle for medium rare, so if you have a thermometer, check a thick piece there. No thermometer? Cut into one: it should be pink in the middle but not raw looking. Transfer them to a plate and cover loosely with foil.",
+  "Cook the rest of the skewers the same way and add them to the plate.",
+  "Wipe out the skillet and set it over medium. Warm the pitas one at a time for about 30 seconds a side, until they're soft and spotted brown.",
+  "Taste the tzatziki. If it's flat, add a pinch more salt.",
+  "Serve the skewers with the warm pita, the tzatziki, the romaine and the tomatoes."
+ ],
+ "advance_prep_notes": "Marinate the lamb the night before (12 to 24 hours).",
+ "advance_prep_step_indices": [1, 2],
+ "method_notes": "All three marinate cubed lean lamb in lemon, garlic, olive oil and an herb, then cook the skewers fast over high heat and serve them with pita and tzatziki. RecipeTin Eats (the lead) uses boneless leg, adds lemon zest, white wine vinegar, oregano and bay to the marinade, marinates 12 to 24 hours, salts the skewers just before cooking, and sears them 3 minutes a side in a hot pan to medium rare, serving them with shredded lettuce and tomato; BBC Good Food uses dill instead of oregano with a 2 hour minimum, and Corrie Cooks grills for 10 to 12 minutes. The tzatziki follows BBC Good Food's (yogurt, grated cucumber, garlic, dill and a little vinegar), since the lead points to a separate recipe for it. The lead's 12 to 24 hour marinade is kept as a night before step.",
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Lamb Souvlaki", "url": "https://www.recipetineats.com/lamb-souvlaki/", "rating": 5.0, "rating_count": 21, "read": true, "lead": true},
+  {"name": "BBC Good Food Middle East", "title": "Lamb, lemon & dill souvlaki", "url": "https://www.bbcgoodfoodme.com/recipes/lamb-lemon-and-dill-souvlaki", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Corrie Cooks", "title": "Lamb Souvlaki Skewers", "url": "https://www.corriecooks.com/lamb-souvlaki-skewers/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

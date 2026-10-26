@@ -1,0 +1,45 @@
+{
+ "dish_name": "Entomatadas",
+ "cuisine": "Mexican",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 45,
+ "ingredients": [
+  {"item": "Roma tomatoes", "qty": "10", "category": "produce"},
+  {"item": "White onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Olive oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Vegetable broth", "qty": "1 cup", "category": "pantry"},
+  {"item": "Corn tortillas", "qty": "12", "category": "other"},
+  {"item": "Queso fresco", "qty": "1 package (12 oz)", "category": "dairy", "cook_qty": "about 2 cups crumbled"},
+  {"item": "Mexican crema", "qty": "1 tub", "category": "dairy"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"},
+  {"item": "Jalapeño", "qty": "1", "category": "produce"}
+ ],
+ "instructions": [
+  "Heat the oven to 400°F (200°C). Rinse the 10 tomatoes, pull off any stems and put them on a rimmed baking sheet.",
+  "Roast the tomatoes for 20 to 25 minutes, until the skins are split and blistered and the tomatoes are soft all the way through.",
+  "Meanwhile, chop the onion. Peel the 2 garlic cloves and leave them whole.",
+  "Heat 1 tbsp of the olive oil in a medium skillet over medium. Add the onion and the whole garlic cloves and cook for 8 to 10 minutes, stirring now and then, until the onion is soft and golden brown at the edges. Don't rush the onion. That's where most of the sauce's flavor comes from.",
+  "Transfer the roasted tomatoes with their juices, the onion, the garlic and the 1 tsp salt into a blender. Blend until it's completely smooth. Hold the lid down with a towel. Hot liquid pushes it up.",
+  "Heat 1 tbsp of the olive oil in a wide saucepan over medium. Pour in the sauce. It will sputter for a few seconds. Stir in the 1 cup broth and simmer for about 5 minutes, stirring now and then, until it coats the back of a spoon. Turn the heat to low.",
+  "While the sauce simmers, crumble the queso fresco into a bowl. That should be about 2 cups. Chop a handful of the cilantro. Slice the jalapeño into thin rings and put it in a small bowl for the table.",
+  "Heat 1 tsp of the remaining olive oil in a large skillet over medium high. Add 2 or 3 tortillas and cook them for about 15 seconds a side, until they're hot, soft and lightly blistered but not crisp. Stack them on a plate under a clean towel. Do the rest of the tortillas the same way, adding a little of the remaining olive oil to the pan each time.",
+  "Using tongs, dip one tortilla into the warm sauce so both sides are coated. Lay it on a plate, put about 2 tbsp of the queso fresco on one half and fold it over. Do the same with the rest, three to a plate.",
+  "Spoon the rest of the sauce over the folded tortillas and scatter the last of the queso fresco over the top.",
+  "Taste the sauce. If it's flat, add a pinch more salt.",
+  "Drizzle the crema over each plate and scatter the cilantro on top. Serve with the jalapeño on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "None of the versions found had 20 or more ratings, and RecipeTin Eats, the trusted cook for this cuisine, has no entomatadas, so the first well-rated version read (Mexican Please, 4.86 from 14 votes) leads. All of them blend tomatoes, onion, garlic and a little chile into a smooth sauce, soften corn tortillas, dip them in the sauce and fold them around queso fresco with crema on top. Mexican Please roasts the tomatoes and browns the onion and garlic before blending; Masienda sautes fresh tomatoes and adds bouillon and oregano; The Anthony Kitchen uses canned crushed tomatoes and three jalapeños. This one follows the lead's roast, quick-fry and fold, but keeps the jalapeño out of the sauce and puts it on the table sliced, and uses vegetable broth so the dish stays vegetarian.",
+ "sources": [
+  {"name": "Mexican Please", "title": "Entomatadas", "url": "https://www.mexicanplease.com/entomatadas/", "rating": 4.86, "rating_count": 14, "read": true, "lead": true},
+  {"name": "Masienda", "title": "Entomatadas (Folded Tortillas Bathed in Tomato Sauce)", "url": "https://masienda.com/blogs/learn/entomatadas", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "The Anthony Kitchen", "title": "Entomatadas", "url": "https://www.theanthonykitchen.com/?p=18441", "rating": 3.67, "rating_count": 6, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

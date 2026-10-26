@@ -1,0 +1,48 @@
+{
+ "dish_name": "Fatteh Hummus",
+ "cuisine": "Lebanese",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Pita bread", "qty": "1 package", "category": "other", "cook_qty": "4"},
+  {"item": "Olive oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 1/4 tsp", "category": "pantry"},
+  {"item": "Chickpeas", "qty": "2 cans (15 oz)", "category": "pantry"},
+  {"item": "Ground cumin", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Lemons", "qty": "1", "category": "produce"},
+  {"item": "Plain yogurt", "qty": "1 tub (32 oz)", "category": "dairy", "cook_qty": "2 1/2 cups"},
+  {"item": "Tahini", "qty": "1 jar", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Flat-leaf parsley", "qty": "1 bunch", "category": "produce", "cook_qty": "1/4 cup chopped"},
+  {"item": "Pomegranate", "qty": "1", "category": "produce"},
+  {"item": "Unsalted butter", "qty": "2 tbsp", "category": "dairy"},
+  {"item": "Pine nuts", "qty": "1 bag", "category": "pantry", "cook_qty": "1/4 cup"}
+ ],
+ "instructions": [
+  "Heat the oven to 375°F.",
+  "Split the 4 pitas open into two thin rounds each and cut them into 1 inch squares. Put them on a large baking sheet, drizzle the 3 tbsp olive oil over them, sprinkle on 1/4 tsp of the salt and toss. Spread them out in one layer.",
+  "Bake the pita for 10 to 12 minutes, stirring halfway, until it's deep golden and crisp all the way through.",
+  "Meanwhile, drain the chickpeas over a bowl and keep 1/2 cup of the liquid. Rinse the chickpeas.",
+  "Put the chickpeas in a saucepan with the 1/2 cup liquid, 1 tsp of the cumin and 1/2 tsp of the salt. Simmer over medium heat for 10 minutes, until they're hot and the liquid turns a little creamy. Turn the heat to low to keep them warm.",
+  "Peel the 3 garlic cloves and chop them on a board with 1/2 tsp of the salt. Press and scrape them with the flat of the knife until they turn into a paste.",
+  "Juice the lemon. That should be about 3 tbsp.",
+  "In a bowl, whisk the 2 1/2 cups yogurt with the 1/4 cup tahini, the lemon juice, the garlic paste and the last 1/2 tsp cumin until it's smooth. If it's too thick to pour, whisk in water a spoonful at a time.",
+  "Taste the yogurt sauce. If it's flat, add a pinch more salt.",
+  "Pick the leaves off the parsley and chop 1/4 cup. Cut the pomegranate in half and knock the seeds out of one half with the back of a wooden spoon.",
+  "Melt the 2 tbsp butter in a small frying pan over medium low heat. Add the 1/4 cup pine nuts and stir them until they're golden, 2 to 3 minutes. Take the pan off the heat right away. They burn fast.",
+  "Spread the crisp pita in a wide serving dish. Spoon the warm chickpeas and their liquid over it, then pour the yogurt sauce over the top.",
+  "Pour the pine nuts and their hot butter over the yogurt, scatter on the parsley and pomegranate seeds, and serve right away."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three layer crisp pita, warm chickpeas and a garlicky yogurt, then finish with nuts toasted in fat and serve it at once before the bread softens. The Matbakh and Alphafoodie both put tahini, lemon and cumin in the yogurt and pour pine nuts in hot ghee or butter over the top; The Salt and Sweet keeps the yogurt to garlic and salt and uses almonds fried in olive oil. This follows The Matbakh's sauce and garnish, and simmers the chickpeas in some of their own liquid with cumin the way Alphafoodie does. No version had 20 or more ratings (The Salt and Sweet shows 52, but its page data gives only a review count, not a rating count), and RecipeTin Eats has no fatteh, so The Matbakh leads as the fullest Levantine version.",
+ "sources": [
+  {"name": "The Matbakh", "title": "Fattet Hummus (Chickpea Fatteh)", "url": "https://thematbakh.com/hummus-fatteh-savory-bread-pudding-with-pita-chickpeas-yogurt/", "rating": 5, "rating_count": 4, "read": true, "lead": true},
+  {"name": "Alphafoodie", "title": "Chickpea Fatteh (Fattet Hummus)", "url": "https://www.alphafoodie.com/simple-chickpea-pita-fatteh/", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "The Salt and Sweet", "title": "Chickpea Fatteh- Fattet Hummus", "url": "https://thesaltandsweet.com/chickpea-fatteh-fattet-hummus/", "rating": 5, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

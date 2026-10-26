@@ -1,0 +1,49 @@
+{
+ "dish_name": "Cantonese Lemon Chicken",
+ "cuisine": "Chinese",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "Jasmine rice", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Boneless skinless chicken thighs", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Shaoxing wine", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Garlic powder", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Sesame oil", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "White pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Cornstarch", "qty": "1 box", "category": "pantry", "cook_qty": "1 tbsp plus 2 tbsp plus 1 1/2 tbsp"},
+  {"item": "All-purpose flour", "qty": "3/4 cup", "category": "pantry"},
+  {"item": "Baking powder", "qty": "1 can", "category": "pantry", "cook_qty": "1/8 tsp"},
+  {"item": "Club soda", "qty": "1 can (12 oz)", "category": "other", "cook_qty": "1/2 cup"},
+  {"item": "Vegetable oil", "qty": "6 cups", "category": "pantry"},
+  {"item": "Lemons", "qty": "2", "category": "produce"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1/4 cup"}
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups rice in a sieve until the water runs mostly clear. Put it in a pot with 2 1/4 cups water and bring it to a boil. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave it covered until you serve.",
+  "Meanwhile, cut the 1 lb chicken thighs into 1 1/2 inch chunks. In a bowl, toss them with the 2 tsp Shaoxing wine, 1/2 tsp of the salt, the 1/4 tsp garlic powder, 1/4 tsp of the sesame oil, 1/8 tsp of the white pepper and 1 tbsp of the cornstarch. Set it aside for 20 minutes.",
+  "In another bowl, whisk 1/2 cup of the flour, 2 tbsp of the cornstarch, 1/4 tsp of the salt, the 1/8 tsp baking powder and the remaining 1/8 tsp white pepper. Spread the remaining 1/4 cup flour on a plate.",
+  "Cut 4 thin rounds from the middle of one lemon and cut each round into 6 small wedges. Finely grate 1 tsp zest from the other lemon. Juice what's left of both lemons. That should be about 1/4 cup.",
+  "Pour the 6 cups oil into a heavy pot. It should be about 2 inches deep. Heat it over medium high to 350°F. No thermometer? Drop in a little flour. It should sizzle right away and rise to the top.",
+  "Stir 1/2 cup cold club soda and the remaining 1/4 tsp sesame oil into the dry batter mix until it's smooth.",
+  "Roll a few pieces of chicken in the flour on the plate, dip them in the batter and let the extra drip off. Lower 5 or 6 pieces into the oil, away from you. Fry them for 2 to 3 minutes, turning now and then, until they're light golden and crisp. Keep the oil at about 325°F as they fry. Transfer them to a rack or paper towels and fry the rest the same way.",
+  "Let the chicken rest for at least 5 minutes.",
+  "Meanwhile, put the lemon juice, zest and lemon wedges in a small stainless steel saucepan with 1/3 cup water, the 1/4 cup sugar and the remaining 1/4 tsp salt. Bring it to a simmer over medium high. In a small cup, stir the remaining 1 1/2 tbsp cornstarch with 1 1/2 tbsp cold water.",
+  "Heat the oil back up to 350°F. Fry the chicken again in 2 batches for about 2 minutes each, until it's deep golden and very crisp. Stand back a little. It'll spatter. You're cooking it to 175°F in the middle, so if you have a thermometer, check a big piece. No thermometer? Cut one open: it's done when there's no pink left. Transfer it to the rack.",
+  "While the chicken fries, stir the cornstarch mixture and slowly stir it into the simmering sauce, a little at a time, until the sauce is thick enough to coat a spoon. If it gets there before the cup is empty, leave the rest out. Take the pan off the heat.",
+  "Taste the sauce. If it's flat, add a pinch more salt.",
+  "Add the chicken to the sauce and fold it 3 or 4 times, until every piece is coated.",
+  "Serve right away with the rice."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions coat the chicken in a light batter, fry it twice so it stays crisp under the sauce, and finish it with a sweet, sharp lemon sauce thickened with cornstarch. The Woks of Life (the lead) cuts the chicken into chunks, marinates it in Shaoxing wine, garlic powder, sesame oil and white pepper, fries it at 325°F to 350°F with a short rest between fries, and simmers the sauce with lemon zest and lemon slices, then tosses the chicken in it. RecipeTin Eats pounds whole thighs flat, uses a cold soda water batter, rests them 20 minutes between fries at 320°F and 390°F, adds stock, garlic and ginger to the sauce and spoons it over sliced chicken with steamed rice. This follows the lead's method and amounts with thighs (the lead allows breast or thighs), uses club soda in the batter (the lead offers seltzer or beer), and serves it with rice as RecipeTin Eats does.",
+ "sources": [
+  {"name": "The Woks of Life", "title": "Chinese Lemon Chicken", "url": "https://thewoksoflife.com/chinese-lemon-chicken/", "rating": 4.95, "rating_count": 20, "read": true, "lead": true},
+  {"name": "RecipeTin Eats", "title": "Crispy Chinese Lemon Chicken", "url": "https://www.recipetineats.com/crispy-chinese-lemon-chicken/", "rating": 4.94, "rating_count": 48, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

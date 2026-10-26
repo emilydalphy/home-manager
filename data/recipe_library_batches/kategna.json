@@ -1,0 +1,34 @@
+{
+ "dish_name": "Kategna",
+ "cuisine": "Ethiopian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {"item": "Injera", "qty": "1 package", "category": "other", "cook_qty": "2"},
+  {"item": "Niter kibbeh", "qty": "1 jar", "category": "dairy", "cook_qty": "3 tbsp"},
+  {"item": "Berbere", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "a pinch", "category": "pantry"}
+ ],
+ "instructions": [
+  "Cut each of the 2 injera into 8 wedges, like a pizza. Day-old injera crisps best.",
+  "Heat a large dry skillet over medium heat for 2 minutes. Lay in as many wedges as fit in one layer, bubbly side up.",
+  "Cook them for 2 to 3 minutes, until the underside looks dry and toasty and the wedges start to stiffen.",
+  "Flip them and cook the other side for 2 to 3 minutes, until they're crisp right through and snap when you bend one. If the middle still bends, give them another minute. Move them to a plate and toast the rest the same way.",
+  "Meanwhile, melt the 3 tbsp niter kibbeh in a small pan over low heat. Take the pan off the heat and stir in 1 tsp of the berbere and the pinch of salt until it's smooth.",
+  "Brush the spiced niter kibbeh over the bubbly side of each wedge while they're still warm.",
+  "Put the last 1/2 tsp berbere in a small dish for anyone who likes it hotter.",
+  "Serve the kategna warm, with the berbere on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions crisp wedges of injera in a dry pan and coat them with niter kibbeh melted with berbere. Ethiopian-Food.org (the lead) toasts first and brushes the butter on after, which is the order followed here; Red Fox Spices spreads the butter on soft injera and rolls it instead, and Mesob matches the lead. The lead uses one injera for four, so this follows Red Fox Spices' two injera with a little more butter, and it puts 1 tsp of berbere in the butter with the last 1/2 tsp on the side, a gentler base than the lead's 3/4 tbsp. No version had 20 or more ratings (the lead shows 5 from 9 reviews, a review count rather than a rating count) and RecipeTin Eats, the trusted cook for this cuisine, has no kategna, so the lead is the strongest version read.",
+ "sources": [
+  {"name": "Ethiopian-Food.org", "title": "Kategna Recipe", "url": "https://ethiopian-food.org/kategna-recipe/", "rating": 5.0, "rating_count": null, "read": true, "lead": true},
+  {"name": "Red Fox Spices", "title": "Kategna", "url": "https://redfoxspices.com/blogs/recipe-ideas/kategna", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Mesob", "title": "Kategna", "url": "https://mesob.binaryabyssinia.com/recipes/kategna", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
