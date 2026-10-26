@@ -15799,16 +15799,19 @@
   // (goTab('week') before the POST lands) from starting it again.
   var tourStartedThisLoad = false;
   var tourAsking = false;
+  // A "no" holds for the page load: an approved week now asks too, and every
+  // household already using the app would otherwise ask on every Plan visit.
+  var tourDeclinedThisLoad = false;
 
   function maybeStartFirstTour() {
-    if (!window.PomonaTour || window.PomonaTour.isOpen() || tourStartedThisLoad || tourAsking) return;
+    if (!window.PomonaTour || window.PomonaTour.isOpen() || tourStartedThisLoad || tourAsking || tourDeclinedThisLoad) return;
     // A draft, or the approved week the setup's "Approve the week" made: the
     // server decides whether this household is new enough (app/tools/tour.py).
     var planState = weekPlanState(weekState.data);
     if (weekState.step !== 'week' || (planState !== 'draft' && planState !== 'set')) return;
     tourAsking = true;
     Api.json('/api/tour', { quiet: true }).then(function (st) {
-      if (!st || !st.show) { tourAsking = false; return; }
+      if (!st || !st.show) { tourAsking = false; if (st) tourDeclinedThisLoad = true; return; }
       // A beat for "Here's your week." to land first.
       setTimeout(function () {
         tourAsking = false;

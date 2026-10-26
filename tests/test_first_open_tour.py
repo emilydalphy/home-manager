@@ -6,10 +6,10 @@ Six stops right after "Here's your week." on the household's first draft,
 ending back on it. Skippable, never shown again once done or skipped —
 stored per adult on the server (the household with nobody picked), not in
 the browser. "Show me around again" in Preferences replays it. No tour for a
-household that approved a week before the tour could follow an approval
-(tour.APPROVED_ALLOWED_FROM); a household whose first approval came after
-it — setup's "Approve the week" — gets it on its first visit to Plan
-(Emily, 2026-10-25). See app/tools/tour.py and static/tour.js.
+household from before the tour could follow an approval that has an
+approved week (households.created_at before tour.APPROVED_ALLOWED_FROM); a
+household created after it gets it on its first visit to Plan even once
+setup's "Approve the week" has approved it (Emily, 2026-10-25). See app/tools/tour.py and static/tour.js.
 """
 from __future__ import annotations
 
@@ -17,6 +17,7 @@ import json
 from pathlib import Path
 
 import nodeharness
+import pytest
 from fastapi.testclient import TestClient
 
 from app import tools
@@ -27,6 +28,20 @@ REPO = Path(__file__).resolve().parent.parent
 TOUR_JS = (REPO / "static" / "tour.js").read_text(encoding="utf-8")
 SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
 SHELL_HTML = (REPO / "static" / "shell.html").read_text(encoding="utf-8")
+
+
+def _created(stamp: str) -> None:
+    conn = get_conn()
+    conn.execute("UPDATE households SET created_at = ? WHERE id = 1", (stamp,))
+    conn.commit()
+    conn.close()
+
+
+@pytest.fixture(autouse=True)
+def _an_existing_household():
+    """Every test's household is one from before the 2026-10-26 change unless
+    it says otherwise — so no test here turns on the date the suite runs."""
+    _created("2026-10-01 12:00:00")
 
 
 def _adult(name: str) -> int:
@@ -125,7 +140,6 @@ def test_approve_then_reopen_does_not_bring_it_back():
     c = _device()
     assert c.get("/api/tour").json()["show"] is True
     tools.approve_weekly_plan(plan_id)
-    _first_approved("2026-10-20 12:00:00")  # a household from before the change
     tools.reopen_weekly_plan(plan_id)
     conn = get_conn()
     row = conn.execute("SELECT status, approved_at FROM weekly_plans WHERE id = ?", (plan_id,)).fetchone()
@@ -134,52 +148,63 @@ def test_approve_then_reopen_does_not_bring_it_back():
     assert c.get("/api/tour").json() == {"show": False, "ended": "", "has_approved_week": True}
 
 
-def _first_approved(stamp: str) -> None:
-    conn = get_conn()
-    conn.execute("UPDATE households SET first_approved_at = ? WHERE id = 1", (stamp,))
-    conn.commit()
-    conn.close()
-
-
-def test_a_household_whose_first_approval_came_after_the_change_still_gets_it():
+def test_a_household_created_after_the_change_gets_it_with_its_week_approved():
     """Emily, 2026-10-25: setup's "Approve the week" approves before Plan is
     ever opened, so "no approved week" kept the tour from most new
-    households. One approved on or after APPROVED_ALLOWED_FROM gets it."""
+    households. One created on or after APPROVED_ALLOWED_FROM gets it."""
     from app.tools import tour
+    _created(tour.APPROVED_ALLOWED_FROM)
     _adult("Emily")
     _plan("approved", approved=True)
-    _first_approved(tour.APPROVED_ALLOWED_FROM)
     c = _device()
     assert c.get("/api/tour").json() == {"show": True, "ended": "", "has_approved_week": True}
     # ...once: skipping it ends it like any other.
     assert c.post("/api/tour/done", json={"skipped": True}).json()["show"] is False
 
 
-def test_a_household_that_approved_before_the_change_does_not():
-    from app.tools import tour
+def test_an_old_household_with_no_first_approval_stamp_stays_quiet_after_its_next_approval():
+    """Review, 2026-10-25: first_approved_at is '' on households from before
+    2026-10-19 and is stamped on their NEXT approval — after the change, so
+    keying on it would have shown them the tour out of nowhere. created_at
+    doesn't move."""
     _adult("Emily")
     _plan("approved", approved=True)
-    _first_approved("2026-10-26 04:59:59")
-    assert tour.APPROVED_ALLOWED_FROM > "2026-10-26 04:59:59"
-    assert _device().get("/api/tour").json()["show"] is False
-
-
-def test_a_real_approval_today_is_stamped_in_the_form_the_cutoff_compares():
-    # first_approved_at and the cutoff are compared as strings: both must be
-    # SQLite's "YYYY-MM-DD HH:MM:SS" (UTC).
-    from app.tools import tour
-    _adult("Emily")
     conn = get_conn()
-    plan_id = conn.execute(
-        "INSERT INTO weekly_plans (household_id, week_start_date, status) VALUES (1, '2026-10-19', 'draft')"
+    conn.execute("UPDATE households SET first_approved_at = '2026-10-27 00:00:00' WHERE id = 1")
+    draft = conn.execute(
+        "INSERT INTO weekly_plans (household_id, week_start_date, status) VALUES (1, '2026-10-26', 'draft')"
     ).lastrowid
     conn.commit()
     conn.close()
-    tools.approve_weekly_plan(plan_id)
+    tools.approve_weekly_plan(draft)
+    assert _device().get("/api/tour").json()["show"] is False
+
+
+def test_created_just_before_the_change_does_not():
+    from app.tools import tour
+    _created("2026-10-26 04:59:59")
+    assert tour.APPROVED_ALLOWED_FROM > "2026-10-26 04:59:59"
+    _adult("Emily")
+    _plan("approved", approved=True)
+    assert _device().get("/api/tour").json()["show"] is False
+
+
+def test_a_new_household_is_stamped_in_the_form_the_cutoff_compares():
+    # created_at and the cutoff are compared as strings: both must be
+    # SQLite's "YYYY-MM-DD HH:MM:SS" (UTC).
+    from app.tools import tour
     conn = get_conn()
-    stamp = conn.execute("SELECT first_approved_at FROM households WHERE id = 1").fetchone()[0]
+    hid = conn.execute("INSERT INTO households (name) VALUES ('Stamp check')").lastrowid
+    stamp = conn.execute("SELECT created_at FROM households WHERE id = ?", (hid,)).fetchone()[0]
+    conn.execute("DELETE FROM households WHERE id = ?", (hid,))
+    conn.commit()
     conn.close()
     assert len(stamp) == len(tour.APPROVED_ALLOWED_FROM) and stamp[4] == "-" and stamp[10] == " "
+
+
+def test_a_no_is_remembered_for_the_page_load():
+    fn = SHELL_JS[SHELL_JS.index("function maybeStartFirstTour()"):SHELL_JS.index("function replayTour()")]
+    assert "tourDeclinedThisLoad" in fn and "tourDeclinedThisLoad = true" in fn
 
 
 # ---------- the shell's half ----------
