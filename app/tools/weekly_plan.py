@@ -9,6 +9,7 @@ import re
 from datetime import date, datetime, timedelta
 from ..db import get_conn, write
 from ._shared import acting_member_id_for, acting_name, household_id, require_household_row
+from . import bring_over as _bring_over
 from . import coordination as _coordination
 from . import grocery as _grocery
 from . import meal_plans as _meal_plans
@@ -8214,6 +8215,12 @@ def _settle_weekly_plan_approval(
                 "SELECT approved_at FROM weekly_plans WHERE id = ? AND household_id = ?",
                 (weekly_plan_id, household_id()),
             ).fetchone()["approved_at"]
+
+            # A meal brought over from last week is this week's to buy now,
+            # so its share comes off last week's unbought lines first —
+            # otherwise the one dish is on the list twice, or asked about
+            # as last week's (bring_over.release_last_weeks_share).
+            _bring_over.release_last_weeks_share(conn, weekly_plan_id)
 
             # Before a single ingredient lands: whatever is still unbought
             # from an EARLIER week is set aside, so this week's amounts go

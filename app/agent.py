@@ -7474,6 +7474,9 @@ def _generate_weekly_plan(
                 if household_memory.get(field) == 0
             },
             cap_for=lambda d, slot: _meal_minutes_cap(d, slot, intake, effective_memory),
+            # Not a meal of today that has already gone by: apply_to_plan
+            # runs after the "already gone by" pass and would write over it.
+            gone={(m["date"], m["slot"]) for m in past_meals},
         )
         if brought_over and isinstance(context.get("intake"), dict):
             context["intake"]["brought_over"] = _bring_over.prompt_lines(brought_over)
@@ -7499,7 +7502,9 @@ def _generate_weekly_plan(
                 if household_memory.get(field) == 0
             },
             cap_for=lambda d, slot: _meal_minutes_cap(d, slot, intake, effective_memory),
-            taken={(p["on"], p["slot"]) for p in brought_over},
+            # …nor a meal of today already gone by (same reason as above).
+            taken={(p["on"], p["slot"]) for p in brought_over}
+            | {(m["date"], m["slot"]) for m in past_meals},
             guest_nights=_freezer_portions.guest_nights(period),
         )
         if frozen_portions and isinstance(context.get("intake"), dict):

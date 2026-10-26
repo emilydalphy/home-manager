@@ -1177,6 +1177,17 @@ why*, not duplicating the diff.
   the undo note now records them (`_with_outgoing_sides`) and Undo
   re-attaches and re-buys them. `test_meal_add_component.py` is pinned to
   its Monday whole-file, since it adds to Monday's dinner.
+- **A dish brought over from last week is bought once, and never lands on
+  tonight's gone dinner** (2026-10-24; branch
+  `overnight/hunt-wrapup-bringover-1024`; tests
+  `tests/test_bring_over_turn_of_week.py`). Approval now takes a
+  brought-over meal's share off last week's still-unbought lines
+  (`bring_over.release_last_weeks_share`, before the carried-over set-aside;
+  ticked lines and their ledger rows untouched, a gone night skipped), and
+  `choose_nights` / the freezer-portion pick skip today's meals already gone
+  by. Why: approved on the Sunday, Shop showed the tikka for both weeks;
+  approved Monday it was asked "keep?" as last week's; planned at 9:45pm on
+  the first day it went on that gone dinner.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
