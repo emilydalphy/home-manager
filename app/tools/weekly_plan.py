@@ -2314,25 +2314,33 @@ def get_week_planning_nudge() -> dict:
     if covering is None:
         # Nothing covers today, full stop — offer the suggested period,
         # which is the current one until PLAN_AHEAD_FROM_WEEKDAY and the
-        # next one from there — unless a live plan already holds any of
-        # its days, because offering days the household has planned is an
-        # offer to undo them.
+        # next one from there — but never days a live plan already holds,
+        # because offering those is an offer to undo them.
         #
-        # That check used to be skipped for the CURRENT period (Loop Board
-        # "Today doesn't ask to plan a week I've already planned", tester,
+        # The current period used to skip that check (Loop Board "Today
+        # doesn't ask to plan a week I've already planned", tester,
         # 2026-10-25): a Sunday-start household with next week approved
-        # from Mon 26 opened Today on Sun 25, nothing covered the Sunday,
-        # the suggestion ran Oct 25–31, and the card offered six approved
-        # days again — "Shall I put Oct 25–31 together?" — with "Let's
-        # plan the week" in the dock. The uncovered day is tonight's
-        # dinner card's to ask about ("Tonight needs a dinner"), not the
-        # week card's. Checking the current period too does not bring back
-        # the guard the docstring says went on 2026-09-05: the suggestion
-        # never starts before today, so a plan that ran out early is not
-        # in its window and still leaves the nudge asking every morning.
+        # from Mon 26 opened Today on Sun 25, and the card asked "Shall I
+        # put Oct 25–31 together?" — six approved days — with "Let's plan
+        # the week" in the dock. Now the offer is cut to the gap: today up
+        # to the day before the next held day. A gap of just today is
+        # tonight's dinner card's to ask about ("Tonight needs a dinner"),
+        # not the week card's, so it offers nothing; a longer one (a plan
+        # that starts Wednesday, or Saturday) is offered as that stretch,
+        # which /plan-week and generation take as an ordinary custom range
+        # (week + days) and which overlaps nothing, so nothing is taken
+        # over. The suggestion never starts before today, so a plan that
+        # ran out early is not in its window and the 2026-09-05 rule
+        # (keep asking every morning) is untouched.
         target, is_current = date.fromisoformat(suggestion["start_date"]), suggestion["is_current_period"]
-        if _plan_covers_any(target.isoformat(), target_days) is not None:
-            target = None
+        held = find_overlapping_plans(target.isoformat(), target_days)
+        if held:
+            first_held = min(d for plan in held for d in plan["overlap_dates"])
+            gap = (date.fromisoformat(first_held) - target).days
+            if is_current and gap > 1:
+                target_days = gap
+            else:
+                target = None
     elif covering is not None:
         # A period ends on some day E; the offer for what follows opens
         # from the period's PLAN_AHEAD_FROM_WEEKDAY-th day or from the day

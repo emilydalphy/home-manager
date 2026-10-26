@@ -15,17 +15,16 @@ why*, not duplicating the diff.
 
 - **Today never offers days a live plan already holds** (2026-10-25,
   tester-reported; branch `overnight/sunday-no-replan-nudge`; tests
-  `tests/test_sunday_no_replan_nudge.py`). `get_week_planning_nudge` now runs
-  its "already planned" overlap check on the current-period suggestion too,
-  not only next week's — so a Sunday-start household with next week approved
-  from Monday is no longer asked "Shall I put Oct 25–31 together?" (nor shown
-  "Let's plan the week", which reads the same `week_start`); tonight's
-  "Tonight needs a dinner" asks about the one uncovered day. Drafts count as
-  held, as they always did for next week. Why: offering held days is an offer
-  to undo them; the suggestion never starts before today, so the 2026-09-05
-  "plan ran out early keeps nudging" rule is untouched. Open: a 2–3 day gap
-  before a plan (e.g. plan starts Wednesday) now gets only the nightly card,
-  not a short-period offer.
+  `tests/test_sunday_no_replan_nudge.py`). With nothing covering today,
+  `get_week_planning_nudge` now cuts the current-period offer to the gap
+  before the next held day (approved or draft): just today → no week card and
+  no "Let's plan the week" (both read `week_start`), only "Tonight needs a
+  dinner"; a longer gap → that stretch (plan from Wed: "Oct 25–27"), which
+  /plan-week and generation take as an ordinary custom range overlapping
+  nothing. Why: Sunday-start households with next week approved from Monday
+  were asked "Shall I put Oct 25–31 together?" — six approved days. The
+  suggestion never starts before today, so the 2026-09-05 "plan ran out
+  early keeps nudging" rule is untouched.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

@@ -11,15 +11,17 @@ Root cause: nothing covered the Sunday, so get_week_planning_nudge offered
 suggest_planning_period's current period, which for a household whose week
 starts on Sunday (any anchor but the default) is clamped to today and runs
 Oct 25–31. The "already planned" check ran only for a NEXT-week suggestion.
-Now it runs for the current one too; the one uncovered night is tonight's
-dinner card's question ("Tonight needs a dinner"), which is untouched.
+Now the current one is cut to the gap before the next held day: a gap of
+just today offers nothing (that night is tonight's dinner card's question,
+"Tonight needs a dinner", which is untouched); a longer gap is offered as
+that stretch, never the held days after it.
 
 The dock button reads the same payload (shell.js todayNeedsPlan:
 `nudge.week_start`), so `week_start: None` is what keeps it away.
 """
 import pytest
 
-from app import tools
+from app import agent, tools
 from app.db import get_conn
 
 SUNDAY = "2026-10-25"
@@ -107,3 +109,48 @@ def test_with_nothing_planned_the_week_is_still_offered(client, signed_in):
     assert (nudge["week_start"], nudge["week_label"], nudge["is_current_week"]) == (
         SUNDAY, "Oct 25–31", True,
     )
+
+
+@pytest.mark.today(SUNDAY)
+@pytest.mark.parametrize("plan_start, label, days", [
+    ("2026-10-28", "Oct 25–27", 3),  # F: the plan starts Wednesday
+    ("2026-10-31", "Oct 25–30", 6),  # G: the plan starts Saturday
+])
+def test_a_longer_gap_is_offered_as_just_the_gap(plan_start, label, days, client, signed_in):
+    """GUARD (review of the first cut, which offered nothing here): more than
+    tonight is uncovered, so the gap is offered — and only the gap."""
+    _anchor("saturday")
+    _insert_plan(plan_start, 7)
+
+    nudge = client.get("/api/week/plan-nudge").json()
+
+    assert nudge["show"] is True
+    assert (nudge["week_start"], nudge["day_count"], nudge["week_label"], nudge["is_current_week"]) == (
+        SUNDAY, days, label, True,
+    )
+
+
+@pytest.mark.today(SUNDAY)
+def test_planning_the_gap_takes_nothing_from_the_plan_after_it(client, signed_in, monkeypatch):
+    """GUARD: the offered gap generates exactly its own days, and the
+    approved plan it stops short of keeps all seven."""
+    _anchor("saturday")
+    tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}],
+                     prep_time_minutes=10, cook_time_minutes=20)
+    later = _insert_plan("2026-10-28", 7)
+    nudge = client.get("/api/week/plan-nudge").json()
+    start, days = nudge["week_start"], nudge["day_count"]
+    monkeypatch.setattr(agent, "generate_weekly_plan_llm", lambda context: [
+        {"date": d, "slot": slot, "meal_name": "Chili", "is_new_recipe": False, "reasoning": "fits"}
+        for d in tools.period_dates(start, days) for slot in tools.WEEK_SLOTS
+    ])
+
+    plan = agent.generate_weekly_plan(start, day_count=days, period_start=start)
+
+    conn = get_conn()
+    row = conn.execute("SELECT * FROM weekly_plans WHERE id = ?", (plan["weekly_plan_id"],)).fetchone()
+    later_row = conn.execute("SELECT * FROM weekly_plans WHERE id = ?", (later,)).fetchone()
+    conn.close()
+    assert tools.plan_period(row) == (SUNDAY, 3)
+    assert tools.plan_period(later_row) == ("2026-10-28", 7)
+    assert later_row["status"] == "approved"
