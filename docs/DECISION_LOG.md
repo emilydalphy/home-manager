@@ -58,6 +58,17 @@ why*, not duplicating the diff.
   three in one row squeezed the apricot to 12px at 390px. Not on Settings →
   Recipes (decision 2). Change recipe's own "Tell Pomona what to change" row
   still rewrites the saved recipe everywhere — untouched, a product question.
+- **Different snacks in the week: two by default, a ceiling, asked right
+  under snacks a day** (2026-10-26; branch `overnight/two-snacks-default`;
+  tests `tests/test_snack_dishes_count.py`). Unset now reads as 2 (never
+  fewer than snacks a day) — it was 5 at two a day since 2026-10-19; the
+  three-day snack rule's cap is whatever the count needs (2 at 2 a day is
+  every day) and its pool never takes the week past the count; onboarding
+  asks it under snacks a day and What we know moved its stepper from How
+  you eat to the Snacks row ("Emily 2 · Sam 1 · 2 different"). Why: Emily,
+  2026-10-25 — "2 snacks a day" was quietly becoming five snack recipes.
+  The 2026-10-19 variety tests now set 5 themselves.
+
 - **Second 200 library recipes: Emily's three calls** (2026-10-25; branch
   `recipe-library-200b`; doc `docs/RECIPE_LIBRARY_SPOTCHECK_200B.md`).
   Bistec a la Mexicana is two dishes (the rated slow simmer, plus "Quick

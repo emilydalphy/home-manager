@@ -11,10 +11,10 @@ Two things made that week, and only one of them was the model:
     DEFAULT 2 (2026-09-27, "ASSUMPTION for Emily"). Two dishes and two
     snacks a day is every dish on every day — so for a household that
     never touched the stepper, the app itself folded any variety the
-    model did send down to the orange-and-edamame week. The count is
-    now read as an answer only once someone sets it
-    (snack_dishes_per_week_set); until then it is default_snack_dishes:
-    enough dishes that none has to be on more than MAX_SNACK_DAYS days.
+    model did send down to the orange-and-edamame week. From 2026-10-19
+    an unset count read as five at two a day; Emily put it back to two on
+    2026-10-25 (default_snack_dishes) — the number of different snacks is
+    the household's to set, and the three-day cap gives way to it.
   - nothing held the model to a spread. Telling the generator is not
     the same as preventing it (CLAUDE.md), so enforce_snack_variety runs
     after the counts, in code, with no model call.
@@ -30,8 +30,8 @@ tahini in hummus), skips a standing dislike, last fortnight's snacks and
 anything already on that day, and leans toward the ones whose ingredients
 the week already buys, so variety doesn't balloon the list.
 
-What stands it down: a count they set (the cap is then what their number
-needs: two dishes at two a day is seven days each, as they said); words
+What stands it down: a small count (the cap is then what the number
+needs: two dishes at two a day is seven days each); words
 for the week or a standing note that say repeats are fine ("same snack
 every day is fine"); and, per dish, a snack they asked for by name or one
 carried in on purpose (meal_variety.theirs / asked_for_by_name). A house
@@ -59,17 +59,25 @@ MAX_SNACK_DAYS = 3
 VARIETY_CONSTRAINT = "snack_variety"
 
 
+# Different snacks a week for a household that never set the count (Emily,
+# 2026-10-25: "2 snacks a day doesn't quietly turn into 4-5 different
+# snack recipes"). It was five at two a day from 2026-10-19 — enough for
+# no snack on more than three days — so a household that said two snacks
+# a day got five snack recipes on the list without ever choosing that.
+DEFAULT_SNACK_DISHES = 2
+
+
 def default_snack_dishes(snacks_per_day: int | None) -> int | None:
     """
     How many different snacks a week reads as, for a household that never
-    set the "Snacks" stepper: enough that no snack is on more than
-    MAX_SNACK_DAYS of seven days (2 a day -> ceil(14/3) = 5), never fewer
-    than one day's snacks, at most 7. None for a house with no snacks.
+    set it: DEFAULT_SNACK_DISHES, but never fewer than one day's snacks
+    (three a day from two dishes would be a day eating one twice — the
+    edit refuses that too), at most 7. None for a house with no snacks.
     """
     per_day = int(snacks_per_day or 0)
     if per_day <= 0:
         return None
-    return min(7, max(per_day, math.ceil(per_day * 7 / MAX_SNACK_DAYS)))
+    return min(7, max(DEFAULT_SNACK_DISHES, per_day))
 
 
 # "same snack every day is fine", "the same snacks all week", "snacks can
@@ -217,8 +225,9 @@ def enforce_snack_variety(plan_id: int, dates: list[str], memory: dict, period_s
                           asks: tuple[str | None, ...] = ()) -> dict:
     """
     No snack on more than its cap of days (see the module docstring). The
-    cap is MAX_SNACK_DAYS, or — when the household set the count — what
-    their number needs to cover the week's snack days. Never raises.
+    cap is MAX_SNACK_DAYS, or what the different-snacks count needs to
+    cover the week's snack days when that is more; a pool pick never takes
+    the week past that count. Never raises.
     """
     from . import allergen_gate as _allergen_gate
     from . import draft_opener as _draft_opener
@@ -242,9 +251,15 @@ def enforce_snack_variety(plan_id: int, dates: list[str], memory: dict, period_s
                   if e["date"] in in_scope and e["slot_state"] == "planned" and e["meal"]]
         if not snacks:
             return out
+        # The count — theirs, or the default of two — is the number of
+        # different snacks, so the three-day rule gives way to whatever
+        # that number needs: two dishes at two a day is seven days each.
+        # And it is a ceiling here too: a pool snack is only brought in
+        # while the week has fewer dishes than that (Emily, 2026-10-25).
+        limit = int(memory.get("snack_dishes_per_week") or 0)
         cap = MAX_SNACK_DAYS
-        if memory.get("snack_dishes_per_week_set") and memory.get("snack_dishes_per_week"):
-            cap = max(cap, math.ceil(len(snacks) / int(memory["snack_dishes_per_week"])))
+        if limit:
+            cap = max(cap, math.ceil(len(snacks) / limit))
         out["cap"] = cap
 
         dishes: dict[str, dict] = {}
@@ -298,6 +313,8 @@ def enforce_snack_variety(plan_id: int, dates: list[str], memory: dict, period_s
 
         def _pool_pick(date: str) -> dict | None:
             if not use_pool:
+                return None
+            if limit and sum(1 for d in dishes.values() if d["days"]) >= limit:
                 return None
             on_day = set(day_food.get(date, {}))
             ranked = []

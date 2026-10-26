@@ -11833,8 +11833,9 @@
   // week sets each meal's variety and the snacks a day (wwkUsualWeekHtml).
   // How many DIFFERENT snack dishes a week (2026-09-27); at least one
   // (none is Snacks at "None"). meal_preferences.snack_dishes_per_week,
-  // default 2.
-  var WWK_SNACK_DISHES = { field: 'snack_dishes_per_week', label: 'Snacks', max: 7, min: 1, aria: 'different snacks' };
+  // default 2 (snack_variety.default_snack_dishes). Drawn under the
+  // Snacks row's snacks a day since 2026-10-25 (wwkSnackDishesHtml).
+  var WWK_SNACK_DISHES = { field: 'snack_dishes_per_week', label: 'Different snacks in the week', max: 7, min: 1, aria: 'different snacks' };
   // Cuisines you like (Emily, 2026-09-25): the same fifteen chips
   // onboarding's "Cuisines you like" step shows (static/onboarding.html's
   // CUISINES), so the list isn't only a "+ Add". A chip is on when the
@@ -13189,7 +13190,7 @@
     var dinnerKey = ((mem && mem.rhythm) || {}).dinner_window || '';
     var dinnerOpt = WWK_DINNER_WINDOW.filter(function (o) { return o.key === dinnerKey; })[0];
     html += '<div class="uw-set-rows">' +
-      uwSetRowHtml('snacks', 'Snacks', wwkSnacksValue(data)) +
+      uwSetRowHtml('snacks', 'Snacks', wwkSnacksRowValue(data)) +
       (uwState.row === 'snacks' ? wwkMemberSnacksHtml() : '') +
       uwSetRowHtml('dinner', 'Dinner time', dinnerOpt ? dinnerOpt.label : '—') +
       (uwState.row === 'dinner' ? '<div class="wwk-chips">' + WWK_DINNER_WINDOW.map(function (o) {
@@ -13783,6 +13784,14 @@
     }
     return people.map(function (p) { return p.name + ' ' + wwkSnacksFor(p); }).join(' · ');
   }
+  // The row reads both numbers (Emily, 2026-10-25): snacks a day, then
+  // how many different snacks the week has — "Emily 1 · Sam 2 · 2 different".
+  function wwkSnacksRowValue(data) {
+    var value = wwkSnacksValue(data);
+    if (!wwkSnackDishesPerDay()) return value;
+    var mem = Object.assign({}, wwkMem() || {}, { snacks_per_day: wwkSnackDishesPerDay() });
+    return value + ' · ' + wwkSnackDishes(mem) + ' different';
+  }
   function wwkMemberSnacksHtml() {
     var people = wwkState.needs;
     if (!people) return '<p class="wwk-note">Reading it back…</p>';
@@ -13792,7 +13801,23 @@
         WWK_SNACKS_A_DAY.map(function (v) {
           return wwkChip(String(v), 'data-wwk="member-snacks" data-member="' + who + '" data-value="' + v + '"', wwkSnacksFor(p) === v ? 'on' : '');
         }).join('') + '</div>';
-    }).join('');
+    }).join('') + wwkSnackDishesHtml();
+  }
+  // Different snacks in the week, right under snacks a day (Emily,
+  // 2026-10-25) — it lived in Taste until then, a screen away from the
+  // number it is read against. Never below snacks a day: fewer different
+  // snacks than land on a day would be a day eating one twice, which the
+  // draft won't plan. Nothing to count when nobody has a snack.
+  function wwkSnackDishesPerDay() {
+    var most = wwkSnacksMost();
+    if (most !== null) return most;
+    return wwkSnacksHousehold() || 0;
+  }
+  function wwkSnackDishesHtml() {
+    var perDay = wwkSnackDishesPerDay();
+    if (!perDay) return '';
+    return wwkStepperHtml(Object.assign({}, WWK_SNACK_DISHES, { min: Math.max(1, perDay) }),
+      wwkSnackDishes(Object.assign({}, wwkMem() || {}, { snacks_per_day: perDay })));
   }
   // Everyone who hasn't answered is saved at what they show — the
   // household's number — in the same request, so the next change to the
@@ -13816,7 +13841,16 @@
       if (most === null || !uwState.data || uwState.data.snacks_per_day === most) return;
       var saved = await uwPost({ snacks_per_day: most });
       if (saved) uwState.data = saved;
-      if (wwkMem()) wwkMem().snacks_per_day = most;
+      if (wwkMem()) {
+        wwkMem().snacks_per_day = most;
+        // The server raised the different-snacks count with it
+        // (preferences.keep_snack_counts_consistent): keep that raise, or
+        // lowering a day's snacks again shows the old number (review,
+        // 2026-10-26) — as wwkSetCount does.
+        if (!(wwkMem().snack_dishes_per_week >= most)) {
+          wwkMem().snack_dishes_per_week = Math.min(WWK_SNACK_DISHES.max, most);
+        }
+      }
     });
   }
 
@@ -13954,13 +13988,6 @@
       '</span>' +
       '<span class="wwk-toggle-verb">' + (platesOn ? 'Stop' : 'Start') + '</span>' +
     '</button>';
-    // Breakfasts, lunches and dinners are Your rhythm's variety now
-    // (2026-09-30). Different snacks a week stays here. Never below snacks
-    // a day: fewer different snacks than land on a day would be a day
-    // eating one twice, which the draft won't plan.
-    var snackFloor = Math.max(1, typeof mem.snacks_per_day === 'number' ? mem.snacks_per_day : 0);
-    html += wwkLead('Different snacks a week') +
-      wwkStepperHtml(Object.assign({}, WWK_SNACK_DISHES, { min: snackFloor }), wwkSnackDishes(mem));
     html += wwkLead('In your kitchen') + '<div class="wwk-chips">' +
       WWK_KIT.map(function (k) { return wwkChip(k.label, 'data-wwk="kit" data-value="' + k.key + '"', (mem.kitchen_kit || []).indexOf(k.key) !== -1 ? 'on' : ''); }).join('') + '</div>';
     html += wwkFactsHtml('taste');
@@ -13998,7 +14025,9 @@
       : (typeof wwkMem()[field] === 'number' ? wwkMem()[field] : 0);
     var next = Math.max(min || 0, Math.min(max, current + delta));
     if (next === current) return;
-    wwkSavePreference('taste', field, next, function () {
+    // Saved from the Snacks row under Your rhythm (2026-10-25), so that
+    // is the section that redraws.
+    wwkSavePreference(field === WWK_SNACK_DISHES.field ? 'rhythm' : 'taste', field, next, function () {
       wwkMem()[field] = next;
       // More snacks a day than different snacks: Snacks comes up with it
       // (preferences.keep_snack_counts_consistent does the same on the server).

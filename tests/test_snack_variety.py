@@ -8,8 +8,10 @@ days each, and the list bought 14 oranges. The model sent it, and
 meal_variety.enforce_snack_dishes then folded any variety it did send down
 to snack_dishes_per_week's column DEFAULT of 2 — a number nobody chose.
 
-Now: an unanswered count reads as enough dishes that no snack is on more
-than three days (snack_variety.default_snack_dishes), and
+Then: an unanswered count read as enough dishes that no snack is on more
+than three days. Since 2026-10-25 (Emily) an unanswered count is two again
+— the number of different snacks is the household's to set, and these
+tests set five, the number the three-day rule needs at two a day.
 snack_variety.enforce_snack_variety re-picks each over-cap snack day from
 the week's own snacks first, then a code-side pool (no model call) held to
 the allergen/taste gate and leaning toward what the week already buys.
@@ -70,6 +72,11 @@ def two_adults():
     tools.add_member("Emily")
     tools.add_member("Sam")
     tools.set_household_meal_preferences(snacks_per_day=2, mark_complete=False)
+    # Five different snacks, as the household's own answer: what the
+    # three-day rule needs at two a day. Unset is two (Emily, 2026-10-25),
+    # and two at two a day is every snack every day, which these tests
+    # are not about.
+    tools.edit_preference("snack_dishes_per_week", 5)
 
 
 @pytest.fixture
@@ -95,9 +102,9 @@ def _per_day(plan_id) -> dict[str, list[str]]:
     return out
 
 
-def test_two_snacks_a_day_for_two_adults_is_at_least_four_snacks_none_on_more_than_three_days(
+def test_five_different_snacks_at_two_a_day_is_none_on_more_than_three_days(
         two_adults, stub_model):
-    """The card's test. CATCH: on main the week keeps 2 snacks, 7 days each."""
+    """The 2026-10-19 card's test, with the five now the household's answer."""
     week = _monday()
     stub_model(_tester_home_week(week))
     plan_id = agent.generate_weekly_plan(week)["weekly_plan_id"]
@@ -113,10 +120,12 @@ def test_two_snacks_a_day_for_two_adults_is_at_least_four_snacks_none_on_more_th
     assert ORANGE in days and EDAMAME in days
 
 
-def test_an_unanswered_count_reads_as_enough_for_three_days_each():
-    assert tools.get_household_memory()["snack_dishes_per_week"] == 5
-    assert snack_variety.default_snack_dishes(1) == 3
-    assert snack_variety.default_snack_dishes(3) == 7
+def test_an_unanswered_count_reads_as_two_never_fewer_than_a_days_snacks():
+    """Emily, 2026-10-25. It read as five at two a day from 2026-10-19."""
+    assert tools.get_household_memory()["snack_dishes_per_week"] == 2
+    assert snack_variety.default_snack_dishes(1) == 2
+    assert snack_variety.default_snack_dishes(3) == 3
+    assert snack_variety.default_snack_dishes(0) is None
 
 
 def test_a_count_they_set_is_theirs_even_at_two(two_adults, stub_model):
@@ -199,15 +208,15 @@ def test_a_household_that_already_set_the_stepper_keeps_its_number():
     from app import db
     from app.db import get_conn
     tools.set_household_meal_preferences(snacks_per_day=2, mark_complete=False)
-    tools.edit_preference("snack_dishes_per_week", 2)
+    tools.edit_preference("snack_dishes_per_week", 4)
     conn = get_conn()
     conn.execute("UPDATE meal_preferences SET snack_dishes_per_week_set = 0")
     conn.commit()
-    assert tools.get_household_memory()["snack_dishes_per_week"] == 5
+    assert tools.get_household_memory()["snack_dishes_per_week"] == 2
     db._backfill_snack_dishes_set(conn)
     conn.commit()
     conn.close()
-    assert tools.get_household_memory()["snack_dishes_per_week"] == 2
+    assert tools.get_household_memory()["snack_dishes_per_week"] == 4
 
 
 def test_a_pool_snack_never_echoes_that_days_meal(two_adults, stub_model):

@@ -535,12 +535,10 @@ def get_household_memory() -> dict:
         # How many DIFFERENT snack dishes a week (2026-09-27) — the "Snacks"
         # stepper under Different dishes a week; the draft folds to it
         # (meal_variety.enforce_snack_dishes). See schema.sql.
-        # Read as an answer only once someone set it (2026-10-19, Loop Board
-        # "not the same orange snack 7 days running"): the column's default 2
-        # at two a day is every snack on every day, so an unset count reads
-        # as enough dishes for no snack on more than three days
-        # (snack_variety.default_snack_dishes) — the stepper shows that, and
-        # the draft folds to it.
+        # Unset, it reads as snack_variety.default_snack_dishes: two (Emily,
+        # 2026-10-25), never fewer than snacks a day. It read as five at two
+        # a day from 2026-10-19, which turned "2 snacks a day" into five
+        # recipes nobody chose. The stepper shows it and the draft folds to it.
         "snack_dishes_per_week": (
             prefs["snack_dishes_per_week"] if prefs and prefs["snack_dishes_per_week_set"]
             else _snack_variety.default_snack_dishes(prefs["snacks_per_day"] if prefs else 2)

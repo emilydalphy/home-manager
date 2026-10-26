@@ -37,7 +37,10 @@ def _settings_harness() -> str:
            "escapeHtml", "wwkChip", "wwkNote",
            # Snacks a day is per person since 2026-10-06 (/api/member-needs);
            # with no needs read yet the row reads the household number.
-           "wwkSnacksValue", "wwkSnacksMost", "wwkMemberSnacksHtml", "wwkSnacksFor", "wwkSnacksHousehold"]
+           "wwkSnacksValue", "wwkSnacksMost", "wwkMemberSnacksHtml", "wwkSnacksFor", "wwkSnacksHousehold",
+           # Different snacks in the week reads on the same row (2026-10-25).
+           "wwkSnacksRowValue", "wwkSnackDishesPerDay", "wwkSnackDishesHtml", "wwkSnackDishes",
+           "wwkStepperHtml", "wwkMem"]
 
     def lift(name):
         s = SHELL_JS.index(f"function {name}(")
@@ -55,7 +58,9 @@ def _settings_harness() -> str:
 
     dinner = SHELL_JS[SHELL_JS.index("  var WWK_DINNER_WINDOW = ["):]
     dinner = dinner[: dinner.index("];") + 2]
-    needs = "var wwkState = (typeof wwkState !== 'undefined' && wwkState) || { needs: null, lunchByDay: {} };\n"
+    needs = ("var wwkState = (typeof wwkState !== 'undefined' && wwkState) || { needs: null, lunchByDay: {} };\n"
+             "var prefsState = (typeof prefsState !== 'undefined' && prefsState) || { memory: {} };\n"
+             + SHELL_JS[SHELL_JS.index("  var WWK_SNACK_DISHES = "):].split("\n", 1)[0] + "\n")
     return SHELL_JS[start:end] + "\n" + dinner + "\n" + needs + "\n".join(lift(n) for n in fns) + "\n"
 
 
@@ -95,7 +100,7 @@ console.log(JSON.stringify(wwkUsualWeekHtml({ rhythm: { dinner_window: '6_8' } }
     assert 'class="uw-day is-some" data-wwk="uw-open" data-value="dinner" aria-label="Thursday dinner, Greg"' in out
     assert 'aria-label="Friday dinner, not planned"><b>F</b><span>–</span>' in out
     assert out.index("Snacks") < out.index("Dinner time") < out.index("Prep day")
-    assert "2 a day ›" in out and "6–8 ›" in out and "Sunday ›" in out
+    assert "2 a day · 2 different ›" in out and "6–8 ›" in out and "Sunday ›" in out
 
 
 @_needs_node
