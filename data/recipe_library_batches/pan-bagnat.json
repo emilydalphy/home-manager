@@ -1,0 +1,136 @@
+{
+ "dish_name": "Pan Bagnat",
+ "cuisine": "French",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Crusty French loaf",
+   "qty": "1 (14 oz)",
+   "category": "other"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Canned tuna in water",
+   "qty": "2 cans (5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Mixed pitted olives",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Capers",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Persian cucumber",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Baby arugula",
+   "qty": "1 package",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "The night before, or at least 1 hour ahead: put the 4 eggs in a small pot and cover them with cold water by an inch. Bring it to a boil over high heat, then cover the pot, take it off the heat and leave it for 10 minutes.",
+  "Transfer the eggs to a bowl of cold water and leave them for 5 minutes. Meanwhile, cut the loaf in half horizontally. Pull out about half the soft crumb from the top half, and a little less from the bottom so it holds its shape. Brush both cut sides with the 2 tbsp olive oil.",
+  "In a medium bowl, whisk the 2 tbsp vinegar, the 1 1/2 tsp Dijon and the 1/4 tsp pepper.",
+  "Drain the tuna well, pressing on it with a fork. Chop 1/2 cup of the olives. Add the tuna, olives and 1 tbsp of the capers to the bowl with the 1/4 tsp salt and fold it all together. Taste it, and add a pinch more salt if it's flat.",
+  "Peel the eggs and slice them lengthwise. Cut the cucumber into long, thin slices with a vegetable peeler or a knife. Slice the tomato. Slice a quarter of the red onion as thinly as you can.",
+  "Spread the tuna over the bottom half of the loaf. Layer on the eggs, cucumber, tomato and onion, then a big handful of arugula, about 2 cups. Set the top half on and press down firmly.",
+  "Wrap the whole loaf tightly in plastic wrap and set it on a sheet pan. Put a second pan on top and weigh it down with a few cans. Refrigerate it for at least 1 hour, or overnight.",
+  "Unwrap it and cut it into 4 pieces. For a packed lunch, wrap each piece again."
+ ],
+ "advance_prep_notes": "make and press the sandwich at least 1 hour ahead, or the night before",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7
+ ],
+ "method_notes": "All three fill a crusty loaf with tuna, capers, olives and hard boiled egg or other Niçoise vegetables, and the two pressed versions wrap the loaf and chill it under a weight so the bread soaks up the juices. Skinnytaste dresses the tuna in red wine vinegar and Dijon and layers egg, cucumber, tomato, red onion and arugula, while Geoffrey Zakarian spreads the bread with a homemade olive tapenade and uses oil packed tuna, and Rachael Ray poaches a fresh tuna steak and serves it right away on a crisp baguette with artichokes. No version read had 20 or more ratings (Food52's, which has more, returned too many requests and was skipped) and RecipeTin Eats (the trusted cook for French) has no pan bagnat, so the top rated version read leads. This one follows the lead but leaves out its optional anchovies and cuts the 14 oz loaf into 4 portions instead of 6.",
+ "sources": [
+  {
+   "name": "Skinnytaste",
+   "title": "Pan Bagnat",
+   "url": "https://www.skinnytaste.com/pan-bagnat/",
+   "rating": 4.56,
+   "rating_count": 9,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food Network (Geoffrey Zakarian)",
+   "title": "Pan Bagnat",
+   "url": "https://www.foodnetwork.com/recipes/geoffrey-zakarian/pan-bagnat-22110307",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Food Network (Rachael Ray)",
+   "title": "Rachael's Tuna Pan Bagnat",
+   "url": "https://www.foodnetwork.com/recipes/rachael-ray/rachaels-tuna-pan-bagnat-recipe-1941451",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
