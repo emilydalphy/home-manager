@@ -3512,6 +3512,12 @@ _CHECK_MAX_COUNT = 36
 # whole stance.
 _CHECK_AMOUNT_REACH = 48
 
+# A word in an ingredient's name that says what SORT it is, not what it is:
+# "Whole chicken" was credited with the "2 whole garlic cloves" in its
+# cavity, and "Large shrimp" would be with "2 large eggs" (library audit,
+# 2026-10-25). The rest of the name still finds it.
+_CHECK_NOT_A_NAME_WORD = {"whole", "fresh", "large", "small", "medium"}
+
 _CHECK_CLAUSE_BREAK_RE = re.compile(r"[,;.:()\n]|\bthen\b|\buntil\b|\bwhile\b")
 
 # Its own pattern rather than scale_steps' _STEP_AMOUNT_RE, because the two
@@ -3519,8 +3525,14 @@ _CHECK_CLAUSE_BREAK_RE = re.compile(r"[,;.:()\n]|\bthen\b|\buntil\b|\bwhile\b")
 # ("2-3 cloves") in named groups it substitutes a rescaled number into,
 # and never looks at the word afterwards; this one wants the number and
 # the measuring word right after it, and a range would read as one amount.
+# Not a pan's size either: "a 9x13 inch baking dish and stir in the onion"
+# was 9 onions to Gigantes Plaki's 1 (library audit, 2026-10-25) — the "x"
+# read as the word after the number. The (?!\d) stops "13x9" backing off
+# to a lone "1". Only number-by-number with no weight on the second: "2 x
+# 400g cans" is two cans, and stays counted (review, same day).
 _CHECK_AMOUNT_RE = re.compile(
-    r"(?<![\w./])(\d+\s+\d+/\d+|\d+/\d+|\d+(?:\.\d+)?)\s*°?\s*([a-z]+)?"
+    r"(?<![\w./])(\d+\s+\d+/\d+|\d+/\d+|\d+(?:\.\d+)?)(?!\d)"
+    r"(?!\s*[x×]\s*\d+(?![\d.]*\s*(?:g|kg|oz|ml|l|lb|lbs)\b))\s*°?\s*([a-z]+)?"
 )
 
 # A model writes "1½ cups" as often as "1 1/2 cups", and a fraction this
@@ -3763,7 +3775,10 @@ def _amount_mismatches(ingredients: list[dict], instructions: list[str], serving
     item_words = []
     for ing in lines:
         name = (ing.get("item") or "").strip() if isinstance(ing, dict) else ""
-        item_words.append([w for w in re.findall(r"[a-z]+", _clean_item(name)) if len(w) > 2])
+        item_words.append([
+            w for w in re.findall(r"[a-z]+", _clean_item(name))
+            if len(w) > 2 and w not in _CHECK_NOT_A_NAME_WORD
+        ])
     by_index: dict[int, list[tuple[float, str | None]]] = {}
     strays: list[tuple[float, str | None]] = []
     for step in instructions or []:
@@ -4116,6 +4131,10 @@ _GENERIC_STEP_WORDS = {
     "egg whites": ("egg",),
     "corn": ("tortilla", "chip", "cornmeal", "polenta", "cornstarch"),
     "green onions": ("scallion", "spring onion"),
+    # A bottle named for its maker is the hot sauce the step pours: Buffalo
+    # Wings' "Frank's RedHot sauce" was "hot sauce isn't on the list"
+    # (library audit, 2026-10-25).
+    "hot sauce": ("redhot", "tabasco", "cholula", "valentina", "sriracha"),
 }
 
 _STEP_NUMBER_WORDS = {

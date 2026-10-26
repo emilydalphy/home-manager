@@ -828,6 +828,27 @@ why*, not duplicating the diff.
   Friday" no longer pins the braise), and a day inside the dish's name
   ("Sunday Roast") is not one; `POST /swap-nights` and its undo now
   re-say the draft's lines (`draft_flags.refresh`), as Move already did.
+- **Recipe library audit: the dishes pass, four checker misreads and a
+  vegetarian copy fixed** (2026-10-25; branch
+  `overnight/library-audit-2026-10-25`; tests
+  `tests/test_library_batches_pass_the_checks.py`). All 594 batch files
+  through `library_batch.py check` and the morning report's recipe rules:
+  no clear data defect. Fixed in the checks: a pan's "9x13" read as 9
+  onions; "Whole"/"Fresh"/"Large" in a name credited with "2 whole garlic
+  cloves"/"fresh oil"; Frank's RedHot not the step's hot sauce. Fixed in
+  the copy: a member's vegetarian/vegan/pescatarian/halal/kosher holds
+  nothing back at the gate, so `_copy_from_library` now writes for that
+  household (as for `eating_style`) — Broccoli Cheddar Soup on chicken
+  broth was copied. Review: read off `swap_hard_exclusions` (restrictions
+  + hard facts as written), not the gate's avoidances, which drop "We're
+  vegetarian" / "We keep kosher"; "no meat", "meat-free", "veggie" count;
+  the pan guard spares "2 x 400g cans". `check` also flags a bad category, an out-of-range
+  advance-prep step, and a vegetarian tag over meat/fish (a look). The
+  test pins today's 19 amount looks (all misreads) so a new one goes red.
+  Left for Emily: "Serve with rice/naan" is a morning-report line on ~60
+  library dishes (by the 2026-10-13 split); Green Papaya Salad tagged
+  vegetarian with fish sauce; the style rules (`longest_thing_not_first`
+  96, `method_is_assembly` 54) fire on researched dishes that are fine.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
