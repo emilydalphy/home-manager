@@ -62,6 +62,17 @@ KNOWN_AMOUNT_LOOKS = {
     ("turkey-and-cheese-roll-ups", "Sliced deli turkey"),
     ("warak-enab", "Roma tomatoes"),
     ("warak-enab", "Lemons"),
+    # The 45 gap-fillers and the second 200 (2026-10-25), each read by hand:
+    # per-piece amounts (2 tortillas a pan, 6 tbsp labneh on each of 4 pitas,
+    # 1/4 cup marinara in each cap), "the rest of the X" and "the other one".
+    ("corn-and-poblano-quesadillas", "Corn tortillas (100% corn)"),
+    ("crustless-leek-and-gruyere-quiche", "Whole milk"),
+    ("horiatiki-pita-wraps", "Tzatziki"),
+    ("labneh-wraps", "Labneh"),
+    ("quick-bistec-a-la-mexicana", "Jalapeños"),
+    ("spinach-and-ricotta-stuffed-portobellos", "Gluten-free marinara sauce"),
+    ("tofu-tibs", "Berbere (gluten-free)"),
+    ("torrijas", "Lemon"),
 }
 # Tagged vegetarian with fish sauce on the list — left for Emily (the tag is
 # a variety word no household's copy carries; see the decision log).

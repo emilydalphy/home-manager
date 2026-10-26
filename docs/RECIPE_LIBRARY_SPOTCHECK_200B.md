@@ -5,9 +5,9 @@ Emily asked to "make another 200 recipes based on the recipe rules". She chose t
 Written by 41 researcher agents from the run brief (docs/RECIPE_LIBRARY_RUN.md plus later lessons: a lead must be a version of the dish, and a site that blocks the reader is out). All 200 pass `library_batch.py check`. The 13 "look" lines are broth or stock the dish makes itself, or a misread split. A sweep found no "more" after a time, no "tip", no "because" tags and no household words. None of this has been filed into the live library.
 
 ## Calls for Emily
-1. **Bistec a la Mexicana:** the lead rule picked a 45-minute covered simmer (Cup of Yum, 4.9 from 100, a user-submitted site), so it takes 90 minutes plus salting. The quick strip versions rate low (3.58 from 14). Keep it, or swap to the quick version?
-2. **Siyadieh** has no sauce, because none of its three sources serves one. This sets the "something wet on the plate" rule against the "no invented sauce" rule.
-3. **Tofu Steak:** RecipeTin's sesame-crusted teriyaki tofu steak (4.82 from 32) was treated as a different dish. If it counts as the same dish, it should lead.
+1. **Bistec a la Mexicana (decided 2026-10-25):** two recipes. The slow simmer (Cup of Yum, 4.9 from 100) stays, and Quick Bistec a la Mexicana (the skillet strip version, about 35 minutes) sits beside it.
+2. **Siyadieh (decided 2026-10-25):** no sauce. None of its sources serves one, and a dish that isn't meant to have one doesn't get one.
+3. **Tofu Steak (decided 2026-10-25):** RecipeTin's sesame-crusted teriyaki tofu steak (4.82 from 32) counts as the dish and now leads.
 4. **Weak leads:** about 90 of the 200 use the fallback, leading with versions that have fewer than 20 ratings or none. Spanish, Turkish, Ethiopian, Lebanese and Thai home dishes are thinly rated online, and the big sites (Allrecipes, Serious Eats, The Mediterranean Dish, Maangchi, Spanish Sabores) block the reader. For Ethiopian and Turkish, RecipeTin (the only trusted cook on the list) has nothing, so the trusted-cook list does no work there. This is the open "Ethiopian/Turkish trusted cooks" call.
 5. **Leads that count reviews, not ratings:** My Greek Dish, A Family Feast, ATK and others, the same pattern as before.
 6. **Older print-page source URLs:** about 8 files from earlier rounds (Baked Feta, Amatriciana, Gomen, Gozleme, Khai Jiao, Levrek Bugulama, Sausage and Lentil Stew, Shakshuka) point their sources at /print/ pages. In this round they turned out to be 404s, not blocks, but they're worth a look before filing.

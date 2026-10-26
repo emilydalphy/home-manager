@@ -13,6 +13,15 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Second 200 library recipes: Emily's three calls** (2026-10-25; branch
+  `recipe-library-200b`; doc `docs/RECIPE_LIBRARY_SPOTCHECK_200B.md`).
+  Bistec a la Mexicana is two dishes (the rated slow simmer, plus "Quick
+  Bistec a la Mexicana" for the skillet version); Siyadieh files without a
+  sauce; Tofu Steak leads with RecipeTin's sesame-crusted version. Why:
+  Emily: a dish that isn't meant to have a sauce doesn't get one, and a
+  fast and a slow version are separate recipes. Also: spice lines bought
+  by the jar ("1 jar" + cook_qty) to pass the spoon check, and "buddha"
+  joins the shared possessives (Buddha's Delight).
 - **Sauce and pantry-staple rows show the line's amount, not teaspoons**
   (2026-10-21; branch `overnight/defect-hunt-2026-10-21`; tests
   `tests/test_pantry_rows_show_their_own_amount.py`). `list_spices_this_week`
