@@ -904,6 +904,10 @@ class OnboardingAnswersRequest(BaseModel):
     # Optional, so an older client is unaffected.
     lunch_needs: dict | None = None
     member_snacks: dict | None = None
+    # Different snacks in the week (Emily, 2026-10-25), asked right under
+    # snacks a day: 1-7, sent only once tapped — left out, the household
+    # reads the default (snack_variety.default_snack_dishes, two).
+    snack_dishes_per_week: int | None = None
     # Setup's "This week / Next week" (2026-10-14): 'this_week' |
     # 'next_week', the same words FirstPlanRequest.start takes. Sent here
     # because this post is the one write BOTH answers to sharing with
@@ -1728,6 +1732,8 @@ def onboarding_answers(req: OnboardingAnswersRequest):
         raise HTTPException(status_code=400, detail=str(e))
     if req.first_plan_start not in (None, "this_week", "next_week"):
         raise HTTPException(status_code=400, detail="first_plan_start must be 'this_week' or 'next_week'.")
+    if req.snack_dishes_per_week is not None and not 1 <= req.snack_dishes_per_week <= 7:
+        raise HTTPException(status_code=400, detail="Different snacks in the week is a number from 1 to 7.")
     try:
         memory = tools.save_onboarding_answers(
             member_names=req.member_names,
@@ -1770,6 +1776,18 @@ def onboarding_answers(req: OnboardingAnswersRequest):
             logger.exception("Onboarding member needs save failed")
             raise HTTPException(status_code=500, detail=f"Server error: {e}")
         memory = dict(memory, member_needs=needs)
+    per_day = int(tools.get_household_memory().get("snacks_per_day") or 0) if req.snack_dishes_per_week else 0
+    if per_day > 0:
+        # After snacks a day is final (above), and raised to it rather than
+        # refused: the page keeps the two in step, but a person's snacks
+        # changed after the tap must not cost the whole set of answers.
+        try:
+            tools.edit_preference("snack_dishes_per_week", min(7, max(req.snack_dishes_per_week, per_day)))
+        except Exception:
+            logger.exception("Onboarding different-snacks save failed")
+        saved_now = tools.get_household_memory()
+        memory = dict(memory, snack_dishes_per_week=saved_now["snack_dishes_per_week"],
+                      snack_dishes_per_week_set=saved_now["snack_dishes_per_week_set"])
     if req.first_plan_start is not None:
         # Resolved NOW, by the same function the first plan is generated
         # through, and after the rhythm post (finishSetupAndReveal's order)

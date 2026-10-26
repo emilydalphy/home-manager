@@ -72,13 +72,12 @@ def _snacks(plan_id) -> dict[str, list[str]]:
     return out
 
 
-def test_every_household_starts_at_enough_for_three_days_each():
-    """Was "starts at two" until 2026-10-19 (Loop Board "not the same orange
-    snack 7 days running"): the column's default 2 at two snacks a day is
-    every snack on every day, so an unset count now reads as
-    snack_variety.default_snack_dishes — five at two a day."""
+def test_every_household_starts_at_two():
+    """Emily, 2026-10-25 (Loop Board "'2 snacks a day' doesn't quietly turn
+    into 4-5 different snack recipes"). It read as five at two a day from
+    2026-10-19, when an unset count meant enough for three days each."""
     memory = tools.get_household_memory()
-    assert memory["snack_dishes_per_week"] == 5
+    assert memory["snack_dishes_per_week"] == 2
     assert memory["snack_dishes_per_week_set"] is False
 
 
@@ -91,8 +90,8 @@ def test_the_count_is_a_whole_number_from_one_to_seven():
 
 
 def test_the_draft_folds_fourteen_snacks_to_two_and_every_day_keeps_two(stub_model):
-    """CATCH: on main the week keeps all fourteen. Two is now a number they
-    SET (the stepper); unset, the week folds to five (below)."""
+    """CATCH: on main the week keeps all fourteen. Two set on the stepper;
+    unset is two as well (below)."""
     week = _monday()
     tools.set_household_meal_preferences(snacks_per_day=2, mark_complete=False)
     tools.edit_preference("snack_dishes_per_week", 2)
@@ -144,17 +143,78 @@ def test_a_snack_they_asked_for_is_kept(stub_model):
 
     names = {s for day in _snacks(plan_id).values() for s in day}
     assert "Popcorn" in names
-    assert len(names) == 5
+    assert len(names) == 2
 
 
-def test_unset_the_draft_folds_fourteen_snacks_to_five(stub_model):
+def test_two_a_day_unset_is_exactly_two_snack_recipes_across_the_week(stub_model):
+    """The card's test (2026-10-25): two a day, never set, is two snack
+    recipes — the model sent fourteen. CATCH: on d0ff5d93 it was five."""
     week = _monday()
     tools.set_household_meal_preferences(snacks_per_day=2, mark_complete=False)
     stub_model(_week(week))
     plan_id = agent.generate_weekly_plan(week)["weekly_plan_id"]
     by_day = _snacks(plan_id)
-    assert len({s.lower() for day in by_day.values() for s in day}) == 5
+    assert len({s.lower() for day in by_day.values() for s in day}) == 2, by_day
     assert all(len(day) == 2 and len(set(day)) == 2 for day in by_day.values()), by_day
+    assert len(by_day) == 7
+    conn = get_conn()
+    recipes = {r[0] for r in conn.execute(
+        "SELECT recipe_id FROM meal_plan_entries WHERE weekly_plan_id = ? AND slot = 'snack' "
+        "AND slot_state = 'planned'", (plan_id,))}
+    conn.close()
+    assert len(recipes) == 2 and None not in recipes, recipes
+
+
+ORANGE_WEEK = [["Sliced Orange with Pumpkin Seeds", "Edamame with Sea Salt"]] * 7
+
+
+@pytest.mark.parametrize("count", [2, 3, 5])
+@pytest.mark.parametrize("snacks", [SNACKS, ORANGE_WEEK], ids=["fourteen", "same-two"])
+def test_a_draft_never_has_more_different_snacks_than_the_count(stub_model, count, snacks):
+    """Whatever the model sends — fourteen snacks, or the same two all week
+    for the three-day rule to spread — the week ends on no more than their
+    number: the variety pass's pool never takes it past (2026-10-25)."""
+    week = _monday()
+    tools.set_household_meal_preferences(snacks_per_day=2, mark_complete=False)
+    tools.edit_preference("snack_dishes_per_week", count)
+    stub_model(_week(week, snacks=snacks))
+    plan_id = agent.generate_weekly_plan(week)["weekly_plan_id"]
+    by_day = _snacks(plan_id)
+    assert len({s.lower() for day in by_day.values() for s in day}) <= count, by_day
+    assert all(len(day) == 2 and len(set(day)) == 2 for day in by_day.values()), by_day
+
+
+def test_the_three_day_rule_gives_way_to_two_different_snacks(stub_model):
+    """Two at two a day is each snack every day — the three-day rule would
+    otherwise bring in a third."""
+    week = _monday()
+    tools.set_household_meal_preferences(snacks_per_day=2, mark_complete=False)
+    stub_model(_week(week, snacks=ORANGE_WEEK))
+    plan_id = agent.generate_weekly_plan(week)["weekly_plan_id"]
+    days: dict[str, int] = {}
+    for day in _snacks(plan_id).values():
+        for name in day:
+            days[name] = days.get(name, 0) + 1
+    # (Each may be swapped for an everyday-list snack, one for one.)
+    assert sorted(days.values()) == [7, 7], days
+
+
+def test_onboarding_saves_different_snacks_under_snacks_a_day(signed_in):
+    """Asked right under snacks a day (Emily, 2026-10-25): sent only once
+    tapped, raised to snacks a day rather than refused, 1-7."""
+    body = {"member_names": ["Emily", "Sam"], "snacks_per_day": 2,
+            "member_snacks": {"Emily": 2, "Sam": 1}}
+    res = signed_in.post("/api/onboarding/answers", json=body)
+    assert res.status_code == 200, res.text
+    mem = tools.get_household_memory()
+    assert (mem["snack_dishes_per_week"], mem["snack_dishes_per_week_set"]) == (2, False)
+    res = signed_in.post("/api/onboarding/answers", json=dict(body, snack_dishes_per_week=4))
+    assert res.status_code == 200, res.text
+    assert res.json()["snack_dishes_per_week"] == 4
+    assert tools.get_household_memory()["snack_dishes_per_week_set"] is True
+    res = signed_in.post("/api/onboarding/answers", json=dict(body, snack_dishes_per_week=1))
+    assert res.status_code == 200 and res.json()["snack_dishes_per_week"] == 2
+    assert signed_in.post("/api/onboarding/answers", json=dict(body, snack_dishes_per_week=9)).status_code == 400
 
 
 def test_a_week_that_names_its_own_snack_count_is_left_alone():
@@ -194,8 +254,9 @@ def test_snacks_never_goes_below_snacks_a_day_and_rises_with_it():
     with pytest.raises(ValueError):
         tools.edit_preference("snack_dishes_per_week", 1)
     tools.edit_preference("snacks_per_day", 4)
-    # Unset, four a day reads as seven (snack_variety.default_snack_dishes).
-    assert tools.get_household_memory()["snack_dishes_per_week"] == 7
+    # Unset, four a day reads as four: two, never fewer than a day's
+    # snacks (snack_variety.default_snack_dishes).
+    assert tools.get_household_memory()["snack_dishes_per_week"] == 4
     tools.edit_preference("snack_dishes_per_week", 6)
     tools.edit_preference("snacks_per_day", 3)
     assert tools.get_household_memory()["snack_dishes_per_week"] == 6, "lowering a day's snacks leaves it"

@@ -183,13 +183,15 @@ def test_copy_is_kitchen_table_not_form_labels():
     # "At the table" and "A normal week at yours" came in from /meal-setup.
     # UPDATED 2026-09-30: "When dinner lands" is Your rhythm's Dinner time
     # row, and "Different dishes a week" is the usual week's variety (the
-    # snack count kept its stepper as "Different snacks a week").
+    # snack count kept its stepper as "Different snacks a week"; since
+    # 2026-10-25 it is "Different snacks in the week", under the Snacks
+    # row's snacks a day).
     for lead in ("Never on the plate", "Dinner time", "Plan ready by", "Who cooks",
                  # 2026-10-06 (Onboarding, regrouped): the per-person
                  # weekday lunches replaced "Lunch, on a normal day", and
                  # "Roughly how long" left with Cook ahead's "How long?".
                  "Weekday lunches", "Made fresh: how long can it take?", "How old is ",
-                 "How meals lean", "Cuisines you like", "Rounding out meals", "Different snacks a week",
+                 "How meals lean", "Cuisines you like", "Rounding out meals", "Different snacks in the week",
                  "In your kitchen", "Anything else", "Paste a whole list",
                  "Time limits", "At the table", "A normal week at yours"):
         assert lead in WWK, f"lead-in {lead!r} missing"

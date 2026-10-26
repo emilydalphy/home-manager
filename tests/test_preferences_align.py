@@ -80,6 +80,8 @@ USUAL_WEEK_FNS = [
     "wwkLunchNeedsHtml", "wwkLunchPeople", "wwkLunchEntry", "wwkNeedsFor", "wwkNeedsOnDay",
     "wwkLunchIsByDay", "wwkOrderNeeds", "wwkSomeoneMadeFresh", "wwkLunchChipsHtml",
     "wwkSnacksValue", "wwkSnacksMost", "wwkMemberSnacksHtml", "wwkSnacksFor", "wwkSnacksHousehold",
+    # Different snacks in the week, under snacks a day (2026-10-25).
+    "wwkSnackDishesPerDay", "wwkSnackDishesHtml", "wwkSnacksRowValue",
     "wwkLunchFromPlace",
 ]
 
@@ -148,14 +150,37 @@ def test_the_different_dishes_steppers_are_gone():
     assert "WWK_COUNTS" not in SHELL_JS and "'Snacks a day'" not in SHELL_JS
 
 
-def test_different_snacks_a_week_keeps_its_stepper():
-    html = _render("wwkTasteHtml", MEMORY)
-    assert '<p class="wwk-lead">Different snacks a week</p>' in html
-    assert html.index("Different snacks a week") < html.index('data-field="snack_dishes_per_week"')
-    assert '<span class="wwk-count-label">Snacks</span>' in html
+def _render_snacks_row(memory: dict, needs: list[dict]) -> list:
+    """The Snacks row's value and its open contents, under Your rhythm."""
+    return _run(_harness() + f"""
+prefsState.memory = {json.dumps(memory)};
+wwkState.needs = {json.dumps(needs)};
+var uwState = {{ data: {{ snacks_per_day: {memory.get('snacks_per_day', 0)} }} }};
+console.log(JSON.stringify([wwkSnacksRowValue(uwState.data), wwkMemberSnacksHtml(), wwkTasteHtml(prefsState.memory)]))
+""")
+
+
+TWO_SNACKERS = [{"name": "Emily", "snacks_per_day": 2, "snacks_set": True},
+                {"name": "Sam", "snacks_per_day": 1, "snacks_set": True}]
+
+
+def test_different_snacks_in_the_week_sits_right_under_snacks_a_day():
+    """Emily, 2026-10-25: two numbers, side by side — snacks a day, then
+    different snacks in the week. It left How you eat for the Snacks row."""
+    value, row, taste = _render_snacks_row(MEMORY, TWO_SNACKERS)
+    assert value == "Emily 2 · Sam 1 · 2 different"
+    assert row.index('data-wwk="member-snacks"') < row.index('data-field="snack_dishes_per_week"')
+    assert '<span class="wwk-count-label">Different snacks in the week</span>' in row
     # Two when the household never set it, and the minus stops at snacks a day (2).
     assert re.search(r'data-field="snack_dishes_per_week" data-delta="-1" data-max="7" data-min="2" '
-                     r'aria-label="Fewer different snacks">&minus;</button><span class="cook-serves-count">2<', html)
+                     r'aria-label="Fewer different snacks">&minus;</button><span class="cook-serves-count">2<', row)
+    assert 'snack_dishes_per_week' not in taste and "Different snacks" not in taste
+
+
+def test_no_snacks_means_no_second_number():
+    none = [{"name": "Emily", "snacks_per_day": 0, "snacks_set": True}]
+    value, row, _ = _render_snacks_row(dict(MEMORY, snacks_per_day=0), none)
+    assert value == "Emily 0" and 'snack_dishes_per_week' not in row
 
 
 def test_snacks_a_day_above_snacks_brings_snacks_up_on_screen():
@@ -174,7 +199,8 @@ console.log(JSON.stringify([saves, afterRaise, prefsState.memory.snack_dishes_pe
 def test_the_snacks_stepper_shows_a_clamped_value_so_minus_never_jumps_up():
     """An older row with Snacks below Snacks a day shows Snacks a day, and
     "−" at that floor does nothing (review round 2)."""
-    html = _render("wwkTasteHtml", dict(MEMORY, snacks_per_day=3, snack_dishes_per_week=1))
+    three = [{"name": "Emily", "snacks_per_day": 3, "snacks_set": True}]
+    html = _render_snacks_row(dict(MEMORY, snacks_per_day=3, snack_dishes_per_week=1), three)[1]
     assert re.search(r'data-field="snack_dishes_per_week" data-delta="-1" data-max="7" data-min="3" '
                      r'aria-label="Fewer different snacks">&minus;</button><span class="cook-serves-count">3<', html)
     out = _run(_harness("wwkSetCount") + f"""
@@ -188,8 +214,8 @@ console.log(JSON.stringify(saves));
 
 
 def test_the_snacks_count_saves_and_reads_back(signed_in):
-    # Unset reads as enough for three days each (2026-10-19): five at two a day.
-    assert signed_in.get("/api/memory").json()["snack_dishes_per_week"] == 5
+    # Unset reads as two (Emily, 2026-10-25; it was five at two a day).
+    assert signed_in.get("/api/memory").json()["snack_dishes_per_week"] == 2
     res = signed_in.post("/api/memory/edit", json={"field": "snack_dishes_per_week", "value": 3})
     assert res.status_code == 200, res.text
     assert signed_in.get("/api/memory").json()["snack_dishes_per_week"] == 3

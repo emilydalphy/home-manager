@@ -1644,6 +1644,12 @@
     <p class="q-line">For each person. I&rsquo;ll keep every snack to what they can eat.</p>
     <div class="q-controls">
       <div id="snacks-people"></div>
+      <!-- Right under snacks a day (Emily, 2026-10-25): the second number,
+           so "2 a day" never quietly becomes five snack recipes. -->
+      <div class="q-group" id="snack-dishes-group" hidden>
+        <p class="q-sub" id="snack-dishes-q">How many different snacks in the week?</p>
+        <div class="uw-snacks" id="snack-dishes-chips" role="group" aria-labelledby="snack-dishes-q"></div>
+      </div>
     </div>
   </div>
   <div class="q-foot">
@@ -2557,7 +2563,34 @@ function memberSnacksPayload() {
   currentMembers({ forMeals: true }).forEach(m => { out[m.name] = snacksFor(m); });
   return Object.keys(out).length ? out : null;
 }
+// Different snacks in the week (Emily, 2026-10-25): two unless tapped,
+// never fewer than snacks a day (a day can't eat one snack twice — the
+// server refuses that too), so the chips start at snacks a day. Sent only
+// once tapped; untouched, the household reads the same default of two.
+let snackDishes = null;
+function shownSnackDishes() {
+  return Math.min(7, Math.max(snackDishes === null ? 2 : snackDishes, householdSnacksPerDay()));
+}
+function buildSnackDishes() {
+  const perDay = householdSnacksPerDay();
+  const group = document.getElementById('snack-dishes-group');
+  group.hidden = perDay <= 0;
+  if (perDay <= 0) return;
+  const n = shownSnackDishes();
+  const options = [];
+  for (let v = Math.max(1, perDay); v <= 7; v += 1) options.push(v);
+  document.getElementById('snack-dishes-chips').innerHTML = options.map(v =>
+    `<button type="button" class="uw-q${n === v ? ' is-on' : ''}" data-snack-dishes="${v}" aria-pressed="${n === v ? 'true' : 'false'}">${v}</button>`
+  ).join('');
+}
+document.getElementById('snack-dishes-chips').addEventListener('click', e => {
+  const btn = e.target.closest('[data-snack-dishes]');
+  if (!btn) return;
+  snackDishes = Number(btn.dataset.snackDishes);
+  buildSnackDishes();
+});
 function buildSnacksStep() {
+  buildSnackDishes();
   document.getElementById('snacks-people').innerHTML = currentMembers({ forMeals: true }).map(m => {
     const n = snacksFor(m);
     return `<div class="uw-card uw-card-row"><span class="uw-title">${escapeHtmlLocal(m.name)}</span><div class="uw-snacks" role="group" aria-label="${escapeHtmlLocal(m.name)}’s snacks a day">` +
@@ -3426,6 +3459,7 @@ async function saveOnboardingAnswers() {
     // the names above (app/tools/member_needs.py).
     lunch_needs: lunchNeedsPayload(),
     member_snacks: memberSnacksPayload(),
+    ...(snackDishes === null ? {} : { snack_dishes_per_week: shownSnackDishes() }),
     // "This week / Next week", sent here as well as on the reveal's stream
     // (2026-10-14): this is the one post both answers to sharing with
     // Claude make, and "Not now" never reaches the stream — so the answer
