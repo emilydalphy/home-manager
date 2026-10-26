@@ -360,6 +360,21 @@ why*, not duplicating the diff.
   before the first committed and MAX(revision) after: it wrote revision+2 on
   the stale base, dropping the first adult's answer and leaving two live
   rows (6 rounds in 40). Each attempt now opens with `BEGIN IMMEDIATE`.
+- **A moved meal is bought for the table on its new day** (2026-10-24; branch
+  `overnight/plan-move-follows-headcount`, builds on
+  `overnight/guests-resize-in-place` — merge after it; tests
+  `tests/test_move_follows_headcount.py`). Move and the nights swap kept each
+  dish's grocery links as approved, so salmon for two traded onto a six-person
+  night stayed "2 fillets" while Cook said 6. `meal_move._after_move` (Move and
+  its Undo) and `swap_dinner_nights` / `undo_dinner_nights_swap` now call
+  `attendance.resize_after_redate` after commit. Night off's move
+  (`tonight._night_off_with_undo`) is NOT hooked: its Undo snapshot holds the
+  grocery links, so a resize there needs its own care. Review round: only a
+  meal whose table size differs between its old and new day is resized (a
+  same-size move once "corrected" a recipe edited since approval, and Undo
+  couldn't put it back); every moved meal resizes in ONE transaction; the
+  answers carry `list_changed` and shell.js re-reads Shop on Move, the
+  Tonight trade and both Undos.
 - **Guests (or someone out) after approval resize the list IN PLACE**
   (2026-10-22; branch `overnight/guests-resize-in-place`; tests
   `tests/test_guests_resize_in_place.py`). `attendance.resize_for_new_headcount`

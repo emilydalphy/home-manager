@@ -454,6 +454,79 @@ def resize_for_new_headcount(date_str: str, slot: str) -> list[int]:
         return []
 
 
+def resize_after_redate(moved_from) -> list[int]:
+    """
+    A meal that moved to another day of an approved week is bought for the
+    table on the day it is on NOW. Move and the nights swap re-date rows in
+    place and keep their grocery links, so a dish bought for two that
+    traded onto Monday's six-person dinner kept two people's shopping while
+    Cook said six (2026-10-24).
+
+    `moved_from` is {entry id: the date it was on before}, called after the
+    move has committed. Only a meal whose table is a DIFFERENT SIZE on its
+    new day is resized — a move between two same-size tables leaves the
+    list byte for byte as it was, even if the recipe-week has drifted from
+    what the ingest would write today (a recipe's servings edited since
+    approval): correcting that is not the move's business, and Undo could
+    not put it back. Each recipe-week is resized as a guest change would
+    (_resize_recipe_week — drafts, cooked or past nights and anything in
+    the cart or bought are left alone), ALL in one transaction: either
+    every moved meal follows its table or none does. An Undo calls this
+    too, which puts the list back. Returns the entry ids resized (empty
+    when nothing changed); never raises.
+    """
+    from . import recipe_change as _recipe_change  # deferred: it imports grocery/recipes
+    from . import grocery as _grocery
+
+    moved = {int(i): d for i, d in (moved_from or {}).items() if d}
+    if not moved:
+        return []
+    ids = sorted(moved)
+    marks = ",".join("?" * len(ids))
+    try:
+        with write() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            hid = household_id()
+            today = _grocery._household_today(conn=conn).isoformat()
+            rows = conn.execute(
+                "SELECT mpe.id, mpe.date, mpe.slot, mpe.weekly_plan_id, mpe.recipe_id, mpe.derived_from_json "
+                "FROM meal_plan_entries mpe JOIN weekly_plans wp ON wp.id = mpe.weekly_plan_id "
+                f"WHERE mpe.household_id = ? AND mpe.id IN ({marks}) "
+                "AND wp.status = 'approved' AND mpe.slot_state = 'planned' "
+                "AND mpe.recipe_id IS NOT NULL AND mpe.component_category IS NULL "
+                "AND mpe.date >= ? AND mpe.cooked_at IS NULL AND mpe.cook_started_at IS NULL",
+                [hid, *ids, today],
+            ).fetchall()
+            weeks: list[tuple[int, int]] = []
+            for row in rows:
+                was = moved[int(row["id"])]
+                if was == row["date"]:
+                    continue
+                before = get_slot_attendance(was, row["slot"], conn=conn)["headcount"]
+                after = get_slot_attendance(row["date"], row["slot"], conn=conn)["headcount"]
+                if before == after:
+                    continue
+                try:
+                    derived = json.loads(row["derived_from_json"] or "{}") or {}
+                except (TypeError, ValueError):
+                    derived = {}
+                if isinstance(derived, dict) and derived.get("holiday_menu"):
+                    continue
+                key = (int(row["weekly_plan_id"]), int(row["recipe_id"]))
+                if key not in weeks:
+                    weeks.append(key)
+            resized: list[int] = []
+            for plan_id, recipe_id in weeks:
+                resized.extend(_resize_recipe_week(
+                    conn, plan_id, recipe_id, today, _recipe_change, _grocery))
+            conn.commit()
+            return resized
+    except Exception:
+        logging.getLogger("home_manager").exception(
+            "The list could not follow the moved meals' tables (%s)", ids)
+        return []
+
+
 def _resize_recipe_week(conn, plan_id: int, recipe_id: int, today: str, _recipe_change, _grocery) -> list[int]:
     hid = household_id()
     # The recipe-week as approval bought it: the shape

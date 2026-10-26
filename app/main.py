@@ -4833,7 +4833,7 @@ def week_swap_nights(week_start: str, req: SwapNightsRequest):
     Move a dinner to another night by trading it with what is there. No
     model call: the rows are re-dated in place (see
     tools.swap_dinner_nights for exactly what follows them and what does
-    not), and the grocery list is left alone. A 200 can still say no —
+    not), and each dish's lines are resized for its new night's table. A 200 can still say no —
     `status` 'refused' carries the sentence to show and nothing was
     written. A night that isn't on this plan, the same night twice, or a
     malformed date is a 400.
@@ -4902,7 +4902,7 @@ def week_move_meal(week_start: str, req: MoveMealRequest):
     """
     Move one lunch or dinner (its leftovers with it) to another day, trading
     places with what is there. A 200 can still say no — `status` 'refused'
-    with the sentence, nothing written. The grocery list is not touched.
+    with the sentence, nothing written. Its lines follow the new day's table size.
     """
     plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
