@@ -1241,6 +1241,18 @@ why*, not duplicating the diff.
   purchase onto a non-freezer row past its use-by replaces it: the new
   amount and date (`inventory._add_to_inventory` kept the old date on the
   sum). Also "One new dish" / "No new dishes" and "lunches" in two reasons.
+- **A told staple rhythm lasts until the household shows a new one; a
+  top-up two days later is the same restock** (2026-10-25, defect hunt over
+  eight simulated weeks; branch `overnight/staples-weeks-hunt`; tests
+  `tests/test_staple_rhythm_over_weeks.py`). `staples._relearn` learned from
+  every bought date ever, so "paper towels every two months" went back to
+  "about every month" on the next purchase; now only gaps ending after the
+  newest `told` event (new `staple_events` kind; legacy rows use the staple's
+  created day) can replace a told cadence. And purchases under
+  `MIN_CADENCE_DAYS` apart count as one restock, because weekly milk plus one
+  top-up learned [7, 2] → "about every 4 days" at the first learning.
+  Review round: the told-day filter applies whatever the source, so a year of
+  monthly gaps can't pull a learned-since-telling 60 back to 30.
 
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
