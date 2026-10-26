@@ -13,6 +13,25 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Freezer/thaw and recipe-import small calls** (2026-10-26, Emily: "go with
+  your picks"; branch `calls-1026/freezer-recipes`).
+  - #40: a night off's spare portion of a double batch stays off the freezer
+    list until the batch is cooked (ticked, or its night gone by) —
+    `freezer_portions.not_yet_cooked_portion_ids`, read by `get_inventory`.
+  - #44: a night off's "Use the … soon" note lasts until the next shop (a
+    recorded `shopping_trips` stop after it) — `tonight.expire_use_soon_after_shop`,
+    swept on `get_attention_items`; a frozen portion's note is not touched.
+  - #45: thawed food (fridge move ticked) whose dinner moves past how long it
+    keeps (2 days poultry/ground/fish, 3 red meat, counted from the night it
+    was thawed for) gets one line at the move — `defrost.thawed_wait_sentence`,
+    on the Move sheet's `thaw_notes` and the nights swap / night off `thaw_now`.
+  - #46: swapping the only night with a frozen item to another dish using it
+    carries the freezer answer over — `_replace_slot_entries` reads the
+    outgoing night's pending moves before releasing them.
+  - #47: an imported yield like "1 pie" / "1 loaf" / "2 dozen" is servings
+    unknown (`servings_unknown_makes`), the review sheet says so and asks for
+    Serves before saving; "1 pie, serves 8" now reads 8.
+
 - **The iPhone app's id is `com.heypomona.app`** (2026-10-25, Emily's pick
   to match her heypomona domain; branch `overnight/bundle-id-heypomona`).
   Replaced the `com.pomona.app` placeholder in `capacitor.config.json`, the

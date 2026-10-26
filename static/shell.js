@@ -15058,6 +15058,11 @@
     var host = rliHost(draft.source_url);
     var ings = (draft.ingredients || []).map(rliIngredientRowHtml).join('');
     var fromPhoto = draft.read_by === 'photo';
+    // A yield of "1 pie" or "2 dozen" says what the recipe makes, not who
+    // it feeds: Serves starts empty and the line under it says so, so the
+    // household sets it rather than the planner scaling a "serves 1" by
+    // four (Emily 2026-10-26).
+    var makes = draft.servings_unknown_makes || '';
     body.innerHTML =
       // Where it came from and how it was read. A model-read draft says so,
       // because it is a reading of the page rather than a copy of it.
@@ -15079,12 +15084,15 @@
       '<input id="rli-name" class="rli-input" type="text" value="' + escapeHtml(draft.name || '') + '">' +
       '<div class="rli-numbers">' +
         '<label class="rli-label rli-num"><span>Serves</span>' +
-          '<input id="rli-servings" class="rli-input" type="number" min="1" inputmode="numeric" value="' + escapeHtml(draft.default_servings || 4) + '"></label>' +
+          '<input id="rli-servings" class="rli-input" type="number" min="1" inputmode="numeric" value="' + (makes ? '' : escapeHtml(draft.default_servings || 4)) + '"></label>' +
         '<label class="rli-label rli-num"><span>Prep mins</span>' +
           '<input id="rli-prep" class="rli-input" type="number" min="0" inputmode="numeric" value="' + escapeHtml(draft.prep_time_minutes || '') + '"></label>' +
         '<label class="rli-label rli-num"><span>Cook mins</span>' +
           '<input id="rli-cook" class="rli-input" type="number" min="0" inputmode="numeric" value="' + escapeHtml(draft.cook_time_minutes || '') + '"></label>' +
       '</div>' +
+      (makes
+        ? '<p class="rli-problem" id="rli-servings-note">The recipe says it makes “' + escapeHtml(makes) + '”, not how many it serves. Set Serves before saving.</p>'
+        : '') +
       '<div class="rli-label">Ingredients</div>' +
       '<div class="rli-ings" id="rli-ings">' + ings + '</div>' +
       '<button type="button" class="rli-link" data-rli="add-ing">Add an ingredient</button>' +
@@ -15146,6 +15154,13 @@
       problem.textContent = 'Give it a name first.';
       problem.hidden = false;
       body.querySelector('#rli-name').focus();
+      return;
+    }
+    var servingsEl = body.querySelector('#rli-servings');
+    if (rliDraft && rliDraft.servings_unknown_makes && !(parseInt(servingsEl.value, 10) > 0)) {
+      problem.textContent = 'Set how many it serves, then save.';
+      problem.hidden = false;
+      servingsEl.focus();
       return;
     }
     save.disabled = true;

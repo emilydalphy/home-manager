@@ -666,6 +666,66 @@ def thaw_move_sentence(description: str, task_date: str, today: str) -> str | No
     return f"{head} on {_weekday_name(task_date)}."
 
 
+# How long a thawed ingredient keeps in the fridge, for the warning when
+# its dinner moves later (Loop Board card 4031f4c0…, Emily 2026-10-26 "go
+# with your pick": warn, a plain line at the move). The same USDA FSIS
+# rule the lead-time table above cites: poultry, ground meat and fish
+# 1-2 days once thawed, red meat 3-5. The low end of each, and anything
+# not named as red meat gets the shorter one — the safe direction.
+THAWED_POULTRY_FISH_KEEPS_DAYS = 2
+THAWED_RED_MEAT_KEEPS_DAYS = 3
+_RED_MEAT_RE = re.compile(r"\b(?:beef|steaks?|pork|lamb|veal|venison|roast|brisket|chops?|ribs?)\b", re.IGNORECASE)
+_SHORT_KEEP_RE = re.compile(r"\b(?:ground|mince[d]?|sausages?|burgers?|patt(?:y|ies))\b", re.IGNORECASE)
+
+
+def thawed_keeps_days(item: str) -> int:
+    name = item or ""
+    if _RED_MEAT_RE.search(name) and not _SHORT_KEEP_RE.search(name):
+        return THAWED_RED_MEAT_KEEPS_DAYS
+    return THAWED_POULTRY_FISH_KEEPS_DAYS
+
+
+def thawed_wait_sentence(description: str, thawed_for: str, cook_date: str, today: str) -> str | None:
+    """
+    The one line said at a move when a fridge move already ticked done —
+    the food is out of the freezer — now has its dinner on a night past
+    how long it keeps thawed: "The Chicken thighs were thawed for Tuesday,
+    so they need cooking by Thursday." None when the new night is still
+    inside that time, or the row is not one this module wrote.
+
+    `thawed_for` is the night the move was booked for: the lead time puts
+    the food thawed by then, and the keep (thawed_keeps_days) counts from
+    it.
+    """
+    item = thawed_item(description)
+    if not item or not thawed_for or not cook_date:
+        return None
+    for_day = date.fromisoformat(thawed_for)
+    by = for_day + timedelta(days=thawed_keeps_days(item))
+    if date.fromisoformat(cook_date) <= by:
+        return None
+    today_d = date.fromisoformat(today)
+
+    def _day(d: date, tonight: bool = False) -> str:
+        delta = (d - today_d).days
+        if delta == 0:
+            return "tonight" if tonight else "today"
+        if delta == -1:
+            return "yesterday"
+        if delta == 1:
+            return "tomorrow"
+        return d.strftime("%A")
+
+    plural = item.lower().endswith("s") and not item.lower().endswith("ss")
+    were = "were" if plural else "was"
+    if by < today_d:
+        need = "needed"
+    else:
+        need = "need" if plural else "needs"
+    pron = "they" if plural else "it"
+    return f"The {item} {were} thawed for {_day(for_day, tonight=True)}, so {pron} {need} cooking by {_day(by)}."
+
+
 def resync_plan_thaws(weekly_plan_id: int | None, entry_ids=(), *, today: str | None = None) -> list[str]:
     """
     Recompute this plan's fridge moves after a hand change, and say which
@@ -1905,7 +1965,7 @@ def restate_frozen_after_batch_change(weekly_plan_id: int, entry_ids) -> dict:
     return {"created": created, "cancelled": len(doomed), "set_aside": set_aside}
 
 
-def carry_freezer_answer_to_nights(weekly_plan_id: int, entry_ids) -> dict:
+def carry_freezer_answer_to_nights(weekly_plan_id: int, entry_ids, also_answered=None) -> dict:
     """
     Bring meals just swapped INTO an approved week under the freezer
     answer the household already gave for their ingredient.
@@ -1958,6 +2018,11 @@ def carry_freezer_answer_to_nights(weekly_plan_id: int, entry_ids) -> dict:
     finally:
         conn.close()
     answered = {thawed_item(r["description"]).lower() for r in rows} - {""}
+    # The swap's own outgoing nights: their moves were released before
+    # this runs, so a night that was the only one with the item leaves no
+    # move above to read the answer from (Emily 2026-10-26: a swap to
+    # another dish using the same frozen item carries the answer over).
+    answered |= {str(a).lower() for a in (also_answered or ()) if a}
     if not answered:
         return {"created": [], "set_aside": []}
 

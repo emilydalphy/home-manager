@@ -212,6 +212,41 @@ def _skipped_cooks_portion_ids(conn) -> set[int]:
     return out
 
 
+def not_yet_cooked_portion_ids(conn) -> set[int]:
+    """
+    The freezer rows a night off wrote for a batch that hasn't been cooked
+    yet — the `cook_on_fed` night off writes its spare portion when tapped,
+    ahead of the cook on a later night. The freezer list leaves them out
+    until the batch is cooked (Loop Board card 4001f4c0…, Emily 2026-10-26
+    "go with your pick"): before, the Kitchen's freezer showed a portion of
+    a dish nobody had made yet.
+
+    "Cooked" is the cook ticked done, or its night gone by unticked (most
+    nights are never ticked, and the portion is real by then). A cook
+    answered "We skipped it" is left to the rules that already handle it
+    (_skipped_cooks_portion_ids, release_uncooked_extra). Read at list
+    time, nothing written: the row itself is what the night off's Undo and
+    release_uncooked_extra work on.
+    """
+    from . import cooker as _cooker
+    from . import leftovers as _leftovers
+
+    today = _cooker.household_today(conn=conn).isoformat()
+    out: set[int] = set()
+    for r in conn.execute(
+        "SELECT derived_from_json FROM meal_plan_entries WHERE household_id = ? "
+        "AND COALESCE(cooked_status, '') != 'done' "
+        "AND date >= ? "
+        "AND derived_from_json LIKE ?",
+        (household_id(), today, f'%{_leftovers.FREEZER_EXTRA_KEY}%'),
+    ).fetchall():
+        extra = _derived(r["derived_from_json"]).get(_leftovers.FREEZER_EXTRA_KEY)
+        if isinstance(extra, dict):
+            out |= {i for i in extra.get("inventory_item_ids") or []
+                    if isinstance(i, int) and not isinstance(i, bool)}
+    return out
+
+
 def _claimed_item_ids(conn, ignore_dates: set[str] | frozenset = frozenset()) -> set[int]:
     """
     The portions a live plan already stands a night on — which is what makes
