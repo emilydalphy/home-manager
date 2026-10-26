@@ -849,6 +849,20 @@ why*, not duplicating the diff.
   library dishes (by the 2026-10-13 split); Green Papaya Salad tagged
   vegetarian with fish sauce; the style rules (`longest_thing_not_first`
   96, `method_is_assembly` 54) fire on researched dishes that are fine.
+- **Phone walk: the toast clears a tab's dock, Escape closes a tab's sheet**
+  (2026-10-25; branch `overnight/hunt-phone-walk-2026-10-25`; tests
+  `tests/test_phone_walk_2026_10_25.py`). Found by driving the real UI at
+  390x844: a toast sat on Cook's "Start cooking" / Shop's "Add something"
+  (showToast now lifts over any tab dock at the foot, `toastDockBelow`, not
+  only cook mode's); the toast's "Undo"/"Rate it" was 34x17 (now 44+ via
+  `::before`); Shop's "Somewhere else? Add" was 33px wide; ten tab-level
+  sheets had no Escape (one handler clicks the open scrim, innermost first);
+  the Meal step's dock sat mid-screen on a short page (`is-meal-layout`,
+  same cure as is-review-layout). "Carrots was added" left as is: it is
+  DESIGN_SYSTEM's own example — a voice call. Review fix: "at the foot" means
+  the dock's bottom IS `#shell-scroll`'s (sticky docks sit mid-page on short
+  pages; the Plan root's lifted the toast onto the freezer row); Escape keeps
+  a sheet whose field has typed text, and hands focus back to the opener.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

@@ -362,6 +362,52 @@
     setTimeout(finish, motionMs('--motion-base') + 50);
   }
 
+  // Escape for the tab-level sheets (phone walk, 2026-10-25). Settings and
+  // every sheet reached from it close on Escape; these ten — the ones a tab
+  // opens directly — had only their scrim, handle and x, so on the desktop
+  // "phone in the room" a keyboard had no way out of Cook's More but the
+  // mouse. Escape does exactly what a tap outside does: it clicks the
+  // scrim, so a sheet that holds itself open mid-write (the swap's
+  // dismissSwapSheet) holds against the key too. Listed innermost first —
+  // a swap opened from the whole-week sheet closes before the week does.
+  var ESCAPE_CLOSES_SCRIMS = [
+    'wk-swap-scrim', 'wk-tweak-scrim', 'wk-add-scrim', 'gro-scan-scrim',
+    'gro-add-scrim', 'tonight-scrim', 'cook-more-scrim', 'meals-more-scrim',
+    'week-sheet-scrim', 'notif-scrim'
+  ];
+  //
+  // Two courtesies a tap outside doesn't need. A field in the sheet with
+  // words typed in keeps the sheet open — Escape is a reflex, and Shop's
+  // "Add something" forgets its draft on close, so "oat milk" went with it
+  // (review of this branch, 2026-10-25). And focus goes back to whatever
+  // had it before the sheet opened, the last thing focused outside any
+  // dialog, so a keyboard lands where it left rather than on <body>.
+  var escapeOpener = null;
+  function escapeClosesTabSheet(e) {
+    if (!e || e.key !== 'Escape' || e.defaultPrevented) return false;
+    var active = document.activeElement;
+    if (active && /^(INPUT|TEXTAREA)$/.test(active.tagName) && active.closest &&
+        active.closest('[role="dialog"]') && String(active.value || '').trim()) return false;
+    for (var i = 0; i < ESCAPE_CLOSES_SCRIMS.length; i++) {
+      var scrim = document.getElementById(ESCAPE_CLOSES_SCRIMS[i]);
+      if (scrim && !scrim.hidden && scrim.classList.contains('is-open')) {
+        scrim.click();
+        if (escapeOpener && escapeOpener.isConnected && escapeOpener.focus) {
+          escapeOpener.focus({ preventScroll: true });
+        }
+        return true;
+      }
+    }
+    return false;
+  }
+  if (typeof document !== 'undefined' && document.addEventListener) {
+    document.addEventListener('keydown', escapeClosesTabSheet);
+    document.addEventListener('focusin', function (e) {
+      var t = e.target;
+      if (t && t.closest && !t.closest('[role="dialog"]')) escapeOpener = t;
+    });
+  }
+
   // ---------- One level at a time: the sheet stack (2026-10-05) ----------
   //
   // Gowthami's household, 2026-10-04: "Everytime you click x on the top it
@@ -2451,6 +2497,32 @@
     showToast(said || SAVED_PLAIN, action || null, holdMs);
   }
 
+  // The dock at the foot of the tab on screen, when one is there — Shop's
+  // "Add something", Cook's "Start cooking", Now's plan-the-week. The toast's
+  // usual spot (72px up) is the middle of that strip, so for its 2–6 seconds
+  // it covered the one button the screen exists for (found on the phone walk,
+  // 2026-10-25: "Logged — that'll steer next week. Rate it" sat on top of
+  // "Start cooking"). Only a dock STUCK at the foot counts: .dock is sticky,
+  // so on a short page it just sits after the content (the approved Plan
+  // root's at 541px of 844), and lifting over that one put the toast on the
+  // "Anything in the freezer?" row instead of over empty ground. Stuck means
+  // its bottom is the scroller's visible bottom (#shell-scroll, which ends
+  // at the tab bar), give or take a pixel of rounding. None while a sheet is
+  // up, whose own content is what the toast is over.
+  function toastDockBelow() {
+    if (document.querySelector('[id$="scrim"].is-open')) return null;
+    var panel = document.querySelector('.tab-panel.active');
+    if (!panel) return null;
+    var scroller = document.getElementById('shell-scroll');
+    var foot = scroller ? scroller.getBoundingClientRect().bottom : window.innerHeight;
+    var docks = panel.querySelectorAll('.dock');
+    for (var i = 0; i < docks.length; i++) {
+      if (docks[i].offsetParent === null) continue;
+      if (Math.abs(docks[i].getBoundingClientRect().bottom - foot) <= 2) return docks[i];
+    }
+    return null;
+  }
+
   function showToast(message, action, holdMs, opts) {
     // holdMs: for the rare toast that is a sentence rather than a
     // confirmation — an allergy warning after approval — 2.2 seconds is not
@@ -2486,9 +2558,10 @@
     var sheetOpen = typeof askSheet !== 'undefined' && askSheet && !askSheet.hidden;
     toastEl.classList.toggle('is-over-sheet', !!sheetOpen);
     // In cook mode the Back / Next dock sits where the toast usually does.
-    // Sit just above whichever dock is on screen, so the buttons stay tappable.
+    // Sit just above whichever dock is on screen, so the buttons stay tappable
+    // — cook mode's, or a tab root's (toastDockBelow).
     toastEl.style.bottom = '';
-    var dockEl = !sheetOpen && document.querySelector('.cook-focus .cook-dock');
+    var dockEl = !sheetOpen && (document.querySelector('.cook-focus .cook-dock') || toastDockBelow());
     if (dockEl && dockEl.offsetParent !== null) {
       var dockTop = dockEl.getBoundingClientRect().top;
       toastEl.style.bottom = Math.max(0, Math.round(window.innerHeight - dockTop + 12)) + 'px';
@@ -19843,6 +19916,9 @@
     // not one step name. Day/Meal steps and the plain week root untouched.
     var usesReviewLayout = weekState.step === 'review' || (weekState.step === 'week' && draft);
     panel.classList.toggle('is-review-layout', usesReviewLayout);
+    // And the Meal step's dock (mealDockHtml), for the same reason: one
+    // freeform dish is a short page (shell.css, is-meal-layout).
+    panel.classList.toggle('is-meal-layout', weekState.step === 'meal');
 
     // Chores is a state of the ROOT (a sibling of the week, not a step
     // under it): it keeps the band and the gear, and has no crumb of its
