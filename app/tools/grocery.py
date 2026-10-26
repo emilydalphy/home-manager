@@ -767,6 +767,13 @@ def _merge_target(same_name: list, quantity: str, consolidate, standing: bool, s
     joins a person's line (standing, see above) and a spice line from any
     week, ticked or not: the section is one jar per name, not one per week,
     and a second cumin row beside a ticked one is a question asked twice.
+    That is the spice RACK only. A SAUCE or PANTRY STAPLE shares the
+    'spice' status but carries its week's real amount (pantry.py), so it is
+    an amount line like any other and keeps to its own week (integration
+    hunt, 2026-10-26; widened to them with the 2026-10-19 pantry work, next
+    week approved on the Sunday summed its lasagna noodles onto this week's
+    unanswered "2 boxes", stamped next week's id on the lot, and Monday's
+    sweep of the ended week no longer saw it: "3 boxes" for one lasagna).
     """
     from . import spices as _spices  # lazy: spices imports this module
 
@@ -775,7 +782,7 @@ def _merge_target(same_name: list, quantity: str, consolidate, standing: bool, s
         other_plan = row["source_weekly_plan_id"]
         if (
             source_plan is not None and other_plan is not None and other_plan != source_plan
-            and row["status"] != "spice" and not _spices.is_assumed(row["item"])
+            and not _spices.is_spice(row["item"])
         ):
             continue
         households_line = row["source_weekly_plan_id"] is None and row["status"] == "needed"

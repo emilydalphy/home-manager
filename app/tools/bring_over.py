@@ -197,6 +197,23 @@ def bought_items(entry_ids: list[int], conn=None) -> set[str]:
                 use_by = (r["expiration_date"] or "").strip()
                 frozen = _quantities._display_location(dict(r)).strip().lower() == "freezer"
                 (stale if use_by and use_by < today and not frozen else fresh).add(key)
+            # "Yes, freezing it" on the Shop checklist books the fridge move
+            # and nothing else (defrost.book_defrost_for_grocery_line): the
+            # kitchen row stays in the fridge on a fridge use-by. A move
+            # still pending for one of these meals says the food is in the
+            # freezer, so it is not stale (integration hunt, 2026-10-26: the
+            # chicken frozen at the shop was bought again for the dinner
+            # brought over to the next Monday).
+            if stale - fresh:
+                from . import defrost as _defrost
+
+                for r in conn.execute(
+                    f"SELECT description FROM prep_tasks WHERE household_id = ? AND task_type = 'defrost' "
+                    f"AND status = 'pending' AND meal_plan_entry_id IN ({marks})",
+                    (household_id(), *ids),
+                ).fetchall():
+                    thawing = _defrost.thawed_item(r["description"])
+                    fresh.update(k for k in stale if _defrost._matches_selected_item(thawing, {k}))
             bought -= stale - fresh
     finally:
         if own:
