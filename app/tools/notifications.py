@@ -146,7 +146,15 @@ def get_active_notifications() -> list[dict]:
     # 2. Expiring soon (NOTIFICATIONS.md #2) — 2-day window per spec (the
     # Kitchen/Inventory badge itself uses 4 days; this notification is
     # deliberately tighter, matching the spec's own trigger).
-    expiring = _inventory.get_expiring_soon(days=2)
+    # Only food still INSIDE its date. get_expiring_soon also returns
+    # everything already past it, with no lower bound, and every inventory
+    # row gets an estimated date — so a carton of milk added three weeks ago
+    # and never cleared read "Your milk turns soon — I'll work it into this
+    # week" here, and "Your milk turns soon." in the morning text (digest's
+    # kitchen part reads this title), every day for ever (defect hunt,
+    # 2026-10-22). The spec's trigger is food REACHING two days from its
+    # date (NOTIFICATIONS.md #2); food already past it is Kitchen's to show.
+    expiring = [e for e in _inventory.get_expiring_soon(days=2) if e["status"] == "expiring_soon"]
     if expiring:
         today_iso = _today().isoformat()
         key = f"expiring:{today_iso}"

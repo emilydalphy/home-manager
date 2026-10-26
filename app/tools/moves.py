@@ -625,6 +625,37 @@ def _missed_fridge_moves(view: dict, day: date, now: datetime) -> set[int]:
     return carried
 
 
+def _without_moot_prep(moves: list[dict], view: dict) -> list[dict]:
+    """
+    Today's moves less any fridge/prep step nobody ticked whose meal is
+    already cooked. The dinner is eaten, so "Marinate the chicken · still
+    to do" stood as Today's next-up card until midnight and kept "That's
+    today handled" and tomorrow's first move off the screen (defect hunt,
+    2026-10-22). Dropped, not shown ticked — nobody did it, and a tick
+    would have nothing behind it to flip. A step the household DID tick or
+    skip stays, as the record it is.
+
+    Applied in today_moves (the screen, and the texts that read it), NOT in
+    moves_for_day: move_credits looks the move up there at tick time, while
+    it is still pending, and a step ticked after its cook must still find
+    the move it credits.
+    """
+    cooked: set[int] = set()
+    for meal in view.get("meals") or []:
+        if meal.get("cooked_status") == "done":
+            cooked.update(i for i in (meal.get("entry_ids") or [meal.get("entry_id")]) if i)
+    if not cooked:
+        return moves
+    # A batch step rides on its FIRST cook's entry but feeds later meals
+    # ("Grill extra chicken for tomorrow's Fish Tacos too"), so tonight's
+    # tick doesn't make it moot — it stays (review, same night).
+    batch = {t.get("id") for t in view.get("prep_tasks") or []
+             if t.get("task_type") == "batch_component"}
+    return [m for m in moves
+            if not (m["kind"] in ("fridge", "prep") and not m["done"]
+                    and m.get("entry_id") in cooked and m.get("task_id") not in batch)]
+
+
 def _prep_moves(view: dict, day: date, now: datetime, dinner_clock: time) -> list[dict]:
     """
     Fridge moves (task_type='defrost') and the rest of the day's prep.
@@ -1483,7 +1514,8 @@ def today_moves(day: str | date | None = None, now: datetime | None = None) -> d
     # read of the rhythm and the members table however many moves it holds.
     rhythm = _household_rhythm()
     owners = _move_owner.resolve(view, rhythm)
-    moves = moves_for_day(target, now=now, view=view, owners=owners, rhythm=rhythm)
+    moves = _without_moot_prep(
+        moves_for_day(target, now=now, view=view, owners=owners, rhythm=rhythm), view)
     featured = featured_move_id(moves, now=now)
     # The day's meals, top of the screen (day_meals.for_day) — read off the
     # SAME cooker view the moves are, so Today's meals row and its Cook row
@@ -1498,8 +1530,8 @@ def today_moves(day: str | date | None = None, now: datetime | None = None) -> d
         next_day = target + timedelta(days=1)
         ahead_view = _view_for_day(view, next_day)
         ahead_owners = owners if ahead_view is view else _move_owner.resolve(ahead_view, rhythm)
-        ahead = moves_for_day(next_day, now=now, view=ahead_view,
-                              owners=ahead_owners, rhythm=rhythm)
+        ahead = _without_moot_prep(moves_for_day(next_day, now=now, view=ahead_view,
+                                                 owners=ahead_owners, rhythm=rhythm), ahead_view)
         # An open slot tomorrow is not tomorrow's first move: tomorrow's
         # open slots keep the treatment they had (the needs-you band's
         # "Tomorrow needs a dinner", Plan's own Pick) — the row is today's.

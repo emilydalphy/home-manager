@@ -1053,6 +1053,16 @@ why*, not duplicating the diff.
   at both writers.
   Review: a zone suffix is trimmed only on midnight (02:00Z is the evening
   before here, so it is refused), and the needs-you card answers 400.
+- **Today drops an unticked prep step once its meal is cooked; "turns soon"
+  is only food still inside its date** (2026-10-22, defect hunt; branch
+  `overnight/hunt-today-bell-2026-10-22`; tests
+  `tests/test_today_after_dinner_and_old_food.py`). `moves._without_moot_prep`
+  (in `today_moves`, not `moves_for_day` — move_credits looks moves up there
+  at tick time) drops a pending fridge/prep step whose meal is cooked; it was
+  the "still to do" card until midnight (a `batch_component` row stays: it
+  feeds a later meal). The use-it-up notification (and the
+  morning text's kitchen line) skips `expired` rows, which
+  `get_expiring_soon` returns with no lower bound.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
