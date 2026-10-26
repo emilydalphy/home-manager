@@ -1,0 +1,44 @@
+{
+ "dish_name": "Japanese Fried Rice",
+ "cuisine": "Japanese",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Short-grain white rice", "qty": "2 cups", "category": "pantry"},
+  {"item": "Eggs", "qty": "4", "category": "dairy"},
+  {"item": "Sliced ham", "qty": "6 oz", "category": "meat/seafood"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce", "cook_qty": "4"},
+  {"item": "Vegetable oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Ground white pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "4 tsp"}
+ ],
+ "instructions": [
+  "The day before, or at least 2 hours ahead: rinse the 2 cups rice in a strainer under cold water until the water runs mostly clear. Put it in a saucepan with 2 1/4 cups water and bring it to a boil over high heat. Turn the heat to low, cover and cook for 15 minutes, then leave it off the heat with the lid on for 10 minutes. Spread the rice out on a baking sheet and let it cool completely, then cover it and put it in the fridge. If you already have about 6 cups of cooked rice from another meal, use that and skip this step.",
+  "Take the rice out of the fridge and break up the clumps with your fingers. Put it in a large bowl and microwave it for 1 to 2 minutes, until it's no longer cold.",
+  "Slice the 4 green onions. Cut the white parts into thin rounds and the green parts on an angle, and keep them in separate piles. Set aside a small handful of the greens for the top.",
+  "Cut the 6 oz ham into 1/2 inch squares.",
+  "Crack the 4 eggs into a bowl and beat them until no streaks of white are left.",
+  "Heat a wok or your largest frying pan over medium-high heat. Add 1 tbsp of the oil and swirl it around. Pour in the eggs and leave them for a few seconds, until the edges puff.",
+  "Push the eggs gently around the pan with a spatula. When the bottom is set and the top is still a little runny, about 1 minute, transfer them to a plate.",
+  "You'll fry the rice in two batches so it browns. Add 1 1/2 tbsp of the oil to the same pan, then half the ham and half the white parts of the green onions. Stir-fry them for 1 minute, until the ham starts to brown at the edges.",
+  "Add half the rice. Use the edge of the spatula to cut through any clumps without mashing the grains, then keep tossing it for 3 to 4 minutes, until the rice is hot and some grains are toasted and a little crisp.",
+  "Add half the egg and break it into small pieces as you toss. Sprinkle over 1/2 tsp of the salt and 1/8 tsp of the white pepper.",
+  "Drizzle 2 tsp of the soy sauce around the hot edge of the pan, not onto the rice, so it sizzles. Toss everything for 1 minute, until the color is even.",
+  "Add half of the green parts of the green onions, toss a few times and transfer the rice to a serving bowl.",
+  "Make the second batch the same way with the last 1 1/2 tbsp oil, the rest of the ham, white parts, rice, egg, the last 1/2 tsp salt, 1/8 tsp white pepper, 2 tsp soy sauce and the rest of the green parts.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the reserved green onions scattered over the top."
+ ],
+ "advance_prep_notes": "Cook the rice and chill it at least 2 hours ahead, ideally the day before.",
+ "advance_prep_step_indices": [1],
+ "method_notes": "Both sources fry cold, day-old short grain rice with diced ham, egg and green onion in oil over medium-high heat, season with salt and pepper and add a little soy sauce at the end over high heat for a smoky edge. Just One Cookbook cooks the egg first and sets it aside, fries the ham and green onion whites before the rice, and uses white pepper; No Recipes leaves the soft egg in the pan and adds the rice straight onto it, uses black pepper, pours the soy sauce around the rim and finishes with sesame oil. This one follows Just One Cookbook, borrows No Recipes' soy sauce around the rim, and splits the rice into two batches so a home pan can brown it for four.",
+ "sources": [
+  {"name": "Just One Cookbook", "title": "Easy Japanese Fried Rice (Yakimeshi)", "url": "https://www.justonecookbook.com/easy-fried-rice/", "rating": 4.8, "rating_count": 84, "read": true, "lead": true},
+  {"name": "No Recipes", "title": "Japanese Fried Rice (Yakimeshi)", "url": "https://norecipes.com/yakimeshi-japanese-fried-rice/", "rating": 4.69, "rating_count": 22, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
