@@ -1603,7 +1603,10 @@ def enforce_minutes_caps(plan_id: int, intake: dict | None, memory: dict | None,
     try:
         # A move off a night nobody is home first (rule 8): it says why the
         # dish is where it is, which any time line about it then builds on.
-        flagged = (_draft_flags.flags_for_days_out(plan_id) + _draft_flags.flags_for_kept_over_cap(read_back)
+        # A request the allergen gate took off (rule 9) leads: it says why
+        # their dish is not there at all.
+        flagged = (_draft_flags.flags_for_allergy_requests(plan_id, asks)
+                   + _draft_flags.flags_for_days_out(plan_id) + _draft_flags.flags_for_kept_over_cap(read_back)
                    + _draft_flags.flags_for_late_requests(plan_id))
         _draft_flags.record(plan_id, flagged)
     except Exception:

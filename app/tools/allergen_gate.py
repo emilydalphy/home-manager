@@ -256,6 +256,46 @@ def _person(clashes: list[dict]) -> str | None:
     return names[0] if names else None
 
 
+# The few allergen words the matcher keeps singular that a person says in
+# the plural: "Sam can't have peanuts", never "…can't have peanut". Mass
+# words (dairy, gluten, shellfish, pork, pineapple) read right as they are.
+_PLURAL_FOOD = {
+    "peanut": "peanuts", "nut": "nuts", "tree nut": "tree nuts", "egg": "eggs",
+    "almond": "almonds", "cashew": "cashews", "walnut": "walnuts", "pecan": "pecans",
+    "hazelnut": "hazelnuts", "pistachio": "pistachios", "strawberry": "strawberries",
+    "mushroom": "mushrooms", "tomato": "tomatoes",
+}
+
+
+def plain_food(word: str) -> str:
+    """A matched allergen word the way a person says it ("peanut" ->
+    "peanuts"); anything not on the short list is left as it is."""
+    word = (word or "").strip().lower()
+    return _PLURAL_FOOD.get(word, word)
+
+
+def repick_stamp(dropped: str, clashes: list[dict]) -> dict:
+    """
+    What a re-picked slot records about the dish it replaced: the dish,
+    the food it had (`avoided`, as _food_word reads it), and for the
+    draft's line the food as the MATCHER named it (`food`, plain_food; ""
+    when no clash carried a matched word — a restriction's whole label is
+    not a food to put in a sentence) and WHO can't have it — every member
+    whose clash matched that food, or [] when it is a household-wide hard
+    no (a hard What-we-know fact naming nobody). The draft's "You asked for
+    peanut noodles, but Sam can't have peanuts…" (draft_flags.
+    flags_for_allergy_requests, snag rule 9) is built from this record and
+    nothing else, so it can only name a person and a food this gate
+    actually matched.
+    """
+    food = next((plain_food(c["matched"]) for c in clashes if (c.get("matched") or "").strip()), "")
+    who = []
+    for c in clashes:
+        if food and plain_food(c.get("matched") or "") == food and c.get("member") and c["member"] not in who:
+            who.append(c["member"])
+    return {"dropped": dropped, "avoided": _food_word(clashes), "food": food, "who": who}
+
+
 def open_reason(slot: str, clashes: list[dict]) -> str:
     """
     The open slot's own sentence when nothing safe could be found: plain
@@ -727,7 +767,7 @@ def repick_slot(
         reasoning=(pick.get("reason") or "").strip(),
         derived_from={
             **(item.get("derived_from") or {}),
-            "allergen_repick": {"dropped": dropped, "avoided": _food_word(clashes)},
+            "allergen_repick": repick_stamp(dropped, clashes),
         },
     )
     logger.info("Allergen re-pick: %s %s %r -> %r", meal_date, slot, dropped, pick["meal_name"])
@@ -1137,7 +1177,7 @@ def _write_group(weekly_plan_id: int, group: list[dict], pick: dict | None, on_f
             reasoning=(pick.get("reason") or "").strip(),
             derived_from={
                 **(item.get("derived_from") or {}),
-                "allergen_repick": {"dropped": dropped, "avoided": _food_word(held["clashes"])},
+                "allergen_repick": repick_stamp(dropped, held["clashes"]),
             },
         )
         logger.info("Allergen re-pick: %s %s %r -> %r", meal_date, slot, dropped, pick["meal_name"])
