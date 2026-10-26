@@ -68,6 +68,12 @@ why*, not duplicating the diff.
     ahead of the feed's zone; an unanswered (default) zone keeps the old order.
   - Chat's "back to normal" keeps a member's own earlier "I'm out" for that
     meal; only the out chat set is undone.
+- **Planning/Approve/Out-night calls — went with the picks** (Emily 2026-10-26; branch `calls-1026/planning-b`).
+  #27/#75: Approve stops only when NO new dish could be reached (`_none_reached`); else it approves and names the unwritten dish (`recipes_not_ready_line`).
+  #28: a freezer portion past its use-by gets one line on the draft (`past_use_by_line` → `freezer_toss_note`).
+  #29/#30: already true (snag rules 8 `DAY_OUT` and 9 `ALLERGY_REQUEST`, 2026-10-25).
+  #31: an Out night offers "We're in after all" (`in_after_all`: tag off, dinner picked); no empty slot offers Swap; "no breakfasts" reads "Not planned".
+  #32: skipping a cook whose freezer portion a later night eats asks first (attention `portion_not_made`, Today: Plan something else / Leave it).
 
 - **The iPhone app's id is `com.heypomona.app`** (2026-10-25, Emily's pick
   to match her heypomona domain; branch `overnight/bundle-id-heypomona`).

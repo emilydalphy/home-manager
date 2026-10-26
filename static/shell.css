@@ -2114,6 +2114,10 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   border-bottom: 1.5px solid var(--hairline);
 }
 .holding-row:last-child { border-bottom: none; }
+/* A row that asks a question (the missing frozen portion, #32): the
+   sentence on its own line, its two answers under it. */
+.holding-row.is-stacked { flex-direction: column; align-items: stretch; padding: 10px 0; }
+.holding-row.is-stacked .wk-acts { justify-content: flex-start; align-items: center; }
 .holding-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .holding-text {
   font-family: var(--font-body);

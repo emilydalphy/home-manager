@@ -6209,8 +6209,18 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         # For a draft: what approving it takes off an approved week (see
         # below). None for an approved week and in the ordinary case.
         "replaces": None,
+        # A cooked portion in the freezer past its use-by (Emily's pick #28,
+        # 2026-10-26): the planner never puts one on a plate
+        # (freezer_portions.portions_to_plan), and until now nothing said
+        # it was there. One plain line on the draft. None when there is none.
+        "freezer_toss_note": None,
     }
     if plan["status"] != "approved":
+        try:
+            from . import freezer_portions as _freezer_portions  # lazy: it reads back into this module
+            approval["freezer_toss_note"] = _freezer_portions.past_use_by_line(today=today_str)
+        except Exception:
+            logger.exception("Reading the freezer for past-use-by portions failed")
         approval["approving_adults"] = [
             p["name"] for p in _coordination.get_household_people()
         ]
@@ -6445,8 +6455,13 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             # A meal the household's usual week has off that day
             # (usual_week.OFF_CONSTRAINT, 2026-09-30) — not planned, not out.
             usual_off = derived.get("constraint") == "usual_week_off"
+            # A meal the household asked for none of all week ("No
+            # breakfasts", `{slot}s_per_week:0`) — people are home, so it
+            # is not "Out" either (Emily's pick #31, 2026-10-26).
+            none_asked = str(derived.get("constraint") or "").endswith("s_per_week:0")
             empty = {
-                "title": "Not planned" if skipped or past or usual_off else "Out — nothing to cook", "meta": None,
+                "title": "Not planned" if skipped or past or usual_off or none_asked else "Out — nothing to cook",
+                "meta": None,
                 "source": "empty",
                 "state": "planned_empty", "reason": row["reasoning"], "entry_id": row["id"],
                 # Left out on purpose, not away (2026-09-26): the Which days
@@ -6460,6 +6475,11 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             }
             if past:
                 empty["past"] = True
+            # A night the week's answers marked Out (the `out` tag,
+            # agent._finish_week_slots): the one empty dinner Plan offers
+            # "We're in after all" on (swap_in_place.in_after_all, #31).
+            if derived.get("constraint") == OUT_NIGHT_CONSTRAINT and row["slot"] == "dinner":
+                empty["in_after_all"] = True
             # A meal the household switched off for its whole usual week
             # (Breakfast: None) is not a row at all — the clients leave it
             # out. Only an EMPTY row: a dish that is there is always shown.
@@ -7813,6 +7833,12 @@ _CHECK_FAILED_NOTE = (
 )
 
 
+# The constraint an Out night's empty dinner carries (agent._finish_week_slots
+# writes it off the week's `out` tag). One name, read by get_week_menu and
+# swap_in_place.in_after_all.
+OUT_NIGHT_CONSTRAINT = "nobody_home"
+
+
 # Said when approval stops because Claude couldn't be reached to write the
 # week's new recipes (2026-10-25). Plain, with its way out, and the fact the
 # household most needs: nothing was approved and the list is untouched.
@@ -7820,6 +7846,41 @@ RECIPES_UNREACHABLE_LINE = (
     "I couldn’t write up this week’s new recipes just now, so I haven’t approved it "
     "yet — your list is as it was. Try again in a minute."
 )
+
+
+def _none_reached(written: dict) -> bool:
+    """
+    True when the approval's recipe pass reached Claude for none of the
+    dishes it tried — every recipe it asked for came back unreachable and
+    none was written. Then approving would build a list missing the week's
+    new dishes, so approval stops (RECIPES_UNREACHABLE_LINE). One dish
+    unreachable beside others that were written is not this (#75).
+    `clashed` is not a sign Claude answered: a dish whose NAME names a
+    must-avoid is refused before any call, and its re-pick needs Claude too.
+    """
+    unreachable = written.get("unreachable") or []
+    if not unreachable:
+        return False
+    if written.get("filled"):
+        return False
+    return len(written.get("failed") or []) <= len(unreachable)
+
+
+def recipes_not_ready_line(names: list[str]) -> str | None:
+    """
+    The one line approval adds when a new dish couldn't be written up
+    (#27/#75, 2026-10-26): which dish, what that means for the list, and
+    where it gets written. None when every dish is ready.
+    """
+    names = [n.strip() for n in names or [] if (n or "").strip()]
+    if not names:
+        return None
+    if len(names) == 1:
+        return (f"{names[0]} isn’t written up yet, so its groceries aren’t on the list. "
+                "You can fill it in from Cook.")
+    joined = ", ".join(names[:-1]) + " and " + names[-1]
+    return (f"{joined} aren’t written up yet, so their groceries aren’t on the list. "
+            "You can fill them in from Cook.")
 
 
 def _write_pending_recipes(weekly_plan_id: int) -> dict:
@@ -7969,6 +8030,7 @@ def approve_weekly_plan(
     # below and the grocery ingest inside the transaction both work from
     # ingredients, and a dish the menu pass chose has none until this
     # writes them. Skipped for a re-approval, which adds nothing anyway.
+    not_ready: list[str] = []
     if not was_already_approved:
         written = _write_pending_recipes(weekly_plan_id)
         # One recipe that came back wrong still approves (above). Claude
@@ -7979,11 +8041,25 @@ def approve_weekly_plan(
         # household is told to try again — the recipes that WERE written
         # are kept, so the retry only asks for the rest. Already filed in
         # the morning report by the calls that gave up.
-        if written.get("unreachable"):
+        #
+        # Only when NONE could be reached (Emily, 2026-10-26, #75): one
+        # dish Claude didn't answer for, beside others it did write, no
+        # longer holds the whole week back — the week approves and the
+        # toast names the dish that isn't ready (recipes_not_ready_line).
+        if _none_reached(written):
             from .. import agent as _agent
             err = _agent.AssistantUnavailableError(RECIPES_UNREACHABLE_LINE)
             setattr(err, _agent.AI_FILED, True)
             raise err
+        # What is still unwritten after the pass — a dish that failed, or
+        # one another pass was still holding when the wait ran out. Read
+        # off the plan rather than off the pass's own lists, so a dish the
+        # allergen sweep replaced is not named (#27, 2026-10-26).
+        try:
+            not_ready = [r["name"] for r in _recipes.pending_recipes_for_plan(weekly_plan_id) if r.get("name")]
+        except Exception:
+            logger.exception("Reading the unwritten recipes for plan %s failed", weekly_plan_id)
+            not_ready = []
 
     # Run before the approval work, so the warning (and the confirmation
     # gate just below) describe the plan that was actually approved, and a
@@ -8079,6 +8155,11 @@ def approve_weekly_plan(
                 result["cook_ahead"] = _cook_ahead.apply_prep_day_batches(weekly_plan_id)
         except Exception:
             logger.exception("Batching repeated dishes at approval failed for plan %s", weekly_plan_id)
+    # The dishes approval couldn't write up (#27, 2026-10-26): approving
+    # goes ahead, but the household is told which, since nothing went on
+    # the list for them. [] and None when every dish is ready.
+    result["recipes_not_ready"] = not_ready
+    result["recipes_not_ready_line"] = recipes_not_ready_line(not_ready)
     return result
 
 
