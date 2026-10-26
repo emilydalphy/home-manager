@@ -18,6 +18,18 @@ why*, not duplicating the diff.
   Replaced the `com.pomona.app` placeholder in `capacitor.config.json`, the
   Xcode project, `codemagic.yaml`, `APNS_TOPIC` docs and the push tests, so it
   lands before she registers the App ID with Apple. `npm run sync` passes.
+- **Today never offers days a live plan already holds** (2026-10-25,
+  tester-reported; branch `overnight/sunday-no-replan-nudge`; tests
+  `tests/test_sunday_no_replan_nudge.py`). With nothing covering today,
+  `get_week_planning_nudge` now cuts the current-period offer to the gap
+  before the next held day (approved or draft): just today → no week card and
+  no "Let's plan the week" (both read `week_start`), only "Tonight needs a
+  dinner"; a longer gap → that stretch (plan from Wed: "Oct 25–27"), which
+  /plan-week and generation take as an ordinary custom range overlapping
+  nothing. Why: Sunday-start households with next week approved from Monday
+  were asked "Shall I put Oct 25–31 together?" — six approved days. The
+  suggestion never starts before today, so the 2026-09-05 "plan ran out
+  early keeps nudging" rule is untouched.
 - **Second 200 library recipes: Emily's three calls** (2026-10-25; branch
   `recipe-library-200b`; doc `docs/RECIPE_LIBRARY_SPOTCHECK_200B.md`).
   Bistec a la Mexicana is two dishes (the rated slow simmer, plus "Quick
