@@ -577,6 +577,11 @@ def _prelude() -> str:
         + _DAYNAME_STUB
         + "var weekState = { days: [], data: null, selectedIndex: 0, step: 'week' };\n"
         + "var defrostAskState = { planId: null, items: null, selected: {} };\n"
+        # ensureDefrostAskItems races its lookup against this timer. Without
+        # it the timer's promise rejected at once (ReferenceError) and the
+        # test only passed because the stub fetch won the race by a
+        # microtask — which api.js's signed-out check (2026-10-26) takes.
+        + "var DEFROST_ASK_WAIT_MS = 6000;\n"
         + _extract_var("WK_ICONS", SHELL_JS) + "\n"
         + _extract("isSnackSlot", SHELL_JS) + "\n"
         + _extract("slotWord", SHELL_JS) + "\n"

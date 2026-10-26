@@ -5400,6 +5400,10 @@
     if (groOffline) groOffline.forget();
     groceryState.offline = false;
   }
+  // A signed-out answer to ANY read sends the page to sign-in from inside
+  // api.js, and that caller never hears back (so its own 401 check above
+  // never runs) — the forget is handed over to run on the way out instead.
+  if (typeof Api !== 'undefined' && Api.onSignedOut) Api.onSignedOut(groForgetOffline);
   function groPostStatus(id, status) {
     return groPostJson('/api/grocery-list/' + id + '/status', { status: status });
   }

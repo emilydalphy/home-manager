@@ -13,6 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Signed out: every screen goes to sign-in, not "Couldn't check just
+  now"** (2026-10-26; branch `overnight/signed-out-goes-to-sign-in`; tests
+  `tests/test_signed_out_goes_to_sign_in.py`). auth_middleware's "not
+  signed in" 401 now carries `X-Pomona-Signed-Out: 1`; `Api.fetch`
+  (static/api.js) on it calls the `Api.onSignedOut` hook (shell.js: forget
+  the offline grocery copy), replaces the page with
+  `/login?next=<this screen>` once, and never settles the caller's promise,
+  so no screen draws its failure line first. Why: a security reset signed a
+  phone out and Today read as broken. Keyed on the header, not on 401, and
+  /login, /join, share and the other public pages never leave.
 - **Second 200 library recipes: Emily's three calls** (2026-10-25; branch
   `recipe-library-200b`; doc `docs/RECIPE_LIBRARY_SPOTCHECK_200B.md`).
   Bistec a la Mexicana is two dishes (the rated slow simmer, plus "Quick
