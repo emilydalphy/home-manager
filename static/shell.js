@@ -13841,7 +13841,16 @@
       if (most === null || !uwState.data || uwState.data.snacks_per_day === most) return;
       var saved = await uwPost({ snacks_per_day: most });
       if (saved) uwState.data = saved;
-      if (wwkMem()) wwkMem().snacks_per_day = most;
+      if (wwkMem()) {
+        wwkMem().snacks_per_day = most;
+        // The server raised the different-snacks count with it
+        // (preferences.keep_snack_counts_consistent): keep that raise, or
+        // lowering a day's snacks again shows the old number (review,
+        // 2026-10-26) — as wwkSetCount does.
+        if (!(wwkMem().snack_dishes_per_week >= most)) {
+          wwkMem().snack_dishes_per_week = Math.min(WWK_SNACK_DISHES.max, most);
+        }
+      }
     });
   }
 

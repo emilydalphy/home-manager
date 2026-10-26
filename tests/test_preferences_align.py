@@ -371,3 +371,23 @@ def test_the_shell_opens_preferences_from_the_param_and_scrubs_it():
 
 def test_adjust_your_setup_opens_the_preferences_sheet():
     assert "row.querySelector('#week-setup-standing').addEventListener('click', openPrefsSheet);" in SHELL_JS
+
+
+def test_a_raise_from_snacks_a_day_stays_when_it_comes_back_down():
+    """Review, 2026-10-26: set 2 different, Emily to 3 a day (the server
+    raises the count to 3), Emily back to 1 — the row said "2 different"
+    while the server held 3."""
+    out = _run(_harness("wwkSaveMemberSnacks") + f"""
+async function wwkSaveNeeds(body, apply, said, then) {{ apply(); if (then) await then(); }}
+async function uwPost(body) {{ return Object.assign({{}}, uwState.data, body); }}
+var uwState = {{ data: {{ snacks_per_day: 1 }} }};
+prefsState.memory = {json.dumps(dict(MEMORY, snacks_per_day=1, snack_dishes_per_week=2, snack_dishes_per_week_set=True))};
+wwkState.needs = [{{"name": "Emily", "snacks_per_day": 1, "snacks_set": true}},
+                  {{"name": "Sam", "snacks_per_day": 1, "snacks_set": true}}];
+(async function () {{
+  await wwkSaveMemberSnacks('Emily', 3);
+  await wwkSaveMemberSnacks('Emily', 1);
+  console.log(JSON.stringify([wwkSnacksRowValue(uwState.data), prefsState.memory.snack_dishes_per_week]));
+}})();
+""")
+    assert out == ["Emily 1 · Sam 1 · 3 different", 3]
