@@ -1122,6 +1122,15 @@ why*, not duplicating the diff.
   library's own amounts on the cook card — deep-frying oil "4 cups" -> "2
   tbsp" (~30 dishes), cookies' "1 cup butter" -> "2 tbsp" — while the steps
   say the real amount; soba is still excepted from gluten.
+- **After dinner is cooked, Cook's card stays on it; pool snacks read
+  "Hummus", not "hummus"** (2026-10-23; branch
+  `overnight/hunt-e2e-2026-10-23`; tests `tests/test_cook_card_after_dinner.py`,
+  `tests/test_snack_pool_list_names.py`). Found walking a new household end to
+  end. `cookTonightIndex` ranked a snack after dinner, so from 4pm a cooked
+  dinner handed the card to the 3pm snack ("START 3:00 · Start cooking" at
+  11pm); from dinner on a snack is now passed over. `snack_variety`'s pool is
+  spelled lower case and the list prints names as saved; `pool_ingredients`
+  capitalises, and a lower-case pool recipe at the same table is respelled.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

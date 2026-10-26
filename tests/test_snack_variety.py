@@ -282,5 +282,5 @@ def test_a_pool_recipe_from_a_smaller_table_is_written_again_for_this_one(two_ad
     stub_model(_tester_home_week(week))
     plan_id = agent.generate_weekly_plan(week)["weekly_plan_id"]
     assert pool["name"] in _snack_days(plan_id)
-    clementines = next(i for i in recipes.saved_ingredients(pool["name"]) if i["item"] == "clementines")
+    clementines = next(i for i in recipes.saved_ingredients(pool["name"]) if i["item"].lower() == "clementines")
     assert clementines["qty"] == "2"

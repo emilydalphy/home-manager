@@ -123,8 +123,18 @@ def pool_ingredients(pool: dict, serves: int) -> list[dict]:
     out = []
     for item, value, unit, category, _key in pool["lines"]:
         qty = _amount(value, serves)
-        out.append({"item": item, "qty": f"{qty} {unit}".strip(), "category": category})
+        out.append({"item": _list_name(item), "qty": f"{qty} {unit}".strip(), "category": category})
     return out
+
+
+def _list_name(item: str) -> str:
+    """The pool's item as the shopping list shows it: a capital first letter,
+    like every line a recipe writes ("Carrots", "Plain Greek yogurt"). The
+    pool is spelled lower case for matching, and the list prints a line's
+    name as saved — so a new household's first list read "hummus" and
+    "carrots" among "Avocados" and "Bread" (overnight e2e hunt,
+    2026-10-23)."""
+    return item[:1].upper() + item[1:]
 
 
 def _rescale_pool_recipe(recipe_id: int, pool: dict, saved: list[dict], serves: int) -> None:
@@ -141,7 +151,12 @@ def _rescale_pool_recipe(recipe_id: int, pool: dict, saved: list[dict], serves: 
                            (recipe_id, household_id())).fetchone()
         old = int(row["default_servings"] or 0) if row else 0
         pairs = lambda lines: [((l.get("item") or "").strip().lower(), (l.get("qty") or "").strip()) for l in lines]
-        if row and old != serves and old > 0 and pairs(saved) == pairs(pool_ingredients(pool, old)):
+        # Also rewritten at the same table when only the spelling differs:
+        # a pool recipe saved before _list_name went in keeps putting
+        # "hummus" on the list otherwise.
+        same_list = old > 0 and pairs(saved) == pairs(pool_ingredients(pool, old))
+        respelled = [(l.get("item") or "").strip() for l in saved] != [l["item"] for l in pool_ingredients(pool, old)]
+        if row and same_list and (old != serves or respelled):
             conn.execute("UPDATE recipes SET ingredients_json = ?, default_servings = ? "
                          "WHERE id = ? AND household_id = ?",
                          (json.dumps(pool_ingredients(pool, serves)), serves, recipe_id, household_id()))
