@@ -705,6 +705,19 @@ why*, not duplicating the diff.
   prep session still named it. Now released like every swap door; a ticked
   thaw is held, and `held_thawed` rides on the result; the freezer-night
   Undo takes that hold back off (the move comes back done).
+- **A typed sauce or pantry staple keeps its own line beside the recipes'
+  waiting one** (2026-10-24; branch `overnight/hunt-preshop-pantry-1024`;
+  tests `tests/test_typed_pantry_add_keeps_its_own_line.py`). Typing
+  "Basmati rice · 1 bag" over the week's waiting "2 cups" made one household
+  line "2 cups + 1 bag" that no swap or drop could shrink (the 2026-09-13
+  concatenation bug, left open by `_merge_target`'s "a person's add joins a
+  waiting 'spice' line" rule, which was written for the jar-a-name spice
+  rack). Now only a spice-rack line takes an unaddable typed amount; an
+  amount that adds up ("3 cups") still merges and ticks. While their own line
+  is on the list, or after they tap Already have on it, the waiting
+  sauce/staple is not asked about again (`spices._answered_by_own_line`, so
+  Before you shop step 2 too), and a stale tick on it is refused rather than
+  buying the food twice.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
