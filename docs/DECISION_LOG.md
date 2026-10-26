@@ -386,6 +386,19 @@ why*, not duplicating the diff.
   stores, member-needs GET, scan-receipt: happy path, 4xx on bad input,
   household isolation with valid bodies. `days=99999999999` overflowed
   `timedelta` and 500'd; now `Query(ge=0, le=366)` answers 422.
+- **The share link heads a week with its own first day** (2026-10-22; branch
+  `overnight/hunt-public-2026-10-22b`; tests
+  `tests/test_share_pages_read_true_dates.py`). `/api/share/<token>` now
+  carries `period_start_date` and share.html's "Week of …" reads it. Why: it
+  read `week_start_date`, the Monday a plan is filed under, so a period
+  starting Thursday (or a mid-week first week) was headed "Week of Monday,
+  Oct 19" over a menu that starts Thursday the 22nd.
+- **A member's own page shows when a note was left on the phone's clock**
+  (2026-10-22; branch `overnight/hunt-public-2026-10-22b`; tests
+  `tests/test_share_pages_read_true_dates.py`). member-share.html read
+  `member_notes.created_at` (SQLite `datetime('now')`, UTC, no zone) as-is,
+  so a 9pm Toronto note read "2026-10-23 01:00:00". Now parsed as UTC and
+  shown "Oct 22, 9:00 PM".
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
