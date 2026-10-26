@@ -13,6 +13,17 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **iPhone app opens app.heypomona.com — DO NOT MERGE before DNS answers**
+  (2026-10-26; branch `overnight/app-heypomona-address`). capacitor
+  `server.url`, the first `WKAppBoundDomains` entry and the store listing's
+  support/privacy/terms URLs move to `https://app.heypomona.com`; the old
+  Railway host stays as a further bound domain (harmless, Apple allows ten).
+  Why: a TestFlight build bakes its address in, so testers should get the
+  final one once and never reinstall. Until `app.heypomona.com` resolves
+  with a certificate, a build from this branch opens nothing but the offline
+  page — Railway steps are in `docs/APP_STORE_LISTING.md` §5. Cookies pin no
+  domain, so sign-in works on the new host; in-app links stay built from
+  `PUBLIC_BASE_URL`, nothing hardcoded. Pinned in `tests/test_ios_address.py`.
 - **Second 200 library recipes: Emily's three calls** (2026-10-25; branch
   `recipe-library-200b`; doc `docs/RECIPE_LIBRARY_SPOTCHECK_200B.md`).
   Bistec a la Mexicana is two dishes (the rated slow simmer, plus "Quick

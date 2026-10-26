@@ -91,12 +91,34 @@ Words already in the name and subtitle are indexed anyway, so "meal" and
 
 | Field | Draft | Status |
 |---|---|---|
-| Support URL (required) | `https://home-manager-production-4949.up.railway.app/support` | Confirmed: `overnight/legal-pages` (Builder C, 2026-10-06) adds `GET /support`. Live once that branch merges. |
-| Privacy policy URL (required) | `https://home-manager-production-4949.up.railway.app/privacy` | Confirmed on the same branch: `GET /privacy`. |
-| Terms (EULA field, optional) | `https://home-manager-production-4949.up.railway.app/terms` | Confirmed on the same branch: `GET /terms`. Apple's standard EULA applies if left blank. |
+| Support URL (required) | `https://app.heypomona.com/support` | Confirmed: `overnight/legal-pages` (Builder C, 2026-10-06) adds `GET /support`. Live once that branch merges. |
+| Privacy policy URL (required) | `https://app.heypomona.com/privacy` | Confirmed on the same branch: `GET /privacy`. |
+| Terms (EULA field, optional) | `https://app.heypomona.com/terms` | Confirmed on the same branch: `GET /terms`. Apple's standard EULA applies if left blank. |
 | Marketing URL (optional) | leave blank | No marketing site yet. |
 
-If a custom domain comes first, all three change with it.
+These use Pomona's real address, `app.heypomona.com`, which is also what the
+iPhone app opens (`ios-app/capacitor.config.json`). Neither works until the
+steps below are done — branch `overnight/app-heypomona-address` must not be
+merged before then.
+
+### Railway steps for Emily (before that branch merges)
+
+1. In Railway, open the Pomona service → **Settings** → **Networking** →
+   **Custom Domain**, and add `app.heypomona.com`.
+2. Railway shows you one DNS record to add (usually a CNAME named `app`
+   pointing at an address ending in `.up.railway.app`). Add exactly that
+   record at the company you bought heypomona.com from.
+3. Wait until Railway shows the domain as active with a green tick (it gets
+   the security certificate itself; minutes to a few hours). Check
+   `https://app.heypomona.com` opens the sign-in page with a padlock.
+4. In Railway → **Variables**, set `PUBLIC_BASE_URL` to
+   `https://app.heypomona.com` (no slash at the end). Invite and share links
+   use this from then on.
+5. Check the old address, `https://home-manager-production-4949.up.railway.app`,
+   still opens too — anyone using it in a browser keeps working. (People
+   have to sign in once on the new address; sign-in is per address.)
+6. Only then merge the branch, between 1am and 6am Toronto time, and build
+   the app for TestFlight from it.
 
 ## 6. App privacy ("nutrition label") answers
 
