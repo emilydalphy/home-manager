@@ -1,0 +1,49 @@
+{
+ "dish_name": "Espinacas con Garbanzos y Bacalao",
+ "cuisine": "Spanish",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {"item": "Cod loin", "qty": "1.25 lb", "category": "meat/seafood"},
+  {"item": "Chickpeas", "qty": "2 cans (15 oz)", "category": "pantry"},
+  {"item": "Baby spinach", "qty": "1 bag (5 oz)", "category": "produce"},
+  {"item": "Fish stock", "qty": "1 carton (32 oz)", "category": "pantry", "cook_qty": "2 cups"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Crusty bread", "qty": "1 small loaf", "category": "pantry", "cook_qty": "1 slice"},
+  {"item": "Sweet paprika", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Tomato sauce", "qty": "1 can (8 oz)", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Bay leaf", "qty": "1", "category": "pantry"},
+  {"item": "Eggs", "qty": "2", "category": "dairy"},
+  {"item": "Olive oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Put the 2 eggs in a small pot and cover them with cold water. Bring it to a boil, then cover the pot, take it off the heat and leave the eggs for 10 minutes. Transfer them into a bowl of cold water.",
+  "Meanwhile, finely chop the onion and 2 of the garlic cloves. Peel the last clove and leave it whole. Drain and rinse the chickpeas. Roughly chop the spinach.",
+  "Pat the cod dry, cut it into 4 pieces and sprinkle it with 1/2 tsp of the salt.",
+  "Heat 2 tbsp of the oil in a wide pot over medium heat. Fry 1 slice of the bread and the whole garlic clove until golden, about 2 minutes on each side. Transfer them into a small bowl.",
+  "Add 1/4 cup of the stock to the bowl and mash the bread and garlic with a fork into a thick, rough paste.",
+  "Add the last 2 tbsp of oil to the pot and turn the heat to medium high. Add the cod, skin side down if it has skin, and brown it for about 2 minutes. Turn the pieces and brown the other side for about 2 minutes. It won't be cooked through yet. Transfer it to a plate.",
+  "Turn the heat to medium. Add the onion and cook, stirring now and then, until soft and golden, 6 to 8 minutes. Don't rush the onion.",
+  "Add the chopped garlic and stir for about 1 minute. Stir in the 1 tbsp paprika and 1 tbsp tomato sauce for about 30 seconds. Watch the paprika. It burns fast.",
+  "Add the chickpeas, 1 3/4 cups of the stock, the bay leaf and the remaining 1/2 tsp salt. Bring it to a simmer and cook for 10 minutes.",
+  "Stir in the bread paste until the broth thickens a little. Add the spinach a handful at a time, stirring until it wilts, about 2 minutes.",
+  "Set the cod on top of the chickpeas, cover the pot, and simmer gently for 5 to 6 minutes, until the cod is white all the way through and flakes when you press it.",
+  "Meanwhile, peel the eggs and cut them into quarters.",
+  "Pick out the bay leaf. Taste it. If it's flat, add a pinch more salt.",
+  "Ladle into shallow bowls with a piece of cod in each. Serve with the egg quarters on top."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three build a sofrito of onion, garlic and sweet paprika, simmer cooked chickpeas in it with a bay leaf, add the cod and spinach near the end and top it with hard-boiled egg. Directo al Paladar (the lead) adds a spoon of tomato sauce, browns the cod in the pot, simmers it in fish stock and thickens it with fried bread and garlic mashed in a little broth; Arguiñano thickens with the puréed vegetables the chickpeas cooked with, and Hola adds potatoes. Directo al Paladar shows 379 votes but no average, and none of the others shows a rating, and RecipeTin Eats has no version, so this follows the lead using its own shortcuts of canned chickpeas and fresh cod loin instead of soaked dried chickpeas and salt cod that needs a day of soaking.",
+ "sources": [
+  {"name": "Directo al Paladar", "title": "Garbanzos con bacalao y espinacas, receta tradicional", "url": "https://www.directoalpaladar.com/recetas-de-legumbres-y-verduras/garbanzos-con-bacalao-y-espinacas-receta-tradicional", "rating": null, "rating_count": null, "read": true, "lead": true},
+  {"name": "OKDiario (Karlos Arguiñano)", "title": "Garbanzos con bacalao: el potaje de vigilia de Karlos Arguiñano", "url": "https://okdiario.com/recetas/garbanzos-bacalao-arguinano-2-15414789", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Hola", "title": "Potaje de garbanzos con bacalao y espinacas, el tradicional", "url": "https://www.hola.com/cocina/recetas/2013022163445/potaje-garbanzos-vigilia/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

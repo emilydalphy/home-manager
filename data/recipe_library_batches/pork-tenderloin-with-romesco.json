@@ -1,0 +1,45 @@
+{
+ "dish_name": "Pork Tenderloin with Romesco",
+ "cuisine": "Spanish",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {"item": "Pork tenderloin", "qty": "1.5 lb", "category": "meat/seafood"},
+  {"item": "Smoked paprika", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 3/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Olive oil", "qty": "6 tbsp", "category": "pantry"},
+  {"item": "Marcona almonds", "qty": "1 bag", "category": "pantry", "cook_qty": "1/3 cup"},
+  {"item": "Baguette", "qty": "1", "category": "pantry", "cook_qty": "1 cup cubes"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Tomato", "qty": "1", "category": "produce"},
+  {"item": "Roasted red peppers", "qty": "1 jar (12 oz)", "category": "pantry"},
+  {"item": "Sherry vinegar", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp"}
+ ],
+ "instructions": [
+  "Heat the oven to 350°F.",
+  "Mix 2 1/2 tsp of the smoked paprika, 3/4 tsp of the salt and the 1/4 tsp pepper in a small bowl.",
+  "Pat the pork dry and trim off any thin silvery skin. Rub the spice mix all over it and drizzle it with 1 tbsp of the oil.",
+  "Heat a large ovenproof frying pan over medium high heat. Add 1 tbsp of the oil and wait until it shimmers.",
+  "Add the pork and brown it on all sides, turning it every minute or so, about 5 minutes in all. It should be deep brown all over.",
+  "Transfer the pan to the oven and roast for 15 to 20 minutes. You're cooking it to 145°F in the thickest part, so if you have a thermometer, check it there. No thermometer? Cut into the thickest part: it's done when the middle is just blush pink and the juices run clear.",
+  "Meanwhile, cut enough of the baguette into 1/2 inch cubes to make 1 cup. Drain the roasted peppers. Cut the tomato in half, scoop out the seeds and chop it roughly. Roughly chop the 2 garlic cloves.",
+  "Put the 1/3 cup almonds and the bread cubes in a food processor and blend until finely ground.",
+  "Add the peppers, tomato, garlic, the 1 tbsp sherry vinegar, the remaining 1 tsp salt and the remaining 1/2 tsp smoked paprika. Blend to a thick purée, scraping down the sides once or twice.",
+  "With the motor running, pour in the last 1/4 cup of oil slowly, until the sauce is smooth and glossy. Transfer it into a bowl.",
+  "Transfer the pork to a cutting board and let it rest for 5 minutes.",
+  "Taste the romesco. If it's flat, add a pinch more salt or a splash of the sherry vinegar.",
+  "Slice the pork into 1/2 inch rounds. Serve with the romesco spooned over it."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both rub the tenderloin with smoked paprika and salt, brown it in a hot pan and serve it with a romesco blended from roasted red peppers, nuts, garlic, sherry vinegar and olive oil. Whole Foods Market (the lead) sears the whole tenderloin and roasts it at 350°F to 145°F, and thickens the sauce with Marcona almonds, stale bread and a fresh tomato; Williams-Sonoma uses walnuts, fennel seed, cumin and cayenne and pan-fries the pork as thin medallions. Neither had 20 ratings and RecipeTin Eats has no version, so this follows Whole Foods Market, leaves out the cayenne to keep it mild, and uses 1.5 lb of pork instead of 1 lb so it makes a full dinner for four.",
+ "sources": [
+  {"name": "Whole Foods Market", "title": "Roasted Pimentón-Rubbed Pork Tenderloin with Romesco Sauce", "url": "https://www.wholefoodsmarket.com/recipe/roasted-piment%C3%B3n-rubbed-pork-tenderloin-romesco-sauce", "rating": null, "rating_count": null, "read": true, "lead": true},
+  {"name": "Williams-Sonoma", "title": "Pork Medallions with Romesco Sauce", "url": "https://williams-sonoma.com/recipe/pork-medallions-with-romesco-sauce.html", "rating": 4.0, "rating_count": 1, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
