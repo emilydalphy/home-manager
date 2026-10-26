@@ -720,6 +720,10 @@ def _night_off_plan(conn, plan, rows, tonight_row, today: str,
                         untouched; a side the replaced leftovers night
                         carried comes off the list with it (2026-09-30).
       - 'drop'          feeds nobody, nowhere to move — comes off the week.
+      - 'cooking'       tonight's cook has started (cook_started_at) and
+                        is not ticked: refused in a sentence, nothing moves
+                        and nothing comes off. Decided before 'move' and
+                        'drop', not only for a chain source — see below.
 
     `line` is the row's sub-line, a statement of what the tap will do (§8
     rule 7). `conn` may be the tap's own transaction or a plain read
@@ -742,6 +746,21 @@ def _night_off_plan(conn, plan, rows, tonight_row, today: str,
             "line": f"The {dish} leftovers go in the freezer.",
         }
 
+    if _weekly_plan.cook_begun(tonight_row):
+        # The cook has started (overnight 2026-10-14): it stays on tonight,
+        # whatever it feeds. Moving it onto a fed night would carry tonight's
+        # start stamp there ("cooking since yesterday"); the swap already
+        # refuses a started cook, so no free night is ever found for it.
+        # This used to be asked only of a chain source, so a started dinner
+        # feeding nobody fell through to 'drop' — "Salmon Bowls is off the
+        # week", the pot on the stove deleted and its unbought groceries
+        # reversed — from the chat's take_the_night_off, or a second phone
+        # still showing the card from before the start (defect hunt,
+        # 2026-10-22). The Review stepper's "−" already refuses the same
+        # dinner (drop_dish_from_day). "Mark not cooked" clears the start.
+        return {"kind": "cooking", "dish": dish,
+                "line": f"The {dish} is already cooking, so it stays on tonight."}
+
     free = _next_free_night(plan, rows, today, conn=conn)
     if free is not None:
         return {
@@ -754,13 +773,6 @@ def _night_off_plan(conn, plan, rows, tonight_row, today: str,
     # stepper's "−" reads too so the two can never disagree about which
     # night a cook with nowhere free to go lands on.
     targets = _weekly_plan.fed_nights_in_eating_order(source, today)
-    if targets and _weekly_plan.cook_begun(tonight_row):
-        # The cook has started (overnight 2026-10-14): moving it onto the
-        # fed night would carry tonight's start stamp there ("cooking since
-        # yesterday"), and dropping it would leave that night's leftovers
-        # with no cook. It stays; the tap is refused in a sentence.
-        return {"kind": "cooking", "dish": dish,
-                "line": f"The {dish} is already cooking, so it stays on tonight."}
     if targets:
         first = targets[0]
         return {
@@ -1077,7 +1089,7 @@ def tonight_night_off(day: str | None = None, now: datetime | None = None,
             return {**out, **asked, "said": asked["message"]}
 
         if kind == "cooking":
-            # See _night_off_plan: a started cook feeding later nights stays.
+            # See _night_off_plan: a started, unticked cook is never dropped or moved.
             conn.rollback()
             return {"status": "refused", "date": today, "message": step["line"]}
 
