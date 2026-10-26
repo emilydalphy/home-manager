@@ -142,6 +142,17 @@ _WHEAT_WORDS = {
     "egg roll wrapper", "dumpling wrapper", "gyoza wrapper", "muffin mix", "bucatini",
     "ditalini", "orecchiette", "tagliatelle", "rotini", "cavatappi", "capellini",
     "vermicelli", "shaoxing", "doubanjiang", "gochujang",
+    # The 200-dish library audit (2026-10-26): what the rest of its lists
+    # buy that the 2026-10-23 hunt didn't reach. Breads by name, wrappers,
+    # and the jars thickened or brewed with wheat (oyster sauce, sweet and
+    # ground bean sauce, chunjang, Maggi, kecap manis). Ladyfingers are
+    # sponge (Tiramisu). A gluten-free bottle says so on its line.
+    "puri", "poori", "bhatura", "bhature", "kulcha", "chapatti", "flatbread", "lavash",
+    "egg roll", "gyoza", "mandu", "potsticker", "pizza crust", "ladyfinger", "savoiardi",
+    "oyster sauce", "sweet bean sauce", "ground bean sauce", "chunjang", "maggi", "kecap manis",
+    # The second 200 (same night): a crusty French loaf, Hawaiian sweet
+    # rolls, Peking duck's mandarin pancakes, corn flakes (barley malt).
+    "french loaf", "sweet roll", "hawaiian roll", "mandarin pancake", "corn flake",
 }
 _ALLERGEN_ALIASES: dict[str, set[str]] = {
     "nut": {"peanut", "walnut", "almond", "cashew", "pecan", "hazelnut",
@@ -161,7 +172,11 @@ _ALLERGEN_ALIASES: dict[str, set[str]] = {
                   "langoustine", "langostino", "scampi", "octopus", "cockle", "whelk",
                   "bouillabaisse", "cioppino", "gumbo", "belacan", "xo sauce", "ebi",
                   "abalone", "conch", "krill", "cuttlefish", "crawdad", "mudbug",
-                  "tom yum paste", "bagoong", "kapi", "escargot", "geoduck", "periwinkle"},
+                  "tom yum paste", "bagoong", "kapi", "escargot", "geoduck", "periwinkle",
+                  # Library audit 2026-10-26: "Frozen seafood mix" is shrimp,
+                  # squid and mussels. One word: this family's words are
+                  # also plan_quality's title-warning vocabulary.
+                  "seafood"},
     # No "sole", "pike" or "bass": ordinary words ("The Sole Survivor",
     # "Pike Place", "Bass-Boosted") that held dishes with no fish in them.
     # "sea bass" is kept whole. No "caesar" in any family: the dressing's
@@ -171,7 +186,14 @@ _ALLERGEN_ALIASES: dict[str, set[str]] = {
              "sea bass", "snapper", "pollock", "mahi", "swordfish", "catfish",
              "herring", "flounder", "grouper", "monkfish", "branzino", "carp", "perch",
              "lox", "caviar", "roe", "bonito", "dashi", "worcestershire",
-             "nam pla", "surimi", "caesar dressing", "puttanesca"},
+             "nam pla", "surimi", "caesar dressing", "puttanesca",
+             # Library audit 2026-10-26: Hake fillets went through.
+             "hake", "basa", "pangasius", "barramundi", "pomfret", "sablefish",
+             "whiting", "smelt", "eel", "unagi", "yellowtail", "hamachi", "walleye",
+             "bacalao", "bacalhau", "katsuobushi", "kingfish", "arctic char",
+             "whitefish", "rockfish", "redfish", "bluefish", "milkfish",
+             # Not bare "sole" (see above), but the fillet and the named ones.
+             "sole fillet", "dover sole", "lemon sole"},
     # "buttermilk" is here rather than left to "butter"/"milk": whole-word
     # matching reaches neither half of it, and it is unambiguously dairy —
     # the opposite call from "peanut butter", which is spelled with a dairy
@@ -191,7 +213,10 @@ _ALLERGEN_ALIASES: dict[str, set[str]] = {
               # Round 3. ("2% milk" and "skim milk" are milk already; "2%" and
               # "skim" alone are not listed — "2% brine", "skim the fat".)
               "grana", "oaxaca", "evaporated", "clotted", "cool whip", "whipped topping",
-              "lactose", "boursin", "american slices"},
+              "lactose", "boursin", "american slices",
+              # Library audit 2026-10-26: Mexican crema is cream, and
+              # cajeta and khoya are milk cooked down.
+              "crema", "cajeta", "khoya", "khoa", "mawa"},
     "gluten": set(_WHEAT_WORDS),
     "wheat": set(_WHEAT_WORDS),
     # "whites" is matched as written (see _VERBATIM_ALIASES), never as
@@ -202,14 +227,20 @@ _ALLERGEN_ALIASES: dict[str, set[str]] = {
             "yolk", "brioche", "challah", "remoulade", "tartar sauce", "flan",
             "creme brulee", "mousse", "shakshuka", "lo mein", "ranch", "coleslaw dressing",
             "lemon curd", "zabaglione", "sabayon", "clafoutis", "crepe", "french toast",
-            "dutch baby", "albumen", "tamagoyaki", "yorkshire pudding"},
+            "dutch baby", "albumen", "tamagoyaki", "yorkshire pudding",
+            # Library audit 2026-10-26 (Tiramisu): a ladyfinger is egg sponge.
+            "ladyfinger", "savoiardi"},
     "soy": {"soya", "tofu", "tempeh", "edamame", "soy sauce", "miso", "tamari", "shoyu",
             "natto", "teriyaki", "hoisin", "ponzu", "yuba", "okara",
             # Pastes made of fermented soybeans (library defect hunt,
-            # 2026-10-23: Kimchi Fried Rice's gochujang passed a soy allergy).
+            # 2026-10-23: Kimchi Fried Rice's gochujang passed a soy allergy),
+            # and the rest the library buys (audit, 2026-10-26).
             "gochujang", "doenjang", "ssamjang", "fermented black bean", "black bean sauce",
-            "douchi"},
-    "sesame": {"tahini", "hummus", "halva", "halvah", "zaatar", "za atar", "gomasio", "benne"},
+            "douchi", "soybean", "bean curd", "chunjang", "black bean paste",
+            "ground bean sauce", "sweet bean sauce", "yellow bean sauce", "kecap manis",
+            "golden mountain"},
+    "sesame": {"tahini", "hummus", "halva", "halvah", "zaatar", "za atar", "gomasio", "benne",
+               "furikake"},
     # Mustard is one of Canada's priority allergens, and the jar on the line
     # is usually named for the town: "mustard allergy" let "Dijon" through
     # (defect hunt, 2026-10-20). Only words that are mustard by definition.
@@ -229,7 +260,9 @@ _MEAT_ALIASES: dict[str, set[str]] = {
     "pork": {"bacon", "ham", "prosciutto", "pancetta", "chorizo", "lardon", "lardons",
              "guanciale", "salami", "pepperoni", "carnitas", "char siu", "mortadella",
              "nduja", "soppressata", "capicola", "chicharron", "chicharrones", "tonkatsu",
-             "jamon"},
+             "jamon",
+             # Library audit 2026-10-26.
+             "lard", "baby back ribs", "lap cheong", "lap chong", "morcilla"},
     "beef": {"sirloin", "ribeye", "rib eye", "bresaola", "filet mignon", "ground chuck",
              "chuck roast"},
 }
@@ -353,6 +386,32 @@ _PLANT_MOD = (
     r"coconut|oat|soy|soya|almond|cashew|rice|chocolate|vanilla)"
 )
 
+_LIBRARY_COMPOUNDS: tuple[tuple, ...] = (
+    # The 200-dish library audit (2026-10-26): foods in its lists named for
+    # an allergen they don't contain. Butter lettuce and butter beans are
+    # not dairy; oyster mushrooms, oyster crackers and a vegetarian
+    # (mushroom) oyster sauce are not shellfish — the sauce's "oyster
+    # sauce" still reads for gluten, which is a different word; tonkatsu
+    # sauce is fruit and vinegar, not pork; Old Bay's "seafood seasoning"
+    # is spice; soybean oil is the refined oil food labelling exempts, as
+    # "vegetable oil" already is.
+    #
+    # Kept apart because a STEP's bare word is still the allergen here:
+    # for oat milk "stir in the milk" is the oat milk, but butter lettuce
+    # on the list doesn't make "melt the butter" lettuce. check_meal_
+    # conflicts takes only these compounds themselves out of the steps.
+    (frozenset({"butter", "butters"}), re.compile(r"\bbutter\s+(?:lettuces?|beans?)\b")),
+    (frozenset({"oyster", "oysters"}), re.compile(
+        r"\boysters?\s+(?:mushrooms?|crackers?)\b"
+        r"|\b(?:vegetarian|vegan|mushroom)\s+(?:stir[\s-]?fry\s+)?oyster\s+sauces?\b"
+    )),
+    (frozenset({"tonkatsu"}), re.compile(r"\btonkatsu\s+sauces?\b")),
+    (frozenset({"seafood", "seafoods"}), re.compile(r"\bseafood\s+(?:boil\s+)?(?:seasonings?|spices?)\b")),
+    (frozenset({"soybean", "soybeans"}), re.compile(r"\bsoybean\s+oils?\b")),
+    (frozenset({"crema", "cremas"}), re.compile(r"\bbalsamic\s+crema\b|\bcrema\s+di\s+balsamico\b")),
+    (frozenset({"cracker", "crackers"}), re.compile(r"\brice\s+crackers?\b")),
+)
+
 _COMPOUND_EXCEPTIONS: tuple[tuple, ...] = (
     (frozenset({"butter", "butters"}), re.compile(
         r"\b(?:peanut|almond|cashew|hazelnut|pistachio|pecan|walnut|macadamia|"
@@ -400,6 +459,7 @@ _COMPOUND_EXCEPTIONS: tuple[tuple, ...] = (
     # That is the failure this whole check exists to prevent, so the false
     # positive matters more here than the rarity of the restriction.
     (frozenset({"olive", "olives"}), re.compile(r"\bolive\s+oils?\b")),
+    *_LIBRARY_COMPOUNDS,
     # Red meat's (2026-10-20): goat's cheese and milk are dairy, not the
     # animal; lamb's lettuce and lamb's quarters are greens. Matched on the
     # folded text, where "goat's" is "goat s". Not for an avoidance of
@@ -413,16 +473,23 @@ _COMPOUND_EXCEPTIONS: tuple[tuple, ...] = (
     # alias table above. "Gluten-Free Pasta" made with rice flour flagged a
     # dish that is, by definition, safe for the restriction it tripped.
     (frozenset({"flour", "flours"}), re.compile(
-        r"\b(?:rice|almond|chickpea|buckwheat|corn|oat|coconut|tapioca)\s+flours?\b"
+        r"\b(?:rice|almond|chickpea|buckwheat|corn|oat|coconut|tapioca|"
+        r"gram|sorghum|millet|teff|potato|arrowroot|cassava)\s+flours?\b"
     )),
+    # Not "soba" (library audit, 2026-10-26): most soba sold is buckwheat
+    # cut with wheat, so "soba noodles" is matched; a line that says
+    # buckwheat ("buckwheat soba noodles") or gluten-free is believed.
+    # Rice vermicelli, bean thread, shirataki and the other starch noodles
+    # are gluten-free by what they are made of.
     (frozenset({"noodle", "noodles"}), re.compile(
-        r"\b(?:rice|glass|soba|buckwheat|rice\s+vermicelli|bean\s+thread|mung\s+bean)\s+noodles?\b"
+        r"\b(?:rice|glass|buckwheat(?:\s+soba)?|bean\s+thread|mung\s+bean|shirataki|konjac|"
+        r"kelp|sweet\s+potato|cellophane|tapioca)(?:\s+vermicelli)?\s+noodles?\b"
     )),
     # Vermicelli is wheat unless it says what else it is (review, 2026-10-23).
     # A dish NAMED "Vermicelli Bowl" with no qualifier is still held on its
     # name even over a rice list — over-safe, as every name is.
     (frozenset({"vermicelli", "vermicellis"}), re.compile(
-        r"\b(?:rice(?:\s+stick)?|glass|bean\s+thread|mung\s+bean)\s+vermicellis?\b"
+        r"\b(?:rice(?:\s+stick)?|glass|bean\s+thread|mung\s+bean|cellophane)\s+vermicellis?\b"
         r"|\bvermicelli\s+rice\s+noodles?\b"
     )),
     # Rice-paper spring roll wrappers are rice, however the line says it.
@@ -433,6 +500,8 @@ _COMPOUND_EXCEPTIONS: tuple[tuple, ...] = (
         r"\b(?:chickpea|lentil|rice)\s+pastas?\b"
     )),
 )
+_LIBRARY_PHRASE_ONLY = frozenset((e[0], e[1]) for e in _LIBRARY_COMPOUNDS)
+
 
 # The plant versions a QUALIFIER makes of a dairy or egg word. Kept apart
 # from _COMPOUND_EXCEPTIONS because they are a claim, not a food name:
@@ -1546,6 +1615,11 @@ def check_meal_conflicts(
         listed_text = " ".join(segments[1:])
         for words, pattern, *_ in _COMPOUND_EXCEPTIONS:
             if pattern.search(listed_text):
+                if (words, pattern) in _LIBRARY_PHRASE_ONLY:
+                    # Butter lettuce on the list doesn't make "Melt the
+                    # butter" lettuce: only the compound itself comes out.
+                    step_segments = [pattern.sub(" ", s) for s in step_segments]
+                    continue
                 bare = re.compile(r"\b(?:" + "|".join(map(re.escape, sorted(words))) + r")\b")
                 step_segments = [bare.sub(" ", s) for s in step_segments]
         step_segments = [s for s in step_segments if s.strip()]

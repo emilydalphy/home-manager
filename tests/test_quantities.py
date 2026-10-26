@@ -61,10 +61,10 @@ def test_container_word_not_in_the_table_still_displays_unpluralized():
     """
     Documents the current boundary of the table rather than silently
     letting an unlisted word regress -- if this starts failing because
-    someone added "wedge" to the table, update this test to a word that's
+    someone added "smidge" to the table, update this test to a word that's
     still genuinely absent.
     """
-    assert quantities._format_quantity(2, "wedge") == "2 wedge"
+    assert quantities._format_quantity(2, "smidge") == "2 smidge"
 
 
 def test_a_size_descriptor_alone_carries_no_unit_to_pluralize():

@@ -8,7 +8,7 @@
  "ingredients": [
   {"item": "Cheese tortellini", "qty": "1 package (20 oz)", "category": "dairy"},
   {"item": "Low-sodium chicken broth", "qty": "2 cartons (32 oz)", "category": "pantry", "cook_qty": "8 cups"},
-  {"item": "Parmesan", "qty": "1 wedge with rind", "category": "dairy", "cook_qty": "the rind + 1 cup grated"},
+  {"item": "Parmesan", "qty": "1 wedge, with rind", "category": "dairy", "cook_qty": "the rind + 1 cup grated"},
   {"item": "Baby spinach", "qty": "1 bag (5 oz)", "category": "produce"},
   {"item": "Salt", "qty": "to taste", "category": "pantry"},
   {"item": "Black pepper", "qty": "to taste", "category": "pantry"}

@@ -15,7 +15,7 @@
   {"item": "Fresh rosemary", "qty": "1 bunch", "category": "produce", "cook_qty": "1 sprig"},
   {"item": "Marinara sauce", "qty": "1 jar (24 oz)", "category": "pantry", "cook_qty": "2 cups"},
   {"item": "Ditalini pasta", "qty": "1 box (16 oz)", "category": "pantry", "cook_qty": "1 cup (4 oz)"},
-  {"item": "Parmesan cheese", "qty": "1 wedge with rind (about 4 oz)", "category": "dairy", "cook_qty": "the rind plus 1/2 cup grated"},
+  {"item": "Parmesan cheese", "qty": "1 wedge (about 4 oz), with rind", "category": "dairy", "cook_qty": "the rind plus 1/2 cup grated"},
   {"item": "Fresh parsley", "qty": "1 bunch", "category": "produce", "cook_qty": "2 tbsp chopped"}
  ],
  "instructions": [

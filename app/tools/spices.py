@@ -100,6 +100,11 @@ _SPICES = {
     "tandoori masala", "chana masala powder", "gochugaru", "shichimi togarashi",
     "togarashi", "aleppo pepper", "urfa biber", "pul biber", "mustard powder",
     "dried mustard", "ground fennel", "annatto seed", "achiote seed", "tajin", "tajín",
+    # The second 200 (library audit, 2026-10-26): cardamom bought as green
+    # pods, allspice as berries, and the Basque and Gulf blends.
+    "green cardamom", "black cardamom", "allspice berry", "achiote powder",
+    "piment d'espelette", "espelette", "baharat", "dried minced onion",
+    "chili de arbol", "chili de árbol",
     # dried herbs (dried by default when written bare)
     "oregano", "marjoram", "dried basil", "dried cilantro", "dried parsley",
     "dried mint", "dried dill", "dried chive", "dried rosemary", "dried thyme",

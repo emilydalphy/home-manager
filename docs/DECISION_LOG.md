@@ -87,6 +87,27 @@ why*, not duplicating the diff.
   (`overnight/defect-hunt-2026-10-21`). For Emily: Today hides "Shop for
   tonight" on a non-shop day (tests pin "second week = usual day line").
 
+- **Library defect hunt, after the 2026-10-23 one: the gate and the list
+  over all 840 batch dishes** (2026-10-26; branch
+  `overnight/hunt-library-200-1026`; tests
+  `tests/test_library_200_defect_hunt.py`). Every batch ingredient line
+  through each allergen family, every shopping qty through the parser.
+  Still missed after the 10-23 hunt: gluten puri/bhatura/kulcha/flatbread,
+  egg rolls, gyoza, mandu, ladyfingers, oyster sauce, sweet/ground bean
+  sauce, chunjang, Maggi, kecap manis, a French loaf, Hawaiian sweet
+  rolls, mandarin pancakes, corn flakes and soba (no longer excepted; a
+  "buckwheat" or gluten-free line is); dairy crema; fish hake, sole
+  fillets and kin; shellfish seafood mix; soy soybean, bean curd,
+  Golden Mountain; sesame furikake; pork baby back ribs, lard, morcilla;
+  egg ladyfingers. Held wrongly: butter lettuce (dairy), oyster
+  mushrooms/crackers and vegetarian oyster sauce (shellfish), tonkatsu
+  sauce (pork), gram and other GF flours, starch noodles (gluten). Spices:
+  green cardamom pods, allspice berries, baharat,
+  Espelette, chiles de árbol. package/piece/wedge/stalk/crown and kin
+  pluralise and parse back. Data: Ham bone "1 meaty", Yakisoba "4
+  servings", Tantanmen "4 portions", ginger "1 knob", Parmesan "1 wedge
+  with rind" were the recipes' own lines. Why: a hard gate that lets a bun
+  through, or blocks a lettuce, is one a household stops trusting.
 - **Second 200 library recipes: Emily's three calls** (2026-10-25; branch
   `recipe-library-200b`; doc `docs/RECIPE_LIBRARY_SPOTCHECK_200B.md`).
   Bistec a la Mexicana is two dishes (the rated slow simmer, plus "Quick
