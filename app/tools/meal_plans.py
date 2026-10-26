@@ -44,6 +44,34 @@ def plan_meal_for_chat(*args, override: bool = False, **kwargs) -> dict:
     return plan_meal(**bound.arguments)
 
 
+def refuse_if_planned_empty(rows, slot: str) -> None:
+    """
+    SlotRefused when any of `rows` (one slot's entries: slot_state and
+    derived_from_json) is `planned_empty` — planning beside it would buy for
+    a meal nobody is eating. Nobody home gets resolve_open_slot's words; a
+    meal the household switched off (`{slot}s_per_week:0`, or off every day
+    of the usual week) is told where to turn it back on, because "if you're
+    in after all" is not the answer to "no breakfasts, please".
+
+    Shared by the two doors that plan straight onto a day by date: chat's
+    plan_meal (below) and Now's dinner card (resolve_needs_you_dinner).
+    """
+    empty = [r for r in rows if r["slot_state"] == "planned_empty"]
+    if not empty:
+        return
+    constraints = {str(json.loads(r["derived_from_json"] or "{}").get("constraint") or "") for r in empty}
+    from . import usual_week as _usual_week  # lazy: it reaches back into weekly_plan
+    if f"{slot}s_per_week:0" in constraints or slot in _usual_week.switched_off_meals():
+        raise _weekly_plan.SlotRefused(
+            f"You’ve asked me not to plan {slot}{'es' if slot == 'lunch' else 's'}, so nothing is planned or bought for this one. "
+            "You can turn them back on in Preferences, under Your rhythm."
+        )
+    raise _weekly_plan.SlotRefused(
+        f"That {slot} is deliberately empty — nothing is planned or bought for it. "
+        "Change the night’s answer if you’re in after all."
+    )
+
+
 def _into_the_covering_plan(a: dict) -> dict | None:
     """
     A chat plan_meal for a night a live plan already covers, filed INTO
@@ -94,22 +122,8 @@ def _into_the_covering_plan(a: dict) -> dict | None:
         ).fetchall()
     finally:
         conn.close()
+    refuse_if_planned_empty(rows, slot)
     states = {r["slot_state"] for r in rows}
-    if "planned_empty" in states:
-        constraints = {
-            str(json.loads(r["derived_from_json"] or "{}").get("constraint") or "")
-            for r in rows if r["slot_state"] == "planned_empty"
-        }
-        from . import usual_week as _usual_week  # lazy: it reaches back into weekly_plan
-        if f"{slot}s_per_week:0" in constraints or slot in _usual_week.switched_off_meals():
-            raise _weekly_plan.SlotRefused(
-                f"You’ve asked me not to plan {slot}s, so nothing is planned or bought for this one. "
-                "You can turn them back on in Preferences, under Your rhythm."
-            )
-        raise _weekly_plan.SlotRefused(
-            f"That {slot} is deliberately empty — nothing is planned or bought for it. "
-            "Change the night's answer if you're in after all."
-        )
     if not rows:
         return plan_meal(**{**a, "weekly_plan_id": plan["id"],
                             "add_ingredients_to_grocery_list": plan["status"] == "approved"})
@@ -196,6 +210,14 @@ def plan_meal(
     # take the "dinner" default, so this does not narrow them — checked, not
     # assumed (agent.py's component branch and swap_component_in_plan).
     _weekly_plan.validate_slot(slot)
+    # The column is NOT NULL, and generation passes the model's own value
+    # (day.get("reasoning", "") is None when the JSON says null): the
+    # insert raised with the write lock held and the week stopped halfway
+    # (census audit, 2026-10-21). A null "why" is no "why".
+    reasoning = reasoning or ""
+    # And a day is a YYYY-MM-DD string: a row dated "Friday" or
+    # "2026-10-23T00:00" is saved and shown nowhere (validate_meal_date).
+    _weekly_plan.validate_meal_date(meal_date)
 
     own_conn = conn is None
     if own_conn:
@@ -256,7 +278,7 @@ def plan_meal(
     # writing a second row for the second spelling; it refuses that now
     # (recipes.existing_recipe_named), so this has to resolve it instead.
     recipe = conn.execute(
-        "SELECT * FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?) "
+        "SELECT * FROM recipes WHERE household_id = ? AND name_key(name) = name_key(?) "
         "ORDER BY id LIMIT 1",
         (household_id(), (meal or "").strip()),
     ).fetchone()

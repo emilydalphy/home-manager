@@ -1,0 +1,44 @@
+{
+ "dish_name": "Patatas a la Riojana",
+ "cuisine": "Spanish",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 45,
+ "ingredients": [
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Spanish chorizo", "qty": "8 oz", "category": "meat/seafood"},
+  {"item": "Olive oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Yukon Gold potatoes", "qty": "1.5 lbs", "category": "produce"},
+  {"item": "Sweet Spanish paprika", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Bay leaves", "qty": "2", "category": "pantry"},
+  {"item": "Fresh parsley", "qty": "1 bunch", "category": "produce"}
+ ],
+ "instructions": [
+  "Finely chop the onion and mince the 2 garlic cloves. Slice the chorizo into 1/2 inch rounds.",
+  "Heat 2 tbsp olive oil in a wide, heavy pot over medium-low heat. Add the onion and cook, stirring now and then, until it's soft and just turning golden, about 8 minutes. Don't rush the onion. That's where the flavor starts.",
+  "Meanwhile, peel the potatoes and cut them into rough 1 inch chunks.",
+  "Add the garlic to the onion and stir for about 30 seconds, until it smells fragrant.",
+  "Add the chorizo and turn the heat up to medium. Cook, stirring, until the edges brown and the oil turns red, about 3 minutes.",
+  "Add the potatoes and stir to coat them in the red oil. Cook, stirring now and then, until they're golden in spots at the edges, about 10 minutes.",
+  "Sprinkle the 1 tbsp paprika over the potatoes and stir for about 20 seconds. Keep it moving. Paprika burns fast.",
+  "Right away, add 2 cups water, the 1 1/2 tsp salt and the 2 bay leaves. The water should come almost to the top of the potatoes, so add a splash more if it doesn't. Bring it to a boil.",
+  "Turn the heat down to medium-low and simmer, uncovered, for about 20 minutes, until a knife slides easily into the potatoes and the liquid has cooked down by about half.",
+  "While it simmers, chop 2 tbsp of the parsley.",
+  "Press a few of the potato chunks against the side of the pot with the back of a spoon and stir them in, so the liquid thickens into a stew. Fish out the bay leaves.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve hot in bowls with the parsley scattered over the top."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version had 20 or more ratings and RecipeTin Eats only has a related chorizo potato soup whose recipe is in her cookbook, so this leads with Tara's Multicultural Table, adapted from José Andrés. All three cook onion, garlic and chorizo in olive oil, add potatoes and sweet pimentón with a bay leaf, and simmer until the potatoes are tender and the liquid has cooked down by half. Cupcakes and Kale Chips and The Spanish Chef use chicken stock instead of water, and The Spanish Chef adds soaked choricero peppers and lets the potato edges break down to thicken it. This follows Tara's with water and sweet paprika only, and borrows the broken potato for body; buy a mild chorizo to keep the pot gentle.",
+ "sources": [
+  {"name": "Tara's Multicultural Table", "title": "Patatas a la Riojana (Potatoes Rioja-Style with Chorizo)", "url": "https://tarasmulticulturaltable.com/patatas-la-riojana/", "rating": null, "rating_count": null, "read": true, "lead": true},
+  {"name": "Cupcakes and Kale Chips", "title": "Patatas Riojana", "url": "https://cupcakesandkalechips.com/patatas-a-la-riojana/", "rating": 4.5, "rating_count": 2, "read": true, "lead": false},
+  {"name": "The Spanish Chef", "title": "Patatas a la Riojana - Chorizo and Potato Stew", "url": "https://thespanishchef.com/recipes/patatas-riojana", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

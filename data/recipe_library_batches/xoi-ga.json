@@ -1,0 +1,42 @@
+{
+ "dish_name": "Xoi Ga",
+ "cuisine": "Vietnamese",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {"item": "Glutinous rice", "qty": "3 cups", "category": "pantry"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Ground turmeric", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Rotisserie chicken", "qty": "1", "category": "meat/seafood"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Mint", "qty": "1 bunch", "category": "produce"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce", "cook_qty": "4"},
+  {"item": "Sweet chili sauce", "qty": "1 bottle", "category": "pantry"}
+ ],
+ "instructions": [
+  "The night before, or at least 1 hour ahead, rinse the 3 cups glutinous rice in two changes of water. Cover it with cold water by about 2 inches and leave it to soak.",
+  "In the morning, drain the rice well in a sieve. Transfer it to the rice cooker bowl and toss it with 3/4 tsp salt, 1 tbsp of the oil and 1/2 tsp turmeric until it's evenly yellow.",
+  "Add 1 1/2 cups water and cook it on the sticky rice setting, or the regular white rice setting. It takes about 30 minutes.",
+  "Meanwhile, slice the onion paper thin and put it in a bowl of cold water for 10 minutes.",
+  "Pull 2 cups of meat off the chicken and shred it into bite-size pieces.",
+  "Make the scallion oil. Thinly slice 4 green onions, keeping the white parts and the green parts separate. Heat the last 3 tbsp of oil in a small pan over medium heat for about 1 minute. Add the white parts and stir for about 30 seconds, until they sizzle and smell sweet.",
+  "Off the heat, stir in the green parts. They'll wilt and turn bright green.",
+  "Drain the onion and pat it dry. Chop about 1/2 cup of mint leaves. In a bowl, toss the chicken with the onion, the mint, 1/4 tsp salt and 1/4 tsp black pepper.",
+  "When the rice is done, fluff it with chopsticks or a fork.",
+  "Spoon the rice onto 4 plates, top it with the chicken and spoon the scallion oil over. Serve with the sweet chili sauce."
+ ],
+ "advance_prep_notes": "Soak the sticky rice the night before, or at least 1 hour ahead.",
+ "advance_prep_step_indices": [1],
+ "method_notes": "No version read had 20 or more ratings, and RecipeTin Eats, the trusted cook for Vietnamese, has no xoi ga, so this follows Helen Le's Da Nang style breakfast version. Every source soaks glutinous rice ahead (1 hour for Helen, overnight for Take Two Eggs and Marion's Kitchen) and cooks it in a rice cooker or steamer. Helen tints the rice with turmeric and tops it with shredded chicken tossed with raw onion and Vietnamese mint, scallion oil and sweet chili sauce; Take Two Eggs uses rotisserie chicken with sweet soy, Chinese sausage and fried shallots, and Marion stir-fries thigh pieces with sausage and dried shrimp. Rotisserie chicken keeps this a breakfast, and ordinary mint stands in for Vietnamese mint, which is hard to find.",
+ "sources": [
+  {"name": "Helen's Recipes", "title": "Xôi Gà – Chicken Sticky Rice", "url": "https://helenrecipes.com/recipe-76-xoi-ga-chicken-sticky-rice", "rating": null, "rating_count": null, "read": true, "lead": true},
+  {"name": "Take Two Eggs", "title": "Vietnamese Sticky Rice with Chicken (Xôi gà)", "url": "https://takestwoeggs.com/vietnamese-sticky-rice-with-chicken-xoi-ga/", "rating": 5.0, "rating_count": 1, "read": true, "lead": false},
+  {"name": "Marion's Kitchen", "title": "Vietnamese-Style Sticky Rice with Chicken & Chinese Sausage", "url": "https://www.marionskitchen.com/vietnamese-style-sticky-rice-with-chicken-chinese-sausage/", "rating": 4.5, "rating_count": 2, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

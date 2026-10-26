@@ -1,0 +1,102 @@
+{
+ "dish_name": "Atayef",
+ "cuisine": "Lebanese",
+ "main_protein": "dairy",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 cup plus 1 tbsp"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1 1/2 tsp juice"
+  },
+  {
+   "item": "Rose water",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Orange blossom water",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Baking powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole milk ricotta",
+   "qty": "1 tub (15 oz)",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Shelled pistachios",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Make the syrup first so it has time to cool. In a small saucepan, whisk 1 cup of the sugar with 1/2 cup water and 1 1/2 tsp lemon juice over medium-high until the sugar dissolves.",
+  "Let it simmer for 10 minutes. Take it off the heat and stir in the 1 tsp rose water and 1/2 tsp orange blossom water. Leave it to cool completely.",
+  "Meanwhile, whisk the 3/4 cup flour, 1 tsp baking powder and the last 1 tbsp sugar in a bowl. Whisk in 3/4 cup room temperature water until it's smooth and a little runnier than pancake batter. Leave it for 15 minutes.",
+  "While it rests, crush the 1/4 cup pistachios finely and spread them on a small plate.",
+  "Heat a nonstick skillet over medium-low. Spoon in about 1 1/2 tbsp batter and spread it with the back of the spoon into a round about 3 inches across. Cook 3 or 4 at a time.",
+  "Cook them for 1 to 2 minutes, until the tops are covered in bubbles and there's no shiny wet batter left. The bottoms should be light brown. Don't flip them.",
+  "Transfer them bubbly side up onto a clean kitchen towel and cook the rest the same way. That should be about 12. Cover them with another towel and let them cool completely, about 10 minutes.",
+  "Stir 1 tbsp of the cooled syrup into the 1 cup ricotta.",
+  "Hold a pancake bubbly side up and put a heaped tablespoon of ricotta in the middle. Fold it into a half moon and pinch the edges together from the bottom about 3/4 of the way up, leaving the top open.",
+  "Dip the open end into the pistachios so they stick to the ricotta. Fill the rest the same way.",
+  "Serve with the rest of the syrup in a small jug for drizzling."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three cook small pancakes on one side only until the tops are set and bubbly, then fill them while they're soft and finish with syrup and pistachios. Simply Lebanese, the lead, uses a quick baking powder batter with no yeast or semolina, fills the open cone with ricotta and serves a rose and orange blossom syrup on the side; Cookin' with Mima and Alpha Foodie add semolina to the batter, make a cooked cornstarch ashta, and seal and fry some of theirs before dipping them in syrup. This one halves the lead for about 12 pancakes, three each, and stirs a spoonful of the syrup into the ricotta, which the lead gives as an option.",
+ "sources": [
+  {
+   "name": "Simply Lebanese",
+   "title": "Atayef (Atayef Asafiri)",
+   "url": "https://www.simplyleb.com/recipe/atayef/",
+   "rating": 4.63,
+   "rating_count": 51,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cookin' with Mima",
+   "title": "Atayef with Ashta (Katayef)",
+   "url": "https://www.cookinwithmima.com/atayef/",
+   "rating": 5.0,
+   "rating_count": 13,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Alpha Foodie",
+   "title": "Qatayef (Lebanese Filled Pancakes)",
+   "url": "https://www.alphafoodie.com/qatayef-lebanese-filled-pancakes/",
+   "rating": 5.0,
+   "rating_count": 8,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

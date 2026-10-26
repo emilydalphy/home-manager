@@ -1,0 +1,136 @@
+{
+ "dish_name": "Thai Red Curry Salmon",
+ "cuisine": "Thai",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Skinless salmon fillets",
+   "qty": "1.5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Snow peas",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce",
+   "cook_qty": "1 tbsp grated"
+  },
+  {
+   "item": "Makrut lime leaves",
+   "qty": "1 package",
+   "category": "produce",
+   "cook_qty": "6"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Thai basil",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Thai chilies",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Roasted cashews",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Thai red curry paste",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Coconut milk",
+   "qty": "1 can (13.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups of jasmine rice under cold water until it runs mostly clear. Transfer it to a medium pot with 2 1/4 cups of water and bring it to a boil. Cover, turn the heat to the lowest setting and cook for 12 minutes. Take it off the heat and leave the lid on until you serve.",
+  "Meanwhile, cut the salmon into 8 even pieces and pat them dry. Sprinkle the 1/2 tsp salt over them.",
+  "Trim the snow peas and halve them lengthwise. Seed the bell pepper and cut it into thin strips. Grate 1 tbsp of the ginger.",
+  "Crush 6 of the lime leaves lightly in your hand. Cut the lime in half, juice one half and cut the other into wedges.",
+  "Pick the basil leaves off the stems. Roughly chop 1/3 cup of the cashews. Slice the Thai chilies into a small bowl for the table.",
+  "Heat 1 tbsp of the oil in a large deep skillet over medium high heat until it shimmers. Add the salmon, best side down, and leave it alone for 2 minutes, until it's golden underneath and lets go of the pan. Transfer it to a plate, browned side up. It will still be raw in the middle.",
+  "Turn the heat down to medium. Add the remaining 1 tbsp oil, 3 tbsp curry paste, the ginger and the lime leaves. Stir for 1 to 2 minutes, until the paste darkens and smells fragrant.",
+  "Add the bell pepper and stir for 1 minute.",
+  "Pour in the coconut milk and add 2 tsp brown sugar. Scrape up the browned bits and bring it to a simmer. Cook for 5 minutes, until it thickens a little.",
+  "Return the salmon to the pan, browned side up, and scatter the snow peas around it. Simmer for 3 to 4 minutes, until the snow peas are bright green and the salmon flakes in the center when you press it with a fork.",
+  "Take the pan off the heat. Gently stir in 1 tbsp fish sauce and the lime juice, and scatter the basil leaves over the top.",
+  "Taste the sauce. If it's flat, add a pinch more salt or a squeeze of one of the lime wedges.",
+  "Serve over the rice with the cashews on top, and the lime wedges and sliced chilies on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version read had 20 or more ratings (The Roasted Root, the one rated version with more, blocked the reader) and RecipeTin Eats, the trusted cook for Thai, has no red curry salmon (its coconut lime salmon uses chili paste, not red curry paste), so the first read version leads. Recipe Girl's version (from Donna Hay) fries red curry paste with lime leaves and ginger, simmers it in coconut milk, poaches salmon pieces and snow peas in it and finishes with fish sauce and lime; Sitka Seafood Market adds red pepper, shallot, lemongrass, brown sugar and broth. This one follows the lead but sears the salmon first, borrows Sitka's red pepper and brown sugar, and uses 3 tbsp of paste instead of the lead's 1/3 cup so it stays mild, with chilies at the table.",
+ "sources": [
+  {
+   "name": "Recipe Girl",
+   "title": "Thai Coconut Red Curry Salmon",
+   "url": "https://www.recipegirl.com/thai-coconut-red-curry-salmon/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Sitka Seafood Market",
+   "title": "Thai Red Curry Salmon",
+   "url": "https://sitkaseafoodmarket.com/blogs/recipes/thai-red-curry-salmon",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

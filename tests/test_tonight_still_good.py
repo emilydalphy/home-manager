@@ -22,6 +22,7 @@ import pytest
 from app import tools
 from app.db import get_conn
 from app.tools import tonight as _tonight
+from conftest import household_pin
 
 REPO = Path(__file__).resolve().parents[1]
 SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
@@ -313,6 +314,10 @@ def test_the_dry_run_behind_the_options_writes_nothing():
 
 # ---------------------------------------------------------------- the swap
 
+# Pinned to TONIGHT's afternoon on the household's clock, because the route
+# reads the real one: swap_dinner_nights refuses a night that has gone by, so
+# from Thursday on (Wednesday past) the unpinned test met a correct refusal.
+@pytest.mark.today(household_pin(15, 50, on=datetime.date.fromisoformat(TONIGHT)))
 def test_one_tap_trades_tonight_with_the_chosen_night_and_the_list_is_untouched(signed_in):
     plan = _plan()
     _full_week(plan)

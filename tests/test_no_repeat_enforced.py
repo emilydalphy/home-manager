@@ -249,7 +249,7 @@ def test_a_lunch_repeat_goes_too(last_week, stub_model, picker):
     assert len(picker) == 1
 
 
-def test_a_breakfast_or_snack_repeat_is_left_exactly_as_it_is(last_week, stub_model, picker):
+def test_a_breakfast_or_snack_repeat_is_left_exactly_as_it_is(last_week, stub_model, picker, snacks_as_the_model_sent_them):
     """
     GUARD — green on `main` too, because `main` leaves EVERYTHING alone.
     Pinned instead by the mutation that widens
@@ -273,7 +273,7 @@ def test_a_breakfast_or_snack_repeat_is_left_exactly_as_it_is(last_week, stub_mo
     assert picker == []
 
 
-def test_something_new_changes_breakfast_too(last_week, stub_model, picker):
+def test_something_new_changes_breakfast_too(last_week, stub_model, picker, snacks_as_the_model_sent_them):
     """
     CATCH (Emily, 2026-09-27: she picked "Something new" and last week's
     breakfast came back). With that mood on, breakfast joins the rule:

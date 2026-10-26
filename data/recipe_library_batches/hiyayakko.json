@@ -1,0 +1,33 @@
+{
+ "dish_name": "Hiyayakko",
+ "cuisine": "Japanese",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {"item": "Silken tofu", "qty": "1 package (14 oz)", "category": "dairy"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce"},
+  {"item": "Ginger", "qty": "1 piece (1 inch)", "category": "produce"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "4 tsp"}
+ ],
+ "instructions": [
+  "Keep the tofu in the fridge until you start so it's well chilled. Open the package, pour off the water and slide the block onto a plate lined with paper towels.",
+  "Lay another paper towel over the top and leave it for 10 minutes to drain. Don't press it. Silken tofu breaks apart easily.",
+  "Meanwhile, thinly slice 2 of the green onions.",
+  "Peel the ginger and grate it finely. That should be about 1 tbsp.",
+  "Cut the tofu into 4 pieces and set each one in a small bowl or on a small plate.",
+  "Top each piece with a quarter of the green onions, then a small mound of the ginger.",
+  "Serve right away with the 4 tsp soy sauce on the side, about 1 tsp poured over each piece at the table."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions put a block of chilled silken tofu in each bowl, top it with sliced green onion, grated ginger and bonito flakes, and pour on soy sauce just before eating. RecipeTin Japan (the lead) cuts one pack into quarters for four and lets each person add their own soy sauce; Japanese Cooking 101 rinses the tofu and offers ponzu instead, and The Daily Meal warns to add the soy sauce a little at a time. Bonito flakes are fish, so they're left out to keep this vegetarian. No version read had 20 or more ratings (Just One Cookbook's page blocked the read), so this falls back to RecipeTin Eats, the trusted cook for this cuisine, whose Japanese site RecipeTin Japan has the version used here.",
+ "sources": [
+  {"name": "RecipeTin Japan", "title": "Chilled Tofu (Hiyayakko) 4 Ways", "url": "https://japan.recipetineats.com/chilled-tofu-hiyayakko-4-ways/", "rating": 5.0, "rating_count": 2, "read": true, "lead": true},
+  {"name": "Japanese Cooking 101", "title": "Hiyayakko (Cold Tofu Salad) Recipe", "url": "https://www.japanesecooking101.com/?p=2871", "rating": 4.5, "rating_count": 2, "read": true, "lead": false},
+  {"name": "The Daily Meal", "title": "Hiyayakko (Cold Tofu)", "url": "https://www.thedailymeal.com/recipes/hiyayakko-cold-tofu-recipe", "rating": 4.0, "rating_count": 1, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

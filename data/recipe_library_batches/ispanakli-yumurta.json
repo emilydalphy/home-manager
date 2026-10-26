@@ -1,0 +1,116 @@
+{
+ "dish_name": "Ispanakli Yumurta",
+ "cuisine": "Turkish",
+ "main_protein": "eggs",
+ "ingredients": [
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Onion",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Baby spinach",
+   "qty": "2 containers (10 oz each)",
+   "category": "produce",
+   "cook_qty": "1 1/4 lbs"
+  },
+  {
+   "item": "Plain whole-milk Greek yogurt",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Feta",
+   "qty": "1 block (6 oz)",
+   "category": "dairy",
+   "cook_qty": "1/2 cup crumbled"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Aleppo pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Corn tortillas (100% corn)",
+   "qty": "1 pack (8)",
+   "category": "pantry",
+   "cook_qty": "8"
+  }
+ ],
+ "instructions": [
+  "Finely chop the onion and mince the garlic.",
+  "Heat the butter and oil in a large deep skillet with a lid over medium-high heat until the butter melts. Add the onion, 1/2 tsp of the salt and 1/4 tsp of the pepper. Cook, stirring often, for 6 minutes, until it's soft but not brown.",
+  "Add the garlic and cumin. Stir for 30 seconds, until you can smell them.",
+  "Add the spinach a big handful at a time, stirring each handful until it starts to wilt before adding the next.",
+  "Add 3/4 cup of the yogurt and 1/2 tsp of the salt. Stir for 2 minutes, until the spinach is deep green and the yogurt is mixed in.",
+  "Turn the heat to medium. Use the back of a spoon to make 8 wells in the spinach, deep enough that you can see the bottom of the skillet. Crack an egg into each well.",
+  "Sprinkle the remaining 1/2 tsp salt and 1/4 tsp pepper over the eggs. Cover and cook for 5 minutes, until the whites are set and the yolks still jiggle. Give them 2 minutes longer if you like the yolks firm.",
+  "While the eggs cook, crumble 1/2 cup of the feta. Wrap the tortillas in a damp paper towel and microwave them for 45 seconds.",
+  "Scatter the feta over the top. Taste the spinach around the eggs. If it's flat, add a pinch more salt.",
+  "Serve with the warm corn tortillas, with the Aleppo pepper on the table."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree on spinach cooked with onion and eggs set into hollows in it under a lid. The traditional Turkish Ministry of Culture version uses only spinach and onion. The lead stirs in Greek yogurt for a creamy base, and another version uses grated tomato and pepper paste instead. This version follows the lead with yogurt, cumin and feta, and puts the Aleppo pepper on the table to keep the base mild. It is served with corn tortillas instead of bread so it stays gluten-free. No source had 20 or more ratings, so the lead is the best-read version.",
+ "sources": [
+  {
+   "name": "Umami Recipes",
+   "title": "Turkish-Style Eggs and Spinach",
+   "url": "https://www.umami.recipes/recipe/DrK5u2TJV2P1eGakheGf",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Turkish Ministry of Culture and Tourism",
+   "title": "Eggs with Spinach",
+   "url": "https://www.ktb.gov.tr/EN-98923/eggs-with-spinach.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

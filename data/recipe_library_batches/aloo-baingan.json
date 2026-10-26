@@ -1,0 +1,125 @@
+{
+ "dish_name": "Aloo Baingan",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Vegetable oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Eggplant",
+   "qty": "1 large (about 1 lb)",
+   "category": "produce"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mild chili powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put 1 1/2 cups of the basmati rice in a fine strainer and rinse it under cold water until the water runs mostly clear. Transfer it to a medium saucepan with 2 1/4 cups water and a pinch of salt.",
+  "Bring the rice to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on for 5 minutes, then fluff it with a fork.",
+  "Meanwhile, cut the potatoes into 1/2 inch cubes and the eggplant into 1 inch cubes. Finely chop the onion, mince the garlic and ginger, and chop the tomatoes.",
+  "Heat 3 tbsp of the oil in a large wide skillet over medium-high heat. Add the eggplant in one layer and sprinkle with 1/2 tsp salt. Cook for 6 minutes, turning every minute or two, until browned on most sides. Transfer it to a plate.",
+  "Add the remaining 1 tbsp oil to the pan and turn the heat to medium. Add the cumin seeds. After about 20 seconds they'll sizzle and smell toasty.",
+  "Add the onion and cook for 5 minutes, until soft and golden.",
+  "Add the garlic and ginger and stir for 1 minute. Add the turmeric, coriander and chili powder and stir for 30 seconds.",
+  "Add the tomatoes and 1 tsp salt. Cook for 3 minutes, until they break down.",
+  "Add the potatoes and 3/4 cup water. Cover and cook for 7 minutes, until the potatoes are nearly tender.",
+  "Return the eggplant to the pan. Uncover and cook for 6 minutes, stirring gently, until the potatoes and eggplant are tender and the sauce clings to them. Take the pan off the heat.",
+  "Stir in the garam masala and 1/4 cup of chopped cilantro.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 31,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree on cumin seeds, onion, tomato and a dry spice mix of turmeric, coriander and garam masala, with potatoes and eggplant cooked until just tender. They differ on whether the eggplant is browned separately and on how wet it ends up, from semi-dry to a gravy. This version browns the eggplant first, cuts the potatoes small so they cook in 7 minutes, and keeps the sauce thick. It is vegan and gluten-free as written, and the heat is kept mild.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Aloo Baingan Recipe",
+   "url": "https://www.indianhealthyrecipes.com/aloo-baingan-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "My Cooking Journey",
+   "title": "Aloo Baingan (Potato and Eggplant Curry)",
+   "url": "https://www.mycookingjourney.com/aloo-baingan-potato-and-eggplant-curry/",
+   "rating": 5.0,
+   "rating_count": 16,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

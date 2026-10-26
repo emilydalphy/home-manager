@@ -1,0 +1,111 @@
+{
+ "dish_name": "Risi e Bisi",
+ "cuisine": "Italian",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Gluten-free vegetable broth",
+   "qty": "5 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Arborio rice",
+   "qty": "1 1/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "2 cups",
+   "category": "frozen"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "1/2 cup grated",
+   "category": "dairy"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Pour the broth into a medium pot and bring it to a gentle simmer over medium heat. Turn the heat to low and keep it hot.",
+  "Meanwhile, finely dice the onion and mince the garlic.",
+  "Set a large, wide pot over medium heat. Add the olive oil and 1 tbsp of the butter. When the butter has melted, add the onion and the salt and cook for 5 minutes, stirring now and then, until soft but not browned.",
+  "Add the garlic and stir for 30 seconds, until you can smell it.",
+  "Add the rice and stir for 2 minutes, until the edges of the grains look clear and smell toasty.",
+  "Add 3 cups of the hot broth. Stir once, bring it to a simmer, then cook for 10 minutes, stirring every couple of minutes.",
+  "Add the peas and 1 cup of the broth. Cook for 5 minutes, until the rice is tender with a little bite left in the middle. It should look loose and soupy, like a thick soup.",
+  "Add the last 1 cup of broth if the pot looks thick. Meanwhile, chop 2 tbsp of the parsley.",
+  "Take the pot off the heat. Stir in the remaining 1 tbsp butter, the Parmesan, the parsley and the pepper. Leave it for 2 minutes.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve in shallow bowls."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree on a Venetian rice dish that sits between risotto and soup: onion, rice cooked in hot broth, peas, then butter and Parmigiano off the heat. They differ on fresh peas with a pod broth and pancetta (the classic, about 90 minutes) versus a quick version with frozen peas. This follows the quick lead with frozen peas, and leaves out the pancetta and uses vegetable broth so it stays vegetarian. Arborio and plain broth keep it gluten-free.",
+ "sources": [
+  {
+   "name": "Skinny Spatula",
+   "title": "Risi e Bisi (Italian Rice and Peas)",
+   "url": "https://skinnyspatula.com/risi-e-bisi/",
+   "rating": 4.6,
+   "rating_count": 50,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Recipes from Italy",
+   "title": "Risi e Bisi Recipe (Authentic Venetian Rice and Peas)",
+   "url": "https://www.recipesfromitaly.com/risi-e-bisi-recipe/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true
+  },
+  {
+   "name": "Tasting Table",
+   "title": "Easy Spring Risi E Bisi Recipe",
+   "url": "https://www.tastingtable.com/1547034/easy-spring-risi-e-bisi-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

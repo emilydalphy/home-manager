@@ -41,7 +41,12 @@ from __future__ import annotations
 
 from app import agent, tools
 from app.db import get_conn
+import pytest
+
 from app.tools import allergen_gate, meal_variety
+
+# Its own snack names stand (conftest.snacks_as_the_model_sent_them).
+pytestmark = pytest.mark.usefixtures("snacks_as_the_model_sent_them")
 
 from test_no_repeat_enforced import (  # noqa: F401  (reused fixtures/helpers)
     FRESH_DINNERS,

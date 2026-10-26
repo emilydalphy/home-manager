@@ -1,0 +1,145 @@
+{
+ "dish_name": "Thai Green Curry with Tofu",
+ "cuisine": "Thai",
+ "main_protein": "tofu",
+ "ingredients": [
+  {
+   "item": "Extra-firm tofu",
+   "qty": "1 block (14 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Vegan gluten-free green curry paste",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Coconut milk",
+   "qty": "1 can (13.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Gluten-free vegetable broth",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Japanese eggplants",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Snow peas",
+   "qty": "6 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Thai basil",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Kaffir lime leaves",
+   "qty": "1 pack",
+   "category": "produce",
+   "cook_qty": "6 leaves"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 knob",
+   "category": "produce",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Tamari (gluten-free)",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Chili garlic sauce",
+   "qty": "1 jar",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups of jasmine rice under cold water until it runs mostly clear. Transfer it to a medium pot with 2 1/4 cups of water and bring it to a boil. Cover, turn the heat to the lowest setting and cook for 12 minutes. Take it off the heat and leave the lid on until you serve.",
+  "Meanwhile, cut the tofu into 3/4 inch cubes and pat them very dry with paper towels. Sprinkle 1/4 tsp of the salt over them.",
+  "Slice the eggplants into 1/2 inch rounds and trim the snow peas. Grate 2 tsp of the ginger, mince the garlic and tear the lime leaves in half. Juice half the lime and cut the other half into wedges. Pick the basil leaves off the stems.",
+  "Heat 1 tbsp of the oil in a large deep skillet over medium-high heat for 1 minute. Add the tofu in a single layer and leave it alone for 3 minutes, until the underside is golden and lets go of the pan.",
+  "Turn the cubes and cook for 4 minutes, until they're golden on most sides. Transfer them to a plate.",
+  "Turn the heat down to medium. Add the remaining 2 tbsp oil, 2 tbsp of the curry paste and the ginger. Stir for 2 to 3 minutes, until the paste darkens and smells strong. Add the garlic and stir for 30 seconds.",
+  "Shake the can of coconut milk, then add it to the skillet with the broth, 2 tsp tamari, 1 tsp sugar and the lime leaves. Stir until the paste dissolves and bring it to a gentle simmer.",
+  "Add the eggplant and simmer gently for 6 minutes, until it's soft.",
+  "Add the tofu and the snow peas and cook for 2 minutes. Take the skillet off the heat.",
+  "Stir in the basil and the juice of half the lime. Taste it, and add a pinch more salt if it's flat.",
+  "Serve over the rice with the lime wedges and the chili garlic sauce on the side."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both sources agree on the order: fry the paste in oil until it darkens, add coconut milk and a little liquid, simmer the vegetables, then finish with basil and lime off the heat. The lead (RecipeTin Eats) uses 4 to 6 tbsp of paste to one can of coconut milk and about a cup of broth, and this keeps that ratio at 4 tbsp so the base stays mild. Changes for this library: the lead's chicken is replaced with browned extra-firm tofu, its fish sauce with a little tamari and sugar, and the heat moves to chili garlic sauce at the table. Many jar pastes contain shrimp paste, so buy one that says vegan and gluten-free on the label.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Thai Green Curry",
+   "url": "https://www.recipetineats.com/thai-green-curry/",
+   "rating": 4.96,
+   "rating_count": 281,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Cheeky Chickpea",
+   "title": "Tofu Thai Green Curry",
+   "url": "https://thecheekychickpea.com/tofu-thai-green-curry/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true
+  },
+  {
+   "name": "JVS",
+   "title": "Thai Green Tofu Curry",
+   "url": "https://jvs.org.uk/recipes/thai-green-tofu-curry",
+   "rating": 4.8,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

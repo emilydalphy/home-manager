@@ -1,0 +1,38 @@
+{
+ "dish_name": "Bocadillo de Calamares",
+ "cuisine": "Spanish",
+ "main_protein": "seafood",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {"item": "Squid tubes", "qty": "1.5 lb", "category": "meat/seafood"},
+  {"item": "All-purpose flour", "qty": "3/4 cup", "category": "pantry"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Sunflower oil", "qty": "3/4 cup", "category": "pantry"},
+  {"item": "Demi-baguettes", "qty": "4", "category": "pantry"},
+  {"item": "Parsley", "qty": "1 bunch", "category": "produce"},
+  {"item": "Lemon", "qty": "1", "category": "produce"}
+ ],
+ "instructions": [
+  "Pat the squid tubes very dry with paper towels, inside and out. Cut them into 1/2 inch rings.",
+  "Put the 3/4 cup flour and 3/4 tsp of the salt in a large zip bag and shake it to mix.",
+  "Split the 4 demi-baguettes lengthwise, leaving them joined along one side. Chop 1/4 cup of the parsley. Cut the lemon into wedges. Line a plate with paper towels.",
+  "Heat a large frying pan over medium high heat and add the 3/4 cup oil. Give it about 3 minutes. It's ready when a squid ring dropped in sizzles right away.",
+  "Add a third of the rings to the bag and shake until they're evenly coated. Shake off the extra flour in your hands.",
+  "Add them to the pan in a single layer with a little room between them. Stand back a little. They'll spatter. Fry until the underside is golden, about 1 1/2 minutes.",
+  "Turn them and cook the other side for about 1 1/2 minutes, until golden and crisp. Transfer them to the paper towels and sprinkle them with a pinch of the salt.",
+  "Coat and fry the rest of the rings the same way in two batches, salting each batch as it comes out.",
+  "Fill each baguette with the hot squid and scatter the parsley over it. Serve with the lemon wedges."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three coat squid rings in seasoned flour, fry them until golden and crisp, salt them as they come out and pile them hot into a split baguette. Spain on a Fork (the lead) shallow fries the rings in sunflower oil in a frying pan and finishes with parsley; Jose Pizarro (Broadsheet) deep fries them with pimentón in the flour and spreads the bread with aioli, and The Takeout adds shrimp, butters and toasts the rolls and uses a lemon aioli. None had 20 ratings and RecipeTin Eats has no version, so this follows Spain on a Fork, scaled to four sandwiches, with lemon wedges on the side as the Madrid bars serve it and no aioli.",
+ "sources": [
+  {"name": "Spain on a Fork", "title": "4 Classic Spanish Bocadillos | Famous Sandwiches from Spain", "url": "https://spainonafork.com/4-classic-spanish-bocadillos-famous-sandwiches-from-spain/", "rating": null, "rating_count": null, "read": true, "lead": true},
+  {"name": "Broadsheet (Jose Pizarro)", "title": "Jose Pizarro's Deep-Fried Calamari Sandwich", "url": "https://broadsheet.com.au/national/food-and-drink/article/recipe-be-transported-spain-and-cure-hangover-jose-pizarros-deep-fried-calamari-sandwich", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "The Takeout", "title": "Bocadillos de Calamares (Fried Squid Sandwiches)", "url": "https://thetakeout.com/recipe-bocadillo-de-calamares-fried-squid-sandwich-1836825420", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

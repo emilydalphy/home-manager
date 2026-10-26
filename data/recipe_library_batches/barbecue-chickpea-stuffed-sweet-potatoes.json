@@ -1,0 +1,125 @@
+{
+  "dish_name": "Barbecue Chickpea Stuffed Sweet Potatoes",
+  "cuisine": "American",
+  "main_protein": "chickpeas",
+  "default_servings": 4,
+  "prep_time_minutes": 15,
+  "cook_time_minutes": 30,
+  "ingredients": [
+    {
+      "item": "Sweet potatoes",
+      "qty": "4 medium",
+      "category": "produce"
+    },
+    {
+      "item": "Chickpeas",
+      "qty": "2 cans (15 oz)",
+      "category": "pantry"
+    },
+    {
+      "item": "Red onion",
+      "qty": "1",
+      "category": "produce"
+    },
+    {
+      "item": "Garlic",
+      "qty": "3 cloves",
+      "category": "produce"
+    },
+    {
+      "item": "Tomato paste",
+      "qty": "1 small can",
+      "category": "pantry",
+      "cook_qty": "3 tbsp"
+    },
+    {
+      "item": "Maple syrup",
+      "qty": "1 bottle",
+      "category": "pantry",
+      "cook_qty": "2 tbsp"
+    },
+    {
+      "item": "Apple cider vinegar",
+      "qty": "1 bottle",
+      "category": "pantry",
+      "cook_qty": "1 tbsp"
+    },
+    {
+      "item": "Tamari (gluten-free)",
+      "qty": "1 bottle",
+      "category": "pantry",
+      "cook_qty": "1 tbsp"
+    },
+    {
+      "item": "Smoked paprika",
+      "qty": "2 tsp",
+      "category": "pantry"
+    },
+    {
+      "item": "Garlic powder",
+      "qty": "1/2 tsp",
+      "category": "pantry"
+    },
+    {
+      "item": "Olive oil",
+      "qty": "2 tbsp",
+      "category": "pantry"
+    },
+    {
+      "item": "Salt",
+      "qty": "3/4 tsp",
+      "category": "pantry"
+    },
+    {
+      "item": "Kale",
+      "qty": "1 bunch",
+      "category": "produce"
+    },
+    {
+      "item": "Tahini",
+      "qty": "1 jar",
+      "category": "pantry",
+      "cook_qty": "2 tbsp"
+    },
+    {
+      "item": "Lemons",
+      "qty": "1",
+      "category": "produce"
+    }
+  ],
+  "instructions": [
+    "Heat the oven to 450°F. Cut the sweet potatoes in half lengthwise and rub the cut sides with 1 tbsp of the oil and 1/4 tsp salt. Lay them cut side down on a rimmed baking sheet.",
+    "Roast for 30 minutes. They're done when a knife slides into the middle easily and the cut sides are browned.",
+    "Meanwhile, make the barbecue sauce. In a small bowl, stir the tomato paste, maple syrup, vinegar, tamari, 1 tsp of the smoked paprika, the garlic powder and 1/4 cup water until smooth.",
+    "Drain and rinse the chickpeas and pat them dry. Dice the onion small and mince the garlic.",
+    "Heat 1 tbsp oil in a large skillet over medium-high heat. Add the onion with 1/4 tsp salt and cook for 3 minutes, until soft. Add the garlic and the other 1 tsp smoked paprika and stir for 30 seconds.",
+    "Add the chickpeas and cook for 5 minutes, stirring now and then, until some are golden. Pour in the sauce and cook for 4 minutes, until it's thick and coats the chickpeas. Take the pan off the heat.",
+    "Remove the kale stems and tear the leaves into small pieces in a large bowl. Add the tahini, the juice of the lemon, 1/4 tsp salt and 1 tbsp water. Rub it into the kale with your hands for 1 minute, until it softens.",
+    "Taste the chickpeas. If they're flat, add a pinch more salt.",
+    "Split the sweet potatoes open, press the flesh down with a fork and spoon the chickpeas on top. Serve with the tahini kale."
+  ],
+  "advance_prep_notes": "",
+  "advance_prep_step_indices": [],
+  "method_notes": "Both sources fill baked sweet potatoes with canned chickpeas cooked in a sauce with onion-type spices until they start to caramelize. Plant Based RD roasts the potatoes and serves them with massaged tahini kale, which this keeps; Slender Kitchen bakes or microwaves them and tops them with ranch. This version halves the potatoes and roasts them cut side down at 450°F so they fit 45 minutes. Both sources use bottled sauce (barbecue or buffalo, with butter in one), but bottled barbecue sauce often contains Worcestershire (anchovy and sometimes gluten), so the sauce is made from tomato paste, maple syrup, vinegar and tamari so it is certainly vegan and gluten-free.",
+  "sources": [
+    {
+      "name": "Plant Based RD",
+      "title": "Pineapple BBQ Chickpeas",
+      "url": "https://plantbasedrdblog.com/2022/06/pineapple-bbq-chickpeas/",
+      "rating": null,
+      "rating_count": null,
+      "read": true,
+      "lead": true
+    },
+    {
+      "name": "Slender Kitchen",
+      "title": "Buffalo Chickpea Stuffed Sweet Potatoes",
+      "url": "https://www.slenderkitchen.com/recipe/buffalo-chickpea-stuffed-sweet-potatoes",
+      "rating": null,
+      "rating_count": null,
+      "read": true
+    }
+  ],
+  "fallback_used": true,
+  "origin": "seed"
+}

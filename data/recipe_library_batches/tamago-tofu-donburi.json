@@ -1,0 +1,108 @@
+{
+  "dish_name": "Tamago Tofu Donburi",
+  "cuisine": "Japanese",
+  "main_protein": "eggs",
+  "prep_time_minutes": 10,
+  "cook_time_minutes": 20,
+  "ingredients": [
+    {
+      "item": "Eggs",
+      "qty": "6",
+      "category": "dairy"
+    },
+    {
+      "item": "Firm tofu",
+      "qty": "1 block (14 oz)",
+      "category": "dairy"
+    },
+    {
+      "item": "Jasmine rice",
+      "qty": "1 bag",
+      "category": "pantry",
+      "cook_qty": "1 1/2 cups"
+    },
+    {
+      "item": "Yellow onion",
+      "qty": "1",
+      "category": "produce"
+    },
+    {
+      "item": "Dried kombu",
+      "qty": "1 package",
+      "category": "pantry",
+      "cook_qty": "1 piece (4 inches)"
+    },
+    {
+      "item": "Tamari (gluten-free)",
+      "qty": "1 bottle",
+      "category": "pantry",
+      "cook_qty": "4 tbsp"
+    },
+    {
+      "item": "Mirin",
+      "qty": "1 bottle",
+      "category": "pantry",
+      "cook_qty": "2 tbsp"
+    },
+    {
+      "item": "Sake",
+      "qty": "1 bottle",
+      "category": "pantry",
+      "cook_qty": "2 tbsp"
+    },
+    {
+      "item": "Sugar",
+      "qty": "1 bag",
+      "category": "pantry",
+      "cook_qty": "1 tbsp"
+    },
+    {
+      "item": "Scallions",
+      "qty": "1 bunch",
+      "category": "produce",
+      "cook_qty": "3 scallions"
+    },
+    {
+      "item": "Salt",
+      "qty": "1/4 tsp",
+      "category": "pantry"
+    }
+  ],
+  "instructions": [
+    "Put the kombu and 1 1/2 cups of water in a small saucepan over medium heat. When small bubbles start to rise at the edges, after about 6 minutes, take the kombu out. Don't let it boil. Pour the kombu water into a measuring cup. You need 1 cup, so add water if there's less.",
+    "Meanwhile, rinse the rice in a sieve until the water runs mostly clear. Add it to a medium pot with 2 1/4 cups of water, bring it to a boil over high heat, then cover, turn the heat to low and cook for 15 minutes. Leave the lid on and take the pot off the heat until you serve.",
+    "Halve the onion and slice it thinly. Drain the tofu and cut it into 1/2-inch slices, then into bite-size pieces. Slice the scallions.",
+    "Crack the eggs into a bowl and beat them lightly with a fork, leaving a few streaks of white.",
+    "In a 12-inch skillet, stir together the kombu water, tamari, mirin, sake and sugar. Add the onion and set the skillet over medium heat. Bring it to a simmer and cook for 4 minutes, until the onion is soft.",
+    "Add the tofu in a single layer and simmer for 4 minutes, turning the pieces once, until they've taken on the color of the broth.",
+    "Pour two thirds of the egg over the tofu in a circle. Cook for 1 minute, until the edges start to set.",
+    "Pour in the rest of the egg, cover the skillet and turn off the heat. Leave it for 1 minute, until the eggs are mostly set and still a little soft on top. Give them 2 minutes longer if you like the eggs firm.",
+    "Taste the broth. If it's flat, add a pinch of salt.",
+    "Fluff the rice with a fork and divide it among 4 bowls. Slide the tofu and egg over the rice, spooning the broth on top, and sprinkle with the scallions."
+  ],
+  "method_notes": "Both sources simmer tofu in a sweet-salty dashi broth, pour beaten egg over it and slide it all over rice. They agree on adding the egg in two additions so some of it stays soft, and differ on the seasoning (Just One Cookbook also uses fried tofu, Japanese Cooking 101 is plainer) and on soft or firm tofu. Every tofu version has fewer than 20 ratings, so the best-rated one leads. This version uses kombu dashi with no bonito, tamari instead of soy sauce, and firm tofu.",
+  "sources": [
+    {
+      "name": "Just One Cookbook",
+      "title": "Simmered Tofu and Egg Rice Bowl",
+      "url": "https://www.justonecookbook.com/simmered-tofu-and-egg-rice-bowl/",
+      "rating": 5.0,
+      "rating_count": 3,
+      "read": true,
+      "lead": true
+    },
+    {
+      "name": "Japanese Cooking 101",
+      "title": "Tofu and Egg Donburi",
+      "url": "https://japanesecooking101.com/tofu-and-egg-donburi/",
+      "rating": 5.0,
+      "rating_count": 2,
+      "read": true
+    }
+  ],
+  "fallback_used": true,
+  "default_servings": 4,
+  "origin": "seed",
+  "advance_prep_notes": "",
+  "advance_prep_step_indices": []
+}

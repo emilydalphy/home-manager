@@ -1,0 +1,42 @@
+{
+ "dish_name": "Sole Meuniere",
+ "cuisine": "French",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {"item": "Sole fillets", "qty": "1.5 lbs", "category": "meat/seafood"},
+  {"item": "All-purpose flour", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Olive oil", "qty": "4 tsp", "category": "pantry"},
+  {"item": "Unsalted butter", "qty": "8 tbsp", "category": "dairy"},
+  {"item": "Lemon", "qty": "1", "category": "produce"},
+  {"item": "Parsley", "qty": "1 bunch", "category": "produce"}
+ ],
+ "instructions": [
+  "Heat the oven to 200°F and put a large platter in it to warm.",
+  "Meanwhile, pat the sole fillets very dry with paper towels. Sprinkle 3/4 tsp of the salt and the 1/2 tsp pepper over both sides.",
+  "Squeeze the lemon into a small bowl. That should be about 2 tbsp of juice. Finely chop 2 tbsp of the parsley.",
+  "Spread the 1/4 cup flour on a plate. Lay each fillet in it, turn it over to coat the other side, and shake off the extra. You want a thin dusting, not a crust.",
+  "Set a large skillet over medium heat with 2 tsp of the olive oil and 1 tbsp of the butter. When the butter foams, add half the fillets in a single layer, leaving room between them.",
+  "Cook without moving them until the underside is golden and they lift easily with a thin spatula, about 2 minutes.",
+  "Flip them carefully and add 1 tbsp of the butter to the pan. Tilt the pan and spoon the foaming butter over the fish as the other side cooks, about 1 to 2 minutes. They're done when the flesh is white all the way through and flakes when you press it with a fork.",
+  "Transfer the fillets to the warm platter in the oven. Cook the rest of the fish the same way with the last 2 tsp of olive oil, 1 tbsp of the butter, then 1 tbsp of the butter after you flip them, and add them to the platter.",
+  "Wipe the skillet out with a paper towel and set it back over medium heat with the last 4 tbsp of butter. Swirl it as it melts and foams. After 2 to 3 minutes it turns light brown and smells nutty. Watch it closely. It goes from brown to burnt fast.",
+  "Take the pan off the heat right away and add the lemon juice. Stand back a little. It will sputter. Stir in the parsley and the last 1/4 tsp of salt.",
+  "Taste the sauce. If it's flat, add a pinch more salt.",
+  "Spoon the brown butter over the fish and serve right away."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three dust the fillets lightly in seasoned flour, fry them quickly in butter and finish with butter browned until nutty, lemon juice and parsley. Vanilla Bean Cuisine starts the fish in olive oil and a little butter, bastes with more butter after the flip and then browns the rest in the same pan, while Pardon Your French and Reluctant Gourmet fry in butter alone and Pardon Your French browns the sauce butter in a separate saucepan. This one follows the lead's ratios doubled for four, cooks the fish in two batches so the pan isn't crowded and wipes the pan before browning the butter so the bits of flour don't burn.",
+ "sources": [
+  {"name": "Vanilla Bean Cuisine", "title": "Easy Sole Meunière", "url": "https://www.vanillabeancuisine.com/easy-sole-meuniere/", "rating": 4.95, "rating_count": 40, "read": true, "lead": true},
+  {"name": "Pardon Your French", "title": "Classic French Sole Meunière", "url": "https://www.pardonyourfrench.com/classic-french-sole-meuniere/", "rating": 5.0, "rating_count": 2, "read": true, "lead": false},
+  {"name": "The Reluctant Gourmet", "title": "Sole Meuniere Recipe", "url": "https://reluctantgourmet.com/sole-meuniere-recipe/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

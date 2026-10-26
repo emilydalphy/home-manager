@@ -1,0 +1,113 @@
+{
+ "dish_name": "Doro Alicha",
+ "cuisine": "Ethiopian",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 75,
+ "ingredients": [
+  {
+   "item": "Bone-in chicken thighs",
+   "qty": "2.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece (2 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Ghee",
+   "qty": "1 jar",
+   "category": "dairy",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cardamom",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1 bottle",
+   "category": "other",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Injera",
+   "qty": "1 package",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Bring a small pot of water to a boil and gently lower in the 4 eggs with a spoon. Boil them for 10 minutes, then move them to a bowl of cold water.",
+  "Meanwhile, pull the skin off the chicken thighs, using a paper towel for grip. Put them in a bowl, squeeze half the lemon over them, add 1 1/2 tsp of the salt, and toss. Leave them while you start the onions.",
+  "Finely chop the 3 onions. Mince the 6 garlic cloves. Peel and finely grate the ginger. That should be about 2 tbsp.",
+  "Put the onions in a heavy pot or Dutch oven over medium heat with no fat at all. Cook them for 10 minutes, stirring often, until they've shrunk and are starting to stick. If they catch, add a splash of water.",
+  "Add 3 tbsp of the ghee, the ginger and the remaining 1/2 tsp salt. Turn the heat to medium-low and cook for 10 minutes, stirring every few minutes, until the onions are very soft and pale gold. Keep them golden, not dark brown. That's what keeps an alicha mild and yellow.",
+  "Add the garlic and stir for 1 minute, until it smells fragrant.",
+  "Stir in the 1 tsp turmeric and 1/2 tsp cardamom and cook for 30 seconds, until the onions turn bright yellow and smell warm.",
+  "Add the chicken with its lemony juices and turn the pieces in the onions until they're coated. Pour in the 1/2 cup wine and let it bubble for 2 minutes, scraping up anything stuck to the bottom of the pot.",
+  "Pour in 1 cup water and bring it to a bubble. Cover, turn the heat to low, and simmer for 35 to 40 minutes, turning the thighs halfway, until the meat pulls easily from the bone. You're cooking them to 175°F, so if you have a thermometer, check the thickest part away from the bone. No thermometer? Cut into one next to the bone: it's done when the juices run clear with no pink.",
+  "While it simmers, peel the eggs and prick each one all over with a fork.",
+  "Take the lid off, nestle the eggs into the sauce, and simmer uncovered for 10 minutes, spooning sauce over the eggs, until the sauce is thick enough to coat a spoon.",
+  "Turn off the heat and stir in the last 1 tbsp ghee.",
+  "Taste it. If it's flat, add a pinch more salt, or a squeeze from the other lemon half.",
+  "Serve with injera."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions rub skinned chicken legs with lemon and salt, cook a lot of onion down first, add spiced butter, ginger and garlic, then turmeric and white wine, simmer the chicken until tender and finish with hard-boiled eggs. Brundo keeps it to about an hour with a small amount of turmeric and its own spice blends, while the Cooklang version simmers the sauce for hours and adds tomato, cinnamon and honey. No version showed any ratings (Milk Street's turmeric chicken is behind a paywall, so it wasn't read), and the trusted cook for the cuisine has no Ethiopian recipes, so this follows Brundo, with ghee plus ground cardamom standing in for niter kibbeh and the spice blends.",
+ "sources": [
+  {
+   "name": "Brundo",
+   "title": "Doro Alicha (Chicken Stewed in Turmeric)",
+   "url": "https://brundo.com/blogs/recipes/how-to-cook-ethiopian-doro-alicha-chicken-stewed-in-turmeric",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cooklang (Stefan Surzycki's Recipes)",
+   "title": "Doro Alecha Wat",
+   "url": "https://recipes.cooklang.org/recipes/3081",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

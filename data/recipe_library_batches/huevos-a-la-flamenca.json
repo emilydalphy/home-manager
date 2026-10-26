@@ -1,0 +1,130 @@
+{
+ "dish_name": "Huevos a la Flamenca",
+ "cuisine": "Spanish",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Tomatoes",
+   "qty": "2 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Spanish chorizo",
+   "qty": "4 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Serrano ham",
+   "qty": "3 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Smoked paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sherry vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "1 bag",
+   "category": "frozen",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F (200°C).",
+  "Meanwhile, halve the tomatoes and grate the cut sides on the large holes of a box grater into a bowl, until only the skins are left in your hand. Throw the skins away. That should be about 2 1/2 cups.",
+  "Chop the onion, seed and dice the bell pepper, and thinly slice the garlic. Cut the chorizo into 1/2 inch pieces and chop the ham.",
+  "Heat the oil in a 12 inch ovenproof skillet over medium heat. Add the chorizo and ham and cook, stirring, for about 3 minutes, until the chorizo browns at the edges and the oil turns red. Lift them out with a slotted spoon onto a plate and leave the oil in the pan.",
+  "Add the onion, bell pepper and 1/2 tsp of the salt. Cook, stirring now and then, for about 8 minutes, until they're soft and the onion is golden at the edges. Don't rush this part.",
+  "Add the garlic and cook for about 30 seconds, until it smells fragrant. Stir in the smoked paprika and cook for 15 seconds.",
+  "Add the grated tomatoes, 1 tbsp sherry vinegar, 1/4 tsp of the salt and the black pepper. Bring it to a simmer and cook, stirring now and then, for 10 to 12 minutes, until it's thick and a spoon dragged through it leaves a clear trail.",
+  "Stir in 1/2 cup of the peas and return the chorizo and ham to the pan. Taste the sauce, and add a pinch more salt if it's flat.",
+  "Make 8 hollows in the sauce with the back of a spoon and crack an egg into each one. Sprinkle the last 1/4 tsp salt over the eggs.",
+  "Bake for 10 to 12 minutes, until the whites are set and opaque and the yolks still wobble when you shake the pan.",
+  "Meanwhile, chop 1/4 cup of the parsley.",
+  "Scatter the parsley over the eggs and serve straight from the skillet. The handle will be hot, so keep an oven mitt on it."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version had 20 or more ratings and RecipeTin Eats has no huevos a la flamenca, so this leads with Spain on a Fork, the only rated version read. All three build a tomato sauce on onion, garlic and cured pork, add peas, and cook eggs in hollows in the sauce until the whites set and the yolks stay runny. Andalucia.com and Food.com bake the eggs in the oven with ham, chorizo and pepper, while Spain on a Fork adds roasted potatoes and finishes the eggs covered on the stove. This bakes them in one skillet the Andalusian way, uses Spain on a Fork's grated fresh tomato, smoked paprika and sherry vinegar, and leaves out the potatoes and asparagus so the sauce is tomato and pepper.",
+ "sources": [
+  {
+   "name": "Spain on a Fork",
+   "title": "Spanish Flamenco Eggs | Huevos a la Flamenca",
+   "url": "https://spainonafork.com/spanish-flamenco-eggs-huevos-a-la-flamenca-recipe/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Andalucia.com",
+   "title": "Seville - Flamenco Eggs (Huevos a la Flamenca)",
+   "url": "https://andalucia.com/node/5919",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Food.com",
+   "title": "Huevos a La Flamenca",
+   "url": "https://www.food.com/recipe/huevos-a-la-flamenca-369736",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

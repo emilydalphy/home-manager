@@ -241,6 +241,13 @@ def test_a_feed_with_no_zone_at_all_falls_back_to_the_household_env_or_server_cl
         "UID:f", "SUMMARY:Floating", "END:VEVENT", "END:VCALENDAR", "",
     ])
     monkeypatch.setenv("HOUSEHOLD_TIMEZONE", "America/Vancouver")
+    # The household's own zone comes first (households.timezone, Toronto by
+    # default); the env var and the server only when that can't be read.
+    result = _parse(floating)
+    assert result["timezone"] == "America/Toronto" and result["timezone_source"] == "household"
+    def unreadable():
+        raise RuntimeError("no household row")
+    monkeypatch.setattr(tools.cooker, "household_zone", unreadable)
     result = _parse(floating)
     assert result["timezone"] == "America/Vancouver" and result["timezone_source"] == "env"
     # A floating time is the household's own wall clock, whatever the zone.
@@ -425,7 +432,22 @@ def test_webcal_and_webcals_links_are_https_underneath():
 def test_a_path_the_http_client_itself_rejects_never_reaches_the_log(monkeypatch, caplog, path):
     """http.client's InvalidURL quotes the whole request path in its
     message. The path IS the secret, so the fetch log line must carry the
-    exception's class and the host — never its text."""
+    exception's class and the host — never its text.
+
+    Since 2026-10-23 the fetch percent-encodes the path before it asks
+    (recipe_import._check_url), so these two no longer reach http.client
+    raw; the connection here raises the InvalidURL http.client would have,
+    path and all, so the log rule is still what is tested."""
+    import http.client
+
+    class Refuses:
+        def request(self, method, path, headers=None):
+            raise http.client.InvalidURL(f"URL can't contain control characters. {path!r}")
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(ri, "_open_connection", lambda *a, **k: Refuses())
     monkeypatch.setattr(ri.socket, "getaddrinfo", lambda host, port, **k: [
         (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("142.250.65.78", port)),
     ])
@@ -907,3 +929,83 @@ def test_a_cancellation_naming_its_week_in_utc_still_cancels_a_local_series():
     dates = [e["date"] for e in cf.parse_ics(ics, MON, MON + timedelta(days=20))["events"]]
     assert cancelled.isoformat() not in dates
     assert TUE.isoformat() in dates and (TUE + timedelta(days=14)).isoformat() in dates
+
+
+# ---------- overnight defect hunt, 2026-10-23 ----------
+
+def _utc_only(*events: list[str]) -> str:
+    """A feed with no X-WR-TIMEZONE and every time in UTC — how team and
+    school apps publish."""
+    body = [line for ev in events for line in ev]
+    return "\r\n".join(["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Team app//EN", *body, "END:VCALENDAR", ""])
+
+
+def test_a_utc_only_feed_reads_on_the_households_clock_not_the_servers():
+    # 22:00Z on a September Tuesday is 6pm in Toronto (EDT). On the server's
+    # UTC clock it read as 22:00 — after dinner — and the evening looked free.
+    ics = _utc_only(_vevent(f"DTSTART:{_d(TUE)}T220000Z", f"DTEND:{_d(TUE)}T233000Z", "UID:p", "SUMMARY:Practice"))
+    result = _parse(ics)
+    assert result["timezone"] == "America/Toronto" and result["timezone_source"] == "household"
+    assert [(e["start"], e["end"]) for e in result["events"]] == [("18:00", "19:30")]
+    day = cf.day_contexts(result["events"], [TUE.isoformat()])[TUE.isoformat()]
+    assert day["evening_busy_from"] == "18:00"
+
+
+def test_a_utc_only_feed_follows_the_zone_the_household_set():
+    conn = get_conn()
+    conn.execute("UPDATE households SET timezone = 'America/Vancouver' WHERE id = ?", (DEFAULT_HOUSEHOLD_ID,))
+    conn.commit()
+    conn.close()
+    ics = _utc_only(_vevent(f"DTSTART:{_d(WED)}T010000Z", f"DTEND:{_d(WED)}T020000Z", "UID:p", "SUMMARY:Practice"))
+    result = _parse(ics)
+    # 01:00Z Wednesday is 6pm Tuesday in Vancouver (PDT): the day moves too.
+    assert result["timezone"] == "America/Vancouver"
+    assert [(e["date"], e["start"]) for e in result["events"]] == [(TUE.isoformat(), "18:00")]
+
+
+def test_a_busy_feed_drops_the_far_end_of_the_window_not_a_one_off_listed_last():
+    # Six daily work series listed first fill more than MAX_EVENTS_PER_WINDOW
+    # over the eight-week read; the one-off practice this week comes last in
+    # the feed and used to be the thing that got dropped.
+    start = MON - timedelta(days=30)
+    series = [
+        _vevent(f"DTSTART;TZID=America/Toronto:{_d(start)}T{9 + i:02d}0000",
+                f"DTEND;TZID=America/Toronto:{_d(start)}T{9 + i:02d}3000",
+                "RRULE:FREQ=DAILY", f"UID:standup{i}", f"SUMMARY:Standup {i}")
+        for i in range(6)
+    ]
+    practice = _vevent(f"DTSTART;TZID=America/Toronto:{_d(TUE)}T180000",
+                       f"DTEND;TZID=America/Toronto:{_d(TUE)}T193000", "UID:soccer", "SUMMARY:Soccer practice")
+    ics = _google([line for ev in series for line in ev] + practice)
+    result = cf.parse_ics(ics, MON - timedelta(days=1), MON + timedelta(days=cf.CACHE_DAYS_AHEAD))
+    events = result["events"]
+    assert len(events) <= cf.MAX_EVENTS_PER_WINDOW
+    assert (TUE.isoformat(), "Soccer practice") in _by_title(result)
+    # Whole days only: the last day kept has all six of its standups, and
+    # the near end of the window (the day before Monday) is still there.
+    last = events[-1]["date"]
+    assert sum(1 for e in events if e["date"] == last) == 6
+    assert events[0]["date"] == (MON - timedelta(days=1)).isoformat()
+
+
+def test_a_fortnightly_rule_groups_its_days_by_the_rules_own_week_start():
+    # RFC 5545's own WKST example: the same rule gives different days when
+    # the week starts on Sunday. Google writes WKST=SU.
+    def dates(wkst):
+        ics = _google(_vevent(
+            "DTSTART;TZID=America/Toronto:19970805T090000", "DTEND;TZID=America/Toronto:19970805T100000",
+            f"RRULE:FREQ=WEEKLY;INTERVAL=2;COUNT=4;BYDAY=TU,SU;WKST={wkst}", "UID:r", "SUMMARY:Rule"))
+        return [e["date"] for e in cf.parse_ics(ics, date(1997, 8, 1), date(1997, 9, 30))["events"]]
+    assert dates("MO") == ["1997-08-05", "1997-08-10", "1997-08-19", "1997-08-24"]
+    assert dates("SU") == ["1997-08-05", "1997-08-17", "1997-08-19", "1997-08-31"]
+
+
+def test_every_other_weekend_from_google_lands_on_googles_days():
+    sat = SAT
+    ics = _google(_vevent(f"DTSTART;VALUE=DATE:{_d(sat)}", f"DTEND;VALUE=DATE:{_d(sat + timedelta(days=1))}",
+                          "RRULE:FREQ=WEEKLY;WKST=SU;INTERVAL=2;BYDAY=SA,SU", "UID:kids", "SUMMARY:Kids at Dad's"))
+    got = [e["date"] for e in cf.parse_ics(ics, MON, MON + timedelta(days=27))["events"]]
+    # Sunday-start weeks: this Saturday, then the Sunday AND Saturday of the
+    # week after next — never the Sunday straight after this Saturday.
+    assert got == [sat.isoformat(), (sat + timedelta(days=8)).isoformat(),
+                   (sat + timedelta(days=14)).isoformat(), (sat + timedelta(days=22)).isoformat()]

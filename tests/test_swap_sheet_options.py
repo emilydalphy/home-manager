@@ -2,7 +2,7 @@
 The Plan tab's Swap sheet, on the Week 1 screen's picks (2026-09-18).
 
 Two branches built "three swap picks" the same day — the Week 1 reveal's
-(app/tools/swap_options.py: POST /swap-options, POST /swap-choose with the
+(app/tools/swap_option_picks.py: POST /swap-options, POST /swap-choose with the
 pick's index) and Plan's (a second module and two more routes). The
 integration kept Week 1's and rewired Plan's sheet (shell.js openSwapSheet /
 runSwapPick) onto it. What is here is what Plan's own tests covered and
@@ -23,7 +23,7 @@ import nodeharness
 from app import tools
 # The package re-exports the function under the module's name, so the
 # module itself is reached the way test_week1_carousel reaches it.
-sop = importlib.import_module("app.tools.swap_options")
+sop = importlib.import_module("app.tools.swap_option_picks")
 from test_week1_carousel import DAY1, WEEK_START, _asker, _entry_id, _pick, week  # noqa: F401
 from test_week_seven_tiles import _extract
 

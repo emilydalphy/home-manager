@@ -1,0 +1,38 @@
+{
+ "dish_name": "Tuna Mayo Onigiri",
+ "cuisine": "Japanese",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {"item": "Short-grain white rice", "qty": "2 cups", "category": "pantry"},
+  {"item": "Canned tuna", "qty": "1 can (5 oz)", "category": "pantry"},
+  {"item": "Mayonnaise", "qty": "1 jar", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tsp"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Roasted seaweed sheets (nori)", "qty": "1 package", "category": "pantry", "cook_qty": "4 sheets"}
+ ],
+ "instructions": [
+  "Put the 2 cups rice in a bowl, cover it with cold water, swirl it with your hand and pour the water off. Repeat 3 or 4 times, until the water is only a little cloudy, then drain the rice in a sieve.",
+  "Put the rice in a rice cooker or a heavy pot with 2 1/4 cups cold water and leave it to soak for 20 minutes.",
+  "Cook the rice. In a rice cooker, start it now. In a pot, bring it to a boil over high heat, cover it, turn the heat to the lowest setting and cook for 13 minutes. Take it off the heat and leave the lid on for 10 minutes.",
+  "Meanwhile, drain the tuna well, pressing on it with a fork, and flake it into a small bowl. Mix in the 2 tbsp mayonnaise and 1 tsp soy sauce until there are no big chunks left. It should taste well seasoned, a little salty.",
+  "Cut each of the 4 nori sheets in half to make 8 pieces, and keep them in a dry bag.",
+  "Gently fold the cooked rice into a wide bowl or onto a tray and cover it with a damp towel. Leave it for a few minutes, until you can hold it comfortably. It should still be warm.",
+  "Set out a bowl of water and put the 1 tsp salt in a small dish. Wet your palms, then dab 2 fingertips in the salt and rub it over both palms.",
+  "Scoop about 1/3 cup of rice into one palm and press a dip into the middle. Spoon in an eighth of the tuna mayo, about 1 tbsp, and cover it with another 1/3 cup of rice.",
+  "Cup your bottom hand and bend your top hand into a roof shape. Press gently to make a corner, turn the ball and press again, until you have a neat triangle. Press just firmly enough for it to hold, or the rice turns dense.",
+  "Set it on a plate and make 7 more the same way, wetting and salting your hands each time.",
+  "Wrap a piece of nori around the bottom of each onigiri right before you eat. Serve warm or at room temperature. To pack them for lunch, wrap each one in plastic wrap, pack the nori separately in a dry bag, keep them in an insulated bag with an ice pack and eat them within 6 hours. The rice turns hard in the fridge."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both fill warm, lightly salted short grain rice with canned tuna mixed with Japanese mayonnaise and a little soy sauce, and shape it gently into triangles. No Recipes makes six from 1 1/2 cups of rice, uses 3 tbsp mayo to a small can of tuna, shapes with wet salted hands and wraps them in shiso leaves or nori; Just One Cookbook uses much less mayo, shapes in plastic wrap or a mold, and says to wrap the nori on just before eating and eat packed onigiri within 6 hours. This one follows No Recipes' hand shaping with nori, uses a mayo amount between the two so a 5 oz can fills eight, and keeps Just One Cookbook's packing advice.",
+ "sources": [
+  {"name": "No Recipes", "title": "Tuna Mayo Onigiri", "url": "https://norecipes.com/tuna-mayo-onigiri/", "rating": 4.65, "rating_count": 28, "read": true, "lead": true},
+  {"name": "Just One Cookbook", "title": "Tuna Mayo Onigiri", "url": "https://www.justonecookbook.com/tuna-mayo-onigiri/", "rating": 5, "rating_count": 9, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

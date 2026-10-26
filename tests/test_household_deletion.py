@@ -396,7 +396,7 @@ def test_delete_clears_photos_and_what_the_server_holds_in_memory(client, beta_h
         app_main._save_chat_session(f"h{beta_household}:abc", [{"role": "user", "content": "hi"}])
     app_main._save_chat_session(f"h{DEFAULT_HOUSEHOLD_ID}:keep", [])
     proposals._PROPOSALS[beta_household] = {"p": {}}
-    from app.tools.swap_options import _OPTIONS_CACHE as swap_cache
+    from app.tools.swap_option_picks import _OPTIONS_CACHE as swap_cache
     swap_cache[(beta_household, 9)] = {"at": 0}
     swap_cache[(DEFAULT_HOUSEHOLD_ID, 9)] = {"at": 0}
     try:

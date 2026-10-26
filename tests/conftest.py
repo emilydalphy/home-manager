@@ -102,6 +102,8 @@ _TABLES = [
     # about (schema.sql), so nothing cascades it away — it is wiped here
     # by name like every other table.
     "pre_shop_decisions",
+    # Add receipts (2026-10-22) reference households only.
+    "grocery_add_receipts",
     "grocery_substitutions", "grocery_items", "inventory_items", "member_recipe_feedback", "recipe_notes", "recipe_photos", "recipes",
     "chore_instances", "chores", "chores_profile", "attention_items",
     "member_notes", "member_share_links", "share_links", "household_invites", "facts",
@@ -400,6 +402,17 @@ def pytest_configure(config):
     global _REAL_EPOCH_AT_PIN, _FROZEN_EPOCH_AT_PIN
     pinned = _parse_pin(raw)
     at, offset = _freeze_args(raw)
+    # The SDK's response model is built HERE, before the freeze, because it
+    # cannot be built after it. anthropic defers `Message`'s pydantic schema
+    # to first use, and pydantic recognises a datetime field by comparing
+    # against `datetime.datetime` — which freezegun has swapped for
+    # FakeDatetime by then, so the lazy build raises "Unable to generate
+    # pydantic-core schema for <class 'datetime.datetime'>". That made the one
+    # @real_model_client test (test_chat_sessions_in_db.py's byte-for-byte
+    # round trip) fail under EVERY --today pin and pass unpinned — the pin
+    # failing, not the day. Production has no freezegun, so no app change.
+    from anthropic.types import Message as _SdkMessage
+    _SdkMessage.model_rebuild()
     _REAL_EPOCH_AT_PIN = time.time()
     config._pomona_freezer = freeze_time(at, tz_offset=offset, tick=True)
     config._pomona_freezer.start()
@@ -420,6 +433,9 @@ def pytest_configure(config):
 
 
 def pytest_unconfigure(config):
+    # A collection that was interrupted never reached pytest_collection_finish;
+    # unwind its midnight hold before the session pin it sits inside.
+    _COLLECTION_HOLD.close()
     freezer = getattr(config, "_pomona_freezer", None)
     if freezer is not None:
         nodeharness.unpin_clock()
@@ -819,6 +835,122 @@ def frozen_today():
         yield _freeze
 
 
+# ---------------------------------------------------------------------------
+# A run that crosses midnight (2026-10-23)
+# ---------------------------------------------------------------------------
+# 84 test files open with `TODAY = household_today()` (or `date.today()`) at
+# module scope, and collection imports every one of them before the first
+# test runs. So those constants hold the day the run STARTED, while the app
+# under test reads the clock as it stands. A run that crosses midnight — the
+# household's or the process's — therefore has every later test seeding
+# yesterday and asking about today. Measured the night this was written: two
+# full runs that straddled 04:00 UTC (Toronto midnight) showed 57 and 87
+# failures, and the swap/freezer/carousel/ticked files alone showed 55 when
+# started at 23:58:30 and none at all when started at 00:05. Not a time-of-day
+# bug — the crossing.
+#
+# Rewriting 84 files to read the clock per test would fix today's files and
+# not the 85th, so the run is held to the day it started instead: once either
+# clock's date has moved on from what collection saw, each test is pinned
+# back to the collection instant (through `_pin`, so Python, SQLite and node
+# all agree). Before the crossing nothing changes — this costs a run that
+# does not cross midnight nothing at all.
+#
+# Pinned to the collection instant, NOT "now minus a day": in a UTC process
+# the household's midnight and the process's are four hours apart, and a
+# whole-day shift puts back whichever clock crossed while pushing the other
+# one a day into the past. The collection instant is the one moment both
+# dates are known to be right. If it fell in the last few minutes before
+# either midnight, the pin is drawn back to five minutes short of it, so the
+# ticking clock does not carry a test straight across the line it was pinned
+# to avoid.
+#
+# Composes with every other pin: a `today`/`live_clock` marker means the test
+# chose its own clock and is left alone, and a session `--today` simply makes
+# the collection instant the frozen one (a `sunday-night` pin at 23:30 is the
+# CI job that can cross).
+_COLLECTION_CLOCK = None  # (epoch, process date, household date), set below
+_MIDNIGHT_MARGIN_SECONDS = 300
+_COLLECTION_HOLD = contextlib.ExitStack()
+_HOLDING = False
+# The zone collection's household_today() read (no database yet, so always
+# the column default). Held fixed rather than re-read per test: the check runs
+# BEFORE clean_state restores households.timezone, so re-reading it would see
+# whatever zone the previous test left behind and pin for no reason.
+_COLLECTION_ZONE = ZoneInfo(_cooker.DEFAULT_TIMEZONE)
+
+
+def _collection_zone_today():
+    return _dt.datetime.now(_dt.timezone.utc).astimezone(_COLLECTION_ZONE).date()
+
+
+def pytest_sessionstart(session):
+    # After pytest_configure (so under --today the freeze is already on) and
+    # before collection (so before any module-level TODAY is computed).
+    global _COLLECTION_CLOCK
+    _COLLECTION_CLOCK = (time.time(), _dt.date.today(), _collection_zone_today())
+    # Collection itself takes 10-15 seconds, and a run started inside the
+    # margin could cross while it is still importing — the modules imported
+    # after the line would then make their TODAY on the new day, and the hold
+    # below would pin them back to the old one (17 failures, reproduced at a
+    # 23:59:56 start). So a start inside the margin holds collection too, at
+    # the same drawn-back instant, and every module constant comes from it.
+    held = _held_to_the_starting_day()
+    if held.timestamp() < _COLLECTION_CLOCK[0]:
+        _COLLECTION_HOLD.enter_context(_pin(held))
+
+
+def pytest_collection_finish(session):
+    _COLLECTION_HOLD.close()
+
+
+def _held_to_the_starting_day():
+    """The instant to pin a post-midnight test at: see the block above."""
+    epoch, process_day, home_day = _COLLECTION_CLOCK
+    next_home_midnight = _dt.datetime.combine(
+        home_day + _dt.timedelta(days=1), _dt.time(0), tzinfo=_COLLECTION_ZONE
+    ).timestamp()
+    # The process's own midnight, from its wall clock at the collection
+    # instant. Off by an hour on a clock-change night — harmless, since the
+    # change is at 02:00, a start that early is ~22 hours from midnight, and
+    # min() below then picks the start instant anyway.
+    local = freezegun.api.real_datetime.fromtimestamp(epoch)
+    since_local_midnight = local.hour * 3600 + local.minute * 60 + local.second
+    next_process_midnight = epoch - since_local_midnight + 86400
+    latest_safe = min(next_home_midnight, next_process_midnight) - _MIDNIGHT_MARGIN_SECONDS
+    return freezegun.api.real_datetime.fromtimestamp(min(epoch, latest_safe))
+
+
+@pytest.fixture(autouse=True)
+def _a_run_that_crosses_midnight(request):
+    # Named to sort first: autouse fixtures of one scope run in name order,
+    # and clean_state's seeding should already see the held clock.
+    if (
+        _COLLECTION_CLOCK is None
+        or request.node.get_closest_marker("live_clock") is not None
+        or request.node.get_closest_marker("today") is not None
+    ):
+        yield
+        return
+    _, process_day, home_day = _COLLECTION_CLOCK
+    if _dt.date.today() == process_day and _collection_zone_today() == home_day:
+        yield
+        return
+    global _HOLDING
+    with _pin(_held_to_the_starting_day()):
+        _HOLDING = True
+        try:
+            yield
+        finally:
+            _HOLDING = False
+
+
+def held_past_midnight() -> bool:
+    """True inside a test this hold has pinned. For the few tests that assert
+    an UNPINNED run leaves every clock alone — after a crossing it doesn't."""
+    return _HOLDING
+
+
 @pytest.fixture(autouse=True)
 def _drafting_at_the_start_of_the_day(request, monkeypatch):
     """
@@ -1199,3 +1331,21 @@ def _agent_ast():
     if not _AGENT_AST:
         _AGENT_AST.append(_ast.parse(agent_source()))
     return _AGENT_AST[0]
+
+
+@pytest.fixture
+def snacks_as_the_model_sent_them(monkeypatch):
+    """
+    Stand the everyday-snack-list passes down (agent._hold_counts ->
+    everyday_snacks.enforce_snacks_from_list, and fill_held_snacks, which
+    re-picks a held snack from the list before the model's quick pick), so
+    a snack name the stubbed model (or its stubbed re-pick) sent survives. Since 2026-10-21 an invented snack is replaced by
+    one from data/everyday_snacks.json; a test of ANOTHER pass (the swap
+    tool, the grocery list, the no-repeat re-pick, the variety cap) that
+    drives the planner with its own snack names asks for this so it keeps
+    testing that pass. The list itself is tested in test_everyday_snacks.py.
+    """
+    from app.tools import everyday_snacks
+    monkeypatch.setattr(everyday_snacks, "enforce_snacks_from_list",
+                        lambda *a, **k: {"replaced": [], "left": [], "skipped": "test"})
+    monkeypatch.setattr(everyday_snacks, "fill_held_snacks", lambda plan_id, held, *a, **k: held)

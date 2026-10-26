@@ -215,7 +215,12 @@ def test_a_forged_member_id_is_a_signature_failure_not_a_person(client, two_adul
     forged = f"{sid}.{household}.{issued}.{two_adults['Emily']}.{sig}"
     assert security.read_session_parts(forged) is None
     assert security.read_session_member(forged) is None
+    # Clear first: set() without a domain files the forgery BESIDE the real
+    # cookie (stored under "testserver.local"), both are sent, and the server
+    # reads the real one — so this went red without the app changing at all.
+    client.cookies.clear()
     client.cookies.set(security.COOKIE_NAME, forged)
+    assert len([c for c in client.cookies.jar if c.name == security.COOKIE_NAME]) == 1
     assert client.get("/api/whoami").status_code == 401, "an edited cookie is no cookie at all"
 
 
