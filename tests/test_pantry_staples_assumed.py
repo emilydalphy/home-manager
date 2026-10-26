@@ -171,12 +171,16 @@ def test_a_tick_puts_it_in_its_aisle_and_an_untick_takes_it_off(dal_week):
 def test_the_sort_queue_and_the_trip_never_see_an_untouched_staple(dal_week):
     names = {i["item"] for i in tools.list_grocery_list()}
     assert "Basmati rice" not in names and "Soy sauce" not in names
-    # A second week's rice joins this week's line — one bag per name.
+    # A second week's rice keeps to its own line (integration hunt,
+    # 2026-10-26): a staple carries its week's amount, and summing the two
+    # weeks is what Monday's sweep could never take back. Read as the list
+    # of rows, not by name, so the count is what the section really holds.
     tools.add_recipe("Fried rice", ingredients=[{"item": "Basmati rice", "qty": "1 cup", "category": "pantry"}])
     plan_b = tools.create_weekly_plan(_monday(1))["weekly_plan_id"]
     tools.plan_meal(tools._week_dates(_monday(1))[0], "Fried rice", slot="dinner", weekly_plan_id=plan_b)
     tools.approve_weekly_plan(plan_b, approved_by="Emily")
-    assert [n for n in _sections() if "rice" in n.lower()] == ["Basmati rice"]
+    rows = [sp["item"] for sp in tools.list_spices_this_week()["items"] if "rice" in sp["item"].lower()]
+    assert rows == ["Basmati rice", "Basmati rice"]
 
 
 def test_a_person_adding_a_staple_buys_it():

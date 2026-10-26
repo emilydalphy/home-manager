@@ -84,8 +84,20 @@ def test_meat_frozen_at_the_shop_is_not_bought_again_for_the_brought_over_dinner
     brought over. The chicken went in the freezer at the shop (its fridge
     move still waiting), so it stays bought."""
     entry = _frozen_at_the_shop(frozen_today)
-    frozen_today("2026-11-08 09:00:00")
+    frozen_today("2026-11-04 09:00:00")
     assert "chicken thighs" in bring_over.bought_items([entry])
+
+
+def test_a_fridge_move_left_unticked_for_days_is_not_trusted(frozen_today):
+    """GUARD (review, 2026-10-26). The move was dated Monday and never
+    ticked; six days on it may well have been done untold, and chicken
+    thawed that long is bought again (the use-by rule), not counted frozen.
+    Two days on, the move is still read as the food being frozen."""
+    entry = _frozen_at_the_shop(frozen_today)
+    frozen_today("2026-11-04 09:00:00")  # the move's date + 2
+    assert "chicken thighs" in bring_over.bought_items([entry])
+    frozen_today("2026-11-08 09:00:00")  # the move's date + 6
+    assert "chicken thighs" not in bring_over.bought_items([entry])
 
 
 def test_meat_thawed_in_the_fridge_last_week_is_bought_again(frozen_today):

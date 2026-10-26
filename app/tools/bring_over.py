@@ -53,7 +53,7 @@ from __future__ import annotations
 import json
 import logging
 import re
-from datetime import date
+from datetime import date, timedelta
 
 from ..db import get_conn
 from ._shared import household_id
@@ -150,6 +150,11 @@ def _statuses_for(conn, entry_ids: list[int]) -> list[str]:
     ]
 
 
+# How long an unticked fridge move is still read as "the food is in the
+# freezer" (bought_items). Past it, the move may have happened untold.
+PENDING_MOVE_TRUSTED_DAYS = 2
+
+
 def bought_items(entry_ids: list[int], conn=None) -> set[str]:
     """
     The ingredient names last week's list bought for these entries — every
@@ -203,14 +208,18 @@ def bought_items(entry_ids: list[int], conn=None) -> set[str]:
             # still pending for one of these meals says the food is in the
             # freezer, so it is not stale (integration hunt, 2026-10-26: the
             # chicken frozen at the shop was bought again for the dinner
-            # brought over to the next Monday).
+            # brought over to the next Monday). Only a move dated at most
+            # PENDING_MOVE_TRUSTED_DAYS ago: an older one nobody ticked may
+            # well have been done without the tick, and chicken thawed for
+            # days is the use-by rule's to answer (re-bought), not this.
             if stale - fresh:
                 from . import defrost as _defrost
 
+                trusted_from = (date.fromisoformat(today) - timedelta(days=PENDING_MOVE_TRUSTED_DAYS)).isoformat()
                 for r in conn.execute(
                     f"SELECT description FROM prep_tasks WHERE household_id = ? AND task_type = 'defrost' "
-                    f"AND status = 'pending' AND meal_plan_entry_id IN ({marks})",
-                    (household_id(), *ids),
+                    f"AND status = 'pending' AND task_date >= ? AND meal_plan_entry_id IN ({marks})",
+                    (household_id(), trusted_from, *ids),
                 ).fetchall():
                     thawing = _defrost.thawed_item(r["description"])
                     fresh.update(k for k in stale if _defrost._matches_selected_item(thawing, {k}))

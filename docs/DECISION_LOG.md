@@ -25,8 +25,10 @@ why*, not duplicating the diff.
   to sauces/pantry staples, which carry amounts, so next week approved on
   Sunday summed its noodles onto this week's waiting line ("3 boxes" for one
   lasagna, never swept). Why: each branch assumed the other's old model.
-  Open: on that Sunday the pantry section shows both weeks' rows (Monday's
-  sweep takes last week's) — same as needed lines already do.
+  A pending move counts only if dated at most 2 days ago (an older unticked
+  one may have been done untold: re-bought). Open: (2) brings back a one-day
+  duplicate row — "Soy sauce 3 tbsp" twice on the Sunday both weeks are live,
+  until Monday's sweep; reviewer's follow-up: group by name at display time.
 - **Second 200 library recipes: Emily's three calls** (2026-10-25; branch
   `recipe-library-200b`; doc `docs/RECIPE_LIBRARY_SPOTCHECK_200B.md`).
   Bistec a la Mexicana is two dishes (the rated slow simmer, plus "Quick
