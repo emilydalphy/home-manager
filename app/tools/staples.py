@@ -797,6 +797,11 @@ def add_staple(
                     (today, staple_id, household_id()),
                 )
         created = True
+    if line is not None and on_list and line["staple_id"] is None and line["source_weekly_plan_id"] is not None:
+        # Made from a week's line: that line stays the plan's (below), and
+        # it is what covers this staple this trip — sync_due_staples reads
+        # this row, because a week's line by name alone no longer does.
+        _event(conn, staple_id, "added", "shop", grocery_item_id=line["id"])
     if line is not None and line["staple_id"] is None and line["source_weekly_plan_id"] is None:
         # The tapped line becomes the staple's line, so buying it teaches
         # this staple and sync_due_staples sees it covered by id. A line
@@ -804,7 +809,8 @@ def add_staple(
         # (grocery.set_aside_carried_over_items) only moves lines with no
         # staple_id, and the meals need it whatever the staple decides. Its
         # name on the list still covers the staple in sync, and buying it
-        # still teaches the staple by name.
+        # still teaches the staple by name (the 'added' row above is what
+        # makes the name cover it).
         conn.execute(
             "UPDATE grocery_items SET staple_id = ? WHERE id = ? AND household_id = ? AND staple_id IS NULL",
             (staple_id, line["id"], household_id()),
@@ -1544,6 +1550,16 @@ def sync_due_staples() -> dict:
     nothing. Idempotent; safe to call on every read of the list, which is
     where it is called from (get_grocery_list_by_section and
     get_grocery_list_by_store, for status 'needed').
+
+    A WEEK'S line does not cover it (defect hunt, 2026-10-24). A recipe's
+    "Milk · 1/2 cup" is what that dinner uses, not the household's weekly
+    2 L: counted as cover, the staple never came on, the list asked for
+    half a cup, and ticking it then taught the staple it had been bought.
+    The staple's line joins the week's when the amounts add up — the same
+    line the other order makes (a staple's line the approval then adds a
+    meal's share to), so "We have plenty" trims it back to the meals'
+    part — and stands beside it when they don't ("2 L" beside "1/2 cup").
+    A person's own line, or a line already this staple's, still covers it.
     """
     # The household's day and zone, read before this function's own
     # connection opens (each helper opens one of its own).
@@ -1561,11 +1577,29 @@ def sync_due_staples() -> dict:
         conn.close()
         return {"added": []}
     live = conn.execute(
-        "SELECT item, staple_id FROM grocery_items WHERE household_id = ? AND status IN ('needed', 'in_cart')",
+        "SELECT item, staple_id, source_weekly_plan_id, excluded_from_list FROM grocery_items "
+        "WHERE household_id = ? AND status IN ('needed', 'in_cart')",
         (household_id(),),
     ).fetchall()
-    live_keys = {_grocery._merge_key(row["item"]) for row in live}
+    # What covers a staple by name: a line the household's own (no week
+    # behind it), or one set aside as "getting it elsewhere" — they have
+    # said where that comes from. A week's line alone does not (docstring).
+    live_keys = {
+        _grocery._merge_key(row["item"]) for row in live
+        if row["source_weekly_plan_id"] is None or row["excluded_from_list"]
+    }
     live_staple_ids = {row["staple_id"] for row in live if row["staple_id"]}
+    # A staple made from a week's line still on the list ("Make it a
+    # staple" on a plan row, add_staple): that line is this trip's answer.
+    made_from_live = {
+        row["staple_id"]
+        for row in conn.execute(
+            "SELECT e.staple_id FROM staple_events e JOIN grocery_items g "
+            "ON g.id = e.grocery_item_id AND g.household_id = e.household_id "
+            "WHERE e.household_id = ? AND e.kind = 'added' AND g.status IN ('needed', 'in_cart')",
+            (household_id(),),
+        ).fetchall()
+    }
     # A line taken off today — by the staple buttons, ⋯ → Remove, or a
     # pre-shop drop — is this trip's answer; don't ask again until
     # tomorrow at the earliest. Older removed lines are just leftovers of
@@ -1598,7 +1632,8 @@ def sync_due_staples() -> dict:
     }
     added = []
     for s in due:
-        if s["id"] in live_staple_ids or s["id"] in answered_today or _grocery._merge_key(s["item"]) in live_keys:
+        if (s["id"] in live_staple_ids or s["id"] in answered_today or s["id"] in made_from_live
+                or _grocery._merge_key(s["item"]) in live_keys):
             continue
         # A spice waits for a recipe to want it (the "Spices this week"
         # card pre-ticks it then) — never a line of its own. Module note.
@@ -1615,7 +1650,17 @@ def sync_due_staples() -> dict:
         if not (s["item"] or "").strip():
             logger.debug("Skipping a blank staple item name for staple_id %s", s["id"])
             continue
-        added.append(_put_on_list(conn, s))
+        put = _put_on_list(conn, s)
+        if put.get("merged"):
+            # Joined a week's line: the line is now the staple's with the
+            # meals' share on it, exactly as when the staple came first —
+            # so it reads "Probably running low", and the staple's answers
+            # trim it back to the meals' part (_trim_to_the_weeks_part).
+            conn.execute(
+                "UPDATE grocery_items SET added_by = ? WHERE id = ? AND household_id = ?",
+                (ADDED_BY_STAPLE, put["item_id"], household_id()),
+            )
+        added.append(put)
     conn.commit()
     conn.close()
     return {"added": added}
@@ -1649,4 +1694,4 @@ def _put_on_list(conn, s) -> dict:
         "UPDATE grocery_items SET staple_id = ? WHERE id = ? AND household_id = ?",
         (s["id"], res["item_id"], household_id()),
     )
-    return {"item_id": res["item_id"], "item": s["item"], "staple_id": s["id"]}
+    return {"item_id": res["item_id"], "item": s["item"], "staple_id": s["id"], "merged": bool(res.get("merged"))}

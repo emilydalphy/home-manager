@@ -454,6 +454,13 @@ why*, not duplicating the diff.
   prep-sessions; /discard keeps its own id handling; slot-recommendation
   never used the key. Start over's "this week's answers" also counts a
   same-key plan as sharing them (week_intake is keyed by week_start).
+- **A due staple comes on beside a week's line for the same thing** (2026-10-24;
+  branch `overnight/grocery-staple-beside-week`; tests
+  `tests/test_staple_beside_a_weeks_line.py`). `sync_due_staples` counted a
+  recipe's "Milk · 1/2 cup" as cover, so the weekly 2 L never reached the list
+  and the tick taught the staple it was bought. Only a person's own line, an
+  "elsewhere" line, or the plan row a staple was made from covers it now; the
+  staple's line joins the week's when amounts add (as in the other order).
 - **A staple's line sheds an ended week's share too** (2026-10-23, overnight;
   branch `overnight/staple-share-asked-not-added`, on top of
   `overnight/hunt-listedit-2026-10-22b`; tests `tests/test_staple_line_week_ends.py`).
