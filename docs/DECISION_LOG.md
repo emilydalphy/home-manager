@@ -1026,6 +1026,22 @@ why*, not duplicating the diff.
   another household's real errors behind exit 2; a missing `usage` is its own
   line; IncompleteRead is exit 2; whole-loop failures file as
   `morning_text_loop` / `evening_nudge_loop`.
+- **Red-on-a-weekday and red-across-midnight tests fixed, test-only**
+  (2026-10-21; branch `overnight/sunday-monday-red-tests`). No app bug: each
+  failure was the test, the app's refusal/omission was correct.
+  `test_chat_sessions_in_db` round trip failed under EVERY `--today` pin —
+  anthropic builds `Message`'s pydantic schema lazily and freezegun's
+  FakeDatetime breaks that build; conftest now builds it before the freeze.
+  `test_demo_household` (beef off the list from Thursday: approval buys only
+  from today since 2026-10-18) now `@on_the_weeks_monday()`;
+  `test_tonight_still_good`'s swap route test (Wednesday "tonight" refused
+  as gone by from Thursday) pinned to that Wednesday afternoon. Four files
+  reading the day once at import (`test_swap_in_place`,
+  `test_drop_dish_self_solving`, `test_open_dinner_reaches_the_bell`,
+  `test_grocery_line_to_zero`) failed 59 tests when a run crossed the
+  household's midnight; each now pins itself to that day at household 10:00.
+  `test_cook_ahead_approval`'s already-chained test (red from Wednesday, on
+  main too) joined its siblings under `@ON_MONDAY`.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

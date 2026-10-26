@@ -38,7 +38,7 @@ import pytest
 
 from app import tools
 from app.db import get_conn
-from conftest import household_today
+from conftest import household_pin, household_today
 
 REPO = Path(__file__).resolve().parent.parent
 NOTIFICATIONS_PY = (REPO / "app" / "tools" / "notifications.py").read_text(encoding="utf-8")
@@ -47,6 +47,11 @@ NOTIFICATIONS_PY = (REPO / "app" / "tools" / "notifications.py").read_text(encod
 # "tonight" on households.timezone and the morning text is built for the
 # household's own local day. See conftest.household_today.
 TODAY = household_today()
+# The whole file runs ON TODAY, at the household's 10:00. TODAY is read once,
+# at collection; unpinned, a run that crossed the household's midnight
+# between collection and these tests met an app that (rightly) treated
+# "TODAY" as gone by — 59 failures across four files, 2026-10-21.
+pytestmark = pytest.mark.today(household_pin(10, on=TODAY))
 ISO_TODAY = TODAY.isoformat()
 ISO_TOMORROW = (TODAY + dt.timedelta(days=1)).isoformat()
 WEEK_START = (TODAY - dt.timedelta(days=1)).isoformat()
