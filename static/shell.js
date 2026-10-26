@@ -2923,6 +2923,17 @@
   // starts the line or appears nowhere in it).
   function dayNodeWhyHtml(move, state, metaLine) {
     var bits = [];
+    // An allergy saved since the week was approved ("Has peanut, which Theo
+    // can't have — swap it on Plan", moves.allergy_line) leads the row on a
+    // line of its own in the allergy-clash style (.day-node-allergy), not
+    // after "Start by 7:35" in the quiet grey (Emily, 2026-10-26). The
+    // reason carries the same words first for other readers; taken out
+    // here so the row doesn't say it twice.
+    var allergyLine = String(move.allergy_line || '');
+    var reason = String(move.reason || '');
+    if (allergyLine && reason.indexOf(allergyLine) === 0) {
+      reason = reason.slice(allergyLine.length).replace(/^ · /, '');
+    }
     if (move.kind === 'cook' && state !== 'done') {
       var start = (move.chips || []).filter(function (c) { return /^Start/.test(c); })[0];
       if (start) bits.push(start);
@@ -2930,9 +2941,12 @@
     // The double-batch line ("Cooking for 6 — covers tonight and leftovers
     // on Thursday") — a fact about the cook, not the planner explaining
     // itself.
-    if (move.reason && String(metaLine || '').indexOf(move.reason) === -1) bits.push(move.reason);
-    if (!bits.length) return '';
-    return '<span class="day-node-meta day-node-why">' + escapeHtml(bits.join(' · ')) + '</span>';
+    if (reason && String(metaLine || '').indexOf(reason) === -1) bits.push(reason);
+    var allergyHtml = (allergyLine && state !== 'done')
+      ? '<span class="day-node-meta day-node-why day-node-allergy">' + escapeHtml(allergyLine) + '</span>'
+      : '';
+    if (!bits.length) return allergyHtml;
+    return allergyHtml + '<span class="day-node-meta day-node-why">' + escapeHtml(bits.join(' · ')) + '</span>';
   }
 
   function dayStripNodeHtml(move, state, text) {

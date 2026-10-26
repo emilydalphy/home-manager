@@ -128,6 +128,25 @@ why*, not duplicating the diff.
   - Not built: the passphrase prompt after taking someone out. There's no
     in-app way to change a passphrase (only `create_household.py
     --reset-passphrase`), so the button would have nowhere to go.
+- **Allergy, diet and library-check calls** (Emily 2026-10-26: went with the
+  picks; branch `calls-1026/allergy-library`; tests
+  `tests/test_calls_1026_allergy_library.py`).
+  - Gluten/celiac holds soba, yakisoba and injera (`_WHEAT_WORDS`); plain
+    "buckwheat noodles" too. Believed only when the line says 100% buckwheat
+    / juwari soba / 100% teff injera, or gluten-free. Oyster sauce was already
+    held (2026-10-26 library audit).
+  - Today's after-approval allergy line leads the row on its own line in the
+    draft's allergy-clash style (`--warn-ink`, 600; `--ink` on the tinted Now
+    row for contrast). Moves carry `allergy_line`; the reason keeps it too.
+  - A serving line ("Serve with roti, naan or rice") is no longer a "step uses
+    X, which isn't on the list" finding — from the serving word to the end of
+    the sentence, the same clauses the list repair already ignores.
+  - Green Papaya Salad is `main_protein` "fish", not "vegetarian" (batch file,
+    seed list, and `db._retag_library_proteins` for rows already filed). It
+    was the only meatless-tagged library dish with meat or fish.
+  - The six recipe style checks (`plan_quality._STYLE_RULES`) skip dishes whose
+    library entry is a researched seed dish; a household's own written recipe
+    is still checked, filed to the library or not.
 
 - **The iPhone app's id is `com.heypomona.app`** (2026-10-25, Emily's pick
   to match her heypomona domain; branch `overnight/bundle-id-heypomona`).

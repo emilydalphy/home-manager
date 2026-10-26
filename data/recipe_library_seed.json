@@ -282,7 +282,7 @@
   {"dish_name": "Yellow Curry Shrimp", "dish_key": "yellow curry shrimp", "cuisine": "Thai", "meal": "dinner", "main_protein": "shrimp", "why": "A mild turmeric curry with potatoes."},
   {"dish_name": "Pad Prik King", "dish_key": "pad prik king", "cuisine": "Thai", "meal": "dinner", "main_protein": "pork", "why": "Pork and green beans in a dry red curry paste."},
   {"dish_name": "Pad Woon Sen", "dish_key": "pad woon sen", "cuisine": "Thai", "meal": "dinner", "main_protein": "eggs", "why": "Glass noodles stir-fried with egg and vegetables."},
-  {"dish_name": "Green Papaya Salad", "dish_key": "green papaya salad", "cuisine": "Thai", "meal": "lunch", "main_protein": "vegetarian", "why": "Crunchy, sour and spicy, no stove needed."},
+  {"dish_name": "Green Papaya Salad", "dish_key": "green papaya salad", "cuisine": "Thai", "meal": "lunch", "main_protein": "fish", "why": "Crunchy, sour and spicy, no stove needed."},
   {"dish_name": "Thai Beef Salad", "dish_key": "thai beef salad", "cuisine": "Thai", "meal": "lunch", "main_protein": "beef", "why": "Seared steak with herbs and lime."},
   {"dish_name": "Thai Noodle Soup", "dish_key": "thai noodle soup", "cuisine": "Thai", "meal": "lunch", "main_protein": "pork", "why": "A clear noodle soup with pork and greens."},
   {"dish_name": "Glass Noodle Salad", "dish_key": "glass noodle salad", "cuisine": "Thai", "meal": "lunch", "main_protein": "shrimp", "why": "A light, tangy noodle salad with shrimp."},

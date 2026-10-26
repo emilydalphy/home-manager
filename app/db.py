@@ -1441,7 +1441,31 @@ def _run_migrations(conn):
     _migrate_chore_modes(conn)
     _backfill_chore_done_on(conn)
     _backfill_primary_member(conn)
+    _retag_library_proteins(conn)
     _run_once_data_migrations(conn)
+
+
+# Library dishes filed with the wrong main_protein, put right in the batch
+# files and here for the rows already filed (file_entry never overwrites a
+# filled column, so refiling can't). (dish_key, wrong, right). Emily,
+# 2026-10-26: Green Papaya Salad has fish sauce, so it isn't vegetarian.
+_LIBRARY_PROTEIN_RETAGS = (
+    ("green papaya salad", "vegetarian", "fish"),
+)
+
+
+def _retag_library_proteins(conn):
+    """Idempotent and run every startup: only a row still carrying the
+    wrong tag is touched, so a later deliberate change is never undone."""
+    if not conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'recipe_library'"
+    ).fetchone():
+        return
+    for key, wrong, right in _LIBRARY_PROTEIN_RETAGS:
+        conn.execute(
+            "UPDATE recipe_library SET main_protein = ? WHERE dish_key = ? AND main_protein = ?",
+            (right, key, wrong),
+        )
 
 
 # Data migrations that must run exactly ONCE per database, unlike every
