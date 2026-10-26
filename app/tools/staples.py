@@ -71,7 +71,7 @@ import statistics
 from datetime import date, timedelta
 
 from ..db import get_conn
-from ._shared import household_id
+from ._shared import household_id, require_household_row
 from . import grocery as _grocery
 from . import quantities as _quantities
 from . import recipes as _recipes
@@ -422,6 +422,21 @@ def add_grocery_item_for_chat(
     see CLAUDE.md's Decision log, 2026-09-15 ("Shop tab behaviour
     unchanged").
     """
+    # The tool's schema doesn't declare source_weekly_plan_id, but an
+    # undeclared key reaches here untouched (agent.read_tool_input), so the
+    # model can send one. Another household's plan id would stamp this
+    # household's line as that plan's ingredient — merged, cleared and
+    # recomputed by a week that isn't theirs. Checked HERE, at the one
+    # untrusted door, rather than in grocery.add_grocery_item, which the
+    # ingest calls mid-transaction with plans of its own.
+    if source_weekly_plan_id is not None:
+        conn = get_conn()
+        try:
+            require_household_row(
+                conn, "weekly_plans", source_weekly_plan_id, label="weekly plan", close_on_miss=False,
+            )
+        finally:
+            conn.close()
     result = _grocery.add_grocery_item(
         item, quantity=quantity, category=category, added_by=added_by,
         source_weekly_plan_id=source_weekly_plan_id, quantity_mode=quantity_mode,

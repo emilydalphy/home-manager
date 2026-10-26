@@ -745,6 +745,25 @@ why*, not duplicating the diff.
   model's report, so "Lasagna Wednesday, as you asked, Wednesday left free."
   and "I moved Lamb Curry to Monday dinner" were said of dishes nowhere on
   the week.
+- **Every id-taking chat tool is now attacked with another household's id**
+  (2026-10-24; branch `overnight/test-gaps-chat-tools-1024`; tests
+  `tests/test_chat_tool_isolation.py`). It found two: `hold_thing` took a
+  foreign `member_id` and showed that household's adult as "said by" (their
+  name, on B's Today), and the chat's `add_grocery_item` stamped B's line with
+  A's plan as `source_weekly_plan_id`; review added `set_slot_need`, which
+  stored A's `away_stretch_id` and `for_member_ids`. All now
+  `require_household_row` first
+  (the grocery one in `add_grocery_item_for_chat` only — the ingest is
+  trusted); the held-things join is scoped too. Why: neither arg is in the
+  tool schema, but `agent.read_tool_input` passes undeclared keys through, so
+  the model can send them. A new tool with an id arg fails the test until it
+  is classified — read through `*_for_chat(**kwargs)` wrappers to the real
+  function, which is how `plan_meal`'s `weekly_plan_id` got in. Also found:
+  `require_household_row` closes the connection on a miss, which took a
+  caller's open transaction away (hold_thing's passed `conn`; set_slot_need's
+  rollback then raised and hid the refusal) — it now takes
+  `close_on_miss=False` for those callers.
+
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
