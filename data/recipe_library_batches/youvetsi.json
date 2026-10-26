@@ -1,0 +1,52 @@
+{
+ "dish_name": "Youvetsi",
+ "cuisine": "Greek",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 150,
+ "ingredients": [
+  {"item": "Beef chuck", "qty": "1.5 lbs", "category": "meat/seafood"},
+  {"item": "Kosher salt", "qty": "1 1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Olive oil", "qty": "5 tbsp", "category": "pantry"},
+  {"item": "Red onion", "qty": "1", "category": "produce"},
+  {"item": "Carrot", "qty": "1", "category": "produce"},
+  {"item": "Tomato paste", "qty": "1 can (6 oz)", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Dry red wine", "qty": "1 bottle", "category": "other", "cook_qty": "1/2 cup"},
+  {"item": "Chopped tomatoes", "qty": "1 can (14 oz)", "category": "pantry"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1/2 tsp"},
+  {"item": "Cinnamon stick", "qty": "1", "category": "pantry"},
+  {"item": "Orzo", "qty": "1 box (16 oz)", "category": "pantry", "cook_qty": "1 1/2 cups"},
+  {"item": "Parmesan", "qty": "1 wedge (4 oz)", "category": "dairy", "cook_qty": "1/2 cup grated"}
+ ],
+ "instructions": [
+  "Pat the beef dry and cut it into 1 1/2 inch chunks if it isn't already. Sprinkle 3/4 tsp of the salt and the 1/2 tsp pepper over it.",
+  "Finely chop the onion. Peel the carrot and slice it into rounds about 1/2 inch thick.",
+  "Heat 3 tbsp of the olive oil in a large pot over medium high until it shimmers. Add half the beef in a single layer and leave it alone for about 3 minutes, until the underside is crusty brown and lets go of the pot. Turn the pieces and brown the other sides for about 3 minutes. Transfer them to a plate. Stand back a little. It'll spatter.",
+  "Brown the rest of the beef the same way and add it to the plate.",
+  "Turn the heat to medium low. Add the onion and carrot and cook, stirring now and then, for about 5 minutes, until the onion is soft. Scrape up the browned bits as you stir.",
+  "Stir in the 1 tbsp tomato paste and cook for about 1 minute, until it turns a shade darker.",
+  "Add the 1/2 cup red wine and let it bubble for about 2 minutes, until it has cooked down by about half and the sharp smell of alcohol is gone.",
+  "Return the beef to the pot with any juices from the plate. Add the chopped tomatoes, the 1/2 tsp sugar, the cinnamon stick, 1/2 tsp of the salt and enough water to just cover the meat, about 2 cups.",
+  "Bring it to a simmer, cover and turn the heat to low. Cook for about 1 1/2 hours, stirring now and then, until a chunk of beef breaks apart easily with a fork. If the sauce gets thick before the beef is tender, add a splash of water.",
+  "When the beef has about 20 minutes left, heat the oven to 350°F (180°C) and put a kettle of water on.",
+  "Meanwhile, heat the last 2 tbsp olive oil in a large skillet over medium. Add the 1 1/2 cups orzo and stir it for 3 to 4 minutes, until it's golden and smells toasty. Transfer it into a 9 by 13 inch baking dish.",
+  "Fish the cinnamon stick out of the stew. Pour the beef and sauce over the orzo, add 2 1/2 cups of the boiling water and the last 1/4 tsp salt, and stir. The orzo should be just covered with liquid.",
+  "Cover the dish tightly with foil and bake for 25 minutes.",
+  "Take off the foil and stir. If it looks dry, add a splash of hot water. Bake it uncovered for about 15 minutes, until the orzo is tender and the top is browned at the edges.",
+  "Let it rest for 10 minutes. Meanwhile, grate the Parmesan. That should be about 1/2 cup.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the grated Parmesan over the top."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three brown the beef, soften onion, build a tomato sauce with a cinnamon stick, braise the beef until tender, then finish the orzo in the oven in that sauce with extra water and serve it with grated hard cheese. My Greek Dish (the lead) adds carrot, tomato paste, red wine and a little sugar, toasts the orzo in oil first, uses about 3 cups of liquid per cup of orzo and bakes it covered then uncovered; Cookingorgeous braises the beef in the oven for 2 hours and adds bay, paprika and nutmeg, and The Hungry Bites adds leek, allspice and cloves. The lead simmers veal for 45 minutes; with beef chuck the honest time is closer to 1 1/2 hours. The lead fries in 1/2 cup of olive oil; this uses 5 tbsp, and Parmesan (from Cookingorgeous) stands in for kefalotyri, which is harder to find.",
+ "sources": [
+  {"name": "My Greek Dish", "title": "Giouvetsi recipe (Greek Beef stew with Orzo pasta)", "url": "https://www.mygreekdish.com/recipe/giouvetsi-beef-stew-with-orzo-pasta/", "rating": 4.7, "rating_count": 834, "read": true, "lead": true},
+  {"name": "The Hungry Bites", "title": "Greek Beef Stew with Orzo (Youvetsi)", "url": "https://www.thehungrybites.com/greek-beef-stew-with-orzo-pasta-youvetsi", "rating": 4.9, "rating_count": 11, "read": true, "lead": false},
+  {"name": "Cookingorgeous", "title": "Youvetsi (Greek Beef Stew with Orzo)", "url": "https://cookingorgeous.com/blog/youvetsi-greek-beef-and-orzo-stew/", "rating": 5.0, "rating_count": 3, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
