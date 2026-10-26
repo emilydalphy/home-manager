@@ -276,6 +276,8 @@ _MIGRATIONS = [
     # back as a measured "called nothing".
     ("chat_turns", "tools_recorded", "INTEGER NOT NULL DEFAULT 0"),
     ("chat_turns", "theme", "TEXT NOT NULL DEFAULT ''"),
+    # Nullable on purpose: NULL is "ran before the column, on Sonnet".
+    ("chat_turns", "model", "TEXT"),
     ("held_things", "ask_text", "TEXT NOT NULL DEFAULT ''"),
     ("chores", "category", "TEXT NOT NULL DEFAULT 'cleaning'"),
     ("chores", "rotation_member_ids_json", "TEXT NOT NULL DEFAULT '[]'"),

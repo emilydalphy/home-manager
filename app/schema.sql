@@ -1904,6 +1904,11 @@ CREATE TABLE IF NOT EXISTS chat_turns (
     -- thirteen strings; the message the label was read from is never
     -- stored, same rule as the rest of this table.
     theme TEXT NOT NULL DEFAULT '',
+    -- The model the turn ran on (agent.CHAT_MODEL, or the fallback that
+    -- answered), so chat's cost is priced at the right rate. NULL on every
+    -- row written before chat moved to Haiku (2026-10-25): those ran on
+    -- Sonnet, and usage._chat_cost_by_model prices them so.
+    model TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

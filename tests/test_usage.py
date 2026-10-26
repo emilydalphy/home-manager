@@ -250,10 +250,18 @@ def test_a_real_week_of_chat_is_priced_in_the_summary(signed_in, monkeypatch):
     of the summary as money, which is the number this ticket exists for.
     """
     monkeypatch.setattr(main, "run_agent_turn", _fake_turn_returning())
-    signed_in.post(
-        "/api/chat",
-        json={"session_id": "default", "message": "hello"},
-    )
+    # A turn's usage is a ContextVar, and one left by an earlier test's real
+    # run_agent_turn would be what this stubbed turn records -- its model
+    # included, which is what this test prices by.
+    from app import agent
+    token = agent.LAST_TURN_USAGE.set({})
+    try:
+        signed_in.post(
+            "/api/chat",
+            json={"session_id": "default", "message": "hello"},
+        )
+    finally:
+        agent.LAST_TURN_USAGE.reset(token)
 
     conn = get_conn()
     conn.execute(
@@ -265,14 +273,16 @@ def test_a_real_week_of_chat_is_priced_in_the_summary(signed_in, monkeypatch):
 
     summary = tools.get_usage_summary(days=7)
     # 1000 in + 30000 cached reads + 2000 cache writes + 500 out, at
-    # Haiku 4.5 list prices -- chat's model since 2026-10-25
-    # (usage._CHAT_PRICED_MODEL). The cache *write* is deliberately
-    # non-zero: it is the priciest input class, and a summary that dropped
-    # it would still look plausible.
+    # Sonnet 5 list prices: this fake turn records no model, which is what
+    # every row written before chat_turns.model existed looks like, and
+    # those all ran on Sonnet (usage._CHAT_LEGACY_MODEL). A row that names
+    # its model is priced at that model -- tests/test_chat_on_haiku.py.
+    # The cache *write* is deliberately non-zero: it is the priciest input
+    # class, and a summary that dropped it would still look plausible.
     assert summary["cost"]["total"] == round(
-        1000 * 1.0 / 1e6 + 30000 * 0.1 / 1e6 + 2000 * 1.25 / 1e6 + 500 * 5.0 / 1e6, 6
+        1000 * 2.0 / 1e6 + 30000 * 0.2 / 1e6 + 2000 * 2.5 / 1e6 + 500 * 10.0 / 1e6, 6
     )
-    assert summary["cost"]["cache_write"] == round(2000 * 1.25 / 1e6, 6)
+    assert summary["cost"]["cache_write"] == round(2000 * 2.5 / 1e6, 6)
     assert summary["cost"]["total"] > 0
 
 
@@ -517,7 +527,7 @@ def test_every_llm_call_site_passes_the_shared_model_constant():
         "this test's label list, and the api_calls schema comment, to match"
     )
     # Chat and its warm-up run on CHAT_MODEL (2026-10-25), priced through
-    # chat_turns' _CHAT_PRICED_MODEL and api_calls' recorded model; every
+    # the model each chat_turns / api_calls row records; every
     # other call site stays on MODEL.
     chat_labels = {"run_agent_turn", "run_agent_turn.warm"}
     for label in labels:

@@ -270,7 +270,7 @@ ingredients include that finish."""
 # work a smaller, faster model does well. Every other call site stays on
 # MODEL. Pinned to the dated snapshot the fallback already used, and
 # env-overridable so production can put chat back on MODEL without a
-# deploy (usage.py's _CHAT_PRICED_MODEL reads the same variable).
+# deploy (each chat_turns row records the model it ran on, for pricing).
 CHAT_MODEL = os.environ.get("CHAT_MODEL", "claude-haiku-4-5-20251001")
 
 # The model interactive chat falls back to, once, after the primary model's
@@ -10424,35 +10424,53 @@ def tools_for_request() -> list[dict]:
 CHAT_WRITER_FAILED = "Couldn't write that recipe just now — nothing was saved. Try again in a moment."
 
 
+def _accepted_out(avoidances: list[dict], must_not_contain: list, accepted: list[dict]) -> tuple[list, list]:
+    """The household's must-avoids less the ones a person's "save it
+    anyway" accepted — and ONLY those. A clash names its avoidance by
+    (member, restriction == label); everything else stays checked, so
+    accepting the buttermilk in a dairy-free house never lets an egg into
+    an egg-allergic one (review, 2026-10-25)."""
+    taken = {((c.get("member") or "").lower(), (c.get("restriction") or "").lower()) for c in accepted}
+    kept = [a for a in avoidances
+            if ((a.get("member") or "").lower(), (a.get("label") or "").lower()) not in taken]
+    labels = [label for _member, label in taken if label]
+    told = [m for m in must_not_contain or []
+            if not any(label in str(m).lower() for label in labels)]
+    return kept, told
+
+
 def _write_dish_for_chat(name: str, *, brief: str = "", slot: str = "dinner",
                          serves: int | None = None, extra: dict | None = None,
-                         check_allergens: bool = True, shared: dict | None = None,
+                         accepted: list[dict] | None = None, shared: dict | None = None,
                          avoidances: list[dict] | None = None) -> dict:
     """
     Write one dish with the recipe writer. Returns {"ok", "clash", "detail"}:
     detail carries ingredients (completed from the steps), instructions,
-    default_servings, prep/cook minutes and advance prep. Never raises for
-    a bad answer — `ok` False with an empty `clash` is "nothing usable".
+    default_servings, prep/cook minutes and advance prep — the last draft
+    in full when it is refused, so a person's "save it anyway" can save
+    exactly what they were told about. Never raises for a bad answer —
+    `ok` False with an empty `clash` is "nothing usable".
 
     The allergen check is Approve's (_write_one_pending_recipe): the list
     the steps complete is the list judged, and a clash is written again
     once with the food named before it is given up on — being told is not
-    being prevented. `check_allergens=False` is only for a person's own
-    "save it anyway", which already answered a refusal.
+    being prevented. `accepted` is the clashes a person has already said
+    yes to: those avoidances alone are left out, every other one is still
+    told to the writer and still checked.
     """
     shared = dict(shared if shared is not None else _shared_recipe_details_context())
     if serves:
         shared["serves"] = serves
-    if not check_allergens:
-        shared.pop("must_not_contain", None)
-        avoidances = []
-    elif avoidances is None:
+    if avoidances is None:
         avoidances = _allergen_gate.hard_avoidances()
+    if accepted:
+        avoidances, told = _accepted_out(avoidances, shared.get("must_not_contain") or [], accepted)
+        shared["must_not_contain"] = told
     spec = _recipe_details_spec({"name": name, "dish_note": (brief or "").strip()}, slot or "dinner", shared)
     spec.update(extra or {})
     started = time.perf_counter()
     clashes: list = []
-    ingredients: list = []
+    last: dict = {}
     for attempt in (1, 2):
         detail = generate_recipe_details_llm(spec)
         servings = tools.positive_servings(detail.get("default_servings")) or shared.get("serves") or 4
@@ -10466,6 +10484,15 @@ def _write_dish_for_chat(name: str, *, brief: str = "", slot: str = "dinner",
                            name, "ingredients" if not ingredients else "steps", attempt)
             continue
         ingredients = tools.complete_ingredient_list(ingredients, instructions, servings)
+        last = {
+            "ingredients": ingredients,
+            "instructions": instructions,
+            "default_servings": servings,
+            "prep_time_minutes": detail.get("prep_time_minutes"),
+            "cook_time_minutes": detail.get("cook_time_minutes"),
+            "advance_prep_notes": detail.get("advance_prep_notes") or "",
+            "advance_prep_step_indices": detail.get("advance_prep_step_indices") or [],
+        }
         clashes = (_allergen_gate.hard_clashes(name, ingredients=ingredients, avoidances=avoidances)
                    if avoidances else [])
         if clashes:
@@ -10478,37 +10505,59 @@ def _write_dish_for_chat(name: str, *, brief: str = "", slot: str = "dinner",
                                 "Write it again without it."}
                 continue
             break
-        instructions, ingredients, consistency = _settle_recipe_amounts(name, ingredients, instructions, servings)
+        last["instructions"], last["ingredients"], consistency = _settle_recipe_amounts(
+            name, ingredients, instructions, servings)
         if not consistency["ok"]:
             logger.warning("Recipe %s quality [steps_match_ingredients/info]: %s",
                            name, plan_quality.steps_ingredients_message(consistency))
         logger.info("Chat recipe writer wrote %r in %.2fs (attempt %d)",
                     name, time.perf_counter() - started, attempt)
-        return {"ok": True, "clash": [], "detail": {
-            "ingredients": ingredients,
-            "instructions": instructions,
-            "default_servings": servings,
-            "prep_time_minutes": detail.get("prep_time_minutes"),
-            "cook_time_minutes": detail.get("cook_time_minutes"),
-            "advance_prep_notes": detail.get("advance_prep_notes") or "",
-            "advance_prep_step_indices": detail.get("advance_prep_step_indices") or [],
-        }}
+        return {"ok": True, "clash": [], "detail": last}
     logger.info("Chat recipe writer gave up on %r after %.2fs", name, time.perf_counter() - started)
-    return {"ok": False, "clash": clashes, "detail": {"ingredients": ingredients} if clashes else {}}
+    return {"ok": False, "clash": clashes, "detail": last if clashes else {}}
 
 
-def _writer_refusal(name: str, clashes: list) -> "tools.SlotRefused":
+def _writer_refusal(name: str, clashes: list, *, can_override: bool = True,
+                    tail: str | None = None) -> "tools.SlotRefused":
     """The sentence for a dish the writer could not write without a
-    must-avoid — the same words add_recipe's own gate uses, so the model
-    reads the refusal it already knows how to answer."""
+    must-avoid — the shape add_recipe's own gate uses, so the model reads
+    a refusal it already knows how to answer. Only a door that HAS an
+    override offers "save it anyway"."""
     word = next((c.get("matched_word") for c in clashes if c.get("matched_word")), "") \
         or _allergen_gate._food_word(clashes)
     who = _allergen_gate._person(clashes)
     cannot = f"{who} can’t have" if who else "this house can’t have"
-    return tools.SlotRefused(
-        f"Not saved: I couldn’t write {name} without {word}, which {cannot}. "
-        f"Pick a different dish, or ask them if it should be saved anyway."
-    )
+    tail = tail or ("Pick a different dish, or ask them if it should be saved anyway." if can_override
+                    else "Pick a different dish.")
+    return tools.SlotRefused(f"Not saved: I couldn’t write {name} without {word}, which {cannot}. {tail}")
+
+
+# A draft the writer could only write with a must-avoid, kept for the
+# person's "save it anyway" in a later turn: that answer is to THIS draft
+# — the list they were told about — so it is what gets saved, not a fresh
+# write nobody has seen (review, 2026-10-25: a re-write with the check off
+# saved an egg the house had never been told about). Keyed the way the
+# refusal itself is (allergen_gate._refusal_key: door, household, name),
+# for as long as the override itself is honoured.
+_REFUSED_DRAFTS: dict[tuple, tuple[float, dict]] = {}
+_REFUSED_DRAFTS_LOCK = threading.Lock()
+
+
+def _keep_refused_draft(name: str, detail: dict) -> None:
+    key = _allergen_gate._refusal_key("recipe", name, [])
+    with _REFUSED_DRAFTS_LOCK:
+        _REFUSED_DRAFTS[key] = (time.monotonic(), detail)
+
+
+def _take_refused_draft(name: str) -> dict | None:
+    key = _allergen_gate._refusal_key("recipe", name, [])
+    with _REFUSED_DRAFTS_LOCK:
+        now = time.monotonic()
+        for k, (at, _d) in list(_REFUSED_DRAFTS.items()):
+            if now - at > _allergen_gate.RECIPE_OVERRIDE_WINDOW_SECONDS:
+                del _REFUSED_DRAFTS[k]
+        found = _REFUSED_DRAFTS.pop(key, None)
+    return found[1] if found else None
 
 
 def add_recipe_from_chat(name: str, ingredients: list | None = None, brief: str = "",
@@ -10521,12 +10570,14 @@ def add_recipe_from_chat(name: str, ingredients: list | None = None, brief: str 
 
     The name is gated before anything is written (a "Buttermilk Pancakes"
     in a dairy-free house costs no writer call), and the written list by
-    the writer's own check. `override` works as it always has: honoured
-    only as an answer to this door's refusal of this recipe in an earlier
-    turn — and then the writer is not told the must-avoids either, since
-    "save it anyway" is the person accepting them.
+    the writer's own check. `override` is honoured only as an answer to
+    this door's refusal of this recipe in an earlier turn: a refused DRAFT
+    is then saved exactly as it was refused; a refused NAME is written with
+    only the avoidances that name tripped left out, everything else still
+    told and checked.
     """
     if ingredients:
+        logger.info("add_recipe from chat: dictated list, saved as given")
         return tools.add_recipe_for_chat(name, ingredients, override=override, **kwargs)
     # Only the lines the model may not write itself are dropped here: a
     # model that sent steps but no list has written a recipe, and the
@@ -10544,22 +10595,32 @@ def add_recipe_from_chat(name: str, ingredients: list | None = None, brief: str 
         # Before the writer runs: add_recipe refuses the duplicate anyway,
         # and a writer call for a recipe that will not be saved is wasted.
         raise tools.DuplicateRecipeName(tools.duplicate_recipe_message(taken["name"]))
-    accepted = bool(override) and _allergen_gate._override_armed("recipe", name, [])
-    if not accepted:
-        _allergen_gate.refuse_recipe_if_clashing(name, None)
-    written = _write_dish_for_chat(
-        name, brief=brief or kwargs.get("notes") or "", slot=slot, serves=tools.positive_servings(servings),
-        extra={k: kwargs[k] for k in ("cuisine", "main_protein", "tags", "food_groups") if kwargs.get(k)},
-        check_allergens=not accepted,
-    )
-    if written["clash"]:
-        # Remembered under the name alone, so the person's "save it anyway"
-        # next turn arms the override above.
-        _allergen_gate._remember_refusal("recipe", name, [])
-        raise _writer_refusal(name, written["clash"])
-    if not written["ok"]:
-        raise ValueError(CHAT_WRITER_FAILED)
-    detail = written["detail"]
+    armed = bool(override) and _allergen_gate._override_armed("recipe", name, [])
+    draft = _take_refused_draft(name) if armed else None
+    if draft:
+        logger.info("add_recipe from chat: saving the refused draft the person accepted")
+        detail = draft
+    else:
+        accepted = _allergen_gate.hard_clashes(name) if armed else []
+        if not armed:
+            _allergen_gate.refuse_recipe_if_clashing(name, None)
+        logger.info("add_recipe from chat: recipe writer%s", " (name accepted)" if accepted else "")
+        written = _write_dish_for_chat(
+            name, brief=brief or kwargs.get("notes") or "", slot=slot,
+            serves=tools.positive_servings(servings),
+            extra={k: kwargs[k] for k in ("cuisine", "main_protein", "tags", "food_groups") if kwargs.get(k)},
+            accepted=accepted,
+        )
+        if written["clash"]:
+            # Remembered under the name alone, so the person's "save it
+            # anyway" next turn arms the override above — and the draft
+            # beside it, so that answer saves what they were told about.
+            _allergen_gate._remember_refusal("recipe", name, [])
+            _keep_refused_draft(name, written["detail"])
+            raise _writer_refusal(name, written["clash"])
+        if not written["ok"]:
+            raise ValueError(CHAT_WRITER_FAILED)
+        detail = written["detail"]
     saved = tools.add_recipe(
         name, detail["ingredients"],
         instructions=detail["instructions"],
@@ -10581,21 +10642,31 @@ def update_recipe_details_from_chat(recipe_name: str, instructions: list[str] | 
     """
     Chat's update_recipe_details. Steps the person dictated (`instructions`)
     and plain field corrections (servings, minutes, advance prep) save as
-    they always did. `change` hands the STEPS to the recipe writer: a
-    recipe with none is filled in by fill_in_recipe (the Cook screen's own
-    writer), and one with steps is re-written to the change asked for —
-    the ingredient list kept exactly as it is, since this door has never
-    changed what a dish is made of.
+    they always did. `change` hands the STEPS to the recipe writer — written
+    for a recipe with none, re-written to the change asked for otherwise —
+    with the ingredient list kept exactly as it is, since this door has
+    never changed what a dish is made of. A draft dish not yet written up
+    (details_pending) goes to fill_in_recipe, Approve's own gated writer.
+
+    The new steps are held to Approve's gate: the list they complete (what
+    the steps reach for, added to the saved list) is checked against the
+    must-avoids, written again once with the food named, then refused —
+    an air-fryer rewrite that dips the chicken in egg is not saved in an
+    egg-allergic house (review, 2026-10-25).
     """
     change = (change or "").strip()
     if instructions or not change:
+        logger.info("update_recipe_details from chat: %s", "dictated steps" if instructions else "fields only")
         return tools.update_recipe_details(recipe_name, instructions=instructions or None, **kwargs)
     recipe = tools.get_recipe(recipe_name)
-    if not recipe.get("instructions"):
+    if recipe.get("details_pending"):
+        logger.info("update_recipe_details from chat: pending draft, fill_in_recipe")
         filled = fill_in_recipe(recipe["name"])
-        if kwargs:
-            filled = tools.update_recipe_details(recipe["name"], **kwargs)
+        if kwargs and not (isinstance(filled, dict) and filled.get("status") == "replaced"):
+            filled = tools.update_recipe_details(filled.get("name") or recipe["name"], **kwargs)
         return filled
+    logger.info("update_recipe_details from chat: recipe writer (%s)",
+                "rewrite" if recipe.get("instructions") else "write")
     lines = [
         {k: v for k, v in i.items() if k not in ("cook_qty", "verbatim", "qty_as_written")}
         if isinstance(i, dict) else i
@@ -10604,26 +10675,46 @@ def update_recipe_details_from_chat(recipe_name: str, instructions: list[str] | 
     spec = _recipe_details_spec(recipe, "dinner", _shared_recipe_details_context())
     spec.update({
         "change_requested": change,
-        "current_recipe": {"ingredients": lines, "instructions": recipe["instructions"]},
-        "note": ("Rewrite this recipe's STEPS the way change_requested asks. The ingredient list "
+        "current_recipe": {"ingredients": lines, "instructions": recipe.get("instructions") or []},
+        "note": ("Write this recipe's STEPS the way change_requested asks. The ingredient list "
                  "stays exactly as it is — same items, same amounts — so write steps that cook "
                  "from it."),
     })
+    avoidances = _allergen_gate.hard_avoidances()
+    servings = recipe.get("default_servings") or 4
     started = time.perf_counter()
-    detail = generate_recipe_details_llm(spec)
-    steps = [s for s in (detail.get("instructions") or []) if isinstance(s, str) and s.strip()]
-    logger.info("Chat recipe writer rewrote the steps of %r in %.2fs", recipe["name"], time.perf_counter() - started)
-    if not steps:
-        raise ValueError(CHAT_WRITER_FAILED)
-    fields = {
-        "prep_time_minutes": detail.get("prep_time_minutes"),
-        "cook_time_minutes": detail.get("cook_time_minutes"),
-        "advance_prep_notes": detail.get("advance_prep_notes"),
-        "advance_prep_step_indices": detail.get("advance_prep_step_indices"),
-    }
-    fields = {k: v for k, v in fields.items() if v not in (None, "", [])}
-    fields.update(kwargs)
-    return tools.update_recipe_details(recipe["name"], instructions=steps, **fields)
+    for attempt in (1, 2):
+        detail = generate_recipe_details_llm(spec)
+        steps = [s for s in (detail.get("instructions") or []) if isinstance(s, str) and s.strip()]
+        if not steps:
+            logger.warning("Chat steps writer for %r came back without steps (attempt %d)", recipe["name"], attempt)
+            continue
+        completed = tools.complete_ingredient_list(recipe.get("ingredients") or [], steps, servings)
+        clashes = _allergen_gate.hard_clashes(recipe["name"], ingredients=completed, avoidances=avoidances) \
+            if avoidances else []
+        if clashes:
+            food = _allergen_gate._food_word(clashes)
+            logger.warning("Chat steps writer for %r reached for a must-avoid (%s); %s",
+                           recipe["name"], food, "retrying once" if attempt == 1 else "refusing")
+            if attempt == 1:
+                spec = {**spec, "previous_attempt_included": food,
+                        "note": spec["note"] + " Your previous attempt used something on "
+                                "must_not_contain. Write the steps again without it."}
+                continue
+            raise _writer_refusal(recipe["name"], clashes, can_override=False,
+                                  tail="The steps are as they were — ask for the change another way.")
+        logger.info("Chat steps writer wrote the steps of %r in %.2fs (attempt %d)",
+                    recipe["name"], time.perf_counter() - started, attempt)
+        fields = {
+            "prep_time_minutes": detail.get("prep_time_minutes"),
+            "cook_time_minutes": detail.get("cook_time_minutes"),
+            "advance_prep_notes": detail.get("advance_prep_notes"),
+            "advance_prep_step_indices": detail.get("advance_prep_step_indices"),
+        }
+        fields = {k: v for k, v in fields.items() if v not in (None, "", [])}
+        fields.update(kwargs)
+        return tools.update_recipe_details(recipe["name"], instructions=steps, **fields)
+    raise ValueError(CHAT_WRITER_FAILED)
 
 
 def _in_parallel(fn, items: list) -> list:
@@ -10645,18 +10736,38 @@ def propose_plan_changes_from_chat(weekly_plan_id: int, rows: list[dict], line: 
     judge what was written. A dish the writer could only write with a
     must-avoid keeps that list, which is exactly what makes the card report
     it under `unsafe` in the words the model already acts on.
+
+    Only what the card can show is written: the card's own row and
+    candidate limits are applied first, and nothing is written for a plan
+    that isn't this household's or a slot with no meal on it to change —
+    the card would drop those anyway (review, 2026-10-25: two writer calls
+    spent on "No plan by that id").
     """
-    rows = copy.deepcopy(rows or [])
+    from .tools import proposals as _proposals
+    rows = copy.deepcopy([r for r in (rows or []) if isinstance(r, dict)][:_proposals._MAX_ROWS])
+    for row in rows:
+        if isinstance(row.get("candidates"), list):
+            row["candidates"] = row["candidates"][:_proposals._MAX_CANDIDATES]
+    plan = tools.get_weekly_plan(weekly_plan_id) if weekly_plan_id else {}
+    if not (plan or {}).get("weekly_plan_id"):
+        logger.info("propose_plan_changes from chat: no such plan, nothing written")
+        return tools.propose_plan_changes(weekly_plan_id, rows, line=line)
     todo = []
     for row in rows:
-        if not isinstance(row, dict) or str(row.get("action") or "").strip().lower() == "keep":
+        if str(row.get("action") or "").strip().lower() == "keep":
+            continue
+        slot = (row.get("slot") or "dinner").strip().lower()
+        if slot not in _proposals._SLOTS:
+            slot = "dinner"
+        if _proposals._slot_entry(weekly_plan_id, (row.get("date") or "").strip(), slot) is None:
             continue
         for cand in row.get("candidates") or []:
             if not isinstance(cand, dict) or cand.get("ingredients"):
                 continue
             name = (cand.get("meal_name") or cand.get("name") or "").strip()
             if name and not tools.existing_recipe_named(name):
-                todo.append((cand, name, (row.get("slot") or "dinner")))
+                todo.append((cand, name, slot))
+    logger.info("propose_plan_changes from chat: %d dish(es) to the recipe writer", len(todo))
     if todo:
         shared = _shared_recipe_details_context()
         avoidances = _allergen_gate.hard_avoidances()
@@ -10692,13 +10803,15 @@ def set_big_meal_dish_from_chat(date_str: str, name: str, role: str = "side",
     if not ingredients and not (role_l == "main" and tools.existing_recipe_named(name or "")):
         meal = tools.get_big_meal(date_str) or {}
         if meal.get("hosting"):
+            logger.info("set_big_meal_dish from chat: recipe writer")
             extra = {"course": {"main": "the main", "sweet": "the dessert"}.get(role_l, "a side dish")}
             if meal.get("guest_notes"):
                 extra["guests_cannot_have"] = meal["guest_notes"]
             written = _write_dish_for_chat(name, brief=brief, slot="dinner",
                                            serves=meal.get("eaters") or None, extra=extra)
             if written["clash"]:
-                raise _writer_refusal(name, written["clash"])
+                # No override on this door, so the refusal offers none.
+                raise _writer_refusal(name, written["clash"], can_override=False)
             if not written["ok"]:
                 raise ValueError(CHAT_WRITER_FAILED)
             detail = written["detail"]
@@ -10709,6 +10822,8 @@ def set_big_meal_dish_from_chat(date_str: str, name: str, role: str = "side",
                 kwargs["minutes"] = detail["prep_time_minutes"]
             if kwargs.get("cook_minutes") is None and isinstance(detail.get("cook_time_minutes"), int):
                 kwargs["cook_minutes"] = detail["cook_time_minutes"]
+    else:
+        logger.info("set_big_meal_dish from chat: %s", "dictated list" if ingredients else "saved recipe")
     return tools.set_big_meal_dish(date_str, name, role=role, ingredients=ingredients, **kwargs)
 
 
@@ -11899,7 +12014,11 @@ def run_agent_turn(
              # was actually FOR. See schema.sql on chat_turns. It is a list
              # among counters, which record_chat_turn handles separately;
              # nothing the person wrote is ever added to it.
-             "tools_called": []}
+             "tools_called": [],
+             # Which model answered, for pricing the row (usage.py's
+             # _chat_cost_by_model). Updated per round below, so a turn the
+             # overload fallback answered is priced as the fallback.
+             "model": CHAT_MODEL}
     LAST_TURN_USAGE.set(usage)
 
     # Wall-clock accounting for the whole turn, split three ways: time
@@ -11985,6 +12104,12 @@ def run_agent_turn(
         usage["cache_read_tokens"] += response.usage.cache_read_input_tokens
         usage["cache_write_tokens"] += response.usage.cache_creation_input_tokens
         usage["output_tokens"] += response.usage.output_tokens
+        # Recorded as the id this app ASKED for (the rate table's key), with
+        # the response's own model only telling chat from its fallback.
+        answered_by = getattr(response, "model", None)
+        if isinstance(answered_by, str) and answered_by:
+            usage["model"] = (CHAT_FALLBACK_MODEL if answered_by.startswith(CHAT_FALLBACK_MODEL)
+                              and not answered_by.startswith(CHAT_MODEL) else CHAT_MODEL)
 
         conversation.append({"role": "assistant", "content": response.content})
 

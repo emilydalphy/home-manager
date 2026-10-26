@@ -74,8 +74,15 @@ def _overloaded():
 @pytest.fixture(autouse=True)
 def _clean_refusals():
     allergen_gate._RECIPE_REFUSALS.clear()
+    agent._REFUSED_DRAFTS.clear()
+    # run_agent_turn sets this ContextVar in the test thread, and it would
+    # otherwise outlive the test: a later /api/chat with a stubbed turn
+    # records whatever this left behind (its model included).
+    token = agent.LAST_TURN_USAGE.set({})
     yield
+    agent.LAST_TURN_USAGE.reset(token)
     allergen_gate._RECIPE_REFUSALS.clear()
+    agent._REFUSED_DRAFTS.clear()
 
 
 @pytest.fixture
@@ -134,9 +141,22 @@ def test_chat_runs_on_haiku_and_sends_it_no_effort(monkeypatch):
     assert "effort" not in (request.get("output_config") or {}), (
         "Haiku 4.5 refuses output_config.effort — every chat round would 400"
     )
-    # The pricing side agrees with the model actually used.
-    assert _usage._CHAT_PRICED_MODEL == agent.CHAT_MODEL
+    # The turn says which model it ran on, for pricing, and that model has a rate.
+    assert agent.LAST_TURN_USAGE.get()["model"] == agent.CHAT_MODEL
     assert agent.CHAT_MODEL in _usage._RATES_PER_MTOK
+
+
+def test_chat_cost_is_priced_per_row_at_the_model_it_ran_on():
+    """Rows from before the model column (NULL) ran on Sonnet; new rows name
+    their model; a model with no rate is reported unpriced, never a crash."""
+    tok = {"rounds": 1, "input_tokens": 1_000_000, "output_tokens": 0}
+    tools.record_chat_turn(tok)                                   # pre-switch: Sonnet
+    tools.record_chat_turn({**tok, "model": agent.CHAT_MODEL})    # Haiku
+    assert tools.get_usage_summary(days=7)["cost"]["input"] == round(2.00 + 1.00, 6)
+
+    tools.record_chat_turn({**tok, "model": "claude-not-in-the-table"})
+    cost = tools.get_usage_summary(days=7)["cost"]
+    assert cost["unpriced"] is True and cost["input"] == round(2.00 + 1.00, 6)
 
 
 def test_the_warm_up_warms_the_chat_models_cache(monkeypatch):
@@ -238,7 +258,61 @@ def test_a_name_that_names_the_allergen_costs_no_writer_call(writer):
 
 
 # --------------------------------------------------------------------------
-# update_recipe_details, propose_plan_changes, set_big_meal_dish
+# "Save it anyway" (review, 2026-10-25: it used to re-write with no check)
+# --------------------------------------------------------------------------
+
+
+@pytest.fixture
+def egg_and_dairy():
+    tools.add_member("Emily")
+    tools.set_member_dietary_restrictions("Emily", ["egg allergy"])
+    tools.add_member("Sam")
+    tools.set_member_dietary_restrictions("Sam", ["dairy free"])
+
+
+def test_save_it_anyway_saves_exactly_the_refused_draft(writer, egg_and_dairy):
+    writer["recipes"] = [_recipe("Flour", "Buttermilk")]
+    allergen_gate.begin_chat_turn()
+    with pytest.raises(tools.SlotRefused, match="buttermilk"):
+        agent.TOOL_FUNCTIONS["add_recipe"](name="Fluffy Pancakes", brief="weekend")
+    # Were the dish written again now, this is what would come back.
+    writer["recipes"] = [_recipe("Flour", "Buttermilk", "Eggs")]
+
+    allergen_gate.begin_chat_turn()
+    agent.TOOL_FUNCTIONS["add_recipe"](name="Fluffy Pancakes", brief="weekend", override=True)
+
+    assert len(writer["specs"]) == 2, "the accepted draft is saved, not re-written"
+    items = [i["item"] for i in tools.get_recipe("Fluffy Pancakes")["ingredients"]]
+    assert "Buttermilk" in items and "Eggs" not in items
+
+
+def test_save_it_anyway_on_a_refused_name_still_checks_every_other_allergy(writer, egg_and_dairy):
+    allergen_gate.begin_chat_turn()
+    with pytest.raises(tools.SlotRefused):
+        agent.TOOL_FUNCTIONS["add_recipe"](name="Buttermilk Pancakes", brief="weekend")
+    writer["recipes"] = [_recipe("Flour", "Buttermilk", "Eggs"), _recipe("Flour", "Buttermilk")]
+
+    allergen_gate.begin_chat_turn()
+    agent.TOOL_FUNCTIONS["add_recipe"](name="Buttermilk Pancakes", brief="weekend", override=True)
+
+    told = writer["specs"][0]["must_not_contain"]
+    assert any("egg" in str(m).lower() for m in told), "the egg allergy is still told to the writer"
+    assert not any("dairy" in str(m).lower() for m in told), "the accepted one is not"
+    assert writer["specs"][1].get("previous_attempt_included"), "the egg draft was caught and re-written"
+    items = [i["item"] for i in tools.get_recipe("Buttermilk Pancakes")["ingredients"]]
+    assert "Eggs" not in items and "Buttermilk" in items
+
+
+def test_override_with_nothing_refused_is_not_honoured(writer, egg_and_dairy):
+    writer["recipes"] = [_recipe("Flour", "Buttermilk")]
+    allergen_gate.begin_chat_turn()
+    with pytest.raises(tools.SlotRefused):
+        agent.TOOL_FUNCTIONS["add_recipe"](name="Fluffy Pancakes", brief="weekend", override=True)
+    assert tools.existing_recipe_named("Fluffy Pancakes") is None
+
+
+# --------------------------------------------------------------------------
+# update_recipe_details
 # --------------------------------------------------------------------------
 
 
@@ -259,32 +333,146 @@ def test_changing_a_recipes_steps_goes_to_the_writer_and_keeps_its_ingredients(w
     assert after["ingredients"] == before, "this door never changes what the dish is made of"
 
 
-def test_the_change_card_has_new_dishes_written_and_keeps_its_gate(monkeypatch, writer):
-    tools.add_member("Emily")
-    tools.set_member_dietary_restrictions("Emily", ["dairy free"])
-    seen = {}
-    monkeypatch.setattr(tools, "propose_plan_changes",
-                        lambda pid, rows, line="": seen.setdefault("rows", rows) and {"ok": True})
-    # One clean dish and one the writer only ever writes with cream.
-    writer["recipes"] = [_recipe("Cod", "Lemon")]
-    clean = {"meal_name": "Lemon Cod", "reason": "Light and quick", "brief": "pan-fried cod"}
-    creamy = {"meal_name": "Fish Pie", "reason": "Cosy", "brief": "fish pie"}
-    rows = [{"date": "2026-10-27", "slot": "dinner", "action": "change", "candidates": [clean]},
-            {"date": "2026-10-28", "slot": "dinner", "action": "change", "candidates": [creamy]}]
+EGG_STEPS = ("Dip the chicken in beaten egg, then the breadcrumbs.", "Air-fry at 200C for 14 minutes.")
+CLEAN_STEPS = ("Brush the chicken with oil, then the breadcrumbs.", "Air-fry at 200C for 14 minutes.")
 
+
+@pytest.fixture
+def pan_chicken():
+    tools.add_member("Emily")
+    tools.set_member_dietary_restrictions("Emily", ["egg allergy"])
+    tools.add_recipe("Pan Chicken", [{"item": "Chicken thighs", "qty": "1 lb"}, {"item": "Breadcrumbs", "qty": "1 cup"}],
+                     instructions=["Coat the chicken in breadcrumbs.", "Pan-fry 6 minutes a side."])
+
+
+def test_a_rewrite_that_reaches_for_an_allergen_is_retried_then_refused(writer, pan_chicken):
+    writer["recipes"] = [_recipe(steps=EGG_STEPS)]
+
+    with pytest.raises(tools.SlotRefused, match="egg"):
+        agent.TOOL_FUNCTIONS["update_recipe_details"](recipe_name="Pan Chicken", change="do it in the air fryer")
+
+    assert len(writer["specs"]) == 2 and writer["specs"][1].get("previous_attempt_included")
+    assert tools.get_recipe("Pan Chicken")["instructions"][0] == "Coat the chicken in breadcrumbs."
+
+
+def test_a_rewrite_caught_once_saves_the_clean_steps(writer, pan_chicken):
+    writer["recipes"] = [_recipe(steps=EGG_STEPS), _recipe(steps=CLEAN_STEPS)]
+
+    agent.TOOL_FUNCTIONS["update_recipe_details"](recipe_name="Pan Chicken", change="do it in the air fryer")
+
+    assert tools.get_recipe("Pan Chicken")["instructions"] == list(CLEAN_STEPS)
+
+
+def test_writing_steps_for_a_recipe_with_none_carries_the_change_and_the_gate(writer, pan_chicken):
+    tools.add_recipe("Plain Chicken", [{"item": "Chicken thighs", "qty": "1 lb"}])
+    writer["recipes"] = [_recipe(steps=EGG_STEPS)]
+
+    with pytest.raises(tools.SlotRefused):
+        agent.TOOL_FUNCTIONS["update_recipe_details"](recipe_name="Plain Chicken", change="air fryer, crispy")
+
+    assert writer["specs"][0]["change_requested"] == "air fryer, crispy"
+    assert tools.get_recipe("Plain Chicken")["instructions"] == []
+
+
+# --------------------------------------------------------------------------
+# propose_plan_changes — through the card's real gate
+# --------------------------------------------------------------------------
+
+from conftest import household_today  # noqa: E402
+import datetime as _dt  # noqa: E402
+
+DAY1 = household_today().isoformat()
+DAY2 = (household_today() + _dt.timedelta(days=1)).isoformat()
+
+
+def _a_week():
+    for name in ("Pork Chops", "Chili Night"):
+        tools.add_recipe(name, ingredients=[{"item": name.split()[0], "qty": "1 lb", "category": "meat/seafood"}])
+    plan_id = tools.create_weekly_plan(DAY1)["weekly_plan_id"]
+    tools.plan_meal(DAY1, "Pork Chops", slot="dinner", weekly_plan_id=plan_id, reasoning="fits")
+    tools.plan_meal(DAY2, "Chili Night", slot="dinner", weekly_plan_id=plan_id, reasoning="fits")
+    return plan_id
+
+
+def _rows(*names_per_day):
+    return [{"date": day, "slot": "dinner", "action": "change",
+             "candidates": [{"meal_name": n, "reason": "Fits the week", "brief": n.lower()} for n in names]}
+            for day, names in zip((DAY1, DAY2), names_per_day)]
+
+
+def _by_name(monkeypatch, recipes: dict, seen: list):
     def fake(spec):
-        writer["specs"].append(spec)
-        return _recipe("Cod", "Lemon") if spec["name"] == "Lemon Cod" else _recipe("Haddock", "Heavy cream")
+        seen.append({"name": spec["name"], "household": tools.household_id(),
+                     "must_not_contain": list(spec.get("must_not_contain") or [])})
+        return recipes[spec["name"]]
     monkeypatch.setattr(agent, "generate_recipe_details_llm", fake)
 
-    agent.TOOL_FUNCTIONS["propose_plan_changes"](weekly_plan_id=1, rows=rows)
 
-    got = {c["meal_name"]: c for r in seen["rows"] for c in r["candidates"]}
-    assert got["Lemon Cod"]["instructions"] and got["Lemon Cod"]["ingredients"][0]["item"] == "Cod"
-    # The clashing dish keeps the list it was written with, so the card's
-    # own gate reports it as unsafe rather than drawing it.
-    assert any(i["item"] == "Heavy cream" for i in got["Fish Pie"]["ingredients"])
-    assert "instructions" not in creamy and rows[0]["candidates"][0] is clean, "the model's rows are not mutated"
+def test_the_change_card_writes_new_dishes_and_its_own_gate_holds_a_clash(monkeypatch, writer):
+    tools.add_member("Emily")
+    tools.set_member_dietary_restrictions("Emily", ["dairy free"])
+    plan_id = _a_week()
+    seen: list = []
+    _by_name(monkeypatch, {"Lemon Cod": _recipe("Cod", "Lemon"),
+                           "Fish Pie": _recipe("Haddock", "Heavy cream")}, seen)
+    rows = _rows(["Lemon Cod"], ["Fish Pie"])
+
+    card = agent.TOOL_FUNCTIONS["propose_plan_changes"](weekly_plan_id=plan_id, rows=rows)
+
+    first, second = card["rows"]
+    assert [c["meal_name"] for c in first["candidates"]] == ["Lemon Cod"]
+    assert first["problem"] is None
+    assert second["candidates"] == [] and "Fish Pie" in second["problem"], second
+    assert "ingredients" not in rows[0]["candidates"][0], "the model's rows are not mutated"
+
+
+def test_the_change_card_writes_in_the_households_own_context(monkeypatch, writer):
+    from app import households
+    hid2 = households.create_household("Beta", "beta-passphrase-xyz")
+    seen: list = []
+    _by_name(monkeypatch, {n: _recipe("Chicken", "Rice") for n in ("Dish A", "Dish B", "Dish C")}, seen)
+    with tools.use_household(hid2):
+        tools.add_member("Bea")
+        tools.set_member_dietary_restrictions("Bea", ["peanut allergy"])
+        plan_id = _a_week()
+        card = agent.TOOL_FUNCTIONS["propose_plan_changes"](
+            weekly_plan_id=plan_id, rows=_rows(["Dish A", "Dish B"], ["Dish C"]))
+
+    assert sorted(s["name"] for s in seen) == ["Dish A", "Dish B", "Dish C"]
+    # Each writer thread ran as household 2 and was told household 2's allergy.
+    assert {s["household"] for s in seen} == {hid2}
+    assert all(any("peanut" in str(m).lower() for m in s["must_not_contain"]) for s in seen)
+    assert len(card["rows"][0]["candidates"]) == 2
+
+
+def test_nothing_is_written_for_a_plan_or_slot_the_card_would_drop(monkeypatch, writer):
+    plan_id = _a_week()
+    seen: list = []
+    _by_name(monkeypatch, {}, seen)
+
+    out = agent.TOOL_FUNCTIONS["propose_plan_changes"](weekly_plan_id=999999, rows=_rows(["Lemon Cod"]))
+    assert "error" in out
+    far = [{"date": "2031-01-06", "slot": "dinner", "action": "change",
+            "candidates": [{"meal_name": "Lemon Cod", "reason": "r"}]}]
+    agent.TOOL_FUNCTIONS["propose_plan_changes"](weekly_plan_id=plan_id, rows=far)
+    assert seen == []
+
+
+def test_the_card_writes_no_more_candidates_than_it_can_show(monkeypatch, writer):
+    plan_id = _a_week()
+    seen: list = []
+    names = [f"Dish {i}" for i in range(6)]
+    _by_name(monkeypatch, {n: _recipe("Chicken", "Rice") for n in names}, seen)
+
+    agent.TOOL_FUNCTIONS["propose_plan_changes"](weekly_plan_id=plan_id, rows=_rows(names))
+
+    from app.tools import proposals
+    assert len(seen) == proposals._MAX_CANDIDATES
+
+
+# --------------------------------------------------------------------------
+# set_big_meal_dish
+# --------------------------------------------------------------------------
 
 
 def test_a_new_big_meal_dish_is_written_for_the_whole_table(monkeypatch, writer):
@@ -301,3 +489,14 @@ def test_a_new_big_meal_dish_is_written_for_the_whole_table(monkeypatch, writer)
     spec = writer["specs"][0]
     assert spec["serves"] == 10 and spec["guests_cannot_have"] == "one guest is nut-free"
     assert seen["ingredients"][0]["item"] == "Chicken thighs" and seen["instructions"]
+
+
+def test_a_big_meal_refusal_offers_no_override_it_does_not_have(monkeypatch, writer):
+    tools.add_member("Emily")
+    tools.set_member_dietary_restrictions("Emily", ["dairy free"])
+    monkeypatch.setattr(tools, "get_big_meal", lambda d: {"hosting": True, "eaters": 6, "guest_notes": ""})
+    writer["recipes"] = [_recipe("Potatoes", "Heavy cream")]
+
+    with pytest.raises(tools.SlotRefused) as refused:
+        agent.TOOL_FUNCTIONS["set_big_meal_dish"](date_str="2026-12-25", name="Mash", role="side")
+    assert "anyway" not in str(refused.value)
