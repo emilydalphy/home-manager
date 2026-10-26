@@ -41,6 +41,7 @@ import logging
 import secrets
 import time
 
+from ..db import name_key
 from ._shared import household_id
 from . import allergen_gate as _allergen_gate
 from . import recipes as _recipes
@@ -267,9 +268,9 @@ def _clash_line(meal_name: str, clash: list[dict]) -> str:
 
 
 def _recipe_exists(name: str) -> bool:
-    wanted = name.strip().lower()
+    wanted = name_key(name)
     try:
-        return any((r.get("name") or "").strip().lower() == wanted for r in _recipes.list_recipes())
+        return any(name_key(r.get("name")) == wanted for r in _recipes.list_recipes())
     except Exception:
         return False
 

@@ -261,7 +261,7 @@ def plan_meal(
     # writing a second row for the second spelling; it refuses that now
     # (recipes.existing_recipe_named), so this has to resolve it instead.
     recipe = conn.execute(
-        "SELECT * FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?) "
+        "SELECT * FROM recipes WHERE household_id = ? AND name_key(name) = name_key(?) "
         "ORDER BY id LIMIT 1",
         (household_id(), (meal or "").strip()),
     ).fetchone()

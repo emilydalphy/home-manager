@@ -1284,7 +1284,7 @@ def replace_unwritten_clash(recipe_name: str, clashes: list[dict]) -> int:
         rows = conn.execute(
             "SELECT DISTINCT mpe.weekly_plan_id FROM meal_plan_entries mpe "
             "JOIN recipes r ON r.id = mpe.recipe_id "
-            "WHERE r.household_id = ? AND LOWER(r.name) = LOWER(?) AND mpe.weekly_plan_id IS NOT NULL",
+            "WHERE r.household_id = ? AND name_key(r.name) = name_key(?) AND mpe.weekly_plan_id IS NOT NULL",
             (_shared.household_id(), recipe_name),
         ).fetchall()
     finally:

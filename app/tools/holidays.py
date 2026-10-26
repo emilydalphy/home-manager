@@ -56,7 +56,7 @@ import logging
 import re
 from datetime import date, timedelta
 
-from ..db import get_conn
+from ..db import get_conn, name_key
 from ._shared import acting_name, household_id
 from . import week_intake as _week_intake
 
@@ -491,10 +491,10 @@ ANSWER_ACKS = {
 
 
 def _recipe_named(dish: str) -> tuple[str, int | None]:
-    """A saved recipe matching the dish, by name (case-insensitive), or the dish as typed."""
+    """A saved recipe matching the dish, by name (db.name_key: case, accents, spacing), or the dish as typed."""
     conn = get_conn()
     row = conn.execute(
-        "SELECT id, name FROM recipes WHERE household_id = ? AND lower(name) = lower(?)",
+        "SELECT id, name FROM recipes WHERE household_id = ? AND name_key(name) = name_key(?) ORDER BY id LIMIT 1",
         (household_id(), dish.strip()),
     ).fetchone()
     conn.close()

@@ -626,6 +626,15 @@ why*, not duplicating the diff.
   HTTP test; the isolation attack only ever got 400s from slot-by-plan-id,
   move owner, primary member, age group and memory edit/delete (its bodies
   are built from types), so their scoping was unproven. Pinned; no defect.
+- **One recipe per name now ignores accents, Unicode case, NFC/NFD and
+  extra spaces** (2026-10-24; branch `overnight/recipes-box`; tests in
+  `tests/test_one_recipe_per_name.py`). SQLite `LOWER()` folds ASCII only, so
+  "Shrimp Étouffée" + "SHRIMP ÉTOUFFÉE" + "shrimp étouffée" saved as three
+  recipes, and rating "shrimp étouffée" said "No recipe named". `db.name_key`
+  (NFKD, accents dropped, casefold, spaces collapsed) is registered on every
+  connection as SQL `name_key()`; every recipe-by-name lookup and the
+  duplicate check use it, and `add_recipe` stores names NFC. No sweep of
+  duplicates already saved.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

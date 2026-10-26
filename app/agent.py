@@ -20,6 +20,7 @@ import time
 import urllib.parse
 from anthropic import Anthropic, APIConnectionError, APIStatusError, APITimeoutError
 from . import ai_consent, calendar_feed, chat_progress, tools
+from .db import name_key
 from .tools import allergen_gate as _allergen_gate
 from .tools import typed_requests as _typed_requests
 from .tools import model_shapes as _model_shapes
@@ -5542,7 +5543,7 @@ def _write_one_pending_recipe(recipe: dict, slot: str, shared: dict, avoidances:
     # the dish on it so it is re-picked (2026-09-30, verifier round 3).
     # If another recipe already has the plain name the label stays too.
     plain = _allergen_gate.plain_dish_name(name)
-    if plain.lower() != name.lower() and tools.existing_recipe_named(plain):
+    if name_key(plain) != name_key(name) and tools.existing_recipe_named(plain):
         plain = name
     # A name that names the allergen on its own ("Dairy-Free Pancakes")
     # fails the strict check whatever list comes back, so it is held here,

@@ -5,6 +5,7 @@ import logging
 import re
 import sqlite3
 import os
+import unicodedata
 
 logger = logging.getLogger("home_manager")
 
@@ -148,10 +149,29 @@ def how_to_run_on_production(script_name: str) -> str:
     )
 
 
+def name_key(name) -> str:
+    """
+    What makes two recipe names "the same recipe" to a household: case,
+    accents, Unicode form and runs of spaces don't count. "Shrimp Étouffée",
+    "SHRIMP ÉTOUFFÉE", "shrimp etouffee" and the same words pasted in
+    decomposed form (NFD, as macOS copies them) all share one key.
+
+    SQLite's LOWER() folds ASCII only, so `LOWER(name) = LOWER(?)` let
+    "Shrimp Étouffée" and "shrimp étouffée" save as two recipes and made a
+    chat lookup of one miss the other (2026-10-24). Registered on every
+    connection as the SQL function name_key(), so a query and Python
+    compare names by the one rule.
+    """
+    text = unicodedata.normalize("NFKD", str(name or ""))
+    text = "".join(ch for ch in text if not unicodedata.combining(ch))
+    return " ".join(text.casefold().split())
+
+
 def get_conn():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
+    conn.create_function("name_key", 1, name_key, deterministic=True)
     return conn
 
 

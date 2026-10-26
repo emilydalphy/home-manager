@@ -6,9 +6,10 @@ from __future__ import annotations
 import json
 import logging
 import re
+import unicodedata
 from fractions import Fraction
 from urllib.parse import urlsplit
-from ..db import get_conn, write
+from ..db import get_conn, name_key, write
 from ._shared import household_id
 from . import grocery as _grocery
 from . import household as _household
@@ -157,7 +158,9 @@ def add_recipe(
     # the query and the INSERT stored the name as typed, so a recipe saved
     # with a stray space was invisible to it and the reported bug came
     # straight back through the other door — found by review, measured.
-    name = (name or "").strip()
+    # NFC as well: the same words pasted from a Mac arrive decomposed and
+    # would look identical on screen while comparing unequal as text.
+    name = unicodedata.normalize("NFC", (name or "").strip())
     # The planner's items can carry an explicit null for any of these
     # (2026-09-28: `"cuisine": null` hit recipes.cuisine NOT NULL and failed
     # the whole week's draft). The columns are NOT NULL DEFAULT '' — a
@@ -340,7 +343,7 @@ def existing_recipe_named(name: str, conn=None) -> dict | None:
     conn = conn or get_conn()
     try:
         row = conn.execute(
-            "SELECT id, name FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?) "
+            "SELECT id, name FROM recipes WHERE household_id = ? AND name_key(name) = name_key(?) "
             "ORDER BY id LIMIT 1",
             (household_id(), (name or "").strip()),
         ).fetchone()
@@ -442,7 +445,7 @@ def update_recipe_details(
     conn = get_conn()
     existing = conn.execute(
         "SELECT id, instructions_json, advance_prep_step_indices_json, ingredients_json, default_servings FROM recipes "
-        "WHERE household_id = ? AND LOWER(name) = LOWER(?)",
+        "WHERE household_id = ? AND name_key(name) = name_key(?)",
         (household_id(), recipe_name),
     ).fetchone()
     if not existing:
@@ -573,7 +576,7 @@ def fill_recipe_details(
     try:
         conn.execute("BEGIN IMMEDIATE")
         row = conn.execute(
-            "SELECT id, details_pending FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?)",
+            "SELECT id, details_pending FROM recipes WHERE household_id = ? AND name_key(name) = name_key(?)",
             (household_id(), recipe_name),
         ).fetchone()
         if not row:
@@ -630,7 +633,7 @@ def planned_slot_for_recipe(recipe_name: str) -> str | None:
     try:
         row = conn.execute(
             "SELECT mpe.slot FROM meal_plan_entries mpe JOIN recipes r ON r.id = mpe.recipe_id "
-            "WHERE r.household_id = ? AND LOWER(r.name) = LOWER(?) ORDER BY mpe.id DESC LIMIT 1",
+            "WHERE r.household_id = ? AND name_key(r.name) = name_key(?) ORDER BY mpe.id DESC LIMIT 1",
             (household_id(), recipe_name),
         ).fetchone()
     finally:
@@ -860,11 +863,11 @@ def saved_ingredients(name: str) -> list[dict]:
     "Tropical Fruit Cup" on its name alone while its list held pineapple.
     One helper, so the three cannot drift apart again.
     """
-    wanted = (name or "").strip().lower()
+    wanted = name_key(name)
     if not wanted:
         return []
     for r in list_recipes():
-        if (r.get("name") or "").strip().lower() == wanted:
+        if name_key(r.get("name")) == wanted:
             return list(r.get("ingredients") or [])
     return []
 
@@ -876,7 +879,7 @@ def get_recipe(recipe_name: str) -> dict:
     a specific recipe in full (e.g. "show me the recipe for the chicken
     stir fry") rather than filtering list_recipes yourself.
     """
-    matches = [r for r in list_recipes() if r["name"].lower() == recipe_name.lower()]
+    matches = [r for r in list_recipes() if name_key(r["name"]) == name_key(recipe_name)]
     if not matches:
         raise ValueError(f"No recipe named '{recipe_name}'.")
     return matches[0]
@@ -3334,7 +3337,7 @@ def save_cooking_quantities(recipe_name: str, cook_quantities: dict[str, str]) -
     """
     conn = get_conn()
     row = conn.execute(
-        "SELECT id, ingredients_json, default_servings FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?)",
+        "SELECT id, ingredients_json, default_servings FROM recipes WHERE household_id = ? AND name_key(name) = name_key(?)",
         (household_id(), recipe_name),
     ).fetchone()
     if not row:
@@ -4207,7 +4210,7 @@ def mark_recipe_feedback(recipe_name: str, rating: str | None = None, notes: str
     # commit at the end of the block is a no-op.
     with write() as conn:
         recipe = conn.execute(
-            "SELECT id, feedback_notes FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?) "
+            "SELECT id, feedback_notes FROM recipes WHERE household_id = ? AND name_key(name) = name_key(?) "
             "ORDER BY id LIMIT 1",
             (household_id(), recipe_name),
         ).fetchone()
@@ -4382,7 +4385,7 @@ def attribute_recipe_feedback(
     # to leak the connection holding the write lock.
     with write() as conn:
         recipe = conn.execute(
-            "SELECT id, rating FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?)",
+            "SELECT id, rating FROM recipes WHERE household_id = ? AND name_key(name) = name_key(?)",
             (household_id(), recipe_name),
         ).fetchone()
         if not recipe:
@@ -4499,7 +4502,7 @@ def log_recipe_note(recipe_name: str, note: str) -> dict:
     """
     conn = get_conn()
     recipe = conn.execute(
-        "SELECT id FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?) ORDER BY id LIMIT 1",
+        "SELECT id FROM recipes WHERE household_id = ? AND name_key(name) = name_key(?) ORDER BY id LIMIT 1",
         (household_id(), (recipe_name or "").strip()),
     ).fetchone()
     if not recipe:
@@ -4527,7 +4530,7 @@ def log_cooking_deviation(recipe_name: str, note: str) -> dict:
     """
     conn = get_conn()
     recipe = conn.execute(
-        "SELECT id FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?) ORDER BY id LIMIT 1",
+        "SELECT id FROM recipes WHERE household_id = ? AND name_key(name) = name_key(?) ORDER BY id LIMIT 1",
         (household_id(), (recipe_name or "").strip()),
     ).fetchone()
     if not recipe:
@@ -4554,7 +4557,7 @@ def flag_recipe_temporary(recipe_name: str, excluded: bool = True) -> dict:
     """
     conn = get_conn()
     recipe = conn.execute(
-        "SELECT id FROM recipes WHERE household_id = ? AND LOWER(name) = LOWER(?) ORDER BY id LIMIT 1",
+        "SELECT id FROM recipes WHERE household_id = ? AND name_key(name) = name_key(?) ORDER BY id LIMIT 1",
         (household_id(), (recipe_name or "").strip()),
     ).fetchone()
     if not recipe:
