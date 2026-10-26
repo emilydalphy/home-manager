@@ -574,12 +574,17 @@ def test_the_status_line_copy_is_exactly_what_emily_saw():
 
 @_needs_node
 def test_the_dropped_ticks_toast_counts_and_stays_plain():
-    block = SHELL_JS[SHELL_JS.index("function groTicksDroppedToast(n)"):]
+    block = SHELL_JS[SHELL_JS.index("function groTicksDroppedToast(n"):]
     block = block[:block.index("\n  }\n") + 4]
-    got = _node(block + "console.log(JSON.stringify([groTicksDroppedToast(1), groTicksDroppedToast(3)]));")
+    got = _node(block + "console.log(JSON.stringify([groTicksDroppedToast(1), groTicksDroppedToast(3), "
+                "groTicksDroppedToast(1, 1), groTicksDroppedToast(2, 2), groTicksDroppedToast(3, 1)]));")
     assert got == [
         "One tick couldn’t be saved — the list is up to date now.",
         "3 ticks couldn’t be saved — the list is up to date now.",
+        # An add is not a tick (2026-10-22).
+        "Something you added couldn’t be saved — the list is up to date now.",
+        "2 things you added couldn’t be saved — the list is up to date now.",
+        "3 changes couldn’t be saved — the list is up to date now.",
     ]
     assert "stick" not in block
 

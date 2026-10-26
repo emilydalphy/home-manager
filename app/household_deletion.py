@@ -216,11 +216,11 @@ def forget_in_memory(hid: int) -> None:
         logger.exception("Forgetting household %s's proposals failed", hid)
     try:
         from . import agent
-        # By attribute, not `from .tools import swap_options`: tools/__init__
-        # re-exports a FUNCTION called swap_options that shadows the module
-        # (tests/test_module_name_collisions.py).
+        # The module was swap_options.py until 2026-10-25, when it was
+        # renamed because the FUNCTION tools/__init__ re-exports under that
+        # name shadowed it (tests/test_module_name_collisions.py).
         from .tools.plate_parts import _OPTIONS_CACHE as plate_cache
-        from .tools.swap_options import _OPTIONS_CACHE as swap_cache
+        from .tools.swap_option_picks import _OPTIONS_CACHE as swap_cache
 
         for cache in (
             plate_cache,
@@ -375,10 +375,16 @@ def removal_check(household_id: int, member_id: int | None) -> str | None:
     return None
 
 
-def remove_member(household_id: int, member_id: int) -> dict:
+def remove_member(household_id: int, member_id: int, by_member_id: int | None = None) -> dict:
     """
     Take one adult out of a household that keeps at least one other adult.
     Returns {"table.column": rows touched}.
+
+    `by_member_id` is who asked, when it is not the person leaving: the
+    main person taking a former nanny or an ex-partner out from their row
+    in Who's here (2026-10-21). It changes the log line only — what goes
+    and what stays is the same as "Remove me", by design. Who may ask is
+    the route's to decide (main.remove_household_member).
     """
     hid = int(household_id)
     mid = int(member_id)
@@ -409,6 +415,18 @@ def remove_member(household_id: int, member_id: int) -> dict:
                 )
             name = row[0]
             _drop_their_own_trips_and_needs(conn, hid, mid, touched)
+            # "I've got tonight" said by (or about) the person leaving goes
+            # with them, back to the household's default — never nulled by
+            # the loop below, because a NULL member_id on this table is a
+            # real answer, "Nobody yet" said on purpose (move_owner.py). After
+            # Vineeth claimed tonight and left, Emily's Today said nobody was
+            # cooking a dinner the rotation gives her (defect hunt 2026-10-24).
+            n = conn.execute(
+                "DELETE FROM move_owner_overrides WHERE household_id = ? AND member_id = ?",
+                (hid, mid),
+            ).rowcount
+            if n:
+                touched["move_owner_overrides.member_id"] = n
             for table, column, not_null, is_json in _member_columns(conn):
                 where_hh = "id = ?" if table == "households" else "household_id = ?"
                 if is_json:
@@ -453,7 +471,10 @@ def remove_member(household_id: int, member_id: int) -> dict:
             raise
     finally:
         conn.close()
-    logger.info("Member %s removed themselves from household %s", mid, hid)
+    if by_member_id is not None and int(by_member_id) != mid:
+        logger.info("Member %s was taken out of household %s by member %s", mid, hid, int(by_member_id))
+    else:
+        logger.info("Member %s removed themselves from household %s", mid, hid)
     return touched
 
 

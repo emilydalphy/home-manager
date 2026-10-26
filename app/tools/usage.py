@@ -1196,6 +1196,16 @@ def get_recent_errors(days: int = 1, limit: int = 50) -> dict:
     days = max(1, int(days))
     limit = max(1, min(int(limit), 200))
     since = f"-{days} days"
+    # WHEN IT WAS LAST SEEN, not when its row was filed. record_error folds
+    # a repeat into a row up to a day old (_DEDUPE_WINDOW), so a row filed
+    # at 05:00 yesterday and hit again at 22:00 last night has a created_at
+    # outside a 06:00 "--days 1" window -- and windowing on created_at made
+    # last night's crash vanish: "Nothing broke", exit 0 (2026-10-25). The
+    # count is then the row's whole SUM(occurrences), which can include
+    # hits from before the window; the "last seen ... from ..." line under
+    # it says the stretch, and an overcount is the safe direction here.
+    # NULLIF for rows written before last_seen_at existed.
+    seen = "COALESCE(NULLIF(last_seen_at, ''), created_at)"
     conn = get_conn()
     try:
         hid = household_id()
@@ -1203,7 +1213,7 @@ def get_recent_errors(days: int = 1, limit: int = 50) -> dict:
             r["kind"]: r["n"]
             for r in conn.execute(
                 "SELECT kind, SUM(occurrences) AS n FROM error_events "
-                f"WHERE household_id = ? AND created_at >= datetime('now', '{since}') "
+                f"WHERE household_id = ? AND {seen} >= datetime('now', '{since}') "
                 "AND kind != 'voice' GROUP BY kind ORDER BY n DESC",
                 (hid,),
             ).fetchall()
@@ -1212,7 +1222,7 @@ def get_recent_errors(days: int = 1, limit: int = 50) -> dict:
             r["detail"]: r["n"]
             for r in conn.execute(
                 "SELECT detail, SUM(occurrences) AS n FROM error_events "
-                f"WHERE household_id = ? AND created_at >= datetime('now', '{since}') "
+                f"WHERE household_id = ? AND {seen} >= datetime('now', '{since}') "
                 "AND kind = 'voice' GROUP BY detail ORDER BY n DESC",
                 (hid,),
             ).fetchall()
@@ -1223,7 +1233,7 @@ def get_recent_errors(days: int = 1, limit: int = 50) -> dict:
                 "SELECT kind, where_ AS location, detail, error_type, source, stack_shape, "
                 "reason, request_shape, trail, device, display_mode, lang, app_version, "
                 "occurrences, last_seen_at, created_at FROM error_events "
-                f"WHERE household_id = ? AND created_at >= datetime('now', '{since}') "
+                f"WHERE household_id = ? AND {seen} >= datetime('now', '{since}') "
                 "AND kind != 'voice' "
                 # Newest first means most recently SEEN, not most recently
                 # filed: a row deduping a failure that is still happening is
@@ -1238,7 +1248,7 @@ def get_recent_errors(days: int = 1, limit: int = 50) -> dict:
             r["request_shape"]: r["n"]
             for r in conn.execute(
                 "SELECT request_shape, SUM(occurrences) AS n FROM error_events "
-                f"WHERE household_id = ? AND created_at >= datetime('now', '{since}') "
+                f"WHERE household_id = ? AND {seen} >= datetime('now', '{since}') "
                 "AND kind != 'voice' AND reason = 'network' "
                 "GROUP BY request_shape ORDER BY n DESC",
                 (hid,),
@@ -1249,7 +1259,7 @@ def get_recent_errors(days: int = 1, limit: int = 50) -> dict:
             r["kind"]: r["n"]
             for r in conn.execute(
                 "SELECT kind, SUM(occurrences) AS n FROM error_events "
-                f"WHERE household_id = ? AND created_at >= datetime('now', '{since}') "
+                f"WHERE household_id = ? AND {seen} >= datetime('now', '{since}') "
                 "AND kind != 'voice' AND reason = 'network' GROUP BY kind",
                 (hid,),
             ).fetchall()

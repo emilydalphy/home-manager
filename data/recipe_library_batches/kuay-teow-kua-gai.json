@@ -1,0 +1,47 @@
+{
+ "dish_name": "Kuay Teow Kua Gai",
+ "cuisine": "Thai",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Boneless skinless chicken thighs", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Fresh wide rice noodles", "qty": "1 1/4 lb", "category": "produce"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Oyster sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Golden Mountain seasoning sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Dark soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Ground white pepper", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Eggs", "qty": "4", "category": "dairy"},
+  {"item": "Vegetable oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Green leaf lettuce", "qty": "1 head", "category": "produce"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce"},
+  {"item": "Sriracha", "qty": "1 bottle", "category": "pantry"}
+ ],
+ "instructions": [
+  "Pat the 1 lb chicken dry and slice it into thin bite size strips. Slice the onion and finely chop the 2 garlic cloves.",
+  "In a small bowl, stir together the 1/4 cup oyster sauce, 2 tbsp seasoning sauce, 2 tsp dark soy sauce, 1 tsp white pepper and 1 tbsp sugar.",
+  "Gently pull the 1 1/4 lb noodles apart into single strands. If they're cold and stiff, microwave them for about 1 minute first so they separate without tearing.",
+  "Tear 6 to 8 lettuce leaves into pieces and spread them over 4 plates. Thinly slice 3 green onions. Crack the 4 eggs into a bowl and beat them lightly.",
+  "You'll cook this in two batches. A crowded pan steams the noodles instead of charring them. Heat 2 tbsp oil in a wok or large nonstick skillet over high until it shimmers.",
+  "Add half the chicken in one layer and leave it alone for about 2 minutes, until the underside is browned. Stir fry it for 1 minute, then add half the onion and half the garlic and stir fry for about 1 minute, until the onion softens and the chicken has no pink left inside.",
+  "Add half the sauce and toss to coat the chicken. Add half the noodles and toss them through, then spread them out and leave them for about 30 seconds, until they char in spots. Toss them and leave them again. Do this two or three times, until the noodles have dark, toasty patches.",
+  "Push everything to one side of the pan. Pour half the eggs into the empty side and let them set for about 20 seconds, then scramble them lightly and fold them through the noodles. Transfer it onto 2 of the lettuce plates.",
+  "Wipe out the pan if anything is stuck, then cook the second batch the same way with the last 2 tbsp oil and the rest of the chicken, onion, garlic, sauce, noodles and eggs.",
+  "Taste it. If it's flat, add a few drops more seasoning sauce.",
+  "Scatter the green onions on top. Serve with the Sriracha on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three brown chicken thigh in a very hot wok, season it with oyster sauce and white pepper, toss in fresh wide rice noodles until they char in spots, and finish with an egg scrambled into the noodles. Hungry in Thailand adds onion, garlic, Golden Mountain sauce, dark soy and sugar; Marion's Kitchen marinates the chicken in soy and oyster sauce and serves it on lettuce; the Ekkamai version from Phol Food Mafia adds preserved vegetables and cuttlefish and serves it on lettuce with Sriracha. This one follows the lead's seasoning, takes the lettuce and Sriracha from the other two, cooks in two batches so the noodles char, and uses one egg per person as Marion's Kitchen does where the lead uses one for two. Marion's Kitchen shows 5 stars from 3 reviews, a review count rather than a rating count; no version had 20 or more ratings and RecipeTin Eats (the trusted cook for Thai) has no version, so the version with the most ratings leads.",
+ "sources": [
+  {"name": "Hungry in Thailand", "title": "Kuay Teow Kua Gai Recipe (Roasted Chicken Noodles)", "url": "https://hungryinthailand.com/kuay-teow-kua-gai-recipe/", "rating": 5.0, "rating_count": 1, "read": true, "lead": true},
+  {"name": "Marion's Kitchen", "title": "Thai Chicken & Egg Noodles (Guay Tiew Khua Gai)", "url": "https://www.marionskitchen.com/?p=20707", "rating": 5.0, "rating_count": null, "read": true, "lead": false},
+  {"name": "Phol Food Mafia", "title": "Ekkamai Stir-fried Rice Noodles and Chicken", "url": "https://www.pholfoodmafia.com/?p=20993", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

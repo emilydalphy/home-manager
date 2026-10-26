@@ -195,7 +195,7 @@ def get_reset_preview(weekly_plan_id: int | None = None) -> dict:
         ).fetchone()["n"]
         start, days = _weekly_plan.plan_period(plan)
         week_label = _weekly_plan._format_period_range(start, days)
-        intake_shared = bool(_weekly_plan.find_overlapping_plans(start, days, exclude_plan_id=plan["id"]))
+        intake_shared = _intake_shared(conn, plan)
         if not intake_shared:
             intake_count = 1 if _week_intake.get_week_intake(week_start_date) else 0
     grocery_count = conn.execute(
@@ -213,6 +213,26 @@ def get_reset_preview(weekly_plan_id: int | None = None) -> dict:
         "intake_count": intake_count,
         "intake_shared": intake_shared,
     }
+
+
+def _intake_shared(conn, plan) -> bool:
+    """
+    Whether "this week's answers" also belong to another live plan: its
+    period overlaps this one's, OR it is filed under the same week key
+    (overnight/plan-id-over-week-key, 2026-10-22). week_intake is keyed by
+    week_start, and a takeover that cuts a plan's front days leaves it
+    under its old key — so an approved Nov 1–4 filed under Oct 29 and a
+    draft of Oct 29–30 share one intake row while sharing no day, and the
+    overlap test alone let Start over clear the approved week's answers.
+    """
+    start, days = _weekly_plan.plan_period(plan)
+    if _weekly_plan.find_overlapping_plans(start, days, exclude_plan_id=plan["id"]):
+        return True
+    return conn.execute(
+        "SELECT 1 FROM weekly_plans WHERE household_id = ? AND week_start_date = ? "
+        "AND id != ? AND status != 'retired' LIMIT 1",
+        (household_id(), plan["week_start_date"], plan["id"]),
+    ).fetchone() is not None
 
 
 def _resolve_plan(conn, weekly_plan_id: int | None):
@@ -247,8 +267,7 @@ def check_week_answers_clearable(weekly_plan_id: int | None = None) -> None:
     if not plan:
         conn.close()
         return
-    start, days = _weekly_plan.plan_period(plan)
-    overlapping = _weekly_plan.find_overlapping_plans(start, days, exclude_plan_id=plan["id"])
+    overlapping = _intake_shared(conn, plan)
     conn.close()
     if overlapping:
         raise ValueError(

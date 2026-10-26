@@ -19,6 +19,8 @@ from pathlib import Path
 
 import pytest
 
+import conftest
+
 
 ISO_PIN = "2026-09-13"  # a Sunday: the day PLAN_AHEAD and the fold-forward both fire
 
@@ -277,6 +279,8 @@ def test_with_no_pin_sqlite_is_left_completely_alone(request):
 
     if request.config.getoption("--today") or os.environ.get("POMONA_TEST_TODAY"):
         pytest.skip("this run is pinned on purpose")
+    if conftest.held_past_midnight():
+        pytest.skip("this run crossed midnight, so conftest is holding it to the day it started")
     assert sqlite3.connect is sqlite_clock._real_connect
 
 
@@ -344,6 +348,8 @@ def test_without_a_pin_node_gets_the_script_byte_for_byte(request):
 
     if request.config.getoption("--today") or os.environ.get("POMONA_TEST_TODAY"):
         pytest.skip("this run is pinned on purpose")
+    if conftest.held_past_midnight():
+        pytest.skip("this run crossed midnight, so conftest is holding it to the day it started")
     assert nodeharness._clock_prelude() == ""
 
 

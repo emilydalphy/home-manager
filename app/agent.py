@@ -20,14 +20,17 @@ import time
 import urllib.parse
 from anthropic import Anthropic, APIConnectionError, APIStatusError, APITimeoutError
 from . import ai_consent, calendar_feed, chat_progress, tools
+from .db import name_key
 from .tools import allergen_gate as _allergen_gate
 from .tools import typed_requests as _typed_requests
+from .tools import draft_opener as _draft_opener
 from .tools import model_shapes as _model_shapes
 from .tools import plan_quality
 from .tools import recipe_research as _recipe_research
 from .tools import recipe_library as _recipe_library
 from .tools import meal_variety as _meal_variety
 from .tools import snack_variety as _snack_variety
+from .tools import everyday_snacks as _everyday_snacks
 from .tools import leftovers_spread as _leftovers_spread
 from .tools import leftovers as _leftovers_mod
 from .tools import weekday_lunches as _weekday_lunches
@@ -344,6 +347,83 @@ class AIConsentRequiredError(AssistantUnavailableError):
     """
 
 
+class AssistantAnswerUnusableError(AssistantUnavailableError):
+    """
+    Claude answered, but with nothing the app can use — prose where a tool
+    call was forced, a tool call with its fields missing, an answer cut off
+    at max_tokens. The same 503 and the same "try again" as an outage, in
+    every route that already catches AssistantUnavailableError; only the
+    sentence differs, because "trouble reaching Claude's servers" would not
+    be true. Filed in the morning report by whoever raises it.
+    """
+
+
+# The AI layer's own row in the morning report (2026-10-25, branch
+# overnight/ai-failure-hunt). A route that turns an AI failure into a 200
+# ("options_unavailable"), a 400, or a recipe left pending at approval used
+# to file nothing, so a night Claude was down read "Nothing broke". Filed
+# here, once per call that gave up, kind "ai" and where = the call's label;
+# the exception carries AI_FILED so main.record_server_errors doesn't file
+# the same failure a second time as the route's 5xx.
+AI_FILED = "_pomona_ai_filed"
+
+
+def _ai_error_shape(error: BaseException | None) -> str:
+    """Class name and status code only — never the API's message text."""
+    if error is None:
+        return ""
+    status = getattr(error, "status_code", None)
+    return f"{type(error).__name__} {status}" if status else type(error).__name__
+
+
+def record_ai_failure(label: str, error: BaseException | None = None, *, why: str = "") -> None:
+    """
+    File one AI call that gave up (an outage, a refused request) or came
+    back unusable (`why`, a fixed phrase — never the model's words or the
+    household's). Marks `error` as filed. A household that hasn't said yes
+    to AI is the app working as intended, not breakage: not filed. Never
+    raises.
+    """
+    try:
+        # A cache warm-up (".warm") is optional and never seen: its caller
+        # carries on without it, so a refused one is not breakage.
+        if isinstance(error, AIConsentRequiredError) or label.endswith(".warm"):
+            return
+        tools.record_error("ai", where=label, detail=why or _ai_error_shape(error))
+        if error is not None:
+            setattr(error, AI_FILED, True)
+    except Exception:
+        logger.exception("Recording an AI failure for %s failed", label)
+
+
+def unusable_answer(label: str, why: str, line: str) -> AssistantAnswerUnusableError:
+    """Filed and ready to raise: `line` is the sentence the household reads."""
+    err = AssistantAnswerUnusableError(line)
+    record_ai_failure(label, err, why=why)
+    return err
+
+
+UNAVAILABLE_LINE = (
+    "I'm having trouble reaching Claude's servers right now — looks like a temporary "
+    "hiccup on their end, not anything wrong with your data. Please try again in a "
+    "moment, and if it's still not working after a minute or two, let me know."
+)
+
+
+def _gave_up(label: str, last_error: BaseException | None) -> AssistantUnavailableError:
+    """The error both call points raise once retries are spent, filed."""
+    err = AssistantUnavailableError(UNAVAILABLE_LINE)
+    record_ai_failure(label, last_error)
+    setattr(err, AI_FILED, True)
+    return err
+
+
+# Chat's two give-up replies (2026-10-25: both opened "Sorry," against the
+# voice rules the model itself is held to).
+CHAT_GAVE_UP_LINE = "I couldn’t finish that one in one go. Try asking again — two smaller asks may work better."
+CHAT_EMPTY_REPLY_LINE = "I couldn’t put an answer together just now. Try asking again."
+
+
 def _require_ai_consent(label: str) -> None:
     """The consent check both call points run before anything leaves the building."""
     try:
@@ -470,6 +550,9 @@ def _create_with_retry(
             last_error = e
         except APIStatusError as e:
             if e.status_code not in _RETRYABLE_STATUS_CODES:
+                # A 4xx is our request's fault (or a bad key) — every
+                # household's call fails the same way, so it is filed too.
+                record_ai_failure(label, e)
                 raise
             last_error = e
         if attempt < max_attempts:
@@ -515,11 +598,7 @@ def _create_with_retry(
             last_error = fallback_error
 
     logger.error("Anthropic API call failed after %d attempts: %s", max_attempts, last_error)
-    raise AssistantUnavailableError(
-        "I'm having trouble reaching Claude's servers right now — looks like a temporary "
-        "hiccup on their end, not anything wrong with your data. Please try again in a "
-        "moment, and if it's still not working after a minute or two, let me know."
-    ) from last_error
+    raise _gave_up(label, last_error) from last_error
 
 
 # ---------- per-route response effort ----------
@@ -774,6 +853,9 @@ def _stream_forced_tool_call(
             last_error = e
         except APIStatusError as e:
             if e.status_code not in _RETRYABLE_STATUS_CODES:
+                # A 4xx is our request's fault (or a bad key) — every
+                # household's call fails the same way, so it is filed too.
+                record_ai_failure(label, e)
                 raise
             last_error = e
         if attempt < max_attempts:
@@ -784,11 +866,7 @@ def _stream_forced_tool_call(
             time.sleep(delay)
             delay *= 2
     logger.error("Anthropic streaming call failed after %d attempts: %s", max_attempts, last_error)
-    raise AssistantUnavailableError(
-        "I'm having trouble reaching Claude's servers right now — looks like a temporary "
-        "hiccup on their end, not anything wrong with your data. Please try again in a "
-        "moment, and if it's still not working after a minute or two, let me know."
-    ) from last_error
+    raise _gave_up(label, last_error) from last_error
 
 
 SYSTEM_PROMPT = """You are a helpful home manager assistant for a household — the kind of \
@@ -1467,14 +1545,14 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "set_morning_text",
-        "description": "Set up or change the once-a-day morning text — a short text each morning saying what today needs (tonight's cook, the freezer, the shop). 'Text me at 7 each morning on 416-555-0100' = phone + time + on=true. Every field is optional; only what's given changes. Pass `name` for whose number it is when the household has more than one adult and they didn't say (the tool asks if it can't tell). Turning it off is always accepted; turning it on needs a number on record. The result's `configured` says whether the app can actually send texts yet (Twilio keys set) — if false, say plainly that the number is saved and texts will start once texting is switched on, don't promise a text tomorrow. WHAT THE MESSAGE INCLUDES is one setting for the WHOLE household (it changes for everyone who gets it, whoever asks): `parts` replaces the lot ('just tell me the meals' = parts [\"meals\"]), `add_parts` adds one ('also tell me when to start cooking dinner' = add_parts [\"start\"]) and `drop_parts` takes one away ('stop telling me about the shop' = drop_parts [\"shop\"]). Use add_parts/drop_parts for anything that sounds like 'as well' or 'stop', and `parts` only when they name the whole list — you cannot read the current set first, so a delta is the safe way to add one thing. The result's `parts` is what it now includes; read it back rather than guessing. A part with nothing on it today is simply left out of that morning's message, and a morning with nothing in any chosen part sends nothing at all — say that rather than promising a message every day.",
+        "description": "Set up or change the once-a-day morning text — a short text each morning saying what today needs (tonight's cook, the freezer, the shop). 'Text me at 7 each morning on 416-555-0100' = phone + time + on=true. Every field is optional; only what's given changes. Leave `name` out when it's for the person talking ('text me') — the app knows who is on this device; pass `name` only when they name someone else (the tool asks if it can't tell). Turning it off is always accepted; turning it on needs a number on record. The result's `configured` says whether the app can actually send texts yet (Twilio keys set) — if false, say plainly that the number is saved and texts will start once texting is switched on, don't promise a text tomorrow. WHAT THE MESSAGE INCLUDES is one setting for the WHOLE household (it changes for everyone who gets it, whoever asks): `parts` replaces the lot ('just tell me the meals' = parts [\"meals\"]), `add_parts` adds one ('also tell me when to start cooking dinner' = add_parts [\"start\"]) and `drop_parts` takes one away ('stop telling me about the shop' = drop_parts [\"shop\"]). Use add_parts/drop_parts for anything that sounds like 'as well' or 'stop', and `parts` only when they name the whole list — you cannot read the current set first, so a delta is the safe way to add one thing. The result's `parts` is what it now includes; read it back rather than guessing. A part with nothing on it today is simply left out of that morning's message, and a morning with nothing in any chosen part sends nothing at all — say that rather than promising a message every day.",
         "input_schema": {
             "type": "object",
             "properties": {
                 "phone": {"type": "string", "description": "Mobile number, any format; 10 digits are read as North American (+1). Empty string clears it."},
                 "time": {"type": "string", "description": "When the text should arrive, household local time — '7am', '07:30', '6:45 am'."},
                 "on": {"type": "boolean", "description": "true = send it, false = stop."},
-                "name": {"type": "string", "description": "Which adult this is for, when it isn't obvious."},
+                "name": {"type": "string", "description": "Which adult this is for, only when it is someone other than the person talking. Never guess it."},
                 "timezone": {"type": "string", "description": "IANA zone like America/Toronto or America/Vancouver. Only when they say they're somewhere else — the default is Toronto."},
                 "parts": {
                     "type": "array",
@@ -2077,7 +2155,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "take_the_night_off",
-        "description": "\"We're going out tonight\" / \"we'll grab something\" / \"nobody's cooking tonight\" — settle tonight in one call, with no follow-up question. Takeout, leftovers or cereal all mean the same thing here, so don't ask which. Tonight's dish moves to the next free night of the plan when there is one (`moved_to` says which), otherwise tonight's row comes off (`still_on` names any later night the same dish is still planned on — then it is NOT off the week, so never say it is) and `use_soon` names anything already bought for it that won't keep — say that back in one line if it isn't empty. Either way the night ends deliberately empty: never call it a gap, never offer to fill it, never describe the week as short because of it. `already` true means nothing changed because the night was already empty — `already_reason` 'night_off' is a night off somebody already took (say so plainly, don't take it again), 'away' is a night nobody was home for anyway (say THAT, never \"night off\"). It never asks for anything to be changed first: a dish cooked double for a later night, with no free night, is cooked on the first night it was feeding instead (same size, `moved_to` says which) and tonight's share goes in the freezer; a leftovers night, or a dinner already cooked, goes in the freezer (`frozen` names it). `said` is the line to say back; if `thaw_now` is there, add those lines too — moving the dish has left a fridge move due today or earlier, which no screen can show. A status of 'refused' means there is no plan covering that night and nothing changed — say `message` back rather than retrying. A status of 'needs_confirmation' means NOTHING changed yet: the night the dish would move onto is already marked cooked, and moving onto it replaces that record — ask the household `message` in plain words and stop; only if they say yes in this conversation, call again with confirm_cooked true. Pass `day` only for a day other than today. For a trip or a night nobody is home at all, use set_slot_need or set_away_stretch instead — those are about who's in the house, this is about not cooking.",
+        "description": "\"We're going out tonight\" / \"we'll grab something\" / \"nobody's cooking tonight\" — settle tonight in one call, with no follow-up question. Takeout, leftovers or cereal all mean the same thing here, so don't ask which. Tonight's dish moves to the next free night of the plan when there is one (`moved_to` says which), otherwise tonight's row comes off (`still_on` names any later night the same dish is still planned on — then it is NOT off the week, so never say it is) and `use_soon` names anything already bought for it that won't keep — say that back in one line if it isn't empty. Either way the night ends deliberately empty: never call it a gap, never offer to fill it, never describe the week as short because of it. `already` true means nothing changed because the night was already empty — `already_reason` 'night_off' is a night off somebody already took (say so plainly, don't take it again), 'away' is a night nobody was home for anyway (say THAT, never \"night off\"). It never asks for anything to be changed first: a dish cooked double for a later night, with no free night, is cooked on the first night it was feeding instead (same size, `moved_to` says which) and tonight's share goes in the freezer; a leftovers night, or a dinner already cooked, goes in the freezer (`frozen` names it). `said` is the line to say back; if `thaw_now` is there, add those lines too — moving the dish has left a fridge move due today or earlier, which no screen can show. A status of 'refused' means nothing changed — there is no plan covering that night, or tonight's cook has already started (\"Start cooking\" was tapped; it stays on tonight) — say `message` back rather than retrying. A status of 'needs_confirmation' means NOTHING changed yet: the night the dish would move onto is already marked cooked, and moving onto it replaces that record — ask the household `message` in plain words and stop; only if they say yes in this conversation, call again with confirm_cooked true. Pass `day` only for a day other than today. For a trip or a night nobody is home at all, use set_slot_need or set_away_stretch instead — those are about who's in the house, this is about not cooking.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -3485,6 +3563,15 @@ each other on the same test. Across DIFFERENT days, a repeated snack is fine and
 the guideline above) — this rule is only ever about one day's own plate. Anything caught here \
 after the fact gets traded onto another day automatically, which works but is a repair, not a \
 plan.
+- SNACKS COME FROM `everyday_snacks.pick_from` — a list of good everyday snacks, already \
+filtered for this household's allergies, nut-free lunches and diet, with last fortnight's \
+snacks taken out, least recently eaten first. Pick each of the week's snacks from it by its \
+exact name, leaning toward the top of the list, still holding every snack rule here (the day's \
+snacks differ from each other and from that day's meals, two of three food groups, eating_style). \
+Go off the list ONLY for a snack the household asked for (intake.freeform, notes) — stamp \
+derived_from.freeform on it — or when `everyday_snacks.nothing_fits` is true or nothing on it \
+fits an eating_style. A snack invented instead is replaced after you answer, so it is work \
+thrown away. Absent `everyday_snacks`, plan snacks as below.
 - The no-repeat rule against recent_history is about DINNER, LUNCH and SNACK — not \
 breakfast (except under "Something new", below). recent_history covers {_variety_window}, and a \
 dinner, lunch or snack (or a near-identical variant) that appears there is NOT drafted again \
@@ -5484,6 +5571,22 @@ def _research_capped(plain: str, recipe: dict, *, search: bool, weekly_plan_id=N
 # billed) rather than a copy. eating_style for safety of a kind (vegetarian,
 # keto), kit and children for whether they can cook and eat it as written.
 _WRITE_INSTEAD_OF_COPY = ("eating_style", "kitchen_kit", "children_at_table")
+# The same, said on a PERSON: the allergen gate holds no meat back for these
+# (coordination's matcher reads foods, not diets), so a copy is unguarded —
+# a "vegetarian" member's household was copied Broccoli Cheddar Soup on
+# chicken broth and Green Papaya Salad with fish sauce (library audit,
+# 2026-10-25). The writer is told them (must_not_contain); a copy is not.
+# Read off what the writer is told (swap_hard_exclusions: restrictions and
+# hard facts as written), NOT the gate's avoidances — a fact whose words
+# name no food ("We're vegetarian", "We keep kosher") never becomes one
+# (review, same day). Leans to writing: a needless write costs cents, a
+# wrong copy is meat on a vegetarian's plate.
+_DIET_THE_GATE_CANT_READ = re.compile(
+    r"\b(?:vegetarians?|vegans?|pescatarians?|plant[\s-]?based|halal|kosher|veggie|"
+    r"meat[\s-]?free|meatless|no\s+(?:red\s+)?meat|without\s+meat|"
+    r"(?:doesn['’]?t|does\s+not|don['’]?t|do\s+not|won['’]?t|never|can['’]?t)\s+eats?\s+meat)\b",
+    re.IGNORECASE,
+)
 
 
 def _copy_from_library(recipe: dict, name: str, plain: str, avoidances: list[dict],
@@ -5500,6 +5603,8 @@ def _copy_from_library(recipe: dict, name: str, plain: str, avoidances: list[dic
     """
     try:
         if any((shared or {}).get(k) for k in _WRITE_INSTEAD_OF_COPY):
+            return None, False
+        if any(_DIET_THE_GATE_CANT_READ.search(line) for line in tools.swap_hard_exclusions()):
             return None, False
         entry = _recipe_library.base_recipe(plain)
         if not entry:
@@ -5558,7 +5663,7 @@ def _write_one_pending_recipe(recipe: dict, slot: str, shared: dict, avoidances:
     # the dish on it so it is re-picked (2026-09-30, verifier round 3).
     # If another recipe already has the plain name the label stays too.
     plain = _allergen_gate.plain_dish_name(name)
-    if plain.lower() != name.lower() and tools.existing_recipe_named(plain):
+    if name_key(plain) != name_key(name) and tools.existing_recipe_named(plain):
         plain = name
     # A name that names the allergen on its own ("Dairy-Free Pancakes")
     # fails the strict check whatever list comes back, so it is held here,
@@ -5668,7 +5773,18 @@ def _write_one_pending_recipe(recipe: dict, slot: str, shared: dict, avoidances:
                 except Exception:
                     logger.exception("Filing %r in the recipe library failed; the recipe is saved", plain)
             return {"name": plain, "ok": True, "clash": [], "was": name}
+        # Two answers with no ingredients or no steps: Claude answered, but
+        # with nothing to save — filed, as an outage is.
+        record_ai_failure("generate_recipe_details_llm", why="no ingredients or steps, twice")
         return {"name": name, "ok": False, "clash": []}
+    except AssistantUnavailableError as e:
+        # Claude couldn't be reached (already filed by the call itself).
+        # Marked, so approval can tell "Claude is down" from one bad recipe
+        # — see weekly_plan._write_pending_recipes. A refused consent is
+        # not an outage and stays the plain failure it always was.
+        logger.warning("Recipe pass could not reach Claude for %r; it stays pending: %s", name, e)
+        return {"name": name, "ok": False, "clash": [],
+                "unreachable": not isinstance(e, (AIConsentRequiredError, AssistantAnswerUnusableError))}
     except Exception:
         logger.exception("Recipe pass failed for %r; it stays pending", name)
         return {"name": name, "ok": False, "clash": []}
@@ -5748,7 +5864,7 @@ def fill_pending_recipes_for_plan(weekly_plan_id: int, *, wait: bool = True) -> 
     leaves the rest to whoever holds them, and never re-picks a slot (see
     _fill_claimed_recipes).
     """
-    result = {"filled": [], "failed": [], "clashed": []}
+    result = {"filled": [], "failed": [], "clashed": [], "unreachable": []}
     # Approval (wait=True) tells any background pass on this plan to stop
     # searching the web and write (2026-10-06); see _research_capped.
     waiting_key = (tools.household_id(), int(weekly_plan_id)) if wait and weekly_plan_id else None
@@ -5789,12 +5905,12 @@ def _fill_pending_recipes(weekly_plan_id: int, wait: bool, result: dict) -> dict
                 to_write = [r for r in mine if r["id"] in still]
                 part = (
                     _fill_claimed_recipes(weekly_plan_id, to_write, sweep_clashes=wait)
-                    if to_write else {"filled": [], "failed": [], "clashed": []}
+                    if to_write else {"filled": [], "failed": [], "clashed": [], "unreachable": []}
                 )
             finally:
                 _release_recipes(mine)
             for k in result:
-                result[k] += part[k]
+                result[k] += part.get(k, [])
         if not theirs or not wait:
             break
         for held in theirs:
@@ -5810,7 +5926,7 @@ def _fill_pending_recipes(weekly_plan_id: int, wait: bool, result: dict) -> dict
 
 def _fill_claimed_recipes(weekly_plan_id: int, pending: list[dict], *, sweep_clashes: bool = True) -> dict:
     """The recipe pass proper, for recipes this caller has claimed."""
-    result = {"filled": [], "failed": [], "clashed": []}
+    result = {"filled": [], "failed": [], "clashed": [], "unreachable": []}
     for recipe in pending:
         must = _typed_requests.plan_must_use(weekly_plan_id, recipe["id"])
         if must:
@@ -5869,6 +5985,8 @@ def _fill_claimed_recipes(weekly_plan_id: int, pending: list[dict], *, sweep_cla
             result["clashed"].append(outcome["name"])
         else:
             result["failed"].append(outcome["name"])
+            if outcome.get("unreachable"):
+                result["unreachable"].append(outcome["name"])
     logger.info(
         "Recipe pass for plan %s: %d written, %d failed, %d clashed, %.1fs for %d recipe(s)",
         weekly_plan_id, len(result["filled"]), len(result["failed"]), len(result["clashed"]),
@@ -5893,7 +6011,11 @@ def _fill_claimed_recipes(weekly_plan_id: int, pending: list[dict], *, sweep_cla
     # approval writes it again (told the clash) and re-picks there, as it
     # did before the background pass existed. The same for a label dish
     # held above ("Dairy-Free Pancakes"): pending until Approve sweeps it.
-    if known_clashes and sweep_clashes:
+    # Not while Claude is unreachable: approval is about to refuse and
+    # write nothing (weekly_plan.approve_weekly_plan), and the sweep's
+    # re-pick would rewrite the draft — or open the slot when its own
+    # picker can't reach Claude either — under a week that wasn't approved.
+    if known_clashes and sweep_clashes and not result["unreachable"]:
         # The sweep re-picks a clashing dish through the swap's own gated
         # picker, or opens the slot — the same last line of defence a
         # finished draft gets. It is told the clash, because the pending
@@ -7202,6 +7324,31 @@ def _generate_weekly_plan(
         " ".join(t for t in (constraints_notes, (intake or {}).get("freeform") or "") if t),
         period_days, now.date().isoformat(), past=past_meals,
     )
+    # A "tomorrow" that lands on a meal they also said nobody eats — the
+    # night tagged out, a day tapped off, a meal their usual week has off,
+    # an away slot — is not pinned there. _finish_week_slots empties every
+    # one of those meals whatever is on it (the tag wins), and pinning came
+    # FIRST: place_day_requests moved the dish onto the night, the out pass
+    # then cleared it, and the draft said "Monday left free." over "I moved
+    # Lamb Curry to Monday dinner, as you asked." with the curry nowhere on
+    # the week. Unpinned, the words still reach the model as their request
+    # and the dish goes on a night someone is home.
+    if day_requests:
+        night_tags = (intake or {}).get("night_tags") or {}
+        nobody_eats = {(d, "dinner") for d, tags in night_tags.items() if "out" in (tags or [])}
+        nobody_eats |= {(d, s) for d in usual_skipped for s in ("breakfast", "lunch", "dinner")}
+        nobody_eats |= {(s["date"], s["slot"]) for s in usual_plan["off_slots"]}
+        # A meal they asked for none of (Lunches 0): emptied every day by
+        # _finish_week_slots' zero-count pass, so the same trap.
+        nobody_eats |= {
+            (d, slot) for slot, field in _meal_variety.COUNT_FIELDS.items()
+            if household_memory.get(field) == 0 for d in period_days
+        }
+        nobody_eats |= {
+            (s["date"], s["slot"])
+            for s in tools.generation_context_for_week(content_start_date, day_count)["away_slots"]
+        }
+        day_requests = [r for r in day_requests if (r["date"], r["slot"]) not in nobody_eats]
     # A meal their words name is not taken away for being late ("tonight"
     # at 10pm is still tonight) — the model is told to put the dish there,
     # and _finish_week_slots keeps the meal only if the dish is on it.
@@ -7289,6 +7436,15 @@ def _generate_weekly_plan(
     per_person = tools.member_needs_generation_context(period_days)
     if per_person:
         context["per_person"] = per_person
+    # The everyday snack list (data/everyday_snacks.json), filtered in code
+    # for this household and least-recently-used first — what the week's
+    # snacks are picked from (see the `everyday_snacks` bullet in the
+    # prompt). Telling, not preventing: _hold_counts' everyday-snacks pass
+    # replaces an off-list snack afterwards.
+    if effective_memory.get("snacks_per_day"):
+        snack_list = _everyday_snacks.prompt_context(effective_memory, content_start_date)
+        if snack_list:
+            context["everyday_snacks"] = snack_list
     # Loop Board "Per-person taste learning + solo-night personalization":
     # enrich the subset-attendance slots above with what's actually known
     # about the present people individually, so generation can lean into a
@@ -7403,6 +7559,9 @@ def _generate_weekly_plan(
                 if household_memory.get(field) == 0
             },
             cap_for=lambda d, slot: _meal_minutes_cap(d, slot, intake, effective_memory),
+            # Not a meal of today that has already gone by: apply_to_plan
+            # runs after the "already gone by" pass and would write over it.
+            gone={(m["date"], m["slot"]) for m in past_meals},
         )
         if brought_over and isinstance(context.get("intake"), dict):
             context["intake"]["brought_over"] = _bring_over.prompt_lines(brought_over)
@@ -7428,7 +7587,10 @@ def _generate_weekly_plan(
                 if household_memory.get(field) == 0
             },
             cap_for=lambda d, slot: _meal_minutes_cap(d, slot, intake, effective_memory),
-            taken={(p["on"], p["slot"]) for p in brought_over},
+            # …nor a meal of today already gone by (same reason as above).
+            taken={(p["on"], p["slot"]) for p in brought_over}
+            | {(m["date"], m["slot"]) for m in past_meals},
+            guest_nights=_freezer_portions.guest_nights(period),
         )
         if frozen_portions and isinstance(context.get("intake"), dict):
             context["intake"]["frozen_portions"] = _freezer_portions.prompt_lines(frozen_portions)
@@ -7459,11 +7621,20 @@ def _generate_weekly_plan(
         # days and carry no date, so it is deliberately not run over them.
         items = _expand_repeated_dates(generate_weekly_plan_llm(context))
     if not items:
-        raise ValueError(
-            "Generating this week's plan didn't come back with any meals — the model call may "
-            "have been cut off or hit an error. Nothing was saved; try generating the week again."
+        # Claude answered with no meals (prose, an empty tool call, an
+        # answer cut off). An AI failure, not a refused request: a 503 the
+        # morning report hears of, where a ValueError was a 400 it never
+        # did — and a sentence without "the model call" in it.
+        raise unusable_answer(
+            "generate_weekly_plan", "no meals in the answer",
+            "I couldn’t put the week together just now — nothing was saved. Try again in a minute.",
         )
     _honest_meal_names(items)
+    # The slots the model's own draft cited the household's words on, read
+    # before any pass below can clear or swap one — what
+    # draft_opener.settle_report checks its honoured list against.
+    model_spans = [str((i.get("derived_from") or {}).get("freeform") or "")
+                   for i in items if isinstance(i, dict) and isinstance(i.get("derived_from"), dict)]
     # A dish they asked for by name keeps that name; a side the model
     # folded into it comes off here and goes back on as a side once the
     # entries exist (typed_requests; Emily, 2026-09-21). The asks are the
@@ -7494,7 +7665,14 @@ def _generate_weekly_plan(
     if usual_plan["off_slots"]:
         usual_off = {(s["date"], s["slot"]) for s in usual_plan["off_slots"]}
         items = [i for i in items if ((i.get("date") or ""), i.get("slot") or "dinner") not in usual_off]
+    # A list snack this house can only have nut-free ("Rice Cakes with
+    # Almond Butter") becomes the list's own swap before the gate would
+    # hold it back and lose the snack (tools/everyday_snacks.py).
+    # One it can't have at all (read with the list's own allergen tags) is
+    # held back here like any clashing dish.
+    listed_held = [] if is_component_based else _everyday_snacks.swap_for_household(items, effective_memory)
     items, held_back = _allergen_gate.split_safe(items, hard_avoidances)
+    held_back = listed_held + held_back
     items = GeneratedDays(items)
     items.report = plan_report
     if held_back and not items:
@@ -7694,6 +7872,12 @@ def _generate_weekly_plan(
             # question. The stream is told as each lands, so a screen
             # holding "Finding another breakfast…" fills that row then.
             in_scope_held = [h for h in held_back if (h["item"].get("date") or "") in in_scope]
+            # A held SNACK is re-picked from the everyday list first, with
+            # no model call (everyday_snacks.fill_held_snacks).
+            if in_scope_held:
+                in_scope_held = _everyday_snacks.fill_held_snacks(
+                    plan_id, in_scope_held, effective_memory, content_start_date,
+                )
             if in_scope_held:
                 try:
                     _allergen_gate.repick_held(
@@ -7738,7 +7922,17 @@ def _generate_weekly_plan(
             # that can write a lunch (leftover copies, the first-week fill).
             # See tools/draft_rules.py; neither raises.
             _draft_rules.enforce_cold_packed_lunches(plan_id, usual_period)
-            _draft_rules.enforce_protein_variety(plan_id)
+            # The counts the household set, as _finish_week_slots' guard holds
+            # them (effective memory, so a part-week's prorated number; never a
+            # meal whose count they named in their own words this week): the
+            # protein re-pick runs after that guard and must not undo it.
+            count_asks = (context.get("constraints_notes"), (context.get("intake") or {}).get("freeform"))
+            _draft_rules.enforce_protein_variety(plan_id, targets={
+                slot: effective_memory.get(field)
+                for slot, field in _meal_variety.COUNT_FIELDS.items()
+                if effective_memory.get("meal_counts_set") and effective_memory.get(field)
+                and not _meal_variety.asks_for_a_count(*count_asks, slot=slot)
+            })
 
         if intake:
             tools.attach_intake_to_plan(plan_id, intake["intake_id"])
@@ -7746,7 +7940,12 @@ def _generate_weekly_plan(
         # report) — the draft's opening line is built from this and nothing
         # else, so a request it neither honoured nor listed is not mentioned
         # rather than guessed at (draft_opener).
-        tools.record_plan_requests(plan_id, getattr(items, "report", None) or {})
+        # Squared with the week as written first: a request whose dish an
+        # out night, the allergen gate or a later pass took away is not
+        # "as you asked" (draft_opener.settle_report).
+        final_report = getattr(items, "report", None) or {}
+        _draft_opener.settle_report(plan_id, final_report, model_spans)
+        tools.record_plan_requests(plan_id, final_report)
 
         # Clear out any 'needed' grocery items still sourced from the
         # PREVIOUS plan, so quantities from already-superseded weeks don't
@@ -7789,8 +7988,10 @@ def _generate_weekly_plan(
                 "Plan %s (%s for %d days) took over %d day(s) from plan(s) %s; "
                 "%d grocery line(s) removed, %d trimmed, %d left alone as already bought",
                 plan_id, content_start_date, day_count, len(takeover["surrendered_dates"]),
-                takeover["retired_plan_ids"], len(takeover["grocery_removed"]),
-                len(takeover["grocery_trimmed"]), len(takeover["grocery_kept_bought"]),
+                takeover["retired_plan_ids"], len(set(takeover["grocery_removed"])),
+                # Per LINE: the reversal names a line once per meal it
+                # takes off it, so a trimmed line repeats.
+                len(set(takeover["grocery_trimmed"])), len(set(takeover["grocery_kept_bought"])),
             )
 
         completed = True
@@ -7980,6 +8181,19 @@ def _finish_week_slots(
         }
 
     night_tags = (intake or {}).get("night_tags") or {}
+    # A dish they asked for on a night nobody is home is read off those
+    # nights NOW, before the passes below clear them — the tag wins, and on
+    # its own that DELETED the dish. cap_enforce.place_off_nights_out puts
+    # it on the nearest night that fits, further down (Emily's rule 8).
+    # {date: away?} — an Out tag, or an away need (a trip) on the dinner.
+    nobody_home = {d: False for d, tags in night_tags.items() if "out" in (tags or []) and d in dates}
+    try:
+        for d, slots in (tools.get_week_slot_needs(week_start_date, day_count) or {}).items():
+            if d in dates and d not in nobody_home and ((slots or {}).get("dinner") or {}).get("need") == "away":
+                nobody_home[d] = True
+    except Exception:
+        logger.exception("Plan %s: reading the away dinners for requests on them failed", plan_id)
+    asked_on_nights_out = _cap_enforce.requests_on_nights_out(plan_id, nobody_home)
     for day, tags in night_tags.items():
         if "out" not in tags or day not in dates:
             continue
@@ -8079,7 +8293,7 @@ def _finish_week_slots(
                 weekly_plan_id=plan_id,
                 meal_date=day,
                 slot=slot,
-                reason=f"You’ve asked me not to plan {slot}s — I’ve left this to you.",
+                reason=f"You’ve asked me not to plan {slot}{'es' if slot == 'lunch' else 's'} — I’ve left this to you.",
                 derived_from={"constraint": f"{slot}s_per_week:0"},
             )
 
@@ -8125,6 +8339,18 @@ def _finish_week_slots(
     # the night away sweeps the reminder with it. Swallows its own failures.
     if frozen_portions:
         _freezer_portions.apply_to_plan(plan_id, frozen_portions)
+
+    # Rule 8: a dish they asked for on a night nobody is home goes to the
+    # nearest night that fits its time, and the draft says so. AFTER every
+    # pass that empties a night or claims one for the household (out, away,
+    # a day left out, a holiday, brought over, the freezer), so the nights
+    # it can go to are read off the week itself; BEFORE the dedupe, the
+    # chain repair and every re-pick pass, which leave it alone as theirs.
+    # Swallows its own failures.
+    _cap_enforce.place_off_nights_out(
+        plan_id, intake, household_memory, nobody_home, asked_on_nights_out,
+        asks=((context or {}).get("constraints_notes"), (intake or {}).get("freeform")), report=report,
+    )
 
     # Two rows claiming one slot is how a night nobody is home ends up with
     # groceries bought for it — audit_plan_slots has always computed this,
@@ -8331,6 +8557,15 @@ def _finish_week_slots(
         # the fold, so it spreads the dishes the count kept; on both runs,
         # because it makes no model call. Same gate as snacks a day: a
         # household that answered how they snack. See tools/snack_variety.py.
+        # Every snack from the everyday list unless they asked for it or
+        # nothing on the list fits (Loop Board 2026-10-21). After the fold,
+        # so each off-list dish is swapped for one list snack on all its
+        # days and the count stands; before the variety cap, whose pool is
+        # the same list. Both runs: no model call. See tools/everyday_snacks.py.
+        _everyday_snacks.enforce_snacks_from_list(
+            plan_id, [d for d in period if d not in skipped_days and d not in snackless_days],
+            household_memory, period_start=week_start_date, asks=count_asks,
+        )
         if household_memory.get("snacks_per_day_set") or household_memory.get("snacks_per_week_set"):
             _snack_variety.enforce_snack_variety(
                 plan_id, [d for d in period if d not in skipped_days and d not in snackless_days],
@@ -10233,7 +10468,10 @@ CHORES_TOOLS = frozenset({
 # MoveOwnerRefused (2026-10-07, move-owner slice 2) is the third: "I don't
 # have a Priya among the adults here" is the chat asking back, and every
 # misheard name would otherwise read as a broken tool in the morning report.
-REFUSALS_OWED_TO_A_PERSON = (tools.SlotRefused, tools.ChoreRefused, tools.MoveOwnerRefused)
+# MemberRefused (2026-10-24) is the fourth: "Emily is the only adult here"
+# is set_member_age_group keeping the household one adult, as Settings does.
+REFUSALS_OWED_TO_A_PERSON = (tools.SlotRefused, tools.ChoreRefused, tools.MoveOwnerRefused,
+                             tools.MemberRefused)
 
 
 def _chores_off_result() -> dict:
@@ -10262,6 +10500,25 @@ def _chores_off_result() -> dict:
 _TOOL_INPUT_SCHEMAS = {d["name"]: d.get("input_schema") or {} for d in TOOL_DEFINITIONS}
 
 _INT_STRING = re.compile(r"\s*-?\d+\s*")
+
+# A day argument sent as a timestamp ("2026-10-23T00:00", "2026-10-23
+# 18:00:00Z") is read as the day it names (2026-10-22 defect hunt). Every
+# tool keys meals by the bare YYYY-MM-DD string, so plan_meal saved
+# "2026-10-23T00:00" as a dinner no screen draws, and swap_meal_in_plan
+# wrote a second row beside the meal it was asked to replace. The date part
+# is the day the household meant; the clock part is never a meal's.
+_DAY_FIELDS = frozenset({
+    "meal_date", "date_str", "date_a", "date_b", "from_date", "to_date",
+    "week_start", "week_start_date", "start_date", "day",
+})
+# A zone suffix is taken only on midnight ("…T00:00:00Z" is a date sent
+# as a timestamp). "…T02:00:00Z" names a moment, which is the evening
+# before in Toronto, so it is left alone and validate_meal_date refuses it
+# rather than putting the dinner on the wrong day (review, same night).
+_DAY_WITH_A_TIME = re.compile(
+    r"\s*(\d{4}-\d{2}-\d{2})(?:[T ](?:00:00(?::00(?:\.0+)?)?(?:Z|[+-]\d{2}:?\d{2})?"
+    r"|\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?))?\s*"
+)
 
 
 def read_tool_input(tool_name: str, tool_input):
@@ -10298,7 +10555,8 @@ def read_tool_input(tool_name: str, tool_input):
       stringified-array habit), otherwise a one-item list. Not
       comma-split: "salt, kosher" is one thing, and a single item is
       never letters;
-    - object + a string that is a JSON object -> that object.
+    - object + a string that is a JSON object -> that object;
+    - a day field (_DAY_FIELDS) sent as a timestamp -> its YYYY-MM-DD part.
     Anything else is passed through untouched, so a tool's own validation
     still sees the odd cases and answers them in its own words. Returns a
     new dict; the model's block (which stays in the conversation) is not
@@ -10325,6 +10583,10 @@ def read_tool_input(tool_name: str, tool_input):
             value = int(value)
         elif kind == "boolean" and isinstance(value, str) and value.strip().lower() in ("true", "false"):
             value = value.strip().lower() == "true"
+        elif kind == "string" and key in _DAY_FIELDS and isinstance(value, str):
+            day = _DAY_WITH_A_TIME.fullmatch(value)
+            if day:
+                value = day.group(1)
         elif kind == "array" and isinstance(value, str):
             parsed = None
             if value.strip()[:1] in ("[", "{"):
@@ -10870,7 +11132,7 @@ TOOL_FUNCTIONS = {
     "add_member": tools.add_member,
     "list_members": tools.list_members,
     "set_member_dietary_restrictions": tools.set_member_dietary_restrictions,
-    "set_member_age_group": tools.set_member_age_group,
+    "set_member_age_group": tools.set_member_age_group_for_chat,
     "set_household_goals": tools.set_household_goals,
     "set_morning_text": tools.set_morning_text,
     "add_pet": tools.add_pet,
@@ -10999,7 +11261,9 @@ TOOL_FUNCTIONS = {
     "set_member_attendance": tools.set_member_attendance,
     "set_guest_count": tools.set_guest_count,
     "get_week_attendance": tools.get_week_attendance,
-    "set_slot_need": tools.set_slot_need,
+    # The chat door keeps attendance in step with the need; the bare
+    # primitive is what attendance's own sync calls (see its docstring).
+    "set_slot_need": tools.set_slot_need_for_chat,
     "get_week_slot_needs": tools.get_week_slot_needs,
     "confirm_slot_recommendation": tools.confirm_slot_recommendation,
     "set_lunch_location": tools.set_lunch_location,
@@ -11712,6 +11976,13 @@ READ_ONLY_TOOLS = frozenset({"explain_meal_choice", "check_plan_conflicts", "sca
 # draw an "updated" card -- "Swapped in Weeknight Chili on Wednesday has
 # already been cooked" -- and back a "Done, moved it" as true.
 _NOTHING_CHANGED_STATUSES = frozenset({"refused", "needs_confirmation", "nothing", "ambiguous"})
+# The same answer spelled as a flag: "forget cilantro" when cilantro was
+# never a dislike (delete_preference -> deleted false), add_fact with no
+# text (added false), hold_thing with nothing to hold (held false). Each
+# drew "Household info updated" over a turn that saved nothing (defect hunt
+# 2026-10-24). Only a literal False counts: add_grocery_items' `added` is a
+# list, and an empty one is not this answer.
+_NOTHING_CHANGED_FLAGS = ("deleted", "added", "held")
 
 
 def is_read_only_tool(name: str) -> bool:
@@ -11726,7 +11997,17 @@ def result_changed_nothing(content) -> bool:
         return False
     if not isinstance(result, dict):
         return False
-    return result.get("status") in _NOTHING_CHANGED_STATUSES or result.get("found") is False
+    if result.get("already_known") is True:
+        # add_fact answering with the fact already on file (2026-10-25):
+        # saying it again saved nothing, so it draws no "Remembered" card —
+        # unless it made the fact hard, which is a change ("added" is False
+        # either way, so this answers before _NOTHING_CHANGED_FLAGS).
+        return not result.get("made_hard")
+    return (
+        result.get("status") in _NOTHING_CHANGED_STATUSES
+        or result.get("found") is False
+        or any(result.get(flag) is False for flag in _NOTHING_CHANGED_FLAGS)
+    )
 
 _CHANGE_VERBS = (
     "changed|swapped|replaced|updated|added|removed|deleted|planned|scheduled"
@@ -12081,10 +12362,11 @@ def run_agent_turn(
         rounds += 1
         if rounds > MAX_TOOL_ROUNDS:
             logger.warning("run_agent_turn hit MAX_TOOL_ROUNDS (%d) — aborting loop", MAX_TOOL_ROUNDS)
-            text = (
-                "Sorry, that got stuck in a loop on my end — could you try again, maybe broken "
-                "into a couple smaller requests?"
-            )
+            # Filed: the turn gave up, and a 200 with this line was a night
+            # the morning report called fine. No "Sorry" (SYSTEM_PROMPT rule
+            # 5, DESIGN_SYSTEM §8): the plain fact, then the way out.
+            record_ai_failure("run_agent_turn", why=f"gave up after {MAX_TOOL_ROUNDS} rounds")
+            text = CHAT_GAVE_UP_LINE
             _log_turn_timing()
             return text, conversation
 
@@ -12222,10 +12504,8 @@ def run_agent_turn(
                 logger.warning(
                     "run_agent_turn produced an empty reply (stop_reason=%s)", response.stop_reason
                 )
-                text = (
-                    "Sorry, I hit a snag putting that response together — could you try asking "
-                    "again, maybe a bit more specifically?"
-                )
+                record_ai_failure("run_agent_turn", why="empty reply")
+                text = CHAT_EMPTY_REPLY_LINE
             # A reply that says it changed something, on a turn that
             # changed nothing, is rewritten rather than sent — see
             # verify_change_claim.
@@ -12372,7 +12652,11 @@ def run_agent_turn(
                 # Railway; this row is what lets the morning report say it.
                 # Tool name and exception class only — the arguments carry
                 # household detail and stay out of the table.
-                tools.record_error("tool", where=block.name, detail=type(e).__name__)
+                # Not when the AI layer already filed it (a tool whose own
+                # model call gave up — generate_weekly_plan in an outage):
+                # one failure, one row.
+                if not getattr(e, AI_FILED, False):
+                    tools.record_error("tool", where=block.name, detail=type(e).__name__)
                 content = json.dumps({"error": str(e)})
                 is_error = True
             # The tool's name and its seconds only — never its arguments,

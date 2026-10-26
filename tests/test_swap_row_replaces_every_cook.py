@@ -37,7 +37,7 @@ from test_menu_swap_whole_dish import (  # noqa: F401  (home is a fixture)
 )
 from test_week_seven_tiles import _extract
 
-sop = importlib.import_module("app.tools.swap_options")
+sop = importlib.import_module("app.tools.swap_option_picks")
 
 TODAY = household_today()
 START = (TODAY - datetime.timedelta(days=1)).isoformat()

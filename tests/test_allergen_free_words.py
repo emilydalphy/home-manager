@@ -985,7 +985,7 @@ def test_every_dish_naming_prompt_forbids_allergen_free_labels():
     import importlib
     import inspect
     swap_in_place = importlib.import_module("app.tools.swap_in_place")
-    swap_options = importlib.import_module("app.tools.swap_options")
+    swap_options = importlib.import_module("app.tools.swap_option_picks")
     agent_src = inspect.getsource(agent)
     assert agent_src.count('Name the dish by what\'s in it ("Oat Milk') == 1          # the menu pass
     assert agent_src.count('Name the item by what\'s in it ("Oat Milk') == 1          # the component pass

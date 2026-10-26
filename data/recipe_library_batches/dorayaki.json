@@ -1,0 +1,97 @@
+{
+ "dish_name": "Dorayaki",
+ "cuisine": "Japanese",
+ "main_protein": "vegetarian",
+ "default_servings": 6,
+ "prep_time_minutes": 45,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2/3 cup"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 1/3 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Baking powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sweet red bean paste",
+   "qty": "1 package (18 oz)",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Crack the 4 eggs into a large bowl and add the 2/3 cup sugar and 2 tbsp honey. Whisk hard for about 3 minutes, until the mixture is pale, thick and falls from the whisk in a ribbon.",
+  "Sift the 1 1/3 cups flour and 1 tsp baking powder over the eggs. Fold them in with a spatula until there are no dry streaks left.",
+  "Cover the bowl and put it in the fridge for 30 minutes. The batter turns smoother as it rests.",
+  "Stir 1 tbsp water into the batter. It should pour like pancake batter. If it's still thick, add up to 1 tbsp more water.",
+  "Set a large nonstick skillet over the lowest heat for 5 minutes so it heats evenly, then turn it up to medium-low.",
+  "Dip a folded paper towel in the oil and wipe the pan with it, so there's only a thin shine and no beads of oil. Keep the oily towel by the stove.",
+  "Pour 3 tbsp batter from a few inches above the pan so it spreads into a round about 3 inches across. If your pan is big enough, cook two at a time.",
+  "Cook for 60 to 90 seconds, until bubbles cover the top. Flip it and cook the other side for 20 to 30 seconds, until the edges look dry.",
+  "Transfer the pancake to a plate, smooth golden side up, and lay a damp kitchen towel over it so it stays soft.",
+  "Wipe the pan with the oily towel and cook the rest of the batter the same way. That should be 12 pancakes, enough for 6 dorayaki.",
+  "Spoon a sixth of the red bean paste, about 3 oz, onto the pale side of a pancake, mounding it in the middle so it's thicker there than at the edges.",
+  "Set a second pancake on top, golden side up, and press the edges gently together. Make the rest the same way. This makes 6 dorayaki.",
+  "Wrap each one in plastic wrap so it holds its shape and stays soft. They keep at room temperature for up to 2 days.",
+  "Serve them at room temperature."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions whisk eggs with sugar and honey until thick, fold in flour with a leavener, rest the batter, then cook small rounds in a barely oiled pan until bubbles show, flip briefly and sandwich two around sweet red bean paste. Just One Cookbook (the lead) uses all-purpose flour and baking powder; Cooking with Dog and RecipeTin Japan use baking soda dissolved in water, and RecipeTin Japan adds a little mirin. This one follows the lead and makes its full batch of 6 dorayaki from one 18 oz package of paste. The 30 minute rest is counted in the prep time.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Dorayaki (Japanese Red Bean Pancake)",
+   "url": "https://www.justonecookbook.com/dorayaki/",
+   "rating": 4.7,
+   "rating_count": 210,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cooking with Dog",
+   "title": "Dorayaki",
+   "url": "https://cookingwithdog.com/recipe/dorayaki-pancakes-with-red-bean-paste/",
+   "rating": 4.69,
+   "rating_count": 13,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "RecipeTin Japan",
+   "title": "Dorayaki (Sweet Red Bean Pancake)",
+   "url": "https://japan.recipetineats.com/dorayaki/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

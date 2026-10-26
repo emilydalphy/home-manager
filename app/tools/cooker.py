@@ -70,6 +70,22 @@ class InvalidMealStatus(ValueError):
     """
 
 
+PREP_TASK_STATUSES = ("pending", "done", "skipped")
+
+
+class InvalidPrepStatus(ValueError):
+    """
+    A prep status outside PREP_TASK_STATUSES — InvalidMealStatus's twin
+    for check_off_prep_step. That function always refused a third word,
+    but with a plain ValueError, the same type require_household_row
+    raises for a missing task, so /api/cooker/check-prep answered "no such
+    prep task" (404) to a request that named a real one with a bad word.
+    Its own type lets the route answer 422 like check-meal does; it IS a
+    ValueError, so chat's per-tool except and any caller catching
+    ValueError see no change.
+    """
+
+
 # Slot states with no meal behind them, so nothing to cook. See
 # get_cooker_view for why this is a deny-list rather than an allow-list of
 # 'planned'. The ordered tuple and its placeholders exist only so
@@ -466,6 +482,36 @@ def check_off_meal(entry_id: int, status: str = "done") -> dict:
         _move_credits.meal_credit(linked_ids, row["weekly_plan_id"])
         if status == "done" and not was_done else None
     )
+    # Read the batch again UNDER the write lock before writing. Everything
+    # above read it unlocked, and meal_credit builds a whole cooker view in
+    # between — long enough that two adults ticking tonight's dinner from
+    # two phones both read "not done", and times_cooked went up by two for
+    # one dinner ("you've made this 2 times"; defect hunt 2026-10-24). The
+    # depletion below was already claimed this way; the count wasn't. The
+    # loser of the race is the repeat tick it really is: unchanged.
+    conn.execute("BEGIN IMMEDIATE")
+    marks = ",".join("?" for _ in linked_ids)
+    now_statuses = {
+        r["id"]: r["cooked_status"]
+        for r in conn.execute(
+            f"SELECT id, cooked_status FROM meal_plan_entries WHERE household_id = ? AND id IN ({marks})",
+            (household_id(), *linked_ids),
+        )
+    }
+    if now_statuses and all(s == status for s in now_statuses.values()):
+        conn.rollback()
+        conn.close()
+        result["unchanged"] = True
+        if status == "done":
+            result["inventory_depleted"] = []
+            result["inventory_queued_for_review"] = []
+        return result
+    if was_done != any(s == "done" for s in now_statuses.values()):
+        # The other phone changed the batch in between (an untick, or a
+        # sibling ticked): go by what it is NOW. A credit worked out for the
+        # old state is dropped rather than recorded against the wrong one.
+        was_done = not was_done
+        credit = None
     cooked_at = "datetime('now')" if status == "done" else "NULL"
     # "Mark not cooked" also forgets when the cook began (cook_started_at,
     # 2026-09-13): a night put back to not-cooked is a night still to
@@ -475,7 +521,7 @@ def check_off_meal(entry_id: int, status: str = "done") -> dict:
     # says "Cooked." over it rather than a clock.
     started_at = "cook_started_at" if status == "done" else "NULL"
     # A meal marked cooked is no longer a skipped one ("We skipped it" on
-    # Today's yesterday card, yesterday_check.py) — whichever answer came
+    # Today's yesterday card, yesterday_ask.py) — whichever answer came
     # last is the true one.
     skipped = ", skipped_at = NULL" if status == "done" else ""
     conn.executemany(
@@ -957,6 +1003,26 @@ def _cook_started_map(entry_ids: list[int]) -> dict[int, str]:
     return {r["id"]: r["cook_started_at"] for r in rows}
 
 
+def _is_reheat_entry(row) -> bool:
+    """
+    Whether this night eats an earlier batch — the same three reheats
+    _apply_leftover_chains marks `is_leftovers` on the Cook card: a
+    confirmed chain's night (leftovers or a cook-ahead day, which carries
+    the dish's recipe_id), a portion out of the freezer, or a freeform
+    night NAMED as leftovers. start_cooking used to test only the last, and
+    only as a "Leftover…" prefix, so a made-ahead day took a start the card
+    itself never offers (overnight/test-gaps-1025) — and a started meal
+    reads as "cooking" to every move and swap door (weekly_plan.cook_begun).
+    `row` needs id, weekly_plan_id, recipe_id, freeform_meal and
+    derived_from_json.
+    """
+    if row["weekly_plan_id"] and row["id"] in _leftovers.plan_leftover_chains(row["weekly_plan_id"])["leftovers"]:
+        return True
+    if _leftovers.frozen_portion_on(row["derived_from_json"]):
+        return True
+    return row["recipe_id"] is None and bool(_NAMED_LEFTOVERS_RE.search(row["freeform_meal"] or ""))
+
+
 def start_cooking(entry_id: int, now_utc: datetime | None = None) -> dict:
     """
     "Start cooking" was tapped: write the real start on this entry and hand
@@ -982,8 +1048,8 @@ def start_cooking(entry_id: int, now_utc: datetime | None = None) -> dict:
     """
     conn = get_conn()
     row = conn.execute(
-        "SELECT id, date, cook_started_at, recipe_id, freeform_meal FROM meal_plan_entries "
-        "WHERE id = ? AND household_id = ?",
+        "SELECT id, date, cook_started_at, recipe_id, freeform_meal, weekly_plan_id, derived_from_json "
+        "FROM meal_plan_entries WHERE id = ? AND household_id = ?",
         (entry_id, household_id()),
     ).fetchone()
     if row is None:
@@ -1002,7 +1068,7 @@ def start_cooking(entry_id: int, now_utc: datetime | None = None) -> dict:
         when = _weekday_word(row["date"])
         return {"status": "refused", "entry_id": entry_id,
                 "message": f"That one’s for {when}."}
-    if row["recipe_id"] is None and (row["freeform_meal"] or "").strip().lower().startswith("leftover"):
+    if _is_reheat_entry(row):
         conn.close()
         return {"status": "refused", "entry_id": entry_id, "message": "Nothing to start on a reheat night."}
     # A written-in takeout night is a meal, not a cook (moves.is_takeout_night
@@ -1056,8 +1122,11 @@ def start_cooking(entry_id: int, now_utc: datetime | None = None) -> dict:
 
 def check_off_prep_step(prep_task_id: int, status: str = "done") -> dict:
     """Mark a specific prep task (from generate_prep_schedule/get_prep_schedule — general, defrost, or a prep_cut added on a prep day) as done, skipped, or back to pending. 'skipped' is the defrost tile's one-tap decline — see static/shell.js's Today defrost tile — but is valid for any prep task, not defrost-specific."""
-    if status not in ("pending", "done", "skipped"):
-        raise ValueError(f"status must be one of pending/done/skipped, not {status!r}.")
+    if status not in PREP_TASK_STATUSES:
+        raise InvalidPrepStatus(
+            f"A prep step is done, skipped or still to do — status must be "
+            f"{', '.join(PREP_TASK_STATUSES)}, not {status!r}."
+        )
     conn = get_conn()
     require_household_row(conn, "prep_tasks", prep_task_id, label="prep task")
     task = conn.execute(

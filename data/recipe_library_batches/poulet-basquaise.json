@@ -1,0 +1,168 @@
+{
+ "dish_name": "Poulet Basquaise",
+ "cuisine": "French",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 85,
+ "ingredients": [
+  {
+   "item": "Bone-in chicken thighs",
+   "qty": "8 (about 3 lbs)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Piment d'Espelette",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell peppers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1 bottle",
+   "category": "other",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "1 can (14.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Fresh thyme",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3 sprigs"
+  },
+  {
+   "item": "Fresh rosemary",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 sprig"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  }
+ ],
+ "instructions": [
+  "Pat the 8 thighs dry with paper towels. Mix 1 tsp of the salt, the 1/2 tsp pepper and 1/4 tsp of the Espelette, and season the thighs all over.",
+  "Heat the 2 tbsp olive oil in a large Dutch oven or deep lidded skillet over medium-high heat until it shimmers. Add half the thighs, skin side down. Stand back a little. They'll spatter.",
+  "Cook them without moving them for 6 to 8 minutes, until the skin is deep golden and lets go of the pan. Flip them and cook the other side for 3 minutes. Move them to a plate and brown the rest the same way.",
+  "While the chicken browns, thinly slice the onion. Seed the 4 peppers and cut them into thin strips. Chop the 3 garlic cloves.",
+  "Pour off all but about 2 tbsp of fat from the pot. Turn the heat to medium, add the onion and the remaining 1/2 tsp salt, and cook for 5 minutes, stirring now and then, until it's soft and starting to color.",
+  "Add the peppers and cook for 6 to 8 minutes, stirring now and then, until they've softened and slumped.",
+  "Add the garlic and stir for 1 minute, until it smells fragrant.",
+  "Stir in the 2 tbsp tomato paste, the 2 tbsp flour and 1/4 tsp of the Espelette. Cook, stirring, for 2 minutes, until the paste darkens.",
+  "Pour in the 3/4 cup wine and scrape up the browned bits from the bottom of the pot. Let it bubble for 2 minutes.",
+  "Add the can of crushed tomatoes, 1 1/2 cups of the broth, 3 thyme sprigs, 1 rosemary sprig and the 2 bay leaves, and stir. Nestle the thighs back in, skin side up, with any juices from the plate. Keep the skin above the sauce.",
+  "Bring it to a gentle bubble, then turn the heat to medium-low and simmer uncovered for 40 to 45 minutes, until the sauce has thickened and the meat is tender. You're cooking it to 175°F, so if you have a thermometer, check the thickest thigh away from the bone. No thermometer? Cut into one next to the bone: it's done when the juices run clear with no pink.",
+  "Meanwhile, rinse the 1 1/2 cups rice and put it in a saucepan with 2 1/4 cups water. Bring it to a boil, then cover, turn the heat to low and cook for 18 minutes. Take it off the heat and leave it covered for 5 minutes.",
+  "Chop 1/4 cup of the parsley. Put the last 1/2 tsp Espelette in a small dish for the table.",
+  "Fish out the herb stems and bay leaves. Taste the sauce. If it's flat, add a pinch more salt.",
+  "Scatter the parsley over the chicken. Serve it over the rice, with the Espelette on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three brown the chicken first, soften onion and peppers in the same pan, add tomatoes, white wine and stock with herbs, and braise the chicken in it, seasoned with piment d'Espelette and served with rice. La Cuisine de Géraldine (the lead) cooks tomato paste and flour into the vegetables and simmers on the stove for 45 minutes to an hour; Taste France adds paprika and finishes in a hot oven, and Angie's Recipes bakes it with thighs and finishes with parsley. This follows the lead with bone-in thighs, cooks the garlic after the peppers rather than before, and keeps half the Espelette for the table. No version had 20 or more ratings at 4.0 or above (Taste France has 70 votes but averages 3.8) and RecipeTin Eats has no poulet basquaise, so the lead is the best rated version read, at 5 from 10 votes. If you can't find Espelette, Angie's Recipes uses paprika with a pinch of cayenne.",
+ "sources": [
+  {
+   "name": "La Cuisine de Géraldine",
+   "title": "Poulet Basquaise (Basque Chicken with Pepper)",
+   "url": "https://lacuisinedegeraldine.fr/en/poulet-basquaise-basque-chicken-with-pepper",
+   "rating": 5.0,
+   "rating_count": 10,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Taste France",
+   "title": "Poulet Basquaise – Basque-style Chicken",
+   "url": "https://www.tastefrance.com/recipes/french-classics/poulet-basquaise-basque-style-chicken",
+   "rating": 3.8,
+   "rating_count": 70,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Angie's Recipes",
+   "title": "Poulet Basquaise (Basque-Style Chicken)",
+   "url": "https://angiesrecipes.blogspot.com/2025/11/poulet-basquaise-basque-style-chicken.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,112 @@
+{
+ "dish_name": "Siga Wat",
+ "cuisine": "Ethiopian",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 115,
+ "ingredients": [
+  {
+   "item": "Beef chuck",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small piece",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ghee",
+   "qty": "1 jar",
+   "category": "dairy",
+   "cook_qty": "5 tbsp"
+  },
+  {
+   "item": "Ground cardamom",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Berbere",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Beef broth",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Injera",
+   "qty": "1 package",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Cut the 1 1/2 lbs beef chuck into 1/2 inch cubes. Pat them dry with paper towels and toss them with 1/2 tsp of the salt.",
+  "Finely chop the 2 red onions. Mince the 4 garlic cloves, and peel and mince the ginger until you have about 1 tbsp.",
+  "Heat 1 tbsp of the oil in a Dutch oven or heavy pot over medium-high. Add half the beef in a single layer and cook for 4 to 5 minutes, turning once, until two sides are deep brown. Transfer it to a plate.",
+  "Add the last 1 tbsp oil and brown the rest of the beef the same way. Transfer it to the plate.",
+  "Turn the heat to low. Add 2 tbsp of the ghee and the onions and stir, scraping up the brown bits. Cover and cook for about 20 minutes, stirring every 5 minutes, until the onions are very soft and jammy. If they start to stick, add a splash of water. Don't rush the onions. They're what thickens the stew.",
+  "Meanwhile, put the 4 eggs in a small pot and cover them with cold water. Bring to a boil over high heat, then turn off the heat, cover and leave them for 10 minutes. Transfer them into a bowl of cold water, then peel them and prick each one all over with a fork.",
+  "Add the garlic, ginger, 1 tbsp of the ghee and the 1/2 tsp cardamom to the onions. Cook uncovered on low for about 10 minutes, stirring often, until it smells sweet and the garlic is soft.",
+  "Stir in 2 tbsp of the berbere and 1 tbsp of the ghee. Cover and cook on low for 10 minutes, stirring now and then, until it turns into a thick, dark red paste. If it catches on the bottom, add a splash of water. Burnt berbere tastes bitter.",
+  "Add the beef with its juices, the 3/4 cup broth and 1/2 tsp of the salt. Turn the heat to medium-high and bring it to a boil.",
+  "Cover, turn the heat to low and simmer for 45 to 60 minutes, stirring every 15 minutes, until a cube of beef is tender when you press it with a spoon. If it gets thick enough to stick, add a splash of water.",
+  "Add the eggs, cover, and simmer for 10 minutes, until they're warmed through.",
+  "For anyone who wants more heat, melt the last 1 tbsp ghee in a small pan over low. Stir in the last 1 tbsp berbere for about 30 seconds, until it smells toasty, and transfer it into a small bowl for the table.",
+  "Taste the stew. If it's flat, add the last 1/4 tsp salt.",
+  "Cut the eggs in half. Serve the stew with the eggs and the injera, with the berbere ghee on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both cook a lot of onion slowly in spiced butter, add garlic, ginger and berbere and cook it into a thick paste, then simmer cubed beef chuck in it until tender and serve it with injera. The Daring Gourmet (the lead) cooks the onions covered on low for a long time, adds the raw beef with broth and simmers about an hour, with optional hard-boiled eggs; Chipa by the Dozen browns the beef first and adds cardamom. This one follows the lead's order and ratios for 4, browns the beef like Chipa does, uses store-bought ghee with cardamom in place of niter kibbeh, and moves a third of the berbere to a hot ghee on the side so the pot is milder. It keeps well for a few days, so it works as a cook-once dinner.",
+ "sources": [
+  {
+   "name": "The Daring Gourmet",
+   "title": "Sega Wat (Spicy Ethiopian Beef Stew)",
+   "url": "https://www.daringgourmet.com/sega-wat-spicy-ethiopian-beef-stew/",
+   "rating": 4.99,
+   "rating_count": 92,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Chipa by the Dozen",
+   "title": "Siga Wot (Ethiopian Spicy Beef Stew)",
+   "url": "https://chipabythedozen.com/en/siga-wot-ethiopian-spicy-beef-stew/",
+   "rating": 5.0,
+   "rating_count": 8,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,41 @@
+{
+ "dish_name": "Financiers",
+ "cuisine": "French",
+ "main_protein": "dairy",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "Unsalted butter", "qty": "8 tbsp (1 stick)", "category": "dairy"},
+  {"item": "All-purpose flour", "qty": "1/3 cup (40 g)", "category": "pantry"},
+  {"item": "Almond flour", "qty": "2/3 cup (60 g)", "category": "pantry"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1/2 cup (100 g)"},
+  {"item": "Baking powder", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1/8 tsp", "category": "pantry"},
+  {"item": "Eggs", "qty": "3", "category": "dairy"},
+  {"item": "Vanilla extract", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/2 tsp"},
+  {"item": "Sliced almonds", "qty": "1 bag", "category": "pantry", "cook_qty": "1/4 cup"}
+ ],
+ "instructions": [
+  "Heat the oven to 400°F with a rack in the middle.",
+  "Melt the 8 tbsp butter in a small, light-colored saucepan over medium heat. It foams as it melts. Keep it on the heat, swirling the pan now and then, for 4 to 6 minutes, until the foam clears and the bits on the bottom turn brown. Watch it closely at the end. If the bits turn black, the butter tastes bitter. Take it off the heat as soon as it smells nutty.",
+  "Pour it through a fine sieve lined with a paper towel into a heatproof measuring cup. Pour 1/3 cup of it into a small bowl for the batter and set it aside to cool a little.",
+  "Brush the rest of the browned butter generously inside 16 cups of a mini muffin tin, or a financier mold if you have one.",
+  "In a large bowl, stir together the 1/3 cup flour, the 2/3 cup almond flour, the 1/2 cup sugar, the 1/2 tsp baking powder and the 1/8 tsp salt. Make a well in the middle.",
+  "Separate the 3 eggs and put the whites in a small bowl. You won't need the yolks here, so keep them in the fridge for another dish. Whisk the whites with a fork for about 10 seconds, until they're frothy.",
+  "Add the whites, the 1/3 cup browned butter and the 1/2 tsp vanilla to the well. Fold everything together with a spatula until the batter is smooth with no dry spots.",
+  "Spoon the batter into the buttered cups until they're almost full. Scatter the 1/4 cup sliced almonds over the tops.",
+  "Bake for 10 to 14 minutes, until they've risen, the edges are brown and the tops spring back when you press them.",
+  "Let them cool in the tin for 5 minutes, then ease them out with a butter knife onto a wire rack. They're best the day you bake them. Keep any left over in an airtight container."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three brown the butter until it smells nutty, stir it into almond flour, a little wheat flour, sugar and unwhipped egg whites, and bake small cakes in a hot oven until the edges brown. Chez Le Rêve Français (the lead) strains the browned butter, uses 80 ml of it in the batter and the rest to grease the molds, adds baking powder and vanilla, tops them with flaked almonds and bakes at 400°F; America's Test Kitchen uses a mini muffin tin at 375°F with no leavening (its 4.5 is from 208 reviews, not ratings), and Jaja Bakes adds honey and chills the batter for an hour. This follows the lead, baked in a mini muffin tin since few kitchens have financier molds. It makes about 16 small cakes, enough for two snacks for four, and leaves 3 yolks over.",
+ "sources": [
+  {"name": "Chez Le Rêve Français", "title": "Almond Financiers", "url": "https://chezlerevefrancais.com/almond-financiers/", "rating": 4.8, "rating_count": 24, "read": true, "lead": true},
+  {"name": "America's Test Kitchen", "title": "Financiers (Almond–Browned Butter Cakes)", "url": "https://www.americastestkitchen.com/recipes/12395-financiers-almond-browned-butter-cakes", "rating": 4.5, "rating_count": null, "read": true, "lead": false},
+  {"name": "Jaja Bakes", "title": "Financier", "url": "https://jajabakes.com/financier/", "rating": 4.7, "rating_count": 9, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

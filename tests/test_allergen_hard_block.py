@@ -30,7 +30,7 @@ import pytest
 from app import agent, tools
 import importlib
 from app.tools import allergen_gate, proposals as prop, swap_in_place as sip
-sopt = importlib.import_module("app.tools.swap_options")
+sopt = importlib.import_module("app.tools.swap_option_picks")
 from conftest import household_today, prompt_literals
 
 

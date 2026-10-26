@@ -1,0 +1,147 @@
+{
+ "dish_name": "Ethiopian Spiced Lentil Soup",
+ "cuisine": "Ethiopian",
+ "main_protein": "lentils",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Red lentils",
+   "qty": "1 lb",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Celery",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 stalks"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Berbere",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Diced tomatoes",
+   "qty": "1 can (14.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "4 cups"
+  },
+  {
+   "item": "Kale",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 packed cups chopped"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub",
+   "category": "dairy"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Finely chop the onion. Dice the 2 carrots and 2 stalks of the celery.",
+  "Mince the 3 garlic cloves. Peel and finely grate the ginger. That should be about 1 tbsp.",
+  "Put the 1 1/2 cups lentils in a sieve and rinse them under cold water until it runs mostly clear.",
+  "Heat the 3 tbsp oil in a large pot over medium heat. Add the onion, carrots, celery and 1/2 tsp of the salt, and cook for about 8 minutes, stirring now and then, until they're soft and the onion is golden at the edges.",
+  "Add the garlic and ginger and stir for 1 minute, until they smell fragrant.",
+  "Add the 1 tbsp berbere and stir for 30 seconds, until it darkens and smells toasty. Keep it moving. Burnt berbere tastes bitter.",
+  "Add the tomatoes with their juice, the 4 cups broth, 2 cups water, the lentils and 1 tsp of the salt. Turn the heat to high and bring it to a boil, scraping up anything stuck to the bottom of the pot.",
+  "Turn the heat to medium-low, set the lid on slightly ajar, and simmer for 15 minutes, stirring now and then so the lentils don't catch on the bottom.",
+  "Meanwhile, strip the kale leaves off the stems and chop them until you have 2 packed cups. Slice the jalapeño into thin rings and put them in a small bowl for the table. Cut the lemon in half.",
+  "Stir in the kale and simmer uncovered for 5 to 8 minutes, until the lentils are soft and starting to fall apart and the kale is tender. If it's thicker than you like, add a splash of water.",
+  "Turn off the heat and squeeze in the juice of half the lemon.",
+  "Taste it. If it's flat, add the last 1/2 tsp salt, or a squeeze from the other lemon half.",
+  "Serve with a spoonful of the yogurt on top and the jalapeño on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All the versions soften onion first, bloom berbere with garlic, then simmer red lentils in broth or water with tomato until they collapse, and most finish with plain yogurt on top. The Spice House builds the base on onion, carrot and celery with greens stirred in near the end, Food.com's misr wot adds the berbere in two halves, and the Umami version adds ginger, a fresh jalapeño and lemon at the finish. No version had 20 or more ratings and the trusted cook for the cuisine has no Ethiopian recipes, so this leads with The Spice House's soup (its page shows only a review count of 4) and borrows ginger and the lemon finish from the others, with the jalapeño moved to the table and the berbere kept to 1 tbsp.",
+ "sources": [
+  {
+   "name": "The Spice House",
+   "title": "Ethiopian-Spiced Lentil Soup",
+   "url": "https://www.thespicehouse.com/blogs/recipes/ethiopian-spiced-lentil-soup",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food.com",
+   "title": "Misr Wot (Ethiopian Lentil Soup)",
+   "url": "https://www.food.com/recipe/misr-wot-ethiopian-lentil-soup-398786",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Umami",
+   "title": "Ethiopian-Spiced Lentil Soup",
+   "url": "https://www.umami.recipes/recipe/Nk80NxIFO9XoHVedCPxn",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "FatFree Vegan Kitchen",
+   "title": "Ethiopian-Inspired Red Lentil Soup",
+   "url": "https://blog.fatfreevegan.com/?p=242",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

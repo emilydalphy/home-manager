@@ -1,0 +1,50 @@
+{
+ "dish_name": "Chicken Mizutaki",
+ "cuisine": "Japanese",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 55,
+ "ingredients": [
+  {"item": "Bone-in skin-on chicken thighs", "qty": "1.25 lb", "category": "meat/seafood"},
+  {"item": "Boneless skinless chicken thighs", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Kombu", "qty": "1 package", "category": "pantry", "cook_qty": "1 piece (3 by 3 inches)"},
+  {"item": "Sake", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Ginger", "qty": "1 piece (1 inch)", "category": "produce"},
+  {"item": "Napa cabbage", "qty": "1 head", "category": "produce"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce"},
+  {"item": "Carrot", "qty": "1", "category": "produce"},
+  {"item": "Baby bok choy", "qty": "2", "category": "produce"},
+  {"item": "Medium-firm tofu", "qty": "1 block (14 oz)", "category": "dairy"},
+  {"item": "Shiitake mushrooms", "qty": "4 oz", "category": "produce"},
+  {"item": "Shimeji mushrooms", "qty": "1 package", "category": "produce"},
+  {"item": "Ponzu", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "Shichimi togarashi", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "to taste", "category": "pantry"}
+ ],
+ "instructions": [
+  "Pour 5 cups water into a large, wide pot with a lid and add the piece of kombu. Leave it to soak while you get the chicken ready, about 15 minutes.",
+  "Meanwhile, bring a medium saucepan of water to a boil. Cut the 1.25 lb bone-in thighs into 2 inch pieces with a heavy knife, cutting through the bone. If that's too hard, leave them whole. Cut the 1 lb boneless thighs into 2 inch pieces.",
+  "Drop the bone-in pieces into the boiling water for 1 minute. Drain them and rinse them under lukewarm water, rubbing off any dark bits around the bones.",
+  "Add the rinsed bone-in pieces, the boneless pieces, the 2 tbsp sake and 2 thin slices of the ginger to the kombu pot.",
+  "Set it over medium heat and bring it to a boil, about 10 minutes. Skim off the foam with a spoon as it rises, then lift out the kombu.",
+  "Turn the heat to medium-low, cover, and simmer for 30 minutes. Keep it at a gentle bubble so the broth stays clear.",
+  "Meanwhile, cut about a quarter of the cabbage, roughly 8 leaves, into 2 inch pieces, keeping the thick white stems apart from the leafy tops. Cut 2 of the green onions into 2 inch lengths on a slant.",
+  "Peel the carrot and cut it into thin strips. Cut the 2 bok choy in half lengthwise. Cut the tofu into 9 pieces.",
+  "Trim the stems off the shiitake and cut the caps in half. Cut the base off the shimeji and pull them apart into small clusters. Finely chop 2 more green onions for the dipping bowls.",
+  "Take the ginger slices out of the pot. Add the cabbage stems, tofu, both mushrooms, the green onion lengths and the carrot. Cover and cook over medium for about 10 minutes, until the cabbage stems are tender.",
+  "Add the cabbage leaves and bok choy, cover, and cook for about 2 minutes, until they wilt. You're cooking the chicken to 175°F, so if you have a thermometer, check a boneless piece. No thermometer? Cut one open: it's done when there's no pink left.",
+  "Pour the 1/2 cup ponzu into 4 small dipping bowls and add the chopped green onions.",
+  "Taste the broth. If it's flat, add a pinch of salt.",
+  "Bring the pot to the table and ladle chicken, vegetables and broth into bowls. Serve with the ponzu bowls and the shichimi togarashi on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions blanch bone-in chicken briefly to keep the broth clear, simmer it gently with ginger, then cook napa cabbage, tofu, mushrooms and greens in the broth and serve it with ponzu, green onion and a little spice for dipping. Just One Cookbook (the lead) builds the broth on cold-soaked kombu with sake, uses both bone-in and boneless thighs and simmers it covered for 30 minutes; Japanese Taste uses wings and drumsticks for a richer broth simmered for an hour and suggests a rice porridge in the leftover broth at the end. This one follows the lead but cooks the vegetables on the stove and brings the pot to the table, since few kitchens have a tabletop burner, and uses bok choy and shiitake, which the lead lists as swaps for mizuna and maitake.",
+ "sources": [
+  {"name": "Just One Cookbook", "title": "Mizutaki (Japanese Chicken Hot Pot)", "url": "https://www.justonecookbook.com/mizutaki/", "rating": 4.8, "rating_count": 21, "read": true, "lead": true},
+  {"name": "Japanese Taste", "title": "How to Make Mizutaki (Fukuoka-Style Chicken Hot Pot Recipe)", "url": "https://japanesetaste.com/blogs/japanese-taste-recipes/how-to-make-mizutaki-fukuoka-style-chicken-hot-pot-recipe", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

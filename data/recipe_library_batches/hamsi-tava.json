@@ -1,0 +1,43 @@
+{
+ "dish_name": "Hamsi Tava",
+ "cuisine": "Turkish",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Fresh anchovies", "qty": "2 lbs", "category": "meat/seafood"},
+  {"item": "Cornmeal", "qty": "2 cups", "category": "pantry"},
+  {"item": "Salt", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "1/2 cup", "category": "pantry"},
+  {"item": "Red onion", "qty": "1", "category": "produce"},
+  {"item": "Flat-leaf parsley", "qty": "1 bunch", "category": "produce"},
+  {"item": "Lemon", "qty": "1", "category": "produce"},
+  {"item": "Crusty bread", "qty": "1 loaf", "category": "other"}
+ ],
+ "instructions": [
+  "If the fishmonger hasn't cleaned the 2 lbs anchovies, pinch off each head and pull it down along the belly so the insides come away with it. You can leave the backbones in. They go crisp in the pan.",
+  "Rinse the anchovies in a colander under cold water and let them drain for a few minutes. Spread them on paper towels and pat them as dry as you can, or the cornmeal won't stick.",
+  "Meanwhile, turn the oven to 200°F and put a baking sheet lined with paper towels inside.",
+  "Slice the red onion into thin half moons and put it in a bowl. Chop a big handful of the parsley and add it. Cut the lemon in half. Squeeze one half over the onion, add a pinch of the salt and toss. Cut the other half into wedges.",
+  "In a wide shallow dish, mix the 2 cups cornmeal with the rest of the salt and the 1/2 tsp black pepper.",
+  "Heat a third of the oil, about 2 1/2 tbsp, in a large frying pan over medium-high. It's hot enough when a pinch of cornmeal sizzles right away.",
+  "While it heats, toss a third of the anchovies in the cornmeal until each one is coated, then shake off the extra.",
+  "Lay the coated anchovies in the pan in one layer, side by side and touching but not stacked. Stand back a little. They'll spatter. Leave them alone for about 3 minutes, until the underside is deep golden.",
+  "Flip them with a thin spatula and cook the other side for about 3 minutes, until golden and crisp.",
+  "Transfer them onto the paper towels in the oven to keep warm. Wipe out any burnt cornmeal, then cook the other two batches the same way with the remaining oil and anchovies.",
+  "Taste one. If it's flat, sprinkle a pinch more salt over the batch.",
+  "Pile the anchovies on a platter. Serve with the onion and parsley salad, the lemon wedges and the bread."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions clean the anchovies, coat them in cornmeal or corn flour and brown them in a pan arranged side by side, then serve them hot with lemon. Cooking Gorgeous, the lead, seasons the cornmeal with salt and pepper and fries the fish in a thin layer of oil for about 3 minutes a side; the Turkish Ministry of Culture and Tourism salts and drains the fish first and fries in very little oil, and Turkeys for Life bakes them at 220°C instead and serves them with a sliced onion salad. This one follows the lead in three batches for four people, keeps the batches warm in a low oven, and dresses the onion and parsley with half the lemon so the plate has something wet. No version had 20 or more ratings and RecipeTin Eats has no version, so the lead is the best-rated pan-fried version read. Fresh anchovies can be hard to find outside a fish market.",
+ "sources": [
+  {"name": "Cooking Gorgeous", "title": "Fried Anchovies (Hamsi Tava)", "url": "https://cookingorgeous.com/blog/hamsi-tava-crispy-fried-anchovies/", "rating": 5.0, "rating_count": 1, "read": true, "lead": true},
+  {"name": "Turkish Ministry of Culture and Tourism", "title": "Fried Anchovy", "url": "https://www.ktb.gov.tr/EN-98936/fried-anchovy.html", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Turkeys for Life", "title": "Baked Fresh Anchovies (Fırında Hamsi Tava)", "url": "https://www.turkeysforlife.com/2020/11/fresh-anchovies-black-sea.html", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

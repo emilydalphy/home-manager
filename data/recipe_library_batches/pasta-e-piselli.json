@@ -1,0 +1,43 @@
+{
+ "dish_name": "Pasta e Piselli",
+ "cuisine": "Italian",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {"item": "Ditalini", "qty": "1 lb", "category": "pantry", "cook_qty": "12 oz"},
+  {"item": "Frozen peas", "qty": "1 bag (1 lb)", "category": "frozen"},
+  {"item": "Pancetta", "qty": "4 oz", "category": "meat/seafood"},
+  {"item": "Scallions", "qty": "1 bunch", "category": "produce"},
+  {"item": "Unsalted butter", "qty": "2 tbsp", "category": "dairy"},
+  {"item": "Olive oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Parmesan cheese", "qty": "1 wedge (4 oz)", "category": "dairy", "cook_qty": "1/2 cup grated, plus more to serve"},
+  {"item": "Salt", "qty": "1 tbsp plus 1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Fill a large pot with water, add 1 tbsp of the salt and bring it to a boil over high heat.",
+  "Meanwhile, cut the pancetta into small dice. Trim the scallions, halve them lengthwise and slice them thinly, white and green parts both. Finely grate the Parmesan, keeping 1/2 cup for the pan and the rest for the table.",
+  "Heat the 1 tbsp olive oil in a large, deep skillet over medium. Add the pancetta and cook it for 5 to 6 minutes, stirring now and then, until the fat has melted out and the edges are golden.",
+  "Add the 2 tbsp butter and the scallions, then a ladle of the hot cooking water from the pot. Cook for about 8 minutes, stirring now and then, until the scallions are very soft. Add another splash of cooking water if the pan goes dry.",
+  "Add the peas straight from the freezer, the remaining 1/2 tsp salt and another ladle of cooking water. Cook for about 5 minutes, until the peas are tender and bright green.",
+  "While the peas cook, add 12 oz of the ditalini to the boiling water and cook it for half the package time, about 5 minutes. It'll still be firm in the middle.",
+  "Scoop out 2 cups of the cooking water, then drain the ditalini and add it to the peas.",
+  "Keep the pan over medium and add the saved cooking water a ladle at a time, stirring, letting each one soak in before the next. After about 5 minutes the ditalini will be tender and coated in a loose, creamy sauce. You may not need all the water.",
+  "Take the pan off the heat. Stir in the 1/2 cup Parmesan and the 1/4 tsp black pepper until it's creamy.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the rest of the Parmesan on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions soften an allium in fat, cook the peas in it, cook small pasta until it's loose and creamy and finish with grated cheese. GialloZafferano (the lead) stews scallion in oil and pasta water, cooks the peas, then finishes half-cooked ditali in the pan with ladles of pasta water like a risotto, with no meat; Krumpli and Vikalinka start with pancetta and a shallot or leek in butter or oil and cook the pasta right in water or stock, with a few mint leaves. This follows the lead's method but adds the pancetta and butter from the other two, and uses frozen peas as they do instead of 1 kg of peas in the pod."
+,
+ "sources": [
+  {"name": "GialloZafferano", "title": "Pasta and Peas", "url": "https://www.giallozafferano.com/recipes/Pasta-and-peas.html", "rating": 4.2, "rating_count": 179, "read": true, "lead": true},
+  {"name": "Krumpli", "title": "Pasta e Piselli (Peas and Pancetta)", "url": "https://www.krumpli.co.uk/pea-bacon-and-pasta-soup/", "rating": 4.89, "rating_count": 9, "read": true, "lead": false},
+  {"name": "Vikalinka", "title": "Pasta e Piselli (Pasta with Peas)", "url": "https://vikalinka.com/pasta-e-piselli/", "rating": 5.0, "rating_count": 1, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

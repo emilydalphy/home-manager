@@ -41,6 +41,7 @@ import logging
 import secrets
 import time
 
+from ..db import name_key
 from ._shared import household_id
 from . import allergen_gate as _allergen_gate
 from . import recipes as _recipes
@@ -269,9 +270,9 @@ def _clash_line(meal_name: str, clash: list[dict]) -> str:
 
 
 def _recipe_exists(name: str) -> bool:
-    wanted = name.strip().lower()
+    wanted = name_key(name)
     try:
-        return any((r.get("name") or "").strip().lower() == wanted for r in _recipes.list_recipes())
+        return any(name_key(r.get("name")) == wanted for r in _recipes.list_recipes())
     except Exception:
         return False
 
@@ -350,7 +351,7 @@ def another_for_row(proposal_id: str, row_index: int, picker=None) -> dict:
             break
         offered.append(cand["meal_name"])
         # "Another" is POMONA's pick, not the household's ask, so it is held
-        # to every meal's time cap like Swap's own three (swap_options._gated)
+        # to every meal's time cap like Swap's own three (swap_option_picks._gated)
         # — and marked, so Save holds it there too (apply_proposal). The
         # household's avoidances hold as well (merge 2026-10-19: both gates).
         cand["by_pomona"] = True

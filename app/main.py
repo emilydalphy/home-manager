@@ -4,7 +4,7 @@ FastAPI backend for the Home Manager chat app.
 Run with:  uvicorn app.main:app --reload
 Then open: http://localhost:8000
 """
-from fastapi import BackgroundTasks, FastAPI, HTTPException, File, Form, Request, UploadFile
+from fastapi import BackgroundTasks, FastAPI, HTTPException, File, Form, Query, Request, UploadFile
 from fastapi.encoders import jsonable_encoder
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import (
@@ -36,12 +36,15 @@ from starlette.concurrency import run_in_threadpool
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.exception_handlers import http_exception_handler
 
-from . import account_email, agent, ai_consent, backup, calendar_feed, chat_themes, feedback_email, household_deletion, households, invites, legal, push, ratelimit, recipe_import, recipe_photos, security
+from . import account_email, agent, ai_consent, backup, calendar_feed, chat_themes, feedback_email, grocery_add_once, household_deletion, households, invites, legal, push, ratelimit, recipe_import, recipe_photos, security
 from . import db
 from .db import get_conn, init_db
 from .agent import run_agent_turn, trim_conversation, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo, scan_pantry_photo, scan_grocery_list_image, AssistantUnavailableError
 from . import tools
 from .tools import household as _household_tools
+from .tools import _shared as _tools_shared
+from .tools._shared import AmbiguousMemberName, find_member_row
+from .tools import memory as _memory_tools
 from .tools import feedback as _feedback
 from .tools import draft_flags as _draft_flags
 from .tools import meal_move as _meal_move
@@ -151,8 +154,50 @@ def _refused_for_consent(exc: BaseException | None) -> bool:
     return isinstance(exc.__cause__ or exc.__context__, agent.AIConsentRequiredError)
 
 
+def _filed_by_ai_layer(exc: BaseException | None) -> bool:
+    """
+    Was this failure an AI call that agent.record_ai_failure already filed
+    (kind "ai", where = the call)? The exception itself or the one it was
+    raised from/while handling, one link — the same reach as
+    _refused_for_consent. Filing the route's 5xx as well would count one
+    outage twice in the morning report.
+    """
+    if exc is None:
+        return False
+    return any(
+        getattr(e, agent.AI_FILED, False)
+        for e in (exc, exc.__cause__, exc.__context__) if e is not None
+    )
+
+
 def _consent_refusal_response() -> JSONResponse:
     return JSONResponse({"detail": ai_consent.REFUSAL_LINE, "ai_consent_required": True}, status_code=503)
+
+
+# A number SQLite can't hold names nothing — no row has an id, and no
+# household a count, past 2**63-1. Python parses any size of integer and
+# pydantic passes it through, so `/api/staples/10**20/pause` reached the
+# query and SQLite raised OverflowError: ~60 routes answered "something went
+# wrong on my side" and filed the request as breakage in the morning report
+# (junk-input sweep, 2026-10-25). It is the caller's mistake, said as one.
+NUMBER_TOO_BIG_LINE = "That number is too big — nothing here goes that high."
+
+
+def _number_too_big(exc: BaseException | None) -> bool:
+    """
+    Did this failure come from binding an out-of-range integer into a
+    query? The exception itself or the one it was raised while handling —
+    one link, as _refused_for_consent reads it. Only SQLite's own bind
+    message counts: that integer can only have come from the request (a
+    stored one is 64-bit by construction), whereas an OverflowError from
+    date arithmetic on a stored date would be a real bug and stays a 500.
+    """
+    if exc is None:
+        return False
+    for e in (exc, exc.__cause__ or exc.__context__):
+        if isinstance(e, OverflowError) and "SQLite INTEGER" in str(e):
+            return True
+    return False
 
 
 @app.exception_handler(StarletteHTTPException)
@@ -174,7 +219,9 @@ async def record_server_errors(request: Request, exc: StarletteHTTPException):
         _refused_for_consent(exc) or (exc.status_code == 503 and exc.detail == ai_consent.REFUSAL_LINE)
     ):
         return _consent_refusal_response()
-    if exc.status_code >= 500 and _has_bound_household(request):
+    if exc.status_code >= 500 and _number_too_big(exc):
+        return JSONResponse({"detail": NUMBER_TOO_BIG_LINE}, status_code=400)
+    if exc.status_code >= 500 and _has_bound_household(request) and not _filed_by_ai_layer(exc):
         # The status code, never the message. 83 routes build their detail
         # as f"Server error: {e}", and {e} is unbounded application text —
         # 27 places in app/tools raise exceptions that interpolate
@@ -240,6 +287,8 @@ async def record_unhandled_errors(request: Request, exc: Exception):
     """
     if _refused_for_consent(exc):
         return _consent_refusal_response()
+    if _number_too_big(exc):
+        return JSONResponse({"detail": NUMBER_TOO_BIG_LINE}, status_code=400)
     # Bind the household from the cookie before recording.
     #
     # This handler runs in ServerErrorMiddleware, which sits OUTSIDE
@@ -255,7 +304,7 @@ async def record_unhandled_errors(request: Request, exc: Exception):
     # not recorded, rather than recorded against whoever household 1 is.
     where = _route_pattern(request)
     household = None
-    if _has_bound_household(request):
+    if _has_bound_household(request) and not _filed_by_ai_layer(exc):
         try:
             parts = security.read_session_parts(request.cookies.get(security.COOKIE_NAME))
             household = parts[1] if parts else None
@@ -1195,7 +1244,11 @@ class InventoryUpdateRequest(BaseModel):
     item: str
     action: str = "set"  # add | use | remove | set
     quantity: str = ""
-    category: str = "other"
+    # None, not "other": the Kitchen form sends no category, and an "other"
+    # default re-filed an existing row's dairy/meat under Other on every add
+    # (defect hunt, 2026-10-25). A new row with none is read from its name
+    # (tools.inventory._new_row_category).
+    category: str | None = None
     expiration_date: str | None = None
     location: str | None = None  # fridge | freezer | pantry — falls back to a category-based guess if unset
 
@@ -1267,6 +1320,11 @@ class GroceryAddRequest(BaseModel):
     # unless remember is False.
     store: str | None = None
     remember: bool = True
+    # The add sheet's name for this one add (2026-10-22): made on the phone
+    # before the first send, and re-sent unchanged by the offline queue when
+    # the reply was lost — so a repeat is answered, not added twice. None =
+    # every other caller, which behaves as before. See app/grocery_add_once.py.
+    client_id: str | None = Field(default=None, max_length=64)
 
 
 class GroceryScanItem(BaseModel):
@@ -1355,9 +1413,50 @@ class ResetRequest(BaseModel):
 def startup():
     init_db()
     _prune_chat_sessions_now()
+    # Weeks approved before the allergies-at-approval record existed get
+    # today's allergies as theirs, so a clash already approved past isn't
+    # raised again after a deploy (allergen_gate.snapshot_unrecorded_approvals).
+    # A failure here must not stop the app; those weeks then flag every clash.
+    try:
+        from .tools import allergen_gate as _allergen_gate
+        _allergen_gate.snapshot_unrecorded_approvals()
+    except Exception:
+        logger.exception("Recording allergies on already-approved weeks failed")
     # Says in the logs, on day one, whether this database will survive a
     # redeploy — rather than leaving that discoverable only by losing it.
     backup.warn_if_database_is_ephemeral()
+
+
+def _record_background_failure(where: str, exc: BaseException) -> None:
+    """
+    A background loop's failure, filed where the morning report reads.
+
+    The backup and morning-text loops run with no request and no household,
+    so before 2026-10-25 a failure in either was a log line on Railway and
+    nothing else — a backup failing every night read "Nothing broke" every
+    morning. Filed against household 1, the operator's own report: these
+    loops are the whole database's, not any one household's (a per-household
+    morning-text failure is filed against that household in tools.digest).
+    Class name only, never the message, as every server row.
+    """
+    with tools.use_household(households.DEFAULT_HOUSEHOLD_ID):
+        tools.record_error("background", where=where, detail=type(exc).__name__)
+
+
+def _run_backup_pass() -> None:
+    """One day's backup maintenance; never raises (see start_backup_loop)."""
+    try:
+        result = backup.run_daily_maintenance()
+        logger.info(
+            "Backup maintenance: created=%s pruned=%d kept=%d",
+            result["created"], len(result["pruned"]), result["kept"],
+        )
+    except Exception as e:
+        # The loop must outlive any single bad day. A backup task
+        # that dies quietly would leave the household uncovered
+        # with nothing to show for it.
+        logger.exception("Backup maintenance failed; will try again tomorrow")
+        _record_background_failure("daily_backup", e)
 
 
 @app.on_event("startup")
@@ -1381,17 +1480,7 @@ async def start_backup_loop():
 
     async def _loop():
         while True:
-            try:
-                result = await run_in_threadpool(backup.run_daily_maintenance)
-                logger.info(
-                    "Backup maintenance: created=%s pruned=%d kept=%d",
-                    result["created"], len(result["pruned"]), result["kept"],
-                )
-            except Exception:
-                # The loop must outlive any single bad day. A backup task
-                # that dies quietly would leave the household uncovered
-                # with nothing to show for it.
-                logger.exception("Backup maintenance failed; will try again tomorrow")
+            await run_in_threadpool(_run_backup_pass)
             # A long-running quiet deploy restarts rarely, so startup alone
             # would not hold the week. Its own try inside the helper: a
             # failed sweep must not cost the backup, or the backup the sweep.
@@ -1449,10 +1538,11 @@ async def start_morning_text_loop():
                         "Morning texts: %s",
                         ", ".join(f"household {r['household_id']} member {r['member_id']} {r['status']}" for r in results),
                     )
-            except Exception:
+            except Exception as e:
                 # The loop must outlive any single bad pass — a Twilio
                 # outage at seven is not a reason to miss tomorrow.
                 logger.exception("Morning text pass failed; will try again in a few minutes")
+                await run_in_threadpool(_record_background_failure, "morning_text_loop", e)
             try:
                 nudged = await run_in_threadpool(tools.run_evening_nudges_once)
                 if nudged:
@@ -1460,8 +1550,9 @@ async def start_morning_text_loop():
                         "Evening nudges: %s",
                         ", ".join(f"household {r['household_id']} member {r['member_id']} {r['status']}" for r in nudged),
                     )
-            except Exception:
+            except Exception as e:
                 logger.exception("Evening nudge pass failed; will try again in a few minutes")
+                await run_in_threadpool(_record_background_failure, "evening_nudge_loop", e)
             await asyncio.sleep(tools.MORNING_TEXT_POLL_SECONDS)
 
     asyncio.create_task(_loop())
@@ -1501,6 +1592,12 @@ def onboarding_household(req: HouseholdOnboardingRequest, request: Request):
     for m in req.members:
         if m.age_years is not None and not 0 <= m.age_years <= tools.household.MAX_AGE_YEARS:
             raise HTTPException(status_code=400, detail=f"{m.name.strip() or 'That'}'s age must be 0 to 120 years.")
+        # Same list Settings' chips are held to (defect hunt 2026-10-21):
+        # this route stored "bogus", which is no age stage anywhere and
+        # drops the person out of every adult check — "Who's this?",
+        # approval credit, the main person. Blank still means "not said".
+        if m.age_group and m.age_group.strip().lower() not in _SETTINGS_AGE_GROUPS:
+            raise HTTPException(status_code=400, detail="Pick Adult, Teen or Child.")
     try:
         saved_ids = []
         # (id, name) for each member this request saved, in the order they
@@ -1557,8 +1654,9 @@ def onboarding_household(req: HouseholdOnboardingRequest, request: Request):
     # who had just typed the household in). record_setup_adult returns an id
     # ONLY on the pass that actually recorded the setter-up — a re-run of
     # onboarding, or one that finds a setter-up already on file, returns None
-    # and pins nobody — and only when this session has no adult picked yet,
-    # so an existing pick (or an invited adult's) is never overwritten. Other
+    # and pins nobody — and only when this session resolves to no adult (no
+    # pick, or a pick that no longer checks out — current_member), so a
+    # live pick (or an invited adult's) is never overwritten. Other
     # devices and the other adult get the question as before. Same cookie
     # write as /api/whoami/pick.
     if setup_adult_id is not None and tools.current_member() is None:
@@ -2160,6 +2258,7 @@ def onboarding_generate_first_plan_stream(req: FirstPlanRequest | None = None):
         _stream_week_generation(
             week_start=week_start, constraints_notes="", intake_id=None,
             day_count=day_count, period_start=period_start, run_token=req.run_token,
+            where="/api/onboarding/generate-first-plan/stream",
         ),
         what=f"First-plan stream for the week of {week_start}", carries_on="generation continues",
     )
@@ -2450,16 +2549,16 @@ def _require_member_here(name: str | None) -> None:
     could become the main one. 400 for a blank name, 404 for a stranger,
     nothing written either way.
     """
-    # Blank is refused trimmed; the lookup is the tools' own (case-blind,
-    # untrimmed), so a name this check finds is the row the write lands on.
+    # Blank is refused trimmed; the lookup is the tools' own
+    # (find_member_row: case-, space- and accent-blind), so a name this
+    # check finds is the row the write lands on.
     if not (name or "").strip():
         raise HTTPException(status_code=400, detail="Say who this is about.")
     conn = get_conn()
     try:
-        row = conn.execute(
-            "SELECT 1 FROM members WHERE household_id = ? AND LOWER(name) = LOWER(?)",
-            (tools.household_id(), name),
-        ).fetchone()
+        row = find_member_row(conn, name)
+    except AmbiguousMemberName as e:
+        raise HTTPException(status_code=400, detail=str(e))
     finally:
         conn.close()
     if row is None:
@@ -2475,32 +2574,13 @@ _SETTINGS_AGE_GROUPS = frozenset({"adult", "teen", "child"}) | _household_tools.
 
 def _refuse_last_adult_leaving(name: str, age_group: str) -> None:
     """
-    A household always keeps one adult (defect hunt 2026-10-20). Marking
-    the only adult Teen or Child left "Who's this?", sign-in's member pick,
-    approval credit and the main person with nobody to name — and the
-    phone that did it went on as no one. Re-marking an adult as an adult,
-    or anyone else as anything, is untouched. Same adult test as
-    current_member (LOWER(TRIM(age_group)) = 'adult').
+    A household always keeps one adult (defect hunt 2026-10-20). The rule
+    and its sentence live in tools.last_adult_leaving, shared with chat's
+    set_member_age_group since 2026-10-24; this is its 400.
     """
-    if age_group == "adult":
-        return
-    conn = get_conn()
-    try:
-        # Matched by SQLite's LOWER, the same lookup _require_member_here
-        # and the tool use, so the person checked is the row written.
-        row = conn.execute(
-            "SELECT COUNT(*) AS adults, "
-            "SUM(CASE WHEN LOWER(name) = LOWER(?) THEN 1 ELSE 0 END) AS is_them "
-            "FROM members WHERE household_id = ? AND LOWER(TRIM(age_group)) = 'adult'",
-            (name, tools.household_id()),
-        ).fetchone()
-    finally:
-        conn.close()
-    if row["adults"] == 1 and row["is_them"]:
-        raise HTTPException(
-            status_code=400,
-            detail=f"{name.strip()} is the only adult here. Add another adult before changing this.",
-        )
+    refusal = tools.last_adult_leaving(name, age_group)
+    if refusal:
+        raise HTTPException(status_code=400, detail=refusal)
 
 
 def _refuse_own_age_leaving_adult(name: str, age_group: str) -> None:
@@ -2775,6 +2855,22 @@ def recipe_detail(recipe_id: int):
             "citation", "photo_urls", "details_pending",
         )
     }
+    # The amounts a cook reads, the ones cook mode and the servings stepper
+    # show (defect hunt, 2026-10-22): the stored qty is the SHOPPING amount,
+    # so this page said "1 bottle olive oil" over a method using 2 tbsp, and
+    # "6 tbsp" butter for a page's own "1/4 cup + 2 tbsp". The buying amount
+    # rides along as shopping_qty; the stored row is not touched.
+    try:
+        out["ingredients"] = [
+            {k: v for k, v in ing.items() if k != "cook_qty"} if isinstance(ing, dict) else ing
+            for ing in tools.cooking_ingredients(
+                recipe.get("ingredients") or [],
+                servings=tools.positive_servings(recipe.get("default_servings")) or 4,
+                instructions=recipe.get("instructions"),
+            )
+        ]
+    except Exception:
+        logger.exception("Reading a recipe's cooking amounts failed; showing it as stored")
     # The recipe page's Sources tab and "Changed for your household" row
     # (research-first writing, 2026-10-06). Never the reason this route
     # fails: a recipe with no research reads as research None.
@@ -2912,14 +3008,41 @@ class HolidayAnswerRequest(BaseModel):
     answered_by: str = ""
 
 
+# The years a date a route is handed may fall in. Python's own range is
+# years 1-9999, and every route that takes a day does arithmetic around it
+# (a week's Monday, a holiday window up to 366 days long, the lookback for
+# history), so 9999-12-31 or 0001-01-01 overflowed into an OverflowError
+# and a 500 instead of a refusal. 1900-2999 keeps that arithmetic centuries
+# clear of either edge while refusing nothing a household -- or a test,
+# several of which ask about 1999 on purpose to get "no plan" -- would send.
+ROUTE_DATE_MIN_YEAR = 1900
+ROUTE_DATE_MAX_YEAR = 2999
+
+
+def _route_date(value: str, name: str) -> datetime.date:
+    """
+    Parse a date a route was handed, or refuse it with a 400 -- the one
+    door for the "<name> must be an ISO date" check, so an ISO date at the
+    very edge of the calendar is refused the same way a garbled one is
+    rather than reaching the date maths and coming back a server error.
+    """
+    try:
+        day = datetime.date.fromisoformat(value)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"{name} must be an ISO date (YYYY-MM-DD).")
+    if not ROUTE_DATE_MIN_YEAR <= day.year <= ROUTE_DATE_MAX_YEAR:
+        raise HTTPException(
+            status_code=400,
+            detail=f"{name} has to fall between {ROUTE_DATE_MIN_YEAR} and {ROUTE_DATE_MAX_YEAR}.",
+        )
+    return day
+
+
 @app.get("/api/holidays")
 def holidays_in_window(start: str = "", days: int = 60):
     """The holidays from `start` (today if blank) for `days` days, each with the household's answer."""
     if start:
-        try:
-            datetime.date.fromisoformat(start)
-        except ValueError:
-            raise HTTPException(status_code=400, detail="start must be an ISO date (YYYY-MM-DD).")
+        _route_date(start, "start")
     if days < 1 or days > 366:
         raise HTTPException(status_code=400, detail="days has to be between 1 and 366.")
     try:
@@ -3309,6 +3432,11 @@ def cooker_check_prep(req: CheckOffPrepRequest):
     try:
         tools.check_off_prep_step(req.prep_task_id, req.status)
         view = tools.get_cooker_view()
+    except tools.InvalidPrepStatus as e:
+        # A bad status is a bad request, not a missing prep task — 422 like
+        # check-meal above, not the 404 below. Must come first: it IS a
+        # ValueError, and the 404 would swallow it.
+        raise HTTPException(status_code=422, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -3612,6 +3740,8 @@ def today_moves(date: str | None = None, look: int = 0):
     (Emily's approved design, 2026-09-08), replacing the four separate
     fetches it used to make. See app/tools/moves.py for the ranking rule.
     """
+    if date is not None:
+        _route_date(date, "date")
     try:
         # A week that ended with unbought lines while a later week was
         # already approved: they go to Shop's keep-or-drop step on this,
@@ -3655,6 +3785,10 @@ def today_move_done(move_id: str, req: MoveDoneRequest, date: str | None = None)
     should render the day the caller is actually looking at, not always
     today's.
     """
+    # Checked before the tick, not after: a day the timeline can't be built
+    # for used to write the tick and then fail, so the refusal left a change.
+    if (date or req.date) is not None:
+        _route_date(date or req.date, "date")
     try:
         tools.set_move_done(move_id, req.done)
         payload = tools.today_moves(date or req.date)
@@ -3691,7 +3825,7 @@ def today_yesterday():
     """
     Today's "Did you have it?" card, the morning after: yesterday's meals
     and snacks nobody ticked cooked or skipped, in eating order. [] means
-    no card. See tools/yesterday_check.py.
+    no card. See tools/yesterday_ask.py.
     """
     try:
         return tools.yesterday_check()
@@ -3866,6 +4000,15 @@ class WeekApproveRequest(BaseModel):
     # tap — see tools.approve_weekly_plan. False on every request until the
     # confirm button (shell.js's showApproveConfirm) sends it back true.
     confirm_hard_conflicts: bool = False
+    # The plan on screen, when the screen knows it — wins over the week
+    # key, which two plans can share (see _plan_id_for_week).
+    weekly_plan_id: int | None = None
+
+
+class WeekReopenRequest(BaseModel):
+    """Optional body for /reopen: the plan on screen (see _plan_id_for_week).
+    Absent entirely is the old call, resolved by the week key."""
+    weekly_plan_id: int | None = None
 
 
 class WeekDiscardRequest(BaseModel):
@@ -3948,12 +4091,9 @@ def _validated_period(week_start: str, req: WeekGenerateRequest) -> tuple[str, i
     same failure would arrive as an `error` frame after a 200 and a set of
     headers, i.e. as a stream that starts fine and then says no.
     """
-    try:
-        datetime.date.fromisoformat(week_start)
-        if req.period_start:
-            datetime.date.fromisoformat(req.period_start)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Dates must be ISO dates (YYYY-MM-DD).")
+    _route_date(week_start, "week_start")
+    if req.period_start:
+        _route_date(req.period_start, "period_start")
     if req.day_count < 1 or req.day_count > tools.MAX_PERIOD_DAYS:
         raise HTTPException(
             status_code=400,
@@ -3988,14 +4128,42 @@ def _plan_id_for_week(week_start: str) -> int:
     has no plan. Kept here rather than in each route so every week-scoped
     endpoint fails the same way for the same reason.
     """
-    try:
-        datetime.date.fromisoformat(week_start)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="week_start must be an ISO date (YYYY-MM-DD).")
+    _route_date(week_start, "week_start")
     plan_id = tools.get_plan_id_for_week(week_start)
     if plan_id is None:
         raise HTTPException(status_code=404, detail=f"No plan for the week of {week_start}.")
     return plan_id
+
+
+def _plan_id_for_request(week_start: str, weekly_plan_id: int | None) -> int:
+    """
+    The plan a week-scoped request means: the id the screen sent, else the
+    week key through _plan_id_for_week exactly as before.
+
+    A `weekly_plan_id` the screen sent wins over the week key
+    (overnight/plan-id-over-week-key, 2026-10-22). The key is not unique:
+    a takeover that cuts days off the FRONT of a plan leaves it filed
+    under its old start, so a later plan starting that day shares the key
+    and newest-wins hands every route the wrong one — approving, reopening
+    or swapping on the approved week landed on the draft. /discard already
+    worked this way. The id is checked against the session's household
+    here, never trusted: another household's id is a 404, not a write.
+    A retired plan is refused for the same reason get_plan_id_for_week
+    skips it (approving one brings it back to life). /discard keeps its own
+    resolution: retiring twice is its deliberate no-op, and its tool already
+    answers an unknown id with the screen's plain line.
+    """
+    if weekly_plan_id is not None:
+        conn = get_conn()
+        row = conn.execute(
+            "SELECT status FROM weekly_plans WHERE id = ? AND household_id = ?",
+            (weekly_plan_id, tools.household_id()),
+        ).fetchone()
+        conn.close()
+        if row is None or row["status"] == "retired":
+            raise HTTPException(status_code=404, detail="That plan isn't here any more.")
+        return weekly_plan_id
+    return _plan_id_for_week(week_start)
 
 
 class MealPlanningPreferenceRequest(BaseModel):
@@ -4082,10 +4250,7 @@ def week_intake_prefill(week_start: str, day_count: int = 7):
     maths, and any intake already in flight for this week (so the second
     adult to start joins the first one's answers instead of a blank set).
     """
-    try:
-        datetime.date.fromisoformat(week_start)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="week_start must be an ISO date (YYYY-MM-DD).")
+    _route_date(week_start, "week_start")
     if day_count < 1 or day_count > tools.MAX_PERIOD_DAYS:
         raise HTTPException(
             status_code=400,
@@ -4108,6 +4273,7 @@ def save_week_intake_route(week_start: str, req: WeekIntakeRequest):
     # place it was missing: day_count went straight to period_dates, so a
     # request for three million days spent a second building date strings
     # and then surfaced an OverflowError as a 500.
+    _route_date(week_start, "week_start")
     if req.day_count < 1 or req.day_count > tools.MAX_PERIOD_DAYS:
         raise HTTPException(
             status_code=400,
@@ -4217,6 +4383,28 @@ _STREAM_HEARTBEAT_SECONDS = 5.0
 _SSE_HEARTBEAT = ": keep-alive\n\n"
 
 
+def _record_stream_failure(where: str, status: int, exc: BaseException) -> None:
+    """
+    File a streamed request's failure in the morning report, as the plain
+    route's 5xx is filed.
+
+    A stream has already answered 200 by the time its worker fails, so the
+    failure travels as an `error` frame and never reaches
+    record_server_errors. Until 2026-10-25 that meant a chat turn, a draft
+    week or a first plan that crashed — the three things the app streams,
+    and chat is the streamed path the shell actually uses — was logged and
+    nothing else: the report said "Nothing broke" over a night when chat
+    failed every time. Same row as the plain twin writes ("server",
+    route pattern, "HTTP <status>"), so the two count as one shape; never the
+    message, for the reason record_server_errors gives. A refusal (4xx) and a
+    household that hasn't said yes to AI (the consent 503) are answers, not
+    breakage, exactly as on the plain routes.
+    """
+    if status < 500 or _refused_for_consent(exc):
+        return
+    tools.record_error("server", where=where, detail=f"HTTP {status}")
+
+
 def _relay_stream_events(events: "queue.Queue", done, *, first_frame: str):
     """
     The shared back half of _stream_week_generation and _stream_chat_turn:
@@ -4286,6 +4474,7 @@ class _SSEResponse(StreamingResponse):
 def _stream_week_generation(
     *, week_start: str, constraints_notes: str, intake_id,
     day_count: int = 7, period_start: str | None = None, run_token: str | None = None,
+    where: str = "/api/week/{week_start}/generate/stream",
 ):
     """
     Run generate_weekly_plan on a background thread and yield its progress
@@ -4331,12 +4520,14 @@ def _stream_week_generation(
         # left nothing in the app log to find it by.
         except AssistantUnavailableError as e:
             logger.warning("Streaming week generation for %s: Claude unavailable (503): %s", week_start, e)
+            _record_stream_failure(where, 503, e)
             events.put(("error", {"status": 503, "detail": str(e)}))
         except ValueError as e:
             logger.warning("Streaming week generation for %s refused (400): %s", week_start, e)
             events.put(("error", {"status": 400, "detail": str(e)}))
         except Exception as e:
             logger.exception("Streaming week generation failed")
+            _record_stream_failure(where, 500, e)
             events.put(("error", {"status": 500, "detail": f"Server error: {e}"}))
         finally:
             agent._WEEK_GEN_PROGRESS.reset(token)
@@ -4412,10 +4603,7 @@ def generate_week_status(week_start: str, run: str | None = None):
     "failed", "started_at", "finished_at" (UTC ISO, null while running),
     "plan_id" (when done), "error": {"status", "detail"} (when failed)}.
     """
-    try:
-        datetime.date.fromisoformat(week_start)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="week_start must be an ISO date (YYYY-MM-DD).")
+    _route_date(week_start, "week_start")
     if run is not None and len(run) > 64:
         raise HTTPException(status_code=400, detail="run must be 64 characters or fewer.")
     status = agent.week_generation_status(week_start, run_token=run)
@@ -4440,10 +4628,16 @@ class SwapInPlaceRequest(BaseModel):
     # the row's own Swap does. The server works the days out
     # (swap_in_place.batch_days); the client never names them.
     whole_dish: bool = False
+    # The plan on screen, when the screen knows it — wins over the week
+    # key, which two plans can share (see _plan_id_for_week).
+    weekly_plan_id: int | None = None
 
 
 class SwapUndoRequest(BaseModel):
     entry_id: int
+    # The plan on screen, when the screen knows it — wins over the week
+    # key, which two plans can share (see _plan_id_for_week).
+    weekly_plan_id: int | None = None
 
 
 @app.post("/api/week/{week_start}/swap-in-place")
@@ -4458,7 +4652,7 @@ def week_swap_in_place(week_start: str, req: SwapInPlaceRequest):
     something the household can't have and nothing was written. That is a
     real answer, not an error, and it carries the sentence to show.
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
         if req.whole_dish:
             return tools.swap_meal_in_place(plan_id, req.entry_id, avoid=req.avoid, whole_dish=True)
@@ -4482,6 +4676,8 @@ def week_swap_in_place(week_start: str, req: SwapInPlaceRequest):
 class FillDayRequest(BaseModel):
     """"Build a plan" on a blank day card: which day."""
     date: str
+    # The plan on screen — wins over the week key (see _plan_id_for_request).
+    weekly_plan_id: int | None = None
 
 
 @app.post("/api/week/{week_start}/fill-day")
@@ -4492,11 +4688,8 @@ def week_fill_day(week_start: str, req: FillDayRequest):
     planned is touched; see swap_in_place.fill_empty_day. Like Swap, a 200
     can say no (`status` 'refused', with the sentence to show).
     """
-    try:
-        datetime.date.fromisoformat(req.date)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="date must be an ISO date (YYYY-MM-DD).")
-    plan_id = _plan_id_for_week(week_start)
+    _route_date(req.date, "date")
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
         return tools.fill_empty_day(plan_id, req.date)
     except ValueError as e:
@@ -4521,6 +4714,9 @@ class SwapOptionsRequest(BaseModel):
     # The Swap sheet's box (2026-10-05): what the household typed they'd
     # like instead. Empty / absent is the plain ask.
     request: str | None = Field(default=None, max_length=1000)
+    # The plan on screen, when the screen knows it — wins over the week
+    # key, which two plans can share (see _plan_id_for_week).
+    weekly_plan_id: int | None = None
 
 
 class SwapChooseRequest(BaseModel):
@@ -4532,6 +4728,9 @@ class SwapChooseRequest(BaseModel):
     # The dish name the sheet showed at `option`; the server refuses the tap
     # if the picks it holds have changed since.
     meal: str | None = None
+    # The plan on screen, when the screen knows it — wins over the week
+    # key, which two plans can share (see _plan_id_for_week).
+    weekly_plan_id: int | None = None
 
 
 @app.post("/api/week/{week_start}/swap-options")
@@ -4544,7 +4743,7 @@ def week_swap_options(week_start: str, req: SwapOptionsRequest):
     and `options_unavailable` true means the model call failed; the sheet
     keeps its "Ask for something else" line either way.
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
         # `request` only when there is one: the call shape of every
         # existing caller (and test double) stays as it was.
@@ -4566,7 +4765,7 @@ def week_swap_choose(week_start: str, req: SwapChooseRequest):
     (tools.choose_swap_option). Answers with the swap's own shape — the
     refreshed day, or `status` 'refused' with the sentence to show.
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
         if req.whole_dish:
             return tools.choose_swap_option(plan_id, req.entry_id, req.option, whole_dish=True, meal=req.meal)
@@ -4664,17 +4863,19 @@ class ChangePartRequest(BaseModel):
     entry_id: int
     role: str = "protein"
     choice: str
+    # The plan on screen — wins over the week key (see _plan_id_for_request).
+    weekly_plan_id: int | None = None
 
 
 @app.get("/api/week/{week_start}/part-options")
-def week_part_options(week_start: str, entry_id: int, role: str = "protein"):
+def week_part_options(week_start: str, entry_id: int, role: str = "protein", weekly_plan_id: int | None = None):
     """
     What the "Change the protein" sheet offers for THIS dish — written for
     the dish (ground meats for a burger, the cut for a pan-fry), safe for
     the house, cached for the sitting (Emily, 2026-09-13, "Shaping the
     Draft" Flow A). Household-scoped: an entry from elsewhere is a 404.
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, weekly_plan_id)
     try:
         return tools.part_options(plan_id, entry_id, role=role)
     except ValueError as e:
@@ -4694,7 +4895,7 @@ def week_change_part(week_start: str, req: ChangePartRequest):
     the swap's own (/swap-undo). A 200 can still say no (`status`
     'refused' with the sentence to show) — a real answer, not an error.
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
         return tools.change_part(plan_id, req.entry_id, req.role, req.choice)
     except tools.SlotRefused as e:
@@ -4715,7 +4916,7 @@ def week_change_part(week_start: str, req: ChangePartRequest):
 @app.post("/api/week/{week_start}/swap-undo")
 def week_swap_undo(week_start: str, req: SwapUndoRequest):
     """Put back the dish that was on this slot before it was swapped."""
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
         return tools.undo_meal_swap(plan_id, req.entry_id)
     except ValueError as e:
@@ -4730,6 +4931,27 @@ class SwapNightsRequest(BaseModel):
     days' drag (Emily, 2026-09-12) and its Undo both send this."""
     date_a: str
     date_b: str
+    # The plan on screen — wins over the week key (see _plan_id_for_request).
+    weekly_plan_id: int | None = None
+
+
+def _refresh_draft_flags(plan_id: int, result: dict) -> None:
+    """
+    Re-say the draft's lines for the dinners a night swap just re-dated —
+    what meal_move._after_move does for the Move sheet. Without it a swap
+    that put a dish they asked for onto a short-on-time night said nothing
+    until Undo brought the old line back (review, 2026-10-25). Here at the
+    route, not inside swap_dinner_nights: cap_enforce trades through that
+    function mid-generation and writes the whole flag set itself after.
+    Never fails the swap — it is written.
+    """
+    if (result or {}).get("status") not in ("swapped", "restored"):
+        return
+    try:
+        from .tools import draft_flags as _draft_flags
+        _draft_flags.refresh(plan_id, [m["entry_id"] for m in result.get("moved") or [] if m.get("entry_id")])
+    except Exception:
+        logger.exception("Refreshing the draft's flags after a night swap failed (plan %s)", plan_id)
 
 
 @app.post("/api/week/{week_start}/swap-nights")
@@ -4738,14 +4960,16 @@ def week_swap_nights(week_start: str, req: SwapNightsRequest):
     Move a dinner to another night by trading it with what is there. No
     model call: the rows are re-dated in place (see
     tools.swap_dinner_nights for exactly what follows them and what does
-    not), and the grocery list is left alone. A 200 can still say no —
+    not), and each dish's lines are resized for its new night's table. A 200 can still say no —
     `status` 'refused' carries the sentence to show and nothing was
     written. A night that isn't on this plan, the same night twice, or a
     malformed date is a 400.
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
-        return tools.swap_dinner_nights(plan_id, req.date_a, req.date_b)
+        result = tools.swap_dinner_nights(plan_id, req.date_a, req.date_b)
+        _refresh_draft_flags(plan_id, result)
+        return result
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -4756,9 +4980,11 @@ def week_swap_nights(week_start: str, req: SwapNightsRequest):
 @app.post("/api/week/{week_start}/swap-nights-undo")
 def week_swap_nights_undo(week_start: str, req: SwapNightsRequest):
     """Put the two nights' dinners back where the last move found them."""
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
-        return tools.undo_dinner_nights_swap(plan_id, req.date_a, req.date_b)
+        result = tools.undo_dinner_nights_swap(plan_id, req.date_a, req.date_b)
+        _refresh_draft_flags(plan_id, result)
+        return result
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -4768,15 +4994,21 @@ def week_swap_nights_undo(week_start: str, req: SwapNightsRequest):
 
 class MoveOptionsRequest(BaseModel):
     entry_id: int
+    # The plan on screen — wins over the week key (see _plan_id_for_request).
+    weekly_plan_id: int | None = None
 
 
 class MoveMealRequest(BaseModel):
     entry_id: int
     to_date: str
+    # The plan on screen — wins over the week key (see _plan_id_for_request).
+    weekly_plan_id: int | None = None
 
 
 class MoveUndoRequest(BaseModel):
     move_id: str
+    # The plan on screen — wins over the week key (see _plan_id_for_request).
+    weekly_plan_id: int | None = None
 
 
 @app.post("/api/week/{week_start}/move-options")
@@ -4786,7 +5018,7 @@ def week_move_options(week_start: str, req: MoveOptionsRequest):
     day of the week with what it holds, and whether the meal can go there —
     a day that can't says why (tools/meal_move.py). No model call.
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
         return _meal_move.move_options(plan_id, req.entry_id)
     except ValueError as e:
@@ -4801,9 +5033,9 @@ def week_move_meal(week_start: str, req: MoveMealRequest):
     """
     Move one lunch or dinner (its leftovers with it) to another day, trading
     places with what is there. A 200 can still say no — `status` 'refused'
-    with the sentence, nothing written. The grocery list is not touched.
+    with the sentence, nothing written. Its lines follow the new day's table size.
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
         return _meal_move.move_meal(plan_id, req.entry_id, req.to_date)
     except ValueError as e:
@@ -4816,7 +5048,7 @@ def week_move_meal(week_start: str, req: MoveMealRequest):
 @app.post("/api/week/{week_start}/move-meal-undo")
 def week_move_meal_undo(week_start: str, req: MoveUndoRequest):
     """Put back everything the last Move re-dated."""
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
         return _meal_move.undo_meal_move(plan_id, req.move_id)
     except ValueError as e:
@@ -4831,6 +5063,8 @@ class DraftFlagFixRequest(BaseModel):
     # 'prep_ahead' or 'move'. The DATE is deliberately not taken from the
     # request: see week_draft_flag_fix.
     action: str
+    # The plan on screen — wins over the week key (see _plan_id_for_request).
+    weekly_plan_id: int | None = None
 
 
 @app.post("/api/week/{week_start}/flag-fix")
@@ -4850,7 +5084,7 @@ def week_draft_flag_fix(week_start: str, req: DraftFlagFixRequest):
     No model call either way. Both fixes compose a write that already
     exists — see tools/draft_flags.py.
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
         # A DRAFT's control, and the store outlives the draft on purpose
         # (reopening a week brings its flags back). get_week_menu already
@@ -4919,6 +5153,8 @@ class DropDishDayRequest(BaseModel):
     # there anyway?" — only ever true on the tap AFTER a needs_confirmation
     # answer (Emily, 2026-09-24, option B). See tools.drop_dish_from_day.
     confirm_cooked: bool | str = False
+    # The plan on screen — wins over the week key (see _plan_id_for_request).
+    weekly_plan_id: int | None = None
 
 
 @app.post("/api/week/{week_start}/drop-dish-day")
@@ -4931,7 +5167,7 @@ def week_drop_dish_day(week_start: str, req: DropDishDayRequest):
     changed day in get_week_menu's own shape, the same way the in-place
     swap does.
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
         return tools.drop_dish_from_day(plan_id, req.entry_id, confirm_cooked=req.confirm_cooked)
     except ValueError as e:
@@ -4946,6 +5182,8 @@ class DropDishDayUndoRequest(BaseModel):
     its own result. A handle rather than a date, because a "−" can land on
     any night and any slot, and a day legitimately holds two snacks."""
     entry_id: int
+    # The plan on screen — wins over the week key (see _plan_id_for_request).
+    weekly_plan_id: int | None = None
 
 
 @app.post("/api/week/{week_start}/drop-dish-day-undo")
@@ -4960,7 +5198,7 @@ def week_drop_dish_day_undo(week_start: str, req: DropDishDayUndoRequest):
     since — and it is the shape both halves of the stepper already answer a
     refusal in, so a screen needs one branch rather than three.
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
         return tools.drop_dish_undo(plan_id, req.entry_id)
     except ValueError as e:
@@ -4986,6 +5224,8 @@ class AddDishDayRequest(BaseModel):
     entry_id: int
     target_entry_id: int | None = None
     target_date: str | None = None
+    # The plan on screen — wins over the week key (see _plan_id_for_request).
+    weekly_plan_id: int | None = None
 
 
 @app.post("/api/week/{week_start}/add-dish-day")
@@ -5009,7 +5249,7 @@ def week_add_dish_day(week_start: str, req: AddDishDayRequest):
     id, or a Python exception, printed into somebody's week reports an app
     that did exactly the right thing as broken.
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
         return tools.add_dish_day(
             plan_id, req.entry_id,
@@ -5047,7 +5287,7 @@ def _addition_context() -> dict:
 
 
 @app.get("/api/week/{week_start}/additions")
-def week_additions(week_start: str, entry_id: int, role: str | None = None):
+def week_additions(week_start: str, entry_id: int, role: str | None = None, weekly_plan_id: int | None = None):
     """
     The meal screen's "Add something" sheet: the short list of things
     that make sense beside THIS dish (plates.suggest_additions — a
@@ -5056,7 +5296,7 @@ def week_additions(week_start: str, entry_id: int, role: str | None = None):
     "vegetable"), so that part's kind leads the list. A read, no model
     call.
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, weekly_plan_id)
     try:
         return tools.suggest_additions(
             entry_id, eating_style=_addition_context().get("eating_style"), weekly_plan_id=plan_id,
@@ -5072,6 +5312,8 @@ class AddComponentRequest(BaseModel):
     entry_id: int
     key: str | None = None
     text: str | None = None
+    # The plan on screen — wins over the week key (see _plan_id_for_request).
+    weekly_plan_id: int | None = None
 
 
 @app.post("/api/week/{week_start}/add-component")
@@ -5083,12 +5325,19 @@ def week_add_component(week_start: str, req: AddComponentRequest):
     timeline the next time the screen reads the cooker view. Free text is
     the one path that spends a model call; a picker row spends none.
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
         return tools.add_component(
             req.entry_id, key=req.key, text=req.text,
             context=_addition_context() if req.text else None, weekly_plan_id=plan_id,
         )
+    except tools.SlotRefused as e:
+        # A night gone by, or a side someone at the table can't have:
+        # nothing was written, and the sentence says why. A 409 rather than
+        # the swap's 200 'refused', because the sheet's handler reads any
+        # 200 as "added" (runMealAdd) and would toast a side that isn't on.
+        # ABOVE ValueError, which SlotRefused subclasses.
+        raise HTTPException(status_code=409, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -5099,13 +5348,15 @@ def week_add_component(week_start: str, req: AddComponentRequest):
 class RemoveComponentRequest(BaseModel):
     entry_id: int
     name: str
+    # The plan on screen — wins over the week key (see _plan_id_for_request).
+    weekly_plan_id: int | None = None
 
 
 @app.post("/api/week/{week_start}/remove-component")
 def week_remove_component(week_start: str, req: RemoveComponentRequest):
     """The Undo on an addition: the side comes off the meal and its own
     lines come off the list, the dish's shopping untouched."""
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
         return tools.remove_component(req.entry_id, req.name, weekly_plan_id=plan_id)
     except ValueError as e:
@@ -5135,7 +5386,7 @@ def resolve_week_slot(week_start: str, req: WeekSlotRequest):
     draft this leaves the shopping list alone; in an approved week it keeps
     the list in step, same rule as a swap.
     """
-    plan_id = req.weekly_plan_id if req.weekly_plan_id is not None else _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     if req.slot not in tools.WEEK_SLOTS:
         raise HTTPException(status_code=400, detail=f"slot must be one of {', '.join(tools.WEEK_SLOTS)}.")
     try:
@@ -5214,10 +5465,7 @@ def week_attendance(week_start: str):
     usually before a plan for that week exists at all, exactly like
     week_intake.night_tags. So this must not 404 on "no plan yet".
     """
-    try:
-        datetime.date.fromisoformat(week_start)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="week_start must be an ISO date (YYYY-MM-DD).")
+    _route_date(week_start, "week_start")
     try:
         return {
             "week_start": week_start,
@@ -5304,6 +5552,8 @@ def set_week_away_stretch(week_start: str, req: AwayStretchRequest):
     which merely shrank, and the two derived edges, which is exactly what
     the picker's confirmation copy reports back.
     """
+    _route_date(req.from_date, "from_date")
+    _route_date(req.to_date, "to_date")
     try:
         return tools.set_away_stretch(
             req.from_date, req.from_slot, req.to_date, req.to_slot,
@@ -5333,12 +5583,12 @@ def confirm_week_slot_recommendation(week_start: str, req: SlotRecommendationReq
 
 
 @app.post("/api/week/{week_start}/reopen")
-def reopen_week(week_start: str):
+def reopen_week(week_start: str, req: WeekReopenRequest | None = None):
     """
     Reopen an approved week for editing (DECISIONS.md #2). Never removes
     anything from the shopping list — re-approving only adds what's new.
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id if req else None)
     try:
         return tools.reopen_weekly_plan(plan_id)
     except ValueError as e:
@@ -5394,7 +5644,7 @@ def approve_week(week_start: str, req: WeekApproveRequest):
     because someone tapped again. `was_already_approved` is the field that
     says whether this call actually did anything.
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
         result = tools.approve_weekly_plan(
             plan_id, approved_by=req.approved_by,
@@ -5402,6 +5652,10 @@ def approve_week(week_start: str, req: WeekApproveRequest):
         )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except AssistantUnavailableError as e:
+        # Claude couldn't write the week's new recipes: nothing approved,
+        # nothing written (approve_weekly_plan), and the sentence says so.
+        raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         logger.exception("Week approval failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -5473,10 +5727,13 @@ class DefrostConfirmRequest(BaseModel):
     # Empty list is a real, complete answer ("Nothing frozen — I'm buying
     # it all"), not "nothing sent yet" — see confirm_week_defrost below.
     items: list[str] = []
+    # The plan on screen, when the screen knows it — wins over the week
+    # key, which two plans can share (see _plan_id_for_week).
+    weekly_plan_id: int | None = None
 
 
 @app.get("/api/week/{week_start}/defrost-items")
-def week_defrost_items(week_start: str):
+def week_defrost_items(week_start: str, weekly_plan_id: int | None = None):
     """
     Every meat/seafood ingredient the plan's own meals call for, each with
     the night(s) it feeds, whether it has a grocery line this week and
@@ -5490,7 +5747,7 @@ def week_defrost_items(week_start: str):
     being deferred policy. See tools.defrost.meat_items_for_plan for the
     rules, and for the one that is gone (a line still to buy).
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, weekly_plan_id)
     try:
         items = tools.meat_items_for_plan(plan_id)
     except Exception as e:
@@ -5514,7 +5771,7 @@ def confirm_week_defrost(week_start: str, req: DefrostConfirmRequest):
     tab's freezer row reopens it to change the answer, and does not depend
     on this column).
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
         result = tools.confirm_frozen_items(plan_id, req.items)
         tools.mark_defrost_asked(plan_id)
@@ -5550,10 +5807,12 @@ class WeekCookAheadConfirmRequest(BaseModel):
     # (Emily: "if there is something that is repeated it should be in the
     # same group"). Absent or empty means "leave every component alone".
     components: list[BatchComponentChoiceRequest] = []
+    # The plan on screen — wins over the week key (see _plan_id_for_request).
+    weekly_plan_id: int | None = None
 
 
 @app.get("/api/week/{week_start}/cook-ahead-items")
-def week_cook_ahead_items(week_start: str):
+def week_cook_ahead_items(week_start: str, weekly_plan_id: int | None = None):
     """
     Every dish this plan repeats in the same slot on two or more days with
     no chain on it yet — the approval-time cook-ahead card's blocks (Loop
@@ -5561,7 +5820,7 @@ def week_cook_ahead_items(week_start: str):
     computed from cook_ahead_options like the Cook card's own chips, so
     the two surfaces can't offer different days for the same dish.
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, weekly_plan_id)
     try:
         items = tools.cook_ahead_repeats(plan_id)
         # The same fold's other kind of block: one component several
@@ -5591,7 +5850,7 @@ def confirm_week_cook_ahead(week_start: str, req: WeekCookAheadConfirmRequest):
     marks asked too — re-asking stays available from the Cook view's own
     "Cooking ahead?" link, which doesn't depend on this column.
     """
-    plan_id = _plan_id_for_week(week_start)
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     applied: list[dict] = []
     refused: list[dict] = []
     components_applied: list[dict] = []
@@ -5840,12 +6099,22 @@ def resolve_needs_you_dinner(req: ResolveDinnerRequest):
     the grocery list is only written to when the person actually said yes
     — same rule the assistant follows in chat.
     """
+    # The card sends the day it was offered; anything else is the caller's
+    # mistake, not ours. It used to reach plan_meal's own fromisoformat and
+    # come back as a recorded 500 (junk-input sweep, 2026-10-25).
+    try:
+        datetime.date.fromisoformat(req.date)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="date must be an ISO date (YYYY-MM-DD).")
     try:
         result = tools.resolve_needs_you_dinner(
             req.date, req.meal, add_ingredients_to_grocery_list=req.add_ingredients
         )
     except tools.SlotRefused as e:
         return _card_refusal(e)
+    except ValueError as e:
+        # Not a day (validate_meal_date): the request's fault, not ours.
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.exception("Needs-you dinner resolve failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -5898,8 +6167,9 @@ def get_inventory_view():
 
 
 @app.get("/api/inventory/expiring")
-def get_inventory_expiring(days: int = 4):
-    """Items already expired or expiring within `days` days — powers the Inventory view's 'going bad soon' banner."""
+def get_inventory_expiring(days: int = Query(4, ge=0, le=366)):
+    """Items already expired or expiring within `days` days — powers the Inventory view's 'going bad soon' banner.
+    Bounded so a window too big for a date is a 422, not an OverflowError 500 (2026-10-22)."""
     try:
         result = tools.get_expiring_soon(days=days)
     except Exception as e:
@@ -5986,6 +6256,10 @@ def set_inventory_location_view(item_id: int, req: InventoryLocationRequest):
     """Move an inventory item to a different storage location — the item detail sheet's location picker (design_handoff_home_manager §6)."""
     try:
         result = tools.set_inventory_location(item_id, req.location)
+    except tools.InvalidInventoryLocation as e:
+        # Before the 404 below: it IS a ValueError, and a shelf that isn't
+        # one is a bad request, not a missing item.
+        raise HTTPException(status_code=400, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -6124,6 +6398,11 @@ def get_facts_view(category: str | None = None):
 @app.post("/api/facts/add")
 def add_fact_view(req: FactAddRequest):
     """Add one freeform fact — What We Know's '+ Add something to this list'."""
+    # One of the three tabs, or nowhere (defect hunt 2026-10-25): a fact
+    # filed under any other word was drawn on no tab — so nothing could edit
+    # or delete it — while the planner and the allergy check still read it.
+    if (req.category or "") not in _memory_tools.FACT_CATEGORIES:
+        raise HTTPException(status_code=400, detail="Put it under People, Taste or Rhythm.")
     try:
         result = tools.add_fact(req.category, req.text, hard=req.hard, author=req.author)
     except Exception as e:
@@ -6741,12 +7020,24 @@ def add_grocery_list_item(req: GroceryAddRequest):
     under that store in the same request and — for a real store — the
     store is remembered as the item's usual; '' is "Anywhere".
     """
-    try:
+    def do_add():
         result = tools.add_grocery_item(req.item, quantity=req.quantity, category=req.category, added_by=req.added_by)
         if req.store is not None:
             placed = tools.set_grocery_item_store(result["item_id"], req.store, remember=req.remember)
             result["store"] = placed.get("store", "")
             result["remembered"] = bool(placed.get("remembered"))
+        return result
+
+    try:
+        # A repeat of the same client_id — the offline queue re-sending an
+        # add whose reply was lost — gets the first answer back and adds
+        # nothing, so "2 milk" stays 2.
+        result = grocery_add_once.add_once(req.client_id, do_add)
+    except grocery_add_once.AddInFlight:
+        # The phone's queue keeps the add on a 409 and tries again later
+        # (grocery-offline.js replay); a claim abandoned for a minute is
+        # taken over then, so the add still lands.
+        raise HTTPException(status_code=409, detail="That add is already on its way.")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -7828,9 +8119,11 @@ def _stream_chat_turn(*, session_id: str, message: str, history: list, proactive
             events.put(("done", _finish_chat_turn(session_id, history, reply, updated_history)))
         except AssistantUnavailableError as e:
             logger.warning("Chat turn hit a transient Claude API failure: %s", e)
+            _record_stream_failure("/api/chat/stream", 503, e)
             events.put(("error", {"status": 503, "detail": str(e)}))
         except Exception as e:
             logger.exception("Chat turn failed")
+            _record_stream_failure("/api/chat/stream", 500, e)
             events.put(("error", {"status": 500, "detail": f"Server error: {e}"}))
         finally:
             agent._WEEK_GEN_PROGRESS.reset(token)
@@ -8046,7 +8339,7 @@ def member_share_page(token: str):
 # ---------- Sign-in (see app/security.py for why this exists) ----------
 
 
-def _render_login(next_path: str, error: str = "") -> HTMLResponse:
+def _render_login(next_path: str, error: str = "", status_code: int | None = None) -> HTMLResponse:
     html = open(os.path.join(static_dir, "login.html"), encoding="utf-8").read()
     # The template carries a placeholder rather than building the markup in
     # Python, so the page stays editable as a normal static file.
@@ -8057,7 +8350,12 @@ def _render_login(next_path: str, error: str = "") -> HTMLResponse:
     # quote, and /login?next=/"><script>… ran its script on the sign-in
     # page, where the passphrase and the email code are typed.
     html = html.replace("__NEXT__", html_escape(security.sanitize_next(next_path), quote=True))
-    return HTMLResponse(html, status_code=401 if error else 200)
+    return HTMLResponse(html, status_code=status_code or (401 if error else 200))
+
+
+# What the passphrase form says once the "login" bucket is full — the email
+# steps' own line for a 429 (static/login.html, failureLine), word for word.
+LOGIN_TOO_MANY_LINE = "That\u2019s a lot of tries. Wait a few minutes, then try again."
 
 
 def _is_https(request: Request) -> bool:
@@ -8096,7 +8394,17 @@ def _household_for_password(password: str) -> int | None:
 
 @app.post("/login")
 def login_submit(request: Request, password: str = Form(""), next: str = Form("/")):
-    _enforce_rate_limit(request, "login")
+    try:
+        _enforce_rate_limit(request, "login")
+    except HTTPException as e:
+        if e.status_code != 429:
+            raise
+        # The passphrase form is a plain form post, so the browser shows
+        # whatever comes back as the page: the ninth try in five minutes
+        # was a bare JSON blob with no way back to the form (defect hunt,
+        # 2026-10-21) — in the iPhone app's web view, a dead end. The
+        # sign-in page again, with the refusal in its banner and next kept.
+        return _render_login(next, LOGIN_TOO_MANY_LINE, status_code=429)
     household_id = _household_for_password(password)
     if household_id is None:
         # Deliberately does not say whether the passphrase was wrong or
@@ -9193,10 +9501,27 @@ def _session_adult_id() -> int | None:
     return member["id"] if member else None
 
 
+def _you_are_the_main_person(you_id: int | None) -> bool:
+    """Is the session's adult this household's main person?"""
+    return you_id is not None and tools.primary_member_id() == you_id
+
+
 @app.get("/api/household/invites")
 def household_invites():
-    """Every adult here, and whether each has joined — Preferences' and setup's invite rows."""
-    return {"adults": invites.household_adults_status(tools.household_id(), _session_adult_id())}
+    """
+    Every adult here, and whether each has joined — Preferences' and setup's
+    invite rows. `can_remove` (2026-10-21) is true on every OTHER adult's
+    row, helpers included, when the person looking is the main person and
+    the household can be changed from inside Pomona: that row carries
+    "Take <name> out". The route below checks all of it again.
+    """
+    household = tools.household_id()
+    you_id = _session_adult_id()
+    adults = invites.household_adults_status(household, you_id)
+    main = _you_are_the_main_person(you_id) and not household_deletion.is_protected(household)
+    for a in adults:
+        a["can_remove"] = bool(main and a["id"] != you_id)
+    return {"adults": adults}
 
 
 class InviteRequest(BaseModel):
@@ -9546,7 +9871,10 @@ def _leave_state() -> dict:
     you = tools.current_member()
     protected = household_deletion.is_protected(household)
     return {
-        "household_name": row["name"] if row else "",
+        # Lowercase for a household with no name of its own, so the dialog
+        # reads "Delete your household?" / "Remove yourself from your
+        # household?" — never "Your household" mid-sentence.
+        "household_name": _tools_shared.household_display_name(row["name"] if row else "") or "your household",
         "protected": protected,
         # Any adult may delete the household (Emily's default, 2026-09-27).
         # A house with adults but nobody picked on this device has to say
@@ -9648,6 +9976,64 @@ def remove_me_from_household(request: Request):
             detail="That didn't go through, and nothing was changed. Try again in a moment.",
         )
     return _signed_out({"removed": True, "goodbye": "/goodbye?left=1"}, request)
+
+
+class RemoveMemberRequest(BaseModel):
+    member_id: int = Field(..., ge=1, le=2**63 - 1)  # SQLite binds 64-bit ints only
+
+
+@app.post("/api/household/members/remove")
+def remove_household_member(req: RemoveMemberRequest):
+    """
+    The main person takes another adult — a helper, a former nanny, an
+    ex-partner — out of the household, from that person's row in Who's here
+    (Loop Board, 2026-10-21).
+
+    Only the main person (Emily's open question; this is the default until
+    she answers it): any other adult, or a device that hasn't said who it
+    is, gets 403. Taking yourself out is "Remove me", not this. The person
+    must be an adult in THIS household — anyone else, another household's
+    member included, is 404 and nothing is touched.
+
+    What goes and what stays is exactly "Remove me"
+    (household_deletion.remove_member): their row, their sign-in email and
+    invite links (so a link already sent stops working), their phone's
+    notification rows — and with the row gone every device they were signed
+    in on is signed out at its next request (households.session_still_holds).
+    What they added to the house stays. The person asking stays signed in.
+    """
+    household = tools.household_id()
+    you_id = _session_adult_id()
+    if not _you_are_the_main_person(you_id):
+        raise HTTPException(status_code=403, detail="Only the main person can take someone out of the household.")
+    if req.member_id == you_id:
+        raise HTTPException(status_code=400, detail="To leave yourself, use Remove me.")
+    if household_deletion.is_protected(household):
+        raise HTTPException(status_code=403, detail="This household can't be changed that way from inside Pomona.")
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            "SELECT name FROM members WHERE id = ? AND household_id = ? "
+            "AND LOWER(TRIM(age_group)) = 'adult'",
+            (req.member_id, household),
+        ).fetchone()
+    finally:
+        conn.close()
+    if row is None:
+        raise HTTPException(status_code=404, detail="That person isn't one of the adults here.")
+    try:
+        household_deletion.remove_member(household, req.member_id, by_member_id=you_id)
+    except household_deletion.ProtectedHousehold as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except household_deletion.DeletionRefused as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        logger.exception("Removing member %s from household %s failed", req.member_id, household)
+        raise HTTPException(
+            status_code=500,
+            detail="That didn't go through, and nothing was changed. Try again in a moment.",
+        )
+    return {"removed": True, "name": row["name"]}
 
 
 @app.get("/goodbye")

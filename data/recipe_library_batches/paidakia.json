@@ -1,0 +1,44 @@
+{
+ "dish_name": "Paidakia",
+ "cuisine": "Greek",
+ "main_protein": "lamb",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 60,
+ "ingredients": [
+  {"item": "Lamb rib chops", "qty": "8 (about 1.5 lbs)", "category": "meat/seafood"},
+  {"item": "Lemons", "qty": "2", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Fresh thyme", "qty": "1 bunch", "category": "produce"},
+  {"item": "Dijon mustard", "qty": "1 jar", "category": "pantry", "cook_qty": "1 1/2 tbsp"},
+  {"item": "Olive oil", "qty": "1/2 cup", "category": "pantry"},
+  {"item": "Dried oregano", "qty": "1 3/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1 3/4 tsp", "category": "pantry"},
+  {"item": "Yukon Gold potatoes", "qty": "2 lbs", "category": "produce"}
+ ],
+ "instructions": [
+  "The night before, or at least 3 hours ahead: finely grate the zest of 1 lemon into a shallow dish. Mince 1 of the garlic cloves and chop 1 tbsp of thyme leaves. Add them to the dish with 1/4 cup of the olive oil, the 1 1/2 tbsp Dijon mustard, 1/2 tsp of the oregano and 1/4 tsp of the pepper, and stir it together. Wrap the zested lemon and keep it in the fridge for the potatoes.",
+  "Add the 8 lamb chops and turn them until both sides are coated. Cover the dish and put it in the fridge.",
+  "On the night, take the chops out of the fridge and heat the oven to 425°F (220°C).",
+  "Cut the 2 lbs potatoes into wedges and spread them in one layer in a large metal roasting pan.",
+  "Juice the zested lemon into a bowl. That should be about 3 tbsp. Mince the last garlic clove and add it with the remaining 1/4 cup olive oil, 1/3 cup water, 1 tsp of the oregano, 3/4 tsp of the salt and the last 1/4 tsp pepper. Whisk it, pour it over the potatoes and toss them until they're coated.",
+  "Roast the potatoes for 30 minutes, until the undersides are golden. Turn them with a spatula and roast for 20 to 25 minutes, until they're browned at the edges and a knife slides in easily. If the pan looks dry before they brown, add a splash of hot water.",
+  "When the potatoes have about 15 minutes left, sprinkle the chops on both sides with the remaining 1 tsp salt. Leave the marinade that clings to them.",
+  "Heat a large heavy skillet over medium-high heat until it's very hot. Add half the chops in one layer with room between them. Stand back a little. They'll spatter.",
+  "Leave them alone for 3 to 4 minutes, until the underside is deep brown and lets go of the pan. Flip them and cook the other side for 3 to 4 minutes. You're cooking them to 140°F for medium, so if you have a thermometer, check the thickest chop near the bone. No thermometer? Cut into one next to the bone: it's done when the middle is rosy pink, not red.",
+  "Transfer them to a platter and cook the rest the same way. Let the chops rest for 5 minutes.",
+  "Cut the second lemon in half. Squeeze one half over the chops and sprinkle them with the last 1/4 tsp oregano. Cut the other half into wedges.",
+  "Taste a potato and a bite of lamb. If it's flat, add a pinch more salt or a squeeze of the lemon. Serve the chops with the potatoes, their pan juices spooned over, and the lemon wedges."
+ ],
+ "advance_prep_notes": "Marinate the lamb at least 3 hours ahead, ideally the night before.",
+ "advance_prep_step_indices": [1, 2],
+ "method_notes": "All three versions marinate the chops in olive oil, lemon (zest or juice) and dried oregano and finish them with fresh lemon. My Greek Dish (the lead) adds mustard, thyme and garlic, marinates 3 hours to overnight, and serves them with lemon and oregano roast potatoes; Food.com grills them after a lemon juice marinade, and Krumpli sears them in a very hot pan before finishing them in the oven with garlic potatoes. This follows the lead's marinade and potatoes but sears the chops in a skillet like Krumpli instead of baking them in the potato pan for 25 minutes, which browns them and keeps them pink; the lead notes most Greeks prefer them well done, so cook them longer if you like.",
+ "sources": [
+  {"name": "My Greek Dish", "title": "Marinated Greek Lamb Chops with Roast Potatoes (Paidakia)", "url": "https://www.mygreekdish.com/recipe/greek-lamb-chops-with-roast-potatoes-paidakia/", "rating": 4.6, "rating_count": 807, "read": true, "lead": true},
+  {"name": "Food.com", "title": "Paidakia (Greek Grilled Lamb Chops)", "url": "https://www.food.com/recipe/paidakia-greek-grilled-lamb-chops-507231", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Krumpli", "title": "Greek Lamb Chops with Lemon Garlic Potatoes", "url": "https://www.krumpli.co.uk/greek-lamb-chops/", "rating": 5.0, "rating_count": 1, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

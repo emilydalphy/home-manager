@@ -1,0 +1,53 @@
+{
+ "dish_name": "Gaeng Som",
+ "cuisine": "Thai",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {"item": "Dried red chilies", "qty": "6", "category": "pantry"},
+  {"item": "Jasmine rice", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Daikon radish", "qty": "1 lb", "category": "produce"},
+  {"item": "Green beans", "qty": "1/2 lb", "category": "produce"},
+  {"item": "Napa cabbage", "qty": "1 small head", "category": "produce"},
+  {"item": "Shallots", "qty": "3", "category": "produce"},
+  {"item": "Galangal", "qty": "1 piece (2 inch)", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Shrimp paste", "qty": "1 jar", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "White fish fillets", "qty": "1.5 lbs", "category": "meat/seafood"},
+  {"item": "Tamarind concentrate", "qty": "1 jar", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Palm sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Fish sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Red bird's eye chilies", "qty": "4", "category": "produce"}
+ ],
+ "instructions": [
+  "Put the 6 dried chilies in a small bowl and cover them with hot water. Leave them for about 15 minutes, until they're soft and bendy.",
+  "Rinse the 1 1/2 cups rice in a sieve until the water runs mostly clear. Put it in a medium pot with 2 1/4 cups water and bring it to a boil over high heat.",
+  "Cover the rice, turn the heat to low and cook for 15 minutes. Turn off the heat and leave it covered for 10 minutes.",
+  "Meanwhile, peel the daikon, cut it in half lengthwise and slice it 1/2 inch thick. Trim the green beans and cut them into 2 inch pieces. Cut half the cabbage into 2 inch pieces.",
+  "Slice the 3 shallots. Peel the galangal and chop 1 tbsp of it. Peel the 2 garlic cloves.",
+  "Drain the chilies, pull off the stems and shake out most of the seeds. Put them in a blender with the shallots, chopped galangal, garlic, 1 tbsp shrimp paste, 1/2 tsp salt and 1/2 cup water. Blend until smooth.",
+  "Cut the fish into 2 inch pieces. Set one piece aside, about 4 oz.",
+  "Bring 5 1/2 cups water to a boil in a large pot over high heat. Stir in the paste and boil it for 1 minute. It will smell strong at first.",
+  "Add the piece of fish you set aside and simmer for about 3 minutes, until it's white all the way through. Lift it out, pull off any skin and mash it with a fork in a small bowl. Add it back to the pot.",
+  "Add the daikon and simmer over medium heat for about 10 minutes, until it's soft and a little see through.",
+  "Stir in 1/4 cup tamarind concentrate, 2 tbsp palm sugar and 3 tbsp of the fish sauce.",
+  "Add the green beans and simmer for 2 minutes.",
+  "Slide in the rest of the fish and the cabbage. Simmer gently for 3 to 4 minutes, until the fish is opaque and flakes when you press it. Stir slowly so the fish stays in pieces.",
+  "Meanwhile, thinly slice the 4 bird's eye chilies and mix them with the last 1 tbsp fish sauce in a small bowl.",
+  "Taste it. It should be sour first, then salty, with a little sweetness. If it's flat, add a pinch more salt or a little more of the tamarind.",
+  "Serve with the jasmine rice, with the chili fish sauce on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version had 20 or more ratings, Hot Thai Kitchen was paywalled and RecipeTin Eats has no gaeng som, so this leads with Real Thai Recipes. All three blend or pound a paste of dried or fresh chilies, shallot and shrimp paste, boil it in water or stock and poach fish in it, seasoned at the end with fish sauce; Real Thai Recipes and Great British Chefs mash a little cooked fish back into the broth for body and sour it with tamarind and palm sugar, while Eating Thai Food's southern version uses fresh turmeric, green papaya and a lot of lime and chilies. This follows the central tamarind style of the lead with daikon, green beans and napa cabbage, uses galangal from Great British Chefs in place of hard to find fingerroot, and keeps the pot mild with 6 seeded dried chilies, putting the fresh bird's eye chilies in fish sauce on the side. Eating Thai Food and Great British Chefs show 5.0 stars, but no rating count could be confirmed (Eating Thai Food says 2 reviews).",
+ "sources": [
+  {"name": "Real Thai Recipes", "title": "Sour Curry (gaeng som)", "url": "https://www.realthairecipes.com/recipes/sour-curry/", "rating": null, "rating_count": null, "read": true, "lead": true},
+  {"name": "Great British Chefs", "title": "Gaeng Som Pla (Sour Orange Curry of Sea Bass and Bamboo)", "url": "https://greatbritishchefs.com/recipes/gaeng-som-pla-recipe", "rating": 5.0, "rating_count": null, "read": true, "lead": false},
+  {"name": "Eating Thai Food", "title": "Southern Thai Gaeng Som Recipe (Sour Spicy Fish Curry)", "url": "https://www.eatingthaifood.com/thai-gaeng-som-recipe/", "rating": 5.0, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -5,6 +5,7 @@ import logging
 import re
 import sqlite3
 import os
+import unicodedata
 
 logger = logging.getLogger("home_manager")
 
@@ -148,10 +149,29 @@ def how_to_run_on_production(script_name: str) -> str:
     )
 
 
+def name_key(name) -> str:
+    """
+    What makes two recipe names "the same recipe" to a household: case,
+    accents, Unicode form and runs of spaces don't count. "Shrimp Étouffée",
+    "SHRIMP ÉTOUFFÉE", "shrimp etouffee" and the same words pasted in
+    decomposed form (NFD, as macOS copies them) all share one key.
+
+    SQLite's LOWER() folds ASCII only, so `LOWER(name) = LOWER(?)` let
+    "Shrimp Étouffée" and "shrimp étouffée" save as two recipes and made a
+    chat lookup of one miss the other (2026-10-24). Registered on every
+    connection as the SQL function name_key(), so a query and Python
+    compare names by the one rule.
+    """
+    text = unicodedata.normalize("NFKD", str(name or ""))
+    text = "".join(ch for ch in text if not unicodedata.combining(ch))
+    return " ".join(text.casefold().split())
+
+
 def get_conn():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
+    conn.create_function("name_key", 1, name_key, deterministic=True)
     return conn
 
 
@@ -312,7 +332,7 @@ _MIGRATIONS = [
     ("meal_plan_entries", "cooked_status", "TEXT NOT NULL DEFAULT 'pending'"),
     ("meal_plan_entries", "cooked_at", "TEXT"),
     ("meal_plan_entries", "inventory_depleted_at", "TEXT"),
-    # "We skipped it" on Today's "Did you have it?" card (yesterday_check.py).
+    # "We skipped it" on Today's "Did you have it?" card (tools/yesterday_ask.py).
     ("meal_plan_entries", "skipped_at", "TEXT"),
     ("grocery_items", "store", "TEXT NOT NULL DEFAULT ''"),
     ("inventory_items", "category", "TEXT NOT NULL DEFAULT 'other'"),
@@ -390,6 +410,9 @@ _MIGRATIONS = [
     # The draft's own account of what it had to bend, with the fixes
     # already worked out (2026-09-27, the decided snag rules); see schema.sql.
     ("weekly_plans", "draft_flags_json", "TEXT NOT NULL DEFAULT ''"),
+    # The allergies and must-avoids on file when the week was approved
+    # (2026-10-24); see schema.sql.
+    ("weekly_plans", "avoidances_at_approval_json", "TEXT NOT NULL DEFAULT ''"),
     ("meal_plan_entries", "slot_state", "TEXT NOT NULL DEFAULT 'planned'"),
     ("meal_plan_entries", "open_reason", "TEXT NOT NULL DEFAULT ''"),
     ("meal_plan_entries", "derived_from_json", "TEXT NOT NULL DEFAULT '{}'"),
@@ -664,6 +687,14 @@ _MIGRATIONS = [
     # nothing for THIS plan and every other plan is untouched. Set through
     # set_prep_days(this_week_only=True).
     ("weekly_plans", "skip_prep_this_week", "INTEGER NOT NULL DEFAULT 0"),
+    # When this plan's approval FIRST built the shopping list (2026-10-21,
+    # defect hunt). approved_at is cleared by a reopen and re-stamped by the
+    # re-approval, and Shop's ticked rows are the ones bought since the list
+    # was built (grocery.list_built_at): reopening Wednesday to change
+    # Thursday's dinner made Tuesday's ticks vanish off the checklist. Set
+    # once, never cleared. NULL on plans approved before it existed — the
+    # reader falls back to approved_at for those.
+    ("weekly_plans", "list_built_at", "TEXT"),
     # Loop Board "A browser error tells us nothing" (Emily, 2026-09-10). The
     # whole record of a real tester's crash was kind=client, where=/,
     # detail='browser error' — true, and impossible to find in the code. So
@@ -909,6 +940,13 @@ _MIGRATIONS = [
     # "never on a household that has approved a week" reads both. '' on
     # existing rows; their approved plans still answer for them.
     ("households", "first_approved_at", "TEXT NOT NULL DEFAULT ''"),
+    # The household-local day the household last COUNTED this row (a "set",
+    # a partial "use", the Kitchen stepper) — never a purchase tick or an
+    # "add". A past meal's bought-for share stops being claimed against a
+    # row counted on a later day, because that count already reflects it
+    # (recipes._KitchenStock.reserve_bought_for_meals_ahead). NULL = never
+    # counted.
+    ("inventory_items", "counted_on", "TEXT"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people
@@ -1295,6 +1333,22 @@ def _backfill_snack_dishes_set(conn):
     )
 
 
+def _backfill_list_built_at(conn):
+    """
+    A plan approved before list_built_at existed (2026-10-21) gets its
+    approval time, so the week running on deploy day is covered too: left
+    NULL, its first reopen cleared approved_at and the re-approval stamped
+    list_built_at = now — the very ticks-vanish bug the column fixes.
+    Idempotent: from then on every approval sets both columns, and only a
+    NULL is ever filled. A week already reopened at deploy has nothing to
+    copy and stays as it was.
+    """
+    conn.execute(
+        "UPDATE weekly_plans SET list_built_at = approved_at "
+        "WHERE list_built_at IS NULL AND approved_at IS NOT NULL"
+    )
+
+
 def _run_migrations(conn):
     for table, column, coltype in _MIGRATIONS:
         existing = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
@@ -1326,6 +1380,7 @@ def _run_migrations(conn):
     _backfill_snack_dishes(conn)
     _backfill_snack_dishes_set(conn)
     _backfill_timezone_set(conn)
+    _backfill_list_built_at(conn)
     _migrate_chore_modes(conn)
     _backfill_chore_done_on(conn)
     _backfill_primary_member(conn)

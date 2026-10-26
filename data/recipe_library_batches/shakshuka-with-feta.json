@@ -1,0 +1,125 @@
+{
+ "dish_name": "Shakshuka with Feta",
+ "cuisine": "Lebanese",
+ "main_protein": "eggs",
+ "ingredients": [
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Onion",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Smoked paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 small can",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "1 can (28 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Feta",
+   "qty": "1 block (6 oz)",
+   "category": "dairy",
+   "cook_qty": "1 cup crumbled"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Corn tortillas (100% corn)",
+   "qty": "1 pack (8)",
+   "category": "pantry",
+   "cook_qty": "8"
+  },
+  {
+   "item": "Harissa (gluten-free)",
+   "qty": "1 jar",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Dice the onion and red pepper, and mince the garlic.",
+  "Heat the oil in a large deep skillet with a lid over medium heat. Add the onion, pepper and 1/2 tsp of the salt. Cook, stirring now and then, for 7 minutes, until soft.",
+  "Add the tomato paste and stir for 1 minute, until it darkens a shade.",
+  "Add the garlic, smoked paprika and cumin. Stir for 30 seconds, until you can smell them.",
+  "Add the crushed tomatoes, the remaining 1/2 tsp salt and the pepper. Stir, then simmer uncovered for 10 minutes, until the sauce is thick enough that a spoon leaves a trail.",
+  "Use the back of a spoon to make 8 wells in the sauce. Crack an egg into each one, and sprinkle a pinch of salt over the eggs.",
+  "Cover the skillet and cook over medium-low heat for 7 minutes, until the whites are set and the yolks still jiggle. Give them 2 minutes longer if you like the yolks firm.",
+  "While the eggs cook, crumble the feta and chop 1/4 cup of the parsley. Wrap the tortillas in a damp paper towel and microwave them for 45 seconds.",
+  "Take the skillet off the heat and scatter the feta and parsley over the top. Taste the sauce around the eggs. If it's flat, add a pinch more salt.",
+  "Serve with the warm corn tortillas and the harissa on the table."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 27,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both sources poach eggs in a tomato sauce of onion, red pepper, garlic and smoked paprika and finish with feta and parsley. The lead stirs harissa into the sauce and serves it with crusty bread or pita. This version keeps the sauce mild and puts the harissa (a gluten-free one) on the table, adds tomato paste and cumin for depth, and replaces the bread with warm corn tortillas so the meal stays gluten-free. No source for this exact name was rated by 20 or more people, so the lead is the best-rated version read.",
+ "sources": [
+  {
+   "name": "Salted Mint",
+   "title": "The BEST Shakshuka with Feta",
+   "url": "https://saltedmint.com/wprm_print/the-best-shakshuka-with-feta",
+   "rating": 4.86,
+   "rating_count": 7,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Jewish Chronicle",
+   "title": "Simple spinach and feta green shakshuka",
+   "url": "https://www.thejc.com/recipe/recipe-spinach-and-feta-shakshuka-d92i9leg",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

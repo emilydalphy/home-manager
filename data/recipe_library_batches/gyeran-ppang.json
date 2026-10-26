@@ -1,0 +1,108 @@
+{
+ "dish_name": "Gyeran Ppang",
+ "cuisine": "Korean",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "4 tsp",
+   "category": "dairy"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "2/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Baking powder",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "5",
+   "category": "dairy"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3/4 tsp"
+  },
+  {
+   "item": "Whole milk",
+   "qty": "2/3 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "American cheese",
+   "qty": "4 slices",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F (200°C). Brush 4 cups of a mini loaf pan with the 1 tsp vegetable oil.",
+  "Melt the 4 tsp butter in a small bowl in the microwave, about 20 seconds.",
+  "In a large bowl, whisk together the 2/3 cup flour, 1/4 cup sugar, 1 1/4 tsp baking powder and the pinch of salt.",
+  "Add the melted butter, 1 of the eggs, 3/4 tsp vanilla and the 2/3 cup milk. Whisk until smooth. The batter will be thin and pourable.",
+  "Divide the batter among the 4 cups.",
+  "Crack one of the remaining 4 eggs on top of each. Poke the yolk with a fork and stir the egg a little, without reaching down into the batter.",
+  "Fold a slice of cheese in half and lay it on each one.",
+  "Bake for 13 to 15 minutes, until they are puffed and golden and the egg white is set. For a firm yolk, bake them for 17 to 18 minutes.",
+  "Let them cool in the pan for 5 minutes. Run a knife around the edges and lift them out.",
+  "Serve warm."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version had 20 or more ratings and RecipeTin Eats has no gyeran ppang, so this leads with Emmymade, the most rated version read, whose batter is adapted from Maangchi's. All three pour a sweet, runny, vanilla scented batter into small loaf or muffin cups, crack a whole egg on top and bake it at 375 to 400°F until puffed and the white is set. Emmymade makes three with American cheese or bacon on top, Beyond Kimchee uses pancake mix and cornmeal with cheddar, and Baking by Yuka adds ham and mozzarella. This scales Emmymade's batter to four with the cheese and without the bacon.",
+ "sources": [
+  {
+   "name": "Emmymade",
+   "title": "Gyeran-Ppang (Korean Street Food Egg Bread)",
+   "url": "https://www.emmymade.com/gyeran-ppang-korean-street-food-egg-bread-recipe/",
+   "rating": 4.41,
+   "rating_count": 10,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Beyond Kimchee",
+   "title": "Easy Gyeran-Ppang (Korean Egg Bread)",
+   "url": "https://www.beyondkimchee.com/korean-egg-bread/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Baking by Yuka",
+   "title": "Gyeran-ppang (Korean Egg Bread)",
+   "url": "https://bakingbyyuka.substack.com/p/gyeran-ppang-korean-egg-bread",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

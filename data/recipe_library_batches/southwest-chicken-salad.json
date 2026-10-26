@@ -1,0 +1,53 @@
+{
+ "dish_name": "Southwest Chicken Salad",
+ "cuisine": "American",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Boneless skinless chicken breasts", "qty": "1 lb (2 breasts)", "category": "meat/seafood"},
+  {"item": "Kosher salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Ground cumin", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Smoked paprika", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Garlic powder", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Chili powder", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Olive oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Sour cream", "qty": "1 tub (8 oz)", "category": "dairy", "cook_qty": "1/2 cup"},
+  {"item": "Lime", "qty": "1", "category": "produce"},
+  {"item": "Honey", "qty": "1 jar", "category": "pantry", "cook_qty": "4 tsp"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"},
+  {"item": "Corn", "qty": "1 can (15 oz)", "category": "pantry"},
+  {"item": "Black beans", "qty": "1 can (15 oz)", "category": "pantry"},
+  {"item": "Romaine hearts", "qty": "2", "category": "produce"},
+  {"item": "Cherry tomatoes", "qty": "1 pint", "category": "produce"},
+  {"item": "Red onion", "qty": "1 small", "category": "produce"},
+  {"item": "Avocado", "qty": "1", "category": "produce"},
+  {"item": "Shredded Monterey Jack", "qty": "1 bag (8 oz)", "category": "dairy", "cook_qty": "1/2 cup"},
+  {"item": "Tortilla chips", "qty": "1 bag", "category": "pantry", "cook_qty": "1 cup"}
+ ],
+ "instructions": [
+  "Lay the chicken breasts between two sheets of plastic wrap and pound them with a rolling pin or the bottom of a heavy pan to an even 1/2 inch thickness.",
+  "In a small bowl, mix 3/4 tsp of the salt, 1/2 tsp of the pepper, 1/2 tsp of the cumin and 1/2 tsp of the smoked paprika. Pat the chicken dry and rub the mix over both sides.",
+  "Heat the 1 tbsp olive oil in a large skillet over medium until it shimmers. Lay the chicken in and press it down. Leave it for 5 to 7 minutes, until the underside is golden brown and lets go of the pan.",
+  "Flip the chicken and cook the other side for 5 to 7 minutes. You're cooking it to 160°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest part: it's done when there's no pink left. Move it to a cutting board to rest for 10 minutes.",
+  "Drain the corn and pat it dry. Add it to the same pan over medium high and leave it for about 2 minutes, until some kernels are browned. Stir it and cook for 2 to 3 minutes, until it's spotted brown all over. Transfer it to a plate to cool.",
+  "Meanwhile, make the dressing. Zest the lime until you have 1/2 tsp, then squeeze it. That should be about 2 tbsp juice. Finely chop 1 tbsp of the cilantro.",
+  "Whisk the 1/2 cup sour cream, the lime juice and zest, the 4 tsp honey, the chopped cilantro, the remaining 1/2 tsp cumin, the remaining 1/4 tsp smoked paprika, the 1/4 tsp garlic powder, the 1/4 tsp chili powder, the remaining 1/4 tsp salt and the remaining 1/4 tsp pepper in a small bowl.",
+  "Rinse and drain the black beans. Slice the romaine hearts crosswise into 1/2 inch ribbons. Halve the cherry tomatoes. Thinly slice a quarter of the red onion. Slice the avocado. Chop 2 tbsp of the cilantro.",
+  "Slice the chicken against the grain into thin strips.",
+  "Toss the romaine with 1/4 cup of the dressing in a large bowl and divide it among 4 plates. Top them with the beans, corn, tomatoes, onion, avocado and chicken. Sprinkle 1/2 cup of the Monterey Jack over the four plates. Crush 1 cup of the tortilla chips over the top and scatter on the chopped cilantro.",
+  "Serve with the rest of the dressing on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three put seasoned, pan cooked chicken breast over chopped romaine with corn, beans, cherry tomatoes, red onion, avocado, cheese and something crunchy, with a creamy lime dressing. Jessica Gavin (the lead) pounds the breasts thin and pan sears them with salt and pepper, uses a sour cream dressing with lime, honey and cumin, and adds pinto beans, zucchini and pepitas; The Anthony Kitchen and Whitney Bond use black beans and a spice rub on the chicken, which this version takes, and Whitney Bond adds crushed tortilla chips. The lead's dressing has minced jalapeño; it's left out here to keep it mild. No version had 20 ratings and RecipeTin Eats has no southwest chicken salad, so the top rated version read leads.",
+ "sources": [
+  {"name": "Jessica Gavin", "title": "Southwest Chicken Salad", "url": "https://www.jessicagavin.com/southwest-chicken-salad/", "rating": 5, "rating_count": 10, "read": true, "lead": true},
+  {"name": "The Anthony Kitchen", "title": "Southwest Chicken Salad", "url": "https://www.theanthonykitchen.com/southwest-chicken-salad/", "rating": 5, "rating_count": 1, "read": true, "lead": false},
+  {"name": "Whitney Bond", "title": "Southwest Salad with Creamy Chipotle Dressing", "url": "https://whitneybond.com/southwest-salad/", "rating": 5, "rating_count": 1, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

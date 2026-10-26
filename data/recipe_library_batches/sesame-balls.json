@@ -1,0 +1,39 @@
+{
+ "dish_name": "Sesame Balls",
+ "cuisine": "Chinese",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 50,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {"item": "Glutinous rice flour", "qty": "1 bag", "category": "pantry", "cook_qty": "1 1/2 cups"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1/3 cup"},
+  {"item": "Red bean paste", "qty": "1 can", "category": "pantry", "cook_qty": "7 oz"},
+  {"item": "Sesame seeds", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "4 cups", "category": "pantry"}
+ ],
+ "instructions": [
+  "In a mixing bowl, stir 1/2 cup of the glutinous rice flour with the 1/3 cup sugar. Pour in 1/4 cup boiling water and stir until it's a smooth, sticky paste. Leave it for 5 minutes.",
+  "Add 1/4 cup plus 1 tbsp room temperature water and the remaining 1 cup of flour. Stir, then knead it with your hands in the bowl until it's a smooth, soft dough that doesn't crack at the edges. Cover the bowl and let the dough rest for 30 minutes.",
+  "Meanwhile, put the 1/4 cup sesame seeds in a fine sieve and rinse them under the tap until they're all wet. Shake off the water and spread them on a plate. They should be damp, not dripping.",
+  "Divide 7 oz of the red bean paste into 8 equal pieces, about 1 1/2 tbsp each, and roll each one into a ball.",
+  "Cut the dough into 8 equal pieces. Flatten one piece into a 3 inch round that's a little thicker in the middle. Set a ball of red bean paste in the center, pull the dough up around it and pinch it closed. Roll it between your palms until it's smooth and round. Repeat with the rest.",
+  "Roll each ball in the sesame seeds until it's covered, then press it gently between your palms so the seeds stick.",
+  "Pour the 4 cups oil into a medium deep pot and heat it over medium to 320°F. No thermometer? Drop in a crumb of dough. It should sink, then float up slowly with small, steady bubbles around it.",
+  "Gently add 4 balls and keep them moving with a slotted spoon so they don't stick to the bottom. Turn the heat down so the oil stays between 290°F and 300°F, and fry for about 10 minutes, until they float. If the oil gets hotter than that, the balls can crack.",
+  "Once they float, keep rolling them and press them gently under the oil with the back of the spoon for 2 to 3 minutes. They'll swell as you go.",
+  "Turn the heat up a little so the oil climbs to 350°F, and fry for about 5 minutes, turning them, until they're light golden brown all over. Transfer them to a rack or paper towels with the slotted spoon.",
+  "Let the oil come back down to 320°F and fry the other 4 the same way.",
+  "Let them cool for at least 10 minutes before you eat them. The filling stays very hot. Serve them warm."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions make a sweetened glutinous rice dough, wrap it around a sweet paste, roll it in sesame seeds and fry it at a low, steady heat so the balls swell before they brown. The Woks of Life (the lead) cooks part of the flour with boiling water first, rinses the sesame seeds so they stick, holds the oil near 300°F until the balls float, then presses them under the oil and finishes at 350°F. King Arthur fries even lower (250°F) for longer, and Sift and Simmer skips the filling and presses the balls flat. This follows the lead's method and amounts for 8 balls, two each, with red bean paste (the lead also offers lotus paste). The lead keeps them for 3 days and reheats them at 375°F for 7 to 8 minutes.",
+ "sources": [
+  {"name": "The Woks of Life", "title": "Sesame Balls", "url": "https://thewoksoflife.com/sesame-balls/", "rating": 4.97, "rating_count": 61, "read": true, "lead": true},
+  {"name": "King Arthur Baking", "title": "Jiān Duī (Fried Sesame Balls)", "url": "https://www.kingarthurbaking.com/recipes/jian-dui-fried-sesame-balls-recipe", "rating": 4.0, "rating_count": 1, "read": true, "lead": false},
+  {"name": "Sift and Simmer", "title": "Chinese Fried Sesame Balls (Jian Dui)", "url": "https://www.siftandsimmer.com/chinese-fried-sesame-balls-jian-dui/", "rating": 5.0, "rating_count": 3, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

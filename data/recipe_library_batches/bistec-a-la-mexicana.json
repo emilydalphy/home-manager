@@ -1,0 +1,47 @@
+{
+ "dish_name": "Bistec a la Mexicana",
+ "cuisine": "Mexican",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 70,
+ "ingredients": [
+  {"item": "Top sirloin steak", "qty": "1.5 lbs", "category": "meat/seafood"},
+  {"item": "Salt", "qty": "2 tsp", "category": "pantry"},
+  {"item": "White onion", "qty": "1", "category": "produce"},
+  {"item": "Jalapeños", "qty": "2", "category": "produce"},
+  {"item": "Vegetable oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Dried oregano", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Ground cumin", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Petite diced tomatoes", "qty": "1 can (14.5 oz)", "category": "pantry"},
+  {"item": "Long-grain white rice", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce", "cook_qty": "1/3 cup chopped"},
+  {"item": "Corn tortillas", "qty": "12", "category": "other"}
+ ],
+ "instructions": [
+  "At least 1 hour ahead, or that morning: cut the 1 1/2 lbs sirloin into 3/4 inch cubes. Toss them with 1 1/2 tsp of the salt, cover and refrigerate.",
+  "Slice the onion about 1/4 inch thick. Stem and seed 1 jalapeño and slice it thinly. Slice the other jalapeño into thin rounds and transfer them to a small bowl for the table.",
+  "Pat the beef dry with paper towels. Heat 1 tbsp of the oil in a large cast iron pan or Dutch oven over high heat until it shimmers.",
+  "Add half the beef in one layer and leave it for 2 minutes, until the underside is browned. Stir and cook for about 2 minutes, until it's browned on a few sides. Transfer it to a plate.",
+  "Add the last 1 tbsp oil and brown the rest of the beef the same way. Add the first batch back to the pan.",
+  "Turn the heat to medium. Add the onion, the seeded jalapeño, the 3/4 tsp oregano and the 3/4 tsp cumin. Cook, stirring now and then, for about 10 minutes, until the onion is soft and golden.",
+  "Turn the heat to low and add the tomatoes with their juice. Scrape up the browned bits from the bottom of the pan. Cover and cook for 45 minutes, stirring every 5 to 10 minutes, until the beef is tender. If it looks dry, add a splash of water.",
+  "When the beef has about 25 minutes to go, rinse the 1 1/2 cups rice in a sieve until the water runs mostly clear. Add it to a medium saucepan with 2 1/4 cups water and the last 1/2 tsp salt.",
+  "Bring the rice to a boil over high heat. Cover it, turn the heat to low and cook for 15 minutes. Take the pan off the heat and leave the lid on for 10 minutes.",
+  "Meanwhile, chop 1/3 cup of the cilantro.",
+  "Warm the 12 tortillas in a dry skillet over medium heat, about 30 seconds a side, and stack them in a clean kitchen towel.",
+  "Take the beef off the heat and stir in the cilantro.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the rice, the warm tortillas and the sliced jalapeño on the side."
+ ],
+ "advance_prep_notes": "salt the beef at least 1 hour ahead",
+ "advance_prep_step_indices": [1],
+ "method_notes": "Every version cooks beef with onion, chile and tomato and serves it with tortillas and rice or beans. The lead, Cup of Yum, salts cubed sirloin an hour ahead, sears it, softens onion and jalapeño with oregano and cumin, then simmers it covered with canned tomatoes for 45 minutes, while Mexican Food Journal and Thrift and Spice use thin strips that cook in 20 to 30 minutes in a blended or chopped fresh tomato sauce. This follows the lead, so it is a slow simmer rather than the quick skillet version, scaled to 1 1/2 lbs beef for four and seared in two batches; one seeded jalapeño goes in the pot and the other is sliced for the table.",
+ "sources": [
+  {"name": "Cup of Yum", "title": "Bisteces a la Mexicana (Mexican Style Beef Stew)", "url": "https://cupofyum.com/recipes/bisteces-a-la-mexicana-mexican-style-beef-stew-50060", "rating": 4.9, "rating_count": 100, "read": true, "lead": true},
+  {"name": "Mexican Food Journal", "title": "Bistec a la Mexicana", "url": "https://mexicanfoodjournal.com/bistec-a-la-mexicana/", "rating": 3.58, "rating_count": 14, "read": true, "lead": false},
+  {"name": "Thrift and Spice", "title": "Bistec a La Mexicana (Mexican Style Steak)", "url": "https://thriftandspice.com/bistec-a-la-mexicana/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

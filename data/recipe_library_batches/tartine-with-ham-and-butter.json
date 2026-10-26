@@ -1,0 +1,31 @@
+{
+ "dish_name": "Tartine with Ham and Butter",
+ "cuisine": "French",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {"item": "Mini baguettes", "qty": "4", "category": "other"},
+  {"item": "Salted butter", "qty": "8 tbsp (1 stick)", "category": "dairy"},
+  {"item": "Sliced ham", "qty": "12 oz", "category": "meat/seafood"}
+ ],
+ "instructions": [
+  "Take the 8 tbsp butter out of the fridge about 10 minutes before you start. You want it soft enough to spread but still firm, not melting.",
+  "Cut each of the 4 baguettes in half lengthwise with a bread knife.",
+  "Cut the butter into thin slices and lay them over both cut sides of every baguette. Spread them out with a butter knife so the bread is covered edge to edge in a thick layer, not a thin smear.",
+  "Divide the 12 oz ham between the bottom halves, folding the slices loosely so they fit the bread.",
+  "Put the tops back on and press down gently.",
+  "Serve them right away. For a packed lunch, wrap each one in parchment paper and then plastic wrap and keep them in the fridge for up to 8 hours."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three are the Paris bakery jambon-beurre: a crusty baguette split lengthwise, a thick layer of good butter on both cut sides, and thin unsmoked ham (jambon de Paris if you can find it) in between, with nothing else. Sprinkles and Sprouts (the lead) uses four mini baguettes, a stick of salted European-style butter laid on in thin slices, and 12 oz of ham; Christina's Cucina cuts one long baguette into four and uses less of both, and Salt and Wind uses thin ficelles. The name says tartine, but every source makes it a closed baguette sandwich, so this does too. Any good unsmoked deli ham works if there's no jambon de Paris.",
+ "sources": [
+  {"name": "Sprinkles and Sprouts", "title": "Jambon Beurre", "url": "https://www.sprinklesandsprouts.com/jambon-beurre/", "rating": 5.0, "rating_count": 61, "read": true, "lead": true},
+  {"name": "Christina's Cucina", "title": "Jambon Beurre", "url": "https://www.christinascucina.com/simplest-is-best-french-ham-and-butter-baguette-sandwich-jambon-beurre/", "rating": 4.9, "rating_count": 22, "read": true, "lead": false},
+  {"name": "Salt and Wind", "title": "Jambon Beurre Sandwich Recipe", "url": "https://saltandwind.com/classic-jambon-beurre-sandwich-recipe", "rating": 5.0, "rating_count": 7, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,123 @@
+{
+ "dish_name": "Egg Bhurji",
+ "cuisine": "Indian",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Serrano chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Pav buns",
+   "qty": "8",
+   "category": "other"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Finely chop the onion and the tomatoes. Mince the garlic and grate the ginger. Chop 1/4 cup of the cilantro. Thinly slice the serrano and set it in a small bowl for the table.",
+  "Crack the eggs into a bowl. Add the turmeric and 1/4 tsp of the salt and beat with a fork until frothy.",
+  "Heat the oil in a large nonstick skillet over medium heat. Add the cumin seeds. After about 20 seconds they'll sizzle and smell toasty.",
+  "Add the onion. Cook for 5 to 6 minutes, stirring now and then, until it's golden.",
+  "Add the garlic and ginger and stir for 1 minute, until the raw smell is gone.",
+  "Add the tomatoes and 1/2 tsp of the salt. Cook for about 4 minutes, stirring, until the tomatoes are soft and mushy.",
+  "Pour in the eggs. Leave them for 20 seconds, then stir slowly, pulling the set egg in from the edges, for about 2 minutes, until they're softly set in large curds.",
+  "Sprinkle the garam masala and the chili powder over the eggs. Stir and cook for 1 minute, until there's no runny egg left.",
+  "Take the pan off the heat. Stir in the chopped cilantro and squeeze in the juice of half the lemon. Cut the other half into wedges.",
+  "Split the pav and toast them cut side down in a dry skillet over medium heat for about 1 minute, until lightly golden.",
+  "Taste the eggs. If they're flat, add a pinch more salt or a squeeze of the lemon.",
+  "Serve with the warm pav, the lemon wedges and the sliced serrano on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions bloom cumin seeds, brown the onion, soften the tomato, then scramble the eggs in the masala. Swasthi adds the garam masala and chili powder after the eggs go in and finishes with cilantro and an optional squeeze of lemon, while Piping Pot Curry stirs ground coriander and cumin in with the tomato; this follows the lead. The green chili the sources cook in is sliced on the side, and the eggs are served with pav, one of the breads both sources name.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Egg Bhurji Recipe (Indian Anda Bhurji)",
+   "url": "https://www.indianhealthyrecipes.com/egg-bhurji-andhra-egg-porutu/",
+   "rating": 4.99,
+   "rating_count": 214,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Piping Pot Curry",
+   "title": "Egg Bhurji (Easy 15-Minute Recipe)",
+   "url": "https://pipingpotcurry.com/egg-bhurji-recipe",
+   "rating": 4.98,
+   "rating_count": 37,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

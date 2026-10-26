@@ -1,0 +1,104 @@
+{
+ "dish_name": "Pad Pak Boong",
+ "cuisine": "Thai",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Jasmine rice",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Water spinach",
+   "qty": "2 bunches (about 1 1/2 lb)",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "8 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Thai chilies",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetarian oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Fermented soybean paste",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "to taste",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse 2 cups of jasmine rice under cold water until it runs mostly clear. Transfer it to a medium pot with 3 cups of water and bring it to a boil. Cover, turn the heat to the lowest setting and cook for 15 minutes. Take it off the heat and leave the lid on until you serve.",
+  "Meanwhile, cut the roots and the tough bottom 2 inches off the water spinach and pull off any yellow leaves. Wash it well in a sink of cold water, lift it out and shake it dry.",
+  "Cut it into 2 inch lengths. Keep the thick stem pieces in one pile and the leafy tops in another.",
+  "Peel the garlic and pound it in a mortar to a rough paste. No mortar? Chop it finely. Slice the Thai chilies into a small bowl for the table.",
+  "In a small bowl, stir together 2 tbsp vegetarian oyster sauce, 3 tbsp soybean paste and 1 tsp sugar.",
+  "Heat 1 tbsp of the oil in a wok or your largest skillet over high heat until it shimmers. Add half the garlic and stir for about 20 seconds, until it smells toasty.",
+  "Add half the stems and stir fry for 1 minute. Add half the leaves and half the sauce and toss for 1 to 2 minutes, until the leaves wilt but the stems are still bright green and crunchy. If the pan looks dry, add a splash of water. Transfer it to a platter.",
+  "Heat the remaining 1 tbsp oil and cook the rest of the garlic, greens and sauce the same way. Add them to the platter.",
+  "Taste it. If it's flat, add a pinch of salt.",
+  "Serve right away with the rice and the sliced chilies on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Every version fries pounded garlic (and usually chilies) in very hot oil and tosses the water spinach for only a minute or two so the stems stay crunchy. Cooking with Nart (the lead) seasons it with oyster sauce and fermented soybean paste only; Hungry in Thailand and Khin's Kitchen add a little sugar, and Khin's Kitchen cooks the stems before the leaves and suggests a mushroom based oyster sauce for a vegetarian version. This one uses vegetarian oyster sauce so it stays vegetarian, cooks in two batches so the wok stays hot, and moves the chilies to the table. The splash of fish sauce in Hungry in Thailand's version is left out for the same reason. It is a light dinner of greens and rice.",
+ "sources": [
+  {
+   "name": "Cooking with Nart",
+   "title": "Stir-Fried Water Spinach (Pad Pak Boong)",
+   "url": "https://www.cookingwithnart.com/stir-fried-water-spinach-pad-pak-boong/",
+   "rating": 5.0,
+   "rating_count": 42,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Khin's Kitchen",
+   "title": "Morning Glory Stir Fry",
+   "url": "https://khinskitchen.com/morning-glory-stir-fry/",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Hungry in Thailand",
+   "title": "Pad Pak Boong (Thai Morning Glory Recipe)",
+   "url": "https://hungryinthailand.com/pad-pak-boong/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
