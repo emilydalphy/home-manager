@@ -353,6 +353,13 @@ why*, not duplicating the diff.
   `swapped_from.prep_cuts` and Undo re-adds them, status kept (one-day and
   whole-dish), never after the dinner's current day and a pending one never
   in the past (review: the dinner can move between swap and Undo).
+- **Two saves of a week's answers at once both stand** (2026-10-22, defect
+  hunt; branch `overnight/hunt-intake-2026-10-22`; tests
+  `tests/test_intake_two_saves_at_once.py`). `save_week_intake` read the
+  current revision outside a transaction, so the second save could read it
+  before the first committed and MAX(revision) after: it wrote revision+2 on
+  the stale base, dropping the first adult's answer and leaving two live
+  rows (6 rounds in 40). Each attempt now opens with `BEGIN IMMEDIATE`.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
