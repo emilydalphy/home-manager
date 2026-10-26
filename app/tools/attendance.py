@@ -751,8 +751,23 @@ def _set_slot_attendance_locked(
         present = resolve_member_ids(present_member_ids) if present_member_ids else []
         absent = [i for i in _household_member_ids() if i not in set(present)]
     guests = current["guest_count"] if guest_count is None else max(0, int(guest_count))
+    if away_stretch_id is None:
+        _refuse_past_nobody_home(date_str, slot, current, absent, guests)
     _write(date_str, slot, absent, guests, source or current["source"] or "", away_stretch_id)
     return _after_attendance_write(date_str, slot, away_stretch_id, current["headcount"])
+
+
+def _refuse_past_nobody_home(date_str: str, slot: str, current: dict, absent, guests: int) -> None:
+    """Before a write that would make a meal already gone by nobody-home:
+    refused when that would take its uncooked meal off the week (Emily
+    2026-10-26 — the Review "−"'s rule, slot_needs.refuse_past_away). A
+    trip writes its own range (away_stretch_id) and is not asked here."""
+    if current["nobody_home"] or not current["household_size"]:
+        return
+    live = _household_member_ids()
+    if live and set(live) <= set(absent) and not guests:
+        from . import slot_needs as _slot_needs  # deferred: slot_needs reaches back into this module
+        _slot_needs.refuse_past_away(date_str, slot)
 
 
 def _after_attendance_write(date_str: str, slot: str, away_stretch_id: int | None,
@@ -791,6 +806,13 @@ def set_member_attendance(date_str: str, slot: str, member: str, present: bool =
     _validate_writable_slot(slot)
     member_ids = set(resolve_member_ids([member]))
     with _slot_write_lock(date_str, slot):
+        if not present:
+            # Asked before the write transaction: refuse_past_away opens a
+            # connection of its own (see _refuse_past_nobody_home).
+            current = get_slot_attendance(date_str, slot)
+            _refuse_past_nobody_home(
+                date_str, slot, current, set(current["absent_member_ids"]) | member_ids, current["guest_count"],
+            )
         # Read and write on ONE connection, holding the write lock from the
         # read: this changes one person in the STORED absent list rather
         # than writing back a whole list read a moment ago, which is what
@@ -845,6 +867,12 @@ def set_day_attendance(date_str: str, slots: dict, source: str = "sheet") -> dic
     for slot in slots:
         _validate_writable_slot(slot)
     all_ids = _household_member_ids()
+    # A meal gone by that this would empty is refused before ANY slot is
+    # written, the snack check's reason above (Emily 2026-10-26).
+    for slot, spec in slots.items():
+        if isinstance(spec, dict) and isinstance(spec.get("absent"), list) and spec["absent"] and all_ids:
+            if set(all_ids) <= set(resolve_member_ids(spec["absent"])):
+                _refuse_past_nobody_home(date_str, slot, get_slot_attendance(date_str, slot), all_ids, 0)
     out: dict[str, dict] = {}
     for slot, spec in slots.items():
         _validate_writable_slot(slot)

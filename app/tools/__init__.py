@@ -798,6 +798,7 @@ from .week_intake import (  # noqa: F401
     get_week_intake_history,
     get_week_intake_prefill,
     save_week_intake,
+    set_week_dish_count,
 )
 from .weekly_plan import (  # noqa: F401
     DAY_SLOTS,

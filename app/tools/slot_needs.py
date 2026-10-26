@@ -43,6 +43,41 @@ SNACK_NEED_REFUSAL = (
 )
 
 
+def refuse_past_away(date_str: str, slot: str) -> None:
+    """
+    Refuse "nobody home" on a meal that has already gone by when it would
+    take a planned meal off the week that nobody ticked cooked (Emily
+    2026-10-26, "go with your picks"): the Review "−"'s rule and its words
+    (weekly_plan.NIGHT_GONE). Emptying it would reverse its groceries —
+    food that was in all likelihood bought — and leave a past night saying
+    "nothing planned, nothing bought". A meal ticked cooked or on the stove
+    is kept by set_slot_need anyway, and a past night with nothing planned
+    loses nothing, so both are allowed.
+
+    THE HOUSEHOLD'S TODAY, strictly before it, as the "−" reads it: tonight
+    is never refused. Raises ValueError, so every route's 400 carries it.
+    """
+    from . import cooker as _cooker
+
+    if date_str >= _cooker.household_today().isoformat():
+        return
+    conn = get_conn()
+    try:
+        plan_id = _plan_id_for_date(conn, date_str, slot)
+        if plan_id is None:
+            return
+        rows = conn.execute(
+            "SELECT cooked_status, cook_started_at FROM meal_plan_entries "
+            "WHERE weekly_plan_id = ? AND household_id = ? AND date = ? AND slot = ? "
+            "AND slot_state = 'planned' AND component_category IS NULL",
+            (plan_id, household_id(), date_str, slot),
+        ).fetchall()
+    finally:
+        conn.close()
+    if rows and not any(_weekly_plan.cook_begun(r) for r in rows):
+        raise ValueError(_weekly_plan.NIGHT_GONE)
+
+
 def _validate_slot(slot: str, *, allow_snack: bool = True) -> None:
     valid = _ALL_SLOTS if allow_snack else _SEQUENCE_SLOTS
     if slot not in valid:
@@ -600,10 +635,19 @@ def set_slot_need_for_chat(date_str: str, slot: str, need: str, reason: str = ""
 
     current = get_slot_need(date_str, slot)
     if need == "away":
+        if current["need"] != "away":
+            refuse_past_away(date_str, slot)
         superseded = (
             current.get("superseded") if current["need"] == "away"
             else _attendance._supersede_record(current)
         )
+        if current["need"] != "away":
+            # Who was ALREADY out by their own say, kept so "back to normal"
+            # undoes only the out this door sets (Emily 2026-10-26, "go
+            # with your picks"): Vineeth's own "I'm out Friday" survives.
+            before = _attendance.get_slot_attendance(date_str, slot)
+            if before["absent_member_ids"] and not before["nobody_home"]:
+                superseded = dict(superseded or {}, absent_before=list(before["absent_member_ids"]))
         result = set_slot_need(date_str, slot, "away", reason=reason, superseded=superseded)
         att = _attendance.get_slot_attendance(date_str, slot)
         if att["household_size"] and not att["nobody_home"]:
@@ -617,7 +661,21 @@ def set_slot_need_for_chat(date_str: str, slot: str, need: str, reason: str = ""
 
     if current["need"] == "away":
         att = _attendance.get_slot_attendance(date_str, slot)
-        if att["household_size"] and att["nobody_home"]:
+        kept_out = [
+            i for i in ((current.get("superseded") or {}).get("absent_before") or [])
+            if i in set(att.get("absent_member_ids") or [])
+        ]
+        if att["household_size"] and att["nobody_home"] and kept_out \
+                and len(kept_out) < att["household_size"]:
+            # Home again, except whoever was out by their own say before
+            # chat's away: their "I'm out" stands. The sync takes the away
+            # off and reopens the night for the rest.
+            _attendance.set_slot_attendance(
+                date_str, slot,
+                present_member_ids=[i for i in _attendance._household_member_ids() if i not in set(kept_out)],
+                guest_count=0, source="chat",
+            )
+        elif att["household_size"] and att["nobody_home"]:
             # Clearing the row is everyone home; its sync takes the away
             # off and reopens the night, the same path a toggle back takes.
             _attendance.clear_slot_attendance(date_str, slot)
