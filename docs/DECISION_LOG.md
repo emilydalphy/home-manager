@@ -46,6 +46,25 @@ why*, not duplicating the diff.
   old "a count is small enough to accept"). Every merge onto a PLAN-owned line
   is now re-read off the ledger and rounded once; a household's own line is
   still never re-rounded. `only_if_edited_down` is gone (nothing else used it).
+- **A week's snacks come from the everyday snack list** (2026-10-21; branch
+  `overnight/snacks-from-the-list`; tests `tests/test_everyday_snacks.py`).
+  The 40 snacks live in `data/everyday_snacks.json` (group, food groups,
+  allergens, per-person lines, a nut-free swap for each nut butter);
+  `app/tools/everyday_snacks.py` filters it per household in code (allergen
+  gate with the list's own tags, nut-free lunch, vegetarian/vegan/pescatarian,
+  dislikes, the two-week window), hands the model a least-recently-used
+  shortlist (`everyday_snacks.pick_from`), reads every list snack the model
+  sent with the list's own tags before the gate (nut butter -> its swap;
+  can't-have -> held, and a held snack is re-picked from the list with no
+  model call instead of left open), and after the count fold
+  (`_hold_counts`, both runs, no model call) replaces any off-list / can't-have
+  / recent snack dish-for-dish, keeping the count and spread. Off-list stays
+  only when they asked for it, it's cooked, nothing fits, or an eating style
+  (keto, allowed-foods list) the code can't judge. `snack_variety`'s pool is
+  now this list (the old 12-snack pool is gone). Why code-side: prompt-only
+  is a request. Emily to decide: strict "from the list" vs "lean on it"; the
+  62 party snacks in the shared library are not removed, just replaced when
+  the model picks one.
 
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests

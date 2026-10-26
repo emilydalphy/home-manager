@@ -28,6 +28,7 @@ from .tools import recipe_research as _recipe_research
 from .tools import recipe_library as _recipe_library
 from .tools import meal_variety as _meal_variety
 from .tools import snack_variety as _snack_variety
+from .tools import everyday_snacks as _everyday_snacks
 from .tools import leftovers_spread as _leftovers_spread
 from .tools import leftovers as _leftovers_mod
 from .tools import weekday_lunches as _weekday_lunches
@@ -3459,6 +3460,15 @@ each other on the same test. Across DIFFERENT days, a repeated snack is fine and
 the guideline above) — this rule is only ever about one day's own plate. Anything caught here \
 after the fact gets traded onto another day automatically, which works but is a repair, not a \
 plan.
+- SNACKS COME FROM `everyday_snacks.pick_from` — a list of good everyday snacks, already \
+filtered for this household's allergies, nut-free lunches and diet, with last fortnight's \
+snacks taken out, least recently eaten first. Pick each of the week's snacks from it by its \
+exact name, leaning toward the top of the list, still holding every snack rule here (the day's \
+snacks differ from each other and from that day's meals, two of three food groups, eating_style). \
+Go off the list ONLY for a snack the household asked for (intake.freeform, notes) — stamp \
+derived_from.freeform on it — or when `everyday_snacks.nothing_fits` is true or nothing on it \
+fits an eating_style. A snack invented instead is replaced after you answer, so it is work \
+thrown away. Absent `everyday_snacks`, plan snacks as below.
 - The no-repeat rule against recent_history is about DINNER, LUNCH and SNACK — not \
 breakfast (except under "Something new", below). recent_history covers {_variety_window}, and a \
 dinner, lunch or snack (or a near-identical variant) that appears there is NOT drafted again \
@@ -7263,6 +7273,15 @@ def _generate_weekly_plan(
     per_person = tools.member_needs_generation_context(period_days)
     if per_person:
         context["per_person"] = per_person
+    # The everyday snack list (data/everyday_snacks.json), filtered in code
+    # for this household and least-recently-used first — what the week's
+    # snacks are picked from (see the `everyday_snacks` bullet in the
+    # prompt). Telling, not preventing: _hold_counts' everyday-snacks pass
+    # replaces an off-list snack afterwards.
+    if effective_memory.get("snacks_per_day"):
+        snack_list = _everyday_snacks.prompt_context(effective_memory, content_start_date)
+        if snack_list:
+            context["everyday_snacks"] = snack_list
     # Loop Board "Per-person taste learning + solo-night personalization":
     # enrich the subset-attendance slots above with what's actually known
     # about the present people individually, so generation can lean into a
@@ -7468,7 +7487,14 @@ def _generate_weekly_plan(
     if usual_plan["off_slots"]:
         usual_off = {(s["date"], s["slot"]) for s in usual_plan["off_slots"]}
         items = [i for i in items if ((i.get("date") or ""), i.get("slot") or "dinner") not in usual_off]
+    # A list snack this house can only have nut-free ("Rice Cakes with
+    # Almond Butter") becomes the list's own swap before the gate would
+    # hold it back and lose the snack (tools/everyday_snacks.py).
+    # One it can't have at all (read with the list's own allergen tags) is
+    # held back here like any clashing dish.
+    listed_held = [] if is_component_based else _everyday_snacks.swap_for_household(items, effective_memory)
     items, held_back = _allergen_gate.split_safe(items, hard_avoidances)
+    held_back = listed_held + held_back
     items = GeneratedDays(items)
     items.report = plan_report
     if held_back and not items:
@@ -7668,6 +7694,12 @@ def _generate_weekly_plan(
             # question. The stream is told as each lands, so a screen
             # holding "Finding another breakfast…" fills that row then.
             in_scope_held = [h for h in held_back if (h["item"].get("date") or "") in in_scope]
+            # A held SNACK is re-picked from the everyday list first, with
+            # no model call (everyday_snacks.fill_held_snacks).
+            if in_scope_held:
+                in_scope_held = _everyday_snacks.fill_held_snacks(
+                    plan_id, in_scope_held, effective_memory, content_start_date,
+                )
             if in_scope_held:
                 try:
                     _allergen_gate.repick_held(
@@ -8305,6 +8337,15 @@ def _finish_week_slots(
         # the fold, so it spreads the dishes the count kept; on both runs,
         # because it makes no model call. Same gate as snacks a day: a
         # household that answered how they snack. See tools/snack_variety.py.
+        # Every snack from the everyday list unless they asked for it or
+        # nothing on the list fits (Loop Board 2026-10-21). After the fold,
+        # so each off-list dish is swapped for one list snack on all its
+        # days and the count stands; before the variety cap, whose pool is
+        # the same list. Both runs: no model call. See tools/everyday_snacks.py.
+        _everyday_snacks.enforce_snacks_from_list(
+            plan_id, [d for d in period if d not in skipped_days and d not in snackless_days],
+            household_memory, period_start=week_start_date, asks=count_asks,
+        )
         if household_memory.get("snacks_per_day_set") or household_memory.get("snacks_per_week_set"):
             _snack_variety.enforce_snack_variety(
                 plan_id, [d for d in period if d not in skipped_days and d not in snackless_days],
