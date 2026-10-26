@@ -1,0 +1,97 @@
+{
+ "dish_name": "Hobak Jeon",
+ "cuisine": "Korean",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Zucchini",
+   "qty": "2 small",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Trim the zucchini and slice them into 1/4 inch rounds. Lay the rounds in one layer on a tray and sprinkle 3/4 tsp of the salt over both sides. Leave them for 10 minutes, until they bend a little and look wet.",
+  "Meanwhile, stir 3 tbsp soy sauce, 1 1/2 tbsp rice vinegar and the 1 tsp sesame seeds together in a small bowl.",
+  "Put the 1/2 cup flour on a plate. In a shallow bowl, beat the 2 eggs with the last 1/4 tsp salt until smooth.",
+  "Pat the zucchini dry with paper towels.",
+  "Coat each round in flour on both sides and shake off the extra.",
+  "Heat 1 tbsp vegetable oil in a large nonstick skillet over medium heat. Dip a few floured rounds in the egg, let the extra drip off, and lay them in the pan with a little room between them.",
+  "Cook for 1 to 2 minutes, until the undersides are light golden. Flip them and cook the other side for about 1 minute, until it's golden too. Turn the heat down a little if they brown too fast.",
+  "Transfer them to a plate lined with paper towels. Cook the rest the same way, adding 1 tbsp of the oil for each batch.",
+  "Serve warm with the dipping sauce."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version had 20 or more ratings and RecipeTin Eats has no hobak jeon, so this leads with Kimchimari, the only rated version read. All three salt 1/4 inch zucchini rounds for 5 to 15 minutes, pat them dry, dredge them in flour, dip them in beaten egg and fry them in a little oil over medium heat for about a minute a side, served with a soy and vinegar dip. Tara's Multicultural Table adds gochugaru to the dip and Korean Bapsang keeps the timing short so the zucchini stays tender. This follows Kimchimari scaled for four with regular small zucchini; Korean zucchini (aehobak) is the traditional choice if you can find it.",
+ "sources": [
+  {
+   "name": "Kimchimari",
+   "title": "Pan-fried Zucchini Fritters (Hobak Jeon)",
+   "url": "https://kimchimari.com/pan-fried-zucchini-fritters/",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Tara's Multicultural Table",
+   "title": "Hobak Jeon (Korean Pan-Fried Zucchini)",
+   "url": "https://tarasmulticulturaltable.com/hobakjeon-korean-zucchini-pancakes/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Korean Bapsang",
+   "title": "Hobak Jeon (Pan-fried Zucchini in Egg Batter)",
+   "url": "https://www.koreanbapsang.com/hobak-jeon-pan-fried-zucchini-in-egg-batter/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
