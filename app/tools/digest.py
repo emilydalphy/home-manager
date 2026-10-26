@@ -74,6 +74,7 @@ from . import quantities as _quantities
 from . import rhythm as _rhythm
 from . import slot_needs as _slot_needs
 from . import weekly_plan as _weekly_plan
+from . import usage as _usage
 
 logger = logging.getLogger("home_manager")
 
@@ -1195,11 +1196,15 @@ def run_morning_texts_once(
             try:
                 for item in _run_household(now_utc, sender):
                     results.append({"household_id": hid, **item})
-            except Exception:
+            except Exception as e:
                 # One household's bad morning must not cost the next one
                 # theirs. Nothing was recorded for it, so the next pass
                 # tries again.
                 logger.exception("Morning text pass failed for household %s", hid)
+                # And the morning report hears of it, against this
+                # household: a log line is something the report cannot read
+                # (2026-10-25). Class name only, as every server row.
+                _usage.record_error("background", where="morning_text", detail=type(e).__name__)
     return results
 
 
@@ -1575,8 +1580,9 @@ def run_evening_nudges_once(
             try:
                 for item in _run_household_evening(now_utc, sender):
                     results.append({"household_id": hid, **item})
-            except Exception:
+            except Exception as e:
                 logger.exception("Evening nudge pass failed for household %s", hid)
+                _usage.record_error("background", where="evening_nudge", detail=type(e).__name__)
     return results
 
 
