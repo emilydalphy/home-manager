@@ -219,6 +219,15 @@ _CONTAINER_UNIT_PLURALS = {
     "tin": "tins", "carton": "cartons", "punnet": "punnets",
     "sachet": "sachets", "bar": "bars", "roll": "rolls",
     "sprig": "sprigs", "slice": "slices",
+    # The 200-dish library audit (2026-10-26): words its shopping lines
+    # use that came out "2 package (8 oz)", "2 wedge" and "2 piece" on the
+    # list, and whose plurals ("2 stalks", "4 ears") never parsed back to
+    # the singular, so "1 stalk" and "2 stalks" could not add up.
+    "package": "packages", "packet": "packets", "piece": "pieces",
+    "wedge": "wedges", "wheel": "wheels", "ball": "balls",
+    "canister": "canisters", "tube": "tubes", "pouch": "pouches",
+    "stalk": "stalks", "ear": "ears", "link": "links", "pod": "pods",
+    "quart": "quarts",
 }
 
 

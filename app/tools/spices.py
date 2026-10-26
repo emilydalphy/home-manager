@@ -92,6 +92,16 @@ _SPICES = {
     "msg", "bouillon", "bouillon cube", "stock cube", "vanilla extract",
     "vanilla", "almond extract", "baking soda", "baking powder", "cream of tartar",
     "bay leaf",
+    # The 200-dish library audit (2026-10-26): the Indian, Korean, Chinese
+    # and Turkish dishes' jars, which sat in the aisles as "Kashmiri chili
+    # powder · 0.25 tsp" and "Asafoetida · a pinch". A "... masala" is a
+    # ground blend (chaat, sambar, pav bhaji), like a "... spice".
+    "kashmiri chili powder", "kashmiri chili", "kasuri methi", "asafoetida", "hing",
+    "masala", "amchur", "amchoor", "mango powder", "ajwain", "carom seed", "kalonji",
+    "panch phoron", "sambar powder", "gochugaru", "aleppo pepper", "urfa pepper",
+    "shichimi togarashi", "togarashi", "mustard powder", "black mustard seed",
+    "brown mustard seed", "ground fennel", "sichuan pepper", "sichuan chili flake",
+    "chinese chili powder", "tajin", "tajín", "annatto seed",
     # dried herbs (dried by default when written bare)
     "oregano", "marjoram", "dried basil", "dried cilantro", "dried parsley",
     "dried mint", "dried dill", "dried chive", "dried rosemary", "dried thyme",
@@ -151,6 +161,11 @@ def is_spice(name: str) -> bool:
     if all(w in _DESCRIPTORS or w in _DRIED_WORDS for w in inside):
         candidates.append(_PAREN_RE.sub(" ", raw).split(",", 1)[0].strip())
     if any(c != raw and _is_spice_name(c) for c in candidates):
+        return True
+    # A bracket that is the same spice's other name — "Ajwain (carom
+    # seeds)" (library audit, 2026-10-26). Only when the bracket alone is a
+    # spice, so "Cloves (garlic)" and "Pepper (bell)" stay produce.
+    if inside and _is_spice_name(" ".join(inside)):
         return True
     bare = candidates[-1] if len(candidates) == 3 else raw.split(",", 1)[0]
     halves = [h for h in re.split(r"\s+(?:and|&)\s+", bare) if h.strip()]

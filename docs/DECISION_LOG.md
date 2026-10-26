@@ -13,6 +13,24 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Library defect hunt: the allergy gate reads what the 200 new dishes
+  buy; their spices go to Spices; package words pluralise** (2026-10-26;
+  branch `overnight/hunt-library-200-1026`; tests
+  `tests/test_library_200_defect_hunt.py`). Every library ingredient line
+  run through each allergen family: gluten missed buns, bolillo/telera/
+  hoagie rolls, baguette, ladyfingers, parathas, pie crust, egg roll
+  wrappers, corn muffin mix, Shaoxing, oyster sauce, gochujang,
+  doubanjiang, vermicelli and soba (Smash Burgers, Chicken Torta, Tiramisu
+  passed a celiac table); dairy missed crema; fish hake; shellfish
+  "seafood mix"; soy doenjang/fermented black beans; sesame furikake; pork
+  baby back ribs. Held wrongly: butter lettuce (dairy), oyster mushrooms
+  and vegetarian oyster sauce (shellfish), tonkatsu sauce (pork), gram
+  flour and rice vermicelli/bean thread noodles (gluten). Kashmiri chili
+  powder, asafoetida, kasuri methi, gochugaru and kin sat in aisles as
+  "0.25 tsp"; package/piece/wedge/stalk and kin read "2 package". Data:
+  Ham bone "1 meaty" and Yakisoba "4 servings" were the recipes' own
+  errors. Why: a hard gate that lets a bun through, or blocks a lettuce, is
+  one a household stops trusting.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
