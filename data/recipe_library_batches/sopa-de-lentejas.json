@@ -1,0 +1,45 @@
+{
+ "dish_name": "Sopa de Lentejas",
+ "cuisine": "Mexican",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 45,
+ "ingredients": [
+  {"item": "Brown lentils", "qty": "1.5 cups", "category": "pantry"},
+  {"item": "Carrots", "qty": "2", "category": "produce"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Vegetable oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Ground cumin", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Bay leaf", "qty": "1", "category": "pantry"},
+  {"item": "Tomato sauce", "qty": "1 can (8 oz)", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"},
+  {"item": "Jalapeño", "qty": "1", "category": "produce"}
+ ],
+ "instructions": [
+  "Put the 1.5 cups lentils in a sieve and rinse them under cold water. Pick out any small stones or shriveled ones.",
+  "Peel the 2 carrots and cut them into small dice. Chop the onion and mince the 2 garlic cloves.",
+  "Heat the 2 tbsp oil in a large pot over medium. Add the carrots and cook for about 3 minutes, stirring now and then, until they start to soften.",
+  "Add the onion and 1/2 tsp of the salt. Cook for about 4 minutes, until the onion is soft and see-through.",
+  "Add the garlic and the 1/2 tsp cumin and stir for about 30 seconds, until it smells toasty.",
+  "Add the lentils, 6 cups water, the bay leaf and the rest of the salt, 1 1/2 tsp. Turn the heat to high and bring it to a boil.",
+  "Turn the heat down so it simmers gently, partly cover the pot and cook for 25 minutes, stirring now and then, until the lentils are almost tender.",
+  "Stir in half the can of tomato sauce, 1/2 cup. Simmer uncovered for about 10 minutes, until the lentils are soft all the way through and the broth is a light tomato red. If it gets too thick, add a splash of water.",
+  "Meanwhile, chop a handful of the cilantro. Slice the jalapeño into thin rings and put it in a small bowl for the table.",
+  "Take the pot off the heat and fish out the bay leaf. Stir in the cilantro.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Ladle into bowls. Serve with the jalapeño on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three soften onion and other vegetables in oil, simmer rinsed lentils in water or broth with bay leaf, and bring in tomato. Mama Maggie's Kitchen, the lead, browns carrot and onion, simmers brown lentils in water with garlic, salt and a bay leaf for 25 minutes and only then adds tomato sauce for the last 10, so the lentils soften first; Mexican Made Meatless adds celery, jalapeño, cumin and parsley with vegetable broth and fresh tomatoes; the Pulses.org version builds on bacon and sausage with fresh tomato, oregano and cilantro. This one follows the lead's ratios scaled to four, blooms a little cumin from Mexican Made Meatless with the garlic, finishes with cilantro, and puts the jalapeño on the side sliced so the pot stays mild.",
+ "sources": [
+  {"name": "Mama Maggie's Kitchen", "title": "Sopa de Lentejas (Mexican Lentil Soup)", "url": "https://inmamamaggieskitchen.com/mexican-lentil-soup-sopa-de-lentejas/", "rating": 5.0, "rating_count": 49, "read": true, "lead": true},
+  {"name": "Mexican Made Meatless", "title": "Sopa De Lentejas Recipe (Mexican Lentil Soup)", "url": "https://mexicanmademeatless.com/mexican-lentil-soup-sopa-de-lentejas-traditional-recipe/", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Pulses.org", "title": "Sopa de Lentejas", "url": "https://pulses.org/us/recipe/sopa-de-lentejas/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
