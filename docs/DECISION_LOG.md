@@ -37,6 +37,17 @@ why*, not duplicating the diff.
   flagged to Emily); a clash note or takeover note still rides on it and holds it
   9 s, otherwise 6 s. `weekApprovedLine` is unchanged for the onboarding
   hand-off. Why: the toast had grown into a paragraph nobody could read.
+- **Fresh herbs under two names are one grocery line** (2026-10-26; branch
+  `overnight/fresh-herbs-one-line`; tests `tests/test_grocery_same_purchase.py`).
+  `grocery._SAME_PURCHASE` gains explicit pairs: flat-leaf / Italian / fresh
+  parsley → parsley; fresh cilantro / fresh coriander / coriander leaves →
+  cilantro; fresh basil, mint, dill, thyme, ginger (and ginger root) → the
+  plain name. "fresh" is still not stripped, so dried herbs, bare
+  "coriander" (the seed) and "ground ginger" stay their own lines. The
+  merged line's name now ranks plain < "only says fresh"
+  (`_ONLY_SAYS_FRESH`) < real variety, so "Flat-leaf parsley" wins over
+  "Fresh parsley" (and over "Italian parsley") whichever lands first. Amounts add as written ("2
+  bunches" + "3 bunches, small" → "5 bunches, small", the size note kept).
 - **Second 200 library recipes: Emily's three calls** (2026-10-25; branch
   `recipe-library-200b`; doc `docs/RECIPE_LIBRARY_SPOTCHECK_200B.md`).
   Bistec a la Mexicana is two dishes (the rated slow simmer, plus "Quick

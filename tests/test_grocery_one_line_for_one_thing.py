@@ -224,8 +224,12 @@ def test_the_historical_prep_descriptor_mangle_folds_to_one_number():
     # Fresh is NOT filler in this app: spices.py counts basil as a rack
     # item only when written "dried", so letting a dried line absorb a
     # fresh one would lose a distinction the app reads elsewhere.
-    ("Fresh basil", "Basil"),
+    # ("Fresh basil" / "Basil" used to be pinned here too; they are now ONE
+    # line by an explicit _SAME_PURCHASE pair -- bare basil already means
+    # the fresh bunch -- Loop Board "Flat-leaf parsley and Fresh parsley
+    # are one line", tests/test_grocery_same_purchase.py.)
     ("Fresh basil", "Dried basil"),
+    ("Basil", "Dried basil"),
     # A LEADING adjective can name the product. A tin of diced tomatoes is
     # not a fresh tomato -- which is why prep words are dropped only after
     # a comma.

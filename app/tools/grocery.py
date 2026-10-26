@@ -206,6 +206,57 @@ _SAME_PURCHASE = {
     "freshly ground black pepper": "black pepper",
     "fresh ground black pepper": "black pepper",
     "cracked black pepper": "black pepper",
+    # Fresh herbs under the names recipes give them (Loop Board, "Flat-leaf
+    # parsley and Fresh parsley are one line"). A bare herb name already
+    # means the fresh bunch in this app -- spices.py files bare basil,
+    # parsley, thyme under produce and only "dried ..." on the rack -- so
+    # "fresh X" joining "X" is the same purchase, and "dried X" is NOT
+    # here: it keys to itself and stays its own line. "fresh" is still not
+    # stripped as filler (see _NAME_FILLER); these are explicit pairs.
+    #
+    # Two spellings deliberately left out. Bare "coriander" is the ground
+    # seed in a Canadian/US recipe (spices.py's rack list), so only
+    # "fresh coriander" / "coriander leaves" join cilantro. And "ground
+    # ginger" is a jar, not a root, so it is not here either.
+    "flat-leaf parsley": "parsley",
+    "flat leaf parsley": "parsley",
+    "italian parsley": "parsley",
+    "fresh flat-leaf parsley": "parsley",
+    "fresh flat leaf parsley": "parsley",
+    "fresh italian parsley": "parsley",
+    "fresh parsley": "parsley",
+    "fresh parsley leave": "parsley",   # keys singularise the last word
+    "parsley leave": "parsley",
+    "fresh cilantro": "cilantro",
+    "fresh cilantro leave": "cilantro",
+    "cilantro leave": "cilantro",
+    "fresh coriander": "cilantro",
+    "fresh coriander leave": "cilantro",
+    "coriander leave": "cilantro",
+    "fresh basil": "basil",
+    "fresh basil leave": "basil",
+    "basil leave": "basil",
+    "fresh mint": "mint",
+    "fresh mint leave": "mint",
+    "mint leave": "mint",
+    "fresh dill": "dill",
+    "fresh thyme": "thyme",
+    "fresh ginger": "ginger",
+    "ginger root": "ginger",
+    "fresh ginger root": "ginger",
+    "gingerroot": "ginger",
+    "fresh gingerroot": "ginger",
+}
+
+# Names in _SAME_PURCHASE that add only "fresh" (or "leaves") to the plain
+# name, so they tell the shopper less than a real variety does: the merged
+# line reads "Flat-leaf parsley" whichever of "Fresh parsley" / "Flat-leaf
+# parsley" landed first. They still beat the bare name ("Fresh basil" over
+# "Basil"), the same direction every other pair goes.
+_ONLY_SAYS_FRESH = {
+    key for key, plain in _SAME_PURCHASE.items()
+    if plain in {"parsley", "cilantro", "basil", "mint", "dill", "thyme", "ginger"}
+    and not any(word in key for word in ("flat", "italian"))
 }
 
 
@@ -299,9 +350,24 @@ def _plain_name_key(name: str) -> str:
     return " ".join(words)
 
 
-def _names_the_variety(name: str) -> bool:
-    """True when `name` is a variety in _SAME_PURCHASE ("Yellow onion"), not the plain name ("Onions")."""
-    return _plain_name_key(name) in _SAME_PURCHASE
+def _specificity(name: str) -> int:
+    """
+    0 for a plain name, 1 for one that only says fresh, 2 for a real
+    variety, 3 for flat-leaf parsley.
+
+    The 3 is a tie-break the card asks for: "Italian parsley" and
+    "Flat-leaf parsley" are the same bunch under two names, and the list
+    should read "Flat-leaf parsley" whichever recipe landed first --
+    it is the name on the shelf tag here.
+    """
+    key = _plain_name_key(name)
+    if key not in _SAME_PURCHASE:
+        return 0
+    if key in _ONLY_SAYS_FRESH:
+        return 1
+    if _SAME_PURCHASE[key] == "parsley" and "flat" in key:
+        return 3
+    return 2
 
 
 def _refold_quantity_segments(qty: str, families: bool = False) -> str:
@@ -356,10 +422,12 @@ def _more_specific_name(current: str, incoming: str) -> str:
     """
     Which wording one merged line should carry: the variety over the plain
     name, because "Yellow onion" tells the shopper which onion and "Onions"
-    does not. Otherwise the name already there stays (two plurals, two
-    varieties, or anything not in _SAME_PURCHASE).
+    does not, and a real variety over a name that only adds "fresh"
+    ("Flat-leaf parsley" over "Fresh parsley"; see _ONLY_SAYS_FRESH).
+    Otherwise the name already there stays (two plurals, two varieties of
+    equal standing, or anything not in _SAME_PURCHASE).
     """
-    if incoming and _names_the_variety(incoming) and not _names_the_variety(current) \
+    if incoming and _specificity(incoming) > _specificity(current) \
             and _merge_key(current) == _merge_key(incoming):
         return incoming
     return current
