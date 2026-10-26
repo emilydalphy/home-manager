@@ -399,13 +399,16 @@ def test_a_child_cannot_be_remembered_as_the_devices_adult(client, two_adults):
     """
     sam = _child("Sam")
     token = security.device_token(1, sam)
-    # The re-apply's own answer: nobody, and the cookie is spent — it names
-    # this household and somebody who is not an adult of it.
-    assert security.device_member_for_login(token, 1) == (None, True)
+    # Since 2026-10-26 (Emily went with the pick): a member still here who
+    # isn't an adult keeps their phone — the session names them, and is
+    # nobody's adult. Not spent: made an adult again, it's them again.
+    assert security.device_member_for_login(token, 1) == (sam, False)
 
     client.cookies.set(security.DEVICE_COOKIE, token)
     _sign_in(client)
-    assert client.get("/api/whoami").json()["member"] is None
+    who = client.get("/api/whoami").json()
+    assert who["member"] is None
+    assert who["picked_on_this_device"] is False
 
 
 def test_a_remembered_member_who_was_removed_means_asking_again(client, two_adults):
@@ -451,9 +454,11 @@ def test_a_remembered_member_marked_a_child_means_asking_again(client, two_adult
     client.post("/api/whoami/pick", json={"member_id": two_adults["Vineeth"]})
     _adult("Priya")
     tools.set_member_age_group("Vineeth", "teen")
+    # Since 2026-10-26: still Vineeth's phone (not spent), but the session
+    # it signs in names no ADULT — whoami's member is nobody.
     assert security.device_member_for_login(
         client.cookies[security.DEVICE_COOKIE], 1
-    ) == (None, True), "an adult who stopped being one is not this device's answer"
+    ) == (two_adults["Vineeth"], False), "still his phone, not somebody else's"
 
     _sign_out(client)
     _sign_in(client)

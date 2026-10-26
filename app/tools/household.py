@@ -8,6 +8,7 @@ import json
 from ..db import _ADULT_COLORS, get_conn, write
 from ._shared import (
     EATS_HERE_SQL, AmbiguousMemberName, current_member, find_member_row, household_id, household_initials,
+    member_id,
 )
 
 
@@ -343,6 +344,12 @@ def set_member_age_group(name: str, age_group: str) -> dict:
                 (member_id, household_id()),
             )
         if (age_group or "").strip().lower() == "adult":
+            # An adult again: a later change off Adult gets its note too
+            # (age_change_note).
+            conn.execute(
+                "UPDATE members SET age_note_shown_for = '' WHERE id = ? AND household_id = ?",
+                (member_id, household_id()),
+            )
             row = conn.execute(
                 "SELECT color FROM members WHERE id = ? AND household_id = ?",
                 (member_id, household_id()),
@@ -415,15 +422,103 @@ def last_adult_leaving(name: str, age_group: str) -> str | None:
     return None
 
 
+OWN_AGE_STAYS_ADULT = "Your own age stays Adult here. Another adult can change it."
+
+
+def own_age_leaving_adult(name: str, age_group: str) -> str | None:
+    """
+    The sentence that refuses a signed-in adult moving THEIR OWN age group
+    off Adult, or None when the change is fine. Another adult still can
+    (Emily, 2026-10-20). Marking yourself Teen in a two-adult home left the
+    phone acting as nobody.
+
+    One rule for both doors (Emily, 2026-10-26: "go with your picks"):
+    Settings' age chip and chat's set_member_age_group. Until then only
+    Settings asked, so "make me a teen" in chat went through. A device with
+    no pick (shared passphrase, nobody chosen) is not refused here; the
+    last-adult rule still covers a lone adult. The person is found by
+    find_member_row, the lookup the write uses, so "Emily " is still Emily.
+    """
+    if (age_group or "").strip().lower() == "adult":
+        return None
+    if member_id() is None:
+        return None
+    me = current_member()
+    if not me:
+        return None
+    conn = get_conn()
+    try:
+        try:
+            them = find_member_row(conn, name)
+        except AmbiguousMemberName:
+            return None  # last_adult_leaving, asked first, already says so
+    finally:
+        conn.close()
+    if them is not None and them["id"] == me["id"]:
+        return OWN_AGE_STAYS_ADULT
+    return None
+
+
+_AGE_NOTE_WORD = {"teen": "a Teen", "child": "a Child"}
+
+
+def age_change_note() -> str:
+    """
+    The one-time note for a phone whose own member stopped being an adult
+    (Emily, 2026-10-26: went with the pick). Another adult re-marked them
+    a Teen in Who's here; their phone, still theirs (security.
+    device_member_for_login), now acts as nobody, and until this it got no
+    word about why. '' when there's nothing to say.
+
+    Said once per change: the age group it was said for is stored on the
+    member (members.age_note_shown_for) the moment it is handed out, and
+    becoming an adult again clears it. Only for a session whose pick names
+    this member — never for a device with nobody picked, and never for an
+    adult.
+    """
+    claimed = member_id()
+    if claimed is None:
+        return ""
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            "SELECT age_group, age_note_shown_for FROM members WHERE id = ? AND household_id = ?",
+            (claimed, household_id()),
+        ).fetchone()
+        if row is None:
+            return ""
+        group = (row["age_group"] or "").strip().lower()
+        if group == "adult" or (row["age_note_shown_for"] or "") == (group or "-"):
+            return ""
+        changed = conn.execute(
+            "UPDATE members SET age_note_shown_for = ? "
+            "WHERE id = ? AND household_id = ? AND age_note_shown_for != ?",
+            (group or "-", claimed, household_id(), group or "-"),
+        ).rowcount
+        conn.commit()
+    finally:
+        conn.close()
+    if not changed:
+        return ""  # another request from the same phone already said it
+    word = _AGE_NOTE_WORD.get(group)
+    first = f"You’re down as {word} here now" if word else "You’re not down as an adult here now"
+    return (
+        f"{first}, so what you do on this phone isn’t under your name. "
+        "An adult can change it in Preferences, under Who’s here."
+    )
+
+
 def set_member_age_group_for_chat(name: str, age_group: str) -> dict:
     """
-    set_member_age_group with the refusal a person is owed in front of it:
-    never the household's last adult (last_adult_leaving). agent.TOOL_FUNCTIONS
-    points at this; onboarding and the tests call the bare function. Raises
-    rather than answering a dict, so the turn records no write and the
-    model cannot say it made the change (see swap_meal_in_plan_for_chat).
+    set_member_age_group with the refusals a person is owed in front of it:
+    never the household's last adult (last_adult_leaving), and never your
+    own age off Adult (own_age_leaving_adult) — the same two rules, in the
+    same order, as Settings. agent.TOOL_FUNCTIONS points at this; onboarding
+    and the tests call the bare function. Raises rather than answering a
+    dict, so the turn records no write and the model cannot say it made the
+    change (see swap_meal_in_plan_for_chat).
     """
-    refusal = last_adult_leaving(name, age_group)
+    refusal = last_adult_leaving(name, age_group) or own_age_leaving_adult(name, age_group)
     if refusal:
         raise MemberRefused(refusal)
     return set_member_age_group(name, age_group)

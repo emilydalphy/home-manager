@@ -28498,6 +28498,9 @@
     // the tabs build under it, so "Show me today" lands on a Today that's
     // already there. Not awaited — nothing below waits on it.
     if (shellWho.first_open) openFirstOpen();
+    // "You're down as a Teen here now…" — once, on that member's own phone
+    // (Emily, 2026-10-26). A sentence, so it's held long enough to read.
+    if (shellWho.age_note) showToast(shellWho.age_note, null, 9000);
     // The onboarding reveal's Approve hands into the shell with
     // ?after=approve (its URL is /grocery?after=approve&drafted=<Monday>,
     // 2026-09-18): whatever tab the path names, the week just approved is
@@ -28607,6 +28610,9 @@
       // The other adult's first open (openFirstOpen, below).
       shellWho.first_open = !!data.first_open;
       shellWho.set_up_by = data.set_up_by || '';
+      // A phone whose own member was re-marked a Teen: the server hands the
+      // note out once (tools.age_change_note); boot shows it, below.
+      shellWho.age_note = typeof data.age_note === 'string' ? data.age_note : '';
       // Sharing with Claude: '' / 'granted' / 'declined' (app/ai_consent.py).
       shellWho.ai_consent = typeof data.ai_consent === 'string' ? data.ai_consent : 'granted';
       // Preferences → About's version line (app/legal.py).
