@@ -25,7 +25,11 @@ why*, not duplicating the diff.
   `output_config.effort` for Haiku 4.5, which refuses it — so the old Haiku
   fallback was very likely 400ing too. Seconds per tool now logged beside
   seconds per round. Why: most of chat's time was the model writing recipes
-  as tool input.
+  as tool input. Review fixes: "save it anyway" saves the exact refused
+  draft (or, for a refused name, re-writes with only that avoidance lifted);
+  a steps rewrite is gated on the list its steps complete; the card writes
+  nothing past its limits or for a missing plan/slot; `chat_turns.model`
+  (NULL = pre-switch Sonnet) prices chat per row, an unknown model unpriced.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
