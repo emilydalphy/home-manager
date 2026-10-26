@@ -506,6 +506,30 @@ def update_recipe_details(
             # had; the old ones were settled when they were saved.
             n = len(old_ingredients)
             completed = completed[:n] + settle_cooking_quantities(completed[n:], servings_now)
+            # What the new steps add is bought for an approved week below,
+            # so it gets the gate add_recipe_for_chat gives a new recipe: an
+            # egg the household can't have is refused, not shopped for.
+            from . import allergen_gate as _allergen_gate
+            # Matched with the recipe's name (the matcher needs one) but kept
+            # to what the ADDED lines carry, so a name that already names a
+            # food doesn't lock the recipe against every edit.
+            added_text = " ".join(str(ing.get("item") or "") for ing in completed[n:]).lower()
+            clashes = [
+                c for c in _allergen_gate.hard_clashes(recipe_name, ingredients=completed[n:])
+                if c.get("source") == "check_failed"
+                or ((c.get("matched_word") or c.get("matched") or "").lower() or "\0") in added_text
+            ]
+            if clashes:
+                conn.close()
+                foods = ", ".join(w for w in dict.fromkeys(
+                    (c.get("matched_word") or c.get("matched") or "").strip() for c in clashes
+                ) if w) or "something"
+                who = next((c.get("member") for c in clashes if c.get("member")), None)
+                cannot = f"{who} can’t have" if who else "this house can’t have"
+                raise _allergen_gate._weekly_plan.SlotRefused(
+                    f"Not saved: the new steps for {recipe_name} use {foods}, which {cannot}. "
+                    "Write the steps again without it."
+                )
             fields.append("ingredients_json = ?")
             params.append(json.dumps(completed))
     if default_servings is not None:
@@ -526,11 +550,35 @@ def update_recipe_details(
 
     if fields:
         params.extend([existing["id"], household_id()])
-        conn.execute(
-            f"UPDATE recipes SET {', '.join(fields)} WHERE id = ? AND household_id = ?",
-            params,
+        # A changed list or serving count changes what an approved week
+        # buys for this dish. The steps' new eggs used to reach the recipe
+        # and never the shopping list (2026-10-24): the list is taken back
+        # off for every night still ahead and uncooked on this recipe and
+        # bought again from the row as it now stands, less what is already
+        # ticked (recipe_change._rebuy_after_edit), in the same transaction
+        # as the edit. Cooked nights, drafts and past weeks are left alone
+        # (_approved_users_of).
+        from . import recipe_change as _recipe_change   # circular at module scope
+        # Only when something the list is bought from really changed: a
+        # same-value servings call rebuilt every line under new ids, which
+        # an open Shop screen or a queued offline tick still points at.
+        reprices_the_list = any(f.startswith("ingredients_json") for f in fields) or (
+            default_servings is not None and default_servings != existing["default_servings"]
         )
-        conn.commit()
+        try:
+            users = _recipe_change._approved_users_of(conn, existing["id"]) if reprices_the_list else {}
+            conn.execute(
+                f"UPDATE recipes SET {', '.join(fields)} WHERE id = ? AND household_id = ?",
+                params,
+            )
+            if users:
+                # Less what is already in the cart or bought for those nights.
+                _recipe_change._rebuy_after_edit(conn, users)
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            conn.close()
+            raise
     conn.close()
     return get_recipe(recipe_name)
 
