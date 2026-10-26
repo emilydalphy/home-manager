@@ -84,3 +84,27 @@ def test_every_field_the_share_page_reads_is_still_sent(client):
     read = set(re.findall(r"\bplan\.([a-z_]+)", html))
     assert read, "share.html no longer reads plan.<key> — update this test"
     assert read - {"components"} <= set(plan), read - set(plan)
+
+
+def test_a_part_week_is_named_by_its_first_planned_day(client):
+    """Defect hunt 2026-10-26 (week anchors). A part-week is FILED under its
+    period's start (main._first_plan_window: a "ready by Friday" household
+    starting on a Monday files under Saturday) and the page said "Week of"
+    that filing day over a menu that begins Monday. CATCH: red on main —
+    period_start_date was not sent, and the page read week_start_date."""
+    conn = get_conn()
+    plan_id = conn.execute(
+        "INSERT INTO weekly_plans (household_id, week_start_date, status, content_start_date, "
+        "day_count, planning_mode) VALUES (1, '2099-10-24', 'approved', '2099-10-26', 5, 'day_based')"
+    ).lastrowid
+    conn.execute(
+        "INSERT INTO meal_plan_entries (household_id, weekly_plan_id, date, slot, freeform_meal) "
+        "VALUES (1, ?, '2099-10-26', 'dinner', 'Chili')", (plan_id,),
+    )
+    conn.commit()
+    conn.close()
+    token = tools.get_or_create_share_link()["token"]
+    client.cookies.clear()
+    plan = client.get(f"/api/share/{token}").json()
+    assert plan["period_start_date"] == "2099-10-26"
+    assert "formatDate(plan.period_start_date" in client.get(f"/share/{token}").text

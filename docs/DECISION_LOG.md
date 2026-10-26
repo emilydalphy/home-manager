@@ -1324,6 +1324,19 @@ why*, not duplicating the diff.
   not the allergy refusal; chat's two give-up replies lost their "Sorry".
   Merge note: `overnight/report-gaps-1025`'s `_record_stream_failure` should
   skip an `AI_FILED` error the same way.
+- **Two week labels follow the household's week, not the calendar's**
+  (2026-10-26, defect hunt — week anchors; branch
+  `overnight/hunt-week-anchors-1026`; tests
+  `tests/test_questions_answered_names_the_right_week.py`,
+  `tests/test_share_link_shows_the_menu_only.py`). "Since you last looked"
+  said "answered next week's questions" for any intake starting after this
+  calendar Monday — a Sunday-start household answering on its Sunday, or
+  anyone answering mid-week, was told "next"; now "next" means it starts
+  after today. The share page's "Week of …" read the filing key, which for a
+  part-week is a day the plan never reaches ("Week of Saturday, Oct 24" over
+  a Mon–Fri menu); it now reads `period_start_date`, added to the share
+  allowlist. Why: both are the same Monday-shaped arithmetic the planning
+  anchor replaced everywhere else.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
