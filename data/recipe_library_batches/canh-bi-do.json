@@ -1,0 +1,103 @@
+{
+ "dish_name": "Canh Bi Do",
+ "cuisine": "Vietnamese",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Butternut squash",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Ground pork",
+   "qty": "8 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Peel the squash, scoop out the seeds and cut the flesh into 3/4 inch chunks. That should be about 4 cups.",
+  "Mince the 3 garlic cloves. In a bowl, mix the 8 oz pork with 1/4 tsp of the salt.",
+  "Heat 1 tbsp oil in a medium pot over medium heat. Add the garlic and stir for about 30 seconds, until it smells fragrant and just starts to turn golden.",
+  "Add the pork and 1/2 tsp of the salt. Cook for 3 to 4 minutes, breaking the pork into small bits with a spoon, until there's no pink left.",
+  "Add 4 1/2 cups water and bring it to a boil over high heat. Skim off the grey foam with a spoon.",
+  "Turn the heat down, set the lid on slightly open and simmer gently for 5 minutes.",
+  "Add the squash and bring it back to a lively simmer. Skim it again, then turn it down and simmer gently for about 10 minutes, until a knife slides easily into the squash.",
+  "Meanwhile, thinly slice 2 of the scallions and roughly chop a small handful of the cilantro.",
+  "Stir in 1 tsp fish sauce and the last 1/4 tsp salt.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Ladle it into bowls and scatter the scallions, cilantro and 1/4 tsp pepper over the top. Serve hot."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three cook seasoned pork in a little oil, add water, skim it and simmer chunks of pumpkin or squash until tender, then season with fish sauce and finish with scallions, cilantro and black pepper. Delightful Plate fries the garlic first and keeps the seasoning to salt with a touch of fish sauce; Vicky Pham adds shallot, sugar and bouillon powder, and MM Bon Appetit marinates the pork with shallot and fish sauce and simmers it longer. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Vietnamese) has no canh bi do, so the first read version leads. This one follows the lead for 4 with butternut squash; kabocha works the same way.",
+ "sources": [
+  {
+   "name": "Delightful Plate",
+   "title": "Vietnamese Pumpkin Soup (Canh Bi Do)",
+   "url": "https://delightfulplate.com/vietnamese-pumpkin-soup-canh-bi-do/",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Vicky Pham",
+   "title": "Vietnamese Kabocha Pumpkin Soup with Ground Pork (Canh Bi Do Nau Thit Bam)",
+   "url": "https://vickypham.com/blog/vietnamese-kabocha-pumpkin-soup-with-ground-pork/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "MM Bon Appetit",
+   "title": "Canh bi do (Vietnamese pumpkin soup)",
+   "url": "https://mmbonappetit.com/canh-bi-do/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
