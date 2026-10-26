@@ -13,6 +13,13 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The approve toast is short: "Meals for the week are saved"** (2026-10-25,
+  Emily's call, Option A; branch `overnight/approve-toast-short`). The count
+  and the batched-dishes sentence are gone from it (All set still draws
+  batched, but nothing routes there since 2b = A, so no screen says it now —
+  flagged to Emily); a clash note or takeover note still rides on it and holds it
+  9 s, otherwise 6 s. `weekApprovedLine` is unchanged for the onboarding
+  hand-off. Why: the toast had grown into a paragraph nobody could read.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

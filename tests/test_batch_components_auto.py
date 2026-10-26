@@ -415,12 +415,15 @@ def test_all_set_has_no_batched_line_when_nothing_was_batched():
         assert "batched" not in html.lower()
 
 
-def test_the_approve_toast_says_the_batched_line():
-    """All set is no longer a stop after approving (2b = A, 2026-10-12), so
-    the toast is the only screen left to say what approval batched."""
+def test_the_approve_toast_leaves_the_batched_line_to_all_set():
+    """Emily, 2026-10-25 (Option A): the approve toast is short — "Meals for
+    the week are saved" — and the batched-dishes sentence is not in it. It
+    stays on the All set receipt (the two tests above), and the toast holds
+    for the normal 6 seconds unless a clash or takeover note is in it."""
     import pathlib
     src = (pathlib.Path(__file__).resolve().parent.parent / "static" / "shell.js").read_text()
     body = src[src.index("async function submitWeekApproval"):]
     body = body[: body.index("\n  }\n")]
-    assert "approval.batched_line" in body
-    assert "batchedLine ? ' ' + batchedLine" in body
+    assert "batched_line" not in body and "batchedLine" not in body
+    assert "var approvedToast = 'Meals for the week are saved' +" in body
+    assert "showToast(approvedToast, null, (approval.conflicts_note || takeoverNote) ? 9000 : 6000);" in body
