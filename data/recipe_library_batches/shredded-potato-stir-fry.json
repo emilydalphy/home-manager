@@ -1,0 +1,123 @@
+{
+ "dish_name": "Shredded Potato Stir-Fry",
+ "cuisine": "Chinese",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 8,
+ "ingredients": [
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "1 1/2 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sichuan peppercorns",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried red chilies",
+   "qty": "4",
+   "category": "pantry"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small piece",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Light soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3/4 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "White vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Peel the 1 1/2 lbs potatoes. Cut them into slices about 1/8 inch thick, then stack a few slices at a time and cut them into thin matchsticks. A mandoline makes this much quicker.",
+  "Put the matchsticks in a big bowl of cold water and swish them around with your hand. Drain, refill and swish again 2 or 3 times, until the water stays fairly clear. Leave them sitting in the last bowl of water while you get everything else ready, and cook them within 20 minutes or they start to turn brown.",
+  "Meanwhile, peel the ginger and mince enough to make about 1 tsp. Mince the 4 garlic cloves. Chop 2 of the scallions. Snip the 4 dried chilies in half and shake out the seeds.",
+  "In a small bowl, stir together the 1 1/2 tsp soy sauce, 3/4 tsp sugar, 3/4 tsp salt and 1 1/2 tbsp water.",
+  "Drain the potatoes well in a colander, shake them hard, and pat them dry with a clean kitchen towel. Wet potatoes spatter and go soggy in the pan.",
+  "Heat the 3 tbsp oil in a wok or large skillet over medium. Add the 1 tbsp Sichuan peppercorns and the chilies and stir for about 1 minute, until the peppercorns smell fragrant and the chilies turn a shade darker. Don't let them go black.",
+  "Scoop the peppercorns and chilies out of the oil with a slotted spoon. Throw the peppercorns away and put the chilies in a small bowl for the table.",
+  "Add the ginger and garlic to the oil and stir for about 30 seconds, until they smell fragrant.",
+  "Turn the heat to high and add the potatoes. Stir-fry for about 1 minute, tossing so every strand gets coated in the oil.",
+  "Pour in the soy sauce mixture and stir-fry for 1 to 2 minutes. Cover the pan and cook for 45 seconds.",
+  "Take the lid off and taste a strand. It should be cooked through but still have a little crunch in the middle. If it tastes raw, stir-fry for 30 seconds and taste again.",
+  "Take the pan off the heat. Drizzle the 1 tbsp vinegar around the edge of the pan and the 1 tsp sesame oil over the top, add the scallions and toss.",
+  "Taste it. If it's flat, add a pinch more salt or a splash more of the vinegar.",
+  "Serve right away, with the fried chilies on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three cut the potatoes into thin matchsticks, rinse off the starch, bloom Sichuan peppercorns and dried chilies in oil, then stir-fry the potatoes fast on high heat so they stay crunchy. The Woks of Life (the lead) lifts the peppercorns out of the oil, seasons with light soy, sugar, a little white vinegar and sesame oil, and covers the wok briefly; China Sichuan Food and The Mala Market use Chinese black vinegar and add it last, off the heat. This one follows the lead's seasoning but adds the vinegar at the end like the other two, leaves out the lead's long hot pepper, and lifts the fried chilies out so they go on the side. None of the versions had 20 or more ratings and RecipeTin Eats has no version, so the lead is the first page read; China Sichuan Food shows 6 votes on the page.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Sichuan Stir-Fried Potatoes",
+   "url": "https://thewoksoflife.com/sichuan-stir-fried-potatoes/",
+   "rating": 4.92,
+   "rating_count": 12,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "China Sichuan Food",
+   "title": "Spicy and Sour Shredded Potato",
+   "url": "https://www.chinasichuanfood.com/spicy-and-sour-potato/",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "The Mala Market",
+   "title": "Sichuan Hot and Sour Shredded Potato (Suanla Tudousi)",
+   "url": "https://blog.themalamarket.com/sichuan-hot-and-sour-shredded-potato-suanla-tudou-si/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
