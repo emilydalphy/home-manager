@@ -140,8 +140,16 @@ def _try_subtract_quantity(existing_qty: str, minus_qty: str) -> tuple[str | Non
         # precise math, so treat any explicit "used some" as using it all
         # rather than leaving a stale, unreconciled line behind.
         return None, True
-    if minus_parsed and existing_parsed[1] == minus_parsed[1]:
-        remaining = existing_parsed[0] - minus_parsed[0]
+    # The same unit, or one family apart (lb and oz, cups and tbsp):
+    # quantities._convert_to_unit. The grocery line rounds to whichever unit
+    # reads best, so a recipe's "1 lb" chicken came home as "12 oz" (three
+    # eaters of four) and cooking it took nothing off — the Monday walk,
+    # 2026-10-26: last Monday's chicken sat in the fridge as on hand, and
+    # approving this week left Saturday's stir-fry chicken off the list.
+    used = (_quantities._convert_to_unit(minus_parsed[0], minus_parsed[1], existing_parsed[1])
+            if minus_parsed else None)
+    if used is not None:
+        remaining = existing_parsed[0] - used
         if remaining <= 0:
             return None, True
         return _quantities._format_quantity(remaining, existing_parsed[1]), True

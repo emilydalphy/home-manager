@@ -146,7 +146,13 @@ def get_active_notifications() -> list[dict]:
     # 2. Expiring soon (NOTIFICATIONS.md #2) — 2-day window per spec (the
     # Kitchen/Inventory badge itself uses 4 days; this notification is
     # deliberately tighter, matching the spec's own trigger).
-    expiring = _inventory.get_expiring_soon(days=2)
+    # Not what has already gone by. get_expiring_soon includes it (that is
+    # its job for the planner and the Inventory page), and this card read it
+    # as "use this week": the Monday walk's morning text, 2026-10-26, said
+    # "3 things to use this week" for chicken and ground beef five days past
+    # their date. "I'll work them into this week" is not an offer to make
+    # about meat that should be thrown out.
+    expiring = [e for e in _inventory.get_expiring_soon(days=2) if e["status"] != "expired"]
     if expiring:
         today_iso = _today().isoformat()
         key = f"expiring:{today_iso}"

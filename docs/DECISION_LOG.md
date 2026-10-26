@@ -13,6 +13,24 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Monday after the week turns: five small fixes** (2026-10-26, overnight
+  defect hunt walking Mon Oct 26 at 7:30/12:00/18:00; branch
+  `overnight/hunt-monday-walk-1026`; tests
+  `tests/test_monday_after_the_week_turns.py`). (1) Pantry staples / Sauces
+  this week showed spice totals ("red lentils 96 tbsp", broth "about ½ tsp"):
+  `spices.list_spices_this_week` totals the rack only, others show their own
+  amount. (2) "N things to use this week" (bell + morning text) counted food
+  past its date: `notifications` #2 drops `expired`. (3) Canned/frozen rows
+  got fresh-food shelf life off the name (canned diced tomatoes = 7 days):
+  `quantities._lookup_item_shelf_life_days` lets the category win. (4) With no
+  new week approved, Shop drew last week's ticks as this list's ("11 of 17"):
+  `grocery.list_built_at` starts no earlier than the household midnight after
+  the newest approved week ended. (5) Cooking a "1 lb" recipe took nothing off
+  a "12 oz" shelf row, so next week's approval read it as on hand and left
+  that chicken off the list: `inventory._try_subtract_quantity` converts within
+  a unit family. NOT fixed, for Emily: Today hides "Shop for tonight" on a
+  non-shop day (tests pin "second week = usual day line").
+
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

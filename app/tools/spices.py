@@ -631,9 +631,14 @@ def list_spices_this_week() -> dict:
             "WHERE household_id = ? AND grocery_item_id = ?",
             (household_id(), r["id"]),
         ).fetchall()
+        # Only the RACK is totalled in teaspoons. A sauce or pantry staple
+        # has no measure on its ledger (the ingest records one for is_spice
+        # alone), so week_total read it as a spice: "red lentils 96 tbsp",
+        # a carton of broth "about ½ tsp", a jar of salsa "about ¼ tsp"
+        # (Monday walk, 2026-10-26). Those rows show their own amount.
         items.append({
             "id": r["id"], "item": r["item"], "quantity": r["quantity"] or "",
-            "total": week_total(r["item"], links)["text"] if links else "",
+            "total": week_total(r["item"], links)["text"] if links and section == SECTION_SPICES else "",
             "category": r["category"], "store": r["store"] or "",
             "ticked": ticked, "due": due, "section": section,
             "a_lot": a_lot,

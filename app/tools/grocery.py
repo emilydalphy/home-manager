@@ -1767,15 +1767,37 @@ def list_built_at() -> str:
     off the status alone; it is the rows ticked since the list was last
     built. The next approval moves the window, and last week's ticks stop
     being drawn as this week's.
+
+    So does the END of that week, when no approval follows it. Monday walk,
+    2026-10-26: a household with this week still a draft (or nothing
+    planned) opened Shop to "11 of 17", last Monday's shop struck through
+    as if it were this list's. Once the newest approved plan's last day has
+    gone by on the household's clock, the window starts no earlier than the
+    household's midnight after it.
     """
+    from datetime import datetime, time, timedelta, timezone
+    from . import cooker as _cooker  # lazy: cooker imports this module
+
     conn = get_conn()
-    row = conn.execute(
-        "SELECT MAX(approved_at) AS at FROM weekly_plans WHERE household_id = ? AND approved_at IS NOT NULL",
-        (household_id(),),
-    ).fetchone()
-    fallback = conn.execute("SELECT datetime('now', '-7 days') AS at").fetchone()["at"]
-    conn.close()
-    return (row["at"] if row and row["at"] else None) or fallback
+    try:
+        row = conn.execute(
+            "SELECT approved_at, week_start_date, content_start_date, day_count FROM weekly_plans "
+            "WHERE household_id = ? AND approved_at IS NOT NULL ORDER BY approved_at DESC, id DESC LIMIT 1",
+            (household_id(),),
+        ).fetchone()
+        fallback = conn.execute("SELECT datetime('now', '-7 days') AS at").fetchone()["at"]
+        if not row or not row["approved_at"]:
+            return fallback
+        at = row["approved_at"]
+        start, days = _weekly_plan.plan_period(row)
+        end = _weekly_plan.period_end_date(start, days)
+        if days > 0 and end < _household_today(conn=conn).isoformat():
+            turned = datetime.combine(date.fromisoformat(end) + timedelta(days=1), time(0, 0))
+            turned = turned.replace(tzinfo=_cooker.household_zone(conn=conn)).astimezone(timezone.utc)
+            at = max(at, turned.strftime("%Y-%m-%d %H:%M:%S"))
+        return at
+    finally:
+        conn.close()
 
 
 def list_grocery_list(status: str = "needed") -> list[dict]:

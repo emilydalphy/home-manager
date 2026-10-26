@@ -103,6 +103,13 @@ _ITEM_SHELF_LIFE_DAYS = {
 
 
 def _lookup_item_shelf_life_days(item: str, category: str | None) -> int:
+    # A tin or a freezer bag keeps however long its KIND keeps, whatever
+    # food is in it. The name table is fresh food, so "diced tomatoes" in
+    # the canned aisle matched "tomato" and got a week, and the Monday
+    # walk's morning text (2026-10-26) said a can bought last Monday
+    # "turns soon"; coconut milk read as milk, canned salmon as salmon.
+    if category in ("canned", "frozen"):
+        return _DEFAULT_SHELF_LIFE_DAYS[category]
     name = item.strip().lower()
     best_match: tuple[str, int] | None = None
     for key, days in _ITEM_SHELF_LIFE_DAYS.items():
