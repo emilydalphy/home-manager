@@ -201,15 +201,47 @@ backup in case the 6.9" slot rejects anything).
 
 ## 9. App Review notes (for the "Sign-in information" box)
 
-> Pomona signs in with a household passphrase rather than a username.
-> Username: (leave blank or "demo") · Password: `<DEMO_PASSPHRASE from
-> Railway>`. After the passphrase, tap "Maya" on "Who's this?". The demo
-> household has a planned week, a shopping list and recipes. The chat uses
-> Anthropic's Claude and answers live. To delete a household: the gear
-> (top right) → "Delete your household".
+Paste into App Review's Notes box. The passphrase itself goes in App Store
+Connect's sign-in fields (Password; Username can be "demo"), never here or
+anywhere in this repo.
 
-(Checked against `main`: the Preferences sheet's link reads "Delete your
-household" and calls `/api/household/delete`; it refuses household 1.)
+> Pomona signs in with a household passphrase. The demo passphrase is in
+> the Password field of the sign-in information; the Username isn't used.
+>
+> 1. The sign-in screen opens on "Your email". Don't type there. Tap
+> "Sign in with a household passphrase", under the orange button.
+> 2. Type the passphrase in the Passphrase box and tap "Come in".
+> 3. On "Who's this?", tap "Maya".
+>
+> You're in the demo household: a whole week planned on Plan, a shopping
+> list on Shop and tonight's dinner on Today and Cook. The first time you
+> open Plan a short tour shows; tap "Skip the tour" to close it. Sharing
+> with Claude is already allowed for this household. Ask (bottom right)
+> uses Anthropic's Claude and answers live.
+>
+> To delete the household: the gear (top right) → "Delete your
+> household" → type DELETE → "Delete". It's gone at once and you're
+> signed out. We can put the demo household back if you need it again.
+
+Checked 2026-10-26 on current `main`, on a throwaway database at 390px
+(branch `overnight/testflight-words-reviewer-notes`):
+
+- `static/login.html` opens on the email step ("Start with your email");
+  the passphrase is behind the "Sign in with a household passphrase" link
+  under it, and its button reads "Come in". After a passphrase sign-in
+  succeeds, that phone opens on the passphrase step next time.
+- `create_demo_household.py` makes two adults, **Maya** and **Theo**, so
+  "Who's this?" ("I'll remember on this device.") always shows. Picking
+  Maya lands on Today with tonight's dinner; Plan shows the week Approved
+  with all seven nights; consent comes back `granted`.
+- Deleting from Preferences calls `/api/household/delete`, removes the
+  household and its passphrase, and goes to `/goodbye`. The passphrase
+  then stops working. **Re-running the script puts it back**:
+  `railway ssh -- python create_demo_household.py` finds no demo household,
+  creates a fresh one (new id) with the same `DEMO_PASSPHRASE`, and the
+  reviewer's sign-in works again. Run, delete, re-run and sign in was done
+  end to end. A plain re-run with the household still there rebuilds its
+  data in place; it never touches household 1.
 
 ## 10. Pricing — decision page for Emily
 
@@ -248,3 +280,73 @@ before submission.
 
 **Decision needed from Emily:** A, B or C; the prices if C; approve the
 words above.
+
+## 11. TestFlight — DRAFT — Emily approves before first external submission
+
+What App Store Connect asks for under TestFlight → Test Information before
+the first build goes to external testers (which needs Beta App Review).
+Limits are 4,000 characters per text field. The Claude line matches the
+in-app "Sharing with Claude" screen (`AI_CONSENT_COPY` in `static/shell.js`
+and `static/onboarding.html`); change all three together.
+
+**Beta App Description** (shown to testers in the TestFlight app):
+
+> Pomona takes on the feeding-the-family job: what's for dinner, what to
+> buy, who's home which night, who can't eat what.
+>
+> Tell me who's at the table and what your week looks like. I'll plan the
+> meals, build the shopping list and walk you through dinner, one step at
+> a time. Ask me for changes the way you'd ask a person.
+>
+> It's for the grown-ups who carry the meals in a busy household, so it
+> isn't all on you.
+>
+> I use Claude, an AI made by Anthropic, to plan your meals and answer you.
+> To do that, I send it what you've told me. I ask before anything is
+> shared, and you can turn it off any time in Preferences, under Sharing
+> with Claude.
+
+**What to Test** (per build; written from Emily to testers):
+
+> Thanks for trying Pomona! This is an early build, so rough edges are
+> expected. Here's what I'd love you to try this week:
+>
+> - Plan next week. On Plan, tap "Plan next week", answer the questions
+> and look over the draft. Swap anything that's wrong, then tap "Approve
+> the week".
+> - Shop from the list. Open Shop in the store and tick things off as you
+> go. Did the amounts make sense?
+> - Cook a dinner. On Cook, open tonight's meal and tap "Start cooking".
+> Was each step clear with your hands busy?
+> - Ask Pomona. Tap Ask and say something real: "Can we swap Friday for
+> something quicker?" or "Theo's away till Sunday."
+>
+> When something's off, tell me right there: the gear (top right) →
+> "Something not working?". Or take a screenshot in TestFlight. Even "it
+> was fine" helps!
+>
+> Thanks, Emily
+
+**Feedback Email** (required): `[feedback email — hello@heypomona.com once it exists]`
+
+**Beta App Review Information:**
+
+| Field | Draft |
+|---|---|
+| First name / Last name | Emily `[last name]` |
+| Phone | `[Emily's phone — she fills this in]` |
+| Email | `[feedback email — hello@heypomona.com once it exists]` |
+| Sign-in required | Yes. Username "demo"; Password: the demo passphrase (`DEMO_PASSPHRASE` on Railway), typed into App Store Connect only |
+| Review notes | The §9 App Review notes above, word for word |
+
+Words to check before approving:
+
+- "Plan next week" and "Approve the week" are the real labels in
+  `static/shell.js` today. The number of questions isn't named on purpose:
+  it has changed before.
+- "Start cooking" is the Cook screen's button (Kitchen tab, labelled Cook
+  in the tab bar).
+- Nothing about the morning text or push: both need keys set before
+  they're true for a tester.
+- If §10 lands on a subscription, tell testers before the first build
+  that charges.
