@@ -1131,6 +1131,13 @@ why*, not duplicating the diff.
   11pm); from dinner on a snack is now passed over. `snack_variety`'s pool is
   spelled lower case and the list prints names as saved; `pool_ingredients`
   capitalises, and a lower-case pool recipe at the same table is respelled.
+- **"Forget X" with no X draws no "updated" card** (2026-10-24, defect hunt;
+  branch `overnight/chat-tools-noop-card`; tests
+  `tests/test_forget_nothing_draws_no_card.py`). `result_changed_nothing` now
+  also reads a literal `deleted`/`added`/`held: false`, and
+  `delete_preference` says `deleted: false` for a cuisine or store it never
+  had. Why: "forget cilantro" with no cilantro saved still showed
+  "Household info updated · Updated cilantro".
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
