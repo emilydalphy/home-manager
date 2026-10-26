@@ -697,6 +697,14 @@ why*, not duplicating the diff.
   list when Cook's fill-in wrote it; `fill_recipe_details` now buys that
   recipe's meals on approved weeks, today on, once
   (`weekly_plan.buy_for_late_written_recipe`).
+- **The Review "−" takes the dropped night's fridge move with it**
+  (2026-10-24, overnight hunt; branch `overnight/hunt-defrost-nudge-1024`;
+  tests `tests/test_drop_takes_its_thaw.py`). `drop_dish_from_day` deleted
+  its row by hand without `_release_prep_rows`, so a thaw booked at approval
+  outlived the dinner: chat's "what do I need to defrost?" and the Cook tab's
+  prep session still named it. Now released like every swap door; a ticked
+  thaw is held, and `held_thawed` rides on the result; the freezer-night
+  Undo takes that hold back off (the move comes back done).
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
