@@ -1747,11 +1747,26 @@ def get_feedback_nudge() -> dict:
     notes don't count, and a note on another dish never reaches this one.
     member_recipe_feedback.rating is NOT NULL, so a per-person note always
     arrives on a row that already counts as a verdict.
+
+    A REHEAT IS NOT ASKED ABOUT (overnight 2026-10-22). "Mark eaten" on a
+    leftovers / made-ahead night, or on a portion out of the freezer, is
+    the same check_off_meal tick and stamps cooked_at, so the newest "cook"
+    could be a night nobody cooked. Cook's own toast already treats that
+    tick as eaten, not cooked (no "Rate it"), off the cook view's
+    is_leftovers — and this skips the same nights by the same two facts
+    that set it: a confirmed chain (leftovers.plan_leftover_chains) or a
+    freezer portion (leftovers.frozen_portion_on). The third way a night
+    reads as leftovers, by name, has no recipe and is excluded below
+    already. Skipped, not stopped: the cook a reheat eats from is still
+    asked about.
     """
+    from . import leftovers as _leftovers  # deferred: the domains are circular
+
     conn = get_conn()
-    row = conn.execute(
+    rows = conn.execute(
         """
-        SELECT COALESCE(r.name, mpe.freeform_meal) AS meal, mpe.recipe_id, mpe.cooked_at
+        SELECT COALESCE(r.name, mpe.freeform_meal) AS meal, mpe.recipe_id, mpe.cooked_at,
+               mpe.id, mpe.weekly_plan_id, mpe.derived_from_json
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
         WHERE mpe.household_id = ? AND mpe.cooked_status = 'done' AND mpe.cooked_at IS NOT NULL
@@ -1768,11 +1783,24 @@ def get_feedback_nudge() -> dict:
               WHERE rn.household_id = mpe.household_id AND rn.recipe_id = mpe.recipe_id
                 AND rn.note_type = 'feedback' AND TRIM(rn.note) != ''
           )
-        ORDER BY mpe.cooked_at DESC LIMIT 1
+        ORDER BY mpe.cooked_at DESC, mpe.id DESC
         """,
         (household_id(),),
-    ).fetchone()
+    ).fetchall()
     conn.close()
+    chains_by_plan: dict = {}
+    row = None
+    for r in rows:
+        if _leftovers.frozen_portion_on(r["derived_from_json"]):
+            continue
+        plan_id = r["weekly_plan_id"]
+        if plan_id is not None:
+            if plan_id not in chains_by_plan:
+                chains_by_plan[plan_id] = _leftovers.plan_leftover_chains(plan_id)["leftovers"]
+            if r["id"] in chains_by_plan[plan_id]:
+                continue
+        row = r
+        break
     if not row:
         return {"has_nudge": False}
     return {"has_nudge": True, "meal": row["meal"], "cooked_at": row["cooked_at"]}

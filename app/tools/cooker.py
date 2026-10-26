@@ -70,6 +70,22 @@ class InvalidMealStatus(ValueError):
     """
 
 
+PREP_TASK_STATUSES = ("pending", "done", "skipped")
+
+
+class InvalidPrepStatus(ValueError):
+    """
+    A prep status outside PREP_TASK_STATUSES — InvalidMealStatus's twin
+    for check_off_prep_step. That function always refused a third word,
+    but with a plain ValueError, the same type require_household_row
+    raises for a missing task, so /api/cooker/check-prep answered "no such
+    prep task" (404) to a request that named a real one with a bad word.
+    Its own type lets the route answer 422 like check-meal does; it IS a
+    ValueError, so chat's per-tool except and any caller catching
+    ValueError see no change.
+    """
+
+
 # Slot states with no meal behind them, so nothing to cook. See
 # get_cooker_view for why this is a deny-list rather than an allow-list of
 # 'planned'. The ordered tuple and its placeholders exist only so
@@ -1106,8 +1122,11 @@ def start_cooking(entry_id: int, now_utc: datetime | None = None) -> dict:
 
 def check_off_prep_step(prep_task_id: int, status: str = "done") -> dict:
     """Mark a specific prep task (from generate_prep_schedule/get_prep_schedule — general, defrost, or a prep_cut added on a prep day) as done, skipped, or back to pending. 'skipped' is the defrost tile's one-tap decline — see static/shell.js's Today defrost tile — but is valid for any prep task, not defrost-specific."""
-    if status not in ("pending", "done", "skipped"):
-        raise ValueError(f"status must be one of pending/done/skipped, not {status!r}.")
+    if status not in PREP_TASK_STATUSES:
+        raise InvalidPrepStatus(
+            f"A prep step is done, skipped or still to do — status must be "
+            f"{', '.join(PREP_TASK_STATUSES)}, not {status!r}."
+        )
     conn = get_conn()
     require_household_row(conn, "prep_tasks", prep_task_id, label="prep task")
     task = conn.execute(
