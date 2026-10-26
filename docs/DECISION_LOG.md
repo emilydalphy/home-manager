@@ -112,6 +112,24 @@ why*, not duplicating the diff.
   (bún), cookie, cake, and graham (a name: "no nuts for Graham" lost its nuts). Still open: "vegetarian" / "vegan" / "no meat"
   restrictions hold back nothing (see the celiac entry below).
 
+- **One tap on Today's dock runs its action once** (2026-10-21, overnight
+  hunt; branch `overnight/defect-hunt-3-2026-10-21`; tests
+  `tests/test_today_dock_fires_once.py`). renderTodayMoves bound every
+  `[data-move-action]` in the panel after renderTodayDock had bound the
+  dock's own, so a dock "Done"/"Mark eaten" posted a tick AND an untick from
+  one tap and the two raced. The panel-wide binding now skips the dock.
+- **A fridge move nobody ticked stays on Today until its cook** (2026-10-21,
+  overnight hunt; branch `overnight/defect-hunt-3-2026-10-21`; tests
+  `tests/test_missed_fridge_move_carries.py`). `_prep_moves` read only rows
+  dated today, so Monday's missed "Move the beef to the fridge" vanished on
+  Tuesday from Now, the morning text and the evening nudge ("Tap to start")
+  while Cook's card still said "still to do". `moves._missed_fridge_moves`
+  carries a pending defrost row onto the real today, overdue, while its meal
+  is on a LATER day and not ticked cooked. Never onto the cook day (too late
+  to thaw; `test_own_freezer_portion_thaw` pins Now quiet there), so that
+  evening's nudge still says "Tap to start" over Cook's "still to do" — left
+  for Emily. `test_thaw_follows_the_meal`'s swap catch now sees the carried
+  row on Now. Not done: missed general prep rows and entry-less defrost rows.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
