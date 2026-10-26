@@ -37,6 +37,16 @@ why*, not duplicating the diff.
   `can_remove` per row. Open for Emily: main person only (built), or any
   adult? Household 1 stays protected, so Emily's own household can't use
   it yet — same rule as Remove me.
+- **A meal added to an approved week rounds the plan's line once** (2026-10-21,
+  defect hunt; branch `overnight/defect-hunt-2-2026-10-21`; tests
+  `tests/test_plan_line_rounds_once_after_an_add.py`). Swap then Undo read 21
+  onions over a ledger of exactly 20: `WeekGroceryBuffer.flush` summed one
+  meal's share, rounded on its own (0.75 -> 1), onto the already-rounded line
+  and re-read the ledger only for packs / mixed units / edited-down lines (the
+  old "a count is small enough to accept"). Every merge onto a PLAN-owned line
+  is now re-read off the ledger and rounded once; a household's own line is
+  still never re-rounded. `only_if_edited_down` is gone (nothing else used it).
+
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
