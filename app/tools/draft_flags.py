@@ -66,7 +66,10 @@ DELIBERATELY NOT BUILT HERE, so nobody reports them as missing:
     exist. Scenario 5 — a requested dish that fits NO night goes on the
     night with the most time, and Pomona says so — is built
     (2026-10-25): cap_enforce.place_fits_nowhere places it, and
-    `FITS_NOWHERE` below is the line, with no fixes.
+    `FITS_NOWHERE` below is the line, with no fixes. So is rule 8 — a
+    dish asked for on a night nobody is home moves to the nearest night
+    that fits its time (cap_enforce.place_off_nights_out), and `DAY_OUT`
+    is the line.
   * A chain end — a cook that feeds a later night, or the reheat itself —
     is never flagged. cap_enforce's own docstring names the over-cap
     chain source as its biggest open hole and Emily's call; widening into
@@ -103,6 +106,12 @@ RUN_LEFT = "run_left"
 # the longest night, and this is the line that says so. No fixes: none
 # were decided, and the row's own Swap is the way out.
 FITS_NOWHERE = "fits_nowhere"
+
+# Emily's rule 8 (2026-09-23): a dish they asked for on a night nobody is
+# home — cap_enforce.place_off_nights_out has moved it to the nearest night
+# that fits its time, and this is the line that says so. No fixes: none
+# were decided, and the row's own Move or Swap is the way out.
+DAY_OUT = "day_out"
 
 # What a fix does. Each is an existing write; see the module docstring.
 FIX_PREP_AHEAD = "prep_ahead"
@@ -143,6 +152,16 @@ def fits_nowhere_text(dish: str, minutes: int, meal_date: str) -> str:
     takes 90 minutes, and your longest night is Sunday, so it's there."
     """
     return f"{dish} takes {int(minutes)} minutes, and your longest night is {_weekday(meal_date)}, so it's there."
+
+
+def day_out_text(dish: str, from_date: str, to_date: str, away: bool = False) -> str:
+    """
+    Emily's own sentence off the decided page: "You're out Friday, so
+    pizza moved to Saturday." A night nobody is home because of a trip
+    (an away need, not the Out tag) says "away" — the word the day sheet
+    and set_away_stretch use for it.
+    """
+    return f"You're {'away' if away else 'out'} {_weekday(from_date)}, so {dish} moved to {_weekday(to_date)}."
 
 
 def late_text(dish: str, meal_date: str, slot: str, moved: bool = False) -> str:
@@ -403,7 +422,7 @@ def plan_flags(weekly_plan_id: int, intake: dict | None = None,
     live = []
     planned = _planned_rows(weekly_plan_id)
     for flag in flags:
-        if flag.get("kind") in (LATE_REQUEST, RUN_LEFT):
+        if flag.get("kind") in (LATE_REQUEST, RUN_LEFT, DAY_OUT):
             # Not about a cap, so not judged by one: still about something
             # while the same dish is on the same meal, and not yet cooked.
             row = planned.get(flag.get("entry_id"))
@@ -509,6 +528,27 @@ def flags_for_late_requests(weekly_plan_id: int) -> list[dict]:
          "date": r["date"], "slot": r["slot"], "dish": r["meal"], "fixes": []}
         for r in _late_rows(weekly_plan_id).values() if (r["meal"] or "").strip()
     ]
+
+
+def flags_for_days_out(weekly_plan_id: int) -> list[dict]:
+    """
+    One line per dish they asked for on a night nobody is home that was
+    moved off it (cap_enforce.place_off_nights_out stamps the row). Said
+    only when their words named that night — a dish the model happened to
+    put there was rescued, but nobody asked for that night.
+    """
+    from . import cap_enforce as _cap_enforce  # lazy: it imports this module
+    flags = []
+    for r in _planned_rows(weekly_plan_id).values():
+        stamp = _derived_of(r).get(_cap_enforce.DAY_OUT_KEY)
+        if not isinstance(stamp, dict) or not stamp.get("said") or not (r["meal"] or "").strip():
+            continue
+        if r["slot"] != "dinner" or not stamp.get("from") or stamp["from"] == r["date"]:
+            continue
+        flags.append({"kind": DAY_OUT,
+                      "text": day_out_text(r["meal"], stamp["from"], r["date"], bool(stamp.get("away"))),
+                      "entry_id": r["id"], "date": r["date"], "slot": "dinner", "dish": r["meal"], "fixes": []})
+    return sorted(flags, key=lambda f: f["date"])
 
 
 def _week_nights(weekly_plan_id: int, intake: dict | None,

@@ -8087,6 +8087,19 @@ def _finish_week_slots(
         }
 
     night_tags = (intake or {}).get("night_tags") or {}
+    # A dish they asked for on a night nobody is home is read off those
+    # nights NOW, before the passes below clear them — the tag wins, and on
+    # its own that DELETED the dish. cap_enforce.place_off_nights_out puts
+    # it on the nearest night that fits, further down (Emily's rule 8).
+    # {date: away?} — an Out tag, or an away need (a trip) on the dinner.
+    nobody_home = {d: False for d, tags in night_tags.items() if "out" in (tags or []) and d in dates}
+    try:
+        for d, slots in (tools.get_week_slot_needs(week_start_date, day_count) or {}).items():
+            if d in dates and d not in nobody_home and ((slots or {}).get("dinner") or {}).get("need") == "away":
+                nobody_home[d] = True
+    except Exception:
+        logger.exception("Plan %s: reading the away dinners for requests on them failed", plan_id)
+    asked_on_nights_out = _cap_enforce.requests_on_nights_out(plan_id, nobody_home)
     for day, tags in night_tags.items():
         if "out" not in tags or day not in dates:
             continue
@@ -8232,6 +8245,18 @@ def _finish_week_slots(
     # the night away sweeps the reminder with it. Swallows its own failures.
     if frozen_portions:
         _freezer_portions.apply_to_plan(plan_id, frozen_portions)
+
+    # Rule 8: a dish they asked for on a night nobody is home goes to the
+    # nearest night that fits its time, and the draft says so. AFTER every
+    # pass that empties a night or claims one for the household (out, away,
+    # a day left out, a holiday, brought over, the freezer), so the nights
+    # it can go to are read off the week itself; BEFORE the dedupe, the
+    # chain repair and every re-pick pass, which leave it alone as theirs.
+    # Swallows its own failures.
+    _cap_enforce.place_off_nights_out(
+        plan_id, intake, household_memory, nobody_home, asked_on_nights_out,
+        asks=((context or {}).get("constraints_notes"), (intake or {}).get("freeform")), report=report,
+    )
 
     # Two rows claiming one slot is how a night nobody is home ends up with
     # groceries bought for it — audit_plan_slots has always computed this,
