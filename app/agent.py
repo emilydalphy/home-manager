@@ -7796,8 +7796,10 @@ def _generate_weekly_plan(
                 "Plan %s (%s for %d days) took over %d day(s) from plan(s) %s; "
                 "%d grocery line(s) removed, %d trimmed, %d left alone as already bought",
                 plan_id, content_start_date, day_count, len(takeover["surrendered_dates"]),
-                takeover["retired_plan_ids"], len(takeover["grocery_removed"]),
-                len(takeover["grocery_trimmed"]), len(takeover["grocery_kept_bought"]),
+                takeover["retired_plan_ids"], len(set(takeover["grocery_removed"])),
+                # Per LINE: the reversal names a line once per meal it
+                # takes off it, so a trimmed line repeats.
+                len(set(takeover["grocery_trimmed"])), len(set(takeover["grocery_kept_bought"])),
             )
 
         completed = True

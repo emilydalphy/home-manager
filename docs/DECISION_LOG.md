@@ -428,6 +428,17 @@ why*, not duplicating the diff.
   due in 3 weeks"). It is now last bought + the told cadence; a staple never
   bought stays due; and a later date a "We have plenty" / "Not this trip"
   set stands (review round: rebuilding from last bought alone undid it).
+- **Re-planning over an approved week no longer calls pantry lines "bought"**
+  (2026-10-22; branch `overnight/hunt-plan-2026-10-22b`; tests
+  `tests/test_takeover_pantry_lines.py`). `preview_approved_takeover` and
+  `_release_plan_days` counted every status but 'needed' as bought, so a
+  re-plan over nights holding only 'spice' lines (spices, sauces, pantry
+  staples — never bought) said "it's all bought already" and approval then
+  took them off. Both now read one rule beside the reversal's own:
+  needed/spice change, in_cart/purchased are bought, anything else neither.
+  Review: a jar or bottle a surviving night still names stays whole, so the
+  question counts it only when no other night is left on it
+  (`grocery.reversal_changes_line`).
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

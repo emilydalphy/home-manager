@@ -999,6 +999,23 @@ def _holds_one_package(item: str, qty: str) -> bool:
     return bool(_quantities.package_unit(qty) or (_quantities.rack_package(qty) and _spices_is_spice(item)))
 
 
+def reversal_changes_line(item: str, reversing_qtys: list[str], others_left: int) -> bool:
+    """
+    Whether _reverse_meal_grocery_contributions, taking these ledger rows
+    off one live line while `others_left` of its rows stay, changes what
+    the line says — for the question asked BEFORE a takeover
+    (weekly_plan.preview_approved_takeover), so its count follows the
+    reversal's own rule. A line no row is left on goes. A package line (a
+    jar of cumin, a bottle of oil — _holds_one_package) is held whole
+    while any meal still names it, so it stays as it is (review,
+    2026-10-22: "3 things would change" when only the soy sauce did). A
+    measured line loses the reversed share and is trimmed.
+    """
+    if not others_left:
+        return True
+    return not all(_holds_one_package(item, qty or "") for qty in reversing_qtys)
+
+
 def _plan_or_rack_amount(item: str, ledger: list[str], kept: str, short: str, edited: str) -> str | None:
     """_plan_line_amount, except where the NAME decides how a ledger reads:
     a spice is one package (_rack_quantity), and bread, berries, yogurt,
