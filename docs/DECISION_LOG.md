@@ -176,6 +176,12 @@ why*, not duplicating the diff.
   (`serves_planned_for`, set from the override's `planned_for`). Ingredient
   headings say "1 serving". The Yesterday check's toast is `markedLine`,
   "Marked Tacos as skipped" — a dish name is as often plural, so no was/were.
+- **The forged-member-cookie test sends one cookie, not two** (2026-10-21,
+  overnight; branch `overnight/forged-cookie-test-one-cookie`; test-only,
+  `tests/test_adult_login.py`). It was red on main: `cookies.set()` with no
+  domain stored the forgery beside the real cookie, both went out, and the
+  server read the real one. The app was right all along (the forgery reads as
+  None); the test now clears the jar first and asserts a single cookie.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
