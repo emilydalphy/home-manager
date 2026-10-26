@@ -23,6 +23,7 @@ from . import ai_consent, calendar_feed, chat_progress, tools
 from .db import name_key
 from .tools import allergen_gate as _allergen_gate
 from .tools import typed_requests as _typed_requests
+from .tools import draft_opener as _draft_opener
 from .tools import model_shapes as _model_shapes
 from .tools import plan_quality
 from .tools import recipe_research as _recipe_research
@@ -7187,6 +7188,31 @@ def _generate_weekly_plan(
         " ".join(t for t in (constraints_notes, (intake or {}).get("freeform") or "") if t),
         period_days, now.date().isoformat(), past=past_meals,
     )
+    # A "tomorrow" that lands on a meal they also said nobody eats — the
+    # night tagged out, a day tapped off, a meal their usual week has off,
+    # an away slot — is not pinned there. _finish_week_slots empties every
+    # one of those meals whatever is on it (the tag wins), and pinning came
+    # FIRST: place_day_requests moved the dish onto the night, the out pass
+    # then cleared it, and the draft said "Monday left free." over "I moved
+    # Lamb Curry to Monday dinner, as you asked." with the curry nowhere on
+    # the week. Unpinned, the words still reach the model as their request
+    # and the dish goes on a night someone is home.
+    if day_requests:
+        night_tags = (intake or {}).get("night_tags") or {}
+        nobody_eats = {(d, "dinner") for d, tags in night_tags.items() if "out" in (tags or [])}
+        nobody_eats |= {(d, s) for d in usual_skipped for s in ("breakfast", "lunch", "dinner")}
+        nobody_eats |= {(s["date"], s["slot"]) for s in usual_plan["off_slots"]}
+        # A meal they asked for none of (Lunches 0): emptied every day by
+        # _finish_week_slots' zero-count pass, so the same trap.
+        nobody_eats |= {
+            (d, slot) for slot, field in _meal_variety.COUNT_FIELDS.items()
+            if household_memory.get(field) == 0 for d in period_days
+        }
+        nobody_eats |= {
+            (s["date"], s["slot"])
+            for s in tools.generation_context_for_week(content_start_date, day_count)["away_slots"]
+        }
+        day_requests = [r for r in day_requests if (r["date"], r["slot"]) not in nobody_eats]
     # A meal their words name is not taken away for being late ("tonight"
     # at 10pm is still tonight) — the model is told to put the dish there,
     # and _finish_week_slots keeps the meal only if the dish is on it.
@@ -7459,6 +7485,11 @@ def _generate_weekly_plan(
             "have been cut off or hit an error. Nothing was saved; try generating the week again."
         )
     _honest_meal_names(items)
+    # The slots the model's own draft cited the household's words on, read
+    # before any pass below can clear or swap one — what
+    # draft_opener.settle_report checks its honoured list against.
+    model_spans = [str((i.get("derived_from") or {}).get("freeform") or "")
+                   for i in items if isinstance(i, dict) and isinstance(i.get("derived_from"), dict)]
     # A dish they asked for by name keeps that name; a side the model
     # folded into it comes off here and goes back on as a side once the
     # entries exist (typed_requests; Emily, 2026-09-21). The asks are the
@@ -7764,7 +7795,12 @@ def _generate_weekly_plan(
         # report) — the draft's opening line is built from this and nothing
         # else, so a request it neither honoured nor listed is not mentioned
         # rather than guessed at (draft_opener).
-        tools.record_plan_requests(plan_id, getattr(items, "report", None) or {})
+        # Squared with the week as written first: a request whose dish an
+        # out night, the allergen gate or a later pass took away is not
+        # "as you asked" (draft_opener.settle_report).
+        final_report = getattr(items, "report", None) or {}
+        _draft_opener.settle_report(plan_id, final_report, model_spans)
+        tools.record_plan_requests(plan_id, final_report)
 
         # Clear out any 'needed' grocery items still sourced from the
         # PREVIOUS plan, so quantities from already-superseded weeks don't

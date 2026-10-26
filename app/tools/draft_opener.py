@@ -48,6 +48,7 @@ prompt, the quality check and this line.
 from __future__ import annotations
 
 import json
+import logging
 import re
 from datetime import date, timedelta
 
@@ -55,6 +56,8 @@ from ..db import get_conn
 from ._shared import household_id
 from . import meal_variety as _meal_variety
 from . import week_intake as _week_intake
+
+logger = logging.getLogger("home_manager")
 
 # About two lines of the band's 15px type at 390px. The second line is a
 # short sentence by construction. Over budget, whole items go from the
@@ -165,12 +168,131 @@ def asked_fact(entry: dict, cuisines: list[str] | None = None) -> str | None:
             chip = chips.get(cited.lower())
             if chip and _typed_requests.dish_is_cuisine(chip, entry.get("meal"), entry.get("cuisine")):
                 return f"{_cap(chip)}, as asked"
-    if str(d.get("freeform") or "").strip():
+    if their_words(d):
         return "as asked"
     return None
 
 
 # ---------- the two lines ----------
+
+def their_words(derived: dict) -> str:
+    """
+    The household's own words a slot cites (derived_from.freeform) — or
+    nothing when the dish the model put there for them is not on it any
+    more. The allergen gate re-picks a clashing dish and carries the
+    slot's derived_from across (allergen_gate.repick_slot / repick_held,
+    stamping `allergen_repick`), so the citation of "Peanut noodles one
+    night" stayed on the Quick Dish that replaced them and the draft said
+    "Peanut noodles Tuesday, as you asked." over a dish with no peanuts in
+    it, because Emily is allergic. The stamp is left on the row (other
+    passes read it); only what the draft SAYS about it changes.
+    """
+    if not isinstance(derived, dict) or derived.get("allergen_repick"):
+        return ""
+    return str(derived.get("freeform") or "").strip()
+
+
+def settle_report(plan_id: int, report: dict | None, model_spans: list[str]) -> None:
+    """
+    Square the model's report with the week as it was finally written,
+    in place, before weekly_plan.record_plan_requests stores it.
+
+    The report is what the model said it did; the passes after it can
+    take that away — an out night or a day tapped off is emptied whatever
+    is on it, the allergen gate swaps a dish someone can't have, a holiday
+    dish takes the night. The draft's line one then said "Lasagna
+    Wednesday, as you asked, Wednesday left free." of a lasagna that was
+    nowhere on the week. So:
+
+      * an honoured request some slot of the model's draft CITED
+        (`model_spans`, its derived_from.freeform, read before any pass
+        ran) and no planned slot cites any more becomes unmet — line two's
+        "I couldn't fit “…” in this week." A request the model honoured
+        without citing any slot is left as it said: there is nothing to
+        check it against, and the opener's rule is to say nothing rather
+        than guess (module docstring);
+      * one whose cited dish the allergen gate swapped is said neither way
+        (the replacement may or may not still answer it);
+      * a "moved" line whose dish is no longer on the meal it names is
+        dropped — its request is then said like any other.
+
+    Never raises: a report it can't read is left as the model wrote it.
+    """
+    if not report:
+        return
+    try:
+        conn = get_conn()
+        rows = conn.execute(
+            """SELECT mpe.date, mpe.slot, mpe.slot_state, mpe.derived_from_json,
+                      COALESCE(r.name, mpe.freeform_meal) AS meal
+               FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id
+               WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ?""",
+            (plan_id, household_id()),
+        ).fetchall()
+        conn.close()
+        planned = [r for r in rows if (r["slot_state"] or "planned") == "planned"]
+        # Matched on the model's own span STRINGS, not on word overlap:
+        # every pass carries derived_from across unchanged, so the span it
+        # wrote is still there, verbatim, wherever its dish still is. Word
+        # overlap (_cited) is loose by design — "Chicken tacos on Tuesday"
+        # and "Chicken curry on Friday" share a word — and here it let a
+        # request whose dish was gone borrow the other's slot (review,
+        # 2026-10-24: "Chicken tacos Tuesday Friday, … as you asked,
+        # Tuesday left free.").
+        still, swapped = set(), set()
+        for r in planned:
+            d = _derived({"derived_from": r["derived_from_json"]})
+            span = str(d.get("freeform") or "").strip().lower()
+            if span:
+                (swapped if d.get("allergen_repick") else still).add(span)
+        spans = [s for s in (str(x or "").strip() for x in model_spans) if s]
+
+        requests = [r for r in report.get("honoured_requests") or []]
+        words_of = [str(r.get("words") or "").strip() if isinstance(r, dict) else "" for r in requests]
+        # Each span goes to the request it shares the MOST words with (ties
+        # to all of them): both chicken requests are _cited by both spans.
+        owners: dict[int, set] = {i: set() for i in range(len(requests))}
+        for span in spans:
+            scores = {i: len(_content_words(w) & _content_words(span))
+                      for i, w in enumerate(words_of) if w and _cited(w, span)}
+            best = max(scores.values(), default=0)
+            for i, score in scores.items():
+                if score == best:
+                    owners[i].add(span.lower())
+
+        honoured, lost, unsaid = [], [], []
+        for i, r in enumerate(requests):
+            mine = owners[i]
+            if not mine or mine & still:
+                honoured.append(r)
+            elif mine & swapped:
+                # The allergen gate swapped the dish: the replacement may
+                # still answer the request (Shrimp Pad Thai → Chicken Pad
+                # Thai) or may not, and nothing here can tell. So it is
+                # neither "as you asked" nor "couldn't fit" — it is not
+                # said at all (the wording is Emily's to give).
+                unsaid.append(r)
+            else:
+                lost.append(r)
+        if lost or unsaid:
+            report["honoured_requests"] = honoured
+        if lost:
+            report["unmet_requests"] = list(report.get("unmet_requests") or []) + [
+                {"words": r["words"], "reason": "not on the week after all"} for r in lost
+            ]
+
+        on = {(r["date"], r["slot"], (r["meal"] or "").strip().lower()) for r in planned}
+        moved = report.get("moved_requests") or []
+        kept = [
+            m for m in moved
+            if not (isinstance(m, dict) and m.get("to") and m.get("meal"))
+            or (*str(m["to"]).split(":", 1), str(m["meal"]).strip().lower()) in on
+        ]
+        if len(kept) != len(moved):
+            report["moved_requests"] = kept
+    except Exception:
+        logger.exception("Squaring plan %s's request report with the week failed; it stands", plan_id)
+
 
 def _plan_entries(rows) -> list[dict]:
     out = []
@@ -264,7 +386,7 @@ def _honoured_items(entries: list[dict], report: dict | None, period: list[str])
     for e in entries:
         if e.get("slot_state", "planned") != "planned":
             continue
-        span = str(_derived(e).get("freeform") or "").strip()
+        span = their_words(_derived(e))
         if span:
             c = cited.setdefault(span.lower(), {"words": span, "dates": set(), "slots": set()})
             c["dates"].add(e["date"])
@@ -408,7 +530,7 @@ def _line_two(entries: list[dict], report: dict | None, recent: set[str] | None,
         # neither new nor "had" here (verifier, 2026-09-21).
         asked = {
             e["meal"].strip().lower() for e in entries
-            if _is_dish(e) and str(_derived(e).get("freeform") or "").strip()
+            if _is_dish(e) and their_words(_derived(e))
         }
         names = [n for n in names if n.lower() not in asked]
     if recent is None or not names:

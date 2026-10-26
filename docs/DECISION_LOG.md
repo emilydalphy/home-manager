@@ -733,6 +733,18 @@ why*, not duplicating the diff.
   read plus `meal_credit`'s cooker view let two concurrent ticks both bump
   `times_cooked` (2 of 2 over HTTP); the depletion was already claimed so.
 
+- **The draft says "as you asked" only of a dish still on the week**
+  (2026-10-24, defect hunt; branch `overnight/hunt-draft-rules-1024`; tests
+  `tests/test_draft_says_only_what_stands.py`). `draft_opener.settle_report`
+  turns an honoured request the model cited but no planned slot still cites
+  (matched on the exact span, never word overlap) into an unmet line, says
+  nothing either way of one whose dish the allergen gate swapped (wording
+  is Emily's to give), and drops a "moved" line whose dish left that meal;
+  a "tomorrow" is never pinned onto a meal nobody eats (out, day off,
+  usual-week off, away, a meal set to 0). Why: the opener trusted the
+  model's report, so "Lasagna Wednesday, as you asked, Wednesday left free."
+  and "I moved Lamb Curry to Monday dinner" were said of dishes nowhere on
+  the week.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you
