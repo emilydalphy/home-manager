@@ -6,8 +6,10 @@ Six stops right after "Here's your week." on the household's first draft,
 ending back on it. Skippable, never shown again once done or skipped —
 stored per adult on the server (the household with nobody picked), not in
 the browser. "Show me around again" in Preferences replays it. No tour for a
-household that already has an approved week. See app/tools/tour.py and
-static/tour.js.
+household that approved a week before the tour could follow an approval
+(tour.APPROVED_ALLOWED_FROM); a household whose first approval came after
+it — setup's "Approve the week" — gets it on its first visit to Plan
+(Emily, 2026-10-25). See app/tools/tour.py and static/tour.js.
 """
 from __future__ import annotations
 
@@ -123,6 +125,7 @@ def test_approve_then_reopen_does_not_bring_it_back():
     c = _device()
     assert c.get("/api/tour").json()["show"] is True
     tools.approve_weekly_plan(plan_id)
+    _first_approved("2026-10-20 12:00:00")  # a household from before the change
     tools.reopen_weekly_plan(plan_id)
     conn = get_conn()
     row = conn.execute("SELECT status, approved_at FROM weekly_plans WHERE id = ?", (plan_id,)).fetchone()
@@ -131,13 +134,62 @@ def test_approve_then_reopen_does_not_bring_it_back():
     assert c.get("/api/tour").json() == {"show": False, "ended": "", "has_approved_week": True}
 
 
+def _first_approved(stamp: str) -> None:
+    conn = get_conn()
+    conn.execute("UPDATE households SET first_approved_at = ? WHERE id = 1", (stamp,))
+    conn.commit()
+    conn.close()
+
+
+def test_a_household_whose_first_approval_came_after_the_change_still_gets_it():
+    """Emily, 2026-10-25: setup's "Approve the week" approves before Plan is
+    ever opened, so "no approved week" kept the tour from most new
+    households. One approved on or after APPROVED_ALLOWED_FROM gets it."""
+    from app.tools import tour
+    _adult("Emily")
+    _plan("approved", approved=True)
+    _first_approved(tour.APPROVED_ALLOWED_FROM)
+    c = _device()
+    assert c.get("/api/tour").json() == {"show": True, "ended": "", "has_approved_week": True}
+    # ...once: skipping it ends it like any other.
+    assert c.post("/api/tour/done", json={"skipped": True}).json()["show"] is False
+
+
+def test_a_household_that_approved_before_the_change_does_not():
+    from app.tools import tour
+    _adult("Emily")
+    _plan("approved", approved=True)
+    _first_approved("2026-10-26 04:59:59")
+    assert tour.APPROVED_ALLOWED_FROM > "2026-10-26 04:59:59"
+    assert _device().get("/api/tour").json()["show"] is False
+
+
+def test_a_real_approval_today_is_stamped_in_the_form_the_cutoff_compares():
+    # first_approved_at and the cutoff are compared as strings: both must be
+    # SQLite's "YYYY-MM-DD HH:MM:SS" (UTC).
+    from app.tools import tour
+    _adult("Emily")
+    conn = get_conn()
+    plan_id = conn.execute(
+        "INSERT INTO weekly_plans (household_id, week_start_date, status) VALUES (1, '2026-10-19', 'draft')"
+    ).lastrowid
+    conn.commit()
+    conn.close()
+    tools.approve_weekly_plan(plan_id)
+    conn = get_conn()
+    stamp = conn.execute("SELECT first_approved_at FROM households WHERE id = 1").fetchone()[0]
+    conn.close()
+    assert len(stamp) == len(tour.APPROVED_ALLOWED_FROM) and stamp[4] == "-" and stamp[10] == " "
+
+
 # ---------- the shell's half ----------
 
 def test_the_shell_loads_it_and_starts_it_only_on_a_draft_off_the_approve_hand_off():
     assert SHELL_HTML.index('src="/static/tour.js"') < SHELL_HTML.index('src="/static/shell.js"')
     assert "if (!afterApprove) maybeStartFirstTour();" in SHELL_JS
     fn = SHELL_JS[SHELL_JS.index("function maybeStartFirstTour()"):SHELL_JS.index("function replayTour()")]
-    assert "weekPlanState(weekState.data) !== 'draft'" in fn
+    # A draft, or the approved week setup made (the server decides who).
+    assert "planState !== 'draft' && planState !== 'set'" in fn
     assert "Api.json('/api/tour'" in fn and "tourBlocked()" in fn
 
 

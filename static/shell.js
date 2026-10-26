@@ -15744,8 +15744,9 @@
     }
     // The first-open tour (Emily, 2026-10-18): right after "Here's your
     // week." on the household's first draft. Not on the approve hand-off —
-    // that household has an approved week, which the server says no to
-    // anyway — and see maybeStartFirstTour for everything else it waits on.
+    // that goes on to Shop; the tour waits for their first visit to Plan
+    // (activateTab), approved or not (Emily, 2026-10-25) — and see
+    // maybeStartFirstTour for everything else it waits on.
     if (!afterApprove) maybeStartFirstTour();
   }
 
@@ -15801,7 +15802,10 @@
 
   function maybeStartFirstTour() {
     if (!window.PomonaTour || window.PomonaTour.isOpen() || tourStartedThisLoad || tourAsking) return;
-    if (weekState.step !== 'week' || weekPlanState(weekState.data) !== 'draft') return;
+    // A draft, or the approved week the setup's "Approve the week" made: the
+    // server decides whether this household is new enough (app/tools/tour.py).
+    var planState = weekPlanState(weekState.data);
+    if (weekState.step !== 'week' || (planState !== 'draft' && planState !== 'set')) return;
     tourAsking = true;
     Api.json('/api/tour', { quiet: true }).then(function (st) {
       if (!st || !st.show) { tourAsking = false; return; }
