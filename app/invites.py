@@ -161,23 +161,26 @@ def add_adult(household_id: int, name: str, eats_here: bool = True) -> int:
     # avatar colour and the attendance reconcile like anyone else added.
     # Deferred import: tools pulls in most of the app.
     from . import tools
+    from .tools import attendance as _attendance
 
-    with use_household(int(household_id)):
+    # One membership change as far as the list is concerned: a helper who
+    # doesn't eat here is added and then taken out of meals, and an
+    # approved week's shopping must see only the net (none) — the inner
+    # writes' own wraps stand down inside this one.
+    with use_household(int(household_id)), _attendance.list_follows_membership():
         member_id = tools.add_member(clean)["member_id"]
         tools.set_member_age_group(clean, "adult")
-    if not eats_here:
-        conn = get_conn()
-        try:
-            conn.execute(
-                "UPDATE members SET eats_here = 0 WHERE id = ? AND household_id = ?",
-                (int(member_id), int(household_id)),
-            )
-            conn.commit()
-        finally:
-            conn.close()
-        # add_member re-synced attendance counting them; now they aren't.
-        with use_household(int(household_id)):
-            from .tools import attendance as _attendance
+        if not eats_here:
+            conn = get_conn()
+            try:
+                conn.execute(
+                    "UPDATE members SET eats_here = 0 WHERE id = ? AND household_id = ?",
+                    (int(member_id), int(household_id)),
+                )
+                conn.commit()
+            finally:
+                conn.close()
+            # add_member re-synced attendance counting them; now they aren't.
             _attendance.reconcile_membership()
     logger.info("Invite added an adult to household %s", household_id)
     return member_id

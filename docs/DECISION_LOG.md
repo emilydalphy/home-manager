@@ -13,6 +13,17 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **People added or taken out after approval change the list; one allergy
+  said twice is stored once** (2026-10-26, defect hunt; branch
+  `overnight/hunt-prefs-tz-1026`; tests `tests/test_list_follows_membership.py`,
+  `tests/test_restriction_remove_one.py`). A member added (Settings, chat,
+  invite), an infant's "Include in meals?", an age group or a removal moved
+  Cook's count but never the list. `attendance.list_follows_membership` snapshots
+  every approved meal ahead's headcount and calls `resize_for_new_headcount`
+  where it changed; only the outermost wrap acts (an invite adds then marks
+  "doesn't eat here": net nothing). Snacks are not resized (no attendance).
+  `set_member_dietary_restrictions(replace=True)` now dedupes case-blind as
+  the merge always did. Why: guests already resize in place; people should too.
 - **Second 200 library recipes: Emily's three calls** (2026-10-25; branch
   `recipe-library-200b`; doc `docs/RECIPE_LIBRARY_SPOTCHECK_200B.md`).
   Bistec a la Mexicana is two dishes (the rated slow simmer, plus "Quick

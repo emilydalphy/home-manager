@@ -377,6 +377,19 @@ def removal_check(household_id: int, member_id: int | None) -> str | None:
 
 def remove_member(household_id: int, member_id: int, by_member_id: int | None = None) -> dict:
     """
+    Take one adult out of a household (see _remove_member) — and an
+    approved week's shopping stops buying for them, as it would for someone
+    out (attendance.list_follows_membership; defect hunt 2026-10-26).
+    """
+    from .tools import attendance as _attendance
+    from .tools._shared import use_household
+
+    with use_household(int(household_id)), _attendance.list_follows_membership():
+        return _remove_member(household_id, member_id, by_member_id)
+
+
+def _remove_member(household_id: int, member_id: int, by_member_id: int | None = None) -> dict:
+    """
     Take one adult out of a household that keeps at least one other adult.
     Returns {"table.column": rows touched}.
 

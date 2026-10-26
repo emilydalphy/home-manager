@@ -3,6 +3,7 @@ The household itself: onboarding status, the people in it, and pets.
 """
 from __future__ import annotations
 
+import functools
 import json
 from ..db import _ADULT_COLORS, get_conn, write
 from ._shared import (
@@ -138,6 +139,18 @@ def get_coaching_state() -> dict:
     }
 
 
+def _list_follows_membership(fn):
+    """A write that changes who is counted at meals: an approved week's
+    shopping follows (attendance.list_follows_membership)."""
+    @functools.wraps(fn)
+    def wrapped(*args, **kwargs):
+        from . import attendance as _attendance  # deferred: attendance imports weekly_plan
+        with _attendance.list_follows_membership():
+            return fn(*args, **kwargs)
+    return wrapped
+
+
+@_list_follows_membership
 def add_member(name: str) -> dict:
     """Add a household member (person who can be assigned chores). A blank name is refused."""
     if not (name or "").strip():
@@ -212,7 +225,12 @@ def set_member_dietary_restrictions(name: str, restrictions: list[str], replace:
     # Trimmed on the way in: " Sesame " was being stored as typed.
     restrictions = [r.strip() for r in restrictions if r.strip().lower() not in _NON_RESTRICTION_VALUES]
     if replace:
-        merged = list(restrictions)
+        # Once each, case-blind, as the merge below: "Sesame" picked and
+        # "sesame" typed are one allergy, not two chips (defect hunt 2026-10-26).
+        merged = []
+        for r in restrictions:
+            if r.lower() not in {m.lower() for m in merged}:
+                merged.append(r)
     else:
         # The merge reads the stored list and writes it back, so it holds the
         # write lock from the read: two adds landing together (the member's
@@ -280,6 +298,7 @@ def remove_member_dietary_restriction(name: str, restriction: str) -> dict:
 LITTLE_ONE_WORDS = frozenset({"toddler", "little one", "baby", "infant"})
 
 
+@_list_follows_membership
 def set_member_age_group(name: str, age_group: str) -> dict:
     """
     Set a member's general age group ('adult', 'teen', 'child', or
@@ -464,6 +483,7 @@ def portion_weight(age_group: str | None, age_years) -> float:
     return PORTION_BY_STAGE.get(age_stage(age_group, age_years), 1.0)
 
 
+@_list_follows_membership
 def set_member_age(name: str, age_years=None, include_in_meals: bool | None = None,
                    must_exist: bool = False) -> dict:
     """
