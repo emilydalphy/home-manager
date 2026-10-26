@@ -20,7 +20,7 @@ import pytest
 
 import nodeharness
 from app import tools
-sop = importlib.import_module("app.tools.swap_options")
+sop = importlib.import_module("app.tools.swap_option_picks")
 from test_week1_carousel import DAY1, WEEK_START, _asker, _entry_id, _pick, week  # noqa: F401
 from test_week_seven_tiles import _extract, _extract_async, _extract_var
 

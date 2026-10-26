@@ -3728,7 +3728,7 @@ def today_yesterday():
     """
     Today's "Did you have it?" card, the morning after: yesterday's meals
     and snacks nobody ticked cooked or skipped, in eating order. [] means
-    no card. See tools/yesterday_check.py.
+    no card. See tools/yesterday_ask.py.
     """
     try:
         return tools.yesterday_check()

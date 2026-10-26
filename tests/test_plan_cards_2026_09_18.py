@@ -612,7 +612,7 @@ def test_the_move_view_draws_the_servers_days_dimming_the_ones_that_cannot_take_
 
 
 def test_the_swap_sheet_is_a_sheet_and_the_picks_go_through_week_ones_routes():
-    """The three picks are the Week 1 screen's (app/tools/swap_options.py):
+    """The three picks are the Week 1 screen's (app/tools/swap_option_picks.py):
     POST /swap-options to ask, POST /swap-choose with the pick's index to
     take one — the Plan sheet and the first-week screen are one feature."""
     sheet = SHELL_CSS[SHELL_CSS.index("#wk-swap-sheet, #wk-tweak-sheet {"):SHELL_CSS.index("}", SHELL_CSS.index("#wk-swap-sheet, #wk-tweak-sheet {"))]

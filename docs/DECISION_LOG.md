@@ -789,6 +789,16 @@ why*, not duplicating the diff.
   build tools and system text from that one read. Why: ~3,600 chars (~900
   tokens) per turn re-written to cache for a feature the house can't see.
   The "chores isn't switched on" sentence stays in the base on purpose.
+- **No module in app/tools/ is shadowed any more** (2026-10-25; branch
+  `overnight/tools-module-renames`; guard `tests/test_module_name_collisions.py`).
+  `swap_options.py` → `swap_option_picks.py`, `yesterday_check.py` →
+  `yesterday_ask.py` (`git mv`); the functions `tools.swap_options` /
+  `tools.yesterday_check`, routes and tool names are unchanged. The
+  allowlist is gone, not emptied: the guard asserts zero collisions and
+  proves non-vacuity on a throwaway package. Why: a module named like its
+  own re-export can't be imported as a module inside the package (the
+  unbatch bug, 2026-09-24). Comments in `static/shell.js` still name the
+  old paths — this branch wasn't allowed to touch that file.
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

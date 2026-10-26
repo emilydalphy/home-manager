@@ -1146,7 +1146,7 @@ def change_part(weekly_plan_id: int, entry_id: int, role: str, choice: str, aske
     # The amounts were asked for `serves`; the recipe is saved at it, so
     # "Cooking for" reads the batch and never the model's own guess.
     pick["default_servings"] = serves
-    # Every day's table is its own gate (swap_options._gate_all) — the
+    # Every day's table is its own gate (swap_option_picks._gate_all) — the
     # Friday table can be different people from Thursday's.
     # No time cap here: the household picked this part themselves, and
     # their own pick is never refused for time (swap_in_place.over_cap_said

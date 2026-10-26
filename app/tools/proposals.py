@@ -349,7 +349,7 @@ def another_for_row(proposal_id: str, row_index: int, picker=None) -> dict:
             break
         offered.append(cand["meal_name"])
         # "Another" is POMONA's pick, not the household's ask, so it is held
-        # to every meal's time cap like Swap's own three (swap_options._gated)
+        # to every meal's time cap like Swap's own three (swap_option_picks._gated)
         # — and marked, so Save holds it there too (apply_proposal). The
         # household's avoidances hold as well (merge 2026-10-19: both gates).
         cand["by_pomona"] = True
