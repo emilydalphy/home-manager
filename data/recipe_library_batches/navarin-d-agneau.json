@@ -1,0 +1,56 @@
+{
+ "dish_name": "Navarin d'Agneau",
+ "cuisine": "French",
+ "main_protein": "lamb",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 160,
+ "ingredients": [
+  {"item": "Boneless lamb shoulder", "qty": "2 lbs", "category": "meat/seafood"},
+  {"item": "Salt", "qty": "2 1/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Pearl onions", "qty": "1 bag", "category": "produce", "cook_qty": "8"},
+  {"item": "Carrots", "qty": "2", "category": "produce"},
+  {"item": "Baby potatoes", "qty": "1 lb", "category": "produce"},
+  {"item": "Turnip", "qty": "1 large", "category": "produce"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Tomato paste", "qty": "1 can (6 oz)", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "All-purpose flour", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Dry white wine", "qty": "1 bottle", "category": "other", "cook_qty": "3/4 cup"},
+  {"item": "Low-sodium chicken broth", "qty": "1 carton (32 oz)", "category": "pantry", "cook_qty": "3 cups"},
+  {"item": "Fresh thyme", "qty": "1 bunch", "category": "produce", "cook_qty": "3 sprigs"},
+  {"item": "Bay leaves", "qty": "2", "category": "pantry"},
+  {"item": "Frozen peas", "qty": "1 bag", "category": "frozen", "cook_qty": "1 cup"},
+  {"item": "Fresh parsley", "qty": "1 bunch", "category": "produce", "cook_qty": "2 tbsp chopped"},
+  {"item": "Baguette", "qty": "1", "category": "other"}
+ ],
+ "instructions": [
+  "Heat the oven to 350°F. Trim the thick pieces of fat off the 2 lbs lamb and cut it into 2 inch chunks. Pat them very dry with paper towels and sprinkle them all over with 1 1/2 tsp of the salt.",
+  "Put 8 pearl onions in a heatproof bowl, cover them with boiling water and leave them for 2 minutes. Drain them, trim off the root ends and slip off the skins.",
+  "Meanwhile, peel the 2 carrots and cut them into 3/4 inch pieces. Halve the 1 lb baby potatoes. Peel the turnip and cut it into wedges about the size of the potato halves. Mince the 3 garlic cloves.",
+  "Heat 1 tbsp of the oil in a large heavy ovenproof pot with a lid over high heat until it shimmers. Add half the lamb in one layer. Leave it alone for about 2 minutes, until it's deep brown underneath and lets go of the pot, then turn the pieces and brown another side, about 2 minutes. Transfer them to a bowl.",
+  "Brown the rest of the lamb the same way in the last 1 tbsp oil, and add it to the bowl.",
+  "Turn the heat to medium high and add the pearl onions. Roll them around for about 2 minutes, until they're browned in spots, then transfer them to a plate. They go back in later.",
+  "Add the carrots and stir them for about 2 minutes. Add the garlic and stir for about 20 seconds, until it smells fragrant.",
+  "Stir in the 2 tbsp tomato paste and cook for 1 minute, stirring the whole time, until it darkens. Return the lamb to the pot with any juices from the bowl.",
+  "Sprinkle the 1/4 cup flour over everything and stir for about 1 minute, until there's no dry flour left.",
+  "Pour in the 3/4 cup wine and stir, scraping up the browned bits, until it's a loose, pale red paste. Stir in the 3 cups broth with the remaining 3/4 tsp salt, the 3/4 tsp pepper, 3 thyme sprigs and the 2 bay leaves.",
+  "Bring it to a simmer, cover the pot and put it in the oven. Bake for 1 hour.",
+  "Take the pot out and stir in the potatoes, turnip and pearl onions, pushing them down into the sauce as best you can. Cover and bake for about 1 1/4 hours, until the lamb breaks apart easily with a spoon and a knife slides into the potatoes with no resistance.",
+  "Meanwhile, chop 2 tbsp of the parsley. For the last 5 minutes, put the baguette in the oven to warm.",
+  "Set the pot on the stove off the heat. Fish out the thyme stems and bay leaves. Stir in the 1 cup frozen peas, put the lid back on and leave it for 2 to 3 minutes, until the peas are bright green and hot.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Scatter the parsley over the top. Serve with the warm baguette."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions brown lamb shoulder hard, build the base with carrot, garlic, tomato paste and flour, add white wine, stock, thyme and bay, and add potatoes, turnips, pearl onions and peas as it goes so the vegetables keep their shape. RecipeTin Eats (the lead) braises it covered in a 350°F oven for 1 hour, adds the potatoes, turnip and browned pearl onions for another 1 1/2 hours, and stirs frozen peas in at the end; Pardon Your French simmers it on the stove for about an hour and glazes the pearl onions separately in butter and sugar. This follows the lead, scaled from 5 to 4, shortens the second bake a little for the smaller pot, and takes the parsley finish from Pardon Your French. It keeps well and is even better made a day ahead and reheated gently."
+ ,
+ "sources": [
+  {"name": "RecipeTin Eats", "title": "Lamb Navarin (French lamb stew)", "url": "https://www.recipetineats.com/lamb-navarin-recipe/", "rating": 5.0, "rating_count": 42, "read": true, "lead": true},
+  {"name": "Pardon Your French", "title": "Lamb Navarin (Navarin d'agneau)", "url": "https://www.pardonyourfrench.com/lamb-navarin/", "rating": 5.0, "rating_count": 2, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

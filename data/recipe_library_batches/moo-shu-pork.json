@@ -1,0 +1,50 @@
+{
+ "dish_name": "Moo Shu Pork",
+ "cuisine": "Chinese",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {"item": "Pork tenderloin", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Cornstarch", "qty": "1 box", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "Sesame oil", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Hoisin sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "3 tbsp, plus more for the table"},
+  {"item": "Oyster sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Eggs", "qty": "3", "category": "dairy"},
+  {"item": "Salt", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Green cabbage", "qty": "1 small head", "category": "produce"},
+  {"item": "Carrots", "qty": "1", "category": "produce"},
+  {"item": "Shiitake mushrooms", "qty": "4 oz", "category": "produce"},
+  {"item": "Scallions", "qty": "1 bunch", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Mandarin pancakes", "qty": "1 package", "category": "frozen"}
+ ],
+ "instructions": [
+  "Slice the 1 lb pork tenderloin into 1/4 inch slices, then cut the slices into thin strips. In a bowl, mix the pork with 1 tbsp of the soy sauce, 1 tsp of the cornstarch and 1 tsp of the sesame oil. Set it aside while you get everything else ready.",
+  "Meanwhile, shred half the cabbage as thin as you can. That should be about 4 cups. Cut the carrot into thin matchsticks. Pull the stems off the 4 oz shiitakes and slice the caps thin.",
+  "Cut 4 of the scallions into 2 inch lengths, then into thin strips. Mince the 2 garlic cloves.",
+  "In a small bowl, stir together 3 tbsp hoisin sauce, the remaining 1 tbsp soy sauce, the 1 tbsp oyster sauce, 1/4 cup water and the remaining 1 tsp cornstarch until smooth.",
+  "Beat the 3 eggs with the 1/4 tsp salt. Heat 1 tbsp of the vegetable oil in a large skillet or wok over medium high until it shimmers. Pour in the eggs, let them set for about 20 seconds, then push them around into large, soft pieces, about 1 minute. Transfer them to a plate.",
+  "Turn the heat to high and add 1 tbsp of the vegetable oil. When it just starts to smoke, add the pork in one layer. Leave it alone for about 1 minute, until it's browned underneath, then stir it for about 1 minute, until there's no pink left. Transfer it to the plate with the eggs.",
+  "Add the last 1 tbsp vegetable oil to the pan, then the mushrooms and carrot. Stir them for about 2 minutes, until the mushrooms soften and start to brown.",
+  "Add the cabbage and stir it for 2 to 3 minutes, until it wilts but still has a little crunch. Add the garlic and stir for about 30 seconds, until it smells fragrant.",
+  "Return the pork and eggs to the pan. Stir the sauce, pour it in and toss everything for about 1 minute, until the sauce thickens and turns glossy.",
+  "Take the pan off the heat and stir in the scallions and the remaining 1 tsp sesame oil.",
+  "Taste it. If it's flat, add a splash more soy sauce.",
+  "Wrap the stack of pancakes in a damp paper towel and microwave them for 30 to 45 seconds, until they're warm and soft.",
+  "Serve with the warm pancakes and the rest of the hoisin sauce. Spread a little hoisin on a pancake, spoon in some filling and roll it up."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions stir-fry thin strips of pork with shredded cabbage and mushrooms in a hoisin and soy sauce and wrap it in thin pancakes with hoisin at the table. Jo Cooks (the lead, and the only version with 20 or more ratings) is the quickest: a short soy and hoisin marinade, a hard sear on the pork, then the vegetables and a cornstarch thickened sauce; it also uses orange juice and radishes and leaves out egg. The Woks of Life and Food Network scramble eggs first and fold them back in, and both make their own pancakes from flour and boiling water. This keeps the lead's quick sear and thickened sauce, takes the eggs and carrot from the other two because the dish is pork, egg and cabbage, leaves out the orange juice and radishes, and buys frozen mandarin pancakes (small flour tortillas work too, as the lead suggests).",
+ "sources": [
+  {"name": "Jo Cooks", "title": "Moo Shu Pork", "url": "https://www.jocooks.com/recipes/moo-shu-pork/", "rating": 4.75, "rating_count": 51, "read": true, "lead": true},
+  {"name": "The Woks of Life", "title": "Moo Shu Pork", "url": "https://thewoksoflife.com/moo-shu-pork-recipe/", "rating": 5.0, "rating_count": 12, "read": true, "lead": false},
+  {"name": "Food Network", "title": "Mu Shu Pork", "url": "https://www.foodnetwork.com/recipes/mu-shu-pork-recipe-2103265", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

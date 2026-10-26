@@ -1,0 +1,92 @@
+{
+ "dish_name": "Khai Jiao with Rice",
+ "cuisine": "Thai",
+ "main_protein": "eggs",
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Tamari (gluten-free)",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Persian cucumbers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Sriracha",
+   "qty": "1 bottle",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups of jasmine rice under cold water until it runs mostly clear. Transfer it to a medium pot with 2 1/4 cups of water and bring it to a boil. Cover, turn the heat to the lowest setting and cook for 12 minutes. Take it off the heat and leave the lid on until you serve.",
+  "Meanwhile, slice the cucumbers into rounds and set them on a plate. Squeeze 2 tsp of lime juice into a large bowl and cut the rest of the lime into wedges.",
+  "Crack the eggs into the bowl with the lime juice. Add 4 tsp tamari and sprinkle in 4 tsp cornstarch. Whisk with a fork for 1 minute, until there are no lumps and no streaks of white.",
+  "Pour the oil into an 8 inch skillet. It should be about 1/4 inch deep. Heat it over medium-high for 3 minutes, until a drop of the egg sizzles the moment it lands.",
+  "Stand back a little. It will spatter. Pour in a quarter of the eggs. They'll puff and bubble right away. Cook for 1 minute, until the underside is deep golden and the edges are crisp.",
+  "Flip it and cook the other side for 30 seconds. Transfer it to a plate lined with paper towels.",
+  "Taste a corner of the first omelette. If it's flat, add a pinch of salt to the eggs that are left.",
+  "Make 3 more omelettes the same way, whisking the eggs before each pour.",
+  "Serve the omelettes over the rice with the cucumber, the lime wedges and the sriracha on the side."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Every source agrees on the core: beaten eggs with fish sauce, poured into a lot of very hot oil so the omelette puffs and goes crisp at the edges. Some add cornstarch or rice flour for extra crunch (Saveur-style) and some add lime juice. The sources use fish sauce; this uses tamari so it stays vegetarian and gluten-free. No source had 20 or more ratings, and the lead is the best-rated one that could be read.",
+ "sources": [
+  {
+   "name": "Grantourismo",
+   "title": "Classic Thai Omelette Recipe for Kai Jeow",
+   "url": "https://grantourismotravels.com/thai-omelette-recipe/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Global Kitchen Travels",
+   "title": "Khai-Jiao Niaow, Thai Fried Omelette",
+   "url": "https://globalkitchentravels.com/wprm_print/recipe/220201",
+   "rating": 4.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

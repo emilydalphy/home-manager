@@ -41,7 +41,9 @@ def test_inventory_item_sheet_routes_change_the_row_they_name(signed_in):
     assert e["expiration_date"] == household_date(2)
 
     loc = signed_in.post(f"/api/inventory/{item_id}/location", json={"location": "freezer"})
-    assert loc.json() == {"item_id": item_id, "location": "freezer"}
+    # Into the freezer restarts the date on the frozen shelf life (2026-10-25,
+    # tests/test_inventory_hunt_2026_10_25.py).
+    assert loc.json() == {"item_id": item_id, "location": "freezer", "expiration_date": household_date(90)}
     by_loc = signed_in.get("/api/inventory/by-location").json()["locations"]
     assert [b["location"] for b in by_loc if any(i["id"] == item_id for i in b["items"])] == ["freezer"]
 

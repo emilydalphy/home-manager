@@ -580,6 +580,7 @@ def test_the_sends_table_never_holds_the_token_or_the_text(twilio_env):
     ("(647) 555 0199", "+16475550199"),
     ("1 416 555 0100", "+14165550100"),
     ("+44 20 7946 0958", "+442079460958"),
+    ("+1 416 555 0100", "+14165550100"),
     ("  ", ""),
     (None, ""),
 ])
@@ -587,7 +588,13 @@ def test_numbers_are_normalised_to_e164(raw, e164):
     assert tools.normalise_phone(raw) == e164
 
 
-@pytest.mark.parametrize("raw", ["555-0100", "12345", "call me", "+1", "0416555010", "4161550100", "1-041-655-5010"])
+@pytest.mark.parametrize("raw", [
+    "555-0100", "12345", "call me", "+1", "0416555010", "4161550100", "1-041-655-5010",
+    # Defect hunt, 2026-10-22: a "+1" number skipped the North American
+    # check and was stored as typed — a dropped digit, an extra one, an
+    # area code starting 0.
+    "+1 416 555 010", "+1 (416) 555-01000", "+1 041 655 5010",
+])
 def test_a_number_that_is_not_one_is_refused_plainly(raw):
     """Verifier finding, 2026-09-11: a ten-digit string with a leading 0
     used to normalise to +10416555010 — a number no morning could reach."""

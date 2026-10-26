@@ -49,13 +49,14 @@ is present, exactly as the no-row default would have them.
 from __future__ import annotations
 
 import json
+import logging
 import math
 import threading
 from contextlib import contextmanager
 from datetime import date, timedelta
 
 from ..db import get_conn, write
-from ._shared import IN_MEALS_SQL, household_id
+from ._shared import IN_MEALS_SQL, find_member_row, household_id
 from . import weekly_plan as _weekly_plan
 from . import quantities as _quantities
 
@@ -121,14 +122,16 @@ def resolve_member_ids(members: list | None) -> list[int]:
     if not members:
         return [r["id"] for r in rows]
 
-    by_lower_name = {r["name"].strip().lower(): r["id"] for r in rows}
     valid_ids = {r["id"] for r in rows}
     resolved: list[int] = []
     for m in members:
         # A NAME always wins over an id-shaped reading of the same string,
         # so a household member called "2" is still addressable by name.
-        if isinstance(m, str) and str(m).strip().lower() in by_lower_name:
-            resolved.append(by_lower_name[str(m).strip().lower()])
+        # Matched accent-, space- and case-blind (find_member_row), so
+        # "zoe's out tonight" about Zoé is Zoé, not a refusal.
+        named = find_member_row(None, m, rows=rows) if isinstance(m, str) else None
+        if named is not None:
+            resolved.append(named["id"])
             continue
         if isinstance(m, int) or (isinstance(m, str) and m.isdigit()):
             mid = int(m)
@@ -136,11 +139,8 @@ def resolve_member_ids(members: list | None) -> list[int]:
                 raise ValueError(f"No household member with id {mid}.")
             resolved.append(mid)
             continue
-        key = str(m).strip().lower()
-        if key not in by_lower_name:
-            known = ", ".join(r["name"] for r in rows) or "nobody yet"
-            raise ValueError(f"No household member named {m!r}. Members are: {known}.")
-        resolved.append(by_lower_name[key])
+        known = ", ".join(r["name"] for r in rows) or "nobody yet"
+        raise ValueError(f"No household member named {m!r}. Members are: {known}.")
     # Preserve household order and drop duplicates, so two spellings of the
     # same person don't count as two travelers.
     return [r["id"] for r in rows if r["id"] in set(resolved)]
@@ -348,6 +348,291 @@ def _sync_away_need(date_str: str, slot: str, att: dict, away_stretch_id: int | 
     return "unchanged"
 
 
+def _share_in_unit(new_qty: str, old_qty: str) -> str | None:
+    """A simulated ledger share written in the unit the existing ledger row
+    is in (the unit its line ended up in), at ledger precision. The same
+    string back when both are freeform and identical; None when it can't be
+    reconciled — the caller then leaves the whole recipe-week alone."""
+    if new_qty == old_qty:
+        return old_qty
+    new = _quantities._parse_quantity(new_qty or "")
+    old = _quantities._parse_quantity(old_qty or "")
+    if not new or not old:
+        return None
+    converted = _quantities._convert_to_unit(new[0], new[1], old[1])
+    if converted is None:
+        return None
+    from . import recipes as _recipes  # deferred: recipes is heavy and circular
+    return _quantities._format_quantity(converted, old[1], sig=_recipes._LEDGER_SIG)
+
+
+def _unit_family(qty: str) -> str:
+    """Which unit family a ledger row is written in ("measure:lb/oz",
+    a bare unit, or "" for freeform) — for pairing like rows with like."""
+    parsed = _quantities._parse_quantity(qty or "")
+    if not parsed:
+        return ""
+    unit = parsed[1]
+    for group in _quantities._UNIT_CONVERSION_GROUPS + _quantities._PACK_CONVERSION_GROUPS:
+        if unit in group:
+            return "measure:" + min(group, key=group.get)
+    return unit or ""
+
+
+def resize_for_new_headcount(date_str: str, slot: str) -> list[int]:
+    """
+    An approved week's shopping follows a meal whose table changed size —
+    guests added or taken off, one person out or back — RESIZED IN PLACE.
+
+    Before this the ingest read attendance only at approval, so "my
+    parents are coming Thursday" moved the Cook card to "Cooking for 9"
+    and left the list at three people's beef.
+
+    How, and why this shape (2026-10-22; a first cut that unbought and
+    rebought the recipe-week was pulled): the recipe-week this meal was
+    bought with — every night of the plan on the same recipe, so a reheat
+    night's guests grow its cook night's batch — is reversed and
+    re-ingested INSIDE A SAVEPOINT, purely to read what the ingest would
+    now record as each meal's share; then rolled back. Those shares are
+    written onto the EXISTING ledger rows, and each linked line is re-read
+    from its ledger (grocery._restate_lines_for_new_shares). One ingest,
+    no second copy of its arithmetic, and:
+      - grocery_items ids never change;
+      - a line the household took off (pre-shop drop / set aside / freezer,
+        Remove, "getting it at the butcher") keeps its status and flag — the
+        rebuy cut put dropped lines back on the list, because the reversal
+        keeps an off-list row but drops its links and the re-ingest only
+        merges into 'needed'. Its remembered amount IS resized, so Put
+        back / Undo returns what the table now needs, on the same row;
+      - a standing want is restated, never crept.
+
+    Left alone: a draft; a night past, cooked or being cooked (if the new
+    shares would move any such night's share — a reheat whose cook night
+    has gone by — the whole recipe-week is left); a hosted holiday menu
+    (big_meal.on_attendance_changed); any recipe-week with a line in a
+    cart or bought; a component plate's parts; and any week whose
+    simulated ledger doesn't line up row for row with the one on file
+    (something other than the headcount changed — not this function's to
+    guess). Returns the entry ids resized; never raises — an attendance
+    write must not fail over the list.
+    """
+    from . import recipe_change as _recipe_change  # deferred: it imports grocery/recipes
+    from . import grocery as _grocery
+
+    try:
+        with write() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            hid = household_id()
+            today = _grocery._household_today(conn=conn).isoformat()
+            here = conn.execute(
+                "SELECT mpe.weekly_plan_id, mpe.recipe_id, mpe.derived_from_json "
+                "FROM meal_plan_entries mpe JOIN weekly_plans wp ON wp.id = mpe.weekly_plan_id "
+                "WHERE mpe.household_id = ? AND mpe.date = ? AND mpe.slot = ? "
+                "AND wp.status = 'approved' AND mpe.slot_state = 'planned' "
+                "AND mpe.recipe_id IS NOT NULL AND mpe.component_category IS NULL "
+                "AND mpe.date >= ? AND mpe.cooked_at IS NULL AND mpe.cook_started_at IS NULL",
+                (hid, date_str, slot, today),
+            ).fetchall()
+            resized: list[int] = []
+            for row in here:
+                try:
+                    derived = json.loads(row["derived_from_json"] or "{}") or {}
+                except (TypeError, ValueError):
+                    derived = {}
+                if isinstance(derived, dict) and derived.get("holiday_menu"):
+                    continue
+                resized.extend(_resize_recipe_week(
+                    conn, int(row["weekly_plan_id"]), int(row["recipe_id"]), today,
+                    _recipe_change, _grocery,
+                ))
+            conn.commit()
+            return resized
+    except Exception:
+        logging.getLogger("home_manager").exception(
+            "The list could not follow the headcount change for %s %s", date_str, slot)
+        return []
+
+
+def resize_after_redate(moved_from) -> list[int]:
+    """
+    A meal that moved to another day of an approved week is bought for the
+    table on the day it is on NOW. Move and the nights swap re-date rows in
+    place and keep their grocery links, so a dish bought for two that
+    traded onto Monday's six-person dinner kept two people's shopping while
+    Cook said six (2026-10-24).
+
+    `moved_from` is {entry id: the date it was on before}, called after the
+    move has committed. Only a meal whose table is a DIFFERENT SIZE on its
+    new day is resized — a move between two same-size tables leaves the
+    list byte for byte as it was, even if the recipe-week has drifted from
+    what the ingest would write today (a recipe's servings edited since
+    approval): correcting that is not the move's business, and Undo could
+    not put it back. Each recipe-week is resized as a guest change would
+    (_resize_recipe_week — drafts, cooked or past nights and anything in
+    the cart or bought are left alone), ALL in one transaction: either
+    every moved meal follows its table or none does. An Undo calls this
+    too, which puts the list back. Returns the entry ids resized (empty
+    when nothing changed); never raises.
+    """
+    from . import recipe_change as _recipe_change  # deferred: it imports grocery/recipes
+    from . import grocery as _grocery
+
+    moved = {int(i): d for i, d in (moved_from or {}).items() if d}
+    if not moved:
+        return []
+    ids = sorted(moved)
+    marks = ",".join("?" * len(ids))
+    try:
+        with write() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            hid = household_id()
+            today = _grocery._household_today(conn=conn).isoformat()
+            rows = conn.execute(
+                "SELECT mpe.id, mpe.date, mpe.slot, mpe.weekly_plan_id, mpe.recipe_id, mpe.derived_from_json "
+                "FROM meal_plan_entries mpe JOIN weekly_plans wp ON wp.id = mpe.weekly_plan_id "
+                f"WHERE mpe.household_id = ? AND mpe.id IN ({marks}) "
+                "AND wp.status = 'approved' AND mpe.slot_state = 'planned' "
+                "AND mpe.recipe_id IS NOT NULL AND mpe.component_category IS NULL "
+                "AND mpe.date >= ? AND mpe.cooked_at IS NULL AND mpe.cook_started_at IS NULL",
+                [hid, *ids, today],
+            ).fetchall()
+            weeks: list[tuple[int, int]] = []
+            for row in rows:
+                was = moved[int(row["id"])]
+                if was == row["date"]:
+                    continue
+                before = get_slot_attendance(was, row["slot"], conn=conn)["headcount"]
+                after = get_slot_attendance(row["date"], row["slot"], conn=conn)["headcount"]
+                if before == after:
+                    continue
+                try:
+                    derived = json.loads(row["derived_from_json"] or "{}") or {}
+                except (TypeError, ValueError):
+                    derived = {}
+                if isinstance(derived, dict) and derived.get("holiday_menu"):
+                    continue
+                key = (int(row["weekly_plan_id"]), int(row["recipe_id"]))
+                if key not in weeks:
+                    weeks.append(key)
+            resized: list[int] = []
+            for plan_id, recipe_id in weeks:
+                resized.extend(_resize_recipe_week(
+                    conn, plan_id, recipe_id, today, _recipe_change, _grocery))
+            conn.commit()
+            return resized
+    except Exception:
+        logging.getLogger("home_manager").exception(
+            "The list could not follow the moved meals' tables (%s)", ids)
+        return []
+
+
+def _resize_recipe_week(conn, plan_id: int, recipe_id: int, today: str, _recipe_change, _grocery) -> list[int]:
+    hid = household_id()
+    # The recipe-week as approval bought it: the shape
+    # weekly_plan._rescale_leftover_source_grocery uses (still ahead, or
+    # already on the list).
+    entries = conn.execute(
+        "SELECT mpe.id, mpe.date, mpe.cooked_at, mpe.cook_started_at FROM meal_plan_entries mpe "
+        "WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ? AND mpe.recipe_id = ? "
+        "AND mpe.component_category IS NULL AND mpe.slot_state = 'planned' "
+        "AND (mpe.date >= ? OR EXISTS (SELECT 1 FROM meal_plan_grocery_links l "
+        "     WHERE l.meal_plan_entry_id = mpe.id AND l.household_id = mpe.household_id)) "
+        "ORDER BY mpe.date ASC, mpe.id ASC",
+        (plan_id, hid, recipe_id, today),
+    ).fetchall()
+    ids = [int(e["id"]) for e in entries]
+    if not ids:
+        return []
+    frozen = {int(e["id"]) for e in entries
+              if e["date"] < today or e["cooked_at"] or e["cook_started_at"]}
+    marks = ",".join("?" * len(ids))
+    links = conn.execute(
+        "SELECT l.id, l.meal_plan_entry_id, l.item, l.quantity, l.measure_tsp, l.measure_about, "
+        "l.grocery_item_id, g.status "
+        "FROM meal_plan_grocery_links l LEFT JOIN grocery_items g ON g.id = l.grocery_item_id "
+        f"WHERE l.household_id = ? AND l.meal_plan_entry_id IN ({marks}) ORDER BY l.id",
+        [hid, *ids],
+    ).fetchall()
+    if not links or any(l["status"] in ("in_cart", "purchased") for l in links):
+        return []
+
+    # What the ingest would record now — read, then rolled back. The
+    # kitchen's stock is blanked for the read (inside the savepoint, so
+    # it is rolled back with everything else): coverage is all-or-nothing
+    # (recipes._KitchenStock), so a fridge logged since approval flipped a
+    # line in or out of the simulation and the week used to be left at the
+    # old size whole. A line already on the list is resized as a line;
+    # one stock kept off it stays off (below, rows the file doesn't hold).
+    conn.execute("SAVEPOINT headcount_resize")
+    try:
+        conn.execute("UPDATE inventory_items SET quantity = '' WHERE household_id = ?", (hid,))
+        _recipe_change._unbuy(conn, ids)
+        _recipe_change._rebuy(conn, plan_id, ids)
+        simulated = conn.execute(
+            "SELECT meal_plan_entry_id, item, quantity, measure_tsp, measure_about FROM meal_plan_grocery_links "
+            f"WHERE household_id = ? AND meal_plan_entry_id IN ({marks}) ORDER BY id",
+            [hid, *ids],
+        ).fetchall()
+    finally:
+        conn.execute("ROLLBACK TO headcount_resize")
+        conn.execute("RELEASE headcount_resize")
+
+    def keyed(rows):
+        # One meal's rows for one item, by unit family then order: a side's
+        # lemon beside the recipe's own pairs like with like.
+        out: dict[tuple, list] = {}
+        for r in rows:
+            out.setdefault((int(r["meal_plan_entry_id"]), _grocery._merge_key(r["item"] or ""),
+                            _unit_family(r["quantity"] or "")), []).append(r)
+        return out
+
+    old_by_key, new_by_key = keyed(links), keyed(simulated)
+    log = logging.getLogger("home_manager")
+    rewrites: list[tuple] = []
+    for key, old_rows in old_by_key.items():
+        new_rows = new_by_key.get(key)
+        if not new_rows or len(new_rows) != len(old_rows):
+            # The ingest no longer writes this row the way the file holds
+            # it — left at the size it was bought at; every other line of
+            # the week still follows the table.
+            log.info("Headcount resize left %s on entry %s as it was (ledger no longer lines up)", key[1], key[0])
+            continue
+        pending = []
+        for old, new in zip(old_rows, new_rows):
+            share = _share_in_unit(new["quantity"] or "", old["quantity"] or "")
+            if share is None:
+                pending = None
+                break
+            # The spice rack's teaspoons ride along with the share.
+            if share != (old["quantity"] or "") or new["measure_tsp"] != old["measure_tsp"] \
+                    or new["measure_about"] != old["measure_about"]:
+                if key[0] in frozen:
+                    return []  # a past or cooked night's batch would move
+                pending.append((int(old["id"]), share, new["measure_tsp"], new["measure_about"]))
+        if pending is None:
+            log.info("Headcount resize left %s on entry %s as it was (units don't reconcile)", key[1], key[0])
+            continue
+        rewrites.extend(pending)
+    if not rewrites:
+        return []
+    rewritten = {r[0] for r in rewrites}
+    lines = {int(l["grocery_item_id"]) for l in links if int(l["id"]) in rewritten}
+    before_by_line = {
+        gid: [r["quantity"] or "" for r in conn.execute(
+            "SELECT quantity FROM meal_plan_grocery_links WHERE household_id = ? AND grocery_item_id = ? ORDER BY id",
+            (hid, gid),
+        ).fetchall()]
+        for gid in lines
+    }
+    conn.executemany(
+        "UPDATE meal_plan_grocery_links SET quantity = ?, measure_tsp = ?, measure_about = ? "
+        "WHERE id = ? AND household_id = ?",
+        [(share, tsp, about, lid, hid) for lid, share, tsp, about in rewrites],
+    )
+    _grocery._restate_lines_for_new_shares(conn, before_by_line)
+    return ids
+
+
 def _supersede_record(need: dict) -> dict | None:
     """
     The parts of a need that have to survive being covered by an away: what
@@ -400,14 +685,22 @@ def _set_slot_attendance_locked(
         absent = [i for i in _household_member_ids() if i not in set(present)]
     guests = current["guest_count"] if guest_count is None else max(0, int(guest_count))
     _write(date_str, slot, absent, guests, source or current["source"] or "", away_stretch_id)
-    return _after_attendance_write(date_str, slot, away_stretch_id)
+    return _after_attendance_write(date_str, slot, away_stretch_id, current["headcount"])
 
 
-def _after_attendance_write(date_str: str, slot: str, away_stretch_id: int | None) -> dict:
+def _after_attendance_write(date_str: str, slot: str, away_stretch_id: int | None,
+                            before_headcount: int | None = None) -> dict:
     """What every attendance write does once the row is stored: read it
-    back, keep the away need in step, and let a hosted holiday follow."""
+    back, keep the away need in step, let an approved week's shopping
+    follow a table that changed size, and let a hosted holiday follow."""
     att = get_slot_attendance(date_str, slot)
     att["away_need"] = _sync_away_need(date_str, slot, att, away_stretch_id)
+    # Only a real change of size, and never across "nobody home": going
+    # away and coming back are the away conversion's (_sync_away_need).
+    if (before_headcount is not None and before_headcount > 0
+            and att["headcount"] != before_headcount and not att["nobody_home"]
+            and att["away_need"] == "unchanged"):
+        resize_for_new_headcount(date_str, slot)
     # A hosted holiday's dinner whose table just changed size follows it
     # (the menu's shopping rescales, its prep re-spreads) — a no-op for
     # every other meal, and never a failure of this write. Imported at
@@ -444,6 +737,8 @@ def set_member_attendance(date_str: str, slot: str, member: str, present: bool =
                 (household_id(), date_str, slot),
             ).fetchone()
             absent = set(json.loads(row["absent_member_ids_json"] or "[]")) if row else set()
+            guests_before = int(row["guest_count"] or 0) if row else 0
+            before_headcount = len([i for i in live if i not in absent]) + guests_before
             absent = (absent - member_ids) if present else (absent | member_ids)
             # Live members only, as the whole-list write always stored it:
             # someone since removed stops being carried along.
@@ -452,7 +747,7 @@ def set_member_attendance(date_str: str, slot: str, member: str, present: bool =
                 json.dumps(sorted(i for i in live if i in absent)),
                 int(row["guest_count"] or 0) if row else 0, "toggle", None,
             ))
-        return _after_attendance_write(date_str, slot, None)
+        return _after_attendance_write(date_str, slot, None, before_headcount)
 
 
 def set_day_attendance(date_str: str, slots: dict, source: str = "sheet") -> dict:

@@ -465,11 +465,15 @@ def test_a_nights_swap_that_pulls_a_frozen_cook_forward_says_so(frozen_kitchen):
     assert result["status"] == "swapped" and result["prep_tasks_moved"] == 1
     assert _defrost_rows(plan_id)[0]["task_date"] < household_today().isoformat(), \
         "premise: the shift put the move on a day that has already gone"
-    # …so no surface can draw it. The sentence is the only thing left.
-    assert [m for m in moves.today_moves(
+    # The defrost lists still read only its own (gone) day; Now carries a
+    # missed fridge move onto today while its meal is ahead (moves.
+    # _missed_fridge_moves, 2026-10-21 — this used to assert Now drew
+    # nothing), and the sentence says it at the tap.
+    [carried] = [m for m in moves.today_moves(
         day=household_today().isoformat(),
         now=datetime.datetime.combine(household_today(), datetime.time(9, 0)),
-    )["moves"] if m["kind"] == "fridge"] == []
+    )["moves"] if m["kind"] == "fridge"]
+    assert carried["title"] == "Move the Chicken thighs to the fridge" and carried["overdue"]
     assert df.get_defrost_today() == [] and df.get_defrost_schedule() == []
     assert result["thaw_now"] == ["Move the Chicken thighs to the fridge now."]
 

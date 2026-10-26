@@ -80,6 +80,14 @@ def _dish_clashes(label: str, key: str) -> bool:
     ("sesame", "Furikake"),
     ("pork", "Baby back ribs"),
     ("egg", "Ladyfingers"),
+    # The second 200 (re-swept after main's merge, same night).
+    ("gluten", "Crusty French loaf"),
+    ("gluten", "Hawaiian sweet rolls"),
+    ("gluten", "Mandarin pancakes"),
+    ("gluten", "Corn flakes"),
+    ("fish", "Sole fillets"),
+    ("pork", "Morcilla"),
+    ("soy", "Golden Mountain seasoning sauce"),
 ])
 def test_a_library_line_that_is_the_allergen_is_held(label, line):
     assert _line_clashes(label, line), f"{line!r} went through a {label} avoidance"
@@ -107,6 +115,7 @@ def test_a_library_line_named_for_an_allergen_it_lacks_is_not_held(label, line):
     ("gluten", "Rice paper wrappers", "Fresh Spring Rolls"),
     ("soy", "Black beans", "Black Bean Burgers"),
     ("dairy", "Balsamic crema", "Caprese Salad"),
+    ("fish", "Potatoes", "The Sole Survivor's Hash"),
 ])
 def test_the_new_words_stop_where_the_food_stops(label, line, name):
     assert not _line_clashes(label, line, name)
@@ -130,6 +139,8 @@ def test_whole_library_dishes_the_gate_now_reads_right():
     "Kashmiri chili powder", "Kasuri methi", "Asafoetida", "Chaat masala", "Amchur",
     "Ajwain (carom seeds)", "Gochugaru", "Aleppo pepper", "Shichimi togarashi",
     "Black mustard seeds", "Ground Sichuan pepper", "Pav bhaji masala", "Sambar powder",
+    "Green cardamom pods", "Whole allspice berries", "Baharat", "Piment d'Espelette",
+    "Dried chiles de árbol",
 ])
 def test_a_library_spice_waits_in_spices_not_an_aisle(name):
     assert spices.assumed_section(name) == spices.SECTION_SPICES
@@ -146,6 +157,7 @@ def test_package_words_pluralise_on_the_list():
     assert quantities._format_quantity(2, "package (8 oz)") == "2 packages (8 oz)"
     assert quantities._format_quantity(2, "piece") == "2 pieces"
     assert quantities._format_quantity(1, "wedge") == "1 wedge"
+    assert quantities._format_quantity(2, "crown") == "2 crowns"
 
 
 def test_package_plurals_add_up_with_their_singular():
@@ -155,11 +167,12 @@ def test_package_plurals_add_up_with_their_singular():
 
 
 def test_every_library_shopping_unit_is_one_the_list_knows():
-    """The two lines that weren't (Ham bone "1 meaty", Yakisoba noodles "4
-    servings") were the recipe data, fixed in the data. A new batch file
+    """The lines that weren't (Ham bone "1 meaty", Yakisoba noodles "4
+    servings", Tantanmen "4 portions", ginger "1 knob") were the recipe
+    data, fixed in the data. A new batch file
     with a unit the list can't read fails here, not on someone's phone."""
     known = (set(quantities._measure_units()) | set(quantities._CONTAINER_UNIT_PLURALS)
-             | {"inch piece", "thick slice", "berries", "leaves", "pots"})
+             | set(quantities._UNIT_PLURALS) | {"inch piece", "thick slice", "berries", "leaves", "pots"})
     odd = []
     for path in sorted(BATCHES.glob("*.json")):
         for line in json.loads(path.read_text())["ingredients"]:
@@ -170,3 +183,24 @@ def test_every_library_shopping_unit_is_one_the_list_knows():
             if head not in known and quantities._normalize_container_word(head) not in known:
                 odd.append(f"{path.stem}: {line['item']} {line['qty']!r}")
     assert odd == []
+
+
+@pytest.mark.parametrize("label,line,step", [
+    ("dairy", "Butter lettuce", "Melt the butter in a pan."),
+    ("shellfish", "Oyster mushrooms", "Shuck the oysters."),
+    ("soy", "Soybean oil", "Add the soybeans."),
+])
+def test_a_listed_lookalike_does_not_hide_the_real_thing_in_a_step(label, line, step):
+    """Review catch: listing butter lettuce took every "butter" out of the
+    steps, so "Melt the butter" said nothing to a dairy avoidance. The
+    compound comes out of the steps, the bare word stays."""
+    hits = coordination.check_meal_conflicts(
+        "Dinner", ingredients=[{"item": line}], avoidances=_avoid(label), instructions=[step])
+    assert [h.get("steps_only") for h in hits] == [True]
+
+
+def test_guard_a_plant_milk_still_speaks_for_the_steps_bare_word():
+    hits = coordination.check_meal_conflicts(
+        "Porridge", ingredients=[{"item": "Oat milk"}], avoidances=_avoid("dairy"),
+        instructions=["Stir in the milk."])
+    assert hits == []

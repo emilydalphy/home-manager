@@ -1,0 +1,43 @@
+{
+ "dish_name": "Jok",
+ "cuisine": "Thai",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 70,
+ "ingredients": [
+  {"item": "Jasmine rice", "qty": "3/4 cup", "category": "pantry"},
+  {"item": "Chicken broth", "qty": "1 carton (32 oz)", "category": "pantry", "cook_qty": "4 cups"},
+  {"item": "Ground pork", "qty": "3/4 lb", "category": "meat/seafood"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"},
+  {"item": "Fish sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "White pepper", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Eggs", "qty": "4", "category": "dairy"},
+  {"item": "Ginger", "qty": "1 piece (2 inch)", "category": "produce"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce", "cook_qty": "3"}
+ ],
+ "instructions": [
+  "Rinse the 3/4 cup jasmine rice in a sieve until the water runs almost clear.",
+  "Put the rice in a large pot with the 4 cups chicken broth and 3 cups water. Bring it to a boil over high, stirring now and then so the rice doesn't stick. Turn it down to medium low so it bubbles gently, uncovered.",
+  "Meanwhile, mince the 3 garlic cloves and 2 tbsp of the cilantro stems very finely, or pound them to a paste in a mortar.",
+  "In a bowl, mix the garlic paste with 1/2 tsp white pepper, 1 tbsp fish sauce and 1 tbsp soy sauce. Add the 3/4 lb ground pork and stir it hard for about 1 minute, until it turns sticky.",
+  "With wet hands, roll the pork into balls about the size of a large marble and drop them gently into the simmering pot.",
+  "Simmer it for about 1 hour, stirring every 10 to 15 minutes and scraping the bottom. Whenever it gets thicker than you like, stir in about 1/2 cup water. It's ready when the grains have burst and broken down into a thick, creamy porridge.",
+  "About 15 minutes before the porridge is ready, bring a small pot of water to a boil. Lower in the 4 eggs, turn off the heat, cover the pot and leave them for 6 minutes. Transfer them to a bowl of cold water.",
+  "Meanwhile, cut the ginger into thin matchsticks, thinly slice 3 green onions and roughly chop a handful of the cilantro leaves.",
+  "Stir 1 tbsp fish sauce and 1 tbsp soy sauce into the porridge. Taste it. If it's flat, add a splash more soy sauce.",
+  "Ladle the porridge and meatballs into bowls. Peel the eggs and set one in each bowl. Top with the ginger, green onions, cilantro and the last 1/4 tsp white pepper. Serve with the soy sauce on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions simmer jasmine rice in water or broth until it breaks down, cook small pork meatballs seasoned with a pounded garlic and cilantro root paste and white pepper in the porridge, and top it with a soft egg, ginger, green onion and white pepper. Rachel Cooks Thai simmers whole broken rice for at least an hour with the meatballs in from the start and seasons with fish sauce and soy at the end; Hungry in Thailand blends the raw rice to cut the cooking to 15 minutes, and The Storied Recipe blends cooked rice with broth and thickens it with tapioca starch. This one follows the lead's long simmer, uses regular jasmine rice and part chicken broth, and swaps cilantro stems for the roots (which the lead allows). No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Thai) has no jok, so the first read version leads.",
+ "sources": [
+  {"name": "Rachel Cooks Thai", "title": "Jok (Thai Rice Porridge)", "url": "https://rachelcooksthai.com/rice-porridge/", "rating": 5.0, "rating_count": 7, "read": true, "lead": true},
+  {"name": "Hungry in Thailand", "title": "Thai Congee Recipe (Rice Porridge) Jok", "url": "https://hungryinthailand.com/thai-congee-rice-porridge/", "rating": 5.0, "rating_count": 2, "read": true, "lead": false},
+  {"name": "The Storied Recipe", "title": "Thai Jok Breakfast Porridge with Pork and Crispy Garlic", "url": "https://thestoriedrecipe.com/thai-jok/", "rating": 5.0, "rating_count": 1, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

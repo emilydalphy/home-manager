@@ -1,0 +1,48 @@
+{
+ "dish_name": "Cajun Shrimp Pasta",
+ "cuisine": "American",
+ "main_protein": "shrimp",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Penne", "qty": "8 oz", "category": "pantry"},
+  {"item": "Large shrimp", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Cajun seasoning", "qty": "4 tsp", "category": "pantry"},
+  {"item": "Olive oil", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Unsalted butter", "qty": "2 tbsp", "category": "dairy"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Tomatoes", "qty": "1", "category": "produce"},
+  {"item": "Heavy cream", "qty": "1 pint", "category": "dairy", "cook_qty": "1 1/2 cups"},
+  {"item": "Parmesan cheese", "qty": "1 wedge (4 oz)", "category": "dairy", "cook_qty": "1/2 cup grated, plus more to serve"},
+  {"item": "Flat-leaf parsley", "qty": "1 bunch", "category": "produce", "cook_qty": "2 tbsp chopped"},
+  {"item": "Salt", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Red pepper flakes", "qty": "1/4 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Fill a large pot with water, add 1 tbsp salt and bring it to a boil over high heat.",
+  "Meanwhile, if the shrimp aren't peeled and deveined, do that now. Pat them dry with paper towels and toss them with 2 tsp of the Cajun seasoning.",
+  "Mince the 2 garlic cloves and dice the tomato. Finely grate the Parmesan, keeping 1/2 cup for the sauce and the rest for the table. Chop 2 tbsp of the parsley.",
+  "Add the 8 oz penne to the boiling water and cook it until it's al dente, following the package time. Scoop out 1 cup of the pasta water, drain the penne, then put it back in the pot with the lid on.",
+  "While the pasta cooks, heat the 1 tbsp olive oil in a large, deep skillet over medium high until it shimmers. Lay the shrimp in a single layer and leave them for 1 to 2 minutes, until they're pink underneath.",
+  "Flip them and cook the other side for 1 to 2 minutes, until they're opaque all the way through. Cut one in half to check. Transfer them to a plate.",
+  "Turn the heat to medium. Add the 2 tbsp butter and the garlic and stir for about 30 seconds, until you can smell the garlic.",
+  "Add the tomato and cook for 2 to 3 minutes, stirring, until it softens.",
+  "Add the remaining 2 tsp Cajun seasoning and stir for 30 seconds. Pour in the 1 1/2 cups cream, scrape up the browned bits and bring it to a gentle simmer.",
+  "Stir in the 1/2 cup Parmesan, turn the heat to medium low and simmer for 2 to 3 minutes, until the sauce is thick enough to coat a spoon.",
+  "Add the penne and the shrimp with any juices from the plate and toss everything together. If it looks thick, add the pasta water a splash at a time until the sauce coats the pasta.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Scatter the parsley on top. Serve with the rest of the Parmesan and the 1/4 tsp red pepper flakes on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three season the shrimp with Cajun spice, sear them and set them aside, then build a cream sauce in the same pan and toss it with the pasta, loosening it with pasta water. Natasha's Kitchen (the lead) cooks garlic and a diced tomato in butter, then simmers cream with the rest of the Cajun seasoning and Parmesan, while Simply Delicious reduces white wine before the cream and finishes with lemon, and Cookin' with Mima uses onion, more spice and a cayenne option. This follows the lead's ratios but uses 4 tsp Cajun seasoning instead of 2 tbsp to keep it mild, with red pepper flakes on the side for anyone who wants heat."
+,
+ "sources": [
+  {"name": "Natasha's Kitchen", "title": "Creamy Cajun Shrimp Pasta", "url": "https://natashaskitchen.com/cajun-shrimp-pasta/", "rating": 4.98, "rating_count": 395, "read": true, "lead": true},
+  {"name": "Simply Delicious", "title": "Creamy Cajun Shrimp Pasta", "url": "https://simply-delicious-food.com/creamy-cajun-shrimp-pasta/", "rating": 4.85, "rating_count": 20, "read": true, "lead": false},
+  {"name": "Cookin' with Mima", "title": "Creamy Cajun Shrimp Pasta", "url": "https://www.cookinwithmima.com/creamy-cajun-shrimp-pasta/", "rating": 4.67, "rating_count": 12, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

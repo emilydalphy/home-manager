@@ -1,0 +1,111 @@
+{
+ "dish_name": "Kaak",
+ "cuisine": "Lebanese",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 40,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Whole milk",
+   "qty": "1 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Active dry yeast",
+   "qty": "1 packet",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole wheat flour",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "5 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Za'atar",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "About 3 hours before breakfast: warm 3/4 cup of the milk until it feels warm on your wrist, not hot. Stir in the 2 tbsp sugar and 1 1/2 tsp yeast in a large bowl, cover it and leave it for about 10 minutes, until it's frothy. If it doesn't froth, the yeast is dead, so start again with fresh yeast.",
+  "Add 1 3/4 cups of the all-purpose flour, the 1/2 cup whole wheat flour, the 1 tsp salt and 1 tbsp of the olive oil. Mix it with a stand mixer's dough hook or a wooden spoon, adding warm water a spoonful at a time if it's dry, until it's a soft dough that isn't sticky. Knead it for 7 to 8 minutes, until it's smooth and springs back when you poke it.",
+  "Rub a few drops of olive oil around a clean bowl, put the dough in and cover it. Leave it somewhere warm for about 1 hour, until it's doubled.",
+  "Knead it gently for 1 minute, shape it into a ball and put it back in the bowl. Cover it and let it rise for 45 minutes to 1 hour, until it's doubled again.",
+  "Line 2 baking sheets with parchment. Cut the dough into 4 equal pieces.",
+  "Dust the counter with some of the last 1/4 cup all-purpose flour. Roll each piece into a teardrop about 1/2 inch thick and 6 to 7 inches long. Cut a 2 inch hole near the narrow end with a small cookie cutter or the rim of a glass, and stretch the shape gently so the hole stays open. Put 2 on each sheet.",
+  "Cover them loosely with a kitchen towel and let them rise for about 30 minutes, until they're a little puffy.",
+  "Meanwhile, heat the oven to 425°F with a metal pan half full of water on the bottom rack.",
+  "Brush the tops with the last 1/4 cup milk and sprinkle 1/2 tbsp sesame seeds over each one. Press the seeds on lightly.",
+  "Bake one sheet at a time for 10 to 12 minutes, turning the sheet halfway, until they're deep golden. Bake the second sheet the same way.",
+  "While they bake, stir the 1/4 cup za'atar and 1/4 cup olive oil together in a small bowl until it's a loose paste.",
+  "Let the kaak cool on a rack for 5 minutes. Cut a slit into the thick part of each one and spread a spoonful of the za'atar paste inside.",
+  "Serve warm with the rest of the za'atar paste on the side."
+ ],
+ "advance_prep_notes": "Start the dough about 3 hours before breakfast so it can rise twice",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4
+ ],
+ "method_notes": "All three make a yeasted dough, shape it into a flat purse with a handle hole, top it with sesame seeds and bake it hot. My Cooking Journey, the lead, uses milk, a little whole wheat flour and olive oil, rises the dough twice, and bakes at 425°F with a pan of water for steam; Heghineh uses milk and water with an egg wash and a 500°F oven, and Hadia's Lebanese Cuisine uses plain flour and water with a flour glaze and fills the baked bread with za'atar. No version had 20 or more ratings and RecipeTin Eats, the trusted cook for Lebanese, has none, so the most rated version leads. This one follows the lead's dough and bake for 4 breads, brushes with milk instead of egg, and adds Heghineh's za'atar and olive oil paste inside, the way street vendors serve it.",
+ "sources": [
+  {
+   "name": "My Cooking Journey",
+   "title": "Ka'ak Bread | Lebanese Purse Bread",
+   "url": "https://www.mycookingjourney.com/kaak-bread-kaak-lebanese-purse-bread/",
+   "rating": 5.0,
+   "rating_count": 18,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Heghineh",
+   "title": "Kaak Bread Recipe - Purse Bread",
+   "url": "https://heghineh.com/kaak/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Hadia's Lebanese Cuisine",
+   "title": "Kaak Al Asreya (Lebanese Street Bread)",
+   "url": "https://hadiaslebanesecuisine.com/newsite/?p=5310",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

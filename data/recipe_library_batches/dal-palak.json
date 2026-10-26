@@ -1,0 +1,127 @@
+{
+ "dish_name": "Dal Palak",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 55,
+ "ingredients": [
+  {
+   "item": "Toor dal",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Spinach",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ghee",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried red chili",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Asafoetida (hing)",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Kasuri methi (dried fenugreek leaves)",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Serrano chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put 1 cup of the toor dal in a strainer and rinse it under cold water, rubbing it with your fingers, until the water runs mostly clear. Transfer it to a medium pot with 3 1/2 cups water and the turmeric.",
+  "Bring it to a boil over high heat and skim off the foam. Partly cover, turn the heat to medium low and cook for 40 to 45 minutes, stirring now and then, until the dal is soft and falls apart when you press it against the side of the pot. If it gets too thick, add a splash of hot water.",
+  "Meanwhile, wash the spinach well, cut off the thick stems and finely chop the leaves. Chop the tomato. Mince the ginger and garlic. Thinly slice the serrano and set it in a small bowl for the table.",
+  "When the dal has about 20 minutes left, start the rice. Put 1 1/2 cups of the basmati rice in a fine strainer and rinse it under cold water until the water runs mostly clear. Transfer it to a medium saucepan with 2 1/4 cups water and a pinch of salt.",
+  "Bring the rice to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave the lid on for 5 minutes, then fluff it with a fork.",
+  "When the dal is soft, whisk it or mash it with the back of a spoon until it's mostly smooth. Keep it on low heat.",
+  "Heat the ghee in a large skillet over medium heat. Add the cumin seeds and the dried chili. After about 20 seconds the seeds will sizzle and smell toasty.",
+  "Add the ginger and garlic and stir for 1 minute, until fragrant. Add the asafoetida and stir for a few seconds.",
+  "Add the tomato and cook for about 3 minutes, stirring, until it softens.",
+  "Add the spinach and 1/2 tsp of the salt. Cook for 3 to 4 minutes, stirring, until the spinach wilts and turns dark green.",
+  "Add the spinach mixture to the dal with the remaining 1/2 tsp salt. Simmer for 3 minutes, stirring. If it's thicker than you'd like, stir in hot water a splash at a time.",
+  "Take the pot off the heat. Crush the kasuri methi between your palms over the dal, then squeeze in the juice of half the lemon and stir. Cut the other half into wedges.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of the lemon.",
+  "Serve over the rice, with the lemon wedges and the sliced serrano on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions cook toor dal soft, temper cumin, hing, chili and garlic in fat, add spinach, and finish with lemon. Swasthi wilts the spinach in the tempering and stirs it into the cooked dal, while Easy Indian Cookbook pressure cooks everything together with onion, mustard seeds and curry leaves; this version follows the lead. The dal is simmered on the stove, which takes about 45 minutes; a pressure cooker cuts that to about 15. The green chili is sliced on the side, and it's served with rice as both sources do.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Dal Palak (Spinach Dal)",
+   "url": "https://www.indianhealthyrecipes.com/dal-palak-recipe/",
+   "rating": 5.0,
+   "rating_count": 313,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Easy Indian Cookbook",
+   "title": "Spinach Dal (Dal Palak Recipe)",
+   "url": "https://easyindiancookbook.com/dal-palak-spinach-dal/",
+   "rating": 5.0,
+   "rating_count": 61,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

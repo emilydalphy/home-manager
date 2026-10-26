@@ -216,7 +216,7 @@ def test_the_approved_roots_card_and_a_planned_day_get_no_button():
 def test_build_a_plan_fills_the_day_or_opens_the_intake_for_an_empty_week():
     run = _extract("runBuildDay", SHELL_JS)
     assert "if (!wkWeekHasMeals(weekState.days)) { replanWeek(); return; }" in run
-    assert "'/fill-day'" in run and "JSON.stringify({ date: day.date })" in run
+    assert "'/fill-day'" in run and "{ date: day.date }" in run
     assert "spliceSwappedDay(data.day)" in run and "await loadWeekMenu(panel)" in run
     assert "steps.querySelectorAll('[data-wk-build-day]')" in SHELL_JS
     assert _css_rule(".wk-card-blank p").count("var(--ink-secondary)") == 1

@@ -116,21 +116,43 @@ _WHEAT_WORDS = {
     "rigatoni", "ravioli", "tortellini", "fusilli", "farfalle", "ziti", "pappardelle",
     "gnocchi", "dough", "tempura", "wonton", "pastry", "phyllo", "filo", "roux", "beer",
     "sourdough", "focaccia", "brioche", "challah", "lo mein",
-    # The 200-dish library audit (2026-10-26): what its lists actually
-    # buy. Breads and wrappers by name — a hamburger bun, a bolillo, an egg
-    # roll wrapper — and the Chinese and Korean jars that are brewed or
-    # thickened with wheat (Shaoxing, doubanjiang, gochujang, oyster
-    # sauce). A gluten-free bottle says so on its line, and
-    # _GLUTEN_FREE_SEGMENT_RE believes it. No bare "roll" (cabbage rolls,
-    # fresh spring rolls) and no bare "muffin" (egg muffin cups).
-    "bun", "baguette", "ciabatta", "bolillo", "telera", "hoagie", "kaiser roll",
-    "dinner roll", "crusty roll", "sub roll", "english muffin", "muffin mix",
-    "ladyfinger", "savoiardi", "pie crust", "pizza crust", "cracker", "graham",
-    "paratha", "roti", "chapati", "chapatti", "puri", "poori", "bhatura", "bhature",
-    "kulcha", "flatbread", "lavash", "egg roll", "spring roll wrapper",
-    "dumpling wrapper", "gyoza", "mandu", "potsticker", "vermicelli",
-    "shaoxing", "doubanjiang", "gochujang", "oyster sauce", "sweet bean sauce",
-    "ground bean sauce", "chunjang", "maggi", "kecap manis",
+    # Third audit (2026-10-21, snacks builder): the bought wheat foods whose
+    # flour is never written as an ingredient. "Apple slices with cheddar and
+    # pretzels" passed the gate for a gluten-free child. A "gluten-free
+    # pretzels" / "GF crackers" line is still believed (_GLUTEN_FREE_SEGMENT_RE).
+    # Not "tortilla" (corn ones are the gluten-free kind; "flour tortilla" is
+    # caught on "flour"), "bun" (Vietnamese bún is rice noodle), "cookie" or
+    # "cake" (often flourless, and their lists say flour when they have it).
+    # Not "graham" either: it is a person's name, and big_meal keeps a food
+    # word in a guest note, so "no nuts for Graham" became the phrase "nuts
+    # graham" and found no nuts (review). Graham crackers trip on "cracker".
+    "pretzel", "cracker", "baguette", "ciabatta", "matzo", "matzah",
+    # The shared recipe library's breads, wrappers and shapes (defect hunt,
+    # 2026-10-23): a library dish is COPIED for a household with no writer
+    # told about its gluten, so this table is all that stands between a
+    # celiac child and Smash Burgers on hamburger buns, a Philly on hoagie
+    # rolls or Banh Mi on a baguette — all of which passed. Shaoxing wine
+    # is brewed with wheat; doubanjiang and gochujang are made with it.
+    # "buns" is matched as written (_VERBATIM_ALIASES): its singular would
+    # hold Bun Cha, which is rice noodles. Vermicelli is wheat unless it
+    # says rice (_COMPOUND_EXCEPTIONS).
+    "baguette", "ciabatta", "hoagie", "telera", "bolillo", "dinner roll", "crusty roll",
+    "kaiser roll", "sub roll", "hamburger bun", "burger bun", "hot dog bun", "english muffin",
+    "paratha", "roti", "chapati", "yufka", "pie crust", "spring roll wrapper",
+    "egg roll wrapper", "dumpling wrapper", "gyoza wrapper", "muffin mix", "bucatini",
+    "ditalini", "orecchiette", "tagliatelle", "rotini", "cavatappi", "capellini",
+    "vermicelli", "shaoxing", "doubanjiang", "gochujang",
+    # The 200-dish library audit (2026-10-26): what the rest of its lists
+    # buy that the 2026-10-23 hunt didn't reach. Breads by name, wrappers,
+    # and the jars thickened or brewed with wheat (oyster sauce, sweet and
+    # ground bean sauce, chunjang, Maggi, kecap manis). Ladyfingers are
+    # sponge (Tiramisu). A gluten-free bottle says so on its line.
+    "puri", "poori", "bhatura", "bhature", "kulcha", "chapatti", "flatbread", "lavash",
+    "egg roll", "gyoza", "mandu", "potsticker", "pizza crust", "ladyfinger", "savoiardi",
+    "oyster sauce", "sweet bean sauce", "ground bean sauce", "chunjang", "maggi", "kecap manis",
+    # The second 200 (same night): a crusty French loaf, Hawaiian sweet
+    # rolls, Peking duck's mandarin pancakes, corn flakes (barley malt).
+    "french loaf", "sweet roll", "hawaiian roll", "mandarin pancake", "corn flake",
 }
 _ALLERGEN_ALIASES: dict[str, set[str]] = {
     "nut": {"peanut", "walnut", "almond", "cashew", "pecan", "hazelnut",
@@ -169,7 +191,9 @@ _ALLERGEN_ALIASES: dict[str, set[str]] = {
              "hake", "basa", "pangasius", "barramundi", "pomfret", "sablefish",
              "whiting", "smelt", "eel", "unagi", "yellowtail", "hamachi", "walleye",
              "bacalao", "bacalhau", "katsuobushi", "kingfish", "arctic char",
-             "whitefish", "rockfish", "redfish", "bluefish", "milkfish"},
+             "whitefish", "rockfish", "redfish", "bluefish", "milkfish",
+             # Not bare "sole" (see above), but the fillet and the named ones.
+             "sole fillet", "dover sole", "lemon sole"},
     # "buttermilk" is here rather than left to "butter"/"milk": whole-word
     # matching reaches neither half of it, and it is unambiguously dairy —
     # the opposite call from "peanut butter", which is spelled with a dairy
@@ -208,11 +232,13 @@ _ALLERGEN_ALIASES: dict[str, set[str]] = {
             "ladyfinger", "savoiardi"},
     "soy": {"soya", "tofu", "tempeh", "edamame", "soy sauce", "miso", "tamari", "shoyu",
             "natto", "teriyaki", "hoisin", "ponzu", "yuba", "okara",
-            # Library audit 2026-10-26: the fermented soybean pastes and
-            # sauces the Korean and Chinese dishes buy.
-            "soybean", "bean curd", "doenjang", "gochujang", "chunjang", "douchi",
-            "fermented black bean", "black bean sauce", "black bean paste",
-            "ground bean sauce", "sweet bean sauce", "yellow bean sauce", "kecap manis"},
+            # Pastes made of fermented soybeans (library defect hunt,
+            # 2026-10-23: Kimchi Fried Rice's gochujang passed a soy allergy),
+            # and the rest the library buys (audit, 2026-10-26).
+            "gochujang", "doenjang", "ssamjang", "fermented black bean", "black bean sauce",
+            "douchi", "soybean", "bean curd", "chunjang", "black bean paste",
+            "ground bean sauce", "sweet bean sauce", "yellow bean sauce", "kecap manis",
+            "golden mountain"},
     "sesame": {"tahini", "hummus", "halva", "halvah", "zaatar", "za atar", "gomasio", "benne",
                "furikake"},
     # Mustard is one of Canada's priority allergens, and the jar on the line
@@ -236,7 +262,7 @@ _MEAT_ALIASES: dict[str, set[str]] = {
              "nduja", "soppressata", "capicola", "chicharron", "chicharrones", "tonkatsu",
              "jamon",
              # Library audit 2026-10-26.
-             "lard", "baby back ribs", "lap cheong", "lap chong"},
+             "lard", "baby back ribs", "lap cheong", "lap chong", "morcilla"},
     "beef": {"sirloin", "ribeye", "rib eye", "bresaola", "filet mignon", "ground chuck",
              "chuck roast"},
 }
@@ -265,6 +291,7 @@ _PHRASE_FAMILIES: dict[tuple[str, ...], set[str]] = {
 _VERBATIM_ALIASES: dict[str, set[str]] = {
     "egg": {"whites"}, "eggs": {"whites"},
     "nut": {"florentines"}, "nuts": {"florentines"},
+    "gluten": {"buns"}, "wheat": {"buns"}, "celiac": {"buns"}, "coeliac": {"buns"},
 }
 _ALLERGEN_ALIASES["nuts"] = _ALLERGEN_ALIASES["nut"]
 _ALLERGEN_ALIASES["peanuts"] = _ALLERGEN_ALIASES["peanut"]
@@ -359,6 +386,32 @@ _PLANT_MOD = (
     r"coconut|oat|soy|soya|almond|cashew|rice|chocolate|vanilla)"
 )
 
+_LIBRARY_COMPOUNDS: tuple[tuple, ...] = (
+    # The 200-dish library audit (2026-10-26): foods in its lists named for
+    # an allergen they don't contain. Butter lettuce and butter beans are
+    # not dairy; oyster mushrooms, oyster crackers and a vegetarian
+    # (mushroom) oyster sauce are not shellfish — the sauce's "oyster
+    # sauce" still reads for gluten, which is a different word; tonkatsu
+    # sauce is fruit and vinegar, not pork; Old Bay's "seafood seasoning"
+    # is spice; soybean oil is the refined oil food labelling exempts, as
+    # "vegetable oil" already is.
+    #
+    # Kept apart because a STEP's bare word is still the allergen here:
+    # for oat milk "stir in the milk" is the oat milk, but butter lettuce
+    # on the list doesn't make "melt the butter" lettuce. check_meal_
+    # conflicts takes only these compounds themselves out of the steps.
+    (frozenset({"butter", "butters"}), re.compile(r"\bbutter\s+(?:lettuces?|beans?)\b")),
+    (frozenset({"oyster", "oysters"}), re.compile(
+        r"\boysters?\s+(?:mushrooms?|crackers?)\b"
+        r"|\b(?:vegetarian|vegan|mushroom)\s+(?:stir[\s-]?fry\s+)?oyster\s+sauces?\b"
+    )),
+    (frozenset({"tonkatsu"}), re.compile(r"\btonkatsu\s+sauces?\b")),
+    (frozenset({"seafood", "seafoods"}), re.compile(r"\bseafood\s+(?:boil\s+)?(?:seasonings?|spices?)\b")),
+    (frozenset({"soybean", "soybeans"}), re.compile(r"\bsoybean\s+oils?\b")),
+    (frozenset({"crema", "cremas"}), re.compile(r"\bbalsamic\s+crema\b|\bcrema\s+di\s+balsamico\b")),
+    (frozenset({"cracker", "crackers"}), re.compile(r"\brice\s+crackers?\b")),
+)
+
 _COMPOUND_EXCEPTIONS: tuple[tuple, ...] = (
     (frozenset({"butter", "butters"}), re.compile(
         r"\b(?:peanut|almond|cashew|hazelnut|pistachio|pecan|walnut|macadamia|"
@@ -406,27 +459,7 @@ _COMPOUND_EXCEPTIONS: tuple[tuple, ...] = (
     # That is the failure this whole check exists to prevent, so the false
     # positive matters more here than the rarity of the restriction.
     (frozenset({"olive", "olives"}), re.compile(r"\bolive\s+oils?\b")),
-    # The 200-dish library audit (2026-10-26): foods in its lists named for
-    # an allergen they don't contain. Butter lettuce and butter beans are
-    # not dairy; oyster mushrooms, oyster crackers and a vegetarian
-    # (mushroom) oyster sauce are not shellfish — the sauce's "oyster
-    # sauce" still reads for gluten, which is a different word; tonkatsu
-    # sauce is fruit and vinegar, not pork; Vietnamese bún is rice
-    # noodles; Old Bay's "seafood seasoning" is spice; soybean oil is the
-    # refined oil food labelling exempts, as "vegetable oil" already is.
-    (frozenset({"butter", "butters"}), re.compile(r"\bbutter\s+(?:lettuces?|beans?)\b")),
-    (frozenset({"oyster", "oysters"}), re.compile(
-        r"\boysters?\s+(?:mushrooms?|crackers?)\b"
-        r"|\b(?:vegetarian|vegan|mushroom)\s+(?:stir[\s-]?fry\s+)?oyster\s+sauces?\b"
-    )),
-    (frozenset({"tonkatsu"}), re.compile(r"\btonkatsu\s+sauces?\b")),
-    (frozenset({"bun", "buns"}), re.compile(
-        r"\bbun\s+(?:cha|bo|thit|rieu|ga|mam|moc|oc|chay|nem|dau|ca|vit|bi)\b"
-    )),
-    (frozenset({"seafood", "seafoods"}), re.compile(r"\bseafood\s+(?:boil\s+)?(?:seasonings?|spices?)\b")),
-    (frozenset({"soybean", "soybeans"}), re.compile(r"\bsoybean\s+oils?\b")),
-    (frozenset({"crema", "cremas"}), re.compile(r"\bbalsamic\s+crema\b|\bcrema\s+di\s+balsamico\b")),
-    (frozenset({"cracker", "crackers"}), re.compile(r"\brice\s+crackers?\b")),
+    *_LIBRARY_COMPOUNDS,
     # Red meat's (2026-10-20): goat's cheese and milk are dairy, not the
     # animal; lamb's lettuce and lamb's quarters are greens. Matched on the
     # folded text, where "goat's" is "goat s". Not for an avoidance of
@@ -452,13 +485,23 @@ _COMPOUND_EXCEPTIONS: tuple[tuple, ...] = (
         r"\b(?:rice|glass|buckwheat(?:\s+soba)?|bean\s+thread|mung\s+bean|shirataki|konjac|"
         r"kelp|sweet\s+potato|cellophane|tapioca)(?:\s+vermicelli)?\s+noodles?\b"
     )),
+    # Vermicelli is wheat unless it says what else it is (review, 2026-10-23).
+    # A dish NAMED "Vermicelli Bowl" with no qualifier is still held on its
+    # name even over a rice list — over-safe, as every name is.
     (frozenset({"vermicelli", "vermicellis"}), re.compile(
-        r"\b(?:rice|bean\s+thread|mung\s+bean|glass|cellophane)\s+vermicelli\b"
+        r"\b(?:rice(?:\s+stick)?|glass|bean\s+thread|mung\s+bean|cellophane)\s+vermicellis?\b"
+        r"|\bvermicelli\s+rice\s+noodles?\b"
+    )),
+    # Rice-paper spring roll wrappers are rice, however the line says it.
+    (frozenset({"spring roll wrapper", "spring roll wrappers"}), re.compile(
+        r"\brice\s+paper\s+spring\s+roll\s+wrappers?\b|\bspring\s+roll\s+wrappers?\s+rice\s+paper\b"
     )),
     (frozenset({"pasta", "pastas"}), re.compile(
         r"\b(?:chickpea|lentil|rice)\s+pastas?\b"
     )),
 )
+_LIBRARY_PHRASE_ONLY = frozenset((e[0], e[1]) for e in _LIBRARY_COMPOUNDS)
+
 
 # The plant versions a QUALIFIER makes of a dairy or egg word. Kept apart
 # from _COMPOUND_EXCEPTIONS because they are a claim, not a food name:
@@ -1113,9 +1156,9 @@ def _avoidances() -> list[dict]:
     # is parsed out of the sentence when one of them is named in it
     # ("Emily is allergic to pineapple"); otherwise the fact stands for the
     # whole household ("no shellfish in this house").
-    for fact in _memory.get_facts():
-        if not fact.get("hard"):
-            continue
+    # hard_facts: each sentence once, so one dish is never "a clash with
+    # two things" because the same rule sits under two tabs.
+    for fact in _memory.hard_facts():
         text = fact.get("text") or ""
         named = _named_member(text, member_names)
         phrases, excepted = _fact_keywords(text, drop=_name_words(named))
@@ -1284,6 +1327,10 @@ def _clash_sentence(c: dict) -> str:
     # own name doesn't already say. "Pineapple Salsa has pineapple" is
     # noise; "Pineapple Salsa" plus the person is the whole fact.
     term = terms[0] if terms else ""
+    # A condition is not an ingredient: "has celiac" names the person's
+    # restriction, not what is in the dish. Said as the food it stands for
+    # ("has gluten") — the same mapping the gate matched it by.
+    term = _WHOLE_WORD_FAMILIES.get(term.lower(), term)
     # Always a full sentence, even when the dish name already says it:
     # "Pineapple Salsa Bowls has pineapple, which Emily is allergic to."
     # A fragment is the wrong shape for the one card about someone's allergy.
@@ -1568,6 +1615,11 @@ def check_meal_conflicts(
         listed_text = " ".join(segments[1:])
         for words, pattern, *_ in _COMPOUND_EXCEPTIONS:
             if pattern.search(listed_text):
+                if (words, pattern) in _LIBRARY_PHRASE_ONLY:
+                    # Butter lettuce on the list doesn't make "Melt the
+                    # butter" lettuce: only the compound itself comes out.
+                    step_segments = [pattern.sub(" ", s) for s in step_segments]
+                    continue
                 bare = re.compile(r"\b(?:" + "|".join(map(re.escape, sorted(words))) + r")\b")
                 step_segments = [bare.sub(" ", s) for s in step_segments]
         step_segments = [s for s in step_segments if s.strip()]
@@ -1800,11 +1852,26 @@ def get_feedback_nudge() -> dict:
     notes don't count, and a note on another dish never reaches this one.
     member_recipe_feedback.rating is NOT NULL, so a per-person note always
     arrives on a row that already counts as a verdict.
+
+    A REHEAT IS NOT ASKED ABOUT (overnight 2026-10-22). "Mark eaten" on a
+    leftovers / made-ahead night, or on a portion out of the freezer, is
+    the same check_off_meal tick and stamps cooked_at, so the newest "cook"
+    could be a night nobody cooked. Cook's own toast already treats that
+    tick as eaten, not cooked (no "Rate it"), off the cook view's
+    is_leftovers — and this skips the same nights by the same two facts
+    that set it: a confirmed chain (leftovers.plan_leftover_chains) or a
+    freezer portion (leftovers.frozen_portion_on). The third way a night
+    reads as leftovers, by name, has no recipe and is excluded below
+    already. Skipped, not stopped: the cook a reheat eats from is still
+    asked about.
     """
+    from . import leftovers as _leftovers  # deferred: the domains are circular
+
     conn = get_conn()
-    row = conn.execute(
+    rows = conn.execute(
         """
-        SELECT COALESCE(r.name, mpe.freeform_meal) AS meal, mpe.recipe_id, mpe.cooked_at
+        SELECT COALESCE(r.name, mpe.freeform_meal) AS meal, mpe.recipe_id, mpe.cooked_at,
+               mpe.id, mpe.weekly_plan_id, mpe.derived_from_json
         FROM meal_plan_entries mpe
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
         WHERE mpe.household_id = ? AND mpe.cooked_status = 'done' AND mpe.cooked_at IS NOT NULL
@@ -1821,11 +1888,24 @@ def get_feedback_nudge() -> dict:
               WHERE rn.household_id = mpe.household_id AND rn.recipe_id = mpe.recipe_id
                 AND rn.note_type = 'feedback' AND TRIM(rn.note) != ''
           )
-        ORDER BY mpe.cooked_at DESC LIMIT 1
+        ORDER BY mpe.cooked_at DESC, mpe.id DESC
         """,
         (household_id(),),
-    ).fetchone()
+    ).fetchall()
     conn.close()
+    chains_by_plan: dict = {}
+    row = None
+    for r in rows:
+        if _leftovers.frozen_portion_on(r["derived_from_json"]):
+            continue
+        plan_id = r["weekly_plan_id"]
+        if plan_id is not None:
+            if plan_id not in chains_by_plan:
+                chains_by_plan[plan_id] = _leftovers.plan_leftover_chains(plan_id)["leftovers"]
+            if r["id"] in chains_by_plan[plan_id]:
+                continue
+        row = r
+        break
     if not row:
         return {"has_nudge": False}
     return {"has_nudge": True, "meal": row["meal"], "cooked_at": row["cooked_at"]}

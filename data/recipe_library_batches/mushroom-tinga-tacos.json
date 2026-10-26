@@ -1,0 +1,132 @@
+{
+  "dish_name": "Mushroom Tinga Tacos",
+  "cuisine": "Mexican",
+  "main_protein": "vegetarian",
+  "default_servings": 4,
+  "prep_time_minutes": 15,
+  "cook_time_minutes": 27,
+  "ingredients": [
+    {
+      "item": "Cremini mushrooms",
+      "qty": "1.5 lbs",
+      "category": "produce"
+    },
+    {
+      "item": "Yellow onion",
+      "qty": "1",
+      "category": "produce"
+    },
+    {
+      "item": "Garlic",
+      "qty": "3 cloves",
+      "category": "produce"
+    },
+    {
+      "item": "Fire-roasted diced tomatoes",
+      "qty": "1 can (14.5 oz)",
+      "category": "pantry"
+    },
+    {
+      "item": "Chipotle peppers in adobo (gluten-free)",
+      "qty": "1 small can",
+      "category": "pantry",
+      "cook_qty": "2 peppers and 1 tbsp sauce"
+    },
+    {
+      "item": "Ground cumin",
+      "qty": "1 tsp",
+      "category": "pantry"
+    },
+    {
+      "item": "Dried oregano",
+      "qty": "1 tsp",
+      "category": "pantry"
+    },
+    {
+      "item": "Tamari (gluten-free)",
+      "qty": "1 bottle",
+      "category": "pantry",
+      "cook_qty": "1 tbsp"
+    },
+    {
+      "item": "Apple cider vinegar",
+      "qty": "1 bottle",
+      "category": "pantry",
+      "cook_qty": "1 tsp"
+    },
+    {
+      "item": "Olive oil",
+      "qty": "3 tbsp",
+      "category": "pantry"
+    },
+    {
+      "item": "Salt",
+      "qty": "3/4 tsp",
+      "category": "pantry"
+    },
+    {
+      "item": "Corn tortillas (100% corn)",
+      "qty": "1 pack",
+      "category": "pantry",
+      "cook_qty": "12"
+    },
+    {
+      "item": "Avocados",
+      "qty": "2",
+      "category": "produce"
+    },
+    {
+      "item": "Cilantro",
+      "qty": "1 bunch",
+      "category": "produce"
+    },
+    {
+      "item": "Limes",
+      "qty": "1",
+      "category": "produce"
+    }
+  ],
+  "instructions": [
+    "Slice the mushrooms 1/4 inch thick. Slice the onion thin and mince the garlic. Finely chop 2 of the chipotle peppers.",
+    "Heat 1 tbsp of the oil in a large skillet over medium-high heat. Add half of the mushrooms in a single layer with 1/4 tsp salt. Leave them alone for 3 minutes, until the underside is deep brown.",
+    "Stir and cook for 2 minutes. Transfer them to a bowl and repeat with 1 tbsp oil, the rest of the mushrooms and 1/4 tsp salt.",
+    "Add the last 1 tbsp oil to the pan, then the onion with 1/4 tsp salt. Cook for 5 minutes, until soft. Add the garlic, cumin and oregano and stir for 30 seconds.",
+    "Add the tomatoes, the chopped chipotles, 1 tbsp of the adobo sauce, the tamari and 1/2 cup water. Simmer for 6 minutes, stirring now and then, until the sauce is thick.",
+    "Return the mushrooms to the pan and simmer for 5 minutes, until they're coated. Take the pan off the heat and stir in the vinegar.",
+    "Meanwhile, heat a dry skillet over medium-high heat and warm the tortillas one at a time for 20 seconds on each side. Wrap them in a clean towel. Slice the avocados, chop the cilantro and cut the lime into wedges.",
+    "Taste the mushrooms. If they're flat, add a pinch more salt or a squeeze of lime.",
+    "Serve the mushrooms in the warm tortillas with the avocado, cilantro and lime wedges."
+  ],
+  "advance_prep_notes": "",
+  "advance_prep_step_indices": [],
+  "method_notes": "The sources agree on a tinga sauce of onion, garlic, tomato and chipotle with oregano and spice, with mushrooms cooked until browned and then simmered in it until they are coated. They differ on the mushroom (hand-shredded king trumpet and oyster, oyster with carrot, or sliced portobello), on whether the sauce is blended, and on the cheese and sour cream on top. This version uses sliced cremini, which are easy to find, and chops the chipotle instead of blending, so there is no blender to wash. The tamari is gluten-free and the dairy toppings are left off to stay vegan.",
+  "sources": [
+    {
+      "name": "PETA",
+      "title": "Vegan Mushroom and Carrot Tinga Tacos",
+      "url": "https://www.peta.org/recipes/vegan-mushroom-carrot-tinga-tacos/",
+      "rating": 5.0,
+      "rating_count": 1,
+      "read": true,
+      "lead": true
+    },
+    {
+      "name": "Far West Fungi",
+      "title": "Mushroom Tinga Tacos",
+      "url": "https://farwestfungi.com/blogs/recipes/mushroom-tinga-tacos",
+      "rating": null,
+      "rating_count": null,
+      "read": true
+    },
+    {
+      "name": "Morton Salt",
+      "title": "Mushroom Tinga Tacos",
+      "url": "https://www.mortonsalt.com/recipe/mushroom-tinga-tacos/",
+      "rating": null,
+      "rating_count": null,
+      "read": true
+    }
+  ],
+  "fallback_used": true,
+  "origin": "seed"
+}

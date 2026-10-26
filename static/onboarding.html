@@ -285,6 +285,11 @@
     font-size: 17px; color: var(--ink-secondary); cursor: pointer;
   }
   .q-skip-quiet:hover { color: var(--ink-strong); }
+  /* The quiet lines are buttons (2026-10-25): as spans they were never
+     reachable from a keyboard and a screen reader read them as text. The
+     browser's button chrome comes off so they stay lines, not a fill. */
+  button.skip-link, button.q-skip-quiet { background: none; border: 0; padding: 0; }
+  button.skip-link:disabled, button.q-skip-quiet:disabled { cursor: default; }
 
   /* Chips — one look for both chip families the page grew over time
      (.chip from the taste steps, .rhythm-chip from the rhythm steps; the
@@ -475,6 +480,8 @@
   :where(:root[data-theme="dark"]) .uw-day.is-some, :where(:root[data-theme="dark"]) .uw-sw.is-some { background: var(--celadon); border-color: var(--celadon); color: var(--on-accent-ink); }
   #prep-day-tiles .uw-day { height: 44px; }
   .uw-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  /* A picker scrolled to (renderMealsDays) stops above the fixed foot, not under it. */
+  .uw-row { scroll-margin-bottom: 150px; }
   .uw-q { padding: 0 12px; font-size: 13px; }
   /* The four quick picks share one row at 375px. */
   .uw-quick { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -1485,7 +1492,7 @@
   </div>
   <div class="q-foot">
     <button class="btn-primary q-next" id="who-cooks-next" type="button">Continue</button>
-    <span class="q-skip-quiet" id="who-cooks-skip">Skip</span>
+    <button type="button" class="q-skip-quiet" id="who-cooks-skip">Skip</button>
   </div>
 </div>
 
@@ -1685,7 +1692,7 @@
   </div>
   <div class="q-foot">
     <button class="btn-primary q-next" id="dinner-time-next" type="button">Continue</button>
-    <span class="q-skip-quiet" id="dinner-time-skip">Skip</span>
+    <button type="button" class="q-skip-quiet" id="dinner-time-skip">Skip</button>
   </div>
 </div>
 
@@ -1713,7 +1720,7 @@
   </div>
   <div class="q-foot">
     <button class="btn-primary q-next" id="shop-day-next" type="button">Next</button>
-    <span class="q-skip-quiet" id="shop-day-skip">Skip</span>
+    <button type="button" class="q-skip-quiet" id="shop-day-skip">Skip</button>
   </div>
 </div>
 
@@ -1807,7 +1814,7 @@
     </div>
   </div>
   <div class="q-foot">
-    <span class="skip-link" id="kit-repeats-skip">Skip &mdash; I&rsquo;ll tell you as we go</span>
+    <button type="button" class="skip-link" id="kit-repeats-skip">Skip &mdash; I&rsquo;ll tell you as we go</button>
     <button class="btn-primary q-next" id="kit-repeats-next" type="button">Let&rsquo;s plan your first week</button>
   </div>
 </div>
@@ -1836,7 +1843,7 @@
     </div>
   </div>
   <div class="q-foot">
-    <span class="skip-link" id="ai-consent-later"></span>
+    <button type="button" class="skip-link" id="ai-consent-later"></button>
     <button class="btn-primary q-next" id="ai-consent-allow" type="button"></button>
   </div>
 </div>
@@ -1889,7 +1896,7 @@
     </div>
   </div>
   <div class="q-foot">
-    <span class="skip-link" id="anything-else-quiet">Nothing else</span>
+    <button type="button" class="skip-link" id="anything-else-quiet">Nothing else</button>
     <button class="btn-primary q-next" id="anything-else-next" type="button">Build my first week</button>
   </div>
 </div>
@@ -2106,6 +2113,12 @@ const membersDiv = document.getElementById('members');
 // reference here is safe) rather than inventing another chip pattern.
 function renderMemberAgeChips(block) {
   const row = block.querySelector('.member-age-chips');
+  // Two people means two rows of Adult / Teen / Child; said as a group
+  // with the person's name, so a screen reader can tell whose they are.
+  const nameEl = block.querySelector('.member-name') || block.querySelector('.member-you-name');
+  const who = nameEl ? (nameEl.value != null ? nameEl.value : nameEl.textContent).trim() : '';
+  row.setAttribute('role', 'group');
+  row.setAttribute('aria-label', who ? who + '’s age' : 'Age');
   buildSingleSelectChips(row, AGE_GROUP_OPTIONS, block.dataset.ageGroup || '', (key) => {
     block.dataset.ageGroup = key;
     // The pinned "You" row is redrawn on every arrival at the step, so its
@@ -3294,6 +3307,7 @@ function buildAnythingElseStep() {
   quiet.textContent = confirming ? 'Change' : 'Nothing else';
   next.disabled = anythingElseBusy;
   quiet.classList.toggle('is-busy', anythingElseBusy);
+  quiet.disabled = anythingElseBusy;
 }
 
 // The one model call. Skipped entirely for an empty note: "Nothing else"
@@ -5116,6 +5130,14 @@ document.getElementById('your-name-input').addEventListener('input', () => {
   showYourNameEmptyNote(false);
   pruneMemberKeyedAnswers();
 });
+// One box on the screen, so the keyboard's return key is Next — it did
+// nothing before (2026-10-25). Not mid-composition: an IME's Enter picks a
+// word, it doesn't answer the question.
+document.getElementById('your-name-input').addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' || e.isComposing) return;
+  e.preventDefault();
+  document.getElementById('your-name-next').click();
+});
 document.getElementById('household-next').onclick = () => {
   if (!currentMembers().length) { showHouseholdEmptyNote(true); return; }
   showHouseholdEmptyNote(false);
@@ -5307,6 +5329,7 @@ function setKitRepeatsBusy(busy) {
   if (btn) btn.disabled = busy;
   if (skip) {
     skip.classList.toggle('is-busy', busy);
+    skip.disabled = busy;
     skip.textContent = busy ? 'Saving your answers…' : KIT_SKIP_LABEL;
   }
 }
@@ -5400,7 +5423,7 @@ function setAiConsentBusy(busy) {
   const btn = document.getElementById('ai-consent-allow');
   const later = document.getElementById('ai-consent-later');
   if (btn) btn.disabled = busy;
-  if (later) later.classList.toggle('is-busy', busy);
+  if (later) { later.classList.toggle('is-busy', busy); later.disabled = busy; }
 }
 
 document.getElementById('ai-consent-allow').onclick = async () => {

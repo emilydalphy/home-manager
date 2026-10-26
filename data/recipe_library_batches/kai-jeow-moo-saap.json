@@ -1,0 +1,42 @@
+{
+ "dish_name": "Kai Jeow Moo Saap",
+ "cuisine": "Thai",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {"item": "Jasmine rice", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Eggs", "qty": "8", "category": "dairy"},
+  {"item": "Ground pork", "qty": "8 oz", "category": "meat/seafood"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Oyster sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Fish sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "White pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "1 cup", "category": "pantry"},
+  {"item": "Sriracha", "qty": "1 bottle", "category": "pantry"}
+ ],
+ "instructions": [
+  "Rinse the 1 1/2 cups jasmine rice in a sieve until the water runs almost clear. Cook it with 2 1/4 cups water in a rice cooker, or in a covered pot over low heat for about 15 minutes, then let it sit, covered, for 10 minutes. If you'd like the rice ready when you wake up, do this the night before and set the cooker's timer.",
+  "Meanwhile, mince the 2 garlic cloves.",
+  "Crack the 8 eggs into a large bowl. Add the 2 tbsp oyster sauce, 1 tbsp fish sauce and 1/4 tsp white pepper. Whisk hard for about 1 minute, until the eggs are frothy with bubbles on top.",
+  "Add the 8 oz ground pork and the garlic. Break the pork up with a fork and stir until there are no big lumps.",
+  "Line a plate with paper towels. Pour 1/2 cup of the oil into a small wok or an 8 inch skillet and heat it over medium high until it shimmers. Drop in a little of the egg. If it puffs and sizzles straight away, the oil is ready.",
+  "Whisk the eggs again and pour a quarter of them, about 1 cup, into the middle of the oil. Stand back a little. It will spatter.",
+  "Leave it alone for 30 to 45 seconds, until it puffs up and the edges turn deep golden and crisp.",
+  "Flip it with a wide spatula and cook the other side for about 1 minute, until it's golden. Cut into the thickest part. It's done when there's no pink pork and no runny egg left.",
+  "Lift it out, let the oil drip back into the pan and transfer it to the paper towels.",
+  "Cook the other three the same way, whisking the eggs before each one. Add the last 1/2 cup oil once the pan starts to look dry.",
+  "Serve each omelette over a mound of the hot rice, with the sriracha on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All the versions beat eggs with fish sauce or soy, stir in raw minced pork, and fry the mixture in a generous amount of very hot oil so it puffs, crisps at the edges and stays soft inside, then serve it over rice. Hungry in Thailand seasons with oyster sauce and fish sauce and adds garlic; Eating Thai Food uses only light soy and whisks until frothy, serving it with tomato sauce; Rachel Cooks Thai, whose plain kai jeow notes the minced pork version with white pepper, serves it with sriracha. This one follows the lead's seasoning with white pepper added, cooks four 2 egg omelettes one at a time, and puts sriracha on the side. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Thai) has no Thai omelette, so the first read version leads. Eating Thai Food shows 4.5 stars from 4 reviews, a review count rather than a rating count, so its count is left blank.",
+ "sources": [
+  {"name": "Hungry in Thailand", "title": "Thai Pork Omelette Recipe (Kai Jeow Moo Sab)", "url": "https://hungryinthailand.com/minced-pork-omelette/", "rating": 5.0, "rating_count": 3, "read": true, "lead": true},
+  {"name": "Eating Thai Food", "title": "Thai Street Food Pork Omelet Recipe (Kai Jeow Moo Sab)", "url": "https://eatingthaifood.com/thai-omelet-recipe-kai-jeow-moo-sab", "rating": 4.5, "rating_count": null, "read": true, "lead": false},
+  {"name": "Rachel Cooks Thai", "title": "Thai Omelette | Kai Jeow", "url": "https://rachelcooksthai.com/thai-omelet/", "rating": 5.0, "rating_count": 2, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

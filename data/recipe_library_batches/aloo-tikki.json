@@ -1,0 +1,109 @@
+{
+ "dish_name": "Aloo Tikki",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 55,
+ "ingredients": [
+  {
+   "item": "Russet potatoes",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chaat masala",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Plain breadcrumbs",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub",
+   "category": "dairy"
+  },
+  {
+   "item": "Tamarind chutney",
+   "qty": "1 jar",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the potatoes, whole and unpeeled, in a medium pot and cover them with cold water by an inch. Bring it to a boil over high heat, then keep it at a steady boil for 20 to 25 minutes, until a knife slides into the middle of the biggest potato with no resistance.",
+  "Drain the potatoes and spread them on a plate. Leave them for about 20 minutes, until they're cool all the way through. Warm potato makes a sticky mix, and the patties fall apart in the pan.",
+  "Meanwhile, grate 1 tbsp of the ginger and finely chop 2 tbsp of the cilantro.",
+  "Peel the potatoes and grate them, or mash them in a large bowl until smooth with no lumps.",
+  "Add the ginger, cilantro, garam masala, chili powder, 1/2 tsp of the chaat masala, the salt, 2 tbsp of the cornstarch and 1/4 cup of the breadcrumbs. Mix it with your hand until it holds together like a soft dough and doesn't stick to your palm. If it's still sticky, work in another spoonful of breadcrumbs.",
+  "Divide the mix into 8 even portions. Roll each one into a ball, then flatten it into a patty about 1/2 inch thick and smooth any cracks around the edge.",
+  "Heat the oil in a large nonstick skillet over medium heat. It's ready when a pinch of the mix sizzles as soon as it goes in.",
+  "Add 4 of the tikkis and leave them alone for 3 minutes, until the underside is firm and golden. Don't move them before then. They'll break.",
+  "Flip them and cook the other side for 3 minutes, until it's golden and crisp. Transfer them to a paper towel lined plate, then cook the other 4 the same way.",
+  "Sprinkle the remaining 1/4 tsp chaat masala over the hot tikkis.",
+  "Serve with the yogurt and the tamarind chutney."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions mash fully cooled potatoes with ginger, a little binder and spices, then fry them until a crust forms before moving them. Swasthi binds with cornstarch and breadcrumbs and shallow fries, while Cook With Manali stuffs them with spiced paneer, binds with soaked poha and deep fries twice; this version follows the lead's plain shallow fried tikki. The chopped green chili is left out to keep them mild, and they're served with yogurt and tamarind chutney, as Manali does.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Aloo Tikki Recipe (Crispy Street Style)",
+   "url": "https://www.indianhealthyrecipes.com/aloo-tikki-recipe/",
+   "rating": 4.99,
+   "rating_count": 262,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cook With Manali",
+   "title": "Aloo Tikki",
+   "url": "https://www.cookwithmanali.com/aloo-tikki/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

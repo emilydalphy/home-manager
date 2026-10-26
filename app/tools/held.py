@@ -100,7 +100,7 @@ def _row_dict(row, today: date | None = None) -> dict:
 
 _SELECT = (
     "SELECT h.id, h.text, h.member_id, h.said_on, h.ask_text, m.name AS said_by "
-    "FROM held_things h LEFT JOIN members m ON m.id = h.member_id "
+    "FROM held_things h LEFT JOIN members m ON m.id = h.member_id AND m.household_id = h.household_id "
 )
 
 
@@ -146,6 +146,18 @@ def hold_thing(text: str, *, ask_text: str = "", member_id=SESSION_MEMBER, conn=
     own_conn = conn is None
     if own_conn:
         conn = get_conn()
+    # The chat's schema doesn't declare member_id, but an undeclared key
+    # reaches the function untouched (agent.read_tool_input), so the model
+    # can send one. A foreign adult's id would be held under THIS household
+    # and read back as "said by" the other household's adult — their name,
+    # on this household's Today. Refused the way every by-id write is.
+    if member_id is not None:
+        try:
+            require_household_row(conn, "members", member_id, label="member", close_on_miss=False)
+        except ValueError:
+            if own_conn:
+                conn.close()
+            raise
     today = _today(conn=conn)
     existing = conn.execute(
         _SELECT + "WHERE h.household_id = ? AND h.resolved_at IS NULL AND LOWER(h.text) = LOWER(?) "

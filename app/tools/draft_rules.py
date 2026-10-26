@@ -162,7 +162,19 @@ def enforce_cold_packed_lunches(plan_id: int, dates: list[str], picker=None) -> 
     return out
 
 
-def enforce_protein_variety(plan_id: int, picker=None) -> list[dict]:
+def enforce_protein_variety(plan_id: int, picker=None, targets: dict | None = None) -> list[dict]:
+    """`targets` is {slot: distinct-dish count} for the counts the
+    household set ("Different dishes a week"). This pass runs after the
+    count's last guard in agent._finish_week_slots (and after the
+    tripwire), so a re-pick here can put a dish on the week past that
+    number — and could: one night of a two-night chicken lunch, re-picked,
+    was a third lunch dish against Lunches 2. (enforce_cold_packed_lunches
+    can too; that one is a person's need against the count, left for
+    Emily.) A night is re-picked only when the new dish keeps its meal
+    within the count (the night is its dish's only night, or the meal is
+    still under its number); otherwise it stands, as a pick that came back
+    unsuitable does. The count is a number the household chose;
+    MAX_PER_PROTEIN is Pomona's own default."""
     from . import leftovers as _leftovers
     from . import meal_variety as _meal_variety
 
@@ -181,6 +193,10 @@ def enforce_protein_variety(plan_id: int, picker=None) -> list[dict]:
                 continue
             if (row["cooked_status"] or "") == "done" or _meal_variety.theirs(row["derived"]) \
                     or row["derived"].get("make_double_for") or row["id"] in chains["sources"]:
+                continue
+            target = (targets or {}).get(row["slot"])
+            at_count = target and len(_meal_variety.distinct_dishes(plan_id, row["slot"])) >= int(target)
+            if at_count and _meal_variety.replacing_adds_a_dish(plan_id, row["slot"], row["id"]):
                 continue
             because = f"not {protein} again this week."
             new = _repick(plan_id, row, because, {"avoid_main_protein": protein}, picker,

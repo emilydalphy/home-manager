@@ -1,0 +1,180 @@
+{
+ "dish_name": "Bun Bo Xao",
+ "cuisine": "Vietnamese",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 35,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {
+   "item": "Flank steak",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Lemongrass",
+   "qty": "2 stalks",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Bean sprouts",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Rice vermicelli",
+   "qty": "8 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Green leaf lettuce",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "English cucumber",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Mint",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Roasted peanuts",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Thai chilies",
+   "qty": "2",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Trim the 2 lemongrass stalks. Cut off the root end and the dry green tops, and peel away the tough outer layer. Mince the pale, tender part as finely as you can. That should be about 3 tbsp.",
+  "Mince 2 of the garlic cloves for the beef. Finely chop the last clove and keep it separate for the dipping sauce.",
+  "Slice the 1 lb flank steak across the grain into thin strips, about 1/8 inch thick and 2 inches long.",
+  "In a medium bowl, stir together 1 tbsp soy sauce, 1 tbsp oyster sauce, 1 tbsp brown sugar, 1/2 tsp cornstarch, 1/2 tsp salt, 1/2 tsp pepper and 1 tbsp of the oil. Stir in the lemongrass and the minced garlic. Add the beef and toss until every strip is coated. Leave it for 30 minutes while you get everything else ready.",
+  "Meanwhile, bring a large pot of water to a boil for the noodles.",
+  "Make the dipping sauce. In a small bowl, stir 3 tbsp sugar into 1/2 cup warm water until it dissolves. Juice the 2 limes. That should be about 1/4 cup. Stir the lime juice, 3 tbsp fish sauce and the chopped garlic into the sweet water.",
+  "Thinly slice the 2 chilies and put them in a little bowl for the table.",
+  "Add the 8 oz vermicelli to the boiling water and cook for 3 to 5 minutes, until the noodles are soft all the way through. Drain them, rinse them under cold water until they're cool, and leave them in the colander to drain well.",
+  "Shred about half the head of lettuce. Cut the cucumber and the carrot into thin matchsticks. Pick the mint leaves off the stems. Roughly chop the 1/4 cup peanuts.",
+  "Peel the onion, cut it in half and slice it thin.",
+  "Heat 1 tbsp of the oil in a large skillet or wok over high heat until it shimmers. Add the onion and stir it for about 2 minutes, until it softens and browns at the edges. Transfer it to a plate.",
+  "Add the last 1 tbsp oil and half the beef in a single layer. Leave it alone for about 1 minute, until the underside browns. Stir and cook for about 1 minute, until there's no pink left, and transfer it to the plate.",
+  "Cook the rest of the beef the same way.",
+  "Return the onion and all the beef to the pan with the 8 oz bean sprouts. Toss for about 30 seconds, until the sprouts are warm but still crunchy, then take the pan off the heat.",
+  "Taste a piece of the beef. If it's flat, add a pinch more salt.",
+  "Divide the noodles among 4 bowls. Pile the lettuce, cucumber, carrot and mint beside them, spoon the warm beef on top and scatter over the peanuts.",
+  "Serve with the dipping sauce and the chilies on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three marinate thin strips of beef with minced lemongrass and garlic, stir fry them fast over high heat with onion or shallot, and serve them warm over cold rice vermicelli with lettuce, cucumber, herbs and nuoc cham. Cooking Therapy seasons the beef with soy, oyster sauce, brown sugar and a little cornstarch, while Runaway Rice and SBS lean on fish sauce and both toss bean sprouts into the pan at the end. This one follows the lead's marinade, uses 2 lemongrass stalks for the pound of beef (the lead uses 1), adds the bean sprouts from the other two, cooks the beef in two batches so it browns, and keeps the chilies out of the dipping sauce and on the side.",
+ "sources": [
+  {
+   "name": "Cooking Therapy",
+   "title": "Vietnamese Beef Noodle Salad (Bun Bo Xao)",
+   "url": "https://www.cooking-therapy.com/vietnamese-beef-noodle-salad-bun-bo-xao/",
+   "rating": 4.93,
+   "rating_count": 27,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Runaway Rice",
+   "title": "Lemongrass Beef over Rice Noodles (Bun Bo Xao)",
+   "url": "https://runawayrice.com/noodles-rice/lemongrass-beef-over-rice-noodles/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "SBS Food",
+   "title": "Beef noodle salad (Bun bo xao)",
+   "url": "https://www.sbs.com.au/food/recipe/beef-noodle-salad-bun-bo-xao/6bdyk3ldv",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

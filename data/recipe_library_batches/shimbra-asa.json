@@ -1,0 +1,123 @@
+{
+ "dish_name": "Shimbra Asa",
+ "cuisine": "Ethiopian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 55,
+ "ingredients": [
+  {
+   "item": "Chickpea flour",
+   "qty": "1 bag (1 lb)",
+   "category": "pantry",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Ground white pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Ghee",
+   "qty": "1 jar",
+   "category": "dairy",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Berbere",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cardamom",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Injera",
+   "qty": "1 package",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Grate a quarter of one onion on the fine side of a box grater. That should be about 2 tbsp. Finely chop the rest of the onions.",
+  "Mince 1 garlic clove for the dough and the other 3 for the sauce, keeping them in separate piles. Peel and finely grate the ginger. That should be about 1 tbsp.",
+  "In a bowl, mix the 2 cups chickpea flour, 1 tsp of the salt and the 1/2 tsp white pepper. Add the grated onion, the garlic for the dough and 1/2 cup water. Stir, then knead with your hands until it's a smooth dough that holds together in a ball. If it crumbles, add water 1 tsp at a time. Cover it and set it aside.",
+  "Put the chopped onions in a wide, heavy pan over medium heat with no fat at all. Cook them for 6 minutes, stirring often, until they're soft and dry. If they catch, add a splash of water.",
+  "Add the 3 tbsp ghee and cook for 5 minutes, stirring now and then, until the onions are golden.",
+  "Add the garlic for the sauce and the ginger and stir for 1 minute, until they smell fragrant.",
+  "Stir in the 2 tbsp berbere, 1/2 tsp cardamom and 2 tbsp tomato paste. Cook, stirring all the time, for 2 minutes, until the paste darkens and it smells toasty. If it starts to catch, add a splash of water. Burnt berbere tastes bitter.",
+  "Pour in 2 1/2 cups water, add the remaining 1 tsp salt, and bring it to a bubble. Turn the heat to low and simmer uncovered for 10 minutes, until it's slightly thickened. Turn off the heat.",
+  "Meanwhile, roll the dough out between two sheets of parchment until it's about 1/4 inch thick. Cut it into strips about 3 inches long and 1 inch wide.",
+  "Heat the 2 cups oil in a deep, heavy saucepan over medium-high heat. You're heating it to 350°F, so if you have a thermometer, clip it to the side. No thermometer? Drop in a scrap of dough: the oil is ready when it sizzles straight away and floats up within a few seconds.",
+  "Fry the strips in batches of 6 to 8, turning them often, for 3 to 4 minutes, until they're puffed, golden and firm. Stand back a little. They'll spatter. Fry them until the crust is firm. A pale, soft one breaks up in the sauce. Move them to paper towels as they come out.",
+  "Put the sauce back over medium-low heat until it bubbles. Add the fried pieces and spoon the sauce over them. Cover and simmer gently for 15 minutes, until they're soft all the way through but still hold their shape. Shake the pan instead of stirring.",
+  "Taste the sauce. If it's flat, add a pinch more salt.",
+  "Serve with injera."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three make a chickpea flour dough seasoned with pepper and garlic, deep fry it until golden, and simmer the pieces in a berbere sauce built on onions cooked dry first. Food.com rolls the dough and cuts it into small fish shapes and uses a full 1/2 cup berbere, the Heirloom Vegetable Archive drops spoonfuls of a wetter batter and adds ginger and cardamom, and Niva's version uses a thick dough rolled into balls with tomato paste in the sauce. None had more than a single review and the trusted cook for the cuisine has no Ethiopian recipes, so this follows Food.com's rolled fish shapes and its 350°F fry, with ginger, cardamom and tomato paste from the others and the berbere cut to 2 tbsp so the sauce is warm, not fiery.",
+ "sources": [
+  {
+   "name": "Food.com",
+   "title": "Yeshimbra Assa (Ethiopian Chickpea \"Fish\" and Sauce)",
+   "url": "https://www.food.com/recipe/yeshimbra-assa-ethiopian-chickpea-fish-and-sauce-133101",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Heirloom Vegetable Archive",
+   "title": "Chickpea Dumpling Stew (Yeshimbra Assa)",
+   "url": "https://www.sci.muni.cz/botany/nekola/kitchen/ethiopia/dumplings.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Niva Cooks (E-pad)",
+   "title": "Shenbra Asa Wot Recipe",
+   "url": "https://epad.substack.com/p/shenbra-asa-wot-recipe",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

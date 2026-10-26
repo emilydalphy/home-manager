@@ -19,7 +19,7 @@
   {"item": "Diced tomatoes", "qty": "1 can (14.5 oz)", "category": "pantry"},
   {"item": "Vegetable broth", "qty": "1 carton (32 oz)", "category": "pantry", "cook_qty": "4 cups"},
   {"item": "Cannellini beans", "qty": "1 can (15 oz)", "category": "pantry"},
-  {"item": "Parmesan", "qty": "1 wedge with rind (4 oz)", "category": "dairy", "cook_qty": "the rind + 1/2 cup grated"},
+  {"item": "Parmesan", "qty": "1 wedge (4 oz), with rind", "category": "dairy", "cook_qty": "the rind + 1/2 cup grated"},
   {"item": "Lacinato kale", "qty": "1 bunch", "category": "produce"}
  ],
  "instructions": [

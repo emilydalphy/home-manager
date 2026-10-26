@@ -1,0 +1,98 @@
+{
+ "dish_name": "Torrijas",
+ "cuisine": "Spanish",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Whole milk",
+   "qty": "1 1/2 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3 tbsp plus 1/4 cup"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Baguette",
+   "qty": "1",
+   "category": "other"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Use a vegetable peeler to take 2 wide strips of peel from the lemon, leaving the white pith behind.",
+  "Add the 1 1/2 cups milk, 3 tbsp of the sugar, the cinnamon stick and the lemon peel to a small saucepan. Warm it over medium heat for about 5 minutes, until it steams and small bubbles appear at the edge. Don't let it boil.",
+  "Turn off the heat and leave the milk for 15 minutes, until it's warm rather than hot.",
+  "Meanwhile, cut the baguette on a slant into slices about 1 inch thick. That should be about 12 slices.",
+  "Stir the 1/4 cup sugar and the 1 tsp ground cinnamon together on a plate. Beat the 2 eggs in a shallow bowl.",
+  "Lift the cinnamon stick and lemon peel out of the milk and pour the milk into a shallow dish.",
+  "Heat the oil in a large skillet over medium heat. It's ready when a drop of egg sizzles as soon as it hits the pan.",
+  "Lay 4 slices of bread in the milk for about 10 seconds a side, until they're soaked through but still hold their shape. Lift them out and let the extra milk drip off.",
+  "Dip each soaked slice in the egg on both sides and lay it in the pan. Fry for about 2 minutes, until the underside is deep golden. Flip them and cook the other side for about 2 minutes.",
+  "Transfer them to a plate lined with paper towels for a few seconds, then roll each one in the cinnamon sugar while it's warm. Soak, dip and fry the rest the same way, turning the heat down a little if they brown too fast.",
+  "Serve warm or at room temperature."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "None of the versions read had ratings and RecipeTin Eats has no torrijas, so this follows Spain on a Fork. All three warm milk with sugar, and Spain on a Fork and Tasty Mediterraneo infuse it with cinnamon stick and lemon peel, before the bread is soaked, dipped in beaten egg and finished with sugar and cinnamon. Spain on a Fork fries in sunflower oil, Spain.info fries in olive oil and finishes with honey, and Tasty Mediterraneo bakes them instead. This fries in olive oil as Spain.info does, with Spain on a Fork's cinnamon sugar; day-old bread soaks without falling apart, so buy the baguette the day before if you can.",
+ "sources": [
+  {
+   "name": "Spain on a Fork",
+   "title": "Torrijas Recipe - Spanish Cinnamon Toast",
+   "url": "https://spainonafork.com/torrijas-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Tasty Mediterraneo",
+   "title": "Torrijas: Spanish Easter dessert",
+   "url": "https://www.tastymediterraneo.com/torrijas-spanish-easter-dessert/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Spain.info",
+   "title": "Torrijas from Madrid",
+   "url": "https://www.spain.info/en/recipe/torrijas-madrilenas/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

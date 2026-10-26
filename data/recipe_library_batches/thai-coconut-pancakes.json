@@ -1,0 +1,40 @@
+{
+ "dish_name": "Thai Coconut Pancakes",
+ "cuisine": "Thai",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {"item": "Rice flour", "qty": "1 bag", "category": "pantry", "cook_qty": "1 cup + 1 tbsp"},
+  {"item": "Glutinous rice flour", "qty": "1 bag", "category": "pantry", "cook_qty": "1 1/2 tsp"},
+  {"item": "Coconut milk", "qty": "1 can (13.5 oz)", "category": "pantry", "cook_qty": "1 1/2 cups"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "2 tbsp"},
+  {"item": "Salt", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Green onions", "qty": "1 bunch", "category": "produce", "cook_qty": "2"},
+  {"item": "Vegetable oil", "qty": "1 tbsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Shake the can of coconut milk hard before you open it.",
+  "In a bowl, stir together 1 cup rice flour, the 1 1/2 tsp glutinous rice flour and 1/8 tsp salt. Stir in 3/4 cup of the coconut milk.",
+  "Bring 1 cup water to a boil, pour it over the flour mixture and whisk until it's smooth and about as thin as cream.",
+  "Make the filling in a measuring cup with a spout: stir together the remaining 3/4 cup coconut milk, the last 1 tbsp rice flour, the other 1/8 tsp salt and the 2 tbsp sugar until the sugar dissolves.",
+  "Thinly slice 2 green onions.",
+  "Heat a takoyaki or aebleskiver pan over medium until a drop of water sizzles on it. Brush each cup lightly with oil. You can skip the oil on a nonstick pan.",
+  "Fill each cup about three quarters full with the batter. Tilt the pan gently, or use the back of a spoon, so the batter coats the sides of each cup up to the rim.",
+  "Spoon 1 to 2 tsp of the filling into the middle of each cup. Cover the pan with a lid or a baking sheet and cook for 1 minute.",
+  "Uncover and scatter a few green onion slices over each one. Cover again and cook for 2 to 3 minutes, until the tops are set and not sticky when you touch them lightly and the bottoms are golden and crisp.",
+  "Loosen the edges with a small spoon and lift each one out.",
+  "Stir both bowls, brush the cups with oil again and cook the rest the same way. You should get about 35. Serve them warm."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions make a thin rice flour and coconut milk batter for the shell and a sweeter, saltier coconut milk filling, cook them together in a cupped pan under a lid until the bottoms crisp and the middles set, and top them with green onion or corn. Raks Kitchen whisks boiling water into the batter, adds a little glutinous rice flour, swirls the batter up the sides of each cup and thickens the filling with rice flour; Hungry in Thailand sweetens the batter itself with palm sugar and makes a much bigger batch, and Jackie M uses desiccated coconut in the base and coconut cream with tapioca starch on top. This one follows the lead's amounts, which make about 35, with green onion as the topping. It needs a takoyaki or aebleskiver pan. No version had 20 or more ratings and RecipeTin Eats (the trusted cook for Thai) has no kanom krok, so the first read version leads.",
+ "sources": [
+  {"name": "Raks Kitchen", "title": "Kanom Krok Recipe (Thai Coconut Pancakes)", "url": "https://rakskitchen.net/kanom-krok-recipe-thai-coconut-pancakes/", "rating": 5.0, "rating_count": 3, "read": true, "lead": true},
+  {"name": "Hungry in Thailand", "title": "Kanom Krok Recipe (Authentic Thai Coconut Pancakes)", "url": "https://hungryinthailand.com/kanom-krok-recipe/", "rating": 5.0, "rating_count": 1, "read": true, "lead": false},
+  {"name": "Jackie M", "title": "Kanom Krok: Thai Coconut Cakes", "url": "https://jackiem.com.au/2018/11/20/how-to-make-kanom-krok-thai-coconut-cakes/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

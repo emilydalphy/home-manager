@@ -1,0 +1,131 @@
+{
+  "dish_name": "Calabacitas Tacos",
+  "cuisine": "Mexican",
+  "main_protein": "vegetarian",
+  "default_servings": 4,
+  "prep_time_minutes": 15,
+  "cook_time_minutes": 22,
+  "ingredients": [
+    {
+      "item": "Zucchini",
+      "qty": "1 lb",
+      "category": "produce"
+    },
+    {
+      "item": "Yellow squash",
+      "qty": "1 lb",
+      "category": "produce"
+    },
+    {
+      "item": "Poblano peppers",
+      "qty": "2",
+      "category": "produce"
+    },
+    {
+      "item": "Yellow onion",
+      "qty": "1",
+      "category": "produce"
+    },
+    {
+      "item": "Garlic",
+      "qty": "3 cloves",
+      "category": "produce"
+    },
+    {
+      "item": "Frozen corn",
+      "qty": "1 bag",
+      "category": "frozen",
+      "cook_qty": "1 1/2 cups"
+    },
+    {
+      "item": "Ground cumin",
+      "qty": "1 tsp",
+      "category": "pantry"
+    },
+    {
+      "item": "Dried oregano",
+      "qty": "1/2 tsp",
+      "category": "pantry"
+    },
+    {
+      "item": "Salt",
+      "qty": "1 tsp",
+      "category": "pantry"
+    },
+    {
+      "item": "Olive oil",
+      "qty": "3 tbsp",
+      "category": "pantry"
+    },
+    {
+      "item": "Limes",
+      "qty": "2",
+      "category": "produce"
+    },
+    {
+      "item": "Cilantro",
+      "qty": "1 bunch",
+      "category": "produce"
+    },
+    {
+      "item": "Avocados",
+      "qty": "2",
+      "category": "produce"
+    },
+    {
+      "item": "Corn tortillas (100% corn)",
+      "qty": "1 pack",
+      "category": "pantry",
+      "cook_qty": "8"
+    },
+    {
+      "item": "Hot sauce",
+      "qty": "1 bottle",
+      "category": "pantry"
+    }
+  ],
+  "instructions": [
+    "Cut the zucchini and yellow squash into 1/2 inch pieces. Seed the poblanos and dice them. Dice the onion and mince the garlic.",
+    "Heat 1 tbsp of the oil in a large skillet over medium-high heat until it shimmers. Add half of the zucchini and squash in a single layer with 1/4 tsp salt. Leave it alone for 3 minutes, until the underside is browned.",
+    "Stir, cook for 2 minutes, then transfer it to a bowl. Add another 1 tbsp oil and cook the rest of the zucchini and squash the same way with 1/4 tsp salt.",
+    "Add the last 1 tbsp oil to the empty pan. Add the onion and poblanos with 1/4 tsp salt and cook for 5 minutes, stirring now and then, until the onion is soft.",
+    "Add the garlic, cumin and oregano and stir for 30 seconds, until you can smell them.",
+    "Add the corn and cook for 2 minutes. Return the squash to the pan and stir for 1 minute. Take the pan off the heat.",
+    "Juice 1 lime into the pan. Chop the cilantro, stir 1/4 cup of it into the filling and keep the rest for the top.",
+    "Heat a dry skillet over medium-high heat. Warm the tortillas one at a time for 20 seconds on each side, and wrap them in a clean towel as they're done. Slice the avocados and cut the other lime into wedges.",
+    "Taste the filling. If it's flat, add 1/4 tsp salt or a squeeze of lime.",
+    "Serve the filling in the warm tortillas with the avocado, the rest of the cilantro and the lime wedges, with the hot sauce on the table."
+  ],
+  "advance_prep_notes": "",
+  "advance_prep_step_indices": [],
+  "method_notes": "The sources agree on the base: summer squash and corn cooked in a skillet with onion, garlic and a little ground spice, in corn tortillas. They differ on the chile (poblano or roasted green chile in the New Mexico versions, ancho powder in the PBS one) and on toppings, where all three use cheddar, cotija or bacon. This version cooks the squash in two batches over high heat so it browns instead of steaming, drops the cheese and bacon to stay vegan, uses fresh poblano instead of roasted green chile so it fits 45 minutes, and puts heat on the table as hot sauce.",
+  "sources": [
+    {
+      "name": "My Crazy Good Life",
+      "title": "Easy Recipe for Calabacitas Tacos",
+      "url": "https://mycrazygoodlife.com/?p=53176",
+      "rating": 5,
+      "rating_count": 2,
+      "read": true,
+      "lead": true
+    },
+    {
+      "name": "MJ's Kitchen",
+      "title": "Calabacitas Tacos (Squash, Corn and Hatch Chile)",
+      "url": "https://mjskitchen.com/2018/07/calabacitas-tacos-squash-corn-hatch-chile/",
+      "rating": 5,
+      "rating_count": 1,
+      "read": true
+    },
+    {
+      "name": "PBS Food",
+      "title": "Calbacita Tacos",
+      "url": "https://www.pbs.org/food/recipes/calbacita-tacos",
+      "rating": null,
+      "rating_count": null,
+      "read": true
+    }
+  ],
+  "fallback_used": true,
+  "origin": "seed"
+}
