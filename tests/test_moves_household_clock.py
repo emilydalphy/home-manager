@@ -56,6 +56,11 @@ PLAN_DAYS = [(SERVER_TODAY + timedelta(days=n)).isoformat() for n in range(-3, 4
 # behind the server, which is the reported bug, the real Pomona households
 # and every evening between 8pm and midnight Eastern.
 UTC_EARLY = datetime.combine(SERVER_TODAY, time(1, 30), tzinfo=timezone.utc)
+# 00:30 UTC: Toronto is 20:30 (19:30 in winter) the evening BEFORE — still a
+# day behind the server, and before 9pm, when tonight's dinner stops being
+# a question (weekly_plan.TONIGHT_QUESTION_CLOSES, 2026-10-26). For the
+# tests that need the "Tonight" card itself.
+UTC_EARLY_EVENING = datetime.combine(SERVER_TODAY, time(0, 30), tzinfo=timezone.utc)
 # 23:30 UTC: Tokyo is 08:30 the morning AFTER — the household is a day
 # ahead of the server, the same defect read from the other side.
 UTC_LATE = datetime.combine(SERVER_TODAY, time(23, 30), tzinfo=timezone.utc)
@@ -431,7 +436,7 @@ def _seed_undecided(zone: str, instant: datetime) -> str:
     return _local_date(zone, instant)
 
 
-@pytest.mark.parametrize("zone,instant", [(TORONTO, UTC_EARLY), (TOKYO, UTC_LATE)])
+@pytest.mark.parametrize("zone,instant", [(TORONTO, UTC_EARLY_EVENING), (TOKYO, UTC_LATE)])
 def test_the_dinner_card_names_the_households_day(monkeypatch, zone, instant):
     """
     CATCH. "Tonight" has to mean the household's tonight, in both zone
@@ -446,7 +451,7 @@ def test_the_dinner_card_names_the_households_day(monkeypatch, zone, instant):
     assert card["date"] == local != SERVER_TODAY.isoformat()
 
 
-@pytest.mark.parametrize("zone,instant", [(TORONTO, UTC_EARLY), (TOKYO, UTC_LATE)])
+@pytest.mark.parametrize("zone,instant", [(TORONTO, UTC_EARLY_EVENING), (TOKYO, UTC_LATE)])
 def test_a_dinner_answered_on_now_is_on_nows_timeline(monkeypatch, zone, instant):
     """
     CATCH, and the whole point: answer the card with the date it carries,
