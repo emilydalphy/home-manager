@@ -7909,6 +7909,37 @@ def recipes_not_ready_line(names: list[str]) -> str | None:
             "You can fill them in from Cook.")
 
 
+def _new_dishes_written(weekly_plan_id: int) -> int:
+    """
+    How many of this plan's NEW dishes already have their recipe written —
+    by the draft's background pass (agent.start_background_recipe_pass),
+    which in production usually writes most of them before Approve, or by
+    an earlier approval try. A new dish is one the week generator saved
+    (from_draft) that no other approved week has had on it; written means
+    details_pending is clear. Any of them written means Claude WAS reached
+    for this week, so one dish left unreachable must not block it (#75).
+    """
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            """
+            SELECT COUNT(DISTINCT r.id) AS n
+            FROM meal_plan_entries mpe JOIN recipes r ON r.id = mpe.recipe_id
+            WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ?
+              AND r.from_draft = 1 AND r.details_pending = 0
+              AND NOT EXISTS (
+                SELECT 1 FROM meal_plan_entries o JOIN weekly_plans owp ON owp.id = o.weekly_plan_id
+                WHERE o.recipe_id = r.id AND o.household_id = mpe.household_id
+                  AND o.weekly_plan_id != mpe.weekly_plan_id AND owp.approved_at IS NOT NULL
+              )
+            """,
+            (weekly_plan_id, household_id()),
+        ).fetchone()
+    finally:
+        conn.close()
+    return int(row["n"] or 0)
+
+
 def _write_pending_recipes(weekly_plan_id: int) -> dict:
     """
     Approval's first move since 2026-09-21: any dish the menu pass left
@@ -8072,7 +8103,9 @@ def approve_weekly_plan(
         # dish Claude didn't answer for, beside others it did write, no
         # longer holds the whole week back — the week approves and the
         # toast names the dish that isn't ready (recipes_not_ready_line).
-        if _none_reached(written):
+        # "None reached" is about the WEEK, not just this pass: a dish the
+        # background pass already wrote was Claude answering for this week.
+        if _none_reached(written) and not _new_dishes_written(weekly_plan_id):
             from .. import agent as _agent
             err = _agent.AssistantUnavailableError(RECIPES_UNREACHABLE_LINE)
             setattr(err, _agent.AI_FILED, True)

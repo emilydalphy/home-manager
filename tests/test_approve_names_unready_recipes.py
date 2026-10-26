@@ -87,6 +87,61 @@ def test_one_unreachable_dish_beside_a_written_one_still_approves(household, men
     assert "chicken thighs" in items, "the dish that WAS written got nothing on the list"
 
 
+def test_a_dish_the_background_pass_wrote_counts_as_reached(household, menu_model, monkeypatch):
+    """Production's shape (review, 2026-10-26): the draft's background pass
+    writes most dishes before Approve, so Approve's own pass only retries
+    the one it couldn't reach — filled=[], failed == unreachable. That
+    alone used to block the whole week."""
+    week = _week_start()
+    menu_model(_two_new_dinners(week))
+    plan = agent.generate_weekly_plan(week)
+    # The background pass (wait=False): writes Reachable, can't reach Claude for Unreachable.
+    monkeypatch.setattr(agent, "generate_recipe_details_llm", _writer_that_cannot_reach("Unreachable Dinner"))
+    agent.fill_pending_recipes_for_plan(plan["weekly_plan_id"], wait=False)
+    assert _recipe("Reachable Dinner")["details_pending"] is False, "premise: written before Approve"
+    assert _recipe("Unreachable Dinner")["details_pending"] is True
+
+    # By Approve, Claude can't be reached at all.
+    def _never(spec):
+        raise agent._gave_up("generate_recipe_details_llm", APIConnectionError(
+            request=httpx.Request("POST", "https://api.anthropic.com/v1/messages")))
+    monkeypatch.setattr(agent, "generate_recipe_details_llm", _never)
+
+    result = tools.approve_weekly_plan(plan["weekly_plan_id"])
+
+    assert result["status"] == "approved"
+    assert result["recipes_not_ready"] == ["Unreachable Dinner"]
+    assert result["recipes_not_ready_line"].startswith("Unreachable Dinner isn’t written up yet")
+
+
+def test_a_reused_dish_from_an_approved_week_does_not_count_as_reached(household, menu_model, monkeypatch):
+    """A dish already written for an EARLIER approved week isn't this
+    week's Claude answering: with every new dish unreachable, approval
+    still stops."""
+    week = _week_start()
+    menu_model(_menu_week(week, new_dinner="Old Favourite"))
+    first = agent.generate_weekly_plan(week)
+    monkeypatch.setattr(agent, "generate_recipe_details_llm", lambda spec: dict(DETAILS))
+    tools.approve_weekly_plan(first["weekly_plan_id"])
+
+    nxt = _week_start(2)
+    days = []
+    for i, d in enumerate(_menu_week(nxt, new_dinner="Old Favourite")):
+        if d["slot"] == "dinner" and i % 2:
+            d = {**d, "meal_name": "Brand New Dinner"}
+        days.append(d)
+    menu_model(days)
+    second = agent.generate_weekly_plan(nxt)
+
+    def _never(spec):
+        raise agent._gave_up("generate_recipe_details_llm", APIConnectionError(
+            request=httpx.Request("POST", "https://api.anthropic.com/v1/messages")))
+    monkeypatch.setattr(agent, "generate_recipe_details_llm", _never)
+
+    with pytest.raises(agent.AssistantUnavailableError):
+        tools.approve_weekly_plan(second["weekly_plan_id"])
+
+
 def test_when_no_dish_could_be_reached_approval_still_stops(household, menu_model, monkeypatch):
     week = _week_start()
     menu_model(_two_new_dinners(week))
