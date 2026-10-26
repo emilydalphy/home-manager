@@ -97,6 +97,21 @@ why*, not duplicating the diff.
   is changed, so a later "We skipped it" puts the food back. Reverses the
   2026-10-12 "past meal left out on purpose" call (its guard test flipped).
   Default "assume it was eaten" is Emily's open question.
+- **A celiac refusal names gluten, not the condition** (2026-10-21, overnight;
+  branch `overnight/allergen-gate-knows-pretzels`). "Soup and crackers has
+  celiac, which Maya can't have" read as if celiac were in the bowl;
+  `_clash_sentence` now says the food the word stands for
+  (`_WHOLE_WORD_FAMILIES`: celiac/coeliac → gluten, milk/lactose → dairy).
+- **A gluten / wheat / celiac restriction holds back pretzels and crackers**
+  (2026-10-21, defect hunt; branch `overnight/allergen-gate-knows-pretzels`;
+  tests `tests/test_gluten_gate_knows_pretzels.py`). `_WHEAT_WORDS` gained
+  pretzel, cracker, baguette, ciabatta, matzo, matzah: "Apple slices
+  with cheddar and pretzels" passed the hard gate for a gluten-free child.
+  Why: bought wheat foods never list flour. "gluten-free pretzels" / "GF
+  crackers" are still believed. Left out on purpose: tortilla (corn), bun
+  (bún), cookie, cake, and graham (a name: "no nuts for Graham" lost its nuts). Still open: "vegetarian" / "vegan" / "no meat"
+  restrictions hold back nothing (see the celiac entry below).
+
 - **The shop-day reminder waits on a two-week plan too** (2026-10-20, Emily's
   call; branch `fix/fortnight-shop-reminder-waits`; tests
   `tests/test_fortnight_shop_reminder_waits.py`). The "plan it before you

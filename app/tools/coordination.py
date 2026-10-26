@@ -116,6 +116,17 @@ _WHEAT_WORDS = {
     "rigatoni", "ravioli", "tortellini", "fusilli", "farfalle", "ziti", "pappardelle",
     "gnocchi", "dough", "tempura", "wonton", "pastry", "phyllo", "filo", "roux", "beer",
     "sourdough", "focaccia", "brioche", "challah", "lo mein",
+    # Third audit (2026-10-21, snacks builder): the bought wheat foods whose
+    # flour is never written as an ingredient. "Apple slices with cheddar and
+    # pretzels" passed the gate for a gluten-free child. A "gluten-free
+    # pretzels" / "GF crackers" line is still believed (_GLUTEN_FREE_SEGMENT_RE).
+    # Not "tortilla" (corn ones are the gluten-free kind; "flour tortilla" is
+    # caught on "flour"), "bun" (Vietnamese bún is rice noodle), "cookie" or
+    # "cake" (often flourless, and their lists say flour when they have it).
+    # Not "graham" either: it is a person's name, and big_meal keeps a food
+    # word in a guest note, so "no nuts for Graham" became the phrase "nuts
+    # graham" and found no nuts (review). Graham crackers trip on "cracker".
+    "pretzel", "cracker", "baguette", "ciabatta", "matzo", "matzah",
 }
 _ALLERGEN_ALIASES: dict[str, set[str]] = {
     "nut": {"peanut", "walnut", "almond", "cashew", "pecan", "hazelnut",
@@ -1216,6 +1227,10 @@ def _clash_sentence(c: dict) -> str:
     # own name doesn't already say. "Pineapple Salsa has pineapple" is
     # noise; "Pineapple Salsa" plus the person is the whole fact.
     term = terms[0] if terms else ""
+    # A condition is not an ingredient: "has celiac" names the person's
+    # restriction, not what is in the dish. Said as the food it stands for
+    # ("has gluten") — the same mapping the gate matched it by.
+    term = _WHOLE_WORD_FAMILIES.get(term.lower(), term)
     # Always a full sentence, even when the dish name already says it:
     # "Pineapple Salsa Bowls has pineapple, which Emily is allergic to."
     # A fragment is the wrong shape for the one card about someone's allergy.
