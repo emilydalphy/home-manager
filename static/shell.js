@@ -13881,20 +13881,16 @@
     // app/tools/breakfast_prep.py has the rule it sets.
     if (keys.length) {
       var bp = (mem.rhythm || {}).breakfast_prep || '';
+      // One prep day names it ("Made ahead on Sunday"); more than one, or
+      // "As we go", keeps the general label. Follows whatever days are set.
+      var aheadLabel = keys.length === 1 && keys[0] !== 'as_we_go'
+        ? 'Made ahead on ' + keys[0].charAt(0).toUpperCase() + keys[0].slice(1) : 'Made ahead on prep day';
       html += wwkLead('Breakfast') + '<div class="wwk-chips">' +
-        WWK_BREAKFAST_PREP.map(function (o) { return wwkChip(o.key === 'make_ahead' ? wwkMadeAheadLabel(keys) : o.label, 'data-wwk="rhythm" data-field="breakfast_prep" data-value="' + o.key + '"', bp === o.key ? 'on' : ''); }).join('') + '</div>';
+        WWK_BREAKFAST_PREP.map(function (o) { return wwkChip(o.key === 'make_ahead' ? aheadLabel : o.label, 'data-wwk="rhythm" data-field="breakfast_prep" data-value="' + o.key + '"', bp === o.key ? 'on' : ''); }).join('') + '</div>';
       if (bp) html += wwkNote(bp === 'make_ahead' ? 'Things that keep in the fridge, like egg bites and overnight oats.'
         : 'Quick breakfasts, made each morning.');
     }
     return html;
-  }
-
-  // One prep day names it ("Made ahead on Sunday"); more than one, or
-  // "As we go", keeps the general label. Follows whatever days are set.
-  function wwkMadeAheadLabel(keys) {
-    var days = keys.filter(function (k) { return k !== 'as_we_go'; });
-    if (days.length !== 1 || keys.length !== 1) return 'Made ahead on prep day';
-    return 'Made ahead on ' + days[0].charAt(0).toUpperCase() + days[0].slice(1);
   }
 
   // The whole list is the fact, so every tap sends the whole list — in

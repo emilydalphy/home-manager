@@ -9,6 +9,8 @@ only when it keeps in the fridge and the household doesn't make it fresh.
 """
 from __future__ import annotations
 
+import pathlib
+
 import pytest
 
 from app import tools
@@ -166,3 +168,30 @@ def test_the_planner_prompt_carries_the_rule():
     import inspect
     assert "rhythm.breakfast_prep" in inspect.getsource(agent)
     assert any(t["name"] == "set_breakfast_prep" for t in agent.TOOL_DEFINITIONS)
+
+
+# ---------- Onboarding asks it inside the prep day (option B, 2026-10-26) ----------
+
+def _static(name):
+    return (pathlib.Path(__file__).resolve().parent.parent / "static" / name).read_text()
+
+
+def test_onboarding_prep_step_carries_the_breakfast_row():
+    html = _static("onboarding.html")
+    js = _static("setup-screens.js")
+    # The row sits inside the "Yes, I have a prep day" body.
+    body = html[html.index('id="prep-yes-body"'):html.index('id="prep-readback"')]
+    assert 'id="prep-breakfast"' in body
+    assert "BREAKFAST_PREP_KEYS = ['fresh', 'make_ahead']" in js
+    assert "'Made ahead on ' + uwDayName(days[0])" in js
+    # Asked only with a prep day and breakfast planned; saved with the rhythm.
+    assert "hasPrepDay() && uwMealOn('breakfast')" in js
+    assert "body.breakfast_prep = breakfastPrep" in html
+    # Kept in the draft, so going back keeps the pick.
+    assert "breakfast: breakfastPrep" in html
+
+
+def test_plan_week_hides_the_breakfast_row():
+    # Plan the Week lifts the prep step for one week; breakfast is a
+    # household answer, so the row stays out of it.
+    assert "#setup-host #prep-breakfast" in _static("plan-week.html")
