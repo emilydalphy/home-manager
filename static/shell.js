@@ -22477,10 +22477,10 @@
   // after the household has tapped the "Approve anyway" button that
   // showApproveConfirm renders below — never inferred, never set on the
   // first tap.
-  // "Week approved · 3 things to buy." — one sentence for every way a
-  // week gets approved (Plan's button here, and the onboarding reveal's,
-  // which hands `added` over in its ?after=approve URL). A week that added
-  // nothing says the first half alone rather than "0 things".
+  // "Week approved · 3 things to buy." — the onboarding reveal's approve
+  // sentence (it hands `added` over in its ?after=approve URL). Plan's own
+  // button says "Meals for the week are saved" instead (Emily, 2026-10-25).
+  // A week that added nothing says the first half alone rather than "0 things".
   function weekApprovedLine(added) {
     var n = Number(added) || 0;
     return 'Week approved' + (n > 0 ? ' · ' + n + (n === 1 ? ' thing' : ' things') + ' to buy' : '') + '.';
@@ -22529,25 +22529,25 @@
         return;
       }
 
-      // The list opens straight away and this toast says what happened
-      // (Emily, 2026-10-12, 2b = A — the mockup's "Week approved · 34
-      // things to buy"). The count is what approving just put on the list
-      // (`groceries_added`); a week that added nothing says the first half
-      // alone rather than "0 things".
+      // The list opens straight away and this toast says it took. Short on
+      // purpose (Emily, 2026-10-25, Option A): no count and no batched-dishes
+      // sentence — the list itself is the count. The batched line is still
+      // drawn by the All set receipt (allSetStepHtml), but nothing routes to
+      // All set since 2b = A (2026-10-12), so no screen says it today. Only
+      // this toast reads this way; weekApprovedLine still speaks for the
+      // onboarding hand-off.
       //
+      // Two things still ride on it, because they are facts the household
+      // has to hear at the moment of approving: an allergy or diet clash
+      // (safety — approving is allowed to clash, being quiet about it is
+      // not), and a takeover, since the meals it replaced do not come back.
       // `approval.replaced` is what the approve endpoint itself just did
       // (the real takeover); `data.replaces` is get_week_menu's preview
       // from before the tap, kept only as a fallback — see
-      // weekTakeoverToastNote. Both are null the rest of the time, so this
-      // changes nothing about the toast on an ordinary approval.
-      var approvedLine = weekApprovedLine(approval.groceries_added);
+      // weekTakeoverToastNote. Both are null the rest of the time.
       var takeoverNote = weekTakeoverToastNote(approval.replaced, data.replaces);
-      // What approval batched rides the same toast: All set was the only
-      // screen that said it, and nothing was asked, so this is the one
-      // place the household hears that one cook now covers several meals.
-      var batchedLine = approval.batched_line || '';
-      var approvedToast = approvedLine +
-        (batchedLine ? ' ' + batchedLine : '') +
+      var approvedToast = 'Meals for the week are saved' +
+        ((approval.conflicts_note || takeoverNote) ? '.' : '') +
         (approval.conflicts_note ? ' ' + approval.conflicts_note : '') +
         (takeoverNote ? ' ' + takeoverNote + '.' : '');
       // Approving is the one action in this app that writes to the grocery
@@ -22569,7 +22569,7 @@
       // the freezer row asks its question quietly.
       weekState.step = 'week';
       goGroceryList();
-      showToast(approvedToast, null, (approval.conflicts_note || takeoverNote || batchedLine) ? 9000 : 6000);
+      showToast(approvedToast, null, (approval.conflicts_note || takeoverNote) ? 9000 : 6000);
       await loadWeekMenu(panel);
       // The notifications ask's moment (iPhone app only; see offerPush):
       // a week is settled, so there's a morning note and a dinner nudge to

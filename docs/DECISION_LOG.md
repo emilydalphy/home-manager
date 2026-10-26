@@ -30,6 +30,13 @@ why*, not duplicating the diff.
   were asked "Shall I put Oct 25–31 together?" — six approved days. The
   suggestion never starts before today, so the 2026-09-05 "plan ran out
   early keeps nudging" rule is untouched.
+- **The approve toast is short: "Meals for the week are saved"** (2026-10-25,
+  Emily's call, Option A; branch `overnight/approve-toast-short`). The count
+  and the batched-dishes sentence are gone from it (All set still draws
+  batched, but nothing routes there since 2b = A, so no screen says it now —
+  flagged to Emily); a clash note or takeover note still rides on it and holds it
+  9 s, otherwise 6 s. `weekApprovedLine` is unchanged for the onboarding
+  hand-off. Why: the toast had grown into a paragraph nobody could read.
 - **Second 200 library recipes: Emily's three calls** (2026-10-25; branch
   `recipe-library-200b`; doc `docs/RECIPE_LIBRARY_SPOTCHECK_200B.md`).
   Bistec a la Mexicana is two dishes (the rated slow simmer, plus "Quick

@@ -79,7 +79,10 @@ def test_approval_lands_on_the_list_and_the_all_set_screen_is_kept_unrouted():
     # away with a toast. The All set screen below is no longer a stop.
     approve = _fn("submitWeekApproval")
     assert "weekState.step = 'allset';" not in approve
-    assert "goGroceryList();" in approve and "weekApprovedLine(approval.groceries_added)" in approve
+    assert "goGroceryList();" in approve and "'Meals for the week are saved'" in approve
+    # The approve toast is short (Emily, 2026-10-25, Option A); the onboarding
+    # hand-off still says it with weekApprovedLine.
+    assert "weekApprovedLine(" not in approve
     assert "return 'Week approved' +" in SHELL_JS
     allset = _fn("allSetStepHtml")
     assert "All set." in allset and "' is planned.'" in allset and "'Week 1 is planned.'" in allset
