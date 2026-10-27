@@ -35,7 +35,7 @@ import json
 import re
 from datetime import date, datetime, timedelta, timezone
 
-from ..db import get_conn
+from ..db import get_conn, write
 from ._shared import household_id, require_household_row
 from . import quantities as _quantities
 from . import use_up as _use_up
@@ -589,13 +589,18 @@ def restore_item(undo: dict) -> dict:
         item_id = int(undo.get("item_id"))
     except (TypeError, ValueError):
         raise ValueError("I couldn't tell which item to put back.")
-    conn = get_conn()
-    try:
+    if kind not in ("removed", "moved", "amount"):
+        raise ValueError("I couldn't tell what to undo.")
+    if kind == "removed":
+        try:
+            removal_id = int(undo.get("removal_id"))
+        except (TypeError, ValueError):
+            raise ValueError("I couldn't tell which item to put back.")
+    if kind == "moved" and (undo.get("location") or "") not in ("",) + LOCATIONS:
+        raise ValueError("I couldn't tell where to put it back.")
+    gid = None
+    with write() as conn:
         if kind == "removed":
-            try:
-                removal_id = int(undo.get("removal_id"))
-            except (TypeError, ValueError):
-                raise ValueError("I couldn't tell which item to put back.")
             rec = conn.execute(
                 "SELECT inventory_item_id, row_json, restored_at FROM inventory_removals "
                 "WHERE id = ? AND household_id = ?",
@@ -603,7 +608,9 @@ def restore_item(undo: dict) -> dict:
             ).fetchone()
             if rec is None or rec["inventory_item_id"] != item_id:
                 raise ValueError("I couldn't tell which item to put back.")
-            exists = conn.execute("SELECT 1 FROM inventory_items WHERE id = ?", (item_id,)).fetchone()
+            exists = conn.execute(
+                "SELECT 1 FROM inventory_items WHERE id = ? AND household_id = ?", (item_id, household_id())
+            ).fetchone()
             if rec["restored_at"] or exists:
                 return {"item_id": item_id, "undone": False}
             row = json.loads(rec["row_json"])
@@ -614,50 +621,39 @@ def restore_item(undo: dict) -> dict:
                 f"INSERT INTO inventory_items ({', '.join(use)}) VALUES ({', '.join('?' * len(use))})",
                 [row[c] for c in use],
             )
-            conn.execute("UPDATE inventory_removals SET restored_at = datetime('now') WHERE id = ?", (removal_id,))
-            conn.commit()
+            conn.execute(
+                "UPDATE inventory_removals SET restored_at = datetime('now') WHERE id = ? AND household_id = ?",
+                (removal_id, household_id()),
+            )
             return {"item_id": item_id, "item": row.get("item"), "undone": True}
+        found = conn.execute(
+            "SELECT item FROM inventory_items WHERE id = ? AND household_id = ?", (item_id, household_id())
+        ).fetchone()
+        if not found:
+            return {"item_id": item_id, "undone": False}
         if kind == "moved":
-            found = conn.execute(
-                "SELECT item FROM inventory_items WHERE id = ? AND household_id = ?", (item_id, household_id())
-            ).fetchone()
-            if not found:
-                return {"item_id": item_id, "undone": False}
-            if (undo.get("location") or "") not in ("",) + LOCATIONS:
-                raise ValueError("I couldn't tell where to put it back.")
             conn.execute(
                 "UPDATE inventory_items SET location = ?, expiration_date = ?, frozen_on = ?, updated_at = datetime('now') "
                 "WHERE id = ? AND household_id = ?",
                 (undo.get("location") or "", undo.get("expiration_date"), undo.get("frozen_on"), item_id, household_id()),
             )
-            conn.commit()
-            return {"item_id": item_id, "item": found["item"], "undone": True}
-        if kind == "amount":
-            found = conn.execute(
-                "SELECT item FROM inventory_items WHERE id = ? AND household_id = ?", (item_id, household_id())
-            ).fetchone()
-            if not found:
-                return {"item_id": item_id, "undone": False}
+        else:
             conn.execute(
                 "UPDATE inventory_items SET amount_left = ?, amount_left_qty = ?, updated_at = datetime('now') "
                 "WHERE id = ? AND household_id = ?",
                 (undo.get("amount_left") or "", undo.get("amount_left_qty"), item_id, household_id()),
             )
             gid = undo.get("grocery_item_id")
-            conn.commit()
-        else:
-            raise ValueError("I couldn't tell what to undo.")
-    finally:
-        conn.close()
+            if gid:
+                still = conn.execute(
+                    "SELECT item FROM grocery_items WHERE id = ? AND household_id = ? AND status = 'needed'",
+                    (int(gid), household_id()),
+                ).fetchone()
+                from . import grocery as _grocery
+                # Only the line this chip put there: the same thing, still unbought.
+                if not (still and _grocery._merge_key(still["item"]) == _grocery._merge_key(found["item"])):
+                    gid = None
     if gid:
         from . import grocery as _grocery
-        c2 = get_conn()
-        still = c2.execute(
-            "SELECT item FROM grocery_items WHERE id = ? AND household_id = ? AND status = 'needed'",
-            (int(gid), household_id()),
-        ).fetchone()
-        c2.close()
-        # Only the line this chip put there: the same thing, still unbought.
-        if still and _grocery._merge_key(still["item"]) == _grocery._merge_key(found["item"]):
-            _grocery.remove_grocery_item(int(gid))
+        _grocery.remove_grocery_item(int(gid))
     return {"item_id": item_id, "item": found["item"], "undone": True}

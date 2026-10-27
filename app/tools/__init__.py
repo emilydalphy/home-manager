@@ -432,7 +432,6 @@ from .use_up import candidates as use_up_candidates  # noqa: F401
 from .use_up import selected as use_up_selected  # noqa: F401
 # The Kitchen TAB (Loop Board C1/C3, 2026-10-26) — `home` in code, because
 # `kitchen` already means Cook. See whats_home.py.
-from . import whats_home  # noqa: F401
 from .whats_home import (  # noqa: F401
     InvalidAmount,
     get_whats_home,
