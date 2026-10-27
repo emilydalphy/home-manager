@@ -22,6 +22,7 @@ from . import plate_parts as _plate_parts_mod
 from . import recipes as _recipes
 from . import rhythm as _rhythm
 from . import time_caps as _time_caps
+from . import use_up as _use_up
 from . import week_intake as _week_intake
 
 
@@ -6595,6 +6596,10 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
                 derived = {}
             built["brought_over"] = bool(isinstance(derived, dict) and derived.get("brought_over"))
             built["schedule_note"] = schedule_note(row, derived if isinstance(derived, dict) else {})
+            # "Uses the spinach and feta" (Loop Board B2, 2026-10-26): the
+            # celadon tag under a dish that uses something going off — only
+            # what use_up.reconcile CHECKED the dish carries. '' otherwise.
+            built["uses_tag"] = _use_up.tag_for(derived, row["meal"])
         return built
 
     # The one line a row still says under its dish besides the minutes
@@ -6745,6 +6750,10 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         # household has not taken yet. Stale flags are dropped on the way
         # out — see draft_flags.plan_flags. Never fails the screen.
         "draft_flags": _safe_draft_flags(plan) if plan["status"] != "approved" else [],
+        # "Uses 6 of the 8 things going off." and "Couldn't fit these"
+        # (Loop Board B2/B3) — draft only, read from the plan as it stands.
+        # None when there was nothing to use up. Never fails the screen.
+        "use_up": _safe_use_up(plan["weekly_plan_id"]) if plan["status"] != "approved" else None,
         # Told once, and only once — see PLATES_INTRO and
         # mark_plates_intro_shown. None on every week after the first one
         # where the app actually completed a plate, and None immediately if
@@ -6776,6 +6785,14 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         "next_period": next_period,
         **approval,
     }
+
+
+def _safe_use_up(plan_id: int) -> dict | None:
+    try:
+        return _use_up.plan_summary(plan_id)
+    except Exception:
+        logger.exception("Use-up summary failed for plan %s", plan_id)
+        return None
 
 
 def _safe_draft_flags(plan) -> list[dict]:

@@ -38,6 +38,56 @@ why*, not duplicating the diff.
   sheet's Freeze it follows `use_up.freeze_ok`; chat's inventory writes are
   tagged `tab: 'home'` (`_HOME_TOOLS`) so "View" opens the Kitchen tab;
   the Use-soon pill is celadon tint (Rule 5: the dock's apricot is the one).
+
+- **Use-up, after the independent verify** (2026-10-27; branch
+  `inventory/use-it-all-draft`; tests `tests/test_use_up_verify_fixes.py`). A
+  "Uses the…" tag is stamped with the dish it was checked against
+  (`use_up.live_uses`), so any path that swaps the dish and copies
+  `derived_from` loses the tag, the count and the recipe pass's must_use (read
+  via `plan_must_use` → `must_use_for`, no longer written into `must_use`).
+  Candidates must still be good on the period's first day and never clash with
+  an allergy or dislike (`coordination.check_meal_conflicts` + a variety→food
+  map); the generator's three inventory lists drop switched-off and
+  past-by-the-start rows (`filter_stock`). A dish naming food past its date on
+  its day is said under the days. Freezer food is put oldest first in the
+  nights via `swap_dinner_nights`, only when neither night carries an answer.
+  "Freeze it" is celadon-tint (rule 5); unfreeze restores from
+  `inventory_items.freeze_undo_json`; staples match by head noun. Why: the
+  verify failed B2 on a swap keeping its tag and on next-week food safety.
+
+- **Two steps before the draft: "Quick check: still have these?" and "First,
+  what's home"** (2026-10-26, Loop Board A4 + B1; branch
+  `inventory/pre-draft-check`, stacked on `87e5af9`; tests
+  `tests/test_pre_draft_check.py`). In `static/plan-week.html`, "Draft my
+  week" now runs `preDraftStep()` first: the check (≤5 chips from
+  `tools.inventory_check_candidates` / `GET /api/inventory/check`; tap =
+  gone, Next posts `{gone, confirmed}` → rows deleted / new column
+  `inventory_items.confirmed_on` stamped), then "Use these up" (use_up
+  candidates, all on; Plan the week sends `use_up_off` on the same intake
+  save). Each step is skipped when empty. Why: Emily's decision 3, "It should
+  ask when they want their plan and grocery list made." Plan's "Try again"
+  (same answers, different week) does not show them — it reuses the saved
+  intake. "Least sure" = past date first, then days since bought/used/
+  counted/confirmed (+7 if no recipe uses it), floors 7 days (freezer 45),
+  confirmed rows left alone 14 days; never staples/spices. `confirmed_on`
+  is not `counted_on` on purpose — a count changes bought-for claims.
+
+- **The draft uses everything going off, and says what couldn't fit**
+  (2026-10-26, Loop Board B2+B3; branch `inventory/use-it-all-draft`; tests
+  `tests/test_use_up_candidates.py`, `tests/test_use_it_all_draft.py`). One
+  list, `app/tools/use_up.py` (`candidates`/`selected`: going-off fridge/pantry
+  soonest first, freezer oldest first; no staples, spices, past dates or
+  night-off portions), handed to generation as `use_up` with "plan every one",
+  and switched off per week via `week_intake.use_up_off_json`. The model's
+  claims (`derived_from.use_up_ids`) are never counted: `use_up.reconcile`
+  runs after every re-pick pass and tags a dish (`derived_from.use_up`, plus
+  `must_use` for the recipe pass) only when the dish's own words carry the item
+  on or before its use_by; the rest is "Couldn't fit these" (Freeze it via the
+  new `inventory.freeze_item`/`unfreeze_item` + `inventory_items.frozen_on`;
+  Add as a side; Let it go), recorded in `weekly_plans.use_up_json`. A disliked
+  or allergen item is never handed to the model (a real draft turned a disliked
+  cabbage into slaw when told "plan every one"). Why: Emily's food-waste
+  pain point; telling the generator is not preventing it.
 - **The iPhone app's id is `com.heypomona.app`** (2026-10-25, Emily's pick
   to match her heypomona domain; branch `overnight/bundle-id-heypomona`).
   Replaced the `com.pomona.app` placeholder in `capacitor.config.json`, the

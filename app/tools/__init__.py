@@ -426,8 +426,8 @@ from .inventory import (  # noqa: F401
 )
 # "Use these up" (Loop Board B1/B2, 2026-10-26): the one list of what the
 # week should use, shared by the pre-draft step and the draft. Aliased: a
-# bare `candidates` in this flat namespace would say nothing.
-from . import use_up  # noqa: F401
+# bare `candidates` in this flat namespace would say nothing, and the
+# module itself is never re-exported (test_module_name_collisions).
 from .use_up import candidates as use_up_candidates  # noqa: F401
 from .use_up import selected as use_up_selected  # noqa: F401
 # The Kitchen TAB (Loop Board C1/C3, 2026-10-26) — `home` in code, because
@@ -442,6 +442,15 @@ from .whats_home import (  # noqa: F401
     move_item as move_kitchen_item,
     restore_item as restore_kitchen_item,
 )
+# "Quick check: still have these?" (Loop Board A4): the few kitchen rows
+# Pomona is least sure of, asked when the week is planned — and the same
+# chips on the Kitchen tab's freezer segment (C4), so one answer counts in
+# both places. (No bare `from . import inventory_check`: a re-exported name
+# equal to a module name fails tests/test_module_name_collisions.py.)
+from .inventory_check import candidates as inventory_check_candidates  # noqa: F401
+from .inventory_check import answer as answer_inventory_check  # noqa: F401
+from .use_up import resolve as use_up_resolve  # noqa: F401
+from .use_up import undo_resolve as use_up_undo_resolve  # noqa: F401
 # Read-side helpers for the leftover chains repair_leftover_chains records
 # (see leftovers.py). Not agent tools — the assistant has no reason to
 # call these — but re-exported so agent.py's prep-schedule context and any
