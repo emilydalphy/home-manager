@@ -473,6 +473,166 @@ def _add_to_inventory(
 
 
 # ---------------------------------------------------------------------------
+# "It's already home" — the answers that count as what's in the kitchen
+# ---------------------------------------------------------------------------
+# Emily, 2026-10-25 (Inventory A3), lifting policy 2026-09-01 ("nobody does
+# inventory work to finish the loop"): the answers a household already
+# gives — "already have it" on a grocery line, a tapped chip in the
+# freezer step — count as what's home, so it never has to say so twice.
+# Staples stay out (decision 6, 2026-10-26): staples.py never reads or
+# writes inventory, and pre_shop skips a staple's line before it gets here.
+#
+# An answer CONFIRMS a kitchen row that is already there (a confident name
+# match, at the shelf when one is named) and writes nothing to it — the
+# household said "we have it", not "we have it again", so 2 lb in the fridge
+# does not become 3. Only when nothing matches is a row added, in its likely
+# place. Either way a receipt (already_home_receipts) records which, and
+# release_already_home reverses exactly that: a confirmed row is left as it
+# is, a created row is deleted only while it still reads exactly what the
+# answer wrote (inventory_items.rev — the grocery untick's proof, see
+# grocery._restore_inventory_from_receipt). A created row another standing
+# answer also leans on is handed to that answer instead of deleted.
+ALREADY_HOME_SOURCE = "grocery_list_already_have"
+FREEZER_STEP_SOURCE = "freezer_step"
+
+
+def record_already_home(
+    conn,
+    item: str,
+    quantity: str = "",
+    *,
+    category: str | None = None,
+    location: str | None = None,
+    source: str = ALREADY_HOME_SOURCE,
+    grocery_item_id: int | None = None,
+    weekly_plan_id: int | None = None,
+    item_key: str = "",
+) -> dict:
+    """
+    Count one "it's already home" answer as kitchen stock, on the caller's
+    connection (inside its transaction; no commit). Returns
+    {"inventory_id", "fresh"}: fresh is True when this created the row.
+    """
+    from .cooker import _find_inventory_match
+
+    sql = "SELECT id, item, quantity, location FROM inventory_items WHERE household_id = ?"
+    params: list = [household_id()]
+    if location:
+        sql += " AND location = ?"
+        params.append(location)
+    rows = [dict(r) for r in conn.execute(sql + " ORDER BY updated_at DESC, id DESC", params).fetchall()]
+    match, confident = _find_inventory_match(item, rows)
+    if match is not None and confident:
+        inventory_id, fresh, after = match["id"], False, None
+    else:
+        added = _add_to_inventory(item, quantity, source=source, category=category, location=location, conn=conn)
+        inventory_id, fresh, after = added["item_id"], True, added["after"] or {}
+    conn.execute(
+        "INSERT INTO already_home_receipts (household_id, grocery_item_id, weekly_plan_id, item_key, "
+        "inventory_item_id, fresh, after_rev, after_quantity) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (household_id(), grocery_item_id, weekly_plan_id, (item_key or "").strip().lower(), inventory_id,
+         1 if fresh else 0, (after or {}).get("rev"), (after or {}).get("quantity")),
+    )
+    return {"inventory_id": inventory_id, "fresh": fresh}
+
+
+def release_already_home(conn, receipt_ids: list[int]) -> int:
+    """
+    Take back the answers behind these receipts, on the caller's
+    connection: each receipt goes, and a kitchen row an answer CREATED goes
+    with it when nobody has written to it since and no other standing
+    answer leans on it. A row it only confirmed is never touched, and
+    neither is one that has been used from, edited or moved since (the
+    household's later word is the truer record). Returns how many kitchen
+    rows were removed.
+    """
+    removed = 0
+    for rid in receipt_ids:
+        r = conn.execute(
+            "SELECT id, inventory_item_id, fresh, after_rev, after_quantity FROM already_home_receipts "
+            "WHERE id = ? AND household_id = ?",
+            (rid, household_id()),
+        ).fetchone()
+        if r is None:
+            continue
+        conn.execute("DELETE FROM already_home_receipts WHERE id = ? AND household_id = ?", (rid, household_id()))
+        if not r["fresh"]:
+            continue
+        heir = conn.execute(
+            # A line's answer stands only while that line is still off the
+            # list (a line deleted since says nothing any more).
+            "SELECT r.id FROM already_home_receipts r WHERE r.household_id = ? AND r.inventory_item_id = ? "
+            "AND (r.grocery_item_id IS NULL OR EXISTS (SELECT 1 FROM grocery_items g "
+            "     WHERE g.id = r.grocery_item_id AND g.household_id = r.household_id AND g.status = 'removed')) "
+            "ORDER BY r.id LIMIT 1",
+            (household_id(), r["inventory_item_id"]),
+        ).fetchone()
+        if heir is not None:
+            # Another answer still says this is home: the row stays, and
+            # that answer now owns it (its own undo removes it).
+            conn.execute(
+                "UPDATE already_home_receipts SET fresh = 1, after_rev = ?, after_quantity = ? "
+                "WHERE id = ? AND household_id = ?",
+                (r["after_rev"], r["after_quantity"], heir["id"], household_id()),
+            )
+            continue
+        current = _receipt_snapshot(conn, r["inventory_item_id"])
+        if current is None:
+            continue
+        if current.get("rev") != r["after_rev"] or (current.get("quantity") or "") != (r["after_quantity"] or ""):
+            continue
+        conn.execute(
+            "DELETE FROM inventory_items WHERE id = ? AND household_id = ?",
+            (r["inventory_item_id"], household_id()),
+        )
+        removed += 1
+    return removed
+
+
+def release_already_home_for_line(conn, grocery_item_id: int) -> int:
+    """release_already_home for every receipt one grocery line's answer left."""
+    ids = [r["id"] for r in conn.execute(
+        "SELECT id FROM already_home_receipts WHERE household_id = ? AND grocery_item_id = ? ORDER BY id DESC",
+        (household_id(), grocery_item_id),
+    ).fetchall()]
+    return release_already_home(conn, ids)
+
+
+def rows_added_by_plans_freezer_answer(conn, weekly_plan_id: int | None) -> set[int]:
+    """
+    The Freezer rows THIS plan's own freezer-step chips added. That food is
+    already the plan's set-aside line and its booked moves, so the plan's
+    own grocery ingest (recipes.WeekGroceryBuffer.kitchen_stock) and its
+    own inventory-matched thaws (defrost.defrost_candidates_for_plan) leave
+    them out — counted again, a swapped-back night would be "covered" by
+    the row or thawed twice, and the chip's undo could not put it back.
+    Every OTHER plan sees them as ordinary freezer stock.
+    """
+    if weekly_plan_id is None:
+        return set()
+    # Only while the row still reads what the chip wrote: once the household
+    # has added to it or edited it, it is their stock like any other.
+    return {r["inventory_item_id"] for r in conn.execute(
+        "SELECT r.inventory_item_id FROM already_home_receipts r "
+        "JOIN inventory_items i ON i.id = r.inventory_item_id AND i.household_id = r.household_id "
+        "WHERE r.household_id = ? AND r.weekly_plan_id = ? AND r.grocery_item_id IS NULL AND r.fresh = 1 "
+        "AND i.rev IS r.after_rev AND i.quantity IS r.after_quantity",
+        (household_id(), weekly_plan_id),
+    ).fetchall()}
+
+
+def freezer_answer_receipts(conn, weekly_plan_id: int | None) -> list[dict]:
+    """The freezer step's receipts for one plan (every plan's when None)."""
+    sql = ("SELECT id, weekly_plan_id, item_key FROM already_home_receipts "
+           "WHERE household_id = ? AND grocery_item_id IS NULL AND weekly_plan_id IS NOT NULL")
+    params: list = [household_id()]
+    if weekly_plan_id is not None:
+        sql += " AND weekly_plan_id = ?"
+        params.append(weekly_plan_id)
+    return [dict(r) for r in conn.execute(sql + " ORDER BY id DESC", params).fetchall()]
+
+
+# ---------------------------------------------------------------------------
 # Provenance, and the one thing it is load-bearing for
 # ---------------------------------------------------------------------------
 # `inventory_items.source` is the only record of whether anybody actually

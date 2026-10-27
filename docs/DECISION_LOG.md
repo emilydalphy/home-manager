@@ -13,6 +13,13 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **"Already have it" and freezer chips go into the kitchen; policy 2026-09-01 lifted**
+  (2026-10-27, Emily 2026-10-25/26, Inventory A3; branch `overnight/have-it-goes-home`;
+  tests `test_already_home_goes_in_the_kitchen.py`). A drop confirms a matching row
+  (no write) or adds one on its likely shelf; a chip does it in the Freezer. Undo
+  deletes only a row the tap made, while its `rev` is untouched (`already_home_receipts`).
+  Staples never write. The plan's own ingest/thaws skip rows its chips added; every
+  ingest reserves already-home lines' meal shares (else next week reads them as spare).
 - **The iPhone app's id is `com.heypomona.app`** (2026-10-25, Emily's pick
   to match her heypomona domain; branch `overnight/bundle-id-heypomona`).
   Replaced the `com.pomona.app` placeholder in `capacitor.config.json`, the

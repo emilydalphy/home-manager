@@ -389,7 +389,7 @@ def _candidates_from_plan(plan: dict, freezer_items: list[dict], dinner_window: 
     return candidates
 
 
-def defrost_candidates_for_plan(weekly_plan_id: int) -> list[dict]:
+def defrost_candidates_for_plan(weekly_plan_id: int, conn=None) -> list[dict]:
     """
     What needs defrosting for this plan, without writing anything —
     exposed separately from sync_defrost_tasks so callers (tests, a future
@@ -398,7 +398,21 @@ def defrost_candidates_for_plan(weekly_plan_id: int) -> list[dict]:
     plan = _weekly_plan.get_weekly_plan(weekly_plan_id)
     if plan.get("weekly_plan_id") is None:
         return []
-    freezer_items = [i for i in _inventory.get_inventory() if i.get("location") == "freezer"]
+    # Not the rows this plan's own freezer chips added: those nights have
+    # the household's own moves already (inventory.rows_added_by_plans_
+    # freezer_answer).
+    # On the caller's connection when it has one (sync_defrost_tasks): a
+    # swap's resync is held to a fixed connection count.
+    if conn is not None:
+        own = _inventory.rows_added_by_plans_freezer_answer(conn, weekly_plan_id)
+    else:
+        own_conn = get_conn()
+        try:
+            own = _inventory.rows_added_by_plans_freezer_answer(own_conn, weekly_plan_id)
+        finally:
+            own_conn.close()
+    freezer_items = [i for i in _inventory.get_inventory()
+                     if i.get("location") == "freezer" and i.get("id") not in own]
     dinner_window = _rhythm.get_household_rhythm().get("dinner_window")
     return _candidates_from_plan(plan, freezer_items, dinner_window)
 
@@ -439,9 +453,9 @@ def sync_defrost_tasks(weekly_plan_id: int) -> dict:
     only exists once a confident freezer match is found), so this is
     free for this function's own rows, but it matters for a THIRD kind of
     row sharing the same task_type/meal_plan_entry_id-not-null shape:
-    confirm_frozen_items's household-confirmed tasks, which never have an
-    inventory row to point at (inventory is deferred policy — see that
-    function's own docstring) and set meal_plan_entry_id instead, the same
+    confirm_frozen_items's household-confirmed tasks, which never point at
+    an inventory row (even now the tap also files the item in the Freezer,
+    2026-10-25 — the move is the household's) and set meal_plan_entry_id instead, the same
     field this function keys its own candidates by. Without this filter
     those rows read as "existing" here, never match one of THIS function's
     freezer-derived candidate keys, and get swept away as stale the next
@@ -466,7 +480,7 @@ def sync_defrost_tasks(weekly_plan_id: int) -> dict:
     # so a partial pass is one the next call replaces wholesale.
     conn = get_conn()
     try:
-        candidates = defrost_candidates_for_plan(weekly_plan_id)
+        candidates = defrost_candidates_for_plan(weekly_plan_id, conn=conn)
         own = [c for c in candidates if c.get("kind") == OWN_PORTION_KIND]
         candidates = [c for c in candidates if c.get("kind") != OWN_PORTION_KIND]
         existing = conn.execute(
@@ -938,11 +952,12 @@ def get_defrost_schedule(days: int = 7) -> list[dict]:
 # This is deliberately NOT a new scheduling rule. It reuses the exact
 # lead-time table and dinner-window-aware backward math every other
 # defrost task in this module uses; the only new thing is where the fact
-# "this is in the freezer" comes from (a tap, not an inventory row) — and,
-# per Emily's explicit "optional bonus OFF", confirming it here is never
-# written back to inventory. A household that taps "Chicken Thighs" has
-# told this ONE plan about ONE freezer item, not made a standing inventory
-# claim.
+# "this is in the freezer" comes from (a tap, not an inventory row). Until
+# 2026-10-25 the tap was never written back to inventory (Emily's
+# "optional bonus OFF" under policy 2026-09-01). That policy is lifted
+# (Emily, 2026-10-25, Inventory A3): a tapped chip now also records the
+# item in the Freezer (_record_frozen_in_kitchen), and un-tapping takes
+# exactly that back. The moves themselves still carry no inventory row.
 
 # Same alias set quantities.py's grocery-category normalization uses —
 # recipe ingredients recorded before "meat/seafood" was standardized (or
@@ -1495,23 +1510,27 @@ def confirm_frozen_items(weekly_plan_id: int, items: list[str]) -> dict:
 
       1. its grocery line(s) for this week come off the list — the SAME
          write Shop's "Have it" makes (pre_shop.drop_grocery_item_pre_shop:
-         a soft remove that lands under "Already had on hand", tells a
-         staple "we have plenty", and never writes inventory — policy
-         2026-09-01), marked removed_by FREEZER_REMOVED_BY so the one undo
+         a soft remove that lands under "Already had on hand" and tells a
+         staple "we have plenty"; the line's own drop writes no kitchen
+         row, because step 3 does, once per item), marked
+         removed_by FREEZER_REMOVED_BY so the one undo
          (pre_shop.undo_pre_shop_drop, "Put back on the list") knows to take
          the move below with it;
       2. one prep_tasks row per (item, cook night), dated with the item's
          own lead (lead_hours_for_item) — same v1-simplification and same
          leftovers handling as _candidates_from_plan (a reheat night is
          never its own task; its cook night's quantity already covers it).
-         inventory_item_id is always NULL on what this creates — see the
-         module-level note above: confirming a freezer item here is a fact
-         about this one plan, never a write to inventory.
+         inventory_item_id is always NULL on what this creates — the move
+         is the household's, not one sync_defrost_tasks booked off a row;
+      3. the item goes in the kitchen's Freezer (_record_frozen_in_kitchen,
+         Emily 2026-10-25 lifting policy 2026-09-01): the freezer row that
+         is there is confirmed, or one is added with the week's amount.
 
     An un-tapped chip that WAS on (the step reopened from the Plan tab's
     freezer row to change the answer) is the same two facts reversed: the
-    line goes back on the list and the still-pending move is cancelled
-    (_release_frozen_item). A move already ticked done stays — the food is
+    line goes back on the list, the still-pending move is cancelled
+    (_release_frozen_item) and the Freezer row the tap added comes out
+    while nobody has touched it since. A move already ticked done stays — the food is
     in the fridge, whatever the list says. On a first answer nothing is
     on, so "Nothing frozen — I'm buying it all" writes nothing at all here
     (the route stamps defrost_asked_at and that is the whole answer).
@@ -1563,6 +1582,9 @@ def confirm_frozen_items(weekly_plan_id: int, items: list[str]) -> dict:
     plan_names: dict[str, str] = {}
     for _m, _ing, ing_name, _factor in plan_meats:
         plan_names.setdefault(ing_name.lower(), ing_name)
+    # The week's amount of each item, for a Freezer row the answer adds
+    # (the same figure the set-aside line and the move carry).
+    need = _plan_need_by_item(weekly_plan_id)[1] if selected_lower else {}
 
     conn = get_conn()
     created, notes = _book_frozen_moves(conn, weekly_plan_id, plan_meats, selected_lower, today, dinner_window)
@@ -1608,8 +1630,66 @@ def confirm_frozen_items(weekly_plan_id: int, items: list[str]) -> dict:
             # And the move alone where there was no line to put back
             # (covered at home, never on the list) — a no-op otherwise.
             cancelled += _release_frozen_item(name, weekly_plan_id)
+    _record_frozen_in_kitchen(weekly_plan_id, plan_names, selected_lower, need)
     return {"created": created, "notes": notes, "set_aside": set_aside,
             "put_back": put_back, "cancelled": cancelled}
+
+
+def _record_frozen_in_kitchen(weekly_plan_id: int, plan_names: dict[str, str], selected_lower: set[str],
+                              need: dict) -> list[str]:
+    """
+    The kitchen half of the freezer step's answer (Emily, 2026-10-25,
+    lifting policy 2026-09-01 — the tap is no longer only a fact about this
+    plan): a tapped item is recorded in the Freezer — the freezer row that
+    is already there confirmed, or one added with the week's amount — and
+    an item that is no longer tapped has that record taken back exactly
+    (inventory.release_already_home: only a row the tap created, and only
+    while nobody has touched it since). Once per (plan, item): answering
+    again with the same chips writes nothing more, and an item that was
+    already recorded is not recorded twice. Whether or not the item had a
+    grocery line, and whether or not a night is too late to thaw for — the
+    household said it is in the freezer, and that is true either way.
+    Returns the names now recorded by this call.
+    """
+    recorded: list[str] = []
+    with write() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        held = _inventory.freezer_answer_receipts(conn, weekly_plan_id)
+        for key, name in plan_names.items():
+            mine = [r["id"] for r in held if _matches_selected_item(r["item_key"], {key})]
+            if _matches_selected_item(key, selected_lower):
+                if mine:
+                    continue
+                amount = need.get(key)
+                quantity = ""
+                if amount:
+                    # Spelt the way the list spells it ("8 oz", not "0.5 lb").
+                    quantity = _quantities._humanize_grocery_quantity(*_quantities._shopping_round(*amount))
+                _inventory.record_already_home(
+                    conn, name, quantity, category="meat/seafood", location="freezer",
+                    source=_inventory.FREEZER_STEP_SOURCE, weekly_plan_id=weekly_plan_id, item_key=key,
+                )
+                held.append({"id": None, "weekly_plan_id": weekly_plan_id, "item_key": key})
+                recorded.append(name)
+            elif mine:
+                _inventory.release_already_home(conn, [i for i in mine if i is not None])
+    return recorded
+
+
+def _release_frozen_in_kitchen(conn, item_name: str, weekly_plan_id: int | None) -> int:
+    """
+    Take back the freezer step's Freezer record for one item, on the
+    caller's connection — pre_shop.undo_pre_shop_drop's half for a line
+    the step set aside ("Put back on the list": not in the freezer after
+    all). Scoped to one plan when the line names one, every plan's
+    otherwise, like _release_frozen_item. Returns kitchen rows removed.
+    """
+    name = (item_name or "").strip().lower()
+    if not name:
+        return 0
+    ids = [r["id"] for r in _inventory.freezer_answer_receipts(conn, weekly_plan_id)
+           if _matches_selected_item(r["item_key"], {name})]
+    return _inventory.release_already_home(conn, ids)
 
 
 def _set_aside_own_lines(lines: list[dict], weekly_plan_id: int, entry_ids=None) -> list[int]:
@@ -2189,7 +2269,9 @@ def mark_defrost_asked(weekly_plan_id: int) -> None:
 # just-ticked row — "Freezing it? I'll remind you Saturday night to move
 # it to the fridge for Monday." — and a yes books the same defrost row
 # confirm_frozen_items writes for the freezer step: inventory_item_id
-# NULL (a fact about this plan, never an inventory write), keyed by the
+# NULL (the household's move, not one booked off a kitchen row; this
+# answer writes no kitchen row of its own — the bought tick already put
+# the pack in the kitchen), keyed by the
 # meal's entry and the same _describe() string, so the two doors cannot
 # book one move twice and sync_defrost_tasks never sweeps it.
 #

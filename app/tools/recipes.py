@@ -4966,7 +4966,8 @@ class _KitchenStock:
     """
 
     def __init__(self, conn, locations: set[str] | None = None,
-                 exclude_sources: set[str] | None = None):
+                 exclude_sources: set[str] | None = None,
+                 exclude_ids: set[int] | None = None):
         """
         `locations` and `exclude_sources` narrow which rows count, and
         both default to None, which is every row — the ingest's own
@@ -4978,6 +4979,12 @@ class _KitchenStock:
         read the way every screen reads it (_display_location, so a blank
         one falls back to its category's shelf) and compared case-folded,
         because 'Freezer' typed with a capital is the same shelf.
+
+        `exclude_ids` leaves out named rows — the Freezer rows a plan's own
+        freezer-step answer added (WeekGroceryBuffer.kitchen_stock): that
+        food is already this plan's set-aside line, and counting it again
+        would let a swapped-back night be "covered" by it instead of
+        rejoining the line the chip's undo puts back.
         """
         # Read once per buffer — one approval, one reading of the kitchen.
         # Nothing writes inventory in between.
@@ -4992,12 +4999,14 @@ class _KitchenStock:
         # fridge estimate (meat: two days), not how long frozen food keeps.
         today = _grocery._household_today(conn=conn).isoformat()
         rows = conn.execute(
-            "SELECT item, quantity, category, location, source, expiration_date FROM inventory_items "
+            "SELECT id, item, quantity, category, location, source, expiration_date FROM inventory_items "
             "WHERE household_id = ? AND TRIM(quantity) != ''",
             (household_id(),),
         ).fetchall()
         for row in rows:
             if exclude_sources and (row["source"] or "") in exclude_sources:
+                continue
+            if exclude_ids and row["id"] in exclude_ids:
                 continue
             use_by = (row["expiration_date"] or "").strip()
             if (use_by and use_by < today
@@ -5081,6 +5090,26 @@ class _KitchenStock:
             "        AND i.id = json_extract(g.inventory_receipt_json, '$.inventory_id') "
             "        AND (i.counted_on IS NULL OR e.date >= i.counted_on))))",
             (household_id(), today, -1 if exclude_plan_id is None else exclude_plan_id, today),
+        ).fetchall()
+        # And what the household said is ALREADY HOME for a meal still to
+        # come (2026-10-25: "already have it" and the freezer step's chips
+        # now count as kitchen stock — inventory.record_already_home). The
+        # line came off the list because that food is spoken for by its
+        # meals, so its shares are claimed the way a bought line's are:
+        # otherwise next week's approval reads this week's "we have the
+        # chicken" as spare and puts none on next week's list.
+        rows = list(rows) + conn.execute(
+            "SELECT g.item AS item, l.quantity AS quantity "
+            "FROM meal_plan_grocery_links l "
+            "JOIN grocery_items g ON g.id = l.grocery_item_id AND g.household_id = l.household_id "
+            "JOIN meal_plan_entries e ON e.id = l.meal_plan_entry_id AND e.household_id = l.household_id "
+            "LEFT JOIN weekly_plans w ON w.id = e.weekly_plan_id AND w.household_id = e.household_id "
+            "WHERE l.household_id = ? AND g.status = 'removed' "
+            "AND (g.removed_by = 'freezer' OR EXISTS (SELECT 1 FROM already_home_receipts r "
+            "     WHERE r.household_id = g.household_id AND r.grocery_item_id = g.id)) "
+            "AND e.inventory_depleted_at IS NULL AND COALESCE(w.status, '') != 'retired' "
+            "AND e.cooked_status = 'pending' AND e.date >= ? AND COALESCE(e.weekly_plan_id, -1) != ?",
+            (household_id(), today, -1 if exclude_plan_id is None else exclude_plan_id),
         ).fetchall()
         for row in rows:
             key = (row["item"] or "").strip().lower()
@@ -5241,7 +5270,13 @@ class WeekGroceryBuffer:
         if self._stock is None:
             conn = self.conn or get_conn()
             try:
-                self._stock = _KitchenStock(conn)
+                # Not the Freezer rows this plan's own freezer step added:
+                # they are this plan's set-aside line already.
+                from . import inventory as _inventory
+
+                self._stock = _KitchenStock(
+                    conn, exclude_ids=_inventory.rows_added_by_plans_freezer_answer(conn, self.weekly_plan_id),
+                )
                 # What is already bought for a dinner still to come is not
                 # this pass's to spend — see reserve_bought_for_meals_ahead.
                 self._stock.reserve_bought_for_meals_ahead(conn)

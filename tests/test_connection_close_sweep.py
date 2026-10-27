@@ -477,8 +477,7 @@ UNPROTECTED_WRITERS: dict[str, list[str]] = {
         "_set_side_field", "attach_sides", "remove_component"
     ],
     "app/tools/pre_shop.py": [
-        "drop_grocery_item_pre_shop", "keep_all_pre_shop_flags",
-        "mark_grocery_item_already_have_reviewed", "undo_pre_shop_drop"
+        "keep_all_pre_shop_flags", "mark_grocery_item_already_have_reviewed"
     ],
     "app/tools/prep_sessions.py": [
         "add_prep_cut", "set_skip_prep_this_week"

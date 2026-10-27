@@ -3283,9 +3283,10 @@ def undo_carried_over_decision(item_id: int) -> dict:
 # says "using dry oregano instead" when cooking (cooker.get_cooker_view).
 # Never a recipe edit, never an inventory record. The "have it already"
 # half of the same ticket is pre_shop.drop_grocery_item_pre_shop: a
-# soft-remove with an undo, listed on the wrap-up, and nothing written to
-# inventory (policy 2026-09-01 — nobody does inventory work to finish the
-# loop).
+# soft-remove with an undo, listed on the wrap-up — and, since Emily lifted
+# policy 2026-09-01 on 2026-10-25, counted as what's home (the kitchen row
+# confirmed or added, and taken back exactly by the undo; never for a
+# staple's line). This swap's own "I have it" still writes nothing.
 
 
 def substitute_grocery_item(item_id: int, alternative: str, at_home: bool = False, author: str = "") -> dict:

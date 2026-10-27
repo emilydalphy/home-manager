@@ -104,6 +104,8 @@ _TABLES = [
     "pre_shop_decisions",
     # Add receipts (2026-10-22) reference households only.
     "grocery_add_receipts",
+    # "Already home" receipts (2026-10-27) reference households only.
+    "already_home_receipts",
     "grocery_substitutions", "grocery_items", "inventory_items", "member_recipe_feedback", "recipe_notes", "recipe_photos", "recipes",
     "chore_instances", "chores", "chores_profile", "attention_items",
     "member_notes", "member_share_links", "share_links", "household_invites", "facts",

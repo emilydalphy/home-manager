@@ -375,35 +375,65 @@ def drop_grocery_item_pre_shop(item_id: int, author: str = "") -> dict:
     name one (the shell sends the generic "user"; see _shared.acting_name),
     otherwise the name given. Recorded, and not yet driving a live
     cross-device "the other adult changed something" notification.
+
+    Since 2026-10-25 (Emily, Inventory A3 — policy 2026-09-01 lifted) the
+    drop also counts the line as what's home: inventory.record_already_home
+    confirms the kitchen row that is there or adds one in its likely place,
+    and undo_pre_shop_drop takes exactly that back. Not for a staple's line
+    and not for the freezer step's set-aside (see below).
     """
     conn = get_conn()
     require_household_row(conn, "grocery_items", item_id, label="grocery list item")
-    # A staple's line dropped here means "we already have it" — say so to the
-    # staple, or the next list read puts the line straight back.
-    _staple_row = conn.execute(
-        "SELECT id, staple_id FROM grocery_items WHERE id = ? AND household_id = ? AND status != 'removed'",
-        (item_id, household_id()),
-    ).fetchone()
-    if _staple_row is not None and _staple_row["staple_id"]:
-        from . import staples as _staples
-        _staples.note_line_removed(conn, _staple_row, how="plenty")
-    who = acting_name(author) or ""
-    changed = conn.execute(
-        "UPDATE grocery_items SET status = 'removed', removed_by = ?, removed_at = datetime('now') "
-        "WHERE id = ? AND household_id = ? AND status != 'removed'",
-        (who, item_id, household_id()),
-    ).rowcount
-    # Counted only when this call actually dropped something (the function
-    # is idempotent, and a second tap is not a second decision) and only
-    # when a person made it: the freezer step calls this route too
-    # (defrost.py, author=FREEZER_REMOVED_BY) to set a line aside because
-    # it is in the freezer, which is a different question with a different
-    # right answer and must not land in the accuracy count. A line the
-    # card never raised is ignored inside _record_decision.
-    if changed and who != _defrost.FREEZER_REMOVED_BY:
-        _record_decision(conn, item_id, DROPPED)
-    conn.commit()
-    conn.close()
+    # One write lock from the first read: a row's ⋯ "Have it" posts every
+    # line behind it at once, and two of them must not both find the
+    # kitchen empty and both add the food to it.
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        # A staple's line dropped here means "we already have it" — say so to the
+        # staple, or the next list read puts the line straight back.
+        line = conn.execute(
+            "SELECT id, staple_id, item, quantity, category FROM grocery_items "
+            "WHERE id = ? AND household_id = ? AND status != 'removed'",
+            (item_id, household_id()),
+        ).fetchone()
+        if line is not None and line["staple_id"]:
+            from . import staples as _staples
+            _staples.note_line_removed(conn, line, how="plenty")
+        who = acting_name(author) or ""
+        changed = conn.execute(
+            "UPDATE grocery_items SET status = 'removed', removed_by = ?, removed_at = datetime('now') "
+            "WHERE id = ? AND household_id = ? AND status != 'removed'",
+            (who, item_id, household_id()),
+        ).rowcount
+        # "Already have it" counts as what's home (Emily, 2026-10-25, lifting
+        # policy 2026-09-01): the kitchen row is confirmed, or added in its
+        # likely place, with a receipt the undo reverses exactly. Only on the
+        # call that actually dropped the line (the drop is idempotent, so a
+        # second tap is not a second answer). Never for a staple's line — its
+        # "We have plenty" stays out of the kitchen (decision 6, 2026-10-26) —
+        # and never for the freezer step's set-aside: that step records the
+        # item in the Freezer itself, once per item (defrost.confirm_frozen_items).
+        if (changed and line is not None and not line["staple_id"]
+                and who != _defrost.FREEZER_REMOVED_BY):
+            _inventory.record_already_home(
+                conn, line["item"], line["quantity"] or "",
+                category=line["category"] or None, grocery_item_id=item_id,
+            )
+        # Counted only when this call actually dropped something (the function
+        # is idempotent, and a second tap is not a second decision) and only
+        # when a person made it: the freezer step calls this route too
+        # (defrost.py, author=FREEZER_REMOVED_BY) to set a line aside because
+        # it is in the freezer, which is a different question with a different
+        # right answer and must not land in the accuracy count. A line the
+        # card never raised is ignored inside _record_decision.
+        if changed and who != _defrost.FREEZER_REMOVED_BY:
+            _record_decision(conn, item_id, DROPPED)
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
     return {"item_id": item_id, "status": "removed"}
 
 
@@ -415,14 +445,13 @@ def undo_pre_shop_drop(item_id: int) -> dict:
     "does not re-add the flag this trip"). Also reused by the Review
     screen's "already have" confirmation section (see
     get_already_have_decisions) to undo a Have it / Already have action, so
-    there's no separate "already-have-undo" endpoint — but that flow wrote
-    an inventory row a plain pre-shop drop never did, so this also deletes
-    that row when (and only when) it's safe to: already_have_inventory_id
-    is set only for a fresh-insert write (see
-    grocery_items.already_have_inventory_id / move_grocery_item_to_
-    inventory), never for one that merged into pre-existing stock — undoing
-    a merge would need the pre-merge quantity, which nothing tracks, so
-    that case leaves inventory untouched on undo by design.
+    there's no separate "already-have-undo" endpoint. The kitchen half of
+    the drop (2026-10-25: already_home_receipts) is reversed exactly by
+    inventory.release_already_home — a row the drop created goes while
+    nobody has touched it, a row it only confirmed stays. The older
+    /already-have route (move_grocery_item_to_inventory) keeps its own
+    rule: already_have_inventory_id is set only for a fresh-insert write,
+    so only that row is deleted here, and a merge leaves inventory alone.
 
     A line the freezer step set aside (removed_by defrost.FREEZER_REMOVED_BY,
     2026-09-21) comes back the same way — and its still-pending defrost
@@ -434,35 +463,51 @@ def undo_pre_shop_drop(item_id: int) -> dict:
     """
     conn = get_conn()
     require_household_row(conn, "grocery_items", item_id, label="grocery list item")
-    row = conn.execute(
-        "SELECT item, already_have_inventory_id, staple_id, removed_by, source_weekly_plan_id "
-        "FROM grocery_items WHERE id = ? AND household_id = ?",
-        (item_id, household_id()),
-    ).fetchone()
-    if row is not None and row["staple_id"]:
-        # "Put back on the list" on a staple's line: the staple was wrong to
-        # say plenty, so its last answer goes too — otherwise the line is
-        # back but the staple still believes the cupboard is full.
-        from . import staples as _staples
-        _staples.reverse_last_answer(conn, row["staple_id"])
-    # removed_by is cleared with the removal (it was not until 2026-09-21):
-    # a stale 'freezer' mark on a line back on the list would read as
-    # "set aside by the freezer step" to defrost._grocery_lines_by_item the
-    # next time anything else soft-removed the line without saying who.
-    conn.execute(
-        "UPDATE grocery_items SET status = 'needed', already_have_reviewed = 1, removed_by = '', "
-        "removed_at = NULL, already_have_inventory_id = NULL WHERE id = ? AND household_id = ?",
-        (item_id, household_id()),
-    )
-    # A drop the household took back is a flag that was WRONG, and the one
-    # kind of wrong this app can actually observe — so it is counted, in
-    # its own bucket rather than left inside 'dropped'. `only_when` keeps
-    # it to a line this card actually dropped: this same function is the
-    # undo for the freezer set-aside and for a Review-screen "Have it",
-    # neither of which recorded a drop to take back.
-    _record_decision(conn, item_id, UNDONE, only_when=DROPPED)
-    conn.commit()
-    conn.close()
+    # Serialised with the drop (see there): the lines behind one row are
+    # put back all at once, and the kitchen half below reads the others.
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            "SELECT item, already_have_inventory_id, staple_id, removed_by, source_weekly_plan_id "
+            "FROM grocery_items WHERE id = ? AND household_id = ?",
+            (item_id, household_id()),
+        ).fetchone()
+        # The kitchen half of "already have it" goes back exactly as it came
+        # (inventory.release_already_home): a row the answer created comes out
+        # while nobody has touched it since; a row it only confirmed stays. For
+        # a line the freezer step set aside, "Put back on the list" means "not
+        # in my freezer after all", so the step's Freezer record goes too.
+        _inventory.release_already_home_for_line(conn, item_id)
+        if row is not None and row["removed_by"] == _defrost.FREEZER_REMOVED_BY:
+            _defrost._release_frozen_in_kitchen(conn, row["item"], row["source_weekly_plan_id"])
+        if row is not None and row["staple_id"]:
+            # "Put back on the list" on a staple's line: the staple was wrong to
+            # say plenty, so its last answer goes too — otherwise the line is
+            # back but the staple still believes the cupboard is full.
+            from . import staples as _staples
+            _staples.reverse_last_answer(conn, row["staple_id"])
+        # removed_by is cleared with the removal (it was not until 2026-09-21):
+        # a stale 'freezer' mark on a line back on the list would read as
+        # "set aside by the freezer step" to defrost._grocery_lines_by_item the
+        # next time anything else soft-removed the line without saying who.
+        conn.execute(
+            "UPDATE grocery_items SET status = 'needed', already_have_reviewed = 1, removed_by = '', "
+            "removed_at = NULL, already_have_inventory_id = NULL WHERE id = ? AND household_id = ?",
+            (item_id, household_id()),
+        )
+        # A drop the household took back is a flag that was WRONG, and the one
+        # kind of wrong this app can actually observe — so it is counted, in
+        # its own bucket rather than left inside 'dropped'. `only_when` keeps
+        # it to a line this card actually dropped: this same function is the
+        # undo for the freezer set-aside and for a Review-screen "Have it",
+        # neither of which recorded a drop to take back.
+        _record_decision(conn, item_id, UNDONE, only_when=DROPPED)
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
     if row and row["already_have_inventory_id"]:
         _inventory.remove_inventory_item(row["already_have_inventory_id"])
     moves_cancelled = 0

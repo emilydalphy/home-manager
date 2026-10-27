@@ -7,9 +7,9 @@ for any ingredient (Emily, 2026-09-13).
     alternative that should be a spot we can put it here too, for example,
     instead of fresh oregano I'll use dry oregano."
 
-"Have it" is a per-week answer, not an inventory record (policy
-2026-09-01): it is the pre-shop drop — soft-removed, undoable, on the
-wrap-up — and never the kitchen-inventory route. "Use something else" is
+"Have it" is the pre-shop drop — soft-removed, undoable, on the wrap-up —
+and, since Emily lifted policy 2026-09-01 on 2026-10-25, it also counts the
+line as what's home (tests/test_already_home_goes_in_the_kitchen.py). "Use something else" is
 grocery.substitute_grocery_item: the line becomes the alternative (or comes
 off, when the alternative is at home), and the recipe's ingredient line
 says "using dry oregano instead" when it is cooked.
@@ -195,17 +195,21 @@ def test_a_swap_with_no_plan_annotates_nothing_later():
     assert "substitute" not in line, "a swap made with no week is not every week's"
 
 
-# ---------- have it already: no inventory ----------
+# ---------- have it already: counts as what's home (2026-10-25) ----------
 
 @ON_MONDAY
-def test_have_it_is_the_pre_shop_drop_and_never_an_inventory_write(week):
+def test_have_it_is_the_pre_shop_drop_and_counts_as_home_until_undone(week):
+    # Policy 2026-09-01 ("a per-week answer, not a record") was lifted by
+    # Emily on 2026-10-25: the same drop now puts the cucumber in the
+    # kitchen, and its undo takes it back out.
     cucumber = _needed()["Cucumber"]
     tools.drop_grocery_item_pre_shop(cucumber["id"], author="Emily")
     assert "Cucumber" not in _needed()
-    assert all(i["item"].lower() != "cucumber" for i in tools.get_inventory()), "a per-week answer, not a record"
+    assert [i["item"] for i in tools.get_inventory() if i["item"].lower() == "cucumber"] == ["Cucumber"]
     assert "Cucumber" in {d["item"] for d in tools.get_already_have_decisions()}
     tools.undo_pre_shop_drop(cucumber["id"])
     assert _needed()["Cucumber"]["quantity"] == "1"
+    assert all(i["item"].lower() != "cucumber" for i in tools.get_inventory())
 
 
 # ---------- over HTTP ----------

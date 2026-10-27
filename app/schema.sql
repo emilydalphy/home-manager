@@ -1682,6 +1682,32 @@ BEGIN
     UPDATE inventory_items SET rev = OLD.rev + 1 WHERE id = NEW.id;
 END;
 
+-- What a household's "it's already home" answer did to the kitchen
+-- (2026-10-27, Emily 2026-10-25: those answers count as what's home). One
+-- row per answer: a grocery line's "already have it" (grocery_item_id),
+-- or a freezer-step chip (weekly_plan_id + item_key). The kitchen row it
+-- either confirmed (fresh = 0: it was already there, and nothing was
+-- written to it) or created (fresh = 1, with the row's rev and quantity
+-- straight after the insert). The undo reads this and nothing else, so it
+-- removes only a row the answer created and only while nobody has touched
+-- it since — see inventory.release_already_home. Staples never write here.
+CREATE TABLE IF NOT EXISTS already_home_receipts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    grocery_item_id INTEGER,
+    weekly_plan_id INTEGER,
+    item_key TEXT NOT NULL DEFAULT '',
+    inventory_item_id INTEGER NOT NULL,
+    fresh INTEGER NOT NULL DEFAULT 0,
+    after_rev INTEGER,
+    after_quantity TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_already_home_receipts_line
+    ON already_home_receipts(household_id, grocery_item_id);
+CREATE INDEX IF NOT EXISTS idx_already_home_receipts_plan
+    ON already_home_receipts(household_id, weekly_plan_id);
+
 -- Phase 6: append-only log of preference writes (create/update/delete) —
 -- not a value store, meal_preferences/members already hold current state.
 -- Just a timestamped record that a write happened, so the Memory view's
