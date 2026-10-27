@@ -26952,17 +26952,26 @@
     btn.addEventListener('click', async function () {
       if (btn.disabled) return;
       btn.disabled = true;
+      // A chat Move's Undo is the Move sheet's own route (2026-10-27):
+      // the payload names the week and the move, and the server puts back
+      // exactly the rows that move re-dated, or says why it can't.
+      var p = action.undo.payload;
+      var isMove = action.undo.kind === 'move';
+      var url = isMove
+        ? '/api/week/' + encodeURIComponent(p.week_start) + '/move-meal-undo'
+        : '/api/week/unbatch-undo';
+      var body = isMove ? { move_id: p.move_id, weekly_plan_id: p.weekly_plan_id } : p;
       try {
-        var res = await Api.fetch('/api/week/unbatch-undo', {
+        var res = await Api.fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(action.undo.payload),
+          body: JSON.stringify(body),
         });
         var out = await res.json();
-        if (!res.ok || out.status !== 'rebatched') {
+        if (!res.ok || out.status !== (isMove ? 'restored' : 'rebatched')) {
           // The week moved under it. The server wrote the sentence; this
           // says it and leaves the card as it is.
-          showToast((out && out.said) || 'That didn\u2019t work just now \u2014 nothing changed.');
+          showToast((out && (out.said || out.detail)) || 'That didn\u2019t work just now \u2014 nothing changed.');
           btn.disabled = false;
           return;
         }

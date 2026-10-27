@@ -139,6 +139,7 @@ from .cooker import (  # noqa: F401
     PREP_TASK_STATUSES,
     InvalidPrepStatus,
     check_off_meal,
+    check_off_meal_for_chat,
     check_off_prep_step,
     deplete_inventory_for_meal,
     get_cooker_view,
@@ -948,3 +949,7 @@ from .week_ingredients import get_week_ingredients  # noqa: F401
 # shows one line per item while two weeks are live", 2026-10-13). Display
 # only: a screen's own read stamps it; never an agent tool.
 from .week_lines import stamp_week_groups  # noqa: F401
+
+# Chat's "move the shrimp to Wednesday": the Plan tab's Move, by date and
+# slot, leftovers and all (Loop Board, Emily's phone test 2026-10-26).
+from .meal_move import move_meal_for_chat  # noqa: F401

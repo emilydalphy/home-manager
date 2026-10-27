@@ -76,6 +76,9 @@ ENTRY_HEADING = re.compile(r"^- \*\*(20\d\d-\d\d-\d\d) — ", re.M)
 # newest entry 2026-10-05. Raised 2026-10-27 on overnight/security-audit-finish
 # (main c50a672 plus one entry): 29004 lines, 294 dated entries, newest dated
 # 2026-10-19. Earlier floors: 8295894 (2026-10-05), 24000 lines;
+# newest entry 2026-10-05. Raised 2026-10-27 (overnight/chat-moves-a-dinner,
+# when the slack test tripped): 29009 lines, 294 entries, newest dated
+# heading 2026-10-19. Earlier floors:
 # ee741f8 (2026-09-27), 19030 lines. Raise them together when the log has
 # grown well past them; only lower one for a deletion you can point at.
 # Raised 2026-10-27 (branch overnight/now-in-the-kitchen) when the slack

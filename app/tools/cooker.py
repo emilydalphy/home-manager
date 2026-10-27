@@ -627,6 +627,40 @@ def check_off_meal(entry_id: int, status: str = "done") -> dict:
     return result
 
 
+def check_off_meal_for_chat(entry_id: int, status: str = "done") -> dict:
+    """
+    check_off_meal with the one refusal a PERSON is owed in chat: a meal
+    can't be marked cooked before its own day has come.
+
+    On 2026-10-26 (Emily, Tester Home) chat, asked to move a dinner it
+    couldn't move, ticked TUESDAY's stew cooked on Monday morning to make
+    room — which also took the stew's ingredients out of the kitchen. Being
+    cooked early is real (a stew made a day ahead), but that is the person
+    saying so on Cook, not the model reaching for a tick to rearrange the
+    week. So chat's door refuses a 'done' on a day still to come, and says
+    the rule. Un-ticking (pending) and ticking today or a past night are
+    unchanged. A raise, not a dict, for the reason
+    weekly_plan.swap_meal_in_plan_for_chat spells out: a refusal has to
+    reach the turn as an error, or "Done, the stew's marked cooked" reads
+    as a write that happened.
+    """
+    if status == "done":
+        conn = get_conn()
+        try:
+            row = conn.execute(
+                "SELECT date FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+                (entry_id, household_id()),
+            ).fetchone()
+        finally:
+            conn.close()
+        if row is not None and row["date"] and row["date"] > household_today().isoformat():
+            raise _weekly_plan.SlotRefused(
+                "A meal is only marked cooked once it has been cooked, on or after its own day. "
+                "To change which night it's on, move it (move_meal_to_day)."
+            )
+    return check_off_meal(entry_id, status)
+
+
 def _changed_any_inventory_row(depleted: list[dict]) -> bool:
     """
     Did the depletion pass actually move anything?

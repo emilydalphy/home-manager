@@ -152,6 +152,7 @@ def price_tokens_soft(tokens: dict, model: str) -> dict:
 TOOLS_WITH_A_TAP = {
     "swap_meal_in_plan",        # Plan -> a dish row -> Swap
     "swap_dinner_nights",       # Plan -> the day tiles, dragged
+    "move_meal_to_day",         # Plan -> a dish row -> Move
     "add_grocery_item",         # Shop -> "+ Add something"
     "add_grocery_items",        # Shop -> the same sheet
     "mark_grocery_item",        # Shop -> a row's tick

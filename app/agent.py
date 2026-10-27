@@ -1147,9 +1147,14 @@ saved recipe detail, ask in chat" — the user gave you the idea once and should
 again just to get the actual recipe.
 - To change just one day of an already-generated plan ("swap Tuesday for something with \
 chicken"), use swap_meal_in_plan rather than regenerating the whole week.
-- To move a dinner to a DIFFERENT NIGHT ("move Thursday's dinner to Friday", "do the chili \
-on Saturday instead"), use swap_dinner_nights with the two dates — the two nights' dinners \
-trade places and nothing is re-bought. Never re-plan both nights with plan_meal to do this.
+- To move a lunch or dinner to a DIFFERENT DAY ("move Thursday's dinner to Friday", "do the \
+chili on Saturday instead", "we're having the stew tonight instead"), use move_meal_to_day — \
+it moves the dish with its leftovers night, trades places with what's there, and nothing is \
+re-bought. Do it in one go when the ask is clear; don't ask first. If it refuses, say the rule \
+it gives and, in the same reply, offer the nearest day from its could_go — then make exactly \
+that move once they say yes. Never get a move by ticking a meal cooked, by planning a second \
+copy of the dish on the new day, or by re-planning both days with plan_meal. \
+swap_dinner_nights is only for "swap Tuesday and Thursday" — two nights the person named.
 - "We're going out tonight" / "we'll just grab something" / "not cooking tonight" is \
 take_the_night_off, and it is the WHOLE answer — don't offer to swap the dish for something \
 quicker instead, and don't ask whether they mean takeout. It never needs anything changed \
@@ -2088,6 +2093,10 @@ TOOL_DEFINITIONS = [
                 "new_meal": {"type": "string"},
                 "slot": {"type": "string", "enum": ["breakfast", "lunch", "dinner", "snack"]},
                 "food_groups": {"type": "array", "items": {"type": "string", "enum": ["protein", "carb", "vegetable"]}},
+                "repeat": {
+                    "type": "boolean",
+                    "description": "Defaults to false. Set only when the person asked to have the SAME dish on this day as well as the day it's already on. Without it, a dish still to be cooked on another day is refused — to move a dish, use move_meal_to_day.",
+                },
                 "old_meal": {"type": "string", "description": "The exact name of the entry being replaced. Only needed when the slot holds more than one — a day's two snacks — and required in spirit there: without it both are replaced. Get the exact name from get_weekly_plan/get_week_menu rather than guessing."},
                 "override": {
                     "type": "boolean",
@@ -2141,8 +2150,22 @@ TOOL_DEFINITIONS = [
         },
     },
     {
+        "name": "move_meal_to_day",
+        "description": "Move one lunch or dinner to another day of an already-generated plan — \"move the shrimp to Wednesday\", \"we're having the stew tonight instead\". The same Move as the Plan tab's: the dish's leftovers night moves with it (same gap), whatever is on the day it lands on trades places with it, and the groceries, defrost reminders and prep follow — nothing is re-bought and nothing is ticked cooked. meal_date is the day the dish is cooked now (not its leftovers night), to_date the day it should go. Status 'moved': say `said` back as the one line, plus each of `thaw_notes`; the card under the reply has Undo, so don't offer one. Status 'refused': nothing changed; say `message` as the rule (never \"I can only…\") and in the same reply offer the nearest day from `could_go` as a one-word yes; when they agree, call this again with that day. Never get to a move another way (a cooked tick, a second copy of the dish, plan_meal on both days). For two nights the person named to trade, swap_dinner_nights.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "weekly_plan_id": {"type": "integer"},
+                "meal_date": {"type": "string", "description": "YYYY-MM-DD — the day the dish is cooked now."},
+                "to_date": {"type": "string", "description": "YYYY-MM-DD — the day it should be on."},
+                "slot": {"type": "string", "enum": ["lunch", "dinner"], "description": "Defaults to dinner."},
+            },
+            "required": ["weekly_plan_id", "meal_date", "to_date"],
+        },
+    },
+    {
         "name": "swap_dinner_nights",
-        "description": "Move a dinner to another night of an already-generated plan by trading it with whatever dinner is on that night (\"move Thursday's dinner to Friday\" swaps Thursday's and Friday's dinners). Only the two DINNERS trade places; breakfasts, lunches and snacks stay put. Each dish keeps its groceries, its cooked tick and its leftover chain, and its defrost reminders move with it — the grocery list itself is untouched. If the result carries thaw_now, moving the meal has put a fridge move on today or on a day that has already gone — nothing on any screen can show a thaw whose day has passed, so say each of those lines back in the same breath. A status of 'refused' means nothing changed and `message` says why (a night nobody is home, a dinner already cooked, or a leftover chain that would end up running backwards): say that sentence back rather than retrying. Not for changing WHAT is eaten — that is swap_meal_in_plan.",
+        "description": "Move a dinner to another night of an already-generated plan by trading it with whatever dinner is on that night (\"move Thursday's dinner to Friday\" swaps Thursday's and Friday's dinners). Only the two DINNERS trade places; breakfasts, lunches and snacks stay put. Each dish keeps its groceries, its cooked tick and its leftover chain, and its defrost reminders move with it — the grocery list itself is untouched. If the result carries thaw_now, moving the meal has put a fridge move on today or on a day that has already gone — nothing on any screen can show a thaw whose day has passed, so say each of those lines back in the same breath. A status of 'refused' means nothing changed and `message` says why (a night nobody is home, a dinner already cooked, or a leftover chain that would end up running backwards): say that sentence back rather than retrying. Not for changing WHAT is eaten — that is swap_meal_in_plan. To move ONE dinner to a day (\"move the shrimp to Wednesday\") use move_meal_to_day instead — it carries leftovers, which this refuses.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -2268,7 +2291,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "check_off_meal",
-        "description": "Mark a specific planned meal as cooked (status='done') or back to pending. Find the entry_id via get_weekly_plan or get_plan_progress. Marking done also tries to deplete its ingredients from tracked inventory — confident matches happen silently (mention briefly if relevant, e.g. 'used up the last of the chicken'), anything uncertain (a loose name match, or no amount in the recipe) is left as it is, never asked about.",
+        "description": "Mark a specific planned meal as cooked (status='done') or back to pending — 'done' only when the person says it was cooked, never to rearrange the week (a meal on a day still to come is refused). Find the entry_id via get_weekly_plan or get_plan_progress. Marking done also tries to deplete its ingredients from tracked inventory — confident matches happen silently (mention briefly if relevant, e.g. 'used up the last of the chicken'), anything uncertain (a loose name match, or no amount in the recipe) is left as it is, never asked about.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -11185,6 +11208,7 @@ TOOL_FUNCTIONS = {
     "swap_meal_in_plan": tools.swap_meal_in_plan_for_chat,
     "propose_plan_changes": propose_plan_changes_from_chat,
     "swap_component_in_plan": tools.swap_component_in_plan,
+    "move_meal_to_day": tools.move_meal_for_chat,
     "swap_dinner_nights": tools.swap_dinner_nights,
     "take_the_night_off": tools.tonight_night_off,
     "change_move_owner": tools.change_move_owner,
@@ -11195,7 +11219,8 @@ TOOL_FUNCTIONS = {
     "get_prep_schedule": tools.get_prep_schedule,
     "get_defrost_schedule": tools.get_defrost_schedule,
     "check_off_prep_step": tools.check_off_prep_step,
-    "check_off_meal": tools.check_off_meal,
+    # The chat twin: no cooked tick on a day still to come (2026-10-26).
+    "check_off_meal": tools.check_off_meal_for_chat,
     "get_plan_progress": tools.get_plan_progress,
     "get_week_ingredients": tools.get_week_ingredients,
     "get_cooker_view": tools.get_cooker_view,
@@ -11749,7 +11774,7 @@ def _build_week_context_block(context: dict) -> dict | None:
         "- A reason in the message (\"the kids won't eat shrimp\", \"we've had a lot of "
         "stir-fries\") is remembered with the memory tools in the SAME turn, and the card re-picks "
         "around it. Say what you remembered in a few words.\n"
-        "- Moving a dinner to another night is still swap_dinner_nights; approving is still "
+        "- Moving a lunch or dinner to another day is still move_meal_to_day; approving is still "
         "approve_weekly_plan; a comment that changes nothing on the week is remembered and answered "
         "in one line (\"Noted — ... Nothing in this draft to change.\").\n"
         "- If your line says how many options a row has, use each row's `options_shown` from the result, "
