@@ -13,6 +13,22 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Use-up, after the independent verify** (2026-10-27; branch
+  `inventory/use-it-all-draft`; tests `tests/test_use_up_verify_fixes.py`). A
+  "Uses the…" tag is stamped with the dish it was checked against
+  (`use_up.live_uses`), so any path that swaps the dish and copies
+  `derived_from` loses the tag, the count and the recipe pass's must_use (read
+  via `plan_must_use` → `must_use_for`, no longer written into `must_use`).
+  Candidates must still be good on the period's first day and never clash with
+  an allergy or dislike (`coordination.check_meal_conflicts` + a variety→food
+  map); the generator's three inventory lists drop switched-off and
+  past-by-the-start rows (`filter_stock`). A dish naming food past its date on
+  its day is said under the days. Freezer food is put oldest first in the
+  nights via `swap_dinner_nights`, only when neither night carries an answer.
+  "Freeze it" is celadon-tint (rule 5); unfreeze restores from
+  `inventory_items.freeze_undo_json`; staples match by head noun. Why: the
+  verify failed B2 on a swap keeping its tag and on next-week food safety.
+
 - **Two steps before the draft: "Quick check: still have these?" and "First,
   what's home"** (2026-10-26, Loop Board A4 + B1; branch
   `inventory/pre-draft-check`, stacked on `87e5af9`; tests

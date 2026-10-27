@@ -970,6 +970,12 @@ _MIGRATIONS = [
     # still shows its tags, count line and "Couldn't fit these" card. Shape
     # in tools/use_up.py (plan_use_up). '{}' = a plan drafted before this.
     ("weekly_plans", "use_up_json", "TEXT NOT NULL DEFAULT '{}'"),
+    # What a freeze_item changed on this row ({location, expiration_date,
+    # frozen_on} before it), so unfreeze_item restores from the server's
+    # own record rather than from whatever a client sends back (verify
+    # finding 7, 2026-10-27). NULL when the row was not frozen by it, and
+    # cleared by any move out of the freezer.
+    ("inventory_items", "freeze_undo_json", "TEXT"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people

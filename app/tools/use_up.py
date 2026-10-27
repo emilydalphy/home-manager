@@ -100,22 +100,62 @@ def freeze_ok(name: str, location: str = "") -> bool:
 
 # ---------- the list ----------
 
+# A variety → the food it is, for the dislike/allergy check only.
+_FAMILY = {
+    "portobello": "mushroom", "cremini": "mushroom", "crimini": "mushroom", "shiitake": "mushroom",
+    "chanterelle": "mushroom", "enoki": "mushroom", "porcini": "mushroom", "morel": "mushroom",
+    "prawn": "shrimp", "scallop": "shellfish", "crab": "shellfish", "lobster": "shellfish",
+    "mussel": "shellfish", "clam": "shellfish", "oyster": "shellfish",
+}
+
 def _name_key(name: str) -> str:
     words = re.findall(r"[a-z]+", (name or "").lower())
     return " ".join(w[:-1] if len(w) > 3 and w.endswith("s") else w for w in words)
 
 
-def _staple_keys(conn) -> set[str]:
+def _staple_words(name: str) -> list[str]:
+    """A name as the staples list reads it (staples._name_words: lowercase,
+    singular), less anything in brackets — "Milk (1 L)" is milk."""
+    from . import staples as _staples
+    return _staples._name_words(re.sub(r"\([^)]*\)", " ", name or ""))
+
+
+def _staple_keys(conn) -> list[list[str]]:
     try:
         rows = conn.execute("SELECT item FROM staples WHERE household_id = ?", (household_id(),)).fetchall()
     except Exception:
-        return set()
-    return {_name_key(r["item"]) for r in rows if r["item"]}
+        return []
+    return [w for w in (_staple_words(r["item"]) for r in rows if r["item"]) if w]
+
+
+def is_staple(name: str, staples: list[list[str]]) -> bool:
+    """Whether a kitchen row is one of the household's staples: the same
+    words, or every word of the staple with the same last word (the thing
+    itself) — "Whole milk" is the "Milk" staple, "Coffee beans" the
+    "Coffee bean" one. Verify finding 7 (2026-10-27): exact names let
+    "Whole milk" through beside a "Milk" staple."""
+    words = _staple_words(name)
+    if not words:
+        return False
+    for staple in staples:
+        if words == staple:
+            return True
+        if words[-1] == staple[-1] and set(staple) <= set(words):
+            return True
+    return False
 
 
 def _today(conn=None) -> date:
     from .cooker import household_today
     return household_today(conn=conn)
+
+
+def _period_first(period_start: str | None, today: date) -> date:
+    try:
+        start = date.fromisoformat(period_start) if period_start else today
+    except ValueError:
+        start = today
+    return max(start, today)
 
 
 def _period_end(period_start: str | None, day_count: int, today: date) -> date:
@@ -142,7 +182,15 @@ def candidates(period_start: str | None = None, day_count: int = 7, conn=None) -
        "freeze_ok": bool, "side_ok": bool}
 
     `period_start`/`day_count` are the period about to be drafted: a row
-    going off after its last day is not this week's to use.
+    going off after its last day is not this week's to use, and a row that
+    turns before the period's FIRST day can't be used in it at all (verify
+    finding 2, 2026-10-27: planning next week offered spinach turning on the
+    Friday before it, and the model put it in Monday's breakfast). Its
+    use_by (the day before it turns) has to be on or after the first day.
+
+    Never an item a household rule rules out (rule_clash: an allergy or a
+    dislike) — it can never be planned, so it is not offered, not shown on
+    the pre-draft step and not counted (verify finding 5).
     """
     own = conn is None
     if own:
@@ -150,6 +198,7 @@ def candidates(period_start: str | None = None, day_count: int = 7, conn=None) -
     try:
         today = _today(conn)
         end = _period_end(period_start, day_count, today)
+        first = _period_first(period_start, today)
         staples = _staple_keys(conn)
         from . import spices as _spices
         from . import tonight as _tonight
@@ -163,7 +212,7 @@ def candidates(period_start: str | None = None, day_count: int = 7, conn=None) -
         for r in rows:
             row = dict(r)
             name = (row["item"] or "").strip()
-            if not name or _name_key(name) in staples or _spices.is_spice(name):
+            if not name or is_staple(name, staples) or _spices.is_spice(name):
                 continue
             if (row["quantity"] or "").strip() in ("0", "0.0"):
                 continue
@@ -191,7 +240,7 @@ def candidates(period_start: str | None = None, day_count: int = 7, conn=None) -
                 turns_d = date.fromisoformat(turns)
             except ValueError:
                 continue
-            if turns_d < today or turns_d > end:
+            if turns_d < today or turns_d > end or turns_d - timedelta(days=1) < first:
                 continue
             going.append({
                 "id": row["id"], "item": name, "quantity": row["quantity"] or "",
@@ -204,6 +253,9 @@ def candidates(period_start: str | None = None, day_count: int = 7, conn=None) -
             })
         going.sort(key=lambda c: (c["turns_on"], c["id"]))
         frozen.sort(key=lambda c: (c["frozen_on"], c["id"]))
+        rules = _rule_context()
+        going = [c for c in going if not rule_clash(c, *rules)]
+        frozen = [c for c in frozen if not rule_clash(c, *rules)]
         return going + frozen[:MAX_FREEZER]
     finally:
         if own:
@@ -235,20 +287,45 @@ def rule_clash(c: dict, dislikes: list[str] | None = None, avoidances: list[dict
     offered; the allergen gate still checks every dish).
     """
     from . import allergen_gate as _allergen_gate
+    from . import coordination as _coordination
     from . import everyday_snacks as _everyday_snacks
 
     name = c.get("item") or ""
+    # The family a variety belongs to, so "Portobellos" answers to a
+    # mushrooms dislike (verify finding 5). Small and easy to grow.
+    words = set(re.findall(r"[a-z]+", name.lower()))
+    family = sorted({fam for w in words for key, fam in _FAMILY.items() if w == key or w == key + "s"})
+    said = " ".join([name] + family)
     try:
         if dislikes is None:
             from .memory import get_household_memory
             dislikes = (get_household_memory() or {}).get("dislikes") or []
-        if _everyday_snacks.disliked(name, dislikes):
-            return "dislike"
-        if _allergen_gate.hard_clashes(name, [{"item": name}], avoidances=avoidances):
+        if _allergen_gate.hard_clashes(said, [{"item": said}], avoidances=avoidances):
             return "allergy"
+        if _everyday_snacks.disliked(said, dislikes):
+            return "dislike"
+        # The app's own matcher (coordination.check_meal_conflicts — the
+        # one the draft's banner uses), which reads "Mushroom caps" as a
+        # mushrooms dislike where the plain word match does not.
+        clashes = _coordination.check_meal_conflicts(said, [{"item": said}])
+        if any(x.get("severity") == "hard" for x in clashes):
+            return "allergy"
+        if any(x.get("source") == "dislike" for x in clashes):
+            return "dislike"
     except Exception:
         logger.exception("Use-up rule check failed for %r", name)
     return None
+
+
+def _rule_context() -> tuple[list[str] | None, list[dict] | None]:
+    """The household's dislikes and hard avoidances, read once for a list."""
+    try:
+        from . import allergen_gate as _allergen_gate
+        from .memory import get_household_memory
+        return ((get_household_memory() or {}).get("dislikes") or [], _allergen_gate.hard_avoidances())
+    except Exception:
+        logger.exception("Use-up rule lookup failed")
+        return (None, None)
 
 
 def for_prompt(offered: list[dict]) -> list[dict]:
@@ -264,6 +341,48 @@ def for_prompt(offered: list[dict]) -> list[dict]:
         logger.exception("Use-up rule lookup failed; offering the whole list")
         return [prompt_item(c) for c in offered]
     return [prompt_item(c) for c in offered if not rule_clash(c, dislikes, avoidances)]
+
+
+def filter_stock(rows: list[dict], intake: dict | None, period_start: str | None) -> list[dict]:
+    """
+    An inventory list as generation may see it for this plan: never a row
+    the household switched off (intake["use_up_off"]), and never a fridge
+    or pantry row whose date falls before the period's first day — it will
+    be gone or past it before any dish here is eaten (verify findings 2
+    and 3, 2026-10-27: a switched-off zucchini became "Zucchini and
+    Cheddar Beef Tacos", and spinach turning Friday went into the next
+    Monday's breakfast, both from these lists). Freezer rows keep.
+
+    Never a row a household rule rules out either (rule_clash): a real
+    next-week draft (2026-10-27) made "Portobello and Chicken Thigh Fajita
+    Skillet" for a mushrooms-disliking house out of current_inventory. The
+    allergen gate still checks every dish whatever this list says.
+    """
+    off = set()
+    for i in (intake or {}).get("use_up_off") or []:
+        try:
+            off.add(int(i))
+        except (TypeError, ValueError):
+            continue
+    try:
+        first = _period_first(period_start, _today()).isoformat()
+    except Exception:
+        first = ""
+    rules = _rule_context()
+    out = []
+    for r in rows or []:
+        if r.get("id") in off:
+            continue
+        if rule_clash(r, *rules):
+            continue
+        where = (r.get("location") or "").strip().lower()
+        if where != "freezer" and first and (r.get("expiration_date") or "")[:10]:
+            # Turning ON the first day counts as gone, the same rule as a
+            # candidate's use_by (the day before it turns).
+            if r["expiration_date"][:10] <= first:
+                continue
+        out.append(r)
+    return out
 
 
 def prompt_item(c: dict) -> dict:
@@ -323,17 +442,47 @@ def tag_text(names: list[str]) -> str:
     return f"Uses the {body}"
 
 
-def tag_for(derived) -> str:
-    """The celadon line under a dish, from its derived_from.use_up."""
+def _dish_key(meal: str | None) -> str:
+    return " ".join((meal or "").lower().split())
+
+
+def live_uses(derived, meal: str | None) -> list[dict]:
+    """
+    The use-up items this dish genuinely uses NOW: derived_from.use_up
+    entries stamped with the dish they were checked against, kept only
+    while the slot still holds that dish. A swap, a re-pick, a chat
+    replace — any path that puts a different dish on the slot and copies
+    derived_from forward — leaves the old stamp behind, and the stamp no
+    longer matches (verify finding 1, 2026-10-27: swapped-in Beef Tacos
+    still said "Uses the spinach and feta"). Telling is not preventing:
+    no path has to remember to clear it.
+    """
     if isinstance(derived, str):
         try:
             derived = json.loads(derived or "{}")
         except (TypeError, ValueError):
-            return ""
+            return []
     if not isinstance(derived, dict):
-        return ""
-    uses = derived.get(USE_UP_KEY) or []
-    return tag_text([short_name(u.get("item") or "") for u in uses if isinstance(u, dict)])
+        return []
+    now = _dish_key(meal)
+    return [u for u in (derived.get(USE_UP_KEY) or [])
+            if isinstance(u, dict) and _dish_key(u.get("dish")) == now and now]
+
+
+def tag_for(derived, meal: str | None = None) -> str:
+    """The celadon line under a dish, from what it uses now (live_uses)."""
+    return tag_text([short_name(u.get("item") or "") for u in live_uses(derived, meal)])
+
+
+def must_use_for(derived, meal: str | None) -> list[str]:
+    """What the recipe pass must write this dish around, from use-up: the
+    foods it was checked to use, while it is still that dish."""
+    out = []
+    for u in live_uses(derived, meal):
+        food = _food(u.get("item") or "")
+        if food and food not in out:
+            out.append(food)
+    return out
 
 
 def count_line(used: int, total: int) -> str:
@@ -472,7 +621,8 @@ def _snapshot(c: dict) -> dict:
     return {k: c.get(k) for k in keep}
 
 
-def reconcile(plan_id: int, offered: list[dict], model_report: dict | None = None) -> dict:
+def reconcile(plan_id: int, offered: list[dict], model_report: dict | None = None,
+              intake: dict | None = None) -> dict:
     """
     After every pass that can change a dish: which offered item each dish
     genuinely uses, written onto the dish (derived_from.use_up, which is
@@ -531,7 +681,7 @@ def reconcile(plan_id: int, offered: list[dict], model_report: dict | None = Non
                 if cand["id"] in model_missed and model_missed[cand["id"]]:
                     out["missed"][cand["id"]] = reason + ": " + model_missed[cand["id"]]
                 continue
-            uses.setdefault(pick["id"], []).append({"id": cand["id"], "item": cand["item"]})
+            uses.setdefault(pick["id"], []).append({"id": cand["id"], "item": cand["item"], "dish": pick.get("meal") or ""})
             out["used"].append({"id": cand["id"], "item": cand["item"], "entry_id": pick["id"]})
         conn = get_conn()
         try:
@@ -541,13 +691,10 @@ def reconcile(plan_id: int, offered: list[dict], model_report: dict | None = Non
                 if not mine and USE_UP_KEY not in derived:
                     continue
                 if mine:
+                    # Not copied into must_use: the recipe pass reads these
+                    # through must_use_for, which drops them once the slot
+                    # holds a different dish (verify finding 1).
                     derived[USE_UP_KEY] = mine
-                    must = [m for m in (derived.get("must_use") or []) if isinstance(m, str)]
-                    for u in mine:
-                        food = _food(u["item"])
-                        if food and food not in must:
-                            must.append(food)
-                    derived["must_use"] = must
                 else:
                     derived.pop(USE_UP_KEY, None)
                 conn.execute(
@@ -558,6 +705,7 @@ def reconcile(plan_id: int, offered: list[dict], model_report: dict | None = Non
                 "offered": [_snapshot(c) for c in offered],
                 "missed": {str(k): v for k, v in out["missed"].items()},
                 "resolved": {},
+                "past_date": _past_date_dishes(cooks),
             }
             conn.execute(
                 "UPDATE weekly_plans SET use_up_json = ? WHERE id = ? AND household_id = ?",
@@ -568,9 +716,130 @@ def reconcile(plan_id: int, offered: list[dict], model_report: dict | None = Non
             conn.close()
         logger.info("Plan %s uses %d of %d use-up item(s); couldn't fit %s",
                     plan_id, len(out["used"]), len(offered), out["missed"])
+        out["freezer_swaps"] = _freezer_oldest_first(plan_id, offered, intake)
     except Exception:
         logger.exception("Use-up reconcile failed for plan %s; the week stands as generated", plan_id)
     return out
+
+
+def _past_date_dishes(cooks: list[dict]) -> list[dict]:
+    """
+    Dishes that name kitchen food which will be past its date on the dish's
+    own day — the model drew on a row it was told about (its claim lists
+    name it) and the dish carries it, but the row turns on or before that
+    day (verify finding 2). Not trusted, not hidden: the draft says so
+    under the days, so the household buys fresh or swaps it. Each:
+    {"entry_id", "item", "dish", "date", "slot", "turns_on"}.
+    """
+    conn = get_conn()
+    try:
+        rows = [dict(r) for r in conn.execute(
+            "SELECT id, item, location, category, expiration_date FROM inventory_items WHERE household_id = ?",
+            (household_id(),),
+        ).fetchall()]
+    finally:
+        conn.close()
+    dated = [r for r in rows if (r.get("expiration_date") or "")[:10]
+             and _quantities._display_location(r).strip().lower() != "freezer"]
+    out = []
+    for e in cooks:
+        ids, names = _claims(e)
+        for r in dated:
+            named = r["id"] in ids or any(_matches(n, r["item"]) for n in names)
+            if not named or not _carries(e, r["item"]):
+                continue
+            if r["expiration_date"][:10] <= (e.get("date") or ""):
+                out.append({"entry_id": e["id"], "item": r["item"], "dish": e.get("meal") or "",
+                            "date": e["date"], "slot": e["slot"], "turns_on": r["expiration_date"][:10]})
+    return out
+
+
+# Most nights-swaps one draft may make to put freezer food in age order.
+MAX_FREEZER_SWAPS = 2
+
+
+def _freezer_oldest_first(plan_id: int, offered: list[dict], intake: dict | None) -> list[tuple[str, str]]:
+    """
+    Freezer food is eaten oldest first (B2), in the NIGHTS, not just in the
+    list the model was handed (verify finding 4: 90-day thighs landed after
+    30-day beef in both real runs). When two cooked dinners use freezer
+    items in the wrong order, their nights are traded with the existing
+    swap_dinner_nights — which already refuses a cooked dinner, a night
+    nobody is home and a leftover chain that would run backwards — and
+    only when, on top of that, neither night carries a household answer
+    (any night tag: rush, guests, unrushed…), neither dish was placed by
+    their own words or a binding constraint, and any going-off food either
+    dish uses is still good on its new night. Anything else: the order
+    stands as generated. Returns the (date_a, date_b) pairs traded.
+    """
+    done: list[tuple[str, str]] = []
+    try:
+        from . import weekly_plan as _weekly_plan
+
+        frozen_on = {c["id"]: c.get("frozen_on") or "" for c in offered if c.get("kind") == "freezer"}
+        use_by = {c["id"]: c.get("use_by") for c in offered if c.get("kind") == "going_off"}
+        tags = (intake or {}).get("night_tags") or {}
+        for _ in range(MAX_FREEZER_SWAPS):
+            conn = get_conn()
+            try:
+                entries = _plan_entries(conn, plan_id)
+            finally:
+                conn.close()
+            dinners = []
+            for e in entries:
+                if e["slot"] != "dinner" or e["slot_state"] != "planned":
+                    continue
+                uses = live_uses(e.get("derived_from_json"), e.get("meal"))
+                ages = [frozen_on[u["id"]] for u in uses if u.get("id") in frozen_on and frozen_on[u["id"]]]
+                if ages:
+                    dinners.append((e, min(ages), uses))
+            dinners.sort(key=lambda d: d[0]["date"])
+            pair = None
+            for i in range(len(dinners)):
+                for j in range(i + 1, len(dinners)):
+                    if dinners[i][1] > dinners[j][1]:
+                        pair = (dinners[i], dinners[j])
+                        break
+                if pair:
+                    break
+            if pair is None:
+                break
+            (a, _, a_uses), (b, _, b_uses) = pair
+
+            def safe(entry, uses, new_date):
+                if tags.get(entry["date"]) or tags.get(new_date):
+                    return False
+                d = _derived(entry.get("derived_from_json"))
+                if d.get("freeform") or d.get("constraint") or d.get("links_to"):
+                    return False
+                return all(not use_by.get(u.get("id")) or new_date <= use_by[u["id"]] for u in uses)
+
+            if not (safe(a, a_uses, b["date"]) and safe(b, b_uses, a["date"])):
+                break
+            try:
+                result = _weekly_plan.swap_dinner_nights(plan_id, a["date"], b["date"])
+            except Exception:
+                logger.exception("Freezer-order swap of %s and %s failed on plan %s", a["date"], b["date"], plan_id)
+                break
+            if result.get("status") != "swapped":
+                logger.info("Plan %s: freezer food stays out of age order (%s / %s): %s",
+                            plan_id, a["date"], b["date"], result.get("message") or result.get("status"))
+                break
+            done.append((a["date"], b["date"]))
+            logger.info("Plan %s: traded dinners %s and %s so the older freezer food is eaten first",
+                        plan_id, a["date"], b["date"])
+    except Exception:
+        logger.exception("Freezer-order pass failed for plan %s; the order stands", plan_id)
+    return done
+
+
+def past_date_line(row: dict) -> str:
+    """ "The spinach turns before Monday's breakfast." """
+    try:
+        weekday = date.fromisoformat(row["date"]).strftime("%A")
+    except (KeyError, ValueError):
+        return ""
+    return f"The {short_name(row.get('item') or '')} turns before {weekday}’s {row.get('slot') or 'dinner'}."
 
 
 # ---------- the draft's record, read back ----------
@@ -601,7 +870,7 @@ def _used_ids(entries: list[dict]) -> set[int]:
     for e in entries:
         if e["slot_state"] != "planned":
             continue
-        for u in _derived(e.get("derived_from_json")).get(USE_UP_KEY) or []:
+        for u in live_uses(e.get("derived_from_json"), e.get("meal")):
             try:
                 used.add(int(u.get("id")))
             except (TypeError, ValueError, AttributeError):
@@ -637,7 +906,7 @@ def plan_summary(plan_id: int) -> dict | None:
     try:
         record = _record(conn, plan_id)
         offered = record["offered"]
-        if not offered:
+        if not offered and not record.get("past_date"):
             return None
         entries = _plan_entries(conn, plan_id)
         live = {r["id"]: dict(r) for r in conn.execute(
@@ -663,8 +932,17 @@ def plan_summary(plan_id: int) -> dict | None:
             "kind": c.get("kind"), "primary": primary_action(c),
         })
     n_used = sum(1 for c in offered if c["id"] in used)
+    by_id = {e["id"]: e for e in entries}
+    past = []
+    for p in record.get("past_date") or []:
+        e = by_id.get(p.get("entry_id"))
+        if e is None or e["slot_state"] != "planned" or _dish_key(e.get("meal")) != _dish_key(p.get("dish")):
+            continue
+        line = past_date_line(dict(p, date=e["date"], slot=e["slot"]))
+        if line and line not in past:
+            past.append(line)
     return {"total": len(offered), "used": n_used, "line": count_line(n_used, len(offered)),
-            "couldnt_fit": rows}
+            "couldnt_fit": rows, "past_date": past}
 
 
 # ---------- "Couldn't fit these": the three taps (B3) ----------
@@ -693,7 +971,7 @@ def fitting_dinner(entries: list[dict], cand: dict, today: str, reheats: set[int
                and (e.get("date") or "") >= today]
     in_time = [e for e in dinners if _fits_date(e, cand, today)]
     pool = in_time or dinners
-    free = [e for e in pool if not _derived(e.get("derived_from_json")).get(USE_UP_KEY)]
+    free = [e for e in pool if not live_uses(e.get("derived_from_json"), e.get("meal"))]
     return (free or pool or [None])[0]
 
 
@@ -747,7 +1025,7 @@ def resolve(plan_id: int, item_id: int, action: str) -> dict:
         _plates.attach_sides(dinner["id"], [side], [])
         derived = _derived(dinner.get("derived_from_json"))
         tagged = [u for u in (derived.get(USE_UP_KEY) or []) if isinstance(u, dict)]
-        tagged.append({"id": cand["id"], "item": name})
+        tagged.append({"id": cand["id"], "item": name, "dish": dinner.get("meal") or ""})
         derived[USE_UP_KEY] = tagged
         conn = get_conn()
         try:

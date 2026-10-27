@@ -17554,8 +17554,13 @@
   function wkCouldntFitHtml(data) {
     var u = data && data.use_up;
     var rows = (u && u.couldnt_fit) || [];
-    if (!rows.length) return '';
-    return '<div class="shell-card wk-unfit" id="wk-unfit">' +
+    // A dish naming kitchen food that will be past its date by then
+    // (use_up._past_date_dishes) — said, never hidden.
+    var past = ((u && u.past_date) || []).map(function (line) {
+      return '<p class="wk-use-up-past">' + escapeHtml(line) + '</p>';
+    }).join('');
+    if (!rows.length) return past;
+    return past + '<div class="shell-card wk-unfit" id="wk-unfit">' +
       '<h2 class="wk-unfit-head">Couldn’t fit these</h2>' +
       rows.map(function (r) {
         var primary = r.primary && USE_UP_ACTIONS[r.primary]

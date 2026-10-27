@@ -1229,6 +1229,9 @@ def apply_pick(weekly_plan_id: int, entry: dict, pick: dict, carry_sides: bool =
         swapped_from = dict(swapped_from, prep_cuts=cuts)
     swapped_from = _with_outgoing_sides(swapped_from, entry, carry_sides, outgoing_sides)
     derived = dict(entry["derived_from"])
+    # A different dish now: what the old one was checked to use up is not
+    # this one's (use_up.live_uses also ignores a stale stamp).
+    derived.pop("use_up", None)
     # A day swapped on its own after its dish was swapped as a whole
     # (apply_pick_to_days) leaves that group: its Undo is its own now.
     derived.pop("swap_group", None)
@@ -2017,6 +2020,7 @@ def apply_pick_to_days(weekly_plan_id: int, entries: list[dict], pick: dict,
             if was:
                 swapped_from = dict(swapped_from, chain_fields=was)
         derived = dict(entry["derived_from"])
+        derived.pop("use_up", None)
         derived.update({"swapped_from": swapped_from, "swapped_in_place_at": now,
                         "carry_sides": bool(carry_sides), "swap_group": token})
         return derived
