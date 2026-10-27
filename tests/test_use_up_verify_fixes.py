@@ -9,6 +9,8 @@ from __future__ import annotations
 import datetime
 import json
 
+import pytest
+
 from conftest import household_today
 
 from app import agent, tools
@@ -306,3 +308,29 @@ def test_toasts_say_were_for_a_plural_name(household, stub_model):
     plan_id, _ = _draft(stub_model, week, days)
     out = use_up.resolve(plan_id, peppers, "freeze")
     assert out["toast"] == "Red peppers were moved to the freezer."
+
+
+@pytest.mark.today("2026-10-27")
+def test_a_day_two_periods_share_still_belongs_to_the_other_plan(household, stub_model):
+    """Final check (a659503): this week (Mon 10-26, opened Tue 10-27) and
+    next week (Mon 11-02) — the exact pair the real runs made. Next week's
+    Monday thigh dish must keep the thighs off this week's list, whether
+    the shared day comes from this week's end or not."""
+    nxt = "2026-11-02"
+    d = tools._week_dates(nxt)
+    thighs = _inv("Chicken thighs", location="freezer", category="meat/seafood", frozen_days_ago=90)
+    beef = _inv("Ground beef", location="freezer", category="meat/seafood", frozen_days_ago=30)
+    names = ["Chicken Thigh Traybake", "Ground Beef Chili", "Bibimbap", "Laksa", "Ramen", "Gumbo", "Dal"]
+    days = [_slot(dd, "dinner", n, **({"derived_from": {"use_up_ids": [thighs]}} if i == 0 else
+                                       {"derived_from": {"use_up_ids": [beef]}} if i == 1 else {}))
+            for i, (dd, n) in enumerate(zip(d, names))]
+    _draft(stub_model, nxt, days)
+    # This week, asked as the screens ask it (its Monday, 7 days) — and the
+    # 7-days-from-today reading that ran it into Mon 11-02.
+    for start, count in (("2026-10-26", 7), ("2026-10-27", 7)):
+        offered = [c["id"] for c in use_up.candidates(start, count)]
+        assert thighs not in offered and beef not in offered, (start, offered)
+        stock = [r["id"] for r in use_up.filter_stock(tools.get_inventory(), {}, start, count)]
+        assert thighs not in stock and beef not in stock, (start, stock)
+    # Next week itself — the plan its own draft replaces — still sees both.
+    assert {thighs, beef} <= {c["id"] for c in use_up.candidates(nxt, 7)}
