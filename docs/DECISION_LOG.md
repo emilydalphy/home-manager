@@ -21,7 +21,9 @@ why*, not duplicating the diff.
   Tacos put beef + tortillas on the list), and pick / rewrite / undo resync
   through `_rebuy_after_edit` (new `_resync_users`), so chicken in the cart
   counts toward the new recipe instead of a second 2 lbs. Closes 2026-10-24's
-  "apply_rewrite still re-buys over a ticked line".
+  "apply_rewrite still re-buys over a ticked line". Review fix: a person's
+  own line is restated once from the ledger before/after the cuts
+  (`_restate_after_cut`), not cut by the whole bought amount per link.
 - **The iPhone app's id is `com.heypomona.app`** (2026-10-25, Emily's pick
   to match her heypomona domain; branch `overnight/bundle-id-heypomona`).
   Replaced the `com.pomona.app` placeholder in `capacitor.config.json`, the

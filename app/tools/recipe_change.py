@@ -56,6 +56,7 @@ from ..db import get_conn
 from . import coordination as _coordination
 from . import grocery as _grocery
 from . import leftovers as _leftovers
+from . import quantities as _quantities
 from . import recipes as _recipes
 from ._shared import household_id, member_id
 
@@ -669,36 +670,45 @@ def _rebuy_after_edit(conn, users: dict[int, list[int]]) -> None:
             [hid, *ids],
         ).fetchall()
         touched: set[int] = set()
+        # A person's own line the shares were added onto (source_weekly_plan_id
+        # IS NULL) can't be recomputed from the ledger. Its ledger is read once
+        # before any cut and once after, and the line restated in one step
+        # with the plan's ROUNDED part changed (_ledger_totals +
+        # _restate_standing_want, the reversal's own pair). Taking the whole
+        # bought amount off the line, link by link from one snapshot, left the
+        # new share on it with no ledger row behind it, and two cuts on one
+        # line overwrote each other (review, 2026-10-27).
+        standing_before: dict[int, list[str]] = {}
+        standing_cut: dict[int, list[tuple[str, str]]] = {}
         for link in fresh:
             if int(link["id"]) in old_ids or link["status"] in _done:
                 continue
             had = bought.get((int(link["meal_plan_entry_id"]), _grocery._merge_key(link["item"] or "")))
             if not had:
                 continue
-            left, gone = link["quantity"] or "", False
+            share = link["quantity"] or ""
+            left, gone = share, False
             for qty in had:
                 left, gone = _grocery._subtract_quantity(left, qty)
                 if gone:
                     break
-            if link["source_weekly_plan_id"] is None:
-                # A person's own line the share was added onto: the ledger
-                # can't restate it, so the bought part comes off its words.
-                line_left, line_gone = link["line_qty"] or "", False
-                for qty in had:
-                    line_left, line_gone = _grocery._subtract_quantity(line_left, qty)
-                    if line_gone:
-                        break
-                if not line_gone and line_left != (link["line_qty"] or ""):
-                    conn.execute("UPDATE grocery_items SET quantity = ? WHERE id = ? AND household_id = ?",
-                                 (line_left, link["grocery_item_id"], hid))
+            item_id = int(link["grocery_item_id"])
+            if link["source_weekly_plan_id"] is None and item_id not in standing_before:
+                standing_before[item_id] = _grocery._ledger_quantities(item_id, conn)
             if gone:
                 conn.execute("DELETE FROM meal_plan_grocery_links WHERE id = ? AND household_id = ?", (link["id"], hid))
-            elif left != (link["quantity"] or ""):
+            elif left != share:
                 conn.execute("UPDATE meal_plan_grocery_links SET quantity = ? WHERE id = ? AND household_id = ?",
                              (left, link["id"], hid))
             else:
                 continue
-            touched.add(int(link["grocery_item_id"]))
+            if link["source_weekly_plan_id"] is None:
+                standing_cut.setdefault(item_id, []).append((share, "" if gone else left))
+            touched.add(item_id)
+        for item_id, before_qtys in standing_before.items():
+            if item_id not in standing_cut:
+                continue
+            _restate_after_cut(conn, item_id, before_qtys, standing_cut[item_id])
         for item_id in touched:
             still = conn.execute(
                 "SELECT 1 FROM meal_plan_grocery_links WHERE household_id = ? AND grocery_item_id = ? LIMIT 1",
@@ -715,6 +725,45 @@ def _rebuy_after_edit(conn, users: dict[int, list[int]]) -> None:
                     "AND COALESCE(kept_amount, '') = ''",
                     (item_id, hid),
                 )
+
+
+def _restate_after_cut(conn, item_id: int, before_qtys: list[str], cuts: list[tuple[str, str]]) -> None:
+    """
+    A household's own line after _rebuy_after_edit cut the plan's shares on
+    it: restated from the ledger before and after (the plan's rounded part
+    swapped), or — when those rows can't be read that way — each cut taken
+    off in turn (share less what is left of it), never more than that and
+    never below nothing.
+    """
+    hid = household_id()
+    row = conn.execute("SELECT quantity FROM grocery_items WHERE id = ? AND household_id = ?",
+                       (item_id, hid)).fetchone()
+    if not row:
+        return
+    current = row["quantity"] or ""
+    totals = _quantities._ledger_totals(before_qtys, _grocery._ledger_quantities(item_id, conn))
+    restated = None if totals is None else _grocery._restate_standing_want(current, *totals)
+    if restated is not None:
+        new_qty, gone = restated
+    else:
+        new_qty, gone = current, False
+        for share, left in cuts:
+            cut = _quantities._parse_quantity(share)
+            rest = _quantities._parse_quantity(left) if left else (0.0, cut[1] if cut else None)
+            if not cut or not rest:
+                continue
+            rest_amount = _quantities._convert_to_unit(rest[0], rest[1], cut[1]) if left else 0.0
+            if rest_amount is None or cut[0] - rest_amount <= 0:
+                continue
+            new_qty, gone = _grocery._subtract_quantity(new_qty, f"{cut[0] - rest_amount:g} {cut[1] or ''}".strip())
+            if gone:
+                break
+    if gone or not new_qty:
+        return   # a line somebody typed is never blanked here
+    new_qty = _grocery._no_more_than(new_qty, current)
+    if new_qty != current:
+        conn.execute("UPDATE grocery_items SET quantity = ? WHERE id = ? AND household_id = ?",
+                     (new_qty, item_id, hid))
 
 
 def _resync_users(conn, users: dict[int, list[int]]) -> dict:

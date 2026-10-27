@@ -93,3 +93,56 @@ def test_a_rewrite_and_its_undo_count_the_chicken_already_in_the_cart():
     assert undone["status"] == "undone"
     lines = _lines()
     assert not [l for l in lines if l[0] in ("Chicken thighs", "Peas") and l[2] == "needed"], lines
+
+
+# ---------- the household's own line (source_weekly_plan_id IS NULL) ----------
+#
+# Review, 2026-10-27: once the shopping above runs through _rebuy_after_edit,
+# a person's own line the new share lands on had the WHOLE bought amount
+# taken off it (the new share stayed on with no ledger row behind it), and
+# two cuts on one line overwrote each other.
+
+RICE_3 = [{"item": "Rice", "qty": "2 cups", "category": "pantry"},
+          {"item": "Chicken thighs", "qty": "3 lbs", "category": "meat-seafood"}]
+
+
+def _own_chicken():
+    conn = get_conn()
+    try:
+        return [r["quantity"] for r in conn.execute(
+            "SELECT quantity FROM grocery_items WHERE item = 'Chicken thighs' "
+            "AND source_weekly_plan_id IS NULL AND status = 'needed'")]
+    finally:
+        conn.close()
+
+
+def test_a_pick_takes_only_the_covered_share_off_the_households_own_line():
+    tools.add_recipe("Fried Rice", RICE_3, instructions=["Cook the rice."])
+    tools.add_recipe("Chicken Curry", CURRY, instructions=["Simmer."])
+    plan = tools.create_weekly_plan(household_today().isoformat(), day_count=7)
+    day = (household_today() + datetime.timedelta(days=2)).isoformat()
+    entry = tools.plan_meal(day, "Fried Rice", slot="dinner", weekly_plan_id=plan["weekly_plan_id"])["entry_id"]
+    tools.approve_weekly_plan(plan["weekly_plan_id"])
+    tools.mark_grocery_item(_id("SELECT id FROM grocery_items WHERE item = 'Chicken thighs'"), "in_cart")
+    tools.add_grocery_item("Chicken thighs", quantity="1 lb", category="meat-seafood")
+    assert _own_chicken() == ["1 lb"]
+    tools.change_meal_recipe(entry, _id("SELECT id FROM recipes WHERE name = 'Chicken Curry'"))
+    assert _own_chicken() == ["1 lb"], "the curry's 2 lbs are in the cart already; the own 1 lb is all that's left"
+
+
+def test_two_nights_cut_on_one_own_line_add_up_and_the_undo_comes_back():
+    tools.add_recipe("Fried Rice", RICE_3, instructions=["Cook the rice."])
+    plan = tools.create_weekly_plan(household_today().isoformat(), day_count=7)
+    ids = [tools.plan_meal((household_today() + datetime.timedelta(days=n)).isoformat(), "Fried Rice",
+                           slot="dinner", weekly_plan_id=plan["weekly_plan_id"])["entry_id"] for n in (1, 3)]
+    tools.approve_weekly_plan(plan["weekly_plan_id"])
+    tools.mark_grocery_item(_id("SELECT id FROM grocery_items WHERE item = 'Chicken thighs'"), "in_cart")
+    tools.add_grocery_item("Chicken thighs", quantity="1 lb", category="meat-seafood")
+    spec = recipe_change.rewrite_spec(ids[0])
+    detail = {"ingredients": [{"item": "Rice", "qty": "2 cups", "category": "pantry"},
+                              {"item": "Chicken thighs", "qty": "5 lbs", "category": "meat-seafood"}],
+              "instructions": ["Cook the rice."], "default_servings": 4}
+    out = recipe_change.apply_rewrite(spec, detail, "more chicken")
+    assert _own_chicken() == ["5 lbs"], "own 1 lb + (5 - 3) lbs for each of two nights"
+    recipe_change.undo_recipe_change(out["request_id"])
+    assert _own_chicken() == ["1 lb"]
