@@ -2230,7 +2230,10 @@ def kitchen_from_this_shop() -> dict:
                 expires = date.fromisoformat((r.get("expiration_date") or "")[:10])
             except ValueError:
                 continue
-            if (expires - today).days <= USE_FIRST_WITHIN_DAYS:
+            # Already past its date: "use first" would be the wrong advice,
+            # and since this card stays up until the next approval it would
+            # say "today" about it every day for a week.
+            if 0 <= (expires - today).days <= USE_FIRST_WITHIN_DAYS:
                 soon.append((expires, r["item"].lower(), r))
         soon.sort(key=lambda t: (t[0], t[1]))
 

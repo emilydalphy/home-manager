@@ -152,3 +152,18 @@ console.log(JSON.stringify({ withCard: withCard, without: without, waiting: wait
     assert "Show me tonight" not in html, "one primary: Done"
     assert "Now in the kitchen" not in out["without"] and "Show me tonight" in out["without"]
     assert "That’s the shopping done." in out["waiting"] and "Show me tonight" not in out["waiting"]
+
+
+def test_a_thing_already_past_its_date_is_not_one_to_use_first():
+    # The card stays up until the next approval, so a dated-yesterday row
+    # would otherwise read "today" every day for a week.
+    _bought("Chicken thighs", "meat/seafood", "2 lb")
+    _bought("Baby spinach", "produce", "1 bag")
+    conn = get_conn()
+    conn.execute("UPDATE inventory_items SET expiration_date = ? WHERE item = 'Chicken thighs'", (household_date(-3),))
+    conn.commit()
+    conn.close()
+
+    now = tools.kitchen_from_this_shop()
+    assert "Chicken thighs" not in [u["item"] for u in now["use_first"]]
+    assert now["total"] == 2, "it still counts as in the kitchen"
