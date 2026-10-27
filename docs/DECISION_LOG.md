@@ -13,6 +13,22 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The draft uses everything going off, and says what couldn't fit**
+  (2026-10-26, Loop Board B2+B3; branch `inventory/use-it-all-draft`; tests
+  `tests/test_use_up_candidates.py`, `tests/test_use_it_all_draft.py`). One
+  list, `app/tools/use_up.py` (`candidates`/`selected`: going-off fridge/pantry
+  soonest first, freezer oldest first; no staples, spices, past dates or
+  night-off portions), handed to generation as `use_up` with "plan every one",
+  and switched off per week via `week_intake.use_up_off_json`. The model's
+  claims (`derived_from.use_up_ids`) are never counted: `use_up.reconcile`
+  runs after every re-pick pass and tags a dish (`derived_from.use_up`, plus
+  `must_use` for the recipe pass) only when the dish's own words carry the item
+  on or before its use_by; the rest is "Couldn't fit these" (Freeze it via the
+  new `inventory.freeze_item`/`unfreeze_item` + `inventory_items.frozen_on`;
+  Add as a side; Let it go), recorded in `weekly_plans.use_up_json`. A disliked
+  or allergen item is never handed to the model (a real draft turned a disliked
+  cabbage into slaw when told "plan every one"). Why: Emily's food-waste
+  pain point; telling the generator is not preventing it.
 - **The iPhone app's id is `com.heypomona.app`** (2026-10-25, Emily's pick
   to match her heypomona domain; branch `overnight/bundle-id-heypomona`).
   Replaced the `com.pomona.app` placeholder in `capacitor.config.json`, the

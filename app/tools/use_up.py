@@ -221,3 +221,609 @@ def selected(intake: dict | None, period_start: str | None = None, day_count: in
         except (TypeError, ValueError):
             continue
     return [c for c in candidates(period_start, day_count, conn=conn) if c["id"] not in off]
+
+
+def rule_clash(c: dict, dislikes: list[str] | None = None, avoidances: list[dict] | None = None) -> str | None:
+    """
+    "dislike" or "allergy" when using this item would break a household
+    rule, else None. Household rules win (B2): measured on a real draft
+    2026-10-26, a disliked cabbage in the list came back as "Cabbage
+    Slaw" — telling the model the dislike was not enough once the same
+    prompt said "plan every one". So an item like that is never handed to
+    the generator; it goes straight to "Couldn't fit these", where it can
+    be frozen or let go. Fails open on a lookup error (the item is
+    offered; the allergen gate still checks every dish).
+    """
+    from . import allergen_gate as _allergen_gate
+    from . import everyday_snacks as _everyday_snacks
+
+    name = c.get("item") or ""
+    try:
+        if dislikes is None:
+            from .memory import get_household_memory
+            dislikes = (get_household_memory() or {}).get("dislikes") or []
+        if _everyday_snacks.disliked(name, dislikes):
+            return "dislike"
+        if _allergen_gate.hard_clashes(name, [{"item": name}], avoidances=avoidances):
+            return "allergy"
+    except Exception:
+        logger.exception("Use-up rule check failed for %r", name)
+    return None
+
+
+def for_prompt(offered: list[dict]) -> list[dict]:
+    """What the generator is told to plan: the offered items no household
+    rule holds back, as prompt_item shapes them."""
+    from . import allergen_gate as _allergen_gate
+    from .memory import get_household_memory
+
+    try:
+        dislikes = (get_household_memory() or {}).get("dislikes") or []
+        avoidances = _allergen_gate.hard_avoidances()
+    except Exception:
+        logger.exception("Use-up rule lookup failed; offering the whole list")
+        return [prompt_item(c) for c in offered]
+    return [prompt_item(c) for c in offered if not rule_clash(c, dislikes, avoidances)]
+
+
+def prompt_item(c: dict) -> dict:
+    """One candidate as the generation prompt sees it — the id it reports
+    back, and the date it has to be eaten by."""
+    out = {"id": c["id"], "item": c["item"], "kind": c["kind"]}
+    if c.get("quantity"):
+        out["quantity"] = c["quantity"]
+    if c.get("use_by"):
+        out["use_by"] = c["use_by"]
+    if c.get("frozen_on"):
+        out["frozen_on"] = c["frozen_on"]
+    return out
+
+
+# ---------- names ----------
+
+_CONTAINERS = ("bag", "bags", "pack", "packs", "package", "box", "tub", "block", "jar", "bunch",
+               "head", "carton", "container", "can", "loaf", "bottle", "punnet", "clamshell")
+_HALF_OF_RE = re.compile(r"^(?:half|a half|some|leftover|the rest of)\s+(?:an?\s+)?(?:" + "|".join(_CONTAINERS) + r")\s+of\s+")
+_A_OF_RE = re.compile(r"^(?:an?|one|\d+)\s+(?:" + "|".join(_CONTAINERS) + r")\s+of\s+")
+_HALF_A_RE = re.compile(r"^half\s+(?:an?\s+)")
+_LEAD_RE = re.compile(r"^(?:baby|fresh|leftover|opened|some)\s+")
+
+
+def short_name(item: str) -> str:
+    """How a tag says it: "Baby spinach" → "spinach", "Half a bag of rice" →
+    "rice", "Half an onion" → "half onion" (the mockup's own words)."""
+    name = re.sub(r"\([^)]*\)", "", (item or "").lower()).strip()
+    name = " ".join(name.split())
+    name = _HALF_OF_RE.sub("", name)
+    name = _A_OF_RE.sub("", name)
+    name = _HALF_A_RE.sub("half ", name)
+    while _LEAD_RE.match(name):
+        name = _LEAD_RE.sub("", name, count=1)
+    return name.strip() or (item or "").strip().lower()
+
+
+def _food(item: str) -> str:
+    """The words a dish has to carry for it to be using this item."""
+    name = short_name(item)
+    return re.sub(r"^half\s+", "", name).strip()
+
+
+def tag_text(names: list[str]) -> str:
+    """ "Uses the spinach and feta" / "Uses the peppers, eggs, half onion"
+    (Option B mockup, verbatim shapes)."""
+    names = [n for n in names if n]
+    if not names:
+        return ""
+    if len(names) == 1:
+        body = names[0]
+    elif len(names) == 2:
+        body = f"{names[0]} and {names[1]}"
+    else:
+        body = ", ".join(names)
+    return f"Uses the {body}"
+
+
+def tag_for(derived) -> str:
+    """The celadon line under a dish, from its derived_from.use_up."""
+    if isinstance(derived, str):
+        try:
+            derived = json.loads(derived or "{}")
+        except (TypeError, ValueError):
+            return ""
+    if not isinstance(derived, dict):
+        return ""
+    uses = derived.get(USE_UP_KEY) or []
+    return tag_text([short_name(u.get("item") or "") for u in uses if isinstance(u, dict)])
+
+
+def count_line(used: int, total: int) -> str:
+    """The draft's subtitle (Option B mockup): "Uses 6 of the 8 things
+    going off." / "Uses all 8 things going off." """
+    if total <= 0:
+        return ""
+    if used >= total:
+        return "Uses the one thing going off." if total == 1 else f"Uses all {total} things going off."
+    if used == 0:
+        return "Couldn’t fit the one thing going off." if total == 1 else f"Couldn’t fit the {total} things going off."
+    return f"Uses {used} of the {total} things going off."
+
+
+# ---------- the draft: what each dish uses (B2) ----------
+
+# derived_from key on a meal_plan_entries row: [{"id", "item"}] — written
+# by reconcile and by "Add as a side", read by tag_for. One name, here.
+USE_UP_KEY = "use_up"
+
+
+def _derived(raw) -> dict:
+    try:
+        value = json.loads(raw or "{}") if not isinstance(raw, dict) else raw
+    except (TypeError, ValueError):
+        return {}
+    return value if isinstance(value, dict) else {}
+
+
+def _plan_entries(conn, plan_id: int) -> list[dict]:
+    rows = conn.execute(
+        """
+        SELECT mpe.id, mpe.date, mpe.slot, mpe.slot_state, mpe.recipe_id, mpe.freeform_meal,
+               mpe.derived_from_json, mpe.sides_json, mpe.cooked_status,
+               COALESCE(r.name, mpe.freeform_meal) AS meal,
+               r.dish_note, r.main_protein, r.ingredients_json
+        FROM meal_plan_entries mpe
+        LEFT JOIN recipes r ON r.id = mpe.recipe_id
+        WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ?
+        ORDER BY mpe.date, CASE mpe.slot WHEN 'breakfast' THEN 0 WHEN 'lunch' THEN 1
+                 WHEN 'dinner' THEN 2 ELSE 3 END, mpe.id
+        """,
+        (plan_id, household_id()),
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def _is_cook(entry: dict, reheats: set[int]) -> bool:
+    """A planned dish that is cooked that day — never a reheat night, a
+    frozen portion, takeout, or an empty slot."""
+    from . import leftovers as _leftovers
+    from . import weekly_plan as _weekly_plan
+
+    if entry["slot_state"] != "planned" or not (entry.get("meal") or "").strip():
+        return False
+    if entry["id"] in reheats:
+        return False
+    derived = _derived(entry.get("derived_from_json"))
+    if derived.get("freezer_portion") or derived.get(_leftovers.FROM_FREEZER_KEY) or derived.get("links_to"):
+        return False
+    if not entry.get("recipe_id") and _weekly_plan.written_in_not_a_cook(entry.get("freeform_meal")):
+        return False
+    return True
+
+
+def _dish_words(entry: dict) -> str:
+    """What the dish itself says it is — name, note, protein, ingredients,
+    sides. NOT derived_from.inventory / use_up_ids: those are the model's
+    claim, and the claim is what this checks."""
+    parts = [entry.get("meal") or "", entry.get("dish_note") or "", entry.get("main_protein") or ""]
+    try:
+        ingredients = json.loads(entry.get("ingredients_json") or "[]") or []
+    except (TypeError, ValueError):
+        ingredients = []
+    parts += [str(i.get("item") or "") for i in ingredients if isinstance(i, dict)]
+    try:
+        sides = json.loads(entry.get("sides_json") or "[]") or []
+    except (TypeError, ValueError):
+        sides = []
+    for side in sides if isinstance(sides, list) else []:
+        if not isinstance(side, dict):
+            continue
+        parts.append(str(side.get("name") or ""))
+        parts += [str(i.get("item") or "") for i in (side.get("ingredients") or []) if isinstance(i, dict)]
+    return " ".join(parts)
+
+
+# Words that describe WHICH one, not what it is: "Red peppers" are used
+# by a "Pepper and Onion Frittata". Tried only after the full name fails.
+_MODIFIERS = {"red", "green", "yellow", "orange", "purple", "white", "large", "small", "mini",
+              "organic", "ripe", "english", "roma", "cherry", "grape", "plum", "medium"}
+
+
+def _matches(words: str, item: str) -> bool:
+    from . import typed_requests as _typed_requests
+    food = _food(item)
+    if _typed_requests.dish_carries(words, food):
+        return True
+    core = " ".join(w for w in food.split() if w not in _MODIFIERS)
+    return bool(core) and core != food and _typed_requests.dish_carries(words, core)
+
+
+def _carries(entry: dict, item: str) -> bool:
+    return _matches(_dish_words(entry), item)
+
+
+def _claims(entry: dict) -> tuple[set[int], list[str]]:
+    derived = _derived(entry.get("derived_from_json"))
+    ids = set()
+    for i in derived.get("use_up_ids") or []:
+        try:
+            ids.add(int(i))
+        except (TypeError, ValueError):
+            continue
+    names = [str(n) for n in (derived.get("inventory") or []) if isinstance(n, (str, int))]
+    return ids, names
+
+
+def _claimed(entry: dict, cand: dict) -> bool:
+    ids, names = _claims(entry)
+    if cand["id"] in ids:
+        return True
+    return any(_matches(n, cand["item"]) for n in names)
+
+
+def _fits_date(entry: dict, cand: dict, today: str) -> bool:
+    if (entry.get("date") or "") < today:
+        return False
+    use_by = cand.get("use_by")
+    return not use_by or (entry.get("date") or "") <= use_by
+
+
+def _snapshot(c: dict) -> dict:
+    keep = ("id", "item", "quantity", "category", "kind", "turns_on", "use_by", "frozen_on",
+            "freeze_ok", "side_ok")
+    return {k: c.get(k) for k in keep}
+
+
+def reconcile(plan_id: int, offered: list[dict], model_report: dict | None = None) -> dict:
+    """
+    After every pass that can change a dish: which offered item each dish
+    genuinely uses, written onto the dish (derived_from.use_up, which is
+    the tag; derived_from.must_use, so the recipe pass writes the dish
+    around it), and the plan's record (weekly_plans.use_up_json).
+
+    Telling is not preventing (CLAUDE.md): the model's claims are checked,
+    never counted. An item counts as used on a dish only when the dish's
+    own words carry it (name, dish_note, ingredients, sides — never the
+    claim lists), the dish is a cook (not a reheat night), and, for food
+    going off, it is eaten on or before its use_by. Claimed dishes are
+    preferred; an unclaimed dish that carries it (a saved spinach pasta
+    on Monday) counts too. Anything else is couldn't-fit, with why.
+
+    Returns {"used": [{id, item, entry_id}], "missed": {id: reason}}.
+    Never raises: a draft that generated is never lost to this.
+    """
+    out = {"used": [], "missed": {}}
+    try:
+        from . import leftovers as _leftovers
+
+        conn = get_conn()
+        try:
+            today = _today(conn).isoformat()
+            entries = _plan_entries(conn, plan_id)
+        finally:
+            conn.close()
+        reheats = set((_leftovers.plan_leftover_chains(plan_id).get("leftovers") or {}).keys())
+        cooks = [e for e in entries if _is_cook(e, reheats)]
+        model_missed = {}
+        for row in (model_report or {}).get("couldnt_fit") or []:
+            try:
+                model_missed[int(row.get("id"))] = str(row.get("reason") or "")
+            except (TypeError, ValueError, AttributeError):
+                continue
+        uses: dict[int, list[dict]] = {}
+        from . import allergen_gate as _allergen_gate
+        from .memory import get_household_memory
+        dislikes = (get_household_memory() or {}).get("dislikes") or []
+        avoidances = _allergen_gate.hard_avoidances()
+        for cand in offered:
+            held = rule_clash(cand, dislikes, avoidances)
+            if held:
+                out["missed"][cand["id"]] = "household_rule: " + held
+                continue
+            fits = [e for e in cooks if _fits_date(e, cand, today) and _carries(e, cand["item"])]
+            claimed = [e for e in fits if _claimed(e, cand)]
+            pick = (claimed or fits or [None])[0]
+            if pick is None:
+                if any(_claimed(e, cand) for e in cooks):
+                    reason = "too_late" if any(_claimed(e, cand) and _carries(e, cand["item"]) for e in cooks) \
+                        else "not_in_the_dish"
+                else:
+                    reason = "no_dish"
+                out["missed"][cand["id"]] = reason
+                if cand["id"] in model_missed and model_missed[cand["id"]]:
+                    out["missed"][cand["id"]] = reason + ": " + model_missed[cand["id"]]
+                continue
+            uses.setdefault(pick["id"], []).append({"id": cand["id"], "item": cand["item"]})
+            out["used"].append({"id": cand["id"], "item": cand["item"], "entry_id": pick["id"]})
+        conn = get_conn()
+        try:
+            for e in entries:
+                derived = _derived(e.get("derived_from_json"))
+                mine = uses.get(e["id"]) or []
+                if not mine and USE_UP_KEY not in derived:
+                    continue
+                if mine:
+                    derived[USE_UP_KEY] = mine
+                    must = [m for m in (derived.get("must_use") or []) if isinstance(m, str)]
+                    for u in mine:
+                        food = _food(u["item"])
+                        if food and food not in must:
+                            must.append(food)
+                    derived["must_use"] = must
+                else:
+                    derived.pop(USE_UP_KEY, None)
+                conn.execute(
+                    "UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?",
+                    (json.dumps(derived), e["id"], household_id()),
+                )
+            record = {
+                "offered": [_snapshot(c) for c in offered],
+                "missed": {str(k): v for k, v in out["missed"].items()},
+                "resolved": {},
+            }
+            conn.execute(
+                "UPDATE weekly_plans SET use_up_json = ? WHERE id = ? AND household_id = ?",
+                (json.dumps(record), plan_id, household_id()),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+        logger.info("Plan %s uses %d of %d use-up item(s); couldn't fit %s",
+                    plan_id, len(out["used"]), len(offered), out["missed"])
+    except Exception:
+        logger.exception("Use-up reconcile failed for plan %s; the week stands as generated", plan_id)
+    return out
+
+
+# ---------- the draft's record, read back ----------
+
+def _record(conn, plan_id: int) -> dict:
+    row = conn.execute(
+        "SELECT use_up_json FROM weekly_plans WHERE id = ? AND household_id = ?",
+        (plan_id, household_id()),
+    ).fetchone()
+    if row is None:
+        raise ValueError(f"No weekly plan {plan_id} in this household.")
+    value = _derived(row["use_up_json"])
+    value.setdefault("offered", [])
+    value.setdefault("missed", {})
+    value.setdefault("resolved", {})
+    return value
+
+
+def _save_record(conn, plan_id: int, record: dict) -> None:
+    conn.execute(
+        "UPDATE weekly_plans SET use_up_json = ? WHERE id = ? AND household_id = ?",
+        (json.dumps(record), plan_id, household_id()),
+    )
+
+
+def _used_ids(entries: list[dict]) -> set[int]:
+    used = set()
+    for e in entries:
+        if e["slot_state"] != "planned":
+            continue
+        for u in _derived(e.get("derived_from_json")).get(USE_UP_KEY) or []:
+            try:
+                used.add(int(u.get("id")))
+            except (TypeError, ValueError, AttributeError):
+                continue
+    return used
+
+
+def primary_action(c: dict) -> str | None:
+    """The one pill a couldn't-fit row offers: "side" for herbs and greens
+    (the mockup's cilantro), else "freeze" for things that freeze, else
+    none (only "Let it go")."""
+    if c.get("kind") == "freezer":
+        return None
+    if c.get("side_ok"):
+        return "side"
+    if c.get("freeze_ok"):
+        return "freeze"
+    return None
+
+
+def plan_summary(plan_id: int) -> dict | None:
+    """
+    What the draft shows (B2/B3), read from the plan as it stands now —
+    so a swapped dish loses its tag and its item comes back to "Couldn't
+    fit these" rather than vanishing:
+
+      {"total": 8, "used": 6, "line": "Uses 6 of the 8 things going off.",
+       "couldnt_fit": [{"id", "item", "quantity", "kind", "primary": "freeze"|"side"|None}]}
+
+    None for a plan drafted before this, or with nothing to use up.
+    """
+    conn = get_conn()
+    try:
+        record = _record(conn, plan_id)
+        offered = record["offered"]
+        if not offered:
+            return None
+        entries = _plan_entries(conn, plan_id)
+        live = {r["id"]: dict(r) for r in conn.execute(
+            "SELECT id, location, category FROM inventory_items WHERE household_id = ?", (household_id(),),
+        ).fetchall()}
+    finally:
+        conn.close()
+    used = _used_ids(entries)
+    resolved = record["resolved"]
+    rows = []
+    for c in offered:
+        if c["id"] in used:
+            continue
+        if (resolved.get(str(c["id"])) or {}).get("action") in ("frozen", "let_go"):
+            continue
+        row = live.get(c["id"])
+        if row is None:
+            continue  # eaten, thrown out — nothing left to decide
+        if c.get("kind") == "going_off" and _quantities._display_location(row).strip().lower() == "freezer":
+            continue  # frozen some other way since
+        rows.append({
+            "id": c["id"], "item": c["item"], "quantity": c.get("quantity") or "",
+            "kind": c.get("kind"), "primary": primary_action(c),
+        })
+    n_used = sum(1 for c in offered if c["id"] in used)
+    return {"total": len(offered), "used": n_used, "line": count_line(n_used, len(offered)),
+            "couldnt_fit": rows}
+
+
+# ---------- "Couldn't fit these": the three taps (B3) ----------
+
+def _offered(record: dict, item_id: int) -> dict:
+    for c in record["offered"]:
+        if c["id"] == item_id:
+            return c
+    raise ValueError("That isn't one of this week's things to use up.")
+
+
+def _cap(text: str) -> str:
+    return text[:1].upper() + text[1:] if text else text
+
+
+def fitting_dinner(entries: list[dict], cand: dict, today: str, reheats: set[int]) -> dict | None:
+    """
+    "Add as a side" goes on the most fitting dinner: the earliest dinner
+    that is cooked (not a reheat or takeout night), still ahead, and on or
+    before the item's use_by — preferring one that isn't already using
+    something up, so the week's use spreads. Failing any before its
+    use_by, the earliest cooked dinner still ahead (sooner is better than
+    never). None when the week has no cooked dinner left.
+    """
+    dinners = [e for e in entries if e["slot"] == "dinner" and _is_cook(e, reheats)
+               and (e.get("date") or "") >= today]
+    in_time = [e for e in dinners if _fits_date(e, cand, today)]
+    pool = in_time or dinners
+    free = [e for e in pool if not _derived(e.get("derived_from_json")).get(USE_UP_KEY)]
+    return (free or pool or [None])[0]
+
+
+def resolve(plan_id: int, item_id: int, action: str) -> dict:
+    """
+    One tap on a "Couldn't fit these" row. `action` is "freeze", "side" or
+    "let_go". Returns {"action", "item_id", "toast", "undo", ...}; hand
+    `undo` back to undo_resolve to take it back.
+
+      freeze — inventory.freeze_item: out of the fridge, into the Freezer
+               dated today. A later week's use_up.candidates offers it
+               again, oldest first.
+      side   — attached to fitting_dinner as a side (no shopping: it is
+               already home), and that dinner gets the "Uses the …" tag.
+      let_go — left untouched in the kitchen; only this week's card
+               stops asking.
+    """
+    from . import inventory as _inventory
+    from . import leftovers as _leftovers
+    from . import plates as _plates
+
+    if action not in ("freeze", "side", "let_go"):
+        raise ValueError("Freeze it, add it as a side, or let it go.")
+    conn = get_conn()
+    try:
+        record = _record(conn, plan_id)
+    finally:
+        conn.close()
+    cand = _offered(record, int(item_id))
+    name = cand["item"]
+    out = {"action": action, "item_id": cand["id"], "item": name}
+    if action == "freeze":
+        frozen = _inventory.freeze_item(cand["id"])
+        out["undo"] = {"freeze": frozen["undo"]}
+        # The house toast pattern, "<thing> was <verbed>" (copywriter rule 3).
+        out["toast"] = f"{_cap(name)} was moved to the freezer."
+        resolution = {"action": "frozen"}
+    elif action == "side":
+        conn = get_conn()
+        try:
+            today = _today(conn).isoformat()
+            entries = _plan_entries(conn, plan_id)
+        finally:
+            conn.close()
+        reheats = set((_leftovers.plan_leftover_chains(plan_id).get("leftovers") or {}).keys())
+        dinner = fitting_dinner(entries, cand, today, reheats)
+        if dinner is None:
+            raise ValueError("There’s no dinner left this week to put it with.")
+        side = {"name": _cap(short_name(name)), "covers": [], "ingredients": [], "instructions": [],
+                "minutes": 0, "added_by": "household", "use_up_id": cand["id"]}
+        _plates.attach_sides(dinner["id"], [side], [])
+        derived = _derived(dinner.get("derived_from_json"))
+        tagged = [u for u in (derived.get(USE_UP_KEY) or []) if isinstance(u, dict)]
+        tagged.append({"id": cand["id"], "item": name})
+        derived[USE_UP_KEY] = tagged
+        conn = get_conn()
+        try:
+            conn.execute("UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ? AND household_id = ?",
+                         (json.dumps(derived), dinner["id"], household_id()))
+            conn.commit()
+        finally:
+            conn.close()
+        weekday = date.fromisoformat(dinner["date"]).strftime("%A")
+        out.update(entry_id=dinner["id"], undo={"entry_id": dinner["id"]},
+                   toast=f"{_cap(name)} was added to {weekday}’s dinner.")
+        resolution = {"action": "side", "entry_id": dinner["id"]}
+    else:
+        out["undo"] = {}
+        out["toast"] = f"{_cap(name)} was left off the plan."
+        resolution = {"action": "let_go"}
+    conn = get_conn()
+    try:
+        record = _record(conn, plan_id)
+        record["resolved"][str(cand["id"])] = resolution
+        _save_record(conn, plan_id, record)
+        conn.commit()
+    finally:
+        conn.close()
+    return out
+
+
+def undo_resolve(plan_id: int, item_id: int, undo: dict | None = None) -> dict:
+    """The Undo on a "Couldn't fit these" toast: the row comes back."""
+    from . import inventory as _inventory
+
+    conn = get_conn()
+    try:
+        record = _record(conn, plan_id)
+    finally:
+        conn.close()
+    cand = _offered(record, int(item_id))
+    resolution = record["resolved"].get(str(cand["id"])) or {}
+    action = resolution.get("action")
+    undo = undo or {}
+    if action == "frozen" and undo.get("freeze"):
+        _inventory.unfreeze_item(undo["freeze"])
+    elif action == "side":
+        entry_id = resolution.get("entry_id")
+        conn = get_conn()
+        try:
+            row = conn.execute(
+                "SELECT sides_json, derived_from_json FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+                (entry_id, household_id()),
+            ).fetchone()
+            if row is not None:
+                try:
+                    sides = json.loads(row["sides_json"] or "[]") or []
+                except (TypeError, ValueError):
+                    sides = []
+                sides = [s for s in sides if not (isinstance(s, dict) and s.get("use_up_id") == cand["id"])]
+                derived = _derived(row["derived_from_json"])
+                tagged = [u for u in (derived.get(USE_UP_KEY) or [])
+                          if isinstance(u, dict) and u.get("id") != cand["id"]]
+                if tagged:
+                    derived[USE_UP_KEY] = tagged
+                else:
+                    derived.pop(USE_UP_KEY, None)
+                conn.execute(
+                    "UPDATE meal_plan_entries SET sides_json = ?, derived_from_json = ? WHERE id = ? AND household_id = ?",
+                    (json.dumps(sides), json.dumps(derived), entry_id, household_id()),
+                )
+                conn.commit()
+        finally:
+            conn.close()
+    conn = get_conn()
+    try:
+        record = _record(conn, plan_id)
+        record["resolved"].pop(str(cand["id"]), None)
+        _save_record(conn, plan_id, record)
+        conn.commit()
+    finally:
+        conn.close()
+    return {"item_id": cand["id"], "undone": True}

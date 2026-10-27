@@ -17208,6 +17208,7 @@
           (planned && entry.brought_over
             ? '<span class="wk-from-last-line"><span class="wk-from-last">From last week</span></span>'
             : '') +
+          (planned ? wkUsesTagHtml(entry.uses_tag) : '') +
         '</div>' +
         (!planned && acts ? '<div class="wk-row-acts">' + acts + '</div>' : '') +
       '</div>' +
@@ -17514,12 +17515,96 @@
                 (entry.leftover_from && entry.leftover_from.cook_ahead ? 'Made ahead' : 'Leftovers') +
                 '</span></span>'
             : '') +
+          (dish.isLeftover ? '' : wkUsesTagHtml(wkDishUsesTag(dish))) +
         '</div>' +
       '</div>' +
       '<div class="wk-row-foot">' + (meta ? '<span class="wk-row-meta">' + escapeHtml(meta) + '</span>' : '') +
         (acts ? '<div class="wk-row-acts">' + acts + '</div>' : '') +
       '</div>' +
     '</div>';
+  }
+
+  // ---------- Use it all: tags, the count, "Couldn't fit these" ----------
+  // Loop Board B2/B3 (Emily, 2026-10-26; Option B mockup, screen 2). The
+  // tag is the server's (get_week_menu's uses_tag — only what use_up.
+  // reconcile checked the dish carries); the count line and the card are
+  // get_week_menu's `use_up` (use_up.plan_summary). Draft only.
+  function wkUsesTagHtml(tag) {
+    if (!tag) return '';
+    return '<span class="wk-uses-line"><span class="wk-uses">' + escapeHtml(tag) + '</span></span>';
+  }
+
+  // A menu row is one dish over several days; the cook day carries it.
+  function wkDishUsesTag(dish) {
+    for (var j = 0; j < dish.days.length; j++) {
+      var e = dish.days[j].entry;
+      if (e && e.uses_tag) return e.uses_tag;
+    }
+    return '';
+  }
+
+  function wkUseUpLineHtml(data) {
+    var u = data && data.use_up;
+    if (!u || !u.line) return '';
+    return '<p class="wk-use-up-line">' + escapeHtml(u.line) + '</p>';
+  }
+
+  var USE_UP_ACTIONS = { freeze: 'Freeze it', side: 'Add as a side' };
+
+  function wkCouldntFitHtml(data) {
+    var u = data && data.use_up;
+    var rows = (u && u.couldnt_fit) || [];
+    if (!rows.length) return '';
+    return '<div class="shell-card wk-unfit" id="wk-unfit">' +
+      '<h2 class="wk-unfit-head">Couldn’t fit these</h2>' +
+      rows.map(function (r) {
+        var primary = r.primary && USE_UP_ACTIONS[r.primary]
+          ? '<button type="button" class="wk-unfit-act is-' + r.primary + '" data-wk-useup="' + r.primary + '" ' +
+              'data-wk-useup-id="' + r.id + '" aria-label="' + escapeHtml(USE_UP_ACTIONS[r.primary] + ' — ' + r.item) + '">' +
+              escapeHtml(USE_UP_ACTIONS[r.primary]) + '</button>'
+          : '';
+        // The quiet one. A freezer row is already where it keeps: it just
+        // stays there for a later week.
+        var quietLabel = r.kind === 'freezer' ? 'Keep it frozen' : 'Let it go';
+        return '<div class="wk-unfit-row">' +
+          '<span class="wk-unfit-name">' + escapeHtml(r.item) + '</span>' +
+          '<span class="wk-unfit-acts">' + primary +
+            '<button type="button" class="wk-unfit-quiet" data-wk-useup="let_go" data-wk-useup-id="' + r.id + '" ' +
+              'aria-label="' + escapeHtml(quietLabel + ' — ' + r.item) + '">' + escapeHtml(quietLabel) + '</button>' +
+          '</span>' +
+        '</div>';
+      }).join('') +
+    '</div>';
+  }
+
+  function wireCouldntFit(panel, steps) {
+    var data = weekState.data || {};
+    var planId = data.weekly_plan_id;
+    if (!planId) return;
+    steps.querySelectorAll('[data-wk-useup]').forEach(function (btn) {
+      btn.addEventListener('click', async function () {
+        var action = btn.getAttribute('data-wk-useup');
+        var itemId = btn.getAttribute('data-wk-useup-id');
+        btn.disabled = true;
+        var base = '/api/week-plan/' + encodeURIComponent(planId) + '/use-up/' + encodeURIComponent(itemId);
+        try {
+          var done = await Api.json(base, { method: 'POST', body: { action: action } });
+          await loadWeekMenu(panel);
+          showToast(done.toast || 'Done.', {
+            label: 'Undo',
+            onClick: async function () {
+              try {
+                await Api.json(base + '/undo', { method: 'POST', body: { undo: done.undo || {} } });
+              } finally {
+                loadWeekMenu(panel);
+              }
+            }
+          });
+        } catch (err) {
+          btn.disabled = false;
+        }
+      });
+    });
   }
 
   function wkMenuHtml(days) {
@@ -17603,7 +17688,7 @@
     // approved week, which is what makes this one expression safe on the
     // deeper, approved-week form of this screen too.
     var head = root
-      ? weekSuggestedNoteHtml(data) + weekFlagsHtml(data) + draftSoftNoteHtml(data) + planEndsLineHtml(data)
+      ? wkUseUpLineHtml(data) + weekSuggestedNoteHtml(data) + weekFlagsHtml(data) + draftSoftNoteHtml(data) + planEndsLineHtml(data)
       : '<button type="button" class="crumb" data-wk-back="week">‹ Plan</button>' +
         '<div class="wk-head wk-check-head">' +
           '<div class="wk-head-row">' +
@@ -17616,7 +17701,7 @@
       return head + '<div class="rv-body"><div class="rv-empty">Nothing planned yet.</div></div>' + reviewDecideHtml(data);
     }
     if (root && weekPlanState(data) === 'draft' && draftView(data) === 'menu') {
-      return head + wkMenuHtml(days) +
+      return head + wkMenuHtml(days) + (root ? wkCouldntFitHtml(data) : '') +
         reviewDecideHtml(data);
     }
     return head +
@@ -17625,6 +17710,7 @@
         days.map(function (day, i) { return wkDayCardHtml(day, i, { done: false, swapLabel: 'Swap' }); }).join('') +
       '</div>' +
       wkDotsHtml(days.length, selected) +
+      (root ? wkCouldntFitHtml(data) : '') +
       // weekReplacesNote's "Once it's approved, I'd replace…" sentence
       // used to sit here, above the dock (declutter, 2026-09-25: Emily
       // asked it off the draft screen). data.replaces is still computed
@@ -20050,6 +20136,7 @@
   }
 
   function wireMealsStep(panel, steps) {
+    wireCouldntFit(panel, steps);
     steps.querySelectorAll('[data-wk-day]').forEach(function (row) {
       row.addEventListener('click', function () {
         goMealsStep('day', { dayIndex: Number(row.getAttribute('data-wk-day')) });
