@@ -31,11 +31,15 @@ why*, not duplicating the diff.
   fridge scan. New `/api/inventory/scan-freezer` (+ `scan_freezer` source);
   Say it is deterministic (no model call) and its shelves are recorded as
   guesses (`kitchen_said` in GUESSED_LOCATION_SOURCES). C5: one
-  welcome-look screen laid OVER the reveal while the first week drafts —
-  not in ALL_STEPS, not awaited, so it never delays the plan; "Set up
-  later" only uncovers the reveal; skipped for a stocked kitchen and on the
-  "Not now" to Claude path. Why there: photos need the Claude yes first,
-  and the brief said don't hold up the first plan.
+  welcome-look screen right BEFORE the first week is drafted —
+  `finishSetupAndReveal` awaits `kitchenStepBeforeDraft()` ahead of the
+  saves and the draft (story: "so that my first plan can use what I already
+  have"); not in ALL_STEPS; "Set up later" goes straight on to drafting;
+  skipped for a stocked kitchen and on the "Not now" to Claude path. Why
+  after the Claude yes: the photos go to Claude. Why before the saves: a
+  reload mid-photos resumes the answers draft instead of leaving a finished
+  household with no week. (First built over the reveal, alongside the
+  draft; moved the same day — the week couldn't use the photos.)
 
 - **A fifth tab, Kitchen: what's home, and one-tap fixes** (2026-10-26,
   Loop Board C1 + C3; Emily approved the nav change that day, decision 2 —

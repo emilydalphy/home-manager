@@ -958,11 +958,10 @@
 
   /* ---------- The Kitchen, introduced (Loop Board C5, 2026-10-27) ----------
      One screen in the welcome-flow look (one idea, big type, lots of air),
-     laid OVER the reveal while the first week cooks underneath — so it
-     adds no wait and blocks nothing: "Set up later" (or finishing the
-     photos) uncovers the reveal in whatever state it has reached. Its
-     photos are static/kitchen-add.js's "Show me your kitchen" sheet, the
-     same review-before-save the Kitchen tab uses. */
+     laid over the last question right before the first week is drafted,
+     so the week can use what's home. "Set up later" goes straight on to
+     drafting. Its photos are static/kitchen-add.js's "Show me your
+     kitchen" sheet, the same review-before-save the Kitchen tab uses. */
   #kitchen-intro {
     position: fixed; inset: 0; z-index: 50;
     overflow-y: auto;
@@ -1943,10 +1942,9 @@
      every meal (Loop Board "Week 1: day-card carousel", 2026-09-18). The one
      apricot is in the foot. The markup each renderer fills — see the
      .reveal-* rules above and the "First-plan reveal" script section. -->
-<div id="step-reveal" style="display:none">
-  <!-- The Kitchen, introduced (Loop Board C5). Shown over the reveal while
-       the first week is drafted (offerKitchenSetup). No typing: a photo per
-       shelf, each skippable, or "Set up later". -->
+  <!-- The Kitchen, introduced (Loop Board C5). Shown right before the first
+       week is drafted (kitchenStepBeforeDraft), so the week can use what's
+       home. No typing: a photo per shelf, each skippable, or "Set up later". -->
   <div id="kitchen-intro" role="dialog" aria-modal="true" aria-labelledby="kitchen-intro-title" hidden>
     <div class="intro-screen">
       <div class="intro-body has-lead">
@@ -1955,12 +1953,13 @@
         <p class="intro-lead">Tick things off at the shop and they&rsquo;re in. Cook, and they come out. I&rsquo;ll plan around whatever needs using up first, so less goes in the bin.</p>
       </div>
       <div class="intro-foot">
-        <p class="kitchen-intro-note">Your first week is cooking in the meantime.</p>
+        <p class="kitchen-intro-note">Your first week will use what&rsquo;s already here.</p>
         <button class="intro-next" id="kitchen-intro-start" type="button">Take three photos</button>
         <button class="kitchen-intro-later" id="kitchen-intro-later" type="button">Set up later</button>
       </div>
     </div>
   </div>
+<div id="step-reveal" style="display:none">
   <div class="reveal-screen">
     <!-- The round `?`: "Need a hand?" (static/help-sheet.js), named for
          this screen so a "Something not working?" report says where. -->
@@ -5376,6 +5375,14 @@ async function finishSetupAndReveal(opts) {
   setupRun = 'running';
   setKitRepeatsBusy(true);
   try {
+    // The Kitchen step (C5) comes first, so the first week is drafted from
+    // what's home. Only on the path that drafts a week (the yes to Claude:
+    // the photos go to Claude too). It resolves when the photos are done or
+    // on "Set up later", and at once for a stocked kitchen. Before the
+    // saves on purpose: a reload while taking photos resumes the answers
+    // draft and lands back on the last question, rather than on a finished
+    // household with no week.
+    if (plan && typeof kitchenStepBeforeDraft === 'function') await kitchenStepBeforeDraft();
     await saveHouseholdMembers();
     await saveRhythmAnswers();
     const answers = await saveOnboardingAnswers();
@@ -5386,9 +5393,6 @@ async function finishSetupAndReveal(opts) {
     if (typeof clearOnboardingDraft === 'function') clearOnboardingDraft();
     if (!plan) return true;
     showStep('reveal');
-    // The Kitchen step (C5) goes over the reveal while the week cooks —
-    // not awaited, so it never holds the first plan up.
-    if (typeof offerKitchenSetup === 'function') offerKitchenSetup();
     await generateFirstPlanAndReveal(answers);
     return true;
   } catch (err) {
@@ -5566,44 +5570,57 @@ INTRO_STEPS.forEach(key => {
 // ---------- The Kitchen, introduced (Loop Board C5, 2026-10-27) ----------
 // Emily: "we should include that there's an inventory management feature in
 // the onboarding flow ... it can be a 'set up later' opt out of the flow."
-// WHERE: over the reveal, from the moment the first week starts drafting —
-// after every household question and the yes to sharing with Claude (a
-// photo goes to Claude, so it can't come before that yes), and never in
-// front of the week: the draft runs underneath, nothing waits on this, and
-// "Set up later" uncovers the reveal as far as it has got. The Kitchen then
-// fills from the first shop. A household that said "Not now" to Claude
-// never reaches the reveal, so it never sees this — its photos couldn't be
-// read anyway. Shown once per page, and only to a kitchen with nothing in
-// it yet (a re-run of setup on a stocked kitchen is not a first run).
-let kitchenIntroOffered = false;
-async function offerKitchenSetup() {
-  if (kitchenIntroOffered) return;
-  kitchenIntroOffered = true;
-  const el = document.getElementById('kitchen-intro');
-  if (!el || !window.KitchenAdd) return;
-  try {
-    const home = await Api.json('/api/whats-home', { quiet: true });
-    if (home && home.count > 0) return;
-  } catch (err) {
-    // Couldn't check: offer it anyway — a photo review saves nothing
-    // without a tap, so the worst case is one screen they pass.
-  }
-  el.hidden = false;
-  const start = document.getElementById('kitchen-intro-start');
-  if (start) start.focus();
+// The story: so that my first plan can use what I already have. So it sits
+// RIGHT BEFORE the first week is drafted — after every household question
+// and the yes to sharing with Claude (a photo goes to Claude, so it can't
+// come before that yes) — and finishSetupAndReveal awaits it. Not a step in
+// ALL_STEPS: it is laid over the last question, has no back, and no answer
+// of its own to save. "Set up later" goes straight on to drafting; the
+// Kitchen then fills from the first shop. Skipped on "Not now" to Claude
+// (no week is drafted there) and for a kitchen with things in it (a re-run
+// of setup). Offered once per page.
+const KITCHEN_CHECK_WAIT_MS = 3000;
+let kitchenStepOffered = false;
+let kitchenStepResolve = null;
+function kitchenStepBeforeDraft() {
+  if (kitchenStepOffered) return Promise.resolve();
+  kitchenStepOffered = true;
+  return new Promise(async (resolve) => {
+    const el = document.getElementById('kitchen-intro');
+    if (!el || !window.KitchenAdd) { resolve(); return; }
+    try {
+      // A slow answer never holds the week up: after the wait it is offered.
+      const home = await Promise.race([
+        Api.json('/api/whats-home', { quiet: true }),
+        new Promise(r => setTimeout(() => r(null), KITCHEN_CHECK_WAIT_MS)),
+      ]);
+      if (home && home.count > 0) { resolve(); return; }
+    } catch (err) {
+      // Couldn't check: offer it anyway — a photo review saves nothing
+      // without a tap, and "Set up later" is one more.
+    }
+    kitchenStepResolve = resolve;
+    el.hidden = false;
+    window.scrollTo(0, 0);
+    const start = document.getElementById('kitchen-intro-start');
+    if (start) start.focus();
+  });
 }
+// Done or set up later: the overlay goes and the draft starts.
 function closeKitchenIntro() {
   const el = document.getElementById('kitchen-intro');
   if (el) el.hidden = true;
-  window.scrollTo(0, 0);
+  const go = kitchenStepResolve;
+  kitchenStepResolve = null;
+  if (go) go();
 }
 document.getElementById('kitchen-intro-later').onclick = () => { closeKitchenIntro(); };
 document.getElementById('kitchen-intro-start').onclick = () => {
   if (!window.KitchenAdd) { closeKitchenIntro(); return; }
   window.KitchenAdd.open({
     mode: 'setup',
-    doneLabel: 'See my first week',
-    // Finished (or a receipt added instead): straight on to the week.
+    doneLabel: 'Draft my first week',
+    // Finished (or a receipt added instead): on to the draft.
     onDone: () => { closeKitchenIntro(); },
     // Closed part-way: back to this screen, where "Set up later" is.
     onClose: () => {},

@@ -313,7 +313,7 @@ def test_undo_leaves_a_row_somebody_changed_since(signed_in):
 
 def _intro_markup() -> str:
     start = ONBOARDING.index('<div id="kitchen-intro"')
-    return ONBOARDING[start: ONBOARDING.index("<!-- The title claims a week only once one exists.", start)]
+    return ONBOARDING[start: ONBOARDING.index('<div id="step-reveal"', start)]
 
 
 def test_onboarding_introduces_the_kitchen_with_set_up_later():
@@ -352,46 +352,115 @@ def test_the_setup_sheet_is_the_mockups_three_photos():
     assert "Or scan your last receipt instead." not in html  # only before the first shelf
     first = _ka("k.htmlFor({mode: 'setup', step: 'setup'})")
     assert "Or scan your last receipt instead." in first
-    done = _ka("k.htmlFor({mode: 'setup', step: 'setup', opts: {doneLabel: 'See my first week'}, "
+    done = _ka("k.htmlFor({mode: 'setup', step: 'setup', opts: {doneLabel: 'Draft my first week'}, "
                "setup: {fridge: 14, freezer: 'skipped', pantry: 3}})")
-    assert "Skipped" in done and ">See my first week</button>" in done and "Skip the" not in done
+    assert "Skipped" in done and ">Draft my first week</button>" in done and "Skip the" not in done
 
 
-def test_the_kitchen_step_never_holds_up_the_first_plan():
-    """CATCH — it is offered as the first week starts drafting, not awaited,
-    and only on the path that drafts one (after the yes to Claude)."""
-    finish = ONBOARDING[ONBOARDING.index("async function finishSetupAndReveal("):]
-    finish = finish[: finish.index("\n}\n")]
-    i_reveal = finish.index("showStep('reveal');\n    // The Kitchen step")
-    i_offer = finish.index("if (typeof offerKitchenSetup === 'function') offerKitchenSetup();")
-    i_gen = finish.index("await generateFirstPlanAndReveal(answers);")
-    assert finish.index("if (!plan) return true;") < i_reveal < i_offer < i_gen
-    assert "await offerKitchenSetup" not in ONBOARDING
-    # The step list is unchanged: it is not a question in front of the week.
-    steps = re.search(r"const ALL_STEPS = \[([^\]]*)\]", ONBOARDING).group(1)
-    assert "kitchen" not in steps
+def _onb_fn(name: str, is_async: bool = False) -> str:
+    head = ("async function " if is_async else "function ") + name + "("
+    start = ONBOARDING.index(head)
+    return ONBOARDING[start: ONBOARDING.index("\n}\n", start) + 3]
 
 
-def test_set_up_later_continues_with_no_penalty():
-    """CATCH — "Set up later" only uncovers the reveal: it saves nothing,
-    finishes nothing and goes nowhere, so the week carries on as it was."""
+# The finish and the Kitchen step, run under node with every save, the
+# draft and the DOM stood in for: what is recorded is the ORDER things
+# happen in, which is the claim.
+def _finish_harness(scenario: str, kitchen_count: int = 0, plan: bool = True):
+    script = "\n".join([
+        """
+const LOG = [];
+const ELS = {};
+function el(id) { return ELS[id] || (ELS[id] = { id: id, hidden: true, focus() {}, onclick: null }); }
+const document = { getElementById: el };
+const window = { KitchenAdd: { open(o) { LOG.push('sheet:' + o.mode); window._opts = o; } }, scrollTo() {} };
+const Api = { json(path) { LOG.push('GET ' + path); return Promise.resolve({ count: %d }); } };
+function currentMembers() { return [{ name: 'Emily' }]; }
+function showStep(k) { LOG.push('show:' + k); }
+function setKitRepeatsBusy() {}
+async function saveHouseholdMembers() { LOG.push('save'); }
+async function saveRhythmAnswers() {}
+async function saveOnboardingAnswers() { return {}; }
+async function savePlanTheWeekAnswers() {}
+function clearOnboardingDraft() {}
+async function generateFirstPlanAndReveal() { LOG.push('draft'); }
+function alert() {}
+""" % kitchen_count,
+        "const KITCHEN_CHECK_WAIT_MS = 3000;",
+        "let kitchenStepOffered = false;",
+        "let kitchenStepResolve = null;",
+        _onb_fn("kitchenStepBeforeDraft"),
+        _onb_fn("closeKitchenIntro"),
+        "let setupRun = 'idle';",
+        _onb_fn("finishSetupAndReveal", is_async=True),
+        """
+const tick = () => new Promise(r => setTimeout(r, 0));
+(async () => {
+  const run = finishSetupAndReveal(%s);
+  for (let i = 0; i < 5; i++) await tick();
+  const shownWhileWaiting = !el('kitchen-intro').hidden;
+  const beforeTap = LOG.slice();
+  %s
+  await run;
+  console.log(JSON.stringify({ shownWhileWaiting, beforeTap, log: LOG, hiddenAfter: el('kitchen-intro').hidden }));
+})();
+""" % ("{ plan: false }" if not plan else "", scenario),
+    ])
+    res = nodeharness.run_node(script, timeout=30)
+    assert res.returncode == 0, res.stderr
+    return json.loads(res.stdout)
+
+
+@_needs_node
+def test_the_draft_starts_only_after_the_kitchen_step_is_set_up_later():
+    """CATCH — the step sits right before the first week is drafted, so the
+    week can use what's home: nothing is saved and no week is asked for
+    while it shows; "Set up later" goes straight on to saving and drafting."""
+    out = _finish_harness("closeKitchenIntro();")
+    assert out["shownWhileWaiting"] is True
+    assert out["beforeTap"] == ["GET /api/whats-home"], "no save, no draft before the step is answered"
+    assert out["log"] == ["GET /api/whats-home", "save", "show:reveal", "draft"]
+    assert out["hiddenAfter"] is True
+
+
+@_needs_node
+def test_the_draft_starts_after_the_photos_are_done():
+    """CATCH — "Take three photos" opens the setup sheet; its finish (onDone)
+    is what lets the draft start, so the photos are home before the week."""
+    out = _finish_harness("window.KitchenAdd.open({mode: 'setup'}); "
+                          "LOG.push('photos added'); closeKitchenIntro();")
+    assert out["log"].index("photos added") < out["log"].index("draft")
+    wiring = ONBOARDING[ONBOARDING.index("document.getElementById('kitchen-intro-start').onclick"):]
+    wiring = wiring[: wiring.index("\n};\n")]
+    assert "mode: 'setup'" in wiring and "onDone: () => { closeKitchenIntro(); }" in wiring
+    assert "doneLabel: 'Draft my first week'" in wiring
+
+
+@_needs_node
+def test_the_step_is_skipped_for_a_stocked_kitchen_and_on_not_now():
+    """CATCH/GUARD — a kitchen with things in it goes straight to the draft;
+    "Not now" to Claude drafts nothing and never shows the step."""
+    stocked = _finish_harness("", kitchen_count=4)
+    assert stocked["shownWhileWaiting"] is False
+    assert stocked["log"] == ["GET /api/whats-home", "save", "show:reveal", "draft"]
+    not_now = _finish_harness("", plan=False)
+    assert not_now["shownWhileWaiting"] is False
+    assert not_now["log"] == ["save"]
+
+
+def test_set_up_later_only_moves_on():
+    """CATCH — "Set up later" saves nothing of its own and goes nowhere but
+    on: it hides the screen and lets the finish carry on."""
     later = ONBOARDING[ONBOARDING.index("document.getElementById('kitchen-intro-later').onclick"):]
     later = later[: later.index("\n")]
     assert later.strip() == "document.getElementById('kitchen-intro-later').onclick = () => { closeKitchenIntro(); };"
-    close = ONBOARDING[ONBOARDING.index("function closeKitchenIntro()"):]
-    close = close[: close.index("\n}\n")]
+    close = _onb_fn("closeKitchenIntro")
     assert "Api." not in close and "location" not in close and "finishSetupAndReveal" not in close
-    # The photos open the shared sheet in setup mode; finishing them is the
-    # same uncovering.
-    start = ONBOARDING[ONBOARDING.index("document.getElementById('kitchen-intro-start').onclick"):]
-    start = start[: start.index("\n};\n")]
-    assert "mode: 'setup'" in start and "onDone: () => { closeKitchenIntro(); }" in start
+    # It is not a question step, and the finish keeps its four callers.
+    steps = re.search(r"const ALL_STEPS = \[([^\]]*)\]", ONBOARDING).group(1)
+    assert "kitchen" not in steps
+    assert ONBOARDING.count("finishSetupAndReveal(") == 4
     assert ONBOARDING.index('src="/static/api.js"') < ONBOARDING.index('src="/static/kitchen-add.js"')
-
-
-def test_the_step_is_skipped_for_a_kitchen_that_already_has_things():
-    """GUARD — a re-run of setup on a stocked kitchen is not a first run."""
-    offer = ONBOARDING[ONBOARDING.index("async function offerKitchenSetup()"):]
-    offer = offer[: offer.index("\n}\n")]
-    assert "Api.json('/api/whats-home', { quiet: true })" in offer
-    assert "if (home && home.count > 0) return;" in offer
+    # Its markup is outside the reveal, which is hidden while it shows.
+    assert ONBOARDING.index('<div id="kitchen-intro"') < ONBOARDING.index('<div id="step-reveal"')
+    assert "Your first week will use what&rsquo;s already here." in _intro_markup()
