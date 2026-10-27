@@ -122,10 +122,12 @@ def test_the_tab_never_shows_the_in_development_label_or_line():
     assert "In development" not in block and "INVENTORY_IN_DEVELOPMENT" not in block
     # UPDATED 2026-10-27 (C2, inventory/kitchen-add): the dock no longer
     # opens inventory.html — it opens static/kitchen-add.js's own sheet —
-    # so the interim KITCHEN_SHEETS.kitchenAdd entry is gone. inventory.html
-    # still hides its line when told it came from the tab.
+    # so the interim KITCHEN_SHEETS.kitchenAdd entry is gone. Since card A5
+    # merged (2026-10-27) inventory.html has no "still being built" line to
+    # hide at all.
     assert "kitchenAdd:" not in SHELL_JS
-    assert "if (INVENTORY_IN_DEVELOPMENT && !FROM_KITCHEN_TAB)" in INVENTORY_HTML
+    assert "INVENTORY_IN_DEVELOPMENT" not in INVENTORY_HTML
+    assert "Inventory is still being built" not in INVENTORY_HTML
 
 
 def test_the_dock_has_a_seam_for_card_c2():
