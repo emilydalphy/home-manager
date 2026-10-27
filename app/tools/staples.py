@@ -1181,6 +1181,11 @@ def _trim_to_the_weeks_part(conn, row) -> dict | None:
     }
 
 
+def _is_due(r) -> bool:
+    """Whether a staples row is asking now: unpaused and due by today."""
+    return bool(r is not None and not r["paused"] and (r["next_due_at"] or "") <= _iso(_today()))
+
+
 def note_line_removed(conn, line_row, how: str) -> None:
     """
     A person took a staple's line off the list by some OTHER route — the
@@ -1198,6 +1203,20 @@ def note_line_removed(conn, line_row, how: str) -> None:
         return
     # drop_lines=False: the caller owns the row and writes it itself; this
     # only moves the staple's dates and streak.
+    if how != "plenty" and not _is_due(_row(conn, line_row["staple_id"])):
+        # A line a person put on before the staple was due (a regular
+        # ticked on "Before you shop") and then took off is not "not this
+        # trip" — the staple never asked. Skipping pulled a coffee due in
+        # three weeks back to next week, and three such removes paused it
+        # (defect hunt, 2026-10-27). Nothing can boomerang: sync only adds
+        # a due staple. The event is still written, marked, so the toast's
+        # Undo (reverse_last_answer) puts the row back and nothing else.
+        event_id = _event(conn, line_row["staple_id"], "skipped", "tap")
+        conn.execute(
+            "UPDATE staple_events SET receipt_json = ? WHERE id = ? AND household_id = ?",
+            (json.dumps({"rhythm_kept": True}), event_id, household_id()),
+        )
+        return
     if how == "plenty":
         _plenty(conn, line_row["staple_id"], source="tap", drop_lines=False)
     else:
@@ -1401,8 +1420,8 @@ def reverse_last_answer(conn, staple_id: int) -> bool:
     if r is None:
         return False
     last = conn.execute(
-        "SELECT id, kind FROM staple_events WHERE household_id = ? AND staple_id = ? AND kind IN ('plenty', 'skipped') "
-        "ORDER BY id DESC LIMIT 1",
+        "SELECT id, kind, receipt_json FROM staple_events WHERE household_id = ? AND staple_id = ? "
+        "AND kind IN ('plenty', 'skipped') ORDER BY id DESC LIMIT 1",
         (household_id(), staple_id),
     ).fetchone()
     if last is None:
@@ -1411,6 +1430,15 @@ def reverse_last_answer(conn, staple_id: int) -> bool:
         "DELETE FROM staple_events WHERE id = ? AND household_id = ?",
         (last["id"], household_id()),
     )
+    try:
+        rhythm_kept = bool(json.loads(last["receipt_json"] or "{}").get("rhythm_kept"))
+    except (TypeError, ValueError, AttributeError):
+        rhythm_kept = False
+    if rhythm_kept:
+        # A remove that moved no rhythm (note_line_removed, not due yet):
+        # undoing it moves none either — making it due today would put
+        # "probably running low" on the line just put back.
+        return True
     if last["kind"] == "skipped":
         conn.execute(
             "DELETE FROM staple_events WHERE id = (SELECT id FROM staple_events WHERE household_id = ? AND staple_id = ? "

@@ -45,6 +45,13 @@ why*, not duplicating the diff.
   the copies buys little; Railway's disk is the protection (flagged to Emily).
   The isolation attack now drives the five photo routes with a real PNG and
   stubs the model to prove each was reached. pip-audit clean.
+- **Taking off a regular you added before the staple is due moves nothing**
+  (2026-10-27, defect hunt; branch `overnight/hunt-staples-1027`; tests
+  `tests/test_staple_regular_removed_before_due.py`). `note_line_removed`
+  skipped on any staple line: Coffee "due in 3 weeks", ticked on Before you
+  shop then Removed, came back due next week, and three removes paused it.
+  Not due now = the staple never asked, so no skip; a marked (`rhythm_kept`)
+  event lets Undo put the row back without making it due today.
 - **The iPhone app's id is `com.heypomona.app`** (2026-10-25, Emily's pick
   to match her heypomona domain; branch `overnight/bundle-id-heypomona`).
   Replaced the `com.pomona.app` placeholder in `capacitor.config.json`, the
