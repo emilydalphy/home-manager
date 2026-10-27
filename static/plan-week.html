@@ -5277,7 +5277,7 @@ body.toast-up { padding-bottom: 260px; }
         await answerInventoryCheck();
       } catch (err) {
         console.warn('Quick check answer failed:', err);
-        alert(PRE_COPY.saveFailed);
+        showToast(PRE_COPY.saveFailed);
         return true;
       }
       return await openUseUp();

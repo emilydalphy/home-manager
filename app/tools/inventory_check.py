@@ -33,9 +33,11 @@ How "least sure" is decided (constants below, each one line to change):
   - a row no household recipe uses (snacks, the hummus, the apples) gets
     NO_RECIPE_BONUS_DAYS added: nothing Pomona plans would ever notice it
     went.
-Never a staple (the staples table's names) and never a spice — the same
-two exclusions use_up applies, through the same helpers. Cooked night-off
-portions are freezer_portions' and are left out, as in use_up.
+Never a staple and never a spice (spices.is_spice). A staple is matched on
+the staples code's own key (grocery._merge_key, as staples._find_by_name)
+and also covers kinds of it: "Whole milk" under a "Milk" staple (_is_staple).
+Cooked night-off portions are freezer_portions' and are left out, as in
+use_up.
 """
 from __future__ import annotations
 
@@ -47,7 +49,6 @@ from datetime import date
 from ..db import get_conn
 from ._shared import household_id
 from . import quantities as _quantities
-from . import use_up as _use_up
 
 logger = logging.getLogger("home_manager")
 
@@ -76,6 +77,14 @@ _OF_WORDS = {
     "container", "containers", "bowl", "bowls", "bit", "lot", "piece", "pieces",
     "half", "quarter", "third", "end", "rest", "wedge", "slab", "stick", "sticks",
 }
+
+
+def _name_key(name: str) -> str:
+    """Lowercase words, a simple plural dropped — one chip per thing, and
+    the key recipe ingredients are compared on. A copy of use_up's own, so
+    this module does not lean on another module's private helper."""
+    words = re.findall(r"[a-z]+", (name or "").lower())
+    return " ".join(w[:-1] if len(w) > 3 and w.endswith("s") else w for w in words)
 
 
 def _today(conn=None) -> date:
@@ -112,6 +121,31 @@ def label_for(item: str, quantity: str) -> str:
     return joined[0].upper() + joined[1:]
 
 
+def _staple_merge_keys(conn) -> list[str]:
+    """The household's staples on the staples code's own key
+    (grocery._merge_key — what staples._find_by_name matches on)."""
+    from . import grocery as _grocery
+    try:
+        rows = conn.execute("SELECT item FROM staples WHERE household_id = ?", (household_id(),)).fetchall()
+    except Exception:
+        return []
+    return [k for k in (_grocery._merge_key(r["item"] or "") for r in rows) if k]
+
+
+def _is_staple(name: str, staple_keys: list[str]) -> bool:
+    """A staple by the staples code's key, or a kind of one: the staple's
+    words are the row's last words ("Whole milk", "2% milk" under a "Milk"
+    staple; the last word is the thing, the ones before describe it). So
+    "Milk chocolate" is not milk. Errs toward not asking — a "Coconut milk"
+    row under a "Milk" staple is left out too."""
+    from . import grocery as _grocery
+    key = _grocery._merge_key(name)
+    if not key:
+        return False
+    padded = f" {key}"
+    return any(key == s or padded.endswith(f" {s}") for s in staple_keys)
+
+
 def _recipe_keys(conn) -> list[str]:
     try:
         rows = conn.execute(
@@ -127,7 +161,7 @@ def _recipe_keys(conn) -> list[str]:
             continue
         for ing in ings if isinstance(ings, list) else []:
             name = ing.get("item") if isinstance(ing, dict) else ing
-            key = _use_up._name_key(str(name or ""))
+            key = _name_key(str(name or ""))
             if key:
                 keys.add(key)
     return list(keys)
@@ -159,7 +193,7 @@ def candidates(location: str | None = None, conn=None) -> list[dict]:
         conn = get_conn()
     try:
         today = _today(conn)
-        staples = _use_up._staple_keys(conn)
+        staples = _staple_merge_keys(conn)
         recipe_keys = _recipe_keys(conn)
         from . import spices as _spices
         from . import tonight as _tonight
@@ -175,8 +209,8 @@ def candidates(location: str | None = None, conn=None) -> list[dict]:
         for r in rows:
             row = dict(r)
             name = (row["item"] or "").strip()
-            key = _use_up._name_key(name)
-            if not name or not key or key in staples or _spices.is_spice(name):
+            key = _name_key(name)
+            if not name or not key or _is_staple(name, staples) or _spices.is_spice(name):
                 continue
             if (row["quantity"] or "").strip() in ("0", "0.0"):
                 continue
@@ -242,6 +276,10 @@ def answer(gone=None, confirmed=None) -> dict:
     try:
         today = _today(conn).isoformat()
         removed, stamped = [], []
+        # A plain delete, the same as the Kitchen view's remove
+        # (inventory.remove_inventory_item): nothing in the app keeps a
+        # record of removed rows today. If one arrives (an inventory
+        # removals table from the Kitchen-tab work), write it here too.
         for i in gone_ids:
             row = conn.execute(
                 "SELECT id, item FROM inventory_items WHERE id = ? AND household_id = ?", (i, household_id())

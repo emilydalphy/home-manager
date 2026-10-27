@@ -89,6 +89,28 @@ def test_staples_and_spices_are_never_asked_about():
     assert [c["id"] for c in tools.inventory_check_candidates()] == [keep]
 
 
+def test_a_kind_of_staple_is_a_staple_but_a_different_thing_is_not():
+    """CATCH (verify 2026-10-27) — "Whole milk" slipped past a "Milk" staple;
+    the staples code's own key plus the head noun now catches it."""
+    conn = get_conn()
+    conn.execute("INSERT INTO staples (household_id, item, next_due_at) VALUES (1, 'Milk', '2099-01-01')")
+    conn.execute("INSERT INTO staples (household_id, item, next_due_at) VALUES (1, 'Coffee beans', '2099-01-01')")
+    conn.commit()
+    conn.close()
+    _row("Whole milk", category="dairy", bought_days_ago=30)
+    _row("2% milk", category="dairy", bought_days_ago=30)
+    _row("Coffee bean", location="pantry", category="pantry", bought_days_ago=30)
+    keep = _row("Milk chocolate", location="pantry", category="pantry", bought_days_ago=30)
+    assert [c["id"] for c in tools.inventory_check_candidates()] == [keep]
+
+
+def test_a_failed_next_uses_the_page_toast_not_a_native_alert():
+    """CATCH (verify 2026-10-27) — the page's own toast, never alert()."""
+    step = _extract("preDraftStep")
+    assert "showToast(PRE_COPY.saveFailed)" in step
+    assert "alert(" not in step
+
+
 def test_recent_rows_and_recently_confirmed_rows_are_not_asked_about():
     """CATCH — Pomona is sure of last weekend's shop and of what was just confirmed."""
     _row("Yesterday's bread", bought_days_ago=1)
@@ -191,7 +213,7 @@ var preCheck = { items: [], gone: [] }, preUseUp = { shown: false, items: [], of
 var PRE_COPY = { saveFailed: 'x' };
 function renderCheckChips() {} function renderUseUpChips() {}
 function showPreSection(w) { preStep = w; shown.push(w); }
-function alert() {}
+function showToast() {}
 var Api = { json: async function (path, opts) {
   if (opts && opts.method === 'POST') { posted.push(opts.body); return {}; }
   if (path.indexOf('/api/inventory/check') === 0) return { items: %s };
