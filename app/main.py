@@ -7536,7 +7536,7 @@ _CHORE_TOOLS = {
 # changes that day's dinner (out empties it, hosting builds the big meal
 # into it) and the big-meal tools change the dishes on it, so Plan is the
 # screen that goes stale. One line, by test_week_seven_tiles's source check.
-_WEEK_TOOLS = {"plan_meal", "generate_weekly_plan", "set_week_constraints", "swap_meal_in_plan", "swap_component_in_plan", "swap_dinner_nights", "take_the_night_off", "unbatch", "approve_weekly_plan", "discard_draft_plan", "answer_holiday", "set_big_meal_dish", "remove_big_meal_dish", "set_big_meal_prep_day", "propose_big_meal"}
+_WEEK_TOOLS = {"plan_meal", "generate_weekly_plan", "set_week_constraints", "swap_meal_in_plan", "swap_component_in_plan", "swap_dinner_nights", "move_meal_to_day", "take_the_night_off", "unbatch", "approve_weekly_plan", "discard_draft_plan", "answer_holiday", "set_big_meal_dish", "remove_big_meal_dish", "set_big_meal_prep_day", "propose_big_meal"}
 # Who's home is the week's too. "Emily's out Tuesday" (set_member_attendance
 # taking the last person out), "we're away Saturday" (set_slot_need,
 # set_away_stretch) empty a planned dinner and take its groceries off the
@@ -7854,6 +7854,22 @@ def summarize_chat_actions(before_history: list, after_history: list) -> list[Ch
                     change=(result.get("said") or "").strip() or _CATEGORY_FALLBACK_CHANGES["week"],
                     tab="week", href=None,
                     undo={"label": "Undo", "kind": "unbatch", "payload": result.get("undo")}
+                    if result.get("undo") else None,
+                )
+                continue
+            # A chat Move says what moved in move_meal's own sentence (the
+            # one the Plan tab's toast says), and carries the same Undo the
+            # toast has — the card the 2026-10-26 card asked for. Anything
+            # but 'moved' wrote nothing and was skipped above.
+            if name == "move_meal_to_day" and isinstance(result, dict) and result.get("status") == "moved":
+                to_date = args.get("to_date") if isinstance(args, dict) else None
+                by_category["week"] = ChatAction(
+                    kicker=_CATEGORY_KICKERS["week"],
+                    change=(result.get("said") or "").strip() or _CATEGORY_FALLBACK_CHANGES["week"],
+                    tab="week", href=None,
+                    date=to_date if isinstance(to_date, str) and _ISO_DATE_RE.match(to_date) else None,
+                    slot=(args.get("slot") or "dinner") if isinstance(args, dict) else None,
+                    undo={"label": "Undo", "kind": "move", "payload": result.get("undo")}
                     if result.get("undo") else None,
                 )
                 continue

@@ -13,6 +13,23 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Chat moves a dinner with the Plan tab's Move, leftovers and all**
+  (2026-10-27, Emily's phone test on Tester Home; branch
+  `overnight/chat-moves-a-dinner`; tests `tests/test_chat_moves_a_dinner.py`).
+  New chat tool `move_meal_to_day` → `meal_move.move_meal_for_chat` (date +
+  slot, not entry id): moves the dish and its leftovers night, trades with
+  what's there, card "Week updated" + Undo (the Move sheet's own
+  `/move-meal-undo`; `mountActionUndo` in shell.js now picks the route by
+  `undo.kind`). A refusal returns `could_go` so the reply offers the nearest
+  day. Moving a dish onto its OWN leftovers night is allowed from chat only
+  (`onto_own_leftovers`) — cook there, leftovers on by the same gap; the
+  Move sheet still dims that day (Emily's picker decision). Two guards on
+  chat's doors: `check_off_meal_for_chat` refuses a cooked tick on a day
+  still to come; `swap_meal_in_plan_for_chat` refuses a lunch/dinner that is
+  still to be cooked on another day unless `repeat` (the person asked for it
+  twice). swap_dinner_nights stays, for two named nights. Why: chat could
+  only swap, refused on leftovers, then faked the move with a cooked tick
+  and a second shrimp.
 - **The iPhone app's id is `com.heypomona.app`** (2026-10-25, Emily's pick
   to match her heypomona domain; branch `overnight/bundle-id-heypomona`).
   Replaced the `com.pomona.app` placeholder in `capacitor.config.json`, the

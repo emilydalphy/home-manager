@@ -273,7 +273,8 @@ def _empty_reason(row: dict, slot: str) -> str:
 
 # ---------- the placement ----------
 
-def plan_move(snap: dict, entry_id: int, to_date: str, today: str) -> dict:
+def plan_move(snap: dict, entry_id: int, to_date: str, today: str,
+              onto_own_leftovers: bool = False) -> dict:
     """
     Where every row goes if this meal moves to `to_date`, or why it can't.
 
@@ -330,8 +331,14 @@ def plan_move(snap: dict, entry_id: int, to_date: str, today: str) -> dict:
     member_pos = {(m["date"], m["slot"]) for m in members}
     dish = short_name(source["meal"])
 
-    # The day tapped is one of the dish's own leftovers nights.
-    if (to_date, slot) in member_pos:
+    # The day tapped is one of the dish's own leftovers nights. The Move
+    # sheet dims it (the row already says "Chicken Stew leftovers"); chat's
+    # "move the shrimp to Wednesday" when Wednesday is the shrimp's
+    # leftovers night means cook it there and push the leftovers on by the
+    # same gap (2026-10-27) — the permutation below already places that:
+    # the leftovers night's own row is skipped as a member position, and
+    # whatever the leftovers land on goes back to the day the cook left.
+    if (to_date, slot) in member_pos and not onto_own_leftovers:
         # Shown dimmed with no line of its own: the row already reads
         # "Chicken Stew leftovers", which is the reason.
         return {"ok": False, "reason": ""}
@@ -739,7 +746,8 @@ def _said(snap: dict, placement: dict[int, str], members: list[int], source_id: 
     return line
 
 
-def move_meal(weekly_plan_id: int, entry_id: int, to_date: str) -> dict:
+def move_meal(weekly_plan_id: int, entry_id: int, to_date: str,
+              onto_own_leftovers: bool = False) -> dict:
     """
     Move one lunch or dinner (and its leftovers) to another day, trading
     places with what is there.
@@ -760,7 +768,7 @@ def move_meal(weekly_plan_id: int, entry_id: int, to_date: str) -> dict:
         snap = _snapshot(weekly_plan_id, conn)
     finally:
         conn.close()
-    first = plan_move(snap, entry_id, to_date, today)
+    first = plan_move(snap, entry_id, to_date, today, onto_own_leftovers=onto_own_leftovers)
     if not first["ok"]:
         return {"status": "refused", "message": _refusal_sentence(snap, entry_id, to_date, first["reason"])}
     by_id = {r["id"]: r for r in snap["rows"]}
@@ -777,7 +785,7 @@ def move_meal(weekly_plan_id: int, entry_id: int, to_date: str) -> dict:
     try:
         conn.execute("BEGIN IMMEDIATE")
         snap = _snapshot(weekly_plan_id, conn)
-        planned = plan_move(snap, entry_id, to_date, today)
+        planned = plan_move(snap, entry_id, to_date, today, onto_own_leftovers=onto_own_leftovers)
         if not planned["ok"] or planned["placement"] != first["placement"]:
             conn.rollback()
             return {"status": "refused", "message": "The week just changed — try that again."}
@@ -1078,3 +1086,70 @@ def _after_move(weekly_plan_id: int, moved_ids: list[int]) -> list[str]:
         logger.exception("Refreshing the draft's flags after a move failed (plan %s)", weekly_plan_id)
     from . import defrost as _defrost
     return _defrost.resync_plan_thaws(weekly_plan_id, moved_ids)
+
+
+# ---------- chat's door ----------
+
+def move_meal_for_chat(weekly_plan_id: int, meal_date: str, to_date: str,
+                       slot: str = "dinner") -> dict:
+    """
+    "Move the shrimp to Wednesday" from chat — the same move the Plan tab's
+    Move sheet makes, through move_meal, so chat and the button can never
+    disagree about what a move does to the leftovers, the list or the thaw.
+
+    Chat used to have only swap_dinner_nights, a two-night trade that
+    refuses whenever a leftovers night would run backwards. On 2026-10-26
+    (Emily, Tester Home) it refused "move the shrimp to Wednesday" because
+    Wednesday was the shrimp's own leftovers night, and the model then
+    improvised the move out of a cooked tick and a second fresh shrimp —
+    the week was wrong on three screens. A move that carries its leftovers
+    is exactly what move_meal already does.
+
+    The day is named by date and slot (the way the model names every other
+    week write) rather than by entry id, so the model can't point at a row
+    it read three turns ago. On a refusal nothing is written and
+    `could_go` lists the days that DO work, in week order — the reply
+    offers the closest one in the same breath instead of stopping at "no".
+    On a move, `undo` is what the chat card's Undo posts back.
+    """
+    slot = (slot or "dinner").strip().lower()
+    conn = get_conn()
+    try:
+        snap = _snapshot(weekly_plan_id, conn)
+    finally:
+        conn.close()
+    row = None
+    for r in snap["rows"]:
+        if r["date"] == meal_date and r["slot"] == slot and r["slot_state"] == "planned" \
+                and (r["meal"] or "").strip():
+            row = r
+            break
+    if row is None:
+        raise ValueError(f"There's no {slot} planned on {meal_date} to move.")
+    if _is_reheat(row, snap["chains"]):
+        # The night named is a leftovers night; the move belongs to the
+        # night that cooks it. Said as the rule, with that night named, so
+        # the next call is the right one rather than a guess.
+        cook = (snap["chains"]["leftovers"].get(row["id"]) or {}).get("source")
+        where = f" It's cooked on {_weekday(cook['date'])} ({cook['date']}) — move that night instead." \
+            if cook else ""
+        return {"status": "refused",
+                "message": f"Leftovers move with the meal they come from.{where}",
+                "could_go": []}
+    out = move_meal(weekly_plan_id, row["id"], to_date, onto_own_leftovers=True)
+    if out.get("status") != "moved":
+        could_go = []
+        try:
+            options = move_options(weekly_plan_id, row["id"])
+            could_go = [{"date": d["date"], "weekday": d["weekday"], "note": d["note"]}
+                        for d in options["days"] if d["ok"]]
+        except ValueError:
+            pass
+        return {"status": "refused", "message": out.get("message") or "That move can't happen.",
+                "could_go": could_go}
+    # `days` is the Plan tab's redraw; chat never reads it, and it is the
+    # bulk of the result.
+    out = {k: v for k, v in out.items() if k != "days"}
+    out["undo"] = {"weekly_plan_id": weekly_plan_id, "week_start": snap["start"],
+                   "move_id": out["move_id"]}
+    return out

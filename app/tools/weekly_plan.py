@@ -9281,7 +9281,7 @@ def restore_leftover_chain(weekly_plan_id: int, cook_id: int, chain: dict) -> li
     return [r["id"] for r in relinked]
 
 
-def swap_meal_in_plan_for_chat(*args, override: bool = False, **kwargs) -> dict:
+def swap_meal_in_plan_for_chat(*args, override: bool = False, repeat: bool = False, **kwargs) -> dict:
     """
     swap_meal_in_plan with the two refusals a PERSON is owed in front of
     it: a night that has already gone by, and — since 2026-09-21 — a dish
@@ -9330,6 +9330,8 @@ def swap_meal_in_plan_for_chat(*args, override: bool = False, **kwargs) -> dict:
     if isinstance(new_meal, str):
         from . import allergen_gate as _allergen_gate
         _allergen_gate.refuse_if_clashing(new_meal, override=override)
+    if not repeat:
+        _refuse_a_second_copy(args, kwargs, new_meal)
     widened = _chat_swap_along_the_chain(args, kwargs, new_meal)
     if widened is not None:
         return widened
@@ -9402,6 +9404,63 @@ def open_slot_instead_of(weekly_plan_id: int, entry_id: int, open_reason: str,
         except Exception:
             logger.exception("Could not rescale the cook after opening %s", entry_id)
     return opened
+
+
+def _refuse_a_second_copy(args: tuple, kwargs: dict, new_meal) -> None:
+    """
+    SlotRefused when chat's swap would put a lunch or dinner on a day while
+    the same dish is still to be cooked on another day of the week — the
+    shape of "moving" a dinner by planning a fresh copy of it somewhere
+    else, which is what chat did on 2026-10-26 (Emily, Tester Home): the
+    shrimp stayed on Monday and a second fresh shrimp went on Wednesday,
+    bought and cooked twice. A move is move_meal_to_day.
+
+    `repeat` on the chat twin is the person's own "have it twice" — the
+    same dish on two nights is a fine thing to ask for, just never a thing
+    to arrive at by accident. A reheat night ("Shrimp leftovers"), a dish
+    already cooked and the day being swapped itself never count.
+    """
+    from . import leftovers as _leftovers
+
+    if not isinstance(new_meal, str) or not new_meal.strip():
+        return
+    plan_id = kwargs.get("weekly_plan_id", args[0] if args else None)
+    meal_date = kwargs.get("meal_date", args[1] if len(args) >= 2 else None)
+    slot = kwargs.get("slot", args[3] if len(args) >= 4 else "dinner")
+    if slot not in ("lunch", "dinner") or not isinstance(meal_date, str):
+        return
+    wanted = _leftovers.dish_identity(new_meal)
+    if not wanted:
+        return
+    conn = get_conn()
+    try:
+        rows = conn.execute(
+            "SELECT mpe.date, mpe.slot, mpe.cooked_status, mpe.derived_from_json, "
+            "COALESCE(r.name, mpe.freeform_meal) AS meal "
+            "FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id "
+            "WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ? AND mpe.slot_state = 'planned' "
+            "AND mpe.slot IN ('lunch', 'dinner') AND mpe.date != ? AND mpe.component_category IS NULL",
+            (plan_id, household_id(), meal_date),
+        ).fetchall()
+    finally:
+        conn.close()
+    for r in rows:
+        name = r["meal"] or ""
+        if (r["cooked_status"] or "") == "done" or re.search(r"\bleftovers?\b", name, re.IGNORECASE):
+            continue
+        try:
+            derived = json.loads(r["derived_from_json"] or "{}") or {}
+        except (TypeError, ValueError):
+            derived = {}
+        if (derived.get("links_to") or "").strip() or derived.get(_leftovers.FROM_FREEZER_KEY):
+            continue
+        if _leftovers.dish_identity(name) == wanted:
+            day = date.fromisoformat(r["date"]).strftime("%A")
+            raise SlotRefused(
+                f"{name} is already on {day} ({r['date']}). To have it on {meal_date} instead, "
+                f"move it (move_meal_to_day) — that carries its leftovers and keeps one shop. "
+                f"Pass repeat only if they asked to have it on both days."
+            )
 
 
 def _chat_swap_along_the_chain(args: tuple, kwargs: dict, new_meal) -> dict | None:
