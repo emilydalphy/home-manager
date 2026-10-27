@@ -6223,9 +6223,9 @@ button.cook-ready-row { cursor: pointer; }
 /* Inventory's row is quiet — a neutral stroke and no badge of any kind
    (the "In development" pill came off 2026-10-27). */
 .kit-row[data-sheet="inventory"] .kit-row-icon { color: var(--ink-placeholder); }
-/* The inline label pill on a More-sheet row title. .pill/.pill-neutral (theme.css) are the design system's neutral status
-   pill; this just adds the spacing to sit inline next to a row's label
-   text. */
+/* The inline label pill on a More-sheet row title. .pill/.pill-neutral
+   (theme.css) are the design system's neutral status pill; this just adds
+   the spacing to sit inline next to a row's label text. */
 .kit-row-pill { margin-left: 8px; vertical-align: 1px; white-space: nowrap; flex-shrink: 0; }
 
 /* The "Worth doing sometime" card (.kit-worth*) went with the old hub on

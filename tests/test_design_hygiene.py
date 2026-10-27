@@ -299,8 +299,8 @@ def test_the_named_removed_emoji_entities_do_not_come_back():
 # ---------------------------------------------------------------------------
 
 DELETED_PAGES = ["grocery.html", "cooker.html", "kitchen.html", "memory.html", "index.html"]
-# inventory.html is the one page that STAYS embedded (deferred beta feature,
-# Emily's call) — a negative-control so this test would catch itself
+# inventory.html is the one page that STAYS embedded (was a deferred beta
+# feature until 2026-10-25; Emily's call to keep it framed) — a negative-control so this test would catch itself
 # deleting the wrong thing.
 KEPT_PAGES = ["inventory.html", "share.html", "member-share.html"]
 

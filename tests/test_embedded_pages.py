@@ -21,7 +21,7 @@ before them (What we know absorbed memory.html's content on 2026-09-12,
 Grocery/Kitchen/Cook went native earlier), so nothing live embedded them any
 more; inventory.html is the only page the shell still puts in a frame
 (`#kit-sheet-frame`), and it stays that way on purpose (inventory is a
-deferred beta feature, Emily's call). EMBEDDABLE is one entry now, but the
+deferred beta feature until 2026-10-25; Emily's call to keep it framed). EMBEDDABLE is one entry now, but the
 whole point of computing it as a closure below is that it doesn't need to
 stay that way by hand — a future embed is caught the same way memory and
 inventory themselves were.

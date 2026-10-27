@@ -152,10 +152,11 @@
     return !!shellWho.chores_enabled;
   }
 
-  // "Add from a link" (recipe import, 2026-09-11) was also marked
-  // as still being built, with a quiet neutral "In development" pill at its entry point (the row in
-  // Cook's More sheet, cookMoreRowsHtml), reusing the same
-  // .pill/.pill-neutral/.kit-row-pill markup Inventory's row used to carry. The feature
+  // "Add from a link" (recipe import, 2026-09-11) is marked
+  // as still being built, when this is true, with a quiet neutral "In
+  // development" pill on its row in Cook's More sheet (cookMoreRowsHtml),
+  // using .pill/.pill-neutral/.kit-row-pill (Inventory's row carried the
+  // same pill until 2026-10-27). The feature
   // itself is untouched either way: paste a link, read it, review, save
   // all still work. Flipping this back to false removes the pill.
   // Was `true` until 2026-10-05. "Add from a link" is a shipping path now

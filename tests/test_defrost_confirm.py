@@ -3,7 +3,7 @@ Loop Board "Defrost check: ask at approval" (Emily, 2026-09-04, High).
 
 Every test in tests/test_defrost.py exercises the INVENTORY-matched path:
 a defrost task only ever appears there for a household that tracks a
-freezer item, and inventory is deferred policy (2026-09-01) -- most
+freezer item, and inventory was deferred policy (2026-09-01, reversed 2026-10-25) -- most
 households never track one. This file covers the other half: asking
 directly, once, right after the week is approved, and scheduling from the
 plan's own recipes instead of from inventory at all. See
