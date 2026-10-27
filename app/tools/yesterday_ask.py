@@ -254,25 +254,7 @@ def _skip(entry_id: int, meal: str, day: str, today: str) -> dict | None:
             (today, household_id(), entry_id, today),
         )
         # The night it landed on is the cook now, not a night it feeds.
-        derived = json.loads(conn.execute(
-            "SELECT derived_from_json FROM meal_plan_entries WHERE id = ? AND household_id = ?",
-            (entry_id, household_id()),
-        ).fetchone()["derived_from_json"] or "{}")
-        fed_keys = derived.get("make_double_for") or []
-        if isinstance(fed_keys, str):
-            fed_keys = [fed_keys]
-        fed_keys = [k for k in fed_keys if str(k).strip() != new_ref]
-        if fed_keys:
-            derived["make_double_for"] = fed_keys
-            derived["make_double_note"] = _weekly_plan._make_double_note_text(fed_keys, target["slot"])
-        else:
-            derived.pop("make_double_for", None)
-            derived.pop("make_double_note", None)
-        conn.execute(
-            "UPDATE meal_plan_entries SET derived_from_json = ?, cook_started_at = NULL "
-            "WHERE id = ? AND household_id = ?",
-            (json.dumps(derived), entry_id, household_id()),
-        )
+        _no_longer_doubled_for(conn, entry_id, target)
         # The stored reason is read on later days, so it keeps the weekday;
         # the toast is said now, so a move onto today says "tonight".
         label = _weekly_plan.fed_night_label(target, today=today)
@@ -293,6 +275,35 @@ def _skip(entry_id: int, meal: str, day: str, today: str) -> dict | None:
     thaw_now = _defrost.resync_plan_thaws(plan_id, [entry_id], today=today)
     return {"date": target["date"], "slot": target["slot"], "label": label,
             "undo_entry_id": holder_id, "thaw_now": thaw_now}
+
+
+def _no_longer_doubled_for(conn, entry_id: int, target: dict) -> None:
+    """A cook that has just landed on a night it was feeding
+    (weekly_plan.move_cook_onto_fed_night) no longer cooks double for that
+    night — the night eats the cook itself. Drops it from make_double_for
+    (and its note) and clears any start stamp, on the caller's open
+    transaction. Lifted out of _skip for going_off's swap (Loop Board B5),
+    which moves tonight's cook onto its leftovers night by the same rule."""
+    new_ref = f"{target['date']}:{target['slot']}"
+    derived = json.loads(conn.execute(
+        "SELECT derived_from_json FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+        (entry_id, household_id()),
+    ).fetchone()["derived_from_json"] or "{}")
+    fed_keys = derived.get("make_double_for") or []
+    if isinstance(fed_keys, str):
+        fed_keys = [fed_keys]
+    fed_keys = [k for k in fed_keys if str(k).strip() != new_ref]
+    if fed_keys:
+        derived["make_double_for"] = fed_keys
+        derived["make_double_note"] = _weekly_plan._make_double_note_text(fed_keys, target["slot"])
+    else:
+        derived.pop("make_double_for", None)
+        derived.pop("make_double_note", None)
+    conn.execute(
+        "UPDATE meal_plan_entries SET derived_from_json = ?, cook_started_at = NULL "
+        "WHERE id = ? AND household_id = ?",
+        (json.dumps(derived), entry_id, household_id()),
+    )
 
 
 def undo_skipped_move(holder_entry_id: int) -> dict:

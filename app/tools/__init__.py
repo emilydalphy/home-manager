@@ -925,6 +925,15 @@ from .yesterday_ask import (  # noqa: F401
     undo_skipped_move,
     yesterday_check,
 )
+# Today's food-going-off card and quiet "use soon" line (Loop Board B5,
+# 2026-10-26): a screen's own read and its two answers. Not agent tools.
+from .going_off import (  # noqa: F401
+    WeekChanged as GoingOffWeekChanged,
+    leave_going_off,
+    swap_for_going_off,
+    today_going_off,
+    undo_going_off_swap,
+)
 # Now's "Tonight: X. Still good?" card, its swap-from-the-plan sheet
 # (Emily, 2026-09-13) and its third answer, "Not tonight — we're going
 # out" (Emily, 2026-09-14). tonight_check and tonight_keep are a screen's

@@ -13,6 +13,27 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Today notices food going off: a swap card for a skipped dinner, one
+  quiet "use soon" line otherwise** (2026-10-26, Loop Board B5, Option B
+  screen 4; branch `inventory/today-use-soon`; tests
+  `tests/test_going_off_on_today.py`). New `app/tools/going_off.py` +
+  `/api/today/going-off{,/swap,/leave,/undo}`. "Uses" is DETECTED (recipe
+  ingredients vs going-off inventory rows, Mark eaten's matcher plus a
+  whole-word loose match) in one function, `dinner_uses`, which already
+  prefers a stored `derived_from.uses` when B2 writes one. "Didn't happen"
+  = a past, unticked, unstarted dinner on the approved plan — except
+  yesterday's while the "Did you have it?" card is still asking. "Turns" =
+  expires today or tomorrow (food already past is Kitchen's). The swap is
+  NOT a new mover: every move door refuses a gone-by night on purpose, so
+  it chains the existing writers in one transaction — tonight's dinner goes
+  by the night off's own decision (`_night_off_plan`: next free night via
+  the nights swap, or onto its own leftovers night), the skipped dinner is
+  re-dated by `_redate_plan_rows`, the night it left is `planned_empty`
+  with yesterday_ask's skipped-moved marker, and Undo is
+  `undo_skipped_move` (plan_undo). No card for a planned_empty/away
+  tonight, a reheat, a started cook, or a dinner with nowhere to go — the
+  item falls to the line instead. "Leave it" = per item, per household
+  day. The line stands down while the freezer "Use soon" card is up.
 - **The iPhone app's id is `com.heypomona.app`** (2026-10-25, Emily's pick
   to match her heypomona domain; branch `overnight/bundle-id-heypomona`).
   Replaced the `com.pomona.app` placeholder in `capacitor.config.json`, the

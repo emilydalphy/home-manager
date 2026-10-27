@@ -84,6 +84,8 @@ var slot = { innerHTML: '', querySelectorAll: function () {
 var panel = { querySelector: function () { return slot; } };
 """ % json.dumps(items)
     script += _function("isFreezerUseSoon") + "  var useSoonState = { items: [] };\n"
+    # renderUseSoon also stands the going-off line down (B5); not this test's.
+    script += "  function renderGoingOffLine(p) {}\n"
     script += _function("loadUseSoon") + _function("renderUseSoon") + _function("resolveUseSoon")
     script += """
 loadUseSoon(panel).then(function () {
