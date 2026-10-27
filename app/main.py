@@ -2487,6 +2487,9 @@ def add_memory_store_item(req: StoreTypicalItemAddRequest):
     try:
         tools.add_store_typical_items(req.store, [req.item])
         memory = tools.get_household_memory_for_display()
+    except ValueError as e:
+        # A blank store or item: refused before anything is written.
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.exception("Adding store typical item failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -2496,6 +2499,10 @@ def add_memory_store_item(req: StoreTypicalItemAddRequest):
 @app.post("/api/memory/store-items/remove")
 def remove_memory_store_item(req: StoreTypicalItemRemoveRequest):
     """Remove one typical item from a usual store's list, used by the 'what we know' view's per-store item lists."""
+    if not req.store.strip() or not req.item.strip():
+        # Nothing to name: it used to answer 200 and file an empty list
+        # under a blank store key.
+        raise HTTPException(status_code=400, detail="Which store, and which item?")
     try:
         tools.remove_store_typical_item(req.store, req.item)
         memory = tools.get_household_memory_for_display()

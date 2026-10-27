@@ -7216,6 +7216,11 @@ def resolve_needs_you_dinner(
     just with no plan link, the same shape a one-off chat request already
     gets and the shape unplanned_meals_ahead exists to keep visible.
     """
+    # A blank pick planned a dinner with no name: shown as nothing, and
+    # every later pick refused with "already decided — ." (2026-10-27).
+    # A ValueError, so the route answers 400 before anything is written.
+    if not (meal or "").strip():
+        raise ValueError("Pick a dinner first.")
     # The same strict allergen check chat's plan_meal_for_chat runs (name +
     # the saved ingredient list, no draft/label negation). Raises
     # SlotRefused before anything is written to the plan or the list; the

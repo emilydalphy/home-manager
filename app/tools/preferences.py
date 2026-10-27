@@ -255,6 +255,17 @@ def add_store_typical_items(
     can't bounce back and forth with this function forever).
     """
     from . import stores as _stores  # call time: see the note at the foot
+    # A blank store is not "no store" here: the sync below would hand ''
+    # to set_item_store, which reads '' as FORGET — so a blank store wiped
+    # where each item is usually bought and answered 200 (route-test-gaps,
+    # 2026-10-27). And no item at all is nothing to remember.
+    cleaned = [i.strip() for i in items if (i or "").strip()]
+    if not _stores.store_key(store):
+        raise ValueError("Which store? Type the store's name first.")
+    if not cleaned and sync_preference:
+        # (set_item_store's own call back in here has already written its
+        # half; refusing there would leave the two out of step.)
+        raise ValueError("Type an item first.")
     with write() as conn:
         existing = conn.execute(
             "SELECT store_typical_items_json FROM meal_preferences WHERE household_id = ?", (household_id(),)
@@ -263,7 +274,6 @@ def add_store_typical_items(
         # "costco" is the household's "Costco": one key in this map, the
         # same name the item's remembered store will carry.
         store = _stores.canonical_store_name(conn, store)
-        cleaned = [i.strip() for i in items if i.strip()]
         store_items = list(dict.fromkeys(current.get(store, []) + cleaned))
         current[store] = store_items
         cleaned_keys = {_merge_key(i) for i in cleaned}
