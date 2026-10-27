@@ -214,6 +214,43 @@ def test_eaten_undo_still_brings_back_a_row_dinner_used_up():
     assert [(r["item"], r["quantity"]) for r in _rows_like("lemon%")] == [("Lemons", "2")]
 
 
+def test_undo_of_the_first_of_two_dinners_puts_back_only_its_share():
+    """Re-verify of 617241a: a row a later DINNER used up is not the
+    household's answer — Undo of the first dinner gives back what it took."""
+    tools.add_recipe("Rice bowl", ingredients=[{"item": "Jasmine rice", "qty": "1 cup"}], default_servings=1)
+    tools.add_recipe("Fried rice", ingredients=[{"item": "Jasmine rice", "qty": "2 cup"}], default_servings=1)
+    tools.update_inventory("Jasmine rice", "add", quantity="3 cup", category="pantry", location="pantry")
+    first = tools.plan_meal(_d(0), "Rice bowl", slot="dinner")["entry_id"]
+    tools.check_off_meal(first, "done")  # 2 cups left
+    second = tools.plan_meal(_d(0), "Fried rice", slot="lunch")["entry_id"]
+    tools.check_off_meal(second, "done")  # used up, deleted by a tick
+    assert _rows_like("%rice%") == []
+    tools.undo_eaten_meal(first)
+    rows = _rows_like("%rice%")
+    assert len(rows) == 1 and rows[0]["quantity"].startswith("1 cup"), rows
+    tools.undo_eaten_meal(second)
+    rows = _rows_like("%rice%")
+    assert len(rows) == 1 and rows[0]["quantity"].startswith("3 cup"), rows
+
+
+def test_a_row_saved_with_no_location_comes_back_on_its_own_shelf():
+    """A blank-location row is read on its category's shelf: its twin is
+    never a same-name row in the freezer."""
+    tools.add_recipe("Thigh dinner", ingredients=[{"item": "Chicken thighs", "qty": "2 lbs"}], default_servings=2)
+    tools.update_inventory("Chicken thighs", "add", quantity="2 lbs", category="meat/seafood", location="fridge")
+    conn = get_conn()
+    conn.execute("UPDATE inventory_items SET location = ''")
+    conn.commit()
+    conn.close()
+    entry = tools.plan_meal(_d(0), "Thigh dinner", slot="dinner")["entry_id"]
+    tools.check_off_meal(entry, "done")
+    assert _rows_like("chicken%") == [], "premise: used up and deleted"
+    tools.add_kitchen_items([{"item": "Chicken thighs", "quantity": "3 lbs", "location": "freezer"}], "freezer")
+    tools.undo_eaten_meal(entry)
+    rows = {(r["location"], r["quantity"]) for r in _rows_like("chicken%")}
+    assert rows == {("", "2 lbs"), ("freezer", "3 lbs")}, rows
+
+
 # ---- 6. Today's going-off card follows the Kitchen tab -----------------------
 
 def test_today_going_off_is_reread_after_every_kitchen_tab_write():

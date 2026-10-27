@@ -137,34 +137,65 @@ def strip_before(depleted: list[dict]) -> list[dict]:
 RECEIPT_LIFETIME = "-1 day"
 
 
-def _put_back(entry: dict, written_at: str | None = None) -> None:
-    """One row. Untouched since the tick: written back exactly. Changed
-    since (a shop tick added to it): the amount the meal took is ADDED
-    back, so what came in meanwhile is kept. Used up and deleted BY THE
-    TICK: back under its own id unless the household has a row for that
-    food again, in which case the amount goes onto that one.
-
-    The twin is found by the Kitchen's own "same food" key
-    (kitchen_add._existing — the grocery merge key, sizes off), so "Lemon 3"
-    added after the tick is where "Lemons" goes back, not a second row
-    beside it (merge seams, 2026-10-27).
-
-    A row the tick LEFT in the kitchen that is gone now was taken out by the
-    household afterwards ("Used it up", "Threw it out", the pre-draft
-    check's "gone", chat): they decided it's gone, so nothing comes back —
-    putting back the pre-dinner row silently reversed their answer and
-    overstated the amount (merge seams, 2026-10-27). The receipt's
-    after_rev is None exactly when the tick itself deleted the row, and
-    then the whole "before" amount is what dinner took — so nothing here
-    ever restores more than dinner took."""
+def _twin(conn, row: dict):
+    """The row that is this food again, on the same shelf: the Kitchen's
+    own "same food" key (kitchen_add._match_key — the grocery merge key,
+    sizes off) and the same DISPLAYED location, so a row saved with no
+    location is still read on its category's shelf rather than matching
+    a same-name row anywhere (re-verify, 2026-10-27). Most recently
+    touched first, the rule inventory._find_row_by_name uses."""
     from . import kitchen_add as _kitchen_add
+    from . import quantities as _quantities
 
+    key = _kitchen_add._match_key(row.get("item") or "")
+    where = _quantities._display_location(row).strip().lower()
+    for r in conn.execute(
+        "SELECT * FROM inventory_items WHERE household_id = ? ORDER BY updated_at DESC, id DESC",
+        (household_id(),),
+    ).fetchall():
+        o = dict(r)
+        if _kitchen_add._match_key(o["item"] or "") == key and \
+                _quantities._display_location(o).strip().lower() == where:
+            return o
+    return None
+
+
+def _add_onto(conn, row_id: int, have: str, amount: str) -> None:
+    from . import grocery as _grocery
+
+    merged, _ = _grocery._try_consolidate_quantity(have or "", amount)
+    conn.execute(
+        "UPDATE inventory_items SET quantity = ?, updated_at = datetime('now') WHERE id = ? AND household_id = ?",
+        (merged, row_id, household_id()),
+    )
+
+
+def _put_back(entry: dict, written_at: str | None = None) -> None:
+    """
+    One row, never more back than THIS dinner took.
+
+    - Untouched since the tick: written back exactly.
+    - Changed since (a shop tick added to it, another dinner took some):
+      the amount this meal took is ADDED back onto it, so what happened
+      meanwhile is kept.
+    - Gone: if the household took it out after this receipt was written
+      ("Used it up", "Threw it out", the pre-draft check's "gone" — every
+      one recorded in inventory_removals), nothing comes back: they decided
+      it's gone, and putting back the pre-dinner row silently reversed that
+      (merge seams, 2026-10-27). Otherwise (this tick used it up, or a
+      later dinner did) what this dinner took comes back — the whole
+      "before" row when this tick deleted it (after_rev None: all of it was
+      taken), else only `taken` (re-verify: rice 3 cups, dinner A took 1,
+      dinner B the other 2, Undo A gave back nothing). It goes onto the
+      row that is this food again on that shelf (_twin: "Lemon 3" added
+      since takes the lemons back, not a second row beside it), or back
+      under its own id.
+    """
     row = entry["before"]
-    location = row.get("location") or None
     conn = get_conn()
     try:
         now = conn.execute(
-            "SELECT rev FROM inventory_items WHERE id = ? AND household_id = ?",
+            "SELECT rev, quantity FROM inventory_items WHERE id = ? AND household_id = ?",
             (row["id"], household_id()),
         ).fetchone()
         if now is not None and now["rev"] == entry.get("after_rev"):
@@ -176,33 +207,42 @@ def _put_back(entry: dict, written_at: str | None = None) -> None:
             )
             conn.commit()
             return
-        if now is None:
-            if entry.get("after_rev") is not None:
-                return  # dinner left some; the household took the rest out since
-            if written_at and conn.execute(
-                "SELECT 1 FROM inventory_removals WHERE household_id = ? AND inventory_item_id = ? "
-                "AND removed_at >= ?",
-                (household_id(), row["id"], written_at),
-            ).fetchone():
-                return
-            twin = _kitchen_add._existing(conn, row["item"], location)
-            if twin is None:
-                cols = [c for c in row if c not in ("household_id", "id")]
-                conn.execute(
-                    f"INSERT INTO inventory_items (id, household_id, {', '.join(cols)}) "
-                    f"VALUES (?, ?, {', '.join('?' for _ in cols)})",
-                    [row["id"], household_id()] + [row[c] for c in cols],
-                )
+        if now is not None:
+            amount = entry.get("taken") or ""
+            if amount:
+                _add_onto(conn, row["id"], now["quantity"], amount)
                 conn.commit()
-                return
-            name, where, amount = twin["item"], twin["location"] or location, row["quantity"]
+            return
+        if written_at and conn.execute(
+            "SELECT 1 FROM inventory_removals WHERE household_id = ? AND inventory_item_id = ? "
+            "AND removed_at >= ?",
+            (household_id(), row["id"], written_at),
+        ).fetchone():
+            return
+        whole = entry.get("after_rev") is None
+        amount = row.get("quantity") if whole else (entry.get("taken") or "")
+        if not amount:
+            return
+        twin = _twin(conn, row)
+        if twin is not None:
+            _add_onto(conn, twin["id"], twin["quantity"], amount)
         else:
-            name, where, amount = row["item"], location, entry.get("taken") or ""
+            back = dict(row)
+            back["quantity"] = amount
+            if not whole:
+                # Only part of it comes back: the household's chip was read
+                # against a different amount.
+                back.pop("amount_left", None)
+                back.pop("amount_left_qty", None)
+            cols = [c for c in back if c not in ("household_id", "id")]
+            conn.execute(
+                f"INSERT INTO inventory_items (id, household_id, {', '.join(cols)}) "
+                f"VALUES (?, ?, {', '.join('?' for _ in cols)})",
+                [row["id"], household_id()] + [back[c] for c in cols],
+            )
+        conn.commit()
     finally:
         conn.close()
-    if amount:
-        _inventory._add_to_inventory(name, amount, source=row.get("source") or "chat",
-                                     category=row.get("category"), location=where)
 
 
 def restore(entry_id: int) -> dict:
