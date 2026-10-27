@@ -13,6 +13,18 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Security audit, last pieces before TestFlight** (2026-10-27; branch
+  `overnight/security-audit-finish`). FastAPI's `/docs`, `/redoc` and
+  `/openapi.json` are off unless `SHOW_API_DOCS=1` (a map of every route is
+  no use to a household; nothing in `static/` reads it;
+  `tests/test_api_docs_off.py`). Backup snapshots and their folder are
+  owner-only (0600/0700); retention stays 14 days, pruned daily, so a deleted
+  household is out of every copy within 15 — already tested and quoted by the
+  privacy page. Backups are NOT encrypted at rest by the app: they sit on the
+  same volume as the live database, which isn't either, so encrypting only
+  the copies buys little; Railway's disk is the protection (flagged to Emily).
+  The isolation attack now drives the five photo routes with a real PNG and
+  stubs the model to prove each was reached. pip-audit clean.
 - **The iPhone app's id is `com.heypomona.app`** (2026-10-25, Emily's pick
   to match her heypomona domain; branch `overnight/bundle-id-heypomona`).
   Replaced the `com.pomona.app` placeholder in `capacitor.config.json`, the
