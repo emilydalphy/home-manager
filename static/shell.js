@@ -17688,7 +17688,8 @@
     // approved week, which is what makes this one expression safe on the
     // deeper, approved-week form of this screen too.
     var head = root
-      ? weekSuggestedNoteHtml(data) + (typeof wkUseUpLineHtml === 'function' ? wkUseUpLineHtml(data) : '') + weekFlagsHtml(data) + draftSoftNoteHtml(data) + planEndsLineHtml(data)
+      ? weekSuggestedNoteHtml(data) + weekFlagsHtml(data) + draftSoftNoteHtml(data) + planEndsLineHtml(data) +
+        (typeof wkUseUpLineHtml === 'function' ? wkUseUpLineHtml(data) : '')
       : '<button type="button" class="crumb" data-wk-back="week">‹ Plan</button>' +
         '<div class="wk-head wk-check-head">' +
           '<div class="wk-head-row">' +
