@@ -39,7 +39,7 @@ from fastapi.exception_handlers import http_exception_handler
 from . import account_email, agent, ai_consent, backup, calendar_feed, chat_themes, feedback_email, grocery_add_once, household_deletion, households, invites, legal, push, ratelimit, recipe_import, recipe_photos, security
 from . import db
 from .db import get_conn, init_db
-from .agent import run_agent_turn, trim_conversation, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo, scan_pantry_photo, scan_grocery_list_image, AssistantUnavailableError
+from .agent import run_agent_turn, trim_conversation, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo, scan_pantry_photo, scan_freezer_photo, scan_grocery_list_image, AssistantUnavailableError
 from . import tools
 from .tools import household as _household_tools
 from .tools import _shared as _tools_shared
@@ -6418,6 +6418,51 @@ def whats_home_move_view(item_id: int, req: WhatsHomeMoveRequest):
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
+class WhatsHomeSaidRequest(BaseModel):
+    text: str = ""
+
+
+class WhatsHomeAddRequest(BaseModel):
+    # 'fridge' | 'freezer' | 'pantry' (a shelf photo) | 'receipt' | 'say' | 'type'
+    kind: str
+    items: list[dict]
+
+
+@app.post("/api/whats-home/read-said")
+def whats_home_read_said_view(req: WhatsHomeSaidRequest):
+    """"Say it" (Loop Board C2): a sentence -> the review's rows. Nothing is
+    saved here; /api/whats-home/add is what writes."""
+    if len(req.text or "") > 2000:
+        raise HTTPException(status_code=400, detail="That's a lot at once — try a few things at a time.")
+    return {"items": tools.read_said_items(req.text or "")}
+
+
+@app.post("/api/whats-home/add")
+def whats_home_add_view(req: WhatsHomeAddRequest):
+    """The review's "Add N to the fridge" (and Type it's one thing): writes
+    only the rows sent, which are the ones left ticked. `undo` comes back
+    for the toast."""
+    try:
+        return tools.add_kitchen_items(req.items, req.kind)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Kitchen add failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/whats-home/add/undo")
+def whats_home_add_undo_view(req: WhatsHomeUndoRequest):
+    """The Undo on the toast "13 things were added to the fridge." """
+    try:
+        return tools.undo_kitchen_add(req.undo)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Kitchen add undo failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
 @app.post("/api/whats-home/undo")
 def whats_home_undo_view(req: WhatsHomeUndoRequest):
     """The Undo on the Kitchen sheet's toasts (used up, thrown out, moved,
@@ -7462,7 +7507,7 @@ async def scan_receipt(request: Request, photo: UploadFile = File(...)):
     _enforce_rate_limit(request, "scan")
     image_b64, media_type = await _read_scan_image(photo)
     try:
-        items = scan_receipt_image(image_b64, media_type)
+        items = tools.kitchen_review_items(scan_receipt_image(image_b64, media_type), None)
     except AssistantUnavailableError as e:
         logger.warning("Receipt scan hit a transient Claude API failure: %s", e)
         raise HTTPException(status_code=503, detail=str(e))
@@ -7486,7 +7531,7 @@ async def scan_fridge(request: Request, photo: UploadFile = File(...)):
     _enforce_rate_limit(request, "scan")
     image_b64, media_type = await _read_scan_image(photo)
     try:
-        items = scan_fridge_photo(image_b64, media_type)
+        items = tools.kitchen_review_items(scan_fridge_photo(image_b64, media_type), "fridge")
     except AssistantUnavailableError as e:
         logger.warning("Fridge scan hit a transient Claude API failure: %s", e)
         raise HTTPException(status_code=503, detail=str(e))
@@ -7505,12 +7550,33 @@ async def scan_pantry(request: Request, photo: UploadFile = File(...)):
     _enforce_rate_limit(request, "scan")
     image_b64, media_type = await _read_scan_image(photo)
     try:
-        items = scan_pantry_photo(image_b64, media_type)
+        items = tools.kitchen_review_items(scan_pantry_photo(image_b64, media_type), "pantry")
     except AssistantUnavailableError as e:
         logger.warning("Pantry scan hit a transient Claude API failure: %s", e)
         raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         logger.exception("Pantry scan failed")
+        raise HTTPException(status_code=500, detail=f"Couldn't read that photo: {e}")
+    return {"items": items}
+
+
+@app.post("/api/inventory/scan-freezer")
+async def scan_freezer(request: Request, photo: UploadFile = File(...)):
+    """
+    The Kitchen tab's "Snap a shelf" on the freezer (Loop Board C2/C5) —
+    the same draft-only scan as scan-fridge, every row tagged 'freezer'.
+    Nothing is saved: the review sheet's "Add N to the freezer" is
+    /api/whats-home/add.
+    """
+    _enforce_rate_limit(request, "scan")
+    image_b64, media_type = await _read_scan_image(photo)
+    try:
+        items = tools.kitchen_review_items(scan_freezer_photo(image_b64, media_type), "freezer")
+    except AssistantUnavailableError as e:
+        logger.warning("Freezer scan hit a transient Claude API failure: %s", e)
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        logger.exception("Freezer scan failed")
         raise HTTPException(status_code=500, detail=f"Couldn't read that photo: {e}")
     return {"items": items}
 

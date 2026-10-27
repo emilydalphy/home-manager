@@ -9922,7 +9922,7 @@ _SCAN_ITEMS_TOOL = {
                             "enum": ["produce", "dairy", "meat/seafood", "pantry", "frozen", "other"],
                             "description": "Grocery store section.",
                         },
-                        "confidence": {"type": "string", "enum": ["high", "low"], "description": "'low' for anything you're genuinely unsure about (partially obscured, ambiguous, guessed from packaging alone) — surfaced to the user so they know what to double-check."},
+                        "confidence": {"type": "string", "enum": ["high", "low"], "description": "'low' for anything you're genuinely unsure about (partially obscured, ambiguous, guessed from packaging alone). A 'low' item starts UNTICKED in the review the person sees, so they only untick what's wrong. Never put a question mark or 'maybe' in the name to say this — use 'low'."},
                     },
                     "required": ["item", "category", "confidence"],
                 },
@@ -10037,6 +10037,19 @@ def scan_pantry_photo(image_b64: str, media_type: str) -> list[dict]:
     instructions = _FRIDGE_PANTRY_SCAN_INSTRUCTIONS_TEMPLATE.format(place="pantry or cupboard shelf")
     items = _scan_image_for_items(image_b64, media_type, instructions)
     return _tag_scan_location(items, "pantry")
+
+
+def scan_freezer_photo(image_b64: str, media_type: str) -> list[dict]:
+    """
+    Identify food in a freezer photo (the Kitchen tab's "Snap a shelf" on
+    the freezer, Loop Board C2/C5). Same review-before-save flow as the
+    fridge and pantry scans; every row is tagged location='freezer'.
+    """
+    instructions = _FRIDGE_PANTRY_SCAN_INSTRUCTIONS_TEMPLATE.format(place="freezer")
+    items = _scan_image_for_items(image_b64, media_type, instructions)
+    for it in items:
+        it["location"] = "freezer"
+    return items
 
 
 def scan_grocery_list_image(image_b64: str, media_type: str) -> list[dict]:

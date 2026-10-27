@@ -120,7 +120,11 @@ def test_the_tab_never_shows_the_in_development_label_or_line():
     block = SHELL_JS[SHELL_JS.index("// ---------- The Kitchen TAB: what's home"):
                      SHELL_JS.index("// ---------- Kitchen root: today's cooks ----------")]
     assert "In development" not in block and "INVENTORY_IN_DEVELOPMENT" not in block
-    assert "kitchenAdd: { title: 'Add to the kitchen', src: '/static/inventory.html?from=kitchen' }" in SHELL_JS
+    # UPDATED 2026-10-27 (C2, inventory/kitchen-add): the dock no longer
+    # opens inventory.html — it opens static/kitchen-add.js's own sheet —
+    # so the interim KITCHEN_SHEETS.kitchenAdd entry is gone. inventory.html
+    # still hides its line when told it came from the tab.
+    assert "kitchenAdd:" not in SHELL_JS
     assert "if (INVENTORY_IN_DEVELOPMENT && !FROM_KITCHEN_TAB)" in INVENTORY_HTML
 
 
@@ -132,7 +136,8 @@ def test_the_dock_has_a_seam_for_card_c2():
     assert 'data-home="add">+ Add</button>' in build
     click = _fn("onHomeClick")
     assert "openKitchenAdd('snap')" in click and "openKitchenAdd('add')" in click
-    assert "openKitchenSheet('kitchenAdd')" in _fn("openKitchenAdd")
+    # UPDATED 2026-10-27 (C2): the seam's body is the real sheet now.
+    assert "window.KitchenAdd.open(" in _fn("openKitchenAdd")
 
 
 def test_inventory_changes_refresh_the_tab():

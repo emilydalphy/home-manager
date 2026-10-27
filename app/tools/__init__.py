@@ -442,6 +442,15 @@ from .whats_home import (  # noqa: F401
     move_item as move_kitchen_item,
     restore_item as restore_kitchen_item,
 )
+# "Add to the kitchen" (Loop Board C2, 2026-10-27): the scan review's rows
+# (with `sure`), "Say it"'s sentence reader, and the one write the review
+# makes. Aliased: bare `review_items` / `add_items` would say nothing here.
+from .kitchen_add import (  # noqa: F401
+    review_items as kitchen_review_items,
+    read_said_items,
+    add_items as add_kitchen_items,
+    undo_added as undo_kitchen_add,
+)
 # Read-side helpers for the leftover chains repair_leftover_chains records
 # (see leftovers.py). Not agent tools — the assistant has no reason to
 # call these — but re-exported so agent.py's prep-schedule context and any

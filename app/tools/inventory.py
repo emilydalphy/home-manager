@@ -568,7 +568,7 @@ def _add_to_inventory(
 # column; there is nothing else to read. defrost.meat_items_for_plan is the
 # reader (2026-09-15): it may not take the freezer question away from a
 # household on a shelf the app picked for them.
-SCAN_SOURCES = {"receipt": "scan_receipt", "fridge": "scan_fridge", "pantry": "scan_pantry"}
+SCAN_SOURCES = {"receipt": "scan_receipt", "fridge": "scan_fridge", "pantry": "scan_pantry", "freezer": "scan_freezer"}
 
 # Where the shelf on a row came from the category default rather than from
 # a person. The two grocery paths write a row straight off a line the app
@@ -583,6 +583,9 @@ SCAN_SOURCES = {"receipt": "scan_receipt", "fridge": "scan_fridge", "pantry": "s
 GUESSED_LOCATION_SOURCES = frozenset({
     "grocery_checkoff", "grocery_list_already_have",
     SCAN_SOURCES["receipt"], "scan",
+    # The Kitchen tab's "Say it" (kitchen_add.read_said_items): a sentence
+    # names food, and its shelf is the category's usual one unless said.
+    "kitchen_said",
 })
 
 

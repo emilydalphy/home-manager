@@ -13,6 +13,30 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **"Add to the kitchen" sheet + the Kitchen in first-run setup**
+  (2026-10-27, Loop Board C2 + C5; branch `inventory/kitchen-add`, stacked
+  on `inventory/kitchen-tab` b0bc508; tests `tests/test_kitchen_add.py`).
+  `static/kitchen-add.js` (help-sheet.js pattern: own markup + injected
+  token-only CSS, Api.json) is the one sheet for the Kitchen tab's dock
+  (`openKitchenAdd`: 'snap' → photo step on the shelf showing, 'add' → Snap
+  a shelf / Scan a receipt / Say it / Type it) and for onboarding's three
+  photos. NOTHING IS SAVED BEFORE THE REVIEW: scans and
+  `/api/whats-home/read-said` only read; `/api/whats-home/add` writes the
+  ticked rows (`kitchen_add.add_items`, one transaction through
+  `_add_to_inventory`) and returns an Undo (`/api/whats-home/add/undo`:
+  fresh rows deleted, merged rows restored, skipped if `rev` moved). Type
+  it saves its one thing directly. "Isn't sure of" = the scan tool's
+  existing `confidence: low`, else a "?" / hedge / "x or y" / container
+  name (`kitchen_add.is_sure`; no flag → ticked); verified with one real
+  fridge scan. New `/api/inventory/scan-freezer` (+ `scan_freezer` source);
+  Say it is deterministic (no model call) and its shelves are recorded as
+  guesses (`kitchen_said` in GUESSED_LOCATION_SOURCES). C5: one
+  welcome-look screen laid OVER the reveal while the first week drafts —
+  not in ALL_STEPS, not awaited, so it never delays the plan; "Set up
+  later" only uncovers the reveal; skipped for a stocked kitchen and on the
+  "Not now" to Claude path. Why there: photos need the Claude yes first,
+  and the brief said don't hold up the first plan.
+
 - **A fifth tab, Kitchen: what's home, and one-tap fixes** (2026-10-26,
   Loop Board C1 + C3; Emily approved the nav change that day, decision 2 —
   "an 'inventory management screen' for your kitchen"; branch

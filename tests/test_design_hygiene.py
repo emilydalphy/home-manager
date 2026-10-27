@@ -56,6 +56,9 @@ LIVE_FILES = [
     # The first-open tour (2026-10-18): draws its own card; its colours are
     # shell.css tokens.
     "tour.js",
+    # "Add to the kitchen" (2026-10-27): the help-sheet.js pattern, so the
+    # same rules.
+    "kitchen-add.js",
 ]
 
 # `&#9733;`-style HTML numeric entities (a plain "★" written as an entity)

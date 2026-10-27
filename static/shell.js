@@ -285,11 +285,6 @@
   var KITCHEN_SHEETS = {
     memory: { title: 'What we know', native: true, section: null },
     inventory: { title: 'Inventory', src: '/static/inventory.html' },
-    // The Kitchen tab's "Snap a shelf" / "+ Add" until card C2's own
-    // "Add to the kitchen" sheet replaces it (openKitchenAdd is the seam):
-    // the same page, told it was opened from the Kitchen tab, which hides
-    // its "still being built" note — this is a real feature now.
-    kitchenAdd: { title: 'Add to the kitchen', src: '/static/inventory.html?from=kitchen' },
     stores: { title: 'What we know', native: true, section: 'stores' }
   };
 
@@ -10844,44 +10839,31 @@
     }
   }
 
-  // ---- The C2 seam: "Snap a shelf" and "+ Add" ----
+  // ---- "Snap a shelf" and "+ Add" (Loop Board C2) ----
   //
-  // ONE door for both dock buttons, so card C2's "Add to the kitchen"
-  // sheet (built on a later branch, stacked on this one) replaces the
-  // body of this function and nothing else. `mode` is 'snap' (the camera
-  // first) or 'add' (type one thing); `where` is the shelf on screen.
-  //
-  // Until then it opens the existing scan/add page in the Kitchen entry
-  // sheet (KITCHEN_SHEETS.kitchenAdd — static/inventory.html, whose
-  // receipt / fridge / pantry scans and add field all work today), with
-  // the add field focused or the scan buttons brought into view and the
-  // add's shelf set to the one showing. Never a dead button.
+  // ONE door for both dock buttons: static/kitchen-add.js's sheet, the
+  // same one first-run setup's "Show me your kitchen" runs (C5). `mode` is
+  // 'snap' (straight to the photo step, on the shelf showing) or 'add'
+  // (the four ways in). Nothing is saved before its review; a save re-reads
+  // the tab and says what went in, with Undo.
   function openKitchenAdd(mode) {
-    var where = homeSegment(homeState.data);
-    openKitchenSheet('kitchenAdd');
-    var frame = document.getElementById('kit-sheet-frame');
-    if (!frame) return;
-    function point() {
-      var doc;
-      try { doc = frame.contentDocument; } catch (err) { return; }
-      if (!doc || !doc.getElementById) return;
-      var loc = doc.getElementById('inv-add-location');
-      if (loc) loc.value = where;
-      if (mode === 'add') {
-        var field = doc.getElementById('inv-add-item');
-        if (field) field.focus();
-      } else {
-        var row = doc.querySelector('.inv-scan-row');
-        if (row && row.scrollIntoView) row.scrollIntoView({ block: 'center' });
-        var btn = doc.getElementById(where === 'pantry' ? 'inv-scan-pantry-btn' : 'inv-scan-fridge-btn');
-        if (btn) btn.focus();
+    if (!window.KitchenAdd) return;
+    closeAskSheet();
+    window.KitchenAdd.open({
+      mode: mode === 'snap' ? 'snap' : 'add',
+      place: homeSegment(homeState.data),
+      onSaved: function (res) {
+        refreshHomePanel();
+        showToast(res.line, {
+          label: 'Undo',
+          onClick: function () {
+            Api.json('/api/whats-home/add/undo', { body: { undo: res.undo } })
+              .then(function () { refreshHomePanel(); })
+              .catch(function () { /* Api.json toasted */ });
+          }
+        });
       }
-    }
-    var ready = false;
-    try { ready = frame.contentDocument && frame.contentDocument.readyState === 'complete' &&
-      String(frame.contentWindow.location.search).indexOf('from=kitchen') !== -1; } catch (err) { ready = false; }
-    if (ready) point();
-    else frame.addEventListener('load', point, { once: true });
+    });
   }
 
   // ---- The item sheet (C3): fix one thing in one tap ----
@@ -12039,9 +12021,6 @@
     // as they save (see wwkCommit), so the Preferences rows are right
     // without a re-read; closing it just notes that it is closed.
     if (kitSheetOpen) refreshKitchenPanel();
-    // The Kitchen tab's interim add/scan sheet (openKitchenAdd) adds to
-    // the kitchen; the tab under it re-reads on the way out.
-    if (kitSheetOpen === 'kitchenAdd') refreshHomePanel();
     if (kitSheetOpen && KITCHEN_SHEETS[kitSheetOpen] && KITCHEN_SHEETS[kitSheetOpen].native) {
       wwkState.open = false;
       wwkState.addNext = null;
