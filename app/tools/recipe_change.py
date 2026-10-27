@@ -505,13 +505,14 @@ def change_meal_recipe(entry_id: int, recipe_id: int) -> dict:
         # past or cooked night changes recipe and leaves the list alone.
         live_ids = _live_ids(conn, ids) if approved else []
         before = _needed_lines(conn) if approved else {}
-        _unbuy(conn, live_ids)
         conn.execute(
             "UPDATE meal_plan_entries SET recipe_id = ?, freeform_meal = NULL "
             f"WHERE id IN ({','.join('?' * len(ids))}) AND household_id = ?",
             [int(recipe_id)] + ids + [hid],
         )
-        after = _rebuy(conn, plan_id, live_ids) if live_ids else before
+        # Less what is already in the cart or bought for these nights: the
+        # chicken ticked for Fried Rice is the Curry's chicken too.
+        after = _resync_users(conn, {plan_id: live_ids}) if live_ids else before
         conn.commit()
     except Exception:
         conn.rollback()
@@ -607,26 +608,18 @@ def _approved_users_of(conn, recipe_id: int) -> dict[int, list[int]]:
 
 
 def _live_ids(conn, ids: list[int]) -> list[int]:
-    """The entries among `ids` that are still ahead and 'planned'."""
+    """The entries among `ids` that are still ahead, 'planned' and not
+    ticked cooked — _approved_users_of's reading. A night already eaten
+    tonight is not still ahead: "we had tacos instead" put the tacos on
+    the live list (defect hunt, 2026-10-27)."""
     today = _grocery._household_today(conn=conn).isoformat()
     marks = ",".join("?" * len(ids))
     return [int(r["id"]) for r in conn.execute(
         f"SELECT id FROM meal_plan_entries WHERE id IN ({marks}) AND household_id = ? "
-        "AND date >= ? AND slot_state = 'planned' ORDER BY date ASC, id ASC",
+        "AND date >= ? AND slot_state = 'planned' AND cooked_status != 'done' "
+        "ORDER BY date ASC, id ASC",
         [*ids, household_id(), today],
     ).fetchall()]
-
-
-def _unbuy_users(conn, users: dict[int, list[int]]) -> None:
-    for ids in users.values():
-        _unbuy(conn, ids)
-
-
-def _rebuy_users(conn, users: dict[int, list[int]]) -> dict:
-    after: dict = {}
-    for plan_id, ids in users.items():
-        after = _rebuy(conn, plan_id, ids)
-    return after
 
 
 def _rebuy_after_edit(conn, users: dict[int, list[int]]) -> None:
@@ -722,6 +715,26 @@ def _rebuy_after_edit(conn, users: dict[int, list[int]]) -> None:
                     "AND COALESCE(kept_amount, '') = ''",
                     (item_id, hid),
                 )
+
+
+def _resync_users(conn, users: dict[int, list[int]]) -> dict:
+    """
+    Redo these nights' shopping after their recipe changed (a pick, a
+    rewrite, an undo): _rebuy_after_edit's reading — unticked lines come
+    off and the recipe as it now stands is bought less what is already in
+    the cart or bought for those nights — and what the list reads after.
+
+    Called AFTER the write; the reversal reads the ledger, never the
+    recipe. _unbuy/_rebuy left a ticked line alone and bought the whole
+    new amount beside it, so switching Fried Rice to Chicken Curry with
+    the chicken in the cart put a second 2 lbs on the list (defect hunt,
+    2026-10-27; the 2026-10-24 entry's "apply_rewrite still re-buys over a
+    ticked line").
+    """
+    users = {k: v for k, v in users.items() if v}
+    if users:
+        _rebuy_after_edit(conn, users)
+    return _needed_lines(conn)
 
 
 def _unbuy(conn, entry_ids: list[int]) -> None:
@@ -1042,7 +1055,6 @@ def apply_rewrite(spec: dict, detail: dict, request_text: str, this_meal_only: b
             users = {plan_id: _live_ids(conn, ids)} if approved else {}
             users = {k: v for k, v in users.items() if v}
             before = _needed_lines(conn) if approved else {}
-            _unbuy_users(conn, users)
             target_id = _fork_recipe(conn, target_id, _fork_name(conn, spec.get("name") or "", entry["date"]))
             conn.execute(
                 "UPDATE meal_plan_entries SET recipe_id = ? "
@@ -1057,7 +1069,6 @@ def apply_rewrite(spec: dict, detail: dict, request_text: str, this_meal_only: b
             users = _approved_users_of(conn, target_id)
             approved = approved or bool(users)
             before = _needed_lines(conn) if approved else {}
-            _unbuy_users(conn, users)
         conn.execute(
             "UPDATE recipes SET ingredients_json = ?, instructions_json = ?, default_servings = ?, "
             "prep_time_minutes = COALESCE(?, prep_time_minutes), "
@@ -1070,7 +1081,7 @@ def apply_rewrite(spec: dict, detail: dict, request_text: str, this_meal_only: b
              json.dumps(detail.get("advance_prep_step_indices") or []),
              target_id, hid),
         )
-        after = _rebuy_users(conn, users) if users else before
+        after = _resync_users(conn, users) if users else before
         conn.commit()
     except Exception:
         conn.rollback()
@@ -1134,12 +1145,11 @@ def _undo_fork(conn, req, entry, snapshot: dict) -> dict:
         approved = entry["plan_status"] == "approved"
         live = _live_ids(conn, ids) if (approved and ids) else []
         before = _needed_lines(conn) if approved else {}
-        _unbuy(conn, live)
         conn.execute(
             "UPDATE meal_plan_entries SET recipe_id = ? WHERE recipe_id = ? AND household_id = ?",
             (original, fork, hid),
         )
-        after = _rebuy(conn, int(entry["weekly_plan_id"]), live) if live else before
+        after = _resync_users(conn, {int(entry["weekly_plan_id"]): live}) if live else before
         conn.execute("DELETE FROM recipes WHERE id = ? AND household_id = ?", (fork, hid))
         conn.execute(
             "UPDATE recipe_change_requests SET outcome = ? WHERE id = ? AND household_id = ?",
@@ -1227,13 +1237,12 @@ def undo_recipe_change(request_id: int) -> dict:
         users = _approved_users_of(conn, req["recipe_id"])
         approved = bool(users)
         before = _needed_lines(conn) if approved else {}
-        _unbuy_users(conn, users)
         conn.execute(
             "UPDATE recipes SET " + ", ".join(f"{c} = ?" for c in _SNAPSHOT_COLUMNS) +
             " WHERE id = ? AND household_id = ?",
             [snapshot.get(c) for c in _SNAPSHOT_COLUMNS] + [int(req["recipe_id"]), hid],
         )
-        after = _rebuy_users(conn, users) if users else before
+        after = _resync_users(conn, users) if users else before
         conn.execute(
             "UPDATE recipe_change_requests SET outcome = ? WHERE id = ? AND household_id = ?",
             (OUTCOME_UNDONE, int(request_id), hid),
