@@ -947,6 +947,21 @@ _MIGRATIONS = [
     # (recipes._KitchenStock.reserve_bought_for_meals_ahead). NULL = never
     # counted.
     ("inventory_items", "counted_on", "TEXT"),
+    # The household-local day this row went into the freezer (2026-10-26,
+    # inventory/use-it-all-draft): stamped by inventory.freeze_item and by
+    # set_inventory_location on any move IN, cleared on a move out. NULL on
+    # a row frozen before the column — use_up falls back to created_at.
+    # Read by use_up.candidates to plan freezer food oldest first.
+    ("inventory_items", "frozen_on", "TEXT"),
+    # "Use these up" (Loop Board B1/B2): the inventory_items ids the household
+    # switched OFF on the pre-draft step for this week — everything else
+    # use_up.candidates offers is planned in. '[]' = nothing switched off.
+    # Written only through save_week_intake (append-only).
+    ("week_intake", "use_up_off_json", "TEXT NOT NULL DEFAULT '[]'"),
+    # What the draft did with the use-up list (B2/B3), so a reloaded draft
+    # still shows its tags, count line and "Couldn't fit these" card. Shape
+    # in tools/use_up.py (plan_use_up). '{}' = a plan drafted before this.
+    ("weekly_plans", "use_up_json", "TEXT NOT NULL DEFAULT '{}'"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people

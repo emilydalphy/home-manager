@@ -197,12 +197,98 @@ def set_inventory_location(item_id: int, location: str) -> dict:
         )
     else:
         conn.execute("UPDATE inventory_items SET location = ?, updated_at = datetime('now') WHERE id = ? AND household_id = ?", (location, item_id, household_id()))
+    # frozen_on (2026-10-26): the day it went IN, so freezer food is planned
+    # oldest first (use_up.candidates). Cleared on the way out.
+    was = _quantities._display_location(dict(row)).strip().lower()
+    if location == "freezer" and was != "freezer":
+        conn.execute("UPDATE inventory_items SET frozen_on = ? WHERE id = ? AND household_id = ?",
+                     (_today().isoformat(), item_id, household_id()))
+    elif location != "freezer" and was == "freezer":
+        conn.execute("UPDATE inventory_items SET frozen_on = NULL WHERE id = ? AND household_id = ?",
+                     (item_id, household_id()))
     conn.commit()
     conn.close()
     result = {"item_id": item_id, "location": location}
     if new_date:
         result["expiration_date"] = new_date
     return result
+
+
+class CannotFreeze(ValueError):
+    """freeze_item on a row that is already in the freezer."""
+
+
+def freeze_item(item_id: int) -> dict:
+    """
+    Move one fridge/pantry row to the Freezer, dated today ("frozen today").
+
+    The one "freeze this" door (2026-10-26, Loop Board B3; the Kitchen tab
+    reuses it). The move itself is set_inventory_location's, so the
+    freezer-door date rule is the same one every move follows; this adds
+    the undo. Returns {"item_id", "item", "location": "freezer",
+    "frozen_on", "expiration_date", "undo"} — hand `undo` back to
+    unfreeze_item unchanged to put the row exactly where it was.
+    Raises CannotFreeze for a row already in the freezer.
+    """
+    conn = get_conn()
+    require_household_row(conn, "inventory_items", item_id, label="inventory item")
+    row = conn.execute(
+        "SELECT id, item, category, location, expiration_date, frozen_on FROM inventory_items "
+        "WHERE id = ? AND household_id = ?",
+        (item_id, household_id()),
+    ).fetchone()
+    conn.close()
+    before = dict(row)
+    if _quantities._display_location(before).strip().lower() == "freezer":
+        raise CannotFreeze(f"{before['item']} is already in the freezer.")
+    moved = set_inventory_location(item_id, "freezer")
+    conn = get_conn()
+    after = conn.execute(
+        "SELECT expiration_date, frozen_on FROM inventory_items WHERE id = ? AND household_id = ?",
+        (item_id, household_id()),
+    ).fetchone()
+    conn.close()
+    return {
+        "item_id": item_id,
+        "item": before["item"],
+        "location": moved["location"],
+        "frozen_on": after["frozen_on"],
+        "expiration_date": after["expiration_date"],
+        "undo": {
+            "item_id": item_id,
+            "location": before["location"] or "",
+            "expiration_date": before["expiration_date"],
+            "frozen_on": before["frozen_on"],
+        },
+    }
+
+
+def unfreeze_item(undo: dict) -> dict:
+    """
+    Undo a freeze_item: put the row back on its shelf with the date it had.
+    Only while it is still in the freezer — a row that has moved since, or
+    is gone, is left alone and {"undone": False} comes back.
+    """
+    try:
+        item_id = int((undo or {}).get("item_id"))
+    except (TypeError, ValueError):
+        raise ValueError("I couldn't tell which item to put back.")
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT item, location, category FROM inventory_items WHERE id = ? AND household_id = ?",
+        (item_id, household_id()),
+    ).fetchone()
+    if row is None or _quantities._display_location(dict(row)).strip().lower() != "freezer":
+        conn.close()
+        return {"item_id": item_id, "undone": False}
+    conn.execute(
+        "UPDATE inventory_items SET location = ?, expiration_date = ?, frozen_on = ?, updated_at = datetime('now') "
+        "WHERE id = ? AND household_id = ?",
+        (undo.get("location") or "", undo.get("expiration_date"), undo.get("frozen_on"), item_id, household_id()),
+    )
+    conn.commit()
+    conn.close()
+    return {"item_id": item_id, "item": row["item"], "undone": True, "location": undo.get("location") or ""}
 
 
 def step_inventory_expiration(item_id: int, delta_days: int) -> dict:

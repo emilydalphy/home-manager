@@ -403,7 +403,10 @@ from .household import (  # noqa: F401
     remove_member_dietary_restriction,
 )
 from .inventory import (  # noqa: F401
+    CannotFreeze,
     InvalidInventoryLocation,
+    freeze_item,
+    unfreeze_item,
     _LEADING_NUM_RE,
     _add_to_inventory,
     _step_quantity_text,
@@ -421,6 +424,12 @@ from .inventory import (  # noqa: F401
     update_inventory,
     update_inventory_items,
 )
+# "Use these up" (Loop Board B1/B2, 2026-10-26): the one list of what the
+# week should use, shared by the pre-draft step and the draft. Aliased: a
+# bare `candidates` in this flat namespace would say nothing.
+from . import use_up  # noqa: F401
+from .use_up import candidates as use_up_candidates  # noqa: F401
+from .use_up import selected as use_up_selected  # noqa: F401
 # Read-side helpers for the leftover chains repair_leftover_chains records
 # (see leftovers.py). Not agent tools — the assistant has no reason to
 # call these — but re-exported so agent.py's prep-schedule context and any

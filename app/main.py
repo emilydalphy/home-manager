@@ -4079,6 +4079,10 @@ class WeekIntakeRequest(BaseModel):
     # THIS week only — {"grid", "prep", "variety", "lunch_needs"}, the
     # whole set each time; {} clears it. See usual_week.normalize_week_answers.
     week_answers: dict | None = None
+    # "Use these up" (Loop Board B1, 2026-10-26): the inventory_items ids
+    # switched OFF before the draft — the whole list each time; [] turns
+    # everything back on. See tools/use_up.py.
+    use_up_off: list | None = None
 
 
 class WeekGenerateRequest(BaseModel):
@@ -4312,6 +4316,7 @@ def save_week_intake_route(week_start: str, req: WeekIntakeRequest):
             weekday_lunches=req.weekday_lunches,
             brought_over=req.brought_over,
             week_answers=req.week_answers,
+            use_up_off=req.use_up_off,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -6284,6 +6289,58 @@ def set_inventory_location_view(item_id: int, req: InventoryLocationRequest):
         logger.exception("Inventory location change failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return result
+
+
+@app.post("/api/inventory/{item_id}/freeze")
+def freeze_inventory_item_view(item_id: int):
+    """
+    "Freeze it" (Loop Board B3, 2026-10-26; the Kitchen tab reuses it):
+    fridge/pantry -> Freezer, dated today. The response's `undo` goes back
+    to /api/inventory/unfreeze unchanged.
+    """
+    try:
+        return tools.freeze_item(item_id)
+    except tools.CannotFreeze as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Inventory freeze failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+class InventoryUnfreezeRequest(BaseModel):
+    undo: dict
+
+
+@app.post("/api/inventory/unfreeze")
+def unfreeze_inventory_item_view(req: InventoryUnfreezeRequest):
+    """The Undo on "Froze the …" — puts the row back where it was."""
+    try:
+        return tools.unfreeze_item(req.undo)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Inventory unfreeze failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.get("/api/week/{week_start}/use-up")
+def week_use_up_view(week_start: str, day_count: int = 7):
+    """
+    "Use these up" (Loop Board B1): what the week should use, and which of
+    them the household has switched off for it. {"items": use_up.candidates,
+    "off": [inventory ids]}. Switching one off is a save of the week's
+    intake with `use_up_off` (the whole list).
+    """
+    _route_date(week_start, "week_start")
+    if day_count < 1 or day_count > tools.MAX_PERIOD_DAYS:
+        raise HTTPException(status_code=400, detail=f"A planning period has to be between 1 and {tools.MAX_PERIOD_DAYS} days.")
+    intake = tools.get_week_intake(week_start) or {}
+    return {
+        "items": tools.use_up_candidates(week_start, day_count),
+        "off": list(intake.get("use_up_off") or []),
+    }
 
 
 @app.post("/api/inventory/{item_id}/expiration")
