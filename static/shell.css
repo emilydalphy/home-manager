@@ -11538,14 +11538,6 @@ button.home-row { width: 100%; }
 }
 .home-snap svg { width: 20px; height: 20px; flex: 0 0 auto; }
 .home-snap span { white-space: nowrap; }
-@media (max-width: 359px) {
-  /* 320px: 236px of dock for two buttons (the chat icon takes the right).
-     "Snap a shelf" keeps one line; both stay 52px tall (rule 6). */
-  .home-dock-row { gap: 6px; }
-  .home-dock-row .home-snap { flex: 1 1 auto; gap: 6px; padding: 0 10px; font-size: 15px; }
-  .home-snap svg { width: 18px; height: 18px; }
-  .home-add { flex: 0 0 auto; padding: 0 12px; font-size: 15px; }
-}
 .home-add {
   flex: 1 1 0;
   min-width: 0;
@@ -11562,6 +11554,14 @@ button.home-row { width: 100%; }
   white-space: nowrap;
 }
 .home-add:hover { border-color: var(--ink-strong); }
+@media (max-width: 359px) {
+  /* 320px: 236px of dock for two buttons (the chat icon takes the right).
+     "Snap a shelf" keeps one line; both stay 52px tall (rule 6). */
+  .home-dock-row { gap: 6px; }
+  .home-dock-row .home-snap { flex: 1 1 auto; gap: 6px; padding: 0 10px; font-size: 15px; }
+  .home-snap svg { width: 18px; height: 18px; }
+  .home-add { flex: 0 0 auto; padding: 0 12px; font-size: 15px; }
+}
 
 /* The item sheet (C3). Same geometry and motion as #tonight-sheet. */
 #home-item-scrim {

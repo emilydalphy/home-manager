@@ -617,7 +617,7 @@ def restore_item(undo: dict) -> dict:
     with write() as conn:
         if kind == "removed":
             rec = conn.execute(
-                "SELECT inventory_item_id, row_json, restored_at, "
+                "SELECT inventory_item_id, row_json, restored_at, removed_at, "
                 "removed_at >= datetime('now', ?) AS fresh FROM inventory_removals "
                 "WHERE id = ? AND household_id = ?",
                 (f"-{UNDO_WINDOW_HOURS} hours", removal_id, household_id()),
@@ -633,11 +633,15 @@ def restore_item(undo: dict) -> dict:
             # Back since (bought again at the shop, a scan, chat): the row
             # that is there now IS the kitchen's stock, so the old one is not
             # put back beside it — that made two Milks (verify, 2026-10-27).
+            # Only a row created or written AFTER the removal counts as "back":
+            # a second batch that was already on the shelf (two freezer bags
+            # of chicken thighs) is not the same food come back (re-verify).
             where = _quantities._display_location(row).strip().lower()
             key = _use_up._name_key(row.get("item") or "")
             for other in conn.execute(
-                "SELECT id, item, category, location FROM inventory_items WHERE household_id = ?",
-                (household_id(),),
+                "SELECT id, item, category, location FROM inventory_items WHERE household_id = ? "
+                "AND MAX(created_at, updated_at) >= ?",
+                (household_id(), rec["removed_at"]),
             ).fetchall():
                 o = dict(other)
                 if _use_up._name_key(o["item"] or "") == key and \
