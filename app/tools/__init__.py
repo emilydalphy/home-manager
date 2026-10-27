@@ -430,6 +430,19 @@ from .inventory import (  # noqa: F401
 from . import use_up  # noqa: F401
 from .use_up import candidates as use_up_candidates  # noqa: F401
 from .use_up import selected as use_up_selected  # noqa: F401
+# The Kitchen TAB (Loop Board C1/C3, 2026-10-26) — `home` in code, because
+# `kitchen` already means Cook. See whats_home.py.
+from . import whats_home  # noqa: F401
+from .whats_home import (  # noqa: F401
+    InvalidAmount,
+    get_whats_home,
+    get_whats_home_item,
+    set_amount_left,
+    used_up_item,
+    threw_out_item,
+    move_item as move_kitchen_item,
+    restore_item as restore_kitchen_item,
+)
 # Read-side helpers for the leftover chains repair_leftover_chains records
 # (see leftovers.py). Not agent tools — the assistant has no reason to
 # call these — but re-exported so agent.py's prep-schedule context and any

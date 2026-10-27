@@ -193,7 +193,7 @@ def test_every_listed_scrim_is_a_real_scrim_the_shell_has():
     # The list is ids, so a renamed scrim would fail silently: check each.
     html = (REPO / "static" / "shell.html").read_text(encoding="utf-8")
     ids = re.findall(r"'([a-z-]+-scrim)'", _ESC)
-    assert len(ids) == 10
+    assert len(ids) == 11  # + the Kitchen tab's item sheet (2026-10-26)
     for sid in ids:
         assert f'id="{sid}"' in html or f"id = '{sid}'" in SHELL_JS, sid
 

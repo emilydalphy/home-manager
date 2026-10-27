@@ -64,22 +64,19 @@ def test_shell_js_constant_declared_beside_other_shell_constants():
     assert chores_idx < flag_idx < notif_idx
 
 
-def test_kitchen_tile_pill_is_gated_and_uses_the_neutral_pill_classes():
+def test_the_inventory_row_and_its_pill_left_cooks_more_sheet():
     """
-    cookMoreRowsHtml()'s Inventory row (Cook's More sheet, 2026-09-13; it
-    was kitchenTilesHtml() on the root before that) prints the pill only inside an
-    INVENTORY_IN_DEVELOPMENT conditional, using the design system's
-    neutral pill (theme.css .pill / .pill-neutral) rather than a new class.
+    cookMoreRowsHtml()'s Inventory row — the pill's one entry point — is
+    gone (2026-10-26, Loop Board C1): what's home has its own tab,
+    Kitchen (TABS key 'home'), and the tab is a real feature, so it never
+    prints the pill (tests/test_kitchen_tab.py). The constant itself stays
+    until card A5 takes it out with the docs.
     """
     fn_start = SHELL_JS.index("function cookMoreRowsHtml()")
     fn_end = SHELL_JS.index("function openCookMoreSheet()")
     fn = SHELL_JS[fn_start:fn_end]
-    assert "data-sheet=\"inventory\"" in fn
-    assert "INVENTORY_IN_DEVELOPMENT" in fn
-    assert "pill pill-neutral" in fn
-    assert MARKER_TEXT in fn
-    # Not apricot: the pill classes used must not be an accent/apricot pill.
-    assert "pill-attention" not in fn
+    assert "data-sheet=\"inventory\"" not in fn
+    assert "INVENTORY_IN_DEVELOPMENT" not in fn
 
 
 def test_desktop_rail_is_gone():

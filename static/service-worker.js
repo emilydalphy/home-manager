@@ -52,7 +52,7 @@ const CACHE_NAME = "pomona-shell-v7";
 // Where an offline navigation lands when its own URL was never cached.
 // Every entry serves shell.html; the order only decides which copy is tried
 // first.
-const SHELL_ROUTES = ["/", "/grocery", "/week", "/kitchen"];
+const SHELL_ROUTES = ["/", "/grocery", "/week", "/kitchen", "/home"];
 const SHELL_ASSETS = [
   "/static/manifest.json",
   "/static/icons/icon-192.png",

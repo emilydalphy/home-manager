@@ -13,6 +13,26 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A fifth tab, Kitchen: what's home, and one-tap fixes** (2026-10-26,
+  Loop Board C1 + C3; Emily approved the nav change that day, decision 2 —
+  "an 'inventory management screen' for your kitchen"; branch
+  `inventory/kitchen-tab`, stacked on `87e5af9`; tests
+  `tests/test_kitchen_tab.py`). Bar reads Today · Plan · Shop · Kitchen ·
+  Cook. NAMING TRAP: keyed and pathed `home` (`/home`, `panel-home`,
+  `/api/whats-home`, `app/tools/whats_home.py`) because `kitchen` is Cook.
+  Count = rows shown, never staples or spices; "Use soon" = up to 3 of
+  `use_up.candidates` turning within 4 days; plans are approved, uneaten
+  meals in the next 7 days (confident ingredient match, as cooking
+  depletes). Amount chips on new `inventory_items.amount_left` (+ the
+  quantity it was read against, so a re-buy retires a stale chip). Used it
+  up / Threw it out delete the row and keep it in new `inventory_removals`
+  (`how` = used|thrown) so Undo restores the same id server-side. Freeze it
+  is `inventory.freeze_item`. "Almost gone" on food a planned meal needs →
+  `add_grocery_item` as a standing want, unless a line is already waiting.
+  Cook → More loses its Inventory row (and its two reads); "+ Add" / "Snap a
+  shelf" open `inventory.html?from=kitchen` through `openKitchenAdd(mode)`,
+  the seam card C2 replaces. Subtitle omitted when neither a tick nor an
+  eaten dinner is within a week.
 - **The iPhone app's id is `com.heypomona.app`** (2026-10-25, Emily's pick
   to match her heypomona domain; branch `overnight/bundle-id-heypomona`).
   Replaced the `com.pomona.app` placeholder in `capacitor.config.json`, the

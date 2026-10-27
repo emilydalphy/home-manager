@@ -142,7 +142,9 @@ def test_the_two_quiet_tiles_are_inventory_and_recipes():
     # Board: mark inventory as still being built) rather than closing
     # straight away — see tests/test_inventory_in_development_marker.py
     # for that pill's own coverage.
-    assert 'kit-row-title">Inventory' in tiles and ">Ask about our recipes<" in tiles
+    # Inventory left this sheet for its own tab on 2026-10-26 (Kitchen,
+    # TABS key 'home' — Loop Board C1; tests/test_kitchen_tab.py).
+    assert 'kit-row-title">Inventory' not in tiles and ">Ask about our recipes<" in tiles
     assert 'class="kit-row"' in tiles, "Kitchen's entry points are quiet rows"
     assert "btn-primary" not in tiles and "apricot" not in tiles, (
         "the entry points are quiet — the root's one apricot is the dock's (DESIGN_SYSTEM Rule 5)"

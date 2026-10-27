@@ -828,7 +828,11 @@ async function runScan(kind, file) {
 
 setupDictation(document.getElementById('inv-add-item'), document.getElementById('inv-add-item-mic-btn'));
 
-if (INVENTORY_IN_DEVELOPMENT) {
+// Opened by the Kitchen tab's "Snap a shelf" / "+ Add" (shell.js
+// openKitchenAdd, 2026-10-26): what's home is a real feature there, so the
+// "still being built" line doesn't show (Loop Board C1).
+const FROM_KITCHEN_TAB = new URLSearchParams(window.location.search).get('from') === 'kitchen';
+if (INVENTORY_IN_DEVELOPMENT && !FROM_KITCHEN_TAB) {
   const devNote = document.getElementById('inv-dev-note');
   if (devNote) devNote.hidden = false;
 }

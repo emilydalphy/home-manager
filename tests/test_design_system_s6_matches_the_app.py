@@ -40,7 +40,8 @@ def test_section_six_names_the_tabs_the_household_reads():
     """Not a hard-coded list — the labels come out of TABS, so renaming a
     tab in the code and not here fails rather than rots."""
     labels = _tab_labels_from_code()
-    assert labels == ["Today", "Plan", "Shop", "Cook"], labels
+    # Five since 2026-10-26: the Kitchen tab (key `home`, Loop Board C1).
+    assert labels == ["Today", "Plan", "Shop", "Kitchen", "Cook"], labels
     opening = _section_six().split("\n")[2]
     for label in labels:
         assert label in opening, f"§6's opening bullet never names {label}"
@@ -49,10 +50,12 @@ def test_section_six_names_the_tabs_the_household_reads():
 def test_section_six_does_not_still_claim_the_old_four_are_the_four():
     """The old names may appear as history ("The first was Now…", "Meals,
     Grocery and Kitchen until…"), but never as the statement of what the
-    four screens are. "Now" joined the retired list on 2026-09-17."""
+    four screens are. "Now" joined the retired list on 2026-09-17.
+    "Kitchen" left it on 2026-10-26: it is a tab's name again, the new
+    fifth tab (key `home`), not Cook's old one."""
     opening = _section_six().split("\n")[2]
     claim = opening[: opening.index("(")]
-    for old in ("Now", "Meals", "Grocery", "Kitchen"):
+    for old in ("Now", "Meals", "Grocery"):
         assert old not in claim, f"§6 still asserts the tabs are {old}…"
 
 

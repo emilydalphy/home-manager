@@ -962,6 +962,14 @@ _MIGRATIONS = [
     # still shows its tags, count line and "Couldn't fit these" card. Shape
     # in tools/use_up.py (plan_use_up). '{}' = a plan drafted before this.
     ("weekly_plans", "use_up_json", "TEXT NOT NULL DEFAULT '{}'"),
+    # The Kitchen tab's "How much is left?" chips (Loop Board C3,
+    # 2026-10-26, inventory/kitchen-tab): 'plenty' | 'half' | 'almost_gone',
+    # '' = never tapped. amount_left_qty is the row's quantity when it was
+    # tapped: the chip only counts while the quantity is unchanged, so a
+    # re-buy merging into the row (or a cook that changed it) quietly
+    # retires an "almost gone" (whats_home.amount_level).
+    ("inventory_items", "amount_left", "TEXT NOT NULL DEFAULT ''"),
+    ("inventory_items", "amount_left_qty", "TEXT"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people

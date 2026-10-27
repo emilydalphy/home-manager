@@ -6325,6 +6325,112 @@ def unfreeze_inventory_item_view(req: InventoryUnfreezeRequest):
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
+# ---------- The Kitchen TAB (Loop Board C1/C3, 2026-10-26) ----------
+# "home" in every path: `kitchen` is already the Cook tab's name in code
+# (/kitchen, tab 'kitchen'). See app/tools/whats_home.py.
+
+class WhatsHomeAmountRequest(BaseModel):
+    level: str
+
+
+class WhatsHomeMoveRequest(BaseModel):
+    location: str
+
+
+class WhatsHomeUndoRequest(BaseModel):
+    undo: dict
+
+
+@app.get("/api/whats-home")
+def whats_home_view():
+    """The Kitchen tab: count, the up-to-date line, Use soon, and the
+    Fridge / Freezer / Pantry rows (amounts as words, never numbers)."""
+    try:
+        return tools.get_whats_home()
+    except Exception as e:
+        logger.exception("Kitchen tab read failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.get("/api/whats-home/{item_id}")
+def whats_home_item_view(item_id: int):
+    """One Kitchen row, as the item sheet (C3) shows it."""
+    try:
+        return tools.get_whats_home_item(item_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Kitchen item read failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/whats-home/{item_id}/amount")
+def whats_home_amount_view(item_id: int, req: WhatsHomeAmountRequest):
+    """"How much is left?" — plenty / half / almost_gone. "Almost gone" on
+    food a planned meal needs puts it on the list once."""
+    try:
+        return tools.set_amount_left(item_id, req.level)
+    except tools.InvalidAmount as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Kitchen amount change failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/whats-home/{item_id}/used-up")
+def whats_home_used_up_view(item_id: int):
+    """"Used it up" — the row leaves the kitchen; `undo` brings it back."""
+    try:
+        return tools.used_up_item(item_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Kitchen used-up failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/whats-home/{item_id}/thrown-out")
+def whats_home_thrown_out_view(item_id: int):
+    """"Threw it out" — the row leaves the kitchen; `undo` brings it back."""
+    try:
+        return tools.threw_out_item(item_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Kitchen thrown-out failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/whats-home/{item_id}/move")
+def whats_home_move_view(item_id: int, req: WhatsHomeMoveRequest):
+    """"Move to pantry" / "Move to fridge". Into the freezer is
+    /api/inventory/{id}/freeze."""
+    try:
+        return tools.move_kitchen_item(item_id, req.location)
+    except tools.InvalidInventoryLocation as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Kitchen move failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/whats-home/undo")
+def whats_home_undo_view(req: WhatsHomeUndoRequest):
+    """The Undo on the Kitchen sheet's toasts (used up, thrown out, moved,
+    the amount chip). Freeze's Undo is /api/inventory/unfreeze."""
+    try:
+        return tools.restore_kitchen_item(req.undo)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Kitchen undo failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
 @app.get("/api/week/{week_start}/use-up")
 def week_use_up_view(week_start: str, day_count: int = 7):
     """
@@ -8306,6 +8412,13 @@ def kitchen_page():
     return FileResponse(os.path.join(static_dir, "shell.html"))
 
 
+# The Kitchen TAB (2026-10-26, Loop Board C1) — labelled "Kitchen", keyed
+# and pathed `home` because /kitchen is Cook's (see TABS in shell.js).
+@app.get("/home")
+def home_page():
+    return FileResponse(os.path.join(static_dir, "shell.html"))
+
+
 # The app shell on Plan with the Preferences sheet open (shell.js's boot
 # reads ?prefs=open, opens the sheet and scrubs the param).
 PREFERENCES_URL = "/week?prefs=open"
@@ -8834,7 +8947,7 @@ _TRAIL_ARROW = " → "
 # step appears in shell.js's goMealsStep / goGroceryStep or onboarding's
 # ALL_STEPS.
 _TRAIL_VIEWS = frozenset(
-    ["today", "week", "grocery", "kitchen", "ask"]
+    ["today", "week", "grocery", "kitchen", "home", "ask"]
     + [f"week.{s}" for s in ("day", "meal", "review", "allset", "freezer", "chores")]
     + [f"grocery.{s}" for s in ("carry", "sortall")]
     + [

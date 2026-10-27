@@ -2430,3 +2430,22 @@ CREATE TABLE IF NOT EXISTS grocery_add_receipts (
     PRIMARY KEY (household_id, client_id)
 );
 CREATE INDEX IF NOT EXISTS idx_grocery_add_receipts_age ON grocery_add_receipts (created_at);
+
+-- What left the Kitchen tab by hand (Loop Board C3, 2026-10-26, branch
+-- inventory/kitchen-tab): "Used it up" and "Threw it out" each delete the
+-- inventory_items row and keep its last state here, so the toast's Undo
+-- can put it back exactly, same id, looked up by this row's id and the
+-- household, never from a row the client sends. `how` is 'used' |
+-- 'thrown': nothing reads it yet, but a thrown-out row is the one record
+-- of food waste the app has. `restored_at` set = the Undo ran.
+CREATE TABLE IF NOT EXISTS inventory_removals (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    inventory_item_id INTEGER NOT NULL,
+    item TEXT NOT NULL,
+    how TEXT NOT NULL,
+    row_json TEXT NOT NULL,
+    removed_at TEXT NOT NULL DEFAULT (datetime('now')),
+    restored_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_inventory_removals_household ON inventory_removals (household_id, removed_at);

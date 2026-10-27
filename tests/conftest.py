@@ -104,6 +104,8 @@ _TABLES = [
     "pre_shop_decisions",
     # Add receipts (2026-10-22) reference households only.
     "grocery_add_receipts",
+    # The Kitchen tab's Undo for "Used it up" / "Threw it out" (2026-10-26).
+    "inventory_removals",
     "grocery_substitutions", "grocery_items", "inventory_items", "member_recipe_feedback", "recipe_notes", "recipe_photos", "recipes",
     "chore_instances", "chores", "chores_profile", "attention_items",
     "member_notes", "member_share_links", "share_links", "household_invites", "facts",

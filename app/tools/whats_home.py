@@ -1,0 +1,663 @@
+"""
+What's home — the Kitchen TAB (Loop Board C1 + C3, 2026-10-26).
+
+NAMING: the tab the household sees as "Kitchen" is `home` everywhere in
+code (TABS key 'home', path /home, this module). `kitchen` in this codebase
+already means the COOK tab (TABS key 'kitchen', path /kitchen, chat actions
+tagged tab 'kitchen'), and renaming that is not this card's job.
+
+Emily: "I'm envisioning it almost as an 'inventory management screen' for
+your kitchen." The screen is mostly for reading, so this module is mostly a
+read, `get_whats_home()`:
+
+  - the count in the band ("41 things home") is every row the three
+    segments show — spices and the household's regulars (the staples
+    table) are never shown, they live with Staples;
+  - "Use soon": up to USE_SOON_MAX rows going off within USE_SOON_DAYS,
+    soonest first, from use_up.candidates (the one going-off list B1/B2
+    plan from, so the Kitchen and the planner never disagree), each with
+    its plan ("in Tue dinner", "snacks") or, with nothing planned, a
+    "Freeze it" offer;
+  - Fridge / Freezer / Pantry: each row shows its plan, else its amount as
+    a word — "plenty", "about half", "almost gone" — never a number.
+
+And C3's one-tap fixes, each returning an `undo` to hand back unchanged:
+  set_amount_left (the "How much is left?" chips; "Almost gone" on food a
+  planned meal needs puts it on the list, once), used_up_item,
+  threw_out_item, move_item (fridge <-> pantry, or out of the freezer),
+  restore_item (the Undo for all of them). "Freeze it" is
+  inventory.freeze_item / unfreeze_item — this module does not write a
+  second freeze.
+"""
+from __future__ import annotations
+
+import json
+import re
+from datetime import date, datetime, timedelta, timezone
+
+from ..db import get_conn
+from ._shared import household_id, require_household_row
+from . import quantities as _quantities
+from . import use_up as _use_up
+
+# "Use soon" is the going-off rows within this many days (today counts as
+# day 0), at most USE_SOON_MAX of them. The mockup shows three.
+USE_SOON_DAYS = 4
+USE_SOON_MAX = 3
+# How far ahead a row's "plan" is looked for: the meals of the coming week.
+PLAN_AHEAD_DAYS = 7
+
+# The "How much is left?" chips. Stored on inventory_items.amount_left.
+AMOUNT_LEVELS = ("plenty", "half", "almost_gone")
+AMOUNT_WORDS = {"plenty": "plenty", "half": "about half", "almost_gone": "almost gone"}
+
+LOCATIONS = ("fridge", "freezer", "pantry")
+LOCATION_LABELS = {"fridge": "Fridge", "freezer": "Freezer", "pantry": "Pantry"}
+
+_DOW_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+_DOW_LONG = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+_SLOT_ORDER = {"breakfast": 0, "lunch": 1, "snack": 2, "dinner": 3}
+
+# Bought, not just added: these sources are a shop.
+_BOUGHT_SOURCES = ("grocery_checkoff", "scan_receipt")
+
+
+class InvalidAmount(ValueError):
+    """set_amount_left with a level that isn't one of the three chips."""
+
+
+def _today(conn=None) -> date:
+    from .cooker import household_today
+    return household_today(conn=conn)
+
+
+def _local_day(utc_text: str | None, conn=None) -> date | None:
+    """A UTC `datetime('now')` stamp as the household's calendar day."""
+    if not utc_text:
+        return None
+    try:
+        when = datetime.fromisoformat(str(utc_text).replace("Z", "").strip()[:19])
+    except ValueError:
+        try:
+            return date.fromisoformat(str(utc_text)[:10])
+        except ValueError:
+            return None
+    from .cooker import household_zone
+    return when.replace(tzinfo=timezone.utc).astimezone(household_zone(conn=conn)).date()
+
+
+def _day_word(d: date, today: date, long: bool = True) -> str:
+    """'today' / 'yesterday' / 'tomorrow' / 'Thursday' within the week / 'Oct 30'."""
+    delta = (d - today).days
+    if delta == 0:
+        return "today"
+    if delta == -1:
+        return "yesterday"
+    if delta == 1:
+        return "tomorrow"
+    if -6 <= delta <= 6:
+        return (_DOW_LONG if long else _DOW_SHORT)[d.weekday()]
+    return f"{_MONTHS[d.month - 1]} {d.day}"
+
+
+# ---------- what is shown ----------
+
+def _shown_rows(conn) -> list[dict]:
+    """Every inventory row the Kitchen tab shows: not a staple, not a
+    spice, not an emptied "0" row."""
+    from . import spices as _spices
+
+    staples = _use_up._staple_keys(conn)
+    rows = conn.execute(
+        "SELECT id, item, quantity, source, category, location, expiration_date, created_at, "
+        "updated_at, frozen_on, amount_left, amount_left_qty FROM inventory_items "
+        "WHERE household_id = ? ORDER BY id",
+        (household_id(),),
+    ).fetchall()
+    shown = []
+    for r in rows:
+        row = dict(r)
+        name = (row["item"] or "").strip()
+        if not name or _use_up._name_key(name) in staples or _spices.is_spice(name):
+            continue
+        if (row["quantity"] or "").strip() in ("0", "0.0"):
+            continue
+        where = _quantities._display_location(row).strip().lower()
+        row["location"] = where if where in LOCATIONS else "pantry"
+        row["item"] = name
+        shown.append(row)
+    return shown
+
+
+_HALF_RE = re.compile(r"\bhalf\b|½|\b0?\.5\b|\b1/2\b", re.I)
+_LOW_RE = re.compile(r"\balmost\b|\bnearly\b|\ba little\b|\ba bit\b|\blow\b|\bscraps?\b|¼|\b1/4\b|\b0?\.25\b", re.I)
+
+
+def amount_level(row: dict) -> str:
+    """
+    plenty / half / almost_gone for one row. The household's own chip wins
+    while the row's quantity is what it was when they tapped it; a re-buy
+    (a tick merging into the row) or a cook that changed the quantity
+    makes the chip stale, and the quantity text is read instead. A
+    quantity says "about half" or "almost gone" only when its words do;
+    anything else — a count, a weight, nothing at all — is "plenty",
+    because nobody is ever asked to count.
+    """
+    chip = (row.get("amount_left") or "").strip()
+    if chip in AMOUNT_LEVELS and (row.get("amount_left_qty") or "") == (row.get("quantity") or ""):
+        return chip
+    qty = (row.get("quantity") or "").strip()
+    if _LOW_RE.search(qty):
+        return "almost_gone"
+    if _HALF_RE.search(qty):
+        return "half"
+    return "plenty"
+
+
+def _upcoming_meals(conn, today: date) -> list[dict]:
+    """
+    The approved plans' meals from today through PLAN_AHEAD_DAYS, not yet
+    eaten, earliest first, each with the ingredient names it uses (a
+    saved recipe's list, or a freeform meal's own words). A draft is not a
+    plan the household has said yes to, so it gives nothing a plan here.
+    Leftover nights are skipped: the food went in on the night it was
+    cooked.
+    """
+    from . import leftovers as _leftovers
+
+    end = (today + timedelta(days=PLAN_AHEAD_DAYS - 1)).isoformat()
+    rows = conn.execute(
+        "SELECT mpe.id, mpe.date, mpe.slot, mpe.weekly_plan_id, mpe.freeform_meal, "
+        "r.name AS recipe_name, r.ingredients_json "
+        "FROM meal_plan_entries mpe JOIN weekly_plans wp ON wp.id = mpe.weekly_plan_id "
+        "LEFT JOIN recipes r ON r.id = mpe.recipe_id "
+        "WHERE mpe.household_id = ? AND wp.household_id = ? AND wp.status = 'approved' "
+        "AND COALESCE(mpe.slot_state, 'planned') = 'planned' AND mpe.cooked_status != 'done' "
+        "AND mpe.date >= ? AND mpe.date <= ?",
+        (household_id(), household_id(), today.isoformat(), end),
+    ).fetchall()
+    leftover_ids: set[int] = set()
+    for plan_id in {r["weekly_plan_id"] for r in rows if r["weekly_plan_id"]}:
+        try:
+            leftover_ids |= set(_leftovers.plan_leftover_chains(plan_id, conn=conn)["leftovers"].keys())
+        except Exception:
+            continue
+    meals = []
+    for r in rows:
+        if r["id"] in leftover_ids:
+            continue
+        names = []
+        try:
+            for ing in json.loads(r["ingredients_json"] or "[]"):
+                n = (ing.get("item") if isinstance(ing, dict) else str(ing)) or ""
+                if n.strip():
+                    names.append(n.strip())
+        except (ValueError, TypeError):
+            pass
+        meals.append({
+            "entry_id": r["id"], "date": r["date"], "slot": (r["slot"] or "dinner").strip().lower(),
+            "meal": r["recipe_name"] or r["freeform_meal"] or "",
+            "ingredients": names, "freeform": (r["freeform_meal"] or "") if not r["ingredients_json"] else "",
+        })
+    meals.sort(key=lambda m: (m["date"], _SLOT_ORDER.get(m["slot"], 9), m["entry_id"]))
+    return meals
+
+
+def _uses(meal: dict, item: str) -> bool:
+    """Whether a meal uses this row: one of its ingredients is the same
+    thing (cooker's confident match — the one cooking depletes by), or a
+    freeform meal names it outright."""
+    from .cooker import _find_inventory_match
+
+    row = {"item": item}
+    for ing in meal["ingredients"]:
+        match, confident = _find_inventory_match(ing, [row])
+        if match is not None and confident:
+            return True
+    text = " " + " ".join(re.findall(r"[a-z]+", (meal.get("freeform") or "").lower())) + " "
+    key = _use_up._name_key(item)
+    if key and meal.get("freeform"):
+        singular = " " + " ".join(w[:-1] if len(w) > 3 and w.endswith("s") else w for w in text.split()) + " "
+        return f" {key} " in singular
+    return False
+
+
+def _plan_for(item: str, meals: list[dict], today: date) -> dict | None:
+    for meal in meals:
+        if _uses(meal, item):
+            d = date.fromisoformat(meal["date"])
+            if meal["slot"] == "snack":
+                short = "snacks"
+                long = "snacks"
+            elif d == today and meal["slot"] == "dinner":
+                short = "tonight's dinner"
+                long = "tonight's dinner"
+            else:
+                short = f"{_DOW_SHORT[d.weekday()]} {meal['slot']}"
+                long = f"{_DOW_LONG[d.weekday()]}'s {meal['slot']}"
+            return {"entry_id": meal["entry_id"], "date": meal["date"], "slot": meal["slot"],
+                    "meal": meal["meal"], "label": short, "long": long}
+    return None
+
+
+def _plan_line(plan: dict) -> str:
+    """The row's right-hand words for a planned row: 'in Tue dinner', 'snacks'."""
+    return plan["label"] if plan["slot"] == "snack" else f"in {plan['label']}"
+
+
+def _detail_line(row: dict, plan: dict | None, today: date, conn) -> str:
+    """'Fridge · bought Saturday · best by Thursday · in Tuesday's dinner'."""
+    parts = [LOCATION_LABELS.get(row["location"], "Pantry")]
+    if row["location"] == "freezer":
+        frozen = None
+        try:
+            frozen = date.fromisoformat((row.get("frozen_on") or "")[:10])
+        except ValueError:
+            frozen = _local_day(row.get("created_at"), conn)
+        if frozen:
+            parts.append(f"frozen {_day_word(frozen, today)}")
+    else:
+        got = _local_day(row.get("created_at"), conn)
+        if got:
+            verb = "bought" if (row.get("source") or "") in _BOUGHT_SOURCES else "added"
+            parts.append(f"{verb} {_day_word(got, today)}")
+    try:
+        best = date.fromisoformat((row.get("expiration_date") or "")[:10])
+    except ValueError:
+        best = None
+    if best and row["location"] != "freezer":
+        parts.append("past its date" if best < today else f"best by {_day_word(best, today)}")
+    if plan:
+        parts.append("for snacks" if plan["slot"] == "snack" else f"in {plan['long']}")
+    return " · ".join(parts)
+
+
+def _row_view(row: dict, plan: dict | None, today: date, conn) -> dict:
+    level = amount_level(row)
+    return {
+        "id": row["id"],
+        "item": row["item"],
+        "location": row["location"],
+        "category": row.get("category") or "other",
+        "amount": level,
+        "amount_word": AMOUNT_WORDS[level],
+        "plan": plan,
+        "line": _plan_line(plan) if plan else AMOUNT_WORDS[level],
+        "detail": _detail_line(row, plan, today, conn),
+        "expiration_date": row.get("expiration_date"),
+        # Freezer rows: the day it went in, else the day it arrived (a row
+        # frozen before frozen_on existed) — the freezer lists oldest first.
+        "frozen_on": (row.get("frozen_on") or ((row.get("created_at") or "")[:10] or None))
+        if row["location"] == "freezer" else None,
+        "freeze_ok": row["location"] != "freezer",
+        "move_to": "pantry" if row["location"] == "fridge" else "fridge",
+    }
+
+
+def _sort_key(view: dict):
+    if view["location"] == "freezer":
+        return ((view.get("frozen_on") or "9999")[:10], view["item"].lower())
+    return ((view.get("expiration_date") or "9999")[:10], view["item"].lower())
+
+
+def _shop_phrase(conn, today: date) -> str | None:
+    row = conn.execute(
+        "SELECT MAX(inventory_added_at) AS at FROM grocery_items WHERE household_id = ? AND inventory_added_at IS NOT NULL",
+        (household_id(),),
+    ).fetchone()
+    d = _local_day(row["at"] if row else None, conn)
+    if not d or (today - d).days > 6 or d > today:
+        return None
+    if d == today:
+        return "today's shop"
+    if (today - d).days == 1:
+        return "yesterday's shop"
+    return f"{_DOW_LONG[d.weekday()]}'s shop"
+
+
+def _dinner_phrase(conn, today: date) -> str | None:
+    row = conn.execute(
+        "SELECT MAX(date) AS d FROM meal_plan_entries WHERE household_id = ? AND slot = 'dinner' "
+        "AND cooked_status = 'done' AND inventory_depleted_at IS NOT NULL AND date <= ?",
+        (household_id(), today.isoformat()),
+    ).fetchone()
+    try:
+        d = date.fromisoformat((row["d"] or "")[:10]) if row else None
+    except ValueError:
+        d = None
+    if not d or (today - d).days > 6:
+        return None
+    if d == today:
+        return "tonight's dinner"
+    if (today - d).days == 1:
+        return "last night's dinner"
+    return f"{_DOW_LONG[d.weekday()]}'s dinner"
+
+
+def up_to_date_line(conn=None) -> str:
+    """
+    'Up to date after Saturday's shop and last night's dinner.' — the two
+    things that keep the kitchen without anyone typing: the last tick at
+    the shop (grocery_items.inventory_added_at) and the last dinner marked
+    eaten that took food out (meal_plan_entries.inventory_depleted_at).
+    Each half only within the last week; '' when neither is known, and
+    the screen then shows no line rather than a guess.
+    """
+    own = conn is None
+    if own:
+        conn = get_conn()
+    try:
+        today = _today(conn)
+        parts = [p for p in (_shop_phrase(conn, today), _dinner_phrase(conn, today)) if p]
+    finally:
+        if own:
+            conn.close()
+    if not parts:
+        return ""
+    return "Up to date after " + " and ".join(parts) + "."
+
+
+def get_whats_home() -> dict:
+    """
+    The Kitchen tab in one read:
+
+      {"count": 41,                       # rows shown (no staples/spices)
+       "up_to_date": "Up to date after Saturday's shop.",   # or ""
+       "use_soon": [{"id", "item", "location", "turns_on", "dot": "today"|"soon",
+                     "plan": {...}|None, "line": "today · snacks"|"in Tue dinner"|"",
+                     "freeze_ok": bool}],          # at most USE_SOON_MAX
+       "counts": {"fridge": 18, "freezer": 9, "pantry": 14},
+       "locations": {"fridge": [row, ...], "freezer": [...], "pantry": [...]}}
+
+    Each row: {"id", "item", "location", "amount", "amount_word", "plan",
+    "line" (the right-hand words), "detail" (the sheet's line),
+    "expiration_date", "frozen_on", "freeze_ok", "move_to"}.
+    """
+    conn = get_conn()
+    try:
+        today = _today(conn)
+        rows = _shown_rows(conn)
+        meals = _upcoming_meals(conn, today)
+        views = {}
+        for row in rows:
+            views[row["id"]] = _row_view(row, _plan_for(row["item"], meals, today), today, conn)
+        locations = {loc: [] for loc in LOCATIONS}
+        for v in views.values():
+            locations[v["location"]].append(v)
+        for loc in LOCATIONS:
+            locations[loc].sort(key=_sort_key)
+
+        soon_cutoff = today + timedelta(days=USE_SOON_DAYS)
+        use_soon = []
+        for c in _use_up.candidates(today.isoformat(), PLAN_AHEAD_DAYS, conn=conn):
+            if c["kind"] != "going_off" or c["id"] not in views:
+                continue
+            turns = date.fromisoformat(c["turns_on"])
+            if turns > soon_cutoff:
+                continue
+            v = views[c["id"]]
+            is_today = turns <= today
+            if v["plan"]:
+                line = ("today · " + v["plan"]["label"]) if is_today else _plan_line(v["plan"])
+            elif c.get("freeze_ok"):
+                line = ""  # the row shows the "Freeze it" pill instead
+            else:
+                line = "today" if is_today else f"by {_DOW_SHORT[turns.weekday()]}"
+            use_soon.append({
+                "id": c["id"], "item": v["item"], "location": v["location"],
+                "turns_on": c["turns_on"], "dot": "today" if is_today else "soon",
+                "plan": v["plan"], "line": line,
+                "freeze_ok": bool(c.get("freeze_ok")) and not v["plan"],
+            })
+            if len(use_soon) >= USE_SOON_MAX:
+                break
+        return {
+            "count": len(views),
+            "up_to_date": up_to_date_line(conn) if views else "",
+            "use_soon": use_soon,
+            "counts": {loc: len(locations[loc]) for loc in LOCATIONS},
+            "locations": locations,
+        }
+    finally:
+        conn.close()
+
+
+def get_whats_home_item(item_id: int) -> dict:
+    """One row as the tab shows it (the C3 sheet's read)."""
+    home = get_whats_home()
+    for loc in LOCATIONS:
+        for v in home["locations"][loc]:
+            if v["id"] == item_id:
+                return v
+    raise ValueError("That isn't in the kitchen any more.")
+
+
+# ---------- the one-tap fixes (C3) ----------
+
+def _snapshot(conn, item_id: int) -> dict:
+    require_household_row(conn, "inventory_items", item_id, label="inventory item")
+    row = conn.execute(
+        "SELECT * FROM inventory_items WHERE id = ? AND household_id = ?", (item_id, household_id())
+    ).fetchone()
+    return dict(row)
+
+
+def _on_the_list(conn, item: str) -> int | None:
+    """The id of a line for this thing already waiting on the list, if any."""
+    from . import grocery as _grocery
+
+    key = _grocery._merge_key(item)
+    for r in conn.execute(
+        "SELECT id, item FROM grocery_items WHERE household_id = ? AND status IN ('needed', 'in_cart') "
+        "AND COALESCE(excluded_from_list, 0) = 0",
+        (household_id(),),
+    ).fetchall():
+        if _grocery._merge_key(r["item"]) == key:
+            return r["id"]
+    return None
+
+
+def set_amount_left(item_id: int, level: str) -> dict:
+    """
+    The "How much is left?" chips: plenty / half / almost_gone. Stored on
+    the row with the quantity it was read against (see amount_level).
+
+    "Almost gone" on a food a planned meal in the coming week needs puts
+    it on the list — the same add a person's own "add milk" makes
+    (grocery.add_grocery_item, no plan id, so it is a standing want) —
+    unless a line for it is already waiting there. Returns
+    {"item_id", "item", "amount", "amount_word", "added_to_list": bool,
+     "grocery_item_id": id|None, "needed_for": "Tuesday's dinner"|None,
+     "undo": {...}}; hand `undo` to restore_item.
+    """
+    level = (level or "").strip().lower().replace(" ", "_")
+    if level == "about_half":
+        level = "half"
+    if level not in AMOUNT_LEVELS:
+        raise InvalidAmount("How much is left has to be plenty, about half or almost gone.")
+    conn = get_conn()
+    try:
+        before = _snapshot(conn, item_id)
+        conn.execute(
+            "UPDATE inventory_items SET amount_left = ?, amount_left_qty = ?, updated_at = datetime('now') "
+            "WHERE id = ? AND household_id = ?",
+            (level, before.get("quantity") or "", item_id, household_id()),
+        )
+        conn.commit()
+        needed_for = None
+        on_list = None
+        if level == "almost_gone":
+            today = _today(conn)
+            plan = _plan_for(before["item"], _upcoming_meals(conn, today), today)
+            if plan:
+                needed_for = plan["long"]
+                on_list = _on_the_list(conn, before["item"])
+    finally:
+        conn.close()
+    added_id = None
+    if needed_for and on_list is None:
+        from . import grocery as _grocery
+        added = _grocery.add_grocery_item(before["item"], "", before.get("category") or "other", added_by="user")
+        added_id = added.get("item_id")
+    return {
+        "item_id": item_id,
+        "item": before["item"],
+        "amount": level,
+        "amount_word": AMOUNT_WORDS[level],
+        "added_to_list": added_id is not None,
+        "grocery_item_id": added_id,
+        "needed_for": needed_for,
+        "undo": {
+            "kind": "amount", "item_id": item_id,
+            "amount_left": before.get("amount_left") or "",
+            "amount_left_qty": before.get("amount_left_qty"),
+            "grocery_item_id": added_id,
+        },
+    }
+
+
+def _take_out(item_id: int, how: str) -> dict:
+    conn = get_conn()
+    try:
+        before = _snapshot(conn, item_id)
+        cur = conn.execute(
+            "INSERT INTO inventory_removals (household_id, inventory_item_id, item, how, row_json) VALUES (?, ?, ?, ?, ?)",
+            (household_id(), item_id, before["item"], how, json.dumps(before)),
+        )
+        removal_id = cur.lastrowid
+        conn.execute("DELETE FROM inventory_items WHERE id = ? AND household_id = ?", (item_id, household_id()))
+        conn.commit()
+    finally:
+        conn.close()
+    return {"item_id": item_id, "item": before["item"], "removed": True, "how": how,
+            "undo": {"kind": "removed", "item_id": item_id, "removal_id": removal_id}}
+
+
+def used_up_item(item_id: int) -> dict:
+    """'Used it up': the row leaves the kitchen. Undo puts it back as it was."""
+    return _take_out(item_id, "used")
+
+
+def threw_out_item(item_id: int) -> dict:
+    """'Threw it out': the row leaves the kitchen. Undo puts it back as it was.
+    (Recorded no differently from 'Used it up' today; nothing reads waste yet.)"""
+    return _take_out(item_id, "thrown")
+
+
+def move_item(item_id: int, location: str) -> dict:
+    """
+    'Move to pantry' / 'Move to fridge' — inventory.set_inventory_location
+    underneath, so the freezer-door date rule is the one every move
+    follows. Moving INTO the freezer is freeze_item's door, not this one.
+    """
+    from . import inventory as _inventory
+
+    where = (location or "").strip().lower()
+    if where == "freezer":
+        raise _inventory.InvalidInventoryLocation("Freezing has its own button: Freeze it.")
+    conn = get_conn()
+    try:
+        before = _snapshot(conn, item_id)
+    finally:
+        conn.close()
+    moved = _inventory.set_inventory_location(item_id, where)
+    return {
+        "item_id": item_id, "item": before["item"], "location": moved["location"],
+        "undo": {
+            "kind": "moved", "item_id": item_id,
+            "location": before.get("location") or "",
+            "expiration_date": before.get("expiration_date"),
+            "frozen_on": before.get("frozen_on"),
+        },
+    }
+
+
+def restore_item(undo: dict) -> dict:
+    """
+    The Undo on every C3 toast. `undo` is what the action returned:
+      removed — the row goes back exactly as it was, same id (AUTOINCREMENT
+                never hands an id out twice, so nothing else can hold it);
+      moved   — location, date and frozen_on put back;
+      amount  — the chip put back, and the list line it added (if any, and
+                still waiting to be bought) taken off.
+    Returns {"item_id", "undone": bool}.
+    """
+    undo = undo or {}
+    kind = undo.get("kind")
+    try:
+        item_id = int(undo.get("item_id"))
+    except (TypeError, ValueError):
+        raise ValueError("I couldn't tell which item to put back.")
+    conn = get_conn()
+    try:
+        if kind == "removed":
+            try:
+                removal_id = int(undo.get("removal_id"))
+            except (TypeError, ValueError):
+                raise ValueError("I couldn't tell which item to put back.")
+            rec = conn.execute(
+                "SELECT inventory_item_id, row_json, restored_at FROM inventory_removals "
+                "WHERE id = ? AND household_id = ?",
+                (removal_id, household_id()),
+            ).fetchone()
+            if rec is None or rec["inventory_item_id"] != item_id:
+                raise ValueError("I couldn't tell which item to put back.")
+            exists = conn.execute("SELECT 1 FROM inventory_items WHERE id = ?", (item_id,)).fetchone()
+            if rec["restored_at"] or exists:
+                return {"item_id": item_id, "undone": False}
+            row = json.loads(rec["row_json"])
+            cols = [r["name"] for r in conn.execute("PRAGMA table_info(inventory_items)").fetchall()]
+            row["household_id"] = household_id()
+            use = [c for c in cols if c in row]
+            conn.execute(
+                f"INSERT INTO inventory_items ({', '.join(use)}) VALUES ({', '.join('?' * len(use))})",
+                [row[c] for c in use],
+            )
+            conn.execute("UPDATE inventory_removals SET restored_at = datetime('now') WHERE id = ?", (removal_id,))
+            conn.commit()
+            return {"item_id": item_id, "item": row.get("item"), "undone": True}
+        if kind == "moved":
+            found = conn.execute(
+                "SELECT item FROM inventory_items WHERE id = ? AND household_id = ?", (item_id, household_id())
+            ).fetchone()
+            if not found:
+                return {"item_id": item_id, "undone": False}
+            if (undo.get("location") or "") not in ("",) + LOCATIONS:
+                raise ValueError("I couldn't tell where to put it back.")
+            conn.execute(
+                "UPDATE inventory_items SET location = ?, expiration_date = ?, frozen_on = ?, updated_at = datetime('now') "
+                "WHERE id = ? AND household_id = ?",
+                (undo.get("location") or "", undo.get("expiration_date"), undo.get("frozen_on"), item_id, household_id()),
+            )
+            conn.commit()
+            return {"item_id": item_id, "item": found["item"], "undone": True}
+        if kind == "amount":
+            found = conn.execute(
+                "SELECT item FROM inventory_items WHERE id = ? AND household_id = ?", (item_id, household_id())
+            ).fetchone()
+            if not found:
+                return {"item_id": item_id, "undone": False}
+            conn.execute(
+                "UPDATE inventory_items SET amount_left = ?, amount_left_qty = ?, updated_at = datetime('now') "
+                "WHERE id = ? AND household_id = ?",
+                (undo.get("amount_left") or "", undo.get("amount_left_qty"), item_id, household_id()),
+            )
+            gid = undo.get("grocery_item_id")
+            conn.commit()
+        else:
+            raise ValueError("I couldn't tell what to undo.")
+    finally:
+        conn.close()
+    if gid:
+        from . import grocery as _grocery
+        c2 = get_conn()
+        still = c2.execute(
+            "SELECT item FROM grocery_items WHERE id = ? AND household_id = ? AND status = 'needed'",
+            (int(gid), household_id()),
+        ).fetchone()
+        c2.close()
+        # Only the line this chip put there: the same thing, still unbought.
+        if still and _grocery._merge_key(still["item"]) == _grocery._merge_key(found["item"]):
+            _grocery.remove_grocery_item(int(gid))
+    return {"item_id": item_id, "item": found["item"], "undone": True}
