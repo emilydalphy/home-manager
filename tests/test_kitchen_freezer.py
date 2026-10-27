@@ -87,7 +87,7 @@ def _portion(dish: str, servings: int, cooked_days_ago: int) -> int:
 
 
 def _approved_meal(day_offset: int, *, recipe=None, ingredients=(), freeform=None, derived=None,
-                   status="approved") -> int:
+                   status="approved", cooked=False) -> int:
     today = household_today()
     start = (today + datetime.timedelta(days=day_offset)).isoformat()
     conn = get_conn()
@@ -104,9 +104,9 @@ def _approved_meal(day_offset: int, *, recipe=None, ingredients=(), freeform=Non
         ).lastrowid
     entry = conn.execute(
         "INSERT INTO meal_plan_entries (household_id, date, slot, recipe_id, freeform_meal, weekly_plan_id, "
-        "derived_from_json) VALUES (1, ?, 'dinner', ?, ?, ?, ?)",
+        "derived_from_json, cooked_status) VALUES (1, ?, 'dinner', ?, ?, ?, ?, ?)",
         ((today + datetime.timedelta(days=day_offset)).isoformat(), rid, freeform, plan,
-         json.dumps(derived or {})),
+         json.dumps(derived or {}), "done" if cooked else "pending"),
     ).lastrowid
     conn.commit()
     conn.close()
@@ -171,14 +171,29 @@ def test_a_night_off_portion_reads_dish_and_portions_from_the_cook_night():
     assert _freezer_row(one)["line"] == f"from {old.day} {old.strftime('%b')}"
 
 
+def _cook_with_extra(day_offset: int, portion_id: int, done: bool = False) -> int:
+    """A cook entry whose batch includes a frozen extra (cook_on_fed's shape:
+    leftovers.FREEZER_EXTRA_KEY on the cook)."""
+    return _approved_meal(day_offset, recipe="Kofte", ingredients=["ground lamb"],
+                          derived={"freezer_extra": {"inventory_item_ids": [portion_id]}},
+                          cooked=done)
+
+
 def test_a_portion_of_a_cook_not_made_yet_is_not_in_the_freezer():
-    """CATCH — cook_on_fed writes the portion ahead of the cook, dated the
-    cook's night; until that night it is not in anybody's freezer."""
-    ahead = _portion("Kofte", 2, cooked_days_ago=-2)
+    """CATCH — cook_on_fed writes the portion ahead of the cook (a later
+    night, or tonight: verify item 6, "from today"); until the cook is
+    ticked or its night has gone by, it is not in anybody's freezer."""
+    later = _portion("Kofte", 2, cooked_days_ago=-2)
+    _cook_with_extra(2, later)
+    tonight_ = _portion("Lamb stew", 2, cooked_days_ago=0)
+    _cook_with_extra(0, tonight_)
+    early = _portion("Dal", 2, cooked_days_ago=-1)
+    _cook_with_extra(1, early, done=True)  # ticked cooked ahead of its night
     made = _portion("Chili", 2, cooked_days_ago=1)
     ids = _freezer_ids()
-    assert made in ids and ahead not in ids
-    assert whats_home.get_whats_home()["counts"]["freezer"] == 1
+    assert made in ids and early in ids
+    assert later not in ids and tonight_ not in ids
+    assert whats_home.get_whats_home()["counts"]["freezer"] == 2
 
 
 def test_the_night_off_source_constant_matches_tonight():
@@ -207,12 +222,12 @@ def test_freezer_plan_line_shapes():
     the slot; a portion IS the dinner ("for")."""
     thu = datetime.date(2026, 10, 29)
     mon = {"date": "2026-11-02", "slot": "dinner", "meal": "Chili"}
-    assert whats_home._freezer_plan_line(mon, thu, portion=False) == "in next Mon's chili"
+    assert whats_home._freezer_plan_line(mon, thu, portion=False) == "in next Mon’s chili"
     sat = {"date": "2026-10-31", "slot": "dinner", "meal": "Braised Chicken Thighs with Peppers"}
-    assert whats_home._freezer_plan_line(sat, thu, portion=False) == "in Sat's dinner"
+    assert whats_home._freezer_plan_line(sat, thu, portion=False) == "in Sat’s dinner"
     tonight_ = {"date": "2026-10-29", "slot": "dinner", "meal": "Chili"}
-    assert whats_home._freezer_plan_line(tonight_, thu, portion=True) == "for tonight's dinner"
-    assert whats_home._freezer_plan_line(mon, thu, portion=True) == "for next Mon's dinner"
+    assert whats_home._freezer_plan_line(tonight_, thu, portion=True) == "for tonight’s dinner"
+    assert whats_home._freezer_plan_line(mon, thu, portion=True) == "for next Mon’s dinner"
 
 
 def test_a_planned_freezer_row_and_a_planned_portion_say_their_plan():
@@ -228,7 +243,7 @@ def test_a_planned_freezer_row_and_a_planned_portion_say_their_plan():
     monday = household_today() - datetime.timedelta(days=household_today().weekday())
 
     def day(d):
-        return ("next " if d >= monday + datetime.timedelta(days=7) else "") + _dow(d) + "'s"
+        return ("next " if d >= monday + datetime.timedelta(days=7) else "") + _dow(d) + "’s"
 
     assert _freezer_row(beef)["line"] == f"in {day(d1)} chili"
     assert _freezer_row(pid)["line"] == f"for {day(d2)} dinner"
@@ -248,7 +263,7 @@ def test_freezer_food_another_weeks_draft_uses_reads_as_planned_there():
     _approved_meal(offset, recipe="Chili", ingredients=["ground beef"], status="draft",
                    derived={"use_up": [{"id": thighs, "item": "Chicken thighs", "dish": "Chili"}]})
     row = _freezer_row(thighs)
-    assert row["line"] == "in next Mon's chili"
+    assert row["line"] == "in next Mon’s chili"
     assert _freezer_ids()[:2] == [thighs, beef]
     # This week's offer (today up to next Monday) starts from the first row
     # nobody has claimed.
@@ -272,10 +287,10 @@ def test_check_chips_here_answer_both_places(signed_in):
     peas, _ = _row("Peas", created_days_ago=60)
     bread, _ = _row("Banana bread", created_days_ago=70)
 
-    here = signed_in.get("/api/inventory/check?location=freezer").json()["items"]
-    assert {i["id"] for i in here} == {peas, bread}  # freezer items only
-    planning = {i["id"] for i in signed_in.get("/api/inventory/check").json()["items"]}
-    assert {peas, bread, old_hummus} <= planning
+    # The Kitchen's freezer asks the very chips planning asks: every shelf
+    # (verify item 4 — the mockup's Hummus / Apples / Feta are fridge food).
+    here = {i["id"] for i in signed_in.get("/api/inventory/check").json()["items"]}
+    assert {peas, bread, old_hummus} <= here
 
     # Gone here → gone from the planning check and the freezer rows.
     r = signed_in.post("/api/inventory/check", json={"gone": [peas], "confirmed": []}).json()
@@ -291,7 +306,7 @@ def test_check_chips_here_answer_both_places(signed_in):
 
     # Confirmed at planning → not asked here.
     signed_in.post("/api/inventory/check", json={"gone": [], "confirmed": [bread]})
-    assert bread not in {i["id"] for i in signed_in.get("/api/inventory/check?location=freezer").json()["items"]}
+    assert bread not in {i["id"] for i in signed_in.get("/api/inventory/check").json()["items"]}
 
 
 @_needs_node
@@ -308,6 +323,7 @@ def test_check_card_markup_marks_a_gone_chip():
     html = out["html"]
     assert "Quick check: still have these?" in html
     assert "Tap anything that’s gone." in html
+    assert "planning check" not in html  # verify item 9: no feature names
     assert '>Hummus</button>' in html
     assert 'class="gro-pill gro-pill-on" data-home="check" data-id="2" aria-pressed="true">Apples · gone<' in html
 
@@ -322,7 +338,8 @@ def test_the_freezer_segment_has_its_own_band_and_no_use_soon():
     freezer_part = body[body.index("if (seg === 'freezer')"):body.index("return homeUseSoonHtml")]
     assert "homeUseSoonHtml" not in freezer_part and "homeCheckHtml" in freezer_part
     assert "r.label || r.item" in _fn("homeShelfHtml")
-    assert "location=freezer" in _fn("loadHomeCheck")
+    assert "location=freezer" not in _fn("loadHomeCheck")  # every shelf's chips (verify item 4)
+    assert "/api/inventory/check'" in _fn("loadHomeCheck")
     assert ".home-check {" in SHELL_CSS
 
 
@@ -330,13 +347,73 @@ def test_the_freezer_segment_has_its_own_band_and_no_use_soon():
 # Empty freezer
 # ---------------------------------------------------------------------------
 
-def test_an_empty_freezer_keeps_the_kitchen_band_and_asks_nothing(signed_in):
+def test_an_empty_freezer_keeps_the_kitchen_band(signed_in):
     """GUARD (API) + CATCH (screen rule) — nothing frozen: no freezer band
-    (it would read "0 things"), no chips, the shelf's own empty line."""
+    (it would read "0 things"), the shelf's own empty line."""
     _row("Milk", location="fridge", exp=_day(4))
     home = signed_in.get("/api/whats-home").json()
     assert home["counts"]["freezer"] == 0 and home["locations"]["freezer"] == []
-    assert signed_in.get("/api/inventory/check?location=freezer").json()["items"] == []
     # renderHome only switches band when the freezer has something in it.
     assert "seg === 'freezer' && frozen" in _fn("renderHome")
     assert ">Nothing in the '" in _fn("homeShelfHtml")
+
+
+# ---------------------------------------------------------------------------
+# Independent verify of 63b21fb (VERIFY-inventory-kitchen-freezer.md)
+# ---------------------------------------------------------------------------
+
+def test_use_soon_shows_whats_home_whatever_the_dislikes_and_claims():
+    """CATCH (verify items 1-2) — Use soon read the planner's offer, which
+    leaves out a dislike/allergy and food another plan has claimed: the
+    mushrooms going off today vanished from Use soon (and lost Freeze it)
+    while the fridge still listed them."""
+    tools.add_food_dislikes(["mushrooms"])
+    mush, _ = _row("Mushrooms", location="fridge", exp=_day(0), category="produce")
+    feta, _ = _row("Feta", location="fridge", exp=_day(2), category="dairy")
+    # Feta is on a dish a draft holds more than a week out.
+    _approved_meal(10, recipe="Greek salad", ingredients=["feta"], status="draft",
+                   derived={"use_up": [{"id": feta, "item": "Feta", "dish": "Greek salad"}]})
+    soon = {s["id"] for s in whats_home.get_whats_home()["use_soon"]}
+    assert {mush, feta} <= soon
+    # The planner still never offers them.
+    offered = {c["id"] for c in tools.use_up_candidates(_day(0), 7)}
+    assert mush not in offered and feta not in offered
+
+
+def test_the_rows_and_the_chips_use_one_staple_rule():
+    """CATCH (verify item 3) — a "Wheat bread" staple hid "Whole wheat
+    sourdough bread" from the freezer rows while the chip still asked."""
+    conn = get_conn()
+    conn.execute("INSERT INTO staples (household_id, item, next_due_at) VALUES (1, 'Wheat bread', '2099-01-01')")
+    conn.commit()
+    conn.close()
+    bread, _ = _row("Whole wheat sourdough bread", created_days_ago=80)
+    peas, _ = _row("Peas", created_days_ago=80)
+    chips = {c["id"] for c in tools.inventory_check_candidates()}
+    rows = set(_freezer_ids())
+    assert bread not in rows and bread not in chips
+    assert peas in rows and peas in chips
+
+
+def test_a_portion_next_weeks_draft_or_a_later_night_has_reads_as_planned():
+    """CATCH (verify item 5) — a portion's plan was read from approved plans
+    in the next 7 days only, so one next week's draft had put on a night (or
+    one further out) read "from last Thu"."""
+    soon = _portion("Lasagna", 4, cooked_days_ago=9)
+    far = _portion("Chili", 3, cooked_days_ago=20)
+    _approved_meal(3, freeform="Lasagna from the freezer", status="draft",
+                   derived={"freezer_portion": {"inventory_item_id": soon, "dish": "Lasagna"}})
+    _approved_meal(15, freeform="Chili from the freezer", status="approved",
+                   derived={"freezer_portion": {"inventory_item_id": far, "dish": "Chili"}})
+    assert _freezer_row(soon)["line"].startswith("for ") and _freezer_row(soon)["plan"]
+    far_day = household_today() + datetime.timedelta(days=15)
+    assert _freezer_row(far)["line"] == f"for the dinner on {far_day.day} {far_day.strftime('%b')}"
+
+
+def test_portions_sort_by_the_night_they_were_cooked():
+    """CATCH (verify item 7) — portions sorted by when the row was written
+    but say when they were cooked."""
+    beef, _ = _row("Ground beef", frozen_on=_day(-6), created_days_ago=6)
+    stew = _portion("Stew", 2, cooked_days_ago=10)  # row written now, cooked 10 days ago
+    ids = _freezer_ids()
+    assert ids.index(stew) < ids.index(beef)

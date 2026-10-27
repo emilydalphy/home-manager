@@ -37,6 +37,14 @@ why*, not duplicating the diff.
   word lists (whats_home's `key in staples` matched nothing → staples
   counted) and dropped food turning today from candidates (Use soon lost its
   "today" rows) — new `candidates(..., turning_today=True)` for the tab only.
+  Verify round (2026-10-27): that argument is now `kitchen_view=True` and
+  also skips the planning-only filters (dislike/allergy, another plan's
+  claim) — the Kitchen shows what's home; the check uses `use_up.is_staple`
+  (one staple rule with the rows); the freezer shows ALL the check's chips
+  (the card's "same chips"); a portion's plan is read from drafts too, any
+  later date; a portion of a cook not yet made (tonight included) is hidden
+  via the cook's `freezer_extra`; portions sort by cook night; "Mon’s" etc.
+  typographic; "The planning check, here too." dropped (names a feature).
 
 - **A fifth tab, Kitchen: what's home, and one-tap fixes** (2026-10-26,
   Loop Board C1 + C3; Emily approved the nav change that day, decision 2 —

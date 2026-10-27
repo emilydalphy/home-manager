@@ -10660,8 +10660,8 @@
   };
 
   var homeState = { data: null, seg: null, loadError: false, sheetId: null, busy: false,
-    // C4: the planning check's freezer chips. `items` from
-    // GET /api/inventory/check?location=freezer; `gone` maps a tapped
+    // C4: the planning check's chips, on the freezer. `items` from
+    // GET /api/inventory/check (every shelf); `gone` maps a tapped
     // chip's id to the Undo the answer returned (null when it was already
     // gone elsewhere), so a second tap puts it back.
     check: { items: [], gone: {} } };
@@ -10714,15 +10714,16 @@
     if (homeState.sheetId) renderHomeItemSheet();
   }
 
-  // C4: the freezer's "Quick check: still have these?" chips — the same
-  // list the week's planning asks (inventory_check.candidates, narrowed to
-  // the freezer), so an answer in either place answers both. A chip
+  // C4: the freezer's "Quick check: still have these?" chips — the very
+  // chips the week's planning asks (inventory_check.candidates, every
+  // shelf: the card's "the same chips also show here", and the mockup's
+  // Hummus / Apples / Feta), so an answer in either place answers both. A chip
   // tapped gone here stays on screen, marked, until the panel is next
   // read with it answered elsewhere. Returns whether the chips changed.
   async function loadHomeCheck() {
     var res;
     try {
-      res = await Api.json('/api/inventory/check?location=freezer', { quiet: true });
+      res = await Api.json('/api/inventory/check', { quiet: true });
     } catch (err) { return false; }
     var fresh = (res && res.items) || [];
     var have = {};
@@ -10857,7 +10858,7 @@
     gone = gone || {};
     return '<section class="home-card home-check" aria-labelledby="home-check-title">' +
       '<h2 class="home-card-title" id="home-check-title">Quick check: still have these?</h2>' +
-      '<p class="home-check-sub">The planning check, here too. Tap anything that’s gone.</p>' +
+      '<p class="home-check-sub">Tap anything that’s gone.</p>' +
       '<div class="home-check-chips">' +
       items.map(function (it) {
         var off = Object.prototype.hasOwnProperty.call(gone, it.id);

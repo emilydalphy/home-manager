@@ -246,7 +246,7 @@ def claimed_elsewhere(period_start: str | None = None, day_count: int = 7, conn=
 
 
 def candidates(period_start: str | None = None, day_count: int = 7, conn=None,
-               turning_today: bool = False) -> list[dict]:
+               kitchen_view: bool = False) -> list[dict]:
     """
     Everything the week should use up, going-off rows soonest first, then
     freezer rows oldest first. Each item:
@@ -272,9 +272,12 @@ def candidates(period_start: str | None = None, day_count: int = 7, conn=None,
     dislike) — it can never be planned, so it is not offered, not shown on
     the pre-draft step and not counted (verify finding 5).
 
-    `turning_today=True` relaxes the use_by rule for a row turning ON the
-    first day: the Kitchen tab's "Use soon" (whats_home), where "today" is
-    the point. Planning never passes it.
+    `kitchen_view=True` is the Kitchen tab's "Use soon" (whats_home), which
+    shows what is HOME, not what the planner may offer: it keeps a row
+    turning ON the first day ("today" is the point), and skips the two
+    planning-only filters — a household rule (dislike/allergy) and another
+    plan's claim (claimed_elsewhere). Staples and spices stay out. Planning
+    never passes it.
     """
     own = conn is None
     if own:
@@ -292,7 +295,7 @@ def candidates(period_start: str | None = None, day_count: int = 7, conn=None,
             "FROM inventory_items WHERE household_id = ? ORDER BY id",
             (household_id(),),
         ).fetchall()
-        taken = claimed_elsewhere(period_start, day_count, conn=conn)
+        taken = set() if kitchen_view else claimed_elsewhere(period_start, day_count, conn=conn)
         going, frozen = [], []
         for r in rows:
             row = dict(r)
@@ -329,7 +332,7 @@ def candidates(period_start: str | None = None, day_count: int = 7, conn=None,
             except ValueError:
                 continue
             if turns_d < today or turns_d > end or (
-                    turns_d - timedelta(days=1) < first and not (turning_today and turns_d == first)):
+                    turns_d - timedelta(days=1) < first and not (kitchen_view and turns_d == first)):
                 continue
             going.append({
                 "id": row["id"], "item": name, "quantity": row["quantity"] or "",
@@ -344,9 +347,10 @@ def candidates(period_start: str | None = None, day_count: int = 7, conn=None,
         frozen.sort(key=lambda c: c["_order"])
         for c in frozen:
             del c["_order"]
-        rules = _rule_context()
-        going = [c for c in going if not rule_clash(c, *rules)]
-        frozen = [c for c in frozen if not rule_clash(c, *rules)]
+        if not kitchen_view:
+            rules = _rule_context()
+            going = [c for c in going if not rule_clash(c, *rules)]
+            frozen = [c for c in frozen if not rule_clash(c, *rules)]
         return going + frozen[:MAX_FREEZER]
     finally:
         if own:

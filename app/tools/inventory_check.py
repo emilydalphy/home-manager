@@ -121,29 +121,23 @@ def label_for(item: str, quantity: str) -> str:
     return joined[0].upper() + joined[1:]
 
 
-def _staple_merge_keys(conn) -> list[str]:
-    """The household's staples on the staples code's own key
-    (grocery._merge_key — what staples._find_by_name matches on)."""
-    from . import grocery as _grocery
-    try:
-        rows = conn.execute("SELECT item FROM staples WHERE household_id = ?", (household_id(),)).fetchall()
-    except Exception:
-        return []
-    return [k for k in (_grocery._merge_key(r["item"] or "") for r in rows) if k]
+def _staple_merge_keys(conn) -> list:
+    """The household's staples, read the ONE way the Kitchen tab and the
+    planner read them (use_up._staple_keys / is_staple). The check used to
+    keep its own rule (grocery._merge_key + last words), and the two
+    disagreed: a "Wheat bread" staple hid "Whole wheat sourdough bread"
+    from the freezer rows while the chip still asked about it (C4 verify,
+    item 3)."""
+    from . import use_up as _use_up
+    return _use_up._staple_keys(conn)
 
 
-def _is_staple(name: str, staple_keys: list[str]) -> bool:
-    """A staple by the staples code's key, or a kind of one: the staple's
-    words are the row's last words ("Whole milk", "2% milk" under a "Milk"
-    staple; the last word is the thing, the ones before describe it). So
-    "Milk chocolate" is not milk. Errs toward not asking — a "Coconut milk"
-    row under a "Milk" staple is left out too."""
-    from . import grocery as _grocery
-    key = _grocery._merge_key(name)
-    if not key:
-        return False
-    padded = f" {key}"
-    return any(key == s or padded.endswith(f" {s}") for s in staple_keys)
+def _is_staple(name: str, staple_keys: list) -> bool:
+    """use_up.is_staple: the staple's words with the same last word (the
+    thing itself) — "Whole milk" is the "Milk" staple, "Milk chocolate" is
+    not. Errs toward not asking ("Coconut milk" under "Milk" is left out)."""
+    from . import use_up as _use_up
+    return _use_up.is_staple(name, staple_keys)
 
 
 def _recipe_keys(conn) -> list[str]:
