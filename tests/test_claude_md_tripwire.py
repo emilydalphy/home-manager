@@ -73,10 +73,13 @@ ENTRY_HEADING = re.compile(r"^- \*\*(20\d\d-\d\d-\d\d) — ", re.M)
 # --- the floors ----------------------------------------------------------
 # All three were taken on docs/DECISION_LOG.md right after the move out of
 # CLAUDE.md (2026-10-05, on top of main 8295894): 24543 lines, 269 entries,
-# newest entry 2026-10-05. Earlier floors: ee741f8 (2026-09-27), 19030 lines. Raise them together when the log has
+# newest entry 2026-10-05. Earlier floors: ee741f8 (2026-09-27), 19030 lines.
+# LINE_FLOOR raised 2026-10-27 (origin/main c50a6725: 28992 lines) when the
+# slack passed MAX_FLOOR_SLACK; the entry count and newest date read the old
+# "**date — " heading, which newer entries don't use, so they stay. Raise them together when the log has
 # grown well past them; only lower one for a deletion you can point at.
 
-LINE_FLOOR = 24000
+LINE_FLOOR = 28500
 ENTRY_FLOOR = 264
 NEWEST_ENTRY_ON_OR_AFTER = "2026-10-05"
 
