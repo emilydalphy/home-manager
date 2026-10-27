@@ -14,8 +14,9 @@ screenshot, and keep going.
 - [ ] Pomona opens from the TestFlight app and shows the sign-in screen.
 - [ ] Sign up with your email. The 6-digit code arrives, and typing it gets
       you in.
-- [ ] Pomona asks before sharing anything with Claude. "Not now" works, and
-      so does saying yes.
+- [ ] Pomona asks before sharing anything with Claude. Emily: tap "Not now"
+      and check Pomona carries on. Vineeth: say yes. (Then swap later in
+      Preferences, under Sharing with Claude.)
 - [ ] Swipe Pomona away completely, open it again: you're still signed in.
 - [ ] Turn the phone off and on, open Pomona: still signed in.
 
@@ -35,10 +36,12 @@ screenshot, and keep going.
 - [ ] Camera: take a photo of a handwritten list on Shop, or of a cookbook
       page when adding a recipe. Pomona asks for the camera first, then
       reads the photo.
-- [ ] Dictation: in Ask, tap the microphone and say something. The words
-      show up in the box.
+- [ ] Dictation: in Ask, tap the microphone. Either you can talk and the
+      words show up in the box, or Pomona tells you to use the microphone on
+      your keyboard, and that works. Both count. Note which one you got.
 - [ ] Invite: Preferences → Who's here → invite someone. The phone's share
-      sheet opens with a message ready to send. (You don't have to send it.)
+      sheet opens with a message ready to send. If it asks you to tap once
+      more first, that's expected. (You don't have to send it.)
 
 ## No signal
 

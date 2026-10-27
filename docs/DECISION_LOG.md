@@ -17,11 +17,11 @@ why*, not duplicating the diff.
   branch `overnight/testflight-pipeline`). `submit_to_testflight` is now
   false: builds go to internal testers with no review, and Emily submits to
   Beta App Review by hand after `docs/IPHONE_TEST_CHECKLIST.md` (true would
-  have sent the very first build to review, and gone red with Test
-  Information still blank). The README said Codemagic makes the signing
+  have sent the very first build to review, before the phone checks). The README said Codemagic makes the signing
   certificate itself; on the `ios_signing` route it doesn't, so
   `docs/TESTFLIGHT_WALKTHROUGH.md` has her generate it in Codemagic and make
-  the App Store profile on Apple's site. A step stops the build unless Xcode
+  the App Store profile on Apple's site, on a personal Codemagic account
+  (Teams are paid and lose the free minutes). A step stops the build unless Xcode
   is 26+ (Apple's rule since 2026-04-28). The build number is
   `$BUILD_NUMBER`, raised above Apple's newest when `APP_STORE_APPLE_ID` is
   set. Untested on a real Mac: nothing here can run until the account exists.

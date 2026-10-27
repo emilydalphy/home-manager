@@ -11,6 +11,13 @@ a chat or the repo.
 
 Words in **bold** are what's on the screen, so you can look for them.
 
+If App Store Connect shows a banner asking you to review an agreement,
+accept it. You can leave Paid Apps, tax and banking alone: a free beta
+doesn't need them.
+
+The build settings only appear in Codemagic once the branch with this
+walkthrough is merged to `main`. I'll tell you when it is.
+
 ---
 
 ## 1 and 2: Tell Apple about the app
@@ -32,7 +39,9 @@ app in three places and I'll change them.
 Go to appstoreconnect.apple.com → **Apps** → the blue **+** → **New App**.
 - Platforms: **iOS**
 - Name: `Pomona: Family Meal Planner` (the store name. Under the icon on a
-  phone it still says Pomona.)
+  phone it still says Pomona.) If Apple says the name is taken, try
+  `Pomona Meal Planner` or `Pomona: Weekly Meal Planner`, and tell me
+  which one stuck.
 - Primary language: **English (U.S.)**
 - Bundle ID: pick **com.heypomona.app** from the list
 - SKU: `pomona`
@@ -50,7 +59,15 @@ build settings so build numbers can never clash with one Apple already has.
 
 **3. Make the key that lets Codemagic talk to Apple.**
 In App Store Connect → **Users and Access** → **Integrations** →
-**App Store Connect API** → **Team Keys** → the **+**.
+**App Store Connect API**.
+
+The first time, there's a **Request Access** button instead of a list of
+keys. Click it, agree to the terms and submit. Apple can take a while to
+say yes. If it isn't instant, stop here and come back when Apple's email
+arrives.
+
+Once you're in: **Team Keys** → the **+** (the very first time, the
+button says **Generate API Key**).
 - Name: `Codemagic`
 - Access: **App Manager**
 
@@ -64,15 +81,19 @@ Click **Generate**. Then:
 Go to codemagic.io → **Sign up** → **Sign up with GitHub**. Let it see the
 `emilydalphy/home-manager` repository when GitHub asks.
 Then **Add application** → GitHub → `home-manager`. If it asks for a project
-type, pick **codemagic.yaml**.
+type, pick **Ionic Capacitor App** (or **Other** if that isn't listed).
+
+Stay on your own account. Don't create a Team: Teams cost money, and the
+free build minutes only come with a personal account.
 
 ---
 
 ## 5 and 6: Give Codemagic the key, then make the signing certificate
 
 **5. Paste the key into Codemagic.**
-In Codemagic → **Team settings** → **Team integrations** →
-**Developer Portal** → **Manage keys** → **Add key**.
+In Codemagic, open your account's **Settings** (left side, under your
+name) → **Integrations** → **Developer Portal** → **Connect** (or
+**Manage keys** → **Add key**).
 - Name: type exactly `Pomona App Store Connect`. The build looks for this
   name, letter for letter.
 - Paste the **Issuer ID** and the **Key ID** from your notes.
@@ -82,7 +103,7 @@ Click **Save**.
 
 **6. Make the signing certificate.** This is Apple's proof that the app
 really comes from you.
-In Codemagic → **Team settings** → **codemagic.yaml settings** →
+In Codemagic → your account's **Settings** → **codemagic.yaml settings** →
 **Code signing identities** → **iOS certificates** → **Generate certificate**.
 - Reference name: `Pomona distribution`
 - Certificate type: **Apple Distribution**
@@ -158,12 +179,14 @@ section 11. Paste them in:
 - **Beta App Description**: the description.
 - **Feedback Email**: your feedback address (hello@heypomona.com once it
   exists).
-- **Privacy Policy URL**, if it asks: the live site's address with
-  `/privacy` on the end.
+- **Privacy Policy URL**: the live site's address with `/privacy` on the
+  end. Apple needs this before outside testers can join. The privacy page
+  has to have your company name, address and contact email filled in first.
 - **Beta App Review Information**: your name, phone and email.
   Tick **Sign-in required**. Username `demo`. Password: the demo
   passphrase. It's `DEMO_PASSPHRASE` in Railway's settings. Type it here
-  only.
+  only. Before you submit, ask me to check the demo household is set up
+  on the live site, so Apple's reviewer can really get in.
 - **Review Notes**: section 9 of the same file, word for word.
 
 Click **Save**. Then, on the build, paste section 11's **What to Test**.
@@ -210,6 +233,8 @@ text.
 
 - **"No matching profiles found"** in the build: step 7 wasn't finished.
   Check the profile shows in Codemagic with a green tick.
+- **The build doesn't show "iPhone app to TestFlight"**: the branch with
+  these settings isn't merged to `main` yet.
 - **"Cannot find integration Pomona App Store Connect"**: the key's name in
   step 5 doesn't match. Rename it there to exactly `Pomona App Store
   Connect`.
