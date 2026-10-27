@@ -13,6 +13,13 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Inventory hunt: cooking takes the night's share; lb + oz add up**
+  (2026-10-27; branch `overnight/hunt-inventory-1027`; tests
+  `tests/test_inventory_hunt_2026_10_27.py`). Depletion now scales by eaters
+  and batch (`defrost._batch_quantity`); a leftovers chain left half its
+  chicken "on hand". A sibling-unit buy wrote "2 lbs + 12 oz" (unparseable;
+  chat "used a pound" deleted it): `inventory._merged_quantity`. The recipe
+  pass's `current_inventory` read `qty`, always null; now `quantity`.
 - **The iPhone app's id is `com.heypomona.app`** (2026-10-25, Emily's pick
   to match her heypomona domain; branch `overnight/bundle-id-heypomona`).
   Replaced the `com.pomona.app` placeholder in `capacitor.config.json`, the
