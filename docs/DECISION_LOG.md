@@ -89,6 +89,26 @@ why*, not duplicating the diff.
   chat gets it too; `/remove` refuses blanks. `POST /api/needs-you/dinner`
   with a blank meal planned a nameless dinner and then refused every real
   pick with "already decided — ." — now 400 "Pick a dinner first."
+- **Vegetarian and vegan get the allergy's hard check** (2026-10-27, Emily's
+  pick #61; branch `overnight/diet-hard-check`; tests
+  `tests/test_diet_hard_check.py`). A member's "Vegetarian" / "Vegan" /
+  "Pescatarian" / "plant-based" restriction now reads as the foods it rules
+  out (`coordination._DIET_FAMILIES`: meat, poultry, fish, shellfish,
+  gelatin, lard, fish sauce, anchovy; vegan adds dairy, egg, honey), in the
+  one matcher every door shares — draft, Swap, three picks, chat
+  plan/swap/add_recipe (same "do it anyway" answer as an allergy), Tweak,
+  sides sweep; binds every dish whoever is home, like an allergy. Why: it
+  was matched as the literal word, so Chicken Tacos passed and "Vegetarian
+  Chili" was held. A clash names the food ("has chicken"), not the diet.
+  `library_batch check` verifies a vegetarian/vegan tag with the same
+  family. Covers the MEMBER restriction only: a What-we-know fact ("We're
+  vegetarian") is not enforced yet, nor halal/kosher, "no meat", household
+  `eating_style`. Review round: the diet's own exceptions ("vegan
+  parmesan", "dairy-free cheese", "egg replacer", "crab meat", "duck
+  sauce") are read for the diet only (`_DIET_COMPOUNDS`,
+  `_DIET_PLANT_QUALIFIERS`), so allergies match exactly as before; "dairy-
+  free custard" stays held for a vegan (eggs). `_find_variant` caches its
+  patterns and checks the substring first: vegan went 55 -> 0.7 ms a dish.
 - **The iPhone app's id is `com.heypomona.app`** (2026-10-25, Emily's pick
   to match her heypomona domain; branch `overnight/bundle-id-heypomona`).
   Replaced the `com.pomona.app` placeholder in `capacitor.config.json`, the

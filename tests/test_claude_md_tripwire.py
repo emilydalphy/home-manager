@@ -78,6 +78,9 @@ ENTRY_HEADING = re.compile(r"^- \*\*(20\d\d-\d\d-\d\d) — ", re.M)
 # 2026-10-19. Earlier floors: 8295894 (2026-10-05), 24000 lines;
 # ee741f8 (2026-09-27), 19030 lines. Raise them together when the log has
 # grown well past them; only lower one for a deletion you can point at.
+# Raised 2026-10-27 (branch overnight/now-in-the-kitchen) when the slack
+# check fired: origin/main c50a6725 had 28991 lines, 294 dated entries,
+# newest dated entry 2026-10-19.
 
 LINE_FLOOR = 28500
 ENTRY_FLOOR = 290
