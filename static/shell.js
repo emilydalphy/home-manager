@@ -5329,6 +5329,9 @@
     // sheet closes either way (groStoresSheetClosed).
     storeReturn: null,
     openFlagKey: null,
+    // The week the "Already home" section last decided its first-look
+    // open state for (groAlreadyHomeFirstLook).
+    alreadyHomeLookedAt: null,
     voiceSession: null,
     voiceLog: [],
     // Page-view only — "Not now" on the finished moment
@@ -7933,16 +7936,26 @@
     var summary = groceryState.alreadyHaveSummary || {};
     var already = summary.already_have || [];
     if (!already.length) return '';
+    // What Pomona left off because the kitchen has it (card B4, see
+    // "Already home" below) retitles the section and leads it; the
+    // household's own answers keep their rows underneath.
+    var home = already.filter(groIsAlreadyHome);
+    if (home.length) groAlreadyHomeFirstLook(home);
+    var theirs = already.filter(function (it) { return !groIsAlreadyHome(it); });
     var open = groceryState.openFlagKey === 'already-have';
-    return '<div class="gro-flag">' +
+    return '<div class="gro-flag' + (home.length ? ' gro-home' : '') + '">' +
       '<button type="button" class="gro-flag-head" data-gro="flag-toggle" data-key="already-have" aria-expanded="' + open + '">' +
         '<span class="gro-flag-badge">' + GRO_ICONS.tick + '</span>' +
-        '<span class="gro-flag-title">Already had on hand &middot; ' + already.length + '</span>' +
+        // "Already home · N" counts what Pomona left off (the mockup's N);
+        // the household's own answers are listed below it, uncounted.
+        '<span class="gro-flag-title">' + (home.length ? GRO_ALREADY_HOME_TITLE + ' &middot; ' + home.length : 'Already had on hand &middot; ' + already.length) + '</span>' +
         '<span class="gro-chev">' + (open ? GRO_ICONS.chevDown : GRO_ICONS.chevRight) + '</span>' +
       '</button>' +
+      (home.length ? groAlreadyHomeNoteHtml(home, open) : '') +
       (open
         ? '<div class="gro-flag-body">' +
-            already.map(function (it) {
+            home.map(groAlreadyHomeRowHtml).join('') +
+            theirs.map(function (it) {
               // A line the freezer step set aside says so — it came off
               // the list for a reason the person gave on another tab, and
               // "Put back on the list" here also cancels its fridge move.
@@ -7955,6 +7968,67 @@
           '</div>'
         : '') +
     '</div>';
+  }
+
+  // ---------- Already home (card B4, branch inventory/already-home-list) ----------
+  // Lines the week needs that the kitchen already holds — bought, added or
+  // counted in the last two weeks (app/tools/already_home.py) — come off
+  // the list with removed_by 'kitchen' and lead the "Already had on hand"
+  // foot, retitled "Already home · N". Pomona filled it in, so it asks to
+  // be checked: the review line shows open or closed, the section is open
+  // the first time each week, and one tap on a row puts that thing back
+  // (the same /pre-shop-undo every row here uses; the toast names it).
+  var GRO_ALREADY_HOME_TITLE = 'Already home';
+  var GRO_ALREADY_HOME_CHECK = 'Check these are really home before you go.';
+  var GRO_ALREADY_HOME_CHECK_ONE = 'Check this is really home before you go.';
+  var GRO_ALREADY_HOME_LEFT_OFF = 'Left off the list.';
+  var GRO_ALREADY_HOME_TAP = 'Bought some anyway? Tap to add it back.';
+  var GRO_ALREADY_HOME_ADD = 'Add back';
+  function groIsAlreadyHome(it) { return !!it && it.removed_by === 'kitchen'; }
+  // The week the section belongs to: the newest plan any of its lines
+  // came from. Open by default each week until somebody closes it on this
+  // device (groAlreadyHomeClosed, from the head's toggle) — "seen" is the
+  // close, not a render: the list renders behind the store picker and the
+  // "Before you shop" steps, where nobody has looked at it yet. A failed
+  // storage read (private window) just opens it, which is the safe side.
+  function groAlreadyHomeKey(week) { return 'pomona.alreadyHomeClosed.' + week; }
+  function groAlreadyHomeFirstLook(home) {
+    var week = home.reduce(function (m, it) { return Math.max(m, Number(it.weekly_plan_id) || 0); }, 0);
+    if (groceryState.alreadyHomeLookedAt === week) return;
+    groceryState.alreadyHomeLookedAt = week;
+    var closed = false;
+    try { closed = window.localStorage.getItem(groAlreadyHomeKey(week)) === '1'; } catch (err) { closed = false; }
+    if (!closed) groceryState.openFlagKey = 'already-have';
+  }
+  function groAlreadyHomeClosed() {
+    if (groceryState.alreadyHomeLookedAt == null) return;
+    try { window.localStorage.setItem(groAlreadyHomeKey(groceryState.alreadyHomeLookedAt), '1'); } catch (err) { /* opens again next time */ }
+  }
+  // "Rice, ground beef, spinach." — the names the way a person lists them.
+  function groAlreadyHomeNames(home) {
+    var names = home.map(function (it, i) {
+      var n = String(it.item || '').trim();
+      return i === 0 ? n.charAt(0).toUpperCase() + n.slice(1) : n.toLowerCase();
+    }).filter(Boolean);
+    return names.length ? names.join(', ') + '.' : '';
+  }
+  // Closed: what was left off, and the ask. Open: the ask, and how to undo
+  // one — the rows below already name each thing.
+  function groAlreadyHomeNoteHtml(home, open) {
+    var check = home.length === 1 ? GRO_ALREADY_HOME_CHECK_ONE : GRO_ALREADY_HOME_CHECK;
+    var text = open
+      ? check + ' ' + GRO_ALREADY_HOME_TAP
+      : groAlreadyHomeNames(home) + ' ' + GRO_ALREADY_HOME_LEFT_OFF + ' ' + check;
+    return '<p class="gro-home-note">' + escapeHtml(text) + '</p>';
+  }
+  function groAlreadyHomeRowHtml(it) {
+    return '<button type="button" class="gro-home-row" data-gro="undo-already-have" data-id="' + String(it.id) + '" ' +
+      'aria-label="' + escapeHtml('Add ' + it.item + ' back to the list') + '">' +
+      '<span class="gro-home-name">' + escapeHtml(it.item) +
+        (it.quantity ? ' <span class="gro-qty">' + escapeHtml(String(it.quantity).replace(/(\d|[½⅓⅔¼¾⅛⅜⅝⅞])(\s*)l\b/g, '$1$2L')) + '</span>' : '') +
+      '</span>' +
+      '<span class="gro-home-add">' + escapeHtml(GRO_ALREADY_HOME_ADD) + '</span>' +
+    '</button>';
   }
 
   // ---------- "Add something": the dock's button and its sheet ----------
@@ -10124,6 +10198,9 @@
       }
 
       case 'flag-toggle':
+        // Closing "Already home" is the answer to its first-look open, for
+        // this week on this device (groAlreadyHomeFirstLook).
+        if (el.dataset.key === 'already-have' && groceryState.openFlagKey === 'already-have') groAlreadyHomeClosed();
         groceryState.openFlagKey = groceryState.openFlagKey === el.dataset.key ? null : el.dataset.key;
         renderGrocery();
         return;

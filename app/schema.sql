@@ -2443,3 +2443,17 @@ CREATE TABLE IF NOT EXISTS eaten_kitchen_receipts (
     rows_json TEXT NOT NULL,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+-- "Bought some anyway? Tap to add it back." on the Shop list's "Already
+-- home" section (2026-10-26, branch inventory/already-home-list): one row
+-- per thing put back for one week, by the list's own merge key, so a
+-- rebuild of the list (which deletes and rewrites the week's lines) does
+-- not set it aside again. Read and written only by app/tools/already_home.py.
+CREATE TABLE IF NOT EXISTS already_home_put_back (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    weekly_plan_id INTEGER NOT NULL,
+    item_key TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE (household_id, weekly_plan_id, item_key)
+);

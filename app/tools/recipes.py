@@ -16,6 +16,7 @@ from . import household as _household
 from . import quantities as _quantities
 from . import bring_over as _bring_over
 from . import spices as _spices
+from . import already_home as _already_home
 
 logger = logging.getLogger("home_manager")
 
@@ -4966,7 +4967,8 @@ class _KitchenStock:
     """
 
     def __init__(self, conn, locations: set[str] | None = None,
-                 exclude_sources: set[str] | None = None):
+                 exclude_sources: set[str] | None = None,
+                 fresh_since: tuple[str, str] | None = None):
         """
         `locations` and `exclude_sources` narrow which rows count, and
         both default to None, which is every row — the ingest's own
@@ -4978,6 +4980,13 @@ class _KitchenStock:
         read the way every screen reads it (_display_location, so a blank
         one falls back to its category's shelf) and compared case-folded,
         because 'Freezer' typed with a capital is the same shelf.
+
+        `fresh_since` (2026-10-26, branch inventory/already-home-list) is
+        (UTC instant, household-local ISO date): only rows put there,
+        counted, or bought into on or after it count. It is the Shop
+        list's "Already home" question (already_home.py) — a row nobody
+        has bought, added or counted in two weeks is not good enough to
+        leave a line off the list on.
         """
         # Read once per buffer — one approval, one reading of the kitchen.
         # Nothing writes inventory in between.
@@ -4992,12 +5001,17 @@ class _KitchenStock:
         # fridge estimate (meat: two days), not how long frozen food keeps.
         today = _grocery._household_today(conn=conn).isoformat()
         rows = conn.execute(
-            "SELECT item, quantity, category, location, source, expiration_date FROM inventory_items "
+            "SELECT id, item, quantity, category, location, source, expiration_date FROM inventory_items "
             "WHERE household_id = ? AND TRIM(quantity) != ''",
             (household_id(),),
         ).fetchall()
+        fresh_ids = None
+        if fresh_since is not None:
+            fresh_ids = _already_home.fresh_inventory_ids(conn, fresh_since)
         for row in rows:
             if exclude_sources and (row["source"] or "") in exclude_sources:
+                continue
+            if fresh_ids is not None and row["id"] not in fresh_ids:
                 continue
             use_by = (row["expiration_date"] or "").strip()
             if (use_by and use_by < today
@@ -5227,6 +5241,9 @@ class WeekGroceryBuffer:
         # The kitchen as it stood when this pass started, read lazily and
         # once — see _KitchenStock and kitchen_stock() below.
         self._stock: "_KitchenStock | None" = None
+        # Names the flush's "Already home" pass set aside (already_home.py),
+        # for approve_weekly_plan's receipt.
+        self.left_off: list[str] = []
 
     def kitchen_stock(self) -> "_KitchenStock":
         """
@@ -5357,6 +5374,14 @@ class WeekGroceryBuffer:
                 # too: its line buys one jar (grocery._rack_quantity).
                 _grocery._recompute_plan_line_from_ledger(add_result["item_id"], conn=self.conn)
         self._lines.clear()
+        # The Shop list's "Already home" pass, once every line of this pass
+        # is written: a plan line the kitchen can be shown to cover, from
+        # food bought or counted in the last two weeks, is set aside
+        # (removed_by 'kitchen') rather than bought. See already_home.py.
+        if self.weekly_plan_id is not None:
+            self.left_off.extend(
+                _already_home.leave_off_what_is_home(self.weekly_plan_id, conn=self.conn)
+            )
 
 
 def _add_recipe_ingredients_to_grocery_list(
@@ -5815,7 +5840,14 @@ def _add_recipe_ingredients_for_entries(
             # frying oil (three bottles).
             week_tsp = sum(spice_tsp[0] * scale_for_entry.get(e, 1.0) for e in contributing_ids)
             need = _quantities._parse_quantity(_spices.store_unit(ing["item"], week_tsp))
-        if stock.covers(ing["item"], need):
+        if stock.covers(ing["item"], need) and _already_home.ingest_keeps_skip(
+            ing["item"], weekly_plan_id, conn=conn,
+        ):
+            # Covered at home, and one of the cases that still leaves it
+            # off silently (a spice, a staple, a household's own line, a
+            # meal with no week). Every other covered ingredient goes on
+            # the list as usual and the flush below decides, line by line,
+            # whether it is "Already home" — see already_home.py.
             already_have.append(ing["item"])
             continue
         if pack_share:
@@ -5877,4 +5909,10 @@ def _add_recipe_ingredients_for_entries(
         added_items.append(ing["item"])
     if own_buffer:
         buffer.flush()
+        # What the flush's Already home pass set aside (already_home.py) is
+        # skipped, not bought — reported the way the old silent skip was.
+        if buffer.left_off:
+            gone = {n.strip().lower() for n in buffer.left_off}
+            already_have.extend(buffer.left_off)
+            added_items = [n for n in added_items if n.strip().lower() not in gone]
     return added_items, already_have

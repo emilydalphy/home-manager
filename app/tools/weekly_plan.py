@@ -8361,6 +8361,11 @@ def _settle_weekly_plan_approval(
                     added_items.extend(added)
                     already_have.extend(have)
             buffer.flush()
+            # What the flush's Already home pass set aside went on the list
+            # and straight off it (already_home.py): it is skipped, not to buy.
+            left_off = {n.strip().lower() for n in buffer.left_off}
+            already_have.extend(buffer.left_off)
+            added_items = [n for n in added_items if n.strip().lower() not in left_off]
 
             # Counted as distinct names, matching preview_plan_grocery_impact,
             # so the number the draft promised and the number the receipt

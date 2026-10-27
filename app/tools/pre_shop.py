@@ -445,6 +445,11 @@ def undo_pre_shop_drop(item_id: int) -> dict:
         # back but the staple still believes the cupboard is full.
         from . import staples as _staples
         _staples.reverse_last_answer(conn, row["staple_id"])
+    # "Bought some anyway? Tap to add it back." on a line the Already home
+    # pass set aside: remembered for the week, so a rebuild doesn't set it
+    # aside again (already_home.note_put_back; branch inventory/already-home-list).
+    from . import already_home as _already_home
+    _already_home.note_put_back(conn, row)
     # removed_by is cleared with the removal (it was not until 2026-09-21):
     # a stale 'freezer' mark on a line back on the list would read as
     # "set aside by the freezer step" to defrost._grocery_lines_by_item the
@@ -575,6 +580,10 @@ def get_already_have_decisions() -> list[dict]:
         # Nor Remove on the list's own row (grocery.REMOVED_BY_LIST): the
         # person took it off, they did not say it was at home.
         "AND removed_by NOT IN ('carried_kept', 'carried_dropped', 'list') "
+        # Nor a line the Already home pass set aside (already_home.py):
+        # already_home_lines lists those, unwindowed, and the summary route
+        # reads both.
+        "AND removed_by != 'kitchen' "
         "AND removed_at IS NOT NULL AND removed_at >= ? ORDER BY removed_at DESC",
         (household_id(), cutoff),
     ).fetchall()
