@@ -13,6 +13,18 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Route gaps: the isolation attack aims at prep steps and recipe changes,
+  and two blank inputs are refused** (2026-10-27; branch
+  `overnight/route-test-gaps-1027`; tests `tests/test_route_gaps_2026_10_27.py`).
+  `test_isolation_attack.py` now seeds A a prep step, a recipe-change request
+  and a week intake, and tries EVERY word a 422 lists ("must be pending, done,
+  skipped"). Why: A owned none of those, and check-prep only ever got 422, so
+  an unscoped prep tick passed the harness (mutation-checked: it now fails).
+  `POST /api/memory/store-items/add` with a blank store forgot where the item
+  is bought ('' means forget to `set_item_store`) — now 400, in the tool so
+  chat gets it too; `/remove` refuses blanks. `POST /api/needs-you/dinner`
+  with a blank meal planned a nameless dinner and then refused every real
+  pick with "already decided — ." — now 400 "Pick a dinner first."
 - **The iPhone app's id is `com.heypomona.app`** (2026-10-25, Emily's pick
   to match her heypomona domain; branch `overnight/bundle-id-heypomona`).
   Replaced the `com.pomona.app` placeholder in `capacitor.config.json`, the

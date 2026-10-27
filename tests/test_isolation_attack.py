@@ -131,6 +131,13 @@ def _seed_a() -> list[str]:
     today = household_today().isoformat()
     tools.plan_meal(today, A_RECIPE, slot="dinner", weekly_plan_id=plan_id, reasoning="Zqs why")
     tools.plan_meal(today, "Zqn Toast", slot="breakfast", weekly_plan_id=plan_id)
+    # Rows a route takes BY ID in its body (prep_task_id, request_id,
+    # intake_id). Until 2026-10-27 A had none of these, so every id the
+    # attack sent named some other table's row and those three lookups
+    # were never aimed at anything of A's (route-test-gaps-1027).
+    tools.add_prep_cut(plan_id, today, "Zqs chop the onions")
+    tools.record_recipe_change_request(A_RECIPE, "Zqs less salt please")
+    tools.save_week_intake(_week_start(), packed_lunch_days=[])
     tools.add_grocery_item(A_GROCERY, quantity="1")
     tools.add_grocery_item("Zqn paper towels")
     tools.update_inventory(A_INVENTORY, "add", quantity="2", location="fridge")
@@ -276,6 +283,20 @@ def _choice_from(res) -> str | None:
     return next((g for g in m.groups() if g), None) if m else None
 
 
+# "status must be pending, done, skipped, not 'x'.": a list, every word of it.
+_CHOICE_LIST = re.compile(r"must be ((?:'?\w+'?,\s*)+(?:or\s+)?'?\w+'?)")
+
+
+def _choices_from(res) -> list[str]:
+    if res.status_code not in (400, 422):
+        return []
+    m = _CHOICE_LIST.search(res.text)
+    if m:
+        return [w for w in re.findall(r"\w+", m.group(1)) if w not in ("or", "not")]
+    one = _choice_from(res)
+    return [one] if one else []
+
+
 def _routes():
     out = []
     for route in app.routes:
@@ -300,7 +321,8 @@ def test_household_b_cannot_read_or_change_anything_of_household_as(a_household_
     ids = _a_ids()
     conn = get_conn()
     for table in ("grocery_items", "recipes", "inventory_items", "facts", "staples",
-                  "weekly_plans", "attention_items", "held_things", "members"):
+                  "weekly_plans", "attention_items", "held_things", "members",
+                  "prep_tasks", "recipe_change_requests", "week_intake"):
         owned = [r["id"] for r in conn.execute(f"SELECT id FROM {table} WHERE household_id = ?", (A,))]
         assert owned and set(owned) <= set(ids), f"A's seed missed {table}, or its ids aren't attacked"
     conn.close()
@@ -327,21 +349,30 @@ def test_household_b_cannot_read_or_change_anything_of_household_as(a_household_
         return req, res
 
     def drive(method, route, attack):
+        def check(req, res):
+            text = res.text
+            found = [s for s in secrets_never_sent if s in text]
+            if not attack["name"] and "Zqn" in text:
+                found.append("Zqn")
+            if found:
+                leaks.append(f"{method} {req['url']} {json.dumps(req['json'])[:120]} -> {res.status_code} showed {found}")
+            after = _owned_state()
+            for d in _damage(before, after):
+                damage.append(f"{method} {req['url']} {json.dumps(req['json'])[:120]} -> {res.status_code}: {d}")
+            return after
+
         req, res = send(method, route, attack)
-        choice = _choice_from(res)
-        if choice:
-            # Refused for a word it named: say that word, so the route's
-            # own lookup — the part that has to be household-scoped — runs.
-            req, res = send(method, route, {**attack, "choice": choice})
-        text = res.text
-        found = [s for s in secrets_never_sent if s in text]
-        if not attack["name"] and "Zqn" in text:
-            found.append("Zqn")
-        if found:
-            leaks.append(f"{method} {req['url']} {json.dumps(req['json'])[:120]} -> {res.status_code} showed {found}")
-        after = _owned_state()
-        for d in _damage(before, after):
-            damage.append(f"{method} {req['url']} {json.dumps(req['json'])[:120]} -> {res.status_code}: {d}")
+        after = check(req, res)
+        # Refused for a word it named: say that word, so the route's own
+        # lookup — the part that has to be household-scoped — runs. EVERY
+        # word it lists, each checked on its own: the first is often the
+        # state A's row is already in (a prep step's "pending"), and a
+        # write of what is already there changes nothing the damage check
+        # can see (2026-10-27).
+        for choice in _choices_from(res):
+            if damage:
+                break
+            after = check(*send(method, route, {**attack, "choice": choice}))
         driven.add((method, route.path))
         return after
 

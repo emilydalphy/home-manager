@@ -76,9 +76,9 @@ ENTRY_HEADING = re.compile(r"^- \*\*(20\d\d-\d\d-\d\d) — ", re.M)
 # newest entry 2026-10-05. Earlier floors: ee741f8 (2026-09-27), 19030 lines. Raise them together when the log has
 # grown well past them; only lower one for a deletion you can point at.
 
-LINE_FLOOR = 24000
-ENTRY_FLOOR = 264
-NEWEST_ENTRY_ON_OR_AFTER = "2026-10-05"
+LINE_FLOOR = 28500
+ENTRY_FLOOR = 290
+NEWEST_ENTRY_ON_OR_AFTER = "2026-10-19"
 
 
 def _entry_dates() -> list[str]:
