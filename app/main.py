@@ -6359,7 +6359,7 @@ def resolve_use_up_view(plan_id: int, item_id: int, req: UseUpResolveRequest):
     `undo` for /api/week-plan/{plan_id}/use-up/{item_id}/undo.
     """
     try:
-        return tools.use_up.resolve(plan_id, item_id, req.action)
+        return tools.use_up_resolve(plan_id, item_id, req.action)
     except tools.CannotFreeze as e:
         raise HTTPException(status_code=400, detail=str(e))
     except ValueError as e:
@@ -6373,7 +6373,7 @@ def resolve_use_up_view(plan_id: int, item_id: int, req: UseUpResolveRequest):
 def undo_use_up_view(plan_id: int, item_id: int, req: UseUpUndoRequest):
     """The Undo on a "Couldn't fit these" toast."""
     try:
-        return tools.use_up.undo_resolve(plan_id, item_id, req.undo)
+        return tools.use_up_undo_resolve(plan_id, item_id, req.undo)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

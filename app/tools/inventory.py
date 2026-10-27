@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import re
 from datetime import date, timedelta
-from ..db import get_conn
+from ..db import get_conn, write
 from ._shared import household_id, require_household_row
 from . import grocery as _grocery
 from . import quantities as _quantities
@@ -273,21 +273,18 @@ def unfreeze_item(undo: dict) -> dict:
         item_id = int((undo or {}).get("item_id"))
     except (TypeError, ValueError):
         raise ValueError("I couldn't tell which item to put back.")
-    conn = get_conn()
-    row = conn.execute(
-        "SELECT item, location, category FROM inventory_items WHERE id = ? AND household_id = ?",
-        (item_id, household_id()),
-    ).fetchone()
-    if row is None or _quantities._display_location(dict(row)).strip().lower() != "freezer":
-        conn.close()
-        return {"item_id": item_id, "undone": False}
-    conn.execute(
-        "UPDATE inventory_items SET location = ?, expiration_date = ?, frozen_on = ?, updated_at = datetime('now') "
-        "WHERE id = ? AND household_id = ?",
-        (undo.get("location") or "", undo.get("expiration_date"), undo.get("frozen_on"), item_id, household_id()),
-    )
-    conn.commit()
-    conn.close()
+    with write() as conn:
+        row = conn.execute(
+            "SELECT item, location, category FROM inventory_items WHERE id = ? AND household_id = ?",
+            (item_id, household_id()),
+        ).fetchone()
+        if row is None or _quantities._display_location(dict(row)).strip().lower() != "freezer":
+            return {"item_id": item_id, "undone": False}
+        conn.execute(
+            "UPDATE inventory_items SET location = ?, expiration_date = ?, frozen_on = ?, updated_at = datetime('now') "
+            "WHERE id = ? AND household_id = ?",
+            (undo.get("location") or "", undo.get("expiration_date"), undo.get("frozen_on"), item_id, household_id()),
+        )
     return {"item_id": item_id, "item": row["item"], "undone": True, "location": undo.get("location") or ""}
 
 

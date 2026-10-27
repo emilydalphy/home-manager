@@ -426,10 +426,12 @@ from .inventory import (  # noqa: F401
 )
 # "Use these up" (Loop Board B1/B2, 2026-10-26): the one list of what the
 # week should use, shared by the pre-draft step and the draft. Aliased: a
-# bare `candidates` in this flat namespace would say nothing.
-from . import use_up  # noqa: F401
+# bare `candidates` in this flat namespace would say nothing, and the
+# module itself is never re-exported (test_module_name_collisions).
 from .use_up import candidates as use_up_candidates  # noqa: F401
 from .use_up import selected as use_up_selected  # noqa: F401
+from .use_up import resolve as use_up_resolve  # noqa: F401
+from .use_up import undo_resolve as use_up_undo_resolve  # noqa: F401
 # Read-side helpers for the leftover chains repair_leftover_chains records
 # (see leftovers.py). Not agent tools — the assistant has no reason to
 # call these — but re-exported so agent.py's prep-schedule context and any
