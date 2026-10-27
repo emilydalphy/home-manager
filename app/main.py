@@ -7218,7 +7218,9 @@ def get_grocery_already_have_summary_view():
     (already_have via /pre-shop-undo, elsewhere via /include).
     """
     try:
-        already_have = tools.get_already_have_decisions()
+        # What the Already home pass set aside (already_home.py) first,
+        # then the household's own "already have" answers — one section.
+        already_have = tools.already_home_lines() + tools.get_already_have_decisions()
         elsewhere = tools.list_grocery_list(status="excluded")
         # A two-weeks row taken off together is one row here too, put back
         # with one tap (app/tools/week_lines.py).

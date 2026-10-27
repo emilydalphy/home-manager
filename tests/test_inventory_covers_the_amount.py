@@ -54,11 +54,15 @@ def _next_week_dates(n: int = 2) -> list[str]:
 
 
 def _on_list(item: str) -> str | None:
-    """The quantity of `item` on the list, or None if it isn't on it."""
+    """The quantity of `item` on the list, or None if it isn't on it.
+    A line set aside as "Already home" (removed_by 'kitchen', already_home.py,
+    2026-10-26) is off the list: the kitchen covered it, which is the
+    question these tests ask. It used to be no line at all."""
     conn = get_conn()
     row = conn.execute(
         "SELECT quantity FROM grocery_items WHERE household_id = ? AND LOWER(item) = ? "
-        "AND status != 'purchased' ORDER BY id LIMIT 1",
+        "AND status != 'purchased' AND NOT (status = 'removed' AND removed_by = 'kitchen') "
+        "ORDER BY id LIMIT 1",
         (tools.household_id(), item.lower()),
     ).fetchone()
     conn.close()

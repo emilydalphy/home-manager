@@ -13,6 +13,11 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Shop leaves off what's already home** (2026-10-26, card B4; branch `inventory/already-home-list`,
+  `app/tools/already_home.py`). A plan line the kitchen fully covers with food bought/added/counted in 14 days
+  is set aside (`removed_by 'kitchen'`) at the end of each ingest flush; "Already home · N" on Shop, one tap
+  puts it back and it sticks (`already_home_put_back`). Partly home = whole line on; staples/spices/own lines
+  unchanged. Why: Emily wants the list shorter but reviewable ("make sure it's clear… review that section").
 - **The iPhone app's id is `com.heypomona.app`** (2026-10-25, Emily's pick
   to match her heypomona domain; branch `overnight/bundle-id-heypomona`).
   Replaced the `com.pomona.app` placeholder in `capacitor.config.json`, the

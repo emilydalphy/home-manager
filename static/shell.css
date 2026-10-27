@@ -5859,6 +5859,39 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 .gro-fix button:disabled { opacity: .6; cursor: default; }
 .gro-fix-note { font-family: var(--font-body); font-size: 14px; line-height: 1.5; color: var(--ink-secondary); margin: 0 0 6px; }
 
+/* ---------- "Already home" (card B4, groAlreadyHomeNoteHtml / RowHtml) ----------
+   What Pomona left off the list because the kitchen has it, leading the
+   foot above. The review line sits outside the toggle so it reads open or
+   closed; each row is one button — a tap puts that thing back. */
+.gro-home-note {
+  margin: -4px 0 12px 39px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-secondary);
+}
+.gro-home-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 6px 0;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink);
+}
+.gro-home-row + .gro-home-row { border-top: 1px solid var(--hairline); }
+.gro-home-name { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.gro-home-add { flex: 0 0 auto; font-weight: 700; font-size: 13.5px; color: var(--ink-secondary); }
+.gro-home-row:hover .gro-home-add { color: var(--ink-strong); }
+.gro-home-row:disabled { opacity: .6; cursor: default; }
+
 /* ---------- Hands-free voice log ---------- */
 .gro-voice {
   margin: 8px 20px 0;
