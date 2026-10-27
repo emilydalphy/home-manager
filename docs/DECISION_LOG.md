@@ -13,6 +13,14 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Test runs no longer hold collection on a fake clock by accident**
+  (2026-10-27; branch `overnight/collection-hold-rounding`). conftest's
+  midnight guard compared the start instant with itself round-tripped
+  through a datetime (whole microseconds), read "earlier" in ~38% of runs and
+  froze collection; modules keeping `TODAY = datetime.date.today` then held
+  freezegun's fake and all 45 tests in the two Chores files failed at once.
+  Now it holds only when the margin really moved the instant
+  (`conftest._drawn_back`). Chores tests themselves untouched.
 - **TestFlight pipeline checked against Codemagic's docs** (2026-10-27;
   branch `overnight/testflight-pipeline`). `submit_to_testflight` is now
   false: builds go to internal testers with no review, and Emily submits to
