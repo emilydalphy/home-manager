@@ -17,9 +17,10 @@ why*, not duplicating the diff.
   C2 + C5, `inventory/kitchen-add`, `tests/test_kitchen_add.py`). One sheet,
   `static/kitchen-add.js`, for the dock and onboarding; nothing is saved
   before its review, unsure scan rows start unticked. A shelf PHOTO counts
-  (a tracked row on that shelf is confirmed: amount set, `counted_on`
-  today), a receipt / Say it / Type it adds. Undo record kept server-side
-  (`kitchen_add_receipts`). C5 sits right before the first draft so the
+  (a tracked row on that shelf is confirmed: amount set and `counted_on`
+  today only when the photo read an amount, else `confirmed_on` where it
+  exists), a receipt / Say it / Type it adds. Undo record kept
+  server-side, one per row per save (`kitchen_add_receipts`). C5 sits right before the first draft so the
   week can use what's home; "Set up later" goes straight on.
   Why: a photo of the fridge is a count, not a shop — summing doubled the
   milk on every photo (verify 2026-10-27).

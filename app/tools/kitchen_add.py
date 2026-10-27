@@ -121,7 +121,7 @@ def review_items(items: list, place: str | None = None) -> list[dict]:
     return out[:MAX_ITEMS]
 
 
-def left_out(rows: list[dict]) -> tuple[list[dict], dict]:
+def left_out(rows: list[dict], place: str | None = None) -> tuple[list[dict], dict]:
     """
     The Kitchen tab never shows a spice or one of the household's regulars
     (whats_home._shown_rows: they live with Staples), so saving one from a
@@ -136,16 +136,25 @@ def left_out(rows: list[dict]) -> tuple[list[dict], dict]:
     conn = get_conn()
     try:
         regulars = _use_up._staple_keys(conn)
+        kept, out = [], {"spices": [], "regulars": []}
+        for r in rows:
+            if _use_up._name_key(r["item"]) in regulars:
+                out["regulars"].append(r["item"])
+                continue
+            if _spices.is_spice(r["item"]):
+                out["spices"].append(r["item"])
+                continue
+            # A shelf photo confirms a row already on that shelf (add_items),
+            # so a new amount REPLACES the old one: say what it was, so a
+            # lower count is seen before it's saved ("Eggs · 1 (was 6)").
+            if place in SHELF_KINDS and r.get("quantity"):
+                found = _existing(conn, r["item"], r.get("location") or place)
+                old = (found["quantity"] or "").strip() if found is not None else ""
+                if old and old.lower() != r["quantity"].strip().lower():
+                    r["was"] = old
+            kept.append(r)
     finally:
         conn.close()
-    kept, out = [], {"spices": [], "regulars": []}
-    for r in rows:
-        if _use_up._name_key(r["item"]) in regulars:
-            out["regulars"].append(r["item"])
-        elif _spices.is_spice(r["item"]):
-            out["spices"].append(r["item"])
-        else:
-            kept.append(r)
     return kept, out
 
 
@@ -243,14 +252,21 @@ def read_said_items(text: str) -> list[dict]:
                 row["location"] = _NEVER_SPLIT_PLACE[low]
                 row["category"] = "other"
             out.append(row)
-    # Dictation often leaves the commas out: "milk eggs butter" is one piece.
-    # When that one piece has no amount and EVERY word is a food on its own,
-    # it becomes a row per word. Anything less certain stays as said.
-    if len(out) == 1 and not out[0]["quantity"]:
-        words = out[0]["item"].split()
-        if len(words) >= 3 and all(_known_food(w) for w in words):
-            out = [r for r in (_said_piece(w) for w in words) if r]
-    return out[:MAX_ITEMS]
+    # Dictation often leaves the commas out: "milk eggs butter", or "milk
+    # eggs and butter" (a piece of "milk eggs"). A piece with no amount
+    # whose EVERY word is a food on its own becomes a row per word, unless
+    # the words are one food together ("orange juice", "cream cheese").
+    # Anything less certain stays as said.
+    split = []
+    for row in out:
+        words = row["item"].split()
+        if (not row["quantity"] and len(words) >= 2 and row["item"].lower() not in _TWO_WORD_FOODS
+                and row["item"].lower() not in _quantities._ITEM_SHELF_LIFE_DAYS
+                and all(_known_food(w) for w in words)):
+            split.extend(r for r in (_said_piece(w) for w in words) if r)
+        else:
+            split.append(row)
+    return split[:MAX_ITEMS]
 
 
 # Foods with "and" in the name. Said whole, they're one thing.
@@ -258,6 +274,15 @@ _NEVER_SPLIT = (
     "mac and cheese", "macaroni and cheese", "fish and chips", "salt and pepper",
     "half and half", "sweet and sour sauce", "peanut butter and jelly", "chips and salsa",
 )
+# Two known foods that are one food together: never split by the
+# comma-less rule.
+_TWO_WORD_FOODS = frozenset({
+    "orange juice", "apple juice", "cream cheese", "sour cream", "ice cream", "heavy cream",
+    "peanut butter", "almond butter", "olive oil", "chicken stock", "beef stock", "chicken broth",
+    "green beans", "green onions", "spring onions", "sweet potatoes", "sweet potato", "egg noodles",
+    "rice noodles", "tomato sauce", "apple sauce", "chocolate milk", "almond milk", "oat milk",
+    "coconut milk", "butter beans", "bread crumbs", "corn tortillas", "flour tortillas",
+})
 # ...and the one whose usual shelf a guess gets wrong (pepper reads as produce).
 _NEVER_SPLIT_PLACE = {"salt and pepper": "pantry"}
 # Pantry foods the shelf-life table doesn't name, for the no-comma rule.
@@ -373,8 +398,9 @@ def _existing(conn, name: str, location: str | None):
     when one is given, else anywhere — the most recently touched, the rule
     inventory._find_row_by_name uses."""
     key = _match_key(name)
-    sql = ("SELECT id, item, quantity, source, category, expiration_date, location, counted_on, rev "
-           "FROM inventory_items WHERE household_id = ?")
+    # Every column: the undo's before-state includes confirmed_on where a
+    # database has it (_restore_fields).
+    sql = "SELECT * FROM inventory_items WHERE household_id = ?"
     params = [household_id()]
     if location:
         sql += " AND location = ?"
@@ -386,6 +412,13 @@ def _existing(conn, name: str, location: str | None):
 
 
 _RESTORE_FIELDS = ("quantity", "source", "category", "expiration_date", "counted_on")
+
+
+def _restore_fields(conn) -> tuple:
+    """_RESTORE_FIELDS, plus confirmed_on where the database has it (the
+    pre-draft check's column, added on another branch — read, not assumed)."""
+    cols = {r["name"] for r in conn.execute("PRAGMA table_info(inventory_items)").fetchall()}
+    return _RESTORE_FIELDS + (("confirmed_on",) if "confirmed_on" in cols else ())
 
 
 def _rev(conn, item_id: int) -> int:
@@ -421,40 +454,63 @@ def add_items(items: list, kind: str) -> dict:
     if kind not in KINDS:
         raise ValueError("I couldn't tell where these came from.")
     rows = _clean_rows(items, kind)
-    receipts = []
+    # ONE undo record per inventory row per save, holding the row as it was
+    # before this save FIRST touched it; a later touch only moves its rev.
+    # A receipt often lists the same thing twice ("Milk", "milk 2%"), and two
+    # records for one row undid it halfway (re-verify, 2026-10-27).
+    receipts: dict[int, dict] = {}
+
+    def record(item_id: int, fresh: bool, before: dict | None):
+        if item_id in receipts:
+            receipts[item_id]["rev"] = _rev(conn, item_id)
+            return
+        receipts[item_id] = {"item_id": item_id, "fresh": fresh, "before": None if fresh else before,
+                             "rev": _rev(conn, item_id)}
+
     added = updated = 0
     with write() as conn:
         today = _grocery._household_today(conn=conn).isoformat()
+        fields = _restore_fields(conn)
         for r in rows:
             where = r["location"] or None
             found = _existing(conn, r["item"], where)
             if kind in SHELF_KINDS and found is not None:
-                before = {f: found[f] for f in _RESTORE_FIELDS}
-                conn.execute(
-                    "UPDATE inventory_items SET quantity = ?, counted_on = ?, updated_at = datetime('now') "
-                    "WHERE id = ? AND household_id = ?",
-                    (r["quantity"] or found["quantity"], today, found["id"], household_id()),
-                )
-                receipts.append({"item_id": found["id"], "fresh": False, "before": before, "rev": _rev(conn, found["id"])})
+                before = {f: found[f] for f in fields}
+                # A count only when the photo read an amount: counted_on is
+                # what the stock check trusts (recipes._KitchenStock), and a
+                # photo that just SAW the tortillas didn't count them. Seen
+                # with no amount is a confirmation (confirmed_on, where it
+                # exists) and the amount stays.
+                if r["quantity"]:
+                    conn.execute(
+                        "UPDATE inventory_items SET quantity = ?, counted_on = ?, updated_at = datetime('now') "
+                        "WHERE id = ? AND household_id = ?",
+                        (r["quantity"], today, found["id"], household_id()),
+                    )
+                elif "confirmed_on" in fields:
+                    conn.execute(
+                        "UPDATE inventory_items SET confirmed_on = ?, updated_at = datetime('now') "
+                        "WHERE id = ? AND household_id = ?",
+                        (today, found["id"], household_id()),
+                    )
+                record(found["id"], False, before)
                 updated += 1
                 continue
             if kind not in SHELF_KINDS:
                 anywhere = found or (_existing(conn, r["item"], None) if where else None)
                 if anywhere is not None:
                     r["item"] = anywhere["item"]
-            before_row = _inventory._find_row_by_name(conn, r["item"], where, ", ".join(_RESTORE_FIELDS))
-            before = {f: before_row[f] for f in _RESTORE_FIELDS} if before_row is not None else None
+            before_row = _inventory._find_row_by_name(conn, r["item"], where, ", ".join(fields))
+            before = {f: before_row[f] for f in fields} if before_row is not None else None
             res = _inventory._add_to_inventory(
                 r["item"], r["quantity"], source=_source(kind, r["location"]),
                 category=r["category"], location=where, conn=conn,
             )
-            fresh = bool(res["fresh"])
-            receipts.append({"item_id": res["item_id"], "fresh": fresh,
-                             "before": None if fresh else before, "rev": _rev(conn, res["item_id"])})
+            record(res["item_id"], bool(res["fresh"]), before)
             added += 1
         cur = conn.execute(
             "INSERT INTO kitchen_add_receipts (household_id, rows_json) VALUES (?, ?)",
-            (household_id(), json.dumps(receipts)),
+            (household_id(), json.dumps(list(receipts.values()))),
         )
         receipt_id = cur.lastrowid
     return {
@@ -504,10 +560,11 @@ def undo_added(undo: dict) -> dict:
                 conn.execute("DELETE FROM inventory_items WHERE id = ? AND household_id = ?", (r["item_id"], household_id()))
             else:
                 b = r["before"]
+                use = [f for f in _restore_fields(conn) if f in b]
                 conn.execute(
-                    f"UPDATE inventory_items SET {', '.join(f + ' = ?' for f in _RESTORE_FIELDS)}, "
+                    f"UPDATE inventory_items SET {', '.join(f + ' = ?' for f in use)}, "
                     "updated_at = datetime('now') WHERE id = ? AND household_id = ?",
-                    [b.get(f) for f in _RESTORE_FIELDS] + [r["item_id"], household_id()],
+                    [b.get(f) for f in use] + [r["item_id"], household_id()],
                 )
             undone += 1
         conn.execute(

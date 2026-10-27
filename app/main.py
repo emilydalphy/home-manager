@@ -7531,7 +7531,7 @@ async def scan_fridge(request: Request, photo: UploadFile = File(...)):
     _enforce_rate_limit(request, "scan")
     image_b64, media_type = await _read_scan_image(photo)
     try:
-        items, left_out = tools.kitchen_left_out(tools.kitchen_review_items(scan_fridge_photo(image_b64, media_type), "fridge"))
+        items, left_out = tools.kitchen_left_out(tools.kitchen_review_items(scan_fridge_photo(image_b64, media_type), "fridge"), "fridge")
     except AssistantUnavailableError as e:
         logger.warning("Fridge scan hit a transient Claude API failure: %s", e)
         raise HTTPException(status_code=503, detail=str(e))
@@ -7550,7 +7550,7 @@ async def scan_pantry(request: Request, photo: UploadFile = File(...)):
     _enforce_rate_limit(request, "scan")
     image_b64, media_type = await _read_scan_image(photo)
     try:
-        items, left_out = tools.kitchen_left_out(tools.kitchen_review_items(scan_pantry_photo(image_b64, media_type), "pantry"))
+        items, left_out = tools.kitchen_left_out(tools.kitchen_review_items(scan_pantry_photo(image_b64, media_type), "pantry"), "pantry")
     except AssistantUnavailableError as e:
         logger.warning("Pantry scan hit a transient Claude API failure: %s", e)
         raise HTTPException(status_code=503, detail=str(e))
@@ -7571,7 +7571,7 @@ async def scan_freezer(request: Request, photo: UploadFile = File(...)):
     _enforce_rate_limit(request, "scan")
     image_b64, media_type = await _read_scan_image(photo)
     try:
-        items, left_out = tools.kitchen_left_out(tools.kitchen_review_items(scan_freezer_photo(image_b64, media_type), "freezer"))
+        items, left_out = tools.kitchen_left_out(tools.kitchen_review_items(scan_freezer_photo(image_b64, media_type), "freezer"), "freezer")
     except AssistantUnavailableError as e:
         logger.warning("Freezer scan hit a transient Claude API failure: %s", e)
         raise HTTPException(status_code=503, detail=str(e))

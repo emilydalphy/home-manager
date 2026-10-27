@@ -104,6 +104,7 @@
         quantity: String((it && it.quantity) || ''),
         category: String((it && it.category) || ''),
         location: String((it && it.location) || ''),
+        was: String((it && it.was) || ''),
         sure: !(it && it.sure === false),
         ticked: !(it && it.sure === false)
       };
@@ -421,7 +422,8 @@
       '<h2 class="ka-title" id="ka-title">' + (st.kind === 'say' ? COPY.heardTitle : COPY.reviewTitle) + '</h2>' +
       '<p class="ka-sub">' + esc(COPY.reviewSub) + '</p>' +
       '<div class="ka-list">' + st.rows.slice(0, shown).map(function (r, i) {
-        var right = r.sure ? r.quantity : COPY.notSure;
+        // A photo replaces a tracked amount: show what it was ("1 (was 6)").
+        var right = r.sure ? r.quantity + (r.was && r.quantity ? ' (was ' + r.was + ')' : '') : COPY.notSure;
         return '<button type="button" class="ka-row" data-ka="tick" data-i="' + i + '" aria-pressed="' + (r.ticked ? 'true' : 'false') + '">' +
           '<span class="ka-box">' + ICONS.tick + '</span>' +
           '<span class="ka-row-name">' + esc(r.item) + (r.sure ? '' : '?') + '</span>' +

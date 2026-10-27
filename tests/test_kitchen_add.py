@@ -468,6 +468,86 @@ def test_say_it_keeps_named_dishes_whole_and_splits_a_comma_less_list_of_foods()
     assert [r["item"] for r in kitchen_add.read_said_items("leftover thai curry")] == ["Leftover thai curry"]
 
 
+def test_undo_puts_back_a_row_one_save_touched_twice(signed_in):
+    """CATCH (re-verify R1) — Milk 4 L; one Say it save of "Milk" 1 L and
+    "milk 2%" 1 L takes it to 6 L; Undo puts it back to 4 L, not 5 L."""
+    milk = _seed("Milk", "4 L", source="chat")
+    body = signed_in.post("/api/whats-home/add", json={"kind": "say", "items": [
+        {"item": "Milk", "quantity": "1 L", "location": "fridge"},
+        {"item": "milk 2%", "quantity": "1 L", "location": "fridge"},
+    ]}).json()
+    assert _get(milk)["quantity"] == "6 L"
+    assert signed_in.post("/api/whats-home/add/undo", json={"undo": body["undo"]}).json()["undone"] == 1
+    assert (_get(milk)["quantity"], _get(milk)["source"]) == ("4 L", "chat")
+
+
+def test_a_photo_with_no_amount_confirms_but_is_not_a_count(signed_in):
+    """CATCH (re-verify R2) — counted_on is what the stock check trusts
+    (recipes._KitchenStock), so a photo that SAW the tortillas but read no
+    amount keeps the amount and stamps no count; one that read an amount
+    is a count."""
+    from conftest import household_today
+    tortillas = _seed("Tortillas", "1 pack", location="pantry", category="pantry")
+    signed_in.post("/api/whats-home/add", json={"kind": "pantry", "items": [{"item": "Tortillas", "location": "pantry"}]})
+    row = _get(tortillas)
+    assert (row["quantity"], row["counted_on"]) == ("1 pack", None)
+    signed_in.post("/api/whats-home/add", json={"kind": "pantry", "items": [{"item": "Tortillas", "quantity": "2 packs"}]})
+    row = _get(tortillas)
+    assert (row["quantity"], row["counted_on"]) == ("2 packs", household_today().isoformat())
+
+
+def test_a_photo_with_no_amount_stamps_confirmed_on_where_the_column_exists(signed_in):
+    """CATCH (re-verify R2) — with the pre-draft check's confirmed_on column
+    present (read through PRAGMA, not assumed), "seen" is stamped there, and
+    Undo takes it back."""
+    from conftest import household_today
+    conn = get_conn()
+    conn.execute("ALTER TABLE inventory_items ADD COLUMN confirmed_on TEXT")
+    conn.commit()
+    conn.close()
+    try:
+        tortillas = _seed("Tortillas", "1 pack", location="pantry", category="pantry")
+        body = signed_in.post("/api/whats-home/add", json={"kind": "pantry", "items": [{"item": "Tortillas"}]}).json()
+        row = _get(tortillas)
+        assert (row["counted_on"], row["confirmed_on"]) == (None, household_today().isoformat())
+        signed_in.post("/api/whats-home/add/undo", json={"undo": body["undo"]})
+        assert _get(tortillas)["confirmed_on"] is None
+    finally:
+        conn = get_conn()
+        conn.execute("ALTER TABLE inventory_items DROP COLUMN confirmed_on")
+        conn.commit()
+        conn.close()
+
+
+def test_the_review_shows_what_a_photo_would_change(signed_in, monkeypatch):
+    """CATCH (re-verify R3) — a shelf photo replaces a tracked amount, so
+    the review says what it was: "Eggs · 1 (was 6)". Same amount, a new
+    food, or a receipt: nothing to say."""
+    _seed("Eggs", "6")
+    _seed("Milk", "2 L")
+    monkeypatch.setattr(main, "scan_fridge_photo", lambda b64, mt: [
+        {"item": "eggs", "quantity": "1", "category": "dairy", "location": "fridge"},
+        {"item": "Milk", "quantity": "2 L", "category": "dairy", "location": "fridge"},
+        {"item": "Butter", "quantity": "1 block", "category": "dairy", "location": "fridge"},
+    ])
+    items = signed_in.post("/api/inventory/scan-fridge", files={"photo": ("f.jpg", _TINY_JPEG, "image/jpeg")}).json()["items"]
+    assert [(i["item"], i.get("was")) for i in items] == [("Eggs", "6"), ("Milk", None), ("Butter", None)]
+    monkeypatch.setattr(main, "scan_receipt_image", lambda b64, mt: [{"item": "Eggs", "quantity": "12", "category": "dairy"}])
+    receipt = signed_in.post("/api/inventory/scan-receipt", files={"photo": ("r.jpg", _TINY_JPEG, "image/jpeg")}).json()["items"]
+    assert "was" not in receipt[0]
+    if shutil.which("node"):
+        html = _ka("k.htmlFor({step: 'review', kind: 'fridge', rows: k.reviewRows([{item: 'Eggs', quantity: '1', was: '6'}])})")
+        assert '<span class="ka-row-qty">1 (was 6)</span>' in html
+
+
+def test_say_it_splits_a_comma_less_piece_after_an_and_and_keeps_two_word_foods():
+    """CATCH (re-verify minor) — "milk eggs and butter" is three rows;
+    "orange juice" and "cream cheese" stay one food each."""
+    assert [r["item"] for r in kitchen_add.read_said_items("milk eggs and butter")] == ["Milk", "Eggs", "Butter"]
+    assert [r["item"] for r in kitchen_add.read_said_items("orange juice and cream cheese")] == ["Orange juice", "Cream cheese"]
+    assert [r["item"] for r in kitchen_add.read_said_items("chicken thighs, baby spinach")] == ["Chicken thighs", "Baby spinach"]
+
+
 # ---------- C5: the Kitchen in first-run setup ----------
 
 def _intro_markup() -> str:
