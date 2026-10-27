@@ -140,7 +140,11 @@ def _shown_rows(conn) -> list[dict]:
             # A night off's spare portion of a cook that hasn't happened yet
             # (cook_on_fed writes it ahead of the cook, dated the cook's
             # night) or that was then skipped is not in the freezer yet.
-            if portion is not None and row["id"] in uncooked:
+            # Either signal hides it: a cook entry still pointing at it, or
+            # a cook night still ahead on the household's clock (the entry
+            # can be gone — plan deleted or re-drafted — re-verify, C4).
+            if portion is not None and (row["id"] in uncooked or (
+                    portion["cooked_on"] and portion["cooked_on"] > today.isoformat())):
                 continue
             row["portion"] = portion
         shown.append(row)
