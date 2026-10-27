@@ -138,10 +138,6 @@ def test_the_two_quiet_tiles_are_inventory_and_recipes():
     "Recipes") 2026-09-15 — it opens the chat, not a recipes screen, and
     the row should say so rather than imply a browser that doesn't exist."""
     tiles = _function("cookMoreRowsHtml")
-    # Inventory's title is followed by the "In development" pill (Loop
-    # Board: mark inventory as still being built) rather than closing
-    # straight away — see tests/test_inventory_in_development_marker.py
-    # for that pill's own coverage.
     assert 'kit-row-title">Inventory' in tiles and ">Ask about our recipes<" in tiles
     assert 'class="kit-row"' in tiles, "Kitchen's entry points are quiet rows"
     assert "btn-primary" not in tiles and "apricot" not in tiles, (

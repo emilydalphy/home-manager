@@ -711,9 +711,20 @@ re-walk once they merge.
   `app/tools/chores.py`, `app/tools/chore_starter.py`, `set_chores_enabled.py`.
 
 ### 15. Inventory
-- **Who and when:** deferred as policy (2026-09-01). Lightweight background; no new
-  investment; no one should have to do inventory work to complete the core loop.
-- **State:** `Not walked`. Walk only to confirm it is *not* in anyone's way.
+- **Who and when:** a real feature again (policy reversed 2026-10-25/26; the 2026-09-01
+  "deferred" call and the "In development" label are gone). Emily, 2026-10-25: "I think
+  we also need to bring the inventory tracking feature back." Her pain point: using things
+  before they go bad, and taking that mental load off. 2026-10-26 she approved Option A
+  (it keeps itself: shopping fills the kitchen, cooking drains it, Pomona says so; a short
+  "still have these?" check when planning, decision 3), Option B (plan around what's home:
+  use everything going off, freeze what won't fit, skip what's home on the list with a
+  clear review; decision 4 = recent purchases only, 14 days) and Option C (a Kitchen tab
+  between Shop and Cook, decision 2; onboarding offers photos with "Set up later",
+  decision 5). Staples and spices stay with Staples (decision 6). **Guardrail kept: nobody
+  has to enter data to finish the loop; only ticking things off at the shop is required.**
+- **State:** `Not walked`. The Loop Board Work group "Inventory" (cards A1-A5, B1-B5,
+  C1-C5) is built on branches awaiting Emily's merge; until they land, the live app is
+  the old Inventory sheet, minus the label. Walk it once they are merged.
 - **For builders:** `static/inventory.html`, `/api/inventory/*`, `app/tools/inventory.py`.
 
 ---

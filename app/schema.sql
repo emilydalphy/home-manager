@@ -998,7 +998,7 @@ CREATE TABLE IF NOT EXISTS grocery_items (
     -- already-have action and whenever the write merged into existing
     -- inventory instead — undoing a merge would need to know how much was
     -- added versus already there, which nothing here tracks (deliberately:
-    -- see the "inventory is deferred as policy" roadmap decision). A merge
+    -- nothing tracks it; that was the "inventory is deferred as policy" call of 2026-09-01, reversed 2026-10-25). A merge
     -- case's inventory entry is left alone on undo; only the grocery list
     -- decision is reversed.
     already_have_inventory_id INTEGER,

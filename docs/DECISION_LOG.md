@@ -52,6 +52,15 @@ why*, not duplicating the diff.
   descriptor words added (butter ≠ peanut butter, milk ≠ coconut milk);
   items are lowercased mid-sentence; "Last Wednesday's" when a bare weekday
   could mean two days.
+- **Inventory is a real feature again; the "deferred as policy" call is reversed**
+  (2026-10-27, Emily 2026-10-25 "I think we also need to bring the inventory tracking
+  feature back"; 2026-10-26 approved Options A, B and C: it keeps itself, plan around
+  what's home, a Kitchen tab). Removed `INVENTORY_IN_DEVELOPMENT` from `static/shell.js`
+  and `static/inventory.html`, the "In development" pill on Cook -> More -> Inventory, and
+  the sheet's "Inventory is still being built..." line; updated PRODUCT_FLOWS 15, CLAUDE.md,
+  both skills. Older entries that say "deferred"/"in development" are history, not policy.
+  Guardrail kept: no data entry needed to finish the loop. Branch `inventory/real-feature`
+  (Loop Board card A5; the other Inventory cards are on their own unmerged branches).
 - **The iPhone app's id is `com.heypomona.app`** (2026-10-25, Emily's pick
   to match her heypomona domain; branch `overnight/bundle-id-heypomona`).
   Replaced the `com.pomona.app` placeholder in `capacitor.config.json`, the

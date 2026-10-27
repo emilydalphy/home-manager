@@ -787,7 +787,7 @@ def test_moving_a_night_off_portions_night_recomputes_its_move(household):
 def test_a_household_confirmed_freezer_item_survives_a_swap_elsewhere(household):
     """
     GUARD, and the one worth having most. confirm_frozen_items' rows carry
-    no inventory row (inventory is deferred policy) and sync_defrost_tasks
+    no inventory row (inventory was deferred policy until 2026-10-25) and sync_defrost_tasks
     is scoped to exclude them — the exact bug independent review caught
     twice in that function's own history, now reachable from a new caller.
 

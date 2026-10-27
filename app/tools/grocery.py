@@ -3924,8 +3924,8 @@ def move_grocery_item_to_inventory(item_id: int) -> dict:
     unambiguously safe to delete on undo, so that row's id is recorded on
     already_have_inventory_id below; when it merged into existing stock,
     reversing it would need the pre-merge quantity, which nothing tracks
-    (deliberately — see the "inventory is deferred as policy" roadmap
-    decision), so that case is left for undo to leave inventory alone.
+    (deliberately — this followed the "inventory is deferred as policy"
+    call of 2026-09-01, reversed 2026-10-25), so that case is left for undo to leave inventory alone.
     Raises ValueError if the item isn't found.
     """
     conn = get_conn()

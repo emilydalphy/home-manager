@@ -2149,7 +2149,7 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
     # Already at home, by the one rule the grocery ingest itself uses to
     # skip buying a thing (recipes._add_recipe_ingredients_for_entries):
     # an inventory row with a quantity on it. Read-only, and nothing new to
-    # keep up — inventory is deferred as policy, so this is a courtesy mark
+    # keep up — inventory was deferred policy (2026-09-01, reversed 2026-10-25) and nobody has to keep it up, so this is a courtesy mark
     # on the meal screen's "What's in it", never a thing to fill in.
     inv_conn = get_conn()
     at_home = {
