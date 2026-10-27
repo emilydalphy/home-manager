@@ -233,13 +233,15 @@ def freeze_item(item_id: int) -> dict:
     Raises CannotFreeze for a row already in the freezer.
     """
     conn = get_conn()
-    require_household_row(conn, "inventory_items", item_id, label="inventory item")
-    row = conn.execute(
-        "SELECT id, item, category, location, expiration_date, frozen_on FROM inventory_items "
-        "WHERE id = ? AND household_id = ?",
-        (item_id, household_id()),
-    ).fetchone()
-    conn.close()
+    try:
+        require_household_row(conn, "inventory_items", item_id, label="inventory item", close_on_miss=False)
+        row = conn.execute(
+            "SELECT id, item, category, location, expiration_date, frozen_on FROM inventory_items "
+            "WHERE id = ? AND household_id = ?",
+            (item_id, household_id()),
+        ).fetchone()
+    finally:
+        conn.close()
     before = dict(row)
     if _quantities._display_location(before).strip().lower() == "freezer":
         raise CannotFreeze(f"{before['item']} is already in the freezer.")
