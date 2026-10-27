@@ -34,6 +34,18 @@ why*, not duplicating the diff.
   tonight, a reheat, a started cook, or a dinner with nowhere to go — the
   item falls to the line instead. "Leave it" = per item, per household
   day. The line stands down while the freezer "Use soon" card is up.
+  **Verify-pass fixes (same branch, 2026-10-27):** leftovers/freezer rows
+  are no longer "a plan" for food (a skipped cook's own leftovers night hid
+  the spinach completely); yesterday's unanswered dinner holds its food —
+  Yesterday leads, then the card after "We skipped it" (the mockup's own
+  scene); a REHEAT tonight may move to the next free night only through the
+  nights swap's age rule (`MAX_LEFTOVER_DAYS` = 3) — "do the leftover Chili
+  Thursday"; a double cook landing on its leftovers night freezes tonight's
+  share as the night off does ("The extra goes in the freezer.", Undo takes
+  the portion back); the matcher needs the same head noun with only
+  descriptor words added (butter ≠ peanut butter, milk ≠ coconut milk);
+  items are lowercased mid-sentence; "Last Wednesday's" when a bare weekday
+  could mean two days.
 - **The iPhone app's id is `com.heypomona.app`** (2026-10-25, Emily's pick
   to match her heypomona domain; branch `overnight/bundle-id-heypomona`).
   Replaced the `com.pomona.app` placeholder in `capacitor.config.json`, the

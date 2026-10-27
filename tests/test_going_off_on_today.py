@@ -87,10 +87,25 @@ def _by_date(plan):
     return out
 
 
-def _mockup_week():
-    """Option B screen 4: the pasta two nights ago didn't happen, the
+def _mockup_scene():
+    """Option B screen 4 exactly: yesterday's pasta didn't happen, the
+    spinach turns tomorrow, tonight is leftover chili (cooked two nights
+    ago), and tomorrow is free."""
+    plan = _plan()
+    _recipe("Chili", "Kidney beans", "Ground beef")
+    cook = _meal(plan, -2, "Chili", derived={"make_double_for": [f"{_d(0)}:dinner"]})
+    tools.check_off_meal(cook, "done")
+    reheat = _meal(plan, 0, "Chili", derived={"links_to": f"{_d(-2)}:dinner"})
+    assert set(leftovers.plan_leftover_chains(plan)["leftovers"]) == {reheat}, "premise: a real chain"
+    pasta = _meal(plan, -1, "Spinach Pasta", recipe_items=["Baby spinach, chopped", "Penne"])
+    spinach = _stock("Spinach", 1)
+    return plan, pasta, cook, reheat, spinach
+
+
+def _double_cook_week():
+    """The other shape: the pasta two nights ago didn't happen, the
     spinach turns tomorrow, tonight is the chili cooked double for
-    tomorrow."""
+    tomorrow (and nowhere free to move it)."""
     plan = _plan()
     pasta = _meal(plan, -2, "Spinach Pasta", recipe_items=["Baby spinach, chopped", "Penne"])
     _recipe("Chili", "Kidney beans", "Ground beef")
@@ -101,20 +116,123 @@ def _mockup_week():
     return plan, pasta, chili, fed, spinach
 
 
+# The name this helper had at 1a05681, which the verify pass's probes import.
+_mockup_week = _double_cook_week
+
+
 # ---------------------------------------------------------------- the card
 
-def test_the_card_says_the_mockups_words_about_a_skipped_dinner():
-    plan, pasta, chili, fed, spinach = _mockup_week()
+def test_the_mockup_scene_yesterday_card_leads_then_the_swap_card():
+    plan, pasta, cook, reheat, spinach = _mockup_scene()
+    # While "Did you have it?" is asking about the pasta, nothing here
+    # contradicts it: no swap card, and no line about the spinach.
+    before = tools.today_going_off()
+    assert before["card"] is None and before["line"] is None
+    tools.answer_yesterday(pasta, "skipped", household_today())
     card = tools.today_going_off()["card"]
-    assert card is not None
     assert card["title"] == "The spinach is still home"
+    assert card["body"] == (
+        f"{_wd(-1)}’s Spinach Pasta didn’t happen, and the spinach turns tomorrow. "
+        f"Swap tonight to the Spinach Pasta and do the leftover Chili {_wd(1)}?"
+    )
+    assert card["swap_label"] == "Swap them" and card["leave_label"] == "Leave it"
+    assert card["entry_id"] == pasta and card["item_id"] == spinach
+    assert card["kind"] == "move" and card["to"] == _d(1)
+
+    out = tools.swap_for_going_off(spinach, pasta)
+    assert out["said"] == f"Spinach Pasta moved to tonight and leftover Chili to {_wd(1)}."
+    rows = _by_date(plan)
+    assert [r["id"] for r in rows[_d(0)]] == [pasta]
+    assert [r["id"] for r in rows[_d(1)]] == [reheat]
+    chains = leftovers.plan_leftover_chains(plan)
+    assert chains["leftovers"][reheat]["source"]["entry_id"] == cook, "still the chili's leftovers"
+    back = tools.undo_going_off_swap(out["undo_entry_id"])
+    assert back["said"] == "Spinach Pasta and leftover Chili are back where they were."
+    assert [r["id"] for r in _by_date(plan)[_d(0)]] == [reheat]
+
+
+def test_leftovers_never_move_past_the_leftovers_keep_window():
+    """Tonight's leftovers may move on only while still within
+    leftovers.MAX_LEFTOVER_DAYS of their cook on the new night (the nights
+    swap's own age rule). Cooked three days ago, the next free night would
+    make them four days old: no card, just the line."""
+    plan = _plan(start=-3, days=6)
+    _recipe("Chili", "Kidney beans")
+    cook = _meal(plan, -3, "Chili", derived={"make_double_for": [f"{_d(0)}:dinner"]})
+    tools.check_off_meal(cook, "done")
+    _meal(plan, 0, "Chili", derived={"links_to": f"{_d(-3)}:dinner"})
+    pasta = _meal(plan, -2, "Spinach Pasta", recipe_items=["Spinach"])
+    _stock("Spinach", 1)
+    out = tools.today_going_off()
+    assert out["card"] is None, "the chili would be four days old tomorrow"
+    assert out["line"]["text"] == "Spinach is best used by tomorrow."
+    assert pasta
+
+
+def test_a_double_cook_tonight_lands_on_its_leftovers_night_and_the_extra_is_frozen():
+    plan, pasta, chili, fed, spinach = _double_cook_week()
+    card = tools.today_going_off()["card"]
     assert card["body"] == (
         f"{_wd(-2)}’s Spinach Pasta didn’t happen, and the spinach turns tomorrow. "
         f"Swap tonight to the Spinach Pasta and do the Chili {_wd(1)}?"
     )
-    assert card["swap_label"] == "Swap them" and card["leave_label"] == "Leave it"
-    assert card["entry_id"] == pasta and card["item_id"] == spinach
     assert card["kind"] == "cook_on_fed" and card["to"] == _d(1)
+    out = tools.swap_for_going_off(spinach, pasta)
+    assert out["said"] == f"Spinach Pasta moved to tonight and Chili to {_wd(1)}. The extra goes in the freezer."
+    conn = get_conn()
+    frozen = conn.execute("SELECT id FROM inventory_items WHERE location = 'freezer' AND item LIKE 'Chili%'").fetchall()
+    conn.close()
+    assert len(frozen) == 1
+    tools.undo_going_off_swap(out["undo_entry_id"])
+    conn = get_conn()
+    left = conn.execute("SELECT id FROM inventory_items WHERE location = 'freezer' AND item LIKE 'Chili%'").fetchall()
+    conn.close()
+    assert left == [], "Undo takes the freezer portion back"
+
+
+def test_leftovers_of_a_skipped_cook_are_not_a_plan_for_its_food():
+    """Verify pass, 2026-10-27: the pasta's own leftovers night, still
+    ahead, read as a plan for the spinach — no card, no line."""
+    plan = _plan()
+    pasta = _meal(plan, -2, "Spinach Pasta", derived={"make_double_for": [f"{_d(2)}:dinner"]},
+                  recipe_items=["Spinach"])
+    _meal(plan, 2, "Spinach Pasta", derived={"links_to": f"{_d(-2)}:dinner"})
+    _recipe("Chili", "Kidney beans")
+    _meal(plan, 0, "Chili")
+    _stock("Spinach", 1)
+    out = tools.today_going_off()
+    assert out["card"] is not None and out["card"]["entry_id"] == pasta
+
+
+@pytest.mark.parametrize("ingredient,item", [
+    ("Butter", "Peanut butter"), ("Peanut butter", "Butter"),
+    ("Milk", "Coconut milk"), ("Coconut milk", "Milk"),
+    ("Cream", "Sour cream"), ("Potatoes", "Sweet potatoes"),
+])
+def test_the_matcher_never_takes_a_different_food_for_the_same_word(ingredient, item):
+    assert not going_off._matches(ingredient, {"item": item})
+
+
+@pytest.mark.parametrize("ingredient,item", [
+    ("Baby spinach, chopped", "Spinach"), ("Spinach", "Baby spinach"),
+    ("Eggs", "Egg"), ("Fresh basil", "Basil"), ("Feta, crumbled", "Feta"),
+])
+def test_the_matcher_still_finds_the_same_food(ingredient, item):
+    assert going_off._matches(ingredient, {"item": item})
+
+
+def test_the_item_is_lowercased_mid_sentence_but_names_keep_their_capitals():
+    assert going_off._mid("Cremini Mushrooms") == "cremini mushrooms"
+    assert going_off._mid("Brussels sprouts") == "Brussels sprouts"
+
+
+def test_a_bare_weekday_is_never_said_twice_for_two_different_days():
+    today = household_today().isoformat()
+    week_ago_plus = _d(-6)
+    # Six days back and moving to tomorrow: the same weekday, two days.
+    assert going_off._skipped_day(week_ago_plus, _d(1), today) == f"Last {_wd(1)}"
+    assert going_off._skipped_day(_d(-2), _d(1), today) == _wd(-2)
+    assert going_off._skipped_day(_d(-7), None, today) == f"Last {_wd(0)}"
 
 
 def test_only_one_card_for_the_most_urgent_item():
@@ -145,21 +263,21 @@ def test_yesterdays_unanswered_dinner_is_left_to_the_yesterday_card():
 
 
 def test_a_dinner_that_was_cooked_is_not_a_skipped_one():
-    plan, pasta, chili, fed, spinach = _mockup_week()
+    plan, pasta, chili, fed, spinach = _double_cook_week()
     tools.check_off_meal(pasta, "done")
     out = tools.today_going_off()
     assert out["card"] is None
 
 
 def test_food_a_later_dinner_still_uses_gets_no_card_and_no_line():
-    plan, pasta, chili, fed, spinach = _mockup_week()
+    plan, pasta, chili, fed, spinach = _double_cook_week()
     _meal(plan, 3, "Spinach Omelette", recipe_items=["Spinach", "Eggs"])
     out = tools.today_going_off()
     assert out["card"] is None and out["line"] is None
 
 
 def test_leave_it_is_remembered_for_that_item_for_the_day():
-    plan, pasta, chili, fed, spinach = _mockup_week()
+    plan, pasta, chili, fed, spinach = _double_cook_week()
     out = tools.leave_going_off(spinach)
     assert out["card"] is None
     assert out["line"] is None, "the household just said they know about the spinach"
@@ -227,12 +345,12 @@ def test_an_open_tonight_just_takes_the_dish():
 # ---------------------------------------------------------------- swap + undo
 
 def test_swap_them_moves_both_dinners_and_undo_puts_them_back():
-    plan, pasta, chili, fed, spinach = _mockup_week()
+    plan, pasta, chili, fed, spinach = _double_cook_week()
     before = {r["id"]: r["date"] for r in _dinner_rows(plan)}
 
     out = tools.swap_for_going_off(spinach, pasta)
     assert out["status"] == "swapped" and out["can_undo"]
-    assert out["said"] == f"Spinach Pasta moved to tonight and Chili to {_wd(1)}."
+    assert out["said"] == f"Spinach Pasta moved to tonight and Chili to {_wd(1)}. The extra goes in the freezer."
     rows = _by_date(plan)
     # Tonight is the pasta, a cook and no longer skipped.
     [tonight] = rows[_d(0)]
@@ -280,7 +398,7 @@ def test_swap_through_a_free_night_uses_the_nights_swap():
 
 
 def test_a_stale_tap_is_refused_and_writes_nothing():
-    plan, pasta, chili, fed, spinach = _mockup_week()
+    plan, pasta, chili, fed, spinach = _double_cook_week()
     tools.check_off_meal(pasta, "done")
     before = _dinner_rows(plan)
     with pytest.raises(going_off.WeekChanged):
@@ -304,7 +422,7 @@ def test_the_line_says_tomorrow_for_tomorrow():
 
 
 def test_nothing_urgent_means_no_card_and_no_line():
-    plan, pasta, chili, fed, spinach = _mockup_week()
+    plan, pasta, chili, fed, spinach = _double_cook_week()
     conn = get_conn()
     conn.execute("UPDATE inventory_items SET expiration_date = ? WHERE id = ?", (_d(3), spinach))
     conn.commit()
@@ -323,7 +441,7 @@ def test_the_freezer_is_never_going_off_here():
 # ---------------------------------------------------------------- routes
 
 def test_routes_read_swap_undo_and_leave(signed_in):
-    plan, pasta, chili, fed, spinach = _mockup_week()
+    plan, pasta, chili, fed, spinach = _double_cook_week()
     res = signed_in.get("/api/today/going-off")
     assert res.status_code == 200 and res.json()["card"]["entry_id"] == pasta
     res = signed_in.post("/api/today/going-off/swap", json={"item_id": spinach, "entry_id": pasta})

@@ -29,10 +29,12 @@ transaction:
      (tonight._night_off_plan): to the next free night through the nights
      swap (`move`), or — cooked double for a later night and nothing free —
      onto the first night it was feeding (`cook_on_fed`,
-     weekly_plan.move_cook_onto_fed_night), the batch no longer doubled
-     because the night it fed now eats the cook itself (yesterday_ask's
-     skipped-double rule). Any other shape — a reheat tonight, a cook
-     already started, nowhere for it to go — offers no card at all.
+     weekly_plan.move_cook_onto_fed_night), tonight's share going in the
+     freezer exactly as the night off freezes it ("The extra goes in the
+     freezer."). A REHEAT tonight (the mockup's "Leftover chili") moves to
+     the next free night through the nights swap too, whose own age rule
+     (leftovers.MAX_LEFTOVER_DAYS) refuses leftovers too old on the new
+     night. A cook already started, or nowhere for it to go: no card.
      An `open` tonight needs nothing moved.
   2. The skipped dinner is re-dated onto tonight by
      weekly_plan._redate_plan_rows, the one re-dating writer (chain
@@ -43,13 +45,17 @@ transaction:
      so yesterday's card never asks about it.
 
 Undo is plan_undo's snapshot on that holder row, under yesterday_ask's own
-key, so yesterday_ask.undo_skipped_move is the undo (one implementation of
-"put both nights back").
+key — restored by the same plan_undo calls undo_skipped_move makes, plus
+the freezer portion taken back the way the night off's undo does.
+
+While the "Did you have it?" card is asking about yesterday's dinner, that
+dinner is still the plan for its food: no card and no line about it until
+it's answered.
 
 "USES" IS DETECTED, NOT STORED (yet). A dinner "uses" a going-off item when
-one of its recipe's ingredients matches the inventory row by the same
-matcher Mark eaten depletes with (cooker._find_inventory_match), plus a
-whole-word loose match ("spinach" ↔ "Baby spinach"). `dinner_uses` is the
+one of its recipe's ingredients is the same food (`_matches`: same name, or
+the same head noun with only descriptor words added — "Baby spinach" is
+spinach, "peanut butter" is not butter). `dinner_uses` is the
 one place that decides it, and it already prefers a stored per-slot
 `uses` list on derived_from when generation writes one (Loop Board B2,
 in flight on another branch).
@@ -91,21 +97,40 @@ def _words(text: str) -> list[str]:
     return [_cooker._singularize(w.strip("()-.")) for w in clean.split() if w.strip("()-.")]
 
 
+# Words that say how much, how fresh or how it's cut — never WHAT the food
+# is. "Baby spinach" is spinach; "peanut butter" is not butter, "coconut
+# milk" is not milk, "sour cream" is not cream, "sweet potato" is not a
+# potato. A loose match may only differ by these.
+_DESCRIPTORS = frozenset({
+    "baby", "fresh", "large", "small", "medium", "jumbo", "ripe", "organic", "whole",
+    "boneless", "skinless", "chopped", "sliced", "diced", "minced", "shredded", "grated",
+    "crumbled", "plain", "unsalted", "salted", "lean", "extra", "trimmed", "packed",
+    "bag", "bunch", "head", "of", "a", "an",
+})
+
+
 def _matches(name: str, item: dict) -> bool:
-    """Whether an ingredient (or a stored `uses` name) is this inventory
-    row. Mark eaten's own confident match, or every word of one side
-    appearing whole in the other ("spinach" / "Baby spinach, chopped")."""
-    from . import cooker as _cooker
-    name = (name or "").split(",")[0].strip()
-    if not name:
+    """
+    Whether an ingredient (or a stored `uses` name) is this inventory row.
+
+    The same name (allowing a plural: "egg" / "Eggs"), or the same food
+    with only descriptor words added on one side ("Spinach" / "Baby
+    spinach, chopped"): the head noun — the last word — must agree, and
+    every extra word must be a _DESCRIPTORS word. So butter never matches
+    peanut butter, milk never matches coconut milk (verify pass,
+    2026-10-27: the any-shared-word rule claimed all three).
+    """
+    a, b = _words(name), _words(item.get("item") or "")
+    if not a or not b:
         return False
-    row, confident = _cooker._find_inventory_match(name, [item])
-    if row is None:
-        return False
-    if confident:
+    if a == b:
         return True
-    a, b = set(_words(name)), set(_words(item["item"]))
-    return bool(a) and bool(b) and (a <= b or b <= a)
+    if a[-1] != b[-1]:
+        return False
+    short, long_ = (a, b) if len(a) <= len(b) else (b, a)
+    if not set(short) <= set(long_):
+        return False
+    return all(w in _DESCRIPTORS for w in set(long_) - set(short))
 
 
 def _ingredients(conn, recipe_id) -> list[str]:
@@ -163,9 +188,15 @@ def _left_today(conn, today: str) -> set[int]:
 
 
 def _planned_from_today(conn, today: str):
-    """Every real dish still ahead on any live plan, today included — what
-    "a plan for it" means for the quiet line."""
-    return conn.execute(
+    """Every real COOK still ahead on any live plan, today included — what
+    "a plan for it" means. A leftovers night or a freezer portion is not
+    one: it reheats a batch, it uses nothing from the fridge — and the
+    leftovers of a cook that never happened would otherwise read as a plan
+    for exactly the food that cook left behind (verify pass, 2026-10-27:
+    no card and no line while the spinach went off)."""
+    from . import leftovers as _leftovers
+    out = []
+    for r in conn.execute(
         """
         SELECT mpe.id, mpe.recipe_id, mpe.derived_from_json
         FROM meal_plan_entries mpe
@@ -175,6 +206,30 @@ def _planned_from_today(conn, today: str):
           AND mpe.component_category IS NULL
         """,
         (household_id(), today),
+    ).fetchall():
+        try:
+            derived = json.loads(r["derived_from_json"] or "{}")
+        except (TypeError, ValueError):
+            derived = {}
+        if isinstance(derived, dict) and (derived.get("links_to") or derived.get(_leftovers.FROM_FREEZER_KEY)):
+            continue
+        out.append(r)
+    return out
+
+
+def _asked_about_yesterday(conn, today: datetime.date) -> list:
+    """The meals the "Did you have it?" card is asking about right now. Until
+    it's answered, that meal is still the plan for its food: neither the
+    swap card nor the quiet line may contradict the question above them."""
+    from . import yesterday_ask as _yesterday_ask
+    ids = [m["entry_id"] for m in _yesterday_ask.yesterday_check(today)["meals"]]
+    if not ids:
+        return []
+    marks = ",".join("?" * len(ids))
+    return conn.execute(
+        f"SELECT id, recipe_id, derived_from_json FROM meal_plan_entries "
+        f"WHERE household_id = ? AND id IN ({marks})",
+        (household_id(), *ids),
     ).fetchall()
 
 
@@ -228,6 +283,23 @@ def _skipped_dinners(conn, plan, rows, today: str) -> list:
     return sorted(out, key=lambda r: r["date"], reverse=True)
 
 
+def _derived(row) -> dict:
+    try:
+        value = json.loads(row["derived_from_json"] or "{}")
+    except (TypeError, ValueError):
+        return {}
+    return value if isinstance(value, dict) else {}
+
+
+def _frozen_dish(row) -> str | None:
+    """The dish a freezer-portion night eats, or None for any other row."""
+    from . import leftovers as _leftovers
+    frozen = _derived(row).get(_leftovers.FROM_FREEZER_KEY)
+    if not frozen:
+        return None
+    return (frozen.get("dish") if isinstance(frozen, dict) else None) or row["meal"] or ""
+
+
 def _swap_step(conn, plan, rows, skipped, today: str, ask_veto: bool = True) -> dict | None:
     """
     What "Swap them" would do with tonight, or None when there is no swap
@@ -260,9 +332,35 @@ def _swap_step(conn, plan, rows, skipped, today: str, ask_veto: bool = True) -> 
         return {"kind": "open", "tonight": t}
     if state != "planned" or not (t["meal"] or "").strip():
         return None
-    if (t["cooked_status"] or "") == "done":
+    if (t["cooked_status"] or "") == "done" or _weekly_plan.cook_begun(t):
         return None
     dinner_rows = [r for r in rows if r["slot"] == "dinner"]
+    reheat = chains["leftovers"].get(t["id"])
+    frozen = _frozen_dish(t)
+    t_derived = _derived(t)
+    if not reheat and frozen is None and t_derived.get("links_to"):
+        return None  # a leftovers night with no cook on this plan to age it by
+    if reheat:
+        src = next((r for r in rows if r["id"] == reheat["source"]["entry_id"]), None)
+        if src is None or src["skipped_at"]:
+            return None  # its cook didn't happen: there are no leftovers to move
+    if reheat or frozen is not None:
+        # Tonight is a reheat (Option B screen 4's "Leftover chili"). The
+        # night off would freeze it rather than push leftovers down the week;
+        # here the household is choosing to eat it later, so it may move to
+        # the next free night — through the nights swap, whose own age rule
+        # (leftovers.MAX_LEFTOVER_DAYS, _leftovers_too_old_after_redate) is
+        # what refuses leftovers older than that on their new night. A
+        # freezer portion has no age. Nowhere it can go: no card.
+        if reheat and (_leftovers.dish_identity(reheat["source"].get("meal") or t["meal"])
+                       == _leftovers.dish_identity(skipped["meal"])):
+            return None
+        free = _tonight._next_free_night(plan, dinner_rows, today, conn=conn)
+        if free is None:
+            return None
+        return {"kind": "move", "free": free, "to": free, "tonight": t,
+                "reheat": "frozen" if frozen is not None else "leftovers",
+                "reheat_dish": frozen or (reheat["source"].get("meal") if reheat else None) or t["meal"]}
     step = _tonight._night_off_plan(conn, plan, dinner_rows, t, today)
     if step["kind"] == "cook_on_fed" and _weekly_plan.fed_night_is_cooked(conn, step["target"]):
         return None
@@ -284,9 +382,40 @@ def _verb(name: str, one: str, many: str) -> str:
 
 
 def _mid(name: str) -> str:
-    from .typed_requests import _sentence_case
-    name = " ".join((name or "").split())
-    return _sentence_case(name) if name else name
+    """An inventory item mid-sentence: every word lowercased ("the cremini
+    mushrooms", never "the cremini Mushrooms"), except a word that is a
+    name — a cuisine or one of typed_requests' proper first words ("the
+    Greek yogurt", "the Brussels sprouts")."""
+    from .typed_requests import _PROPER_FIRST_WORDS, _is_cuisine_adjective
+    out = []
+    for w in (name or "").split():
+        keep = w.lower() in _PROPER_FIRST_WORDS or _is_cuisine_adjective(w)
+        out.append(w[:1].upper() + w[1:].lower() if keep else w.lower())
+    return " ".join(out)
+
+
+def _skipped_day(skipped_date: str, to: str | None, today: str) -> str:
+    """ "Tuesday", or "Last Tuesday" when a bare weekday could be misread:
+    a week or more ago, or the same weekday as the night tonight's dinner
+    moves to ("Wednesday’s … didn’t happen … do the Chili Wednesday?")."""
+    from . import weekly_plan as _weekly_plan
+    day = _weekly_plan._weekday_of(skipped_date)
+    ago = (datetime.date.fromisoformat(today) - datetime.date.fromisoformat(skipped_date)).days
+    if ago >= 7 or (to and _weekly_plan._weekday_of(to) == day):
+        return f"Last {day}"
+    return day
+
+
+def _tonights_dish(step: dict) -> str:
+    """How the card and the toast name what tonight had: the dish, or its
+    leftovers / frozen portion ("the leftover Chili")."""
+    from . import meal_move as _meal_move
+    kind = step.get("reheat")
+    if kind == "leftovers":
+        return f"leftover {_meal_move.short_name(step['reheat_dish'])}"
+    if kind == "frozen":
+        return f"frozen {_meal_move.short_name(step['reheat_dish'])}"
+    return _meal_move.short_name(step["tonight"]["meal"])
 
 
 def _when(expires: str, today: str) -> str:
@@ -308,14 +437,14 @@ def _card_words(item: dict, skipped, step: dict, today: str) -> dict:
     from . import weekly_plan as _weekly_plan
     thing = _mid(item["item"])
     dish = _meal_move.short_name(skipped["meal"])
-    day = _weekly_plan._weekday_of(skipped["date"])
+    day = _skipped_day(skipped["date"], step.get("to"), today)
     turns = _verb(thing, "turns", "turn")
     lead = f"{day}’s {dish} didn’t happen, and the {thing} {turns} {_when(item['expiration_date'], today)}."
     if step["kind"] == "open":
         body = f"{lead} Make the {dish} tonight?"
         label = "Make it tonight"
     else:
-        other = _meal_move.short_name(step["tonight"]["meal"])
+        other = _tonights_dish(step)
         body = f"{lead} Swap tonight to the {dish} and do the {other} {_weekly_plan._weekday_of(step['to'])}?"
         label = "Swap them"
     return {
@@ -351,7 +480,7 @@ def today_going_off(today: datetime.date | None = None) -> dict:
         items = [it for it in items if it["id"] not in left]
         if not items:
             return out
-        planned = _planned_from_today(conn, day)
+        planned = [*_planned_from_today(conn, day), *_asked_about_yesterday(conn, today)]
         has_plan = {it["id"] for row in planned for it in dinner_uses(conn, row, items)}
 
         plan = _yesterday_ask._plan_covering(conn, day)
@@ -468,6 +597,7 @@ def swap_for_going_off(item_id: int, entry_id: int, today: datetime.date | None 
         snap = _plan_undo.snapshot(conn, touched)
 
         # 1. Tonight's dinner moves on.
+        frozen = None
         if step["kind"] == "open":
             _weekly_plan.delete_plan_entry(conn, t["id"])
         elif step["kind"] == "move":
@@ -484,9 +614,18 @@ def swap_for_going_off(item_id: int, entry_id: int, today: datetime.date | None 
             ).fetchall():
                 _weekly_plan.delete_plan_entry(conn, r["id"])
         else:
+            # The night off's own cook_on_fed, freezer and all: the batch was
+            # bought for two nights, the first night it fed now eats the cook
+            # itself, and tonight's share — the night it was planned for —
+            # goes in the freezer at the same size (tonight._freeze_portion /
+            # _shrink_chain_into_freezer), so nothing bought is quietly lost.
+            from . import tonight as _tonight
             target = step["target"]
+            servings = _leftovers.eaters_at(day, "dinner", conn=conn)
+            frozen = _tonight._freeze_portion(conn, t["meal"], servings, target["date"])
             _weekly_plan.move_cook_onto_fed_night(conn, plan_id, t["id"], day, "dinner", target)
-            _yesterday_ask._no_longer_doubled_for(conn, t["id"], target)
+            _tonight._shrink_chain_into_freezer(
+                conn, t["id"], f"{target['date']}:{target['slot']}", servings, frozen["id"], day)
 
         # 2. The skipped dinner lands on tonight — the one re-dating writer.
         now_rows = [dict(r) for r in _plan_rows(conn, plan_id)]
@@ -514,12 +653,16 @@ def swap_for_going_off(item_id: int, entry_id: int, today: datetime.date | None 
         )["entry_id"]
         _plan_undo.stamp(conn, holder_id, _yesterday_ask.SKIPPED_UNDO_KEY, {
             "kind": SWAP_KIND, "dish": dish,
-            "other": t["meal"] if step["kind"] != "open" else None,
+            "other": _tonights_dish(step) if step["kind"] != "open" else None,
             "moved": {str(skipped["id"]): {"from": old_date, "to": day},
                       **({str(t["id"]): {"from": day, "to": step["to"]}} if step["kind"] != "open" else {})},
             **snap,
             "after": _plan_undo.fingerprint(conn, touched, holder_id),
             "grocery": _plan_undo.lines_changed(conn, snap),
+            # The freezer portion the cook_on_fed shape wrote — Undo takes
+            # back exactly that row, while nobody has touched it (the night
+            # off's own rule, tonight.tonight_night_off_undo).
+            "inventory": {"id": frozen["id"], "rev": frozen["rev"]} if frozen else None,
         })
 
     # After the commit — each of these opens connections of its own.
@@ -536,43 +679,66 @@ def swap_for_going_off(item_id: int, entry_id: int, today: datetime.date | None 
     if step["kind"] == "open":
         said = f"{short} moved to tonight."
     else:
-        said = f"{short} moved to tonight and {_meal_move.short_name(t['meal'])} to " \
+        said = f"{short} moved to tonight and {_tonights_dish(step)} to " \
                f"{_weekly_plan._weekday_of(step['to'])}."
+        if frozen:
+            # The night off's own words for the same portion.
+            said += " The extra goes in the freezer."
     return {"status": "swapped", "said": said, "undo_entry_id": holder_id, "can_undo": True,
             "thaw_now": thaw_now, "going_off": today_going_off(today)}
 
 
 def undo_going_off_swap(holder_entry_id: int, today: datetime.date | None = None) -> dict:
-    """Undo on the swap's toast: yesterday_ask.undo_skipped_move, the one
-    "put both nights back" (plan_undo), then each moved dish's lines sized
-    back for the table it is on again."""
+    """
+    Undo on the swap's toast: both nights back exactly as they were —
+    plan_undo's restore, the same record and the same "only while nothing
+    has changed since" rule as yesterday_ask.undo_skipped_move, plus the
+    freezer portion the cook_on_fed shape wrote (deleted only while nobody
+    has touched it, as the night off's undo does). Then each moved dish's
+    lines are sized back for the table it is on again.
+    """
     from . import attendance as _attendance
     from . import meal_move as _meal_move
     from . import plan_undo as _plan_undo
     from . import yesterday_ask as _yesterday_ask
 
-    conn = get_conn()
-    try:
+    nothing = {"status": "refused", "message": "There’s nothing to put back."}
+    changed = {"status": "refused", "message": "That’s changed since, so I’ve left it as it is."}
+    with write() as conn:
+        conn.execute("BEGIN IMMEDIATE")
         holder = conn.execute(
             "SELECT * FROM meal_plan_entries WHERE id = ? AND household_id = ?",
             (int(holder_entry_id), household_id()),
         ).fetchone()
         record = _plan_undo.read(holder, _yesterday_ask.SKIPPED_UNDO_KEY) if holder is not None else None
-    finally:
-        conn.close()
-    out = _yesterday_ask.undo_skipped_move(holder_entry_id)
-    if out.get("status") == "restored" and record and record.get("kind") == SWAP_KIND:
-        # Each dish is on its old night again; the resize wants the night
-        # it was on a moment ago.
-        try:
-            _attendance.resize_after_redate(
-                {int(k): v["to"] for k, v in (record.get("moved") or {}).items()})
-        except Exception:
-            logger.exception("Resizing after undoing the going-off swap failed")
-        names = [_meal_move.short_name(record.get("dish"))]
-        if record.get("other"):
-            names.append(_meal_move.short_name(record["other"]))
-        out["said"] = (f"{names[0]} and {names[1]} are back where they were." if len(names) == 2
-                       else f"{names[0]} is back where it was.")
-    out["going_off"] = today_going_off(today)
-    return out
+        if not record or record.get("kind") != SWAP_KIND:
+            out = nothing
+        elif not _plan_undo.still_as_left(conn, record, holder["id"]):
+            out = changed
+        else:
+            out = None
+            inv = record.get("inventory")
+            if inv:
+                row = conn.execute(
+                    "SELECT rev FROM inventory_items WHERE id = ? AND household_id = ?",
+                    (inv["id"], household_id()),
+                ).fetchone()
+                if row is None or row["rev"] != inv["rev"]:
+                    out = changed
+                else:
+                    conn.execute("DELETE FROM inventory_items WHERE id = ? AND household_id = ?",
+                                 (inv["id"], household_id()))
+            if out is None:
+                _plan_undo.restore(conn, record, holder["id"])
+    if out is not None:
+        return {**out, "going_off": today_going_off(today)}
+    # Each dish is on its old night again; the resize wants the night it
+    # was on a moment ago.
+    try:
+        _attendance.resize_after_redate({int(k): v["to"] for k, v in (record.get("moved") or {}).items()})
+    except Exception:
+        logger.exception("Resizing after undoing the going-off swap failed")
+    first = _meal_move.short_name(record.get("dish"))
+    other = record.get("other")
+    said = f"{first} and {other} are back where they were." if other else f"{first} is back where it was."
+    return {"status": "restored", "said": said, "going_off": today_going_off(today)}
