@@ -13,6 +13,15 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Use-up, after the re-verify** (2026-10-27; branch
+  `inventory/use-it-all-draft`; tests in `tests/test_use_up_verify_fixes.py`).
+  The freezer oldest-first trade now asks the cap pass's own rules
+  (`cap_enforce.nights` caps and movability, `would_offend`) before
+  `swap_dinner_nights`, since it runs after that pass (a 120-minute braise had
+  landed on a 30-minute weeknight). A swap keeps the dish-stamped `use_up`, so
+  Undo brings the tag back. A row a live plan has on a dish on another day is
+  that plan's (`use_up.claimed_elsewhere`), out of candidates and the
+  generator's lists. Toasts say "were" for a plural name.
 - **Use-up, after the independent verify** (2026-10-27; branch
   `inventory/use-it-all-draft`; tests `tests/test_use_up_verify_fixes.py`). A
   "Uses the…" tag is stamped with the dish it was checked against
