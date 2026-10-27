@@ -394,6 +394,50 @@ def _estimated_date(category: str, item: str, location: str) -> str:
     return _quantities._estimate_expiration_date(category, item)
 
 
+def _quarter_clean(amount: float) -> bool:
+    return abs(amount * 4 - round(amount * 4)) <= 1e-9
+
+
+def _merged_quantity(existing_qty: str, adding_qty: str) -> str:
+    """
+    What a row holds after `adding_qty` lands on it. The grocery list's own
+    merge first; when that cannot add the two (it joins them as "2 lbs + 12
+    oz"), the same unit-family conversion _try_subtract_quantity uses.
+
+    Why (defect hunt, 2026-10-27): the list writes a pound or more as lb and
+    less as oz, so the second chicken bought onto a row read "2 lbs + 12
+    oz" — which nothing parses. Cooking then took nothing off it, a chat
+    "used a pound" deleted the whole row (an unparseable amount reads as
+    "all of it"), and the stepper wrote "1 lbs + 12 oz". The total is said
+    in the row's own unit, or the finer one when that lands on an odd
+    fraction (2 cups + 3 tbsp = 35 tbsp). Metric against imperial stays
+    joined: there is no family between them to convert in.
+    """
+    merged, reconciled = _grocery._try_consolidate_quantity(existing_qty, adding_qty)
+    if reconciled:
+        return merged
+    have = _quantities._parse_quantity(existing_qty)
+    more = _quantities._parse_quantity(adding_qty)
+    if not have or not more:
+        return merged
+    converted = _quantities._convert_to_unit(more[0], more[1], have[1])
+    if converted is None:
+        return merged
+    total = have[0] + converted
+    in_other = _quantities._convert_to_unit(total, have[1], more[1])
+    if in_other is None:
+        return _quantities._format_quantity(round(total, 2), have[1])
+    # Whichever order the two were bought in, the same answer: the coarser
+    # unit when the total lands on a clean quarter there (12 oz + 1 lb =
+    # 1.75 lbs, 500 ml + 1 l = 1.5 l), the finer one otherwise.
+    (coarse, coarse_unit), (fine, fine_unit) = sorted(
+        [(total, have[1]), (in_other, more[1])], key=lambda pair: pair[0]
+    )
+    if _quarter_clean(coarse):
+        return _quantities._format_quantity(coarse, coarse_unit)
+    return _quantities._format_quantity(round(fine, 1), fine_unit)
+
+
 def _add_to_inventory(
     item: str,
     quantity: str = "",
@@ -427,7 +471,7 @@ def _add_to_inventory(
     # item is kept in more than one place (see _find_row_by_name).
     existing = _find_row_by_name(conn, item, location, "id, quantity, category, expiration_date, location")
     if existing:
-        merged_qty, _ = _grocery._try_consolidate_quantity(existing["quantity"] or "", quantity)
+        merged_qty = _merged_quantity(existing["quantity"] or "", quantity)
         fields = "quantity = ?, source = ?, updated_at = datetime('now')"
         params = [merged_qty, source]
         resolved_exp = _quantities._resolved_expiration_update(expiration_date, category, existing["category"], existing["expiration_date"], item)

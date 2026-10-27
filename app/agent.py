@@ -5476,7 +5476,7 @@ def _shared_recipe_details_context() -> dict:
         inventory = tools.get_inventory()
         if inventory:
             shared["current_inventory"] = [
-                {"item": i.get("item"), "qty": i.get("qty")} for i in inventory if i.get("item")
+                {"item": i.get("item"), "qty": i.get("quantity")} for i in inventory if i.get("item")
             ]
     except Exception:
         logger.exception("Could not read inventory for the recipe pass; writing recipes without it")

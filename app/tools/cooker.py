@@ -240,7 +240,7 @@ def deplete_inventory_for_meal(entry_id: int) -> dict:
     """
     conn = get_conn()
     entry = conn.execute(
-        "SELECT mpe.id, mpe.recipe_id, mpe.weekly_plan_id, COALESCE(r.name, mpe.freeform_meal) AS meal_name "
+        "SELECT mpe.id, mpe.recipe_id, mpe.weekly_plan_id, mpe.date, mpe.slot, COALESCE(r.name, mpe.freeform_meal) AS meal_name "
         "FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id "
         "WHERE mpe.id = ? AND mpe.household_id = ?",
         (entry_id, household_id()),
@@ -258,7 +258,8 @@ def deplete_inventory_for_meal(entry_id: int) -> dict:
         return {"entry_id": entry_id, "depleted": [portion], "queued_for_review": []}
     if not entry or not entry["recipe_id"]:
         return {"entry_id": entry_id, "depleted": [], "queued_for_review": []}
-    if entry["weekly_plan_id"] and entry_id in _leftovers.plan_leftover_chains(entry["weekly_plan_id"])["leftovers"]:
+    chains = _leftovers.plan_leftover_chains(entry["weekly_plan_id"]) if entry["weekly_plan_id"] else {}
+    if entry_id in (chains.get("leftovers") or {}):
         return {"entry_id": entry_id, "depleted": [], "queued_for_review": []}
 
     try:
@@ -268,6 +269,23 @@ def deplete_inventory_for_meal(entry_id: int) -> dict:
     ingredients = recipe.get("ingredients", [])
     if not ingredients:
         return {"entry_id": entry_id, "depleted": [], "queued_for_review": []}
+
+    # What this night actually cooked is what the list bought for it: the
+    # recipe's amount times this night's eaters over its default_servings,
+    # times the batch when the cook also feeds a leftovers night or the
+    # freezer — the ingest's own composition, the one defrost._night_scale
+    # and the Cook card already share (defect hunt, 2026-10-27). Taking the
+    # recipe's amount as written left a cook-once-eat-twice chain's second
+    # half on the shelf for ever (4 lbs bought, 2 lbs off, the reheat takes
+    # nothing) and took a whole recipe's worth off for a table of two.
+    # Lazily imported: defrost imports this module at module scope.
+    from . import defrost as _defrost
+
+    batch_factor = 1.0
+    batch = _leftovers.batch_for_entry(entry_id, chains) if chains else None
+    if batch and batch["servings"] > 0 and batch["cook_eaters"] > 0:
+        batch_factor = batch["servings"] / batch["cook_eaters"]
+    night = {"date": entry["date"], "slot": entry["slot"]}
 
     inventory = _inventory.get_inventory()
     # queued_for_review stays on the result for the callers that read it,
@@ -311,6 +329,13 @@ def deplete_inventory_for_meal(entry_id: int) -> dict:
         # _use_inventory_row_by_id to compute an exact new remaining total
         # — see units_reconciled on the result for whether the tracked row
         # was actually updated or just left as-is.
+        # A package is bought once for the whole batch ("1 bag" of peas
+        # feeds both nights), so it comes off as written, never times the
+        # batch — the ingest's own `elif package` rule.
+        if not _quantities.package_unit(qty_used):
+            qty_used = _defrost._batch_quantity(
+                ing, batch_factor * _defrost._night_scale(ing, night, recipe.get("default_servings")),
+            ) or qty_used
         result = _use_inventory_row_by_id(match["id"], qty_used)
         depleted.append({"ingredient": ing_name, "item": match["item"], "result": result})
     return {"entry_id": entry_id, "depleted": depleted, "queued_for_review": queued, "left_alone": left_alone}

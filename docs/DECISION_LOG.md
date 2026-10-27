@@ -70,6 +70,13 @@ why*, not duplicating the diff.
   "apply_rewrite still re-buys over a ticked line". Review fix: a person's
   own line is restated once from the ledger before/after the cuts
   (`_restate_after_cut`), not cut by the whole bought amount per link.
+- **Inventory hunt: cooking takes the night's share; lb + oz add up**
+  (2026-10-27; branch `overnight/hunt-inventory-1027`; tests
+  `tests/test_inventory_hunt_2026_10_27.py`). Depletion scales by eaters and
+  batch (`defrost._batch_quantity`), a package once; a chain left half its
+  chicken "on hand". "2 lbs + 12 oz" (unparseable) now adds up, either order
+  (`inventory._merged_quantity`). Recipe pass's `current_inventory` read
+  `qty`, always null. Follow-up: defrost.py:383 batches packages the same way.
 - **The iPhone app's id is `com.heypomona.app`** (2026-10-25, Emily's pick
   to match her heypomona domain; branch `overnight/bundle-id-heypomona`).
   Replaced the `com.pomona.app` placeholder in `capacitor.config.json`, the
