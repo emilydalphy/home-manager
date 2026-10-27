@@ -278,6 +278,11 @@ def _choice_from(res) -> str | None:
 def _routes():
     out = []
     for route in app.routes:
+        # Only the app's own routes. FastAPI's /docs pages (on with
+        # SHOW_API_DOCS=1 on a developer's machine) are plain routes with
+        # nothing to aim at A.
+        if not hasattr(route, "dependant"):
+            continue
         for method in sorted(getattr(route, "methods", None) or ()):
             if method == "HEAD":
                 continue
@@ -383,7 +388,10 @@ def test_household_b_cannot_read_or_change_anything_of_household_as(a_household_
 # The JSON rounds above can't reach an upload route: it takes multipart, so
 # every round was refused at the door with a 422. These send a real (tiny,
 # valid) PNG, so each route gets past its image checks and into the code
-# that runs on a household's behalf. The model is stubbed — it sees only the
+# that runs on a household's behalf. Only import-photo takes a field (its
+# hint) that can carry A's names; the four scans take a photo and nothing
+# else, so for them this proves "reached, shows nothing of A's, writes
+# nothing of A's". The model is stubbed — it sees only the
 # picture and B's typed hint, never a household id — and records that it
 # was reached, so a route that quietly stopped at the door can't pass.
 

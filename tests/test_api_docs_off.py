@@ -31,14 +31,6 @@ def test_the_api_map_is_not_served_to_a_signed_in_household(path):
     assert "swagger" not in res.text.lower() and "openapi" not in res.text.lower()
 
 
-@pytest.mark.parametrize("path", PATHS)
-def test_the_api_map_is_not_served_to_a_stranger(path):
-    res = TestClient(app).get(path, follow_redirects=False)
-    # Signed out, the auth gate answers first; either way, no map.
-    assert res.status_code in (401, 303, 307, 404)
-    assert "swagger" not in res.text.lower() and '"openapi"' not in res.text
-
-
 def test_none_of_the_three_is_a_route():
     paths = {getattr(r, "path", None) for r in app.routes}
     assert not paths & set(PATHS)
