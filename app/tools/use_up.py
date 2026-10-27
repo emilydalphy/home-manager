@@ -166,6 +166,51 @@ def _period_end(period_start: str | None, day_count: int, today: date) -> date:
     return max(start, today) + timedelta(days=max(1, int(day_count or 7)) - 1)
 
 
+def claimed_elsewhere(period_start: str | None = None, day_count: int = 7, conn=None) -> set[int]:
+    """
+    Inventory rows a dish already uses on ANOTHER stretch of days: a
+    planned, not-yet-cooked entry of a live plan (draft or approved), dated
+    today or later but outside this period, whose "Uses the…" tag still
+    stands (live_uses). The rule (re-verify, 2026-10-27, where this week's
+    draft planned the thighs and beef next week's draft already had):
+    food a live plan has put on a dish on another day is that plan's, so it
+    is not offered to this period and not shown to its generator. Entries
+    INSIDE this period don't count — they belong to the plan this draft
+    replaces. Cooking the dish or retiring its plan frees the row.
+    """
+    own = conn is None
+    if own:
+        conn = get_conn()
+    try:
+        today = _today(conn)
+        first = _period_first(period_start, today).isoformat()
+        end = _period_end(period_start, day_count, today).isoformat()
+        rows = conn.execute(
+            """
+            SELECT mpe.derived_from_json, COALESCE(r.name, mpe.freeform_meal) AS meal
+            FROM meal_plan_entries mpe
+            JOIN weekly_plans wp ON wp.id = mpe.weekly_plan_id
+            LEFT JOIN recipes r ON r.id = mpe.recipe_id
+            WHERE mpe.household_id = ? AND wp.status IN ('draft', 'approved')
+              AND mpe.slot_state = 'planned' AND COALESCE(mpe.cooked_status, '') != 'done'
+              AND mpe.date >= ? AND (mpe.date < ? OR mpe.date > ?)
+              AND mpe.derived_from_json LIKE '%use_up%'
+            """,
+            (household_id(), today.isoformat(), first, end),
+        ).fetchall()
+    finally:
+        if own:
+            conn.close()
+    out: set[int] = set()
+    for r in rows:
+        for u in live_uses(r["derived_from_json"], r["meal"]):
+            try:
+                out.add(int(u.get("id")))
+            except (TypeError, ValueError):
+                continue
+    return out
+
+
 def candidates(period_start: str | None = None, day_count: int = 7, conn=None) -> list[dict]:
     """
     Everything the week should use up, going-off rows soonest first, then
@@ -208,9 +253,12 @@ def candidates(period_start: str | None = None, day_count: int = 7, conn=None) -
             "FROM inventory_items WHERE household_id = ? ORDER BY id",
             (household_id(),),
         ).fetchall()
+        taken = claimed_elsewhere(period_start, day_count, conn=conn)
         going, frozen = [], []
         for r in rows:
             row = dict(r)
+            if row["id"] in taken:
+                continue
             name = (row["item"] or "").strip()
             if not name or is_staple(name, staples) or _spices.is_spice(name):
                 continue
@@ -343,7 +391,8 @@ def for_prompt(offered: list[dict]) -> list[dict]:
     return [prompt_item(c) for c in offered if not rule_clash(c, dislikes, avoidances)]
 
 
-def filter_stock(rows: list[dict], intake: dict | None, period_start: str | None) -> list[dict]:
+def filter_stock(rows: list[dict], intake: dict | None, period_start: str | None,
+                 day_count: int = 7) -> list[dict]:
     """
     An inventory list as generation may see it for this plan: never a row
     the household switched off (intake["use_up_off"]), and never a fridge
@@ -368,6 +417,10 @@ def filter_stock(rows: list[dict], intake: dict | None, period_start: str | None
         first = _period_first(period_start, _today()).isoformat()
     except Exception:
         first = ""
+    try:
+        off |= claimed_elsewhere(period_start, day_count)
+    except Exception:
+        logger.exception("Use-up claimed-elsewhere lookup failed")
     rules = _rule_context()
     out = []
     for r in rows or []:
@@ -622,7 +675,7 @@ def _snapshot(c: dict) -> dict:
 
 
 def reconcile(plan_id: int, offered: list[dict], model_report: dict | None = None,
-              intake: dict | None = None) -> dict:
+              intake: dict | None = None, memory: dict | None = None) -> dict:
     """
     After every pass that can change a dish: which offered item each dish
     genuinely uses, written onto the dish (derived_from.use_up, which is
@@ -716,7 +769,7 @@ def reconcile(plan_id: int, offered: list[dict], model_report: dict | None = Non
             conn.close()
         logger.info("Plan %s uses %d of %d use-up item(s); couldn't fit %s",
                     plan_id, len(out["used"]), len(offered), out["missed"])
-        out["freezer_swaps"] = _freezer_oldest_first(plan_id, offered, intake)
+        out["freezer_swaps"] = _freezer_oldest_first(plan_id, offered, intake, memory)
     except Exception:
         logger.exception("Use-up reconcile failed for plan %s; the week stands as generated", plan_id)
     return out
@@ -758,7 +811,36 @@ def _past_date_dishes(cooks: list[dict]) -> list[dict]:
 MAX_FREEZER_SWAPS = 2
 
 
-def _freezer_oldest_first(plan_id: int, offered: list[dict], intake: dict | None) -> list[tuple[str, str]]:
+def _cap_rule_refusal(plan_id: int, intake: dict | None, memory: dict | None, a: dict, b: dict) -> str | None:
+    """Why the time-cap pass's rules forbid trading these two dinners'
+    nights, or None. Fails closed: a rule that can't be read refuses."""
+    from . import cap_enforce as _cap_enforce
+    try:
+        if memory is None:
+            from .memory import get_household_memory
+            memory = get_household_memory() or {}
+        by_date = {n["date"]: n for n in _cap_enforce.nights(plan_id, intake, memory)}
+        na, nb = by_date.get(a["date"]), by_date.get(b["date"])
+        if not na or not nb:
+            return "a night isn't one the cap pass knows"
+        if not (na["movable"] and nb["movable"]):
+            return "the cap pass would not move one of these dinners"
+        for dish, new_night in ((na, nb), (nb, na)):
+            cap = new_night["cap"]
+            if cap and dish["minutes"] and dish["minutes"] > cap:
+                return f"{dish['meal']} is {dish['minutes']} min against {new_night['date']}'s {cap}-minute cap"
+        offends = (_cap_enforce.would_offend(nb["meal"], a["date"])
+                   or _cap_enforce.would_offend(na["meal"], b["date"]))
+        if offends:
+            return offends
+    except Exception:
+        logger.exception("Freezer-order rule check failed for plan %s", plan_id)
+        return "the rules couldn't be read"
+    return None
+
+
+def _freezer_oldest_first(plan_id: int, offered: list[dict], intake: dict | None,
+                          memory: dict | None = None) -> list[tuple[str, str]]:
     """
     Freezer food is eaten oldest first (B2), in the NIGHTS, not just in the
     list the model was handed (verify finding 4: 90-day thighs landed after
@@ -815,6 +897,17 @@ def _freezer_oldest_first(plan_id: int, offered: list[dict], intake: dict | None
                 return all(not use_by.get(u.get("id")) or new_date <= use_by[u["id"]] for u in uses)
 
             if not (safe(a, a_uses, b["date"]) and safe(b, b_uses, a["date"])):
+                break
+            # The rules the time-cap pass (cap_enforce.rearrange) holds a
+            # trade to, asked the same way, because this trade runs AFTER it
+            # and nothing re-checks (re-verify, 2026-10-27: a 120-minute
+            # braise traded onto a 30-minute weeknight). Each dish within
+            # its NEW night's cap, both nights movable by that pass's own
+            # reading, and nobody at either table has said no to the dish.
+            why = _cap_rule_refusal(plan_id, intake, memory, a, b)
+            if why:
+                logger.info("Plan %s: freezer food stays out of age order (%s / %s): %s",
+                            plan_id, a["date"], b["date"], why)
                 break
             try:
                 result = _weekly_plan.swap_dinner_nights(plan_id, a["date"], b["date"])
@@ -954,6 +1047,22 @@ def _offered(record: dict, item_id: int) -> dict:
     raise ValueError("That isn't one of this week's things to use up.")
 
 
+# Names that end in s but are one thing.
+_SINGULAR_S = {"hummus", "asparagus", "couscous", "molasses", "swiss", "brussels", "citrus", "bass",
+               "watercress", "lemongrass", "harissa", "salsa", "feta", "pasta"}
+
+
+def _verb(name: str) -> str:
+    """ "was" or "were" for a toast's "<thing> was <verbed>" (copywriter
+    rule 3: "Two items were moved"): "Red peppers were moved…",
+    "Half a cabbage was moved…"."""
+    words = re.findall(r"[a-z]+", re.sub(r"\([^)]*\)", "", (name or "").lower()))
+    last = words[-1] if words else ""
+    if last in _SINGULAR_S or not last.endswith("s") or last.endswith("ss") or last.endswith("us"):
+        return "was"
+    return "were"
+
+
 def _cap(text: str) -> str:
     return text[:1].upper() + text[1:] if text else text
 
@@ -1007,7 +1116,7 @@ def resolve(plan_id: int, item_id: int, action: str) -> dict:
         frozen = _inventory.freeze_item(cand["id"])
         out["undo"] = {"freeze": frozen["undo"]}
         # The house toast pattern, "<thing> was <verbed>" (copywriter rule 3).
-        out["toast"] = f"{_cap(name)} was moved to the freezer."
+        out["toast"] = f"{_cap(name)} {_verb(name)} moved to the freezer."
         resolution = {"action": "frozen"}
     elif action == "side":
         conn = get_conn()
@@ -1036,11 +1145,11 @@ def resolve(plan_id: int, item_id: int, action: str) -> dict:
             conn.close()
         weekday = date.fromisoformat(dinner["date"]).strftime("%A")
         out.update(entry_id=dinner["id"], undo={"entry_id": dinner["id"]},
-                   toast=f"{_cap(name)} was added to {weekday}’s dinner.")
+                   toast=f"{_cap(name)} {_verb(name)} added to {weekday}’s dinner.")
         resolution = {"action": "side", "entry_id": dinner["id"]}
     else:
         out["undo"] = {}
-        out["toast"] = f"{_cap(name)} was left off the plan."
+        out["toast"] = f"{_cap(name)} {_verb(name)} left off the plan."
         resolution = {"action": "let_go"}
     conn = get_conn()
     try:
