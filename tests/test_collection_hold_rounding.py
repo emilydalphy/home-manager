@@ -33,7 +33,9 @@ def test_a_real_margin_still_counts():
 def test_this_run_collected_on_the_real_clock():
     """Not near midnight, collection was not held, so a module-level
     `datetime.date.today` here is the real one."""
-    if conftest._COLLECTION_CLOCK is None:
+    if conftest._COLLECTION_CLOCK is None or conftest.held_past_midnight():
+        # A run that crossed midnight AFTER collection pins this test, which
+        # swaps datetime.date for freezegun's; collection itself was fine.
         return
     epoch = conftest._COLLECTION_CLOCK[0]
     if conftest._drawn_back(conftest._held_to_the_starting_day(), epoch):
