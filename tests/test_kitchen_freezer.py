@@ -195,11 +195,12 @@ def test_a_portion_of_a_cook_not_made_yet_is_not_in_the_freezer():
     orphan = _portion("Lasagna", 2, cooked_days_ago=-2)
     ids = _freezer_ids()
     assert made in ids
-    assert later not in ids and tonight_ not in ids and orphan not in ids
-    # A cook ticked done ahead of its night waits for that night too (the
-    # date rule is the coordinator's call: either signal hides it).
-    assert early not in ids
-    assert whats_home.get_whats_home()["counts"]["freezer"] == 1
+    assert later not in ids and tonight_ not in ids
+    # Orphaned (no entry left) with its cook night ahead: hidden.
+    assert orphan not in ids
+    # Its cook ticked done ahead of its night: the batch was made, shown.
+    assert early in ids
+    assert whats_home.get_whats_home()["counts"]["freezer"] == 2
 
 
 def test_the_night_off_source_constant_matches_tonight():

@@ -115,6 +115,7 @@ def _shown_rows(conn) -> list[dict]:
     staples = _use_up._staple_keys(conn)
     today = _today(conn)
     uncooked = _freezer_portions._skipped_cooks_portion_ids(conn) | _not_yet_cooked_portion_ids(conn, today)
+    cooked = _done_cook_portion_ids(conn)
     rows = conn.execute(
         "SELECT id, item, quantity, source, category, location, expiration_date, created_at, "
         "updated_at, frozen_on, amount_left, amount_left_qty FROM inventory_items "
@@ -140,10 +141,12 @@ def _shown_rows(conn) -> list[dict]:
             # A night off's spare portion of a cook that hasn't happened yet
             # (cook_on_fed writes it ahead of the cook, dated the cook's
             # night) or that was then skipped is not in the freezer yet.
-            # Either signal hides it: a cook entry still pointing at it, or
-            # a cook night still ahead on the household's clock (the entry
-            # can be gone — plan deleted or re-drafted — re-verify, C4).
-            if portion is not None and (row["id"] in uncooked or (
+            # Precisely (re-verify, C4): its cook ticked done — even ahead of
+            # its night — shows it. Otherwise either signal hides it: a
+            # not-done cook entry still pointing at it, or a cook night still
+            # ahead on the household's clock (the entry can be gone: plan
+            # deleted or re-drafted).
+            if portion is not None and row["id"] not in cooked and (row["id"] in uncooked or (
                     portion["cooked_on"] and portion["cooked_on"] > today.isoformat())):
                 continue
             row["portion"] = portion
@@ -187,6 +190,28 @@ def _not_yet_cooked_portion_ids(conn, today: date) -> set[int]:
         "SELECT derived_from_json FROM meal_plan_entries WHERE household_id = ? "
         "AND COALESCE(cooked_status, '') != 'done' AND date >= ? AND derived_from_json LIKE ?",
         (household_id(), today.isoformat(), f"%{_leftovers.FREEZER_EXTRA_KEY}%"),
+    ).fetchall():
+        try:
+            extra = (json.loads(r["derived_from_json"] or "{}") or {}).get(_leftovers.FREEZER_EXTRA_KEY)
+        except (TypeError, ValueError, AttributeError):
+            continue
+        if isinstance(extra, dict):
+            out |= {i for i in extra.get("inventory_item_ids") or []
+                    if isinstance(i, int) and not isinstance(i, bool)}
+    return out
+
+
+def _done_cook_portion_ids(conn) -> set[int]:
+    """Freezer rows a cook entry ticked DONE lists under leftovers'
+    FREEZER_EXTRA_KEY: that batch was made, so its portion is real, even if
+    it was ticked ahead of the night the portion is dated for."""
+    from . import leftovers as _leftovers
+
+    out: set[int] = set()
+    for r in conn.execute(
+        "SELECT derived_from_json FROM meal_plan_entries WHERE household_id = ? "
+        "AND cooked_status = 'done' AND derived_from_json LIKE ?",
+        (household_id(), f"%{_leftovers.FREEZER_EXTRA_KEY}%"),
     ).fetchall():
         try:
             extra = (json.loads(r["derived_from_json"] or "{}") or {}).get(_leftovers.FREEZER_EXTRA_KEY)
