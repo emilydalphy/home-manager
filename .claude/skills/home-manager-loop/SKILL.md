@@ -259,9 +259,10 @@ has a **Phase** select property mirroring it — use it when picking work:
   deliberately out of rotation — don't pick them up without Emily asking.
 
 Two standing product decisions (2026-09-01): the core job is meals **on the table** (plan →
-grocery list → prep → cook — all core), and **inventory is deferred as policy** — it stays
-lightweight background, gets no new investment, and no user should ever have to do
-inventory work to complete the core loop.
+grocery list → prep → cook — all core), and **inventory is a real feature again** (Emily
+reversed the 2026-09-01 "deferred" call on 2026-10-25/26: it keeps itself, and planning
+works around what's home) — but no user should ever have to do inventory work to
+complete the core loop; only ticking things off at the shop is required.
 
 **Phase 1.5 — Paid-ready** (added 2026-09-10) sits between Beta and Chores and holds what
 makes Pomona worth charging for. The test for Phase 1: *would a beta tester hit this?* The
@@ -301,8 +302,8 @@ queue-don't-guess when unsure; no game to administer (no points/rewards — Emil
 
 **Domain sequencing (Emily, 2026-09-11):** every domain is in scope eventually. Now: food
 (deep), scheduling (calendar read, meals-only so far), cleaning (Phase 2 — Chores), and
-supplies (the *staples* build, which comes before any inventory work — inventory stays a
-"still in development" beta feature, not something shared). Next to scope: social &
+supplies (the *staples* build, which comes before any inventory work — inventory came back as a real feature
+2026-10-26, built on top of staples, which stay separate). Next to scope: social &
 occasions, and scheduling beyond meals. Later modules, in this order and not for a while:
 **maintenance first, childcare logistics second, finances & admin third.**
 

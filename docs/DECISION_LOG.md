@@ -13,6 +13,194 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
+  (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
+  (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.
+  (3) C3 "Almost gone" beside a B4 set-aside line puts THAT line back (`pre_shop.undo_pre_shop_drop` → `note_put_back`) instead of adding a second standing want; its Undo sets it aside again; a row whose chip says almost gone covers nothing in B4's pass.
+  (4) A2's put-back finds its twin by `kitchen_add._existing` (the C2 key); C3's restore uses `kitchen_add._match_key` too.
+  (5) A2's Undo refuses a row only when an `inventory_removals` record for it is newer than the receipt; otherwise it puts back just what this dinner took (two dinners on one row each get their own share back).
+  (6) shell.js re-reads Today's going-off card after every Kitchen-tab write and in `refreshHomeOnce`.
+  Why: each branch was right alone; together Today, Kitchen and Shop contradicted each other.
+- **Marking a dinner eaten says what came out of the kitchen, with Undo** (2026-10-26, inventory card A2, Emily's OptionA screen 2). `check_off_meal` now returns `kitchen_took` ({names, line}: "Took the chicken, spinach, rice and lemons out of the kitchen.", four names then "and N more"); the toast on Kitchen's Mark eaten, Today's tick and Plan's Done names it; Undo (`POST /api/cooker/undo-eaten`, `tools.undo_eaten_meal`) un-marks the meal AND writes every changed `inventory_items` row back as it was (`app/tools/eaten_receipt.py`, table `eaten_kitchen_receipts`; a used-up row returns under its own id; `rev` keeps counting). Why: this reverses the old "an untick puts nothing back" call in `check_off_meal`'s docstring, which only held while nothing recorded the rows. Leftovers nights and untracked meals report nothing and keep today's toast; "Mark cooked" (Start-cooking path) keeps "Logged… Rate it". Branch `inventory/mark-eaten-names-it`.
+- **Shop leaves off what's already home** (2026-10-26, card B4; branch `inventory/already-home-list`,
+  `app/tools/already_home.py`). A plan line the kitchen fully covers with food bought/added/counted in 14 days
+  is set aside (`removed_by 'kitchen'`) at the end of each ingest flush; "Already home · N" on Shop, one tap
+  puts it back and it sticks (`already_home_put_back`). Partly home = whole line on; staples/spices/own lines
+  unchanged. Why: Emily wants the list shorter but reviewable ("make sure it's clear… review that section").
+- **Today notices food going off: a swap card for a skipped dinner, one
+  quiet "use soon" line otherwise** (2026-10-26, Loop Board B5, Option B
+  screen 4; branch `inventory/today-use-soon`; tests
+  `tests/test_going_off_on_today.py`). New `app/tools/going_off.py` +
+  `/api/today/going-off{,/swap,/leave,/undo}`. "Uses" is DETECTED (recipe
+  ingredients vs going-off inventory rows, Mark eaten's matcher plus a
+  whole-word loose match) in one function, `dinner_uses`, which already
+  prefers a stored `derived_from.uses` when B2 writes one. "Didn't happen"
+  = a past, unticked, unstarted dinner on the approved plan — except
+  yesterday's while the "Did you have it?" card is still asking. "Turns" =
+  expires today or tomorrow (food already past is Kitchen's). The swap is
+  NOT a new mover: every move door refuses a gone-by night on purpose, so
+  it chains the existing writers in one transaction — tonight's dinner goes
+  by the night off's own decision (`_night_off_plan`: next free night via
+  the nights swap, or onto its own leftovers night), the skipped dinner is
+  re-dated by `_redate_plan_rows`, the night it left is `planned_empty`
+  with yesterday_ask's skipped-moved marker, and Undo is
+  `undo_skipped_move` (plan_undo). No card for a planned_empty/away
+  tonight, a reheat, a started cook, or a dinner with nowhere to go — the
+  item falls to the line instead. "Leave it" = per item, per household
+  day. The line stands down while the freezer "Use soon" card is up.
+  **Verify-pass fixes (same branch, 2026-10-27):** leftovers/freezer rows
+  are no longer "a plan" for food (a skipped cook's own leftovers night hid
+  the spinach completely); yesterday's unanswered dinner holds its food —
+  Yesterday leads, then the card after "We skipped it" (the mockup's own
+  scene); a REHEAT tonight may move to the next free night only through the
+  nights swap's age rule (`MAX_LEFTOVER_DAYS` = 3) — "do the leftover Chili
+  Thursday"; a double cook landing on its leftovers night freezes tonight's
+  share as the night off does ("The extra goes in the freezer.", Undo takes
+  the portion back); the matcher needs the same head noun with only
+  descriptor words added (butter ≠ peanut butter, milk ≠ coconut milk);
+  items are lowercased mid-sentence; "Last Wednesday's" when a bare weekday
+  could mean two days.
+- **Inventory is a real feature again; the "deferred as policy" call is reversed**
+  (2026-10-27, Emily 2026-10-25 "I think we also need to bring the inventory tracking
+  feature back"; 2026-10-26 approved Options A, B and C: it keeps itself, plan around
+  what's home, a Kitchen tab). Removed `INVENTORY_IN_DEVELOPMENT` from `static/shell.js`
+  and `static/inventory.html`, the "In development" pill on Cook -> More -> Inventory, and
+  the sheet's "Inventory is still being built..." line; updated PRODUCT_FLOWS 15, CLAUDE.md,
+  both skills. Older entries that say "deferred"/"in development" are history, not policy.
+  Guardrail kept: no data entry needed to finish the loop. Branch `inventory/real-feature`
+  (Loop Board card A5; the other Inventory cards are on their own unmerged branches).
+- **"Add to the kitchen" + the Kitchen in first-run setup** (2026-10-27,
+  C2 + C5, `inventory/kitchen-add`, `tests/test_kitchen_add.py`). One sheet,
+  `static/kitchen-add.js`, for the dock and onboarding; nothing is saved
+  before its review, unsure scan rows start unticked. A shelf PHOTO counts
+  (a tracked row on that shelf is confirmed: amount set and `counted_on`
+  today only when the photo read an amount, else `confirmed_on` where it
+  exists), a receipt / Say it / Type it adds. Undo record kept
+  server-side, one per row per save (`kitchen_add_receipts`). C5 sits right before the first draft so the
+  week can use what's home; "Set up later" goes straight on.
+  Why: a photo of the fridge is a count, not a shop — summing doubled the
+  milk on every photo (verify 2026-10-27).
+
+- **The Kitchen tab's freezer: oldest first, and the planning check here
+  too** (2026-10-27, Loop Board C4; branch `inventory/kitchen-freezer` =
+  `inventory/kitchen-tab` + `inventory/pre-draft-check`; tests
+  `tests/test_kitchen_freezer.py`). The Freezer segment gets its own band
+  ("N things *in the freezer*" / "Oldest first. Next week's plan starts from
+  the top.") and no Use soon. Rows sort by ONE key,
+  `use_up.freezer_order_key` (frozen_on, else created_at; then created_at,
+  id) — the planner's freezer candidates use the same key, so the top really
+  is next week's first pick. Row words: plan ("in next Mon's chili"; a dish of
+  >3 words reads as the slot; a freezer row a live draft/approved dish is
+  tagged to use, on any later day, reads as planned there — the same rows
+  `use_up.claimed_elsewhere` keeps out of another week's offer), else
+  "frozen 28 Sep"/"frozen today", else the
+  amount word. Night-off portions read "Chili · 3 portions" / "from last Wed"
+  (cook night = use-by − `FROZEN_COOKED_KEEPS_DAYS`), their plan from the
+  entry's `freezer_portion` claim ("for Thu's dinner"); a portion whose cook
+  hasn't happened (cook_on_fed, or skipped) isn't shown. The A4 check's
+  freezer chips sit under the rows; a tap answers gone immediately
+  (`inventory_check.answer` now records `inventory_removals` how='gone' and
+  returns the Kitchen tab's Undo, so a second tap puts it back). Two
+  merge-semantic breaks fixed: the use-up verify changed `_staple_keys` to
+  word lists (whats_home's `key in staples` matched nothing → staples
+  counted) and dropped food turning today from candidates (Use soon lost its
+  "today" rows) — new `candidates(..., turning_today=True)` for the tab only.
+  Verify round (2026-10-27): that argument is now `kitchen_view=True` and
+  also skips the planning-only filters (dislike/allergy, another plan's
+  claim) — the Kitchen shows what's home; the check uses `use_up.is_staple`
+  (one staple rule with the rows); the freezer shows ALL the check's chips
+  (the card's "same chips"); a portion's plan is read from drafts too, any
+  later date; a portion of a cook not yet made (tonight included) is hidden
+  via the cook's `freezer_extra`; portions sort by cook night; "Mon’s" etc.
+  typographic; "The planning check, here too." dropped (names a feature).
+
+- **A fifth tab, Kitchen: what's home, and one-tap fixes** (2026-10-26,
+  Loop Board C1 + C3; Emily approved the nav change that day, decision 2 —
+  "an 'inventory management screen' for your kitchen"; branch
+  `inventory/kitchen-tab`, stacked on `87e5af9`; tests
+  `tests/test_kitchen_tab.py`). Bar reads Today · Plan · Shop · Kitchen ·
+  Cook. NAMING TRAP: keyed and pathed `home` (`/home`, `panel-home`,
+  `/api/whats-home`, `app/tools/whats_home.py`) because `kitchen` is Cook.
+  Count = rows shown, never staples or spices; "Use soon" = up to 3 of
+  `use_up.candidates` turning within 4 days; plans are approved, uneaten
+  meals in the next 7 days (confident ingredient match, as cooking
+  depletes). Amount chips on new `inventory_items.amount_left` (+ the
+  quantity it was read against, so a re-buy retires a stale chip). Used it
+  up / Threw it out delete the row and keep it in new `inventory_removals`
+  (`how` = used|thrown) so Undo restores the same id server-side. Freeze it
+  is `inventory.freeze_item`. "Almost gone" on food a planned meal needs →
+  `add_grocery_item` as a standing want, unless a line is already waiting.
+  Cook → More loses its Inventory row (and its two reads); "+ Add" / "Snap a
+  shelf" open `inventory.html?from=kitchen` through `openKitchenAdd(mode)`,
+  the seam card C2 replaces. Subtitle omitted when neither a tick nor an
+  eaten dinner is within a week.
+  Verify round (2026-10-27): Undo of a removal is refused when a same-name
+  row is back on that shelf (no second Milk) and after 24 hours; the
+  sheet's Freeze it follows `use_up.freeze_ok`; chat's inventory writes are
+  tagged `tab: 'home'` (`_HOME_TOOLS`) so "View" opens the Kitchen tab;
+  the Use-soon pill is celadon tint (Rule 5: the dock's apricot is the one).
+
+- **Use-up, after the re-verify** (2026-10-27; branch
+  `inventory/use-it-all-draft`; tests in `tests/test_use_up_verify_fixes.py`).
+  The freezer oldest-first trade now asks the cap pass's own rules
+  (`cap_enforce.nights` caps and movability, `would_offend`) before
+  `swap_dinner_nights`, since it runs after that pass (a 120-minute braise had
+  landed on a 30-minute weeknight). A swap keeps the dish-stamped `use_up`, so
+  Undo brings the tag back. A row a live plan has on a dish on another day is
+  that plan's (`use_up.claimed_elsewhere`), out of candidates and the
+  generator's lists. Toasts say "were" for a plural name. Final check: a
+  period ends day_count days from its OWN first day (not from today), and only
+  the plan holding the period's first day counts as "being replaced" — any
+  other live plan's dish claims its row even on a day two periods share.
+- **Use-up, after the independent verify** (2026-10-27; branch
+  `inventory/use-it-all-draft`; tests `tests/test_use_up_verify_fixes.py`). A
+  "Uses the…" tag is stamped with the dish it was checked against
+  (`use_up.live_uses`), so any path that swaps the dish and copies
+  `derived_from` loses the tag, the count and the recipe pass's must_use (read
+  via `plan_must_use` → `must_use_for`, no longer written into `must_use`).
+  Candidates must still be good on the period's first day and never clash with
+  an allergy or dislike (`coordination.check_meal_conflicts` + a variety→food
+  map); the generator's three inventory lists drop switched-off and
+  past-by-the-start rows (`filter_stock`). A dish naming food past its date on
+  its day is said under the days. Freezer food is put oldest first in the
+  nights via `swap_dinner_nights`, only when neither night carries an answer.
+  "Freeze it" is celadon-tint (rule 5); unfreeze restores from
+  `inventory_items.freeze_undo_json`; staples match by head noun. Why: the
+  verify failed B2 on a swap keeping its tag and on next-week food safety.
+
+- **Two steps before the draft: "Quick check: still have these?" and "First,
+  what's home"** (2026-10-26, Loop Board A4 + B1; branch
+  `inventory/pre-draft-check`, stacked on `87e5af9`; tests
+  `tests/test_pre_draft_check.py`). In `static/plan-week.html`, "Draft my
+  week" now runs `preDraftStep()` first: the check (≤5 chips from
+  `tools.inventory_check_candidates` / `GET /api/inventory/check`; tap =
+  gone, Next posts `{gone, confirmed}` → rows deleted / new column
+  `inventory_items.confirmed_on` stamped), then "Use these up" (use_up
+  candidates, all on; Plan the week sends `use_up_off` on the same intake
+  save). Each step is skipped when empty. Why: Emily's decision 3, "It should
+  ask when they want their plan and grocery list made." Plan's "Try again"
+  (same answers, different week) does not show them — it reuses the saved
+  intake. "Least sure" = past date first, then days since bought/used/
+  counted/confirmed (+7 if no recipe uses it), floors 7 days (freezer 45),
+  confirmed rows left alone 14 days; never staples/spices. `confirmed_on`
+  is not `counted_on` on purpose — a count changes bought-for claims.
+
+- **The draft uses everything going off, and says what couldn't fit**
+  (2026-10-26, Loop Board B2+B3; branch `inventory/use-it-all-draft`; tests
+  `tests/test_use_up_candidates.py`, `tests/test_use_it_all_draft.py`). One
+  list, `app/tools/use_up.py` (`candidates`/`selected`: going-off fridge/pantry
+  soonest first, freezer oldest first; no staples, spices, past dates or
+  night-off portions), handed to generation as `use_up` with "plan every one",
+  and switched off per week via `week_intake.use_up_off_json`. The model's
+  claims (`derived_from.use_up_ids`) are never counted: `use_up.reconcile`
+  runs after every re-pick pass and tags a dish (`derived_from.use_up`, plus
+  `must_use` for the recipe pass) only when the dish's own words carry the item
+  on or before its use_by; the rest is "Couldn't fit these" (Freeze it via the
+  new `inventory.freeze_item`/`unfreeze_item` + `inventory_items.frozen_on`;
+  Add as a side; Let it go), recorded in `weekly_plans.use_up_json`. A disliked
+  or allergen item is never handed to the model (a real draft turned a disliked
+  cabbage into slaw when told "plan every one"). Why: Emily's food-waste
+  pain point; telling the generator is not preventing it.
 - **Test runs no longer hold collection on a fake clock by accident**
   (2026-10-27; branch `overnight/collection-hold-rounding`). conftest's
   midnight guard compared the start instant with itself round-tripped

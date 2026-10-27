@@ -140,6 +140,7 @@ from .cooker import (  # noqa: F401
     InvalidPrepStatus,
     check_off_meal,
     check_off_meal_for_chat,
+    undo_eaten_meal,
     check_off_prep_step,
     deplete_inventory_for_meal,
     get_cooker_view,
@@ -404,7 +405,10 @@ from .household import (  # noqa: F401
     remove_member_dietary_restriction,
 )
 from .inventory import (  # noqa: F401
+    CannotFreeze,
     InvalidInventoryLocation,
+    freeze_item,
+    unfreeze_item,
     _LEADING_NUM_RE,
     _add_to_inventory,
     _step_quantity_text,
@@ -422,6 +426,43 @@ from .inventory import (  # noqa: F401
     update_inventory,
     update_inventory_items,
 )
+# "Use these up" (Loop Board B1/B2, 2026-10-26): the one list of what the
+# week should use, shared by the pre-draft step and the draft. Aliased: a
+# bare `candidates` in this flat namespace would say nothing, and the
+# module itself is never re-exported (test_module_name_collisions).
+from .use_up import candidates as use_up_candidates  # noqa: F401
+from .use_up import selected as use_up_selected  # noqa: F401
+# The Kitchen TAB (Loop Board C1/C3, 2026-10-26) — `home` in code, because
+# `kitchen` already means Cook. See whats_home.py.
+from .whats_home import (  # noqa: F401
+    InvalidAmount,
+    get_whats_home,
+    get_whats_home_item,
+    set_amount_left,
+    used_up_item,
+    threw_out_item,
+    move_item as move_kitchen_item,
+    restore_item as restore_kitchen_item,
+)
+# "Add to the kitchen" (Loop Board C2, 2026-10-27): the scan review's rows
+# (with `sure`), "Say it"'s sentence reader, and the one write the review
+# makes. Aliased: bare `review_items` / `add_items` would say nothing here.
+from .kitchen_add import (  # noqa: F401
+    review_items as kitchen_review_items,
+    left_out as kitchen_left_out,
+    read_said_items,
+    add_items as add_kitchen_items,
+    undo_added as undo_kitchen_add,
+)
+# "Quick check: still have these?" (Loop Board A4): the few kitchen rows
+# Pomona is least sure of, asked when the week is planned — and the same
+# chips on the Kitchen tab's freezer segment (C4), so one answer counts in
+# both places. (No bare `from . import inventory_check`: a re-exported name
+# equal to a module name fails tests/test_module_name_collisions.py.)
+from .inventory_check import candidates as inventory_check_candidates  # noqa: F401
+from .inventory_check import answer as answer_inventory_check  # noqa: F401
+from .use_up import resolve as use_up_resolve  # noqa: F401
+from .use_up import undo_resolve as use_up_undo_resolve  # noqa: F401
 # Read-side helpers for the leftover chains repair_leftover_chains records
 # (see leftovers.py). Not agent tools — the assistant has no reason to
 # call these — but re-exported so agent.py's prep-schedule context and any
@@ -517,6 +558,11 @@ from .plates import is_complete as plate_is_complete  # noqa: F401
 from .plates import missing_groups as plate_missing_groups  # noqa: F401
 from .plates import has_starch as plate_has_starch  # noqa: F401
 from .plates import dish_has_carb as plate_dish_has_carb  # noqa: F401
+from .already_home import (  # noqa: F401
+    REMOVED_BY_KITCHEN,
+    already_home_lines,
+    leave_off_what_is_home,
+)
 from .pre_shop import (  # noqa: F401
     _PRE_SHOP_FRACTION_LEAD,
     _PRE_SHOP_FRACTION_TAIL,
@@ -925,6 +971,15 @@ from .yesterday_ask import (  # noqa: F401
     answer_yesterday,
     undo_skipped_move,
     yesterday_check,
+)
+# Today's food-going-off card and quiet "use soon" line (Loop Board B5,
+# 2026-10-26): a screen's own read and its two answers. Not agent tools.
+from .going_off import (  # noqa: F401
+    WeekChanged as GoingOffWeekChanged,
+    leave_going_off,
+    swap_for_going_off,
+    today_going_off,
+    undo_going_off_swap,
 )
 # Now's "Tonight: X. Still good?" card, its swap-from-the-plan sheet
 # (Emily, 2026-09-13) and its third answer, "Not tonight — we're going

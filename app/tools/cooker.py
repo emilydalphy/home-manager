@@ -14,6 +14,7 @@ from ._shared import household_id, require_household_row
 from . import attendance as _attendance
 from . import batch_components as _batch_components
 from . import cook_ahead as _cook_ahead
+from . import eaten_receipt as _eaten_receipt
 # Module scope is safe both ways round: freezer_portions reaches back
 # into this module (household_today) at CALL time, the package's own
 # convention for exactly this shape.
@@ -208,6 +209,18 @@ def _use_inventory_row_by_id(item_id: int, minus_qty: str) -> dict:
     return {"item_id": item_id, "item": row["item"], "quantity": remaining, "units_reconciled": reconciled}
 
 
+def _inventory_row_as_it_is(item_id: int) -> dict | None:
+    """The whole row, for eaten_receipt: Undo writes this back exactly."""
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            "SELECT * FROM inventory_items WHERE id = ? AND household_id = ?", (item_id, household_id())
+        ).fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+
 def deplete_inventory_for_meal(entry_id: int) -> dict:
     """
     Phase 4, §4.4: deplete tracked inventory for a meal's ingredients when
@@ -336,8 +349,9 @@ def deplete_inventory_for_meal(entry_id: int) -> dict:
             qty_used = _defrost._batch_quantity(
                 ing, batch_factor * _defrost._night_scale(ing, night, recipe.get("default_servings")),
             ) or qty_used
+        before = _inventory_row_as_it_is(match["id"])
         result = _use_inventory_row_by_id(match["id"], qty_used)
-        depleted.append({"ingredient": ing_name, "item": match["item"], "result": result})
+        depleted.append({"ingredient": ing_name, "item": match["item"], "result": result, "before": before, "taken": qty_used})
     return {"entry_id": entry_id, "depleted": depleted, "queued_for_review": queued, "left_alone": left_alone}
 
 
@@ -403,6 +417,12 @@ def check_off_meal(entry_id: int, status: str = "done") -> dict:
     Whoever loses the claim depletes nothing. The claim covers the whole
     linked set because a component batch is cooked once for all its
     siblings, so a stamp on any one of them means the food is gone.
+
+    UPDATE 2026-10-26 (inventory card A2): a plain un-tick still puts
+    nothing back, but the "Undo" on the Mark-eaten toast now does, exactly —
+    each tick stores the rows it changed as they were (eaten_receipt) and
+    undo_eaten_meal writes them back. The argument below is why only that
+    one route, with a stored record, may do it.
 
     UN-TICKING DOES NOT PUT THE INGREDIENTS BACK, deliberately, which is
     why the memory has to be its own column rather than cooked_at (which an
@@ -616,10 +636,16 @@ def check_off_meal(entry_id: int, status: str = "done") -> dict:
             # grow as new siblings are planned, so a later-added sibling
             # never changes it.
             depletion = deplete_inventory_for_meal(min(linked_ids))
-            result["inventory_depleted"] = depletion["depleted"]
+            result["inventory_depleted"] = _eaten_receipt.strip_before(depletion["depleted"])
             result["inventory_queued_for_review"] = depletion["queued_for_review"]
             if not _changed_any_inventory_row(depletion["depleted"]):
                 _release_inventory_depletion(linked_ids)
+            else:
+                # What came out, said by the screen that ticked it, with an
+                # Undo that puts it back (eaten_receipt). None when no row moved.
+                took = _eaten_receipt.record(linked_ids, depletion["depleted"])
+                if took:
+                    result["kitchen_took"] = took
     elif was_done:
         # See the docstring: nothing is put back, and the caller is told so
         # rather than left to assume either way.
@@ -659,6 +685,16 @@ def check_off_meal_for_chat(entry_id: int, status: str = "done") -> dict:
                 "To change which night it's on, move it (move_meal_to_day)."
             )
     return check_off_meal(entry_id, status)
+def undo_eaten_meal(entry_id: int) -> dict:
+    """
+    Undo on the "marked eaten" toast: the meal goes back to not cooked AND
+    every inventory row that tick changed goes back exactly as it was
+    (eaten_receipt.restore), the depletion claim included, so the next tick
+    takes the ingredients again. A second call restores nothing.
+    """
+    check_off_meal(entry_id, "pending")
+    restored = _eaten_receipt.restore(entry_id)
+    return {"entry_id": entry_id, **restored}
 
 
 def _changed_any_inventory_row(depleted: list[dict]) -> bool:
@@ -2170,7 +2206,7 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
     # Already at home, by the one rule the grocery ingest itself uses to
     # skip buying a thing (recipes._add_recipe_ingredients_for_entries):
     # an inventory row with a quantity on it. Read-only, and nothing new to
-    # keep up — inventory is deferred as policy, so this is a courtesy mark
+    # keep up — inventory was deferred policy (2026-09-01, reversed 2026-10-25) and nobody has to keep it up, so this is a courtesy mark
     # on the meal screen's "What's in it", never a thing to fill in.
     inv_conn = get_conn()
     at_home = {

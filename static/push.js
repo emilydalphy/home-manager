@@ -24,7 +24,7 @@
 (function () {
   'use strict';
 
-  var ROUTES = { '/': 1, '/week': 1, '/grocery': 1, '/kitchen': 1 };
+  var ROUTES = { '/': 1, '/week': 1, '/grocery': 1, '/kitchen': 1, '/home': 1 };
 
   function plugin() {
     var cap = window.Capacitor;

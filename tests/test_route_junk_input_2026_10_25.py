@@ -128,7 +128,12 @@ def test_shelf_scans_return_a_draft_and_refuse_what_is_not_a_photo(signed_in, mo
 
     ok = signed_in.post(path, files={"photo": ("shelf.jpg", _TINY_JPEG, "image/jpeg")})
     assert ok.status_code == 200
-    assert ok.json() == {"items": [{"item": "Yogurt", "quantity": "1 tub", "location": "fridge"}]}
+    # UPDATED 2026-10-27 (Loop Board C2): the draft is shaped for the review
+    # on the way out — each row gains `sure` (and a default category and
+    # confidence) — and is otherwise what the scan read.
+    [row] = ok.json()["items"]
+    assert {k: row[k] for k in ("item", "quantity", "location")} == {"item": "Yogurt", "quantity": "1 tub", "location": "fridge"}
+    assert row["sure"] is True
     # A draft only — /api/inventory/confirm-scan is what writes.
     conn = get_conn()
     assert conn.execute("SELECT COUNT(*) AS c FROM inventory_items").fetchone()["c"] == 0

@@ -1228,6 +1228,10 @@ def apply_pick(weekly_plan_id: int, entry: dict, pick: dict, carry_sides: bool =
     if cuts:
         swapped_from = dict(swapped_from, prep_cuts=cuts)
     swapped_from = _with_outgoing_sides(swapped_from, entry, carry_sides, outgoing_sides)
+    # derived_from.use_up rides along on purpose: it is stamped with the
+    # dish it was checked against, so use_up.live_uses ignores it on the new
+    # dish and it counts again when Undo puts the old dish back (re-verify,
+    # 2026-10-27: popping it here lost the tag on Undo).
     derived = dict(entry["derived_from"])
     # A day swapped on its own after its dish was swapped as a whole
     # (apply_pick_to_days) leaves that group: its Undo is its own now.

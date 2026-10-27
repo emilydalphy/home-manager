@@ -228,7 +228,11 @@ def test_scan_receipt_returns_a_draft_and_writes_nothing(two, monkeypatch):
     monkeypatch.setattr(main, "scan_receipt_image", fake)
     res = a.post("/api/inventory/scan-receipt", files={"photo": ("r.jpg", b"\xff\xd8\xff fake", "image/jpeg")})
     assert res.status_code == 200, res.text
-    assert res.json()["items"] == [{"item": "Milk", "quantity": "2 L", "category": "dairy"}]
+    # UPDATED 2026-10-27 (Loop Board C2): rows are shaped for the review on
+    # the way out (+ `sure`, location, confidence); what the scan read is kept.
+    [row] = res.json()["items"]
+    assert {k: row[k] for k in ("item", "quantity", "category")} == {"item": "Milk", "quantity": "2 L", "category": "dairy"}
+    assert row["sure"] is True
     assert seen["media_type"] == "image/jpeg"
     assert _inventory_count() == 0, "a scan is a draft; only confirm-scan writes"
 

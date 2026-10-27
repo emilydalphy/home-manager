@@ -61,6 +61,7 @@ function todayAnimateNodeSettle() {}
 function savedName(s) { return s; }
 function savedLine(n, v) { return n + ' ' + v; }
 function showToast(t) { CALLS.push(['toast', t]); }
+function toastMarkedEaten() { return false; }
 var panel = { _moves: { moves: [{ id: 'm1', done: false, title: 'Chicken Stir Fry' }] }, _featured: null };
 toggleTodayMove(panel, 'm1', true).then(function () { console.log(JSON.stringify(CALLS)); });
 """)

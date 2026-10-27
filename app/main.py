@@ -39,7 +39,7 @@ from fastapi.exception_handlers import http_exception_handler
 from . import account_email, agent, ai_consent, backup, calendar_feed, chat_themes, feedback_email, grocery_add_once, household_deletion, households, invites, legal, push, ratelimit, recipe_import, recipe_photos, security
 from . import db
 from .db import get_conn, init_db
-from .agent import run_agent_turn, trim_conversation, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo, scan_pantry_photo, scan_grocery_list_image, AssistantUnavailableError
+from .agent import run_agent_turn, trim_conversation, generate_chore_recommendations, generate_weekly_plan, fill_in_recipe, scan_receipt_image, scan_fridge_photo, scan_pantry_photo, scan_freezer_photo, scan_grocery_list_image, AssistantUnavailableError
 from . import tools
 from .tools import household as _household_tools
 from .tools import _shared as _tools_shared
@@ -1108,6 +1108,10 @@ class StoreTypicalItemAddRequest(BaseModel):
 class StoreTypicalItemRemoveRequest(BaseModel):
     store: str
     item: str
+
+
+class UndoEatenRequest(BaseModel):
+    entry_id: int
 
 
 class CheckOffMealRequest(BaseModel):
@@ -3398,8 +3402,12 @@ def add_recipe_endpoint(req: AddRecipeRequest):
 def cooker_check_meal(req: CheckOffMealRequest):
     """Mark a planned meal cooked/pending directly from the Cooker view (no chat round-trip needed)."""
     try:
-        tools.check_off_meal(req.entry_id, req.status)
+        ticked = tools.check_off_meal(req.entry_id, req.status)
         view = tools.get_cooker_view()
+        # What the tick took out of the kitchen, for the toast (Undo is
+        # POST /api/cooker/undo-eaten). Absent when nothing came out.
+        if ticked.get("kitchen_took"):
+            view["kitchen_took"] = ticked["kitchen_took"]
     except tools.InvalidMealStatus as e:
         # A status outside MEAL_COOKED_STATUSES is a bad request, not a
         # missing row — 422, not the 404 below, which is check_off_meal's
@@ -3415,6 +3423,20 @@ def cooker_check_meal(req: CheckOffMealRequest):
         logger.exception("Cooker check-meal failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return view
+
+
+@app.post("/api/cooker/undo-eaten")
+def cooker_undo_eaten(req: UndoEatenRequest):
+    """Undo on the "marked eaten" toast: un-mark the meal and put back every
+    inventory row that tick changed, exactly (tools.undo_eaten_meal)."""
+    try:
+        tools.undo_eaten_meal(req.entry_id)
+        return tools.get_cooker_view()
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Cooker undo-eaten failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
 @app.post("/api/cooker/start")
@@ -3827,8 +3849,10 @@ def today_move_done(move_id: str, req: MoveDoneRequest, date: str | None = None)
     if (date or req.date) is not None:
         _route_date(date or req.date, "date")
     try:
-        tools.set_move_done(move_id, req.done)
+        ticked = tools.set_move_done(move_id, req.done)
         payload = tools.today_moves(date or req.date)
+        if ticked.get("kitchen_took"):
+            payload["kitchen_took"] = ticked["kitchen_took"]
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -3915,6 +3939,64 @@ def today_yesterday_undo(req: YesterdayUndoRequest):
         return tools.undo_skipped_move(req.undo_entry_id)
     except Exception as e:
         logger.exception("Undoing yesterday's skip failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.get("/api/today/going-off")
+def today_going_off():
+    """
+    Today's food-going-off card and quiet line (Loop Board B5): `card` when
+    a dinner that would have used something turning today or tomorrow
+    didn't happen and there is a swap to offer, `line` for something going
+    off with no plan at all. Either may be None. See tools/going_off.py.
+    """
+    try:
+        return tools.today_going_off()
+    except Exception as e:
+        logger.exception("Today's going-off check failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+class GoingOffSwapRequest(BaseModel):
+    """"Swap them": the card's item and the skipped dinner it named."""
+    item_id: int
+    entry_id: int
+
+
+class GoingOffLeaveRequest(BaseModel):
+    item_id: int
+
+
+@app.post("/api/today/going-off/swap")
+def today_going_off_swap(req: GoingOffSwapRequest):
+    """The skipped dinner onto tonight, tonight's dinner on to the night the
+    card named. 409 when the card on screen is out of date."""
+    try:
+        return tools.swap_for_going_off(req.item_id, req.entry_id)
+    except tools.GoingOffWeekChanged as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    except Exception as e:
+        logger.exception("The going-off swap failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/today/going-off/leave")
+def today_going_off_leave(req: GoingOffLeaveRequest):
+    """"Leave it": no card about this item for the rest of the day."""
+    try:
+        return tools.leave_going_off(req.item_id)
+    except Exception as e:
+        logger.exception("Leaving the going-off card failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/today/going-off/undo")
+def today_going_off_undo(req: YesterdayUndoRequest):
+    """Undo on the swap's toast — both nights back as they were."""
+    try:
+        return tools.undo_going_off_swap(req.undo_entry_id)
+    except Exception as e:
+        logger.exception("Undoing the going-off swap failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
@@ -4098,6 +4180,10 @@ class WeekIntakeRequest(BaseModel):
     # THIS week only — {"grid", "prep", "variety", "lunch_needs"}, the
     # whole set each time; {} clears it. See usual_week.normalize_week_answers.
     week_answers: dict | None = None
+    # "Use these up" (Loop Board B1, 2026-10-26): the inventory_items ids
+    # switched OFF before the draft — the whole list each time; [] turns
+    # everything back on. See tools/use_up.py.
+    use_up_off: list | None = None
 
 
 class WeekGenerateRequest(BaseModel):
@@ -4331,6 +4417,7 @@ def save_week_intake_route(week_start: str, req: WeekIntakeRequest):
             weekday_lunches=req.weekday_lunches,
             brought_over=req.brought_over,
             week_answers=req.week_answers,
+            use_up_off=req.use_up_off,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -6305,6 +6392,280 @@ def set_inventory_location_view(item_id: int, req: InventoryLocationRequest):
     return result
 
 
+@app.post("/api/inventory/{item_id}/freeze")
+def freeze_inventory_item_view(item_id: int):
+    """
+    "Freeze it" (Loop Board B3, 2026-10-26; the Kitchen tab reuses it):
+    fridge/pantry -> Freezer, dated today. The response's `undo` goes back
+    to /api/inventory/unfreeze unchanged.
+    """
+    try:
+        return tools.freeze_item(item_id)
+    except tools.CannotFreeze as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Inventory freeze failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+class InventoryUnfreezeRequest(BaseModel):
+    undo: dict
+
+
+@app.post("/api/inventory/unfreeze")
+def unfreeze_inventory_item_view(req: InventoryUnfreezeRequest):
+    """The Undo on "Froze the …" — puts the row back where it was."""
+    try:
+        return tools.unfreeze_item(req.undo)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Inventory unfreeze failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+# ---------- The Kitchen TAB (Loop Board C1/C3, 2026-10-26) ----------
+# "home" in every path: `kitchen` is already the Cook tab's name in code
+# (/kitchen, tab 'kitchen'). See app/tools/whats_home.py.
+
+class WhatsHomeAmountRequest(BaseModel):
+    level: str
+
+
+class WhatsHomeMoveRequest(BaseModel):
+    location: str
+
+
+class WhatsHomeUndoRequest(BaseModel):
+    undo: dict
+
+
+@app.get("/api/whats-home")
+def whats_home_view():
+    """The Kitchen tab: count, the up-to-date line, Use soon, and the
+    Fridge / Freezer / Pantry rows (amounts as words, never numbers)."""
+    try:
+        return tools.get_whats_home()
+    except Exception as e:
+        logger.exception("Kitchen tab read failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.get("/api/whats-home/{item_id}")
+def whats_home_item_view(item_id: int):
+    """One Kitchen row, as the item sheet (C3) shows it."""
+    try:
+        return tools.get_whats_home_item(item_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Kitchen item read failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/whats-home/{item_id}/amount")
+def whats_home_amount_view(item_id: int, req: WhatsHomeAmountRequest):
+    """"How much is left?" — plenty / half / almost_gone. "Almost gone" on
+    food a planned meal needs puts it on the list once."""
+    try:
+        return tools.set_amount_left(item_id, req.level)
+    except tools.InvalidAmount as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Kitchen amount change failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/whats-home/{item_id}/used-up")
+def whats_home_used_up_view(item_id: int):
+    """"Used it up" — the row leaves the kitchen; `undo` brings it back."""
+    try:
+        return tools.used_up_item(item_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Kitchen used-up failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/whats-home/{item_id}/thrown-out")
+def whats_home_thrown_out_view(item_id: int):
+    """"Threw it out" — the row leaves the kitchen; `undo` brings it back."""
+    try:
+        return tools.threw_out_item(item_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Kitchen thrown-out failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/whats-home/{item_id}/move")
+def whats_home_move_view(item_id: int, req: WhatsHomeMoveRequest):
+    """"Move to pantry" / "Move to fridge". Into the freezer is
+    /api/inventory/{id}/freeze."""
+    try:
+        return tools.move_kitchen_item(item_id, req.location)
+    except tools.InvalidInventoryLocation as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Kitchen move failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+class WhatsHomeSaidRequest(BaseModel):
+    text: str = ""
+
+
+class WhatsHomeAddRequest(BaseModel):
+    # 'fridge' | 'freezer' | 'pantry' (a shelf photo) | 'receipt' | 'say' | 'type'
+    kind: str
+    items: list[dict]
+
+
+@app.post("/api/whats-home/read-said")
+def whats_home_read_said_view(req: WhatsHomeSaidRequest):
+    """"Say it" (Loop Board C2): a sentence -> the review's rows. Nothing is
+    saved here; /api/whats-home/add is what writes."""
+    if len(req.text or "") > 2000:
+        raise HTTPException(status_code=400, detail="That's a lot at once — try a few things at a time.")
+    return {"items": tools.read_said_items(req.text or "")}
+
+
+@app.post("/api/whats-home/add")
+def whats_home_add_view(req: WhatsHomeAddRequest):
+    """The review's "Add N to the fridge" (and Type it's one thing): writes
+    only the rows sent, which are the ones left ticked. `undo` comes back
+    for the toast."""
+    try:
+        return tools.add_kitchen_items(req.items, req.kind)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Kitchen add failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/whats-home/add/undo")
+def whats_home_add_undo_view(req: WhatsHomeUndoRequest):
+    """The Undo on the toast "13 things were added to the fridge." """
+    try:
+        return tools.undo_kitchen_add(req.undo)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Kitchen add undo failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/whats-home/undo")
+def whats_home_undo_view(req: WhatsHomeUndoRequest):
+    """The Undo on the Kitchen sheet's toasts (used up, thrown out, moved,
+    the amount chip). Freeze's Undo is /api/inventory/unfreeze."""
+    try:
+        return tools.restore_kitchen_item(req.undo)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Kitchen undo failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.get("/api/week/{week_start}/use-up")
+def week_use_up_view(week_start: str, day_count: int = 7):
+    """
+    "Use these up" (Loop Board B1): what the week should use, and which of
+    them the household has switched off for it. {"items": use_up.candidates,
+    "off": [inventory ids]}. Switching one off is a save of the week's
+    intake with `use_up_off` (the whole list).
+    """
+    _route_date(week_start, "week_start")
+    if day_count < 1 or day_count > tools.MAX_PERIOD_DAYS:
+        raise HTTPException(status_code=400, detail=f"A planning period has to be between 1 and {tools.MAX_PERIOD_DAYS} days.")
+    intake = tools.get_week_intake(week_start) or {}
+    return {
+        "items": tools.use_up_candidates(week_start, day_count),
+        "off": list(intake.get("use_up_off") or []),
+    }
+
+
+class InventoryCheckAnswer(BaseModel):
+    gone: list[int] = []
+    confirmed: list[int] = []
+
+
+@app.get("/api/inventory/check")
+def inventory_check_view(location: str | None = None):
+    """
+    "Quick check: still have these?" (Loop Board A4): the few kitchen rows
+    Pomona is least sure of, at most five, least sure first. `location`
+    narrows it (the Kitchen tab's freezer segment, C4). {"items": [...]};
+    an empty list means the step is skipped.
+    """
+    if location and location.strip().lower() not in ("fridge", "pantry", "freezer"):
+        raise HTTPException(status_code=400, detail="location has to be fridge, pantry or freezer.")
+    try:
+        return {"items": tools.inventory_check_candidates(location)}
+    except Exception as e:
+        logger.exception("Inventory check list failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/inventory/check")
+def inventory_check_answer_view(req: InventoryCheckAnswer):
+    """The check's Next: `gone` rows come out of the kitchen, `confirmed`
+    rows (the ones left untapped) are stamped confirmed today."""
+    try:
+        return tools.answer_inventory_check(req.gone, req.confirmed)
+    except Exception as e:
+        logger.exception("Inventory check answer failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+class UseUpResolveRequest(BaseModel):
+    action: str  # "freeze" | "side" | "let_go"
+
+
+class UseUpUndoRequest(BaseModel):
+    undo: dict | None = None
+
+
+@app.post("/api/week-plan/{plan_id}/use-up/{item_id}")
+def resolve_use_up_view(plan_id: int, item_id: int, req: UseUpResolveRequest):
+    """
+    One tap on the draft's "Couldn't fit these" (Loop Board B3): Freeze it,
+    Add as a side, or Let it go. The response carries the toast and the
+    `undo` for /api/week-plan/{plan_id}/use-up/{item_id}/undo.
+    """
+    try:
+        return tools.use_up_resolve(plan_id, item_id, req.action)
+    except tools.CannotFreeze as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Use-up resolve failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/week-plan/{plan_id}/use-up/{item_id}/undo")
+def undo_use_up_view(plan_id: int, item_id: int, req: UseUpUndoRequest):
+    """The Undo on a "Couldn't fit these" toast."""
+    try:
+        return tools.use_up_undo_resolve(plan_id, item_id, req.undo)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Use-up undo failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
 @app.post("/api/inventory/{item_id}/expiration")
 def step_inventory_expiration_view(item_id: int, req: InventoryExpirationStepRequest):
     """Shift an inventory item's best-before date by one day per tap (design_handoff_home_manager §6)."""
@@ -7237,7 +7598,9 @@ def get_grocery_already_have_summary_view():
     (already_have via /pre-shop-undo, elsewhere via /include).
     """
     try:
-        already_have = tools.get_already_have_decisions()
+        # What the Already home pass set aside (already_home.py) first,
+        # then the household's own "already have" answers — one section.
+        already_have = tools.already_home_lines() + tools.get_already_have_decisions()
         elsewhere = tools.list_grocery_list(status="excluded")
         # A two-weeks row taken off together is one row here too, put back
         # with one tap (app/tools/week_lines.py).
@@ -7318,14 +7681,14 @@ async def scan_receipt(request: Request, photo: UploadFile = File(...)):
     _enforce_rate_limit(request, "scan")
     image_b64, media_type = await _read_scan_image(photo)
     try:
-        items = scan_receipt_image(image_b64, media_type)
+        items, left_out = tools.kitchen_left_out(tools.kitchen_review_items(scan_receipt_image(image_b64, media_type), None))
     except AssistantUnavailableError as e:
         logger.warning("Receipt scan hit a transient Claude API failure: %s", e)
         raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         logger.exception("Receipt scan failed")
         raise HTTPException(status_code=500, detail=f"Couldn't read that receipt: {e}")
-    return {"items": items}
+    return {"items": items, "left_out": left_out}
 
 
 @app.post("/api/inventory/scan-fridge")
@@ -7342,14 +7705,14 @@ async def scan_fridge(request: Request, photo: UploadFile = File(...)):
     _enforce_rate_limit(request, "scan")
     image_b64, media_type = await _read_scan_image(photo)
     try:
-        items = scan_fridge_photo(image_b64, media_type)
+        items, left_out = tools.kitchen_left_out(tools.kitchen_review_items(scan_fridge_photo(image_b64, media_type), "fridge"), "fridge")
     except AssistantUnavailableError as e:
         logger.warning("Fridge scan hit a transient Claude API failure: %s", e)
         raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         logger.exception("Fridge scan failed")
         raise HTTPException(status_code=500, detail=f"Couldn't read that photo: {e}")
-    return {"items": items}
+    return {"items": items, "left_out": left_out}
 
 
 @app.post("/api/inventory/scan-pantry")
@@ -7361,14 +7724,35 @@ async def scan_pantry(request: Request, photo: UploadFile = File(...)):
     _enforce_rate_limit(request, "scan")
     image_b64, media_type = await _read_scan_image(photo)
     try:
-        items = scan_pantry_photo(image_b64, media_type)
+        items, left_out = tools.kitchen_left_out(tools.kitchen_review_items(scan_pantry_photo(image_b64, media_type), "pantry"), "pantry")
     except AssistantUnavailableError as e:
         logger.warning("Pantry scan hit a transient Claude API failure: %s", e)
         raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         logger.exception("Pantry scan failed")
         raise HTTPException(status_code=500, detail=f"Couldn't read that photo: {e}")
-    return {"items": items}
+    return {"items": items, "left_out": left_out}
+
+
+@app.post("/api/inventory/scan-freezer")
+async def scan_freezer(request: Request, photo: UploadFile = File(...)):
+    """
+    The Kitchen tab's "Snap a shelf" on the freezer (Loop Board C2/C5) —
+    the same draft-only scan as scan-fridge, every row tagged 'freezer'.
+    Nothing is saved: the review sheet's "Add N to the freezer" is
+    /api/whats-home/add.
+    """
+    _enforce_rate_limit(request, "scan")
+    image_b64, media_type = await _read_scan_image(photo)
+    try:
+        items, left_out = tools.kitchen_left_out(tools.kitchen_review_items(scan_freezer_photo(image_b64, media_type), "freezer"), "freezer")
+    except AssistantUnavailableError as e:
+        logger.warning("Freezer scan hit a transient Claude API failure: %s", e)
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        logger.exception("Freezer scan failed")
+        raise HTTPException(status_code=500, detail=f"Couldn't read that photo: {e}")
+    return {"items": items, "left_out": left_out}
 
 
 @app.post("/api/inventory/confirm-scan")
@@ -7568,11 +7952,15 @@ _WEEK_TOOLS |= {"set_slot_need", "set_away_stretch", "set_member_attendance", "s
 _KITCHEN_TOOLS = {
     "add_recipe", "update_recipe_details", "mark_recipe_feedback", "log_recipe_note", "log_cooking_deviation",
     "flag_recipe_temporary", "generate_prep_schedule", "check_off_prep_step", "check_off_meal",
-    "resolve_attention_item", "update_inventory", "update_inventory_items", "remove_inventory_item",
+    "resolve_attention_item",
     # Whose cook/shop it is: Today's rows and Cook's card both read it, and
     # the `kitchen` branch of refreshStaleTabsFromActions re-reads both.
     "change_move_owner",
 }
+# The Kitchen TAB (2026-10-26, key `home`): chat's inventory writes. They
+# were `kitchen` (Cook) while the Inventory sheet hung off Cook's More; that
+# row is gone, so a card's "View" lands where the inventory now lives.
+_HOME_TOOLS = {"update_inventory", "update_inventory_items", "remove_inventory_item"}
 _GROCERY_TOOLS = {
     "add_grocery_item", "add_grocery_items", "consolidate_grocery_list", "repair_grocery_quantities", "clear_stale_grocery_items",
     "clear_grocery_list", "mark_grocery_item", "update_grocery_item", "remove_grocery_item",
@@ -7609,6 +7997,7 @@ _CATEGORY_KICKERS = {
     "today": "Chores updated",
     "week": "Week updated",
     "kitchen": "Kitchen updated",
+    "home": "Kitchen updated",
     "grocery": "Grocery updated",
     "memory": "Household info updated",
 }
@@ -7622,6 +8011,7 @@ _CATEGORY_FALLBACK_CHANGES = {
     "today": "Your chores have changed",
     "week": "Your week has changed",
     "kitchen": "Your kitchen has changed",
+    "home": "Your kitchen has changed",
     "grocery": "Your list has changed",
     "memory": "Saved what you told me",
 }
@@ -7654,6 +8044,8 @@ def _categorize_tool(tool_name: str) -> tuple[str, str | None, str | None]:
         return "week", "week", None
     if tool_name in _KITCHEN_TOOLS:
         return "kitchen", "kitchen", None
+    if tool_name in _HOME_TOOLS:
+        return "home", "home", None
     if tool_name in _GROCERY_TOOLS:
         return "grocery", "grocery", None
     # Explicit household/memory tools, and the catch-all for any write tool
@@ -8284,6 +8676,13 @@ def kitchen_page():
     return FileResponse(os.path.join(static_dir, "shell.html"))
 
 
+# The Kitchen TAB (2026-10-26, Loop Board C1) — labelled "Kitchen", keyed
+# and pathed `home` because /kitchen is Cook's (see TABS in shell.js).
+@app.get("/home")
+def home_page():
+    return FileResponse(os.path.join(static_dir, "shell.html"))
+
+
 # The app shell on Plan with the Preferences sheet open (shell.js's boot
 # reads ?prefs=open, opens the sheet and scrubs the param).
 PREFERENCES_URL = "/week?prefs=open"
@@ -8812,7 +9211,7 @@ _TRAIL_ARROW = " → "
 # step appears in shell.js's goMealsStep / goGroceryStep or onboarding's
 # ALL_STEPS.
 _TRAIL_VIEWS = frozenset(
-    ["today", "week", "grocery", "kitchen", "ask"]
+    ["today", "week", "grocery", "kitchen", "home", "ask"]
     + [f"week.{s}" for s in ("day", "meal", "review", "allset", "freezer", "chores")]
     + [f"grocery.{s}" for s in ("carry", "sortall")]
     + [

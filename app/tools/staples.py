@@ -7,8 +7,8 @@ This is the first piece of Pomona built directly against the mental load
 model: "keeping track of when we need more" is the research's own example
 of anticipation load, and it is the phase that falls on one person. So the
 app takes the noticing. It does NOT take on inventory to do it — that is
-policy (2026-09-01, restated 2026-09-11: inventory stays an in-development
-beta feature, and nobody does inventory work to complete a loop). There
+policy (2026-09-01, restated 2026-09-11; inventory became a real feature again
+2026-10-26, but staples still stay out of it and nobody does inventory work to complete a loop). There
 are no counts and no locations here, and nothing in this module reads or
 writes `inventory_items`.
 

@@ -3,9 +3,10 @@ What is actually in the pantry and fridge, including the item detail sheet.
 """
 from __future__ import annotations
 
+import json as _json
 import re
 from datetime import date, timedelta
-from ..db import get_conn
+from ..db import get_conn, write
 from ._shared import household_id, require_household_row
 from . import grocery as _grocery
 from . import quantities as _quantities
@@ -197,12 +198,119 @@ def set_inventory_location(item_id: int, location: str) -> dict:
         )
     else:
         conn.execute("UPDATE inventory_items SET location = ?, updated_at = datetime('now') WHERE id = ? AND household_id = ?", (location, item_id, household_id()))
+    # frozen_on (2026-10-26): the day it went IN, so freezer food is planned
+    # oldest first (use_up.candidates). Cleared on the way out.
+    was = _quantities._display_location(dict(row)).strip().lower()
+    if location == "freezer" and was != "freezer":
+        conn.execute("UPDATE inventory_items SET frozen_on = ? WHERE id = ? AND household_id = ?",
+                     (_today().isoformat(), item_id, household_id()))
+    elif location != "freezer" and was == "freezer":
+        conn.execute("UPDATE inventory_items SET frozen_on = NULL, freeze_undo_json = NULL "
+                     "WHERE id = ? AND household_id = ?",
+                     (item_id, household_id()))
     conn.commit()
     conn.close()
     result = {"item_id": item_id, "location": location}
     if new_date:
         result["expiration_date"] = new_date
     return result
+
+
+class CannotFreeze(ValueError):
+    """freeze_item on a row that is already in the freezer."""
+
+
+def freeze_item(item_id: int) -> dict:
+    """
+    Move one fridge/pantry row to the Freezer, dated today ("frozen today").
+
+    The one "freeze this" door (2026-10-26, Loop Board B3; the Kitchen tab
+    reuses it). The move itself is set_inventory_location's, so the
+    freezer-door date rule is the same one every move follows; this adds
+    the undo. Returns {"item_id", "item", "location": "freezer",
+    "frozen_on", "expiration_date", "undo"} — hand `undo` back to
+    unfreeze_item unchanged to put the row exactly where it was.
+    Raises CannotFreeze for a row already in the freezer.
+    """
+    conn = get_conn()
+    try:
+        require_household_row(conn, "inventory_items", item_id, label="inventory item", close_on_miss=False)
+        row = conn.execute(
+            "SELECT id, item, category, location, expiration_date, frozen_on FROM inventory_items "
+            "WHERE id = ? AND household_id = ?",
+            (item_id, household_id()),
+        ).fetchone()
+    finally:
+        conn.close()
+    before = dict(row)
+    if _quantities._display_location(before).strip().lower() == "freezer":
+        raise CannotFreeze(f"{before['item']} is already in the freezer.")
+    moved = set_inventory_location(item_id, "freezer")
+    undo_record = {
+        "location": before["location"] or "",
+        "expiration_date": before["expiration_date"],
+        "frozen_on": before["frozen_on"],
+    }
+    with write() as conn:
+        conn.execute(
+            "UPDATE inventory_items SET freeze_undo_json = ? WHERE id = ? AND household_id = ?",
+            (_json.dumps(undo_record), item_id, household_id()),
+        )
+        after = conn.execute(
+            "SELECT expiration_date, frozen_on FROM inventory_items WHERE id = ? AND household_id = ?",
+            (item_id, household_id()),
+        ).fetchone()
+    return {
+        "item_id": item_id,
+        "item": before["item"],
+        "location": moved["location"],
+        "frozen_on": after["frozen_on"],
+        "expiration_date": after["expiration_date"],
+        "undo": {
+            "item_id": item_id,
+            "location": before["location"] or "",
+            "expiration_date": before["expiration_date"],
+            "frozen_on": before["frozen_on"],
+        },
+    }
+
+
+def unfreeze_item(undo: dict) -> dict:
+    """
+    Undo a freeze_item: put the row back on its shelf with the date it had.
+    Only while it is still in the freezer — a row that has moved since, or
+    is gone, is left alone and {"undone": False} comes back.
+
+    Only `undo["item_id"]` is read. Where the row goes back to, and with
+    which date, comes from the record freeze_item kept on the row
+    (inventory_items.freeze_undo_json), never from the client.
+    """
+    try:
+        item_id = int((undo or {}).get("item_id"))
+    except (TypeError, ValueError):
+        raise ValueError("I couldn't tell which item to put back.")
+    with write() as conn:
+        row = conn.execute(
+            "SELECT item, location, category, freeze_undo_json FROM inventory_items WHERE id = ? AND household_id = ?",
+            (item_id, household_id()),
+        ).fetchone()
+        if row is None or _quantities._display_location(dict(row)).strip().lower() != "freezer":
+            return {"item_id": item_id, "undone": False}
+        try:
+            kept = _json.loads(row["freeze_undo_json"] or "null")
+        except (TypeError, ValueError):
+            kept = None
+        if not isinstance(kept, dict):
+            return {"item_id": item_id, "undone": False}
+        back_to = (kept.get("location") or "").strip().lower()
+        if back_to not in ("", "fridge", "pantry"):
+            back_to = ""
+        conn.execute(
+            "UPDATE inventory_items SET location = ?, expiration_date = ?, frozen_on = ?, freeze_undo_json = NULL, "
+            "updated_at = datetime('now') WHERE id = ? AND household_id = ?",
+            (back_to, kept.get("expiration_date"), kept.get("frozen_on"), item_id, household_id()),
+        )
+    return {"item_id": item_id, "item": row["item"], "undone": True, "location": back_to}
 
 
 def step_inventory_expiration(item_id: int, delta_days: int) -> dict:
@@ -526,7 +634,7 @@ def _add_to_inventory(
 # column; there is nothing else to read. defrost.meat_items_for_plan is the
 # reader (2026-09-15): it may not take the freezer question away from a
 # household on a shelf the app picked for them.
-SCAN_SOURCES = {"receipt": "scan_receipt", "fridge": "scan_fridge", "pantry": "scan_pantry"}
+SCAN_SOURCES = {"receipt": "scan_receipt", "fridge": "scan_fridge", "pantry": "scan_pantry", "freezer": "scan_freezer"}
 
 # Where the shelf on a row came from the category default rather than from
 # a person. The two grocery paths write a row straight off a line the app
@@ -541,6 +649,9 @@ SCAN_SOURCES = {"receipt": "scan_receipt", "fridge": "scan_fridge", "pantry": "s
 GUESSED_LOCATION_SOURCES = frozenset({
     "grocery_checkoff", "grocery_list_already_have",
     SCAN_SOURCES["receipt"], "scan",
+    # The Kitchen tab's "Say it" (kitchen_add.read_said_items): a sentence
+    # names food, and its shelf is the category's usual one unless said.
+    "kitchen_said",
 })
 
 

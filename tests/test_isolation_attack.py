@@ -459,6 +459,7 @@ UPLOAD_ROUTES = {
     ("POST", "/api/inventory/scan-receipt"),
     ("POST", "/api/inventory/scan-fridge"),
     ("POST", "/api/inventory/scan-pantry"),
+    ("POST", "/api/inventory/scan-freezer"),
     ("POST", "/api/grocery-list/scan"),
     ("POST", "/api/recipes/import-photo"),
 }
@@ -499,6 +500,7 @@ def test_household_b_photo_scans_reach_the_model_and_touch_nothing_of_as(
     monkeypatch.setattr(main_module, "scan_receipt_image", scan_stub("scan-receipt"))
     monkeypatch.setattr(main_module, "scan_fridge_photo", scan_stub("scan-fridge"))
     monkeypatch.setattr(main_module, "scan_pantry_photo", scan_stub("scan-pantry"))
+    monkeypatch.setattr(main_module, "scan_freezer_photo", scan_stub("scan-freezer"))
     monkeypatch.setattr(main_module, "scan_grocery_list_image", scan_stub("grocery-scan"))
     monkeypatch.setattr(agent, "read_recipe_from_photos_llm", read_photos_stub)
 
@@ -543,7 +545,7 @@ def test_household_b_photo_scans_reach_the_model_and_touch_nothing_of_as(
             damage += [f"{method} {route.path} {form}: {d}" for d in _damage(before, _owned_state())]
 
     assert not refused, "a photo route never got past the door:\n" + "\n".join(refused)
-    assert set(seen) == {"scan-receipt", "scan-fridge", "scan-pantry", "grocery-scan", "import-photo"}
+    assert set(seen) == {"scan-receipt", "scan-fridge", "scan-pantry", "scan-freezer", "grocery-scan", "import-photo"}
     assert not leaks, "household B read household A's data through a photo route:\n" + "\n".join(leaks)
     assert not damage, "household B changed household A's data through a photo route:\n" + "\n".join(damage)
 

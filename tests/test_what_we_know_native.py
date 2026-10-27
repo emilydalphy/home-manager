@@ -73,7 +73,7 @@ def test_what_we_know_is_no_longer_an_iframe():
     assert "memory: { title: 'What we know', native: true" in sheets
     assert "stores: { title: 'What we know', native: true, section: 'stores' }" in sheets
     assert "memory.html" not in sheets, "What we know still points at the old page"
-    # Inventory keeps its frame: deferred beta, Emily's call.
+    # Inventory keeps its frame: stays framed (it was a deferred beta feature until 2026-10-25).
     assert "inventory: { title: 'Inventory', src: '/static/inventory.html' }" in sheets
 
 

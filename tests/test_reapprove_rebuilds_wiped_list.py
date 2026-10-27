@@ -58,7 +58,7 @@ def _new_plan(index: int) -> tuple[int, str, str]:
 def _rows(item: str):
     conn = get_conn()
     rows = conn.execute(
-        "SELECT id, item, quantity, status, source_weekly_plan_id FROM grocery_items WHERE item = ?", (item,)
+        "SELECT id, item, quantity, status, source_weekly_plan_id, removed_by FROM grocery_items WHERE item = ?", (item,)
     ).fetchall()
     conn.close()
     return rows
@@ -198,7 +198,12 @@ def test_a_have_it_line_does_not_stop_a_wiped_list_rebuilding():
 
     assert again["list_rebuilt"] is True
     assert _rows(beans)[0]["status"] == "needed"
-    assert not any(r["status"] == "removed" for r in _rows(onions))
+    # The "Have it" row is gone with the wipe. The onions it put in the
+    # kitchen still cover the rebuilt week, so the rebuild sets the new
+    # line aside as "Already home" (already_home.py, 2026-10-26) — off the
+    # list either way, never back on it.
+    assert not any(r["status"] == "removed" and r["removed_by"] != "kitchen" for r in _rows(onions))
+    assert not any(r["status"] == "needed" for r in _rows(onions))
 
 
 def test_a_standing_line_the_week_merged_onto_counts_by_the_ledger_not_the_plan_id():

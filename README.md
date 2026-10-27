@@ -843,9 +843,10 @@ publicly) until the auth work described below is done.
   its ingredients). No dedupe/merging of quantities yet.
 - Chat history is stored in memory per server process — restarting the
   server clears conversation context (the data itself persists in SQLite).
-- Not built yet: meal planning onboarding (dietary preferences, favorite
-  meals), shared scheduling for appointments/errands/date nights, and pantry
-  /fridge inventory tracking for food waste. These are the next phases.
+- Not built yet: shared scheduling for appointments/errands/date nights.
+  This is a next phase. (Meal planning onboarding exists. Pantry/fridge
+  inventory tracking exists, described above; the 2026-10-26 work to make it
+  keep itself and plan around what's home is on branches awaiting merge.)
 
 ## Path to a sellable product
 

@@ -440,8 +440,8 @@ def sync_defrost_tasks(weekly_plan_id: int) -> dict:
     free for this function's own rows, but it matters for a THIRD kind of
     row sharing the same task_type/meal_plan_entry_id-not-null shape:
     confirm_frozen_items's household-confirmed tasks, which never have an
-    inventory row to point at (inventory is deferred policy — see that
-    function's own docstring) and set meal_plan_entry_id instead, the same
+    inventory row to point at (inventory was deferred policy 2026-09-01, reversed
+    2026-10-25 — see that function's own docstring) and set meal_plan_entry_id instead, the same
     field this function keys its own candidates by. Without this filter
     those rows read as "existing" here, never match one of THIS function's
     freezer-derived candidate keys, and get swept away as stale the next
@@ -925,9 +925,9 @@ def get_defrost_schedule(days: int = 7) -> list[dict]:
 # approval") ----------
 #
 # Everything above this line only ever finds a defrost candidate by
-# crossing the plan against TRACKED inventory — and inventory is deferred
-# policy (2026-09-01 product decision): it stays lightweight background,
-# gets no new investment, and no household should have to do inventory
+# crossing the plan against TRACKED inventory — and inventory was deferred
+# policy (2026-09-01 product decision, reversed 2026-10-25): it stayed
+# lightweight background, and no household should have to do inventory
 # work to complete the core loop. Most households never track a freezer
 # item there at all, which means most households never got a defrost
 # reminder either, regardless of whether they actually had something
