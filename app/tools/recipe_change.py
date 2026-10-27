@@ -56,6 +56,7 @@ from ..db import get_conn
 from . import coordination as _coordination
 from . import grocery as _grocery
 from . import leftovers as _leftovers
+from . import quantities as _quantities
 from . import recipes as _recipes
 from ._shared import household_id, member_id
 
@@ -505,13 +506,14 @@ def change_meal_recipe(entry_id: int, recipe_id: int) -> dict:
         # past or cooked night changes recipe and leaves the list alone.
         live_ids = _live_ids(conn, ids) if approved else []
         before = _needed_lines(conn) if approved else {}
-        _unbuy(conn, live_ids)
         conn.execute(
             "UPDATE meal_plan_entries SET recipe_id = ?, freeform_meal = NULL "
             f"WHERE id IN ({','.join('?' * len(ids))}) AND household_id = ?",
             [int(recipe_id)] + ids + [hid],
         )
-        after = _rebuy(conn, plan_id, live_ids) if live_ids else before
+        # Less what is already in the cart or bought for these nights: the
+        # chicken ticked for Fried Rice is the Curry's chicken too.
+        after = _resync_users(conn, {plan_id: live_ids}) if live_ids else before
         conn.commit()
     except Exception:
         conn.rollback()
@@ -607,26 +609,18 @@ def _approved_users_of(conn, recipe_id: int) -> dict[int, list[int]]:
 
 
 def _live_ids(conn, ids: list[int]) -> list[int]:
-    """The entries among `ids` that are still ahead and 'planned'."""
+    """The entries among `ids` that are still ahead, 'planned' and not
+    ticked cooked — _approved_users_of's reading. A night already eaten
+    tonight is not still ahead: "we had tacos instead" put the tacos on
+    the live list (defect hunt, 2026-10-27)."""
     today = _grocery._household_today(conn=conn).isoformat()
     marks = ",".join("?" * len(ids))
     return [int(r["id"]) for r in conn.execute(
         f"SELECT id FROM meal_plan_entries WHERE id IN ({marks}) AND household_id = ? "
-        "AND date >= ? AND slot_state = 'planned' ORDER BY date ASC, id ASC",
+        "AND date >= ? AND slot_state = 'planned' AND cooked_status != 'done' "
+        "ORDER BY date ASC, id ASC",
         [*ids, household_id(), today],
     ).fetchall()]
-
-
-def _unbuy_users(conn, users: dict[int, list[int]]) -> None:
-    for ids in users.values():
-        _unbuy(conn, ids)
-
-
-def _rebuy_users(conn, users: dict[int, list[int]]) -> dict:
-    after: dict = {}
-    for plan_id, ids in users.items():
-        after = _rebuy(conn, plan_id, ids)
-    return after
 
 
 def _rebuy_after_edit(conn, users: dict[int, list[int]]) -> None:
@@ -676,36 +670,45 @@ def _rebuy_after_edit(conn, users: dict[int, list[int]]) -> None:
             [hid, *ids],
         ).fetchall()
         touched: set[int] = set()
+        # A person's own line the shares were added onto (source_weekly_plan_id
+        # IS NULL) can't be recomputed from the ledger. Its ledger is read once
+        # before any cut and once after, and the line restated in one step
+        # with the plan's ROUNDED part changed (_ledger_totals +
+        # _restate_standing_want, the reversal's own pair). Taking the whole
+        # bought amount off the line, link by link from one snapshot, left the
+        # new share on it with no ledger row behind it, and two cuts on one
+        # line overwrote each other (review, 2026-10-27).
+        standing_before: dict[int, list[str]] = {}
+        standing_cut: dict[int, list[tuple[str, str]]] = {}
         for link in fresh:
             if int(link["id"]) in old_ids or link["status"] in _done:
                 continue
             had = bought.get((int(link["meal_plan_entry_id"]), _grocery._merge_key(link["item"] or "")))
             if not had:
                 continue
-            left, gone = link["quantity"] or "", False
+            share = link["quantity"] or ""
+            left, gone = share, False
             for qty in had:
                 left, gone = _grocery._subtract_quantity(left, qty)
                 if gone:
                     break
-            if link["source_weekly_plan_id"] is None:
-                # A person's own line the share was added onto: the ledger
-                # can't restate it, so the bought part comes off its words.
-                line_left, line_gone = link["line_qty"] or "", False
-                for qty in had:
-                    line_left, line_gone = _grocery._subtract_quantity(line_left, qty)
-                    if line_gone:
-                        break
-                if not line_gone and line_left != (link["line_qty"] or ""):
-                    conn.execute("UPDATE grocery_items SET quantity = ? WHERE id = ? AND household_id = ?",
-                                 (line_left, link["grocery_item_id"], hid))
+            item_id = int(link["grocery_item_id"])
+            if link["source_weekly_plan_id"] is None and item_id not in standing_before:
+                standing_before[item_id] = _grocery._ledger_quantities(item_id, conn)
             if gone:
                 conn.execute("DELETE FROM meal_plan_grocery_links WHERE id = ? AND household_id = ?", (link["id"], hid))
-            elif left != (link["quantity"] or ""):
+            elif left != share:
                 conn.execute("UPDATE meal_plan_grocery_links SET quantity = ? WHERE id = ? AND household_id = ?",
                              (left, link["id"], hid))
             else:
                 continue
-            touched.add(int(link["grocery_item_id"]))
+            if link["source_weekly_plan_id"] is None:
+                standing_cut.setdefault(item_id, []).append((share, "" if gone else left))
+            touched.add(item_id)
+        for item_id, before_qtys in standing_before.items():
+            if item_id not in standing_cut:
+                continue
+            _restate_after_cut(conn, item_id, before_qtys, standing_cut[item_id])
         for item_id in touched:
             still = conn.execute(
                 "SELECT 1 FROM meal_plan_grocery_links WHERE household_id = ? AND grocery_item_id = ? LIMIT 1",
@@ -722,6 +725,65 @@ def _rebuy_after_edit(conn, users: dict[int, list[int]]) -> None:
                     "AND COALESCE(kept_amount, '') = ''",
                     (item_id, hid),
                 )
+
+
+def _restate_after_cut(conn, item_id: int, before_qtys: list[str], cuts: list[tuple[str, str]]) -> None:
+    """
+    A household's own line after _rebuy_after_edit cut the plan's shares on
+    it: restated from the ledger before and after (the plan's rounded part
+    swapped), or — when those rows can't be read that way — each cut taken
+    off in turn (share less what is left of it), never more than that and
+    never below nothing.
+    """
+    hid = household_id()
+    row = conn.execute("SELECT quantity FROM grocery_items WHERE id = ? AND household_id = ?",
+                       (item_id, hid)).fetchone()
+    if not row:
+        return
+    current = row["quantity"] or ""
+    totals = _quantities._ledger_totals(before_qtys, _grocery._ledger_quantities(item_id, conn))
+    restated = None if totals is None else _grocery._restate_standing_want(current, *totals)
+    if restated is not None:
+        new_qty, gone = restated
+    else:
+        new_qty, gone = current, False
+        for share, left in cuts:
+            cut = _quantities._parse_quantity(share)
+            rest = _quantities._parse_quantity(left) if left else (0.0, cut[1] if cut else None)
+            if not cut or not rest:
+                continue
+            rest_amount = _quantities._convert_to_unit(rest[0], rest[1], cut[1]) if left else 0.0
+            if rest_amount is None or cut[0] - rest_amount <= 0:
+                continue
+            new_qty, gone = _grocery._subtract_quantity(new_qty, f"{cut[0] - rest_amount:g} {cut[1] or ''}".strip())
+            if gone:
+                break
+    if gone or not new_qty:
+        return   # a line somebody typed is never blanked here
+    new_qty = _grocery._no_more_than(new_qty, current)
+    if new_qty != current:
+        conn.execute("UPDATE grocery_items SET quantity = ? WHERE id = ? AND household_id = ?",
+                     (new_qty, item_id, hid))
+
+
+def _resync_users(conn, users: dict[int, list[int]]) -> dict:
+    """
+    Redo these nights' shopping after their recipe changed (a pick, a
+    rewrite, an undo): _rebuy_after_edit's reading — unticked lines come
+    off and the recipe as it now stands is bought less what is already in
+    the cart or bought for those nights — and what the list reads after.
+
+    Called AFTER the write; the reversal reads the ledger, never the
+    recipe. _unbuy/_rebuy left a ticked line alone and bought the whole
+    new amount beside it, so switching Fried Rice to Chicken Curry with
+    the chicken in the cart put a second 2 lbs on the list (defect hunt,
+    2026-10-27; the 2026-10-24 entry's "apply_rewrite still re-buys over a
+    ticked line").
+    """
+    users = {k: v for k, v in users.items() if v}
+    if users:
+        _rebuy_after_edit(conn, users)
+    return _needed_lines(conn)
 
 
 def _unbuy(conn, entry_ids: list[int]) -> None:
@@ -1042,7 +1104,6 @@ def apply_rewrite(spec: dict, detail: dict, request_text: str, this_meal_only: b
             users = {plan_id: _live_ids(conn, ids)} if approved else {}
             users = {k: v for k, v in users.items() if v}
             before = _needed_lines(conn) if approved else {}
-            _unbuy_users(conn, users)
             target_id = _fork_recipe(conn, target_id, _fork_name(conn, spec.get("name") or "", entry["date"]))
             conn.execute(
                 "UPDATE meal_plan_entries SET recipe_id = ? "
@@ -1057,7 +1118,6 @@ def apply_rewrite(spec: dict, detail: dict, request_text: str, this_meal_only: b
             users = _approved_users_of(conn, target_id)
             approved = approved or bool(users)
             before = _needed_lines(conn) if approved else {}
-            _unbuy_users(conn, users)
         conn.execute(
             "UPDATE recipes SET ingredients_json = ?, instructions_json = ?, default_servings = ?, "
             "prep_time_minutes = COALESCE(?, prep_time_minutes), "
@@ -1070,7 +1130,7 @@ def apply_rewrite(spec: dict, detail: dict, request_text: str, this_meal_only: b
              json.dumps(detail.get("advance_prep_step_indices") or []),
              target_id, hid),
         )
-        after = _rebuy_users(conn, users) if users else before
+        after = _resync_users(conn, users) if users else before
         conn.commit()
     except Exception:
         conn.rollback()
@@ -1134,12 +1194,11 @@ def _undo_fork(conn, req, entry, snapshot: dict) -> dict:
         approved = entry["plan_status"] == "approved"
         live = _live_ids(conn, ids) if (approved and ids) else []
         before = _needed_lines(conn) if approved else {}
-        _unbuy(conn, live)
         conn.execute(
             "UPDATE meal_plan_entries SET recipe_id = ? WHERE recipe_id = ? AND household_id = ?",
             (original, fork, hid),
         )
-        after = _rebuy(conn, int(entry["weekly_plan_id"]), live) if live else before
+        after = _resync_users(conn, {int(entry["weekly_plan_id"]): live}) if live else before
         conn.execute("DELETE FROM recipes WHERE id = ? AND household_id = ?", (fork, hid))
         conn.execute(
             "UPDATE recipe_change_requests SET outcome = ? WHERE id = ? AND household_id = ?",
@@ -1227,13 +1286,12 @@ def undo_recipe_change(request_id: int) -> dict:
         users = _approved_users_of(conn, req["recipe_id"])
         approved = bool(users)
         before = _needed_lines(conn) if approved else {}
-        _unbuy_users(conn, users)
         conn.execute(
             "UPDATE recipes SET " + ", ".join(f"{c} = ?" for c in _SNAPSHOT_COLUMNS) +
             " WHERE id = ? AND household_id = ?",
             [snapshot.get(c) for c in _SNAPSHOT_COLUMNS] + [int(req["recipe_id"]), hid],
         )
-        after = _rebuy_users(conn, users) if users else before
+        after = _resync_users(conn, users) if users else before
         conn.execute(
             "UPDATE recipe_change_requests SET outcome = ? WHERE id = ? AND household_id = ?",
             (OUTCOME_UNDONE, int(request_id), hid),

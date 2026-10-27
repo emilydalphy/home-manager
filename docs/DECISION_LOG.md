@@ -59,6 +59,17 @@ why*, not duplicating the diff.
   the weekend's big shop. `before_shop._current_plan_row` now prefers an
   approved not-yet-started plan with lines live on the list.
   `tests/test_before_shop_next_weeks_shop.py`.
+- **Change recipe and a rewrite don't buy for an eaten night or over the
+  cart** (2026-10-27, overnight defect hunt; branch
+  `overnight/hunt-recipes-1027`; tests
+  `tests/test_recipe_change_cooked_and_ticked.py`). `recipe_change._live_ids`
+  now skips `cooked_status = 'done'` (tonight's cooked dinner changed to
+  Tacos put beef + tortillas on the list), and pick / rewrite / undo resync
+  through `_rebuy_after_edit` (new `_resync_users`), so chicken in the cart
+  counts toward the new recipe instead of a second 2 lbs. Closes 2026-10-24's
+  "apply_rewrite still re-buys over a ticked line". Review fix: a person's
+  own line is restated once from the ledger before/after the cuts
+  (`_restate_after_cut`), not cut by the whole bought amount per link.
 - **The iPhone app's id is `com.heypomona.app`** (2026-10-25, Emily's pick
   to match her heypomona domain; branch `overnight/bundle-id-heypomona`).
   Replaced the `com.pomona.app` placeholder in `capacitor.config.json`, the
