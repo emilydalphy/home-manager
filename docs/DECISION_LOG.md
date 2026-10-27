@@ -13,6 +13,18 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **TestFlight pipeline checked against Codemagic's docs** (2026-10-27;
+  branch `overnight/testflight-pipeline`). `submit_to_testflight` is now
+  false: builds go to internal testers with no review, and Emily submits to
+  Beta App Review by hand after `docs/IPHONE_TEST_CHECKLIST.md` (true would
+  have sent the very first build to review, and gone red with Test
+  Information still blank). The README said Codemagic makes the signing
+  certificate itself; on the `ios_signing` route it doesn't, so
+  `docs/TESTFLIGHT_WALKTHROUGH.md` has her generate it in Codemagic and make
+  the App Store profile on Apple's site. A step stops the build unless Xcode
+  is 26+ (Apple's rule since 2026-04-28). The build number is
+  `$BUILD_NUMBER`, raised above Apple's newest when `APP_STORE_APPLE_ID` is
+  set. Untested on a real Mac: nothing here can run until the account exists.
 - **The iPhone app's id is `com.heypomona.app`** (2026-10-25, Emily's pick
   to match her heypomona domain; branch `overnight/bundle-id-heypomona`).
   Replaced the `com.pomona.app` placeholder in `capacitor.config.json`, the

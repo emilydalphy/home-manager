@@ -3,9 +3,9 @@
 # Codemagic reads this file from the repo. It holds NO secrets: Apple's
 # sign-in is the App Store Connect API key Emily adds once in Codemagic
 # (Team settings > Integrations > Developer Portal), referenced below by
-# its NAME only. Signing certificates and profiles are made and kept by
-# Codemagic from that key. See ios-app/README.md, "Day one with the Apple
-# account", for exactly what to click.
+# its NAME only. The signing certificate and App Store profile are added
+# once under Code signing identities (made with that key, kept by Codemagic).
+# docs/TESTFLIGHT_WALKTHROUGH.md says exactly what to click.
 #
 # Started by hand (Start new build) — never on every push: the iPhone app
 # only needs a new build when something in ios-app/ changes; a change to
@@ -39,16 +39,43 @@ workflows:
         # privacy manifest. Stops the build with a plain message if not.
         working_directory: ios-app
         script: npm run sync
-      - name: Use the signing profiles Codemagic made
+      - name: Check this Mac has Xcode 26 or newer
+        # Apple has refused uploads built with anything older than Xcode 26
+        # (the iOS 26 SDK) since 28 April 2026, and Capacitor 8 needs it too.
+        # "xcode: latest" above should always give one; this stops the build
+        # here, in plain words, instead of at Apple after the upload.
+        script: |
+          XCODE_MAJOR=$(xcodebuild -version | head -1 | sed -E 's/^Xcode ([0-9]+).*/\1/')
+          xcodebuild -version
+          if [ "$XCODE_MAJOR" -lt 26 ]; then
+            echo "This build machine has Xcode $XCODE_MAJOR. Apple needs Xcode 26 or newer. Pick a newer Xcode in codemagic.yaml (environment > xcode)."
+            exit 1
+          fi
+      - name: Use the signing certificate and profile in Codemagic
+        # The two files Emily adds once under Team settings > codemagic.yaml
+        # settings > Code signing identities (docs/TESTFLIGHT_WALKTHROUGH.md,
+        # steps 7 and 8). ios_signing above fetches them by bundle id;
+        # this points the Xcode project at them.
         script: xcode-project use-profiles
       - name: Build number
         # The version people see (1.0.0) comes from ios-app/package.json and
         # is already in the Xcode project — npm run sync checks they match.
-        # The build number has to go up on every upload to Apple, so it is
-        # Codemagic's own counter for this workflow.
+        # The build number has to go up on every upload to Apple. It is
+        # Codemagic's own counter ($BUILD_NUMBER). If APP_STORE_APPLE_ID is
+        # set (the app's number in App Store Connect > App Information), it
+        # is also checked against the newest build Apple already has, so a
+        # counter that ever starts again from 1 can't collide with an upload.
         script: |
-          sed -i '' "s/CURRENT_PROJECT_VERSION = [^;]*;/CURRENT_PROJECT_VERSION = $BUILD_NUMBER;/" "$XCODE_PROJECT/project.pbxproj"
-          echo "Building $(node -p "require('./$APP_DIR/package.json').version") ($BUILD_NUMBER)"
+          NEXT=$BUILD_NUMBER
+          if [ -n "$APP_STORE_APPLE_ID" ]; then
+            LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" 2>/dev/null | tail -1 | tr -dc '0-9' || true)
+            if [ -n "$LATEST" ] && [ "$((LATEST + 1))" -gt "$NEXT" ]; then
+              NEXT=$((LATEST + 1))
+            fi
+            echo "Newest build Apple has: ${LATEST:-none found}"
+          fi
+          sed -i '' "s/CURRENT_PROJECT_VERSION = [^;]*;/CURRENT_PROJECT_VERSION = $NEXT;/" "$XCODE_PROJECT/project.pbxproj"
+          echo "Building $(node -p "require('./$APP_DIR/package.json').version") ($NEXT)"
       - name: Build the app
         script: |
           xcode-project build-ipa \
@@ -60,4 +87,11 @@ workflows:
     publishing:
       app_store_connect:
         auth: integration
-        submit_to_testflight: true
+        # False on purpose. The build goes to TestFlight for INTERNAL testers
+        # (Emily, Vineeth), which needs no review from Apple. Sending it to
+        # Beta App Review for the public link is a button Emily presses in
+        # App Store Connect after the phone checklist passes
+        # (docs/TESTFLIGHT_WALKTHROUGH.md). True here would send every build
+        # to review straight away, and turn the build red if TestFlight's
+        # Test Information isn't filled in yet.
+        submit_to_testflight: false
