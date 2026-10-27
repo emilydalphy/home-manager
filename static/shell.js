@@ -10935,7 +10935,13 @@
       label: 'Undo',
       onClick: function () {
         Api.json(undoPath, { body: { undo: undo } })
-          .then(function () { refreshHomePanel(); refreshKitchenPanel(); })
+          .then(function (res) {
+            // Bought again (or scanned) since it was taken off: the row on
+            // the shelf now is the stock, so nothing comes back beside it.
+            if (res && res.already_back) showToast(homeItemName(res.item) + ' is already back in the kitchen.');
+            refreshHomePanel();
+            refreshKitchenPanel();
+          })
           .catch(function () { /* Api.json toasted */ });
       }
     });
@@ -10964,6 +10970,9 @@
       if (what === 'amount') {
         var level = el.getAttribute('data-level');
         var res = await Api.json('/api/whats-home/' + id + '/amount', { body: { level: level } });
+        // The answer is given; the sheet goes, so a toast never covers its
+        // buttons (verify, 2026-10-27) and the row shows the new word.
+        closeHomeItemSheet();
         await loadHome(true);
         // "Almost gone" on food a planned meal needs went on the list —
         // the one chip that changes something off this screen says so.
@@ -27909,6 +27918,16 @@
         // both calls are no-ops on a screen that was never built.
         refreshTodayMoves();
         refreshKitchenPanel();
+      } else if (action.tab === 'home') {
+        // The Kitchen TAB (key 'home'): chat's inventory writes
+        // (update_inventory, update_inventory_items, remove_inventory_item —
+        // app/main.py's _HOME_TOOLS, `kitchen` until 2026-10-27). Its card's
+        // "View" opens this tab. Cook and Today are still re-read, as they
+        // were when these tools were tagged `kitchen`: tonight's card and
+        // the fridge moves read the same shelves.
+        refreshHomeOnce();
+        refreshKitchenPanel();
+        refreshTodayMoves();
       } else if (action.tab === 'grocery') {
         refreshGroceryOnce();
         // A chat tick ("we got the milk") puts it in the kitchen.
