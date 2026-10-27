@@ -984,6 +984,14 @@ _MIGRATIONS = [
     # finding 7, 2026-10-27). NULL when the row was not frozen by it, and
     # cleared by any move out of the freezer.
     ("inventory_items", "freeze_undo_json", "TEXT"),
+    # A cook claim's meal slot (2026-10-26: "I've got Sunday" means the
+    # night, not the dish) — see move_owner.MoveOwners.override. '' on
+    # existing rows: they keep today's exact-dish match.
+    ("move_owner_overrides", "slot", "TEXT NOT NULL DEFAULT ''"),
+    # The age group this member's phone was last told about, once they
+    # stopped being an adult (2026-10-26, tools.age_change_note). '' = never
+    # told, or an adult again since.
+    ("members", "age_note_shown_for", "TEXT NOT NULL DEFAULT ''"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people
@@ -1093,6 +1101,54 @@ def _delete_blank_grocery_items(conn):
     nothing here every startup after the first.
     """
     conn.execute("DELETE FROM grocery_items WHERE TRIM(item) = ''")
+
+
+def _respell_grocery_stores_as_usual(conn):
+    """
+    One-off cleanup (Emily 2026-10-26, Loop Board "costco" spelling card):
+    before 2026-10-22 a grocery line kept its store exactly as typed, so an
+    old line could read "costco" or "COSTCO " while the household's usual
+    store is "Costco". Readers already treat them as one store
+    (stores.store_key), but the line itself still showed the old spelling.
+
+    Every line whose store is one of the household's usual stores spelled
+    differently (case or spacing) is rewritten to the usual store's own
+    spelling. A store that isn't a usual store is left exactly as it is —
+    there is no household spelling to pick. Idempotent: once a line matches
+    its usual store's spelling nothing touches it again, so this runs every
+    startup and does nothing after the first.
+    """
+    rows = conn.execute(
+        "SELECT household_id, usual_stores_json FROM meal_preferences "
+        "WHERE usual_stores_json IS NOT NULL AND usual_stores_json NOT IN ('', '[]')"
+    ).fetchall()
+    for row in rows:
+        try:
+            usual = json.loads(row["usual_stores_json"] or "[]")
+        except (TypeError, ValueError):
+            continue
+        if not isinstance(usual, list):
+            continue
+        # Same rule as stores.store_key / tidy_store_name (not imported:
+        # db.py sits below the tools package).
+        spelling: dict[str, str] = {}
+        for name in usual:
+            if isinstance(name, str) and name.strip():
+                tidy = " ".join(name.split())
+                spelling.setdefault(tidy.casefold(), tidy)
+        if not spelling:
+            continue
+        lines = conn.execute(
+            "SELECT id, store FROM grocery_items WHERE household_id = ? AND TRIM(store) != ''",
+            (row["household_id"],),
+        ).fetchall()
+        for line in lines:
+            own = spelling.get(" ".join(line["store"].split()).casefold())
+            if own is not None and own != line["store"]:
+                conn.execute(
+                    "UPDATE grocery_items SET store = ? WHERE id = ? AND household_id = ?",
+                    (own, line["id"], row["household_id"]),
+                )
 
 
 _REPEATS_TOLERANCE_TO_LEFTOVERS_STANCE = {
@@ -1409,6 +1465,7 @@ def _run_migrations(conn):
     _backfill_member_colors(conn)
     _merge_duplicate_item_store_preferences(conn)
     _delete_blank_grocery_items(conn)
+    _respell_grocery_stores_as_usual(conn)
     _migrate_repeats_tolerance_to_leftovers_stance(conn)
     _migrate_planning_anchor_values(conn)
     _backfill_allergy_notes_from_facts(conn)
@@ -1421,7 +1478,31 @@ def _run_migrations(conn):
     _migrate_chore_modes(conn)
     _backfill_chore_done_on(conn)
     _backfill_primary_member(conn)
+    _retag_library_proteins(conn)
     _run_once_data_migrations(conn)
+
+
+# Library dishes filed with the wrong main_protein, put right in the batch
+# files and here for the rows already filed (file_entry never overwrites a
+# filled column, so refiling can't). (dish_key, wrong, right). Emily,
+# 2026-10-26: Green Papaya Salad has fish sauce, so it isn't vegetarian.
+_LIBRARY_PROTEIN_RETAGS = (
+    ("green papaya salad", "vegetarian", "fish"),
+)
+
+
+def _retag_library_proteins(conn):
+    """Idempotent and run every startup: only a row still carrying the
+    wrong tag is touched, so a later deliberate change is never undone."""
+    if not conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'recipe_library'"
+    ).fetchone():
+        return
+    for key, wrong, right in _LIBRARY_PROTEIN_RETAGS:
+        conn.execute(
+            "UPDATE recipe_library SET main_protein = ? WHERE dish_key = ? AND main_protein = ?",
+            (right, key, wrong),
+        )
 
 
 # Data migrations that must run exactly ONCE per database, unlike every

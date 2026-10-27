@@ -220,6 +220,11 @@ def normalize_week_answers(raw) -> dict:
       variety     {meal: choice key} — "How many different …?" this week.
       lunch_needs {name: {"needs": [...], "days": {...}}} — "What does each
                   person need for weekday lunches?" this week.
+      dishes      {meal: 1-7} — a plain number of different dishes for this
+                  week, said in chat ("cut it to four dinners"; Emily
+                  2026-10-26: chat's count is this week's, not the usual).
+                  A meal with a dishes number reads it ahead of its variety
+                  choice.
 
     Raises ValueError on anything malformed; writes nothing.
     """
@@ -230,7 +235,7 @@ def normalize_week_answers(raw) -> dict:
         return {}
     if not isinstance(raw, dict):
         raise ValueError("week_answers must be an object.")
-    unknown = set(raw) - {"grid", "prep", "variety", "lunch_needs"}
+    unknown = set(raw) - {"grid", "prep", "variety", "lunch_needs", "dishes"}
     if unknown:
         raise ValueError(f"week_answers can't hold {', '.join(sorted(unknown))}.")
     out: dict = {}
@@ -256,6 +261,15 @@ def normalize_week_answers(raw) -> dict:
             if meal not in MEALS or choice not in VARIETY_CHOICES[meal]:
                 raise ValueError(f"{meal} variety this week must be one of {', '.join(VARIETY_CHOICES.get(meal, {}))}.")
             out["variety"][meal] = choice
+    if raw.get("dishes") is not None:
+        dishes = raw["dishes"]
+        if not isinstance(dishes, dict):
+            raise ValueError("week_answers.dishes must be an object of meal → number.")
+        out["dishes"] = {}
+        for meal, n in dishes.items():
+            if meal not in MEALS or isinstance(n, bool) or not isinstance(n, int) or not 1 <= n <= 7:
+                raise ValueError("Different dishes this week must be a number from 1 to 7 for breakfast, lunch or dinner.")
+            out["dishes"][meal] = n
     if raw.get("lunch_needs") is not None:
         needs = raw["lunch_needs"]
         if not isinstance(needs, dict):
@@ -302,6 +316,7 @@ def _state(conn) -> dict:
     variety = {}
     stored_variety = (stored or {}).get("variety") or {}
     week_variety = week.get("variety") or {}
+    week_dishes = week.get("dishes") or {}
     for m in MEALS:
         on = len(days_on(grid, m))
         choice = (stored_variety.get(m) or {}).get("choice")
@@ -314,7 +329,12 @@ def _state(conn) -> dict:
         usual_on = len(days_on(usual_grid, m))
         if choice is not None and resolve_dishes(m, choice, usual_on) != dishes:
             choice = None
-        if week_variety.get(m) in VARIETY_CHOICES[m]:
+        if dishes and isinstance(week_dishes.get(m), int):
+            # This week's plain number from chat (a usual count of 0 stays
+            # "none at all"), clamped to the days the meal is on.
+            choice = None
+            dishes = max(1, min(week_dishes[m], on)) if on else 0
+        elif week_variety.get(m) in VARIETY_CHOICES[m]:
             # This week's choice, its number against this week's days.
             choice = week_variety[m]
             dishes = resolve_dishes(m, choice, on) if on else 0
@@ -643,10 +663,25 @@ def _weekday(iso: str) -> str:
     return WEEKDAYS[date.fromisoformat(iso).weekday()]
 
 
+# The week's NEWEST answers, not the revision the plan was drafted from
+# (Emily 2026-10-26, "go with your picks": "use the newest answers
+# everywhere"). The Meals headline, the draft opener and the swap's night
+# tags already read get_week_intake (the current revision); these readers
+# read wp.intake_id, so a re-plan answered but not yet drafted had half
+# the screens on one set of answers and half on the other. A week whose
+# answers were cleared (Start over) has no current revision and reads {}.
+_NEWEST_INTAKE_SQL = (
+    "(SELECT w2.id FROM week_intake w2 WHERE w2.household_id = wp.household_id "
+    "AND w2.week_start = wp.week_start_date AND w2.superseded_at IS NULL "
+    "ORDER BY w2.revision DESC LIMIT 1)"
+)
+
+
 def week_answers_on(iso: str) -> dict:
     """
-    The week's own answers (week_answers) of the live plan holding `iso`,
-    or {} — an approved plan first, then the newest. What lets the readers
+    The week's own answers (week_answers) of the live plan holding `iso`
+    — its week's newest revision (_NEWEST_INTAKE_SQL) — or {}; an approved
+    plan first, then the newest. What lets the readers
     of the usual week OUTSIDE a draft (the menu's left-out meals, Today's
     moves, "Build a plan" on a left-out day, a swap's table size) agree
     with the draft about a week whose "Who's eating" was changed for that
@@ -656,7 +691,7 @@ def week_answers_on(iso: str) -> dict:
     try:
         row = conn.execute(
             "SELECT wi.week_answers_json AS a FROM weekly_plans wp JOIN week_intake wi "
-            "ON wi.id = wp.intake_id AND wi.household_id = wp.household_id "
+            f"ON wi.id = {_NEWEST_INTAKE_SQL} "
             "WHERE wp.household_id = ? AND wp.status != 'retired' "
             "AND COALESCE(NULLIF(wp.content_start_date, ''), wp.week_start_date) <= ? "
             "AND date(COALESCE(NULLIF(wp.content_start_date, ''), wp.week_start_date), "
@@ -679,7 +714,7 @@ def live_week_answers() -> list[dict]:
     try:
         rows = conn.execute(
             "SELECT DISTINCT wi.week_answers_json AS a FROM weekly_plans wp JOIN week_intake wi "
-            "ON wi.id = wp.intake_id AND wi.household_id = wp.household_id "
+            f"ON wi.id = {_NEWEST_INTAKE_SQL} "
             "WHERE wp.household_id = ? AND wp.status != 'retired' AND wi.week_answers_json != '{}'",
             (household_id(),),
         ).fetchall()
@@ -695,14 +730,14 @@ def live_week_answers() -> list[dict]:
 
 
 def plan_week_answers(weekly_plan_id: int) -> dict:
-    """The week's own answers (week_answers) of the intake a plan was
-    drafted from, or {} — what approval and the prep sessions read the
-    week by (for_plan)."""
+    """The week's own answers (week_answers) — the week's newest revision
+    (_NEWEST_INTAKE_SQL), or {} — what approval and the prep sessions read
+    the week by (for_plan)."""
     conn = get_conn()
     try:
         row = conn.execute(
             "SELECT wi.week_answers_json AS a FROM weekly_plans wp JOIN week_intake wi "
-            "ON wi.id = wp.intake_id AND wi.household_id = wp.household_id "
+            f"ON wi.id = {_NEWEST_INTAKE_SQL} "
             "WHERE wp.id = ? AND wp.household_id = ?",
             (weekly_plan_id, household_id()),
         ).fetchone()
@@ -716,7 +751,7 @@ def plan_week_answers(weekly_plan_id: int) -> dict:
 
 @contextmanager
 def for_plan(weekly_plan_id: int):
-    """this_week for the week a plan was drafted for — approval's batching
+    """this_week for a plan's week (its newest answers) — approval's batching
     and the plan's prep sessions read its prep days this way. Inside a
     scope already (a draft), the scope stands."""
     if _THIS_WEEK.get() is not None:
@@ -1120,6 +1155,9 @@ def fill_first_plan_gaps(plan_id: int, dates: list[str], picker=None) -> dict:
     out, who's home changed, a holiday only they can answer). Everything
     else that is still open is filled:
 
+      0. A meal whose number the week already meets: another of the week's
+         own dishes first (step 2's passes), and a new pick only for a gap
+         that leaves (Emily 2026-10-26).
       1. Grouped by meal into as many dishes as that meal's number asks for
          (never more than its open slots), and every group picked AT THE
          SAME TIME through main's fast path — allergen_gate.quick_pick, the
@@ -1166,16 +1204,35 @@ def fill_first_plan_gaps(plan_id: int, dates: list[str], picker=None) -> dict:
         finally:
             conn.close()
 
+        # 0. A meal whose number the week already meets repeats one of the
+        # week's own dishes first — less shopping (Emily 2026-10-26, "go
+        # with your picks"). Before this every meal with a gap got at least
+        # one NEW dish, past the household's number. A gap the repeat can't
+        # fill (nothing fits the time limit) still gets a new pick below.
+        met = []
+        for meal in MEALS:
+            have = _meal_variety.distinct_dishes(plan_id, meal) if any(g["slot"] == meal for g in gaps) else []
+            if have and counts.get(meal) and len(have) >= counts[meal]:
+                met.append(meal)
+        if met:
+            repeat_slots = tuple(m for m in met if m in _meal_variety.NEVER_OPEN_SLOTS)
+            if repeat_slots:
+                _meal_variety.fill_gaps_with_a_repeat(plan_id, dates, caps=caps, slots=repeat_slots)
+            if "dinner" in met:
+                _dinner_gaps.fill_open_dinners(plan_id, dates, caps=caps, budget=_allergen_gate.CallBudget(0),
+                                               reserve=0, targets={"dinner": counts["dinner"]})
+        pick_gaps = _open_gaps(plan_id, dates) if met else gaps
+
         # 1. One group per dish to pick, contexts built here (they read the
         # plan as it stands), picks side by side.
         # At most allergen_gate.MAX_HELD_DISHES picks in flight (the same
         # cap and worker pool the held-back re-pick uses), every meal with a
         # gap getting at least one.
         tasks = []
-        meals_open = [m for m in MEALS if any(g["slot"] == m for g in gaps)]
+        meals_open = [m for m in MEALS if any(g["slot"] == m for g in pick_gaps)]
         room = _allergen_gate.MAX_HELD_DISHES
         for n, meal in enumerate(meals_open):
-            meal_gaps = [g for g in gaps if g["slot"] == meal]
+            meal_gaps = [g for g in pick_gaps if g["slot"] == meal]
             have = _meal_variety.distinct_dishes(plan_id, meal)
             wanted = max(1, (counts.get(meal) or 1) - len(have))
             groups = max(1, min(wanted, len(meal_gaps), room - (len(meals_open) - n - 1)))

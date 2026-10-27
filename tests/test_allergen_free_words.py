@@ -781,7 +781,9 @@ def test_the_second_alias_audit(restriction, item):
     ("egg allergy", "Spritzer", ["white wine"]),
     ("egg allergy", "Chili", ["white beans"]),
     ("gluten free", "Float", ["root beer"]),
-    ("gluten free", "Soba", ["buckwheat noodles"]),
+    # Since Emily's 2026-10-26 pick, soba and plain buckwheat noodles are
+    # held; only the all-buckwheat kind passes.
+    ("gluten free", "Summer Bowl", ["100% buckwheat noodles"]),
     ("nut allergy", "Stir Fry", ["water chestnuts"]),
 ])
 def test_the_second_round_false_positives_pass(restriction, name, ingredients):

@@ -273,7 +273,7 @@ def test_the_provenance_wording_has_one_implementation():
     Today now draws the meals row and the Cook row on ONE screen, so that is
     the one place the two would have been seen drifting."""
     src = (REPO / "app" / "tools" / "moves.py").read_text()
-    assert "_day_meals.provenance_note(meal)" in src
+    assert "_day_meals.provenance_note(meal, today=today_str)" in src
     assert 'lead = "made ahead" if made_ahead else "leftovers from"' not in src, (
         "the second implementation is gone, not merely unused"
     )

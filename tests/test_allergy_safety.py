@@ -1113,11 +1113,21 @@ class TestGlutenAliasesDoNotFlagGlutenFreeDishes:
 
         assert [c["meal"] for c in found] == ["Wheat Pasta"]
 
-    def test_soba_made_with_buckwheat_noodles_does_not_flag(self, kitchen):
+    def test_noodles_that_say_100_percent_buckwheat_do_not_flag(self, kitchen):
+        # Plain "buckwheat noodles" (and any soba) are held since Emily's
+        # 2026-10-26 pick: most are cut with wheat. Only the all-buckwheat
+        # kind is believed. A plain name: "Soba" or "noodle" in it is held on its own.
+        tools.add_recipe("Summer Salad",
+                         ingredients=[{"item": "100% buckwheat noodles", "qty": "200g"}])
+        tools.set_member_dietary_restrictions("Emily", ["gluten free"])
+
+        assert tools.check_plan_conflicts(self._plan_with("Summer Salad"))["conflicts"] == []
+
+    def test_plain_buckwheat_noodles_now_flag(self, kitchen):
         tools.add_recipe("Soba", ingredients=[{"item": "buckwheat noodles", "qty": "200g"}])
         tools.set_member_dietary_restrictions("Emily", ["gluten free"])
 
-        assert tools.check_plan_conflicts(self._plan_with("Soba"))["conflicts"] == []
+        assert tools.check_plan_conflicts(self._plan_with("Soba"))["conflicts"]
 
     def test_udon_noodles_still_flag(self, kitchen):
         tools.add_recipe("Udon", ingredients=[{"item": "udon noodles", "qty": "200g"}])

@@ -4109,7 +4109,13 @@ def check_steps_ingredients_consistency(
     # (complete_ingredient_list), and "no eggs needed" must not buy eggs.
     # The unused half keeps the whole text: a listed item a step mentions
     # only to say it's optional has still been mentioned.
-    used_text = " ".join(steps_without_negations(s) for s in steps)
+    # And with the serving line's accompaniments taken out ("Serve with
+    # rice or naan"): what goes alongside is the household's call, not a
+    # thing the recipe forgot to buy. The list repair already passes over
+    # it (_STEP_SERVING_CLAUSE_RE), so flagging it only put ~100 false
+    # "rice isn't on the ingredient list" lines in the morning report off
+    # the shared library (Emily, 2026-10-26: stop flagging serve-with lines).
+    used_text = " ".join(_without_serving_clauses(steps_without_negations(s)) for s in steps)
     unused = []
     for name in names:
         # Any word of the name is enough: "Baby spinach" is "the spinach"
@@ -4226,6 +4232,23 @@ _PANTRY_STAPLES = frozenset({
     "dijon mustard", "mayonnaise", "tomato paste", "vinegar", "rice vinegar",
     "white vinegar", "red wine vinegar", "balsamic vinegar", "apple cider vinegar",
 })
+
+
+def _without_serving_clauses(text: str) -> str:
+    """Step text with its serving clauses ("serve with rice", "garnish
+    with cilantro") dropped from the serving word to the end of its
+    sentence, so the whole list of choices goes ("Serve with roti, naan or
+    rice"), and a sentence that opens with "Serve" ("Serve the salmon with
+    rice or roast potatoes") counts too. Only from the serving word on:
+    "stir in the broth and serve with rice" still uses the broth."""
+    out = []
+    for sentence in re.split(r"(?<=[.!?;])\s+|[;\n]", text or ""):
+        found = _STEP_SERVING_CLAUSE_RE.search(sentence) or _SERVE_OPENS_RE.match(sentence)
+        out.append(sentence[:found.start()] if found else sentence)
+    return " ".join(out)
+
+
+_SERVE_OPENS_RE = re.compile(r"\s*serve\b")
 
 
 def _steps_for_the_list(steps: list[str]) -> str:

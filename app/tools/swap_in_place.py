@@ -1038,9 +1038,12 @@ def fill_empty_day(weekly_plan_id: int, meal_date: str, picker=None) -> dict:
             "day": _refreshed_day(weekly_plan_id, meal_date)}
 
 
-def _fill_one_slot(weekly_plan_id: int, meal_date: str, item: dict, pick_one) -> dict | None:
+def _fill_one_slot(weekly_plan_id: int, meal_date: str, item: dict, pick_one,
+                   note: str = _FILL_NOTE, constraint: str = "filled_empty_day") -> dict | None:
     """One left-out slot: pick, gate, save, write. None when both picks
-    were turned away (nothing written)."""
+    were turned away (nothing written). `note` / `constraint` are what the
+    picker is told and what the new row records — in_after_all passes its
+    own."""
     entry = {
         "entry_id": None, "date": meal_date, "slot": item["slot"], "meal": "",
         "recipe_id": None, "freeform_meal": None, "food_groups": [], "reasoning": "",
@@ -1050,7 +1053,7 @@ def _fill_one_slot(weekly_plan_id: int, meal_date: str, item: dict, pick_one) ->
     pick = None
     for _attempt in range(MAX_PICK_ATTEMPTS):
         context = build_swap_context(weekly_plan_id, entry, tried)
-        context["note"] = _FILL_NOTE
+        context["note"] = note
         candidate = pick_one(context) or {}
         name = (candidate.get("meal_name") or "").strip()
         if not name:
@@ -1073,9 +1076,154 @@ def _fill_one_slot(weekly_plan_id: int, meal_date: str, item: dict, pick_one) ->
         weekly_plan_id, item["old_ids"], meal_date, item["slot"], pick["meal_name"],
         food_groups=[g for g in (pick.get("food_groups") or []) if g in _plates.ALL_GROUPS],
         reasoning=reason,
-        derived_from={"constraint": "filled_empty_day"},
+        derived_from={"constraint": constraint},
     )
     return {"slot": item["slot"], "meal": pick["meal_name"], "reason": reason}
+
+
+# ---------- "We're in after all" (Emily's pick #31, 2026-10-26) ----------
+
+# Said when the night isn't an Out night any more (a stale screen, a second
+# tap): plain, and it names the state of the plan.
+IN_AFTER_ALL_NOT_OUT = "That dinner isn’t down as a night out any more."
+
+# What the open dinner says when no dish could be picked for it: the night
+# is back, and the one thing to do next.
+IN_AFTER_ALL_OPEN_REASON = "You’re in after all. Pick a dinner and I’ll plan it."
+
+# What the one-slot pick is told (the swap prompt talks about replacing).
+_IN_AFTER_ALL_NOTE = (
+    "Nothing is planned on this slot: the household had said they were out for dinner and "
+    "are now home after all. `replacing` is empty — pick one dinner for the night, and make "
+    "`reason` say why it suits the night, not what it replaces."
+)
+IN_AFTER_ALL_CONSTRAINT = "in_after_all"
+
+
+def _out_night_rows(weekly_plan_id: int, meal_date: str) -> list[dict]:
+    """The dinner rows of an Out night (planned_empty with the out
+    constraint) — [] when the dinner is anything else."""
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT id, slot_state, derived_from_json FROM meal_plan_entries "
+        "WHERE weekly_plan_id = ? AND date = ? AND slot = 'dinner' AND household_id = ? "
+        "AND component_category IS NULL ORDER BY id",
+        (weekly_plan_id, meal_date, household_id()),
+    ).fetchall()
+    conn.close()
+    if not rows or any(
+        r["slot_state"] != "planned_empty"
+        or (json.loads(r["derived_from_json"] or "{}") or {}).get("constraint") != _weekly_plan.OUT_NIGHT_CONSTRAINT
+        for r in rows
+    ):
+        return []
+    return [dict(r) for r in rows]
+
+
+def _forget_out_tag(weekly_plan_id: int, meal_date: str) -> None:
+    """Take `out` off the night in the week's answers — a new revision,
+    the one door every changed answer goes through (save_week_intake) —
+    so the swap's context, a re-plan and every reader of the tags agree
+    the household is home. A week with no answers on file, or no tag on
+    that night, is left as it is."""
+    week_start = _week_start_of(weekly_plan_id)
+    intake = _week_intake.get_week_intake(week_start) if week_start else None
+    tags = dict((intake or {}).get("night_tags") or {})
+    if "out" not in (tags.get(meal_date) or []):
+        return
+    rest = [t for t in tags[meal_date] if t != "out"]
+    if rest:
+        tags[meal_date] = rest
+    else:
+        tags.pop(meal_date)
+    conn = get_conn()
+    owner = conn.execute(
+        "SELECT * FROM weekly_plans WHERE id = ? AND household_id = ?",
+        (weekly_plan_id, household_id()),
+    ).fetchone()
+    conn.close()
+    _start, day_count = _weekly_plan.plan_period(owner)
+    # Every tag left must sit inside the period it is saved for
+    # (save_week_intake checks), so the period is long enough to hold them.
+    span = day_count
+    for d in tags:
+        try:
+            span = max(span, (datetime.date.fromisoformat(d) - datetime.date.fromisoformat(week_start)).days + 1)
+        except ValueError:
+            continue
+    _week_intake.save_week_intake(week_start, night_tags=tags, day_count=span)
+
+
+def in_after_all(weekly_plan_id: int, meal_date: str, picker=None) -> dict:
+    """
+    "We're in after all" on a night the week's answers marked Out (Emily's
+    pick #31, 2026-10-26). Plan used to offer Swap and "Add a meal" there,
+    and Swap failed — there was no dish to swap. This puts the night back
+    to normal: the `out` tag comes off the week's answers, and Pomona picks
+    a dinner for it through the swap's own one-slot picker and gates
+    (_fill_one_slot — so a draft's list is left alone and an approved
+    week's buys for it, as every swap does).
+
+    When no dish can be picked (both picks clash, the picker came back
+    empty, or Claude can't be reached), the night is still back: it is an
+    open dinner ("Pick a dinner and I'll plan it") rather than an Out night,
+    because the household told us they're home.
+
+    Refused, with nothing written: a night outside the plan, a night gone
+    by, or a dinner that isn't an Out night (a trip's away dinner is not
+    this — the day sheet owns who is away).
+
+    Returns {status: 'filled', meal, reason, day} or {status: 'opened',
+    day} or {status: 'refused', message}.
+    """
+    from . import slot_needs as _slot_needs
+
+    pick_one = picker or _pick_replacement
+    if not _in_plan_period(weekly_plan_id, meal_date):
+        return {"status": "refused", "message": FILL_NOT_THIS_WEEK}
+    if _weekly_plan.night_has_gone(meal_date):
+        return {"status": "refused", "message": _weekly_plan.NIGHT_GONE}
+    rows = _out_night_rows(weekly_plan_id, meal_date)
+    if not rows or _slot_needs.get_slot_need(meal_date, "dinner").get("need") == "away":
+        return {"status": "refused", "message": IN_AFTER_ALL_NOT_OUT}
+
+    _forget_out_tag(weekly_plan_id, meal_date)
+    item = {"slot": "dinner", "old_ids": [r["id"] for r in rows]}
+    try:
+        done = _fill_one_slot(weekly_plan_id, meal_date, item, pick_one,
+                              note=_IN_AFTER_ALL_NOTE, constraint=IN_AFTER_ALL_CONSTRAINT)
+    except Exception:
+        logger.exception("in_after_all: picking a dinner for %s failed; opening it instead", meal_date)
+        done = None
+    if done:
+        return {"status": "filled", "meal": done["meal"], "reason": done["reason"],
+                "day": _refreshed_day(weekly_plan_id, meal_date)}
+
+    # No dish: the night is still back, as a dinner to decide. Only over
+    # the very rows read above — a concurrent tap that already filled it
+    # is left as it landed.
+    conn = get_conn()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        still = conn.execute(
+            "SELECT id FROM meal_plan_entries WHERE weekly_plan_id = ? AND date = ? AND slot = 'dinner' "
+            "AND household_id = ? AND component_category IS NULL ORDER BY id",
+            (weekly_plan_id, meal_date, household_id()),
+        ).fetchall()
+        if sorted(r["id"] for r in still) == sorted(item["old_ids"]):
+            _weekly_plan.clear_plan_slot(weekly_plan_id, meal_date, "dinner", conn=conn)
+            _weekly_plan.plan_slot_open(
+                weekly_plan_id=weekly_plan_id, meal_date=meal_date, slot="dinner",
+                open_reason=IN_AFTER_ALL_OPEN_REASON,
+                derived_from={"constraint": IN_AFTER_ALL_CONSTRAINT}, conn=conn,
+            )
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+    return {"status": "opened", "day": _refreshed_day(weekly_plan_id, meal_date)}
 
 
 def honest_meal_name(pick: dict) -> str:

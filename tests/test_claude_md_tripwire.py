@@ -92,9 +92,12 @@ ENTRY_HEADING = re.compile(r"^- \*\*(20\d\d-\d\d-\d\d) — ", re.M)
 # lines, 294 dated entries, newest dated heading 2026-10-19, and the
 # 24000 floor no longer caught a loss of a thousand lines.
 
+# Raised 2026-10-26 (branch calls-1026/household, on main c50a672): the log
+# was 29008 lines and 295 dated entries, newest 2026-10-26.
+
 LINE_FLOOR = 28500
 ENTRY_FLOOR = 290
-NEWEST_ENTRY_ON_OR_AFTER = "2026-10-19"
+NEWEST_ENTRY_ON_OR_AFTER = "2026-10-20"
 
 
 def _entry_dates() -> list[str]:

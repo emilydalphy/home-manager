@@ -399,6 +399,8 @@ from .household import (  # noqa: F401
     set_member_age_group,
     set_member_age_group_for_chat,
     last_adult_leaving,
+    own_age_leaving_adult,
+    age_change_note,
     MemberRefused,
     set_member_age,
     age_stage,
@@ -846,6 +848,7 @@ from .week_intake import (  # noqa: F401
     get_week_intake_history,
     get_week_intake_prefill,
     save_week_intake,
+    set_week_dish_count,
 )
 from .weekly_plan import (  # noqa: F401
     DAY_SLOTS,
@@ -932,6 +935,9 @@ from .swap_in_place import (  # noqa: F401
     # "Build a plan" on a blank Which days card (2026-09-26): the day's
     # left-out meals, one slot at a time, through the swap's own picker.
     fill_empty_day,
+    # "We're in after all" on an Out night (2026-10-26, #31): the tag
+    # comes off and the night gets a dinner through the same picker.
+    in_after_all,
 )
 # The household's allergies and must-avoids as the one `must_not_contain`
 # list every food-picking prompt is handed — the swap's, the three picks',

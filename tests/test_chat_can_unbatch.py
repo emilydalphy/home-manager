@@ -172,7 +172,7 @@ def test_the_agent_has_one_tool_and_every_phrasing_fits_it(what, day):
     assert "unbatch" in agent.TOOL_FUNCTIONS
     assert agent.TOOL_FUNCTIONS["unbatch"] is tools.unbatch
     schema = next(t for t in agent.TOOL_DEFINITIONS if t["name"] == "unbatch")
-    assert set(schema["input_schema"]["properties"]) == {"what", "day"}
+    assert set(schema["input_schema"]["properties"]) == {"what", "day", "confirm_rebuy"}
     assert schema["input_schema"]["required"] == []
     # Both arguments optional, so "no batch cooking this week" is a bare call.
     _batched_week()

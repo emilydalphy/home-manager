@@ -105,11 +105,25 @@ def _weekday(day: str) -> str:
     return date.fromisoformat(day).strftime("%A")
 
 
-def provenance_note(meal: dict) -> str:
+def _from_day(source_date: str, slot: str | None, today: str | None) -> str:
+    """The source day as a weekday — or, read on that same day about a
+    later meal (Today's look at tomorrow), "tonight" / "today": "leftovers
+    from Thursday" on a Thursday read as some other Thursday (Emily,
+    2026-10-26)."""
+    if today and source_date == today:
+        return "tonight" if (slot or "dinner") == "dinner" else "today"
+    return _weekday(source_date)
+
+
+def provenance_note(meal: dict, today: str | None = None) -> str:
     """
     Where a meal came from, when it did not come out of a pan today:
     "leftovers from Sunday", "made ahead Sunday", "from the freezer",
     "prepped Sunday". '' for an ordinary cook.
+
+    `today` (ISO), when the reader is looking at a LATER day from today:
+    a source night that IS today is said "tonight" ("leftovers from
+    tonight"), a daytime one "today" ("prepped today").
 
     THE one implementation of that wording. moves.py builds a reheat row's
     meta line from this too (it used to carry its own copy), because the
@@ -132,15 +146,16 @@ def provenance_note(meal: dict) -> str:
         headline = meal.get("leftovers_headline") or ""
         made_ahead = headline.startswith("Made ahead")
         lead = "made ahead" if made_ahead else "leftovers from"
-        source_date = (meal.get("leftovers_from") or {}).get("date")
+        source = meal.get("leftovers_from") or {}
+        source_date = source.get("date")
         if source_date:
-            return f"{lead} {_weekday(source_date)}"
+            return f"{lead} {_from_day(source_date, source.get('slot'), today)}"
         return lead if made_ahead else "from the freezer"
     # A lunch whose batch was cooked on an earlier (prep) day is not a cook
     # today (Emily, 2026-09-30) — the words are Cook's own.
     prepped = meal.get("prepped_ahead") or {}
     if prepped.get("date") and prepped["date"] < (meal.get("date") or ""):
-        return f"prepped {_weekday(prepped['date'])}"
+        return f"prepped {_from_day(prepped['date'], 'day', today)}"
     return ""
 
 

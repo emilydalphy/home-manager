@@ -1611,13 +1611,22 @@
       it.detail && it.detail.inventory_item_id != null;
   }
 
+  // "Steak was skipped, so there's no frozen portion for Tuesday's dinner.
+  // Plan something else for Tuesday?" (Emily's pick #32, 2026-10-26): asked
+  // on the same queue after "We skipped it", answered here with two buttons.
+  function isMissingPortion(it) {
+    return it && it.kind === 'portion_not_made' && it.id != null;
+  }
+
   var useSoonState = { items: [] };
 
   async function loadUseSoon(panel) {
     if (!panel.querySelector('#today-usesoon')) return;
     try {
       var data = await Api.json('/api/attention', { quiet: true });
-      useSoonState.items = ((data && data.items) || []).filter(isFreezerUseSoon);
+      useSoonState.items = ((data && data.items) || []).filter(function (it) {
+        return isFreezerUseSoon(it) || isMissingPortion(it);
+      });
     } catch (err) {
       // Nothing shown is the safe failure — a reminder is not worth a
       // card about an error.
@@ -1635,21 +1644,75 @@
     // when it goes (renderGoingOffLine) — one use-soon at a time.
     renderGoingOffLine(panel);
     if (!items.length) { slot.innerHTML = ''; return; }
+    var missing = items.filter(isMissingPortion);
+    var soon = items.filter(isFreezerUseSoon);
     slot.innerHTML =
-      '<div class="shell-card holding-card usesoon-card">' +
-        '<div class="chores-header"><h2>Use soon</h2></div>' +
-        items.map(function (it) {
-          return '<div class="holding-row" data-usesoon-id="' + it.id + '">' +
-            '<div class="holding-main">' +
-              '<div class="holding-text">' + escapeHtml(it.summary) + '</div>' +
-            '</div>' +
-            '<button type="button" class="holding-done" data-usesoon-done="' + it.id + '">Done</button>' +
-          '</div>';
-        }).join('') +
-      '</div>';
+      (missing.length
+        ? '<div class="shell-card holding-card usesoon-card">' +
+            missing.map(function (it) {
+              return '<div class="holding-row is-stacked" data-usesoon-id="' + it.id + '">' +
+                '<div class="holding-main">' +
+                  '<div class="holding-text">' + escapeHtml(it.summary) + '</div>' +
+                '</div>' +
+                '<div class="wk-acts">' +
+                  '<button type="button" class="wk-act" data-portion-replan="' + it.id + '">Plan something else</button>' +
+                  '<button type="button" class="holding-done" data-usesoon-done="' + it.id + '">Leave it</button>' +
+                '</div>' +
+              '</div>';
+            }).join('') +
+          '</div>'
+        : '') +
+      (soon.length
+        ? '<div class="shell-card holding-card usesoon-card">' +
+            '<div class="chores-header"><h2>Use soon</h2></div>' +
+            soon.map(function (it) {
+              return '<div class="holding-row" data-usesoon-id="' + it.id + '">' +
+                '<div class="holding-main">' +
+                  '<div class="holding-text">' + escapeHtml(it.summary) + '</div>' +
+                '</div>' +
+                '<button type="button" class="holding-done" data-usesoon-done="' + it.id + '">Done</button>' +
+              '</div>';
+            }).join('') +
+          '</div>'
+        : '');
     slot.querySelectorAll('[data-usesoon-done]').forEach(function (btn) {
       btn.addEventListener('click', function () { resolveUseSoon(panel, btn); });
     });
+    slot.querySelectorAll('[data-portion-replan]').forEach(function (btn) {
+      btn.addEventListener('click', function () { replanMissingPortion(panel, btn); });
+    });
+  }
+
+  // "Plan something else" (#32): the night gets a dinner through the
+  // swap's own picker (POST /api/attention/{id}/replan-night).
+  async function replanMissingPortion(panel, btn) {
+    var id = btn.getAttribute('data-portion-replan');
+    if (btn.disabled) return;
+    btn.disabled = true;
+    btn.setAttribute('aria-busy', 'true');
+    btn.textContent = 'Planning…';
+    try {
+      var data = await Api.json('/api/attention/' + encodeURIComponent(id) + '/replan-night', {
+        body: {},
+        quiet: true
+      });
+      var left = (data && data.items) || [];
+      useSoonState.items = left.filter(function (it) { return isFreezerUseSoon(it) || isMissingPortion(it); });
+      if (typeof cookState !== 'undefined') cookState.attention = left;
+      renderUseSoon(panel);
+      if (data && data.status === 'filled') {
+        toastSaved(savedLine(data.meal, 'planned for ' + dayName(data.date, { weekday: 'long' })));
+        refreshTodayMoves();
+        refreshStaleTabsFromActions([{ tab: 'week' }, { tab: 'kitchen' }]);
+      } else {
+        showToast((data && data.message) || 'That didn’t save. Try it again.');
+      }
+    } catch (err) {
+      btn.disabled = false;
+      btn.removeAttribute('aria-busy');
+      btn.textContent = 'Plan something else';
+      showToast('That didn’t save. Try it again.');
+    }
   }
 
   async function resolveUseSoon(panel, btn) {
@@ -1663,14 +1726,16 @@
         quiet: true
       });
       var left = (data && data.items) || [];
-      useSoonState.items = left.filter(isFreezerUseSoon);
+      useSoonState.items = left.filter(function (it) { return isFreezerUseSoon(it) || isMissingPortion(it); });
       // The same queue feeds Cook's fold; keep it from showing the row
       // this tap just settled until Cook next reads it.
       if (typeof cookState !== 'undefined') cookState.attention = left;
       renderUseSoon(panel);
       // No Undo: the queue has no reopen, and Cook's own "marked handled"
       // offers none either (S10 — Undo where the change can be undone).
-      toastSaved(savedLine(gone.detail && gone.detail.dish, 'marked handled'));
+      toastSaved(isMissingPortion(gone)
+        ? savedLine(gone.detail && gone.detail.date ? dayName(gone.detail.date, { weekday: 'long' }) + '’s dinner' : '', 'left as it is')
+        : savedLine(gone.detail && gone.detail.dish, 'marked handled'));
     } catch (err) {
       btn.disabled = false;
       showToast('That didn’t save. Try it again.');
@@ -3042,6 +3107,17 @@
   // starts the line or appears nowhere in it).
   function dayNodeWhyHtml(move, state, metaLine) {
     var bits = [];
+    // An allergy saved since the week was approved ("Has peanut, which Theo
+    // can't have — swap it on Plan", moves.allergy_line) leads the row on a
+    // line of its own in the allergy-clash style (.day-node-allergy), not
+    // after "Start by 7:35" in the quiet grey (Emily, 2026-10-26). The
+    // reason carries the same words first for other readers; taken out
+    // here so the row doesn't say it twice.
+    var allergyLine = String(move.allergy_line || '');
+    var reason = String(move.reason || '');
+    if (allergyLine && reason.indexOf(allergyLine) === 0) {
+      reason = reason.slice(allergyLine.length).replace(/^ · /, '');
+    }
     if (move.kind === 'cook' && state !== 'done') {
       var start = (move.chips || []).filter(function (c) { return /^Start/.test(c); })[0];
       if (start) bits.push(start);
@@ -3049,9 +3125,12 @@
     // The double-batch line ("Cooking for 6 — covers tonight and leftovers
     // on Thursday") — a fact about the cook, not the planner explaining
     // itself.
-    if (move.reason && String(metaLine || '').indexOf(move.reason) === -1) bits.push(move.reason);
-    if (!bits.length) return '';
-    return '<span class="day-node-meta day-node-why">' + escapeHtml(bits.join(' · ')) + '</span>';
+    if (reason && String(metaLine || '').indexOf(reason) === -1) bits.push(reason);
+    var allergyHtml = (allergyLine && state !== 'done')
+      ? '<span class="day-node-meta day-node-why day-node-allergy">' + escapeHtml(allergyLine) + '</span>'
+      : '';
+    if (!bits.length) return allergyHtml;
+    return allergyHtml + '<span class="day-node-meta day-node-why">' + escapeHtml(bits.join(' · ')) + '</span>';
   }
 
   function dayStripNodeHtml(move, state, text) {
@@ -4005,6 +4084,9 @@
       showToast(markedLine(meal.meal, answer === 'had' ? 'cooked' : 'skipped'));
       // A cooked tick moves what Plan and Cook show (and the pantry).
       if (answer === 'had') refreshStaleTabsFromActions([{ tab: 'week' }, { tab: 'kitchen' }]);
+      // A skip may have left a later night without its frozen portion, and
+      // the question about it is on the queue now (#32).
+      else loadUseSoon(panel);
     } catch (err) {
       console.warn('Could not save yesterday’s answer:', err);
       renderYesterdayCheck(panel, Object.assign({}, data, { meals: before }));
@@ -4341,9 +4423,10 @@
       var out = await res.json();
       var backOn = dish ? dish + ' is back on tonight.' : 'It’s back on tonight.';
       showToast(out.status === 'restored' ? (out.said || backOn) : (out.message || TONIGHT_SWAP_TROUBLE));
-      // Nothing an undoable night off did touched the list, so Shop is left
-      // alone; Kitchen (the freezer row) is re-read by the kitchen branch.
-      afterTonightSwap(panel);
+      // Shop is re-read only when the dish's lines followed it back to
+      // tonight's table (a move onto a different-size table, `list_changed`);
+      // Kitchen (the freezer row) is re-read by the kitchen branch.
+      afterTonightSwap(panel, { listMoved: !!(out && out.list_changed) });
     } catch (err) {
       console.warn('Undoing tonight’s night off failed:', err);
       showToast(TONIGHT_SWAP_TROUBLE);
@@ -4568,6 +4651,18 @@
           // named what came out of the kitchen, with Undo
         } else if (done) showToast(savedLine(moveName, 'ticked off'));
         else showToast(moveName ? moveName + ' is back on the list' : 'Back on the list');
+      } else if (!updated && done && move.tickable !== false &&
+                 (move.kind === 'fridge' || move.kind === 'prep')) {
+        // A move carried from an earlier day (moves._missed_fridge_moves)
+        // leaves the timeline once it's ticked — it's only carried while
+        // pending — so there is no row left to show it done, and it went
+        // with no word and no way back (Emily, 2026-10-26, "go with your
+        // picks"). The house toast and its Undo, which unticks it and
+        // brings the row back.
+        showToast(savedLine(savedName(move.title), 'ticked off'), {
+          label: 'Undo',
+          onClick: function () { return undoCarriedTodayMove(panel, moveId); }
+        }, 6000);
       }
       // The same rows are the Cook screen's check-offs and Plan's "Done" —
       // keep the three from showing different answers to the same question.
@@ -4577,6 +4672,25 @@
       console.warn('Could not save that tick:', err);
       move.done = was;
         renderTodayMoves(panel, data);
+      showToast('That didn’t save — try again.');
+    }
+  }
+
+  // Undo for a carried move's tick (toggleTodayMove): untick it, and the
+  // server's timeline brings the row back as it was.
+  async function undoCarriedTodayMove(panel, moveId) {
+    try {
+      var res = await Api.fetch('/api/today/moves/' + encodeURIComponent(moveId) + '/done', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ done: false })
+      });
+      if (!res.ok) throw new Error('move untick failed');
+      renderTodayMoves(panel, await res.json());
+      refreshKitchenPanel();
+      refreshWeekPanel({ kitchenFresh: true });
+    } catch (err) {
+      console.warn('Could not undo that tick:', err);
       showToast('That didn’t save — try again.');
     }
   }
@@ -11915,6 +12029,10 @@
     var pending = function (t) { return t.status !== 'done' && t.status !== 'skipped'; };
     var thaws = tasks.filter(function (t) { return t.task_type === 'defrost'; });
     var thawToDo = thaws.filter(pending)[0];
+    // Missed, and too late for the fridge: the server's one rule
+    // (moves.fridge_move_too_late, stamped as too_late_note), the same
+    // words Today's row says — never "still to do" beside Today's "too late".
+    if (thawToDo && thawToDo.too_late_note) return thawToDo.too_late_note;
     if (thawToDo) return cookThawTitle(thawToDo) + ' — still to do.';
     var prepToDo = tasks.filter(function (t) { return t.task_type !== 'defrost' && pending(t); });
     if (prepToDo.length === 1) return 'Still to do: ' + prepToDo[0].description.replace(/\.$/, '') + '.';
@@ -15870,6 +15988,11 @@
     var host = rliHost(draft.source_url);
     var ings = (draft.ingredients || []).map(rliIngredientRowHtml).join('');
     var fromPhoto = draft.read_by === 'photo';
+    // A yield of "1 pie" or "2 dozen" says what the recipe makes, not who
+    // it feeds: Serves starts empty and the line under it says so, so the
+    // household sets it rather than the planner scaling a "serves 1" by
+    // four (Emily 2026-10-26).
+    var makes = draft.servings_unknown_makes || '';
     body.innerHTML =
       // Where it came from and how it was read. A model-read draft says so,
       // because it is a reading of the page rather than a copy of it.
@@ -15891,12 +16014,15 @@
       '<input id="rli-name" class="rli-input" type="text" value="' + escapeHtml(draft.name || '') + '">' +
       '<div class="rli-numbers">' +
         '<label class="rli-label rli-num"><span>Serves</span>' +
-          '<input id="rli-servings" class="rli-input" type="number" min="1" inputmode="numeric" value="' + escapeHtml(draft.default_servings || 4) + '"></label>' +
+          '<input id="rli-servings" class="rli-input" type="number" min="1" inputmode="numeric" value="' + (makes ? '' : escapeHtml(draft.default_servings || 4)) + '"></label>' +
         '<label class="rli-label rli-num"><span>Prep mins</span>' +
           '<input id="rli-prep" class="rli-input" type="number" min="0" inputmode="numeric" value="' + escapeHtml(draft.prep_time_minutes || '') + '"></label>' +
         '<label class="rli-label rli-num"><span>Cook mins</span>' +
           '<input id="rli-cook" class="rli-input" type="number" min="0" inputmode="numeric" value="' + escapeHtml(draft.cook_time_minutes || '') + '"></label>' +
       '</div>' +
+      (makes
+        ? '<p class="rli-problem" id="rli-servings-note">The recipe says it makes “' + escapeHtml(makes) + '”, not how many it serves. Set Serves before saving.</p>'
+        : '') +
       '<div class="rli-label">Ingredients</div>' +
       '<div class="rli-ings" id="rli-ings">' + ings + '</div>' +
       '<button type="button" class="rli-link" data-rli="add-ing">Add an ingredient</button>' +
@@ -15958,6 +16084,13 @@
       problem.textContent = 'Give it a name first.';
       problem.hidden = false;
       body.querySelector('#rli-name').focus();
+      return;
+    }
+    var servingsEl = body.querySelector('#rli-servings');
+    if (rliDraft && rliDraft.servings_unknown_makes && !(parseInt(servingsEl.value, 10) > 0)) {
+      problem.textContent = 'Set how many it serves, then save.';
+      problem.hidden = false;
+      servingsEl.focus();
       return;
     }
     save.disabled = true;
@@ -17649,9 +17782,16 @@
   // screen. Top of the draft, beside the flags, so both of its views say
   // it — one quiet line, never a card or a button: it never gates Approve.
   function draftSoftNoteHtml(data) {
-    if (weekPlanState(data) !== 'draft' || !data.soft_note) return '';
-    return '<div class="wk-notes wk-draft-notes"><div class="wk-note">' +
-      escapeHtml(data.soft_note) + '</div></div>';
+    if (weekPlanState(data) !== 'draft') return '';
+    // The quiet lines under the flags: a standing dislike (soft_note), and
+    // a cooked freezer portion past its use-by (freezer_toss_note, Emily's
+    // pick #28, 2026-10-26 — the planner leaves it off every plate, so this
+    // is the one place it is mentioned while the week is being planned).
+    var notes = [data.soft_note, data.freezer_toss_note].filter(function (n) { return !!n; });
+    if (!notes.length) return '';
+    return '<div class="wk-notes wk-draft-notes">' + notes.map(function (n) {
+      return '<div class="wk-note">' + escapeHtml(n) + '</div>';
+    }).join('') + '</div>';
   }
 
   function weekNotesHtml(data, day) {
@@ -19526,7 +19666,10 @@
       var e = daySlotEntry(day, slot);
       // Never a meal that had already gone by when the week was drafted
       // (the server marks it `past`) — there is nothing left to add it to.
-      return !e || e.state === 'open' || (e.state === 'planned_empty' && e.need !== 'away' && !e.past && !e.meal_off);
+      // Nor an Out night: its own "We're in after all" is the way in
+      // (#31) — chat would only refuse a dinner for a night nobody's home.
+      return !e || e.state === 'open' ||
+        (e.state === 'planned_empty' && e.need !== 'away' && !e.past && !e.meal_off && !e.in_after_all);
     })[0];
     var when = dayName(day.date, { weekday: 'long' });
     if (!free) {
@@ -19759,6 +19902,8 @@
   // the household does. One label, so the two never say different things
   // about the same call.
   var SWAP_LABEL = 'Swap · I’ll pick';
+  // An Out night's one action (Emily's pick #31, 2026-10-26).
+  var IN_AFTER_ALL_LABEL = 'We’re in after all';
 
   // The two-segment control. Which primary a slot gets is entirely a
   // function of its state: a cook is cooked, a made-ahead night is eaten,
@@ -19822,7 +19967,18 @@
       // `past`: a meal of the first day that had already gone by when the
       // week was drafted — nothing to swap into (2026-09-27).
       if (entry.need === 'away' || day.isPast || entry.past) return '';
-      return '<div class="wk-acts">' + swap + '</div>' + swapLine;
+      // No Swap on an empty slot (Emily's pick #31, 2026-10-26): there is
+      // no dish to swap, and the server said so ("That didn't work just
+      // now"). An Out night gets the one thing that changes it — the
+      // household is home after all (runInAfterAll). Any other empty slot
+      // was an answer, and offers nothing here.
+      if (entry.in_after_all) {
+        return '<div class="wk-acts">' +
+          '<button type="button" class="wk-act" data-wk-in-after-all="' + escapeHtml(day.date) + '">' +
+            IN_AFTER_ALL_LABEL + '</button>' +
+        '</div>';
+      }
+      return '';
     }
     if (!entry && !day.isPast) {
       // Nothing here at all. Chat is the way out rather than a dead end —
@@ -21182,6 +21338,14 @@
           btn.getAttribute('data-wk-ask') + ', I’d like ');
       });
     });
+    // "We're in after all" on an Out night (#31): see runInAfterAll.
+    steps.querySelectorAll('[data-wk-in-after-all]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var day = mealsCurrentDay();
+        if (!day) return;
+        runInAfterAll(panel, btn, day);
+      });
+    });
     // "Build a plan" on a blank day card (Emily, 2026-09-26): see runBuildDay.
     steps.querySelectorAll('[data-wk-build-day]').forEach(function (btn) {
       btn.addEventListener('click', function () {
@@ -21418,6 +21582,43 @@
       showToast(SWAP_TROUBLE);
       // Reload anyway: the server may have written some of the day before
       // it failed, and the screen should show what is really there.
+      try { await loadWeekMenu(panel); } catch (e) { renderMealsStep(panel); }
+    }
+  }
+
+  // "We're in after all" on an Out night (Emily's pick #31, 2026-10-26).
+  // The server takes the Out off the week's answers and picks a dinner
+  // through the swap's own picker (swap_in_place.in_after_all); when no
+  // dish could be picked the night comes back as a dinner to decide.
+  async function runInAfterAll(panel, btn, day) {
+    var weekStart = weekStartForSwap();
+    if (!weekStart || btn.disabled) return;
+    var dayWord = dayName(day.date, { weekday: 'long' });
+    btn.disabled = true;
+    btn.setAttribute('aria-busy', 'true');
+    btn.textContent = 'Planning ' + dayWord + '…';
+    try {
+      var res = await Api.fetch('/api/week/' + encodeURIComponent(weekStart) + '/in-after-all', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(withPlanId({ date: day.date }, planIdForSwap()))
+      });
+      if (!res.ok) throw new Error('in-after-all failed');
+      var data = await res.json();
+      if (data.status === 'refused') {
+        showToast(data.message || SWAP_TROUBLE);
+        await loadWeekMenu(panel);
+        return;
+      }
+      if (data.day) spliceSwappedDay(data.day);
+      renderMealsStep(panel);
+      toastSaved(data.status === 'filled'
+        ? savedLine(data.meal, 'planned for ' + dayWord)
+        : savedLine(dayWord + '’s dinner', 'added back'));
+      await loadWeekMenu(panel);
+    } catch (err) {
+      console.warn('We’re in after all failed:', err);
+      showToast(SWAP_TROUBLE);
       try { await loadWeekMenu(panel); } catch (e) { renderMealsStep(panel); }
     }
   }
@@ -23561,10 +23762,15 @@
       // from before the tap, kept only as a fallback — see
       // weekTakeoverToastNote. Both are null the rest of the time.
       var takeoverNote = weekTakeoverToastNote(approval.replaced, data.replaces);
+      // A new dish approval couldn't write up (#27/#75, 2026-10-26): the
+      // server's own line, naming the dish — its groceries aren't on the
+      // list, so the household hears it now rather than at the store.
+      var notReadyNote = approval.recipes_not_ready_line || '';
       var approvedToast = 'Meals for the week are saved' +
-        ((approval.conflicts_note || takeoverNote) ? '.' : '') +
+        ((approval.conflicts_note || takeoverNote || notReadyNote) ? '.' : '') +
         (approval.conflicts_note ? ' ' + approval.conflicts_note : '') +
-        (takeoverNote ? ' ' + takeoverNote + '.' : '');
+        (takeoverNote ? ' ' + takeoverNote + '.' : '') +
+        (notReadyNote ? ' ' + notReadyNote : '');
       // Approving is the one action in this app that writes to the grocery
       // list wholesale, so anything already showing that list is stale the
       // moment it succeeds — the same staleness
@@ -23584,7 +23790,7 @@
       // the freezer row asks its question quietly.
       weekState.step = 'week';
       goGroceryList();
-      showToast(approvedToast, null, (approval.conflicts_note || takeoverNote) ? 9000 : 6000);
+      showToast(approvedToast, null, (approval.conflicts_note || takeoverNote || notReadyNote) ? 9000 : 6000);
       await loadWeekMenu(panel);
       // The notifications ask's moment (iPhone app only; see offerPush):
       // a week is settled, so there's a morning note and a dinner nudge to
@@ -29275,6 +29481,9 @@
     // the tabs build under it, so "Show me today" lands on a Today that's
     // already there. Not awaited — nothing below waits on it.
     if (shellWho.first_open) openFirstOpen();
+    // "You're down as a Teen here now…" — once, on that member's own phone
+    // (Emily, 2026-10-26). A sentence, so it's held long enough to read.
+    if (shellWho.age_note) showToast(shellWho.age_note, null, 9000);
     // The onboarding reveal's Approve hands into the shell with
     // ?after=approve (its URL is /grocery?after=approve&drafted=<Monday>,
     // 2026-09-18): whatever tab the path names, the week just approved is
@@ -29384,6 +29593,9 @@
       // The other adult's first open (openFirstOpen, below).
       shellWho.first_open = !!data.first_open;
       shellWho.set_up_by = data.set_up_by || '';
+      // A phone whose own member was re-marked a Teen: the server hands the
+      // note out once (tools.age_change_note); boot shows it, below.
+      shellWho.age_note = typeof data.age_note === 'string' ? data.age_note : '';
       // Sharing with Claude: '' / 'granted' / 'declined' (app/ai_consent.py).
       shellWho.ai_consent = typeof data.ai_consent === 'string' ? data.ai_consent : 'granted';
       // Preferences → About's version line (app/legal.py).

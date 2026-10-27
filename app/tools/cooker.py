@@ -1729,6 +1729,41 @@ def _slot_rank(slot: str | None) -> int:
         return len(slots)
 
 
+def _stamp_too_late_thaws(prep_tasks: list[dict], meals: list[dict], moves_module) -> None:
+    """
+    `too_late_note` on every fridge move, '' unless it was missed and the
+    fridge can't thaw it in time any more — moves.fridge_move_too_late, the
+    one rule Today's row reads too, so Cook's Tonight card (shell.js
+    cookTonightNote) and Today can't disagree about one move (Emily,
+    2026-10-26). The clock and the rhythm are read only when there is a
+    pending fridge move to ask about.
+    """
+    for t in prep_tasks:
+        t["too_late_note"] = ""
+    pending = [t for t in prep_tasks if t.get("task_type") == "defrost" and t.get("status") == "pending"]
+    if not pending:
+        return
+    try:
+        now = household_now()
+        # Only a move whose own day has gone by can be too late; with none,
+        # the rhythm isn't read (Today's payload reads it once — test_move_owner).
+        pending = [t for t in pending if (t.get("task_date") or "") < now.date().isoformat()]
+        if not pending:
+            return
+        dinner_clock = moves_module._dinner_clock()
+    except Exception:
+        logger.exception("Couldn't read the clock for the too-late thaw check; Cook says nothing about it")
+        return
+    by_entry: dict[int, dict] = {}
+    for m in meals:
+        for i in (m.get("entry_ids") or [m.get("entry_id")]):
+            if i:
+                by_entry[i] = m
+    for t in pending:
+        t["too_late_note"] = moves_module.fridge_move_too_late(
+            t, by_entry.get(t.get("meal_plan_entry_id")), now, dinner_clock)
+
+
 def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
     """
     Everything the person actually cooking needs for the current (or given)
@@ -2246,6 +2281,7 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
         m["is_takeout"] = not m.get("is_leftovers") and _moves.is_takeout_night(m)
 
     prep_tasks = get_prep_schedule(plan_id) if plan_id is not None else []
+    _stamp_too_late_thaws(prep_tasks, meals, _moves)
     return {
         "weekly_plan_id": plan_id,
         "is_current_plan": is_current_plan,

@@ -963,6 +963,42 @@ def test_a_utc_only_feed_follows_the_zone_the_household_set():
     assert [(e["date"], e["start"]) for e in result["events"]] == [(TUE.isoformat(), "18:00")]
 
 
+def _toronto_feed(*event_lines: str) -> str:
+    return "\r\n".join([
+        "BEGIN:VCALENDAR", "VERSION:2.0", "X-WR-TIMEZONE:America/Toronto",
+        *_vevent(*event_lines), "END:VCALENDAR", "",
+    ])
+
+
+def _set_household_zone(zone: str, answered: int) -> None:
+    conn = get_conn()
+    conn.execute("UPDATE households SET timezone = ?, timezone_set = ? WHERE id = ?", (zone, answered, DEFAULT_HOUSEHOLD_ID))
+    conn.commit()
+    conn.close()
+
+
+def test_a_household_that_set_its_zone_reads_a_toronto_calendar_on_its_own_clock():
+    # Emily 2026-10-26 ("go with your picks"): the calendar says Toronto, the
+    # family lives in Vancouver — the household's clock decides dinner.
+    _set_household_zone("America/Vancouver", 1)
+    result = _parse(_toronto_feed(
+        f"DTSTART;TZID=America/Toronto:{_d(TUE)}T210000", f"DTEND;TZID=America/Toronto:{_d(TUE)}T220000",
+        "UID:p", "SUMMARY:Call",
+    ))
+    assert result["timezone"] == "America/Vancouver" and result["timezone_source"] == "household"
+    # 9pm Toronto is 6pm Vancouver: that evening is busy at dinner.
+    assert [(e["date"], e["start"]) for e in result["events"]] == [(TUE.isoformat(), "18:00")]
+
+
+def test_a_zone_nobody_answered_still_lets_the_feed_decide():
+    _set_household_zone("America/Vancouver", 0)
+    result = _parse(_toronto_feed(
+        f"DTSTART;TZID=America/Toronto:{_d(TUE)}T180000", f"DTEND;TZID=America/Toronto:{_d(TUE)}T190000",
+        "UID:p", "SUMMARY:Call",
+    ))
+    assert result["timezone"] == "America/Toronto" and result["timezone_source"] == "feed"
+
+
 def test_a_busy_feed_drops_the_far_end_of_the_window_not_a_one_off_listed_last():
     # Six daily work series listed first fill more than MAX_EVENTS_PER_WINDOW
     # over the eight-week read; the one-off practice this week comes last in

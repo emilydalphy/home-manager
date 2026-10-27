@@ -1055,7 +1055,9 @@ a label in its name is declined, because the label itself names the allergen.
 the explanation for a slot left open, and anything typed to you in chat.
 - When someone tells you something in chat that WOULD HAVE CHANGED an answer on those question \
 screens ("cut it to four dinners", "actually Wednesday should be leftovers"), save it as a \
-preference or a new week intake, not just as a change to the plan in front of you. Otherwise \
+preference or a new week intake, not just as a change to the plan in front of you. A count said \
+about a week ("cut it to four dinners") is that week's only: set_week_dish_count, never \
+edit_preference, unless they say it's how they usually want it. Otherwise \
 regenerating the week silently reverts what they just said. Changing one slot ("swap \
 Thursday") is a plan change, not an answer change.
 
@@ -1167,8 +1169,8 @@ and wait; pass confirm_cooked only once they say yes.
 - "Don\u2019t batch the rice" / "cook the chili fresh on Thursday" / "no batch cooking this \
 week" is `unbatch`. Pomona batches on its own when the household preps ahead, so this is the \
 only way back out \u2014 never answer it with a swap, and never say it can\u2019t be undone. Say its \
-`said` back as the one line and nothing else; if the status is \u2018ambiguous\u2019, ask `said` and \
-wait.
+`said` back as the one line and nothing else; if the status is \u2018ambiguous\u2019 or \
+\u2018needs_confirmation\u2019, ask `said` and wait (pass confirm_rebuy only once they say yes).
 - Every meal in a plan carries a slot_state, and it decides how you may talk about that slot:
   * 'planned' — a real meal. Normal.
   * 'planned_empty' — DELIBERATELY empty, and its reasoning says why (nobody is home that \
@@ -2205,12 +2207,13 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "unbatch",
-        "description": "\"Don't batch the rice\" / \"cook the chili fresh on Thursday\" / \"no batch cooking this week\" \u2014 take apart a batch the app made on its own. Pomona batches automatically when the household preps ahead: a dish on two days is cooked once on the first (a second time if the later days run past three days of leftovers), and a component two dishes both make (the eggs a breakfast and a salad both boil) is made once. This is the way back out. `what` names the dish or the thing being cooked as they said it (\"the rice\", \"the chili\", \"the eggs\"); leave it out entirely for \"no batch cooking this week\". `day` (YYYY-MM-DD) is for \"cook it fresh on Thursday\" \u2014 it frees that one day and leaves the rest of the batch alone. Say the result's `said` back as the whole reply, one line, no list of what changed. A status of 'ambiguous' means more than one batch answers to those words and `said` is the question to ask \u2014 ask it and stop. 'nothing' means there is no such batch, and `said` says so; don't retry with different words. 'refused' means nothing changed and `said` is why. The choice is remembered for this plan, so approving the week again will not put it back \u2014 don't promise otherwise. Not for changing WHAT is eaten (swap_meal_in_plan) or for moving a dinner to another night (swap_dinner_nights).",
+        "description": "\"Don't batch the rice\" / \"cook the chili fresh on Thursday\" / \"no batch cooking this week\" \u2014 take apart a batch the app made on its own. Pomona batches automatically when the household preps ahead: a dish on two days is cooked once on the first (a second time if the later days run past three days of leftovers), and a component two dishes both make (the eggs a breakfast and a salad both boil) is made once. This is the way back out. `what` names the dish or the thing being cooked as they said it (\"the rice\", \"the chili\", \"the eggs\"); leave it out entirely for \"no batch cooking this week\". `day` (YYYY-MM-DD) is for \"cook it fresh on Thursday\" \u2014 it frees that one day and leaves the rest of the batch alone. Say the result's `said` back as the whole reply, one line, no list of what changed. A status of 'ambiguous' means more than one batch answers to those words and `said` is the question to ask \u2014 ask it and stop. 'nothing' means there is no such batch, and `said` says so; don't retry with different words. 'refused' means nothing changed and `said` is why. 'needs_confirmation' means NOTHING changed yet: the batch's cook night is already cooked, so the freed night's share is in that pot and cooking it fresh buys its groceries again \u2014 ask `said` and stop; only if they say yes in this conversation, call again with confirm_rebuy true. The choice is remembered for this plan, so approving the week again will not put it back \u2014 don't promise otherwise. Not for changing WHAT is eaten (swap_meal_in_plan) or for moving a dinner to another night (swap_dinner_nights).",
         "input_schema": {
             "type": "object",
             "properties": {
                 "what": {"type": "string", "description": "The dish or the thing being cooked, in their words. Omit for every batch on the week."},
                 "day": {"type": "string", "description": "YYYY-MM-DD, only when they named one day to cook fresh."},
+                "confirm_rebuy": {"type": "boolean", "description": "Defaults to false. The household's explicit yes to cooking fresh after the batch was already cooked, which buys that night's groceries again \u2014 never set this on your own initiative and never on the first call. Only after a needs_confirmation answer, and only if they said yes."},
             },
             "required": [],
         },
@@ -2232,7 +2235,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "approve_weekly_plan",
-        "description": "Approve a weekly plan — and, in the same step, put the week's ingredients on the grocery list. Nothing from a plan reaches the list while it is still an unapproved draft, so this is what turns an agreed plan into a shopping list. Returns groceries_added and already_have_skipped so you can say what landed on the list (and what was skipped because it is already in the fridge/pantry). Safe to call again — it will not double up quantities. Calling it on a week that is already approved comes back with was_already_approved true: if list_rebuilt is also true, the household had wiped the list (Start over) and this call put the week's ingredients back on it — say that; otherwise nothing was added, and the result's note and list_needed_count say what the list actually holds right now — relay THAT rather than the old groceries_added_count, and never tell the household the list is ready without it. If the plan has a HARD allergen/must-avoid clash (check_plan_conflicts severity 'hard') and confirm_hard_conflicts isn't true, this does NOT approve — it writes nothing — and instead returns status 'needs_confirmation' with the conflicts and a sentence describing them; a status of 'approved' is the only outcome that actually put anything on the list.",
+        "description": "Approve a weekly plan — and, in the same step, put the week's ingredients on the grocery list. Nothing from a plan reaches the list while it is still an unapproved draft, so this is what turns an agreed plan into a shopping list. Returns groceries_added and already_have_skipped so you can say what landed on the list (and what was skipped because it is already in the fridge/pantry). When recipes_not_ready_line is set, a new dish couldn't be written up and nothing went on the list for it — pass that line on as it is. Safe to call again — it will not double up quantities. Calling it on a week that is already approved comes back with was_already_approved true: if list_rebuilt is also true, the household had wiped the list (Start over) and this call put the week's ingredients back on it — say that; otherwise nothing was added, and the result's note and list_needed_count say what the list actually holds right now — relay THAT rather than the old groceries_added_count, and never tell the household the list is ready without it. If the plan has a HARD allergen/must-avoid clash (check_plan_conflicts severity 'hard') and confirm_hard_conflicts isn't true, this does NOT approve — it writes nothing — and instead returns status 'needs_confirmation' with the conflicts and a sentence describing them; a status of 'approved' is the only outcome that actually put anything on the list.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -2482,8 +2485,21 @@ TOOL_DEFINITIONS = [
         },
     },
     {
+        "name": "set_week_dish_count",
+        "description": "Set how many DIFFERENT dishes one meal gets for ONE week only — \"cut it to four dinners\", \"just two lunches this week\". Saved on that week's answers, so regenerating that week keeps it; the household's usual count in Settings is not touched. This is the default for any count said about a week (use edit_preference only when they say it's their usual, \"from now on\" or \"every week\"). Then regenerate that week with generate_weekly_plan so the new count shows. 1-7; for no dinners at all this week, mark the nights out instead.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "meal": {"type": "string", "enum": ["breakfast", "lunch", "dinner"]},
+                "count": {"type": "integer", "description": "Different dishes for that meal this week, 1-7."},
+                "week_start_date": {"type": "string", "description": "The Monday the week is filed under (the same week_start_date generate_weekly_plan takes). Omit for the current plan's week."},
+            },
+            "required": ["meal", "count"],
+        },
+    },
+    {
         "name": "edit_preference",
-        "description": "Directly set a household meal-preference field to a new value, for corrections. Valid fields: 'notes', 'cooking_time_preference', 'eating_style' (plain strings — eating_style is a diet/style goal like \"keto\" or \"high-protein, low-carb\", distinct from hard dietary restrictions), 'dinners_per_week'/'breakfasts_per_week'/'lunches_per_week' (integer 0-7, each independent; 0 = none at all), 'snacks_per_day' (integer 0-6: how many snacks land on each day), 'snack_dishes_per_week' (integer 1-7: how many DIFFERENT snack dishes the week rotates), 'cuisine_preferences'/'dislikes'/'usual_stores' (list of strings, replaces the whole list — prefer add_food_dislikes/add_usual_stores for adding a single new item conversationally), 'protein_preferences' (dict of protein -> 1-5 like rating, e.g. {\"chicken\": 5}, merged in — see set_household_meal_preferences for the scale), 'complete_plates' (true/false — whether I may add a small side to a meal that came out short of a full plate. On by default. Set it false whenever someone says any version of \"stop adding things to my meals\" or \"I don't need you rounding out my dinners\", and say plainly that you've stopped; set it back to true if they change their mind). Use delete_preference instead to remove a single item without replacing the whole list.",
+        "description": "Directly set a household meal-preference field to a new value, for corrections. Valid fields: 'notes', 'cooking_time_preference', 'eating_style' (plain strings — eating_style is a diet/style goal like \"keto\" or \"high-protein, low-carb\", distinct from hard dietary restrictions), 'dinners_per_week'/'breakfasts_per_week'/'lunches_per_week' (integer 0-7, each independent; 0 = none at all — the household's USUAL count, changed only when they say it's how they usually want it, \"from now on\" or \"every week\"; a count said about the week being planned, like \"cut it to four dinners\", is set_week_dish_count instead), 'snacks_per_day' (integer 0-6: how many snacks land on each day), 'snack_dishes_per_week' (integer 1-7: how many DIFFERENT snack dishes the week rotates), 'cuisine_preferences'/'dislikes'/'usual_stores' (list of strings, replaces the whole list — prefer add_food_dislikes/add_usual_stores for adding a single new item conversationally), 'protein_preferences' (dict of protein -> 1-5 like rating, e.g. {\"chicken\": 5}, merged in — see set_household_meal_preferences for the scale), 'complete_plates' (true/false — whether I may add a small side to a meal that came out short of a full plate. On by default. Set it false whenever someone says any version of \"stop adding things to my meals\" or \"I don't need you rounding out my dinners\", and say plainly that you've stopped; set it back to true if they change their mind). Use delete_preference instead to remove a single item without replacing the whole list.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -7354,6 +7370,10 @@ def _generate_weekly_plan(
                 effective_memory[field] = usual_plan["targets"][slot]
         if usual_plan["variety_answered"]:
             effective_memory["variety_answered"] = usual_plan["variety_answered"]
+        if ((intake or {}).get("week_answers") or {}).get("dishes"):
+            # A count set for this week in chat (set_week_dish_count) is a
+            # number the household named: the count passes hold it.
+            effective_memory["meal_counts_set"] = True
         _usual_week.apply_usual_attendance(usual_plan, usual_period)
     effective_memory["snacks_per_day"] = tools.resolve_snacks_per_day(household_memory)
     # How much carb the plate carries — none / low / normal / lots — read
@@ -7990,7 +8010,16 @@ def _generate_weekly_plan(
             # held on the draft rather than only asked for — AFTER every pass
             # that can write a lunch (leftover copies, the first-week fill).
             # See tools/draft_rules.py; neither raises.
-            _draft_rules.enforce_cold_packed_lunches(plan_id, usual_period)
+            cold_changed = _draft_rules.enforce_cold_packed_lunches(plan_id, usual_period)
+            # A child's cold packed lunch wins over the lunch number (Emily
+            # 2026-10-26); when it put the week past it, the week says so.
+            cold_line = _draft_rules.cold_lunch_count_line(
+                plan_id,
+                effective_memory.get("lunches_per_week") if effective_memory.get("meal_counts_set") else None,
+                cold_changed,
+            )
+            if cold_line:
+                plan_report.setdefault("said_lines", []).append(cold_line)
             # The counts the household set, as _finish_week_slots' guard holds
             # them (effective memory, so a part-week's prorated number; never a
             # meal whose count they named in their own words this week): the
@@ -10166,6 +10195,7 @@ _READ_RECIPE_TOOL = {
             "found": {"type": "boolean", "description": "false if this page does not actually contain a recipe (a category listing, an article with no method, a login wall)."},
             "name": {"type": "string", "description": "The recipe's title, as the page gives it."},
             "default_servings": {"type": "integer", "description": "How many the recipe serves, if stated."},
+            "makes": {"type": "string", "description": "Only when the page says what the recipe makes instead of how many it serves ('1 pie', '1 loaf', '2 dozen'): those words, and leave default_servings out."},
             "prep_time_minutes": {"type": "integer"},
             "cook_time_minutes": {"type": "integer"},
             "ingredients": {
@@ -10255,6 +10285,7 @@ _READ_RECIPE_PHOTO_TOOL = {
                     "properties": {
                         "name": {"type": "string", "description": "The recipe's title, as printed."},
                         "default_servings": {"type": "integer", "description": "How many it serves, if stated. For a range like 'serves 4–6' give the lower number."},
+                        "makes": {"type": "string", "description": "Only when the page says what the recipe makes instead of how many it serves ('1 pie', '1 loaf', '2 dozen'): those words, and leave default_servings out."},
                         "prep_time_minutes": {"type": "integer"},
                         "cook_time_minutes": {"type": "integer"},
                         "ingredients": {
@@ -11305,6 +11336,7 @@ TOOL_FUNCTIONS = {
     "update_fact": tools.update_fact,
     "delete_fact": tools.delete_fact,
     "edit_preference": tools.edit_preference,
+    "set_week_dish_count": tools.set_week_dish_count,
     "delete_preference": tools.delete_preference,
     # The chat turn's own wrapper (app/tools/staples.py), not
     # tools.add_grocery_item directly — same add, plus the staple_offer

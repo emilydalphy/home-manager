@@ -426,4 +426,4 @@ def test_the_approve_toast_leaves_the_batched_line_to_all_set():
     body = body[: body.index("\n  }\n")]
     assert "batched_line" not in body and "batchedLine" not in body
     assert "var approvedToast = 'Meals for the week are saved' +" in body
-    assert "showToast(approvedToast, null, (approval.conflicts_note || takeoverNote) ? 9000 : 6000);" in body
+    assert "showToast(approvedToast, null, (approval.conflicts_note || takeoverNote || notReadyNote) ? 9000 : 6000);" in body

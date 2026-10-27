@@ -158,6 +158,12 @@ def answer_yesterday(entry_id: int, answer: str, today: datetime.date | None = N
         _cooker.check_off_meal(entry_id, "done")
     else:
         moved = _skip(entry_id, row["meal"], current["date"], today.isoformat())
+        if not moved:
+            # A cook making a night off's freezer portion, skipped, while a
+            # later week already plans a night on that portion: ask before
+            # re-planning that night (Emily's pick #32, 2026-10-26).
+            from . import freezer_portions as _freezer_portions  # lazy: it imports cooker
+            _freezer_portions.ask_about_missing_portions(entry_id)
     fresh = yesterday_check(today)
     fresh["meal"] = row["meal"]
     fresh["answer"] = answer

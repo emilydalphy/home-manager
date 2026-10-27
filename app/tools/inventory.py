@@ -4,12 +4,15 @@ What is actually in the pantry and fridge, including the item detail sheet.
 from __future__ import annotations
 
 import json as _json
+import logging
 import re
 from datetime import date, timedelta
 from ..db import get_conn, write
 from ._shared import household_id, require_household_row
 from . import grocery as _grocery
 from . import quantities as _quantities
+
+logger = logging.getLogger("home_manager")
 
 
 def _today() -> date:
@@ -1030,13 +1033,25 @@ def get_inventory() -> list[dict]:
     be on hand, and before generating a weekly plan (already threaded into
     generate_weekly_plan's context automatically).
     """
+    # A night off's spare portion of a batch not cooked yet stays off the
+    # list until it is (freezer_portions.not_yet_cooked_portion_ids, Emily
+    # 2026-10-26). Lazy import: freezer_portions reaches this module.
+    from . import freezer_portions as _freezer_portions
+
     conn = get_conn()
-    rows = conn.execute(
-        "SELECT id, item, quantity, source, expiration_date, category, location, created_at FROM inventory_items WHERE household_id = ? ORDER BY item",
-        (household_id(),),
-    ).fetchall()
-    conn.close()
-    items = [dict(r) for r in rows]
+    try:
+        rows = conn.execute(
+            "SELECT id, item, quantity, source, expiration_date, category, location, created_at FROM inventory_items WHERE household_id = ? ORDER BY item",
+            (household_id(),),
+        ).fetchall()
+        try:
+            not_yet = _freezer_portions.not_yet_cooked_portion_ids(conn)
+        except Exception:
+            logger.exception("Could not read which freezer portions are not cooked yet")
+            not_yet = set()
+    finally:
+        conn.close()
+    items = [dict(r) for r in rows if r["id"] not in not_yet]
     for it in items:
         it["location"] = _quantities._display_location(it)
     return items

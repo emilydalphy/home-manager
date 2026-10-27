@@ -252,13 +252,20 @@ def looks_like_holiday(title: str) -> bool:
 # shops keep their ordinary hours. A store saved as "Closed on holidays"
 # (stores.open_window) must not read as shut on them — it did, so Farm Boy
 # was "closed for the holiday" on Halloween (a Saturday shop day in 2026),
-# Mother's Day and Father's Day. Only days nobody's grocery store closes
-# for; anything less certain stays a holiday until Emily says otherwise.
+# Mother's Day and Father's Day. Days most grocery stores open for;
+# anything less certain stays a holiday until Emily says otherwise.
 _SHOPS_OPEN_ON = frozenset(_normalise_title(n) for n in (
     "halloween", "mother's day", "mothers day", "father's day", "fathers day",
     "valentine's day", "valentines day",
     "st. patrick's day", "st patrick's day", "st patricks day", "saint patrick's day",
     "christmas eve", "new year's eve", "new years eve",
+    # Emily 2026-10-26: most Ontario grocers open on these, so a store
+    # saved as "Closed on holidays" stays open on them. Good Friday is NOT
+    # here: it is a legal retail holiday under Ontario's Retail Business
+    # Holidays Act, so a store that closes on holidays closes on it.
+    "remembrance day", "civic holiday", "easter monday",
+    "diwali", "eid", "eid al-fitr", "eid ul-fitr", "eid al-adha", "eid ul-adha",
+    "hanukkah", "chanukah", "lunar new year", "chinese new year",
 ))
 
 

@@ -858,6 +858,76 @@ def save_setup_week_answers(week_start: str, day_count: int = 7, cuisines: list 
     return save_week_intake(week_start, cuisines=list(cuisines or []), day_count=day_count)
 
 
+WEEK_COUNT_MEALS = {"breakfast": "breakfasts", "lunch": "lunches", "dinner": "dinners"}
+
+
+def set_week_dish_count(meal: str, count: int, week_start_date: str | None = None) -> dict:
+    """
+    "Cut it to four dinners" from chat, for ONE week (Emily 2026-10-26,
+    "go with your picks"): the number of different dishes for that meal is
+    saved on the week's answers (week_answers.dishes, a new revision through
+    save_week_intake), so regenerating that week keeps it and the usual
+    count in Settings stays exactly as it is.
+
+    week_start_date is the Monday the week is filed under — the one
+    generate_weekly_plan takes. Omitted, it is the current plan's week
+    (_current_weekly_plan_row), else this week's Monday on the household's
+    clock. The period length comes from that week's plan, so a carried-
+    forward weekday-lunch answer on an eighth day is not dropped.
+    """
+    from . import cooker as _cooker
+
+    if meal not in WEEK_COUNT_MEALS:
+        raise ValueError("meal must be breakfast, lunch or dinner.")
+    if isinstance(count, bool) or not isinstance(count, int) or not 1 <= count <= 7:
+        raise ValueError("count must be a number from 1 to 7. For none at all this week, mark the nights out instead.")
+    conn = get_conn()
+    try:
+        if week_start_date:
+            date.fromisoformat(week_start_date)
+            plan = conn.execute(
+                "SELECT * FROM weekly_plans WHERE household_id = ? AND week_start_date = ? "
+                "AND status != 'retired' ORDER BY (status = 'approved') DESC, id DESC LIMIT 1",
+                (household_id(), week_start_date),
+            ).fetchone()
+        else:
+            plan = _weekly_plan._current_weekly_plan_row(conn)
+    finally:
+        conn.close()
+    if week_start_date is None:
+        if plan is not None:
+            week_start_date = plan["week_start_date"]
+        else:
+            today = _cooker.household_now().date()
+            week_start_date = (today - timedelta(days=today.weekday())).isoformat()
+    day_count = 7
+    if plan is not None and plan["week_start_date"] == week_start_date:
+        start, days = _weekly_plan.plan_period(plan)
+        offset = (date.fromisoformat(start) - date.fromisoformat(week_start_date)).days
+        day_count = max(7, offset + days)
+    current = get_week_intake(week_start_date) or {}
+    answers = dict(current.get("week_answers") or {})
+    dishes = dict(answers.get("dishes") or {})
+    dishes[meal] = count
+    answers["dishes"] = dishes
+    # A plain number replaces this week's variety choice for that meal.
+    variety = {m: c for m, c in (answers.get("variety") or {}).items() if m != meal}
+    if variety:
+        answers["variety"] = variety
+    else:
+        answers.pop("variety", None)
+    saved = save_week_intake(week_start_date, week_answers=answers, day_count=day_count)
+    return {
+        "week_start_date": week_start_date,
+        "meal": meal,
+        "count": count,
+        "intake_id": saved["intake_id"],
+        "applies_to": "this week only",
+        "next_step": "Regenerate this week (generate_weekly_plan with this week_start_date) for the new count to "
+                     "show. The household's usual count in Settings is unchanged.",
+    }
+
+
 def clear_week_intake(week_start: str) -> dict:
     """
     "Start over"'s third option (app/tools/reset.py, POST /api/reset):
