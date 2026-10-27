@@ -13,6 +13,13 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **"Before you shop" stamps the week being shopped for** (2026-10-27;
+  branch `overnight/hunt-preshop-1027`). A Sunday shop for an approved
+  Monday week stamped the ENDING week (the current plan), so Monday offered
+  the pass again over a shopped list, and a midweek top-up pass hid it from
+  the weekend's big shop. `before_shop._current_plan_row` now prefers an
+  approved not-yet-started plan with lines live on the list.
+  `tests/test_before_shop_next_weeks_shop.py`.
 - **The iPhone app's id is `com.heypomona.app`** (2026-10-25, Emily's pick
   to match her heypomona domain; branch `overnight/bundle-id-heypomona`).
   Replaced the `com.pomona.app` placeholder in `capacitor.config.json`, the

@@ -39,14 +39,35 @@ logger = logging.getLogger("home_manager")
 def _current_plan_row(conn):
     """
     The plan the household is shopping for — the same one the Shop tab's
-    list was built from. Deliberately `weekly_plan`'s own answer rather
-    than a second query: "which plan is current" drifted once already
-    (see CLAUDE.md's _current_weekly_plan_row entry) and this module has
-    no business having a different opinion about it.
+    list was built from. `weekly_plan`'s own answer for "which plan is
+    current" (that drifted once already — see CLAUDE.md's
+    _current_weekly_plan_row entry), with ONE exception:
+
+    An approved plan that has not started yet and whose food is already on
+    the list is the one being shopped for (2026-10-27). The usual week is
+    approved, and shopped, BEFORE it begins — Saturday or Sunday for a
+    Monday week — and on that day the current plan is the week that is
+    ending. Stamping that one put the answer on the wrong week both ways:
+    Monday's new week offered the pass again over a list already shopped,
+    and a midweek top-up pass (which stamps the running week) hid the pass
+    from the weekend's big shop, straight to "Sort the list". "Has its
+    lines on the list" is what makes it this shop's week rather than one
+    merely planned ahead; the earliest-starting one when there are several.
     """
     from . import weekly_plan as _weekly_plan
 
-    return _weekly_plan._current_weekly_plan_row(conn)
+    current = _weekly_plan._current_weekly_plan_row(conn)
+    today = _weekly_plan._household_today(conn).isoformat()
+    start = _weekly_plan._SQL_PERIOD_START
+    ahead = conn.execute(
+        f"SELECT * FROM weekly_plans p WHERE p.household_id = ? AND p.status = 'approved' "
+        f"AND date({start}) > date(?) "
+        "AND EXISTS (SELECT 1 FROM grocery_items g WHERE g.household_id = p.household_id "
+        "  AND g.source_weekly_plan_id = p.id AND g.status IN ('needed', 'in_cart', 'spice')) "
+        f"ORDER BY date({start}) ASC, p.created_at DESC, p.id DESC LIMIT 1",
+        (household_id(), today),
+    ).fetchone()
+    return ahead if ahead is not None else current
 
 
 def before_shop_state() -> dict:
