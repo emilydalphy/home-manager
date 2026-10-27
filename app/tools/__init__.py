@@ -245,6 +245,7 @@ from .grocery import (  # noqa: F401
     get_grocery_list_by_section,
     include_grocery_item,
     keep_carried_over_item,
+    kitchen_from_this_shop,
     list_built_at,
     list_carried_over_items,
     list_grocery_list,

@@ -13,6 +13,18 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Finishing the shop says what's now in the kitchen** (2026-10-27,
+  Inventory A1; branch `overnight/now-in-the-kitchen`; tests
+  `tests/test_now_in_the_kitchen.py`). At the list's finished moment Shop
+  shows "Now in the kitchen" (counts by place) and "Use these first" (up to
+  three non-freezer things dated within 7 days, each with its plan off the
+  per-meal ledger, else "by <day>"), then "See what's home" (Inventory sheet,
+  frame reloaded) and "Done" (folds, as "Not now" did). Read off this list's
+  tick receipts by `grocery.kitchen_from_this_shop` /
+  `GET /api/grocery-list/now-in-kitchen`, re-read on every load while the
+  list is finished. Nothing in the kitchen → the old handoff, unchanged.
+  Why: every tick already wrote the kitchen and nobody was told.
+  `INVENTORY_IN_DEVELOPMENT` untouched (it only labels the sheet).
 - **The iPhone app's id is `com.heypomona.app`** (2026-10-25, Emily's pick
   to match her heypomona domain; branch `overnight/bundle-id-heypomona`).
   Replaced the `com.pomona.app` placeholder in `capacitor.config.json`, the
