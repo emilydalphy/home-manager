@@ -49,51 +49,29 @@ of the repo. It is started by hand, so nothing builds until you ask.
 
 ## Day one with the Apple account
 
-Everything below is signing in and pasting; nothing needs Xcode or a Mac.
-Two steps at a time, so you can stop between any pair.
+Emily's step-by-step is `docs/TESTFLIGHT_WALKTHROUGH.md` (two steps at a
+time, no code), and the phone checks before Beta App Review are
+`docs/IPHONE_TEST_CHECKLIST.md`. In short, for whoever maintains this:
 
-**1 and 2 — Apple.**
-1. Join the Apple Developer Program at developer.apple.com/programs
-   (US$99 a year; Apple can take a day or two to approve it).
-2. In developer.apple.com > Certificates, Identifiers & Profiles >
-   Identifiers, add an App ID: "Pomona", Bundle ID **explicit**
-   `com.heypomona.app`, and tick **Push Notifications**. (If Apple says the id
-   is taken, pick another, e.g. `com.yourname.pomona`, and tell Claude: it
-   is written in `capacitor.config.json`, the Xcode project and
-   `codemagic.yaml`.)
-
-**3 and 4 — the app's page and the key.**
-3. In appstoreconnect.apple.com > Apps > **+** > New App: iOS, name
-   "Pomona", language English, Bundle ID `com.heypomona.app`, SKU `pomona`.
-4. In App Store Connect > Users and Access > Integrations > App Store
-   Connect API, make a **Team key** with the **App Manager** role. Download
-   the `.p8` file (Apple lets you download it once) and copy the **Issuer
-   ID** and **Key ID** shown on that page.
-
-**5 and 6 — Codemagic.**
-5. Sign in at codemagic.io with GitHub and add this repository.
-6. In Codemagic > Team settings > Integrations > Developer Portal >
-   Connect: paste the Issuer ID and Key ID, upload the `.p8`, and name it
-   exactly **Pomona App Store Connect** (that name is what
-   `codemagic.yaml` looks for).
-
-**7 and 8 — the first build and testers.**
-7. In Codemagic, open the app, choose the workflow "iPhone app to
-   TestFlight", branch `main`, and Start new build. About 15-25 minutes.
-   Codemagic makes the signing certificate itself from the key.
-8. When it's green, App Store Connect > TestFlight shows the build
-   (Apple takes a few more minutes to "process" it). Add yourself under
-   Internal Testing, install the TestFlight app on your iPhone, and open
-   Pomona from it.
-
-**9 — push notifications.** In developer.apple.com > Keys, make a key with
-**Apple Push Notifications service (APNs)** ticked, download its `.p8`,
-and in Railway set `APNS_KEY_ID`, `APNS_TEAM_ID` (your Team ID, top right
-of the developer site), `APNS_KEY_P8` (the whole text of the file) and
-`APNS_TOPIC` = `com.heypomona.app`. Until then the morning note goes by text.
-
-Keys and `.p8` files go into Codemagic and Railway only, never into the
-repo or a chat.
+- App ID `com.heypomona.app` registered with **Push Notifications**; the app
+  record made in App Store Connect.
+- An App Store Connect API key (App Manager) added in Codemagic as the
+  integration **Pomona App Store Connect** — the name `codemagic.yaml` uses.
+- Signing is Codemagic's "Code signing identities" route, which does NOT
+  make anything on its own: an **Apple Distribution** certificate generated
+  in Codemagic (downloaded once and uploaded back), and an **App Store**
+  profile made on the Apple developer site, then fetched into Codemagic.
+  `ios_signing` in `codemagic.yaml` picks both up by bundle id.
+- The workflow uploads for **internal** testing only
+  (`submit_to_testflight: false`); Emily submits to Beta App Review by hand
+  after the phone checklist. Once the public link is live, later builds can
+  go straight to it: set `submit_to_testflight: true` and add
+  `beta_groups: [Public testers]`.
+- Build numbers: Codemagic's `$BUILD_NUMBER`, raised to one above Apple's
+  newest build when `APP_STORE_APPLE_ID` (the app's number in App Store
+  Connect > App Information) is set in the workflow's `vars`.
+- Xcode 26 or newer is required by Apple since 2026-04-28 and by
+  Capacitor 8; the workflow checks before it builds.
 
 ## Things worth knowing
 

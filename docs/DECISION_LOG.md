@@ -201,6 +201,38 @@ why*, not duplicating the diff.
   or allergen item is never handed to the model (a real draft turned a disliked
   cabbage into slaw when told "plan every one"). Why: Emily's food-waste
   pain point; telling the generator is not preventing it.
+- **Test runs no longer hold collection on a fake clock by accident**
+  (2026-10-27; branch `overnight/collection-hold-rounding`). conftest's
+  midnight guard compared the start instant with itself round-tripped
+  through a datetime (whole microseconds), read "earlier" in ~38% of runs and
+  froze collection; modules keeping `TODAY = datetime.date.today` then held
+  freezegun's fake and all 45 tests in the two Chores files failed at once.
+  Now it holds only when the margin really moved the instant
+  (`conftest._drawn_back`). Chores tests themselves untouched.
+- **TestFlight pipeline checked against Codemagic's docs** (2026-10-27;
+  branch `overnight/testflight-pipeline`). `submit_to_testflight` is now
+  false: builds go to internal testers with no review, and Emily submits to
+  Beta App Review by hand after `docs/IPHONE_TEST_CHECKLIST.md` (true would
+  have sent the very first build to review, before the phone checks). The README said Codemagic makes the signing
+  certificate itself; on the `ios_signing` route it doesn't, so
+  `docs/TESTFLIGHT_WALKTHROUGH.md` has her generate it in Codemagic and make
+  the App Store profile on Apple's site, on a personal Codemagic account
+  (Teams are paid and lose the free minutes). A step stops the build unless Xcode
+  is 26+ (Apple's rule since 2026-04-28). The build number is
+  `$BUILD_NUMBER`, raised above Apple's newest when `APP_STORE_APPLE_ID` is
+  set. Untested on a real Mac: nothing here can run until the account exists.
+- **Security audit, last pieces before TestFlight** (2026-10-27; branch
+  `overnight/security-audit-finish`). FastAPI's `/docs`, `/redoc` and
+  `/openapi.json` are off unless `SHOW_API_DOCS=1` (a map of every route is
+  no use to a household; nothing in `static/` reads it;
+  `tests/test_api_docs_off.py`). Backup snapshots and their folder are
+  owner-only (0600/0700); retention stays 14 days, pruned daily, so a deleted
+  household is out of every copy within 15 — already tested and quoted by the
+  privacy page. Backups are NOT encrypted at rest by the app: they sit on the
+  same volume as the live database, which isn't either, so encrypting only
+  the copies buys little; Railway's disk is the protection (flagged to Emily).
+  The isolation attack now drives the five photo routes with a real PNG and
+  stubs the model to prove each was reached. pip-audit clean.
 - **The iPhone app's id is `com.heypomona.app`** (2026-10-25, Emily's pick
   to match her heypomona domain; branch `overnight/bundle-id-heypomona`).
   Replaced the `com.pomona.app` placeholder in `capacitor.config.json`, the

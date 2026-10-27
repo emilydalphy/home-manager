@@ -904,8 +904,25 @@ def pytest_sessionstart(session):
     # 23:59:56 start). So a start inside the margin holds collection too, at
     # the same drawn-back instant, and every module constant comes from it.
     held = _held_to_the_starting_day()
-    if held.timestamp() < _COLLECTION_CLOCK[0]:
+    if _drawn_back(held, _COLLECTION_CLOCK[0]):
         _COLLECTION_HOLD.enter_context(_pin(held))
+
+
+def _drawn_back(held, epoch) -> bool:
+    """True only when the margin really moved the instant back.
+
+    `held` is `epoch` round-tripped through a datetime, which keeps whole
+    microseconds, so with no margin at all it still reads a fraction of a
+    microsecond EARLIER in about 38% of runs. Compared bare, that held
+    collection for no reason, and every module that keeps
+    `TODAY = datetime.date.today` (the function, not a date) took
+    freezegun's fake one, which fails once collection lets the clock go:
+    IndexError in freeze_factories, all 45 tests of test_chores_no_guilt.py
+    and test_chore_outsourced.py at once, in a third of full runs
+    (2026-10-27). The real margin moves it back by minutes, never by less
+    than a millisecond.
+    """
+    return held.timestamp() < epoch - 0.001
 
 
 def pytest_collection_finish(session):

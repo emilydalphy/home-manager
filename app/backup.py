@@ -46,6 +46,23 @@ _PREFIX = "home_manager-"
 _SUFFIX = ".db"
 
 
+def _owner_only(path: str, mode: int) -> None:
+    """
+    Readable by the app's own user and nobody else (security audit,
+    2026-10-27). A snapshot is the whole database — every household's
+    allergies, children's names and routines — and SQLite writes it with
+    the process's default permissions, usually readable by any user on the
+    box. On Railway the app is the only user, so this is a second lock, not
+    the first; it matters the day anything else shares the volume.
+
+    Best effort: a filesystem that refuses chmod must not cost the copy.
+    """
+    try:
+        os.chmod(path, mode)
+    except OSError:
+        logger.warning("Couldn't restrict permissions on %s", path)
+
+
 def backup_path_for(when: datetime | None = None) -> str:
     when = when or datetime.now()
     return os.path.join(BACKUP_DIR, f"{_PREFIX}{when.strftime('%Y-%m-%d')}{_SUFFIX}")
@@ -71,7 +88,8 @@ def create_backup(when: datetime | None = None) -> str | None:
     when = when or datetime.now()
     target = backup_path_for(when)
     try:
-        os.makedirs(BACKUP_DIR, exist_ok=True)
+        os.makedirs(BACKUP_DIR, mode=0o700, exist_ok=True)
+        _owner_only(BACKUP_DIR, 0o700)
         # Same-day re-run replaces the day's snapshot rather than failing:
         # VACUUM INTO refuses to write over an existing file.
         if os.path.exists(target):
@@ -81,6 +99,7 @@ def create_backup(when: datetime | None = None) -> str | None:
             conn.execute("VACUUM INTO ?", (target,))
         finally:
             conn.close()
+        _owner_only(target, 0o600)
         logger.info("Database backup written to %s (%s bytes)", target, os.path.getsize(target))
         return target
     except Exception:
