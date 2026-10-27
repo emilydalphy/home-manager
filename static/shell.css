@@ -11519,6 +11519,18 @@ button.home-row { width: 100%; }
 }
 .home-freeze-pill::after { content: ''; position: absolute; inset: -6px 0; }
 .home-seg .wk-seg-btn { font-size: 13px; }
+/* C4: the planning check's freezer chips (mockups-c screen 4) — a
+   celadon-edged card like Use soon; chips are the app's .gro-pill, tapped
+   gone = .gro-pill-on. No apricot: the dock keeps the screen's one. */
+.home-check { border-color: var(--celadon-edge); padding-bottom: 14px; }
+.home-check-sub {
+  margin: 0 0 10px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--ink-secondary);
+}
+.home-check-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .home-shelf-empty {
   margin: 4px 2px;
   font-family: var(--font-body);

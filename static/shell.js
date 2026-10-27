@@ -10659,7 +10659,12 @@
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>'
   };
 
-  var homeState = { data: null, seg: null, loadError: false, sheetId: null, busy: false };
+  var homeState = { data: null, seg: null, loadError: false, sheetId: null, busy: false,
+    // C4: the planning check's freezer chips. `items` from
+    // GET /api/inventory/check?location=freezer; `gone` maps a tapped
+    // chip's id to the Undo the answer returned (null when it was already
+    // gone elsewhere), so a second tap puts it back.
+    check: { items: [], gone: {} } };
 
   function homePanel() { return panels['home']; }
   function homeIsBuilt() { var p = homePanel(); return !!(p && p.dataset.built); }
@@ -10702,8 +10707,61 @@
     var same = homeState.data && JSON.stringify(homeState.data) === JSON.stringify(data);
     homeState.data = data;
     homeState.loadError = false;
+    if (homeSegment(data) === 'freezer') {
+      if (await loadHomeCheck()) same = false;
+    }
     if (!same || !quiet) renderHome();
     if (homeState.sheetId) renderHomeItemSheet();
+  }
+
+  // C4: the freezer's "Quick check: still have these?" chips — the same
+  // list the week's planning asks (inventory_check.candidates, narrowed to
+  // the freezer), so an answer in either place answers both. A chip
+  // tapped gone here stays on screen, marked, until the panel is next
+  // read with it answered elsewhere. Returns whether the chips changed.
+  async function loadHomeCheck() {
+    var res;
+    try {
+      res = await Api.json('/api/inventory/check?location=freezer', { quiet: true });
+    } catch (err) { return false; }
+    var fresh = (res && res.items) || [];
+    var have = {};
+    fresh.forEach(function (it) { have[it.id] = true; });
+    var kept = homeState.check.items.filter(function (it) {
+      return !have[it.id] && Object.prototype.hasOwnProperty.call(homeState.check.gone, it.id);
+    });
+    var next = fresh.concat(kept);
+    var changed = JSON.stringify(next) !== JSON.stringify(homeState.check.items);
+    homeState.check.items = next;
+    return changed;
+  }
+
+  async function homeCheckTap(id) {
+    if (homeState.busy) return;
+    var item = null;
+    homeState.check.items.forEach(function (it) { if (it.id === id) item = it; });
+    if (!item) return;
+    var gone = homeState.check.gone;
+    homeState.busy = true;
+    try {
+      if (!Object.prototype.hasOwnProperty.call(gone, id)) {
+        var res = await Api.json('/api/inventory/check', { body: { gone: [id], confirmed: [] } });
+        var removed = ((res && res.removed) || [])[0];
+        gone[id] = removed && removed.undo ? removed.undo : null;
+      } else if (gone[id]) {
+        // Tapped again: the row goes back, as the planning check's own
+        // second tap does before Next.
+        var back = await Api.json('/api/whats-home/undo', { body: { undo: gone[id] } });
+        if (back && back.already_back) showToast(homeItemName(back.item) + ' is already back in the kitchen.');
+        delete gone[id];
+      } else {
+        delete gone[id];
+      }
+      await loadHome(true);
+      renderHome();
+      refreshKitchenPanel();
+    } catch (err) { /* Api.json toasted */ }
+    homeState.busy = false;
   }
 
   function refreshHomePanel() {
@@ -10751,9 +10809,24 @@
       return;
     }
     if (content) content.classList.remove('is-empty');
-    if (titleEl) titleEl.innerHTML = homeTitleHtml(data.count);
-    setRootBand(panel, 'home-band', { sub: data.up_to_date || '' });
-    if (body) body.innerHTML = homeBodyHtml(data, homeSegment(data));
+    var seg = homeSegment(data);
+    var frozen = ((data.counts || {}).freezer) || 0;
+    if (seg === 'freezer' && frozen) {
+      // The Freezer segment has its own band (mockups-c screen 4): the
+      // count of rows shown, and the promise the sort keeps.
+      if (titleEl) titleEl.innerHTML = homeFreezerTitleHtml(frozen);
+      setRootBand(panel, 'home-band', { sub: 'Oldest first. Next week’s plan starts from the top.' });
+    } else {
+      if (titleEl) titleEl.innerHTML = homeTitleHtml(data.count);
+      setRootBand(panel, 'home-band', { sub: data.up_to_date || '' });
+    }
+    if (body) body.innerHTML = homeBodyHtml(data, seg);
+  }
+
+  // "9 things in the freezer", "1 thing in the freezer".
+  function homeFreezerTitleHtml(count) {
+    return escapeHtml(count + (count === 1 ? ' thing ' : ' things ')) +
+      '<span class="home-band-accent">in the freezer</span>';
   }
 
   // A new household's Kitchen starts empty (mockups-c's trade-off card:
@@ -10765,9 +10838,35 @@
   }
 
   function homeBodyHtml(data, seg) {
+    if (seg === 'freezer') {
+      // No "Use soon" here: the freezer's own band leads, and the planning
+      // check's freezer chips follow the rows (screen 4).
+      return homeSegHtml(data.counts || {}, seg) +
+        homeShelfHtml((data.locations || {})[seg] || [], seg) +
+        homeCheckHtml(homeState.check.items, homeState.check.gone);
+    }
     return homeUseSoonHtml(data.use_soon || []) +
       homeSegHtml(data.counts || {}, seg) +
       homeShelfHtml((data.locations || {})[seg] || [], seg);
+  }
+
+  // Pure: "Quick check: still have these?" on the freezer, one chip per
+  // thing; a chip tapped gone reads "Apples · gone" in the on fill.
+  function homeCheckHtml(items, gone) {
+    if (!items || !items.length) return '';
+    gone = gone || {};
+    return '<section class="home-card home-check" aria-labelledby="home-check-title">' +
+      '<h2 class="home-card-title" id="home-check-title">Quick check: still have these?</h2>' +
+      '<p class="home-check-sub">The planning check, here too. Tap anything that’s gone.</p>' +
+      '<div class="home-check-chips">' +
+      items.map(function (it) {
+        var off = Object.prototype.hasOwnProperty.call(gone, it.id);
+        return '<button type="button" class="gro-pill' + (off ? ' gro-pill-on' : '') + '" data-home="check" ' +
+          'data-id="' + it.id + '" aria-pressed="' + off + '">' +
+          escapeHtml((it.label || it.item) + (off ? ' · gone' : '')) + '</button>';
+      }).join('') +
+      '</div>' +
+    '</section>';
   }
 
   function homeUseSoonHtml(list) {
@@ -10808,7 +10907,7 @@
     return '<section class="home-card home-shelf" aria-label="' + escapeHtml(HOME_LOCATION_LABELS[seg]) + '">' +
       rows.map(function (r) {
         return '<button type="button" class="home-row home-shelf-row" data-home="row" data-id="' + r.id + '">' +
-          '<span class="home-row-item">' + escapeHtml(r.item) + '</span>' +
+          '<span class="home-row-item">' + escapeHtml(r.label || r.item) + '</span>' +
           '<span class="home-row-line' + (r.plan ? ' is-plan' : '') + '">' + escapeHtml(r.line || '') + '</span>' +
         '</button>';
       }).join('') +
@@ -10833,6 +10932,11 @@
     if (what === 'seg') {
       homeState.seg = el.getAttribute('data-seg');
       renderHome();
+      if (homeState.seg === 'freezer') {
+        loadHomeCheck().then(function (changed) { if (changed) renderHome(); });
+      }
+    } else if (what === 'check') {
+      homeCheckTap(id);
     } else if (what === 'row') {
       openHomeItemSheet(id);
     } else if (what === 'freeze') {

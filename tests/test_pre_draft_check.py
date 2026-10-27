@@ -167,7 +167,8 @@ def test_gone_removes_the_row_and_untapped_ones_are_confirmed(signed_in):
     res = client.post("/api/inventory/check", json={"gone": [hummus], "confirmed": [cheddar, 99999]})
     assert res.status_code == 200
     body = res.json()
-    assert body["removed"] == [{"id": hummus, "item": "Hummus"}]
+    # Each removal also carries the Kitchen tab's Undo (C4, kitchen-freezer).
+    assert [{"id": r["id"], "item": r["item"]} for r in body["removed"]] == [{"id": hummus, "item": "Hummus"}]
     assert body["confirmed"] == [cheddar]
     assert _exists(hummus) is None
     assert _exists(cheddar)["confirmed_on"] == household_today().isoformat()

@@ -13,6 +13,28 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The Kitchen tab's freezer: oldest first, and the planning check here
+  too** (2026-10-27, Loop Board C4; branch `inventory/kitchen-freezer` =
+  `inventory/kitchen-tab` + `inventory/pre-draft-check`; tests
+  `tests/test_kitchen_freezer.py`). The Freezer segment gets its own band
+  ("N things *in the freezer*" / "Oldest first. Next week's plan starts from
+  the top.") and no Use soon. Rows sort by ONE key,
+  `use_up.freezer_order_key` (frozen_on, else created_at; then created_at,
+  id) — the planner's freezer candidates use the same key, so the top really
+  is next week's first pick. Row words: plan ("in next Mon's chili"; a dish of
+  >3 words reads as the slot), else "frozen 28 Sep"/"frozen today", else the
+  amount word. Night-off portions read "Chili · 3 portions" / "from last Wed"
+  (cook night = use-by − `FROZEN_COOKED_KEEPS_DAYS`), their plan from the
+  entry's `freezer_portion` claim ("for Thu's dinner"); a portion whose cook
+  hasn't happened (cook_on_fed, or skipped) isn't shown. The A4 check's
+  freezer chips sit under the rows; a tap answers gone immediately
+  (`inventory_check.answer` now records `inventory_removals` how='gone' and
+  returns the Kitchen tab's Undo, so a second tap puts it back). Two
+  merge-semantic breaks fixed: the use-up verify changed `_staple_keys` to
+  word lists (whats_home's `key in staples` matched nothing → staples
+  counted) and dropped food turning today from candidates (Use soon lost its
+  "today" rows) — new `candidates(..., turning_today=True)` for the tab only.
+
 - **A fifth tab, Kitchen: what's home, and one-tap fixes** (2026-10-26,
   Loop Board C1 + C3; Emily approved the nav change that day, decision 2 —
   "an 'inventory management screen' for your kitchen"; branch

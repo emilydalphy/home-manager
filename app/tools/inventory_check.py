@@ -268,7 +268,9 @@ def answer(gone=None, confirmed=None) -> dict:
     rows are stamped confirmed_on = household today. An id that is no
     longer there (answered in the other place, or removed since) is skipped,
     not an error — answering in either place answers both. An id in both
-    lists counts as gone. Returns {"removed": [{id, item}], "confirmed": [ids]}.
+    lists counts as gone. Returns {"removed": [{id, item, undo}], "confirmed":
+    [ids]}; each `undo` is the Kitchen tab's (whats_home.restore_item), which
+    the freezer segment's chips use when a gone chip is tapped again.
     """
     gone_ids = _ids(gone)
     confirm_ids = [i for i in _ids(confirmed) if i not in gone_ids]
@@ -276,18 +278,22 @@ def answer(gone=None, confirmed=None) -> dict:
     try:
         today = _today(conn).isoformat()
         removed, stamped = [], []
-        # A plain delete, the same as the Kitchen view's remove
-        # (inventory.remove_inventory_item): nothing in the app keeps a
-        # record of removed rows today. If one arrives (an inventory
-        # removals table from the Kitchen-tab work), write it here too.
+        # Kept in inventory_removals (how = 'gone'), the Kitchen tab's record
+        # of a row taken out, so its Undo can put this one back too (C4).
         for i in gone_ids:
             row = conn.execute(
-                "SELECT id, item FROM inventory_items WHERE id = ? AND household_id = ?", (i, household_id())
+                "SELECT * FROM inventory_items WHERE id = ? AND household_id = ?", (i, household_id())
             ).fetchone()
             if not row:
                 continue
+            cur = conn.execute(
+                "INSERT INTO inventory_removals (household_id, inventory_item_id, item, how, row_json) "
+                "VALUES (?, ?, ?, 'gone', ?)",
+                (household_id(), row["id"], row["item"], json.dumps(dict(row))),
+            )
             conn.execute("DELETE FROM inventory_items WHERE id = ? AND household_id = ?", (i, household_id()))
-            removed.append({"id": row["id"], "item": row["item"]})
+            removed.append({"id": row["id"], "item": row["item"],
+                            "undo": {"kind": "removed", "item_id": row["id"], "removal_id": cur.lastrowid}})
         for i in confirm_ids:
             # updated_at is left alone on purpose: it orders same-name rows
             # (inventory._find_row_by_name) and stands for bought/used.

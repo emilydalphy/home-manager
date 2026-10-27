@@ -57,6 +57,20 @@ MAX_FREEZER = 3
 
 _DOW = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
+
+def freezer_order_key(row: dict) -> tuple:
+    """
+    "Oldest first" for freezer food — the ONE key, so the Kitchen tab's
+    freezer segment (whats_home, card C4: "Oldest first. Next week's plan
+    starts from the top.") and this module's freezer candidates can never
+    disagree about which is the top. The day it went in (frozen_on), else
+    the day the row arrived (created_at: bought frozen, or frozen before
+    frozen_on existed), then the arrival stamp and the id for a tie.
+    """
+    created = str(row.get("created_at") or "")
+    day = str(row.get("frozen_on") or created or "")[:10]
+    return (day or "9999-99-99", created, int(row.get("id") or 0))
+
 # ---------- what can happen to a thing that didn't fit (B3) ----------
 #
 # Small word tables, easy to change. Matched as whole words against the
@@ -166,7 +180,8 @@ def _period_end(period_start: str | None, day_count: int, today: date) -> date:
     return max(start, today) + timedelta(days=max(1, int(day_count or 7)) - 1)
 
 
-def candidates(period_start: str | None = None, day_count: int = 7, conn=None) -> list[dict]:
+def candidates(period_start: str | None = None, day_count: int = 7, conn=None,
+               turning_today: bool = False) -> list[dict]:
     """
     Everything the week should use up, going-off rows soonest first, then
     freezer rows oldest first. Each item:
@@ -191,6 +206,10 @@ def candidates(period_start: str | None = None, day_count: int = 7, conn=None) -
     Never an item a household rule rules out (rule_clash: an allergy or a
     dislike) — it can never be planned, so it is not offered, not shown on
     the pre-draft step and not counted (verify finding 5).
+
+    `turning_today=True` relaxes the use_by rule for a row turning ON the
+    first day: the Kitchen tab's "Use soon" (whats_home), where "today" is
+    the point. Planning never passes it.
     """
     own = conn is None
     if own:
@@ -228,6 +247,7 @@ def candidates(period_start: str | None = None, day_count: int = 7, conn=None) -
                 if age < FREEZER_AFTER_DAYS:
                     continue
                 frozen.append({
+                    "_order": freezer_order_key(row),
                     "id": row["id"], "item": name, "quantity": row["quantity"] or "",
                     "category": row["category"] or "other", "location": "freezer",
                     "kind": "freezer", "turns_on": None, "use_by": None, "turns_day": None,
@@ -240,7 +260,8 @@ def candidates(period_start: str | None = None, day_count: int = 7, conn=None) -
                 turns_d = date.fromisoformat(turns)
             except ValueError:
                 continue
-            if turns_d < today or turns_d > end or turns_d - timedelta(days=1) < first:
+            if turns_d < today or turns_d > end or (
+                    turns_d - timedelta(days=1) < first and not (turning_today and turns_d == first)):
                 continue
             going.append({
                 "id": row["id"], "item": name, "quantity": row["quantity"] or "",
@@ -252,7 +273,9 @@ def candidates(period_start: str | None = None, day_count: int = 7, conn=None) -
                 "freeze_ok": freeze_ok(name, where), "side_ok": side_ok(name),
             })
         going.sort(key=lambda c: (c["turns_on"], c["id"]))
-        frozen.sort(key=lambda c: (c["frozen_on"], c["id"]))
+        frozen.sort(key=lambda c: c["_order"])
+        for c in frozen:
+            del c["_order"]
         rules = _rule_context()
         going = [c for c in going if not rule_clash(c, *rules)]
         frozen = [c for c in frozen if not rule_clash(c, *rules)]

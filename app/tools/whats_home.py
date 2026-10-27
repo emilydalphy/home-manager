@@ -110,8 +110,11 @@ def _shown_rows(conn) -> list[dict]:
     """Every inventory row the Kitchen tab shows: not a staple, not a
     spice, not an emptied "0" row."""
     from . import spices as _spices
+    from . import freezer_portions as _freezer_portions
 
     staples = _use_up._staple_keys(conn)
+    today = _today(conn)
+    uncooked = _freezer_portions._skipped_cooks_portion_ids(conn)
     rows = conn.execute(
         "SELECT id, item, quantity, source, category, location, expiration_date, created_at, "
         "updated_at, frozen_on, amount_left, amount_left_qty FROM inventory_items "
@@ -122,15 +125,149 @@ def _shown_rows(conn) -> list[dict]:
     for r in rows:
         row = dict(r)
         name = (row["item"] or "").strip()
-        if not name or _use_up._name_key(name) in staples or _spices.is_spice(name):
+        # use_up.is_staple, not a name-key lookup: since the use-up verify
+        # fixes, _staple_keys is a list of word lists (head-noun match), and
+        # `key in staples` silently matched nothing (found merging C4).
+        if not name or _use_up.is_staple(name, staples) or _spices.is_spice(name):
             continue
         if (row["quantity"] or "").strip() in ("0", "0.0"):
             continue
         where = _quantities._display_location(row).strip().lower()
         row["location"] = where if where in LOCATIONS else "pantry"
         row["item"] = name
+        if row["location"] == "freezer" and row.get("source") == _NIGHT_OFF_SOURCE:
+            portion = _portion_of(row)
+            # A night off's spare portion of a cook that hasn't happened yet
+            # (cook_on_fed writes it ahead of the cook, dated the cook's
+            # night) or that was then skipped is not in the freezer yet.
+            if portion is not None and (row["id"] in uncooked or (
+                    portion["cooked_on"] and portion["cooked_on"] > today.isoformat())):
+                continue
+            row["portion"] = portion
         shown.append(row)
     return shown
+
+
+# ---------- the freezer segment (C4) ----------
+#
+# "9 things in the freezer" / "Oldest first. Next week's plan starts from
+# the top." Rows sort by use_up.freezer_order_key, the key the planner's
+# freezer candidates sort by, so the top of this list IS the planner's next
+# pick. Each row's right-hand words: its plan ("in next Mon's chili"), else
+# the day it went in ("frozen 28 Sep") or, for a night off's cooked
+# portion, the night it was cooked ("from last Wed"), else its amount word
+# (bought frozen: "plenty").
+
+_NIGHT_OFF_SOURCE = "night_off"  # tonight.NIGHT_OFF_FROZEN_SOURCE (a test pins the two equal)
+# A dish is named in a freezer row's plan line only when it is this short;
+# a longer one reads as the slot ("in Thu's dinner").
+_PLAN_DISH_MAX_WORDS = 3
+_PORTION_RE = re.compile(r"^\s*(\d+)\s*(?:servings?|portions?)\b", re.I)
+
+
+def _portion_of(row: dict) -> dict | None:
+    """A night off's cooked portion as the freezer shows it: "Chili · 3
+    portions". The dish comes off the row's name the way freezer_portions
+    reads it; the cook's night off the row's use-by, which
+    tonight._freeze_portion sets FROZEN_COOKED_KEEPS_DAYS after it."""
+    from . import tonight as _tonight
+
+    dish = _tonight.frozen_portion_dish(row.get("item") or "")
+    if not dish:
+        return None
+    m = _PORTION_RE.match(row.get("quantity") or "")
+    count = int(m.group(1)) if m else None
+    try:
+        cooked_on = (date.fromisoformat((row.get("expiration_date") or "")[:10])
+                     - timedelta(days=_tonight.FROZEN_COOKED_KEEPS_DAYS)).isoformat()
+    except ValueError:
+        cooked_on = (row.get("created_at") or "")[:10] or None
+    label = dish if not count else f"{dish} · {count} portion{'' if count == 1 else 's'}"
+    return {"dish": dish, "count": count, "cooked_on": cooked_on, "label": label}
+
+
+def _freezer_day(d: date, today: date) -> str:
+    """'today' / 'yesterday' / 'last Wed' (within the week) / '28 Sep': the
+    mockup's own date shape for the freezer."""
+    delta = (today - d).days
+    if delta == 0:
+        return "today"
+    if delta == 1:
+        return "yesterday"
+    if 2 <= delta <= 6:
+        return f"last {_DOW_SHORT[d.weekday()]}"
+    if delta < 0:
+        return _day_word(d, today, long=False)
+    return f"{d.day} {_MONTHS[d.month - 1]}"
+
+
+def _freezer_plan_line(plan: dict, today: date, portion: bool) -> str:
+    """'in next Mon's chili', 'in Thu's dinner', 'in tonight's dinner'; for
+    a cooked portion, which IS the meal, 'for Thu's dinner'."""
+    d = date.fromisoformat(plan["date"])
+    slot = plan["slot"] if plan["slot"] != "snack" else "snacks"
+    words = re.findall(r"[A-Za-z][A-Za-z'’-]*", plan.get("meal") or "")
+    what = slot
+    if not portion and words and len(words) <= _PLAN_DISH_MAX_WORDS:
+        what = " ".join(words).lower()
+    if d == today:
+        day = "tonight's" if plan["slot"] == "dinner" else "today's"
+    else:
+        this_monday = today - timedelta(days=today.weekday())
+        later_week = d >= this_monday + timedelta(days=7)
+        day = f"{'next ' if later_week else ''}{_DOW_SHORT[d.weekday()]}'s"
+    return f"{'for' if portion else 'in'} {day} {what}"
+
+
+def _portion_plans(conn, today: date) -> dict:
+    """{inventory_item_id: plan} for the cooked portions an approved,
+    uneaten night in the coming week is eating (freezer_portions writes the
+    claim onto the entry's derived_from_json)."""
+    from . import freezer_portions as _freezer_portions
+
+    end = (today + timedelta(days=PLAN_AHEAD_DAYS - 1)).isoformat()
+    out: dict = {}
+    for r in conn.execute(
+        "SELECT mpe.id, mpe.date, mpe.slot, mpe.freeform_meal, mpe.derived_from_json "
+        "FROM meal_plan_entries mpe JOIN weekly_plans wp ON wp.id = mpe.weekly_plan_id "
+        "WHERE mpe.household_id = ? AND wp.household_id = ? AND wp.status = 'approved' "
+        "AND COALESCE(mpe.slot_state, 'planned') = 'planned' AND mpe.cooked_status != 'done' "
+        "AND mpe.date >= ? AND mpe.date <= ? AND mpe.derived_from_json LIKE ? "
+        "ORDER BY mpe.date, mpe.id",
+        (household_id(), household_id(), today.isoformat(), end, f"%{_freezer_portions.KEY}%"),
+    ).fetchall():
+        claim = _freezer_portions.portion_on(r["derived_from_json"])
+        if claim and claim["inventory_item_id"] not in out:
+            slot = (r["slot"] or "dinner").strip().lower()
+            d = date.fromisoformat(r["date"])
+            if d == today:
+                short = long = "tonight's dinner" if slot == "dinner" else f"today's {slot}"
+            else:
+                short = f"{_DOW_SHORT[d.weekday()]} {slot}"
+                long = f"{_DOW_LONG[d.weekday()]}'s {slot}"
+            out[claim["inventory_item_id"]] = {
+                "entry_id": r["id"], "date": r["date"], "slot": slot,
+                "meal": r["freeform_meal"] or "", "label": short, "long": long,
+            }
+    return out
+
+
+def _freezer_line(row: dict, plan: dict | None, today: date, conn) -> str:
+    portion = row.get("portion")
+    if plan:
+        return _freezer_plan_line(plan, today, portion=bool(portion))
+    if portion and portion.get("cooked_on"):
+        try:
+            return f"from {_freezer_day(date.fromisoformat(portion['cooked_on']), today)}"
+        except ValueError:
+            pass
+    try:
+        frozen = date.fromisoformat((row.get("frozen_on") or "")[:10])
+    except ValueError:
+        frozen = None
+    if frozen:
+        return f"frozen {_freezer_day(frozen, today)}"
+    return AMOUNT_WORDS[amount_level(row)]
 
 
 _HALF_RE = re.compile(r"\bhalf\b|½|\b0?\.5\b|\b1/2\b", re.I)
@@ -255,7 +392,12 @@ def _plan_line(plan: dict) -> str:
 def _detail_line(row: dict, plan: dict | None, today: date, conn) -> str:
     """'Fridge · bought Saturday · best by Thursday · in Tuesday's dinner'."""
     parts = [LOCATION_LABELS.get(row["location"], "Pantry")]
-    if row["location"] == "freezer":
+    portion = row.get("portion")
+    if row["location"] == "freezer" and portion and portion.get("cooked_on"):
+        # A night off's portion: the night it was cooked, as its row says
+        # ("from last Wed"), not the row's own stamp.
+        parts.append(f"cooked {_day_word(date.fromisoformat(portion['cooked_on']), today)}")
+    elif row["location"] == "freezer":
         frozen = None
         try:
             frozen = date.fromisoformat((row.get("frozen_on") or "")[:10])
@@ -281,15 +423,25 @@ def _detail_line(row: dict, plan: dict | None, today: date, conn) -> str:
 
 def _row_view(row: dict, plan: dict | None, today: date, conn) -> dict:
     level = amount_level(row)
+    portion = row.get("portion")
+    if row["location"] == "freezer":
+        line = _freezer_line(row, plan, today, conn)
+    else:
+        line = _plan_line(plan) if plan else AMOUNT_WORDS[level]
     return {
         "id": row["id"],
-        "item": row["item"],
+        # A night off's portion is the dish ("Chili", not "Chili (cooked)"):
+        # the sheet's title and every toast name it that way.
+        "item": portion["dish"] if portion else row["item"],
+        # The row's left-hand words: "Chili · 3 portions", else the item.
+        "label": portion["label"] if portion else row["item"],
+        "portion": portion,
         "location": row["location"],
         "category": row.get("category") or "other",
         "amount": level,
         "amount_word": AMOUNT_WORDS[level],
         "plan": plan,
-        "line": _plan_line(plan) if plan else AMOUNT_WORDS[level],
+        "line": line,
         "detail": _detail_line(row, plan, today, conn),
         "expiration_date": row.get("expiration_date"),
         # Freezer rows: the day it went in, else the day it arrived (a row
@@ -304,8 +456,8 @@ def _row_view(row: dict, plan: dict | None, today: date, conn) -> dict:
 
 
 def _sort_key(view: dict):
-    if view["location"] == "freezer":
-        return ((view.get("frozen_on") or "9999")[:10], view["item"].lower())
+    """Fridge and pantry: soonest date first. (The freezer sorts by
+    use_up.freezer_order_key — see get_whats_home.)"""
     return ((view.get("expiration_date") or "9999")[:10], view["item"].lower())
 
 
@@ -387,18 +539,37 @@ def get_whats_home() -> dict:
         today = _today(conn)
         rows = _shown_rows(conn)
         meals = _upcoming_meals(conn, today)
+        portion_plans = _portion_plans(conn, today)
         views = {}
+        by_id = {}
         for row in rows:
-            views[row["id"]] = _row_view(row, _plan_for(row["item"], meals, today), today, conn)
+            by_id[row["id"]] = row
+            if row.get("portion"):
+                # A cooked portion's plan is the night freezer_portions put
+                # it on, never an ingredient match.
+                plan = portion_plans.get(row["id"])
+            else:
+                plan = _plan_for(row["item"], meals, today)
+            views[row["id"]] = _row_view(row, plan, today, conn)
         locations = {loc: [] for loc in LOCATIONS}
         for v in views.values():
             locations[v["location"]].append(v)
         for loc in LOCATIONS:
-            locations[loc].sort(key=_sort_key)
+            if loc == "freezer":
+                # Oldest first by the planner's own key (use_up), so "Next
+                # week's plan starts from the top" stays true.
+                locations[loc].sort(key=lambda v: _use_up.freezer_order_key(by_id[v["id"]]))
+            else:
+                locations[loc].sort(key=_sort_key)
 
         soon_cutoff = today + timedelta(days=USE_SOON_DAYS)
         use_soon = []
-        for c in _use_up.candidates(today.isoformat(), PLAN_AHEAD_DAYS, conn=conn):
+        # turning_today: since the use-up verify fixes, a candidate's use_by
+        # (the day before it turns) must be on or after the period's first
+        # day, which drops food turning TODAY — right for planning, wrong
+        # for "Use soon", whose first row is exactly that (the yogurt,
+        # "today"). Found merging C4.
+        for c in _use_up.candidates(today.isoformat(), PLAN_AHEAD_DAYS, conn=conn, turning_today=True):
             if c["kind"] != "going_off" or c["id"] not in views:
                 continue
             turns = date.fromisoformat(c["turns_on"])
