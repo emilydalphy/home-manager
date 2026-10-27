@@ -139,6 +139,8 @@ from .cooker import (  # noqa: F401
     PREP_TASK_STATUSES,
     InvalidPrepStatus,
     check_off_meal,
+    undo_meal_eaten,
+    kitchen_line,
     check_off_prep_step,
     deplete_inventory_for_meal,
     get_cooker_view,

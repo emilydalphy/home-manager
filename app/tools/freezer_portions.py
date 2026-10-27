@@ -632,7 +632,7 @@ def portion_eaten(entry_id: int) -> dict | None:
         if not portion:
             return None
         item = conn.execute(
-            "SELECT id, item FROM inventory_items WHERE id = ? AND household_id = ?",
+            "SELECT * FROM inventory_items WHERE id = ? AND household_id = ?",
             (portion["inventory_item_id"], household_id()),
         ).fetchone()
         if item is None:
@@ -648,7 +648,10 @@ def portion_eaten(entry_id: int) -> dict | None:
     return {
         "ingredient": portion["dish"], "item": item["item"],
         "result": {"item_id": item["id"], "item": item["item"],
-                   "removed": True, "units_reconciled": True},
+                   "removed": True, "units_reconciled": True,
+                   # The whole row as it was, so the eaten toast's Undo can
+                   # put the portion back (cooker.undo_meal_eaten).
+                   "_receipt": {"inventory_id": item["id"], "before": dict(item), "after": None}},
     }
 
 

@@ -1107,6 +1107,10 @@ class CheckOffMealRequest(BaseModel):
     status: str = "done"  # pending | done
 
 
+class UndoEatenRequest(BaseModel):
+    entry_id: int
+
+
 class StartCookingRequest(BaseModel):
     entry_id: int
 
@@ -3375,12 +3379,56 @@ def add_recipe_endpoint(req: AddRecipeRequest):
     return result
 
 
+def _eaten_receipt(checked: dict | None) -> dict:
+    """
+    What a meal tick tells the screen that made it, so the toast can say
+    what came out of the kitchen (Loop Board "Inventory A2"): the dish, the
+    rows' names, and the sentence. `kitchen_line` is '' when nothing came
+    out — a leftovers night, nothing tracked, a repeat tick — and the
+    screen then keeps its ordinary toast.
+    """
+    checked = checked or {}
+    return {
+        "entry_id": checked.get("entry_id"),
+        "meal": checked.get("meal") or "",
+        "cooked_status": checked.get("cooked_status"),
+        "took_out": checked.get("took_out") or [],
+        "kitchen_line": checked.get("kitchen_line") or "",
+    }
+
+
+@app.post("/api/cooker/undo-eaten")
+def cooker_undo_eaten(req: UndoEatenRequest):
+    """
+    Undo on the eaten toast: un-marks the meal and puts back everything the
+    tick took out of the kitchen, each row exactly as it was
+    (tools.undo_meal_eaten). Answers the refreshed cooker view, like every
+    other /api/cooker/* write, with the undo's own receipt under `undone`.
+    """
+    try:
+        undone = tools.undo_meal_eaten(req.entry_id)
+        view = tools.get_cooker_view()
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Cooker undo-eaten failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    view["undone"] = {
+        "entry_id": req.entry_id,
+        "meal": undone.get("meal") or "",
+        "put_back": undone.get("put_back") or [],
+        "left_alone": undone.get("left_alone") or [],
+    }
+    return view
+
+
 @app.post("/api/cooker/check-meal")
 def cooker_check_meal(req: CheckOffMealRequest):
     """Mark a planned meal cooked/pending directly from the Cooker view (no chat round-trip needed)."""
     try:
-        tools.check_off_meal(req.entry_id, req.status)
+        checked = tools.check_off_meal(req.entry_id, req.status)
         view = tools.get_cooker_view()
+        view["checked"] = _eaten_receipt(checked)
     except tools.InvalidMealStatus as e:
         # A status outside MEAL_COOKED_STATUSES is a bad request, not a
         # missing row — 422, not the 404 below, which is check_off_meal's
@@ -3808,8 +3856,10 @@ def today_move_done(move_id: str, req: MoveDoneRequest, date: str | None = None)
     if (date or req.date) is not None:
         _route_date(date or req.date, "date")
     try:
-        tools.set_move_done(move_id, req.done)
+        ticked = tools.set_move_done(move_id, req.done)
         payload = tools.today_moves(date or req.date)
+        if ticked.get("checked"):
+            payload["checked"] = _eaten_receipt(ticked["checked"])
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:

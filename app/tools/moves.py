@@ -1647,8 +1647,8 @@ def set_move_done(move_id: str, done: bool = True) -> dict:
     kind, _, ref = (move_id or "").partition(":")
     status = "done" if done else "pending"
     if kind in ("cook", "reheat"):
-        _cooker.check_off_meal(int(ref), status)
-        return {"id": move_id, "done": done, "dispatched_to": "check_off_meal"}
+        checked = _cooker.check_off_meal(int(ref), status)
+        return {"id": move_id, "done": done, "dispatched_to": "check_off_meal", "checked": checked}
     if kind in ("fridge", "prep"):
         _cooker.check_off_prep_step(int(ref), status)
         return {"id": move_id, "done": done, "dispatched_to": "check_off_prep_step"}

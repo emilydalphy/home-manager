@@ -4376,7 +4376,10 @@
         // neither said it. The server's re-derived row is the one to read
         // — it is the row this toast is claiming to have moved.
         var moveName = savedName(updated.title || move.title);
-        if (done) showToast(savedLine(moveName, 'ticked off'));
+        // A cook or reheat tick that took food out of the kitchen says so,
+        // with Undo (toastEatenFromKitchen) — the same toast Kitchen gives.
+        if (done && toastEatenFromKitchen(fresh.checked)) { /* said */ }
+        else if (done) showToast(savedLine(moveName, 'ticked off'));
         else showToast(moveName ? moveName + ' is back on the list' : 'Back on the list');
       }
       // The same rows are the Cook screen's check-offs and Plan's "Done" —
@@ -17817,10 +17820,13 @@
         body: JSON.stringify({ entry_id: entry.entry_id, status: done ? 'done' : 'pending' })
       });
       if (!res.ok) throw new Error('check-meal failed (' + res.status + ')');
+      var doneView = await res.json().catch(function () { return {}; });
       delete mealDoneBusy[entry.entry_id];
       // The row knows its dish, both ways (copy sweep findings 1 and 17).
+      // A tick that took food out of the kitchen says so, with Undo.
       var dishName = mealDisplayName(entry);
-      if (done) toastSaved(savedLine(dishName, 'ticked off'));
+      if (toastEatenFromKitchen(doneView && doneView.checked)) { /* said */ }
+      else if (done) toastSaved(savedLine(dishName, 'ticked off'));
       else showToast(savedName(dishName)
         ? savedName(dishName) + ' isn’t cooked yet.'
         : 'Not cooked yet.');
@@ -25018,6 +25024,50 @@
     return name ? name + ' isn’t cooked yet' : SAVED_PLAIN;
   }
 
+  // Inventory A2 (Emily, 2026-10-27): marking a meal eaten says what came
+  // out of the kitchen — "Lemon chicken marked eaten. Took the chicken,
+  // spinach, rice and lemons out of the kitchen." — with Undo, which
+  // un-marks the meal and puts every one of those back exactly as it was
+  // (POST /api/cooker/undo-eaten). `checked` is the receipt every meal
+  // tick now answers with (/api/cooker/check-meal's and Today's move
+  // tick's `checked`); its kitchen_line is '' when nothing came out — a
+  // leftovers night, nothing tracked, a repeat tick from the other phone
+  // — and then this returns false and the caller says what it always did.
+  function toastEatenFromKitchen(checked) {
+    if (!checked || !checked.kitchen_line || checked.cooked_status !== 'done') return false;
+    var name = savedName(checked.meal);
+    showToast((name ? name + ' marked eaten. ' : 'Marked eaten. ') + checked.kitchen_line, {
+      label: 'Undo',
+      onClick: function () { return undoMealEaten(checked); }
+    }, 6000);
+    return true;
+  }
+
+  async function undoMealEaten(checked) {
+    var out;
+    try {
+      out = await Api.json('/api/cooker/undo-eaten', {
+        method: 'POST',
+        body: { entry_id: checked.entry_id },
+        errorMessage: 'That didn’t undo — try again.'
+      });
+    } catch (err) {
+      console.warn('Undoing a meal marked eaten failed:', err);
+      return;
+    }
+    // Every screen that shows the meal or the kitchen reads it again: the
+    // tick is gone and the shelf is back.
+    refreshKitchenPanel();
+    refreshTodayMoves();
+    refreshWeekPanel({ kitchenFresh: true });
+    var undone = (out && out.undone) || {};
+    var name = savedName(undone.meal || checked.meal);
+    var lead = name ? name + ' isn’t marked eaten' : 'Not marked eaten';
+    showToast((undone.left_alone && undone.left_alone.length)
+      ? lead + '.'
+      : lead + ' — it’s all back in the kitchen.');
+  }
+
   function toastMealLogged() {
     showToast('Logged — that’ll steer next week.', {
       label: 'Rate it',
@@ -25038,10 +25088,13 @@
       // moves the week's "N of M cooked" everywhere else that counts it.
       refreshCookAttention();
       refreshPlanSurfacesAfterCook();
-      // The same two lines the focused screen's tick uses (cookFocusCheckMeal):
+      // A tick that took food out of the kitchen says so, with Undo
+      // (toastEatenFromKitchen). Otherwise the same two lines the focused
+      // screen's tick uses (cookFocusCheckMeal):
       // a cook gets "Logged…", an un-cook names the dish it just put back
       // to not-cooked (S10, copy sweep finding 1 — the box carries the
       // name it is drawn beside, `data-name`).
+      if (toastEatenFromKitchen(view && view.checked)) return;
       if (justCooked) toastMealLogged();
       // "Mark eaten" (a reheat, a takeout night) is a tick, not an un-cook:
       // it said "Takeout pizza isn't cooked yet" (overnight 2026-10-18).
@@ -25078,7 +25131,8 @@
       refreshPlanSurfacesAfterCook();
       // "Mark it cooked" has its own line ("Logged — that'll steer next
       // week"); "Mark not cooked" had none until S10, and said which dish
-      // from 2026-09-23.
+      // from 2026-09-23. A tick that took food out says that instead.
+      if (toastEatenFromKitchen(view && view.checked)) return;
       if (next === 'done') toastMealLogged();
       else toastSaved(cookNotCookedLine(el));
     } catch (err) {

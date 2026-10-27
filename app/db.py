@@ -947,6 +947,12 @@ _MIGRATIONS = [
     # (recipes._KitchenStock.reserve_bought_for_meals_ahead). NULL = never
     # counted.
     ("inventory_items", "counted_on", "TEXT"),
+    # What a meal's eaten tick took out of the kitchen, row by row (a
+    # receipt per inventory row: its whole before-state, and what the tick
+    # left it at). Kept on the batch's canonical entry for the eaten
+    # toast's Undo, which puts each one back exactly
+    # (cooker.undo_meal_eaten). NULL = nothing to put back.
+    ("meal_plan_entries", "inventory_takes_json", "TEXT"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people

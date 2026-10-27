@@ -32,6 +32,7 @@ function loadWeekMenu(p, opts) { CALLS.push(['week', !!(opts && opts.kitchenFres
 function refreshTodayMoves() { CALLS.push(['today']); }
 function refreshKitchenMoves() { CALLS.push(['kitchen-moves']); }
 function refreshKitchenPanel() { CALLS.push(['kitchen']); }
+function toastEatenFromKitchen() { return false; }
 """
 
 

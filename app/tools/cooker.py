@@ -174,8 +174,11 @@ def _find_inventory_match(ingredient_item: str, inventory_items: list[dict]) -> 
 def _use_inventory_row_by_id(item_id: int, minus_qty: str) -> dict:
     """Deplete a specific, already-identified inventory row by id (not by name lookup) — used by deplete_inventory_for_meal once a match has already been resolved, so there's no risk of a second, different row matching the same name."""
     conn = get_conn()
+    # The whole row, not just the three columns this reads: it is the
+    # receipt's before-state, which is what lets the toast's Undo put a row
+    # this deletes back exactly as it was (undo_meal_eaten).
     row = conn.execute(
-        "SELECT id, item, quantity FROM inventory_items WHERE id = ? AND household_id = ?", (item_id, household_id())
+        "SELECT * FROM inventory_items WHERE id = ? AND household_id = ?", (item_id, household_id())
     ).fetchone()
     if not row:
         conn.close()
@@ -197,15 +200,20 @@ def _use_inventory_row_by_id(item_id: int, minus_qty: str) -> dict:
         )
         conn.commit()
         conn.close()
-        return {"item_id": item_id, "item": row["item"], "removed": True, "units_reconciled": True}
+        return {"item_id": item_id, "item": row["item"], "removed": True, "units_reconciled": True,
+                "_receipt": {"inventory_id": item_id, "before": dict(row), "after": None}}
     conn.execute(
         "UPDATE inventory_items SET quantity = ?, updated_at = datetime('now') "
         "WHERE id = ? AND household_id = ?",
         (remaining, item_id, household_id()),
     )
     conn.commit()
+    after = _inventory._receipt_snapshot(conn, item_id)
     conn.close()
-    return {"item_id": item_id, "item": row["item"], "quantity": remaining, "units_reconciled": reconciled}
+    out = {"item_id": item_id, "item": row["item"], "quantity": remaining, "units_reconciled": reconciled}
+    if reconciled:
+        out["_receipt"] = {"inventory_id": item_id, "before": dict(row), "after": after}
+    return out
 
 
 def deplete_inventory_for_meal(entry_id: int) -> dict:
@@ -404,6 +412,14 @@ def check_off_meal(entry_id: int, status: str = "done") -> dict:
     made an exact restore constructible. It doesn't, because a reversal
     still could not rebuild a DELETED row's location and expiry, and
     half-exact is the worst of the three. The door is open if Emily wants it.
+
+    IT DOES NOW, FOR THE TOAST'S UNDO ONLY (Loop Board "Inventory A2",
+    2026-10-27). A tick that moves rows records a receipt per row
+    (meal_plan_entries.inventory_takes_json: the row's whole before-state,
+    so a DELETED row comes back with its location and expiry) and answers
+    `took_out` / `kitchen_line` for the toast to say. Undo on that toast is
+    undo_meal_eaten, which puts back exactly what the receipt says. An
+    ordinary untick still restores nothing, for every reason above.
     """
     # Before the connection, so a status nothing can read never reaches the
     # row. The cooked tick drives times_cooked and the inventory claim off
@@ -449,7 +465,8 @@ def check_off_meal(entry_id: int, status: str = "done") -> dict:
     # ANY linked entry, not just this row: unticking a component card whose
     # siblings were done is still an untick of something that was cooked.
     was_done = any(s == "done" for s in linked_statuses.values())
-    result = {"entry_id": entry_id, "cooked_status": status, "linked_entry_ids": linked_ids}
+    result = {"entry_id": entry_id, "cooked_status": status, "linked_entry_ids": linked_ids,
+              "meal": row["meal"]}
 
     # Nothing to change at all: every linked entry already reads this way.
     # Written as "every linked entry" rather than a wholesale early return on
@@ -591,15 +608,190 @@ def check_off_meal(entry_id: int, status: str = "done") -> dict:
             # grow as new siblings are planned, so a later-added sibling
             # never changes it.
             depletion = deplete_inventory_for_meal(min(linked_ids))
+            receipts = _take_receipts(depletion["depleted"])
             result["inventory_depleted"] = depletion["depleted"]
             result["inventory_queued_for_review"] = depletion["queued_for_review"]
             if not _changed_any_inventory_row(depletion["depleted"]):
                 _release_inventory_depletion(linked_ids)
+            else:
+                _save_take_receipts(min(linked_ids), receipts)
+                result["took_out"] = _took_out_names(receipts)
+                result["kitchen_line"] = kitchen_line(result["took_out"])
     elif was_done:
         # See the docstring: nothing is put back, and the caller is told so
         # rather than left to assume either way.
         result["inventory_restored"] = False
     return result
+
+
+def _take_receipts(depleted: list[dict]) -> list[dict]:
+    """
+    Lift each depletion's receipt (_use_inventory_row_by_id /
+    freezer_portions.portion_eaten put one on every row they actually
+    moved) off the result, so what the chat tool and the routes see is the
+    shape it always was, and hand the receipts back in order.
+    """
+    receipts = []
+    for d in depleted:
+        receipt = (d.get("result") or {}).pop("_receipt", None)
+        if receipt:
+            receipts.append(receipt)
+    return receipts
+
+
+def _save_take_receipts(entry_id: int, receipts: list[dict]) -> None:
+    """What this batch's tick took out of the kitchen, row by row, kept on
+    the batch's canonical entry (min(linked_ids), the one the depletion ran
+    under) for the eaten toast's Undo — see undo_meal_eaten."""
+    conn = get_conn()
+    try:
+        conn.execute(
+            "UPDATE meal_plan_entries SET inventory_takes_json = ? WHERE id = ? AND household_id = ?",
+            (json.dumps(receipts), entry_id, household_id()),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def _natural_item_name(name: str) -> str:
+    """'Chicken thighs' -> 'chicken thighs'. An all-capitals word (BBQ)
+    keeps its capitals; everything else reads the way it is said."""
+    return " ".join(w if (w.isupper() and len(w) > 1) else w.lower() for w in (name or "").split())
+
+
+def _took_out_names(receipts: list[dict]) -> list[str]:
+    """The names of the rows a tick moved, as said aloud, once each."""
+    names: list[str] = []
+    for r in receipts:
+        name = _natural_item_name((r.get("before") or {}).get("item") or "")
+        if name and name not in names:
+            names.append(name)
+    return names
+
+
+KITCHEN_LINE_MAX_NAMES = 4
+
+
+def kitchen_line(names: list[str]) -> str:
+    """
+    "Took the chicken, spinach, rice and lemons out of the kitchen." — the
+    second sentence of the eaten toast (Loop Board "Inventory A2", Emily).
+    Up to four names, then "and N more"; no Oxford comma. '' when nothing
+    came out, so the caller keeps its ordinary toast.
+    """
+    names = [n for n in names if n]
+    if not names:
+        return ""
+    shown = names[:KITCHEN_LINE_MAX_NAMES]
+    more = len(names) - len(shown)
+    if more:
+        listed = ", ".join(shown) + f" and {more} more"
+    elif len(shown) == 1:
+        listed = shown[0]
+    else:
+        listed = ", ".join(shown[:-1]) + " and " + shown[-1]
+    return f"Took the {listed} out of the kitchen."
+
+
+def _restore_take(conn, receipt: dict) -> bool:
+    """
+    Put one row a tick moved back exactly as it was, on the caller's
+    connection. True when it was put back.
+
+    A row the tick DELETED (used to zero, or a freezer portion eaten) comes
+    back whole from the before-state — same id, location, category, expiry
+    — provided nothing has taken that id since (AUTOINCREMENT never reuses
+    one, so in practice it is always free). A row the tick SUBTRACTED from
+    gets its before quantity and updated_at back ONLY if it still reads
+    exactly what the tick left (rev and quantity, the proof
+    grocery._restore_inventory_from_receipt uses): a row somebody has
+    written since is the truer record of the shelf, and is left alone.
+    """
+    inventory_id = receipt.get("inventory_id")
+    before = receipt.get("before") or {}
+    if not inventory_id or not before:
+        return False
+    current = _inventory._receipt_snapshot(conn, inventory_id)
+    after = receipt.get("after")
+    if after is None:
+        if current is not None:
+            return False
+        cols = [c for c in before.keys() if c != "household_id"]
+        conn.execute(
+            f"INSERT INTO inventory_items (household_id, {', '.join(cols)}) "
+            f"VALUES (?, {', '.join('?' for _ in cols)})",
+            (household_id(), *[before[c] for c in cols]),
+        )
+        return True
+    if current is None or current.get("rev") != after.get("rev") or current.get("quantity") != after.get("quantity"):
+        return False
+    conn.execute(
+        "UPDATE inventory_items SET quantity = ?, updated_at = ? WHERE id = ? AND household_id = ?",
+        (before.get("quantity") or "", before.get("updated_at"), inventory_id, household_id()),
+    )
+    return True
+
+
+def undo_meal_eaten(entry_id: int) -> dict:
+    """
+    The eaten toast's Undo (Loop Board "Inventory A2", Emily): one tap that
+    un-marks the meal AND puts back everything the tick took out of the
+    kitchen, each row exactly as it was. Not the same as "Mark not cooked",
+    which still restores nothing (see check_off_meal's docstring): an
+    untick an hour later is a correction, not a reversal, and the shelf may
+    have moved since. The toast's few seconds are the window in which the
+    receipt is the truth.
+
+    The meal is put back first (check_off_meal, so the cook count and the
+    credit come off the way they always do), then the rows, in one
+    BEGIN IMMEDIATE so two phones cannot restore the same receipt twice:
+    the receipt is cleared in the same transaction that reads it. When
+    every row came back, the batch's depletion claim is released too, so
+    ticking it eaten again takes the food out again — it is on the shelf
+    again. If any row could not be put back (written since), the claim
+    stays, failing toward under-depleting like everything else here.
+    """
+    checked = check_off_meal(entry_id, "pending")
+    linked_ids = checked.get("linked_entry_ids") or [entry_id]
+    canonical = min(linked_ids)
+    marks = ",".join("?" for _ in linked_ids)
+    conn = get_conn()
+    restored, left = [], []
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            "SELECT inventory_takes_json FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+            (canonical, household_id()),
+        ).fetchone()
+        try:
+            receipts = json.loads((row["inventory_takes_json"] if row else None) or "[]")
+        except (TypeError, ValueError):
+            receipts = []
+        for receipt in receipts:
+            name = _natural_item_name((receipt.get("before") or {}).get("item") or "")
+            (restored if _restore_take(conn, receipt) else left).append(name)
+        if receipts:
+            conn.execute(
+                "UPDATE meal_plan_entries SET inventory_takes_json = NULL WHERE id = ? AND household_id = ?",
+                (canonical, household_id()),
+            )
+            if not left:
+                conn.execute(
+                    f"UPDATE meal_plan_entries SET inventory_depleted_at = NULL "
+                    f"WHERE household_id = ? AND id IN ({marks})",
+                    (household_id(), *linked_ids),
+                )
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+    checked["inventory_restored"] = bool(restored) and not left
+    checked["put_back"] = restored
+    checked["left_alone"] = left
+    return checked
 
 
 def _changed_any_inventory_row(depleted: list[dict]) -> bool:

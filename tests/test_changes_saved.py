@@ -395,6 +395,7 @@ function renderCook() {}
 function refreshPlanSurfacesAfterCook() {}
 function refreshCookAttention() {}
 function toastMealLogged() { TOASTS.push({ msg: 'LOGGED' }); }
+function toastEatenFromKitchen() { return false; }  // nothing came out of the kitchen
 function cookPost(url, body) { POSTS.push({ url: url, body: body }); return Promise.resolve({ items: [] }); }
 function el(attrs) { return { disabled: false, getAttribute: function (n) { return attrs[n] === undefined ? null : attrs[n]; } }; }
 var document = { querySelector: function () { return { value: '2 cups' }; } };

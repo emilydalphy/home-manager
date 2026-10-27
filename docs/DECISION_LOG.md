@@ -13,6 +13,20 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Marking a meal eaten says what came out of the kitchen, with Undo**
+  (2026-10-27, Loop Board "Inventory A2", Emily; branch
+  `overnight/eaten-says-what-came-out`; tests
+  `tests/test_eaten_says_what_came_out.py`). A tick that moves inventory now
+  keeps a receipt per row (`meal_plan_entries.inventory_takes_json`, whole
+  before-state) and answers `checked.kitchen_line` ("Took the chicken,
+  spinach, rice and lemons out of the kitchen.", 4 names then "and N more");
+  Kitchen, Today and Plan toast it with Undo → `POST /api/cooker/undo-eaten`
+  (`cooker.undo_meal_eaten`): un-marks the meal, re-inserts deleted rows
+  with their id, puts subtracted ones back unless written since (rev proof),
+  and releases the claim so a re-tick takes the food out again. That toast
+  replaces "Logged — Rate it" when food came out ("How did it go?" still
+  asks). An ordinary "Mark not cooked" still restores nothing. Why: the cook
+  should know the kitchen is still right without checking.
 - **The iPhone app's id is `com.heypomona.app`** (2026-10-25, Emily's pick
   to match her heypomona domain; branch `overnight/bundle-id-heypomona`).
   Replaced the `com.pomona.app` placeholder in `capacitor.config.json`, the
