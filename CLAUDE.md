@@ -41,8 +41,8 @@ work; Emily anchored the roadmap on it that day. On `main` now:
   the grocery list as an ordinary line when probably due, with "We have
   plenty" / "Not this trip" and a Staples card on Shop. Cadence is learned
   from real purchases (median interval, two needed). **Never touches
-  `inventory_items`** — inventory is an in-development beta feature by
-  Emily's call, staples come first. Chat: `add_staple`, `list_staples`,
+  `inventory_items`** — staples keep their own table (inventory
+  is a real feature again since 2026-10-26; spices and staples stay with Staples). Chat: `add_staple`, `list_staples`,
   `mark_staple_plenty`, `remove_staple`.
 - **Per-adult login, slice 1** ("Who's this?" after the passphrase for a
   household with more than one adult; the pick lives in the signed session

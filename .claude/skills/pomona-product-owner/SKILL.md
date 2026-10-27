@@ -49,7 +49,7 @@ session (the short versions live in the loop skill; links for depth):
    monitor* and making identify + decide a single tap. Every flow must answer: *which
    phase of the load does this take off whom?*
 2. **The core job is meals on the table**: plan → grocery list → prep → cook. Everything
-   else supports that or waits. Inventory is deferred as policy.
+   else supports that or waits. Inventory is a real feature again (reversed 2026-10-26) but never required to finish the loop.
 3. **The guardrails**: never add load to remove load. No data entry to complete a loop.
    Review before save. Queue-don't-guess. No game to administer. Reliable beats clever.
    The app gets quieter over time.

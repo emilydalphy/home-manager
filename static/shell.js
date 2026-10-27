@@ -152,26 +152,10 @@
     return !!shellWho.chores_enabled;
   }
 
-  // Inventory is still being built (Loop Board: "Inventory: mark as still
-  // in development" — beta testers were putting effort into keeping it up
-  // to date, which nothing else in the app depends on). This one constant
-  // gates a small neutral "In development" pill at its entry point — the
-  // Inventory row in Cook's More sheet (cookMoreRowsHtml) — plus the matching note at
-  // the top of the inventory sheet itself, gated by the same-named
-  // constant declared in
-  // static/inventory.html (a separate document loaded in an iframe, so it
-  // can't share this file's variable — see the comment there). Receipt,
-  // fridge and pantry scans, and everything else about inventory, are
-  // completely untouched: this only ever adds a label, never hides
-  // anything. Flipping both constants back to false is the whole
-  // reversal.
-  var INVENTORY_IN_DEVELOPMENT = true;
-
-  // "Add from a link" (recipe import, 2026-09-11) is also still being
-  // built — same reasoning and same treatment as Inventory above: a
-  // quiet neutral "In development" pill at its entry point (the row in
+  // "Add from a link" (recipe import, 2026-09-11) was also marked
+  // as still being built, with a quiet neutral "In development" pill at its entry point (the row in
   // Cook's More sheet, cookMoreRowsHtml), reusing the same
-  // .pill/.pill-neutral/.kit-row-pill markup Inventory uses. The feature
+  // .pill/.pill-neutral/.kit-row-pill markup Inventory's row used to carry. The feature
   // itself is untouched either way: paste a link, read it, review, save
   // all still work. Flipping this back to false removes the pill.
   // Was `true` until 2026-10-05. "Add from a link" is a shipping path now
@@ -263,8 +247,7 @@
   //   title for the same reason they always did: the title is set once at
   //   open time, and a section change inside the sheet never rewrites it.
   // - `src` entries host the EXISTING page in an iframe. Inventory is the
-  //   one left: it is a deferred beta feature by Emily's call
-  //   (INVENTORY_IN_DEVELOPMENT), so it stays framed rather than being
+  //   one left: it stays framed rather than being
   //   rebuilt, and its own back link hides itself inside a frame
   //   (static/embedded-page.js). `src` is written as a plain
   //   /static/*.html literal on purpose: tests/test_embedded_pages.py
@@ -11552,13 +11535,10 @@
         '<span class="kit-row-text"><span class="kit-row-title">Add from a cookbook</span></span>' +
         '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
       '</button>' +
-      // Inventory last: the in-development beta feature (see
-      // INVENTORY_IN_DEVELOPMENT), quiet by policy.
+      // Inventory last, quiet.
       '<button type="button" class="kit-row" data-kit="sheet" data-sheet="inventory">' +
         '<span class="kit-row-icon">' + KITCHEN_ICONS.fridge + '</span>' +
         '<span class="kit-row-text"><span class="kit-row-title">Inventory' +
-        (INVENTORY_IN_DEVELOPMENT ?
-          ' <span class="pill pill-neutral kit-row-pill">In development</span>' : '') +
         '</span>' +
         '<span class="kit-row-sub" id="kit-inv-sub">' + escapeHtml(kitchenInventoryLine()) + '</span></span>' +
         '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
