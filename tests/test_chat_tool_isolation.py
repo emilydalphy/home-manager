@@ -87,6 +87,8 @@ CASES = [
                          "ingredients": [{"item": "beans", "qty": "1 can"}]}]}]}),
     ("swap_dinner_nights", lambda i: {"weekly_plan_id": i["plan"], "date_a": _today(),
                                       "date_b": _tomorrow()}),
+    ("move_meal_to_day", lambda i: {"weekly_plan_id": i["plan"], "meal_date": _today(),
+                                     "to_date": _tomorrow()}),
     ("swap_component_in_plan", lambda i: {"weekly_plan_id": i["plan"], "component_category": "dinner",
                                           "old_meal": "Zqn Lentil Soup", "new_meal": "Injected Stew"}),
     ("approve_weekly_plan", lambda i: {"weekly_plan_id": i["plan"], "approved_by": "B"}),
