@@ -632,11 +632,12 @@ def portion_eaten(entry_id: int) -> dict | None:
         if not portion:
             return None
         item = conn.execute(
-            "SELECT id, item FROM inventory_items WHERE id = ? AND household_id = ?",
+            "SELECT * FROM inventory_items WHERE id = ? AND household_id = ?",
             (portion["inventory_item_id"], household_id()),
         ).fetchone()
         if item is None:
             return None
+        before = dict(item)
         conn.execute("DELETE FROM inventory_items WHERE id = ? AND household_id = ?",
                      (item["id"], household_id()))
         conn.commit()
@@ -646,7 +647,7 @@ def portion_eaten(entry_id: int) -> dict | None:
     # tick keeps its claim (cooker._changed_any_inventory_row reads
     # units_reconciled) and says what came out of the kitchen.
     return {
-        "ingredient": portion["dish"], "item": item["item"],
+        "ingredient": portion["dish"], "item": item["item"], "before": before,
         "result": {"item_id": item["id"], "item": item["item"],
                    "removed": True, "units_reconciled": True},
     }

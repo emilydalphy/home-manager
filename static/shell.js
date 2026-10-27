@@ -2497,6 +2497,40 @@
     showToast(said || SAVED_PLAIN, action || null, holdMs);
   }
 
+  // "Lemon chicken marked eaten. Took the chicken, spinach, rice and lemons
+  // out of the kitchen." with Undo (inventory card A2, Emily 2026-10-26).
+  // `took` is the server's `kitchen_took` ({names, line}) off the tick that
+  // just landed; with none (a leftovers night, nothing tracked) the caller
+  // keeps its own toast, so this returns false and says nothing. Undo is one
+  // call: the server un-marks the meal and puts every row it changed back.
+  function toastMarkedEaten(dish, took, entryId) {
+    if (!took || !took.line || entryId === null || entryId === undefined) return false;
+    var name = savedName(dish);
+    var said = (name ? name + ' marked eaten. ' : 'Marked eaten. ') + took.line;
+    showToast(said, {
+      label: 'Undo',
+      onClick: function () { return undoMarkedEaten(entryId); }
+    }, 7000);
+    return true;
+  }
+
+  async function undoMarkedEaten(entryId) {
+    try {
+      var view = await Api.json('/api/cooker/undo-eaten', {
+        method: 'POST',
+        body: { entry_id: entryId }
+      });
+      try { renderCookFrom(view); } catch (e) { /* Kitchen not built yet */ }
+      refreshTodayMoves();
+      refreshKitchenPanel();
+      refreshWeekPanel({ kitchenFresh: true });
+      showToast('Put it back.');
+    } catch (err) {
+      console.warn('Undoing marked eaten failed:', err);
+      showToast('That didn’t save — try again.');
+    }
+  }
+
   // The dock at the foot of the tab on screen, when one is there — Shop's
   // "Add something", Cook's "Start cooking", Now's plan-the-week. The toast's
   // usual spot (72px up) is the middle of that strip, so for its 2–6 seconds
@@ -4376,7 +4410,10 @@
         // neither said it. The server's re-derived row is the one to read
         // — it is the row this toast is claiming to have moved.
         var moveName = savedName(updated.title || move.title);
-        if (done) showToast(savedLine(moveName, 'ticked off'));
+        var moveEntry = parseInt(String(moveId).split(':')[1], 10);
+        if (done && toastMarkedEaten(updated.title || move.title, fresh && fresh.kitchen_took, isNaN(moveEntry) ? null : moveEntry)) {
+          // named what came out of the kitchen, with Undo
+        } else if (done) showToast(savedLine(moveName, 'ticked off'));
         else showToast(moveName ? moveName + ' is back on the list' : 'Back on the list');
       }
       // The same rows are the Cook screen's check-offs and Plan's "Done" —
@@ -17817,10 +17854,13 @@
         body: JSON.stringify({ entry_id: entry.entry_id, status: done ? 'done' : 'pending' })
       });
       if (!res.ok) throw new Error('check-meal failed (' + res.status + ')');
+      var ticked = await res.json().catch(function () { return {}; });
       delete mealDoneBusy[entry.entry_id];
       // The row knows its dish, both ways (copy sweep findings 1 and 17).
       var dishName = mealDisplayName(entry);
-      if (done) toastSaved(savedLine(dishName, 'ticked off'));
+      if (done && toastMarkedEaten(dishName, ticked && ticked.kitchen_took, entry.entry_id)) {
+        // named what came out of the kitchen, with Undo
+      } else if (done) toastSaved(savedLine(dishName, 'ticked off'));
       else showToast(savedName(dishName)
         ? savedName(dishName) + ' isn’t cooked yet.'
         : 'Not cooked yet.');
@@ -25045,7 +25085,11 @@
       if (justCooked) toastMealLogged();
       // "Mark eaten" (a reheat, a takeout night) is a tick, not an un-cook:
       // it said "Takeout pizza isn't cooked yet" (overnight 2026-10-18).
-      else if (el.getAttribute('data-next') === 'done') toastSaved(savedLine(el.getAttribute('data-name'), 'marked eaten'));
+      else if (el.getAttribute('data-next') === 'done') {
+        if (!toastMarkedEaten(el.getAttribute('data-name'), view && view.kitchen_took, parseInt(el.getAttribute('data-entry-id'), 10))) {
+          toastSaved(savedLine(el.getAttribute('data-name'), 'marked eaten'));
+        }
+      }
       else toastSaved(cookNotCookedLine(el));
     } catch (err) {
       el.disabled = false;

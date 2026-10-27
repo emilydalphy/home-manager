@@ -1098,6 +1098,10 @@ class StoreTypicalItemRemoveRequest(BaseModel):
     item: str
 
 
+class UndoEatenRequest(BaseModel):
+    entry_id: int
+
+
 class CheckOffMealRequest(BaseModel):
     entry_id: int
     # Kept a plain str so the refusal is tools.check_off_meal's own sentence
@@ -3379,8 +3383,12 @@ def add_recipe_endpoint(req: AddRecipeRequest):
 def cooker_check_meal(req: CheckOffMealRequest):
     """Mark a planned meal cooked/pending directly from the Cooker view (no chat round-trip needed)."""
     try:
-        tools.check_off_meal(req.entry_id, req.status)
+        ticked = tools.check_off_meal(req.entry_id, req.status)
         view = tools.get_cooker_view()
+        # What the tick took out of the kitchen, for the toast (Undo is
+        # POST /api/cooker/undo-eaten). Absent when nothing came out.
+        if ticked.get("kitchen_took"):
+            view["kitchen_took"] = ticked["kitchen_took"]
     except tools.InvalidMealStatus as e:
         # A status outside MEAL_COOKED_STATUSES is a bad request, not a
         # missing row — 422, not the 404 below, which is check_off_meal's
@@ -3396,6 +3404,20 @@ def cooker_check_meal(req: CheckOffMealRequest):
         logger.exception("Cooker check-meal failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return view
+
+
+@app.post("/api/cooker/undo-eaten")
+def cooker_undo_eaten(req: UndoEatenRequest):
+    """Undo on the "marked eaten" toast: un-mark the meal and put back every
+    inventory row that tick changed, exactly (tools.undo_eaten_meal)."""
+    try:
+        tools.undo_eaten_meal(req.entry_id)
+        return tools.get_cooker_view()
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        logger.exception("Cooker undo-eaten failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
 @app.post("/api/cooker/start")
@@ -3808,8 +3830,10 @@ def today_move_done(move_id: str, req: MoveDoneRequest, date: str | None = None)
     if (date or req.date) is not None:
         _route_date(date or req.date, "date")
     try:
-        tools.set_move_done(move_id, req.done)
+        ticked = tools.set_move_done(move_id, req.done)
         payload = tools.today_moves(date or req.date)
+        if ticked.get("kitchen_took"):
+            payload["kitchen_took"] = ticked["kitchen_took"]
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:

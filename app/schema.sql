@@ -2430,3 +2430,16 @@ CREATE TABLE IF NOT EXISTS grocery_add_receipts (
     PRIMARY KEY (household_id, client_id)
 );
 CREATE INDEX IF NOT EXISTS idx_grocery_add_receipts_age ON grocery_add_receipts (created_at);
+
+
+-- What a Mark-eaten tick took out of the kitchen, as the rows were BEFORE
+-- (app/tools/eaten_receipt.py): Undo writes them back exactly. One receipt
+-- per tick (latest wins), deleted once used.
+CREATE TABLE IF NOT EXISTS eaten_kitchen_receipts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    entry_id INTEGER NOT NULL,
+    entry_ids_json TEXT NOT NULL,
+    rows_json TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);

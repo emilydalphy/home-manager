@@ -13,6 +13,7 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Marking a dinner eaten says what came out of the kitchen, with Undo** (2026-10-26, inventory card A2, Emily's OptionA screen 2). `check_off_meal` now returns `kitchen_took` ({names, line}: "Took the chicken, spinach, rice and lemons out of the kitchen.", four names then "and N more"); the toast on Kitchen's Mark eaten, Today's tick and Plan's Done names it; Undo (`POST /api/cooker/undo-eaten`, `tools.undo_eaten_meal`) un-marks the meal AND writes every changed `inventory_items` row back as it was (`app/tools/eaten_receipt.py`, table `eaten_kitchen_receipts`; a used-up row returns under its own id; `rev` keeps counting). Why: this reverses the old "an untick puts nothing back" call in `check_off_meal`'s docstring, which only held while nothing recorded the rows. Leftovers nights and untracked meals report nothing and keep today's toast; "Mark cooked" (Start-cooking path) keeps "Logged… Rate it". Branch `inventory/mark-eaten-names-it`.
 - **The iPhone app's id is `com.heypomona.app`** (2026-10-25, Emily's pick
   to match her heypomona domain; branch `overnight/bundle-id-heypomona`).
   Replaced the `com.pomona.app` placeholder in `capacitor.config.json`, the
