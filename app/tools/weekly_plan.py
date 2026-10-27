@@ -9444,9 +9444,14 @@ def _refuse_a_second_copy(args: tuple, kwargs: dict, new_meal) -> None:
         ).fetchall()
     finally:
         conn.close()
+    # A night already gone counts as eaten whether or not anybody ticked
+    # it (most don't), and move_meal can't move it anyway — refusing on it
+    # would send the model to a door that says "Already gone by".
+    today = _household_today().isoformat()
     for r in rows:
         name = r["meal"] or ""
-        if (r["cooked_status"] or "") == "done" or re.search(r"\bleftovers?\b", name, re.IGNORECASE):
+        if (r["cooked_status"] or "") == "done" or r["date"] < today \
+                or re.search(r"\bleftovers?\b", name, re.IGNORECASE):
             continue
         try:
             derived = json.loads(r["derived_from_json"] or "{}") or {}

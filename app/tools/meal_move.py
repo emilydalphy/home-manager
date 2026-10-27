@@ -1150,6 +1150,22 @@ def move_meal_for_chat(weekly_plan_id: int, meal_date: str, to_date: str,
     # `days` is the Plan tab's redraw; chat never reads it, and it is the
     # bulk of the result.
     out = {k: v for k, v in out.items() if k != "days"}
+    # The toast's sentence names the dish and its leftovers but not what
+    # slid to make room when a chain moved ("…leftovers to Friday" with the
+    # fish tacos silently on Monday). Chat says the whole move in one line
+    # (the card's criterion 1), so each other dish that changed day is
+    # named after it — only the ones the sentence doesn't already name.
+    ours = {row["id"]} | {t["entry_id"] for t in
+                          (snap["chains"]["sources"].get(row["id"]) or {}).get("targets") or []}
+    said = out.get("said") or ""
+    for m in out.get("moved") or []:
+        if m["entry_id"] in ours or not (m.get("meal") or "").strip():
+            continue
+        dish = short_name(m["meal"])
+        if dish.lower() in said.lower():
+            continue
+        said += f", {dish} to {_weekday(m['to'])}"
+    out["said"] = said
     out["undo"] = {"weekly_plan_id": weekly_plan_id, "week_start": snap["start"],
                    "move_id": out["move_id"]}
     return out

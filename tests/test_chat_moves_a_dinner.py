@@ -36,7 +36,8 @@ def test_a_dinner_moves_forward_with_its_leftovers_and_carries_an_undo():
     out = tools.move_meal_for_chat(w["plan"], MON, THU)
 
     assert out["status"] == "moved"
-    assert out["said"] == "Chicken Stew was moved to Thursday, leftovers to Friday"
+    assert out["said"] == ("Chicken Stew was moved to Thursday, leftovers to Friday, "
+                           "Black Bean Tacos to Monday, Salmon Rice Bowls to Tuesday")
     assert _meal(THU)["id"] == w["stew"] and _meal(FRI)["id"] == w["left"]
     assert out["undo"] == {"weekly_plan_id": w["plan"], "week_start": MON, "move_id": out["move_id"]}
     assert "days" not in out
@@ -63,6 +64,8 @@ def test_moving_onto_its_own_leftovers_night_cooks_there_and_pushes_the_leftover
     out = tools.move_meal_for_chat(w["plan"], MON, TUE)
 
     assert out["status"] == "moved", out
+    # The reply names what slid to make room, not just the dish.
+    assert out["said"] == "Chicken Stew was moved to Tuesday, leftovers to Wednesday, Sheet-Pan Gnocchi to Monday"
     assert _meal(TUE)["id"] == w["stew"]
     assert _meal(WED)["id"] == w["left"]
     assert _meal(MON)["id"] == w["gnocchi"]
@@ -155,6 +158,21 @@ def test_a_cooked_dish_and_its_leftovers_night_are_not_a_second_copy():
     tools.swap_meal_in_plan_for_chat(w["plan"], SAT, "Chicken Stew", slot="dinner")
 
     assert _meal(SAT)["meal"] == "Chicken Stew"
+
+
+@pytest.mark.today("2026-10-27")
+def test_a_dish_on_a_night_already_gone_is_not_a_second_copy():
+    """Monday's tacos never ticked (most nights aren't); it's Tuesday. A
+    taco night on Saturday is not a move — there is nothing left to move."""
+    _recipe("Black Bean Tacos")
+    _recipe("Bean Stew")
+    plan = tools.create_weekly_plan("2026-10-26")["weekly_plan_id"]
+    tools.plan_meal("2026-10-26", "Black Bean Tacos", slot="dinner", weekly_plan_id=plan)
+    tools.plan_meal("2026-10-31", "Bean Stew", slot="dinner", weekly_plan_id=plan)
+
+    tools.swap_meal_in_plan_for_chat(plan, "2026-10-31", "Black Bean Tacos", slot="dinner")
+
+    assert _meal("2026-10-31")["meal"] == "Black Bean Tacos"
 
 
 # ---------------------------------------------------------------- the card
