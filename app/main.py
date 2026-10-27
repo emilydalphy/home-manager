@@ -6343,6 +6343,39 @@ def week_use_up_view(week_start: str, day_count: int = 7):
     }
 
 
+class InventoryCheckAnswer(BaseModel):
+    gone: list[int] = []
+    confirmed: list[int] = []
+
+
+@app.get("/api/inventory/check")
+def inventory_check_view(location: str | None = None):
+    """
+    "Quick check: still have these?" (Loop Board A4): the few kitchen rows
+    Pomona is least sure of, at most five, least sure first. `location`
+    narrows it (the Kitchen tab's freezer segment, C4). {"items": [...]};
+    an empty list means the step is skipped.
+    """
+    if location and location.strip().lower() not in ("fridge", "pantry", "freezer"):
+        raise HTTPException(status_code=400, detail="location has to be fridge, pantry or freezer.")
+    try:
+        return {"items": tools.inventory_check_candidates(location)}
+    except Exception as e:
+        logger.exception("Inventory check list failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/inventory/check")
+def inventory_check_answer_view(req: InventoryCheckAnswer):
+    """The check's Next: `gone` rows come out of the kitchen, `confirmed`
+    rows (the ones left untapped) are stamped confirmed today."""
+    try:
+        return tools.answer_inventory_check(req.gone, req.confirmed)
+    except Exception as e:
+        logger.exception("Inventory check answer failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
 @app.post("/api/inventory/{item_id}/expiration")
 def step_inventory_expiration_view(item_id: int, req: InventoryExpirationStepRequest):
     """Shift an inventory item's best-before date by one day per tap (design_handoff_home_manager §6)."""

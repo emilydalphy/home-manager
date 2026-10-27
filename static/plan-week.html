@@ -167,6 +167,19 @@
   }
   .chip.add:hover { border-color: var(--apricot-deep); color: var(--apricot-label-hover); }
   .chip.add svg { width: 15px; height: 15px; }
+  /* The two steps before the draft (Loop Board A4 + B1, 2026-10-26, the
+     Option A screen 4 / Option B screen 1 mockups): a chip that is ON is
+     celadon — "settled, already true" — with dark ink (hard rule 1), never
+     the spruce of an answer chip. "· gone" on the check, "switched on" on
+     Use these up. */
+  .chip.is-celadon { background: var(--celadon); border-color: var(--celadon); color: var(--on-accent-ink); font-weight: 700; }
+  .pre-card { display: flex; flex-direction: column; gap: 4px; }
+  .pre-card-title { margin: 0; font-family: var(--font-body); font-size: 16px; font-weight: 700; color: var(--ink); }
+  .pre-card-sub { margin: 0 0 10px; font-family: var(--font-body); font-size: 14px; line-height: 1.4; color: var(--ink-secondary); }
+  .pre-foot { margin: 0; padding: 0 4px; font-family: var(--font-body); font-size: 14px; line-height: 1.4; color: var(--ink-secondary); }
+  /* "First, what's home": the accent half of the title in the one accent
+     face (theme.css .accent-line), apricot label ink. */
+  h1 .h1-accent { font-family: var(--font-accent); font-style: italic; font-weight: 400; letter-spacing: -0.01em; color: var(--apricot-label); }
 
   /* ---------- Add a cuisine (boards B4a / B4b) ---------- */
   /* Its own screen in the motion: the field, already focused, and the
@@ -867,6 +880,42 @@ body.toast-up { padding-bottom: 260px; }
            one function that fills it, called every time this page shows;
            hidden when last week left nothing. -->
       <div class="bring-over" id="bring-over" hidden></div>
+    </div>
+  </section>
+
+  <!-- ---------- Before the draft (Loop Board A4 + B1, 2026-10-26) ----------
+       Two steps between "Draft my week" and the drafting screen, each
+       skipped when it has nothing to ask (like Before you shop). Emily,
+       decision 3: "It should ask when they want their plan and grocery
+       list made."
+       1. Quick check: still have these? — at most five kitchen rows
+          Pomona is least sure of (GET /api/inventory/check,
+          tools.inventory_check_candidates — the same chips the Kitchen
+          tab's freezer segment will show). A tap = gone (celadon,
+          "· gone"); Next takes the gone ones out of the kitchen and
+          stamps the rest confirmed (POST /api/inventory/check).
+       2. First, what's home — "Use these up": use_up.candidates as chips,
+          all on; a tap switches one off for this plan only. Plan the week
+          saves the off list on the intake (use_up_off, the whole list)
+          and drafts. See preDraft* in the script. -->
+  <section id="inv-check" hidden>
+    <h1>Quick check: still have these?</h1>
+    <p class="step-sub">Tap anything that&rsquo;s gone.</p>
+    <div class="step-body">
+      <div class="chip-row" id="inv-check-chips" role="group" aria-label="Still have these?"></div>
+    </div>
+  </section>
+
+  <section id="use-up" hidden>
+    <h1>First, <span class="h1-accent">what&rsquo;s home</span></h1>
+    <p class="step-sub">I&rsquo;ll build the week around these.</p>
+    <div class="step-body">
+      <div class="card pre-card">
+        <p class="pre-card-title">Use these up</p>
+        <p class="pre-card-sub">Tap any you&rsquo;d rather not use.</p>
+        <div class="chip-row" id="use-up-chips" role="group" aria-label="Use these up"></div>
+      </div>
+      <p class="pre-foot">From your last shop and what you&rsquo;ve cooked since. Something wrong? Tap it.</p>
     </div>
   </section>
 
@@ -3951,6 +4000,7 @@ body.toast-up { padding-bottom: 260px; }
   function showSame() {
     step = 0;
     editing = 0;
+    hidePreDraft();
     closeSetupScreen();
     for (var i = 1; i <= STEP_COUNT; i++) $('q' + i).hidden = true;
     $('same').hidden = false;
@@ -4544,6 +4594,7 @@ body.toast-up { padding-bottom: 260px; }
   // 2 of 5" line and bars, went with re-plan Option B (Emily, 2026-10-18).
   function showStep(n) {
     step = n;
+    hidePreDraft();
     $('same').hidden = true;
     closeSetupScreen();
     for (var i = 1; i <= STEP_COUNT; i++) $('q' + i).hidden = n !== i;
@@ -4577,6 +4628,11 @@ body.toast-up { padding-bottom: 260px; }
       // read off the button its screen keeps hidden here.
       var own = setupEl(setupOpen).querySelector('.q-next');
       if (!drafting) $('cta').disabled = !!(own && own.disabled);
+      return;
+    }
+    // Before the draft: Next on the check, Plan the week on Use these up.
+    if (preStep) {
+      $('cta').textContent = preStep === 'check' ? PRE_COPY.next : PRE_COPY.plan;
       return;
     }
     if (step === 0) {
@@ -4846,6 +4902,7 @@ body.toast-up { padding-bottom: 260px; }
   function showDraftProgress(saved) {
     for (var i = 1; i <= STEP_COUNT; i++) $('q' + i).hidden = true;
     $('same').hidden = true;
+    hidePreDraft();
     closeSetupScreen();
     // Nothing to press while drafting: the foot goes, and the crumb is
     // "‹ Plan" again — leaving is fine, the draft still lands.
@@ -5065,6 +5122,7 @@ body.toast-up { padding-bottom: 260px; }
   // screen goes back to the first (setupCrumb).
   function crumbTap() {
     if (cuisineOpen) closeCuisineScreen();
+    else if (preStep && !drafting) showSame();
     else if (setupOpen && !drafting) setupCrumb();
     else if (editing && !drafting) advance();
     else leaveFlow();
@@ -5085,6 +5143,150 @@ body.toast-up { padding-bottom: 260px; }
     }
   }
 
+  // ---------- before the draft (Loop Board A4 + B1, 2026-10-26) ----------
+  // "Draft my week" no longer drafts straight away: first the quick check
+  // (A4), then "First, what's home" (B1), each only when it has something
+  // to show — a step with nothing to ask is skipped, so a kitchen Pomona
+  // knows nothing about drafts exactly as before. preStep is the step
+  // showing ('' on the page, 'check', 'useup'). Every door that drafts
+  // through this page — a first week, Re-plan, Plan next week — passes
+  // here; Plan's "Try again" (same answers, a different week) does not:
+  // it re-drafts from the intake as saved, use_up_off included.
+  var PRE_COPY = {
+    eyebrowNext: 'Plan · next week',
+    eyebrowThis: 'Plan · this week',
+    gone: ' · gone',
+    next: 'Next',
+    plan: 'Plan the week',
+    saveFailed: 'I couldn’t save that just now — try again in a moment.'
+  };
+  var preStep = '';
+  var preCheck = { items: [], gone: [] };
+  var preUseUp = { shown: false, items: [], off: [] };
+
+  function preEyebrow() {
+    return weekStart > todayIso() ? PRE_COPY.eyebrowNext : PRE_COPY.eyebrowThis;
+  }
+
+  function hidePreDraft() {
+    $('inv-check').hidden = true;
+    $('use-up').hidden = true;
+    preStep = '';
+  }
+
+  function showPreSection(which) {
+    preStep = which;
+    $('same').hidden = true;
+    closeSetupScreen();
+    for (var i = 1; i <= STEP_COUNT; i++) $('q' + i).hidden = true;
+    $('inv-check').hidden = which !== 'check';
+    $('use-up').hidden = which !== 'useup';
+    $('eyebrow').hidden = false;
+    $('eyebrow').textContent = preEyebrow();
+    $('leave').innerHTML = esc(SAME_COPY.crumb);
+    window.scrollTo(0, 0);
+  }
+
+  function preChipHtml(id, label, on, onSuffix) {
+    return '<button type="button" class="chip' + (on ? ' is-celadon' : '') + '" data-id="' + esc(String(id)) +
+      '" aria-pressed="' + (on ? 'true' : 'false') + '">' + esc(label) + (on && onSuffix ? esc(onSuffix) : '') + '</button>';
+  }
+
+  function renderCheckChips() {
+    $('inv-check-chips').innerHTML = preCheck.items.map(function (c) {
+      return preChipHtml(c.id, c.label || c.item, preCheck.gone.indexOf(c.id) !== -1, PRE_COPY.gone);
+    }).join('');
+  }
+
+  function renderUseUpChips() {
+    $('use-up-chips').innerHTML = preUseUp.items.map(function (c) {
+      return preChipHtml(c.id, c.label || c.item, preUseUp.off.indexOf(c.id) === -1, '');
+    }).join('');
+  }
+
+  function toggleIn(list, id) {
+    var i = list.indexOf(id);
+    if (i === -1) list.push(id); else list.splice(i, 1);
+  }
+
+  $('inv-check-chips').addEventListener('click', function (e) {
+    var chip = e.target.closest('.chip[data-id]');
+    if (!chip) return;
+    toggleIn(preCheck.gone, Number(chip.getAttribute('data-id')));
+    renderCheckChips();
+  });
+  $('use-up-chips').addEventListener('click', function (e) {
+    var chip = e.target.closest('.chip[data-id]');
+    if (!chip) return;
+    toggleIn(preUseUp.off, Number(chip.getAttribute('data-id')));
+    renderUseUpChips();
+  });
+
+  // The quick check, when Pomona is unsure of anything. True = shown. A
+  // list that fails to load is skipped: the week still plans without it.
+  async function openInventoryCheck() {
+    var items = [];
+    try {
+      items = ((await Api.json('/api/inventory/check', { quiet: true })) || {}).items || [];
+    } catch (err) {
+      console.warn('Quick check list failed; planning without it:', err);
+    }
+    preCheck = { items: items.slice(0, 5), gone: [] };
+    if (!preCheck.items.length) return false;
+    renderCheckChips();
+    showPreSection('check');
+    return true;
+  }
+
+  // Next on the check: gone out, the rest confirmed. A save that fails
+  // keeps the screen (nothing was removed) and says so.
+  async function answerInventoryCheck() {
+    var gone = preCheck.gone.slice();
+    var confirmed = preCheck.items.map(function (c) { return c.id; })
+      .filter(function (id) { return gone.indexOf(id) === -1; });
+    await Api.json('/api/inventory/check', { method: 'POST', body: { gone: gone, confirmed: confirmed }, quiet: true });
+  }
+
+  // "First, what's home", when anything is going off or the freezer has
+  // something worth using. True = shown. A load that fails is skipped.
+  async function openUseUp() {
+    var res = null;
+    try {
+      res = await Api.json('/api/week/' + encodeURIComponent(weekStart) + '/use-up?day_count=' + dayCount, { quiet: true });
+    } catch (err) {
+      console.warn('Use these up failed to load; planning without it:', err);
+    }
+    var items = (res && res.items) || [];
+    var ids = items.map(function (c) { return c.id; });
+    // A chip switched off earlier for this week (a draft that fell over,
+    // Re-plan) opens off again; one that is no longer offered drops out.
+    var off = ((res && res.off) || []).map(Number).filter(function (id) { return ids.indexOf(id) !== -1; });
+    preUseUp = { shown: !!items.length, items: items, off: off };
+    if (!items.length) return false;
+    renderUseUpChips();
+    showPreSection('useup');
+    return true;
+  }
+
+  // Where "Draft my week" / Next goes before anything is drafted. True =
+  // a step is showing and advance() stops there.
+  async function preDraftStep() {
+    if (preStep === 'useup') return false;
+    if (preStep === 'check') {
+      try {
+        await answerInventoryCheck();
+      } catch (err) {
+        console.warn('Quick check answer failed:', err);
+        alert(PRE_COPY.saveFailed);
+        return true;
+      }
+      return await openUseUp();
+    }
+    preUseUp = { shown: false, items: [], off: [] };
+    if (await openInventoryCheck()) return true;
+    return await openUseUp();
+  }
+
   async function advance() {
     if (drafting) return;
     var btn = $('cta');
@@ -5093,12 +5295,17 @@ body.toast-up { padding-bottom: 260px; }
     try {
       if (setupOpen) { await finishSetupScreen(); return; }
       if (editing) { await finishChange(); return; }
+      // The quick check and "First, what's home" first (A4 + B1).
+      if (await preDraftStep()) return;
 
       drafting = true;
       btn.textContent = 'Drafting your week…';
       // "Draft my week": every answer in this one save — with nothing
-      // changed, last week's, in one tap.
-      var saved = await saveIntake(samePayload());
+      // changed, last week's, in one tap. The use-up switches ride in the
+      // same save, the whole list, only when that step showed.
+      var payload = samePayload();
+      if (preUseUp.shown) payload.use_up_off = preUseUp.off.slice();
+      var saved = await saveIntake(payload);
       // A tap on the fallback cuisine list is an answer to "what do you
       // like", not just to "what about this week" — write it back so the
       // question is never asked cold again.

@@ -430,6 +430,13 @@ from .inventory import (  # noqa: F401
 from . import use_up  # noqa: F401
 from .use_up import candidates as use_up_candidates  # noqa: F401
 from .use_up import selected as use_up_selected  # noqa: F401
+# "Quick check: still have these?" (Loop Board A4): the few kitchen rows
+# Pomona is least sure of, asked when the week is planned — and the same
+# chips on the Kitchen tab's freezer segment (C4), so one answer counts in
+# both places. (No bare `from . import inventory_check`: a re-exported name
+# equal to a module name fails tests/test_module_name_collisions.py.)
+from .inventory_check import candidates as inventory_check_candidates  # noqa: F401
+from .inventory_check import answer as answer_inventory_check  # noqa: F401
 # Read-side helpers for the leftover chains repair_leftover_chains records
 # (see leftovers.py). Not agent tools — the assistant has no reason to
 # call these — but re-exported so agent.py's prep-schedule context and any

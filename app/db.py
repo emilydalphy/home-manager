@@ -953,6 +953,14 @@ _MIGRATIONS = [
     # a row frozen before the column — use_up falls back to created_at.
     # Read by use_up.candidates to plan freezer food oldest first.
     ("inventory_items", "frozen_on", "TEXT"),
+    # The household-local day the household said "still have it" on the
+    # planning check (Loop Board A4, inventory/pre-draft-check): an untapped
+    # chip on "Quick check: still have these?" (inventory_check.answer).
+    # Not a count (counted_on is that, and it changes what bought-for shares
+    # are claimed). The check leaves a row confirmed in the last 14 days
+    # alone; B4's "bought or confirmed in the last 14 days" reads it too.
+    # NULL = never confirmed.
+    ("inventory_items", "confirmed_on", "TEXT"),
     # "Use these up" (Loop Board B1/B2): the inventory_items ids the household
     # switched OFF on the pre-draft step for this week — everything else
     # use_up.candidates offers is planned in. '[]' = nothing switched off.

@@ -13,6 +13,23 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Two steps before the draft: "Quick check: still have these?" and "First,
+  what's home"** (2026-10-26, Loop Board A4 + B1; branch
+  `inventory/pre-draft-check`, stacked on `87e5af9`; tests
+  `tests/test_pre_draft_check.py`). In `static/plan-week.html`, "Draft my
+  week" now runs `preDraftStep()` first: the check (≤5 chips from
+  `tools.inventory_check_candidates` / `GET /api/inventory/check`; tap =
+  gone, Next posts `{gone, confirmed}` → rows deleted / new column
+  `inventory_items.confirmed_on` stamped), then "Use these up" (use_up
+  candidates, all on; Plan the week sends `use_up_off` on the same intake
+  save). Each step is skipped when empty. Why: Emily's decision 3, "It should
+  ask when they want their plan and grocery list made." Plan's "Try again"
+  (same answers, different week) does not show them — it reuses the saved
+  intake. "Least sure" = past date first, then days since bought/used/
+  counted/confirmed (+7 if no recipe uses it), floors 7 days (freezer 45),
+  confirmed rows left alone 14 days; never staples/spices. `confirmed_on`
+  is not `counted_on` on purpose — a count changes bought-for claims.
+
 - **The iPhone app's id is `com.heypomona.app`** (2026-10-25, Emily's pick
   to match her heypomona domain; branch `overnight/bundle-id-heypomona`).
   Replaced the `com.pomona.app` placeholder in `capacitor.config.json`, the
