@@ -211,3 +211,20 @@ def test_unfreeze_restores_from_the_servers_own_record(household):
     # A row frozen some other way has no record to restore from.
     tools.set_inventory_location(item, "freezer")
     assert tools.unfreeze_item({"item_id": item})["undone"] is False
+
+
+def test_disliked_and_allergen_stock_is_not_shown_to_the_generator(household, stub_model):
+    """Real next-week draft, 2026-10-27: Portobellos in the fridge, a
+    mushrooms dislike, and the model made a portobello fajita out of
+    current_inventory. Rule-clashing rows are out of all three lists."""
+    tools.add_food_dislikes(["mushrooms"])
+    week = _monday(1)
+    d = tools._week_dates(week)
+    porto = _inv("Portobellos", turns=d[3])
+    keep = _inv("Baby spinach", turns=d[3])
+    tools.save_week_intake(week, moods=["Comfort food"])
+    seen = stub_model([_slot(dd, "dinner", n) for dd, n in zip(d, ["Lamb Stew", "Miso Cod", "Bibimbap",
+                                                                   "Laksa", "Ramen", "Gumbo", "Dal"])])
+    agent.generate_weekly_plan(week)
+    ids = [r.get("id") for r in seen["ctx"]["current_inventory"]]
+    assert porto not in ids and keep in ids

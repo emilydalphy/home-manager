@@ -352,6 +352,11 @@ def filter_stock(rows: list[dict], intake: dict | None, period_start: str | None
     and 3, 2026-10-27: a switched-off zucchini became "Zucchini and
     Cheddar Beef Tacos", and spinach turning Friday went into the next
     Monday's breakfast, both from these lists). Freezer rows keep.
+
+    Never a row a household rule rules out either (rule_clash): a real
+    next-week draft (2026-10-27) made "Portobello and Chicken Thigh Fajita
+    Skillet" for a mushrooms-disliking house out of current_inventory. The
+    allergen gate still checks every dish whatever this list says.
     """
     off = set()
     for i in (intake or {}).get("use_up_off") or []:
@@ -363,9 +368,12 @@ def filter_stock(rows: list[dict], intake: dict | None, period_start: str | None
         first = _period_first(period_start, _today()).isoformat()
     except Exception:
         first = ""
+    rules = _rule_context()
     out = []
     for r in rows or []:
         if r.get("id") in off:
+            continue
+        if rule_clash(r, *rules):
             continue
         where = (r.get("location") or "").strip().lower()
         if where != "freezer" and first and (r.get("expiration_date") or "")[:10]:
@@ -814,6 +822,8 @@ def _freezer_oldest_first(plan_id: int, offered: list[dict], intake: dict | None
                 logger.exception("Freezer-order swap of %s and %s failed on plan %s", a["date"], b["date"], plan_id)
                 break
             if result.get("status") != "swapped":
+                logger.info("Plan %s: freezer food stays out of age order (%s / %s): %s",
+                            plan_id, a["date"], b["date"], result.get("message") or result.get("status"))
                 break
             done.append((a["date"], b["date"]))
             logger.info("Plan %s: traded dinners %s and %s so the older freezer food is eaten first",
