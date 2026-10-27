@@ -7712,11 +7712,15 @@ _WEEK_TOOLS |= {"set_slot_need", "set_away_stretch", "set_member_attendance", "s
 _KITCHEN_TOOLS = {
     "add_recipe", "update_recipe_details", "mark_recipe_feedback", "log_recipe_note", "log_cooking_deviation",
     "flag_recipe_temporary", "generate_prep_schedule", "check_off_prep_step", "check_off_meal",
-    "resolve_attention_item", "update_inventory", "update_inventory_items", "remove_inventory_item",
+    "resolve_attention_item",
     # Whose cook/shop it is: Today's rows and Cook's card both read it, and
     # the `kitchen` branch of refreshStaleTabsFromActions re-reads both.
     "change_move_owner",
 }
+# The Kitchen TAB (2026-10-26, key `home`): chat's inventory writes. They
+# were `kitchen` (Cook) while the Inventory sheet hung off Cook's More; that
+# row is gone, so a card's "View" lands where the inventory now lives.
+_HOME_TOOLS = {"update_inventory", "update_inventory_items", "remove_inventory_item"}
 _GROCERY_TOOLS = {
     "add_grocery_item", "add_grocery_items", "consolidate_grocery_list", "repair_grocery_quantities", "clear_stale_grocery_items",
     "clear_grocery_list", "mark_grocery_item", "update_grocery_item", "remove_grocery_item",
@@ -7753,6 +7757,7 @@ _CATEGORY_KICKERS = {
     "today": "Chores updated",
     "week": "Week updated",
     "kitchen": "Kitchen updated",
+    "home": "Kitchen updated",
     "grocery": "Grocery updated",
     "memory": "Household info updated",
 }
@@ -7766,6 +7771,7 @@ _CATEGORY_FALLBACK_CHANGES = {
     "today": "Your chores have changed",
     "week": "Your week has changed",
     "kitchen": "Your kitchen has changed",
+    "home": "Your kitchen has changed",
     "grocery": "Your list has changed",
     "memory": "Saved what you told me",
 }
@@ -7798,6 +7804,8 @@ def _categorize_tool(tool_name: str) -> tuple[str, str | None, str | None]:
         return "week", "week", None
     if tool_name in _KITCHEN_TOOLS:
         return "kitchen", "kitchen", None
+    if tool_name in _HOME_TOOLS:
+        return "home", "home", None
     if tool_name in _GROCERY_TOOLS:
         return "grocery", "grocery", None
     # Explicit household/memory tools, and the catch-all for any write tool

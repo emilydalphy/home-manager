@@ -46,6 +46,9 @@ USE_SOON_DAYS = 4
 USE_SOON_MAX = 3
 # How far ahead a row's "plan" is looked for: the meals of the coming week.
 PLAN_AHEAD_DAYS = 7
+# How long a "Used it up" / "Threw it out" can still be undone. The toast
+# lasts seconds; this bounds a token replayed later.
+UNDO_WINDOW_HOURS = 24
 
 # The "How much is left?" chips. Stored on inventory_items.amount_left.
 AMOUNT_LEVELS = ("plenty", "half", "almost_gone")
@@ -233,6 +236,9 @@ def _plan_for(item: str, meals: list[dict], today: date) -> dict | None:
             elif d == today and meal["slot"] == "dinner":
                 short = "tonight's dinner"
                 long = "tonight's dinner"
+            elif d == today:
+                short = f"today's {meal['slot']}"
+                long = f"today's {meal['slot']}"
             else:
                 short = f"{_DOW_SHORT[d.weekday()]} {meal['slot']}"
                 long = f"{_DOW_LONG[d.weekday()]}'s {meal['slot']}"
@@ -290,7 +296,9 @@ def _row_view(row: dict, plan: dict | None, today: date, conn) -> dict:
         # frozen before frozen_on existed) — the freezer lists oldest first.
         "frozen_on": (row.get("frozen_on") or ((row.get("created_at") or "")[:10] or None))
         if row["location"] == "freezer" else None,
-        "freeze_ok": row["location"] != "freezer",
+        # The same rule Use soon and the draft's "Couldn't fit" use: not
+        # already frozen, and not a thing a freezer ruins (yogurt, eggs…).
+        "freeze_ok": _use_up.freeze_ok(row["item"], row["location"]),
         "move_to": "pantry" if row["location"] == "fridge" else "fridge",
     }
 
@@ -399,7 +407,8 @@ def get_whats_home() -> dict:
             v = views[c["id"]]
             is_today = turns <= today
             if v["plan"]:
-                line = ("today · " + v["plan"]["label"]) if is_today else _plan_line(v["plan"])
+                snack = v["plan"]["slot"] == "snack"
+                line = "today · snacks" if (is_today and snack) else _plan_line(v["plan"])
             elif c.get("freeze_ok"):
                 line = ""  # the row shows the "Freeze it" pill instead
             else:
@@ -435,8 +444,14 @@ def get_whats_home_item(item_id: int) -> dict:
 
 # ---------- the one-tap fixes (C3) ----------
 
+GONE_ALREADY = "That's already gone from the kitchen."
+
+
 def _snapshot(conn, item_id: int) -> dict:
-    require_household_row(conn, "inventory_items", item_id, label="inventory item")
+    try:
+        require_household_row(conn, "inventory_items", item_id, label="inventory item")
+    except ValueError:
+        raise ValueError(GONE_ALREADY)
     row = conn.execute(
         "SELECT * FROM inventory_items WHERE id = ? AND household_id = ?", (item_id, household_id())
     ).fetchone()
@@ -602,18 +617,37 @@ def restore_item(undo: dict) -> dict:
     with write() as conn:
         if kind == "removed":
             rec = conn.execute(
-                "SELECT inventory_item_id, row_json, restored_at FROM inventory_removals "
+                "SELECT inventory_item_id, row_json, restored_at, "
+                "removed_at >= datetime('now', ?) AS fresh FROM inventory_removals "
                 "WHERE id = ? AND household_id = ?",
-                (removal_id, household_id()),
+                (f"-{UNDO_WINDOW_HOURS} hours", removal_id, household_id()),
             ).fetchone()
             if rec is None or rec["inventory_item_id"] != item_id:
                 raise ValueError("I couldn't tell which item to put back.")
             exists = conn.execute(
                 "SELECT 1 FROM inventory_items WHERE id = ? AND household_id = ?", (item_id, household_id())
             ).fetchone()
-            if rec["restored_at"] or exists:
+            if rec["restored_at"] or exists or not rec["fresh"]:
                 return {"item_id": item_id, "undone": False}
             row = json.loads(rec["row_json"])
+            # Back since (bought again at the shop, a scan, chat): the row
+            # that is there now IS the kitchen's stock, so the old one is not
+            # put back beside it — that made two Milks (verify, 2026-10-27).
+            where = _quantities._display_location(row).strip().lower()
+            key = _use_up._name_key(row.get("item") or "")
+            for other in conn.execute(
+                "SELECT id, item, category, location FROM inventory_items WHERE household_id = ?",
+                (household_id(),),
+            ).fetchall():
+                o = dict(other)
+                if _use_up._name_key(o["item"] or "") == key and \
+                        _quantities._display_location(o).strip().lower() == where:
+                    conn.execute(
+                        "UPDATE inventory_removals SET restored_at = datetime('now') WHERE id = ? AND household_id = ?",
+                        (removal_id, household_id()),
+                    )
+                    return {"item_id": item_id, "item": row.get("item"), "undone": False,
+                            "already_back": True, "back_as": o["id"]}
             cols = [r["name"] for r in conn.execute("PRAGMA table_info(inventory_items)").fetchall()]
             row["household_id"] = household_id()
             use = [c for c in cols if c in row]

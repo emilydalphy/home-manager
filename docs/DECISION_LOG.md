@@ -33,6 +33,11 @@ why*, not duplicating the diff.
   shelf" open `inventory.html?from=kitchen` through `openKitchenAdd(mode)`,
   the seam card C2 replaces. Subtitle omitted when neither a tick nor an
   eaten dinner is within a week.
+  Verify round (2026-10-27): Undo of a removal is refused when a same-name
+  row is back on that shelf (no second Milk) and after 24 hours; the
+  sheet's Freeze it follows `use_up.freeze_ok`; chat's inventory writes are
+  tagged `tab: 'home'` (`_HOME_TOOLS`) so "View" opens the Kitchen tab;
+  the Use-soon pill is celadon tint (Rule 5: the dock's apricot is the one).
 - **The iPhone app's id is `com.heypomona.app`** (2026-10-25, Emily's pick
   to match her heypomona domain; branch `overnight/bundle-id-heypomona`).
   Replaced the `com.pomona.app` placeholder in `capacitor.config.json`, the

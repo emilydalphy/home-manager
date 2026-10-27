@@ -406,3 +406,96 @@ def test_undo_cannot_reach_another_households_removal(signed_in):
     r = signed_in.post("/api/whats-home/undo", json={"undo": out["undo"]})
     assert r.status_code == 400
     assert get_conn().execute("SELECT 1 FROM inventory_items WHERE id = ?", (out["item_id"],)).fetchone() is None
+
+
+# ---------------------------------------------------------------------------
+# Verify round, 2026-10-27 (VERIFY-inventory-kitchen-tab.md items 1-8)
+# ---------------------------------------------------------------------------
+
+def test_undo_after_a_rebuy_does_not_make_a_second_row(signed_in):
+    """CATCH — verify #1: Threw out Milk, bought Milk again, Undo -> two Milks."""
+    old = _row("Milk", quantity="half a jug", category="dairy")
+    out = signed_in.post(f"/api/whats-home/{old}/thrown-out").json()
+    new = _row("Milk", quantity="2 L", category="dairy", source="grocery_checkoff")
+    r = signed_in.post("/api/whats-home/undo", json={"undo": out["undo"]})
+    assert r.status_code == 200
+    assert r.json()["undone"] is False and r.json()["already_back"] is True and r.json()["back_as"] == new
+    data = whats_home.get_whats_home()
+    assert [x["id"] for x in data["locations"]["fridge"]] == [new] and data["count"] == 1
+    # The token is spent.
+    assert signed_in.post("/api/whats-home/undo", json={"undo": out["undo"]}).json()["undone"] is False
+
+
+def test_an_undo_token_runs_out_after_a_day(signed_in):
+    """CATCH — verify #1: a removal token was good for ever."""
+    item = _row("Raspberries")
+    out = tools.used_up_item(item)
+    conn = get_conn()
+    conn.execute("UPDATE inventory_removals SET removed_at = datetime('now', '-25 hours') WHERE id = ?",
+                 (out["undo"]["removal_id"],))
+    conn.commit()
+    conn.close()
+    assert signed_in.post("/api/whats-home/undo", json={"undo": out["undo"]}).json()["undone"] is False
+    assert get_conn().execute("SELECT 1 FROM inventory_items WHERE id = ?", (item,)).fetchone() is None
+
+
+def test_the_sheet_offers_freeze_by_the_same_rule_as_use_soon():
+    """CATCH — verify #2: Greek yogurt's sheet offered Freeze it."""
+    yogurt = _row("Greek yogurt", days=1, category="dairy")
+    cabbage = _row("Half a cabbage", days=1)
+    peas = _row("Peas", location="freezer", category="frozen")
+    assert tools.get_whats_home_item(yogurt)["freeze_ok"] is False
+    assert tools.get_whats_home_item(cabbage)["freeze_ok"] is True
+    assert tools.get_whats_home_item(peas)["freeze_ok"] is False
+
+
+def test_chat_inventory_cards_open_the_kitchen_tab():
+    """CATCH — verify #3: update_inventory & co. were tagged `kitchen` (Cook),
+    a dead end once Inventory left Cook's More."""
+    from app import main as app_main
+
+    for tool in ("update_inventory", "update_inventory_items", "remove_inventory_item"):
+        assert app_main._categorize_tool(tool) == ("home", "home", None), tool
+    assert app_main._categorize_tool("check_off_meal") == ("kitchen", "kitchen", None)
+    refresh = _fn("refreshStaleTabsFromActions")
+    home = refresh[refresh.index("action.tab === 'home'"):refresh.index("action.tab === 'grocery'")]
+    for call in ("refreshHomeOnce();", "refreshKitchenPanel();", "refreshTodayMoves();"):
+        assert call in home, call
+
+
+def test_use_soon_reads_naturally_for_today():
+    """CATCH — verify #5: "today · tonight's dinner"."""
+    spinach = _row("Baby spinach", days=0)
+    yogurt = _row("Greek yogurt", days=0, category="dairy")
+    _plan_dinner(0, "Spinach pasta", ["baby spinach"])
+    _plan_dinner(0, "Yogurt bowl", ["greek yogurt"], slot="snack")
+    lines = {s["id"]: s["line"] for s in whats_home.get_whats_home()["use_soon"]}
+    assert lines[spinach] == "in tonight's dinner"
+    assert lines[yogurt] == "today · snacks"
+
+
+def test_a_row_gone_under_an_open_sheet_says_so_in_the_house_voice(signed_in):
+    """CATCH — verify #8: "No inventory item with id 12."."""
+    for path, body in (("used-up", None), ("thrown-out", None), ("amount", {"level": "half"}),
+                       ("move", {"location": "pantry"})):
+        r = signed_in.post(f"/api/whats-home/987654/{path}", json=body)
+        assert r.status_code == 404 and r.json()["detail"] == "That's already gone from the kitchen.", path
+
+
+def test_almost_gone_closes_the_sheet_and_the_pill_is_not_apricot():
+    """CATCH — verify #6 (toast over the sheet's buttons) and #7 (Rule 5:
+    the dock's Snap a shelf is the one apricot)."""
+    act = _fn("homeItemAct")
+    amount = act[act.index("if (what === 'amount')"):act.index("} else {")]
+    assert "closeHomeItemSheet();" in amount
+    pill = SHELL_CSS[SHELL_CSS.index(".home-freeze-pill {"):]
+    pill = pill[:pill.index("}")]
+    assert "var(--apricot)" not in pill and "var(--celadon-tint)" in pill
+
+
+def test_snap_a_shelf_keeps_one_line_at_320():
+    """CATCH — verify #6 (320px): the label wrapped to two lines."""
+    assert ".home-snap span { white-space: nowrap; }" in SHELL_CSS
+    narrow = SHELL_CSS[SHELL_CSS.index("@media (max-width: 359px) {\n  /* 320px: 236px of dock"):]
+    narrow = narrow[:narrow.index("\n}\n")]
+    assert ".home-dock-row .home-snap" in narrow and ".home-add" in narrow
