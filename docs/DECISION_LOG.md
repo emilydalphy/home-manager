@@ -22,7 +22,10 @@ why*, not duplicating the diff.
   `use_up.freezer_order_key` (frozen_on, else created_at; then created_at,
   id) — the planner's freezer candidates use the same key, so the top really
   is next week's first pick. Row words: plan ("in next Mon's chili"; a dish of
-  >3 words reads as the slot), else "frozen 28 Sep"/"frozen today", else the
+  >3 words reads as the slot; a freezer row a live draft/approved dish is
+  tagged to use, on any later day, reads as planned there — the same rows
+  `use_up.claimed_elsewhere` keeps out of another week's offer), else
+  "frozen 28 Sep"/"frozen today", else the
   amount word. Night-off portions read "Chili · 3 portions" / "from last Wed"
   (cook night = use-by − `FROZEN_COOKED_KEEPS_DAYS`), their plan from the
   entry's `freezer_portion` claim ("for Thu's dinner"); a portion whose cook

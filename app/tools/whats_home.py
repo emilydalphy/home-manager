@@ -210,13 +210,16 @@ def _freezer_plan_line(plan: dict, today: date, portion: bool) -> str:
     what = slot
     if not portion and words and len(words) <= _PLAN_DISH_MAX_WORDS:
         what = " ".join(words).lower()
+    lead = "for" if portion else "in"
     if d == today:
         day = "tonight's" if plan["slot"] == "dinner" else "today's"
     else:
-        this_monday = today - timedelta(days=today.weekday())
-        later_week = d >= this_monday + timedelta(days=7)
-        day = f"{'next ' if later_week else ''}{_DOW_SHORT[d.weekday()]}'s"
-    return f"{'for' if portion else 'in'} {day} {what}"
+        weeks_ahead = (d - (today - timedelta(days=today.weekday()))).days // 7
+        if weeks_ahead >= 2:
+            # Further out than next week (a plan drafted early): the date.
+            return f"{lead} the {what} on {d.day} {_MONTHS[d.month - 1]}"
+        day = f"{'next ' if weeks_ahead == 1 else ''}{_DOW_SHORT[d.weekday()]}'s"
+    return f"{lead} {day} {what}"
 
 
 def _portion_plans(conn, today: date) -> dict:
@@ -248,6 +251,46 @@ def _portion_plans(conn, today: date) -> dict:
             out[claim["inventory_item_id"]] = {
                 "entry_id": r["id"], "date": r["date"], "slot": slot,
                 "meal": r["freeform_meal"] or "", "label": short, "long": long,
+            }
+    return out
+
+
+def _tagged_plans(conn, today: date) -> dict:
+    """
+    {inventory_item_id: plan} for food a live plan (draft OR approved) has
+    put on a dish — its checked "Uses the…" tag (use_up.live_uses), on any
+    day from today on. The same rows use_up.claimed_elsewhere keeps out of
+    another week's offer, so a freezer row next week's draft already uses
+    reads "in next Mon's chili" here rather than looking forgotten (and
+    rather than looking like the top of the next plan). Earliest dish wins.
+    """
+    out: dict = {}
+    for r in conn.execute(
+        "SELECT mpe.id, mpe.date, mpe.slot, mpe.derived_from_json, "
+        "COALESCE(rcp.name, mpe.freeform_meal) AS meal "
+        "FROM meal_plan_entries mpe JOIN weekly_plans wp ON wp.id = mpe.weekly_plan_id "
+        "LEFT JOIN recipes rcp ON rcp.id = mpe.recipe_id "
+        "WHERE mpe.household_id = ? AND wp.household_id = ? AND wp.status IN ('draft', 'approved') "
+        "AND COALESCE(mpe.slot_state, 'planned') = 'planned' AND COALESCE(mpe.cooked_status, '') != 'done' "
+        "AND mpe.date >= ? AND mpe.derived_from_json LIKE '%use_up%' ORDER BY mpe.date, mpe.id",
+        (household_id(), household_id(), today.isoformat()),
+    ).fetchall():
+        for u in _use_up.live_uses(r["derived_from_json"], r["meal"]):
+            try:
+                item_id = int(u.get("id"))
+            except (TypeError, ValueError):
+                continue
+            if item_id in out:
+                continue
+            slot = (r["slot"] or "dinner").strip().lower()
+            d = date.fromisoformat(r["date"])
+            if d == today:
+                short = long = "tonight's dinner" if slot == "dinner" else f"today's {slot}"
+            else:
+                short, long = f"{_DOW_SHORT[d.weekday()]} {slot}", f"{_DOW_LONG[d.weekday()]}'s {slot}"
+            out[item_id] = {
+                "entry_id": r["id"], "date": r["date"], "slot": slot, "meal": r["meal"] or "",
+                "label": short, "long": long,
             }
     return out
 
@@ -540,6 +583,7 @@ def get_whats_home() -> dict:
         rows = _shown_rows(conn)
         meals = _upcoming_meals(conn, today)
         portion_plans = _portion_plans(conn, today)
+        tagged = _tagged_plans(conn, today)
         views = {}
         by_id = {}
         for row in rows:
@@ -548,6 +592,10 @@ def get_whats_home() -> dict:
                 # A cooked portion's plan is the night freezer_portions put
                 # it on, never an ingredient match.
                 plan = portion_plans.get(row["id"])
+            elif row["location"] == "freezer" and row["id"] in tagged:
+                # Freezer food a live plan's dish was checked to use (any
+                # week, draft or approved — use_up.claimed_elsewhere's rule).
+                plan = tagged[row["id"]]
             else:
                 plan = _plan_for(row["item"], meals, today)
             views[row["id"]] = _row_view(row, plan, today, conn)

@@ -86,13 +86,15 @@ def _portion(dish: str, servings: int, cooked_days_ago: int) -> int:
     return made["id"]
 
 
-def _approved_meal(day_offset: int, *, recipe=None, ingredients=(), freeform=None, derived=None) -> int:
+def _approved_meal(day_offset: int, *, recipe=None, ingredients=(), freeform=None, derived=None,
+                   status="approved") -> int:
     today = household_today()
+    start = (today + datetime.timedelta(days=day_offset)).isoformat()
     conn = get_conn()
     plan = conn.execute(
         "INSERT INTO weekly_plans (household_id, week_start_date, content_start_date, day_count, status) "
-        "VALUES (1, ?, ?, 7, 'approved')",
-        (today.isoformat(), today.isoformat()),
+        "VALUES (1, ?, ?, 7, ?)",
+        (start, start, status),
     ).lastrowid
     rid = None
     if recipe:
@@ -231,6 +233,32 @@ def test_a_planned_freezer_row_and_a_planned_portion_say_their_plan():
     assert _freezer_row(beef)["line"] == f"in {day(d1)} chili"
     assert _freezer_row(pid)["line"] == f"for {day(d2)} dinner"
     assert _freezer_row(pid)["plan"]["entry_id"]
+
+
+def test_freezer_food_another_weeks_draft_uses_reads_as_planned_there():
+    """CATCH — use_up.claimed_elsewhere keeps a row next week's draft has on
+    a dish out of this week's offer; the screen must say where it went
+    ("in next Mon's chili"), not show it as idle food at the top. Its place
+    in the age order is unchanged."""
+    thighs, _ = _row("Chicken thighs", frozen_on=_day(-40), created_days_ago=40, category="meat/seafood")
+    beef, _ = _row("Ground beef", frozen_on=_day(-30), created_days_ago=30, category="meat/seafood")
+    today = household_today()
+    next_monday = today + datetime.timedelta(days=7 - today.weekday())
+    offset = (next_monday - today).days
+    _approved_meal(offset, recipe="Chili", ingredients=["ground beef"], status="draft",
+                   derived={"use_up": [{"id": thighs, "item": "Chicken thighs", "dish": "Chili"}]})
+    row = _freezer_row(thighs)
+    assert row["line"] == "in next Mon's chili"
+    assert _freezer_ids()[:2] == [thighs, beef]
+    # This week's offer (today up to next Monday) starts from the first row
+    # nobody has claimed.
+    this_week = [c["id"] for c in tools.use_up_candidates(_day(0), offset) if c["kind"] == "freezer"]
+    assert thighs not in this_week and this_week[0] == beef
+    # Two weeks out reads as a date.
+    later = datetime.date(2026, 11, 12)
+    line = whats_home._freezer_plan_line({"date": later.isoformat(), "slot": "dinner", "meal": "Chili"},
+                                         datetime.date(2026, 10, 29), portion=False)
+    assert line == "in the chili on 12 Nov"
 
 
 # ---------------------------------------------------------------------------
