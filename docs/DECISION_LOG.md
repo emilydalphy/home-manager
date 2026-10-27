@@ -13,6 +13,20 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Vegetarian and vegan get the allergy's hard check** (2026-10-27, Emily's
+  pick #61; branch `overnight/diet-hard-check`; tests
+  `tests/test_diet_hard_check.py`). A member's "Vegetarian" / "Vegan" /
+  "Pescatarian" / "plant-based" restriction now reads as the foods it rules
+  out (`coordination._DIET_FAMILIES`: meat, poultry, fish, shellfish,
+  gelatin, lard, fish sauce, anchovy; vegan adds dairy, egg, honey), in the
+  one matcher every door shares — draft, Swap, three picks, chat
+  plan/swap/add_recipe (same "do it anyway" answer as an allergy), Tweak,
+  sides sweep; binds every dish whoever is home, like an allergy. Why: it
+  was matched as the literal word, so Chicken Tacos passed and "Vegetarian
+  Chili" was held. A clash names the food ("has chicken"), not the diet.
+  `library_batch check` verifies a vegetarian/vegan tag with the same
+  family. Not read: a diet said only in a hard fact ("We're vegetarian"),
+  halal/kosher, "no meat", household `eating_style`.
 - **The iPhone app's id is `com.heypomona.app`** (2026-10-25, Emily's pick
   to match her heypomona domain; branch `overnight/bundle-id-heypomona`).
   Replaced the `com.pomona.app` placeholder in `capacitor.config.json`, the

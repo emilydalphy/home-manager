@@ -150,25 +150,22 @@ def check_one(path: Path) -> list[str]:
 
 CATEGORIES = ("produce", "dairy", "meat/seafood", "pantry", "frozen", "other")
 MEATLESS = ("vegetarian", "vegan")
-# What a meatless dish can't have, read by the allergy matcher itself (so
-# "Vegetable broth" isn't beef, "Vegetarian oyster sauce" isn't shellfish
-# and "Fish sauce" is fish).
-MEAT_WORDS = ("fish", "shellfish", "pork", "beef", "chicken", "lamb", "turkey", "veal",
-              "duck", "goat", "gelatin", "lard")
 
 
 def meat_in_a_meatless_dish(e: dict) -> list[str]:
-    """The lines of a dish tagged vegetarian/vegan that are meat or fish."""
-    if (e.get("main_protein") or "").lower() not in MEATLESS:
+    """The lines of a dish tagged vegetarian/vegan that the diet can't have,
+    read by the gate itself with the tag as the restriction (2026-10-27) —
+    the same check a household's vegetarian or vegan member gets, so
+    "Vegetable broth" isn't beef, "Vegetarian oyster sauce" isn't shellfish,
+    "Fish sauce" is fish, and a vegan dish's butter is butter."""
+    tag = (e.get("main_protein") or "").lower()
+    if tag not in MEATLESS:
         return []
     from app.tools import allergen_gate, coordination
-    avoid = [{"member": None, "label": w, "source": "dietary_restriction", "severity": "hard",
-              "terms": coordination._match_terms(coordination._conflict_phrases(w))} for w in MEAT_WORDS]
-    # A line that says it's the meatless kind is ("Vegetarian oyster sauce");
-    # the gate holds it for a shellfish allergy, rightly, but it's no meat.
+    avoid = [{"member": None, "label": tag, "source": "dietary_restriction", "severity": "hard",
+              "terms": coordination._match_terms(coordination._conflict_phrases(tag))}]
     return [ing["item"] for ing in e.get("ingredients") or []
-            if not re.search(r"\b(?:vegetarian|vegan|plant[\s-]based)\b", ing["item"].lower())
-            and allergen_gate.hard_clashes(ing["item"], [ing], avoidances=avoid)]
+            if allergen_gate.hard_clashes(ing["item"], [ing], avoidances=avoid)]
 
 
 def cmd_check(args) -> int:

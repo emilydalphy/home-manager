@@ -5571,8 +5571,8 @@ def _research_capped(plain: str, recipe: dict, *, search: bool, weekly_plan_id=N
 # billed) rather than a copy. eating_style for safety of a kind (vegetarian,
 # keto), kit and children for whether they can cook and eat it as written.
 _WRITE_INSTEAD_OF_COPY = ("eating_style", "kitchen_kit", "children_at_table")
-# The same, said on a PERSON: the allergen gate holds no meat back for these
-# (coordination's matcher reads foods, not diets), so a copy is unguarded —
+# The same, said on a PERSON: the allergen gate held no meat back for these
+# (coordination's matcher read foods, not diets), so a copy was unguarded —
 # a "vegetarian" member's household was copied Broccoli Cheddar Soup on
 # chicken broth and Green Papaya Salad with fish sauce (library audit,
 # 2026-10-25). The writer is told them (must_not_contain); a copy is not.
@@ -5580,7 +5580,10 @@ _WRITE_INSTEAD_OF_COPY = ("eating_style", "kitchen_kit", "children_at_table")
 # hard facts as written), NOT the gate's avoidances — a fact whose words
 # name no food ("We're vegetarian", "We keep kosher") never becomes one
 # (review, same day). Leans to writing: a needless write costs cents, a
-# wrong copy is meat on a vegetarian's plate.
+# wrong copy is meat on a vegetarian's plate. Since 2026-10-27 the gate
+# reads a member's vegetarian/vegan/pescatarian (coordination._DIET_FAMILIES)
+# and would hold the copy anyway; this stays for halal, kosher, "no meat" and
+# a diet said only in a fact, which it still can't read.
 _DIET_THE_GATE_CANT_READ = re.compile(
     r"\b(?:vegetarians?|vegans?|pescatarians?|plant[\s-]?based|halal|kosher|veggie|"
     r"meat[\s-]?free|meatless|no\s+(?:red\s+)?meat|without\s+meat|"

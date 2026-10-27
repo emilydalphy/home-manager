@@ -314,6 +314,58 @@ _WHOLE_WORD_FAMILIES: dict[str, str] = {
     "celiac": "gluten", "coeliac": "gluten",
 }
 
+# A diet is a list of foods, not a word on an ingredient line (Emily's pick
+# #61, 2026-10-26: "Vegetarian and vegan get a hard check, like
+# allergies"). Matched as the literal word, a member's "Vegetarian" let
+# Chicken Tacos through and held back Vegetarian Chili. Read like
+# _WHOLE_WORD_FAMILIES, only when the diet word IS the whole restriction,
+# and the word itself is NOT searched for: a dish that calls itself
+# vegetarian is judged on what's in it. Only words that are meat or fish
+# by definition, as _MEAT_ALIASES: no bare "steak" (cauliflower steak),
+# "burger", "broth"/"stock" (vegetable broth), "wings" or "mince". A plant
+# qualifier on the line ("veggie sausage", "vegan chorizo") is believed,
+# as "vegan cheese" is (_PLANT_QUALIFIER_EXCEPTIONS).
+_NO_MEAT_WORDS: frozenset[str] = frozenset(
+    {"meat", "beef", "pork", "lamb", "mutton", "veal", "venison", "goat", "bison", "elk",
+     "rabbit", "boar", "chicken", "turkey", "duck", "goose", "quail", "pheasant", "poultry",
+     "cornish hen", "game hen", "sausage", "kielbasa", "bratwurst", "frankfurter", "hot dog",
+     "pastrami", "meatball", "meatloaf", "jerky", "brisket", "oxtail", "liver", "foie gras",
+     "giblets", "tripe", "sweetbreads", "bone marrow", "bone broth", "flank steak",
+     "skirt steak", "strip steak", "t-bone", "porterhouse", "tenderloin", "short rib",
+     "spare rib", "suet", "tallow", "schmaltz", "gelatin", "gelatine",
+     "marshmallow", "aspic"}
+    | _MEAT_ALIASES["pork"] | _MEAT_ALIASES["beef"]
+)
+_NO_FISH_WORDS: frozenset[str] = frozenset(
+    {"fish", "shellfish"} | _ALLERGEN_ALIASES["fish"] | _ALLERGEN_ALIASES["shellfish"]
+)
+_VEGETARIAN_WORDS = _NO_MEAT_WORDS | _NO_FISH_WORDS
+_VEGAN_WORDS = (_VEGETARIAN_WORDS | {"egg", "honey", "royal jelly", "bee pollen"}
+                | _ALLERGEN_ALIASES["dairy"] | _ALLERGEN_ALIASES["egg"])
+_DIET_FAMILIES: dict[str, frozenset[str]] = {
+    "vegetarian": _VEGETARIAN_WORDS, "veggie": _VEGETARIAN_WORDS,
+    "vegan": _VEGAN_WORDS,
+    "pescatarian": _NO_MEAT_WORDS, "pescetarian": _NO_MEAT_WORDS,
+}
+# "Plant-based" said as a diet is vegan.
+_PHRASE_FAMILIES[("plant", "based")] = set(_VEGAN_WORDS)
+# The labels a diet's clash carries; its sentence names the food found.
+_DIET_LABELS = frozenset(_DIET_FAMILIES) | {"plant based"}
+_VEGAN_LABELS = frozenset({"vegan", "plant based"})
+
+
+def _diet_word(phrase: list[str]) -> str | None:
+    """The diet a one-word restriction names ("Vegetarians" too), or None.
+    "veggie" only as written: "veggies" are vegetables."""
+    if len(phrase) != 1:
+        return None
+    word = phrase[0]
+    if word in _DIET_FAMILIES:
+        return word
+    if word.endswith("s") and word[:-1] in _DIET_FAMILIES and word != "veggies":
+        return word[:-1]
+    return None
+
 # The table as it stood before the 2026-09-30 widening, kept for ONE
 # reader: plan_quality's title rule builds its "known food word"
 # vocabulary from it, and a word in that vocabulary becomes judgeable
@@ -459,6 +511,13 @@ _COMPOUND_EXCEPTIONS: tuple[tuple, ...] = (
     # That is the failure this whole check exists to prevent, so the false
     # positive matters more here than the rarity of the restriction.
     (frozenset({"olive", "olives"}), re.compile(r"\bolive\s+oils?\b")),
+    # A diet's (2026-10-27): meat-free mince is not meat, coconut meat is
+    # coconut, and duck sauce is plum sauce.
+    (frozenset({"meat", "meats"}), re.compile(
+        r"\bmeat[\s-]free\b|\b(?:coconut|walnut|jackfruit|mushroom|lentil)\s+(?:taco\s+)?meats?\b"
+    )),
+    (frozenset({"duck", "ducks"}), re.compile(r"\bduck\s+sauces?\b")),
+    (frozenset({"hot dog", "hot dogs"}), re.compile(r"\bhot\s+dog\s+(?:buns?|rolls?)\b")),
     *_LIBRARY_COMPOUNDS,
     # Red meat's (2026-10-20): goat's cheese and milk are dairy, not the
     # animal; lamb's lettuce and lamb's quarters are greens. Matched on the
@@ -510,6 +569,14 @@ _LIBRARY_PHRASE_ONLY = frozenset((e[0], e[1]) for e in _LIBRARY_COMPOUNDS)
 # line (what the dish is made of) and in a label that will be checked
 # against a list, and NOT in a name that is final without a list — "Vegan
 # Cheese Pizza" planned from chat on its name alone is cheese.
+_MEATLESS_PLANT_WORDS = frozenset(
+    v for w in _VEGETARIAN_WORDS
+    for v in (w, w + "s", w + "es", w[:-1] + "ies" if w.endswith("y") else w)
+)
+_MEATLESS_QUALIFIER = (_MEATLESS_PLANT_WORDS, re.compile(
+    r"\b(?:vegan|vegetarian|veggie|plant[\s-]based|meatless|meat[\s-]free)\s+"
+    r"(?:(?!(?:with|and|or|plus)\b)[a-z-]+\s+)?(?!(?:with|and|or|plus)\b)[a-z-]+"
+))
 _PLANT_QUALIFIER_EXCEPTIONS: tuple[tuple, ...] = (
     # A dairy word the line or the name itself says is a plant version:
     # "dairy-free butter", "vegan cream cheese", "non-dairy milk". The
@@ -539,14 +606,19 @@ _PLANT_QUALIFIER_EXCEPTIONS: tuple[tuple, ...] = (
         r"\b(?:dairy[\s-]free|non[\s-]dairy)\s+"
         r"(?:" + _PLANT_MOD + r"\s+)?"
         r"(?:milk|butter|cheese|cream|yogh?urt|custard|alfredo|mousse|flan|panna\s+cotta)s?(?![-a-z0-9])"
-    ), _EGG_LABELS),
+    ), _EGG_LABELS | _VEGAN_LABELS),
     # Coconut custard is set with starch, not cream — but usually still
     # with egg, so it is dairy's exception only.
-    (frozenset({"custard", "custards"}), re.compile(r"\bcoconut\s+custards?\b"), _EGG_LABELS),
+    (frozenset({"custard", "custards"}), re.compile(r"\bcoconut\s+custards?\b"), _EGG_LABELS | _VEGAN_LABELS),
     # A vegan caesar dressing has no anchovy (nor egg or parmesan).
     (frozenset({"caesar dressing", "caesar dressings"}), re.compile(
         r"\b(?:vegan|plant[\s-]based)\s+caesar\s+dressings?\b"
     )),
+    # The meatless kind of a meat or fish word, said right against it:
+    # "veggie sausage", "vegan chorizo", "plant-based chicken nuggets",
+    # "vegetarian oyster sauce" (two words at most, and never across
+    # "with"/"and": "Veggie Burger with Bacon" is still bacon).
+    _MEATLESS_QUALIFIER,
     # The same for egg: vegan or egg-free mayonnaise is made without it.
     (_EGG_PLANT_WORDS, re.compile(
         r"\b(?:vegan|plant[\s-]based|egg[\s-]free|eggless)\s+(?:mayonnaise|mayo|aioli)s?(?![-a-z0-9])"
@@ -917,6 +989,15 @@ def _match_terms(
                 groups.append(variants)
                 out.append((" ".join(phrase), groups))
             continue
+        diet_word = _diet_word(phrase)
+        diet = _DIET_FAMILIES.get(diet_word) if diet_word else None
+        if diet is not None:
+            # Its foods, never the diet's own name (see _DIET_FAMILIES).
+            variants = set().union(*(_keyword_variants(b) for b in diet)) - excluded
+            if variants:
+                groups.append(variants)
+                out.append((diet_word, groups))
+            continue
         kept: list[str] = []
         for word in phrase:
             variants: set[str] = set()
@@ -951,6 +1032,10 @@ def _discounted(variant: str, match: re.Match, text: str, mode: str = "line", la
         if variant not in words:
             continue
         if len(entry) > 2 and label in entry[2]:
+            continue
+        if entry is _MEATLESS_QUALIFIER and label not in _DIET_LABELS:
+            # "vegan chorizo" is believed for a vegetarian, never for an
+            # allergy: those keep exactly the reading they had.
             continue
         for found in compound.finditer(text):
             if found.start() <= match.start() and match.end() <= found.end():
@@ -1588,6 +1673,9 @@ def check_meal_conflicts(
                 for rx in getattr(groups, "carve_outs", ())):
             continue
         matched, matched_word = detail
+        if matched in _DIET_LABELS:
+            # "has chicken", never "has vegetarian": the food that broke it.
+            matched = matched_word or matched
         hits.append({
             "meal": name,
             "member": avoidance["member"],
@@ -1637,6 +1725,8 @@ def check_meal_conflicts(
             if not detail:
                 continue
             matched, matched_word = detail
+            if matched in _DIET_LABELS:
+                matched = matched_word or matched
             hits.append({
                 "meal": name, "member": avoidance["member"],
                 "restriction": avoidance["label"], "source": avoidance["source"],
