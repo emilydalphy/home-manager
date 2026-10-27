@@ -17208,7 +17208,7 @@
           (planned && entry.brought_over
             ? '<span class="wk-from-last-line"><span class="wk-from-last">From last week</span></span>'
             : '') +
-          (planned ? wkUsesTagHtml(entry.uses_tag) : '') +
+          (planned && typeof wkUsesTagHtml === 'function' ? wkUsesTagHtml(entry.uses_tag) : '') +
         '</div>' +
         (!planned && acts ? '<div class="wk-row-acts">' + acts + '</div>' : '') +
       '</div>' +
@@ -17515,7 +17515,7 @@
                 (entry.leftover_from && entry.leftover_from.cook_ahead ? 'Made ahead' : 'Leftovers') +
                 '</span></span>'
             : '') +
-          (dish.isLeftover ? '' : wkUsesTagHtml(wkDishUsesTag(dish))) +
+          (dish.isLeftover || typeof wkUsesTagHtml !== 'function' ? '' : wkUsesTagHtml(wkDishUsesTag(dish))) +
         '</div>' +
       '</div>' +
       '<div class="wk-row-foot">' + (meta ? '<span class="wk-row-meta">' + escapeHtml(meta) + '</span>' : '') +
@@ -17688,7 +17688,7 @@
     // approved week, which is what makes this one expression safe on the
     // deeper, approved-week form of this screen too.
     var head = root
-      ? wkUseUpLineHtml(data) + weekSuggestedNoteHtml(data) + weekFlagsHtml(data) + draftSoftNoteHtml(data) + planEndsLineHtml(data)
+      ? (typeof wkUseUpLineHtml === 'function' ? wkUseUpLineHtml(data) : '') + weekSuggestedNoteHtml(data) + weekFlagsHtml(data) + draftSoftNoteHtml(data) + planEndsLineHtml(data)
       : '<button type="button" class="crumb" data-wk-back="week">‹ Plan</button>' +
         '<div class="wk-head wk-check-head">' +
           '<div class="wk-head-row">' +
@@ -17701,7 +17701,7 @@
       return head + '<div class="rv-body"><div class="rv-empty">Nothing planned yet.</div></div>' + reviewDecideHtml(data);
     }
     if (root && weekPlanState(data) === 'draft' && draftView(data) === 'menu') {
-      return head + wkMenuHtml(days) + (root ? wkCouldntFitHtml(data) : '') +
+      return head + wkMenuHtml(days) + (root && typeof wkCouldntFitHtml === 'function' ? wkCouldntFitHtml(data) : '') +
         reviewDecideHtml(data);
     }
     return head +
@@ -17710,7 +17710,7 @@
         days.map(function (day, i) { return wkDayCardHtml(day, i, { done: false, swapLabel: 'Swap' }); }).join('') +
       '</div>' +
       wkDotsHtml(days.length, selected) +
-      (root ? wkCouldntFitHtml(data) : '') +
+      (root && typeof wkCouldntFitHtml === 'function' ? wkCouldntFitHtml(data) : '') +
       // weekReplacesNote's "Once it's approved, I'd replace…" sentence
       // used to sit here, above the dock (declutter, 2026-09-25: Emily
       // asked it off the draft screen). data.replaces is still computed
@@ -20136,7 +20136,7 @@
   }
 
   function wireMealsStep(panel, steps) {
-    wireCouldntFit(panel, steps);
+    if (typeof wireCouldntFit === 'function') wireCouldntFit(panel, steps);
     steps.querySelectorAll('[data-wk-day]').forEach(function (row) {
       row.addEventListener('click', function () {
         goMealsStep('day', { dayIndex: Number(row.getAttribute('data-wk-day')) });
