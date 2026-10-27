@@ -326,7 +326,7 @@ def deplete_inventory_for_meal(entry_id: int) -> dict:
         # was actually updated or just left as-is.
         before = _inventory_row_as_it_is(match["id"])
         result = _use_inventory_row_by_id(match["id"], qty_used)
-        depleted.append({"ingredient": ing_name, "item": match["item"], "result": result, "before": before})
+        depleted.append({"ingredient": ing_name, "item": match["item"], "result": result, "before": before, "taken": qty_used})
     return {"entry_id": entry_id, "depleted": depleted, "queued_for_review": queued, "left_alone": left_alone}
 
 

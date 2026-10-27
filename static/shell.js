@@ -25082,7 +25082,12 @@
       // a cook gets "Logged…", an un-cook names the dish it just put back
       // to not-cooked (S10, copy sweep finding 1 — the box carries the
       // name it is drawn beside, `data-name`).
-      if (justCooked) toastMealLogged();
+      // When the tick took things out of the kitchen the toast names them
+      // with Undo instead (inventory A2); "Rate it" is still on the
+      // attention card. Nothing taken: today's Logged + Rate it toast.
+      if (justCooked) {
+        if (!toastMarkedEaten(el.getAttribute('data-name'), view && view.kitchen_took, parseInt(el.getAttribute('data-entry-id'), 10))) toastMealLogged();
+      }
       // "Mark eaten" (a reheat, a takeout night) is a tick, not an un-cook:
       // it said "Takeout pizza isn't cooked yet" (overnight 2026-10-18).
       else if (el.getAttribute('data-next') === 'done') {
@@ -25123,7 +25128,9 @@
       // "Mark it cooked" has its own line ("Logged — that'll steer next
       // week"); "Mark not cooked" had none until S10, and said which dish
       // from 2026-09-23.
-      if (next === 'done') toastMealLogged();
+      if (next === 'done') {
+        if (!toastMarkedEaten(el.getAttribute('data-name'), view && view.kitchen_took, parseInt(el.getAttribute('data-entry-id'), 10))) toastMealLogged();
+      }
       else toastSaved(cookNotCookedLine(el));
     } catch (err) {
       el.disabled = false;

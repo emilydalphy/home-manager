@@ -26,6 +26,7 @@ import re
 
 from ..db import get_conn
 from ._shared import household_id
+from . import inventory as _inventory
 
 NAMES_SHOWN = 4
 
@@ -90,17 +91,27 @@ def _changed(depleted: list[dict]) -> list[dict]:
 
 def record(entry_ids: list[int], depleted: list[dict]) -> dict | None:
     """Store the rows a tick changed, as they were. Returns the receipt the
-    caller shows ({names, line}), or None when nothing moved."""
+    caller shows ({names, line}), or None when nothing moved. Each stored
+    row carries how much came off and the row's write counter right after
+    the tick, so Undo can tell whether anyone has touched it since."""
     moved = _changed(depleted)
     if not moved or not entry_ids:
         return None
-    # A row two ingredients both matched is stored once, as it was first.
-    before: dict[int, dict] = {}
-    for d in moved:
-        before.setdefault(d["before"]["id"], d["before"])
     names = took_names([d["before"]["item"] for d in moved])
     conn = get_conn()
     try:
+        # A row two ingredients both matched is stored once, as it was first.
+        stored: dict[int, dict] = {}
+        for d in moved:
+            rid = d["before"]["id"]
+            if rid in stored:
+                continue
+            now = conn.execute(
+                "SELECT rev FROM inventory_items WHERE id = ? AND household_id = ?",
+                (rid, household_id()),
+            ).fetchone()
+            stored[rid] = {"before": d["before"], "taken": d.get("taken") or "",
+                           "after_rev": now["rev"] if now else None}
         conn.execute(
             "DELETE FROM eaten_kitchen_receipts WHERE household_id = ? AND entry_id = ?",
             (household_id(), min(entry_ids)),
@@ -108,7 +119,7 @@ def record(entry_ids: list[int], depleted: list[dict]) -> dict | None:
         conn.execute(
             "INSERT INTO eaten_kitchen_receipts (household_id, entry_id, entry_ids_json, rows_json) "
             "VALUES (?, ?, ?, ?)",
-            (household_id(), min(entry_ids), json.dumps(sorted(entry_ids)), json.dumps(list(before.values()))),
+            (household_id(), min(entry_ids), json.dumps(sorted(entry_ids)), json.dumps(list(stored.values()))),
         )
         conn.commit()
     finally:
@@ -122,16 +133,65 @@ def strip_before(depleted: list[dict]) -> list[dict]:
     return [{k: v for k, v in d.items() if k != "before"} for d in depleted]
 
 
+# An Undo older than this finds nothing: the shelves have moved on.
+RECEIPT_LIFETIME = "-1 day"
+
+
+def _put_back(entry: dict) -> None:
+    """One row. Untouched since the tick: written back exactly. Changed
+    since (a shop tick added to it): the amount the meal took is ADDED
+    back, so what came in meanwhile is kept. Used up and deleted: back
+    under its own id unless the household has a row for it again, in which
+    case the amount goes onto that one."""
+    row = entry["before"]
+    location = row.get("location") or None
+    conn = get_conn()
+    try:
+        now = conn.execute(
+            "SELECT rev FROM inventory_items WHERE id = ? AND household_id = ?",
+            (row["id"], household_id()),
+        ).fetchone()
+        if now is not None and now["rev"] == entry.get("after_rev"):
+            cols = [c for c in row if c not in ("household_id", "id", "rev")]
+            conn.execute(
+                f"UPDATE inventory_items SET {', '.join(f'{c} = ?' for c in cols)} "
+                f"WHERE id = ? AND household_id = ?",
+                [row[c] for c in cols] + [row["id"], household_id()],
+            )
+            conn.commit()
+            return
+        if now is None:
+            twin = _inventory._find_row_by_name(conn, row["item"], location, "id")
+            if twin is None:
+                cols = [c for c in row if c not in ("household_id", "id")]
+                conn.execute(
+                    f"INSERT INTO inventory_items (id, household_id, {', '.join(cols)}) "
+                    f"VALUES (?, ?, {', '.join('?' for _ in cols)})",
+                    [row["id"], household_id()] + [row[c] for c in cols],
+                )
+                conn.commit()
+                return
+            amount = row["quantity"]
+        else:
+            amount = entry.get("taken") or ""
+    finally:
+        conn.close()
+    if amount:
+        _inventory._add_to_inventory(row["item"], amount, source=row.get("source") or "chat",
+                                     category=row.get("category"), location=location)
+
+
 def restore(entry_id: int) -> dict:
-    """Put back every row the tick for this entry changed, exactly as it
-    was, and give the batch's depletion claim back so a re-tick takes the
-    ingredients again. One receipt, used once. {"restored": N}."""
+    """Put back what the tick for this entry took (see _put_back), and give
+    the batch's depletion claim back so a re-tick takes the ingredients
+    again. One receipt, used once, good for a day. {"restored": N}."""
     conn = get_conn()
     try:
         receipt = None
         for r in conn.execute(
             "SELECT id, entry_ids_json, rows_json FROM eaten_kitchen_receipts "
-            "WHERE household_id = ? ORDER BY id DESC", (household_id(),),
+            "WHERE household_id = ? AND created_at >= datetime('now', ?) ORDER BY id DESC",
+            (household_id(), RECEIPT_LIFETIME),
         ).fetchall():
             if entry_id in json.loads(r["entry_ids_json"]):
                 receipt = r
@@ -139,34 +199,19 @@ def restore(entry_id: int) -> dict:
         if receipt is None:
             return {"restored": 0}
         rows = json.loads(receipt["rows_json"])
-        for row in rows:
-            cols = [c for c in row if c not in ("household_id", "id", "rev")]
-            exists = conn.execute(
-                "SELECT 1 FROM inventory_items WHERE id = ? AND household_id = ?",
-                (row["id"], household_id()),
-            ).fetchone()
-            if exists:
-                sets = ", ".join(f"{c} = ?" for c in cols)
-                conn.execute(
-                    f"UPDATE inventory_items SET {sets} WHERE id = ? AND household_id = ?",
-                    [row[c] for c in cols] + [row["id"], household_id()],
-                )
-            else:
-                names = ", ".join(["id", "household_id"] + cols)
-                marks = ", ".join("?" for _ in range(len(cols) + 2))
-                conn.execute(
-                    f"INSERT INTO inventory_items ({names}) VALUES ({marks})",
-                    [row["id"], household_id()] + [row[c] for c in cols],
-                )
+        conn.execute("DELETE FROM eaten_kitchen_receipts WHERE id = ? AND household_id = ?",
+                     (receipt["id"], household_id()))
         ids = json.loads(receipt["entry_ids_json"])
         marks = ",".join("?" for _ in ids)
         conn.execute(
             f"UPDATE meal_plan_entries SET inventory_depleted_at = NULL "
             f"WHERE household_id = ? AND id IN ({marks})", (household_id(), *ids),
         )
-        conn.execute("DELETE FROM eaten_kitchen_receipts WHERE id = ? AND household_id = ?",
-                     (receipt["id"], household_id()))
         conn.commit()
-        return {"restored": len(rows)}
     finally:
         conn.close()
+    for entry in rows:
+        _put_back(entry)
+    return {"restored": len(rows)}
+
+

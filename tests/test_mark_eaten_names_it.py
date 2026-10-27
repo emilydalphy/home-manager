@@ -167,6 +167,64 @@ def test_undo_twice_restores_nothing_the_second_time():
     assert tools.undo_eaten_meal(entry)["restored"] == 0
 
 
+# ---------- Undo keeps what came in meanwhile ----------
+
+def _qty(name):
+    return {r["item"]: r["quantity"] for r in _rows()}[name]
+
+
+def test_undo_adds_back_what_was_taken_instead_of_overwriting_a_newer_purchase():
+    tools.add_recipe("Chicken bake", ingredients=[{"item": "Chicken thighs", "qty": "2 lbs"}], default_servings=4)
+    tools.update_inventory("Chicken thighs", "add", quantity="3 lbs", category="meat/seafood", location="fridge")
+    entry = _entry("Chicken bake")
+    tools.check_off_meal(entry, "done")
+    assert _qty("Chicken thighs") == "1 lb"
+    tools.update_inventory("Chicken thighs", "add", quantity="5 lbs", category="meat/seafood", location="fridge")
+    assert _qty("Chicken thighs") == "6 lbs"
+
+    tools.undo_eaten_meal(entry)
+
+    assert _qty("Chicken thighs") == "8 lbs", "3 lb original + 5 lb bought, not 3 lb with the purchase lost"
+
+
+def test_undo_does_not_duplicate_a_used_up_row_the_household_added_again():
+    tools.add_recipe("Lemon dish", ingredients=[{"item": "Lemons", "qty": "2"}], default_servings=4)
+    tools.update_inventory("Lemons", "add", quantity="2", category="produce", location="fridge")
+    entry = _entry("Lemon dish")
+    tools.check_off_meal(entry, "done")
+    assert _rows() == []
+    tools.update_inventory("Lemons", "add", quantity="4", category="produce", location="fridge")
+
+    tools.undo_eaten_meal(entry)
+
+    rows = _rows()
+    assert len(rows) == 1, "one lemons row, not two"
+    assert rows[0]["quantity"] == "6"
+
+
+def test_an_old_receipt_is_ignored():
+    _lemon_chicken()
+    _stock()
+    entry = _entry()
+    tools.check_off_meal(entry, "done")
+    conn = get_conn()
+    conn.execute("UPDATE eaten_kitchen_receipts SET created_at = datetime('now', '-2 days')")
+    conn.commit()
+    conn.close()
+    assert tools.undo_eaten_meal(entry)["restored"] == 0
+
+
+def test_every_cook_screen_tick_offers_the_kitchen_toast_before_the_logged_one():
+    import re
+    from pathlib import Path
+    js = (Path(__file__).resolve().parent.parent / "static" / "shell.js").read_text()
+    for fn in ("cookCheckMeal", "cookFocusCheckMeal", "runMealDone", "toggleTodayMove"):
+        body = re.search(r"async function " + fn + r"\b.*?\n  }\n", js, re.S).group(0)
+        assert "toastMarkedEaten(" in body, fn
+    focus = re.search(r"async function cookFocusCheckMeal\b.*?\n  }\n", js, re.S).group(0)
+    assert focus.index("toastMarkedEaten(") < focus.index("toastMealLogged()")
+
+
 # ---------- over HTTP ----------
 
 def test_the_routes_carry_the_receipt_and_undo(signed_in):
