@@ -2147,6 +2147,135 @@ def list_grocery_list(status: str = "needed") -> list[dict]:
     return out
 
 
+# "Now in the kitchen" (Inventory A1, 2026-10-27): the shop's wrap-up says
+# out loud what the ticks already did. Places in the order the card reads;
+# a row kept anywhere else (a stated shelf nobody planned for) is counted
+# under its own name after these.
+KITCHEN_PLACES = ("fridge", "freezer", "pantry")
+# "Use these first" looks this far ahead. Without a horizon the three
+# soonest are always three, and a bag of rice good till spring is not a
+# thing to use first.
+USE_FIRST_WITHIN_DAYS = 7
+USE_FIRST_MAX = 3
+
+
+def _use_by_words(expires: date, today: date) -> str:
+    gap = (expires - today).days
+    if gap <= 0:
+        return "today"
+    if gap == 1:
+        return "by tomorrow"
+    return "by " + expires.strftime("%A")
+
+
+def _meal_words(slot: str, on: date, today: date) -> str:
+    gap = (on - today).days
+    if slot == "dinner" and gap == 0:
+        return "in tonight’s dinner"
+    day = "today’s" if gap == 0 else "tomorrow’s" if gap == 1 else on.strftime("%A") + "’s"
+    return f"in {day} {slot}"
+
+
+def kitchen_from_this_shop() -> dict:
+    """
+    What this shop's ticks put in the kitchen: the rows ticked off THIS list
+    (the same 'bought' window list_grocery_list draws struck through) whose
+    tick wrote an inventory row, counted once per kitchen row by where it is
+    kept now — plus up to three of them that go off soonest, each with what
+    it is for.
+
+    Read straight off the tick's own receipt (inventory_receipt_json), so it
+    needs nothing typed and agrees with the untick: an untick that takes a
+    line back out clears inventory_added_at, which takes it out of this
+    window, and a kitchen row deleted since is simply not found. Never
+    writes. {"total": 0} means there is no card to show.
+    """
+    since = list_built_at()
+    conn = get_conn()
+    try:
+        lines = conn.execute(
+            "SELECT id, inventory_receipt_json FROM grocery_items "
+            "WHERE household_id = ? AND excluded_from_list = 0 AND status = 'purchased' "
+            "AND inventory_added_at IS NOT NULL AND inventory_added_at >= ? "
+            "AND inventory_receipt_json IS NOT NULL",
+            (household_id(), since),
+        ).fetchall()
+        line_ids_by_row: dict[int, list[int]] = {}
+        for line in lines:
+            try:
+                inventory_id = int(json.loads(line["inventory_receipt_json"]).get("inventory_id"))
+            except (TypeError, ValueError, AttributeError):
+                continue
+            line_ids_by_row.setdefault(inventory_id, []).append(line["id"])
+        rows = []
+        if line_ids_by_row:
+            marks = ",".join("?" * len(line_ids_by_row))
+            rows = [dict(r) for r in conn.execute(
+                f"SELECT id, item, category, location, expiration_date FROM inventory_items "
+                f"WHERE household_id = ? AND id IN ({marks})",
+                (household_id(), *line_ids_by_row),
+            ).fetchall()]
+        today = _household_today(conn=conn)
+        counts: dict[str, int] = {}
+        for r in rows:
+            place = (_quantities._display_location(r) or "pantry").strip().lower()
+            counts[place] = counts.get(place, 0) + 1
+        places = [p for p in KITCHEN_PLACES if counts.get(p)] + sorted(p for p in counts if p not in KITCHEN_PLACES)
+
+        soon = []
+        for r in rows:
+            if (_quantities._display_location(r) or "").strip().lower() == "freezer":
+                continue
+            try:
+                expires = date.fromisoformat((r.get("expiration_date") or "")[:10])
+            except ValueError:
+                continue
+            # Already past its date: "use first" would be the wrong advice,
+            # and since this card stays up until the next approval it would
+            # say "today" about it every day for a week.
+            if 0 <= (expires - today).days <= USE_FIRST_WITHIN_DAYS:
+                soon.append((expires, r["item"].lower(), r))
+        soon.sort(key=lambda t: (t[0], t[1]))
+
+        use_first = []
+        for expires, _, r in soon[:USE_FIRST_MAX]:
+            line_ids = line_ids_by_row[r["id"]]
+            marks = ",".join("?" * len(line_ids))
+            # The earliest meal still ahead that this line was bought for,
+            # read off the per-meal ledger — never a name match.
+            meal = conn.execute(
+                "SELECT e.date, e.slot, e.component_category FROM meal_plan_grocery_links l "
+                "JOIN meal_plan_entries e ON e.id = l.meal_plan_entry_id "
+                "LEFT JOIN weekly_plans w ON w.id = e.weekly_plan_id "
+                f"WHERE l.household_id = ? AND l.grocery_item_id IN ({marks}) "
+                "AND e.slot_state = 'planned' AND e.cooked_status = 'pending' AND e.date >= ? "
+                "AND (w.id IS NULL OR w.status != 'retired') "
+                "ORDER BY e.date, CASE e.slot WHEN 'breakfast' THEN 0 WHEN 'lunch' THEN 1 "
+                "WHEN 'snack' THEN 2 ELSE 3 END LIMIT 1",
+                (household_id(), *line_ids, today.isoformat()),
+            ).fetchone()
+            use_by = _use_by_words(expires, today)
+            if meal is None:
+                plan = use_by
+            elif meal["slot"] == "snack" or meal["component_category"] in ("snack", "treat", "dip"):
+                plan = "snacks, " + use_by
+            elif meal["component_category"]:
+                plan = use_by
+            else:
+                try:
+                    plan = _meal_words(meal["slot"], date.fromisoformat(meal["date"][:10]), today)
+                except ValueError:
+                    plan = use_by
+            use_first.append({"item": r["item"], "expires": expires.isoformat(), "plan": plan})
+    finally:
+        conn.close()
+    return {
+        "total": len(rows),
+        "places": [{"place": p, "count": counts[p]} for p in places],
+        "use_first": use_first,
+    }
+
+
 def entry_ids_awaiting_a_shop() -> set[int]:
     """
     Every meal_plan_entries row that still has something to buy for it —

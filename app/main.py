@@ -7070,6 +7070,19 @@ def get_grocery_list_by_store_view(status: str = "needed"):
     return result
 
 
+@app.get("/api/grocery-list/now-in-kitchen")
+def get_now_in_kitchen_view():
+    """What this shop's ticks put in the kitchen, by place, and up to three
+    of those things to use first — the Shop tab's "Now in the kitchen" card
+    at the list's finished moment (Inventory A1). total 0 means no card.
+    See grocery.kitchen_from_this_shop."""
+    try:
+        return tools.kitchen_from_this_shop()
+    except Exception as e:
+        logger.exception("Now-in-the-kitchen lookup failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
 @app.get("/api/grocery-list/pre-shop-flags")
 def get_pre_shop_flags_view():
     """Items on the 'needed' list that may already be covered by tracked inventory, humanised into a one-sentence comparison each — powers the Grocery screen's pinned 'Maybe already home' pre-shop check (PRE_SHOP_CHECK.md)."""

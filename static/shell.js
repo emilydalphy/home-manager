@@ -5494,6 +5494,13 @@
     // (tools.list_grocery_list 'bought') keeps true until the next
     // approval rebuilds the list.
     shopDoneHandoffDismissed: false,
+    // "Now in the kitchen" (Inventory A1, 2026-10-27): what this shop's
+    // ticks put in the kitchen (/api/grocery-list/now-in-kitchen), read
+    // only while the list is finished. undefined = not read yet for this
+    // finished moment (the card shows its line alone for that beat rather
+    // than flashing the old buttons), null = nothing to show or the read
+    // failed (the handoff as it was), else { total, places, use_first }.
+    kitchenNow: undefined,
     // A card with every row bought rolls up to one line at the foot of
     // the list (groRolledCardHtml; Emily, 2026-09-22). Both page-view
     // only, so a reload shows every done card rolled up. doneOpen: the
@@ -6217,6 +6224,14 @@
     } catch (err) { groceryState.alreadyHaveSummary = { already_have: [], elsewhere: [] }; }
   }
 
+  async function groLoadKitchenNow() {
+    try {
+      // Quiet: a failed read is the old handoff, not a toast.
+      var now = await Api.json('/api/grocery-list/now-in-kitchen', { quiet: true });
+      groceryState.kitchenNow = now && now.total > 0 ? now : null;
+    } catch (err) { groceryState.kitchenNow = null; }
+  }
+
   // `opts.background` — a re-read nobody on this screen asked for (a chat
   // turn, another tab's tap). It does everything a load does EXCEPT open a
   // step: see refreshGroceryPanel for what that was costing.
@@ -6242,6 +6257,10 @@
       }
       groceryState.loadError = false;
       groSetOffline(false);
+      // Read on every load while the list is finished, so an untick (which
+      // takes its line back out of the kitchen) and a re-tick both show.
+      if (groListDone(groceryState.data)) await groLoadKitchenNow();
+      else groceryState.kitchenNow = undefined;
     } catch (err) {
       var copy = groOffline && groIsNetworkError(err) ? groOffline.readList() : null;
       if (copy) {
@@ -8636,6 +8655,15 @@
         '<button type="button" class="dish-link is-inline" data-gro="shop-done-tonight">' +
         escapeHtml(dish) + '</button>.'
       : 'That’s the shopping done.';
+    var now = groceryState.kitchenNow;
+    if (now) return groKitchenNowHtml(line, now);
+    // The beat between the last tick and the kitchen read landing: the
+    // line alone, so the old buttons never flash up and get replaced.
+    // Offline there is no read coming, so the handoff stands as it was.
+    if (now === undefined && !groceryState.offline) {
+      return '<div class="shell-card gro-shop-done-card">' +
+        '<div class="gro-shop-done-line">' + line + '</div></div>';
+    }
     return (
       '<div class="shell-card gro-shop-done-card">' +
         '<div class="gro-shop-done-line">' + line + '</div>' +
@@ -8643,6 +8671,51 @@
           '<button type="button" class="btn-gold" data-gro="shop-done-tonight">Show me tonight</button>' +
           '<button type="button" class="btn-sand" data-gro="shop-done-later">Not now</button>' +
         '</div>' +
+      '</div>'
+    );
+  }
+
+  // "Now in the kitchen" (Inventory A1, Emily 2026-10-27; mockup "Option A
+  // · It keeps itself", screen 1): the finished moment says out loud what
+  // the ticks already did — every purchased tick has always written the
+  // kitchen (mark_grocery_item), nobody was told. Counts by place, then up
+  // to three things that go off soonest with what each is for, then "See
+  // what's home" and "Done". Nothing to type; a mis-tick is fixed on the
+  // list itself (the untick takes it back out, and this re-reads).
+  // "Done" folds the moment exactly as "Not now" always has; tonight's dish
+  // stays a link in the line, and the folded line keeps "See tonight's
+  // dinner". A shop that put nothing in the kitchen never gets here
+  // (kitchenNow is null) and shows the handoff as it was.
+  function groKitchenThings(n) { return n + (n === 1 ? ' thing' : ' things'); }
+  function groKitchenPlace(p) { p = String(p || ''); return p.charAt(0).toUpperCase() + p.slice(1); }
+
+  function groKitchenNowHtml(line, now) {
+    var places = (now.places || []).map(function (p) {
+      return '<li class="gro-kitchen-row"><span>' + escapeHtml(groKitchenPlace(p.place)) + '</span>' +
+        '<span class="gro-kitchen-aside">' + groKitchenThings(p.count) + '</span></li>';
+    }).join('');
+    var first = (now.use_first || []).map(function (u) {
+      return '<li class="gro-kitchen-row"><span>' + escapeHtml(u.item) + '</span>' +
+        '<span class="gro-kitchen-aside">' + escapeHtml(u.plan) + '</span></li>';
+    }).join('');
+    return (
+      '<div class="shell-card gro-shop-done-card">' +
+        '<div class="gro-shop-done-line">' + line + '</div>' +
+      '</div>' +
+      '<section class="shell-card gro-kitchen-card" aria-labelledby="gro-kitchen-now-title">' +
+        '<h2 class="gro-kitchen-title" id="gro-kitchen-now-title">Now in the kitchen</h2>' +
+        '<p class="gro-kitchen-note">From what you ticked off. Didn’t get something? Untick it on the list.</p>' +
+        '<ul class="gro-kitchen-rows">' + places + '</ul>' +
+      '</section>' +
+      (first
+        ? '<section class="shell-card gro-kitchen-card" aria-labelledby="gro-kitchen-first-title">' +
+            '<h2 class="gro-kitchen-title" id="gro-kitchen-first-title">Use these first</h2>' +
+            '<ul class="gro-kitchen-rows">' + first + '</ul>' +
+          '</section>'
+        : '') +
+      '<div class="gro-shop-done-actions gro-kitchen-actions">' +
+        '<button type="button" class="btn-sand" data-gro="kitchen-see-home">See what’s home</button>' +
+        '<button type="button" class="btn-gold" data-gro="shop-done-later">Done</button>' +
       '</div>'
     );
   }
@@ -10371,6 +10444,17 @@
         groceryState.shopDoneHandoffDismissed = true;
         renderGrocery();
         return;
+
+      // "See what's home" on the Now in the kitchen card: the Inventory
+      // sheet, for now (a Kitchen tab replaces it later). The sheet keeps
+      // the inventory.html it last loaded, which would not have this
+      // shop in it — so this one way in reloads the frame.
+      case 'kitchen-see-home': {
+        var invFrame = document.getElementById('kit-sheet-frame');
+        if (invFrame) invFrame.dataset.page = '';
+        openKitchenSheet('inventory');
+        return;
+      }
 
       // "Put back on the list" on the "Already had on hand" foot: the one
       // pre-shop-undo endpoint, whichever flow removed the row. Restoring
