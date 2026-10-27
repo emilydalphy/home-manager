@@ -73,12 +73,15 @@ ENTRY_HEADING = re.compile(r"^- \*\*(20\d\d-\d\d-\d\d) — ", re.M)
 # --- the floors ----------------------------------------------------------
 # All three were taken on docs/DECISION_LOG.md right after the move out of
 # CLAUDE.md (2026-10-05, on top of main 8295894): 24543 lines, 269 entries,
-# newest entry 2026-10-05. Earlier floors: ee741f8 (2026-09-27), 19030 lines. Raise them together when the log has
+# newest entry 2026-10-05. Raised 2026-10-27 (overnight/chat-moves-a-dinner,
+# when the slack test tripped): 29009 lines, 294 entries, newest dated
+# heading 2026-10-19. Earlier floors:
+# ee741f8 (2026-09-27), 19030 lines. Raise them together when the log has
 # grown well past them; only lower one for a deletion you can point at.
 
-LINE_FLOOR = 24000
-ENTRY_FLOOR = 264
-NEWEST_ENTRY_ON_OR_AFTER = "2026-10-05"
+LINE_FLOOR = 28500
+ENTRY_FLOOR = 290
+NEWEST_ENTRY_ON_OR_AFTER = "2026-10-19"
 
 
 def _entry_dates() -> list[str]:
