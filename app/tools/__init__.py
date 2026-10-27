@@ -447,6 +447,7 @@ from .whats_home import (  # noqa: F401
 # makes. Aliased: bare `review_items` / `add_items` would say nothing here.
 from .kitchen_add import (  # noqa: F401
     review_items as kitchen_review_items,
+    left_out as kitchen_left_out,
     read_said_items,
     add_items as add_kitchen_items,
     undo_added as undo_kitchen_add,

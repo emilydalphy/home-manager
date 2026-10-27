@@ -23,6 +23,7 @@ typed, so it saves straight away — through add_items too.
 """
 from __future__ import annotations
 
+import json
 import re
 
 from ..db import write
@@ -107,6 +108,7 @@ def review_items(items: list, place: str | None = None) -> list[dict]:
         name = _clean_name(raw.get("item"))
         if not name:
             continue
+        name = name[:1].upper() + name[1:]  # scans come back in lower case
         loc = str(raw.get("location") or "").strip().lower() or (place or "")
         out.append({
             "item": name,
@@ -117,6 +119,34 @@ def review_items(items: list, place: str | None = None) -> list[dict]:
             "sure": is_sure(raw),
         })
     return out[:MAX_ITEMS]
+
+
+def left_out(rows: list[dict]) -> tuple[list[dict], dict]:
+    """
+    The Kitchen tab never shows a spice or one of the household's regulars
+    (whats_home._shown_rows: they live with Staples), so saving one from a
+    scan would be a row nobody sees and a toast that over-counts. They come
+    off the review and are NAMED beside it instead — never dropped silently.
+    Returns (rows kept, {"spices": [names], "regulars": [names]}).
+    """
+    from ..db import get_conn
+    from . import spices as _spices
+    from . import use_up as _use_up
+
+    conn = get_conn()
+    try:
+        regulars = _use_up._staple_keys(conn)
+    finally:
+        conn.close()
+    kept, out = [], {"spices": [], "regulars": []}
+    for r in rows:
+        if _use_up._name_key(r["item"]) in regulars:
+            out["regulars"].append(r["item"])
+        elif _spices.is_spice(r["item"]):
+            out["spices"].append(r["item"])
+        else:
+            kept.append(r)
+    return kept, out
 
 
 # ---------------------------------------------------------------------------
@@ -198,18 +228,70 @@ def read_said_items(text: str) -> list[dict]:
     and the review is where a mishearing gets unticked. The shelf is the
     one they said ("…in the freezer"), else the category's usual one.
     """
-    pieces = _SPLIT_RE.split(text or "")
+    text = text or ""
+    # One food whose name has "and" in it stays one row.
+    for phrase in _NEVER_SPLIT:
+        text = re.sub(r"\b" + phrase.replace(" and ", r"\s+and\s+") + r"\b", phrase.replace(" and ", " _AND_ "),
+                      text, flags=re.IGNORECASE)
+    pieces = _SPLIT_RE.split(text)
     out = []
     for piece in pieces:
-        row = _said_piece(piece or "")
+        row = _said_piece((piece or "").replace(" _AND_ ", " and "))
         if row:
+            low = row["item"].lower()
+            if low in _NEVER_SPLIT_PLACE:
+                row["location"] = _NEVER_SPLIT_PLACE[low]
+                row["category"] = "other"
             out.append(row)
+    # Dictation often leaves the commas out: "milk eggs butter" is one piece.
+    # When that one piece has no amount and EVERY word is a food on its own,
+    # it becomes a row per word. Anything less certain stays as said.
+    if len(out) == 1 and not out[0]["quantity"]:
+        words = out[0]["item"].split()
+        if len(words) >= 3 and all(_known_food(w) for w in words):
+            out = [r for r in (_said_piece(w) for w in words) if r]
     return out[:MAX_ITEMS]
+
+
+# Foods with "and" in the name. Said whole, they're one thing.
+_NEVER_SPLIT = (
+    "mac and cheese", "macaroni and cheese", "fish and chips", "salt and pepper",
+    "half and half", "sweet and sour sauce", "peanut butter and jelly", "chips and salsa",
+)
+# ...and the one whose usual shelf a guess gets wrong (pepper reads as produce).
+_NEVER_SPLIT_PLACE = {"salt and pepper": "pantry"}
+# Pantry foods the shelf-life table doesn't name, for the no-comma rule.
+_PANTRY_WORDS = frozenset({
+    "rice", "pasta", "flour", "sugar", "oats", "cereal", "coffee", "tea", "beans",
+    "lentils", "bread", "juice", "honey", "jam", "crackers", "noodles", "tortillas",
+})
+
+
+def _known_food(word: str) -> bool:
+    from .. import recipe_import as _recipe_import
+
+    w = word.strip(" ,.").lower()
+    if not w or len(w) < 3:
+        return False
+    singular = w[:-1] if w.endswith("s") else w
+    if w in _PANTRY_WORDS or singular in _PANTRY_WORDS:
+        return True
+    if w in _quantities._ITEM_SHELF_LIFE_DAYS or singular in _quantities._ITEM_SHELF_LIFE_DAYS:
+        return True
+    return _recipe_import.guess_category(w) in ("produce", "dairy", "meat/seafood", "frozen")
 
 
 # ---------------------------------------------------------------------------
 # Saving the ticked rows, and the Undo
 # ---------------------------------------------------------------------------
+MAX_NAME = 80
+MAX_QTY = 40
+_QTY_NUMBER_RE = re.compile(r"^\s*(\d+(?:\.\d+)?)")
+# A size or a fat percentage is not part of what the thing IS: "milk 2%" and
+# "Milk" are the same row, as are "Eggs 12 pack" and "eggs".
+_SIZE_TOKEN_RE = re.compile(r"\S*\d\S*|%")
+
+
 def _source(kind: str, location: str) -> str:
     if kind == "say":
         return SAID_SOURCE
@@ -229,96 +311,209 @@ def place_word(kind: str, items: list[dict]) -> str:
     return "kitchen"
 
 
+def _match_key(name: str) -> str:
+    """The name two rows have to share to be the same food — the grocery
+    list's merge key (case, spacing, a trailing plural, the plain-name
+    list), after any size or percentage is taken off."""
+    from . import grocery as _grocery
+
+    base = re.sub(r"\s+", " ", _SIZE_TOKEN_RE.sub(" ", str(name or ""))).strip()
+    return _grocery._merge_key(base or str(name or ""))
+
+
+def _clean_rows(items, kind: str) -> list[dict]:
+    if not isinstance(items, list):
+        raise ValueError("I couldn't read that list.")
+    if len(items) > MAX_ITEMS:
+        raise ValueError("That's a lot at once — try one shelf at a time.")
+    rows = []
+    for raw in items:
+        if not isinstance(raw, dict):
+            raise ValueError("I couldn't read that list.")
+        if not isinstance(raw.get("item"), str):
+            raise ValueError("Each thing needs a name.")
+        name = _clean_name(raw["item"])
+        if not name:
+            continue
+        if len(name) > MAX_NAME:
+            raise ValueError("That name is too long — try a shorter one.")
+        qty_raw = raw.get("quantity")
+        if qty_raw is None:
+            qty = ""
+        elif isinstance(qty_raw, bool) or not isinstance(qty_raw, (str, int, float)):
+            raise ValueError("That amount doesn't look right.")
+        else:
+            qty = str(qty_raw).strip()
+        if len(qty) > MAX_QTY or qty.startswith("-"):
+            raise ValueError("That amount doesn't look right.")
+        m = _QTY_NUMBER_RE.match(qty)
+        if m and float(m.group(1)) > 10000:
+            raise ValueError("That amount doesn't look right.")
+        loc = str(raw.get("location") or "").strip().lower()
+        if loc not in LOCATIONS:
+            loc = kind if kind in SHELF_KINDS else ""
+        category = str(raw.get("category") or "").strip().lower()[:30]
+        if kind == "type":
+            # Type it reads a leading amount the way Say it does:
+            # "2 litres of milk" -> Milk · 2 litres.
+            said = _said_piece(name)
+            if said and not qty:
+                name, qty = said["item"], said["quantity"]
+            if not loc:
+                loc = "fridge"
+        rows.append({"item": name[:1].upper() + name[1:], "quantity": qty,
+                     "category": category if category and category != "other" else None, "location": loc})
+    if not rows:
+        raise ValueError("Nothing was ticked.")
+    return rows
+
+
+def _existing(conn, name: str, location: str | None):
+    """The row this name already is: same food by _match_key, at `location`
+    when one is given, else anywhere — the most recently touched, the rule
+    inventory._find_row_by_name uses."""
+    key = _match_key(name)
+    sql = ("SELECT id, item, quantity, source, category, expiration_date, location, counted_on, rev "
+           "FROM inventory_items WHERE household_id = ?")
+    params = [household_id()]
+    if location:
+        sql += " AND location = ?"
+        params.append(location)
+    for row in conn.execute(sql + " ORDER BY updated_at DESC, id DESC", params).fetchall():
+        if _match_key(row["item"]) == key:
+            return row
+    return None
+
+
+_RESTORE_FIELDS = ("quantity", "source", "category", "expiration_date", "counted_on")
+
+
+def _rev(conn, item_id: int) -> int:
+    return conn.execute(
+        "SELECT rev FROM inventory_items WHERE id = ? AND household_id = ?", (item_id, household_id())
+    ).fetchone()["rev"]
+
+
 def add_items(items: list, kind: str) -> dict:
     """
-    Write the rows the person left ticked. Each goes through
-    inventory._add_to_inventory (so a second milk merges into the first,
-    the date rules and the category guess are the ones every add uses), in
-    one transaction. Returns {"added", "place", "items", "undo"}.
+    Write the rows the person left ticked, in one transaction. Returns
+    {"added", "updated", "place", "items", "undo"}.
+
+    A SHELF PHOTO IS A COUNT of what is there, not a purchase: a ticked row
+    already tracked on that shelf (same food, _match_key) is confirmed — its
+    amount becomes the photo's when the photo read one, `counted_on` is
+    today, and its name, bought date and frozen date stay — so photographing
+    the fridge twice never doubles the milk. A row not tracked there is
+    added. A receipt, Say it and Type it are purchases: they add
+    (inventory._add_to_inventory sums into a matching row), under the
+    existing row's name when the food is already tracked, so "milk 2%"
+    lands on "Milk".
 
     A shelf photo files every row on its shelf unless the scan saw it was
     frozen (the fridge's freezer drawer); a receipt row with no location
     takes the category's usual shelf, recorded as a guess (scan_source).
+    The Undo's record stays here (kitchen_add_receipts); the toast holds
+    only its id.
     """
+    from . import grocery as _grocery
+
     kind = (kind or "").strip().lower()
     if kind not in KINDS:
         raise ValueError("I couldn't tell where these came from.")
-    rows = []
-    for raw in (items or [])[:MAX_ITEMS]:
-        if not isinstance(raw, dict):
-            continue
-        name = _clean_name(raw.get("item"))
-        if not name:
-            continue
-        loc = str(raw.get("location") or "").strip().lower()
-        if loc not in LOCATIONS:
-            loc = kind if kind in SHELF_KINDS else ""
-        if kind == "type" and not loc:
-            loc = "fridge"
-        category = str(raw.get("category") or "").strip().lower()
-        rows.append({
-            "item": name,
-            "quantity": str(raw.get("quantity") or "").strip(),
-            "category": category if category and category != "other" else None,
-            "location": loc,
-        })
-    if not rows:
-        raise ValueError("Nothing was ticked.")
+    rows = _clean_rows(items, kind)
     receipts = []
+    added = updated = 0
     with write() as conn:
+        today = _grocery._household_today(conn=conn).isoformat()
         for r in rows:
-            added = _inventory._add_to_inventory(
+            where = r["location"] or None
+            found = _existing(conn, r["item"], where)
+            if kind in SHELF_KINDS and found is not None:
+                before = {f: found[f] for f in _RESTORE_FIELDS}
+                conn.execute(
+                    "UPDATE inventory_items SET quantity = ?, counted_on = ?, updated_at = datetime('now') "
+                    "WHERE id = ? AND household_id = ?",
+                    (r["quantity"] or found["quantity"], today, found["id"], household_id()),
+                )
+                receipts.append({"item_id": found["id"], "fresh": False, "before": before, "rev": _rev(conn, found["id"])})
+                updated += 1
+                continue
+            if kind not in SHELF_KINDS:
+                anywhere = found or (_existing(conn, r["item"], None) if where else None)
+                if anywhere is not None:
+                    r["item"] = anywhere["item"]
+            before_row = _inventory._find_row_by_name(conn, r["item"], where, ", ".join(_RESTORE_FIELDS))
+            before = {f: before_row[f] for f in _RESTORE_FIELDS} if before_row is not None else None
+            res = _inventory._add_to_inventory(
                 r["item"], r["quantity"], source=_source(kind, r["location"]),
-                category=r["category"], location=r["location"] or None, conn=conn,
+                category=r["category"], location=where, conn=conn,
             )
-            after = added.get("after") or {}
-            receipts.append({
-                "item_id": added["item_id"], "fresh": bool(added["fresh"]),
-                "before": added.get("before"), "rev": after.get("rev"),
-            })
+            fresh = bool(res["fresh"])
+            receipts.append({"item_id": res["item_id"], "fresh": fresh,
+                             "before": None if fresh else before, "rev": _rev(conn, res["item_id"])})
+            added += 1
+        cur = conn.execute(
+            "INSERT INTO kitchen_add_receipts (household_id, rows_json) VALUES (?, ?)",
+            (household_id(), json.dumps(receipts)),
+        )
+        receipt_id = cur.lastrowid
     return {
-        "added": len(rows),
+        "added": added,
+        "updated": updated,
         "place": place_word(kind, rows),
         "items": [r["item"] for r in rows],
-        "undo": {"kind": "added", "rows": receipts},
+        "undo": {"kind": "added", "receipt_id": receipt_id},
     }
-
-
-_RESTORE_FIELDS = ("quantity", "source", "category", "expiration_date")
 
 
 def undo_added(undo: dict) -> dict:
     """
-    The Undo on "13 things were added to the fridge." A row the add created
-    is taken off; a row it merged into goes back to what it held. A row
-    somebody has changed since (its rev moved on) is left alone — the
-    Undo is for this add, not for whatever came after it.
-    Returns {"undone": n}.
+    The Undo on the save's toast. Only the receipt id comes from the
+    client; what to put back is read from kitchen_add_receipts, for this
+    household. A row the save created is taken off; a row it added to or
+    confirmed goes back to what it held. A row somebody has changed since
+    (its rev moved on) is left alone. Runs once. Returns {"undone": n}.
     """
-    undo = undo or {}
-    if undo.get("kind") != "added" or not isinstance(undo.get("rows"), list):
+    undo = undo if isinstance(undo, dict) else {}
+    receipt_id = None
+    if undo.get("kind") == "added":
+        try:
+            receipt_id = int(undo.get("receipt_id"))
+        except (TypeError, ValueError):
+            receipt_id = None
+    if receipt_id is None:
         raise ValueError("I couldn't tell what to undo.")
     undone = 0
     with write() as conn:
-        for rec in undo["rows"][:MAX_ITEMS]:
-            try:
-                item_id = int(rec.get("item_id"))
-            except (TypeError, ValueError, AttributeError):
-                continue
+        rec = conn.execute(
+            "SELECT rows_json, undone_at FROM kitchen_add_receipts WHERE id = ? AND household_id = ?",
+            (receipt_id, household_id()),
+        ).fetchone()
+        if rec is None:
+            raise ValueError("I couldn't tell what to undo.")
+        if rec["undone_at"]:
+            return {"undone": 0}
+        for r in json.loads(rec["rows_json"]):
             row = conn.execute(
                 "SELECT rev FROM inventory_items WHERE id = ? AND household_id = ?",
-                (item_id, household_id()),
+                (r["item_id"], household_id()),
             ).fetchone()
-            if row is None or (rec.get("rev") is not None and row["rev"] != rec.get("rev")):
+            if row is None or row["rev"] != r["rev"]:
                 continue
-            before = rec.get("before")
-            if rec.get("fresh") or not isinstance(before, dict):
-                conn.execute("DELETE FROM inventory_items WHERE id = ? AND household_id = ?", (item_id, household_id()))
+            if r["fresh"] or not r.get("before"):
+                conn.execute("DELETE FROM inventory_items WHERE id = ? AND household_id = ?", (r["item_id"], household_id()))
             else:
+                b = r["before"]
                 conn.execute(
                     f"UPDATE inventory_items SET {', '.join(f + ' = ?' for f in _RESTORE_FIELDS)}, "
                     "updated_at = datetime('now') WHERE id = ? AND household_id = ?",
-                    [before.get(f) for f in _RESTORE_FIELDS] + [item_id, household_id()],
+                    [b.get(f) for f in _RESTORE_FIELDS] + [r["item_id"], household_id()],
                 )
             undone += 1
+        conn.execute(
+            "UPDATE kitchen_add_receipts SET undone_at = datetime('now') WHERE id = ? AND household_id = ?",
+            (receipt_id, household_id()),
+        )
     return {"undone": undone}
+
+

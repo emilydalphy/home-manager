@@ -51,7 +51,6 @@
     setupReceipt: 'Or scan your last receipt instead.',
     // Invented for C2/C5 (pomona-copywriter; listed in the hand-over note).
     snapTitle: 'Snap a shelf',
-    snapSub: 'One photo of one shelf. You’ll check it before anything’s saved.',
     reading: 'Reading the photo…',
     readingSaid: 'Reading that…',
     heardTitle: 'Here’s what <em>I heard</em>',
@@ -70,6 +69,11 @@
     typePlaceholder: 'What is it?',
     skipped: 'Skipped',
     back: '‹ Add to the kitchen',
+    retakePhoto: 'Try another photo',
+    sayAgain: 'Say it again',
+    leftOut: 'Left out — spices and regulars live with Staples: ',
+    eyebrows: { fridge: 'Kitchen · fridge photo', freezer: 'Kitchen · freezer photo', pantry: 'Kitchen · pantry photo',
+      receipt: 'Kitchen · receipt', say: 'Kitchen · what you said' },
   };
 
   var OPTIONS = [
@@ -85,7 +89,8 @@
     receipt: SVG + '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>',
     say: SVG + '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>',
     type: SVG + '<path d="M5 12h14M12 5v14"/></svg>',
-    tick: SVG + '<path d="M5 12.5l4.5 4.5L19 7"/></svg>'
+    tick: SVG + '<path d="M5 12.5l4.5 4.5L19 7"/></svg>',
+    skip: SVG + '<path d="M7 12h10"/></svg>'
   };
 
   // ---- Pure helpers (tests/test_kitchen_add.py runs these under node) ----
@@ -130,13 +135,25 @@
     return n > 0 ? 'Add ' + n + ' to the ' + place : 'Add to the ' + place;
   }
 
-  // The toast, in the house pattern: the thing, then what happened.
-  function savedLine(added, place, items) {
+  // The toast, in the house pattern: the thing, then what happened. A shelf
+  // photo that confirms rows already tracked UPDATES them; those are
+  // counted apart from the ones it added, so the number is what changed.
+  function savedLine(added, place, items, updated) {
     var where = place || 'kitchen';
-    if (added === 1 && items && items[0]) {
+    added = added || 0;
+    updated = updated || 0;
+    function named() {
       var name = String(items[0]);
-      return name.charAt(0).toUpperCase() + name.slice(1) + ' was added to the ' + where + '.';
+      return name.charAt(0).toUpperCase() + name.slice(1);
     }
+    if (updated && !added) {
+      if (updated === 1 && items && items.length === 1) return named() + ' in the ' + where + ' was updated.';
+      return updated + ' things in the ' + where + ' were updated.';
+    }
+    if (updated && added) {
+      return added + (added === 1 ? ' thing was' : ' things were') + ' added to the ' + where + ', and ' + updated + ' updated.';
+    }
+    if (added === 1 && items && items[0]) return named() + ' was added to the ' + where + '.';
     return added + ' things were added to the ' + where + '.';
   }
 
@@ -219,6 +236,9 @@
     '.ka-step{display:flex;align-items:center;gap:14px;padding:10px 0;border-top:1px solid var(--hairline)}' +
     '.ka-step:first-child{border-top:0}' +
     '.ka-step .ka-ic.is-done{background:var(--celadon);color:var(--on-accent-ink)}' +
+    '.ka-step .ka-ic.is-skipped{background:var(--sand);color:var(--ink-muted)}' +
+    '.ka-more{min-height:44px;background:none;border:0;border-top:1px solid var(--hairline);text-align:left;cursor:pointer;' +
+      'font:600 14px var(--font-body);color:var(--ink-secondary)}' +
     '.ka-step .ka-ic.is-later{background:var(--sand);color:var(--ink-muted)}' +
     '.ka-step-title{margin:0;font-size:15px;font-weight:700;color:var(--ink)}' +
     '.ka-step.is-later .ka-step-title{color:var(--ink-secondary)}' +
@@ -227,6 +247,7 @@
       'color:var(--ink-secondary);text-decoration:underline;text-underline-offset:3px;cursor:pointer}';
 
   var sheetEl = null;
+  var setupMemory = null;
   var scrimEl = null;
   var fileEl = null;
   var st = null;
@@ -267,7 +288,13 @@
     doc.body.appendChild(fileEl);
     scrimEl.addEventListener('click', close);
     doc.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && sheetEl && !sheetEl.hidden) close();
+      if (e.key !== 'Escape' || !sheetEl || sheetEl.hidden) return;
+      // Words typed in Say it / Type it keep the sheet open, the courtesy
+      // shell.js's escapeClosesTabSheet gives every tab sheet.
+      var active = doc.activeElement;
+      if (active && sheetEl.contains(active) && /^(INPUT|TEXTAREA)$/.test(active.tagName) &&
+          String(active.value || '').trim()) return;
+      close();
     });
     fileEl.addEventListener('change', function () {
       var file = fileEl.files && fileEl.files[0];
@@ -292,8 +319,16 @@
       error: '',
       busy: false,
       setup: { fridge: null, freezer: null, pantry: null },
-      setupTotal: 0
+      setupTotal: 0,
+      leftOut: null,
+      showAll: false
     };
+    // Closing the three-photo sheet part-way and opening it again picks up
+    // where it was: a finished shelf stays finished.
+    if (st.mode === 'setup' && setupMemory) {
+      st.setup = setupMemory.setup;
+      st.setupTotal = setupMemory.total;
+    }
     if (st.mode === 'snap') st.step = 'snap';
     if (st.mode === 'setup') st.step = 'setup';
     scrimEl.hidden = false;
@@ -340,7 +375,6 @@
   function snapHtml() {
     return '<div class="ka-handle" aria-hidden="true"></div>' + crumbHtml() +
       '<h2 class="ka-title" id="ka-title">' + esc(COPY.snapTitle) + '</h2>' +
-      '<p class="ka-sub">' + esc(COPY.snapSub) + '</p>' +
       placeChipsHtml(st.place) +
       '<button type="button" class="ka-primary" data-ka="camera">' + ICONS.snap +
         '<span>Take a photo of the ' + esc(st.place) + '</span></button>';
@@ -352,30 +386,53 @@
       '<div class="ka-wait" role="status"><span class="ka-spin" aria-hidden="true"></span><span>' + esc(text) + '</span></div>';
   }
 
+  // How many rows show before "+ N more", so the one button stays in view
+  // at phone height (the mockup folds at six; a seventh row costs nothing).
+  var REVIEW_FOLD = 7;
+
+  function reviewWayOutHtml() {
+    if (st.mode === 'setup' && PLACES.indexOf(st.kind) !== -1) {
+      return '<button type="button" class="ka-quiet" data-ka="skip">Skip the ' + esc(st.kind) + '</button>';
+    }
+    if (st.kind === 'say') return '<button type="button" class="ka-quiet" data-ka="again">' + esc(COPY.sayAgain) + '</button>';
+    return '<button type="button" class="ka-quiet" data-ka="retake">' + esc(COPY.retakePhoto) + '</button>';
+  }
+
+  function leftOutHtml() {
+    var lo = st.leftOut || {};
+    var names = (lo.spices || []).concat(lo.regulars || []);
+    return names.length ? '<p class="ka-sub">' + esc(COPY.leftOut + names.join(', ')) + '</p>' : '';
+  }
+
   function reviewHtml() {
     var n = tickedCount(st.rows);
     var place = reviewPlace(st.kind, st.rows);
-    var head = '<div class="ka-handle" aria-hidden="true"></div>' +
-      '<h2 class="ka-title" id="ka-title">' + (st.kind === 'say' ? COPY.heardTitle : COPY.reviewTitle) + '</h2>';
+    var eyebrow = COPY.eyebrows[st.kind] ? '<p class="ka-eyebrow">' + esc(COPY.eyebrows[st.kind]) + '</p>' : '';
     if (!st.rows.length) {
-      return '<div class="ka-handle" aria-hidden="true"></div>' +
+      return '<div class="ka-handle" aria-hidden="true"></div>' + eyebrow +
         '<h2 class="ka-title" id="ka-title">' + esc(COPY.emptyTitle) + '</h2>' +
-        '<p class="ka-sub">' + esc(st.kind === 'say' ? COPY.emptySaid : COPY.emptySub) + '</p>' +
-        '<button type="button" class="ka-primary" data-ka="again">' + esc(COPY.tryAgain) + '</button>';
+        '<p class="ka-sub">' + esc(st.kind === 'say' ? COPY.emptySaid : COPY.emptySub) + '</p>' + leftOutHtml() +
+        '<button type="button" class="ka-primary" data-ka="again">' + esc(COPY.tryAgain) + '</button>' +
+        (st.mode === 'setup' && PLACES.indexOf(st.kind) !== -1 ? reviewWayOutHtml() : '');
     }
-    return head +
+    var shown = st.showAll ? st.rows.length : Math.min(st.rows.length, REVIEW_FOLD);
+    var more = st.rows.length - shown;
+    return '<div class="ka-handle" aria-hidden="true"></div>' + eyebrow +
+      '<h2 class="ka-title" id="ka-title">' + (st.kind === 'say' ? COPY.heardTitle : COPY.reviewTitle) + '</h2>' +
       '<p class="ka-sub">' + esc(COPY.reviewSub) + '</p>' +
-      '<div class="ka-list">' + st.rows.map(function (r, i) {
+      '<div class="ka-list">' + st.rows.slice(0, shown).map(function (r, i) {
         var right = r.sure ? r.quantity : COPY.notSure;
         return '<button type="button" class="ka-row" data-ka="tick" data-i="' + i + '" aria-pressed="' + (r.ticked ? 'true' : 'false') + '">' +
           '<span class="ka-box">' + ICONS.tick + '</span>' +
           '<span class="ka-row-name">' + esc(r.item) + (r.sure ? '' : '?') + '</span>' +
           (right ? '<span class="ka-row-qty">' + esc(right) + '</span>' : '') +
         '</button>';
-      }).join('') + '</div>' +
+      }).join('') +
+      (more ? '<button type="button" class="ka-more" data-ka="more">+ ' + more + ' more</button>' : '') +
+      '</div>' + leftOutHtml() +
       (st.error ? '<p class="ka-note" role="alert">' + esc(st.error) + '</p>' : '') +
       '<button type="button" class="ka-primary" data-ka="save"' + (n && !st.busy ? '' : ' disabled') + '>' +
-        esc(addButtonLabel(n, place)) + '</button>';
+        esc(addButtonLabel(n, place)) + '</button>' + reviewWayOutHtml();
   }
 
   function errorHtml() {
@@ -426,7 +483,8 @@
         var now = p === next;
         var line = done ? setupLine(result) : (now ? COPY.setupNow : COPY.setupNext);
         return '<div class="ka-step' + (!done && !now ? ' is-later' : '') + '">' +
-          '<span class="ka-ic' + (done ? ' is-done' : (now ? '' : ' is-later')) + '">' + (done ? ICONS.tick : ICONS.snap) + '</span>' +
+          '<span class="ka-ic' + (result === 'skipped' ? ' is-skipped' : (done ? ' is-done' : (now ? '' : ' is-later'))) + '">' +
+            (result === 'skipped' ? ICONS.skip : (done ? ICONS.tick : ICONS.snap)) + '</span>' +
           '<div><p class="ka-step-title">' + PLACE_LABELS[p] + '</p><p class="ka-step-line">' + esc(line) + '</p></div>' +
         '</div>';
       }).join('') + '</div>' +
@@ -517,9 +575,17 @@
       st.kind = 'receipt';
       pickPhoto();
     } else if (what === 'skip') {
-      var p = setupNext();
+      var p = st.step === 'review' ? st.kind : setupNext();
       if (p) st.setup[p] = 'skipped';
+      st.step = 'setup';
+      st.rows = [];
+      remember();
       render();
+    } else if (what === 'more') {
+      st.showAll = true;
+      render();
+    } else if (what === 'retake') {
+      pickPhoto();
     } else if (what === 'setup-done') {
       finishSetup();
     } else if (what === 'tick') {
@@ -570,6 +636,8 @@
     Api.json('/api/inventory/' + route, { body: form, quiet: true }).then(function (data) {
       if (st !== mine) return;
       st.rows = reviewRows(data && data.items);
+      st.leftOut = (data && data.left_out) || null;
+      st.showAll = false;
       st.step = 'review';
       render();
     }, function (err) {
@@ -604,10 +672,14 @@
     return Api.json('/api/whats-home/add', { body: { kind: kind, items: items }, quiet: true });
   }
 
+  function remember() {
+    if (st && st.mode === 'setup') setupMemory = { setup: st.setup, total: st.setupTotal };
+  }
+
   function saved(res) {
-    var line = savedLine(res.added, res.place, res.items);
+    var line = savedLine(res.added, res.place, res.items, res.updated);
     if (st.opts.onSaved) {
-      try { st.opts.onSaved({ added: res.added, place: res.place, items: res.items, undo: res.undo, line: line }); }
+      try { st.opts.onSaved({ added: res.added, updated: res.updated, place: res.place, items: res.items, undo: res.undo, line: line }); }
       catch (err) { /* the host's own business */ }
     }
   }
@@ -626,9 +698,10 @@
       if (st !== mine) return;
       st.busy = false;
       if (st.mode === 'setup') {
-        st.setupTotal += res.added || 0;
+        st.setupTotal += (res.added || 0) + (res.updated || 0);
         if (st.kind === 'receipt') { finishSetup(); return; }
-        st.setup[st.kind] = res.added || 0;
+        st.setup[st.kind] = (res.added || 0) + (res.updated || 0);
+        remember();
         st.step = 'setup';
         render();
         return;
@@ -663,6 +736,7 @@
   }
 
   function finishSetup() {
+    setupMemory = null;
     var total = st.setupTotal;
     var onDone = st.opts.onDone;
     st.opts.onClose = null;
@@ -680,7 +754,7 @@
     st = {
       opts: {}, mode: 'add', step: 'menu', place: 'fridge', kind: 'fridge', rows: [],
       fromMenu: false, error: '', busy: false,
-      setup: { fridge: null, freezer: null, pantry: null }, setupTotal: 0
+      setup: { fridge: null, freezer: null, pantry: null }, setupTotal: 0, leftOut: null, showAll: false
     };
     for (var k in (over || {})) if (Object.prototype.hasOwnProperty.call(over, k)) st[k] = over[k];
     var builders = { menu: menuHtml, snap: snapHtml, review: reviewHtml, say: sayHtml, type: typeHtml, setup: setupHtml };

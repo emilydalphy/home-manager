@@ -155,6 +155,55 @@ def test_the_toast_names_the_thing_or_the_count():
     """CATCH — the house toast pattern."""
     assert _ka("k.savedLine(13, 'fridge', [])") == "13 things were added to the fridge."
     assert _ka("k.savedLine(1, 'pantry', ['rice'])") == "Rice was added to the pantry."
+    # Verify item 8: a photo that confirms tracked rows counts them apart.
+    assert _ka("k.savedLine(9, 'fridge', [], 4)") == "9 things were added to the fridge, and 4 updated."
+    assert _ka("k.savedLine(0, 'fridge', ['Milk', 'Eggs'], 2)") == "2 things in the fridge were updated."
+    assert _ka("k.savedLine(0, 'fridge', ['Milk'], 1)") == "Milk in the fridge was updated."
+
+
+ROWS_14 = json.dumps([{"item": f"Thing {i}", "quantity": "1"} for i in range(14)])
+
+
+@_needs_node
+def test_a_long_review_folds_and_has_its_eyebrow_and_a_way_out():
+    """CATCH (verify items 4, 8) — 14 rows show 7 and "+ 7 more" so Add
+    stays in view; the mockup's eyebrow; a quiet way out when it's all
+    wrong: another photo, say it again, or (setup) skip this shelf."""
+    html = _ka(f"k.htmlFor({{step: 'review', kind: 'fridge', rows: k.reviewRows({ROWS_14})}})")
+    assert html.count('data-ka="tick"') == 7 and ">+ 7 more</button>" in html
+    assert '<p class="ka-eyebrow">Kitchen · fridge photo</p>' in html
+    assert 'data-ka="retake">Try another photo</button>' in html
+    assert html.index('data-ka="save"') < html.index('data-ka="retake"')
+    every = _ka(f"k.htmlFor({{step: 'review', kind: 'fridge', showAll: true, rows: k.reviewRows({ROWS_14})}})")
+    assert every.count('data-ka="tick"') == 14 and "more</button>" not in every
+    said = _ka("k.htmlFor({step: 'review', kind: 'say', rows: k.reviewRows([{item: 'Milk'}])})")
+    assert '<p class="ka-eyebrow">Kitchen · what you said</p>' in said and 'data-ka="again">Say it again</button>' in said
+    setup = _ka("k.htmlFor({mode: 'setup', step: 'review', kind: 'freezer', rows: k.reviewRows([{item: 'Peas', sure: false}])})")
+    assert 'data-ka="skip">Skip the freezer</button>' in setup
+    assert 'data-ka="save" disabled' in setup, "nothing ticked: Skip is the way on"
+    left = _ka("k.htmlFor({step: 'review', kind: 'pantry', leftOut: {spices: ['Cumin'], regulars: ['Coffee']}, "
+               "rows: k.reviewRows([{item: 'Rice'}])})")
+    assert "Left out — spices and regulars live with Staples: Cumin, Coffee" in left
+
+
+@_needs_node
+def test_a_skipped_shelf_does_not_look_finished():
+    """CATCH (verify item 5) — a skip is the sand dash, not the celadon tick."""
+    html = _ka("k.htmlFor({mode: 'setup', step: 'setup', setup: {fridge: 4, freezer: 'skipped', pantry: null}})")
+    steps = re.findall(r'<span class="ka-ic([^"]*)">', html)
+    assert steps == [" is-done", " is-skipped", ""]
+    assert "is-skipped{background:var(--sand)" in KA_JS_PATH.read_text()
+
+
+def test_setup_progress_survives_a_close_and_esc_spares_typed_words():
+    """CATCH (verify items 4, 8) — closing the three-photo sheet part-way
+    keeps finished shelves for the next open; Escape with words typed in
+    Say it / Type it doesn't close the sheet (shell.js's courtesy)."""
+    js = KA_JS_PATH.read_text()
+    assert "if (st.mode === 'setup' && setupMemory) {" in js
+    assert js.count("remember();") >= 2
+    esc = js[js.index("if (e.key !== 'Escape'"): js.index("close();", js.index("if (e.key !== 'Escape'"))]
+    assert "/^(INPUT|TEXTAREA)$/.test(active.tagName)" in esc and "String(active.value || '').trim()) return;" in esc
 
 
 def test_the_sheet_saves_only_from_the_review_and_only_what_is_ticked():
@@ -241,42 +290,105 @@ def test_say_it_reads_a_sentence_into_a_draft_and_saves_nothing(signed_in):
 
 # ---------- the server: the one write, and its Undo ----------
 
-def test_add_writes_only_the_rows_sent_on_the_photos_shelf_and_undo_takes_them_back(signed_in):
-    """CATCH — the review's button: the rows sent land on the shelf the
-    photo was of (a frozen one in the freezer), recorded as that scan;
-    Undo takes a fresh row off and puts a merged one back as it was."""
+def _seed(item, quantity, location="fridge", source="grocery_checkoff", category="dairy"):
     conn = get_conn()
-    conn.execute(
-        "INSERT INTO inventory_items (household_id, item, quantity, source, category, location) "
-        "VALUES (1, 'Milk', '1 L', 'chat', 'dairy', 'fridge')")
+    cur = conn.execute(
+        "INSERT INTO inventory_items (household_id, item, quantity, source, category, location, created_at) "
+        "VALUES (1, ?, ?, ?, ?, ?, '2026-10-01 12:00:00')", (item, quantity, source, category, location))
     conn.commit()
     conn.close()
+    return cur.lastrowid
+
+
+def _get(item_id):
+    conn = get_conn()
+    try:
+        r = conn.execute("SELECT * FROM inventory_items WHERE id = ?", (item_id,)).fetchone()
+        return dict(r) if r else None
+    finally:
+        conn.close()
+
+
+def test_a_shelf_photo_counts_what_is_there_and_never_doubles_it(signed_in):
+    """CATCH (verify issue 1) — shop-ticked Milk 2 L + a fridge photo of
+    Milk 2 L stays 2 L (it used to become 4 L, then 6 L); the row is
+    confirmed (counted today), keeps its name and its bought date; a
+    scanned "milk 2%" is the same Milk; unmatched rows are added."""
+    from conftest import household_today
+    milk = _seed("Milk", "2 L")
+    photo = [{"item": "milk 2%", "quantity": "2 L", "category": "dairy", "location": "fridge"},
+             {"item": "Eggs", "quantity": "6", "category": "dairy", "location": "fridge"}]
+    first = signed_in.post("/api/whats-home/add", json={"kind": "fridge", "items": photo}).json()
+    assert (first["added"], first["updated"]) == (1, 1)
+    again = signed_in.post("/api/whats-home/add", json={"kind": "fridge", "items": photo}).json()
+    assert (again["added"], again["updated"]) == (0, 2)
+    row = _get(milk)
+    assert (row["item"], row["quantity"]) == ("Milk", "2 L")
+    assert row["counted_on"] == household_today().isoformat()
+    assert row["created_at"] == "2026-10-01 12:00:00" and row["source"] == "grocery_checkoff"
+    assert [(r["item"], r["quantity"]) for r in _rows()] == [("Milk", "2 L"), ("Eggs", "6")]
+    # A photo that read no amount confirms the row and keeps its amount.
+    signed_in.post("/api/whats-home/add", json={"kind": "fridge", "items": [{"item": "Milk", "location": "fridge"}]})
+    assert _get(milk)["quantity"] == "2 L"
+
+
+def test_a_purchase_still_adds_and_lands_on_the_tracked_name(signed_in):
+    """CATCH — a receipt / Say it is a purchase: it adds, onto the row
+    already tracked even when the scan wrote "milk 2%"."""
+    milk = _seed("Milk", "1 L")
+    signed_in.post("/api/whats-home/add", json={"kind": "receipt", "items": [{"item": "milk 2%", "quantity": "1 L", "category": "dairy"}]})
+    assert [(r["item"], r["quantity"]) for r in _rows()] == [("Milk", "2 L")]
+    assert _get(milk)["quantity"] == "2 L"
+
+
+def test_add_writes_only_the_rows_sent_and_undo_takes_them_back(signed_in):
+    """CATCH — the rows sent land on the photo's shelf (a frozen one in the
+    freezer), recorded as that scan; Undo puts a confirmed row back as it
+    was and takes the new ones off."""
+    _seed("Milk", "1 L", source="chat")
     res = signed_in.post("/api/whats-home/add", json={"kind": "fridge", "items": [
-        {"item": "Milk", "quantity": "1 L", "category": "dairy", "location": "fridge"},
+        {"item": "Milk", "quantity": "3 L", "category": "dairy", "location": "fridge"},
         {"item": "Eggs", "quantity": "6", "category": "dairy", "location": ""},
         {"item": "Peas", "quantity": "", "category": "frozen", "location": "freezer"},
     ]})
     assert res.status_code == 200, res.text
     body = res.json()
-    assert body["added"] == 3 and body["place"] == "fridge"
+    assert (body["added"], body["updated"], body["place"]) == (2, 1, "fridge")
     rows = {r["item"]: r for r in _rows()}
-    assert rows["Milk"]["quantity"] == "2 L" and rows["Milk"]["source"] == "scan_fridge"
+    assert rows["Milk"]["quantity"] == "3 L" and rows["Milk"]["source"] == "chat"
     assert rows["Eggs"]["location"] == "fridge" and rows["Eggs"]["source"] == "scan_fridge"
     assert rows["Peas"]["location"] == "freezer"
-
+    assert set(body["undo"]) == {"kind", "receipt_id"}, "the toast holds an id, nothing else"
     undo = signed_in.post("/api/whats-home/add/undo", json={"undo": body["undo"]})
     assert undo.status_code == 200 and undo.json()["undone"] == 3
-    after = _rows()
-    assert [(r["item"], r["quantity"], r["source"]) for r in after] == [("Milk", "1 L", "chat")]
+    assert [(r["item"], r["quantity"], r["source"]) for r in _rows()] == [("Milk", "1 L", "chat")]
+    # Once only.
+    assert signed_in.post("/api/whats-home/add/undo", json={"undo": body["undo"]}).json()["undone"] == 0
 
 
-def test_type_it_saves_one_thing_on_the_shelf_picked(signed_in):
-    """CATCH — Type it is what the person typed: saved straight away."""
+def test_undo_only_accepts_an_id_and_never_a_client_payload(signed_in):
+    """CATCH (verify issue 2) — the old payload (rows with fresh/before)
+    is refused; an id from another household or a made-up id is refused."""
+    rice = _seed("Rice", "1 bag", location="pantry", category="pantry")
+    forged = {"kind": "added", "rows": [{"item_id": rice, "fresh": False,
+                                         "before": {"quantity": "999 tonnes", "expiration_date": "not-a-date"}}]}
+    assert signed_in.post("/api/whats-home/add/undo", json={"undo": forged}).status_code == 400
+    assert signed_in.post("/api/whats-home/add/undo", json={"undo": {"kind": "added", "receipt_id": 999}}).status_code == 400
+    deleting = {"kind": "added", "rows": [{"item_id": rice, "fresh": True}]}
+    assert signed_in.post("/api/whats-home/add/undo", json={"undo": deleting}).status_code == 400
+    assert _get(rice)["quantity"] == "1 bag"
+
+
+def test_type_it_saves_one_thing_on_the_shelf_picked_and_reads_its_amount(signed_in):
+    """CATCH (verify issue 7) — Type it saves straight away, and a leading
+    amount comes off the name: "2 litres of milk" -> Milk · 2 litres."""
     res = signed_in.post("/api/whats-home/add", json={"kind": "type", "items": [{"item": "Greek yogurt", "location": "pantry"}]})
     assert res.status_code == 200, res.text
     assert res.json()["place"] == "pantry"
-    [row] = _rows()
-    assert (row["item"], row["location"], row["source"]) == ("Greek yogurt", "pantry", kitchen_add.TYPED_SOURCE)
+    signed_in.post("/api/whats-home/add", json={"kind": "type", "items": [{"item": "2 litres of milk", "location": "fridge"}]})
+    rows = [(r["item"], r["quantity"], r["location"], r["source"]) for r in _rows()]
+    assert rows == [("Greek yogurt", "", "pantry", kitchen_add.TYPED_SOURCE),
+                    ("Milk", "2 litres", "fridge", kitchen_add.TYPED_SOURCE)]
 
 
 def test_a_receipt_and_a_sentence_record_their_shelf_as_a_guess(signed_in):
@@ -290,9 +402,28 @@ def test_a_receipt_and_a_sentence_record_their_shelf_as_a_guess(signed_in):
     assert all(s in inventory.GUESSED_LOCATION_SOURCES for s in sources)
 
 
-def test_add_refuses_nothing_ticked_and_an_unknown_door(signed_in):
+@pytest.mark.parametrize("items", [
+    [],
+    [{"item": "x" * 81}],
+    [{"item": {"nested": 1}}],
+    [{"item": 42}],
+    [{"item": "Milk", "quantity": "-3"}],
+    [{"item": "Milk", "quantity": -3}],
+    [{"item": "Rice", "quantity": "999999 kg"}],
+    [{"item": "Milk", "quantity": "1" * 41}],
+    [{"item": "Milk", "quantity": {"a": 1}}],
+    [{"item": f"Thing {i}"} for i in range(81)],
+])
+def test_add_refuses_junk_with_a_400_and_writes_nothing(signed_in, items):
+    """CATCH (verify issue 3) — names are strings of at most 80 characters,
+    amounts are short and not negative or absurd, at most 80 rows."""
+    res = signed_in.post("/api/whats-home/add", json={"kind": "fridge", "items": items})
+    assert res.status_code == 400, res.text
+    assert _count() == 0
+
+
+def test_add_refuses_an_unknown_door(signed_in):
     """GUARD — a 400 in words, nothing written."""
-    assert signed_in.post("/api/whats-home/add", json={"kind": "fridge", "items": []}).status_code == 400
     assert signed_in.post("/api/whats-home/add", json={"kind": "garage", "items": [{"item": "Milk"}]}).status_code == 400
     assert signed_in.post("/api/whats-home/add/undo", json={"undo": {"kind": "removed"}}).status_code == 400
     assert _count() == 0
@@ -307,6 +438,34 @@ def test_undo_leaves_a_row_somebody_changed_since(signed_in):
     conn.close()
     assert signed_in.post("/api/whats-home/add/undo", json={"undo": body["undo"]}).json()["undone"] == 0
     assert _count() == 1
+
+
+def test_a_pantry_scan_names_the_spices_and_regulars_it_leaves_out(signed_in, monkeypatch):
+    """CATCH (verify item 8) — the Kitchen tab never shows spices or the
+    household's regulars, so the review leaves them out and SAYS so."""
+    from app import tools
+    tools.add_staple("Coffee") if hasattr(tools, "add_staple") else None
+    monkeypatch.setattr(main, "scan_pantry_photo", lambda b64, mt: [
+        {"item": "Rice", "category": "pantry", "confidence": "high"},
+        {"item": "cumin", "category": "pantry", "confidence": "high"},
+        {"item": "Coffee", "category": "pantry", "confidence": "high"},
+    ])
+    res = signed_in.post("/api/inventory/scan-pantry", files={"photo": ("p.jpg", _TINY_JPEG, "image/jpeg")}).json()
+    assert [i["item"] for i in res["items"]] == ["Rice"]
+    assert res["left_out"]["spices"] == ["Cumin"]
+    assert res["left_out"]["regulars"] == ["Coffee"]
+
+
+def test_say_it_keeps_named_dishes_whole_and_splits_a_comma_less_list_of_foods():
+    """CATCH (verify issue 6) — "mac and cheese" / "fish and chips" stay one
+    row; "salt and pepper" goes in the pantry; "milk eggs butter" (dictation
+    with no commas) is three rows; anything less certain stays as said."""
+    rows = kitchen_add.read_said_items("mac and cheese, fish and chips and salt and pepper")
+    assert [r["item"] for r in rows] == ["Mac and cheese", "Fish and chips", "Salt and pepper"]
+    assert rows[2]["location"] == "pantry"
+    assert [r["item"] for r in kitchen_add.read_said_items("milk eggs butter")] == ["Milk", "Eggs", "Butter"]
+    assert [r["item"] for r in kitchen_add.read_said_items("baby spinach")] == ["Baby spinach"]
+    assert [r["item"] for r in kitchen_add.read_said_items("leftover thai curry")] == ["Leftover thai curry"]
 
 
 # ---------- C5: the Kitchen in first-run setup ----------
@@ -463,4 +622,4 @@ def test_set_up_later_only_moves_on():
     assert ONBOARDING.index('src="/static/api.js"') < ONBOARDING.index('src="/static/kitchen-add.js"')
     # Its markup is outside the reveal, which is hidden while it shows.
     assert ONBOARDING.index('<div id="kitchen-intro"') < ONBOARDING.index('<div id="step-reveal"')
-    assert "Your first week will use what&rsquo;s already here." in _intro_markup()
+    assert "Your first week can use what&rsquo;s already here." in _intro_markup()

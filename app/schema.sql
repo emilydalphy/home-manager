@@ -2449,3 +2449,17 @@ CREATE TABLE IF NOT EXISTS inventory_removals (
     restored_at TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_inventory_removals_household ON inventory_removals (household_id, removed_at);
+
+-- The Undo for "Add to the kitchen" (Loop Board C2, 2026-10-27, branch
+-- inventory/kitchen-add): one row per save, holding what each touched
+-- inventory row was before it (or that the save created it) and the rev it
+-- left. The toast carries only this row's id, so an Undo can only put back
+-- what this household's own save changed. `undone_at` set = the Undo ran.
+CREATE TABLE IF NOT EXISTS kitchen_add_receipts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    rows_json TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    undone_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_kitchen_add_receipts_household ON kitchen_add_receipts (household_id, created_at);

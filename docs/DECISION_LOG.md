@@ -13,33 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
-- **"Add to the kitchen" sheet + the Kitchen in first-run setup**
-  (2026-10-27, Loop Board C2 + C5; branch `inventory/kitchen-add`, stacked
-  on `inventory/kitchen-tab` b0bc508; tests `tests/test_kitchen_add.py`).
-  `static/kitchen-add.js` (help-sheet.js pattern: own markup + injected
-  token-only CSS, Api.json) is the one sheet for the Kitchen tab's dock
-  (`openKitchenAdd`: 'snap' → photo step on the shelf showing, 'add' → Snap
-  a shelf / Scan a receipt / Say it / Type it) and for onboarding's three
-  photos. NOTHING IS SAVED BEFORE THE REVIEW: scans and
-  `/api/whats-home/read-said` only read; `/api/whats-home/add` writes the
-  ticked rows (`kitchen_add.add_items`, one transaction through
-  `_add_to_inventory`) and returns an Undo (`/api/whats-home/add/undo`:
-  fresh rows deleted, merged rows restored, skipped if `rev` moved). Type
-  it saves its one thing directly. "Isn't sure of" = the scan tool's
-  existing `confidence: low`, else a "?" / hedge / "x or y" / container
-  name (`kitchen_add.is_sure`; no flag → ticked); verified with one real
-  fridge scan. New `/api/inventory/scan-freezer` (+ `scan_freezer` source);
-  Say it is deterministic (no model call) and its shelves are recorded as
-  guesses (`kitchen_said` in GUESSED_LOCATION_SOURCES). C5: one
-  welcome-look screen right BEFORE the first week is drafted —
-  `finishSetupAndReveal` awaits `kitchenStepBeforeDraft()` ahead of the
-  saves and the draft (story: "so that my first plan can use what I already
-  have"); not in ALL_STEPS; "Set up later" goes straight on to drafting;
-  skipped for a stocked kitchen and on the "Not now" to Claude path. Why
-  after the Claude yes: the photos go to Claude. Why before the saves: a
-  reload mid-photos resumes the answers draft instead of leaving a finished
-  household with no week. (First built over the reveal, alongside the
-  draft; moved the same day — the week couldn't use the photos.)
+- **"Add to the kitchen" + the Kitchen in first-run setup** (2026-10-27,
+  C2 + C5, `inventory/kitchen-add`, `tests/test_kitchen_add.py`). One sheet,
+  `static/kitchen-add.js`, for the dock and onboarding; nothing is saved
+  before its review, unsure scan rows start unticked. A shelf PHOTO counts
+  (a tracked row on that shelf is confirmed: amount set, `counted_on`
+  today), a receipt / Say it / Type it adds. Undo record kept server-side
+  (`kitchen_add_receipts`). C5 sits right before the first draft so the
+  week can use what's home; "Set up later" goes straight on.
+  Why: a photo of the fridge is a count, not a shop — summing doubled the
+  milk on every photo (verify 2026-10-27).
 
 - **A fifth tab, Kitchen: what's home, and one-tap fixes** (2026-10-26,
   Loop Board C1 + C3; Emily approved the nav change that day, decision 2 —
