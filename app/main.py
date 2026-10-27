@@ -64,7 +64,19 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 
 logger = logging.getLogger("home_manager")
 
-app = FastAPI(title="Home Manager")
+# FastAPI's own API pages (/docs, /redoc, /openapi.json) are off unless
+# SHOW_API_DOCS=1 (security audit, 2026-10-27). They are a full map of every
+# route and field, which is no use to a household and a head start to anyone
+# probing the app. Nothing in static/ reads them. Turn them on locally with
+# SHOW_API_DOCS=1 when you want the map; never set it on Railway.
+_SHOW_API_DOCS = os.environ.get("SHOW_API_DOCS") == "1"
+
+app = FastAPI(
+    title="Home Manager",
+    docs_url="/docs" if _SHOW_API_DOCS else None,
+    redoc_url="/redoc" if _SHOW_API_DOCS else None,
+    openapi_url="/openapi.json" if _SHOW_API_DOCS else None,
+)
 
 # Shared-password gate over every non-public route. Registered before the
 # routes below so it wraps all of them, including the /static mount.

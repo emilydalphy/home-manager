@@ -143,3 +143,36 @@ def test_an_ephemeral_database_is_called_out_loudly(monkeypatch, caplog):
 
     monkeypatch.setenv("DB_PATH", "/data/home_manager.db")
     assert backup_module.warn_if_database_is_ephemeral() is False
+
+
+def test_a_snapshot_is_readable_by_the_app_alone(backup_dir):
+    """
+    A snapshot is every household's data in one file. It and its folder are
+    owner-only (security audit, 2026-10-27), whatever the process umask
+    would have made them.
+    """
+    old = os.umask(0o022)
+    try:
+        snapshot = backup_module.create_backup()
+    finally:
+        os.umask(old)
+    assert snapshot
+    assert os.stat(snapshot).st_mode & 0o777 == 0o600
+    assert os.stat(backup_dir).st_mode & 0o777 == 0o700
+
+
+def test_an_existing_open_folder_is_closed_up(backup_dir):
+    """A volume that already has a world-readable backups folder from before
+    this change gets it tightened on the next run, not only new ones."""
+    backup_dir.mkdir(mode=0o755)
+    os.chmod(backup_dir, 0o755)
+    assert backup_module.create_backup()
+    assert os.stat(backup_dir).st_mode & 0o777 == 0o700
+
+
+def test_a_filesystem_that_refuses_chmod_still_gets_its_copy(backup_dir, monkeypatch):
+    def refuse(*a, **k):
+        raise PermissionError("no chmod here")
+    monkeypatch.setattr(backup_module.os, "chmod", refuse)
+    snapshot = backup_module.create_backup()
+    assert snapshot and os.path.exists(snapshot)

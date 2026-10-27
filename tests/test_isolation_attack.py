@@ -74,13 +74,12 @@ B_SELF_DESTRUCT = [
     ("GET", "/api/household/leave"),
     ("POST", "/api/household/delete"),
 ]
-# Not attacked by id: no session involved, or the framework's own pages.
+# Not attacked by id: no session involved. (FastAPI's own /docs, /redoc and
+# /openapi.json are off — test_api_docs_off.py — so they are not routes.)
 SKIP = {
     ("GET", "/login"), ("POST", "/login"), ("GET", "/logout"),
     ("GET", "/join"), ("POST", "/api/join"), ("GET", "/goodbye"),
     ("GET", "/healthz"), ("GET", "/robots.txt"), ("GET", "/favicon.ico"),
-    ("GET", "/openapi.json"), ("GET", "/docs"), ("GET", "/docs/oauth2-redirect"),
-    ("GET", "/redoc"),
     # Keyed by a 128-bit token, not an id; B has none of A's.
     ("GET", "/api/share/{token}"), ("GET", "/share/{token}"),
     ("GET", "/api/member-share/{token}"), ("GET", "/member-share/{token}"),
@@ -377,3 +376,139 @@ def test_household_b_cannot_read_or_change_anything_of_household_as(a_household_
     a = TestClient(app)
     a.post("/login", data={"password": "test-password", "next": "/"}, follow_redirects=False)
     assert A_GROCERY in a.get("/api/grocery-list").text
+
+
+# --- The photo routes, with a real image (2026-10-27) -----------------------
+#
+# The JSON rounds above can't reach an upload route: it takes multipart, so
+# every round was refused at the door with a 422. These send a real (tiny,
+# valid) PNG, so each route gets past its image checks and into the code
+# that runs on a household's behalf. The model is stubbed — it sees only the
+# picture and B's typed hint, never a household id — and records that it
+# was reached, so a route that quietly stopped at the door can't pass.
+
+def _tiny_png() -> bytes:
+    """A real 1x1 PNG: signature, IHDR, IDAT, IEND, with correct CRCs."""
+    import struct
+    import zlib
+
+    def chunk(kind: bytes, data: bytes) -> bytes:
+        return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data) & 0xFFFFFFFF)
+
+    ihdr = struct.pack(">IIBBBBB", 1, 1, 8, 2, 0, 0, 0)
+    idat = zlib.compress(b"\x00\xff\x80\x40")
+    return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", ihdr) + chunk(b"IDAT", idat) + chunk(b"IEND", b"")
+
+
+def _is_upload(annotation) -> bool:
+    from fastapi import UploadFile
+    from starlette.datastructures import UploadFile as StarletteUpload
+    args = typing.get_args(annotation) or (annotation,)
+    return any(isinstance(a, type) and issubclass(a, (UploadFile, StarletteUpload)) for a in args)
+
+
+def _upload_routes():
+    out = []
+    for method, route in _routes():
+        dep = getattr(route, "dependant", None)
+        if dep and any(_is_upload(b.field_info.annotation) for b in dep.body_params):
+            out.append((method, route))
+    return out
+
+
+UPLOAD_ROUTES = {
+    ("POST", "/api/inventory/scan-receipt"),
+    ("POST", "/api/inventory/scan-fridge"),
+    ("POST", "/api/inventory/scan-pantry"),
+    ("POST", "/api/grocery-list/scan"),
+    ("POST", "/api/recipes/import-photo"),
+}
+
+
+@pytest.mark.live_clock("recipe_photos.sweep_pending reads file mtimes, which nothing pins")
+def test_household_b_photo_scans_reach_the_model_and_touch_nothing_of_as(
+        a_household_named, monkeypatch, tmp_path):
+    import app.main as main_module
+    from app import agent, recipe_photos
+
+    photos = tmp_path / "recipe_photos"
+    monkeypatch.setenv("RECIPE_PHOTOS_DIR", str(photos))
+    png = _tiny_png()
+    assert recipe_photos.sniff_media_type(png) == "image/png"
+
+    seen = []
+
+    def scan_stub(name):
+        def stub(image_b64, media_type, *a, **k):
+            import base64
+            assert base64.b64decode(image_b64) == png and media_type == "image/png"
+            seen.append(name)
+            return [{"item": "Plain toast bread", "quantity": "1", "category": "bakery"}]
+        return stub
+
+    def read_photos_stub(images, hint="", *a, **k):
+        import base64
+        assert [base64.b64decode(b) for b, _ in images] == [png]
+        seen.append("import-photo")
+        return {"found": True, "recipes": [{
+            "name": "Plain toast",
+            "default_servings": 1,
+            "ingredients": [{"item": "bread", "qty": "1 slice", "category": "bakery"}],
+            "instructions": ["Toast the bread."],
+        }]}
+
+    monkeypatch.setattr(main_module, "scan_receipt_image", scan_stub("scan-receipt"))
+    monkeypatch.setattr(main_module, "scan_fridge_photo", scan_stub("scan-fridge"))
+    monkeypatch.setattr(main_module, "scan_pantry_photo", scan_stub("scan-pantry"))
+    monkeypatch.setattr(main_module, "scan_grocery_list_image", scan_stub("grocery-scan"))
+    monkeypatch.setattr(agent, "read_recipe_from_photos_llm", read_photos_stub)
+
+    routes = _upload_routes()
+    assert {(m, r.path) for m, r in routes} == UPLOAD_ROUTES, (
+        "an upload route was added or removed — add it to UPLOAD_ROUTES and stub its model call")
+
+    tokens = _seed_a()
+    b = households.create_household("Beta Attackers", B_PASSPHRASE)
+    client = TestClient(app, raise_server_exceptions=False)
+    assert client.post("/login", data={"password": B_PASSPHRASE, "next": "/"},
+                       follow_redirects=False).status_code == 303
+    assert client.get("/api/whoami").json()["household_id"] == b
+
+    secrets_never_sent = ["Zqs", A_NAME, *tokens]
+    ids = _a_ids()
+    before = _owned_state()
+    leaks, damage, refused = [], [], []
+    attacks = [{"id": ids[0], "name": ""}, {"id": ids[-1], "name": ""}] + [
+        {"id": ids[0], "name": name} for name in A_NAMES]
+
+    for attack in attacks:
+        for method, route in routes:
+            dep = route.dependant
+            form, files = {}, {}
+            for p in dep.body_params:
+                if _is_upload(p.field_info.annotation):
+                    # Optional second photo left empty; the first is the PNG.
+                    if p.field_info.is_required():
+                        files[p.alias] = ("page.png", png, "image/png")
+                else:
+                    form[p.alias] = str(_value_for(p.name, p.field_info.annotation, attack))
+            ratelimit.reset()
+            res = client.request(method, route.path, data=form, files=files, follow_redirects=False)
+            if res.status_code != 200:
+                refused.append(f"{method} {route.path} -> {res.status_code} {res.text[:160]}")
+            found = [s for s in secrets_never_sent if s in res.text]
+            if not attack["name"] and "Zqn" in res.text:
+                found.append("Zqn")
+            if found:
+                leaks.append(f"{method} {route.path} {form} showed {found}")
+            damage += [f"{method} {route.path} {form}: {d}" for d in _damage(before, _owned_state())]
+
+    assert not refused, "a photo route never got past the door:\n" + "\n".join(refused)
+    assert set(seen) == {"scan-receipt", "scan-fridge", "scan-pantry", "grocery-scan", "import-photo"}
+    assert not leaks, "household B read household A's data through a photo route:\n" + "\n".join(leaks)
+    assert not damage, "household B changed household A's data through a photo route:\n" + "\n".join(damage)
+
+    # The cookbook photo B uploaded is kept under B's folder, never A's.
+    a_dir, b_dir = photos / str(A), photos / str(b)
+    assert not a_dir.exists() or not any(a_dir.rglob("*.png")), "B's photo landed in A's folder"
+    assert any((b_dir / "pending").glob("*.png")), "B's photo was not kept under B"
