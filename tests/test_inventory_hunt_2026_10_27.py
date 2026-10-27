@@ -106,6 +106,29 @@ def test_a_recipe_written_for_the_table_still_takes_its_amount(signed_in):
     assert _kitchen(client) == {"Chicken thighs": "1 lb"}
 
 
+def test_a_package_comes_off_once_for_the_whole_batch(signed_in):
+    client = signed_in
+    for name in ("Alex", "Sam", "Rae", "Jo"):
+        tools.add_member(name)
+    tools.add_recipe(
+        "Pea Bake",
+        ingredients=[{"item": "Frozen peas", "qty": "1 bag", "category": "frozen"}],
+        default_servings=4, prep_time_minutes=10, cook_time_minutes=30,
+    )
+    client.post("/api/inventory/update", json={"item": "Frozen peas", "action": "set",
+                                              "quantity": "3 bags", "location": "freezer"})
+    dates = _next_week()
+    plan_id = tools.create_weekly_plan(dates[0])["weekly_plan_id"]
+    cook = tools.plan_meal(dates[0], "Pea Bake", slot="dinner", weekly_plan_id=plan_id)
+    tools.plan_meal(dates[1], "Pea Bake", slot="dinner", weekly_plan_id=plan_id,
+                    derived_from={"links_to": f"{dates[0]}:dinner"})
+    tools.repair_leftover_chains(plan_id)
+
+    client.post("/api/cooker/check-meal", json={"entry_id": cook["entry_id"], "status": "done"})
+
+    assert _kitchen(client) == {"Frozen peas": "2 bags"}, "one bag bought for the batch, one bag used"
+
+
 # ---------- 2. a second purchase in a sibling unit adds up ----------
 
 def test_buying_ounces_onto_pounds_adds_up_and_can_be_used(signed_in):
@@ -137,6 +160,9 @@ def test_an_odd_volume_total_reads_in_the_finer_unit():
 
     assert inventory._merged_quantity("2 cups", "3 tbsp") == "35 tbsp"
     assert inventory._merged_quantity("1 kg", "250 g") == "1.25 kg"
+    # The order they were bought in does not change the answer.
+    assert inventory._merged_quantity("12 oz", "1 lb") == inventory._merged_quantity("1 lb", "12 oz") == "1.75 lbs"
+    assert inventory._merged_quantity("1 kg", "1 g") == "1001 g"
     # No family between them: left joined, as before.
     assert inventory._merged_quantity("1 lb", "500 g") == "1 lb + 500 g"
 

@@ -329,9 +329,13 @@ def deplete_inventory_for_meal(entry_id: int) -> dict:
         # _use_inventory_row_by_id to compute an exact new remaining total
         # — see units_reconciled on the result for whether the tracked row
         # was actually updated or just left as-is.
-        qty_used = _defrost._batch_quantity(
-            ing, batch_factor * _defrost._night_scale(ing, night, recipe.get("default_servings")),
-        ) or qty_used
+        # A package is bought once for the whole batch ("1 bag" of peas
+        # feeds both nights), so it comes off as written, never times the
+        # batch — the ingest's own `elif package` rule.
+        if not _quantities.package_unit(qty_used):
+            qty_used = _defrost._batch_quantity(
+                ing, batch_factor * _defrost._night_scale(ing, night, recipe.get("default_servings")),
+            ) or qty_used
         result = _use_inventory_row_by_id(match["id"], qty_used)
         depleted.append({"ingredient": ing_name, "item": match["item"], "result": result})
     return {"entry_id": entry_id, "depleted": depleted, "queued_for_review": queued, "left_alone": left_alone}

@@ -424,12 +424,18 @@ def _merged_quantity(existing_qty: str, adding_qty: str) -> str:
     if converted is None:
         return merged
     total = have[0] + converted
-    if _quarter_clean(total):
-        return _quantities._format_quantity(total, have[1])
-    in_finer = _quantities._convert_to_unit(total, have[1], more[1])
-    if in_finer is not None and in_finer > total:
-        return _quantities._format_quantity(round(in_finer, 1), more[1])
-    return _quantities._format_quantity(round(total, 2), have[1])
+    in_other = _quantities._convert_to_unit(total, have[1], more[1])
+    if in_other is None:
+        return _quantities._format_quantity(round(total, 2), have[1])
+    # Whichever order the two were bought in, the same answer: the coarser
+    # unit when the total lands on a clean quarter there (12 oz + 1 lb =
+    # 1.75 lbs, 500 ml + 1 l = 1.5 l), the finer one otherwise.
+    (coarse, coarse_unit), (fine, fine_unit) = sorted(
+        [(total, have[1]), (in_other, more[1])], key=lambda pair: pair[0]
+    )
+    if _quarter_clean(coarse):
+        return _quantities._format_quantity(coarse, coarse_unit)
+    return _quantities._format_quantity(round(fine, 1), fine_unit)
 
 
 def _add_to_inventory(
