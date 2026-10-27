@@ -404,7 +404,10 @@ from .household import (  # noqa: F401
     remove_member_dietary_restriction,
 )
 from .inventory import (  # noqa: F401
+    CannotFreeze,
     InvalidInventoryLocation,
+    freeze_item,
+    unfreeze_item,
     _LEADING_NUM_RE,
     _add_to_inventory,
     _step_quantity_text,
@@ -422,6 +425,43 @@ from .inventory import (  # noqa: F401
     update_inventory,
     update_inventory_items,
 )
+# "Use these up" (Loop Board B1/B2, 2026-10-26): the one list of what the
+# week should use, shared by the pre-draft step and the draft. Aliased: a
+# bare `candidates` in this flat namespace would say nothing, and the
+# module itself is never re-exported (test_module_name_collisions).
+from .use_up import candidates as use_up_candidates  # noqa: F401
+from .use_up import selected as use_up_selected  # noqa: F401
+# The Kitchen TAB (Loop Board C1/C3, 2026-10-26) — `home` in code, because
+# `kitchen` already means Cook. See whats_home.py.
+from .whats_home import (  # noqa: F401
+    InvalidAmount,
+    get_whats_home,
+    get_whats_home_item,
+    set_amount_left,
+    used_up_item,
+    threw_out_item,
+    move_item as move_kitchen_item,
+    restore_item as restore_kitchen_item,
+)
+# "Add to the kitchen" (Loop Board C2, 2026-10-27): the scan review's rows
+# (with `sure`), "Say it"'s sentence reader, and the one write the review
+# makes. Aliased: bare `review_items` / `add_items` would say nothing here.
+from .kitchen_add import (  # noqa: F401
+    review_items as kitchen_review_items,
+    left_out as kitchen_left_out,
+    read_said_items,
+    add_items as add_kitchen_items,
+    undo_added as undo_kitchen_add,
+)
+# "Quick check: still have these?" (Loop Board A4): the few kitchen rows
+# Pomona is least sure of, asked when the week is planned — and the same
+# chips on the Kitchen tab's freezer segment (C4), so one answer counts in
+# both places. (No bare `from . import inventory_check`: a re-exported name
+# equal to a module name fails tests/test_module_name_collisions.py.)
+from .inventory_check import candidates as inventory_check_candidates  # noqa: F401
+from .inventory_check import answer as answer_inventory_check  # noqa: F401
+from .use_up import resolve as use_up_resolve  # noqa: F401
+from .use_up import undo_resolve as use_up_undo_resolve  # noqa: F401
 # Read-side helpers for the leftover chains repair_leftover_chains records
 # (see leftovers.py). Not agent tools — the assistant has no reason to
 # call these — but re-exported so agent.py's prep-schedule context and any

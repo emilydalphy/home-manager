@@ -477,6 +477,13 @@ def _readable_guest_counts(raw) -> dict:
     return clean
 
 
+def _row_get(row, key):
+    try:
+        return row[key]
+    except (IndexError, KeyError):
+        return None
+
+
 def _intake_row_to_dict(row) -> dict:
     return {
         "intake_id": row["id"],
@@ -497,6 +504,8 @@ def _intake_row_to_dict(row) -> dict:
         # Re-plan Option B (2026-10-18): what was changed for THIS week only
         # — {} when nothing was. See usual_week.normalize_week_answers.
         "week_answers": json.loads(row["week_answers_json"] or "{}"),
+        # "Use these up" (B1): inventory ids switched off for this week.
+        "use_up_off": json.loads(_row_get(row, "use_up_off_json") or "[]"),
         "moods": json.loads(row["moods_json"]),
         "cuisines": json.loads(row["cuisines_json"]),
         "freeform": row["freeform"],
@@ -560,6 +569,7 @@ def save_week_intake(
     weekday_lunches: dict | None = None,
     brought_over: list | None = None,
     week_answers: dict | None = None,
+    use_up_off: list | None = None,
 ) -> dict:
     """
     Record the household's answers for a week, as a NEW REVISION.
@@ -613,6 +623,11 @@ def save_week_intake(
     answers changed while re-planning, for this week only — checked and
     shaped by usual_week.normalize_week_answers; {} clears it. The usual
     answers in Settings are never touched from here.
+
+    use_up_off is "Use these up" (Loop Board B1, 2026-10-26): the
+    inventory_items ids the household switched OFF before the draft. Every
+    other row tools/use_up.candidates offers is planned in (B2). Whole list
+    each time; [] switches everything back on.
     """
     date.fromisoformat(week_start)  # fail loudly on a malformed week
     if brought_over is not None:
@@ -620,6 +635,13 @@ def save_week_intake(
     if week_answers is not None:
         from . import usual_week as _usual_week
         week_answers = _usual_week.normalize_week_answers(week_answers)
+    if use_up_off is not None:
+        if not isinstance(use_up_off, list):
+            raise ValueError("use_up_off must be a list of inventory item ids.")
+        try:
+            use_up_off = sorted({int(i) for i in use_up_off if not isinstance(i, bool)})
+        except (TypeError, ValueError):
+            raise ValueError("use_up_off must be a list of inventory item ids.")
     period = period_dates(week_start, day_count)
     week_days = set(period)
     if weekday_lunches is not None:
@@ -718,6 +740,7 @@ def save_week_intake(
                 "night_tags": {}, "guest_counts": {}, "packed_lunch_days": [],
                 "skipped_days": [], "moods": [], "cuisines": [], "freeform": "",
                 "weekday_lunches": {}, "brought_over": [], "week_answers": {},
+                "use_up_off": [],
             }
 
             def pick(new, key, _base=base):
@@ -762,8 +785,9 @@ def save_week_intake(
                     night_tags_json, guest_counts_json, packed_lunch_days_json,
                     skipped_days_json, moods_json, cuisines_json, freeform,
                     household_snapshot_json, preferences_snapshot_json,
-                    weekday_lunches_json, brought_over_json, week_answers_json
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    weekday_lunches_json, brought_over_json, week_answers_json,
+                    use_up_off_json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     household_id(), week_start, revision,
@@ -783,6 +807,7 @@ def save_week_intake(
                     json.dumps(lunches_saved),
                     json.dumps(pick(brought_over, "brought_over")),
                     json.dumps(pick(week_answers, "week_answers")),
+                    json.dumps(pick(use_up_off, "use_up_off")),
                 ),
             )
             conn.commit()

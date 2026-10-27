@@ -263,6 +263,21 @@
     <div id="tonight-rows"></div>
   </div>
 
+  <!-- The Kitchen tab's item sheet (Loop Board C3, 2026-10-26): one row of
+       what's home, "How much is left?" as three chips, and four one-tap
+       fixes, each with a toast and Undo (openHomeItemSheet /
+       homeItemSheetHtml in shell.js). Same shape as the sheet above. -->
+  <div id="home-item-scrim" hidden></div>
+  <div id="home-item-sheet" hidden role="dialog" aria-labelledby="home-item-title">
+    <div class="ask-sheet-handle" id="home-item-handle"></div>
+    <div class="kit-sheet-titlerow">
+      <span class="kit-sheet-title" id="home-item-title"></span>
+      <span class="kit-sheet-hairline"></span>
+      <button type="button" class="kit-sheet-close" id="home-item-close" aria-label="Close">&times;</button>
+    </div>
+    <div id="home-item-body"></div>
+  </div>
+
   <!-- The meal screen's "Add something" sheet (Emily, 2026-09-13): a
        starch, a green, a sauce written for this dish, each row the tap
        that adds it, and one line to type anything else
@@ -500,6 +515,11 @@
   <!-- The "Need a hand?" sheet behind a round `?` (Plan › Check the week;
        the same file the Week 1 screen loads) — openHelpSheet({screenName}). -->
   <script src="/static/help-sheet.js"></script>
+  <!-- "Add to the kitchen" (Loop Board C2) — window.KitchenAdd; the Kitchen
+       tab's "Snap a shelf" / "+ Add" open it (openKitchenAdd). The same file
+       first-run setup loads. dictation.js is its "Say it" mic. -->
+  <script src="/static/dictation.js"></script>
+  <script src="/static/kitchen-add.js"></script>
   <!-- The first-open tour (2026-10-18) — window.PomonaTour; shell.js starts it. -->
   <script src="/static/tour.js"></script>
   <script src="/static/shell.js"></script>

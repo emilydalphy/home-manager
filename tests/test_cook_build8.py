@@ -47,6 +47,7 @@ def test_inventory_and_recipes_are_rows_in_one_card():
     tiles = _fn("cookMoreRowsHtml")
     assert '<div class="kit-rows">' in tiles
     # Recipes, Add from a link, Add from a cookbook (recipe photo import,
-    # 2026-09-13), Inventory.
-    assert tiles.count('class="kit-row"') == 4
+    # 2026-09-13). Inventory was the fourth until 2026-10-26, when it left
+    # for its own tab (Kitchen, TABS key 'home' — Loop Board C1).
+    assert tiles.count('class="kit-row"') == 3
     assert ".kit-rows {" in SHELL_CSS and ".kit-row {" in SHELL_CSS

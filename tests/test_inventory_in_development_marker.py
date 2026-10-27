@@ -27,12 +27,17 @@ def test_the_constants_are_gone():
     assert "INVENTORY_IN_DEVELOPMENT" not in SHELL_CSS
 
 
-def test_cook_more_inventory_row_has_no_pill():
+def test_the_inventory_row_and_its_pill_left_cooks_more_sheet():
+    """
+    cookMoreRowsHtml()'s Inventory row — the pill's one entry point — is
+    gone (2026-10-26, Loop Board C1): what's home has its own tab,
+    Kitchen (TABS key 'home'), and the tab is a real feature, so it never
+    prints the pill (tests/test_kitchen_tab.py). Card A5 removed the
+    constant itself (test_the_constants_are_gone above).
+    """
     fn = _function(SHELL_JS, "function cookMoreRowsHtml()", "function openCookMoreSheet()")
-    assert 'data-sheet="inventory"' in fn  # the row itself stays
-    inv = fn[fn.index('data-sheet="inventory"'):]
-    assert "In development" not in inv
-    assert "pill" not in inv
+    assert 'data-sheet="inventory"' not in fn
+    assert "In development\">Inventory" not in fn
 
 
 def test_sheet_has_no_in_development_line():

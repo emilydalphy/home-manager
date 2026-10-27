@@ -79,6 +79,9 @@ ENTRY_HEADING = re.compile(r"^- \*\*(20\d\d-\d\d-\d\d) — ", re.M)
 # lines, 294 dated entries, newest dated heading 2026-10-19 — the slack had
 # passed MAX_FLOOR_SLACK.
 
+# Raised 2026-10-26 (inventory/kitchen-tab): the log had reached 29012
+# lines, 294 dated entries, newest dated heading 2026-10-19, and the
+# 24000 floor no longer caught a loss of a thousand lines.
 LINE_FLOOR = 28500
 ENTRY_FLOOR = 290
 NEWEST_ENTRY_ON_OR_AFTER = "2026-10-19"

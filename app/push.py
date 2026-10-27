@@ -80,7 +80,7 @@ _TOKEN_RE = re.compile(r"^[0-9a-fA-F]{32,200}$")
 
 # Where a tap may land. The shell's own routes — a notification is never a
 # way to send the app somewhere else.
-ALLOWED_PATHS = frozenset({"/", "/week", "/grocery", "/kitchen"})
+ALLOWED_PATHS = frozenset({"/", "/week", "/grocery", "/kitchen", "/home"})
 
 # Reasons APNs gives for a token that will never work again. Deliberately
 # NOT BadDeviceToken or DeviceTokenNotForTopic: those are also what a

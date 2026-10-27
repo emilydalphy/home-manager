@@ -956,6 +956,32 @@
   .reveal-quiet-link:hover { color: var(--ivory-ink); }
   body.reveal-active { padding-bottom: 150px; }
 
+  /* ---------- The Kitchen, introduced (Loop Board C5, 2026-10-27) ----------
+     One screen in the welcome-flow look (one idea, big type, lots of air),
+     laid over the last question right before the first week is drafted,
+     so the week can use what's home. "Set up later" goes straight on to
+     drafting. Its photos are static/kitchen-add.js's "Show me your
+     kitchen" sheet, the same review-before-save the Kitchen tab uses. */
+  #kitchen-intro {
+    position: fixed; inset: 0; z-index: 50;
+    overflow-y: auto;
+    background: var(--spruce);
+    padding: 24px;
+    box-sizing: border-box;
+  }
+  #kitchen-intro[hidden] { display: none; }
+  #kitchen-intro .intro-screen { min-height: calc(100dvh - 48px); max-width: 520px; margin: 0 auto; }
+  .kitchen-intro-later {
+    background: none; border: none; padding: 0; margin: 0; min-height: 44px; width: 100%;
+    font-family: var(--font-body); font-weight: 600; font-size: 15px;
+    color: var(--ivory-ink-muted); cursor: pointer;
+  }
+  .kitchen-intro-later:hover { color: var(--ivory-ink); }
+  .kitchen-intro-note {
+    margin: 0; text-align: center;
+    font-family: var(--font-body); font-size: 14px; line-height: 1.4; color: var(--ivory-ink-muted);
+  }
+
   /* ---------- The welcome flow (Loop Board "Onboarding: the welcome flow",
      Emily 2026-09-10; mockups + copy approved the same day:
      https://claude.ai/code/artifact/9137ee30-533a-44ba-87ef-155ec4dcde7b).
@@ -1254,6 +1280,8 @@
 <!-- The mic on "Anything else I should know?" (2026-10-04). Shared with
      inventory.html; this page is standalone, so it loads its own copy. -->
 <script src="/static/dictation.js"></script>
+<!-- "Show me your kitchen" (Loop Board C5) — window.KitchenAdd, the Kitchen tab's own sheet. -->
+<script src="/static/kitchen-add.js"></script>
 <!-- The setup question screens' code, shared with Plan a week's "Same as
      last week?" (re-plan Option B, 2026-10-18) — see the file's header. -->
 <script src="/static/setup-screens.js"></script>
@@ -1914,6 +1942,23 @@
      every meal (Loop Board "Week 1: day-card carousel", 2026-09-18). The one
      apricot is in the foot. The markup each renderer fills — see the
      .reveal-* rules above and the "First-plan reveal" script section. -->
+  <!-- The Kitchen, introduced (Loop Board C5). Shown right before the first
+       week is drafted (kitchenStepBeforeDraft), so the week can use what's
+       home. No typing: a photo per shelf, each skippable, or "Set up later". -->
+  <div id="kitchen-intro" role="dialog" aria-modal="true" aria-labelledby="kitchen-intro-title" hidden>
+    <div class="intro-screen">
+      <div class="intro-body has-lead">
+        <div class="intro-glyph"><svg width="88" height="88" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5.5" y="2.8" width="13" height="18.4" rx="2.6"></rect><path d="M5.5 10h13"></path><path d="M9 6.4v1.8"></path><path d="M9 12.6v2.2"></path></svg></div>
+        <h1 class="intro-title is-lead" id="kitchen-intro-title">I&rsquo;ll keep track of what&rsquo;s home.</h1>
+        <p class="intro-lead">Tick things off at the shop and they&rsquo;re in. Cook, and they come out. I&rsquo;ll plan around whatever needs using up first, so less goes in the bin.</p>
+      </div>
+      <div class="intro-foot">
+        <p class="kitchen-intro-note">Your first week can use what&rsquo;s already here.</p>
+        <button class="intro-next" id="kitchen-intro-start" type="button">Take three photos</button>
+        <button class="kitchen-intro-later" id="kitchen-intro-later" type="button">Set up later</button>
+      </div>
+    </div>
+  </div>
 <div id="step-reveal" style="display:none">
   <div class="reveal-screen">
     <!-- The round `?`: "Need a hand?" (static/help-sheet.js), named for
@@ -5330,6 +5375,14 @@ async function finishSetupAndReveal(opts) {
   setupRun = 'running';
   setKitRepeatsBusy(true);
   try {
+    // The Kitchen step (C5) comes first, so the first week is drafted from
+    // what's home. Only on the path that drafts a week (the yes to Claude:
+    // the photos go to Claude too). It resolves when the photos are done or
+    // on "Set up later", and at once for a stocked kitchen. Before the
+    // saves on purpose: a reload while taking photos resumes the answers
+    // draft and lands back on the last question, rather than on a finished
+    // household with no week.
+    if (plan && typeof kitchenStepBeforeDraft === 'function') await kitchenStepBeforeDraft();
     await saveHouseholdMembers();
     await saveRhythmAnswers();
     const answers = await saveOnboardingAnswers();
@@ -5513,6 +5566,66 @@ INTRO_STEPS.forEach(key => {
     showStep(flow[flow.indexOf(key) + 1]);
   };
 });
+
+// ---------- The Kitchen, introduced (Loop Board C5, 2026-10-27) ----------
+// Emily: "we should include that there's an inventory management feature in
+// the onboarding flow ... it can be a 'set up later' opt out of the flow."
+// The story: so that my first plan can use what I already have. So it sits
+// RIGHT BEFORE the first week is drafted — after every household question
+// and the yes to sharing with Claude (a photo goes to Claude, so it can't
+// come before that yes) — and finishSetupAndReveal awaits it. Not a step in
+// ALL_STEPS: it is laid over the last question, has no back, and no answer
+// of its own to save. "Set up later" goes straight on to drafting; the
+// Kitchen then fills from the first shop. Skipped on "Not now" to Claude
+// (no week is drafted there) and for a kitchen with things in it (a re-run
+// of setup). Offered once per page.
+const KITCHEN_CHECK_WAIT_MS = 3000;
+let kitchenStepOffered = false;
+let kitchenStepResolve = null;
+function kitchenStepBeforeDraft() {
+  if (kitchenStepOffered) return Promise.resolve();
+  kitchenStepOffered = true;
+  return new Promise(async (resolve) => {
+    const el = document.getElementById('kitchen-intro');
+    if (!el || !window.KitchenAdd) { resolve(); return; }
+    try {
+      // A slow answer never holds the week up: after the wait it is offered.
+      const home = await Promise.race([
+        Api.json('/api/whats-home', { quiet: true }),
+        new Promise(r => setTimeout(() => r(null), KITCHEN_CHECK_WAIT_MS)),
+      ]);
+      if (home && home.count > 0) { resolve(); return; }
+    } catch (err) {
+      // Couldn't check: offer it anyway — a photo review saves nothing
+      // without a tap, and "Set up later" is one more.
+    }
+    kitchenStepResolve = resolve;
+    el.hidden = false;
+    window.scrollTo(0, 0);
+    const start = document.getElementById('kitchen-intro-start');
+    if (start) start.focus();
+  });
+}
+// Done or set up later: the overlay goes and the draft starts.
+function closeKitchenIntro() {
+  const el = document.getElementById('kitchen-intro');
+  if (el) el.hidden = true;
+  const go = kitchenStepResolve;
+  kitchenStepResolve = null;
+  if (go) go();
+}
+document.getElementById('kitchen-intro-later').onclick = () => { closeKitchenIntro(); };
+document.getElementById('kitchen-intro-start').onclick = () => {
+  if (!window.KitchenAdd) { closeKitchenIntro(); return; }
+  window.KitchenAdd.open({
+    mode: 'setup',
+    doneLabel: 'Draft my first week',
+    // Finished (or a receipt added instead): on to the draft.
+    onDone: () => { closeKitchenIntro(); },
+    // Closed part-way: back to this screen, where "Set up later" is.
+    onClose: () => {},
+  });
+};
 
 // ---------- Post-reveal ----------
 // The reveal is the last onboarding step (Emily, 2026-09-05, 20a) — its

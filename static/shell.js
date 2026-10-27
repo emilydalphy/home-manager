@@ -107,6 +107,11 @@
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="4" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="8" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="16" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="20" cy="12" r="1.4" fill="currentColor" stroke="none"/><path d="M3 6.5h18"/><path d="M3 17.5h18"/></svg>',
     pot:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 9.5h13V16a4.5 4.5 0 0 1-4.5 4.5h-4A4.5 4.5 0 0 1 5.5 16z"/><path d="M3.5 9.5h17"/><path d="M12 3.5v3"/></svg>',
+    // The Kitchen tab's glyph (2026-10-26, Loop Board C1): the fridge —
+    // the same drawing as KITCHEN_ICONS.fridge, which was the old
+    // Inventory row's, on the nav set's 24-grid and 2.2 stroke.
+    fridge:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="2.8" width="13" height="18.4" rx="2.6"/><path d="M5.5 10h13"/><path d="M9 6.4v1.8"/><path d="M9 12.6v2.2"/></svg>',
     // Pomona (InnToday/InnMeals): the hero's flame tile, the prep tile's
     // clock, the grocery tile's bag, and the arrow that ends a primary
     // action. Line icons, round caps — the brand guide's one icon style;
@@ -215,6 +220,13 @@
     // nothing links to it — it is the fallback, the same way
     // static/grocery-legacy.html already was.
     { key: 'grocery', path: '/grocery', label: 'Shop', icon: ICONS.bag, grocery: true },
+    // The KITCHEN tab (Emily, 2026-10-26, Loop Board C1 — the nav change
+    // she approved that day): what's home, and what Pomona will do with
+    // it. Between Shop and Cook because that is where food sits: shopping
+    // fills it, cooking empties it. NAMING TRAP: it is keyed and pathed
+    // `home`, because `kitchen` / '/kitchen' below is the COOK tab (and
+    // chat actions tagged tab 'kitchen' mean Cook). See buildHomePanel.
+    { key: 'home', path: '/home', label: 'Kitchen', icon: ICONS.fridge, home: true },
     // Kitchen is the COOK'S tab (Emily, 2026-09-08). It answers "what's
     // cooking, and what's in the house?": today's cooks, the prep sessions
     // that feed them, the rest of the week, and the two quiet ways into
@@ -357,7 +369,7 @@
   var ESCAPE_CLOSES_SCRIMS = [
     'wk-swap-scrim', 'wk-tweak-scrim', 'wk-add-scrim', 'gro-scan-scrim',
     'gro-add-scrim', 'tonight-scrim', 'cook-more-scrim', 'meals-more-scrim',
-    'week-sheet-scrim', 'notif-scrim'
+    'week-sheet-scrim', 'notif-scrim', 'home-item-scrim'
   ];
   //
   // Two courtesies a tap outside doesn't need. A field in the sheet with
@@ -900,6 +912,19 @@
       panel.dataset.built = '1';
       buildKitchenPanel(panel);
     }
+    // The Kitchen TAB (key 'home', 2026-10-26). Built once like the rest;
+    // every later showing re-reads quietly, because what is home changes
+    // from other tabs without a chat card to say so — a tick at the shop,
+    // Mark eaten on Cook, Today's own ticks. The re-read re-renders only
+    // when the answer changed, so nothing moves under a thumb.
+    if (tab.home && !panel.dataset.built) {
+      panel.dataset.built = '1';
+      buildHomePanel(panel);
+    } else if (tab.home) {
+      loadHome(true);
+    }
+    // (typeof: harnesses run activateTab sliced out of this file.)
+    if (!tab.home && typeof closeHomeItemSheet === 'function') closeHomeItemSheet();
 
     // Cook mode is a step of Kitchen, and `opts.cookFocus` is how every
     // entry point into it (Today's Next up card and its move lines, Meals'
@@ -10715,7 +10740,6 @@
   // `cookState` (declared with the rest of cook mode, further down) holds
   // the cooker view itself; kitchenState holds only what this root adds.
   var kitchenState = {
-    inventory: null,
     // Today's moves (/api/today/moves), read for ONE thing: the "start by
     // 5:35" arithmetic, which is dinner_window minus the recipe's own
     // prep+cook time and lives on the server (app/tools/moves.py) so Today
@@ -10821,13 +10845,11 @@
         var idx = cookResolveFocusIndex(cookState.data.meals || [], target);
         if (idx !== null && cookState.data.meals[idx]) {
           cookEnterFocus(idx, start);
-          loadKitchenInventory();
           return;
         }
       }
     }
     renderCook();
-    loadKitchenInventory();
   }
 
   function refreshKitchenPanel() {
@@ -10838,42 +10860,501 @@
     if (kitchenIsBuilt()) loadKitchen();
   }
 
-  // "N to use soon · N running low". Use-soon is the real
-  // expiring-within-4-days endpoint; "running low" has no stored threshold
-  // anywhere in this app, so it stays what the old hub made it — a light
-  // client-side read of a leading quantity <= 1 — rather than a fabricated
-  // stat. Carried over unchanged from static/kitchen.html.
-  async function loadKitchenInventory() {
-    try {
-      var pair = await Promise.all([
-        Api.fetch('/api/inventory/expiring?days=4'),
-        Api.fetch('/api/inventory')
-      ]);
-      var expiring = pair[0].ok ? ((await pair[0].json()).items || []) : [];
-      var lowCount = 0;
-      if (pair[1].ok) {
-        ((await pair[1].json()).sections || []).forEach(function (s) {
-          (s.items || []).forEach(function (it) {
-            var m = /^\s*([\d.]+)/.exec(it.quantity || '');
-            if (m && parseFloat(m[1]) <= 1) lowCount++;
-          });
-        });
-      }
-      kitchenState.inventory = { expiring: expiring.length, low: lowCount };
-    } catch (err) {
-      kitchenState.inventory = null;
-    }
-    // The Inventory row is in the More sheet (cookMoreSheet), not on the
-    // panel; when the sheet is open its line updates in place.
-    var sub = document.getElementById('kit-inv-sub');
-    if (sub) sub.textContent = kitchenInventoryLine();
+  // ---------- The Kitchen TAB: what's home (key 'home', 2026-10-26) ----------
+  //
+  // Loop Board C1 + C3 (Emily: "I'm envisioning it almost as an 'inventory
+  // management screen' for your kitchen"). NAMING TRAP: this tab is labelled
+  // "Kitchen" and keyed/pathed `home` (/home, panel-home, GET
+  // /api/whats-home) because everything spelled `kitchen` in this file —
+  // buildKitchenPanel, kitchenState, the /kitchen path, chat actions tagged
+  // tab 'kitchen' — is the COOK tab.
+  //
+  // The root, top to bottom (mockups-c Kitchen.dc.html screen 1):
+  //   - the band: "41 things home" (the count is every row the segments
+  //     show — never a spice or a regular, those stay with Staples) and
+  //     "Up to date after Saturday's shop and last night's dinner." when
+  //     the server knows both halves (whats_home.up_to_date_line); no line
+  //     at all when it knows neither, rather than a guess;
+  //   - "Use soon": up to three rows going off, a terracotta dot for today
+  //     and an apricot one for soon, each with its plan or a "Freeze it"
+  //     pill when nothing is planned;
+  //   - Fridge · N / Freezer · N / Pantry · N, and that shelf's rows: the
+  //     plan ("in Tue dinner") or the amount as a word ("about half"),
+  //     never a number to count;
+  //   - the dock: "Snap a shelf" (the screen's one apricot) and "+ Add".
+  // A tap on any row opens the item sheet (C3, homeItemSheetHtml).
+  var HOME_LOCATIONS = ['fridge', 'freezer', 'pantry'];
+  var HOME_LOCATION_LABELS = { fridge: 'Fridge', freezer: 'Freezer', pantry: 'Pantry' };
+  // "How much is left?" — the three chips, in the mockup's words.
+  var HOME_AMOUNTS = [
+    { level: 'plenty', label: 'Plenty' },
+    { level: 'half', label: 'About half' },
+    { level: 'almost_gone', label: 'Almost gone' }
+  ];
+  var HOME_ICONS = {
+    camera:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>'
+  };
+
+  var homeState = { data: null, seg: null, loadError: false, sheetId: null, busy: false,
+    // C4: the planning check's chips, on the freezer. `items` from
+    // GET /api/inventory/check (every shelf); `gone` maps a tapped
+    // chip's id to the Undo the answer returned (null when it was already
+    // gone elsewhere), so a second tap puts it back.
+    check: { items: [], gone: {} } };
+
+  function homePanel() { return panels['home']; }
+  function homeIsBuilt() { var p = homePanel(); return !!(p && p.dataset.built); }
+
+  function buildHomePanel(panel) {
+    panel.innerHTML =
+      '<div class="home-content">' +
+        rootBandHtml({ id: 'home-band', eyebrow: 'Kitchen', title: '' }) +
+        '<div class="home-body" id="home-body"></div>' +
+        // The dock (nav rule 2): the one apricot is "Snap a shelf"; "+ Add"
+        // rides beside it as an outline, a second way in rather than a
+        // second action. Both open openKitchenAdd — card C2's sheet.
+        '<div class="dock home-dock" id="home-dock">' +
+          '<div class="home-dock-row">' +
+            '<button type="button" class="dock-primary home-snap" data-home="snap">' +
+              HOME_ICONS.camera + '<span>Snap a shelf</span></button>' +
+            '<button type="button" class="home-add" data-home="add">+ Add</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    panel.addEventListener('click', onHomeClick);
+    loadHome(false);
   }
 
-  function kitchenInventoryLine() {
-    var inv = kitchenState.inventory;
-    if (!inv) return 'What’s on hand';
-    return inv.expiring + ' to use soon · ' + inv.low + ' running low';
+  // `quiet`: a re-read on a later showing of the tab or after a change
+  // elsewhere. It re-renders only when the answer changed, and a failure
+  // keeps what is on screen rather than swapping it for an error.
+  async function loadHome(quiet) {
+    if (!homeIsBuilt()) return;
+    var data;
+    try {
+      data = await Api.json('/api/whats-home', { quiet: true });
+    } catch (err) {
+      if (!quiet || !homeState.data) {
+        homeState.loadError = true;
+        renderHome();
+      }
+      return;
+    }
+    var same = homeState.data && JSON.stringify(homeState.data) === JSON.stringify(data);
+    homeState.data = data;
+    homeState.loadError = false;
+    if (homeSegment(data) === 'freezer') {
+      if (await loadHomeCheck()) same = false;
+    }
+    if (!same || !quiet) renderHome();
+    if (homeState.sheetId) renderHomeItemSheet();
   }
+
+  // C4: the freezer's "Quick check: still have these?" chips — the very
+  // chips the week's planning asks (inventory_check.candidates, every
+  // shelf: the card's "the same chips also show here", and the mockup's
+  // Hummus / Apples / Feta), so an answer in either place answers both. A chip
+  // tapped gone here stays on screen, marked, until the panel is next
+  // read with it answered elsewhere. Returns whether the chips changed.
+  async function loadHomeCheck() {
+    var res;
+    try {
+      res = await Api.json('/api/inventory/check', { quiet: true });
+    } catch (err) { return false; }
+    var fresh = (res && res.items) || [];
+    var have = {};
+    fresh.forEach(function (it) { have[it.id] = true; });
+    var kept = homeState.check.items.filter(function (it) {
+      return !have[it.id] && Object.prototype.hasOwnProperty.call(homeState.check.gone, it.id);
+    });
+    var next = fresh.concat(kept);
+    var changed = JSON.stringify(next) !== JSON.stringify(homeState.check.items);
+    homeState.check.items = next;
+    return changed;
+  }
+
+  async function homeCheckTap(id) {
+    if (homeState.busy) return;
+    var item = null;
+    homeState.check.items.forEach(function (it) { if (it.id === id) item = it; });
+    if (!item) return;
+    var gone = homeState.check.gone;
+    homeState.busy = true;
+    try {
+      if (!Object.prototype.hasOwnProperty.call(gone, id)) {
+        var res = await Api.json('/api/inventory/check', { body: { gone: [id], confirmed: [] } });
+        var removed = ((res && res.removed) || [])[0];
+        gone[id] = removed && removed.undo ? removed.undo : null;
+      } else if (gone[id]) {
+        // Tapped again: the row goes back, as the planning check's own
+        // second tap does before Next.
+        var back = await Api.json('/api/whats-home/undo', { body: { undo: gone[id] } });
+        if (back && back.already_back) showToast(homeItemName(back.item) + ' is already back in the kitchen.');
+        delete gone[id];
+      } else {
+        delete gone[id];
+      }
+      await loadHome(true);
+      renderHome();
+      refreshKitchenPanel();
+    } catch (err) { /* Api.json toasted */ }
+    homeState.busy = false;
+  }
+
+  function refreshHomePanel() {
+    if (homeIsBuilt()) loadHome(true);
+  }
+
+  // Which shelf is showing: the household's last pick, else the first one
+  // with anything on it, else the fridge.
+  function homeSegment(data) {
+    if (homeState.seg) return homeState.seg;
+    var counts = (data && data.counts) || {};
+    for (var i = 0; i < HOME_LOCATIONS.length; i++) {
+      if (counts[HOME_LOCATIONS[i]]) return HOME_LOCATIONS[i];
+    }
+    return 'fridge';
+  }
+
+  // "41 things home", "1 thing home". The italic "home" is the mockup's
+  // accent word (.home-band-accent).
+  function homeTitleHtml(count) {
+    return escapeHtml(count + (count === 1 ? ' thing ' : ' things ')) +
+      '<span class="home-band-accent">home</span>';
+  }
+
+  function renderHome() {
+    var panel = homePanel();
+    if (!panel) return;
+    var body = panel.querySelector('#home-body');
+    var titleEl = panel.querySelector('#home-band-title');
+    var content = panel.querySelector('.home-content');
+    var data = homeState.data;
+    if (homeState.loadError || !data) {
+      if (titleEl) titleEl.textContent = 'Kitchen';
+      setRootBand(panel, 'home-band', { sub: '' });
+      if (body) body.innerHTML = homeState.loadError ?
+        emptyMomentHtml('home', 'Couldn’t check just now — pull to refresh.') : '';
+      if (content) content.classList.toggle('is-empty', !!homeState.loadError);
+      return;
+    }
+    if (!data.count) {
+      if (titleEl) titleEl.textContent = 'Nothing home yet';
+      setRootBand(panel, 'home-band', { sub: '' });
+      if (body) body.innerHTML = homeEmptyHtml();
+      if (content) content.classList.add('is-empty');
+      return;
+    }
+    if (content) content.classList.remove('is-empty');
+    var seg = homeSegment(data);
+    var frozen = ((data.counts || {}).freezer) || 0;
+    if (seg === 'freezer' && frozen) {
+      // The Freezer segment has its own band (mockups-c screen 4): the
+      // count of rows shown, and the promise the sort keeps.
+      if (titleEl) titleEl.innerHTML = homeFreezerTitleHtml(frozen);
+      setRootBand(panel, 'home-band', { sub: 'Oldest first. Next week’s plan starts from the top.' });
+    } else {
+      if (titleEl) titleEl.innerHTML = homeTitleHtml(data.count);
+      setRootBand(panel, 'home-band', { sub: data.up_to_date || '' });
+    }
+    if (body) body.innerHTML = homeBodyHtml(data, seg);
+  }
+
+  // "9 things in the freezer", "1 thing in the freezer".
+  function homeFreezerTitleHtml(count) {
+    return escapeHtml(count + (count === 1 ? ' thing ' : ' things ')) +
+      '<span class="home-band-accent">in the freezer</span>';
+  }
+
+  // A new household's Kitchen starts empty (mockups-c's trade-off card:
+  // "It needs a friendly empty screen that points to the first shop or
+  // one photo"). The next step is the dock, as on every empty root.
+  function homeEmptyHtml() {
+    return emptyMomentHtml('home', 'Your kitchen fills itself as you shop.',
+      'Tick things off on the list and they land here. Or snap a shelf to start.');
+  }
+
+  function homeBodyHtml(data, seg) {
+    if (seg === 'freezer') {
+      // No "Use soon" here: the freezer's own band leads, and the planning
+      // check's freezer chips follow the rows (screen 4).
+      return homeSegHtml(data.counts || {}, seg) +
+        homeShelfHtml((data.locations || {})[seg] || [], seg) +
+        homeCheckHtml(homeState.check.items, homeState.check.gone);
+    }
+    return homeUseSoonHtml(data.use_soon || []) +
+      homeSegHtml(data.counts || {}, seg) +
+      homeShelfHtml((data.locations || {})[seg] || [], seg);
+  }
+
+  // Pure: "Quick check: still have these?" on the freezer, one chip per
+  // thing; a chip tapped gone reads "Apples · gone" in the on fill.
+  function homeCheckHtml(items, gone) {
+    if (!items || !items.length) return '';
+    gone = gone || {};
+    return '<section class="home-card home-check" aria-labelledby="home-check-title">' +
+      '<h2 class="home-card-title" id="home-check-title">Quick check: still have these?</h2>' +
+      '<p class="home-check-sub">Tap anything that’s gone.</p>' +
+      '<div class="home-check-chips">' +
+      items.map(function (it) {
+        var off = Object.prototype.hasOwnProperty.call(gone, it.id);
+        return '<button type="button" class="gro-pill' + (off ? ' gro-pill-on' : '') + '" data-home="check" ' +
+          'data-id="' + it.id + '" aria-pressed="' + off + '">' +
+          escapeHtml((it.label || it.item) + (off ? ' · gone' : '')) + '</button>';
+      }).join('') +
+      '</div>' +
+    '</section>';
+  }
+
+  function homeUseSoonHtml(list) {
+    if (!list.length) return '';
+    return '<section class="home-card home-soon" aria-labelledby="home-soon-title">' +
+      '<h2 class="home-card-title" id="home-soon-title">Use soon</h2>' +
+      list.map(function (it) {
+        var right = it.freeze_ok ?
+          '<button type="button" class="home-freeze-pill" data-home="freeze" data-id="' + it.id + '">Freeze it</button>' :
+          '<span class="home-row-line">' + escapeHtml(it.line || '') + '</span>';
+        return '<div class="home-row home-soon-row">' +
+          '<button type="button" class="home-row-name" data-home="row" data-id="' + it.id + '" ' +
+            'aria-label="' + escapeHtml(it.item + (it.dot === 'today' ? ', use today' : ', use soon')) + '">' +
+            '<span class="home-dot home-dot-' + (it.dot === 'today' ? 'today' : 'soon') + '" aria-hidden="true"></span>' +
+            '<span class="home-row-item">' + escapeHtml(it.item) + '</span>' +
+          '</button>' + right +
+        '</div>';
+      }).join('') +
+    '</section>';
+  }
+
+  // Fridge · N / Freezer · N / Pantry · N — the Plan root's .wk-seg control.
+  function homeSegHtml(counts, seg) {
+    return '<div class="wk-seg home-seg" role="tablist" aria-label="Where it is">' +
+      HOME_LOCATIONS.map(function (loc) {
+        var on = loc === seg;
+        return '<button type="button" class="wk-seg-btn' + (on ? ' is-on' : '') + '" role="tab" ' +
+          'aria-selected="' + on + '" data-home="seg" data-seg="' + loc + '">' +
+          escapeHtml(HOME_LOCATION_LABELS[loc] + ' · ' + (counts[loc] || 0)) + '</button>';
+      }).join('') +
+    '</div>';
+  }
+
+  function homeShelfHtml(rows, seg) {
+    if (!rows.length) {
+      return '<p class="home-shelf-empty">Nothing in the ' + escapeHtml(seg) + '.</p>';
+    }
+    return '<section class="home-card home-shelf" aria-label="' + escapeHtml(HOME_LOCATION_LABELS[seg]) + '">' +
+      rows.map(function (r) {
+        return '<button type="button" class="home-row home-shelf-row" data-home="row" data-id="' + r.id + '">' +
+          '<span class="home-row-item">' + escapeHtml(r.label || r.item) + '</span>' +
+          '<span class="home-row-line' + (r.plan ? ' is-plan' : '') + '">' + escapeHtml(r.line || '') + '</span>' +
+        '</button>';
+      }).join('') +
+    '</section>';
+  }
+
+  function homeRowById(id) {
+    var data = homeState.data;
+    if (!data) return null;
+    for (var i = 0; i < HOME_LOCATIONS.length; i++) {
+      var rows = (data.locations || {})[HOME_LOCATIONS[i]] || [];
+      for (var j = 0; j < rows.length; j++) if (rows[j].id === id) return rows[j];
+    }
+    return null;
+  }
+
+  function onHomeClick(e) {
+    var el = e.target && e.target.closest && e.target.closest('[data-home]');
+    if (!el) return;
+    var what = el.getAttribute('data-home');
+    var id = parseInt(el.getAttribute('data-id'), 10);
+    if (what === 'seg') {
+      homeState.seg = el.getAttribute('data-seg');
+      renderHome();
+      if (homeState.seg === 'freezer') {
+        loadHomeCheck().then(function (changed) { if (changed) renderHome(); });
+      }
+    } else if (what === 'check') {
+      homeCheckTap(id);
+    } else if (what === 'row') {
+      openHomeItemSheet(id);
+    } else if (what === 'freeze') {
+      homeFreeze(id);
+    } else if (what === 'snap') {
+      openKitchenAdd('snap');
+    } else if (what === 'add') {
+      openKitchenAdd('add');
+    }
+  }
+
+  // ---- "Snap a shelf" and "+ Add" (Loop Board C2) ----
+  //
+  // ONE door for both dock buttons: static/kitchen-add.js's sheet, the
+  // same one first-run setup's "Show me your kitchen" runs (C5). `mode` is
+  // 'snap' (straight to the photo step, on the shelf showing) or 'add'
+  // (the four ways in). Nothing is saved before its review; a save re-reads
+  // the tab and says what went in, with Undo.
+  function openKitchenAdd(mode) {
+    if (!window.KitchenAdd) return;
+    closeAskSheet();
+    window.KitchenAdd.open({
+      mode: mode === 'snap' ? 'snap' : 'add',
+      place: homeSegment(homeState.data),
+      onSaved: function (res) {
+        refreshHomePanel();
+        showToast(res.line, {
+          label: 'Undo',
+          onClick: function () {
+            Api.json('/api/whats-home/add/undo', { body: { undo: res.undo } })
+              .then(function () { refreshHomePanel(); })
+              .catch(function () { /* Api.json toasted */ });
+          }
+        });
+      }
+    });
+  }
+
+  // ---- The item sheet (C3): fix one thing in one tap ----
+
+  function homeItemSheetEls() {
+    return {
+      sheet: document.getElementById('home-item-sheet'),
+      scrim: document.getElementById('home-item-scrim'),
+      body: document.getElementById('home-item-body'),
+      title: document.getElementById('home-item-title')
+    };
+  }
+
+  function openHomeItemSheet(id) {
+    var row = homeRowById(id);
+    var els = homeItemSheetEls();
+    if (!row || !els.sheet) return;
+    closeAskSheet();
+    homeState.sheetId = id;
+    renderHomeItemSheet();
+    openSheet(els.sheet, els.scrim);
+  }
+
+  function closeHomeItemSheet() {
+    homeState.sheetId = null;
+    var els = homeItemSheetEls();
+    if (els.sheet) closeSheet(els.sheet, els.scrim);
+  }
+
+  function renderHomeItemSheet() {
+    var els = homeItemSheetEls();
+    var row = homeRowById(homeState.sheetId);
+    if (!els.body) return;
+    if (!row) { closeHomeItemSheet(); return; }
+    if (els.title) els.title.textContent = row.item;
+    els.body.innerHTML = homeItemSheetHtml(row);
+  }
+
+  // Pure: the sheet's body from one row of /api/whats-home.
+  function homeItemSheetHtml(row) {
+    var chips = HOME_AMOUNTS.map(function (a) {
+      var on = row.amount === a.level;
+      return '<button type="button" class="gro-pill' + (on ? ' gro-pill-on' : '') + '" data-home-item="amount" ' +
+        'data-level="' + a.level + '" aria-pressed="' + on + '">' + escapeHtml(a.label) + '</button>';
+    }).join('');
+    var moveTo = row.move_to === 'pantry' ? 'pantry' : 'fridge';
+    var actions = [
+      '<button type="button" class="home-act" data-home-item="used">Used it up</button>',
+      row.freeze_ok ? '<button type="button" class="home-act" data-home-item="freeze">Freeze it</button>' : '',
+      '<button type="button" class="home-act" data-home-item="thrown">Threw it out</button>',
+      '<button type="button" class="home-act" data-home-item="move" data-to="' + moveTo + '">Move to ' + moveTo + '</button>'
+    ].join('');
+    return '<p class="home-item-detail">' + escapeHtml(row.detail || '') + '</p>' +
+      '<p class="home-item-q">How much is left?</p>' +
+      '<div class="home-item-chips">' + chips + '</div>' +
+      '<div class="home-item-acts">' + actions + '</div>';
+  }
+
+  function homeItemName(item) {
+    var s = String(item || '').trim();
+    return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+  }
+
+  // Every one-tap fix answers the same way: the screen re-reads, and a
+  // toast names the thing with Undo (the house pattern, `<thing> was
+  // <verbed>`).
+  function homeToastWithUndo(message, undoPath, undo) {
+    showToast(message, {
+      label: 'Undo',
+      onClick: function () {
+        Api.json(undoPath, { body: { undo: undo } })
+          .then(function (res) {
+            // Bought again (or scanned) since it was taken off: the row on
+            // the shelf now is the stock, so nothing comes back beside it.
+            if (res && res.already_back) showToast(homeItemName(res.item) + ' is already back in the kitchen.');
+            refreshHomePanel();
+            refreshKitchenPanel();
+          })
+          .catch(function () { /* Api.json toasted */ });
+      }
+    });
+  }
+
+  async function homeFreeze(id) {
+    var row = homeRowById(id);
+    if (!row || homeState.busy) return;
+    homeState.busy = true;
+    try {
+      var res = await Api.json('/api/inventory/' + id + '/freeze', { body: {} });
+      closeHomeItemSheet();
+      await loadHome(true);
+      homeToastWithUndo(homeItemName(row.item) + ' was frozen.', '/api/inventory/unfreeze', res.undo);
+    } catch (err) { /* Api.json toasted */ }
+    homeState.busy = false;
+  }
+
+  async function homeItemAct(what, el) {
+    var id = homeState.sheetId;
+    var row = homeRowById(id);
+    if (!row || homeState.busy) return;
+    if (what === 'freeze') { homeFreeze(id); return; }
+    homeState.busy = true;
+    try {
+      if (what === 'amount') {
+        var level = el.getAttribute('data-level');
+        var res = await Api.json('/api/whats-home/' + id + '/amount', { body: { level: level } });
+        // The answer is given; the sheet goes, so a toast never covers its
+        // buttons (verify, 2026-10-27) and the row shows the new word.
+        closeHomeItemSheet();
+        await loadHome(true);
+        // "Almost gone" on food a planned meal needs went on the list —
+        // the one chip that changes something off this screen says so.
+        if (res.added_to_list) {
+          homeToastWithUndo(homeItemName(row.item) + ' was added to the list.', '/api/whats-home/undo', res.undo);
+          refreshGroceryPanel();
+        }
+      } else {
+        var path = what === 'used' ? '/used-up' : what === 'thrown' ? '/thrown-out' : '/move';
+        var body = what === 'move' ? { location: el.getAttribute('data-to') } : {};
+        var done = await Api.json('/api/whats-home/' + id + path, { body: body });
+        closeHomeItemSheet();
+        await loadHome(true);
+        var verb = what === 'used' ? 'used up' : what === 'thrown' ? 'thrown out' : 'moved to the ' + body.location;
+        homeToastWithUndo(homeItemName(row.item) + ' was ' + verb + '.', '/api/whats-home/undo', done.undo);
+      }
+      // Cook's tonight card reads the same shelves.
+      refreshKitchenPanel();
+    } catch (err) { /* Api.json toasted */ }
+    homeState.busy = false;
+  }
+
+  (function wireHomeItemSheet() {
+    var els = homeItemSheetEls();
+    if (!els.sheet) return;
+    els.scrim.addEventListener('click', closeHomeItemSheet);
+    var handle = document.getElementById('home-item-handle');
+    if (handle) handle.addEventListener('click', closeHomeItemSheet);
+    var close = document.getElementById('home-item-close');
+    if (close) close.addEventListener('click', closeHomeItemSheet);
+    els.body.addEventListener('click', function (e) {
+      var el = e.target && e.target.closest && e.target.closest('[data-home-item]');
+      if (el) homeItemAct(el.getAttribute('data-home-item'), el);
+    });
+  })();
 
   // ---------- Kitchen root: today's cooks ----------
 
@@ -11794,14 +12275,8 @@
         '<span class="kit-row-text"><span class="kit-row-title">Add from a cookbook</span></span>' +
         '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
       '</button>' +
-      // Inventory last, quiet.
-      '<button type="button" class="kit-row" data-kit="sheet" data-sheet="inventory">' +
-        '<span class="kit-row-icon">' + KITCHEN_ICONS.fridge + '</span>' +
-        '<span class="kit-row-text"><span class="kit-row-title">Inventory' +
-        '</span>' +
-        '<span class="kit-row-sub" id="kit-inv-sub">' + escapeHtml(kitchenInventoryLine()) + '</span></span>' +
-        '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
-      '</button>' +
+      // No Inventory row any more (2026-10-26, Loop Board C1): what's home
+      // has its own tab, Kitchen (TABS key 'home'), between Shop and Cook.
     '</div>';
   }
 
@@ -15777,6 +16252,13 @@
     return HREF_AS_SHEET[(href || '').replace(/\/+$/, '') || '/'] || null;
   }
   function followActionHref(href) {
+    // What's home has its own tab now (Kitchen, key 'home', 2026-10-26):
+    // a "View" on /inventory (the use-soon notification's "Plan a meal
+    // with it") lands there, not on the old Inventory sheet over Cook.
+    if ((href || '').replace(/\/+$/, '') === '/inventory') {
+      activateTab('home', true);
+      return;
+    }
     var sheet = hrefSheetKey(href);
     if (sheet) {
       activateTab('kitchen', true);
@@ -17447,6 +17929,7 @@
           (planned && entry.brought_over
             ? '<span class="wk-from-last-line"><span class="wk-from-last">From last week</span></span>'
             : '') +
+          (planned && typeof wkUsesTagHtml === 'function' ? wkUsesTagHtml(entry.uses_tag) : '') +
         '</div>' +
         (!planned && acts ? '<div class="wk-row-acts">' + acts + '</div>' : '') +
       '</div>' +
@@ -17753,12 +18236,101 @@
                 (entry.leftover_from && entry.leftover_from.cook_ahead ? 'Made ahead' : 'Leftovers') +
                 '</span></span>'
             : '') +
+          (dish.isLeftover || typeof wkUsesTagHtml !== 'function' ? '' : wkUsesTagHtml(wkDishUsesTag(dish))) +
         '</div>' +
       '</div>' +
       '<div class="wk-row-foot">' + (meta ? '<span class="wk-row-meta">' + escapeHtml(meta) + '</span>' : '') +
         (acts ? '<div class="wk-row-acts">' + acts + '</div>' : '') +
       '</div>' +
     '</div>';
+  }
+
+  // ---------- Use it all: tags, the count, "Couldn't fit these" ----------
+  // Loop Board B2/B3 (Emily, 2026-10-26; Option B mockup, screen 2). The
+  // tag is the server's (get_week_menu's uses_tag — only what use_up.
+  // reconcile checked the dish carries); the count line and the card are
+  // get_week_menu's `use_up` (use_up.plan_summary). Draft only.
+  function wkUsesTagHtml(tag) {
+    if (!tag) return '';
+    return '<span class="wk-uses-line"><span class="wk-uses">' + escapeHtml(tag) + '</span></span>';
+  }
+
+  // A menu row is one dish over several days; the cook day carries it.
+  function wkDishUsesTag(dish) {
+    for (var j = 0; j < dish.days.length; j++) {
+      var e = dish.days[j].entry;
+      if (e && e.uses_tag) return e.uses_tag;
+    }
+    return '';
+  }
+
+  function wkUseUpLineHtml(data) {
+    var u = data && data.use_up;
+    if (!u || !u.line) return '';
+    return '<p class="wk-use-up-line">' + escapeHtml(u.line) + '</p>';
+  }
+
+  var USE_UP_ACTIONS = { freeze: 'Freeze it', side: 'Add as a side' };
+
+  function wkCouldntFitHtml(data) {
+    var u = data && data.use_up;
+    var rows = (u && u.couldnt_fit) || [];
+    // A dish naming kitchen food that will be past its date by then
+    // (use_up._past_date_dishes) — said, never hidden.
+    var past = ((u && u.past_date) || []).map(function (line) {
+      return '<p class="wk-use-up-past">' + escapeHtml(line) + '</p>';
+    }).join('');
+    if (!rows.length) return past;
+    return past + '<div class="shell-card wk-unfit" id="wk-unfit">' +
+      '<h2 class="wk-unfit-head">Couldn’t fit these</h2>' +
+      rows.map(function (r) {
+        var primary = r.primary && USE_UP_ACTIONS[r.primary]
+          ? '<button type="button" class="wk-unfit-act is-' + r.primary + '" data-wk-useup="' + r.primary + '" ' +
+              'data-wk-useup-id="' + r.id + '" aria-label="' + escapeHtml(USE_UP_ACTIONS[r.primary] + ' — ' + r.item) + '">' +
+              escapeHtml(USE_UP_ACTIONS[r.primary]) + '</button>'
+          : '';
+        // The quiet one. A freezer row is already where it keeps: it just
+        // stays there for a later week.
+        var quietLabel = r.kind === 'freezer' ? 'Keep it frozen' : 'Let it go';
+        return '<div class="wk-unfit-row">' +
+          '<span class="wk-unfit-name">' + escapeHtml(r.item) + '</span>' +
+          '<span class="wk-unfit-acts">' + primary +
+            '<button type="button" class="wk-unfit-quiet" data-wk-useup="let_go" data-wk-useup-id="' + r.id + '" ' +
+              'aria-label="' + escapeHtml(quietLabel + ' — ' + r.item) + '">' + escapeHtml(quietLabel) + '</button>' +
+          '</span>' +
+        '</div>';
+      }).join('') +
+    '</div>';
+  }
+
+  function wireCouldntFit(panel, steps) {
+    var data = weekState.data || {};
+    var planId = data.weekly_plan_id;
+    if (!planId) return;
+    steps.querySelectorAll('[data-wk-useup]').forEach(function (btn) {
+      btn.addEventListener('click', async function () {
+        var action = btn.getAttribute('data-wk-useup');
+        var itemId = btn.getAttribute('data-wk-useup-id');
+        btn.disabled = true;
+        var base = '/api/week-plan/' + encodeURIComponent(planId) + '/use-up/' + encodeURIComponent(itemId);
+        try {
+          var done = await Api.json(base, { method: 'POST', body: { action: action } });
+          await loadWeekMenu(panel);
+          showToast(done.toast || 'Done.', {
+            label: 'Undo',
+            onClick: async function () {
+              try {
+                await Api.json(base + '/undo', { method: 'POST', body: { undo: done.undo || {} } });
+              } finally {
+                loadWeekMenu(panel);
+              }
+            }
+          });
+        } catch (err) {
+          btn.disabled = false;
+        }
+      });
+    });
   }
 
   function wkMenuHtml(days) {
@@ -17842,7 +18414,8 @@
     // approved week, which is what makes this one expression safe on the
     // deeper, approved-week form of this screen too.
     var head = root
-      ? weekSuggestedNoteHtml(data) + weekFlagsHtml(data) + draftSoftNoteHtml(data) + planEndsLineHtml(data)
+      ? weekSuggestedNoteHtml(data) + weekFlagsHtml(data) + draftSoftNoteHtml(data) + planEndsLineHtml(data) +
+        (typeof wkUseUpLineHtml === 'function' ? wkUseUpLineHtml(data) : '')
       : '<button type="button" class="crumb" data-wk-back="week">‹ Plan</button>' +
         '<div class="wk-head wk-check-head">' +
           '<div class="wk-head-row">' +
@@ -17855,7 +18428,7 @@
       return head + '<div class="rv-body"><div class="rv-empty">Nothing planned yet.</div></div>' + reviewDecideHtml(data);
     }
     if (root && weekPlanState(data) === 'draft' && draftView(data) === 'menu') {
-      return head + wkMenuHtml(days) +
+      return head + wkMenuHtml(days) + (root && typeof wkCouldntFitHtml === 'function' ? wkCouldntFitHtml(data) : '') +
         reviewDecideHtml(data);
     }
     return head +
@@ -17864,6 +18437,7 @@
         days.map(function (day, i) { return wkDayCardHtml(day, i, { done: false, swapLabel: 'Swap' }); }).join('') +
       '</div>' +
       wkDotsHtml(days.length, selected) +
+      (root && typeof wkCouldntFitHtml === 'function' ? wkCouldntFitHtml(data) : '') +
       // weekReplacesNote's "Once it's approved, I'd replace…" sentence
       // used to sit here, above the dock (declutter, 2026-09-25: Emily
       // asked it off the draft screen). data.replaces is still computed
@@ -20292,6 +20866,7 @@
   }
 
   function wireMealsStep(panel, steps) {
+    if (typeof wireCouldntFit === 'function') wireCouldntFit(panel, steps);
     steps.querySelectorAll('[data-wk-day]').forEach(function (row) {
       row.addEventListener('click', function () {
         goMealsStep('day', { dayIndex: Number(row.getAttribute('data-wk-day')) });
@@ -27666,6 +28241,19 @@
       groceryDone = true;
       refreshGroceryPanel();
     }
+    // The Kitchen TAB (key 'home', 2026-10-26) reads three things these
+    // cards say moved: the inventory itself (the `kitchen` tools —
+    // update_inventory and friends, check_off_meal's depletion), the list
+    // (a `grocery` tick from chat fills the kitchen) and the week (a row's
+    // "in Tue dinner" is the approved plan's). One re-read per turn,
+    // however many cards; a no-op on a tab never opened.
+    var homeDone = false;
+    function refreshHomeOnce() {
+      if (homeDone) return;
+      homeDone = true;
+      // (typeof: harnesses run this function sliced out of the file.)
+      if (typeof refreshHomePanel === 'function') refreshHomePanel();
+    }
     (actions || []).forEach(function (action) {
       if (action.held) {
         // hold_thing / resolve_held_thing: Now's "Holding for you" card and
@@ -27726,9 +28314,11 @@
         loadWeekMenu(panels.week);
         refreshTonightFromPlan();
         if (listMoved) refreshGroceryOnce();
+        refreshHomeOnce();
       } else if (action.tab === 'week') {
         refreshTonightFromPlan();
         if (listMoved) refreshGroceryOnce();
+        refreshHomeOnce();
         // The same week changed, but Meals has never been opened in this
         // page load, so there is no panel to reload — and the dish index
         // would go on naming last week's dinners in every reply. One
@@ -27748,6 +28338,9 @@
         // update_inventory and friends all land on the Kitchen tab, which
         // re-reads the cooker view and the inventory tile together.
         refreshKitchenPanel();
+        // ...and the inventory half of that is the Kitchen TAB's whole
+        // screen (key 'home') — tab 'kitchen' here still means Cook.
+        refreshHomeOnce();
         // check_off_meal from chat ("we had the salmon last night") answers
         // the yesterday card's row too — re-read it so it stops asking.
         refreshYesterdayCheck();
@@ -27779,8 +28372,20 @@
         // both calls are no-ops on a screen that was never built.
         refreshTodayMoves();
         refreshKitchenPanel();
+      } else if (action.tab === 'home') {
+        // The Kitchen TAB (key 'home'): chat's inventory writes
+        // (update_inventory, update_inventory_items, remove_inventory_item —
+        // app/main.py's _HOME_TOOLS, `kitchen` until 2026-10-27). Its card's
+        // "View" opens this tab. Cook and Today are still re-read, as they
+        // were when these tools were tagged `kitchen`: tonight's card and
+        // the fridge moves read the same shelves.
+        refreshHomeOnce();
+        refreshKitchenPanel();
+        refreshTodayMoves();
       } else if (action.tab === 'grocery') {
         refreshGroceryOnce();
+        // A chat tick ("we got the milk") puts it in the kitchen.
+        refreshHomeOnce();
         // The list changing also changes Today's shop move, which is a
         // reading of the same items.
         refreshTodayMoves();

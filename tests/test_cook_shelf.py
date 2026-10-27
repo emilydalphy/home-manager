@@ -450,14 +450,17 @@ def test_recipes_add_from_a_link_and_inventory_are_behind_one_more_link():
     assert 'data-kit="more">More ···</button>' in link
     assert "cook-empty-link" in link, "the 44px in-prose link (rule 6)"
     rows = _function("cookMoreRowsHtml")
-    assert rows.count('class="kit-row"') == 4  # + "Add from a cookbook" (recipe photo import, 2026-09-13)
+    # Three rows since 2026-10-26: Inventory left for its own tab (Kitchen,
+    # TABS key 'home' — Loop Board C1; tests/test_kitchen_tab.py).
+    assert rows.count('class="kit-row"') == 3  # + "Add from a cookbook" (recipe photo import, 2026-09-13)
     for needle in ('data-kit="recipes"', ">Ask about our recipes<", 'data-kit="recipe-link"',
                    'kit-row-title">Add from a link',
-                   'data-kit="recipe-photo"', ">Add from a cookbook<",
-                   'data-sheet="inventory"', 'kit-row-title">Inventory'):
+                   'data-kit="recipe-photo"', ">Add from a cookbook<"):
         assert needle in rows, needle
-    # Inventory's pill is gone (2026-10-27); "Add from a link" keeps its
-    # (gated, currently off) one.
+    assert 'data-sheet="inventory"' not in rows
+    # "Add from a link" carries the neutral "In development" pill
+    # (RECIPE_LINK_IN_DEVELOPMENT); Inventory's row, which had the other
+    # one, is gone with the row.
     assert rows.count('pill pill-neutral kit-row-pill">In development</span>') == 1
     assert "dock-primary" not in rows and "btn-primary" not in rows
     assert 'id="cook-more-sheet"' in SHELL_HTML and 'id="cook-more-scrim"' in SHELL_HTML
