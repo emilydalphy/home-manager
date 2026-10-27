@@ -23,7 +23,7 @@ import pytest
 
 from app import tools
 from app.db import get_conn
-from conftest import household_today, on_the_weeks_monday
+from conftest import household_pin, household_today, on_the_weeks_monday
 
 ON_MONDAY = on_the_weeks_monday()
 
@@ -180,6 +180,59 @@ def test_next_weeks_list_does_not_spend_what_this_week_said_is_home(signed_in, w
     result = tools.approve_weekly_plan(plan2, approved_by="Emily")
     assert "Chicken thighs" not in (result.get("already_have_skipped") or [])
     assert "Chicken thighs" in _needed(), "next week's chicken is bought"
+
+
+def _last_weeks_chicken_answered(signed_in, frozen_today, how: str) -> int:
+    """Last week: Lemon chicken on the Wednesday, answered "already home"
+    (`how`: the freezer chip or the list's Have it) on its Monday; then
+    the clock moves to that Friday with the dinner never ticked cooked —
+    what most households do. Returns next week's plan id, approved."""
+    mon = datetime.date.fromisoformat(_monday()) - datetime.timedelta(days=7)
+    frozen_today(household_pin(9, on=mon))
+    tools.add_recipe("Lemon chicken", ingredients=[{"item": "Chicken thighs", "qty": "2 lb", "category": "meat/seafood"}])
+    p1 = tools.create_weekly_plan(mon.isoformat())["weekly_plan_id"]
+    tools.plan_meal(tools._week_dates(mon.isoformat())[2], "Lemon chicken", slot="dinner", weekly_plan_id=p1)
+    tools.approve_weekly_plan(p1, approved_by="Emily")
+    if how == "freezer":
+        signed_in.post(f"/api/week/{mon.isoformat()}/defrost-confirm", json={"items": ["Chicken thighs"], "weekly_plan_id": p1})
+    else:
+        line = _needed()["Chicken thighs"]
+        signed_in.post(f"/api/grocery-list/{line['id']}/pre-shop", json={"decision": "drop", "author": "user"})
+    assert _kitchen("Chicken thighs"), "premise: the answer put it in the kitchen"
+    frozen_today(household_pin(9, on=mon + datetime.timedelta(days=4)))
+    nxt = (mon + datetime.timedelta(days=7)).isoformat()
+    p2 = tools.create_weekly_plan(nxt)["weekly_plan_id"]
+    tools.plan_meal(tools._week_dates(nxt)[1], "Lemon chicken", slot="dinner", weekly_plan_id=p2)
+    result = tools.approve_weekly_plan(p2, approved_by="Emily")
+    assert "Chicken thighs" not in (result.get("already_have_skipped") or [])
+    return p2
+
+
+@pytest.mark.parametrize("how", ["freezer", "have_it"])
+def test_a_past_night_nobody_ticked_still_ate_what_was_said_to_be_home(signed_in, frozen_today, how):
+    """Review, 2026-10-27: the night passed unticked and its row read as
+    spare, so next week bought no chicken. Claimed as eaten, the way a
+    bought line's past meal is."""
+    _last_weeks_chicken_answered(signed_in, frozen_today, how)
+    assert "Chicken thighs" in _needed(), "next week's chicken is bought"
+
+
+@ON_MONDAY
+def test_another_plan_does_not_thaw_this_plans_freezer_chip(signed_in, week):
+    """Review, 2026-10-27: next week bought its chicken AND got a fridge
+    move off this week's chip row."""
+    signed_in.post(f"/api/week/{_monday()}/defrost-confirm", json={"items": ["Chicken thighs"], "weekly_plan_id": week})
+    nxt = (datetime.date.fromisoformat(_monday()) + datetime.timedelta(days=7)).isoformat()
+    plan2 = tools.create_weekly_plan(nxt)["weekly_plan_id"]
+    tools.plan_meal(tools._week_dates(nxt)[1], "Lemon chicken", slot="dinner", weekly_plan_id=plan2)
+    tools.approve_weekly_plan(plan2, approved_by="Emily")
+    tools.sync_defrost_tasks(plan2)
+    conn = get_conn()
+    booked = conn.execute(
+        "SELECT COUNT(*) FROM prep_tasks WHERE weekly_plan_id = ? AND task_type = 'defrost'", (plan2,),
+    ).fetchone()[0]
+    conn.close()
+    assert booked == 0
 
 
 # ---------- staples stay out ----------

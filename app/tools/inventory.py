@@ -602,11 +602,11 @@ def rows_added_by_plans_freezer_answer(conn, weekly_plan_id: int | None) -> set[
     """
     The Freezer rows THIS plan's own freezer-step chips added. That food is
     already the plan's set-aside line and its booked moves, so the plan's
-    own grocery ingest (recipes.WeekGroceryBuffer.kitchen_stock) and its
-    own inventory-matched thaws (defrost.defrost_candidates_for_plan) leave
+    own grocery ingest (recipes.WeekGroceryBuffer.kitchen_stock) leaves
     them out — counted again, a swapped-back night would be "covered" by
-    the row or thawed twice, and the chip's undo could not put it back.
-    Every OTHER plan sees them as ordinary freezer stock.
+    the row, and the chip's undo could not put it back. Another plan's
+    ingest sees the row, with this plan's meal shares reserved out of it
+    (recipes._KitchenStock.reserve_bought_for_meals_ahead).
     """
     if weekly_plan_id is None:
         return set()
@@ -618,6 +618,22 @@ def rows_added_by_plans_freezer_answer(conn, weekly_plan_id: int | None) -> set[
         "WHERE r.household_id = ? AND r.weekly_plan_id = ? AND r.grocery_item_id IS NULL AND r.fresh = 1 "
         "AND i.rev IS r.after_rev AND i.quantity IS r.after_quantity",
         (household_id(), weekly_plan_id),
+    ).fetchall()}
+
+
+def rows_held_by_freezer_answers(conn) -> set[int]:
+    """
+    Every Freezer row ANY plan's freezer chips added and nobody has touched
+    since — the amount is exactly that plan's need, so none of it is spare
+    for another plan's thaw (defrost.defrost_candidates_for_plan). Once a
+    cook uses from it or the household edits it, it is ordinary stock.
+    """
+    return {r["inventory_item_id"] for r in conn.execute(
+        "SELECT r.inventory_item_id FROM already_home_receipts r "
+        "JOIN inventory_items i ON i.id = r.inventory_item_id AND i.household_id = r.household_id "
+        "WHERE r.household_id = ? AND r.weekly_plan_id IS NOT NULL AND r.grocery_item_id IS NULL "
+        "AND r.fresh = 1 AND i.rev IS r.after_rev AND i.quantity IS r.after_quantity",
+        (household_id(),),
     ).fetchall()}
 
 

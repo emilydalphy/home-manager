@@ -398,17 +398,17 @@ def defrost_candidates_for_plan(weekly_plan_id: int, conn=None) -> list[dict]:
     plan = _weekly_plan.get_weekly_plan(weekly_plan_id)
     if plan.get("weekly_plan_id") is None:
         return []
-    # Not the rows this plan's own freezer chips added: those nights have
-    # the household's own moves already (inventory.rows_added_by_plans_
-    # freezer_answer).
-    # On the caller's connection when it has one (sync_defrost_tasks): a
+    # Not a Freezer row any plan's chips added and nobody has touched: its
+    # own plan's nights have the household's moves already, and another
+    # plan must not thaw what is that plan's dinner
+    # (inventory.rows_held_by_freezer_answers). On the caller's connection when it has one (sync_defrost_tasks): a
     # swap's resync is held to a fixed connection count.
     if conn is not None:
-        own = _inventory.rows_added_by_plans_freezer_answer(conn, weekly_plan_id)
+        own = _inventory.rows_held_by_freezer_answers(conn)
     else:
         own_conn = get_conn()
         try:
-            own = _inventory.rows_added_by_plans_freezer_answer(own_conn, weekly_plan_id)
+            own = _inventory.rows_held_by_freezer_answers(own_conn)
         finally:
             own_conn.close()
     freezer_items = [i for i in _inventory.get_inventory()

@@ -5091,13 +5091,14 @@ class _KitchenStock:
             "        AND (i.counted_on IS NULL OR e.date >= i.counted_on))))",
             (household_id(), today, -1 if exclude_plan_id is None else exclude_plan_id, today),
         ).fetchall()
-        # And what the household said is ALREADY HOME for a meal still to
-        # come (2026-10-25: "already have it" and the freezer step's chips
-        # now count as kitchen stock — inventory.record_already_home). The
-        # line came off the list because that food is spoken for by its
-        # meals, so its shares are claimed the way a bought line's are:
-        # otherwise next week's approval reads this week's "we have the
-        # chicken" as spare and puts none on next week's list.
+        # And what the household said is ALREADY HOME (2026-10-25: "already
+        # have it" and the freezer step's chips now count as kitchen stock —
+        # inventory.record_already_home). That food is spoken for by the
+        # line's meals, so their shares are claimed exactly as a bought
+        # line's are above: a meal still to come, and a PAST meal nobody
+        # ticked (claimed as eaten while the receipt's kitchen row survives
+        # uncounted since — the 2026-10-21 rule). Otherwise next week reads
+        # this week's "we have the chicken" as spare and buys none.
         rows = list(rows) + conn.execute(
             "SELECT g.item AS item, l.quantity AS quantity "
             "FROM meal_plan_grocery_links l "
@@ -5105,11 +5106,19 @@ class _KitchenStock:
             "JOIN meal_plan_entries e ON e.id = l.meal_plan_entry_id AND e.household_id = l.household_id "
             "LEFT JOIN weekly_plans w ON w.id = e.weekly_plan_id AND w.household_id = e.household_id "
             "WHERE l.household_id = ? AND g.status = 'removed' "
-            "AND (g.removed_by = 'freezer' OR EXISTS (SELECT 1 FROM already_home_receipts r "
-            "     WHERE r.household_id = g.household_id AND r.grocery_item_id = g.id)) "
             "AND e.inventory_depleted_at IS NULL AND COALESCE(w.status, '') != 'retired' "
-            "AND e.cooked_status = 'pending' AND e.date >= ? AND COALESCE(e.weekly_plan_id, -1) != ?",
-            (household_id(), today, -1 if exclude_plan_id is None else exclude_plan_id),
+            "AND ((e.cooked_status = 'pending' AND e.date >= ? AND COALESCE(e.weekly_plan_id, -1) != ? "
+            "      AND (g.removed_by = 'freezer' OR EXISTS (SELECT 1 FROM already_home_receipts r "
+            "           WHERE r.household_id = g.household_id AND r.grocery_item_id = g.id))) "
+            "  OR (e.date < ? AND e.skipped_at IS NULL AND EXISTS ("
+            "        SELECT 1 FROM already_home_receipts r "
+            "        JOIN inventory_items i ON i.id = r.inventory_item_id AND i.household_id = r.household_id "
+            "        WHERE r.household_id = l.household_id "
+            "        AND (r.grocery_item_id = g.id OR (r.grocery_item_id IS NULL AND g.removed_by = 'freezer' "
+            "             AND r.weekly_plan_id = e.weekly_plan_id AND (r.item_key = LOWER(TRIM(g.item)) "
+            "             OR r.item_key || 's' = LOWER(TRIM(g.item)) OR r.item_key = LOWER(TRIM(g.item)) || 's'))) "
+            "        AND (i.counted_on IS NULL OR e.date >= i.counted_on))))",
+            (household_id(), today, -1 if exclude_plan_id is None else exclude_plan_id, today),
         ).fetchall()
         for row in rows:
             key = (row["item"] or "").strip().lower()
