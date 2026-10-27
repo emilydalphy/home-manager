@@ -25,8 +25,14 @@ why*, not duplicating the diff.
   was matched as the literal word, so Chicken Tacos passed and "Vegetarian
   Chili" was held. A clash names the food ("has chicken"), not the diet.
   `library_batch check` verifies a vegetarian/vegan tag with the same
-  family. Not read: a diet said only in a hard fact ("We're vegetarian"),
-  halal/kosher, "no meat", household `eating_style`.
+  family. Covers the MEMBER restriction only: a What-we-know fact ("We're
+  vegetarian") is not enforced yet, nor halal/kosher, "no meat", household
+  `eating_style`. Review round: the diet's own exceptions ("vegan
+  parmesan", "dairy-free cheese", "egg replacer", "crab meat", "duck
+  sauce") are read for the diet only (`_DIET_COMPOUNDS`,
+  `_DIET_PLANT_QUALIFIERS`), so allergies match exactly as before; "dairy-
+  free custard" stays held for a vegan (eggs). `_find_variant` caches its
+  patterns and checks the substring first: vegan went 55 -> 0.7 ms a dish.
 - **The iPhone app's id is `com.heypomona.app`** (2026-10-25, Emily's pick
   to match her heypomona domain; branch `overnight/bundle-id-heypomona`).
   Replaced the `com.pomona.app` placeholder in `capacitor.config.json`, the

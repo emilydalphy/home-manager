@@ -4,6 +4,7 @@ feedback nudges, and who is in the household.
 """
 from __future__ import annotations
 
+import functools
 import logging
 import re
 import unicodedata
@@ -333,14 +334,18 @@ _NO_MEAT_WORDS: frozenset[str] = frozenset(
      "giblets", "tripe", "sweetbreads", "bone marrow", "bone broth", "flank steak",
      "skirt steak", "strip steak", "t-bone", "porterhouse", "tenderloin", "short rib",
      "spare rib", "suet", "tallow", "schmaltz", "gelatin", "gelatine",
-     "marshmallow", "aspic"}
+     "marshmallow", "aspic",
+     # Review, 2026-10-27 (Machacado con Huevo and Sucuklu Yumurta passed).
+     "sucuk", "sujuk", "machaca", "andouille", "merguez", "speck", "lardo", "chashu",
+     "spam", "pate", "carne asada", "bulgogi", "black pudding", "isinglass"}
     | _MEAT_ALIASES["pork"] | _MEAT_ALIASES["beef"]
 )
 _NO_FISH_WORDS: frozenset[str] = frozenset(
-    {"fish", "shellfish"} | _ALLERGEN_ALIASES["fish"] | _ALLERGEN_ALIASES["shellfish"]
+    {"fish", "shellfish", "nuoc mam", "bottarga"} | _ALLERGEN_ALIASES["fish"] | _ALLERGEN_ALIASES["shellfish"]
 )
 _VEGETARIAN_WORDS = _NO_MEAT_WORDS | _NO_FISH_WORDS
-_VEGAN_WORDS = (_VEGETARIAN_WORDS | {"egg", "honey", "royal jelly", "bee pollen"}
+_VEGAN_WORDS = (_VEGETARIAN_WORDS | {"egg", "honey", "royal jelly", "bee pollen", "carmine",
+                                     "cochineal", "beeswax"}
                 | _ALLERGEN_ALIASES["dairy"] | _ALLERGEN_ALIASES["egg"])
 _DIET_FAMILIES: dict[str, frozenset[str]] = {
     "vegetarian": _VEGETARIAN_WORDS, "veggie": _VEGETARIAN_WORDS,
@@ -511,13 +516,6 @@ _COMPOUND_EXCEPTIONS: tuple[tuple, ...] = (
     # That is the failure this whole check exists to prevent, so the false
     # positive matters more here than the rarity of the restriction.
     (frozenset({"olive", "olives"}), re.compile(r"\bolive\s+oils?\b")),
-    # A diet's (2026-10-27): meat-free mince is not meat, coconut meat is
-    # coconut, and duck sauce is plum sauce.
-    (frozenset({"meat", "meats"}), re.compile(
-        r"\bmeat[\s-]free\b|\b(?:coconut|walnut|jackfruit|mushroom|lentil)\s+(?:taco\s+)?meats?\b"
-    )),
-    (frozenset({"duck", "ducks"}), re.compile(r"\bduck\s+sauces?\b")),
-    (frozenset({"hot dog", "hot dogs"}), re.compile(r"\bhot\s+dog\s+(?:buns?|rolls?)\b")),
     *_LIBRARY_COMPOUNDS,
     # Red meat's (2026-10-20): goat's cheese and milk are dairy, not the
     # animal; lamb's lettuce and lamb's quarters are greens. Matched on the
@@ -569,14 +567,53 @@ _LIBRARY_PHRASE_ONLY = frozenset((e[0], e[1]) for e in _LIBRARY_COMPOUNDS)
 # line (what the dish is made of) and in a label that will be checked
 # against a list, and NOT in a name that is final without a list — "Vegan
 # Cheese Pizza" planned from chat on its name alone is cheese.
-_MEATLESS_PLANT_WORDS = frozenset(
-    v for w in _VEGETARIAN_WORDS
-    for v in (w, w + "s", w + "es", w[:-1] + "ies" if w.endswith("y") else w)
+def _spellings(words) -> frozenset[str]:
+    """Each word with the plural a matcher variant may be in."""
+    return frozenset(v for w in words for v in (
+        w, w + "s", w + "es", w[:-1] + "ies" if w.endswith("y") else w))
+
+
+# Read ONLY for a diet's own avoidance (_DIET_LABELS): an allergy, a
+# won't-eat and "no meat" read exactly the tables above, as they did. Each
+# entry: (spellings it can discount, where, the diet labels it speaks for).
+_DIET_COMPOUNDS: tuple[tuple, ...] = (
+    # Meat-free mince isn't meat; coconut meat is coconut; crab meat is the
+    # crab, which a pescatarian eats and "crab" still holds for the rest.
+    (_spellings({"meat"}), re.compile(
+        r"\bmeat[\s-]free\b"
+        r"|\b(?:coconut|walnut|jackfruit|mushroom|lentil|crab|lobster|clam)\s+(?:taco\s+)?meats?\b"
+    ), _DIET_LABELS),
+    (_spellings({"duck"}), re.compile(r"\bduck\s+sauces?\b"), _DIET_LABELS),
+    (_spellings({"hot dog"}), re.compile(r"\bhot\s+dog\s+(?:buns?|rolls?)\b"), _DIET_LABELS),
+    # Pâte brisée and choux are pastry, not pâté.
+    (_spellings({"pate"}), re.compile(r"\bpate\s+(?:brisee|sucree|sablee|feuilletee|a\s+choux)\b"),
+     _DIET_LABELS),
+    (_spellings({"bulgogi"}), re.compile(r"\b(?:tofu|mushroom|tempeh|jackfruit|soy)\s+bulgogi\b"),
+     _DIET_LABELS),
+    (_spellings({"egg"}), re.compile(r"\begg\s+replacers?\b"), _VEGAN_LABELS),
 )
-_MEATLESS_QUALIFIER = (_MEATLESS_PLANT_WORDS, re.compile(
-    r"\b(?:vegan|vegetarian|veggie|plant[\s-]based|meatless|meat[\s-]free)\s+"
-    r"(?:(?!(?:with|and|or|plus)\b)[a-z-]+\s+)?(?!(?:with|and|or|plus)\b)[a-z-]+"
-))
+# The plant kind said right against the word (two words at most, never
+# across "with"/"and": "Veggie Burger with Bacon" is still bacon). Like
+# _PLANT_QUALIFIER_EXCEPTIONS: on a line or a draft label, never a name
+# that is final without a list.
+_QUALIFIED = r"\s+(?:(?!(?:with|and|or|plus)\b)[a-z-]+\s+)?(?!(?:with|and|or|plus)\b)[a-z-]+"
+_EGG_FREE_DAIRY = _ALLERGEN_ALIASES["dairy"] - _ALLERGEN_ALIASES["egg"]
+_DAIRY_FREE_EGG = (_ALLERGEN_ALIASES["egg"] | {"egg"}) - _ALLERGEN_ALIASES["dairy"]
+_DIET_PLANT_QUALIFIERS: tuple[tuple, ...] = (
+    # "vegan parmesan", "vegan eggs", "plant-based chorizo".
+    (_spellings(_VEGAN_WORDS), re.compile(r"\b(?:vegan|plant[\s-]based)" + _QUALIFIED), _DIET_LABELS),
+    # "veggie sausage", "meatless crumbles", "vegetarian oyster sauce".
+    (_spellings(_VEGETARIAN_WORDS), re.compile(
+        r"\b(?:vegetarian|veggie|meatless|meat[\s-]free)" + _QUALIFIED), _DIET_LABELS),
+    # "dairy-free cheese", "non-dairy whipped topping" — not a custard or a
+    # mousse, which still has its eggs.
+    (_spellings(_EGG_FREE_DAIRY), re.compile(r"\b(?:dairy[\s-]free|non[\s-]dairy)" + _QUALIFIED),
+     _VEGAN_LABELS),
+    # "egg-free mayo" — not an egg-free custard, which still has its milk.
+    (_spellings(_DAIRY_FREE_EGG), re.compile(r"\b(?:egg[\s-]free|eggless)" + _QUALIFIED), _VEGAN_LABELS),
+)
+
+
 _PLANT_QUALIFIER_EXCEPTIONS: tuple[tuple, ...] = (
     # A dairy word the line or the name itself says is a plant version:
     # "dairy-free butter", "vegan cream cheese", "non-dairy milk". The
@@ -618,7 +655,6 @@ _PLANT_QUALIFIER_EXCEPTIONS: tuple[tuple, ...] = (
     # "veggie sausage", "vegan chorizo", "plant-based chicken nuggets",
     # "vegetarian oyster sauce" (two words at most, and never across
     # "with"/"and": "Veggie Burger with Bacon" is still bacon).
-    _MEATLESS_QUALIFIER,
     # The same for egg: vegan or egg-free mayonnaise is made without it.
     (_EGG_PLANT_WORDS, re.compile(
         r"\b(?:vegan|plant[\s-]based|egg[\s-]free|eggless)\s+(?:mayonnaise|mayo|aioli)s?(?![-a-z0-9])"
@@ -1027,15 +1063,18 @@ def _discounted(variant: str, match: re.Match, text: str, mode: str = "line", la
     tables = _COMPOUND_EXCEPTIONS + (_PLANT_QUALIFIER_EXCEPTIONS if mode != "strict" else ())
     if mode == "listed" and variant in _FAMILY_WORDS:
         tables = _COMPOUND_EXCEPTIONS
+    if label in _DIET_LABELS:
+        # A diet entry's third element is who it SPEAKS for (the shared
+        # tables' third element is who they never speak for).
+        diet = _DIET_COMPOUNDS
+        if mode != "strict" and not (mode == "listed" and variant in _FAMILY_WORDS):
+            diet = diet + _DIET_PLANT_QUALIFIERS
+        tables = tables + tuple(e[:2] for e in diet if label in e[2])
     for entry in tables:
         words, compound = entry[0], entry[1]
         if variant not in words:
             continue
         if len(entry) > 2 and label in entry[2]:
-            continue
-        if entry is _MEATLESS_QUALIFIER and label not in _DIET_LABELS:
-            # "vegan chorizo" is believed for a vegetarian, never for an
-            # allergy: those keep exactly the reading they had.
             continue
         for found in compound.finditer(text):
             if found.start() <= match.start() and match.end() <= found.end():
@@ -1050,6 +1089,11 @@ _STYLE_WORDS = frozenset({"oaxaca", "mole", "moles", "flan", "flans", "korma", "
 _STYLE_AFTER_RE = re.compile(r"[\s-]style(?![-a-z0-9])")
 
 
+@functools.lru_cache(maxsize=8192)
+def _whole_word_re(variant: str) -> re.Pattern:
+    return re.compile(r"\b" + re.escape(variant) + r"\b")
+
+
 def _find_variant(
     variant: str, text: str, start: int, discountable: bool, mode: str = "line", label: str = "",
     carved: list[tuple[int, int]] = (),
@@ -1058,7 +1102,13 @@ def _find_variant(
     counts. Only a draft "label" segment reads negations (see _negated).
     `carved` are the spans of the household's own exception ("cauliflower
     rice"): in every kind of segment, since they said it themselves."""
-    for m in re.finditer(r"\b" + re.escape(variant) + r"\b", text):
+    # A whole-word match is a substring first: the plain `in` turns away
+    # nearly every one of a diet's ~600 spellings before any regex runs, and
+    # the patterns are cached here, not in re's own 512-entry cache, which a
+    # vegan household's spellings would flush on every dish (2026-10-27).
+    if variant not in text:
+        return None
+    for m in _whole_word_re(variant).finditer(text):
         if m.start() < start:
             continue
         if any(a <= m.start() and m.end() <= b for a, b in carved):

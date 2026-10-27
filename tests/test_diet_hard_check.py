@@ -61,6 +61,18 @@ def _dish(name, *items):
     ("Vegan", "Chicken Tacos", "chicken thighs"),
     ("plant-based", "Omelette", "eggs"),
     ("Pescatarian", "Chicken Tacos", "chicken thighs"),
+    # Review round (2026-10-27): library dishes that passed, and the rest.
+    ("Vegetarian", "Machacado con Huevo", "machaca"),
+    ("Vegetarian", "Sucuklu Yumurta", "sucuk"),
+    ("Vegetarian", "Breakfast", "sujuk"), ("Vegetarian", "Gumbo", "andouille sausage"),
+    ("Vegetarian", "Couscous", "merguez"), ("Vegetarian", "Dumplings", "speck"),
+    ("Vegetarian", "Crostini", "lardo"), ("Vegetarian", "Ramen", "chashu"),
+    ("Vegetarian", "Musubi", "spam"), ("Vegetarian", "Toast", "chicken liver pâté"),
+    ("Vegetarian", "Dipping Sauce", "nuoc mam"), ("Vegetarian", "Tacos", "carne asada"),
+    ("Vegetarian", "Rice Bowl", "bulgogi"), ("Vegetarian", "Fry-Up", "black pudding"),
+    ("Vegetarian", "Pasta", "bottarga"), ("Vegetarian", "Ale", "isinglass"),
+    ("Vegan", "Red Velvet", "carmine"), ("Vegan", "Frosting", "cochineal"),
+    ("Vegan", "Lip Balm Cookies", "beeswax"), ("Vegan", "Dairy-Free Custard", "dairy-free custard"),
 ])
 def test_a_diet_holds_back_what_it_rules_out(restriction, name, item):
     _member(restriction)
@@ -82,6 +94,21 @@ def test_a_diet_holds_back_what_it_rules_out(restriction, name, item):
     ("Vegan", "Oat Porridge", ["oat milk", "flax egg"]),
     ("Pescatarian", "Salmon Bowl", ["salmon", "rice"]),
     ("Vegetarian", "Veggie Dogs", ["veggie dogs", "hot dog buns"]),
+    ("Vegetarian", "Tart", ["pâte brisée", "leeks"]),
+    ("Vegetarian", "Tofu Bulgogi Bowl", ["tofu bulgogi", "rice"]),
+    ("Pescatarian", "Crab Cakes", ["lump crab meat", "panko"]),
+    ("Vegan", "Vegan Pizza", ["vegan mozzarella", "vegan parmesan", "dough"]),
+    ("Vegan", "Greek Salad", ["vegan feta", "cucumber"]),
+    ("Vegan", "Nachos", ["vegan cheddar", "vegan queso"]),
+    ("Vegan", "Lasagna", ["vegan ricotta", "pasta"]),
+    ("Vegan", "Dal", ["vegan ghee", "lentils"]),
+    ("Vegan", "Pancakes", ["vegan buttermilk", "egg replacer", "flour"]),
+    ("Vegan", "Scramble", ["vegan eggs", "vegan egg"]),
+    ("Vegan", "Granola", ["vegan honey", "oats"]),
+    ("Vegan", "Bowl", ["vegan tzatziki", "vegan ranch"]),
+    ("Vegan", "Toastie", ["dairy-free cheese", "dairy-free butter"]),
+    ("Vegan", "Parfait", ["dairy-free yogurt", "non-dairy whipped topping"]),
+    ("Vegan", "Sandwich", ["egg-free mayo", "bread"]),
 ])
 def test_a_diet_lets_through_what_only_sounds_like_it(restriction, name, items):
     """GUARD: the false positives — a word that names an animal food and
@@ -96,6 +123,18 @@ def test_a_plant_qualifier_speaks_for_a_diet_never_for_an_allergy():
     _member("Vegetarian")
     _member("fish allergy", name="Sam")
     assert {c["member"] for c in _clashes("Noodles", "vegan fish sauce")} == {"Sam"}
+
+
+@pytest.mark.parametrize("restriction, item", [
+    ("no meat", "coconut meat"), ("no meat", "meat-free mince"), ("no duck", "duck sauce"),
+    ("shellfish allergy", "lump crab meat"), ("dairy allergy", "vegan buttermilk"),
+    ("egg allergy", "vegan eggs"), ("dairy allergy", "dairy-free buttermilk"),
+])
+def test_a_diets_own_exceptions_never_reach_any_other_avoidance(restriction, item):
+    """GUARD (review): the diet's compounds and plant qualifiers are read
+    for the diet only; every other avoidance reads what it read on main."""
+    _member(restriction)
+    assert _clashes("Dinner", item), (restriction, item)
 
 
 def test_veggies_are_vegetables_not_a_diet():
