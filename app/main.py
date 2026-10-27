@@ -3923,6 +3923,64 @@ def today_yesterday_undo(req: YesterdayUndoRequest):
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
+@app.get("/api/today/going-off")
+def today_going_off():
+    """
+    Today's food-going-off card and quiet line (Loop Board B5): `card` when
+    a dinner that would have used something turning today or tomorrow
+    didn't happen and there is a swap to offer, `line` for something going
+    off with no plan at all. Either may be None. See tools/going_off.py.
+    """
+    try:
+        return tools.today_going_off()
+    except Exception as e:
+        logger.exception("Today's going-off check failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+class GoingOffSwapRequest(BaseModel):
+    """"Swap them": the card's item and the skipped dinner it named."""
+    item_id: int
+    entry_id: int
+
+
+class GoingOffLeaveRequest(BaseModel):
+    item_id: int
+
+
+@app.post("/api/today/going-off/swap")
+def today_going_off_swap(req: GoingOffSwapRequest):
+    """The skipped dinner onto tonight, tonight's dinner on to the night the
+    card named. 409 when the card on screen is out of date."""
+    try:
+        return tools.swap_for_going_off(req.item_id, req.entry_id)
+    except tools.GoingOffWeekChanged as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    except Exception as e:
+        logger.exception("The going-off swap failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/today/going-off/leave")
+def today_going_off_leave(req: GoingOffLeaveRequest):
+    """"Leave it": no card about this item for the rest of the day."""
+    try:
+        return tools.leave_going_off(req.item_id)
+    except Exception as e:
+        logger.exception("Leaving the going-off card failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/today/going-off/undo")
+def today_going_off_undo(req: YesterdayUndoRequest):
+    """Undo on the swap's toast — both nights back as they were."""
+    try:
+        return tools.undo_going_off_swap(req.undo_entry_id)
+    except Exception as e:
+        logger.exception("Undoing the going-off swap failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
 @app.get("/api/today/tonight")
 def today_tonight():
     """

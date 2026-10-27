@@ -57,6 +57,10 @@ ANSWERS = ("had", "skipped")
 # _skip_moving_the_cook): what the night was, for anyone reading it later.
 SKIPPED_MOVED_CONSTRAINT = "skipped_moved_on"
 
+# The `kind` going_off.swap_for_going_off stamps on its undo record (kept
+# here, the key's owner, so this module needs no import of going_off).
+GOING_OFF_SWAP_KIND = "going_off_swap"
+
 
 class NotAskedAbout(ValueError):
     """The entry isn't one of the rows the card is asking about right now —
@@ -254,25 +258,7 @@ def _skip(entry_id: int, meal: str, day: str, today: str) -> dict | None:
             (today, household_id(), entry_id, today),
         )
         # The night it landed on is the cook now, not a night it feeds.
-        derived = json.loads(conn.execute(
-            "SELECT derived_from_json FROM meal_plan_entries WHERE id = ? AND household_id = ?",
-            (entry_id, household_id()),
-        ).fetchone()["derived_from_json"] or "{}")
-        fed_keys = derived.get("make_double_for") or []
-        if isinstance(fed_keys, str):
-            fed_keys = [fed_keys]
-        fed_keys = [k for k in fed_keys if str(k).strip() != new_ref]
-        if fed_keys:
-            derived["make_double_for"] = fed_keys
-            derived["make_double_note"] = _weekly_plan._make_double_note_text(fed_keys, target["slot"])
-        else:
-            derived.pop("make_double_for", None)
-            derived.pop("make_double_note", None)
-        conn.execute(
-            "UPDATE meal_plan_entries SET derived_from_json = ?, cook_started_at = NULL "
-            "WHERE id = ? AND household_id = ?",
-            (json.dumps(derived), entry_id, household_id()),
-        )
+        _no_longer_doubled_for(conn, entry_id, target)
         # The stored reason is read on later days, so it keeps the weekday;
         # the toast is said now, so a move onto today says "tonight".
         label = _weekly_plan.fed_night_label(target, today=today)
@@ -295,6 +281,35 @@ def _skip(entry_id: int, meal: str, day: str, today: str) -> dict | None:
             "undo_entry_id": holder_id, "thaw_now": thaw_now}
 
 
+def _no_longer_doubled_for(conn, entry_id: int, target: dict) -> None:
+    """A cook that has just landed on a night it was feeding
+    (weekly_plan.move_cook_onto_fed_night) no longer cooks double for that
+    night — the night eats the cook itself. Drops it from make_double_for
+    (and its note) and clears any start stamp, on the caller's open
+    transaction. Lifted out of _skip for going_off's swap (Loop Board B5),
+    which moves tonight's cook onto its leftovers night by the same rule."""
+    new_ref = f"{target['date']}:{target['slot']}"
+    derived = json.loads(conn.execute(
+        "SELECT derived_from_json FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+        (entry_id, household_id()),
+    ).fetchone()["derived_from_json"] or "{}")
+    fed_keys = derived.get("make_double_for") or []
+    if isinstance(fed_keys, str):
+        fed_keys = [fed_keys]
+    fed_keys = [k for k in fed_keys if str(k).strip() != new_ref]
+    if fed_keys:
+        derived["make_double_for"] = fed_keys
+        derived["make_double_note"] = _weekly_plan._make_double_note_text(fed_keys, target["slot"])
+    else:
+        derived.pop("make_double_for", None)
+        derived.pop("make_double_note", None)
+    conn.execute(
+        "UPDATE meal_plan_entries SET derived_from_json = ?, cook_started_at = NULL "
+        "WHERE id = ? AND household_id = ?",
+        (json.dumps(derived), entry_id, household_id()),
+    )
+
+
 def undo_skipped_move(holder_entry_id: int) -> dict:
     """
     Undo on the "moved to Saturday" toast: put both nights back exactly as
@@ -312,7 +327,10 @@ def undo_skipped_move(holder_entry_id: int) -> dict:
             (int(holder_entry_id), household_id()),
         ).fetchone()
         record = _plan_undo.read(holder, SKIPPED_UNDO_KEY) if holder is not None else None
-        if not record:
+        # The going-off swap (going_off.py) leaves its record under this key
+        # too, but its undo also takes back a freezer portion this one knows
+        # nothing about — so it is going_off.undo_going_off_swap's alone.
+        if not record or record.get("kind") == GOING_OFF_SWAP_KIND:
             return nothing
         if not _plan_undo.still_as_left(conn, record, holder["id"]):
             return {"status": "refused", "message": "That’s changed since, so I’ve left it as it is."}

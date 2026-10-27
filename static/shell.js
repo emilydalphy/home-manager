@@ -1253,6 +1253,12 @@
           // the zone on file. Empty — display:none — every other time.
           '<div id="today-clock" class="today-area-clock"></div>' +
           '<div id="yesterday-check" class="today-area-yesterday"></div>' +
+          // A dinner that would have used something going off didn't
+          // happen (renderGoingOffCard, Loop Board B5): "The spinach is
+          // still home", Swap them / Leave it. Under Yesterday, which may
+          // be asking about the very dinner first. Empty — display:none —
+          // whenever there is nothing going off with a swap to offer.
+          '<div id="going-off-card" class="today-area-goingoff"></div>' +
           '<div id="tonight-ask" class="today-area-tonight"></div>' +
           // Tonight's open dinner (or a question about another day) stays
           // above the strip: when tonight's dinner is undecided, deciding
@@ -1269,6 +1275,11 @@
           // (loadUseSoon): the attention queue's own sentence, once, until
           // someone marks it done. Empty — and so display:none — otherwise.
           '<div id="today-usesoon" class="today-area-usesoon"></div>' +
+          // Something fresh going off with no plan for it (Loop Board B5):
+          // one quiet sentence, "Greek yogurt is best today." — no card, no
+          // button. Never beside the freezer's Use soon card above: one
+          // use-soon at a time (renderGoingOffLine).
+          '<p id="today-going-off-line" class="today-going-off-line" hidden></p>' +
           '<div id="today-holding" class="today-area-holding"></div>' +
           // The household's Chores switch (choresEnabled, off /api/whoami):
           // with it off this card is left out of the markup entirely — not
@@ -1325,6 +1336,7 @@
       loadTodayMoves(panel, { look: true }),
       loadHolding(panel),
       loadUseSoon(panel),
+      loadGoingOff(panel),
       // The Chores switch again: skip the call, not just the render — no
       // chores card means no reason to hit /api/chores/today.
       (choresEnabled() ? loadChores(panel) : Promise.resolve())
@@ -1610,6 +1622,9 @@
     var slot = panel.querySelector('#today-usesoon');
     if (!slot) return;
     var items = useSoonState.items || [];
+    // The fresh-food line stands down while this card is up, and comes back
+    // when it goes (renderGoingOffLine) — one use-soon at a time.
+    renderGoingOffLine(panel);
     if (!items.length) { slot.innerHTML = ''; return; }
     slot.innerHTML =
       '<div class="shell-card holding-card usesoon-card">' +
@@ -1649,6 +1664,132 @@
       toastSaved(savedLine(gone.detail && gone.detail.dish, 'marked handled'));
     } catch (err) {
       btn.disabled = false;
+      showToast('That didn’t save. Try it again.');
+    }
+  }
+
+  // ---------- Food going off (Loop Board B5, Option B screen 4) ----------
+  // The server decides everything (app/tools/going_off.py, GET
+  // /api/today/going-off): `card` when a dinner that would have used
+  // something turning today or tomorrow didn't happen and the swap has
+  // somewhere to go, `line` for something going off with no plan at all.
+  // At most one of each. The card is the needs-you shape with no kicker
+  // (the mockup draws none) and the spruce/outline .ny-actions pair — Rule
+  // 5, Today's apricot is the dock. "Swap them" carries an Undo; "Leave it"
+  // is remembered for the item for the rest of the day, on the server.
+  var goingOffState = { card: null, line: null };
+
+  async function loadGoingOff(panel) {
+    if (!panel.querySelector('#going-off-card')) return;
+    try {
+      var data = await Api.json('/api/today/going-off', { quiet: true });
+      goingOffState = { card: (data && data.card) || null, line: (data && data.line) || null };
+    } catch (err) {
+      // Nothing shown is the safe failure: the food is where it was.
+      console.warn('Going-off lookup failed:', err);
+      goingOffState = { card: null, line: null };
+    }
+    renderGoingOffCard(panel);
+    renderGoingOffLine(panel);
+  }
+
+  function refreshGoingOff() {
+    if (panels.today && panels.today.dataset.built) loadGoingOff(panels.today);
+  }
+
+  function renderGoingOffCard(panel) {
+    var slot = panel.querySelector('#going-off-card');
+    if (!slot) return;
+    var card = goingOffState.card;
+    if (!card) { slot.innerHTML = ''; return; }
+    slot.innerHTML =
+      '<div class="shell-card needs-you-card going-off-card" data-card-type="going_off">' +
+        '<div class="ny-title">' + escapeHtml(card.title) + '</div>' +
+        '<p class="going-off-body">' + escapeHtml(card.body) + '</p>' +
+        '<div class="ny-actions">' +
+          '<button type="button" class="btn-gold" data-going-off="swap">' + escapeHtml(card.swap_label) + '</button>' +
+          '<button type="button" class="btn-sand" data-going-off="leave">' + escapeHtml(card.leave_label) + '</button>' +
+        '</div>' +
+      '</div>';
+    slot.querySelector('[data-going-off="swap"]').addEventListener('click', function () { swapGoingOff(panel, card); });
+    slot.querySelector('[data-going-off="leave"]').addEventListener('click', function () { leaveGoingOff(panel, card); });
+  }
+
+  function renderGoingOffLine(panel) {
+    var el = panel.querySelector('#today-going-off-line');
+    if (!el) return;
+    var line = goingOffState.line;
+    var freezerUp = (useSoonState.items || []).length > 0;
+    if (!line || freezerUp) { el.hidden = true; el.textContent = ''; return; }
+    el.textContent = line.text;
+    el.hidden = false;
+  }
+
+  function goingOffFrom(panel, data) {
+    var fresh = (data && data.going_off) || {};
+    goingOffState = { card: fresh.card || null, line: fresh.line || null };
+    renderGoingOffCard(panel);
+    renderGoingOffLine(panel);
+  }
+
+  async function swapGoingOff(panel, card) {
+    var before = goingOffState;
+    goingOffState = { card: null, line: before.line };
+    renderGoingOffCard(panel);
+    try {
+      var out = await Api.json('/api/today/going-off/swap', {
+        body: { item_id: card.item_id, entry_id: card.entry_id },
+        quiet: true
+      });
+      goingOffFrom(panel, out);
+      var said = out.said;
+      if (out.thaw_now && out.thaw_now.length) said += ' ' + out.thaw_now.join(' ');
+      var undoId = out.undo_entry_id;
+      showToast(said, out.can_undo ? {
+        label: 'Undo',
+        onClick: function () { return undoGoingOff(panel, undoId); }
+      } : null, 6000);
+      // Tonight is a different dinner now: Today's moves, Plan and Cook.
+      refreshTodayMoves();
+      refreshYesterdayCheck();
+      refreshStaleTabsFromActions([{ tab: 'week' }, { tab: 'kitchen' }]);
+    } catch (err) {
+      if (err && err.status === 409) { loadGoingOff(panel); return; }
+      console.warn('The going-off swap failed:', err);
+      goingOffState = before;
+      renderGoingOffCard(panel);
+      showToast('That didn’t save. Try it again.');
+    }
+  }
+
+  async function undoGoingOff(panel, undoEntryId) {
+    try {
+      var out = await Api.json('/api/today/going-off/undo', {
+        body: { undo_entry_id: undoEntryId },
+        quiet: true
+      });
+      showToast(out.status === 'restored' ? out.said : (out.message || 'That didn’t work. Try it again.'));
+      goingOffFrom(panel, out);
+      refreshTodayMoves();
+      refreshYesterdayCheck();
+      refreshStaleTabsFromActions([{ tab: 'week' }, { tab: 'kitchen' }]);
+    } catch (err) {
+      console.warn('Undoing the going-off swap failed:', err);
+      showToast('That didn’t work. Try it again.');
+    }
+  }
+
+  async function leaveGoingOff(panel, card) {
+    var before = goingOffState;
+    goingOffState = { card: null, line: before.line };
+    renderGoingOffCard(panel);
+    try {
+      var out = await Api.json('/api/today/going-off/leave', { body: { item_id: card.item_id }, quiet: true });
+      goingOffFrom(panel, { going_off: out });
+    } catch (err) {
+      console.warn('Leaving the going-off card failed:', err);
+      goingOffState = before;
+      renderGoingOffCard(panel);
       showToast('That didn’t save. Try it again.');
     }
   }
@@ -3832,6 +3973,9 @@
       if (!res.ok) throw new Error('yesterday answer failed (' + res.status + ')');
       var out = await res.json();
       renderYesterdayCheck(panel, out);
+      // "We skipped it" is what lets the going-off card speak about that
+      // dinner (going_off._skipped_dinners); "We had it" may take its food.
+      refreshGoingOff();
       if (out.moved_to) {
         // A skipped double-batch cook moved onto the night it was feeding
         // (yesterday_check._skip, 2026-10-13): say where it went, and any
