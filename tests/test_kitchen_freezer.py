@@ -190,9 +190,16 @@ def test_a_portion_of_a_cook_not_made_yet_is_not_in_the_freezer():
     early = _portion("Dal", 2, cooked_days_ago=-1)
     _cook_with_extra(1, early, done=True)  # ticked cooked ahead of its night
     made = _portion("Chili", 2, cooked_days_ago=1)
+    # Re-verify: the cook entry can be gone (plan deleted / re-drafted); a
+    # cook night still ahead hides it anyway.
+    orphan = _portion("Lasagna", 2, cooked_days_ago=-2)
     ids = _freezer_ids()
-    assert made in ids and early in ids
+    assert made in ids
     assert later not in ids and tonight_ not in ids
+    # Orphaned (no entry left) with its cook night ahead: hidden.
+    assert orphan not in ids
+    # Its cook ticked done ahead of its night: the batch was made, shown.
+    assert early in ids
     assert whats_home.get_whats_home()["counts"]["freezer"] == 2
 
 
