@@ -7440,15 +7440,15 @@ def _generate_weekly_plan(
         # date before the period starts (use_up.filter_stock; verify
         # findings 2 and 3, 2026-10-27) — telling the model "don't" was not
         # enough while the row was still in front of it.
-        "current_inventory": _use_up.filter_stock(tools.get_inventory(), intake, content_start_date),
+        "current_inventory": _use_up.filter_stock(tools.get_inventory(), intake, content_start_date, day_count),
         # Phase 4, §4.2: items already expired or expiring soon — the LLM
         # prompts are instructed to weight candidate recipes toward using
         # these up, especially the most urgent ones.
-        "near_expiring_inventory": _use_up.filter_stock(tools.get_expiring_soon(), intake, content_start_date),
+        "near_expiring_inventory": _use_up.filter_stock(tools.get_expiring_soon(), intake, content_start_date, day_count),
         # Phase 4, §4.2 follow-up: perishables on hand that aren't urgent
         # yet — a softer "favor what's fresh" nudge distinct from the
         # near-expiring one above.
-        "fresh_perishable_inventory": _use_up.filter_stock(tools.get_fresh_perishable_inventory(), intake, content_start_date),
+        "fresh_perishable_inventory": _use_up.filter_stock(tools.get_fresh_perishable_inventory(), intake, content_start_date, day_count),
         # Loop Board B2 (2026-10-26): what this week should use up, less what
         # the household switched off before the draft (use_up.selected —
         # the same list the pre-draft step shows). Telling, not preventing:
@@ -7981,7 +7981,8 @@ def _generate_weekly_plan(
         # and what could not fit (Loop Board B2/B3). LAST of the passes that
         # can change a dish, so the tags describe the week as written; the
         # model's claims are checked against the dishes, never trusted.
-        _use_up.reconcile(plan_id, use_up_offered, model_report=plan_report, intake=intake)
+        _use_up.reconcile(plan_id, use_up_offered, model_report=plan_report, intake=intake,
+                          memory=effective_memory)
         if intake:
             tools.attach_intake_to_plan(plan_id, intake["intake_id"])
         # What the model said it did with the typed requests (GeneratedDays.

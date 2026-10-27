@@ -228,3 +228,81 @@ def test_disliked_and_allergen_stock_is_not_shown_to_the_generator(household, st
     agent.generate_weekly_plan(week)
     ids = [r.get("id") for r in seen["ctx"]["current_inventory"]]
     assert porto not in ids and keep in ids
+
+
+# Re-verify (f2c37d2, 2026-10-27) -------------------------------------
+
+def test_the_freezer_trade_never_breaks_a_nights_time_cap(household, stub_model):
+    """Re-verify 1: a 120-minute braise traded onto a 30-minute weeknight
+    for the sake of freezer order. The cap pass's rules hold the trade."""
+    tools.edit_preference("weeknight_max_minutes", 30)
+    week = _monday(1)
+    d = tools._week_dates(week)
+    beef = _inv("Ground beef", location="freezer", category="meat/seafood", frozen_days_ago=30)
+    thighs = _inv("Chicken thighs", location="freezer", category="meat/seafood", frozen_days_ago=90)
+    names = ["Lamb Stew", "Miso Cod", "Ground Beef Chili", "Laksa", "Ramen", "Chicken Thigh Braise", "Dal"]
+    days = []
+    for i, (dd, n) in enumerate(zip(d, names)):
+        extra = {}
+        if i == 2:
+            extra = {"derived_from": {"use_up_ids": [beef]}, "prep_time_minutes": 10, "cook_time_minutes": 15}
+        if i == 5:
+            extra = {"derived_from": {"use_up_ids": [thighs]}, "prep_time_minutes": 20, "cook_time_minutes": 100}
+        days.append(_slot(dd, "dinner", n, **extra))
+    plan_id, _ = _draft(stub_model, week, days)
+    assert _dinner(plan_id, d[2])["meal"] == "Ground Beef Chili"
+    assert _dinner(plan_id, d[5])["meal"] == "Chicken Thigh Braise"
+
+
+def test_undoing_a_swap_brings_the_tag_back(household, stub_model):
+    """Re-verify 2: the swap popped use_up from the copy Undo restores."""
+    week = _monday(1)
+    d, ids = _seed(week)
+    plan_id, _ = _draft(stub_model, week, _week_with(week, ids, d))
+    before = tools.get_week_menu(plan_id)["use_up"]["used"]
+    pasta = _dinner(plan_id, d[0])
+    swapped = sip.apply_pick(plan_id, sip._entry(plan_id, pasta["id"]),
+                             {"meal_name": "Beef Tacos", "food_groups": [], "reason": "Something else."},
+                             correct_title=False)
+    assert tools.get_week_menu(plan_id)["use_up"]["used"] == before - 2
+    sip.undo_meal_swap(plan_id, swapped["entry_id"])
+    menu = tools.get_week_menu(plan_id)
+    monday = next(day for day in menu["days"] if day["date"] == d[0])
+    assert monday["dinner"]["uses_tag"] == "Uses the spinach and feta"
+    assert menu["use_up"]["used"] == before
+
+
+def test_food_another_live_plan_has_on_a_dish_is_not_offered_again(household, stub_model):
+    """Re-verify 3: this week's draft planned the thighs and beef next
+    week's draft already had. A row a live plan has put on a dish on
+    another day is that plan's."""
+    week = _monday(1)
+    d = tools._week_dates(week)
+    thighs = _inv("Chicken thighs", location="freezer", category="meat/seafood", frozen_days_ago=90)
+    spare = _inv("Ground beef", location="freezer", category="meat/seafood", frozen_days_ago=30)
+    names = ["Chicken Thigh Traybake", "Miso Cod", "Bibimbap", "Laksa", "Ramen", "Gumbo", "Dal"]
+    days = [_slot(dd, "dinner", n, **({"derived_from": {"use_up_ids": [thighs]}} if i == 0 else {}))
+            for i, (dd, n) in enumerate(zip(d, names))]
+    _draft(stub_model, week, days)
+    other = _monday(2)
+    assert [c["id"] for c in use_up.candidates(other, 7)] == [spare]
+    stock = use_up.filter_stock(tools.get_inventory(), {}, other, 7)
+    assert thighs not in [r["id"] for r in stock] and spare in [r["id"] for r in stock]
+    # The same plan's own week is not "elsewhere": regenerating it still sees them.
+    assert thighs in [c["id"] for c in use_up.candidates(week, 7)]
+
+
+def test_toasts_say_were_for_a_plural_name(household, stub_model):
+    """Re-verify 4: "Red peppers was moved…" — rule 3's own example is
+    "Two items were moved"."""
+    assert use_up._verb("Red peppers") == "were" and use_up._verb("Mushrooms") == "were"
+    assert use_up._verb("Half a cabbage") == "was" and use_up._verb("Hummus") == "was"
+    assert use_up._verb("Cilantro") == "was" and use_up._verb("Watercress") == "was"
+    week = _monday(1)
+    d = tools._week_dates(week)
+    peppers = _inv("Red peppers", turns=d[2])
+    days = [_slot(dd, "dinner", n) for dd, n in zip(d, ["Lamb Stew", "Miso Cod", "Bibimbap", "Laksa",
+                                                        "Ramen", "Gumbo", "Dal"])]
+    plan_id, _ = _draft(stub_model, week, days)
+    out = use_up.resolve(plan_id, peppers, "freeze")
+    assert out["toast"] == "Red peppers were moved to the freezer."
