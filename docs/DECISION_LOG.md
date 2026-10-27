@@ -13,6 +13,18 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **TestFlight pipeline checked against Codemagic's docs** (2026-10-27;
+  branch `overnight/testflight-pipeline`). `submit_to_testflight` is now
+  false: builds go to internal testers with no review, and Emily submits to
+  Beta App Review by hand after `docs/IPHONE_TEST_CHECKLIST.md` (true would
+  have sent the very first build to review, before the phone checks). The README said Codemagic makes the signing
+  certificate itself; on the `ios_signing` route it doesn't, so
+  `docs/TESTFLIGHT_WALKTHROUGH.md` has her generate it in Codemagic and make
+  the App Store profile on Apple's site, on a personal Codemagic account
+  (Teams are paid and lose the free minutes). A step stops the build unless Xcode
+  is 26+ (Apple's rule since 2026-04-28). The build number is
+  `$BUILD_NUMBER`, raised above Apple's newest when `APP_STORE_APPLE_ID` is
+  set. Untested on a real Mac: nothing here can run until the account exists.
 - **Security audit, last pieces before TestFlight** (2026-10-27; branch
   `overnight/security-audit-finish`). FastAPI's `/docs`, `/redoc` and
   `/openapi.json` are off unless `SHOW_API_DOCS=1` (a map of every route is
