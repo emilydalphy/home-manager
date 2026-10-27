@@ -8032,12 +8032,13 @@
   // and a LIST row's ⋯ (the only place for a one-shop household, which
   // never sees a sorting step) — and both undo from the toast they leave.
   //
-  // "Have it" is a per-week answer, not an inventory record (policy
-  // 2026-09-01: nobody does inventory work to finish the loop): it is the
-  // pre-shop "Drop it" — a soft-remove, listed under "Already had on
-  // hand" with its own undo — and never /already-have, which
-  // writes to the kitchen's inventory. A staple's line dropped this way
-  // tells the staple "we have plenty" (drop_grocery_item_pre_shop).
+  // "Have it" is the pre-shop "Drop it" — a soft-remove, listed under
+  // "Already had on hand" with its own undo — and, since Emily lifted
+  // policy 2026-09-01 on 2026-10-25, it also counts as what's home: the
+  // server confirms the kitchen row that's there or adds one, and the
+  // undo takes back exactly that (pre_shop.drop_grocery_item_pre_shop /
+  // inventory.record_already_home). A staple's line dropped this way
+  // only tells the staple "we have plenty" — never the kitchen.
   //
   // "Use something else" opens one small field under the item: what
   // instead, then either "Put it on the list" (the line becomes the
@@ -10343,8 +10344,8 @@
 
       // "Wait, I already have this" — on SORT ALL or a LIST row's ⋯. The
       // pre-shop drop (soft-remove, undo from the toast and from the
-      // list's "Already had on hand" foot), never an inventory write —
-      // see groHaveItPillHtml.
+      // list's "Already had on hand" foot); the server also counts it as
+      // kitchen stock and the undo reverses that — see groHaveItPillHtml.
       case 'have-it': {
         var haveName = el.dataset.name || 'That';
         var haveId = id;
@@ -10458,10 +10459,9 @@
 
       // "Put back on the list" on the "Already had on hand" foot: the one
       // pre-shop-undo endpoint, whichever flow removed the row. Restoring
-      // it to 'needed' is identical either way; the backend also deletes
-      // the inventory row an already-have action created, but only when
-      // that write didn't merge into pre-existing stock (see
-      // undo_pre_shop_drop / already_have_inventory_id) — and, for a line
+      // it to 'needed' is identical either way; the backend also takes
+      // back exactly what the already-have answer put in the kitchen
+      // (inventory.release_already_home) — and, for a line
       // the freezer step set aside, cancels that item's fridge move
       // (`moves_cancelled`), so the Plan root's freezer row and Today's
       // moves are re-read to stop naming it. The line names the row it
