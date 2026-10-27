@@ -21,7 +21,10 @@ why*, not duplicating the diff.
   landed on a 30-minute weeknight). A swap keeps the dish-stamped `use_up`, so
   Undo brings the tag back. A row a live plan has on a dish on another day is
   that plan's (`use_up.claimed_elsewhere`), out of candidates and the
-  generator's lists. Toasts say "were" for a plural name.
+  generator's lists. Toasts say "were" for a plural name. Final check: a
+  period ends day_count days from its OWN first day (not from today), and only
+  the plan holding the period's first day counts as "being replaced" — any
+  other live plan's dish claims its row even on a day two periods share.
 - **Use-up, after the independent verify** (2026-10-27; branch
   `inventory/use-it-all-draft`; tests `tests/test_use_up_verify_fixes.py`). A
   "Uses the…" tag is stamped with the dish it was checked against
