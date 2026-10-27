@@ -163,20 +163,25 @@ def _period_end(period_start: str | None, day_count: int, today: date) -> date:
         start = date.fromisoformat(period_start) if period_start else today
     except ValueError:
         start = today
-    return max(start, today) + timedelta(days=max(1, int(day_count or 7)) - 1)
+    # Counted from the period's own first day, not from today: a week
+    # starting Monday opened on Tuesday still ends on Sunday (final check,
+    # 2026-10-27 — counting from today ran it into next week's Monday).
+    return max(start + timedelta(days=max(1, int(day_count or 7)) - 1), max(start, today))
 
 
 def claimed_elsewhere(period_start: str | None = None, day_count: int = 7, conn=None) -> set[int]:
     """
     Inventory rows a dish already uses on ANOTHER stretch of days: a
     planned, not-yet-cooked entry of a live plan (draft or approved), dated
-    today or later but outside this period, whose "Uses the…" tag still
+    today or later, whose "Uses the…" tag still
     stands (live_uses). The rule (re-verify, 2026-10-27, where this week's
     draft planned the thighs and beef next week's draft already had):
     food a live plan has put on a dish on another day is that plan's, so it
     is not offered to this period and not shown to its generator. Entries
-    INSIDE this period don't count — they belong to the plan this draft
-    replaces. Cooking the dish or retiring its plan frees the row.
+    of the plan this draft replaces (the one holding the period's first
+    day) that fall inside this period don't count; every other live plan's
+    dishes do, even on a day two periods share. Cooking the dish or
+    retiring its plan frees the row.
     """
     own = conn is None
     if own:
@@ -187,22 +192,37 @@ def claimed_elsewhere(period_start: str | None = None, day_count: int = 7, conn=
         end = _period_end(period_start, day_count, today).isoformat()
         rows = conn.execute(
             """
-            SELECT mpe.derived_from_json, COALESCE(r.name, mpe.freeform_meal) AS meal
+            SELECT mpe.date, mpe.derived_from_json, COALESCE(r.name, mpe.freeform_meal) AS meal,
+                   COALESCE(NULLIF(wp.content_start_date, ''), wp.week_start_date) AS plan_start,
+                   wp.day_count AS plan_days
             FROM meal_plan_entries mpe
             JOIN weekly_plans wp ON wp.id = mpe.weekly_plan_id
             LEFT JOIN recipes r ON r.id = mpe.recipe_id
             WHERE mpe.household_id = ? AND wp.status IN ('draft', 'approved')
               AND mpe.slot_state = 'planned' AND COALESCE(mpe.cooked_status, '') != 'done'
-              AND mpe.date >= ? AND (mpe.date < ? OR mpe.date > ?)
+              AND mpe.date >= ?
               AND mpe.derived_from_json LIKE '%use_up%'
             """,
-            (household_id(), today.isoformat(), first, end),
+            (household_id(), today.isoformat()),
         ).fetchall()
     finally:
         if own:
             conn.close()
     out: set[int] = set()
     for r in rows:
+        # The plan this draft replaces is the one holding the period's
+        # first day; its dishes inside the period are not "elsewhere".
+        # Any OTHER plan's dishes are, whatever their date — two periods
+        # can share a day (final check, 2026-10-27: next week's Monday
+        # thighs sat on this week's last day and were offered again).
+        try:
+            p_start = date.fromisoformat((r["plan_start"] or "")[:10])
+            p_end = p_start + timedelta(days=(int(r["plan_days"] or 0) or 7) - 1)
+            replaced = p_start.isoformat() <= first <= p_end.isoformat()
+        except ValueError:
+            replaced = False
+        if replaced and first <= r["date"] <= end:
+            continue
         for u in live_uses(r["derived_from_json"], r["meal"]):
             try:
                 out.add(int(u.get("id")))
