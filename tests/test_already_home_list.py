@@ -237,6 +237,98 @@ def test_one_pound_at_home_is_already_home_for_one_week_only():
     assert sorted(by_plan.values()) == ["needed", "removed"], beef
 
 
+# ---- verify 2026-10-27: judge a line on its meals STILL TO COME ----------
+
+def _two_taco_nights_two_pounds_home():
+    """Tacos tonight and in two days (1 lb each), 2 lb at home, approved."""
+    _beef_dinner()
+    _recipe("Pasta", [{"item": "Spaghetti", "qty": "1 lb", "category": "pantry"}])
+    tools.update_inventory("Ground beef", "add", quantity="2 lbs", location="fridge")
+    today = household_today()
+    d0, d2, d3 = (today + datetime.timedelta(days=n) for n in (0, 2, 3))
+    monday = today - datetime.timedelta(days=today.weekday())
+    plan_id = _week([(d0.isoformat(), "Beef Tacos"), (d2.isoformat(), "Beef Tacos"),
+                     (d3.isoformat(), "Pasta")], week_start=monday.isoformat())
+    conn = db.get_conn()
+    tonight = conn.execute(
+        "SELECT id FROM meal_plan_entries WHERE weekly_plan_id = ? AND date = ? AND slot = 'dinner'",
+        (plan_id, d0.isoformat())).fetchone()["id"]
+    conn.close()
+    return plan_id, tonight, d3.isoformat()
+
+
+def test_a_cooked_night_does_not_put_the_rest_of_the_week_back_on_the_list():
+    """Issue 1: eat tonight's tacos (1 lb leaves the kitchen), then swap an
+    unrelated night. Thursday's pound is still home — nothing to buy."""
+    plan_id, tonight, pasta_day = _two_taco_nights_two_pounds_home()
+    assert [r["status"] for r in _lines("Ground beef")] == ["removed"]
+    tools.check_off_meal(tonight, "done")
+    _recipe("Soup", [{"item": "Carrots", "qty": "2", "category": "produce"}])
+    tools.swap_meal_in_plan(plan_id, pasta_day, "Soup", slot="dinner")
+    assert not [r for r in _lines("Ground beef") if r["status"] == "needed"], _lines("Ground beef")
+
+
+def test_a_meal_added_while_its_food_is_set_aside_is_one_row_not_two():
+    """Issue 2: swap a second beef dinner in while the beef line is set aside
+    and the kitchen covers both — one set-aside row, not two."""
+    _beef_dinner()
+    _recipe("Pasta", [{"item": "Spaghetti", "qty": "1 lb", "category": "pantry"}])
+    _recipe("Beef Chili", [{"item": "Ground beef", "qty": "1 lb", "category": "meat"}])
+    tools.update_inventory("Ground beef", "add", quantity="2 lbs", location="fridge")
+    d1, d2 = _future_days()
+    plan_id = _week([(d1, "Beef Tacos"), (d2, "Pasta")])
+    tools.swap_meal_in_plan(plan_id, d2, "Beef Chili", slot="dinner")
+    beef = _lines("Ground beef")
+    assert [(r["status"], r["quantity"]) for r in beef] == [("removed", "2 lbs")], beef
+    assert [r["item"] for r in tools.already_home_lines()] == ["Ground beef"]
+
+
+def test_partly_covered_after_an_add_puts_the_whole_line_on_the_list():
+    """Issue 2, the partial case: one pound home, a second beef dinner swapped
+    in — the whole two pounds is on the list, nothing left under Already home."""
+    _beef_dinner()
+    _recipe("Pasta", [{"item": "Spaghetti", "qty": "1 lb", "category": "pantry"}])
+    _recipe("Beef Chili", [{"item": "Ground beef", "qty": "1 lb", "category": "meat"}])
+    tools.update_inventory("Ground beef", "add", quantity="1 lb", location="fridge")
+    d1, d2 = _future_days()
+    plan_id = _week([(d1, "Beef Tacos"), (d2, "Pasta")])
+    assert [r["status"] for r in _lines("Ground beef")] == ["removed"]
+    tools.swap_meal_in_plan(plan_id, d2, "Beef Chili", slot="dinner")
+    beef = _lines("Ground beef")
+    assert [(r["status"], r["quantity"]) for r in beef] == [("needed", "2 lbs")], beef
+    assert tools.already_home_lines() == []
+
+
+def test_a_set_aside_line_with_no_meal_left_is_cleaned_up():
+    _beef_dinner()
+    _recipe("Pasta", [{"item": "Spaghetti", "qty": "1 lb", "category": "pantry"}])
+    tools.update_inventory("Ground beef", "add", quantity="2 lbs", location="fridge")
+    d1 = _future_days()[0]
+    plan_id = _week([(d1, "Beef Tacos")])
+    tools.swap_meal_in_plan(plan_id, d1, "Pasta", slot="dinner")
+    assert _lines("Ground beef") == []
+
+
+def test_a_cooked_week_does_not_hold_its_food_against_next_week():
+    """Issue 3: tacos today with 2 lb home (set aside), eaten (1 lb left);
+    next week's tacos find that pound home."""
+    _beef_dinner()
+    tools.update_inventory("Ground beef", "add", quantity="2 lbs", location="fridge")
+    today = household_today()
+    monday = today - datetime.timedelta(days=today.weekday())
+    this_week = _week([(today.isoformat(), "Beef Tacos")], week_start=monday.isoformat())
+    conn = db.get_conn()
+    tonight = conn.execute("SELECT id FROM meal_plan_entries WHERE weekly_plan_id = ?",
+                           (this_week,)).fetchone()["id"]
+    conn.close()
+    tools.check_off_meal(tonight, "done")
+    next_monday = monday + datetime.timedelta(days=7)
+    nxt = _week([((next_monday + datetime.timedelta(days=1)).isoformat(), "Beef Tacos")],
+                week_start=next_monday.isoformat())
+    by_plan = {r["source_weekly_plan_id"]: r["status"] for r in _lines("Ground beef")}
+    assert by_plan[nxt] == "removed", _lines("Ground beef")
+
+
 # ---------------------------------------------------------------------------
 # The section on Shop, run under node from shell.js itself.
 # ---------------------------------------------------------------------------
@@ -285,7 +377,8 @@ needs_node = pytest.mark.skipif(shutil.which("node") is None, reason="node not i
 def test_the_section_is_titled_already_home_opens_and_asks_for_a_check():
     out = _render(_HOME + [{"id": 9, "item": "Milk", "quantity": "", "removed_by": "user"}])
     html = out["first"]
-    assert "Already home &middot; 3" in html
+    # N counts what Pomona left off, not the household's own Milk row.
+    assert "Already home &middot; 2" in html
     assert 'aria-expanded="true"' in html  # open the first time this week
     assert "Check these are really home before you go. Bought some anyway? Tap to add it back." in html
     # One tap on a row is the put-back, through the section's one undo.
@@ -305,6 +398,13 @@ def test_closed_it_names_what_was_left_off_and_stays_closed_that_week():
     assert 'aria-expanded="false"' in again["first"]
     new_week = [dict(r, weekly_plan_id=4) for r in _HOME]
     assert 'aria-expanded="true"' in _render(new_week, stored=out["store"])["first"]
+
+
+@needs_node
+def test_one_thing_left_off_reads_in_the_singular():
+    out = _render(_HOME[:1], toggles=1)
+    assert "Already home &middot; 1" in out["after"]
+    assert "Rice. Left off the list. Check this is really home before you go." in out["after"]
 
 
 @needs_node

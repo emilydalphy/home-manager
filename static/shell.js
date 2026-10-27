@@ -7909,7 +7909,9 @@
     return '<div class="gro-flag' + (home.length ? ' gro-home' : '') + '">' +
       '<button type="button" class="gro-flag-head" data-gro="flag-toggle" data-key="already-have" aria-expanded="' + open + '">' +
         '<span class="gro-flag-badge">' + GRO_ICONS.tick + '</span>' +
-        '<span class="gro-flag-title">' + (home.length ? GRO_ALREADY_HOME_TITLE : 'Already had on hand') + ' &middot; ' + already.length + '</span>' +
+        // "Already home · N" counts what Pomona left off (the mockup's N);
+        // the household's own answers are listed below it, uncounted.
+        '<span class="gro-flag-title">' + (home.length ? GRO_ALREADY_HOME_TITLE + ' &middot; ' + home.length : 'Already had on hand &middot; ' + already.length) + '</span>' +
         '<span class="gro-chev">' + (open ? GRO_ICONS.chevDown : GRO_ICONS.chevRight) + '</span>' +
       '</button>' +
       (home.length ? groAlreadyHomeNoteHtml(home, open) : '') +
@@ -7941,6 +7943,7 @@
   // (the same /pre-shop-undo every row here uses; the toast names it).
   var GRO_ALREADY_HOME_TITLE = 'Already home';
   var GRO_ALREADY_HOME_CHECK = 'Check these are really home before you go.';
+  var GRO_ALREADY_HOME_CHECK_ONE = 'Check this is really home before you go.';
   var GRO_ALREADY_HOME_LEFT_OFF = 'Left off the list.';
   var GRO_ALREADY_HOME_TAP = 'Bought some anyway? Tap to add it back.';
   var GRO_ALREADY_HOME_ADD = 'Add back';
@@ -7975,9 +7978,10 @@
   // Closed: what was left off, and the ask. Open: the ask, and how to undo
   // one — the rows below already name each thing.
   function groAlreadyHomeNoteHtml(home, open) {
+    var check = home.length === 1 ? GRO_ALREADY_HOME_CHECK_ONE : GRO_ALREADY_HOME_CHECK;
     var text = open
-      ? GRO_ALREADY_HOME_CHECK + ' ' + GRO_ALREADY_HOME_TAP
-      : groAlreadyHomeNames(home) + ' ' + GRO_ALREADY_HOME_LEFT_OFF + ' ' + GRO_ALREADY_HOME_CHECK;
+      ? check + ' ' + GRO_ALREADY_HOME_TAP
+      : groAlreadyHomeNames(home) + ' ' + GRO_ALREADY_HOME_LEFT_OFF + ' ' + check;
     return '<p class="gro-home-note">' + escapeHtml(text) + '</p>';
   }
   function groAlreadyHomeRowHtml(it) {

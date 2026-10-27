@@ -37,6 +37,11 @@ WHEN. Once per ingest pass, at the end of recipes.WeekGroceryBuffer.flush —
 approval, a rebuild, a swap, a meal added — on that pass's connection. A
 line this pass set aside that a later pass finds no longer covered (its
 meals grew, the food went) is put back on the list; the safe direction.
+Every judgement is of what the line's meals STILL TO COME want, off the
+ledger (_still_to_come): a night already cooked has taken its food out of
+the kitchen and is no reason to buy more. A meal added while its food is
+set aside joins that line (_tidy_set_aside_lines), so a food is in one
+place, whole; a set-aside line with no meal left is deleted.
 Nothing happens on a plain list read: the list does not rearrange itself
 while somebody is standing in the shop.
 
@@ -183,14 +188,53 @@ def note_put_back(conn, row) -> None:
         logger.exception("Remembering an Already home put-back failed")
 
 
-def _covered(stock, fresh_names: list[dict], row) -> bool:
-    """Whether the kitchen covers this whole line — and claims it when so."""
-    from . import cooker as _cooker
-    from . import pre_shop as _pre_shop
+def _still_to_come(conn, row, today: str):
+    """
+    What this line is still FOR: the (amount, unit) its meals yet to be
+    cooked want — read off the ledger (meal_plan_grocery_links), never the
+    line's own text, which keeps the share of a night already eaten. None
+    when no meal still to come is behind it (nothing left to judge).
 
-    need = _pre_shop._pre_shop_parse_total(row["quantity"] or "")
-    if need is None:
-        return False  # "a bunch", or two amounts that won't add: buy it
+    A meal still to come: pending, today or later, not skipped, not
+    depleted — the same reading recipes._KitchenStock.reserve_bought_for_
+    meals_ahead makes of "still to be cooked". Cooking a night takes its
+    food out of the kitchen (cooker's depletion), so comparing the whole
+    week's line against what is left would call a covered week short
+    (verify 2026-10-27, issue 1).
+
+    A sealed package or a spice's jar is the line's own amount (one jar
+    for the week, however many meals name it); a ledger that won't read in
+    one unit falls back to the line too, and a freeform one can't be
+    compared at all (None from the parse: bought).
+    """
+    from . import grocery as _grocery
+    from . import pre_shop as _pre_shop
+    from . import quantities as _quantities
+
+    qtys = [r["quantity"] or "" for r in conn.execute(
+        "SELECT l.quantity FROM meal_plan_grocery_links l JOIN meal_plan_entries e "
+        "ON e.id = l.meal_plan_entry_id AND e.household_id = l.household_id "
+        "WHERE l.household_id = ? AND l.grocery_item_id = ? AND e.cooked_status = 'pending' "
+        "AND e.date >= ? AND e.skipped_at IS NULL AND e.inventory_depleted_at IS NULL ORDER BY l.id",
+        (household_id(), row["id"], today),
+    ).fetchall()]
+    if not qtys:
+        return None
+    line = _pre_shop._pre_shop_parse_total(row["quantity"] or "")
+    if any(_grocery._holds_one_package(row["item"] or "", q) for q in qtys):
+        return line or "unreadable"
+    totals = _quantities._ledger_totals(qtys, [])
+    if totals is None:
+        return line or "unreadable"
+    return (totals[0], totals[2])
+
+
+def _covered(stock, fresh_names: list[dict], row, need) -> bool:
+    """Whether the kitchen covers `need` for this line — and claims it when so."""
+    from . import cooker as _cooker
+
+    if need is None or need == "unreadable":
+        return False  # "a bunch", or amounts that won't add: buy it
     match, confident = _cooker._find_inventory_match(row["item"], fresh_names)
     if not match or not confident:
         return False
@@ -208,6 +252,81 @@ _HAS_A_MEAL = (
 )
 
 
+def _plain_plan_line(row, put_back) -> bool:
+    """A line wholly the plan's to decide: no staple, spice or sauce, no
+    amount the household kept or edited, not put back."""
+    from . import grocery as _grocery
+
+    return (
+        row["staple_id"] is None
+        and not _own_rules(row["item"])
+        and not (row["kept_amount"] or "").strip()
+        and not (row["edited_to"] or "").strip()
+        and _grocery._merge_key(row["item"] or "") not in put_back
+    )
+
+
+def _tidy_set_aside_lines(conn, weekly_plan_id: int, put_back) -> None:
+    """
+    Before judging: one row per food, and no empty rows.
+
+    - A set-aside line no meal is behind any more (its last night swapped
+      away) is deleted: nothing will put it back, and nothing shows it.
+    - A meal added to the week while its food's line is set aside gets a
+      NEW needed row (grocery.add_grocery_item merges only onto lines still
+      to buy), so the same food sat in both places — and twice in the
+      section after a second add (verify 2026-10-27, issue 2). The set-aside
+      line's meals move onto the needed one, which is re-read from its whole
+      ledger, and the set-aside row goes; the pass then judges the one line
+      as a whole, so a partly covered food is all on the list, never split.
+      Only when the ledger reads in one unit and holds no package (a jar the
+      re-read keeps as one jar): otherwise the two rows are left as they are.
+    """
+    from . import grocery as _grocery
+    from . import quantities as _quantities
+
+    hid = household_id()
+    conn.execute(
+        "DELETE FROM grocery_items WHERE household_id = ? AND source_weekly_plan_id = ? "
+        "AND status = 'removed' AND removed_by = ? AND NOT EXISTS ("
+        "  SELECT 1 FROM meal_plan_grocery_links l WHERE l.household_id = grocery_items.household_id "
+        "  AND l.grocery_item_id = grocery_items.id)",
+        (hid, weekly_plan_id, REMOVED_BY_KITCHEN),
+    )
+    rows = conn.execute(
+        f"SELECT {_LINE_COLUMNS} FROM grocery_items g WHERE g.household_id = ? AND g.source_weekly_plan_id = ? "
+        "AND ((g.status = 'removed' AND g.removed_by = ?) "
+        "  OR (g.status = 'needed' AND g.excluded_from_list = 0 AND g.already_have_reviewed = 0)) ORDER BY g.id",
+        (hid, weekly_plan_id, REMOVED_BY_KITCHEN),
+    ).fetchall()
+    by_key: dict[str, dict] = {}
+    for r in rows:
+        if not _plain_plan_line(r, put_back):
+            continue
+        slot = by_key.setdefault(_grocery._merge_key(r["item"] or ""), {"aside": [], "needed": []})
+        slot["aside" if r["status"] == "removed" else "needed"].append(r)
+    for slot in by_key.values():
+        if not slot["aside"] or not slot["needed"]:
+            continue
+        keep = slot["needed"][0]
+        ids = [r["id"] for r in slot["aside"]] + [keep["id"]]
+        qtys = [q["quantity"] or "" for q in conn.execute(
+            f"SELECT quantity FROM meal_plan_grocery_links WHERE household_id = ? "
+            f"AND grocery_item_id IN ({','.join('?' * len(ids))})",
+            (hid, *ids),
+        ).fetchall()]
+        if (_quantities._ledger_totals(qtys, []) is None
+                or any(_grocery._holds_one_package(keep["item"] or "", q) for q in qtys)):
+            continue
+        for aside in slot["aside"]:
+            conn.execute(
+                "UPDATE meal_plan_grocery_links SET grocery_item_id = ? WHERE household_id = ? AND grocery_item_id = ?",
+                (keep["id"], hid, aside["id"]),
+            )
+            conn.execute("DELETE FROM grocery_items WHERE id = ? AND household_id = ?", (aside["id"], hid))
+        _grocery._recompute_plan_line_from_ledger(keep["id"], conn=conn)
+
+
 def leave_off_what_is_home(weekly_plan_id: int, conn=None) -> list[str]:
     """
     The pass (see the module docstring). Returns the names it set aside.
@@ -215,15 +334,23 @@ def leave_off_what_is_home(weekly_plan_id: int, conn=None) -> list[str]:
     open transaction); opens, commits and closes its own otherwise.
     Never raises: a failure here costs the "Already home" section, never
     the approval it runs inside.
+
+    Every line is judged on what its meals STILL TO COME want
+    (_still_to_come), never its whole week: a night already cooked has
+    taken its food out of the kitchen, and is not a reason to buy more.
+    A set-aside line with nothing still to come stays set aside.
     """
+    from . import cooker as _cooker
     from . import recipes as _recipes
-    from . import grocery as _grocery
 
     own = conn is None
     if own:
         conn = get_conn()
     left_off: list[str] = []
     try:
+        today = _cooker.household_today(conn=conn).isoformat()
+        put_back = _put_back_keys(conn, weekly_plan_id)
+        _tidy_set_aside_lines(conn, weekly_plan_id, put_back)
         since = fresh_cutoff(conn)
         stock = _recipes._KitchenStock(conn, fresh_since=since)
         stock.reserve_bought_for_meals_ahead(conn)
@@ -234,7 +361,9 @@ def leave_off_what_is_home(weekly_plan_id: int, conn=None) -> list[str]:
                 (household_id(),),
             ).fetchall() if r["id"] in fresh
         ]
-        # Other live weeks' set-aside lines speak for their food first.
+        # Other live weeks' set-aside lines speak for their food first — only
+        # for the meals of theirs still to come (a cooked night's beef is
+        # already out of the kitchen; verify 2026-10-27, issue 3).
         for row in conn.execute(
             f"SELECT {_LINE_COLUMNS} FROM grocery_items g "
             "LEFT JOIN weekly_plans w ON w.id = g.source_weekly_plan_id AND w.household_id = g.household_id "
@@ -243,26 +372,19 @@ def leave_off_what_is_home(weekly_plan_id: int, conn=None) -> list[str]:
             f"AND COALESCE(w.status, '') != 'retired' AND {_HAS_A_MEAL} ORDER BY g.id",
             (household_id(), REMOVED_BY_KITCHEN, weekly_plan_id),
         ).fetchall():
-            _covered(stock, fresh_names, row)
-        put_back = _put_back_keys(conn, weekly_plan_id)
+            _covered(stock, fresh_names, row, _still_to_come(conn, row, today))
         rows = conn.execute(
-            f"SELECT {_LINE_COLUMNS}, {_HAS_A_MEAL} AS has_meal FROM grocery_items g "
+            f"SELECT {_LINE_COLUMNS} FROM grocery_items g "
             "WHERE g.household_id = ? AND g.source_weekly_plan_id = ? AND ("
             "  (g.status = 'needed' AND g.excluded_from_list = 0 AND g.already_have_reviewed = 0)"
             "  OR (g.status = 'removed' AND g.removed_by = ?)) ORDER BY g.id",
             (household_id(), weekly_plan_id, REMOVED_BY_KITCHEN),
         ).fetchall()
         for row in rows:
-            if not row["has_meal"]:
-                continue  # no meal behind it: nothing to decide (and not shown)
-            eligible = (
-                row["staple_id"] is None
-                and not _own_rules(row["item"])
-                and not (row["kept_amount"] or "").strip()
-                and not (row["edited_to"] or "").strip()
-                and _grocery._merge_key(row["item"] or "") not in put_back
-            )
-            covered = eligible and _covered(stock, fresh_names, row)
+            need = _still_to_come(conn, row, today)
+            if need is None:
+                continue  # nothing still to come behind it: leave it where it is
+            covered = _plain_plan_line(row, put_back) and _covered(stock, fresh_names, row, need)
             if row["status"] == "needed" and covered:
                 conn.execute(
                     "UPDATE grocery_items SET status = 'removed', removed_by = ?, removed_at = datetime('now') "
