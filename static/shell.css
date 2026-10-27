@@ -11917,6 +11917,13 @@ body.first-open-active { overflow: hidden; }
   line-height: 1.4;
   color: var(--ink-secondary);
 }
+.wk-use-up-past {
+  margin: 12px 20px 0;
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--ink-secondary);
+}
 .wk-unfit {
   margin: 12px 20px 0;
   padding: 12px 16px;
@@ -11959,7 +11966,11 @@ body.first-open-active { overflow: hidden; }
   background-clip: content-box;
   box-shadow: none;
 }
-.wk-unfit-act.is-freeze { background: var(--apricot); color: var(--on-accent-ink); background-clip: padding-box; min-height: 30px; margin: 7px 0; }
+/* Rule 5: Approve is the draft's one apricot, so "Freeze it" wears the same
+   celadon-tint pill as "Add as a side" (verify, 2026-10-27; flagged to
+   Emily, whose mockup drew it apricot — to go back, give .is-freeze
+   `background: var(--apricot); color: var(--on-accent-ink); border: 0`). */
+.wk-unfit-act.is-freeze,
 .wk-unfit-act.is-side { background: var(--celadon-tint); color: var(--ink-on-celadon); border: 1px solid var(--celadon-edge); background-clip: padding-box; min-height: 30px; margin: 7px 0; }
 .wk-unfit-quiet {
   min-height: 44px;

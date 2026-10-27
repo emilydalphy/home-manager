@@ -120,9 +120,12 @@ def test_tags_count_and_couldnt_fit_are_checked_against_the_dishes(household, st
     tags = {day["date"]: (day.get("dinner") or {}).get("uses_tag") for day in menu["days"]}
     assert tags[d[0]] == "Uses the spinach and feta"
     assert tags[d[1]] == "Uses the half onion, red peppers, eggs"  # soonest-to-turn first
-    assert tags[d[2]] == "Uses the ground beef"
+    # The freezer is eaten oldest first in the NIGHTS: the 90-day thighs
+    # (Sat's traybake, carried unclaimed) trade nights with the 30-day beef
+    # (Wed's chili), through swap_dinner_nights.
+    assert tags[d[2]] == "Uses the chicken thighs"
+    assert tags[d[5]] == "Uses the ground beef"
     assert tags[d[3]] == ""  # claimed the cabbage; a lamb stew doesn't carry it
-    assert tags[d[5]] == "Uses the chicken thighs"  # carried, unclaimed: still counts
     assert tags[d[4]] == "" and tags[d[6]] == ""
     summary = menu["use_up"]
     assert summary["total"] == 9 and summary["used"] == 7
@@ -132,8 +135,9 @@ def test_tags_count_and_couldnt_fit_are_checked_against_the_dishes(household, st
     assert rows["Half a cabbage"]["primary"] == "freeze"
     assert rows["Cilantro"]["primary"] == "side"
     # The recipe pass is told to write the dish around what it uses.
+    from app.tools import typed_requests
     pasta = next(e for e in _entries(plan_id) if e["date"] == d[0] and e["slot"] == "dinner")
-    assert {"spinach", "feta"} <= set(json.loads(pasta["derived_from_json"])["must_use"])
+    assert {"spinach", "feta"} <= set(typed_requests.plan_must_use(plan_id, pasta["recipe_id"]))
 
 
 def test_an_item_claimed_after_it_turns_does_not_count(household, stub_model):
@@ -259,6 +263,8 @@ def test_a_disliked_item_is_never_handed_to_the_generator(household, stub_model)
     assert ids["cabbage"] not in [c["id"] for c in ctx["use_up"]]
     menu = tools.get_week_menu(plan_id)
     assert all("cabbage" not in ((day.get("lunch") or {}).get("uses_tag") or "") for day in menu["days"])
-    assert "Half a cabbage" in [r["item"] for r in menu["use_up"]["couldnt_fit"]]
-    record = json.loads(get_conn().execute("SELECT use_up_json FROM weekly_plans WHERE id = ?", (plan_id,)).fetchone()[0])
-    assert record["missed"][str(ids["cabbage"])] == "household_rule: dislike"
+    # It can never be planned, so it is not offered, shown or counted at
+    # all (verify finding 5, 2026-10-27) — not even on the card.
+    assert "Half a cabbage" not in [r["item"] for r in menu["use_up"]["couldnt_fit"]]
+    assert menu["use_up"]["total"] == 8
+    assert ids["cabbage"] not in [c["id"] for c in use_up.candidates(week, 7)]

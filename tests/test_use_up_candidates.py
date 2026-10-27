@@ -68,10 +68,11 @@ def test_staples_spices_past_dates_far_dates_and_fresh_freezer_rows_are_left_out
 
 def test_selected_drops_what_was_switched_off_on_the_intake():
     """CATCH — save_week_intake had no use_up_off, so nothing could be switched off."""
-    a = _row("Baby spinach", days=2)
-    b = _row("Feta", days=3, category="dairy")
     monday = household_today() + datetime.timedelta(days=(7 - household_today().weekday()) % 7 or 7)
     week = monday.isoformat()
+    lead = (monday - household_today()).days
+    a = _row("Baby spinach", days=lead + 2)
+    b = _row("Feta", days=lead + 3, category="dairy")
     saved = tools.save_week_intake(week, use_up_off=[b])
     assert saved["use_up_off"] == [b]
     # A later save of another half keeps it (append-only inherit).
@@ -130,8 +131,8 @@ def test_freeze_and_side_tables():
 
 def test_http_use_up_and_freeze_routes(signed_in):
     """CATCH — the routes B1 and the Kitchen tab call."""
-    item_id = _row("Baby spinach", days=2)
     monday = household_today() + datetime.timedelta(days=(7 - household_today().weekday()) % 7 or 7)
+    item_id = _row("Baby spinach", days=(monday - household_today()).days + 2)
     r = signed_in.get(f"/api/week/{monday.isoformat()}/use-up")
     assert r.status_code == 200
     assert [i["id"] for i in r.json()["items"]] == [item_id] and r.json()["off"] == []

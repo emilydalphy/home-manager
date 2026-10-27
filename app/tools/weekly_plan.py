@@ -6599,7 +6599,7 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             # "Uses the spinach and feta" (Loop Board B2, 2026-10-26): the
             # celadon tag under a dish that uses something going off — only
             # what use_up.reconcile CHECKED the dish carries. '' otherwise.
-            built["uses_tag"] = _use_up.tag_for(derived)
+            built["uses_tag"] = _use_up.tag_for(derived, row["meal"])
         return built
 
     # The one line a row still says under its dish besides the minutes

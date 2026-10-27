@@ -349,9 +349,13 @@ def _note_must_use(entry: dict, request: dict) -> None:
 def plan_must_use(plan_id: int, recipe_id: int) -> list[str]:
     """The ingredients the entries planned under this recipe were chosen
     to carry (derived_from.must_use), for the recipe pass's spec."""
+    from . import use_up as _use_up  # lazy: use_up reaches this module
+
     conn = get_conn()
     rows = conn.execute(
-        "SELECT derived_from_json FROM meal_plan_entries WHERE weekly_plan_id = ? AND recipe_id = ? AND household_id = ?",
+        "SELECT mpe.derived_from_json, COALESCE(r.name, mpe.freeform_meal) AS meal "
+        "FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id "
+        "WHERE mpe.weekly_plan_id = ? AND mpe.recipe_id = ? AND mpe.household_id = ?",
         (plan_id, recipe_id, household_id()),
     ).fetchall()
     conn.close()
@@ -361,7 +365,9 @@ def plan_must_use(plan_id: int, recipe_id: int) -> list[str]:
             derived = json.loads(r["derived_from_json"] or "{}") or {}
         except (TypeError, ValueError):
             continue
-        for m in derived.get("must_use") or []:
+        # The kitchen's going-off food this dish was checked to use
+        # (use_up.must_use_for — only while the slot still holds it).
+        for m in list(derived.get("must_use") or []) + _use_up.must_use_for(derived, r["meal"]):
             if isinstance(m, str) and m and m not in out:
                 out.append(m)
     return out

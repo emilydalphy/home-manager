@@ -3,6 +3,7 @@ What is actually in the pantry and fridge, including the item detail sheet.
 """
 from __future__ import annotations
 
+import json as _json
 import re
 from datetime import date, timedelta
 from ..db import get_conn, write
@@ -204,7 +205,8 @@ def set_inventory_location(item_id: int, location: str) -> dict:
         conn.execute("UPDATE inventory_items SET frozen_on = ? WHERE id = ? AND household_id = ?",
                      (_today().isoformat(), item_id, household_id()))
     elif location != "freezer" and was == "freezer":
-        conn.execute("UPDATE inventory_items SET frozen_on = NULL WHERE id = ? AND household_id = ?",
+        conn.execute("UPDATE inventory_items SET frozen_on = NULL, freeze_undo_json = NULL "
+                     "WHERE id = ? AND household_id = ?",
                      (item_id, household_id()))
     conn.commit()
     conn.close()
@@ -242,12 +244,20 @@ def freeze_item(item_id: int) -> dict:
     if _quantities._display_location(before).strip().lower() == "freezer":
         raise CannotFreeze(f"{before['item']} is already in the freezer.")
     moved = set_inventory_location(item_id, "freezer")
-    conn = get_conn()
-    after = conn.execute(
-        "SELECT expiration_date, frozen_on FROM inventory_items WHERE id = ? AND household_id = ?",
-        (item_id, household_id()),
-    ).fetchone()
-    conn.close()
+    undo_record = {
+        "location": before["location"] or "",
+        "expiration_date": before["expiration_date"],
+        "frozen_on": before["frozen_on"],
+    }
+    with write() as conn:
+        conn.execute(
+            "UPDATE inventory_items SET freeze_undo_json = ? WHERE id = ? AND household_id = ?",
+            (_json.dumps(undo_record), item_id, household_id()),
+        )
+        after = conn.execute(
+            "SELECT expiration_date, frozen_on FROM inventory_items WHERE id = ? AND household_id = ?",
+            (item_id, household_id()),
+        ).fetchone()
     return {
         "item_id": item_id,
         "item": before["item"],
@@ -268,6 +278,10 @@ def unfreeze_item(undo: dict) -> dict:
     Undo a freeze_item: put the row back on its shelf with the date it had.
     Only while it is still in the freezer — a row that has moved since, or
     is gone, is left alone and {"undone": False} comes back.
+
+    Only `undo["item_id"]` is read. Where the row goes back to, and with
+    which date, comes from the record freeze_item kept on the row
+    (inventory_items.freeze_undo_json), never from the client.
     """
     try:
         item_id = int((undo or {}).get("item_id"))
@@ -275,17 +289,26 @@ def unfreeze_item(undo: dict) -> dict:
         raise ValueError("I couldn't tell which item to put back.")
     with write() as conn:
         row = conn.execute(
-            "SELECT item, location, category FROM inventory_items WHERE id = ? AND household_id = ?",
+            "SELECT item, location, category, freeze_undo_json FROM inventory_items WHERE id = ? AND household_id = ?",
             (item_id, household_id()),
         ).fetchone()
         if row is None or _quantities._display_location(dict(row)).strip().lower() != "freezer":
             return {"item_id": item_id, "undone": False}
+        try:
+            kept = _json.loads(row["freeze_undo_json"] or "null")
+        except (TypeError, ValueError):
+            kept = None
+        if not isinstance(kept, dict):
+            return {"item_id": item_id, "undone": False}
+        back_to = (kept.get("location") or "").strip().lower()
+        if back_to not in ("", "fridge", "pantry"):
+            back_to = ""
         conn.execute(
-            "UPDATE inventory_items SET location = ?, expiration_date = ?, frozen_on = ?, updated_at = datetime('now') "
-            "WHERE id = ? AND household_id = ?",
-            (undo.get("location") or "", undo.get("expiration_date"), undo.get("frozen_on"), item_id, household_id()),
+            "UPDATE inventory_items SET location = ?, expiration_date = ?, frozen_on = ?, freeze_undo_json = NULL, "
+            "updated_at = datetime('now') WHERE id = ? AND household_id = ?",
+            (back_to, kept.get("expiration_date"), kept.get("frozen_on"), item_id, household_id()),
         )
-    return {"item_id": item_id, "item": row["item"], "undone": True, "location": undo.get("location") or ""}
+    return {"item_id": item_id, "item": row["item"], "undone": True, "location": back_to}
 
 
 def step_inventory_expiration(item_id: int, delta_days: int) -> dict:
