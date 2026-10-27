@@ -352,9 +352,14 @@ def leave_off_what_is_home(weekly_plan_id: int, conn=None) -> list[str]:
         put_back = _put_back_keys(conn, weekly_plan_id)
         _tidy_set_aside_lines(conn, weekly_plan_id, put_back)
         since = fresh_cutoff(conn)
-        stock = _recipes._KitchenStock(conn, fresh_since=since)
+        # Not the Freezer rows this plan's own freezer step added: they are
+        # this plan's set-aside line already (inventory A3), the same rule
+        # WeekGroceryBuffer.kitchen_stock follows (merge 2026-10-27).
+        from . import inventory as _inventory
+        own_freezer = _inventory.rows_added_by_plans_freezer_answer(conn, weekly_plan_id)
+        stock = _recipes._KitchenStock(conn, fresh_since=since, exclude_ids=own_freezer)
         stock.reserve_bought_for_meals_ahead(conn)
-        fresh = fresh_inventory_ids(conn, since)
+        fresh = fresh_inventory_ids(conn, since) - own_freezer
         # A row the household marked "Almost gone" (C3's chip, while it still
         # stands: read against the quantity it was tapped at, as
         # whats_home.amount_level reads it) covers nothing — they just told
