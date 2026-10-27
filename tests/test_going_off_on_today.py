@@ -190,6 +190,26 @@ def test_a_double_cook_tonight_lands_on_its_leftovers_night_and_the_extra_is_fro
     assert left == [], "Undo takes the freezer portion back"
 
 
+def test_the_yesterday_undo_refuses_a_going_off_swap():
+    """/api/today/yesterday/undo with the swap's holder id used to restore the
+    plan and leave the freezer portion behind. Only the swap's own undo may
+    take it back."""
+    plan, pasta, chili, fed, spinach = _double_cook_week()
+    before = {r["id"]: r["date"] for r in _dinner_rows(plan)}
+    out = tools.swap_for_going_off(spinach, pasta)
+    after = {r["id"]: r["date"] for r in _dinner_rows(plan)}
+    refused = tools.undo_skipped_move(out["undo_entry_id"])
+    assert refused["status"] == "refused"
+    assert {r["id"]: r["date"] for r in _dinner_rows(plan)} == after, "nothing moved"
+    back = tools.undo_going_off_swap(out["undo_entry_id"])
+    assert back["status"] == "restored"
+    assert {r["id"]: r["date"] for r in _dinner_rows(plan)} == before
+    conn = get_conn()
+    left = conn.execute("SELECT id FROM inventory_items WHERE location = 'freezer'").fetchall()
+    conn.close()
+    assert left == []
+
+
 def test_leftovers_of_a_skipped_cook_are_not_a_plan_for_its_food():
     """Verify pass, 2026-10-27: the pasta's own leftovers night, still
     ahead, read as a plan for the spinach — no card, no line."""
@@ -216,6 +236,11 @@ def test_the_matcher_never_takes_a_different_food_for_the_same_word(ingredient, 
 @pytest.mark.parametrize("ingredient,item", [
     ("Baby spinach, chopped", "Spinach"), ("Spinach", "Baby spinach"),
     ("Eggs", "Egg"), ("Fresh basil", "Basil"), ("Feta, crumbled", "Feta"),
+    # Re-verify, 2026-10-27: descriptors are read before singularizing
+    # ("boneless" is not "boneles"), and "leaves" is the form, not the food.
+    ("Boneless skinless chicken thighs", "Chicken thighs"),
+    ("Chicken thighs", "Boneless skinless chicken thighs"),
+    ("Fresh spinach leaves", "Spinach"), ("Spinach", "Baby spinach leaves"),
 ])
 def test_the_matcher_still_finds_the_same_food(ingredient, item):
     assert going_off._matches(ingredient, {"item": item})

@@ -57,6 +57,10 @@ ANSWERS = ("had", "skipped")
 # _skip_moving_the_cook): what the night was, for anyone reading it later.
 SKIPPED_MOVED_CONSTRAINT = "skipped_moved_on"
 
+# The `kind` going_off.swap_for_going_off stamps on its undo record (kept
+# here, the key's owner, so this module needs no import of going_off).
+GOING_OFF_SWAP_KIND = "going_off_swap"
+
 
 class NotAskedAbout(ValueError):
     """The entry isn't one of the rows the card is asking about right now —
@@ -323,7 +327,10 @@ def undo_skipped_move(holder_entry_id: int) -> dict:
             (int(holder_entry_id), household_id()),
         ).fetchone()
         record = _plan_undo.read(holder, SKIPPED_UNDO_KEY) if holder is not None else None
-        if not record:
+        # The going-off swap (going_off.py) leaves its record under this key
+        # too, but its undo also takes back a freezer portion this one knows
+        # nothing about — so it is going_off.undo_going_off_swap's alone.
+        if not record or record.get("kind") == GOING_OFF_SWAP_KIND:
             return nothing
         if not _plan_undo.still_as_left(conn, record, holder["id"]):
             return {"status": "refused", "message": "That’s changed since, so I’ve left it as it is."}

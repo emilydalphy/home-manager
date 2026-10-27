@@ -81,7 +81,7 @@ TURNS_WITHIN_DAYS = 1
 LEAVE_KEY = "going-off-leave:{date}:{item_id}"
 
 # On the undo record, so the undo's sentence can name both dishes.
-SWAP_KIND = "going_off_swap"
+SWAP_KIND = "going_off_swap"  # == yesterday_ask.GOING_OFF_SWAP_KIND
 
 
 # ---------- reading ----------
@@ -91,10 +91,21 @@ def _today() -> datetime.date:
     return _cooker.household_today()
 
 
+# A trailing word that names the form, not the food: "spinach leaves" is
+# spinach. Dropped from the end of a longer name before the head noun is read.
+_FORM_TAILS = frozenset({"leaf", "leaves"})
+
+
 def _words(text: str) -> list[str]:
+    """The name's words, lowercased and singular — except a _DESCRIPTORS
+    word, which is checked BEFORE singularizing ("boneless" must not become
+    "boneles"). A form tail ("leaves") is dropped from a longer name."""
     from . import cooker as _cooker
     clean = (text or "").split(",")[0].lower()
-    return [_cooker._singularize(w.strip("()-.")) for w in clean.split() if w.strip("()-.")]
+    raw = [w.strip("()-.") for w in clean.split() if w.strip("()-.")]
+    while len(raw) > 1 and raw[-1] in _FORM_TAILS:
+        raw.pop()
+    return [w if w in _DESCRIPTORS else _cooker._singularize(w) for w in raw]
 
 
 # Words that say how much, how fresh or how it's cut — never WHAT the food
