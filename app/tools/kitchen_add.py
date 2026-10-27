@@ -138,7 +138,9 @@ def left_out(rows: list[dict], place: str | None = None) -> tuple[list[dict], di
         regulars = _use_up._staple_keys(conn)
         kept, out = [], {"spices": [], "regulars": []}
         for r in rows:
-            if _use_up._name_key(r["item"]) in regulars:
+            # use_up.is_staple: the ONE staple rule the Kitchen tab and the
+            # planning check hide rows by ("Whole milk" is the "Milk" regular).
+            if _use_up.is_staple(r["item"], regulars):
                 out["regulars"].append(r["item"])
                 continue
             if _spices.is_spice(r["item"]):

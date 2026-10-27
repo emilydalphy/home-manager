@@ -953,6 +953,14 @@ _MIGRATIONS = [
     # a row frozen before the column — use_up falls back to created_at.
     # Read by use_up.candidates to plan freezer food oldest first.
     ("inventory_items", "frozen_on", "TEXT"),
+    # The household-local day the household said "still have it" on the
+    # planning check (Loop Board A4, inventory/pre-draft-check): an untapped
+    # chip on "Quick check: still have these?" (inventory_check.answer).
+    # Not a count (counted_on is that, and it changes what bought-for shares
+    # are claimed). The check leaves a row confirmed in the last 14 days
+    # alone; B4's "bought or confirmed in the last 14 days" reads it too.
+    # NULL = never confirmed.
+    ("inventory_items", "confirmed_on", "TEXT"),
     # "Use these up" (Loop Board B1/B2): the inventory_items ids the household
     # switched OFF on the pre-draft step for this week — everything else
     # use_up.candidates offers is planned in. '[]' = nothing switched off.
@@ -970,6 +978,12 @@ _MIGRATIONS = [
     # retires an "almost gone" (whats_home.amount_level).
     ("inventory_items", "amount_left", "TEXT NOT NULL DEFAULT ''"),
     ("inventory_items", "amount_left_qty", "TEXT"),
+    # What a freeze_item changed on this row ({location, expiration_date,
+    # frozen_on} before it), so unfreeze_item restores from the server's
+    # own record rather than from whatever a client sends back (verify
+    # finding 7, 2026-10-27). NULL when the row was not frozen by it, and
+    # cleared by any move out of the freezer.
+    ("inventory_items", "freeze_undo_json", "TEXT"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people

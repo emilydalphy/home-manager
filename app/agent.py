@@ -23,6 +23,7 @@ from . import ai_consent, calendar_feed, chat_progress, tools
 from .db import name_key
 from .tools import allergen_gate as _allergen_gate
 from .tools import typed_requests as _typed_requests
+from .tools import use_up as _use_up
 from .tools import draft_opener as _draft_opener
 from .tools import model_shapes as _model_shapes
 from .tools import plan_quality
@@ -3126,6 +3127,7 @@ _GENERATE_WEEKLY_PLAN_TOOL = {
                                 "inputs": {"type": "array", "items": {"type": "string"}, "description": "e.g. ['cuisines:thai', 'mood:comfort_food'], or 'calendar:Soccer practice' when a calendar commitment drove it."},
                                 "freeform": {"type": "string", "description": "The quoted span of the household's own words that drove this slot, if any."},
                                 "inventory": {"type": "array", "items": {"type": "string"}, "description": "Stock items this slot was chosen to use up."},
+                                "use_up_ids": {"type": "array", "items": {"type": "integer"}, "description": "The `use_up` ids this dish uses — each one named in this dish's meal_name or dish_note."},
                                 "links_to": {"type": "string", "description": "For a leftovers night: the earlier date/slot whose batch this eats, e.g. '2026-09-02:dinner'."},
                             },
                         },
@@ -3166,6 +3168,18 @@ _GENERATE_WEEKLY_PLAN_TOOL = {
                         "label": {"type": "string", "description": "Two to four words: what it became, e.g. 'Mexican lunches', 'chicken-and-potato dinners', 'pizza Friday'."},
                     },
                     "required": ["words", "label"],
+                },
+            },
+            "couldnt_fit": {
+                "type": "array",
+                "description": "Each `use_up` id no dish this week could sensibly use (or not before its use_by). Empty when everything fit.",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "id": {"type": "integer"},
+                        "reason": {"type": "string", "description": "About five words, e.g. 'nothing this week suits cabbage'."},
+                    },
+                    "required": ["id"],
                 },
             },
             "unmet_requests": {
@@ -3955,14 +3969,27 @@ an honestly-labeled "Indian-spiced" one.
 blank just because the recipe already existed.
 - current_inventory lists what's already on hand. Don't let already-stocked pantry staples \
 influence which dishes you pick either way; the recipe pass sees this list too.
-- near_expiring_inventory lists items already expired or expiring soon, most urgent first — \
-unlike current_inventory generally (which shouldn't sway recipe choice), actively favor at \
-least one recipe this week that uses up something on this list, especially anything already \
-'expired'. This is a real goal, not a tiebreaker — reducing food waste is the point — but don't \
-force a bad fit: skip an item if nothing reasonable uses it, rather than contorting a recipe \
-around it.
+- `use_up` is what in their kitchen needs using this week, each with an `id` (Emily, \
+2026-10-26: "making sure to use things before they go bad to avoid food waste"). kind \
+`going_off` items come soonest-to-turn first, each with a `use_by` date; kind `freezer` items \
+oldest first. The household has already switched off anything they'd rather not use, so EVERY \
+item listed is a yes: PLAN EVERY ONE YOU SENSIBLY CAN, not just one. A going_off item goes in a \
+meal dated ON OR BEFORE its use_by, and the soonest-to-turn go in the earliest nights (spinach \
+with a use_by of Wednesday is in a meal on or before Wednesday). One dish may use several of \
+them (a frittata takes the peppers, the eggs and the half onion). A small thing — herbs, half \
+an onion, a handful of greens — may go in a side, a lunch or a snack rather than a dinner. Name \
+each item IN the dish, in its meal_name or dish_note, so the recipe is written around it, and \
+put its id in that slot's derived_from.use_up_ids (its name in derived_from.inventory). Put the \
+item on the night it is COOKED, never on a leftovers night that reheats it. The household's \
+rules still win: never break a dislike, an allergy, eating_style, a night tag, a usual pizza \
+night or a leftovers night to use something up. Anything you can't fit sensibly goes in the \
+top-level `couldnt_fit` by id — never a forced, odd dish. Every id ends up in a slot's \
+use_up_ids or in couldnt_fit. Each claim is checked against the dish afterwards: a dish whose \
+name and note don't carry the item counts as not using it.
+- near_expiring_inventory overlaps `use_up`; plan from `use_up`, and never put anything \
+already 'expired' in a dish.
 - fresh_perishable_inventory lists meats/seafood, produce, and dairy already on hand that aren't \
-urgent yet (that's near_expiring_inventory above) but are still perishable. Give these a gentle, \
+urgent yet (that's `use_up` above) but are still perishable. Give these a gentle, \
 general preference over buying more of the same when a recipe would work well with them — e.g. \
 if there's chicken thighs on hand and you're picking a protein for one of the nights anyway, lean \
 toward a chicken recipe rather than defaulting to something requiring a fresh purchase. This is a \
@@ -4059,7 +4086,7 @@ Call submit_weekly_plan with the result."""
         result_key="days",
         effort_route="generation",
         on_item=on_day,
-        report_keys=("honoured_requests", "unmet_requests"),
+        report_keys=("honoured_requests", "unmet_requests", "couldnt_fit"),
     )
 
 
@@ -4172,7 +4199,7 @@ approach with an ethnic ingredient bolted on.
 in the ingredients; a "Chettinad-Style Pepper Chicken" has black pepper and the Chettinad \
 blend. A title that names something the ingredient list doesn't carry is a recipe the \
 household can't check at a glance. `must_use`, when present, is an ingredient the household \
-typed to be used up this week and this dish was chosen to carry: it goes in the ingredient \
+typed, or one going off in their kitchen, to be used up this week, and this dish was chosen to carry: it goes in the ingredient \
 list and the steps as a real part of the dish, never a garnish.
 - For every ingredient, set category to the grocery store section it actually belongs to \
 (produce, dairy, meat/seafood, pantry, frozen, other) — pantry means shelf-stable only; eggs, \
@@ -7355,6 +7382,11 @@ def _generate_weekly_plan(
     named = {(r["date"], r["slot"]) for r in day_requests}
     past_meals = [p for p in past_meals if (p["date"], p["slot"]) not in named]
 
+    try:
+        use_up_offered = _use_up.selected(intake, content_start_date, day_count)
+    except Exception:
+        logger.exception("Use-up list failed; drafting without it")
+        use_up_offered = []
     context = {
         "week_start_date": content_start_date,
         "day_count": day_count,
@@ -7404,15 +7436,26 @@ def _generate_weekly_plan(
         # below), independent of and in addition to the subset-attendance
         # personalization already attached to `attendance` further down.
         "member_taste": _household_member_taste(),
-        "current_inventory": tools.get_inventory(),
+        # Less what was switched off for this plan and what will be past its
+        # date before the period starts (use_up.filter_stock; verify
+        # findings 2 and 3, 2026-10-27) — telling the model "don't" was not
+        # enough while the row was still in front of it.
+        "current_inventory": _use_up.filter_stock(tools.get_inventory(), intake, content_start_date, day_count),
         # Phase 4, §4.2: items already expired or expiring soon — the LLM
         # prompts are instructed to weight candidate recipes toward using
         # these up, especially the most urgent ones.
-        "near_expiring_inventory": tools.get_expiring_soon(),
+        "near_expiring_inventory": _use_up.filter_stock(tools.get_expiring_soon(), intake, content_start_date, day_count),
         # Phase 4, §4.2 follow-up: perishables on hand that aren't urgent
         # yet — a softer "favor what's fresh" nudge distinct from the
         # near-expiring one above.
-        "fresh_perishable_inventory": tools.get_fresh_perishable_inventory(),
+        "fresh_perishable_inventory": _use_up.filter_stock(tools.get_fresh_perishable_inventory(), intake, content_start_date, day_count),
+        # Loop Board B2 (2026-10-26): what this week should use up, less what
+        # the household switched off before the draft (use_up.selected —
+        # the same list the pre-draft step shows). Telling, not preventing:
+        # _use_up.reconcile checks every claim against the dishes afterwards.
+        # An item a household rule holds back (a dislike, an allergy) is
+        # never handed over — it goes to "Couldn't fit these" (rule_clash).
+        "use_up": _use_up.for_prompt(use_up_offered),
         # Loop Board "Week planning: away-stretches and per-meal needs".
         # The prompt now actually reads this (see the `slot_needs` bullet in
         # the generation prompt): the streaming work this was deliberately
@@ -7934,6 +7977,12 @@ def _generate_weekly_plan(
                 and not _meal_variety.asks_for_a_count(*count_asks, slot=slot)
             })
 
+        # Everything going off that a dish genuinely carries, soonest first,
+        # and what could not fit (Loop Board B2/B3). LAST of the passes that
+        # can change a dish, so the tags describe the week as written; the
+        # model's claims are checked against the dishes, never trusted.
+        _use_up.reconcile(plan_id, use_up_offered, model_report=plan_report, intake=intake,
+                          memory=effective_memory)
         if intake:
             tools.attach_intake_to_plan(plan_id, intake["intake_id"])
         # What the model said it did with the typed requests (GeneratedDays.

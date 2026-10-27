@@ -10654,7 +10654,12 @@
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>'
   };
 
-  var homeState = { data: null, seg: null, loadError: false, sheetId: null, busy: false };
+  var homeState = { data: null, seg: null, loadError: false, sheetId: null, busy: false,
+    // C4: the planning check's chips, on the freezer. `items` from
+    // GET /api/inventory/check (every shelf); `gone` maps a tapped
+    // chip's id to the Undo the answer returned (null when it was already
+    // gone elsewhere), so a second tap puts it back.
+    check: { items: [], gone: {} } };
 
   function homePanel() { return panels['home']; }
   function homeIsBuilt() { var p = homePanel(); return !!(p && p.dataset.built); }
@@ -10697,8 +10702,62 @@
     var same = homeState.data && JSON.stringify(homeState.data) === JSON.stringify(data);
     homeState.data = data;
     homeState.loadError = false;
+    if (homeSegment(data) === 'freezer') {
+      if (await loadHomeCheck()) same = false;
+    }
     if (!same || !quiet) renderHome();
     if (homeState.sheetId) renderHomeItemSheet();
+  }
+
+  // C4: the freezer's "Quick check: still have these?" chips — the very
+  // chips the week's planning asks (inventory_check.candidates, every
+  // shelf: the card's "the same chips also show here", and the mockup's
+  // Hummus / Apples / Feta), so an answer in either place answers both. A chip
+  // tapped gone here stays on screen, marked, until the panel is next
+  // read with it answered elsewhere. Returns whether the chips changed.
+  async function loadHomeCheck() {
+    var res;
+    try {
+      res = await Api.json('/api/inventory/check', { quiet: true });
+    } catch (err) { return false; }
+    var fresh = (res && res.items) || [];
+    var have = {};
+    fresh.forEach(function (it) { have[it.id] = true; });
+    var kept = homeState.check.items.filter(function (it) {
+      return !have[it.id] && Object.prototype.hasOwnProperty.call(homeState.check.gone, it.id);
+    });
+    var next = fresh.concat(kept);
+    var changed = JSON.stringify(next) !== JSON.stringify(homeState.check.items);
+    homeState.check.items = next;
+    return changed;
+  }
+
+  async function homeCheckTap(id) {
+    if (homeState.busy) return;
+    var item = null;
+    homeState.check.items.forEach(function (it) { if (it.id === id) item = it; });
+    if (!item) return;
+    var gone = homeState.check.gone;
+    homeState.busy = true;
+    try {
+      if (!Object.prototype.hasOwnProperty.call(gone, id)) {
+        var res = await Api.json('/api/inventory/check', { body: { gone: [id], confirmed: [] } });
+        var removed = ((res && res.removed) || [])[0];
+        gone[id] = removed && removed.undo ? removed.undo : null;
+      } else if (gone[id]) {
+        // Tapped again: the row goes back, as the planning check's own
+        // second tap does before Next.
+        var back = await Api.json('/api/whats-home/undo', { body: { undo: gone[id] } });
+        if (back && back.already_back) showToast(homeItemName(back.item) + ' is already back in the kitchen.');
+        delete gone[id];
+      } else {
+        delete gone[id];
+      }
+      await loadHome(true);
+      renderHome();
+      refreshKitchenPanel();
+    } catch (err) { /* Api.json toasted */ }
+    homeState.busy = false;
   }
 
   function refreshHomePanel() {
@@ -10746,9 +10805,24 @@
       return;
     }
     if (content) content.classList.remove('is-empty');
-    if (titleEl) titleEl.innerHTML = homeTitleHtml(data.count);
-    setRootBand(panel, 'home-band', { sub: data.up_to_date || '' });
-    if (body) body.innerHTML = homeBodyHtml(data, homeSegment(data));
+    var seg = homeSegment(data);
+    var frozen = ((data.counts || {}).freezer) || 0;
+    if (seg === 'freezer' && frozen) {
+      // The Freezer segment has its own band (mockups-c screen 4): the
+      // count of rows shown, and the promise the sort keeps.
+      if (titleEl) titleEl.innerHTML = homeFreezerTitleHtml(frozen);
+      setRootBand(panel, 'home-band', { sub: 'Oldest first. Next week’s plan starts from the top.' });
+    } else {
+      if (titleEl) titleEl.innerHTML = homeTitleHtml(data.count);
+      setRootBand(panel, 'home-band', { sub: data.up_to_date || '' });
+    }
+    if (body) body.innerHTML = homeBodyHtml(data, seg);
+  }
+
+  // "9 things in the freezer", "1 thing in the freezer".
+  function homeFreezerTitleHtml(count) {
+    return escapeHtml(count + (count === 1 ? ' thing ' : ' things ')) +
+      '<span class="home-band-accent">in the freezer</span>';
   }
 
   // A new household's Kitchen starts empty (mockups-c's trade-off card:
@@ -10760,9 +10834,35 @@
   }
 
   function homeBodyHtml(data, seg) {
+    if (seg === 'freezer') {
+      // No "Use soon" here: the freezer's own band leads, and the planning
+      // check's freezer chips follow the rows (screen 4).
+      return homeSegHtml(data.counts || {}, seg) +
+        homeShelfHtml((data.locations || {})[seg] || [], seg) +
+        homeCheckHtml(homeState.check.items, homeState.check.gone);
+    }
     return homeUseSoonHtml(data.use_soon || []) +
       homeSegHtml(data.counts || {}, seg) +
       homeShelfHtml((data.locations || {})[seg] || [], seg);
+  }
+
+  // Pure: "Quick check: still have these?" on the freezer, one chip per
+  // thing; a chip tapped gone reads "Apples · gone" in the on fill.
+  function homeCheckHtml(items, gone) {
+    if (!items || !items.length) return '';
+    gone = gone || {};
+    return '<section class="home-card home-check" aria-labelledby="home-check-title">' +
+      '<h2 class="home-card-title" id="home-check-title">Quick check: still have these?</h2>' +
+      '<p class="home-check-sub">Tap anything that’s gone.</p>' +
+      '<div class="home-check-chips">' +
+      items.map(function (it) {
+        var off = Object.prototype.hasOwnProperty.call(gone, it.id);
+        return '<button type="button" class="gro-pill' + (off ? ' gro-pill-on' : '') + '" data-home="check" ' +
+          'data-id="' + it.id + '" aria-pressed="' + off + '">' +
+          escapeHtml((it.label || it.item) + (off ? ' · gone' : '')) + '</button>';
+      }).join('') +
+      '</div>' +
+    '</section>';
   }
 
   function homeUseSoonHtml(list) {
@@ -10803,7 +10903,7 @@
     return '<section class="home-card home-shelf" aria-label="' + escapeHtml(HOME_LOCATION_LABELS[seg]) + '">' +
       rows.map(function (r) {
         return '<button type="button" class="home-row home-shelf-row" data-home="row" data-id="' + r.id + '">' +
-          '<span class="home-row-item">' + escapeHtml(r.item) + '</span>' +
+          '<span class="home-row-item">' + escapeHtml(r.label || r.item) + '</span>' +
           '<span class="home-row-line' + (r.plan ? ' is-plan' : '') + '">' + escapeHtml(r.line || '') + '</span>' +
         '</button>';
       }).join('') +
@@ -10828,6 +10928,11 @@
     if (what === 'seg') {
       homeState.seg = el.getAttribute('data-seg');
       renderHome();
+      if (homeState.seg === 'freezer') {
+        loadHomeCheck().then(function (changed) { if (changed) renderHome(); });
+      }
+    } else if (what === 'check') {
+      homeCheckTap(id);
     } else if (what === 'row') {
       openHomeItemSheet(id);
     } else if (what === 'freeze') {
@@ -17582,6 +17687,7 @@
           (planned && entry.brought_over
             ? '<span class="wk-from-last-line"><span class="wk-from-last">From last week</span></span>'
             : '') +
+          (planned && typeof wkUsesTagHtml === 'function' ? wkUsesTagHtml(entry.uses_tag) : '') +
         '</div>' +
         (!planned && acts ? '<div class="wk-row-acts">' + acts + '</div>' : '') +
       '</div>' +
@@ -17888,12 +17994,101 @@
                 (entry.leftover_from && entry.leftover_from.cook_ahead ? 'Made ahead' : 'Leftovers') +
                 '</span></span>'
             : '') +
+          (dish.isLeftover || typeof wkUsesTagHtml !== 'function' ? '' : wkUsesTagHtml(wkDishUsesTag(dish))) +
         '</div>' +
       '</div>' +
       '<div class="wk-row-foot">' + (meta ? '<span class="wk-row-meta">' + escapeHtml(meta) + '</span>' : '') +
         (acts ? '<div class="wk-row-acts">' + acts + '</div>' : '') +
       '</div>' +
     '</div>';
+  }
+
+  // ---------- Use it all: tags, the count, "Couldn't fit these" ----------
+  // Loop Board B2/B3 (Emily, 2026-10-26; Option B mockup, screen 2). The
+  // tag is the server's (get_week_menu's uses_tag — only what use_up.
+  // reconcile checked the dish carries); the count line and the card are
+  // get_week_menu's `use_up` (use_up.plan_summary). Draft only.
+  function wkUsesTagHtml(tag) {
+    if (!tag) return '';
+    return '<span class="wk-uses-line"><span class="wk-uses">' + escapeHtml(tag) + '</span></span>';
+  }
+
+  // A menu row is one dish over several days; the cook day carries it.
+  function wkDishUsesTag(dish) {
+    for (var j = 0; j < dish.days.length; j++) {
+      var e = dish.days[j].entry;
+      if (e && e.uses_tag) return e.uses_tag;
+    }
+    return '';
+  }
+
+  function wkUseUpLineHtml(data) {
+    var u = data && data.use_up;
+    if (!u || !u.line) return '';
+    return '<p class="wk-use-up-line">' + escapeHtml(u.line) + '</p>';
+  }
+
+  var USE_UP_ACTIONS = { freeze: 'Freeze it', side: 'Add as a side' };
+
+  function wkCouldntFitHtml(data) {
+    var u = data && data.use_up;
+    var rows = (u && u.couldnt_fit) || [];
+    // A dish naming kitchen food that will be past its date by then
+    // (use_up._past_date_dishes) — said, never hidden.
+    var past = ((u && u.past_date) || []).map(function (line) {
+      return '<p class="wk-use-up-past">' + escapeHtml(line) + '</p>';
+    }).join('');
+    if (!rows.length) return past;
+    return past + '<div class="shell-card wk-unfit" id="wk-unfit">' +
+      '<h2 class="wk-unfit-head">Couldn’t fit these</h2>' +
+      rows.map(function (r) {
+        var primary = r.primary && USE_UP_ACTIONS[r.primary]
+          ? '<button type="button" class="wk-unfit-act is-' + r.primary + '" data-wk-useup="' + r.primary + '" ' +
+              'data-wk-useup-id="' + r.id + '" aria-label="' + escapeHtml(USE_UP_ACTIONS[r.primary] + ' — ' + r.item) + '">' +
+              escapeHtml(USE_UP_ACTIONS[r.primary]) + '</button>'
+          : '';
+        // The quiet one. A freezer row is already where it keeps: it just
+        // stays there for a later week.
+        var quietLabel = r.kind === 'freezer' ? 'Keep it frozen' : 'Let it go';
+        return '<div class="wk-unfit-row">' +
+          '<span class="wk-unfit-name">' + escapeHtml(r.item) + '</span>' +
+          '<span class="wk-unfit-acts">' + primary +
+            '<button type="button" class="wk-unfit-quiet" data-wk-useup="let_go" data-wk-useup-id="' + r.id + '" ' +
+              'aria-label="' + escapeHtml(quietLabel + ' — ' + r.item) + '">' + escapeHtml(quietLabel) + '</button>' +
+          '</span>' +
+        '</div>';
+      }).join('') +
+    '</div>';
+  }
+
+  function wireCouldntFit(panel, steps) {
+    var data = weekState.data || {};
+    var planId = data.weekly_plan_id;
+    if (!planId) return;
+    steps.querySelectorAll('[data-wk-useup]').forEach(function (btn) {
+      btn.addEventListener('click', async function () {
+        var action = btn.getAttribute('data-wk-useup');
+        var itemId = btn.getAttribute('data-wk-useup-id');
+        btn.disabled = true;
+        var base = '/api/week-plan/' + encodeURIComponent(planId) + '/use-up/' + encodeURIComponent(itemId);
+        try {
+          var done = await Api.json(base, { method: 'POST', body: { action: action } });
+          await loadWeekMenu(panel);
+          showToast(done.toast || 'Done.', {
+            label: 'Undo',
+            onClick: async function () {
+              try {
+                await Api.json(base + '/undo', { method: 'POST', body: { undo: done.undo || {} } });
+              } finally {
+                loadWeekMenu(panel);
+              }
+            }
+          });
+        } catch (err) {
+          btn.disabled = false;
+        }
+      });
+    });
   }
 
   function wkMenuHtml(days) {
@@ -17977,7 +18172,8 @@
     // approved week, which is what makes this one expression safe on the
     // deeper, approved-week form of this screen too.
     var head = root
-      ? weekSuggestedNoteHtml(data) + weekFlagsHtml(data) + draftSoftNoteHtml(data) + planEndsLineHtml(data)
+      ? weekSuggestedNoteHtml(data) + weekFlagsHtml(data) + draftSoftNoteHtml(data) + planEndsLineHtml(data) +
+        (typeof wkUseUpLineHtml === 'function' ? wkUseUpLineHtml(data) : '')
       : '<button type="button" class="crumb" data-wk-back="week">‹ Plan</button>' +
         '<div class="wk-head wk-check-head">' +
           '<div class="wk-head-row">' +
@@ -17990,7 +18186,7 @@
       return head + '<div class="rv-body"><div class="rv-empty">Nothing planned yet.</div></div>' + reviewDecideHtml(data);
     }
     if (root && weekPlanState(data) === 'draft' && draftView(data) === 'menu') {
-      return head + wkMenuHtml(days) +
+      return head + wkMenuHtml(days) + (root && typeof wkCouldntFitHtml === 'function' ? wkCouldntFitHtml(data) : '') +
         reviewDecideHtml(data);
     }
     return head +
@@ -17999,6 +18195,7 @@
         days.map(function (day, i) { return wkDayCardHtml(day, i, { done: false, swapLabel: 'Swap' }); }).join('') +
       '</div>' +
       wkDotsHtml(days.length, selected) +
+      (root && typeof wkCouldntFitHtml === 'function' ? wkCouldntFitHtml(data) : '') +
       // weekReplacesNote's "Once it's approved, I'd replace…" sentence
       // used to sit here, above the dock (declutter, 2026-09-25: Emily
       // asked it off the draft screen). data.replaces is still computed
@@ -20424,6 +20621,7 @@
   }
 
   function wireMealsStep(panel, steps) {
+    if (typeof wireCouldntFit === 'function') wireCouldntFit(panel, steps);
     steps.querySelectorAll('[data-wk-day]').forEach(function (row) {
       row.addEventListener('click', function () {
         goMealsStep('day', { dayIndex: Number(row.getAttribute('data-wk-day')) });

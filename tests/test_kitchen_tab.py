@@ -501,6 +501,30 @@ def test_almost_gone_closes_the_sheet_and_the_pill_is_not_apricot():
 def test_snap_a_shelf_keeps_one_line_at_320():
     """CATCH — verify #6 (320px): the label wrapped to two lines."""
     assert ".home-snap span { white-space: nowrap; }" in SHELL_CSS
-    narrow = SHELL_CSS[SHELL_CSS.index("@media (max-width: 359px) {\n  /* 320px: 236px of dock"):]
+    at = SHELL_CSS.index("@media (max-width: 359px) {\n  /* 320px: 236px of dock")
+    narrow = SHELL_CSS[at:]
     narrow = narrow[:narrow.index("\n}\n")]
     assert ".home-dock-row .home-snap" in narrow and ".home-add" in narrow
+    # Re-verify R2: the narrow rules have to come AFTER the base ones they
+    # override, or the base `.home-add { flex: 1 1 0 }` wins at 320px.
+    assert SHELL_CSS.index("\n.home-add {") < at
+    assert SHELL_CSS.index("\n.home-dock-row .home-snap {") < at
+
+
+def test_undo_still_restores_when_an_older_batch_shares_the_shelf():
+    """CATCH — re-verify R1: two freezer bags of chicken thighs; use up the
+    older one, Undo -> "already back" and the older bag was lost."""
+    older = _row("Chicken thighs", location="freezer", category="meat/seafood")
+    newer = _row("Chicken thighs", location="freezer", category="meat/seafood")
+    conn = get_conn()
+    conn.execute("UPDATE inventory_items SET created_at = datetime('now', '-29 days'), "
+                 "updated_at = datetime('now', '-29 days') WHERE id = ?", (older,))
+    conn.execute("UPDATE inventory_items SET created_at = datetime('now', '-7 days'), "
+                 "updated_at = datetime('now', '-7 days') WHERE id = ?", (newer,))
+    conn.commit()
+    conn.close()
+    out = tools.used_up_item(older)
+    back = tools.restore_kitchen_item(out["undo"])
+    assert back["undone"] is True and not back.get("already_back")
+    ids = sorted(r["id"] for r in whats_home.get_whats_home()["locations"]["freezer"])
+    assert ids == sorted([older, newer])

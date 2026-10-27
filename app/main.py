@@ -6494,6 +6494,77 @@ def week_use_up_view(week_start: str, day_count: int = 7):
     }
 
 
+class InventoryCheckAnswer(BaseModel):
+    gone: list[int] = []
+    confirmed: list[int] = []
+
+
+@app.get("/api/inventory/check")
+def inventory_check_view(location: str | None = None):
+    """
+    "Quick check: still have these?" (Loop Board A4): the few kitchen rows
+    Pomona is least sure of, at most five, least sure first. `location`
+    narrows it (the Kitchen tab's freezer segment, C4). {"items": [...]};
+    an empty list means the step is skipped.
+    """
+    if location and location.strip().lower() not in ("fridge", "pantry", "freezer"):
+        raise HTTPException(status_code=400, detail="location has to be fridge, pantry or freezer.")
+    try:
+        return {"items": tools.inventory_check_candidates(location)}
+    except Exception as e:
+        logger.exception("Inventory check list failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/inventory/check")
+def inventory_check_answer_view(req: InventoryCheckAnswer):
+    """The check's Next: `gone` rows come out of the kitchen, `confirmed`
+    rows (the ones left untapped) are stamped confirmed today."""
+    try:
+        return tools.answer_inventory_check(req.gone, req.confirmed)
+    except Exception as e:
+        logger.exception("Inventory check answer failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+class UseUpResolveRequest(BaseModel):
+    action: str  # "freeze" | "side" | "let_go"
+
+
+class UseUpUndoRequest(BaseModel):
+    undo: dict | None = None
+
+
+@app.post("/api/week-plan/{plan_id}/use-up/{item_id}")
+def resolve_use_up_view(plan_id: int, item_id: int, req: UseUpResolveRequest):
+    """
+    One tap on the draft's "Couldn't fit these" (Loop Board B3): Freeze it,
+    Add as a side, or Let it go. The response carries the toast and the
+    `undo` for /api/week-plan/{plan_id}/use-up/{item_id}/undo.
+    """
+    try:
+        return tools.use_up_resolve(plan_id, item_id, req.action)
+    except tools.CannotFreeze as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Use-up resolve failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
+@app.post("/api/week-plan/{plan_id}/use-up/{item_id}/undo")
+def undo_use_up_view(plan_id: int, item_id: int, req: UseUpUndoRequest):
+    """The Undo on a "Couldn't fit these" toast."""
+    try:
+        return tools.use_up_undo_resolve(plan_id, item_id, req.undo)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("Use-up undo failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
 @app.post("/api/inventory/{item_id}/expiration")
 def step_inventory_expiration_view(item_id: int, req: InventoryExpirationStepRequest):
     """Shift an inventory item's best-before date by one day per tap (design_handoff_home_manager §6)."""

@@ -496,27 +496,44 @@ def test_a_photo_with_no_amount_confirms_but_is_not_a_count(signed_in):
     assert (row["quantity"], row["counted_on"]) == ("2 packs", household_today().isoformat())
 
 
-def test_a_photo_with_no_amount_stamps_confirmed_on_where_the_column_exists(signed_in):
-    """CATCH (re-verify R2) — with the pre-draft check's confirmed_on column
-    present (read through PRAGMA, not assumed), "seen" is stamped there, and
-    Undo takes it back."""
+def test_a_photo_with_no_amount_stamps_confirmed_on_and_the_check_stops_asking(signed_in):
+    """CATCH (re-verify R2, on the real column since A4 merged) — "seen"
+    is stamped in confirmed_on, the column the "still have these?" check
+    (inventory_check) reads, so a row a photo just saw drops off the check;
+    no count is stamped; Undo takes the stamp back and the chip returns."""
     from conftest import household_today
+    from app.tools import inventory_check
     conn = get_conn()
-    conn.execute("ALTER TABLE inventory_items ADD COLUMN confirmed_on TEXT")
+    cols = {r["name"] for r in conn.execute("PRAGMA table_info(inventory_items)").fetchall()}
+    cur = conn.execute(
+        "INSERT INTO inventory_items (household_id, item, quantity, source, category, location, created_at, updated_at) "
+        "VALUES (1, 'Rice', 'half a bag', 'chat', 'pantry', 'pantry', '2026-08-01 12:00:00', '2026-08-01 12:00:00')")
+    rice = cur.lastrowid
     conn.commit()
     conn.close()
-    try:
-        tortillas = _seed("Tortillas", "1 pack", location="pantry", category="pantry")
-        body = signed_in.post("/api/whats-home/add", json={"kind": "pantry", "items": [{"item": "Tortillas"}]}).json()
-        row = _get(tortillas)
-        assert (row["counted_on"], row["confirmed_on"]) == (None, household_today().isoformat())
-        signed_in.post("/api/whats-home/add/undo", json={"undo": body["undo"]})
-        assert _get(tortillas)["confirmed_on"] is None
-    finally:
-        conn = get_conn()
-        conn.execute("ALTER TABLE inventory_items DROP COLUMN confirmed_on")
-        conn.commit()
-        conn.close()
+    assert "confirmed_on" in cols, "A4's column is on this branch"
+    assert rice in [c["id"] for c in inventory_check.candidates("pantry")]
+    body = signed_in.post("/api/whats-home/add", json={"kind": "pantry", "items": [{"item": "Rice"}]}).json()
+    row = _get(rice)
+    assert (row["quantity"], row["counted_on"], row["confirmed_on"]) == ("half a bag", None, household_today().isoformat())
+    assert rice not in [c["id"] for c in inventory_check.candidates("pantry")]
+    signed_in.post("/api/whats-home/add/undo", json={"undo": body["undo"]})
+    assert _get(rice)["confirmed_on"] is None
+
+
+def test_left_out_uses_the_one_staple_rule(signed_in, monkeypatch):
+    """CATCH (merge semantics) — use_up.is_staple is the one staple rule the
+    Kitchen tab hides rows by: with a "Milk" regular, a scanned "Whole milk"
+    is left out and named, never saved as a row the tab won't show."""
+    from app import tools
+    tools.add_staple("Milk")
+    monkeypatch.setattr(main, "scan_fridge_photo", lambda b64, mt: [
+        {"item": "Whole milk", "quantity": "2 L", "category": "dairy", "confidence": "high"},
+        {"item": "Eggs", "quantity": "6", "category": "dairy", "confidence": "high"},
+    ])
+    res = signed_in.post("/api/inventory/scan-fridge", files={"photo": ("f.jpg", _TINY_JPEG, "image/jpeg")}).json()
+    assert [i["item"] for i in res["items"]] == ["Eggs"]
+    assert res["left_out"]["regulars"] == ["Whole milk"]
 
 
 def test_the_review_shows_what_a_photo_would_change(signed_in, monkeypatch):

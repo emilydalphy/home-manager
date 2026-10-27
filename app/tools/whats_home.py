@@ -110,8 +110,11 @@ def _shown_rows(conn) -> list[dict]:
     """Every inventory row the Kitchen tab shows: not a staple, not a
     spice, not an emptied "0" row."""
     from . import spices as _spices
+    from . import freezer_portions as _freezer_portions
 
     staples = _use_up._staple_keys(conn)
+    today = _today(conn)
+    uncooked = _freezer_portions._skipped_cooks_portion_ids(conn) | _not_yet_cooked_portion_ids(conn, today)
     rows = conn.execute(
         "SELECT id, item, quantity, source, category, location, expiration_date, created_at, "
         "updated_at, frozen_on, amount_left, amount_left_qty FROM inventory_items "
@@ -122,15 +125,233 @@ def _shown_rows(conn) -> list[dict]:
     for r in rows:
         row = dict(r)
         name = (row["item"] or "").strip()
-        if not name or _use_up._name_key(name) in staples or _spices.is_spice(name):
+        # use_up.is_staple, not a name-key lookup: since the use-up verify
+        # fixes, _staple_keys is a list of word lists (head-noun match), and
+        # `key in staples` silently matched nothing (found merging C4).
+        if not name or _use_up.is_staple(name, staples) or _spices.is_spice(name):
             continue
         if (row["quantity"] or "").strip() in ("0", "0.0"):
             continue
         where = _quantities._display_location(row).strip().lower()
         row["location"] = where if where in LOCATIONS else "pantry"
         row["item"] = name
+        if row["location"] == "freezer" and row.get("source") == _NIGHT_OFF_SOURCE:
+            portion = _portion_of(row)
+            # A night off's spare portion of a cook that hasn't happened yet
+            # (cook_on_fed writes it ahead of the cook, dated the cook's
+            # night) or that was then skipped is not in the freezer yet.
+            if portion is not None and row["id"] in uncooked:
+                continue
+            row["portion"] = portion
         shown.append(row)
     return shown
+
+
+# ---------- the freezer segment (C4) ----------
+#
+# "9 things in the freezer" / "Oldest first. Next week's plan starts from
+# the top." Rows sort by use_up.freezer_order_key, the key the planner's
+# freezer candidates sort by, so the top of this list IS the planner's next
+# pick. Each row's right-hand words: its plan ("in next Mon's chili"), else
+# the day it went in ("frozen 28 Sep") or, for a night off's cooked
+# portion, the night it was cooked ("from last Wed"), else its amount word
+# (bought frozen: "plenty").
+
+_NIGHT_OFF_SOURCE = "night_off"  # tonight.NIGHT_OFF_FROZEN_SOURCE (a test pins the two equal)
+# A dish is named in a freezer row's plan line only when it is this short;
+# a longer one reads as the slot ("in Thu's dinner").
+_PLAN_DISH_MAX_WORDS = 3
+_PORTION_RE = re.compile(r"^\s*(\d+)\s*(?:servings?|portions?)\b", re.I)
+
+
+def _not_yet_cooked_portion_ids(conn, today: date) -> set[int]:
+    """
+    Freezer rows a night off wrote for a batch not cooked yet: the
+    `cook_on_fed` night off writes its spare portion when tapped, ahead of
+    the cook — on a later night, or tonight. A cook entry not ticked done,
+    dated today or later, that lists the row under leftovers'
+    FREEZER_EXTRA_KEY is that batch. Once the cook is ticked done, or its
+    night has gone by, the portion is real and shows.
+
+    The same rule as calls-1026/all's freezer_portions.not_yet_cooked_
+    portion_ids (not on this branch's base): on merge, call that instead.
+    """
+    from . import leftovers as _leftovers
+
+    out: set[int] = set()
+    for r in conn.execute(
+        "SELECT derived_from_json FROM meal_plan_entries WHERE household_id = ? "
+        "AND COALESCE(cooked_status, '') != 'done' AND date >= ? AND derived_from_json LIKE ?",
+        (household_id(), today.isoformat(), f"%{_leftovers.FREEZER_EXTRA_KEY}%"),
+    ).fetchall():
+        try:
+            extra = (json.loads(r["derived_from_json"] or "{}") or {}).get(_leftovers.FREEZER_EXTRA_KEY)
+        except (TypeError, ValueError, AttributeError):
+            continue
+        if isinstance(extra, dict):
+            out |= {i for i in extra.get("inventory_item_ids") or []
+                    if isinstance(i, int) and not isinstance(i, bool)}
+    return out
+
+
+def _portion_of(row: dict) -> dict | None:
+    """A night off's cooked portion as the freezer shows it: "Chili · 3
+    portions". The dish comes off the row's name the way freezer_portions
+    reads it; the cook's night off the row's use-by, which
+    tonight._freeze_portion sets FROZEN_COOKED_KEEPS_DAYS after it."""
+    from . import tonight as _tonight
+
+    dish = _tonight.frozen_portion_dish(row.get("item") or "")
+    if not dish:
+        return None
+    m = _PORTION_RE.match(row.get("quantity") or "")
+    count = int(m.group(1)) if m else None
+    try:
+        cooked_on = (date.fromisoformat((row.get("expiration_date") or "")[:10])
+                     - timedelta(days=_tonight.FROZEN_COOKED_KEEPS_DAYS)).isoformat()
+    except ValueError:
+        cooked_on = (row.get("created_at") or "")[:10] or None
+    label = dish if not count else f"{dish} · {count} portion{'' if count == 1 else 's'}"
+    return {"dish": dish, "count": count, "cooked_on": cooked_on, "label": label}
+
+
+def _freezer_day(d: date, today: date) -> str:
+    """'today' / 'yesterday' / 'last Wed' (within the week) / '28 Sep': the
+    mockup's own date shape for the freezer."""
+    delta = (today - d).days
+    if delta == 0:
+        return "today"
+    if delta == 1:
+        return "yesterday"
+    if 2 <= delta <= 6:
+        return f"last {_DOW_SHORT[d.weekday()]}"
+    if delta < 0:
+        return _day_word(d, today, long=False)
+    return f"{d.day} {_MONTHS[d.month - 1]}"
+
+
+def _freezer_plan_line(plan: dict, today: date, portion: bool) -> str:
+    """'in next Mon’s chili', 'in Thu’s dinner', 'in tonight’s dinner'; for
+    a cooked portion, which IS the meal, 'for Thu’s dinner'. Typographic
+    apostrophes, as the rest of the app's copy (C4 verify, item 8)."""
+    d = date.fromisoformat(plan["date"])
+    slot = plan["slot"] if plan["slot"] != "snack" else "snacks"
+    words = re.findall(r"[A-Za-z][A-Za-z'’-]*", plan.get("meal") or "")
+    what = slot
+    if not portion and words and len(words) <= _PLAN_DISH_MAX_WORDS:
+        what = " ".join(words).lower()
+    lead = "for" if portion else "in"
+    if d == today:
+        day = "tonight’s" if plan["slot"] == "dinner" else "today’s"
+    else:
+        weeks_ahead = (d - (today - timedelta(days=today.weekday()))).days // 7
+        if weeks_ahead >= 2:
+            # Further out than next week (a plan drafted early): the date.
+            return f"{lead} the {what} on {d.day} {_MONTHS[d.month - 1]}"
+        day = f"{'next ' if weeks_ahead == 1 else ''}{_DOW_SHORT[d.weekday()]}’s"
+    return f"{lead} {day} {what}"
+
+
+def _portion_plans(conn, today: date) -> dict:
+    """{inventory_item_id: plan} for the cooked portions a live plan's
+    (draft or approved — freezer_portions' own claim rule) uneaten night,
+    today or later, is eating; freezer_portions writes the claim onto the
+    entry's derived_from_json. Same reach as raw freezer food's tags
+    (_tagged_plans): next week's draft already counts (C4 verify, item 5)."""
+    from . import freezer_portions as _freezer_portions
+
+    out: dict = {}
+    for r in conn.execute(
+        "SELECT mpe.id, mpe.date, mpe.slot, mpe.freeform_meal, mpe.derived_from_json "
+        "FROM meal_plan_entries mpe JOIN weekly_plans wp ON wp.id = mpe.weekly_plan_id "
+        "WHERE mpe.household_id = ? AND wp.household_id = ? AND wp.status IN ('draft', 'approved') "
+        "AND COALESCE(mpe.slot_state, 'planned') = 'planned' AND COALESCE(mpe.cooked_status, '') != 'done' "
+        "AND mpe.date >= ? AND mpe.derived_from_json LIKE ? "
+        "ORDER BY mpe.date, mpe.id",
+        (household_id(), household_id(), today.isoformat(), f"%{_freezer_portions.KEY}%"),
+    ).fetchall():
+        claim = _freezer_portions.portion_on(r["derived_from_json"])
+        if claim and claim["inventory_item_id"] not in out:
+            slot = (r["slot"] or "dinner").strip().lower()
+            d = date.fromisoformat(r["date"])
+            if d == today:
+                short = long = "tonight's dinner" if slot == "dinner" else f"today's {slot}"
+            else:
+                short = f"{_DOW_SHORT[d.weekday()]} {slot}"
+                long = f"{_DOW_LONG[d.weekday()]}'s {slot}"
+            out[claim["inventory_item_id"]] = {
+                "entry_id": r["id"], "date": r["date"], "slot": slot,
+                "meal": r["freeform_meal"] or "", "label": short, "long": long,
+            }
+    return out
+
+
+def _tagged_plans(conn, today: date) -> dict:
+    """
+    {inventory_item_id: plan} for food a live plan (draft OR approved) has
+    put on a dish — its checked "Uses the…" tag (use_up.live_uses), on any
+    day from today on. The same rows use_up.claimed_elsewhere keeps out of
+    another week's offer, so a freezer row next week's draft already uses
+    reads "in next Mon's chili" here rather than looking forgotten (and
+    rather than looking like the top of the next plan). Earliest dish wins.
+    """
+    out: dict = {}
+    for r in conn.execute(
+        "SELECT mpe.id, mpe.date, mpe.slot, mpe.derived_from_json, "
+        "COALESCE(rcp.name, mpe.freeform_meal) AS meal "
+        "FROM meal_plan_entries mpe JOIN weekly_plans wp ON wp.id = mpe.weekly_plan_id "
+        "LEFT JOIN recipes rcp ON rcp.id = mpe.recipe_id "
+        "WHERE mpe.household_id = ? AND wp.household_id = ? AND wp.status IN ('draft', 'approved') "
+        "AND COALESCE(mpe.slot_state, 'planned') = 'planned' AND COALESCE(mpe.cooked_status, '') != 'done' "
+        "AND mpe.date >= ? AND mpe.derived_from_json LIKE '%use_up%' ORDER BY mpe.date, mpe.id",
+        (household_id(), household_id(), today.isoformat()),
+    ).fetchall():
+        for u in _use_up.live_uses(r["derived_from_json"], r["meal"]):
+            try:
+                item_id = int(u.get("id"))
+            except (TypeError, ValueError):
+                continue
+            if item_id in out:
+                continue
+            slot = (r["slot"] or "dinner").strip().lower()
+            d = date.fromisoformat(r["date"])
+            if d == today:
+                short = long = "tonight's dinner" if slot == "dinner" else f"today's {slot}"
+            else:
+                short, long = f"{_DOW_SHORT[d.weekday()]} {slot}", f"{_DOW_LONG[d.weekday()]}'s {slot}"
+            out[item_id] = {
+                "entry_id": r["id"], "date": r["date"], "slot": slot, "meal": r["meal"] or "",
+                "label": short, "long": long,
+            }
+    return out
+
+
+def _freezer_age_row(row: dict) -> dict:
+    """The row as the oldest-first key should read it: a night off's
+    portion went in on its cook night (the night its row says, "from last
+    Wed"), whatever moment the row itself was written (C4 verify, item 7)."""
+    portion = row.get("portion")
+    if portion and portion.get("cooked_on"):
+        return {**row, "frozen_on": portion["cooked_on"]}
+    return row
+
+
+def _freezer_line(row: dict, plan: dict | None, today: date, conn) -> str:
+    portion = row.get("portion")
+    if plan:
+        return _freezer_plan_line(plan, today, portion=bool(portion))
+    if portion and portion.get("cooked_on"):
+        try:
+            return f"from {_freezer_day(date.fromisoformat(portion['cooked_on']), today)}"
+        except ValueError:
+            pass
+    try:
+        frozen = date.fromisoformat((row.get("frozen_on") or "")[:10])
+    except ValueError:
+        frozen = None
+    if frozen:
+        return f"frozen {_freezer_day(frozen, today)}"
+    return AMOUNT_WORDS[amount_level(row)]
 
 
 _HALF_RE = re.compile(r"\bhalf\b|½|\b0?\.5\b|\b1/2\b", re.I)
@@ -255,7 +476,12 @@ def _plan_line(plan: dict) -> str:
 def _detail_line(row: dict, plan: dict | None, today: date, conn) -> str:
     """'Fridge · bought Saturday · best by Thursday · in Tuesday's dinner'."""
     parts = [LOCATION_LABELS.get(row["location"], "Pantry")]
-    if row["location"] == "freezer":
+    portion = row.get("portion")
+    if row["location"] == "freezer" and portion and portion.get("cooked_on"):
+        # A night off's portion: the night it was cooked, as its row says
+        # ("from last Wed"), not the row's own stamp.
+        parts.append(f"cooked {_day_word(date.fromisoformat(portion['cooked_on']), today)}")
+    elif row["location"] == "freezer":
         frozen = None
         try:
             frozen = date.fromisoformat((row.get("frozen_on") or "")[:10])
@@ -281,15 +507,25 @@ def _detail_line(row: dict, plan: dict | None, today: date, conn) -> str:
 
 def _row_view(row: dict, plan: dict | None, today: date, conn) -> dict:
     level = amount_level(row)
+    portion = row.get("portion")
+    if row["location"] == "freezer":
+        line = _freezer_line(row, plan, today, conn)
+    else:
+        line = _plan_line(plan) if plan else AMOUNT_WORDS[level]
     return {
         "id": row["id"],
-        "item": row["item"],
+        # A night off's portion is the dish ("Chili", not "Chili (cooked)"):
+        # the sheet's title and every toast name it that way.
+        "item": portion["dish"] if portion else row["item"],
+        # The row's left-hand words: "Chili · 3 portions", else the item.
+        "label": portion["label"] if portion else row["item"],
+        "portion": portion,
         "location": row["location"],
         "category": row.get("category") or "other",
         "amount": level,
         "amount_word": AMOUNT_WORDS[level],
         "plan": plan,
-        "line": _plan_line(plan) if plan else AMOUNT_WORDS[level],
+        "line": line,
         "detail": _detail_line(row, plan, today, conn),
         "expiration_date": row.get("expiration_date"),
         # Freezer rows: the day it went in, else the day it arrived (a row
@@ -304,8 +540,8 @@ def _row_view(row: dict, plan: dict | None, today: date, conn) -> dict:
 
 
 def _sort_key(view: dict):
-    if view["location"] == "freezer":
-        return ((view.get("frozen_on") or "9999")[:10], view["item"].lower())
+    """Fridge and pantry: soonest date first. (The freezer sorts by
+    use_up.freezer_order_key — see get_whats_home.)"""
     return ((view.get("expiration_date") or "9999")[:10], view["item"].lower())
 
 
@@ -387,18 +623,42 @@ def get_whats_home() -> dict:
         today = _today(conn)
         rows = _shown_rows(conn)
         meals = _upcoming_meals(conn, today)
+        portion_plans = _portion_plans(conn, today)
+        tagged = _tagged_plans(conn, today)
         views = {}
+        by_id = {}
         for row in rows:
-            views[row["id"]] = _row_view(row, _plan_for(row["item"], meals, today), today, conn)
+            by_id[row["id"]] = row
+            if row.get("portion"):
+                # A cooked portion's plan is the night freezer_portions put
+                # it on, never an ingredient match.
+                plan = portion_plans.get(row["id"])
+            elif row["location"] == "freezer" and row["id"] in tagged:
+                # Freezer food a live plan's dish was checked to use (any
+                # week, draft or approved — use_up.claimed_elsewhere's rule).
+                plan = tagged[row["id"]]
+            else:
+                plan = _plan_for(row["item"], meals, today)
+            views[row["id"]] = _row_view(row, plan, today, conn)
         locations = {loc: [] for loc in LOCATIONS}
         for v in views.values():
             locations[v["location"]].append(v)
         for loc in LOCATIONS:
-            locations[loc].sort(key=_sort_key)
+            if loc == "freezer":
+                # Oldest first by the planner's own key (use_up), so "Next
+                # week's plan starts from the top" stays true.
+                locations[loc].sort(key=lambda v: _use_up.freezer_order_key(_freezer_age_row(by_id[v["id"]])))
+            else:
+                locations[loc].sort(key=_sort_key)
 
         soon_cutoff = today + timedelta(days=USE_SOON_DAYS)
         use_soon = []
-        for c in _use_up.candidates(today.isoformat(), PLAN_AHEAD_DAYS, conn=conn):
+        # kitchen_view: Use soon is what's HOME. The planner's filters —
+        # use_by on or after the first day (drops food turning TODAY, the
+        # yogurt), a dislike/allergy, another plan's claim — are for
+        # offering food to a draft, not for saying what's going off here.
+        # Found merging C4 and in its verify (items 1-2).
+        for c in _use_up.candidates(today.isoformat(), PLAN_AHEAD_DAYS, conn=conn, kitchen_view=True):
             if c["kind"] != "going_off" or c["id"] not in views:
                 continue
             turns = date.fromisoformat(c["turns_on"])
@@ -617,7 +877,7 @@ def restore_item(undo: dict) -> dict:
     with write() as conn:
         if kind == "removed":
             rec = conn.execute(
-                "SELECT inventory_item_id, row_json, restored_at, "
+                "SELECT inventory_item_id, row_json, restored_at, removed_at, "
                 "removed_at >= datetime('now', ?) AS fresh FROM inventory_removals "
                 "WHERE id = ? AND household_id = ?",
                 (f"-{UNDO_WINDOW_HOURS} hours", removal_id, household_id()),
@@ -633,11 +893,15 @@ def restore_item(undo: dict) -> dict:
             # Back since (bought again at the shop, a scan, chat): the row
             # that is there now IS the kitchen's stock, so the old one is not
             # put back beside it — that made two Milks (verify, 2026-10-27).
+            # Only a row created or written AFTER the removal counts as "back":
+            # a second batch that was already on the shelf (two freezer bags
+            # of chicken thighs) is not the same food come back (re-verify).
             where = _quantities._display_location(row).strip().lower()
             key = _use_up._name_key(row.get("item") or "")
             for other in conn.execute(
-                "SELECT id, item, category, location FROM inventory_items WHERE household_id = ?",
-                (household_id(),),
+                "SELECT id, item, category, location FROM inventory_items WHERE household_id = ? "
+                "AND MAX(created_at, updated_at) >= ?",
+                (household_id(), rec["removed_at"]),
             ).fetchall():
                 o = dict(other)
                 if _use_up._name_key(o["item"] or "") == key and \
