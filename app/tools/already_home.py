@@ -355,11 +355,18 @@ def leave_off_what_is_home(weekly_plan_id: int, conn=None) -> list[str]:
         stock = _recipes._KitchenStock(conn, fresh_since=since)
         stock.reserve_bought_for_meals_ahead(conn)
         fresh = fresh_inventory_ids(conn, since)
+        # A row the household marked "Almost gone" (C3's chip, while it still
+        # stands: read against the quantity it was tapped at, as
+        # whats_home.amount_level reads it) covers nothing — they just told
+        # us it's about out (merge seams, 2026-10-27).
         fresh_names = [
             {"item": r["item"]} for r in conn.execute(
-                "SELECT id, item FROM inventory_items WHERE household_id = ? AND TRIM(quantity) != ''",
+                "SELECT id, item, quantity, amount_left, amount_left_qty FROM inventory_items "
+                "WHERE household_id = ? AND TRIM(quantity) != ''",
                 (household_id(),),
-            ).fetchall() if r["id"] in fresh
+            ).fetchall() if r["id"] in fresh and not (
+                (r["amount_left"] or "") == "almost_gone"
+                and (r["amount_left_qty"] or "") == (r["quantity"] or ""))
         ]
         # Other live weeks' set-aside lines speak for their food first — only
         # for the meals of theirs still to come (a cooked night's beef is

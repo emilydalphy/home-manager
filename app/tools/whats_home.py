@@ -762,6 +762,26 @@ def _on_the_list(conn, item: str) -> int | None:
     return None
 
 
+def _set_aside_line(conn, item: str):
+    """A line for this thing the Already home pass set aside on a live
+    week (removed_by already_home.REMOVED_BY_KITCHEN), if any — Shop shows
+    it under "Already home". Returned as a dict, oldest first."""
+    from . import already_home as _already_home
+    from . import grocery as _grocery
+
+    key = _grocery._merge_key(item)
+    for r in conn.execute(
+        "SELECT g.id, g.item, g.already_have_reviewed, g.source_weekly_plan_id FROM grocery_items g "
+        "LEFT JOIN weekly_plans w ON w.id = g.source_weekly_plan_id AND w.household_id = g.household_id "
+        "WHERE g.household_id = ? AND g.status = 'removed' AND g.removed_by = ? "
+        "AND g.source_weekly_plan_id IS NOT NULL AND COALESCE(w.status, '') != 'retired' ORDER BY g.id",
+        (household_id(), _already_home.REMOVED_BY_KITCHEN),
+    ).fetchall():
+        if _grocery._merge_key(r["item"]) == key:
+            return dict(r)
+    return None
+
+
 def set_amount_left(item_id: int, level: str) -> dict:
     """
     The "How much is left?" chips: plenty / half / almost_gone. Stored on
@@ -791,16 +811,31 @@ def set_amount_left(item_id: int, level: str) -> dict:
         conn.commit()
         needed_for = None
         on_list = None
+        aside = None
         if level == "almost_gone":
             today = _today(conn)
             plan = _plan_for(before["item"], _upcoming_meals(conn, today), today)
             if plan:
                 needed_for = plan["long"]
                 on_list = _on_the_list(conn, before["item"])
+                if on_list is None:
+                    aside = _set_aside_line(conn, before["item"])
     finally:
         conn.close()
     added_id = None
-    if needed_for and on_list is None:
+    put_back = None
+    if needed_for and on_list is None and aside is not None:
+        # The week's own line for it is set aside as "Already home": put
+        # THAT back, the way "add it back" does (undo_pre_shop_drop, which
+        # remembers the put-back so the next pass leaves it on the list) —
+        # never a second, standing-want line beside it, which had Shop
+        # show the same food to buy AND under "Already home" (merge seams,
+        # 2026-10-27).
+        from . import pre_shop as _pre_shop
+        _pre_shop.undo_pre_shop_drop(aside["id"])
+        added_id = aside["id"]
+        put_back = {"reviewed": aside["already_have_reviewed"] or 0}
+    elif needed_for and on_list is None:
         from . import grocery as _grocery
         added = _grocery.add_grocery_item(before["item"], "", before.get("category") or "other", added_by="user")
         added_id = added.get("item_id")
@@ -817,6 +852,7 @@ def set_amount_left(item_id: int, level: str) -> dict:
             "amount_left": before.get("amount_left") or "",
             "amount_left_qty": before.get("amount_left_qty"),
             "grocery_item_id": added_id,
+            "put_back": put_back,
         },
     }
 
@@ -925,15 +961,18 @@ def restore_item(undo: dict) -> dict:
             # Only a row created or written AFTER the removal counts as "back":
             # a second batch that was already on the shelf (two freezer bags
             # of chicken thighs) is not the same food come back (re-verify).
+            # The same "same food" key the Kitchen's add (C2) and A2's
+            # put-back use: kitchen_add._match_key (merge seams, 2026-10-27).
+            from . import kitchen_add as _kitchen_add
             where = _quantities._display_location(row).strip().lower()
-            key = _use_up._name_key(row.get("item") or "")
+            key = _kitchen_add._match_key(row.get("item") or "")
             for other in conn.execute(
                 "SELECT id, item, category, location FROM inventory_items WHERE household_id = ? "
                 "AND MAX(created_at, updated_at) >= ?",
                 (household_id(), rec["removed_at"]),
             ).fetchall():
                 o = dict(other)
-                if _use_up._name_key(o["item"] or "") == key and \
+                if _kitchen_add._match_key(o["item"] or "") == key and \
                         _quantities._display_location(o).strip().lower() == where:
                     conn.execute(
                         "UPDATE inventory_removals SET restored_at = datetime('now') WHERE id = ? AND household_id = ?",
@@ -973,12 +1012,29 @@ def restore_item(undo: dict) -> dict:
             gid = undo.get("grocery_item_id")
             if gid:
                 still = conn.execute(
-                    "SELECT item FROM grocery_items WHERE id = ? AND household_id = ? AND status = 'needed'",
+                    "SELECT item, source_weekly_plan_id FROM grocery_items "
+                    "WHERE id = ? AND household_id = ? AND status = 'needed'",
                     (int(gid), household_id()),
                 ).fetchone()
                 from . import grocery as _grocery
                 # Only the line this chip put there: the same thing, still unbought.
                 if not (still and _grocery._merge_key(still["item"]) == _grocery._merge_key(found["item"])):
+                    gid = None
+                elif isinstance(undo.get("put_back"), dict) and still["source_weekly_plan_id"] is not None:
+                    # The chip put the week's set-aside line back: set it
+                    # aside again (and forget the put-back), never delete it.
+                    from . import already_home as _already_home
+                    conn.execute(
+                        "UPDATE grocery_items SET status = 'removed', removed_by = ?, removed_at = datetime('now'), "
+                        "already_have_reviewed = ? WHERE id = ? AND household_id = ? AND status = 'needed'",
+                        (_already_home.REMOVED_BY_KITCHEN, int(undo["put_back"].get("reviewed") or 0),
+                         int(gid), household_id()),
+                    )
+                    conn.execute(
+                        "DELETE FROM already_home_put_back WHERE household_id = ? AND weekly_plan_id = ? "
+                        "AND item_key = ?",
+                        (household_id(), still["source_weekly_plan_id"], _grocery._merge_key(still["item"] or "")),
+                    )
                     gid = None
     if gid:
         from . import grocery as _grocery

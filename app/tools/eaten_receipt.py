@@ -137,12 +137,28 @@ def strip_before(depleted: list[dict]) -> list[dict]:
 RECEIPT_LIFETIME = "-1 day"
 
 
-def _put_back(entry: dict) -> None:
+def _put_back(entry: dict, written_at: str | None = None) -> None:
     """One row. Untouched since the tick: written back exactly. Changed
     since (a shop tick added to it): the amount the meal took is ADDED
-    back, so what came in meanwhile is kept. Used up and deleted: back
-    under its own id unless the household has a row for it again, in which
-    case the amount goes onto that one."""
+    back, so what came in meanwhile is kept. Used up and deleted BY THE
+    TICK: back under its own id unless the household has a row for that
+    food again, in which case the amount goes onto that one.
+
+    The twin is found by the Kitchen's own "same food" key
+    (kitchen_add._existing — the grocery merge key, sizes off), so "Lemon 3"
+    added after the tick is where "Lemons" goes back, not a second row
+    beside it (merge seams, 2026-10-27).
+
+    A row the tick LEFT in the kitchen that is gone now was taken out by the
+    household afterwards ("Used it up", "Threw it out", the pre-draft
+    check's "gone", chat): they decided it's gone, so nothing comes back —
+    putting back the pre-dinner row silently reversed their answer and
+    overstated the amount (merge seams, 2026-10-27). The receipt's
+    after_rev is None exactly when the tick itself deleted the row, and
+    then the whole "before" amount is what dinner took — so nothing here
+    ever restores more than dinner took."""
+    from . import kitchen_add as _kitchen_add
+
     row = entry["before"]
     location = row.get("location") or None
     conn = get_conn()
@@ -161,7 +177,15 @@ def _put_back(entry: dict) -> None:
             conn.commit()
             return
         if now is None:
-            twin = _inventory._find_row_by_name(conn, row["item"], location, "id")
+            if entry.get("after_rev") is not None:
+                return  # dinner left some; the household took the rest out since
+            if written_at and conn.execute(
+                "SELECT 1 FROM inventory_removals WHERE household_id = ? AND inventory_item_id = ? "
+                "AND removed_at >= ?",
+                (household_id(), row["id"], written_at),
+            ).fetchone():
+                return
+            twin = _kitchen_add._existing(conn, row["item"], location)
             if twin is None:
                 cols = [c for c in row if c not in ("household_id", "id")]
                 conn.execute(
@@ -171,14 +195,14 @@ def _put_back(entry: dict) -> None:
                 )
                 conn.commit()
                 return
-            amount = row["quantity"]
+            name, where, amount = twin["item"], twin["location"] or location, row["quantity"]
         else:
-            amount = entry.get("taken") or ""
+            name, where, amount = row["item"], location, entry.get("taken") or ""
     finally:
         conn.close()
     if amount:
-        _inventory._add_to_inventory(row["item"], amount, source=row.get("source") or "chat",
-                                     category=row.get("category"), location=location)
+        _inventory._add_to_inventory(name, amount, source=row.get("source") or "chat",
+                                     category=row.get("category"), location=where)
 
 
 def restore(entry_id: int) -> dict:
@@ -189,7 +213,7 @@ def restore(entry_id: int) -> dict:
     try:
         receipt = None
         for r in conn.execute(
-            "SELECT id, entry_ids_json, rows_json FROM eaten_kitchen_receipts "
+            "SELECT id, entry_ids_json, rows_json, created_at FROM eaten_kitchen_receipts "
             "WHERE household_id = ? AND created_at >= datetime('now', ?) ORDER BY id DESC",
             (household_id(), RECEIPT_LIFETIME),
         ).fetchall():
@@ -211,7 +235,7 @@ def restore(entry_id: int) -> dict:
     finally:
         conn.close()
     for entry in rows:
-        _put_back(entry)
+        _put_back(entry, receipt["created_at"])
     return {"restored": len(rows)}
 
 

@@ -52,13 +52,11 @@ While the "Did you have it?" card is asking about yesterday's dinner, that
 dinner is still the plan for its food: no card and no line about it until
 it's answered.
 
-"USES" IS DETECTED, NOT STORED (yet). A dinner "uses" a going-off item when
-one of its recipe's ingredients is the same food (`_matches`: same name, or
-the same head noun with only descriptor words added — "Baby spinach" is
-spinach, "peanut butter" is not butter). `dinner_uses` is the
-one place that decides it, and it already prefers a stored per-slot
-`uses` list on derived_from when generation writes one (Loop Board B2,
-in flight on another branch).
+"USES" is decided in one place, `dinner_uses`: a dish-stamped use-up tag
+(B2/B3, derived_from["use_up"], read through use_up.live_uses) by
+inventory id, or one of its recipe's ingredients being the same food
+(`_matches`: same name, or the same head noun with only descriptor words
+added — "Baby spinach" is spinach, "peanut butter" is not butter).
 """
 from __future__ import annotations
 
@@ -162,30 +160,44 @@ def dinner_uses(conn, row, items: list[dict]) -> list[dict]:
     """
     The going-off `items` this planned meal would use, in `items`' order.
 
-    THE ONE PLACE "uses" is decided. A stored `uses` list on the row's
-    derived_from (generation's per-slot tag, Loop Board B2) wins when there
-    is one; otherwise the recipe's ingredients are matched against the
-    inventory rows.
+    THE ONE PLACE "uses" is decided. Two sources, merged: the dish-stamped
+    use-up tags B2/B3 write at derived_from["use_up"] (read only through
+    use_up.live_uses, so a swapped dish's stale tag counts for nothing),
+    matched on inventory id — a side B3 added ("Uses the cilantro") is a
+    plan for the cilantro even though the recipe never names it; then the
+    recipe's ingredients matched against the inventory rows. `row` must
+    carry the meal name (`meal`) for the tag to be read.
     """
+    from . import use_up as _use_up
     try:
-        derived = json.loads(row["derived_from_json"] or "{}")
-    except (TypeError, ValueError):
-        derived = {}
-    stored = derived.get("uses") if isinstance(derived, dict) else None
-    if isinstance(stored, list) and stored:
-        names = [str(s.get("item") if isinstance(s, dict) else s) for s in stored]
-    else:
-        names = _ingredients(conn, row["recipe_id"])
-    return [it for it in items if any(_matches(n, it) for n in names)]
+        meal = row["meal"]
+    except (IndexError, KeyError):
+        meal = None
+    tagged = {u.get("id") for u in _use_up.live_uses(row["derived_from_json"], meal)}
+    names = _ingredients(conn, row["recipe_id"])
+    return [it for it in items
+            if it.get("id") in tagged or any(_matches(n, it) for n in names)]
 
 
 def going_off_items(today: datetime.date) -> list[dict]:
     """Fridge and pantry rows that turn today or tomorrow, soonest first
-    (inventory.get_expiring_soon — the freezer is never in it)."""
+    (inventory.get_expiring_soon — the freezer is never in it). Never a
+    staple or a spice: the Kitchen tab hides both (whats_home._shown_rows),
+    so Today must not name one ("Whole milk is best today." beside a Milk
+    staple the Kitchen never lists — merge seams, 2026-10-27)."""
     from . import inventory as _inventory
+    from . import spices as _spices
+    from . import use_up as _use_up
     start = today.isoformat()
+    conn = get_conn()
+    try:
+        staples = _use_up._staple_keys(conn)
+    finally:
+        conn.close()
     return [e for e in _inventory.get_expiring_soon(days=TURNS_WITHIN_DAYS)
-            if (e.get("expiration_date") or "") >= start]
+            if (e.get("expiration_date") or "") >= start
+            and not _use_up.is_staple(e.get("item") or "", staples)
+            and not _spices.is_spice(e.get("item") or "")]
 
 
 def _left_today(conn, today: str) -> set[int]:
@@ -209,9 +221,11 @@ def _planned_from_today(conn, today: str):
     out = []
     for r in conn.execute(
         """
-        SELECT mpe.id, mpe.recipe_id, mpe.derived_from_json
+        SELECT mpe.id, mpe.recipe_id, mpe.derived_from_json,
+               COALESCE(r.name, mpe.freeform_meal) AS meal
         FROM meal_plan_entries mpe
         JOIN weekly_plans wp ON wp.id = mpe.weekly_plan_id
+        LEFT JOIN recipes r ON r.id = mpe.recipe_id
         WHERE mpe.household_id = ? AND wp.status != 'retired' AND mpe.date >= ?
           AND mpe.slot_state = 'planned' AND mpe.cooked_status != 'done'
           AND mpe.component_category IS NULL
@@ -238,8 +252,10 @@ def _asked_about_yesterday(conn, today: datetime.date) -> list:
         return []
     marks = ",".join("?" * len(ids))
     return conn.execute(
-        f"SELECT id, recipe_id, derived_from_json FROM meal_plan_entries "
-        f"WHERE household_id = ? AND id IN ({marks})",
+        f"SELECT mpe.id, mpe.recipe_id, mpe.derived_from_json, "
+        f"COALESCE(r.name, mpe.freeform_meal) AS meal FROM meal_plan_entries mpe "
+        f"LEFT JOIN recipes r ON r.id = mpe.recipe_id "
+        f"WHERE mpe.household_id = ? AND mpe.id IN ({marks})",
         (household_id(), *ids),
     ).fetchall()
 

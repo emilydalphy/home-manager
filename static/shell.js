@@ -10998,12 +10998,22 @@
       await loadHome(true);
       renderHome();
       refreshKitchenPanel();
+      refreshGoingOff();
     } catch (err) { /* Api.json toasted */ }
     homeState.busy = false;
   }
 
   function refreshHomePanel() {
     if (homeIsBuilt()) loadHome(true);
+  }
+
+  // Every write on the Kitchen tab (C2's add and its Undo, C3's one-tap
+  // fixes and their Undo, the A4 check) changes what Today's going-off card
+  // and line say: Today is built once, so it is told (merge seams,
+  // 2026-10-27). One request; a no-op while Today was never built.
+  function refreshHomeAndGoingOff() {
+    refreshHomePanel();
+    refreshGoingOff();
   }
 
   // Which shelf is showing: the household's last pick, else the first one
@@ -11201,11 +11211,12 @@
       place: homeSegment(homeState.data),
       onSaved: function (res) {
         refreshHomePanel();
+        refreshGoingOff();
         showToast(res.line, {
           label: 'Undo',
           onClick: function () {
             Api.json('/api/whats-home/add/undo', { body: { undo: res.undo } })
-              .then(function () { refreshHomePanel(); })
+              .then(function () { refreshHomePanel(); refreshGoingOff(); })
               .catch(function () { /* Api.json toasted */ });
           }
         });
@@ -11286,7 +11297,7 @@
             // Bought again (or scanned) since it was taken off: the row on
             // the shelf now is the stock, so nothing comes back beside it.
             if (res && res.already_back) showToast(homeItemName(res.item) + ' is already back in the kitchen.');
-            refreshHomePanel();
+            refreshHomeAndGoingOff();
             refreshKitchenPanel();
           })
           .catch(function () { /* Api.json toasted */ });
@@ -11302,6 +11313,7 @@
       var res = await Api.json('/api/inventory/' + id + '/freeze', { body: {} });
       closeHomeItemSheet();
       await loadHome(true);
+      refreshGoingOff();
       homeToastWithUndo(homeItemName(row.item) + ' was frozen.', '/api/inventory/unfreeze', res.undo);
     } catch (err) { /* Api.json toasted */ }
     homeState.busy = false;
@@ -11336,8 +11348,10 @@
         var verb = what === 'used' ? 'used up' : what === 'thrown' ? 'thrown out' : 'moved to the ' + body.location;
         homeToastWithUndo(homeItemName(row.item) + ' was ' + verb + '.', '/api/whats-home/undo', done.undo);
       }
-      // Cook's tonight card reads the same shelves.
+      // Cook's tonight card reads the same shelves, and so does Today's
+      // going-off card and line.
       refreshKitchenPanel();
+      refreshGoingOff();
     } catch (err) { /* Api.json toasted */ }
     homeState.busy = false;
   }
@@ -28253,6 +28267,10 @@
       homeDone = true;
       // (typeof: harnesses run this function sliced out of the file.)
       if (typeof refreshHomePanel === 'function') refreshHomePanel();
+      // Today's going-off card and line read the same shelves (and the
+      // week's plan for them): one request, never a line about food just
+      // thrown out (merge seams, 2026-10-27).
+      if (typeof refreshGoingOff === 'function') refreshGoingOff();
     }
     (actions || []).forEach(function (action) {
       if (action.held) {

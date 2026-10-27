@@ -13,6 +13,14 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
+  (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
+  (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.
+  (3) C3 "Almost gone" beside a B4 set-aside line puts THAT line back (`pre_shop.undo_pre_shop_drop` → `note_put_back`) instead of adding a second standing want; its Undo sets it aside again; a row whose chip says almost gone covers nothing in B4's pass.
+  (4) A2's put-back finds its twin by `kitchen_add._existing` (the C2 key); C3's restore uses `kitchen_add._match_key` too.
+  (5) A2's Undo skips a row the tick left that the household took out since (after_rev set, or an `inventory_removals` row after the receipt) — never more back than dinner took.
+  (6) shell.js re-reads Today's going-off card after every Kitchen-tab write and in `refreshHomeOnce`.
+  Why: each branch was right alone; together Today, Kitchen and Shop contradicted each other.
 - **Marking a dinner eaten says what came out of the kitchen, with Undo** (2026-10-26, inventory card A2, Emily's OptionA screen 2). `check_off_meal` now returns `kitchen_took` ({names, line}: "Took the chicken, spinach, rice and lemons out of the kitchen.", four names then "and N more"); the toast on Kitchen's Mark eaten, Today's tick and Plan's Done names it; Undo (`POST /api/cooker/undo-eaten`, `tools.undo_eaten_meal`) un-marks the meal AND writes every changed `inventory_items` row back as it was (`app/tools/eaten_receipt.py`, table `eaten_kitchen_receipts`; a used-up row returns under its own id; `rev` keeps counting). Why: this reverses the old "an untick puts nothing back" call in `check_off_meal`'s docstring, which only held while nothing recorded the rows. Leftovers nights and untracked meals report nothing and keep today's toast; "Mark cooked" (Start-cooking path) keeps "Logged… Rate it". Branch `inventory/mark-eaten-names-it`.
 - **Shop leaves off what's already home** (2026-10-26, card B4; branch `inventory/already-home-list`,
   `app/tools/already_home.py`). A plan line the kitchen fully covers with food bought/added/counted in 14 days
