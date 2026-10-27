@@ -182,3 +182,29 @@ console.log(JSON.stringify({ said: said, quiet: quiet, toasts: TOASTS }));
 """)
     assert out == {"said": True, "quiet": False, "toasts": [[
         "Lemon chicken marked eaten. Took the chicken, spinach, rice and lemons out of the kitchen.", "Undo"]]}
+
+
+def test_undo_puts_back_a_row_two_recipe_lines_drew_on():
+    # Olive oil for the marinade and again for the dressing; lemons twice,
+    # the second take emptying the row. Undo must bring both back whole.
+    tools.add_recipe("Oily salad", ingredients=[
+        {"item": "Olive oil", "qty": "2 tbsp"},
+        {"item": "Olive oil", "qty": "1 tbsp"},
+        {"item": "Lemons", "qty": "2"},
+        {"item": "Lemons", "qty": "3"},
+    ], default_servings=2)
+    tools.update_inventory("Olive oil", "add", quantity="10 tbsp", location="pantry")
+    tools.update_inventory("Lemons", "add", quantity="5", location="fridge", expiration_date=household_date(9))
+    entry = tools.plan_meal(household_date(0), "Oily salad", slot="dinner")["entry_id"]
+    oil_before, lemons_before = _row("Olive oil"), _row("Lemons")
+
+    tools.check_off_meal(entry, "done")
+    undone = tools.undo_meal_eaten(entry)
+
+    assert not undone["left_alone"], undone
+    assert _row("Olive oil")["quantity"] == oil_before["quantity"]
+    assert _row("Lemons")["quantity"] == lemons_before["quantity"]
+    conn = get_conn()
+    claim = conn.execute("SELECT inventory_depleted_at FROM meal_plan_entries WHERE id = ?", (entry,)).fetchone()[0]
+    conn.close()
+    assert claim is None, "every row came back, so ticking it again takes the food out again"

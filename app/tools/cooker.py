@@ -768,9 +768,27 @@ def undo_meal_eaten(entry_id: int) -> dict:
             receipts = json.loads((row["inventory_takes_json"] if row else None) or "[]")
         except (TypeError, ValueError):
             receipts = []
-        for receipt in receipts:
+        # Last taken, first put back: when two recipe lines drew on the same
+        # row (garlic for the marinade and again for the sauce), each
+        # receipt's "before" is the previous one's "after", so only this
+        # order finds the row as each receipt left it. Our own put-back
+        # bumps the row's rev (the inventory_items_bump_rev trigger), so the
+        # earlier receipt is checked against the rev WE just left, not the
+        # one the tick left — anyone else's write still fails the check.
+        ours: dict = {}
+        for receipt in reversed(receipts):
             name = _natural_item_name((receipt.get("before") or {}).get("item") or "")
-            (restored if _restore_take(conn, receipt) else left).append(name)
+            inventory_id = receipt.get("inventory_id")
+            if inventory_id in ours and receipt.get("after") is not None:
+                receipt = {**receipt, "after": {**receipt["after"], "rev": ours[inventory_id]}}
+            ok = _restore_take(conn, receipt)
+            (restored if ok else left).append(name)
+            if ok and inventory_id:
+                now = _inventory._receipt_snapshot(conn, inventory_id)
+                if now is not None:
+                    ours[inventory_id] = now.get("rev")
+        restored.reverse()
+        left.reverse()
         if receipts:
             conn.execute(
                 "UPDATE meal_plan_entries SET inventory_takes_json = NULL WHERE id = ? AND household_id = ?",
