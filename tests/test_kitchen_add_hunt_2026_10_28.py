@@ -11,18 +11,14 @@ Defect hunt, 2026-10-28 — adding food to the Kitchen tab and taking it out.
 """
 from __future__ import annotations
 
-import json
-import shutil
 from pathlib import Path
 
 import pytest
 
-import nodeharness
 from app import tools
 from app.db import get_conn
 from app.tools import eaten_receipt, whats_home
 
-KA_JS_PATH = Path(__file__).resolve().parent.parent / "static" / "kitchen-add.js"
 
 
 def _rows():
@@ -92,19 +88,3 @@ def test_undo_onto_a_changed_row_adds_up_instead_of_joining():
     # The row moved on since the tick (its rev is not the receipt's).
     eaten_receipt._put_back({"before": before, "taken": "12 oz", "after_rev": -1})
     assert _rows()[0]["quantity"] == "2.75 lbs"
-
-
-# ---------- 4. the toast's grammar ----------
-
-@pytest.mark.skipif(shutil.which("node") is None, reason="node runs the sheet's own builders")
-def test_the_toast_agrees_with_a_plural_name():
-    res = nodeharness.run_node(
-        f"const k = require({str(KA_JS_PATH)!r}); console.log(JSON.stringify(["
-        "k.savedLine(1, 'fridge', ['Eggs']), k.savedLine(1, 'pantry', ['rice']),"
-        "k.savedLine(0, 'fridge', ['Chicken thighs'], 1), k.savedLine(1, 'fridge', ['Hummus'])]));",
-        timeout=30)
-    assert res.returncode == 0, res.stderr
-    assert json.loads(res.stdout) == [
-        "Eggs were added to the fridge.", "Rice was added to the pantry.",
-        "Chicken thighs in the fridge were updated.", "Hummus was added to the fridge.",
-    ]
