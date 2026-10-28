@@ -5266,7 +5266,7 @@ def week_draft_flag_fix(week_start: str, req: DraftFlagFixRequest):
 
         # Unreachable, and kept as the shape rather than the guard: an
         # action this draft does not offer matches no derived fix, so the
-        # `fix is None` return above has already answered it with the same
+        # `flag is None or not fix.get("date")` return above has already answered it with the same
         # 200 a stale flag gets. It stood for the day a third fix (FIX_KEEP,
         # 2026-09-28) got added, and now stands for a fourth.
         raise HTTPException(status_code=400, detail=f"{req.action!r} isn't a fix this draft offers.")
