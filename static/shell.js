@@ -7618,6 +7618,8 @@
     if (!groOffline) {
       groPostJson('/api/grocery-list/' + id + '/freezing', body).then(function (res) {
         if (!res.ok) groFreezeRefused(id, answer, "Couldn't save that — try again.");
+        // As below: the pack moved, so the finished card re-reads.
+        else if (groListDone(groceryState.data)) loadGrocery({ background: true });
       }, function () {
         // No queue to hold it, so the answer is gone with the signal.
         groFreezeRefused(id, answer, GRO_NO_SIGNAL_TOAST);
@@ -7637,7 +7639,7 @@
       // The answer moves the pack between Fridge and Freezer
       // (defrost._freeze_ticked_pack), so a finished list's "Now in the
       // kitchen" card re-reads rather than keep saying Fridge.
-      else if (groListDone(groceryState.data)) loadGrocery();
+      else if (groListDone(groceryState.data)) loadGrocery({ background: true });
     }, function (err) {
       if (!groIsNetworkError(err)) console.warn('Grocery freezing answer failed:', err);
       groOffline.queueFreezing(id, answer);

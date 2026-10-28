@@ -229,3 +229,42 @@ def test_a_staple_bought_on_this_shop_is_not_counted_where_the_kitchen_never_sho
     home = signed_in.get("/api/whats-home").json()
     assert now["places"] == [{"place": "fridge", "count": 1}], "the coffee is a staple now (its tick made it one)"
     assert {p["place"]: p["count"] for p in now["places"]} == {k: v for k, v in home["counts"].items() if v}
+
+
+# ---------- 5. "Same as last week" and the Shop-frozen pack ----------
+
+def _shop_chicken_for_wednesday(frozen_today, own_frozen: bool):
+    frozen_today("2026-11-02 09:00:00")
+    if own_frozen:
+        tools.update_inventory("Chicken thighs", "add", quantity="1 lb", category="meat/seafood", location="freezer")
+    plan = tools.create_weekly_plan("2026-11-02")["weekly_plan_id"]
+    tools.add_recipe("Chicken Traybake", ingredients=[{"item": "Chicken thighs", "qty": "2 lb", "category": "meat/seafood"}],
+                     prep_time_minutes=10, cook_time_minutes=30)
+    entry = tools.plan_meal("2026-11-04", "Chicken Traybake", slot="dinner", weekly_plan_id=plan)["entry_id"]
+    tools.approve_weekly_plan(plan)
+    [line] = [l for l in tools.list_grocery_list("needed") if l["item"].lower() == "chicken thighs"]
+    tools.mark_grocery_item(line["id"], "purchased")
+    tools.book_defrost_for_grocery_line(line["id"], freezing=True)
+    return entry
+
+
+def test_a_tick_merged_into_the_households_own_freezer_bag_stays_bought(frozen_today):
+    """The yes leaves a merged row where it is, so the freezer row is the
+    household's bag, still frozen whatever happened to the move."""
+    from app.tools import bring_over
+
+    entry = _shop_chicken_for_wednesday(frozen_today, own_frozen=True)
+    [row] = _kitchen()
+    assert row["location"] == "freezer"
+    frozen_today("2026-11-08 09:00:00")  # the move six days unticked
+    assert "chicken thighs" in bring_over.bought_items([entry])
+
+
+def test_the_pack_the_yes_froze_counts_as_thawed_once_its_move_is_overdue(frozen_today):
+    from app.tools import bring_over
+
+    entry = _shop_chicken_for_wednesday(frozen_today, own_frozen=False)
+    frozen_today("2026-11-04 09:00:00")
+    assert "chicken thighs" in bring_over.bought_items([entry])
+    frozen_today("2026-11-08 09:00:00")
+    assert "chicken thighs" not in bring_over.bought_items([entry])

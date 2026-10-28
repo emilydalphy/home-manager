@@ -21,7 +21,8 @@ why*, not duplicating the diff.
   Now the yes freezes the row the tick CREATED (`defrost._freeze_ticked_pack`, re-snapshotting the
   tick's receipt so the untick still reverses), Put back unfreezes it, and the untick cancels the move
   (receipt key `freezing`). A merged row or "Freezing some?" moves nothing, as before. `bring_over.bought_items`
-  no longer reads a freezer row as frozen once its move is done or overdue (counted from the move's day). (2) Two ticks on
+  counts the pack the yes froze (receipt `freezing.froze`) as thawed once its move is done or overdue;
+  every other freezer row (the household's own bag, a merged tick) stays never-stale (review fix). (2) Two ticks on
   one kitchen row (two weeks' lines behind one Shop row; "12" eggs beside "2 cups") — unticking both
   left the first amount in the kitchen for good, either order. The receipts chain (later `before` =
   earlier `after`): `grocery._untick_from_under` / `_stacked_tick` follow one link while every state
