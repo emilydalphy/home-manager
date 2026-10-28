@@ -1255,6 +1255,24 @@ def _carry_fork_history(conn, fork: int, original: int, label: str) -> None:
     )
 
 
+def _undo_blocked(name: str, ingredients, entry) -> dict | None:
+    """
+    The refusal an undo returns when the recipe it would put back trips a
+    hard avoidance: one sentence for both undo paths (in place, and a
+    this-meal-only copy), so the sheet shows the same words either way.
+    Household-wide like recipe_change_blocked itself; no attendance read.
+    """
+    blocked = recipe_change_blocked(name, ingredients, _sides_of(entry))
+    if not blocked:
+        return None
+    who = blocked["member"] or "Someone here"
+    what = blocked["ingredient"]
+    return {"status": "refused",
+            "said": (f"{who} can’t have {what}, and the old recipe has it in, "
+                     "so I can’t put it back." if what else
+                     f"{who} can’t eat the old recipe, so I can’t put it back.")}
+
+
 def _undo_fork(conn, req, entry, snapshot: dict) -> dict:
     """
     Put back a this-meal-only rewrite (apply_rewrite's fork): the chain
@@ -1270,6 +1288,23 @@ def _undo_fork(conn, req, entry, snapshot: dict) -> dict:
                             (original, hid)).fetchone():
             conn.rollback()
             return {"status": "refused", "said": UNDO_NOTHING}
+        # The same allergy gate the in-place undo runs (2026-10-28). Undoing
+        # a "no peanuts, this meal only" put the peanut original straight
+        # back on that night with no check, after the household had told us
+        # someone can't have it. Checked on the original as it stands NOW,
+        # not as it was at the Tweak: that is the recipe the night goes back to.
+        orig_row = conn.execute(
+            "SELECT name, ingredients_json FROM recipes WHERE id = ? AND household_id = ?",
+            (original, hid),
+        ).fetchone()
+        try:
+            orig_ings = json.loads(orig_row["ingredients_json"] or "[]")
+        except (TypeError, ValueError):
+            orig_ings = []
+        refused = _undo_blocked(orig_row["name"] or req["dish_name"] or "", orig_ings, entry)
+        if refused:
+            conn.rollback()
+            return refused
         ids = [int(r["id"]) for r in conn.execute(
             "SELECT id FROM meal_plan_entries WHERE recipe_id = ? AND household_id = ?", (fork, hid))]
         approved = entry["plan_status"] == "approved"
@@ -1360,16 +1395,10 @@ def undo_recipe_change(request_id: int) -> dict:
             old_ings = json.loads(snapshot.get("ingredients_json") or "[]")
         except (TypeError, ValueError):
             old_ings = []
-        blocked = recipe_change_blocked(snapshot.get("name") or req["dish_name"] or "",
-                                        old_ings, _sides_of(entry))
-        if blocked:
-            who = blocked["member"] or "Someone here"
-            what = blocked["ingredient"]
+        refused = _undo_blocked(snapshot.get("name") or req["dish_name"] or "", old_ings, entry)
+        if refused:
             conn.rollback()
-            return {"status": "refused",
-                    "said": (f"{who} can’t have {what}, and the old recipe has it in, "
-                             "so I can’t put it back." if what else
-                             f"{who} can’t eat the old recipe, so I can’t put it back.")}
+            return refused
         users = _approved_users_of(conn, req["recipe_id"])
         approved = bool(users)
         before = _needed_lines(conn) if approved else {}

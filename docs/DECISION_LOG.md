@@ -13,6 +13,12 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Put it back on a "this meal only" Tweak runs the allergy gate** (2026-10-28, overnight defect hunt; branch
+  `overnight/undo-allergy-check-1028b`, stacked on `overnight/hunt-tweak-undo-1028b`; tests in
+  `tests/test_tweak_undo_after_notes.py`). `_undo_fork` repointed the night at the original with no check, so "no
+  peanuts, this meal only" then Undo put the peanut dish back after an allergy was on file. Now the same refusal as the
+  in-place undo (one helper, `_undo_blocked`, same sentence; household-wide, no attendance read, as in place), checked on
+  the original as it stands now; nothing written. Why: Undo must not be the one door past an allergy.
 - **Put it back on a "this meal only" Tweak works after a note or a rating** (2026-10-28, overnight defect hunt; branch
   `overnight/hunt-tweak-undo-1028b`; tests `tests/test_tweak_undo_after_notes.py`). `_undo_fork` deleted the copy while
   `recipe_notes` / `member_recipe_feedback` still pointed at it (no CASCADE) → "FOREIGN KEY constraint failed", 500.
