@@ -1046,6 +1046,19 @@ def clear_menu(date_str: str, holiday_name: str) -> dict:
             else:
                 _holidays._reopen(entry["weekly_plan_id"], entry["date"], holiday_name)
                 reopened = True
+    else:
+        # No main was ever had (a guest's note ruled out every one offered,
+        # or the model was down): the menu points at nothing, but the night
+        # still carries OUR "You're hosting … — what's the main?" question.
+        # Left there, a household that just said "Just us" was still asked
+        # for the main of a dinner they are no longer hosting. Only that
+        # mark's open slot — a dinner they've since planned is theirs, and
+        # _reopen gives a trip's night back as its planned_empty.
+        plan_id = _weekly_plan.get_plan_id_for_date(date_str)
+        entry = _dinner_entry(plan_id, date_str) if plan_id is not None else None
+        if entry is not None and entry["slot_state"] == "open" and _derived(entry).get("holiday_menu"):
+            _holidays._reopen(plan_id, date_str, holiday_name)
+            reopened = True
     if row is not None and menu:
         _save_menu(date_str, {})
     return {"prep_removed": removed_prep, "dinner_reopened": reopened, "dinner_restored": restored}
