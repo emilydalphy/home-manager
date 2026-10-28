@@ -78,7 +78,8 @@ def test_a_dinner_turned_back_on_becomes_a_question_not_a_stuck_blank(signed_in)
     (wed,) = _rows(plan, WEDNESDAY)
     assert wed["slot_state"] == "open"
     assert _constraint(wed) == "usual_week_back_on"
-    assert "Wednesday" in wed["open_reason"]
+    # Wednesday is today here: the question names the meal and says tonight.
+    assert wed["open_reason"] == "You’ve turned dinner back on — what would you like for dinner tonight?"
     assert _groceries() == before, "a question buys nothing"
     audit = tools.audit_plan_slots(plan)
     assert audit["duplicated"] == [] and audit["hollow"] == []
@@ -108,6 +109,42 @@ def test_a_day_already_gone_or_a_trip_is_left_alone(signed_in):
     assert thu["slot_state"] == "planned_empty" and _constraint(thu) != "usual_week_back_on"
     (wed,) = _rows(plan, WEDNESDAY)
     assert wed["slot_state"] == "open"
+
+
+def test_a_later_day_is_named_in_the_question(signed_in):
+    c = signed_in
+    c.post("/api/usual-week", json={"grid": {"dinner": {"thursday": "off"}}})
+    plan = _week(off_days=(THURSDAY,))
+    c.post("/api/usual-week", json={"grid": {"dinner": {"thursday": "everyone"}}})
+    (thu,) = _rows(plan, THURSDAY)
+    assert thu["open_reason"] == "You’ve turned dinner back on — what would you like for dinner on Thursday?"
+
+
+def test_an_out_night_rewritten_by_the_usual_week_is_never_reopened(signed_in):
+    """Review, 2026-10-28: generation writes the out night nobody_home, then
+    settle_off_slots rewrites it usual_week_off when the grid has that day
+    off too — the row forgets the household is out. The week's answers
+    (night_tags "out") and attendance still know, and the reopen reads them."""
+    from app.tools import usual_week
+    c = signed_in
+    c.post("/api/usual-week", json={"grid": {"dinner": {"thursday": "off", "friday": "off"}}})
+    intake = tools.save_week_intake(WEEK, night_tags={THURSDAY: ["out"]})
+    plan = tools.create_weekly_plan(WEEK)["weekly_plan_id"]
+    tools.attach_intake_to_plan(plan, intake["intake_id"])
+    for day in (THURSDAY,):
+        tools.plan_slot_empty(weekly_plan_id=plan, meal_date=day, slot="dinner",
+                              reason="You’re out — I’ve planned nothing and bought nothing.",
+                              derived_from={"tags": ["out"], "constraint": "nobody_home"})
+    usual_week.settle_off_slots(plan, usual_week.generation_plan(DATES)["off_slots"])
+    # Friday: no tag, but attendance has nobody home (a trip set after).
+    tools.set_slot_attendance(DATES[4], "dinner", present_member_ids=[], source="sheet")
+    tools.approve_weekly_plan(plan)
+    assert _constraint(_rows(plan, THURSDAY)[0]) == "usual_week_off", "the rewrite this guards against"
+
+    c.post("/api/usual-week", json={"grid": {"dinner": {"thursday": "everyone", "friday": "everyone"}}})
+
+    assert _rows(plan, THURSDAY)[0]["slot_state"] == "planned_empty"
+    assert all(r["slot_state"] != "open" for r in _rows(plan, DATES[4]))
 
 
 @pytest.mark.today(household_pin(21, on=MON + datetime.timedelta(days=2)))

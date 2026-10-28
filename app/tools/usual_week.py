@@ -660,7 +660,59 @@ def prep_days_cleared() -> None:
 # A meal turned back on mid-week (defect hunt, 2026-10-28): the slot a live
 # week holds empty for it becomes a question, under this constraint.
 BACK_ON_CONSTRAINT = "usual_week_back_on"
-_MEAL_PLURALS = {"breakfast": "breakfasts", "lunch": "lunches", "dinner": "dinners"}
+
+
+def _row_constraint(derived_from_json) -> str | None:
+    try:
+        derived = json.loads(derived_from_json or "{}") or {}
+    except (TypeError, ValueError):
+        return None
+    return derived.get("constraint") if isinstance(derived, dict) else None
+
+
+def _out_nights(plan_ids: set[int]) -> dict[int, set[str]]:
+    """{plan id: dates its week's answers tag "out"} — the intake the plan
+    was drafted from and the week's current revision, either one."""
+    from . import week_intake as _week_intake
+
+    out: dict[int, set[str]] = {}
+    conn = get_conn()
+    try:
+        plans = conn.execute(
+            f"SELECT wp.id, wp.week_start_date, wi.night_tags_json FROM weekly_plans wp "
+            f"LEFT JOIN week_intake wi ON wi.id = wp.intake_id AND wi.household_id = wp.household_id "
+            f"WHERE wp.household_id = ? AND wp.id IN ({','.join('?' * len(plan_ids))})",
+            (household_id(), *plan_ids),
+        ).fetchall()
+    finally:
+        conn.close()
+    for p in plans:
+        tag_sets = []
+        try:
+            tag_sets.append(json.loads(p["night_tags_json"] or "{}") or {})
+        except (TypeError, ValueError):
+            pass
+        current = _week_intake.get_week_intake(p["week_start_date"])
+        if current:
+            tag_sets.append(current.get("night_tags") or {})
+        out[p["id"]] = {d for tags in tag_sets if isinstance(tags, dict)
+                        for d, t in tags.items() if isinstance(t, list) and "out" in t}
+    return out
+
+
+def _nobody_home(meal_date: str, slot: str) -> bool:
+    """Attendance says nobody is at this meal, or its need is away."""
+    from . import attendance as _attendance
+    from . import slot_needs as _slot_needs
+
+    try:
+        att = _attendance.get_slot_attendance(meal_date, slot)
+        if att.get("explicit") and att.get("nobody_home"):
+            return True
+        return (_slot_needs.get_slot_need(meal_date, slot) or {}).get("need") == "away"
+    except Exception:
+        logger.exception("Couldn't read who is home for %s %s; leaving it as it is", meal_date, slot)
+        return True
 
 
 def reopen_slots_turned_back_on() -> list[dict]:
@@ -689,6 +741,13 @@ def reopen_slots_turned_back_on() -> list[dict]:
     way it was changed. Each row is cleared and reopened in one
     transaction (the arrangement holidays._reopen uses), so the slot is
     never absent in between.
+
+    An OUT night is never reopened, whatever its row now says (review,
+    2026-10-28): agent._finish_week_slots writes the out night nobody_home
+    and then settle_off_slots rewrites it usual_week_off when the grid has
+    that day off too, so the row alone no longer remembers the household is
+    out. The week's own answers (night_tags "out") and attendance (nobody
+    home, or an away need) are read instead.
     """
     from . import today_meals as _today_meals
     from . import weekly_plan as _weekly_plan
@@ -709,10 +768,7 @@ def reopen_slots_turned_back_on() -> list[dict]:
     for r in rows:
         if r["slot"] not in MEALS:
             continue
-        try:
-            constraint = (json.loads(r["derived_from_json"] or "{}") or {}).get("constraint")
-        except (TypeError, ValueError, AttributeError):
-            continue
+        constraint = _row_constraint(r["derived_from_json"])
         if constraint not in (OFF_CONSTRAINT, f"{r['slot']}s_per_week:0"):
             continue
         if r["date"] == today.isoformat() and _today_meals.has_gone(r["slot"]):
@@ -721,29 +777,36 @@ def reopen_slots_turned_back_on() -> list[dict]:
     if not candidates:
         return []
     unwanted = _weekly_plan.unwanted_meal_slots()
+    out_nights = _out_nights({r["weekly_plan_id"] for r in candidates})
     reopened = []
     for r in candidates:
         d, slot = r["date"], r["slot"]
         if slot in unwanted or slot in switched_off_meals([d]) or (d, slot) in off_slots_on([d]):
             continue
-        weekday = WEEKDAYS[date.fromisoformat(d).weekday()].capitalize()
+        if (slot == "dinner" and d in out_nights.get(r["weekly_plan_id"], set())) or _nobody_home(d, slot):
+            continue
+        when = "tonight" if d == today.isoformat() else f"on {WEEKDAYS[date.fromisoformat(d).weekday()].capitalize()}"
         conn = get_conn()
         try:
             conn.execute("BEGIN IMMEDIATE")
             # Re-read under the write lock: two saves at once must reopen a
             # slot once, never leave two rows on it.
+            # ...and only while it is still the usual week's / a zero
+            # count's empty row: anything else written in between (a trip,
+            # a night off) is that answer's, not ours to reopen.
             still = conn.execute(
-                "SELECT 1 FROM meal_plan_entries WHERE household_id = ? AND weekly_plan_id = ? AND date = ? "
-                "AND slot = ? AND slot_state = 'planned_empty' AND component_category IS NULL",
+                "SELECT derived_from_json FROM meal_plan_entries WHERE household_id = ? AND weekly_plan_id = ? "
+                "AND date = ? AND slot = ? AND slot_state = 'planned_empty' AND component_category IS NULL",
                 (household_id(), r["weekly_plan_id"], d, slot),
-            ).fetchone()
-            if still is None:
+            ).fetchall()
+            if len(still) != 1 or _row_constraint(still[0]["derived_from_json"]) not in (
+                    OFF_CONSTRAINT, f"{slot}s_per_week:0"):
                 conn.rollback()
                 continue
             _weekly_plan.clear_plan_slot(r["weekly_plan_id"], d, slot, conn=conn)
             _weekly_plan.plan_slot_open(
                 weekly_plan_id=r["weekly_plan_id"], meal_date=d, slot=slot,
-                open_reason=f"You’ve turned {_MEAL_PLURALS[slot]} back on — what would you like on {weekday}?",
+                open_reason=f"You’ve turned {slot} back on — what would you like for {slot} {when}?",
                 derived_from={"constraint": BACK_ON_CONSTRAINT},
                 conn=conn,
             )
