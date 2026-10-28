@@ -13,6 +13,7 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Cooking takes from the fridge row, not the frozen pack** (2026-10-28, branch `overnight/cook-takes-from-fridge`; tests `tests/test_cook_takes_from_fridge.py`). `cooker.deplete_inventory_for_meal` took the first name match off `get_inventory` (ORDER BY item), so Beef Mince in freezer (older row) + fridge lost the FREEZER pack on tonight's cook, and the next sync dropped Saturday's fridge move. Now rows are stably ordered before matching: a freezer row THIS entry's own fridge move was ticked done for, then any non-freezer row, then other freezer rows. A pending move does not count (nobody moved it). The eaten receipt is keyed by the row taken, so Undo puts back the fridge pack. Not fixed: `defrost._candidates_from_plan` still books a fridge move for a night the fridge already covers.
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
   (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.
