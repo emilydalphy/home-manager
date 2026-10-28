@@ -197,3 +197,34 @@ def test_the_chat_change_cards_undo_refuses_all_of_it_together(week, signed_in):
     assert res.status_code == 409 and "Reid" in res.json()["detail"]
     assert _entry(week, D1)["meal"] == NEW
     assert _entry(week, D2)["meal"] == "Fish Tacos", "Chili was not put back on its own"
+
+
+def test_a_row_refused_mid_card_keeps_the_rest_on_the_card(week, monkeypatch):
+    """If the up-front gate passes but a row's own undo refuses (a whole-dish
+    swap checks every day it touched), the card stops there: it answers
+    refused, keeps the rows not yet put back, and a later Undo finishes."""
+    out = tools.propose_plan_changes(week, [
+        {"date": D1, "slot": "dinner", "action": "change", "candidates": [_pick()]},
+        {"date": D2, "slot": "dinner", "action": "change", "candidates": [_pick("Fish Tacos")]},
+    ])
+    pid = out["proposal_id"]
+    assert tools.apply_proposal(pid)["status"] == "applied"
+
+    real = sip.undo_meal_swap
+    calls = []
+
+    def second_refuses(plan_id, entry_id):
+        calls.append(entry_id)
+        if len(calls) == 2:
+            return {"status": "refused", "message": "Not that one."}
+        return real(plan_id, entry_id)
+
+    monkeypatch.setattr(sip, "undo_meal_swap", second_refuses)
+    first = tools.undo_proposal(pid)
+    assert first["status"] == "refused" and first["message"] == "Not that one."
+    left = tools.get_proposal(pid)["applied"]
+    assert len(left) == 1, "the row not put back stays on the card"
+
+    monkeypatch.setattr(sip, "undo_meal_swap", real)
+    assert tools.undo_proposal(pid)["status"] == "restored"
+    assert tools.get_proposal(pid)["applied"] == []

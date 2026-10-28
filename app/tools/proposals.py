@@ -529,6 +529,15 @@ def undo_proposal(proposal_id: str) -> dict:
             result = _swap.undo_meal_swap(plan_id, entry["entry_id"])
         except ValueError:
             continue
+        if result.get("status") == "refused":
+            # The up-front gate passed but this row's own undo refused (a
+            # whole-dish swap checks every day it touched): stop here and keep
+            # every row not yet put back on the card, so a later Undo can
+            # finish the job — never "back as it was" over a half-undone week.
+            done = {(r["date"], r["slot"]) for r in restored}
+            proposal["applied"] = [x for x in proposal["applied"] if (x["date"], x["slot"]) not in done]
+            return {"status": "refused", "message": result.get("message") or "",
+                    "days": [r["day"] for r in restored if r.get("day")]}
         if result.get("status") != "restored":
             continue
         restored.append({"date": a["date"], "slot": a["slot"], "meal": result["meal"], "day": result.get("day")})

@@ -21348,7 +21348,10 @@
       var swapToast = thawToast(data.said || savedLine(mealDisplayName(daySlotEntry(data.day, slot)), 'swapped in'),
         data, SWAP_UNDO_MS);
       toastSaved(swapToast.said,
-        { label: 'Undo', onClick: function () { runSwapUndo(panel, day, slot); } }, swapToast.ms);
+        // The day as it is NOW: the swap wrote a new entry, so the day from
+        // before it carries an id the undo can't find (404) — runSwapPick's
+        // wkFreshDay, the same read.
+        { label: 'Undo', onClick: function () { runSwapUndo(panel, wkFreshDay(day), slot); } }, swapToast.ms);
       // Then the rest of the week, quietly: a swap can change the badge,
       // the subtitle, the draft's clash line and Kitchen's reading of the
       // same week. loadWeekMenu is the one place that keeps all of those
@@ -28267,8 +28270,8 @@
       .catch(function (err) {
         // A refusal carries its own sentence (postJson throws the server's
         // detail); only a bare failure gets the generic line.
-        var said = err && err.message;
-        showToast(said && !/^Request failed/.test(said) ? said : 'Couldn’t undo that — try it again in a moment.');
+        var said = err && err.status === 409 && err.message;
+        showToast(said || 'Couldn’t undo that — try it again in a moment.');
       });
   }
 
@@ -28279,7 +28282,11 @@
     return Api.fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) })
       .then(function (res) {
         return res.json().catch(function () { return null; }).then(function (data) {
-          if (!res.ok) throw new Error((data && data.detail) || ('Request failed (' + res.status + ')'));
+          if (!res.ok) {
+            var failed = new Error((data && data.detail) || ('Request failed (' + res.status + ')'));
+            failed.status = res.status; // a 409 is a refusal with a sentence to say
+            throw failed;
+          }
           return data;
         });
       });
