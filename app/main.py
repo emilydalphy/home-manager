@@ -5220,15 +5220,19 @@ def week_draft_flag_fix(week_start: str, req: DraftFlagFixRequest):
         # flag gets, because that is what this is.
         if tools.get_weekly_plan(plan_id).get("status") == "approved":
             return {"status": "gone", "applied": False}
-        flag = next(
-            (f for f in _draft_flags.plan_flags(plan_id) if f.get("entry_id") == req.entry_id),
-            None,
+        # The flag that OFFERS this fix, not merely the first line on the
+        # entry: a meal can also carry a line with no buttons (an allergy
+        # swap, a late "tonight"), and when that one was stored first every
+        # tap on the time line's buttons answered "gone" (2026-10-28).
+        flag, fix = next(
+            ((f, x) for f in _draft_flags.plan_flags(plan_id) if f.get("entry_id") == req.entry_id
+             for x in f.get("fixes") or [] if x.get("action") == req.action),
+            (None, None),
         )
-        if flag is None:
+        if flag is None or not fix.get("date"):
             return {"status": "gone", "applied": False}
-        fix = next((f for f in flag.get("fixes") or [] if f.get("action") == req.action), None)
-        if fix is None or not fix.get("date"):
-            return {"status": "gone", "applied": False}
+        # Each fix clears only the line it was offered on — see dismiss.
+        fixable = _draft_flags.FIXABLE_KINDS
 
         if req.action == _draft_flags.FIX_PREP_AHEAD:
             _prep_sessions.add_prep_cut(
@@ -5236,7 +5240,7 @@ def week_draft_flag_fix(week_start: str, req: DraftFlagFixRequest):
                 _draft_flags.prep_cut_description(flag.get("dish") or "", flag.get("date") or ""),
                 entry_ids=[req.entry_id],
             )
-            _draft_flags.dismiss(plan_id, req.entry_id)
+            _draft_flags.dismiss(plan_id, req.entry_id, fixable)
             return {"status": "applied", "applied": True, "action": req.action, "date": fix["date"]}
 
         if req.action == _draft_flags.FIX_MOVE:
@@ -5246,14 +5250,18 @@ def week_draft_flag_fix(week_start: str, req: DraftFlagFixRequest):
             # it is still true.
             if (result or {}).get("status") == "refused":
                 return {"status": "refused", "applied": False, "message": result.get("message")}
-            _draft_flags.dismiss(plan_id, req.entry_id)
+            _draft_flags.dismiss(plan_id, req.entry_id, fixable)
+            # The same re-check swap-nights gives after the same trade: a
+            # "nothing else fit" line whose run this broke comes off, and a
+            # dish landing on a short night is said afresh (2026-10-28).
+            _refresh_draft_flags(plan_id, result)
             return {"status": "applied", "applied": True, "action": req.action, "date": fix["date"]}
 
         if req.action == _draft_flags.FIX_KEEP:
             # Writes nothing to the plan — the dish is already where the
             # household wants it. Taking the fix just takes the flag off,
             # exactly like the other two once their own write has landed.
-            _draft_flags.dismiss(plan_id, req.entry_id)
+            _draft_flags.dismiss(plan_id, req.entry_id, fixable)
             return {"status": "applied", "applied": True, "action": req.action, "date": fix["date"]}
 
         # Unreachable, and kept as the shape rather than the guard: an

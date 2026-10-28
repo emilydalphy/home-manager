@@ -786,16 +786,33 @@ def _week_nights(weekly_plan_id: int, intake: dict | None,
         return []
 
 
-def dismiss(weekly_plan_id: int, entry_id: int) -> bool:
+# The stored kinds a fix can be offered on — what `plan_flags` derives
+# fixes for (a FITS_NOWHERE line is re-said as OVER_CAP_REQUEST, with its
+# fixes, once the week stops making it true). The flag-fix route dismisses
+# only these.
+FIXABLE_KINDS = (OVER_CAP_REQUEST, FITS_NOWHERE)
+
+
+def dismiss(weekly_plan_id: int, entry_id: int, kinds: tuple[str, ...] | None = None) -> bool:
     """
     Take one entry's flag off, because its fix has been applied.
 
     The move fix does not need this — re-dating the row makes `plan_flags`
     drop the flag on its own — but the prep fix leaves the entry exactly
     where it was, so nothing else would ever clear it.
+
+    `kinds` narrows it to the flag the fix was ON. A meal can carry more
+    than one line — the time line with its buttons, and beside it an
+    allergy swap or a late "tonight" that has none — and matching on the
+    entry alone took them all off, so tapping "Keep on Wednesday" silently
+    deleted "Sam is allergic to peanuts, so it's Lasagna" (2026-10-28).
     """
     flags = _stored(weekly_plan_id)
-    kept = [f for f in flags if f.get("entry_id") != entry_id]
+    kept = [f for f in flags
+            if f.get("entry_id") != entry_id
+            # A line stored with no kind is read as over-cap by plan_flags
+            # (and written as one by _clean), so it is dismissed as one.
+            or (kinds is not None and (f.get("kind") or OVER_CAP_REQUEST) not in kinds)]
     if len(kept) == len(flags):
         return False
     conn = get_conn()
