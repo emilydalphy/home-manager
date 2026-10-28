@@ -15,7 +15,9 @@ Acceptance:
 - Resume the same day as Pause puts the paused line back; Resume of a staple
   that is not due puts nothing on;
 - a line already covering it (a person's own line) means nothing is put back;
-- a row dropped on "Maybe already home" is left where it is (its own Put back).
+- a row dropped on "Maybe already home" is left where it is (its own Put back),
+  and while one waits for the same thing nothing is put back beside it;
+- only a row taken off TODAY comes back — an older leftover is not revived.
 """
 
 from __future__ import annotations
@@ -115,3 +117,41 @@ def test_a_maybe_already_home_drop_keeps_its_own_put_back():
     tools.add_staple("Coffee", running_low=True)
     (row,) = _rows("Coffee")
     assert row["status"] == "removed" and row["removed_by"] == "Emily"
+
+
+def test_an_own_line_dropped_as_already_home_keeps_the_staple_off(signed_in):
+    """The review's sequence, over HTTP: the staple's line answered
+    "plenty", a person's own Oats line dropped on "Maybe already home",
+    then "we're out of oats" — and then that drop's Put back. One Oats line
+    at the end, as on main, not two."""
+    c = signed_in
+    c.post("/api/staples/add", json={"item": "Oats", "running_low": True})
+    (staple_line,) = _needed("Oats")
+    assert c.post(f"/api/grocery-list/{staple_line['id']}/staple", json={"decision": "plenty"}).status_code == 200
+    own = c.post("/api/grocery-list/add", json={"item": "Oats", "quantity": "1 bag"}).json()
+    own_id = own.get("item_id") or own.get("id")
+    assert c.post(f"/api/grocery-list/{own_id}/pre-shop", json={"decision": "drop", "author": "Emily"}).status_code == 200
+
+    c.post("/api/staples/add", json={"item": "Oats", "running_low": True})
+    assert _needed("Oats") == []
+
+    assert c.post(f"/api/grocery-list/{own_id}/pre-shop-undo").status_code == 200
+    assert [r["id"] for r in _needed("Oats")] == [own_id]
+
+
+def test_a_row_taken_off_before_today_is_not_revived():
+    line = _due_line("Coffee")
+    tools.decide_staple_line(line["id"], "plenty")
+    conn = get_conn()
+    conn.execute(
+        "UPDATE grocery_items SET removed_at = datetime('now', '-10 days') WHERE id = ?", (line["id"],)
+    )
+    conn.commit()
+    conn.close()
+    tools.add_staple("Coffee", running_low=True)
+    conn = get_conn()
+    status = conn.execute("SELECT status FROM grocery_items WHERE id = ?", (line["id"],)).fetchone()["status"]
+    conn.close()
+    assert status == "removed"
+    # The next read lists it fresh, as it always has.
+    assert len(_needed("Coffee")) == 1

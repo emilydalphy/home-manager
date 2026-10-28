@@ -17,8 +17,9 @@ why*, not duplicating the diff.
   `overnight/hunt-staples-stores-1028b`; tests `tests/test_staple_wanted_again_today.py`). "We have plenty" in the
   morning, then "we're out of dish soap" in chat (`add_staple` running_low), read "probably running low" with no line
   until tomorrow: `sync_due_staples` treats a line taken off today as the trip's answer. Same with Pause then Resume.
-  `staples._back_on_the_list` now puts that very row back (store, amount kept) when nothing else covers it; a
-  "Maybe already home" drop is left to its own Put back. `_what_covers` is sync's cover test, shared.
+  `staples._back_on_the_list` now puts that very row back (store, amount kept) when nothing else covers it — only a
+  row taken off today (household clock), and never while a row of the same thing waits with its own Put back ("Maybe
+  already home", review: restoring beside it made two Oats lines once tapped). `_what_covers` is sync's cover test.
 
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.

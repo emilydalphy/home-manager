@@ -879,7 +879,7 @@ def add_staple(
         )
     if running_low and not on_list:
         # Out now, after a line of it came off earlier today: back on now.
-        _back_on_the_list(conn, staple_id)
+        _back_on_the_list(conn, staple_id, today_date)
     if running_low and not on_list and in_rack(_row(conn, staple_id)):
         # sync_due_staples never lists a spice on its own (see the module
         # note), so "we're out of cumin" puts the line on today, here —
@@ -1460,6 +1460,8 @@ def reverse_last_answer(conn, staple_id: int) -> bool:
 def pause_staple(staple_id: int, paused: bool = True) -> dict:
     """Pause (stop suggesting) or resume a staple by id. Resuming resets the
     skip streak and makes it due today if its date has passed."""
+    # Before get_conn (see list_staples): Resume may put today's line back.
+    today = _today()
     conn = get_conn()
     r = _row(conn, staple_id)
     if r is None:
@@ -1483,7 +1485,7 @@ def pause_staple(staple_id: int, paused: bool = True) -> dict:
         if _is_due(_row(conn, staple_id)):
             # Pause took its line off (_drop_suggestion_lines); Resume the
             # same day puts that line back rather than waiting a day.
-            _back_on_the_list(conn, staple_id)
+            _back_on_the_list(conn, staple_id, today)
     conn.commit()
     out = _shape(_row(conn, staple_id))
     conn.close()
@@ -1807,7 +1809,7 @@ def _what_covers(conn) -> tuple[set, set, set]:
     return live_keys, live_staple_ids, made_from_live
 
 
-def _back_on_the_list(conn, staple_id: int) -> None:
+def _back_on_the_list(conn, staple_id: int, today: date) -> None:
     """
     The household has just said this staple is wanted NOW — "we're out of
     dish soap" (add_staple running_low), or Resume on a regular paused
@@ -1826,19 +1828,43 @@ def _back_on_the_list(conn, staple_id: int) -> None:
     intact, as the staple's Undo does. Only a row taken off as the
     staple's (removed_by 'staple': its two buttons, the row's Remove,
     Pause, Start over). A row dropped on "Maybe already home" is left
-    alone: it is listed under "already have" with its own "Put back on
-    the list", and a second line beside it would be two of one thing when
-    that is tapped. Nothing is written when something on the list already
-    covers the staple, or when nothing was taken off (the next list read
+    alone, and so is the staple while one waits — this staple's or any
+    line of the same thing (a person's own "Oats · 1 bag" dropped there):
+    it is listed under "already have" with its own "Put back on the list",
+    and restoring beside it made two Oats lines the moment that was tapped
+    (review, 2026-10-28). Only a row taken off TODAY, on the household's
+    clock (`today`, read by the caller before its connection): an older
+    one is a leftover sync_due_staples clears, with flags from a trip long
+    gone. Nothing is written when something on the list already covers
+    the staple, or when nothing was taken off today (the next list read
     lists it as always). Commits nothing itself.
     """
+    from . import cooker as _cooker
+    from . import pre_shop as _pre_shop
     s = _row(conn, staple_id)
     if s is None or in_rack(s) or not (s["item"] or "").strip():
         return
+    key = _grocery._merge_key(s["item"])
+    # A row with a put-back of its own: "Maybe already home" / Have it
+    # (removed_by is who), the Already home pass ('kitchen'), the freezer
+    # step, Remove's toast ('list'). Not the staple's own, nor a carried-
+    # over leftover's answer ('carried_*'), nor a blank one: none of those
+    # is put back as a line of its own.
+    if any(
+        r["removed_by"] not in (ADDED_BY_STAPLE, "", "carried_kept", "carried_dropped")
+        and (r["staple_id"] == staple_id or _grocery._merge_key(r["item"]) == key)
+        for r in conn.execute(
+            "SELECT item, staple_id, COALESCE(removed_by, '') AS removed_by FROM grocery_items "
+            "WHERE household_id = ? AND status = 'removed'",
+            (household_id(),),
+        ).fetchall()
+    ):
+        return
+    day_began = _pre_shop._household_day_start_utc(today, _cooker.household_zone(conn))
     own = conn.execute(
-        "SELECT id FROM grocery_items WHERE household_id = ? AND staple_id = ? "
-        "AND status = 'removed' AND removed_by = ? ORDER BY removed_at DESC, id DESC LIMIT 1",
-        (household_id(), staple_id, ADDED_BY_STAPLE),
+        "SELECT id FROM grocery_items WHERE household_id = ? AND staple_id = ? AND status = 'removed' "
+        "AND removed_by = ? AND removed_at >= ? ORDER BY removed_at DESC, id DESC LIMIT 1",
+        (household_id(), staple_id, ADDED_BY_STAPLE, day_began),
     ).fetchone()
     if own is None:
         return
