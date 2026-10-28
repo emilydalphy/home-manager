@@ -691,8 +691,43 @@ def undo_eaten_meal(entry_id: int) -> dict:
     every inventory row that tick changed goes back exactly as it was
     (eaten_receipt.restore), the depletion claim included, so the next tick
     takes the ingredients again. A second call restores nothing.
+
+    The real start comes back too. Marking it cooked kept cook_started_at;
+    the un-mark below clears it (that is "Mark not cooked"'s way to forget
+    a start tapped by mistake), so an Undo of a tick made mid-cook put the
+    night back to "Start by 5:55" with the pan still on the stove — Today's
+    clock, the evening nudge and the night-off and move doors all reading a
+    cook under way as not begun (defect hunt, 2026-10-28). Undo is "as it
+    was before the tap", and before the tap it was cooking.
     """
-    check_off_meal(entry_id, "pending")
+    conn = get_conn()
+    try:
+        # This entry and its plan's — the batch check_off_meal unticks is
+        # some of them, and which is only known after it has.
+        started = {
+            r["id"]: r["cook_started_at"]
+            for r in conn.execute(
+                "SELECT b.id, b.cook_started_at FROM meal_plan_entries a "
+                "JOIN meal_plan_entries b ON b.household_id = a.household_id "
+                "AND (b.id = a.id OR b.weekly_plan_id = a.weekly_plan_id) "
+                "WHERE a.id = ? AND a.household_id = ? AND b.cook_started_at IS NOT NULL",
+                (entry_id, household_id()),
+            )
+        }
+    finally:
+        conn.close()
+    unticked = check_off_meal(entry_id, "pending")
+    keep = [(started[eid], eid, household_id())
+            for eid in unticked.get("linked_entry_ids") or [entry_id] if eid in started]
+    if keep:
+        conn = get_conn()
+        try:
+            conn.executemany(
+                "UPDATE meal_plan_entries SET cook_started_at = ? WHERE id = ? AND household_id = ?", keep,
+            )
+            conn.commit()
+        finally:
+            conn.close()
     restored = _eaten_receipt.restore(entry_id)
     return {"entry_id": entry_id, **restored}
 
