@@ -193,7 +193,15 @@ def test_tomorrow_is_not_pinned_onto_a_night_tagged_out(household, picker, monke
     assert "Lamb Curry" in _all_dinners(plan_id)
     opener = tools.get_week_menu(plan_id)["draft_opener"]
     assert not any("I moved" in line for line in opener), opener
-    assert opener[0].startswith("Lamb curry Wednesday, as you asked"), opener
+    # Snag rule 8 (hunt, 2026-10-28): "tomorrow" named Monday as surely as
+    # "Monday" would have, so the curry goes to the nearest night someone is
+    # home (Sunday and Tuesday tie; the later wins) and the draft's flag
+    # says so. It used to stay on the model's Wednesday with line one saying
+    # "Lamb curry Wednesday, as you asked" — not what they asked.
+    assert _dinner(plan_id, PERIOD[2])["meal"] == "Lamb Curry"
+    assert [f["text"] for f in tools.get_week_menu(plan_id).get("draft_flags") or []] == [
+        "You're out Monday, so Lamb Curry moved to Tuesday."]
+    assert not any("as you asked" in line for line in opener), opener
 
 
 @pytest.mark.real_time_of_day
