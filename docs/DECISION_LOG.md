@@ -13,6 +13,13 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A big pot keeps its cups on the servings stepper** (2026-10-28, overnight hunt;
+  branch `overnight/hunt-recipes-share-1028b`; tests `tests/test_big_pot_measures.py`).
+  `recipes._easiest_volume`'s 5% slack is also capped at ¼ cup (`_MEASURE_SLACK_MAX_TSP`),
+  and it only lists the counts near the amount. Why: 5% of 24 cups is over a cup, so
+  "12 cups water" doubled said "23 cups"; and listing every count made it quadratic —
+  `/api/recipes/scale?servings=1000000` ate 10 GB. Nothing up to 5 cups changed (checked
+  every ⅛ tsp to 12 cups against the old function).
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
   (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.
