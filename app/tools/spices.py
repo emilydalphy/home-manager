@@ -122,6 +122,9 @@ _SPICES = {
 _FRESH_BY_DEFAULT = {
     "basil", "cilantro", "coriander leaf", "parsley", "mint", "dill", "chive",
     "rosemary", "thyme", "sage", "tarragon", "lemongrass", "curry leaf",
+    # rau răm, a leafy herb sold in bunches — "coriander" is only its
+    # English name (library sweep, 2026-10-28: it sat in Spices this week)
+    "vietnamese coriander",
 }
 
 _DESCRIPTORS = {
@@ -185,8 +188,13 @@ def is_spice(name: str) -> bool:
 
 _PAREN_RE = re.compile(r"\([^()]*\)")
 _FOR_RE = re.compile(r",?\s+for\s+[a-z ,'-]+$")
+# Any oil it is packed in, and "in spices" too: the library's "Shrimp paste
+# in soybean oil" and "Minced crab paste in spices" read as oil and as a
+# spice blend, and went to Spices this week, assumed at home, never bought
+# (library sweep, 2026-10-28). The head before " in " is a plain name —
+# "Saffron, bloomed in water" is still saffron.
 _PACKED_IN_RE = re.compile(
-    r"\S\s+(?:packed\s+)?in\s+(?:extra[\s-]virgin\s+)?(?:(?:olive|sunflower|vegetable|canola)\s+)?(?:oil|water|brine)$"
+    r"^[^,]*\S\s+(?:packed\s+)?in\s+(?:extra[\s-]virgin\s+)?(?:[a-z]+\s+)?(?:oil|water|brine|spices?)$"
 )
 
 
