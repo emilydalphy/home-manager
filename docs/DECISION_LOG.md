@@ -22,6 +22,9 @@ why*, not duplicating the diff.
   (2) A receipt / Say it / Type it / chat add that MERGES into a row already there left its old
   `created_at`, so fresh beef read as 20 days stale and went on the list; such merges stamp `confirmed_on`
   (the kitchen-add undo restores it). A grocery tick is unchanged (its receipt already counts).
+  Review follow-up: the Kitchen add's Undo (`kitchen_add.undo_added`) rechecks too; shell.js re-reads
+  Shop after a Kitchen action or Undo that moved a line (`homeMovedTheList`), after the add's Undo, and
+  for chat's `home`-tagged inventory cards.
   Why: Kitchen and Shop contradicted each other, and the wrong side was "don't buy it".
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.

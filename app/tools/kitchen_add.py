@@ -576,6 +576,10 @@ def undo_added(undo: dict) -> dict:
             "UPDATE kitchen_add_receipts SET undone_at = datetime('now') WHERE id = ? AND household_id = ?",
             (receipt_id, household_id()),
         )
+        # Taking the add back is the kitchen having less: a Shop "Already
+        # home" line the added food covered goes back on the list.
+        from . import already_home as _already_home
+        _already_home.recheck_set_aside(conn=conn)
     return {"undone": undone}
 
 

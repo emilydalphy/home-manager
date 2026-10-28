@@ -11302,7 +11302,9 @@
           label: 'Undo',
           onClick: function () {
             Api.json('/api/whats-home/add/undo', { body: { undo: res.undo } })
-              .then(function () { refreshHomePanel(); refreshGoingOff(); })
+              // Taking the add back can leave a Shop "Already home" line
+              // uncovered; the server puts it back (recheck_set_aside).
+              .then(function () { refreshHomePanel(); refreshGoingOff(); refreshGroceryPanel(); })
               .catch(function () { /* Api.json toasted */ });
           }
         });
@@ -28504,6 +28506,9 @@
         refreshHomeOnce();
         refreshKitchenPanel();
         refreshTodayMoves();
+        // "We're out of beef" can put Shop's "Already home" line back on
+        // the list (already_home.recheck_set_aside, 2026-10-28).
+        refreshGroceryOnce();
       } else if (action.tab === 'grocery') {
         refreshGroceryOnce();
         // A chat tick ("we got the milk") puts it in the kitchen.

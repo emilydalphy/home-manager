@@ -185,3 +185,16 @@ def test_an_old_row_nobody_bought_into_is_still_bought():
     conn.close()
     _approve_tacos()
     assert _beef_line()["status"] == "needed"
+
+
+def test_undoing_a_receipt_add_puts_the_line_back(signed_in):
+    """The add's Undo is the kitchen having less too: the old stale half
+    pound can't cover the tacos, so Shop's Already home line comes back."""
+    _old_beef_row()
+    res = signed_in.post("/api/whats-home/add", json={"kind": "receipt", "items": [
+        {"item": "Ground beef", "quantity": "2 lb", "category": "meat"}]}).json()
+    _approve_tacos()
+    assert _beef_line()["status"] == "removed"
+    signed_in.post("/api/whats-home/add/undo", json={"undo": res["undo"]})
+    assert _beef_line()["status"] == "needed"
+    assert tools.already_home_lines() == []
