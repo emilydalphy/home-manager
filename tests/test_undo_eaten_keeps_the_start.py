@@ -99,3 +99,58 @@ def test_another_nights_start_is_left_alone():
 
     assert _row(lunch)["cooked_status"] == "done"
     assert _row(lunch)["cook_started_at"] == lunch_started
+
+
+def _set_start(entry_id, value):
+    conn = get_conn()
+    conn.execute("UPDATE meal_plan_entries SET cook_started_at = ? WHERE id = ?", (value, entry_id))
+    conn.commit()
+    conn.close()
+
+
+def test_a_component_batch_keeps_each_rows_own_start():
+    tools.add_recipe("Jello Bowl", ingredients=[{"item": "Jello", "qty": "1 box"}], default_servings=2)
+    tools.update_inventory("Jello", "add", quantity="3 box", category="pantry", location="pantry")
+    tools.set_planning_mode("component_based")
+    day = household_date(0)
+    plan_id = tools.create_weekly_plan(day)["weekly_plan_id"]
+    a, b, c = (
+        tools.plan_meal(day, "Jello Bowl", weekly_plan_id=plan_id, component_category="treat")["entry_id"]
+        for _ in range(3)
+    )
+    _set_start(a, f"{day}T17:02:00")
+    _set_start(b, f"{day}T17:10:00")
+    tools.check_off_meal(b, "done")
+    assert {_row(e)["cooked_status"] for e in (a, b, c)} == {"done"}
+
+    tools.undo_eaten_meal(b)
+
+    assert {_row(e)["cooked_status"] for e in (a, b, c)} == {"pending"}
+    assert _row(a)["cook_started_at"] == f"{day}T17:02:00"
+    assert _row(b)["cook_started_at"] == f"{day}T17:10:00"
+    assert _row(c)["cook_started_at"] is None
+
+
+def test_the_start_is_never_cleared_on_the_way(monkeypatch):
+    """No window where the night reads not begun: the un-mark keeps the start
+    in its own write, rather than a later write putting it back. Read at the
+    moment the un-mark has committed — where the evening nudge, Today or a
+    second phone could look."""
+    from app.tools import cooker
+
+    entry = _tonight()
+    started = tools.start_cooking(entry)["started_at"]
+    tools.check_off_meal(entry, "done")
+    seen = {}
+    real_check_off = cooker.check_off_meal
+
+    def probe(*args, **kwargs):
+        out = real_check_off(*args, **kwargs)
+        seen.update(_row(entry))
+        return out
+
+    monkeypatch.setattr(cooker, "check_off_meal", probe)
+    cooker.undo_eaten_meal(entry)
+
+    assert seen["cooked_status"] == "pending"
+    assert seen["cook_started_at"] == started

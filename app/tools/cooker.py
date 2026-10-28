@@ -355,7 +355,7 @@ def deplete_inventory_for_meal(entry_id: int) -> dict:
     return {"entry_id": entry_id, "depleted": depleted, "queued_for_review": queued, "left_alone": left_alone}
 
 
-def check_off_meal(entry_id: int, status: str = "done") -> dict:
+def check_off_meal(entry_id: int, status: str = "done", *, _keep_start: bool = False) -> dict:
     """
     Mark a specific planned meal (meal_plan_entries row) as cooked
     (status='done') or back to pending. Use get_weekly_plan/get_plan_progress
@@ -507,7 +507,7 @@ def check_off_meal(entry_id: int, status: str = "done") -> dict:
         # Still forget a start on a not-cooked row: "Mark not cooked" is
         # the one way to clear a start tapped by mistake, and it must work
         # whether or not the tick itself has anything to change.
-        if status == "pending":
+        if status == "pending" and not _keep_start:
             conn.executemany(
                 "UPDATE meal_plan_entries SET cook_started_at = NULL WHERE id = ? AND household_id = ?",
                 [(eid, household_id()) for eid in linked_ids],
@@ -564,7 +564,12 @@ def check_off_meal(entry_id: int, status: str = "done") -> dict:
     # that reads it. Marking DONE leaves the start alone — it is a true
     # fact about the cook that just happened, and every reader already
     # says "Cooked." over it rather than a clock.
-    started_at = "cook_started_at" if status == "done" else "NULL"
+    # _keep_start is undo_eaten_meal's: the Undo of a tick puts the night
+    # back as it was before the tap, and a cook started before it is still
+    # cooking. Kept inside this one write, not written back afterwards, so
+    # nothing ever reads the night as not begun in between (the evening
+    # nudge stamps its once-a-day send off exactly that read).
+    started_at = "cook_started_at" if status == "done" or _keep_start else "NULL"
     # A meal marked cooked is no longer a skipped one ("We skipped it" on
     # Today's yesterday card, yesterday_ask.py) — whichever answer came
     # last is the true one.
@@ -693,41 +698,15 @@ def undo_eaten_meal(entry_id: int) -> dict:
     takes the ingredients again. A second call restores nothing.
 
     The real start comes back too. Marking it cooked kept cook_started_at;
-    the un-mark below clears it (that is "Mark not cooked"'s way to forget
+    a plain un-mark clears it (that is "Mark not cooked"'s way to forget
     a start tapped by mistake), so an Undo of a tick made mid-cook put the
     night back to "Start by 5:55" with the pan still on the stove — Today's
     clock, the evening nudge and the night-off and move doors all reading a
     cook under way as not begun (defect hunt, 2026-10-28). Undo is "as it
-    was before the tap", and before the tap it was cooking.
+    was before the tap", and before the tap it was cooking — so the un-mark
+    keeps the start in the same write (check_off_meal's _keep_start).
     """
-    conn = get_conn()
-    try:
-        # This entry and its plan's — the batch check_off_meal unticks is
-        # some of them, and which is only known after it has.
-        started = {
-            r["id"]: r["cook_started_at"]
-            for r in conn.execute(
-                "SELECT b.id, b.cook_started_at FROM meal_plan_entries a "
-                "JOIN meal_plan_entries b ON b.household_id = a.household_id "
-                "AND (b.id = a.id OR b.weekly_plan_id = a.weekly_plan_id) "
-                "WHERE a.id = ? AND a.household_id = ? AND b.cook_started_at IS NOT NULL",
-                (entry_id, household_id()),
-            )
-        }
-    finally:
-        conn.close()
-    unticked = check_off_meal(entry_id, "pending")
-    keep = [(started[eid], eid, household_id())
-            for eid in unticked.get("linked_entry_ids") or [entry_id] if eid in started]
-    if keep:
-        conn = get_conn()
-        try:
-            conn.executemany(
-                "UPDATE meal_plan_entries SET cook_started_at = ? WHERE id = ? AND household_id = ?", keep,
-            )
-            conn.commit()
-        finally:
-            conn.close()
+    check_off_meal(entry_id, "pending", _keep_start=True)
     restored = _eaten_receipt.restore(entry_id)
     return {"entry_id": entry_id, **restored}
 
