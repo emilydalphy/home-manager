@@ -64,7 +64,7 @@ from typing import Callable
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from ..db import get_conn, write
-from ._shared import PUBLIC_BASE_URL, current_member, household_id, use_household
+from ._shared import PUBLIC_BASE_URL, current_member, find_member_row, household_id, use_household
 from ._shared import member_id as _session_member_id
 from . import attendance as _attendance
 from . import attention as _attention
@@ -405,9 +405,14 @@ def get_morning_text_settings() -> dict:
 def _resolve_member(conn, name: str | None, phone: str) -> int:
     adults = _adult_rows(conn)
     if name:
-        for r in adults:
-            if r["name"].strip().lower() == name.strip().lower():
-                return r["id"]
+        # The household's one name rule (find_member_row: case-, space- and
+        # accent-blind), among the adults only. An exact compare refused
+        # "text Zoe at 7" for an adult saved as Zoé — the one member write
+        # the 2026-10-24 accent fix didn't reach (defect hunt 2026-10-28).
+        # A name that fits two adults raises its own "which one?" sentence.
+        found = find_member_row(conn, name, rows=adults)
+        if found is not None:
+            return found["id"]
         raise ValueError(f"I don't have {name.strip()} down as an adult here.")
     if phone:
         for r in adults:
