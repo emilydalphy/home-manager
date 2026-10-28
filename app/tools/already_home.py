@@ -327,7 +327,7 @@ def _tidy_set_aside_lines(conn, weekly_plan_id: int, put_back) -> None:
         _grocery._recompute_plan_line_from_ledger(keep["id"], conn=conn)
 
 
-def leave_off_what_is_home(weekly_plan_id: int, conn=None) -> list[str]:
+def leave_off_what_is_home(weekly_plan_id: int, conn=None, put_back_only: bool = False) -> list[str]:
     """
     The pass (see the module docstring). Returns the names it set aside.
     Writes on `conn` without committing when one is given (the ingest's
@@ -339,6 +339,11 @@ def leave_off_what_is_home(weekly_plan_id: int, conn=None) -> list[str]:
     (_still_to_come), never its whole week: a night already cooked has
     taken its food out of the kitchen, and is not a reason to buy more.
     A set-aside line with nothing still to come stays set aside.
+
+    `put_back_only` runs only the safe direction — a set-aside line the
+    kitchen no longer covers goes back on the list, nothing new is set
+    aside: the re-read after a kitchen row is said to be gone
+    (inventory_check.settle_live_plans_after_kitchen_change).
     """
     from . import cooker as _cooker
     from . import recipes as _recipes
@@ -396,6 +401,8 @@ def leave_off_what_is_home(weekly_plan_id: int, conn=None) -> list[str]:
             need = _still_to_come(conn, row, today)
             if need is None:
                 continue  # nothing still to come behind it: leave it where it is
+            if put_back_only and row["status"] == "needed":
+                continue  # not judged at all, so it claims no stock from a set-aside line
             covered = _plain_plan_line(row, put_back) and _covered(stock, fresh_names, row, need)
             if row["status"] == "needed" and covered:
                 conn.execute(

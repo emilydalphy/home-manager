@@ -44,7 +44,7 @@ from __future__ import annotations
 import json
 import logging
 import re
-from datetime import date
+from datetime import date, timedelta
 
 from ..db import get_conn
 from ._shared import household_id
@@ -298,6 +298,58 @@ def answer(gone=None, confirmed=None) -> dict:
             if cur.rowcount:
                 stamped.append(i)
         conn.commit()
-        return {"removed": removed, "confirmed": stamped}
     finally:
         conn.close()
+    if removed:
+        settle_live_plans_after_kitchen_change()
+    return {"removed": removed, "confirmed": stamped}
+
+
+def settle_live_plans_after_kitchen_change() -> None:
+    """
+    After a kitchen row is said to be gone (this check, the Kitchen tab's
+    Used it up / Threw it out) or put back by Undo: every live plan still
+    running re-reads the kitchen for the two things it booked off it.
+
+      - its fridge moves (defrost.resync_plan_thaws): a pending "Move the
+        chicken thighs to the fridge" booked off a freezer row the
+        household just said is gone is swept, and comes back on Undo;
+      - Shop's "Already home" (already_home.leave_off_what_is_home,
+        put_back_only): a line set aside because that row covered it goes
+        back on the list. Only ever back ON — this answer also stamps the
+        untapped rows confirmed, and the list does not grow a second
+        "Already home" section because someone answered a check.
+
+    Before this (hunt 2026-10-28) neither re-read happened until some
+    unrelated change to the plan: tapping "Chicken Thighs · gone" on
+    Sunday's check left this week's move on Today and the evening text,
+    and the spinach the check said was gone stayed off the list.
+
+    Called after the caller's connection is closed (both passes open their
+    own — a nested get_conn in an open write is how this repo earns
+    "database is locked"). Never raises: the answer is written either way.
+    """
+    from . import already_home as _already_home
+    from . import cooker as _cooker
+    from . import defrost as _defrost
+    from . import weekly_plan as _weekly_plan
+
+    try:
+        today = _cooker.household_today()
+        conn = get_conn()
+        try:
+            plans = conn.execute(
+                "SELECT * FROM weekly_plans WHERE household_id = ? AND status IN ('draft', 'approved')",
+                (household_id(),),
+            ).fetchall()
+        finally:
+            conn.close()
+        for plan in plans:
+            start, days = _weekly_plan.plan_period(plan)
+            if days <= 0 or date.fromisoformat(start) + timedelta(days=days - 1) < today:
+                continue
+            _defrost.resync_plan_thaws(plan["id"])
+            if plan["status"] == "approved":
+                _already_home.leave_off_what_is_home(plan["id"], put_back_only=True)
+    except Exception:
+        logger.exception("Re-reading the live plans after a kitchen change failed; the change is written")

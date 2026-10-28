@@ -870,6 +870,9 @@ def _take_out(item_id: int, how: str) -> dict:
         conn.commit()
     finally:
         conn.close()
+    # Its fridge move and any "Already home" line it covered (2026-10-28).
+    from . import inventory_check as _inventory_check
+    _inventory_check.settle_live_plans_after_kitchen_change()
     return {"item_id": item_id, "item": before["item"], "removed": True, "how": how,
             "undo": {"kind": "removed", "item_id": item_id, "removal_id": removal_id}}
 
@@ -914,6 +917,19 @@ def move_item(item_id: int, location: str) -> dict:
 
 
 def restore_item(undo: dict) -> dict:
+    """
+    The Undo on every C3 toast (_restore_item, below). A row put back is
+    in the kitchen again, so the live plans re-read it: the fridge move
+    its "gone" swept comes back (2026-10-28).
+    """
+    result = _restore_item(undo)
+    if (undo or {}).get("kind") == "removed" and result.get("undone"):
+        from . import inventory_check as _inventory_check
+        _inventory_check.settle_live_plans_after_kitchen_change()
+    return result
+
+
+def _restore_item(undo: dict) -> dict:
     """
     The Undo on every C3 toast. `undo` is what the action returned:
       removed — the row goes back exactly as it was, same id (AUTOINCREMENT

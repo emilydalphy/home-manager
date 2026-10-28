@@ -13,6 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **"Gone" reaches the live plans at once; Back keeps the pre-draft taps** (2026-10-28, branch
+  `overnight/hunt-planweek-1028`; tests `tests/test_kitchen_gone_resettles_plans.py`, `tests/test_pre_draft_check.py`).
+  (1) A row said gone (Plan the week's quick check, the Kitchen tab's Used it up / Threw it out) was only deleted:
+  its pending fridge move stayed on Today/the evening text, and a Shop line it covered stayed under "Already home",
+  until some unrelated plan change re-read the kitchen. Now `inventory_check.settle_live_plans_after_kitchen_change`
+  resyncs every live plan's thaws (`defrost.resync_plan_thaws`) and runs `already_home.leave_off_what_is_home(...,
+  put_back_only=True)` — only ever back ON, since the same answer stamps untapped rows confirmed. Undo re-reads too.
+  (2) `static/plan-week.html`: "‹ Same as last week?" from either pre-draft step and Draft my week again reset the
+  taps — a switched-off Use these up chip came back on and was drafted. This visit's taps now stand (`useUpOffHere`,
+  `preCheck.gone` kept for chips still shown).
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
   (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.
