@@ -327,6 +327,8 @@ function escapeHtml(s) { return String(s == null ? '' : s); }
 function daySlotEntry(day, slot) { return day[slot]; }
 function dayName(iso, opts) { return 'Tuesday'; }
 var weekState = { data: { week_start_date: '2026-09-14' } };
+// The toast's Undo reads the day as it is after the swap (shell.js wkFreshDay).
+function wkFreshDay(day) { return day; }
 function renderMealsStep() {}
 function spliceSwappedDay() {}
 function loadWeekMenu() { return Promise.resolve(); }
