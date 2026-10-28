@@ -359,10 +359,32 @@ _DIET_LABELS = frozenset(_DIET_FAMILIES) | {"plant based"}
 _VEGAN_LABELS = frozenset({"vegan", "plant based"})
 
 
+# Words that say nothing more than the diet itself, so "Vegetarian diet",
+# "Lacto-ovo vegetarian" and "Vegan diet" are the diet (defect hunt,
+# 2026-10-28). Read as a phrase, those three matched only the literal
+# words — a member saved as "Vegetarian diet" had Chicken Tacos planned,
+# swapped in and copied with no word from any door. Deliberately not here:
+# "mostly", "pollo" (a pollotarian eats chicken), "except", or any food —
+# "vegetarian meat" is somebody's won't-eat, not a diet. Lacto and ovo are
+# the vegetarian's meat-and-fish check; the eggs a lacto-vegetarian also
+# skips are not read from them.
+_DIET_FILLER = frozenset({"diet", "diets", "lacto", "ovo", "strict", "strictly", "fully",
+                          "totally", "completely", "entirely", "lifestyle"})
+
+
 def _diet_word(phrase: list[str]) -> str | None:
-    """The diet a one-word restriction names ("Vegetarians" too), or None.
-    "veggie" only as written: "veggies" are vegetables."""
-    if len(phrase) != 1:
+    """The diet a restriction names ("Vegetarians", "Vegetarian diet",
+    "Lacto-ovo vegetarian", "Plant-based diet" too), or None. "veggie"
+    only as written: "veggies" are vegetables."""
+    if len(phrase) > 1:
+        words = list(phrase)
+        if words[:2] == ["plant", "based"]:
+            words = ["vegan"] + words[2:]
+        diets = [d for d in (_diet_word([w]) for w in words) if d]
+        if len(diets) == 1 and all(w in _DIET_FILLER for w in words if not _diet_word([w])):
+            return diets[0]
+        return None
+    if not phrase:
         return None
     word = phrase[0]
     if word in _DIET_FAMILIES:
@@ -591,6 +613,8 @@ _DIET_COMPOUNDS: tuple[tuple, ...] = (
     (_spellings({"bulgogi"}), re.compile(r"\b(?:tofu|mushroom|tempeh|jackfruit|soy)\s+bulgogi\b"),
      _DIET_LABELS),
     (_spellings({"egg"}), re.compile(r"\begg\s+replacers?\b"), _VEGAN_LABELS),
+    # A mushroom, wherever it is written (defect hunt, 2026-10-28).
+    (_spellings({"chicken"}), re.compile(r"\bchicken\s+of\s+the\s+woods\b"), _DIET_LABELS),
 )
 # The plant kind said right against the word (two words at most, never
 # across "with"/"and": "Veggie Burger with Bacon" is still bacon). Like
@@ -611,6 +635,32 @@ _DIET_PLANT_QUALIFIERS: tuple[tuple, ...] = (
      _VEGAN_LABELS),
     # "egg-free mayo" — not an egg-free custard, which still has its milk.
     (_spellings(_DAIRY_FREE_EGG), re.compile(r"\b(?:egg[\s-]free|eggless)" + _QUALIFIED), _VEGAN_LABELS),
+    # A bird's EGGS are not the bird (defect hunt, 2026-10-28): "12 quail
+    # eggs", "4 duck eggs", "2 large chicken eggs" held a vegetarian's
+    # ramen and omelettes as meat, because "duck" and "quail" are on the
+    # no-meat list. The vegan list still holds them, on "eggs". Never when
+    # a dish word follows — "Chicken Egg Fried Rice", "Turkey Egg Muffins",
+    # "Chicken Egg Rolls" are the bird — and, as every entry here, never a
+    # name that is final without a list.
+    (_spellings({"chicken", "duck", "quail", "goose", "turkey", "pheasant"}), re.compile(
+        r"\b(?:chicken|duck|quail|goose|turkey|pheasant)\s+eggs?(?:\s+(?:yolks?|whites?))?\b"
+        r"(?!\s+(?:rolls?|noodles?|fried|drop|foo|bites?|muffins?|cups?|bakes?|casseroles?|"
+        r"scrambles?|wraps?|sandwich(?:es)?|salads?|tacos?|burritos?|bowls?|skillets?|hash|"
+        r"frittatas?|quiches?|soups?|curr(?:y|ies)|pies?|dumplings?|benedict|stir|breakfast))"
+    ), _DIET_LABELS),
+    # The meatless broth bases sold by that name: "no-chicken broth",
+    # "Better Than Bouillon no chicken base" (defect hunt, 2026-10-28). Only
+    # right against broth/stock/base/bouillon — "no chicken" anywhere else
+    # on a line is not a product.
+    (_spellings({"chicken", "beef"}), re.compile(
+        r"\b(?:no|not)[\s-](?:chicken|beef)\s+(?:broth|stock|base|bouillon)\b"), _DIET_LABELS),
+    # The soy and wheat kinds of a sausage or bacon: "soy chorizo", "tofu
+    # bacon", "tempeh bacon", "seitan sausage", "coconut bacon". Processed
+    # kinds only, right against the word — never "soy chicken", which is
+    # soy-sauce chicken.
+    (_spellings({"chorizo", "bacon", "sausage", "pepperoni", "jerky", "hot dog", "meatball"}), re.compile(
+        r"\b(?:soy|soya|tofu|tempeh|seitan)\s+(?:chorizo|bacon|sausages?|pepperoni|jerky|hot\s+dogs?|"
+        r"meatballs?)\b|\bcoconut\s+bacon\b"), _DIET_LABELS),
 )
 
 

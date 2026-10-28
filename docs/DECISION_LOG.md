@@ -13,6 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The diet check reads "Vegetarian diet" and stops calling eggs meat** (2026-10-28,
+  defect hunt; branch `overnight/hunt-moves-diet-1028`; tests `tests/test_diet_check_reads_the_diet.py`).
+  `coordination._diet_word` read only a ONE-word restriction, so a member saved as "Vegetarian
+  diet", "Lacto-ovo vegetarian", "Vegan diet" or "plant based diet" got the literal words and no
+  check: Chicken Tacos went through every door. A diet word plus only `_DIET_FILLER` words (diet,
+  lacto, ovo, strict…) is now the diet; never "mostly", "pollo" or a food ("vegetarian meat" is a
+  won't-eat). And the diet's own exceptions (diet-only, allergies unchanged): a bird's eggs
+  ("quail/duck/chicken eggs", not "Chicken Egg Fried Rice"), "no-chicken broth/base", soy/tofu/
+  tempeh/seitan chorizo-bacon-sausage, chicken of the woods. Why: a vegetarian was held on quail
+  eggs and served chicken when the restriction had one more word.
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
   (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.
