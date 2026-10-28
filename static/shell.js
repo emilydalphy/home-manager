@@ -22204,6 +22204,14 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(withPlanId({ entry_id: entry.entry_id }, planIdForSwap()))
       });
+      if (res.status === 409) {
+        // Undo refused (the old dish clashes with an allergy added since):
+        // say the server's sentence, not the generic trouble line.
+        var refused = swapRouteMessage(await res.json().catch(function () { return null; }));
+        swapState = { date: day.date, slot: slot, avoid: [], message: refused || SWAP_TROUBLE };
+        renderMealsStep(panel);
+        return;
+      }
       if (!res.ok) throw new Error('undo failed');
       var data = await res.json();
       swapState = null;
@@ -28256,7 +28264,12 @@
         showToast('The week is back as it was.');
         if (panels.week && panels.week.dataset.built) loadWeekMenu(panels.week);
       })
-      .catch(function () { showToast('Couldn’t undo that — try it again in a moment.'); });
+      .catch(function (err) {
+        // A refusal carries its own sentence (postJson throws the server's
+        // detail); only a bare failure gets the generic line.
+        var said = err && err.message;
+        showToast(said && !/^Request failed/.test(said) ? said : 'Couldn’t undo that — try it again in a moment.');
+      });
   }
 
   // POST helper for the card's four routes: a 4xx/5xx becomes an Error
