@@ -13,6 +13,11 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Kitchen add / take-out defect hunt** (2026-10-28, branch `overnight/hunt-kitchenadd-1028`; tests `tests/test_kitchen_add_hunt_2026_10_28.py`). Four things a household saw:
+  (1) A receipt's "Eggs 12 pack" keyed "eggs pack" (`_SIZE_TOKEN_RE` took the number, left the word) and made a second Eggs row. `kitchen_add._PACK_RE` takes "N pack/ct/count" off the key, and `_clean_rows` moves it into a plain-count amount (1 × "Eggs 12 pack" onto Eggs · 12 = 24).
+  (2) `whats_home.amount_level` read any ".5"/".25"/"1/2" as the amount: 3.25 lbs of chicken said "almost gone", 1.5 L of milk "about half" — the totals `_merged_quantity` writes. A fraction now counts only when no whole number stands before it.
+  (3) `eaten_receipt._add_onto` (Undo onto a row changed since the tick) used the grocery join, writing "2 lbs + 12 oz"; it uses `inventory._merged_quantity` now.
+  (4) The add toast said "Eggs was added to the fridge."; `savedLine` takes the shell's plural rule.
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
   (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.

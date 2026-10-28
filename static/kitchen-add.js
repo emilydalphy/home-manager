@@ -147,14 +147,21 @@
       var name = String(items[0]);
       return name.charAt(0).toUpperCase() + name.slice(1);
     }
+    // "Eggs were added", "Rice was added" — the shell's savedIsPlural rule
+    // (a last word ending in s, not ss/us/is). It said "Eggs was added to
+    // the fridge." (defect hunt, 2026-10-28.)
+    function was() {
+      var last = String(items[0] || '').trim().split(/\s+/).pop().toLowerCase();
+      return /[^su]s$/.test(last) && !/is$/.test(last) ? ' were ' : ' was ';
+    }
     if (updated && !added) {
-      if (updated === 1 && items && items.length === 1) return named() + ' in the ' + where + ' was updated.';
+      if (updated === 1 && items && items.length === 1) return named() + ' in the ' + where + was() + 'updated.';
       return updated + ' things in the ' + where + ' were updated.';
     }
     if (updated && added) {
       return added + (added === 1 ? ' thing was' : ' things were') + ' added to the ' + where + ', and ' + updated + ' updated.';
     }
-    if (added === 1 && items && items[0]) return named() + ' was added to the ' + where + '.';
+    if (added === 1 && items && items[0]) return named() + was() + 'added to the ' + where + '.';
     return added + ' things were added to the ' + where + '.';
   }
 

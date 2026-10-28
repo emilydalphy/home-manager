@@ -317,6 +317,11 @@ _QTY_NUMBER_RE = re.compile(r"^\s*(\d+(?:\.\d+)?)")
 # A size or a fat percentage is not part of what the thing IS: "milk 2%" and
 # "Milk" are the same row, as are "Eggs 12 pack" and "eggs".
 _SIZE_TOKEN_RE = re.compile(r"\S*\d\S*|%")
+# How many come in the pack a receipt line names: "Eggs 12 pack", "Yogurt
+# 6-pack", "Eggs 18 ct". The number alone went with _SIZE_TOKEN_RE and left
+# the word, so "Eggs 12 pack" keyed as "eggs pack" and a receipt made a
+# second Eggs row beside the first (defect hunt, 2026-10-28).
+_PACK_RE = re.compile(r"\s*\b(\d+)\s*-?\s*(?:pack|pk|ct|count)\b\.?", re.IGNORECASE)
 
 
 def _source(kind: str, location: str) -> str:
@@ -344,7 +349,8 @@ def _match_key(name: str) -> str:
     list), after any size or percentage is taken off."""
     from . import grocery as _grocery
 
-    base = re.sub(r"\s+", " ", _SIZE_TOKEN_RE.sub(" ", str(name or ""))).strip()
+    base = _PACK_RE.sub(" ", str(name or ""))
+    base = re.sub(r"\s+", " ", _SIZE_TOKEN_RE.sub(" ", base)).strip()
     return _grocery._merge_key(base or str(name or ""))
 
 
@@ -376,6 +382,16 @@ def _clean_rows(items, kind: str) -> list[dict]:
         m = _QTY_NUMBER_RE.match(qty)
         if m and float(m.group(1)) > 10000:
             raise ValueError("That amount doesn't look right.")
+        # "Eggs 12 pack" × 1 is twelve eggs: the pack size comes off the
+        # name and into the amount, so it lands on "Eggs · 12" as 24 rather
+        # than 13 — only when the amount is a plain count (or none), which
+        # is how a receipt says how many packs.
+        pack = _PACK_RE.search(name)
+        if pack and (not qty or re.fullmatch(r"\d+", qty)):
+            stripped = _clean_name(name[: pack.start()] + " " + name[pack.end():])
+            if stripped:
+                name = stripped
+                qty = str(int(pack.group(1)) * (int(qty) if qty else 1))
         loc = str(raw.get("location") or "").strip().lower()
         if loc not in LOCATIONS:
             loc = kind if kind in SHELF_KINDS else ""
