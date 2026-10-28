@@ -1423,53 +1423,31 @@ def _easiest_volume(tsp: float) -> list[tuple[float, str]]:
     "tsp")]. See the block comment above for the rule."""
     if tsp <= 0:
         return [(0.0, "tsp")]
-    lo, hi = tsp * (1 - _MEASURE_SHORT) - 1e-9, tsp * (1 + _MEASURE_OVER) + 1e-9
-
-    def terms_of(unit_index: int, wholes) -> list:
-        unit, size, parts = _KITCHEN_MEASURES[unit_index]
+    terms_by_unit = []
+    for unit, size, parts in _KITCHEN_MEASURES:
         terms = []
-        for whole in wholes:
+        for whole in range(0, int(tsp * (1 + _MEASURE_OVER) / size) + 2):
             for part, part_scoops in parts:
                 n = whole + part
                 if n <= 0:
                     continue
                 terms.append((n * size, whole + part_scoops, 1 if part else 0, (n, unit)))
-        return terms
-
-    # Only the wholes that can matter (defect hunt, 2026-10-28). A close
-    # candidate is off by less than one of its smallest measure (below) and
-    # a top-up adds less than one of the first, so its first measure is
-    # within two of itself of `tsp`; the fallback takes the smallest value
-    # from `lo` up, whose first measure is within one of `lo`. Building
-    # every whole from 0 and pairing each with every top-up made this
-    # quadratic in the amount: a 4-serving soup's 8 cups of stock on the
-    # stepper at 20 took about a second a tap, and servings=1000 never
-    # came back.
+        terms_by_unit.append(terms)
     candidates = []   # (value, scoops, pieces, fractions, smallest unit used, terms)
-    for i, (_, size, _) in enumerate(_KITCHEN_MEASURES):
-        wholes = sorted(
-            {w for w in range(int(lo / size) - 2, int(lo / size) + 3) if w >= 0}
-            | {w for w in range(int(tsp / size) - 3, int(tsp / size) + 3) if w >= 0}
-        )
-        first = [t for t in terms_of(i, wholes) if t[0] > lo - size]
-        for value, scoops, fracs, term in first:
+    for i, terms in enumerate(terms_by_unit):
+        for value, scoops, fracs, term in terms:
             candidates.append((value, scoops, 1, fracs, i, [term]))
-        for j in range(i + 1, len(_KITCHEN_MEASURES)):
-            # The second measure tops up less than one of the first.
-            tops = [t for t in terms_of(j, range(0, int(size / _KITCHEN_MEASURES[j][1]) + 1)) if t[0] < size]
-            for v1, s1, f1, t1 in first:
-                if v1 > hi or v1 + size <= lo:
+        for j in range(i + 1, len(terms_by_unit)):
+            for v1, s1, f1, t1 in terms:
+                if v1 > tsp * (1 + _MEASURE_OVER):
                     continue
-                for v2, s2, f2, t2 in tops:
+                for v2, s2, f2, t2 in terms_by_unit[j]:
+                    # The second measure tops up less than one of the first.
+                    if v2 >= _KITCHEN_MEASURES[i][1]:
+                        continue
                     candidates.append((v1 + v2, s1 + s2, 2, f1 + f2, j, [t1, t2]))
-    # Close, and never off by a whole one of the smallest measure it is
-    # said in (a cup, a tablespoon, a teaspoon): 5% of 20 cups is a cup,
-    # and "fewest scoops" then said 19 cups of stock for a recipe that
-    # needs 20 (38 for 40), "2 cups + 1 tbsp" for 2 cups + 2 tbsp — a scoop
-    # saved by leaving one out. Less than one is the rounding Emily asked
-    # for; a whole one is a wrong amount (defect hunt, 2026-10-28).
-    close = [c for c in candidates
-             if lo <= c[0] <= hi and abs(c[0] - tsp) < _KITCHEN_MEASURES[c[4]][1] - 1e-9]
+    lo, hi = tsp * (1 - _MEASURE_SHORT) - 1e-9, tsp * (1 + _MEASURE_OVER) + 1e-9
+    close = [c for c in candidates if lo <= c[0] <= hi]
     if close:
         best = min(close, key=lambda c: (c[1], c[2], c[3], abs(c[0] - tsp), c[4]))
     else:
