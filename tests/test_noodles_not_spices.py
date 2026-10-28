@@ -37,6 +37,8 @@ REPO = Path(__file__).resolve().parent.parent
     "Minced crab paste in spices",
     "Tuna in olive oil",          # the 2026-10-23 rule, still holding
     "Krachai (fingerroot) in brine",
+    "Tuna, drained, in olive oil",     # a comma never switches the rule off
+    "Anchovy fillets, packed in olive oil",
     "Chipotle peppers in adobo",
     "Fresh basil",
     "Red bell pepper",
@@ -54,6 +56,7 @@ def test_a_food_with_a_spice_ish_word_is_not_a_spice(name):
     "Bay leaves",
     "Saffron threads",
     "Saffron, bloomed in water",  # " in " after a comma is a method, not a tin
+    "Mustard seeds in hot oil",   # "hot" is no oil's kind: still mustard seeds
     "Olive oil",
     "Ground coriander",
     "Dried Vietnamese coriander",  # dried, it is the rack's like any herb

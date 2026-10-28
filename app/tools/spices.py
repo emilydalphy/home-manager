@@ -160,7 +160,7 @@ def is_spice(name: str) -> bool:
     # What it is packed in is not what it is: "Tuna in olive oil" is tuna,
     # bought in an aisle — read as oil, it went to Spices this week, assumed
     # at home, and Salade Nicoise's tuna was never bought (review, 2026-10-23).
-    if _PACKED_IN_RE.search(raw):
+    if _PACKED_IN_RE.search(raw) and not _METHOD_IN_RE.search(raw):
         return False
     if _is_spice_name(raw):
         return True
@@ -191,10 +191,18 @@ _FOR_RE = re.compile(r",?\s+for\s+[a-z ,'-]+$")
 # Any oil it is packed in, and "in spices" too: the library's "Shrimp paste
 # in soybean oil" and "Minced crab paste in spices" read as oil and as a
 # spice blend, and went to Spices this week, assumed at home, never bought
-# (library sweep, 2026-10-28). The head before " in " is a plain name —
-# "Saffron, bloomed in water" is still saffron.
+# (library sweep, 2026-10-28). Only an oil's KIND may stand before "oil":
+# "Mustard seeds in hot oil" is mustard seeds, still the rack's.
 _PACKED_IN_RE = re.compile(
-    r"^[^,]*\S\s+(?:packed\s+)?in\s+(?:extra[\s-]virgin\s+)?(?:[a-z]+\s+)?(?:oil|water|brine|spices?)$"
+    r"\S\s+(?:packed\s+)?in\s+(?:extra[\s-]virgin\s+)?"
+    r"(?:(?:olive|sunflower|vegetable|canola|soybean|sesame|peanut|chili|chilli|avocado|"
+    r"coconut|rapeseed|grapeseed|neutral|cooking)\s+)?(?:oil|water|brine|spices?)$"
+)
+# Unless what follows the last comma is a cooking step: "Saffron, bloomed
+# in water" is saffron, where "Tuna, drained, in olive oil" is still tuna.
+_METHOD_IN_RE = re.compile(
+    r",\s*(?:bloomed|soaked|steeped|stirred|toasted|fried|warmed|heated|dissolved|infused|"
+    r"mixed|whisked|ground|crushed|tempered|sizzled)\b[^,]*$"
 )
 
 
