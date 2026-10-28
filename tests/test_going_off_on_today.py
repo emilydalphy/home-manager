@@ -295,8 +295,10 @@ def test_a_dinner_that_was_cooked_is_not_a_skipped_one():
 
 
 def test_food_a_later_dinner_still_uses_gets_no_card_and_no_line():
+    # On or before the day it turns (tomorrow). A dinner after that is no
+    # plan for it — tests/test_going_off_hunt_fixes.py.
     plan, pasta, chili, fed, spinach = _double_cook_week()
-    _meal(plan, 3, "Spinach Omelette", recipe_items=["Spinach", "Eggs"])
+    _meal(plan, 1, "Spinach Omelette", recipe_items=["Spinach", "Eggs"])
     out = tools.today_going_off()
     assert out["card"] is None and out["line"] is None
 

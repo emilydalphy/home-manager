@@ -78,6 +78,13 @@ TURNS_WITHIN_DAYS = 1
 # per local day. Tomorrow is a different key, so tomorrow can ask again.
 LEAVE_KEY = "going-off-leave:{date}:{item_id}"
 
+# "Leave it" on the CARD also stands down the swap it offered, for the same
+# day: the household has just said no to "Swap tonight to the Spinach
+# Pasta", and the next thing that pasta uses (a second spinach row, the
+# feta) must not put the identical question straight back (defect hunt,
+# 2026-10-28). Keyed by the skipped dinner's entry id.
+LEAVE_SWAP_KEY = "going-off-leave-swap:{date}:{entry_id}"
+
 # On the undo record, so the undo's sentence can name both dishes.
 SWAP_KIND = "going_off_swap"  # == yesterday_ask.GOING_OFF_SWAP_KIND
 
@@ -194,20 +201,40 @@ def going_off_items(today: datetime.date) -> list[dict]:
         staples = _use_up._staple_keys(conn)
     finally:
         conn.close()
+    # An emptied "0" row ("we're out of milk" said as an amount) is not
+    # food going off: the Kitchen hides it (whats_home._shown_rows), and
+    # "Milk is best used by tomorrow." about it was untrue (defect hunt,
+    # 2026-10-28).
     return [e for e in _inventory.get_expiring_soon(days=TURNS_WITHIN_DAYS)
             if (e.get("expiration_date") or "") >= start
+            and (e.get("quantity") or "").strip() not in ("0", "0.0")
             and not _use_up.is_staple(e.get("item") or "", staples)
             and not _spices.is_spice(e.get("item") or "")]
 
 
-def _left_today(conn, today: str) -> set[int]:
-    prefix = LEAVE_KEY.format(date=today, item_id="")
+def _dismissed_ids(conn, prefix: str) -> set[int]:
     return {
         int(r["key"][len(prefix):]) for r in conn.execute(
             "SELECT key FROM notification_dismissals WHERE household_id = ? AND key LIKE ?",
             (household_id(), prefix + "%"),
         ).fetchall() if r["key"][len(prefix):].isdigit()
     }
+
+
+def _left_today(conn, today: str) -> set[int]:
+    return _dismissed_ids(conn, LEAVE_KEY.format(date=today, item_id=""))
+
+
+def _swaps_left_today(conn, today: str) -> set[int]:
+    return _dismissed_ids(conn, LEAVE_SWAP_KEY.format(date=today, entry_id=""))
+
+
+def _same_food(a: dict, b: dict) -> bool:
+    """Two going-off rows that are one food to the household — "Spinach"
+    and "Baby spinach" bought on two trips. Today speaks about the food,
+    not the row: "Leave it" covers both, and the quiet line never names the
+    one the card above it is already about."""
+    return a["id"] == b["id"] or _matches(a.get("item") or "", b)
 
 
 def _planned_from_today(conn, today: str):
@@ -221,7 +248,7 @@ def _planned_from_today(conn, today: str):
     out = []
     for r in conn.execute(
         """
-        SELECT mpe.id, mpe.recipe_id, mpe.derived_from_json,
+        SELECT mpe.id, mpe.date, mpe.recipe_id, mpe.derived_from_json,
                COALESCE(r.name, mpe.freeform_meal) AS meal
         FROM meal_plan_entries mpe
         JOIN weekly_plans wp ON wp.id = mpe.weekly_plan_id
@@ -252,7 +279,7 @@ def _asked_about_yesterday(conn, today: datetime.date) -> list:
         return []
     marks = ",".join("?" * len(ids))
     return conn.execute(
-        f"SELECT mpe.id, mpe.recipe_id, mpe.derived_from_json, "
+        f"SELECT mpe.id, mpe.date, mpe.recipe_id, mpe.derived_from_json, "
         f"COALESCE(r.name, mpe.freeform_meal) AS meal FROM meal_plan_entries mpe "
         f"LEFT JOIN recipes r ON r.id = mpe.recipe_id "
         f"WHERE mpe.household_id = ? AND mpe.id IN ({marks})",
@@ -503,18 +530,24 @@ def today_going_off(today: datetime.date | None = None) -> dict:
         return out
     conn = get_conn()
     try:
-        left = _left_today(conn, day)
-        items = [it for it in items if it["id"] not in left]
+        left = [it for it in items if it["id"] in _left_today(conn, day)]
+        items = [it for it in items if not any(_same_food(it, l) for l in left)]
         if not items:
             return out
         planned = [*_planned_from_today(conn, day), *_asked_about_yesterday(conn, today)]
-        has_plan = {it["id"] for row in planned for it in dinner_uses(conn, row, items)}
+        # A plan for it is a cook on or before the day it turns. Next
+        # week's draft putting spinach in Sunday's salad is no plan for
+        # spinach that turns tomorrow — it silenced the card and the line
+        # while the food went off (defect hunt, 2026-10-28).
+        has_plan = {it["id"] for row in planned for it in dinner_uses(conn, row, items)
+                    if (row["date"] or "") <= (it.get("expiration_date") or "")}
 
         plan = _yesterday_ask._plan_covering(conn, day)
         card_item = None
         if plan is not None:
             rows = _plan_rows(conn, plan["id"])
-            skipped = _skipped_dinners(conn, plan, rows, day)
+            swaps_left = _swaps_left_today(conn, day)
+            skipped = [s for s in _skipped_dinners(conn, plan, rows, day) if s["id"] not in swaps_left]
             uses = {s["id"]: {it["id"] for it in dinner_uses(conn, s, items)} for s in skipped}
             for it in items:
                 if it["id"] in has_plan:
@@ -537,7 +570,7 @@ def today_going_off(today: datetime.date | None = None) -> dict:
                 if card_item:
                     break
         for it in items:
-            if it["id"] in has_plan or (card_item and it["id"] == card_item["id"]):
+            if it["id"] in has_plan or (card_item and _same_food(it, card_item)):
                 continue
             out["line"] = {"item_id": it["id"], "item": it["item"], "text": line_text(it, day)}
             break
@@ -547,11 +580,17 @@ def today_going_off(today: datetime.date | None = None) -> dict:
 
 
 def leave_going_off(item_id: int, today: datetime.date | None = None) -> dict:
-    """ "Leave it": the card stops asking about this item for the rest of the
-    household's day (and the quiet line leaves it out too — the household
-    has just said they know). Nothing on the plan changes."""
+    """ "Leave it": the card stops asking about this item — this food, on
+    any row — for the rest of the household's day (and the quiet line
+    leaves it out too — the household has just said they know). Left on
+    the card, the swap it offered stands down for the day as well
+    (LEAVE_SWAP_KEY). Nothing on the plan changes."""
     from . import notifications as _notifications
     today = today or _today()
+    card = today_going_off(today)["card"]
+    if card and card["item_id"] == int(item_id):
+        _notifications.dismiss_notification(
+            LEAVE_SWAP_KEY.format(date=today.isoformat(), entry_id=int(card["entry_id"])))
     _notifications.dismiss_notification(LEAVE_KEY.format(date=today.isoformat(), item_id=int(item_id)))
     return today_going_off(today)
 
