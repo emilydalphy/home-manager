@@ -13,6 +13,9 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The texts and the bell read the Kitchen tab** (2026-10-28, branch `overnight/hunt-digest-1028`; tests `tests/test_texts_read_the_kitchen.py`).
+  (1) A pending fridge move whose freezer row the Kitchen tab threw out, used up or moved to the fridge is dropped on READ (`prep_sessions.THAW_STILL_OWED_SQL`, used by `cooker.get_prep_schedule`, the prep session and chat's `get_defrost_today`/`get_defrost_schedule`). Why: no Kitchen-tab door resyncs the plan's thaws, so Today, the morning text and the evening nudge said "Move the Chicken Thighs to the fridge" about chicken in the bin. Undo restores the row's id, so the move comes back; a ticked move stays as the record.
+  (2) The bell's "turns soon" (which the morning text reads) skips staples and spices, the rule `going_off.going_off_items` and the Kitchen tab keep; its many-item body reads "Spinach and greek yogurt turn soon", "…, X and 2 more" (was "Spinach, Greek yogurt all turn soon", and a fourth item counted but never named).
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
   (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.

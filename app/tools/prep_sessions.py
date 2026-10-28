@@ -247,11 +247,31 @@ def _plan_entries(weekly_plan_id: int) -> dict[int, dict]:
     return {r["id"]: dict(r) for r in rows}
 
 
+# A fridge move still to do whose own freezer row is GONE, or no longer in
+# the freezer, is a move with nothing left to make (overnight hunt,
+# 2026-10-28). The Kitchen tab's "Threw it out" / "Used it up" delete the
+# row and its "Move to fridge" moves it, and none of them resync the plan's
+# thaws — so "Move the Chicken Thighs to the fridge" stayed on Today, in
+# the morning text and ahead of the evening nudge, about chicken in the
+# bin. Dropped on READ, the way a row whose meal is gone already is: every
+# removal path is covered, and the Kitchen tab's Undo (which restores the
+# row under its own id) brings the move straight back. Only a PENDING
+# move: a ticked one is a record of work done (defrost's sweep keeps it).
+# Applied to the alias `t`.
+THAW_STILL_OWED_SQL = (
+    "(t.task_type != 'defrost' OR t.status != 'pending' OR t.inventory_item_id IS NULL "
+    " OR EXISTS (SELECT 1 FROM inventory_items i WHERE i.id = t.inventory_item_id "
+    "            AND i.household_id = t.household_id "
+    "            AND COALESCE(i.location, '') NOT IN ('fridge', 'pantry')))"
+)
+
+
 def _prep_task_rows(weekly_plan_id: int) -> list[dict]:
     conn = get_conn()
     rows = conn.execute(
         "SELECT id, task_date, description, related_meal, status, task_type, meal_plan_entry_id, quantity, detail_json "
-        "FROM prep_tasks WHERE weekly_plan_id = ? AND household_id = ? "
+        "FROM prep_tasks t WHERE weekly_plan_id = ? AND household_id = ? "
+        f"AND {THAW_STILL_OWED_SQL} "
         "ORDER BY task_date ASC, id ASC",
         (weekly_plan_id, household_id()),
     ).fetchall()

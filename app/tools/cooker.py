@@ -1292,6 +1292,9 @@ def get_prep_schedule(weekly_plan_id: int | None = None) -> list[dict]:
         "         AND t.weekly_plan_id IN (SELECT id FROM weekly_plans WHERE household_id = t.household_id AND status IN ('draft', 'approved'))) "
         "     OR t.meal_plan_entry_id IN (SELECT id FROM meal_plan_entries WHERE weekly_plan_id = ?)) "
         "AND (t.meal_plan_entry_id IS NULL OR EXISTS (SELECT 1 FROM meal_plan_entries e WHERE e.id = t.meal_plan_entry_id)) "
+        # And a fridge move for food the Kitchen tab has since thrown out,
+        # used up or moved to the fridge itself (see the constant).
+        f"AND {_prep_sessions.THAW_STILL_OWED_SQL} "
         "ORDER BY t.task_date ASC, t.id ASC",
         (household_id(), weekly_plan_id, first, first, last, weekly_plan_id),
     ).fetchall()
