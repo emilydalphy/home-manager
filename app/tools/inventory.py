@@ -10,6 +10,7 @@ from ..db import get_conn, write
 from ._shared import household_id, require_household_row
 from . import grocery as _grocery
 from . import quantities as _quantities
+from . import already_home as _already_home
 
 
 def _today() -> date:
@@ -113,6 +114,8 @@ def step_inventory_quantity(item_id: int, delta: float) -> dict:
     )
     conn.commit()
     conn.close()
+    if delta < 0:
+        _already_home.recheck_set_aside()
     return {"item_id": item_id, "found": True, "quantity": new_qty}
 
 
@@ -554,6 +557,7 @@ def _add_to_inventory(
     category: str | None = None,
     location: str | None = None,
     conn=None,
+    confirm_on_merge: bool = False,
 ) -> dict:
     """
     Merge into a matching row or insert a fresh one. Returns
@@ -563,6 +567,14 @@ def _add_to_inventory(
     is None for a fresh row). Those three exist for grocery.mark_grocery_item,
     which records them so an untick can reverse exactly this write and
     nothing else; other callers can ignore them.
+
+    `confirm_on_merge` stamps confirmed_on = household today on a merge, in
+    the same write: food bought onto a row already there, whose created_at
+    is the OLD food's — without it Shop's "Already home"
+    (already_home._home_recently) read fresh beef as two weeks stale and put
+    it on the list again (defect hunt, 2026-10-28). Chat's add and the
+    Kitchen's receipt / Say it / Type it pass it; a grocery tick does not
+    (its receipt already counts, and its untick must not leave a stamp).
 
     Pass conn to run inside the caller's transaction (no commit, no close)
     — mark_grocery_item does, so the write, its stamp and its receipt land
@@ -582,6 +594,9 @@ def _add_to_inventory(
         merged_qty = _merged_quantity(existing["quantity"] or "", quantity)
         fields = "quantity = ?, source = ?, updated_at = datetime('now')"
         params = [merged_qty, source]
+        if confirm_on_merge:
+            fields += ", confirmed_on = ?"
+            params.append(_grocery._household_today(conn=conn).isoformat())
         resolved_exp = _quantities._resolved_expiration_update(expiration_date, category, existing["category"], existing["expiration_date"], item)
         old_use_by = (existing["expiration_date"] or "").strip()
         if (not expiration_date and old_use_by and (category or existing["category"])
@@ -906,7 +921,10 @@ def update_inventory(
     if action == "add":
         # The receipt fields (fresh/before/after) are mark_grocery_item's
         # business, not the chat agent's — keep this tool's answer as it was.
-        added = _add_to_inventory(item, quantity, source=source, expiration_date=expiration_date, category=category, location=location)
+        # "Picked up beef" onto a row already there is a purchase (see
+        # confirm_on_merge).
+        added = _add_to_inventory(item, quantity, source=source, expiration_date=expiration_date,
+                                  category=category, location=location, confirm_on_merge=True)
         return {"item_id": added["item_id"], "item": added["item"]}
 
     if action == "set":
@@ -930,6 +948,9 @@ def update_inventory(
             conn.execute(f"UPDATE inventory_items SET {fields} WHERE id = ? AND household_id = ?", params)
             conn.commit()
             item_id = existing["id"]
+            # A count can be lower than what Shop set aside on (already_home).
+            _already_home.recheck_set_aside(conn=conn)
+            conn.commit()
         else:
             item_category = _new_row_category(item, category, location)
             item_location = _quantities._resolve_location(location, item_category)
@@ -959,6 +980,9 @@ def update_inventory(
                 (existing["id"], household_id()),
             )
             conn.commit()
+            # "We're out": Shop's "Already home" line for it goes back on the list.
+            _already_home.recheck_set_aside(conn=conn)
+            conn.commit()
             conn.close()
             return {"item": item, "removed": True}
         # A partial use is the household's own count too (counted_on).
@@ -967,6 +991,7 @@ def update_inventory(
             "WHERE id = ? AND household_id = ?",
             (remaining, _today().isoformat(), existing["id"], household_id()),
         )
+        _already_home.recheck_set_aside(conn=conn)
         conn.commit()
         conn.close()
         return {"item": item, "quantity": remaining, "units_reconciled": reconciled}
@@ -1184,4 +1209,5 @@ def remove_inventory_item(item_id: int) -> dict:
     conn.execute("DELETE FROM inventory_items WHERE id = ? AND household_id = ?", (item_id, household_id()))
     conn.commit()
     conn.close()
+    _already_home.recheck_set_aside()
     return {"item_id": item_id, "removed": True}

@@ -13,6 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Shop's "Already home" follows the kitchen between approvals** (2026-10-28, defect hunt; branch
+  `overnight/hunt-whatshome-1028`; tests `tests/test_already_home_kitchen_says_less.py`).
+  (1) The B4 pass only ran inside an ingest, so "Used it up" / "Threw it out", the check's "gone", chat's
+  "we're out" / "used most of it", a stepper down or the inventory delete left Shop saying the beef was
+  already home with nothing to buy. Those doors now run `already_home.recheck_set_aside` (put-back only,
+  every live week, never sets anything new aside); the Kitchen Undo re-sets those lines aside and re-judges.
+  (2) A receipt / Say it / Type it / chat add that MERGES into a row already there left its old
+  `created_at`, so fresh beef read as 20 days stale and went on the list; such merges stamp `confirmed_on`
+  (the kitchen-add undo restores it). A grocery tick is unchanged (its receipt already counts).
+  Why: Kitchen and Shop contradicted each other, and the wrong side was "don't buy it".
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
   (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.

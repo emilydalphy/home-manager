@@ -365,12 +365,16 @@ def test_re_approving_does_not_add_what_was_skipped_as_already_owned():
     tools.plan_meal(_today(), "Chili", slot="dinner", weekly_plan_id=plan_id)
     tools.approve_weekly_plan(plan_id)
     tools.update_inventory("beans", action="remove")  # ate them
+    # Since 2026-10-28 "we're out" itself puts the Already home line back
+    # (already_home.recheck_set_aside, tonight's chili is still unmarked);
+    # what this test guards is that the second APPROVE writes nothing.
+    before = tools.list_grocery_list()
 
     result = tools.approve_weekly_plan(plan_id)
 
     assert result["was_already_approved"] is True
     assert result["groceries_added"] == []
-    assert tools.list_grocery_list() == [], "a second approve must not write to the list"
+    assert tools.list_grocery_list() == before, "a second approve must not write to the list"
 
 
 def test_approving_a_plan_that_does_not_exist_is_an_error():

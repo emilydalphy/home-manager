@@ -507,6 +507,9 @@ def add_items(items: list, kind: str) -> dict:
             res = _inventory._add_to_inventory(
                 r["item"], r["quantity"], source=_source(kind, r["location"]),
                 category=r["category"], location=where, conn=conn,
+                # Bought onto a row already there: stamped, so Shop's
+                # "Already home" trusts it; the undo restores the old value.
+                confirm_on_merge=True,
             )
             record(res["item_id"], bool(res["fresh"]), before)
             added += 1
