@@ -839,6 +839,13 @@ def set_amount_left(item_id: int, level: str) -> dict:
         from . import grocery as _grocery
         added = _grocery.add_grocery_item(before["item"], "", before.get("category") or "other", added_by="user")
         added_id = added.get("item_id")
+    lines = []
+    if level == "almost_gone":
+        # An almost-gone row covers nothing (already_home's pass): any other
+        # line it was holding off the list comes back now — the one above,
+        # put back by hand, is already on it (recheck_set_aside).
+        from . import already_home as _already_home
+        lines = _already_home.recheck_set_aside()
     return {
         "item_id": item_id,
         "item": before["item"],
@@ -853,6 +860,7 @@ def set_amount_left(item_id: int, level: str) -> dict:
             "amount_left_qty": before.get("amount_left_qty"),
             "grocery_item_id": added_id,
             "put_back": put_back,
+            "set_aside_again": lines,
         },
     }
 
@@ -870,11 +878,16 @@ def _take_out(item_id: int, how: str) -> dict:
         conn.commit()
     finally:
         conn.close()
-    # Its fridge move and any "Already home" line it covered (2026-10-28).
-    from . import inventory_check as _inventory_check
-    _inventory_check.settle_live_plans_after_kitchen_change()
+    # Shop's "Already home" lines this row was covering go back on the list
+    # now, not at the next approval (already_home.recheck_set_aside).
+    from . import already_home as _already_home
+    lines = _already_home.recheck_set_aside()
+    # And its fridge move, if a plan booked one off this row (2026-10-28).
+    from . import defrost as _defrost
+    _defrost.resync_live_plan_thaws()
     return {"item_id": item_id, "item": before["item"], "removed": True, "how": how,
-            "undo": {"kind": "removed", "item_id": item_id, "removal_id": removal_id}}
+            "undo": {"kind": "removed", "item_id": item_id, "removal_id": removal_id,
+                     "set_aside_again": lines}}
 
 
 def used_up_item(item_id: int) -> dict:
@@ -917,15 +930,20 @@ def move_item(item_id: int, location: str) -> dict:
 
 
 def restore_item(undo: dict) -> dict:
-    """
-    The Undo on every C3 toast (_restore_item, below). A row put back is
-    in the kitchen again, so the live plans re-read it: the fridge move
-    its "gone" swept comes back (2026-10-28).
-    """
+    """The Undo on every C3 toast (see _restore_item), and then the Shop
+    lines the action put back go under "Already home" again — re-judged,
+    so one the kitchen still can't cover stays on the list."""
     result = _restore_item(undo)
+    again = (undo or {}).get("set_aside_again") or []
+    if result.get("undone") and isinstance(again, list) and again:
+        from . import already_home as _already_home
+        with write() as conn:
+            _already_home.set_aside_again(conn, again)
+            _already_home.recheck_set_aside(conn=conn)
     if (undo or {}).get("kind") == "removed" and result.get("undone"):
-        from . import inventory_check as _inventory_check
-        _inventory_check.settle_live_plans_after_kitchen_change()
+        # Back in the kitchen: the fridge move its "gone" swept comes back.
+        from . import defrost as _defrost
+        _defrost.resync_live_plan_thaws()
     return result
 
 

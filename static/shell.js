@@ -11070,11 +11070,13 @@
         var res = await Api.json('/api/inventory/check', { body: { gone: [id], confirmed: [] } });
         var removed = ((res && res.removed) || [])[0];
         gone[id] = removed && removed.undo ? removed.undo : null;
+        if (homeMovedTheList(gone[id])) refreshGroceryPanel();
       } else if (gone[id]) {
         // Tapped again: the row goes back, as the planning check's own
         // second tap does before Next.
         var back = await Api.json('/api/whats-home/undo', { body: { undo: gone[id] } });
         if (back && back.already_back) showToast(homeItemName(back.item) + ' is already back in the kitchen.');
+        if (homeMovedTheList(gone[id])) refreshGroceryPanel();
         delete gone[id];
       } else {
         delete gone[id];
@@ -11300,7 +11302,9 @@
           label: 'Undo',
           onClick: function () {
             Api.json('/api/whats-home/add/undo', { body: { undo: res.undo } })
-              .then(function () { refreshHomePanel(); refreshGoingOff(); })
+              // Taking the add back can leave a Shop "Already home" line
+              // uncovered; the server puts it back (recheck_set_aside).
+              .then(function () { refreshHomePanel(); refreshGoingOff(); refreshGroceryPanel(); })
               .catch(function () { /* Api.json toasted */ });
           }
         });
@@ -11369,6 +11373,13 @@
     return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
   }
 
+  // A kitchen action that took food the week needs puts its "Already
+  // home" line back on the list, and its Undo sets it aside again
+  // (undo.set_aside_again) — either way Shop, if it's built, is stale.
+  function homeMovedTheList(undo) {
+    return !!(undo && undo.set_aside_again && undo.set_aside_again.length);
+  }
+
   // Every one-tap fix answers the same way: the screen re-reads, and a
   // toast names the thing with Undo (the house pattern, `<thing> was
   // <verbed>`).
@@ -11383,6 +11394,7 @@
             if (res && res.already_back) showToast(homeItemName(res.item) + ' is already back in the kitchen.');
             refreshHomeAndGoingOff();
             refreshKitchenPanel();
+            if (homeMovedTheList(undo)) refreshGroceryPanel();
           })
           .catch(function () { /* Api.json toasted */ });
       }
@@ -11431,6 +11443,7 @@
         await loadHome(true);
         var verb = what === 'used' ? 'used up' : what === 'thrown' ? 'thrown out' : 'moved to the ' + body.location;
         homeToastWithUndo(homeItemName(row.item) + ' was ' + verb + '.', '/api/whats-home/undo', done.undo);
+        if (homeMovedTheList(done.undo)) refreshGroceryPanel();
       }
       // Cook's tonight card reads the same shelves, and so does Today's
       // going-off card and line.
@@ -28493,6 +28506,9 @@
         refreshHomeOnce();
         refreshKitchenPanel();
         refreshTodayMoves();
+        // "We're out of beef" can put Shop's "Already home" line back on
+        // the list (already_home.recheck_set_aside, 2026-10-28).
+        refreshGroceryOnce();
       } else if (action.tab === 'grocery') {
         refreshGroceryOnce();
         // A chat tick ("we got the milk") puts it in the kitchen.

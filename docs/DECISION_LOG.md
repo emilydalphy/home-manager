@@ -13,16 +13,29 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
-- **"Gone" reaches the live plans at once; Back keeps the pre-draft taps** (2026-10-28, branch
-  `overnight/hunt-planweek-1028`; tests `tests/test_kitchen_gone_resettles_plans.py`, `tests/test_pre_draft_check.py`).
-  (1) A row said gone (Plan the week's quick check, the Kitchen tab's Used it up / Threw it out) was only deleted:
-  its pending fridge move stayed on Today/the evening text, and a Shop line it covered stayed under "Already home",
-  until some unrelated plan change re-read the kitchen. Now `inventory_check.settle_live_plans_after_kitchen_change`
-  resyncs every live plan's thaws (`defrost.resync_plan_thaws`) and runs `already_home.leave_off_what_is_home(...,
-  put_back_only=True)` — only ever back ON, since the same answer stamps untapped rows confirmed. Undo re-reads too.
+- **"Gone" takes its fridge move with it; Back keeps the pre-draft taps** (2026-10-28, branch
+  `overnight/hunt-planweek-1028`, merged over `overnight/hunt-whatshome-1028`; tests
+  `tests/test_kitchen_gone_resettles_plans.py`, `tests/test_pre_draft_check.py`).
+  (1) A freezer row said gone (Plan the week's quick check, the Kitchen tab's Used it up / Threw it out, chat's
+  "we're out", the Inventory delete) left its pending "Move the chicken thighs to the fridge" on Today and the
+  evening text until some unrelated plan change re-ran `sync_defrost_tasks`. Those doors (and the Kitchen Undo)
+  now call `defrost.resync_live_plan_thaws`; Shop's half is the whatshome branch's `recheck_set_aside`.
   (2) `static/plan-week.html`: "‹ Same as last week?" from either pre-draft step and Draft my week again reset the
   taps — a switched-off Use these up chip came back on and was drafted. This visit's taps now stand (`useUpOffHere`,
   `preCheck.gone` kept for chips still shown).
+- **Shop's "Already home" follows the kitchen between approvals** (2026-10-28, defect hunt; branch
+  `overnight/hunt-whatshome-1028`; tests `tests/test_already_home_kitchen_says_less.py`).
+  (1) The B4 pass only ran inside an ingest, so "Used it up" / "Threw it out", the check's "gone", chat's
+  "we're out" / "used most of it", a stepper down or the inventory delete left Shop saying the beef was
+  already home with nothing to buy. Those doors now run `already_home.recheck_set_aside` (put-back only,
+  every live week, never sets anything new aside); the Kitchen Undo re-sets those lines aside and re-judges.
+  (2) A receipt / Say it / Type it / chat add that MERGES into a row already there left its old
+  `created_at`, so fresh beef read as 20 days stale and went on the list; such merges stamp `confirmed_on`
+  (the kitchen-add undo restores it). A grocery tick is unchanged (its receipt already counts).
+  Review follow-up: the Kitchen add's Undo (`kitchen_add.undo_added`) rechecks too; shell.js re-reads
+  Shop after a Kitchen action or Undo that moved a line (`homeMovedTheList`), after the add's Undo, and
+  for chat's `home`-tagged inventory cards.
+  Why: Kitchen and Shop contradicted each other, and the wrong side was "don't buy it".
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
   (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.

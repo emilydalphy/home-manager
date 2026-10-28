@@ -86,6 +86,9 @@ def _home_recently(conn) -> tuple[str, int]:
     `confirmed_on` (the "still have these?" answer, card A4, branch
     inventory/pre-draft-check — not on main when this was written) is OR'd
     in whenever the column exists, so that merge needs no change here.
+    A receipt / Say it / Type it or chat add that merges into a row already
+    there stamps it too (kitchen_add, inventory.update_inventory): that row's
+    created_at is the old food's, not today's purchase.
     Returns (sql, kinds) where kinds lists 'utc' / 'day' per placeholder.
     """
     parts = ["i.created_at >= ?", "(i.counted_on IS NOT NULL AND i.counted_on >= ?)"]
@@ -327,7 +330,8 @@ def _tidy_set_aside_lines(conn, weekly_plan_id: int, put_back) -> None:
         _grocery._recompute_plan_line_from_ledger(keep["id"], conn=conn)
 
 
-def leave_off_what_is_home(weekly_plan_id: int, conn=None, put_back_only: bool = False) -> list[str]:
+def leave_off_what_is_home(weekly_plan_id: int, conn=None, put_back_only: bool = False,
+                           put_back_ids: list | None = None) -> list[str]:
     """
     The pass (see the module docstring). Returns the names it set aside.
     Writes on `conn` without committing when one is given (the ingest's
@@ -340,10 +344,9 @@ def leave_off_what_is_home(weekly_plan_id: int, conn=None, put_back_only: bool =
     taken its food out of the kitchen, and is not a reason to buy more.
     A set-aside line with nothing still to come stays set aside.
 
-    `put_back_only` runs only the safe direction — a set-aside line the
-    kitchen no longer covers goes back on the list, nothing new is set
-    aside: the re-read after a kitchen row is said to be gone
-    (inventory_check.settle_live_plans_after_kitchen_change).
+    `put_back_only` is recheck_set_aside's mode: judge only the lines
+    already set aside, put back the ones no longer covered (their ids are
+    appended to `put_back_ids`), set nothing new aside and tidy nothing.
     """
     from . import cooker as _cooker
     from . import recipes as _recipes
@@ -355,7 +358,8 @@ def leave_off_what_is_home(weekly_plan_id: int, conn=None, put_back_only: bool =
     try:
         today = _cooker.household_today(conn=conn).isoformat()
         put_back = _put_back_keys(conn, weekly_plan_id)
-        _tidy_set_aside_lines(conn, weekly_plan_id, put_back)
+        if not put_back_only:
+            _tidy_set_aside_lines(conn, weekly_plan_id, put_back)
         since = fresh_cutoff(conn)
         # Not the Freezer rows this plan's own freezer step added: they are
         # this plan's set-aside line already (inventory A3), the same rule
@@ -398,11 +402,11 @@ def leave_off_what_is_home(weekly_plan_id: int, conn=None, put_back_only: bool =
             (household_id(), weekly_plan_id, REMOVED_BY_KITCHEN),
         ).fetchall()
         for row in rows:
+            if put_back_only and row["status"] == "needed":
+                continue  # a recheck never sets anything new aside, so claims nothing for it
             need = _still_to_come(conn, row, today)
             if need is None:
                 continue  # nothing still to come behind it: leave it where it is
-            if put_back_only and row["status"] == "needed":
-                continue  # not judged at all, so it claims no stock from a set-aside line
             covered = _plain_plan_line(row, put_back) and _covered(stock, fresh_names, row, need)
             if row["status"] == "needed" and covered:
                 conn.execute(
@@ -417,6 +421,8 @@ def leave_off_what_is_home(weekly_plan_id: int, conn=None, put_back_only: bool =
                     "WHERE id = ? AND household_id = ? AND status = 'removed' AND removed_by = ?",
                     (row["id"], household_id(), REMOVED_BY_KITCHEN),
                 )
+                if put_back_ids is not None:
+                    put_back_ids.append(row["id"])
         if own:
             conn.commit()
     except Exception:
@@ -426,6 +432,76 @@ def leave_off_what_is_home(weekly_plan_id: int, conn=None, put_back_only: bool =
         if own:
             conn.close()
     return left_off
+
+
+def recheck_set_aside(conn=None) -> list[int]:
+    """
+    The household just told the kitchen it has LESS — "Used it up", "Threw
+    it out", the check's "gone", chat's "we're out of beef", a count or a
+    stepper down, "Almost gone". Put back on the list every set-aside line,
+    on every live week, that the kitchen no longer covers, and return
+    their ids (for the action's Undo: set_aside_again).
+
+    Until this, only the next ingest pass looked again, so Shop went on
+    saying the beef was "Already home" after the Kitchen tab had thrown it
+    out, and the shop came home without it (defect hunt, 2026-10-28).
+    Only that direction, the safe one: nothing new is set aside here,
+    because a kitchen that has less can't cover more, and the list must
+    not rearrange itself under the shopper for any other reason. Never
+    raises; the kitchen write it follows has already happened.
+    """
+    own = conn is None
+    if own:
+        conn = get_conn()
+    ids: list[int] = []
+    try:
+        plans = [r["pid"] for r in conn.execute(
+            "SELECT DISTINCT g.source_weekly_plan_id AS pid FROM grocery_items g "
+            "LEFT JOIN weekly_plans w ON w.id = g.source_weekly_plan_id AND w.household_id = g.household_id "
+            "WHERE g.household_id = ? AND g.status = 'removed' AND g.removed_by = ? "
+            "AND g.source_weekly_plan_id IS NOT NULL AND COALESCE(w.status, '') != 'retired' ORDER BY pid",
+            (household_id(), REMOVED_BY_KITCHEN),
+        ).fetchall()]
+        for pid in plans:
+            leave_off_what_is_home(pid, conn=conn, put_back_only=True, put_back_ids=ids)
+        if own:
+            conn.commit()
+    except Exception:
+        logger.exception("Rechecking Already home lines failed")
+        return []
+    finally:
+        if own:
+            conn.close()
+    return ids
+
+
+def set_aside_again(conn, ids) -> None:
+    """The Undo of the kitchen write recheck_set_aside followed: the lines
+    it put back go back under "Already home" — only while each is still on
+    the list exactly as the recheck left it (needed, unanswered, not put
+    back by hand since). The kitchen row is back, so the cover is too."""
+    from . import grocery as _grocery
+
+    for gid in ids or []:
+        try:
+            gid = int(gid)
+        except (TypeError, ValueError):
+            continue
+        row = conn.execute(
+            "SELECT item, source_weekly_plan_id FROM grocery_items WHERE id = ? AND household_id = ? "
+            "AND status = 'needed' AND COALESCE(removed_by, '') = '' AND already_have_reviewed = 0 "
+            "AND source_weekly_plan_id IS NOT NULL",
+            (gid, household_id()),
+        ).fetchone()
+        if row is None:
+            continue
+        if _grocery._merge_key(row["item"] or "") in _put_back_keys(conn, row["source_weekly_plan_id"]):
+            continue
+        conn.execute(
+            "UPDATE grocery_items SET status = 'removed', removed_by = ?, removed_at = datetime('now') "
+            "WHERE id = ? AND household_id = ? AND status = 'needed'",
+            (REMOVED_BY_KITCHEN, gid, household_id()),
+        )
 
 
 def already_home_lines() -> list[dict]:

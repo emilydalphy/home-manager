@@ -13,7 +13,9 @@ the plan re-read the kitchen:
   - a Shop line set aside as "Already home" because that row covered it,
     so the food the household said was gone was not on the list to buy.
 
-inventory_check.settle_live_plans_after_kitchen_change re-reads them.
+defrost.resync_live_plan_thaws re-reads the first (this branch);
+already_home.recheck_set_aside the second (overnight/hunt-whatshome-1028 —
+the last test here is the check's door into it, end to end).
 Every test is a CATCH (red before the fix) unless it says GUARD.
 """
 from __future__ import annotations
@@ -84,6 +86,12 @@ def test_gone_on_the_check_takes_its_fridge_move_and_undo_brings_it_back(signed_
 def test_threw_it_out_on_the_kitchen_tab_takes_the_move_too(signed_in):
     plan_id = _chicken_week()
     assert signed_in.post(f"/api/whats-home/{_row_id('Chicken Thighs')}/thrown-out").status_code == 200
+    assert _pending_moves(plan_id) == []
+
+
+def test_chat_saying_we_are_out_takes_the_move_too():
+    plan_id = _chicken_week()
+    assert tools.update_inventory("Chicken Thighs", "remove").get("removed") is True
     assert _pending_moves(plan_id) == []
 
 
