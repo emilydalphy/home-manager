@@ -573,6 +573,14 @@ def save_usual_week(
         _household._log_preference_event("snacks_per_day", "write")
     if plan["prep_days"] is not None:
         _household._log_preference_event("rhythm:prep_days", "write")
+    if grid is not None:
+        # A day turned back on reaches the week already planned around it
+        # (reopen_slots_turned_back_on). Logged, never raised: the answer
+        # is saved, and a 500 would tell the household it wasn't.
+        try:
+            reopen_slots_turned_back_on()
+        except Exception:
+            logger.exception("Couldn't reopen the slots the usual week turned back on")
     return get_usual_week()
 
 
@@ -584,8 +592,20 @@ def meal_counts_changed_elsewhere(changed: dict[str, int]) -> None:
     back on for everyone every day and its variety choice is cleared —
     otherwise the grid would say "never" while the count says "three", and
     generation would plan one dish a day from a meal the grid has off.
-    Nothing for a household with no saved grid.
+    Nothing for a household with no saved grid — except that, saved grid
+    or not, the week already planned follows (reopen_slots_turned_back_on).
     """
+    _grid_follows_count(changed)
+    # A count above 0 is that meal back on — for the week already planned
+    # too, saved grid or not (a count of 0 writes its own empty rows).
+    if any(meal in MEALS and count and int(count) > 0 for meal, count in changed.items()):
+        try:
+            reopen_slots_turned_back_on()
+        except Exception:
+            logger.exception("Couldn't reopen the slots a meal count turned back on")
+
+
+def _grid_follows_count(changed: dict[str, int]) -> None:
     with _save_lock():
         conn = get_conn()
         try:
@@ -635,6 +655,107 @@ def prep_days_cleared() -> None:
             conn.commit()
         finally:
             conn.close()
+
+
+# A meal turned back on mid-week (defect hunt, 2026-10-28): the slot a live
+# week holds empty for it becomes a question, under this constraint.
+BACK_ON_CONSTRAINT = "usual_week_back_on"
+_MEAL_PLURALS = {"breakfast": "breakfasts", "lunch": "lunches", "dinner": "dinners"}
+
+
+def reopen_slots_turned_back_on() -> list[dict]:
+    """
+    A live week's "Not planned" slot for a meal the household has just
+    turned back ON becomes an open question; returns [{"date", "slot"}].
+
+    Found walking a week (defect hunt, 2026-10-28): Wednesday dinner set to
+    "Don't plan", the week approved, then Wednesday dinner turned back on in
+    Preferences. The week went on saying "Not planned — you don’t plan this
+    meal on this day" — no longer true — and nothing could fill it: the
+    menu's can_fill is for a left-out day only, chat's plan_meal refused it
+    as "deliberately empty … Change the night’s answer" (there is no night
+    answer to change), and Today asked nothing. The household had said yes
+    and the week had no door left to act on it.
+
+    Only the direction that can't cost anything: an empty slot becomes a
+    question, nothing is bought until they answer. A meal turned OFF
+    mid-week leaves the week's dish alone — it may already be bought, and
+    the usual week shapes the next plan, not this one.
+
+    Only the rows the usual week (or a count of 0) wrote, on a day still
+    ahead on the household's clock — never a trip, a night off, a left-out
+    day or a meal already gone by. Read per day through off_slots_on, so a
+    week whose "Who's eating" was changed for that week only is read the
+    way it was changed. Each row is cleared and reopened in one
+    transaction (the arrangement holidays._reopen uses), so the slot is
+    never absent in between.
+    """
+    from . import today_meals as _today_meals
+    from . import weekly_plan as _weekly_plan
+
+    today = _weekly_plan._household_today()
+    conn = get_conn()
+    try:
+        rows = conn.execute(
+            "SELECT mpe.weekly_plan_id, mpe.date, mpe.slot, mpe.derived_from_json FROM meal_plan_entries mpe "
+            "JOIN weekly_plans wp ON wp.id = mpe.weekly_plan_id AND wp.household_id = mpe.household_id "
+            "WHERE mpe.household_id = ? AND wp.status != 'retired' AND mpe.slot_state = 'planned_empty' "
+            "AND mpe.component_category IS NULL AND mpe.date >= ? ORDER BY mpe.date, mpe.slot",
+            (household_id(), today.isoformat()),
+        ).fetchall()
+    finally:
+        conn.close()
+    candidates = []
+    for r in rows:
+        if r["slot"] not in MEALS:
+            continue
+        try:
+            constraint = (json.loads(r["derived_from_json"] or "{}") or {}).get("constraint")
+        except (TypeError, ValueError, AttributeError):
+            continue
+        if constraint not in (OFF_CONSTRAINT, f"{r['slot']}s_per_week:0"):
+            continue
+        if r["date"] == today.isoformat() and _today_meals.has_gone(r["slot"]):
+            continue
+        candidates.append(r)
+    if not candidates:
+        return []
+    unwanted = _weekly_plan.unwanted_meal_slots()
+    reopened = []
+    for r in candidates:
+        d, slot = r["date"], r["slot"]
+        if slot in unwanted or slot in switched_off_meals([d]) or (d, slot) in off_slots_on([d]):
+            continue
+        weekday = WEEKDAYS[date.fromisoformat(d).weekday()].capitalize()
+        conn = get_conn()
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            # Re-read under the write lock: two saves at once must reopen a
+            # slot once, never leave two rows on it.
+            still = conn.execute(
+                "SELECT 1 FROM meal_plan_entries WHERE household_id = ? AND weekly_plan_id = ? AND date = ? "
+                "AND slot = ? AND slot_state = 'planned_empty' AND component_category IS NULL",
+                (household_id(), r["weekly_plan_id"], d, slot),
+            ).fetchone()
+            if still is None:
+                conn.rollback()
+                continue
+            _weekly_plan.clear_plan_slot(r["weekly_plan_id"], d, slot, conn=conn)
+            _weekly_plan.plan_slot_open(
+                weekly_plan_id=r["weekly_plan_id"], meal_date=d, slot=slot,
+                open_reason=f"You’ve turned {_MEAL_PLURALS[slot]} back on — what would you like on {weekday}?",
+                derived_from={"constraint": BACK_ON_CONSTRAINT},
+                conn=conn,
+            )
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            logger.exception("Couldn't reopen %s %s after the usual week turned it back on", d, slot)
+            continue
+        finally:
+            conn.close()
+        reopened.append({"date": d, "slot": slot})
+    return reopened
 
 
 # ---------- generation ----------

@@ -83,6 +83,10 @@ DEFAULT_TIMEZONE = "America/Toronto"
 # and anything later that needs to tell a night the household called off
 # from a night they were never home for.
 NIGHT_OFF_CONSTRAINT = "night_off"
+# tonight_night_off's `already_reason` for a dinner never planned while the
+# household is home (the usual week has it off, a count of 0, a left-out
+# day) — neither a night off nor 'away' (defect hunt, 2026-10-28).
+NOT_PLANNED_REASON = "not_planned"
 
 # The sentence that stands in for the meal wherever the plan is drawn.
 # A statement, never an ask — plan_slot_empty's own rule.
@@ -1072,9 +1076,21 @@ def tonight_night_off(day: str | None = None, now: datetime | None = None,
             conn.rollback()
             out["already"] = True
             is_off = _night_off_row(tonight_row) or _cooked_night_off(tonight_row)
-            out["already_reason"] = NIGHT_OFF_CONSTRAINT if is_off else "away"
+            # A dinner that was never planned while people ARE home — the
+            # usual week has it off, "no dinners", a left-out day, gone by
+            # at drafting — is not "Nobody’s home" either (defect hunt,
+            # 2026-10-28: chat's take_the_night_off on a usual-week-off
+            # Wednesday said so to a household sitting at home). Read by the
+            # constraint, through the Move sheet's one reader of it.
+            from . import meal_move as _meal_move  # lazy: it imports this module
+            not_planned = (not is_off and state == "planned_empty"
+                           and not _meal_move._nobody_home_row(dict(tonight_row)))
+            out["already_reason"] = (NIGHT_OFF_CONSTRAINT if is_off
+                                     else NOT_PLANNED_REASON if not_planned else "away")
             out["use_soon"] = _row_use_soon(tonight_row) if state == "planned_empty" else []
-            out["said"] = "Tonight’s already off." if is_off else "Nobody’s home tonight anyway."
+            out["said"] = ("Tonight’s already off." if is_off
+                           else "There’s no dinner planned tonight anyway." if not_planned
+                           else "Nobody’s home tonight anyway.")
             return out
 
         step = _night_off_plan(conn, plan, rows, tonight_row, today,
