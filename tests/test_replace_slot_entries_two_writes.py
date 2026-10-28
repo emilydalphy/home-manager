@@ -746,7 +746,11 @@ def test_the_other_hand_rolled_pairs_are_NOT_fixed_here():
     # empty the same way (today_meals, "today means from now").
     assert agent_src.count("_slot_needs._settle_slot_empty(") == 2
     big_meal_src = inspect.getsource(__import__("app.tools.big_meal", fromlist=["big_meal"]))
-    assert big_meal_src.count("clear_plan_slot(") == 5
+    # Three since overnight/hunt-bigmeal-1028b: the three that take the
+    # MAIN off (two in refresh_menu, one in set_big_meal_dish) now go
+    # through big_meal._clear_main_slot, which frees the nights the main
+    # fed first and holds the one clear_plan_slot call of their own.
+    assert big_meal_src.count("clear_plan_slot(") == 3
     assert big_meal_src.count("add_ingredients_to_grocery_list=False") == 3
 
 

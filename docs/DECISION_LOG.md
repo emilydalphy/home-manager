@@ -13,6 +13,9 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A holiday dinner that fed later nights frees them when it goes; a trip's night stays empty when a brought dish goes** (2026-10-28, branch `overnight/hunt-bigmeal-1028b`; tests `tests/test_holiday_cook_feeds_later_nights.py`, `tests/test_holiday_dish_on_a_trip_night.py`).
+  (1) Leaving hosting (`holidays._reopen`), a clashing guest note swapping the main (`big_meal.refresh_menu`) and "make the main a ham" (`set_big_meal_dish`) took the main off with `clear_plan_slot`, which reverses the whole batch but never told the nights it fed: Tuesday stayed "Leftovers from Monday" over an open Monday with nothing bought, or named the ham. New `weekly_plan.release_fed_nights` applies the swap's rule (fed night = ordinary night of its dish, re-bought on an approved week). Why: same rule as `_replace_slot_entries`; moving the cook onto the fed night (the "−"/night-off rule) would drag the menu's sides along.
+  (2) "Bringing a pie" on a night a trip already had empty, then any other answer, reopened the dinner as "what would you like for dinner?" on a night nobody is home. `_reopen` now settles it back to the trip's planned_empty. Why: a planned_empty night is never a decision.
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
   (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.

@@ -767,23 +767,62 @@ def _reopen(plan_id: int, d: str, name: str) -> None:
     audit_plan_slots' `duplicated` is "how a night nobody is home ends up
     with groceries bought for it".
     """
+    from . import slot_needs as _slot_needs
     from . import weekly_plan as _weekly_plan
+    # A trip already has nobody home for this dinner (the day was away
+    # before the household said "we're bringing a pie", which planned over
+    # it): the answer going is the trip's night again — deliberately empty,
+    # never a question. Asking "what would you like for dinner?" of a night
+    # nobody is home is the one thing a planned_empty slot must never be.
+    # Read here, above the lock: get_slot_need opens a connection of its own.
+    need = _slot_needs.get_slot_need(d, "dinner")
+    away = need.get("need") == "away"
     conn = get_conn()
     try:
         conn.execute("BEGIN IMMEDIATE")
-        _weekly_plan.clear_plan_slot(plan_id, d, "dinner", conn=conn)
-        _weekly_plan.plan_slot_open(
-            weekly_plan_id=plan_id, meal_date=d, slot="dinner",
-            open_reason=f"Plans for {name} changed — what would you like for dinner?",
-            derived_from={"holiday": name, "constraint": "holiday_answer_changed"},
-            conn=conn,
-        )
+        # A holiday dinner cooked big for later nights (the big meal's
+        # turkey, Tuesday eating it) takes its whole batch off the list
+        # here. The nights it fed become ordinary nights of their dish and,
+        # on an approved week, buy for themselves — the swap's rule
+        # (weekly_plan.release_fed_nights). Without it Tuesday stayed
+        # "Leftovers from Monday" over an open Monday, nothing bought.
+        rows = conn.execute(
+            "SELECT id FROM meal_plan_entries WHERE weekly_plan_id = ? AND date = ? AND slot = 'dinner' "
+            "AND household_id = ? AND component_category IS NULL",
+            (plan_id, d, household_id()),
+        ).fetchall()
+        freed = _weekly_plan.release_fed_nights(conn, plan_id, [r["id"] for r in rows])
+        if away:
+            _slot_needs._settle_slot_empty(
+                plan_id, d, "dinner", need.get("reason") or _slot_needs._default_reason("away"),
+                derived_from={"need": "away", "away_stretch_id": need.get("away_stretch_id")},
+                conn=conn,
+            )
+        else:
+            _weekly_plan.clear_plan_slot(plan_id, d, "dinner", conn=conn)
+            _weekly_plan.plan_slot_open(
+                weekly_plan_id=plan_id, meal_date=d, slot="dinner",
+                open_reason=f"Plans for {name} changed — what would you like for dinner?",
+                derived_from={"holiday": name, "constraint": "holiday_answer_changed"},
+                conn=conn,
+            )
+        if freed:
+            status = conn.execute(
+                "SELECT status FROM weekly_plans WHERE id = ? AND household_id = ?", (plan_id, household_id()),
+            ).fetchone()
+            if status is not None and status["status"] == "approved":
+                _weekly_plan._reingest_unlinked_entries(plan_id, conn=conn)
         conn.commit()
     except Exception:
         conn.rollback()
         raise
     finally:
         conn.close()
+    if freed:
+        # A freed night is a cook now: if its dish needs something thawed it
+        # is owed the fridge move it never had (after the commit — the
+        # resync opens connections of its own).
+        _weekly_plan._defrost_resync(plan_id, freed)
 
 
 def _dish_entry(plan_id: int, d: str):
