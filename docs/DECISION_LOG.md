@@ -13,6 +13,22 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The shop's hand-off to the kitchen tells the truth** (2026-10-28, defect hunt; branch
+  `overnight/hunt-shop-home-1028`; tests `tests/test_shop_hands_food_home_1028.py`). Found driving
+  Shop → tick → "Freezing it?" → card → Kitchen over HTTP and at 390px. (1) "Yes, freezing it" booked
+  only the move: the pack stayed in the Fridge on a 2-day date ("Now in the kitchen" said Fridge + use
+  first; Kitchen said going off), and an untick left the move on Today for chicken still on the list.
+  Now the yes freezes the row the tick CREATED (`defrost._freeze_ticked_pack`, re-snapshotting the
+  tick's receipt so the untick still reverses), Put back unfreezes it, and the untick cancels the move
+  (receipt key `freezing`). A merged row or "Freezing some?" moves nothing, as before. `bring_over.bought_items`
+  no longer reads a freezer row as frozen once its move is done or overdue (counted from the move's day). (2) Two ticks on
+  one kitchen row (two weeks' lines behind one Shop row; "12" eggs beside "2 cups") — unticking both
+  left the first amount in the kitchen for good, either order. The receipts chain (later `before` =
+  earlier `after`): `grocery._untick_from_under` / `_stacked_tick` follow one link while every state
+  still reads exactly. (3) "Use these first" named a dinner after the food's date ("in Saturday's
+  dinner" on chicken good till Tuesday); now only a meal on/before it, else "by <day>", and "next
+  <day>" a week out. (4) The card counted staples/spices the Kitchen tab never shows (ticked coffee
+  becomes a staple): "Pantry · 1" over "Pantry · 0". Same filter as `whats_home._shown_rows`.
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
   (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.

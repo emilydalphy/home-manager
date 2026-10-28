@@ -7632,8 +7632,12 @@
       return;
     }
     groPostJson('/api/grocery-list/' + id + '/freezing', body).then(function (res) {
-      if (!res.ok) groFreezeRefused(id, answer, "Couldn't save that — try again.");
       groSetOffline(false);
+      if (!res.ok) groFreezeRefused(id, answer, "Couldn't save that — try again.");
+      // The answer moves the pack between Fridge and Freezer
+      // (defrost._freeze_ticked_pack), so a finished list's "Now in the
+      // kitchen" card re-reads rather than keep saying Fridge.
+      else if (groListDone(groceryState.data)) loadGrocery();
     }, function (err) {
       if (!groIsNetworkError(err)) console.warn('Grocery freezing answer failed:', err);
       groOffline.queueFreezing(id, answer);
