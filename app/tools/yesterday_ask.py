@@ -154,13 +154,20 @@ def answer_yesterday(entry_id: int, answer: str, today: datetime.date | None = N
     if row is None:
         raise NotAskedAbout("That meal isn't one I'm asking about any more.")
     moved = None
+    took = None
     if answer == "had":
-        _cooker.check_off_meal(entry_id, "done")
+        # What the tick took out of the kitchen, handed on for the toast
+        # (inventory card A2). This door kept it to itself, so "We had it"
+        # was the one "eaten" tap that still emptied the shelves in
+        # silence and offered no Undo (defect hunt 2026-10-28).
+        took = _cooker.check_off_meal(entry_id, "done").get("kitchen_took")
     else:
         moved = _skip(entry_id, row["meal"], current["date"], today.isoformat())
     fresh = yesterday_check(today)
     fresh["meal"] = row["meal"]
     fresh["answer"] = answer
+    if took:
+        fresh["kitchen_took"] = took
     if moved:
         # {"date", "slot", "label"} — where the dish is now cooked — plus
         # the Undo's handle and any fridge move that has to start now.
