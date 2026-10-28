@@ -67,9 +67,11 @@ def test_an_unticked_move_for_food_that_is_gone_is_still_swept(week_with_skewers
     tools.update_inventory("Chicken Thighs", "remove")
     assert _freezer_rows() == []
 
-    result = defrost.sync_defrost_tasks(plan_id)
-
-    assert result["removed"] == 1
+    # UPDATED 2026-10-28 (overnight/hunt-planweek-1028): saying "we're out"
+    # sweeps the move itself now (defrost.resync_live_plan_thaws), so a
+    # later sync finds nothing left to remove. The claim is unchanged.
+    assert tools.get_prep_schedule(plan_id) == []
+    assert defrost.sync_defrost_tasks(plan_id)["removed"] == 0
     assert tools.get_prep_schedule(plan_id) == []
 
 
@@ -79,7 +81,9 @@ def test_a_skipped_move_for_food_that_is_gone_is_still_swept(week_with_skewers):
     tools.check_off_prep_step(task["id"], "skipped")
     tools.update_inventory("Chicken Thighs", "remove")
 
-    assert defrost.sync_defrost_tasks(plan_id)["removed"] == 1
+    # Swept by the remove itself since 2026-10-28 (see the test above).
+    assert tools.get_prep_schedule(plan_id) == []
+    assert defrost.sync_defrost_tasks(plan_id)["removed"] == 0
     assert tools.get_prep_schedule(plan_id) == []
 
 
