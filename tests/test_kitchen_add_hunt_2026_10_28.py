@@ -46,12 +46,65 @@ def test_a_pack_with_nothing_tracked_is_saved_as_the_food_and_how_many(signed_in
     assert [(r["item"], r["quantity"]) for r in _rows()] == [("Yogurt", "12")]
 
 
-def test_a_pack_with_an_amount_in_words_keeps_its_amount_but_still_merges(signed_in):
-    """GUARD: only a plain count is multiplied; "2 cartons" stays as said."""
-    signed_in.post("/api/whats-home/add", json={"kind": "type", "items": [{"item": "Eggs", "location": "fridge"}]})
-    signed_in.post("/api/whats-home/add", json={"kind": "receipt", "items": [
-        {"item": "Eggs 12 pack", "quantity": "2 cartons", "location": "fridge"}]})
-    assert [r["item"] for r in _rows()] == ["Eggs"]
+def _add(client, kind, **item):
+    item.setdefault("location", "fridge")
+    res = client.post("/api/whats-home/add", json={"kind": kind, "items": [item]})
+    assert res.status_code == 200, res.text
+    return res
+
+
+def _have():
+    return sorted((r["item"], r["quantity"]) for r in _rows())
+
+
+@pytest.mark.parametrize("have,line", [
+    (("Chicken breast", "2 lbs"), {"item": "Chicken breast 4 pack", "quantity": "1"}),
+    (("Eggs", "1 dozen"), {"item": "Eggs 12 pack", "quantity": "1"}),
+    (("Water", "1 case"), {"item": "Water 24 count", "quantity": "1"}),
+    (("Eggs", "12"), {"item": "Eggs 12 pack", "quantity": "2 cartons"}),
+])
+def test_a_pack_never_lands_on_a_row_it_cannot_add_to(signed_in, have, line):
+    """GUARD (review, 2026-10-28): "2 lbs + 4" is an amount nothing reads,
+    so a dinner took nothing off it. A pack that can't be added keeps its
+    own row, as before."""
+    tools.update_inventory(have[0], "add", quantity=have[1], location="fridge")
+    _add(signed_in, "receipt", **line)
+    assert _have() == sorted([have, (line["item"], line["quantity"])])
+
+
+@pytest.mark.parametrize("kind", ["type", "say"])
+def test_twelve_pack_of_eggs_said_or_typed_is_eggs(signed_in, kind):
+    """GUARD: a pack in the MIDDLE of what was said is Type it's / Say it's
+    "12 pack" of eggs, never "Of eggs"."""
+    if kind == "say":
+        items = signed_in.post("/api/whats-home/read-said", json={"text": "12 pack of eggs"}).json()["items"]
+        signed_in.post("/api/whats-home/add", json={"kind": "say", "items": items})
+    else:
+        _add(signed_in, "type", item="12 pack of eggs")
+    assert _have() == [("Eggs", "12 pack")]
+
+
+def test_a_shelf_photo_of_a_pack_counts_nothing_new(signed_in):
+    """GUARD: a shelf photo is a count, and "Eggs 12 pack" with no amount
+    is not one — "Eggs · 3" stays 3 and is not stamped counted."""
+    tools.update_inventory("Eggs", "add", quantity="3", location="fridge")
+    _add(signed_in, "fridge", item="Eggs 12 pack")
+    conn = get_conn()
+    row = conn.execute("SELECT quantity, counted_on FROM inventory_items WHERE item = 'Eggs'").fetchone()
+    conn.close()
+    assert (row["quantity"], row["counted_on"]) == ("3", None)
+
+
+def test_an_amount_already_equal_to_the_pack_is_the_count(signed_in):
+    _add(signed_in, "receipt", item="Eggs 18 ct", quantity="18")
+    assert _have() == [("Eggs", "18")]
+
+
+def test_a_huge_pack_total_is_refused(signed_in):
+    res = signed_in.post("/api/whats-home/add", json={"kind": "receipt", "items": [
+        {"item": "Eggs 12 pack", "quantity": "9999", "location": "fridge"}]})
+    assert res.status_code == 400
+    assert _rows() == []
 
 
 def test_different_cuts_still_stay_apart(signed_in):
