@@ -877,6 +877,9 @@ def add_staple(
             "UPDATE grocery_items SET staple_id = ? WHERE id = ? AND household_id = ? AND staple_id IS NULL",
             (staple_id, line["id"], household_id()),
         )
+    if running_low and not on_list:
+        # Out now, after a line of it came off earlier today: back on now.
+        _back_on_the_list(conn, staple_id)
     if running_low and not on_list and in_rack(_row(conn, staple_id)):
         # sync_due_staples never lists a spice on its own (see the module
         # note), so "we're out of cumin" puts the line on today, here —
@@ -1477,6 +1480,10 @@ def pause_staple(staple_id: int, paused: bool = True) -> dict:
             (staple_id, household_id()),
         )
         _event(conn, staple_id, "resumed", "tap")
+        if _is_due(_row(conn, staple_id)):
+            # Pause took its line off (_drop_suggestion_lines); Resume the
+            # same day puts that line back rather than waiting a day.
+            _back_on_the_list(conn, staple_id)
     conn.commit()
     out = _shape(_row(conn, staple_id))
     conn.close()
@@ -1666,30 +1673,7 @@ def sync_due_staples() -> dict:
     if not due:
         conn.close()
         return {"added": []}
-    live = conn.execute(
-        "SELECT item, staple_id, source_weekly_plan_id, excluded_from_list FROM grocery_items "
-        "WHERE household_id = ? AND status IN ('needed', 'in_cart')",
-        (household_id(),),
-    ).fetchall()
-    # What covers a staple by name: a line the household's own (no week
-    # behind it), or one set aside as "getting it elsewhere" — they have
-    # said where that comes from. A week's line alone does not (docstring).
-    live_keys = {
-        _grocery._merge_key(row["item"]) for row in live
-        if row["source_weekly_plan_id"] is None or row["excluded_from_list"]
-    }
-    live_staple_ids = {row["staple_id"] for row in live if row["staple_id"]}
-    # A staple made from a week's line still on the list ("Make it a
-    # staple" on a plan row, add_staple): that line is this trip's answer.
-    made_from_live = {
-        row["staple_id"]
-        for row in conn.execute(
-            "SELECT e.staple_id FROM staple_events e JOIN grocery_items g "
-            "ON g.id = e.grocery_item_id AND g.household_id = e.household_id "
-            "WHERE e.household_id = ? AND e.kind = 'added' AND g.status IN ('needed', 'in_cart')",
-            (household_id(),),
-        ).fetchall()
-    }
+    live_keys, live_staple_ids, made_from_live = _what_covers(conn)
     # A line taken off today — by the staple buttons, ⋯ → Remove, or a
     # pre-shop drop — is this trip's answer; don't ask again until
     # tomorrow at the earliest. Older removed lines are just leftovers of
@@ -1785,3 +1769,85 @@ def _put_on_list(conn, s) -> dict:
         (s["id"], res["item_id"], household_id()),
     )
     return {"item_id": res["item_id"], "item": s["item"], "staple_id": s["id"], "merged": bool(res.get("merged"))}
+
+
+def _what_covers(conn) -> tuple[set, set, set]:
+    """
+    What already answers a due staple on the list this trip, as three sets
+    sync_due_staples (and _back_on_the_list) test a staple against: the
+    merge keys of lines that cover it by name, the staple ids that have a
+    live line of their own, and the staples made from a week's line still
+    on the list.
+    """
+    live = conn.execute(
+        "SELECT item, staple_id, source_weekly_plan_id, excluded_from_list FROM grocery_items "
+        "WHERE household_id = ? AND status IN ('needed', 'in_cart')",
+        (household_id(),),
+    ).fetchall()
+    # What covers a staple by name: a line the household's own (no week
+    # behind it), or one set aside as "getting it elsewhere" — they have
+    # said where that comes from. A week's line alone does not
+    # (sync_due_staples' docstring).
+    live_keys = {
+        _grocery._merge_key(row["item"]) for row in live
+        if row["source_weekly_plan_id"] is None or row["excluded_from_list"]
+    }
+    live_staple_ids = {row["staple_id"] for row in live if row["staple_id"]}
+    # A staple made from a week's line still on the list ("Make it a
+    # staple" on a plan row, add_staple): that line is this trip's answer.
+    made_from_live = {
+        row["staple_id"]
+        for row in conn.execute(
+            "SELECT e.staple_id FROM staple_events e JOIN grocery_items g "
+            "ON g.id = e.grocery_item_id AND g.household_id = e.household_id "
+            "WHERE e.household_id = ? AND e.kind = 'added' AND g.status IN ('needed', 'in_cart')",
+            (household_id(),),
+        ).fetchall()
+    }
+    return live_keys, live_staple_ids, made_from_live
+
+
+def _back_on_the_list(conn, staple_id: int) -> None:
+    """
+    The household has just said this staple is wanted NOW — "we're out of
+    dish soap" (add_staple running_low), or Resume on a regular paused
+    earlier — so its line goes back on, even though a line of it was taken
+    off today.
+
+    sync_due_staples reads a line taken off today as this trip's answer and
+    stays quiet until tomorrow. That is right for the answer itself, and
+    wrong once the household takes it back in words: "We have plenty"
+    tapped in the morning and "we're out of dish soap" said in the
+    afternoon left the staple "probably running low" with no line on the
+    list until the next day, and a chat that had just said it went on
+    (defect hunt, 2026-10-28; the same with Pause then Resume).
+
+    The very row that was taken off comes back — its store and amount
+    intact, as the staple's Undo does. Only a row taken off as the
+    staple's (removed_by 'staple': its two buttons, the row's Remove,
+    Pause, Start over). A row dropped on "Maybe already home" is left
+    alone: it is listed under "already have" with its own "Put back on
+    the list", and a second line beside it would be two of one thing when
+    that is tapped. Nothing is written when something on the list already
+    covers the staple, or when nothing was taken off (the next list read
+    lists it as always). Commits nothing itself.
+    """
+    s = _row(conn, staple_id)
+    if s is None or in_rack(s) or not (s["item"] or "").strip():
+        return
+    own = conn.execute(
+        "SELECT id FROM grocery_items WHERE household_id = ? AND staple_id = ? "
+        "AND status = 'removed' AND removed_by = ? ORDER BY removed_at DESC, id DESC LIMIT 1",
+        (household_id(), staple_id, ADDED_BY_STAPLE),
+    ).fetchone()
+    if own is None:
+        return
+    live_keys, live_staple_ids, made_from_live = _what_covers(conn)
+    if (staple_id in live_staple_ids or staple_id in made_from_live
+            or _grocery._merge_key(s["item"]) in live_keys):
+        return
+    conn.execute(
+        "UPDATE grocery_items SET status = 'needed', removed_by = '', removed_at = NULL "
+        "WHERE id = ? AND household_id = ?",
+        (own["id"], household_id()),
+    )

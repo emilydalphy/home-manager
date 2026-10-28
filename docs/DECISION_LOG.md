@@ -13,6 +13,13 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A staple wanted again the same day goes back on the list that day** (2026-10-28, defect hunt; branch
+  `overnight/hunt-staples-stores-1028b`; tests `tests/test_staple_wanted_again_today.py`). "We have plenty" in the
+  morning, then "we're out of dish soap" in chat (`add_staple` running_low), read "probably running low" with no line
+  until tomorrow: `sync_due_staples` treats a line taken off today as the trip's answer. Same with Pause then Resume.
+  `staples._back_on_the_list` now puts that very row back (store, amount kept) when nothing else covers it; a
+  "Maybe already home" drop is left to its own Put back. `_what_covers` is sync's cover test, shared.
+
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
   (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.
