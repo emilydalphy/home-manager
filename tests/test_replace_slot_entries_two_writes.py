@@ -751,6 +751,9 @@ def test_the_other_hand_rolled_pairs_are_NOT_fixed_here():
     # through big_meal._clear_main_slot, which frees the nights the main
     # fed first and holds the one clear_plan_slot call of their own.
     assert big_meal_src.count("clear_plan_slot(") == 3
+    # ...so the five pairs are still all here: two direct, three via the helper
+    # (its three calls plus its own definition).
+    assert big_meal_src.count("_clear_main_slot(") == 4
     assert big_meal_src.count("add_ingredients_to_grocery_list=False") == 3
 
 
