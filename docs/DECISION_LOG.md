@@ -13,6 +13,13 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Put it back on a "this meal only" Tweak works after a note or a rating** (2026-10-28, overnight defect hunt; branch
+  `overnight/hunt-tweak-undo-1028b`; tests `tests/test_tweak_undo_after_notes.py`). `_undo_fork` deleted the copy while
+  `recipe_notes` / `member_recipe_feedback` still pointed at it (no CASCADE) → "FOREIGN KEY constraint failed", 500.
+  `recipe_change._carry_fork_history` now moves them onto the original first: notes as they are; ratings (per person
+  and household) only fill a gap, never overwrite the original's; feedback notes append; cook count carries.
+  Also: undoing an OLDER fork under a newer Tweak (which rewrites the copy in place) deleted both — now refused
+  with UNDO_NEWER, as the in-place undo already was. Why: Undo means "not that change", not "forget that night".
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
   (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.

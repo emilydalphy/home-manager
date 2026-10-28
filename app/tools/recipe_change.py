@@ -1174,6 +1174,63 @@ def _store_snapshot(request_id: int, snapshot: dict) -> None:
         logger.exception("Storing what a recipe rewrite replaced failed; the rewrite itself stands")
 
 
+def _carry_fork_history(conn, fork: int, original: int) -> None:
+    """
+    Move what the household said about a this-meal-only copy onto the
+    recipe its night goes back to, before the undo deletes the copy.
+
+    recipe_notes and member_recipe_feedback reference recipes(id) with no
+    ON DELETE CASCADE, so a cooking note ("used turkey instead") or a
+    person's rating saved on the copy blocked the delete outright — "FOREIGN
+    KEY constraint failed", a 500, the night left on the copy (overnight
+    defect hunt, 2026-10-28).
+
+    Moved, not dropped. The copy is the same dish with one change, named
+    after it ("Chicken Tacos (Tuesday)"), and whatever was said about the
+    night is about a real dinner; Put it back says "not that change", not
+    "forget what we said".
+    Notes are one-off soft signals by design (recipe_notes' own comment),
+    so they go across as they are. A verdict only FILLS a gap: where the
+    original already has that person's rating, or a household rating, it
+    is about the dish the night is on now and it stays — the copy's
+    verdict was about a version the household just put back. Feedback
+    notes append, and a cook of the copy counts as a cook of the dish, as
+    it would have had the Tweak never forked. Same household only, on the
+    caller's connection; commits nothing.
+    """
+    hid = household_id()
+    conn.execute(
+        "UPDATE recipe_notes SET recipe_id = ? WHERE recipe_id = ? AND household_id = ?",
+        (original, fork, hid),
+    )
+    # UNIQUE(household_id, recipe_id, member_id): a person who already has a
+    # row on the original keeps it, and the copy's row is dropped with it.
+    conn.execute(
+        "UPDATE OR IGNORE member_recipe_feedback SET recipe_id = ? WHERE recipe_id = ? AND household_id = ?",
+        (original, fork, hid),
+    )
+    conn.execute("DELETE FROM member_recipe_feedback WHERE recipe_id = ? AND household_id = ?", (fork, hid))
+    copy = conn.execute(
+        "SELECT rating, feedback_notes, times_cooked, last_cooked_date FROM recipes "
+        "WHERE id = ? AND household_id = ?", (fork, hid),
+    ).fetchone()
+    if not copy:
+        return
+    conn.execute(
+        "UPDATE recipes SET "
+        "rating = CASE WHEN COALESCE(rating, '') = '' THEN ? ELSE rating END, "
+        "feedback_notes = CASE WHEN ? = '' THEN feedback_notes "
+        "  WHEN COALESCE(feedback_notes, '') = '' THEN ? ELSE feedback_notes || ' | ' || ? END, "
+        "times_cooked = COALESCE(times_cooked, 0) + ?, "
+        "last_cooked_date = CASE WHEN last_cooked_date IS NULL OR ? > last_cooked_date "
+        "  THEN COALESCE(?, last_cooked_date) ELSE last_cooked_date END "
+        "WHERE id = ? AND household_id = ?",
+        (copy["rating"] or "", copy["feedback_notes"] or "", copy["feedback_notes"] or "",
+         copy["feedback_notes"] or "", int(copy["times_cooked"] or 0),
+         copy["last_cooked_date"], copy["last_cooked_date"], original, hid),
+    )
+
+
 def _undo_fork(conn, req, entry, snapshot: dict) -> dict:
     """
     Put back a this-meal-only rewrite (apply_rewrite's fork): the chain
@@ -1199,6 +1256,7 @@ def _undo_fork(conn, req, entry, snapshot: dict) -> dict:
             (original, fork, hid),
         )
         after = _resync_users(conn, {int(entry["weekly_plan_id"]): live}) if live else before
+        _carry_fork_history(conn, fork, original)
         conn.execute("DELETE FROM recipes WHERE id = ? AND household_id = ?", (fork, hid))
         conn.execute(
             "UPDATE recipe_change_requests SET outcome = ? WHERE id = ? AND household_id = ?",
@@ -1259,8 +1317,10 @@ def undo_recipe_change(request_id: int) -> dict:
             # edit a recipe the meal no longer uses, on other nights' food.
             conn.rollback()
             return {"status": "refused", "said": UNDO_MOVED_ON}
-        if snapshot.get("forked_from"):
-            return _undo_fork(conn, req, entry, snapshot)
+        # Before the fork branch, not after it (2026-10-28): a second Tweak of
+        # the same night rewrites the COPY in place, so its request names the
+        # copy too, and undoing the older fork deleted the copy with the newer
+        # change on it — both gone for one tap. Newest first, either path.
         newer = conn.execute(
             "SELECT 1 FROM recipe_change_requests WHERE household_id = ? AND recipe_id = ? "
             "AND id > ? AND outcome = ? LIMIT 1",
@@ -1269,6 +1329,8 @@ def undo_recipe_change(request_id: int) -> dict:
         if newer:
             conn.rollback()
             return {"status": "refused", "said": UNDO_NEWER}
+        if snapshot.get("forked_from"):
+            return _undo_fork(conn, req, entry, snapshot)
         try:
             old_ings = json.loads(snapshot.get("ingredients_json") or "[]")
         except (TypeError, ValueError):
