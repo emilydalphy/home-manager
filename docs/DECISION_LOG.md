@@ -13,6 +13,12 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **2 cups + 2 tbsp reads "2 cups + 2 tbsp", not "+ 1 tbsp"** (2026-10-28, overnight hunt;
+  branch `overnight/whole-measures-1028b`, stacked on the entry below; tests
+  `tests/test_easiest_measure_whole_scoops.py`). `_easiest_volume` now rejects any answer
+  off by a whole one of the smallest measure it names. Why: 5% of 102 tsp is over a
+  tablespoon, so dropping a scoop "won" the fewest-scoops race. Effect, every ⅛ tsp to
+  12 cups: 19 amounts change, all 1⅞–1.9 cups and 2⅛–2.14 cups; nothing else moves.
 - **A big pot keeps its cups on the servings stepper** (2026-10-28, overnight hunt;
   branch `overnight/hunt-recipes-share-1028b`; tests `tests/test_big_pot_measures.py`).
   `recipes._easiest_volume`'s 5% slack is also capped at ¼ cup (`_MEASURE_SLACK_MAX_TSP`),
