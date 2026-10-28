@@ -30,6 +30,9 @@ from . import time_caps as _time_caps
 # comes up, which is what actually surfaced this: not the write, the read.
 _LIST_PREFERENCE_FIELDS = ("cuisine_preferences", "dislikes", "usual_stores", "kitchen_kit")
 
+# The ceiling on a time limit (weeknight / weekday lunch): past a day it caps nothing.
+MINUTES_IN_A_DAY = 24 * 60
+
 
 def _coerce_str_list(field: str, value) -> list[str]:
     """
@@ -818,10 +821,17 @@ def edit_preference(field: str, value) -> dict:
     if field in ("weeknight_max_minutes", "weekday_lunch_max_minutes"):
         try:
             minutes = int(value)
-        except (TypeError, ValueError):
+        except (TypeError, ValueError, OverflowError):
+            # OverflowError: JSON's 1e400 arrives as infinity, and int() of
+            # that was a 500 (defect hunt, 2026-10-28).
             raise ValueError(f"{field} must be a whole number of minutes (0 for no cap).")
         if minutes < 0:
             raise ValueError(f"{field} can't be negative.")
+        # A cap longer than a day caps nothing. Refused here, in a sentence,
+        # rather than left for 10**30 to overflow the SQLite bind and be
+        # logged as a server error on its way to the 400 (2026-10-28).
+        if minutes > MINUTES_IN_A_DAY:
+            raise ValueError(f"{field} can't be more than a day ({MINUTES_IN_A_DAY} minutes).")
         value = minutes
     # A free-text answer that arrives as nothing at all (chat sending
     # `null` for "remember that…") is refused here, in a sentence, rather

@@ -2459,7 +2459,9 @@ def edit_memory(req: MemoryEditRequest):
     """Directly set a preference field (see MemoryEditRequest for valid fields), used by the 'what we know' view's edit controls."""
     try:
         if req.field == "goals":
-            tools.set_household_goals(str(req.value))
+            # Passed as sent, not str()'d: str(None) stored the word "None"
+            # as the household's goals (defect hunt, 2026-10-28).
+            tools.set_household_goals(req.value)
         else:
             tools.edit_preference(req.field, req.value)
         memory = tools.get_household_memory_for_display()

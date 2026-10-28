@@ -294,7 +294,11 @@ def normalise_phone(raw: str | None) -> str:
     # dropped) and "+1 041 655 5010" used to be stored as given, and then
     # failed at Twilio every morning with nothing on the screen to say so
     # (defect hunt, 2026-10-22).
-    if text.startswith("+") and not digits.startswith("1") and 8 <= len(digits) <= 15:
+    # No country code starts with 0, so "+0 1234 5678" is a typo, not a
+    # country — it was stored as +012345678 and Twilio refused it every
+    # morning (defect hunt, 2026-10-28). It falls through to the refusal.
+    if (text.startswith("+") and not digits.startswith(("0", "1"))
+            and 8 <= len(digits) <= 15):
         return "+" + digits
     if len(digits) == 11 and digits.startswith("1"):
         digits = digits[1:]
