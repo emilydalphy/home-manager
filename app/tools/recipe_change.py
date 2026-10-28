@@ -1174,10 +1174,24 @@ def _store_snapshot(request_id: int, snapshot: dict) -> None:
         logger.exception("Storing what a recipe rewrite replaced failed; the rewrite itself stands")
 
 
-def _carry_fork_history(conn, fork: int, original: int) -> None:
+def _fork_version_label(date, request_text: str) -> str:
+    """'the Tuesday version (Shrimp instead of salmon)' — how a note on the
+    original names the this-meal-only copy it was really about."""
+    import datetime as _dt
+    try:
+        day = _dt.date.fromisoformat(str(date)[:10]).strftime("%A") + " "
+    except ValueError:
+        day = ""
+    words = " ".join(str(request_text or "").split())
+    if len(words) > 80:
+        words = words[:79].rstrip() + "…"
+    return f"the {day}version" + (f" ({words})" if words else "")
+
+
+def _carry_fork_history(conn, fork: int, original: int, label: str) -> None:
     """
-    Move what the household said about a this-meal-only copy onto the
-    recipe its night goes back to, before the undo deletes the copy.
+    Keep what the household said about a this-meal-only copy, on the recipe
+    its night goes back to, before the undo deletes the copy.
 
     recipe_notes and member_recipe_feedback reference recipes(id) with no
     ON DELETE CASCADE, so a cooking note ("used turkey instead") or a
@@ -1185,30 +1199,37 @@ def _carry_fork_history(conn, fork: int, original: int) -> None:
     KEY constraint failed", a 500, the night left on the copy (overnight
     defect hunt, 2026-10-28).
 
-    Moved, not dropped. The copy is the same dish with one change, named
-    after it ("Chicken Tacos (Tuesday)"), and whatever was said about the
-    night is about a real dinner; Put it back says "not that change", not
-    "forget what we said".
-    Notes are one-off soft signals by design (recipe_notes' own comment),
-    so they go across as they are. A verdict only FILLS a gap: where the
-    original already has that person's rating, or a household rating, it
-    is about the dish the night is on now and it stays — the copy's
-    verdict was about a version the household just put back. Feedback
-    notes append, and a cook of the copy counts as a cook of the dish, as
-    it would have had the Tweak never forked. Same household only, on the
-    caller's connection; commits nothing.
+    Notes move across as they are: they are one-off soft signals by design
+    (recipe_notes' own comment), and Put it back says "not that change",
+    not "forget what we said".
+
+    Ratings NEVER become ratings on the original (review, same night). A
+    verdict on the copy was most likely about the change the household
+    then undid — "Shrimp instead of salmon" disliked, then put back — and
+    'disliked' is the app's strong, standing veto: moved across it made
+    Salmon Bowls itself an avoid (taste_verdict) and dropped it from quick
+    dinners. So each rating, per person or the household's, and the copy's
+    feedback text, is kept as a feedback NOTE on the original naming the
+    version ("Sam: disliked the Tuesday version (Shrimp instead of
+    salmon)"), and the copy's rating rows go with the copy. Nothing already
+    on the original is touched. A cook of the copy still counts as a cook
+    of the dish, as it would have had the Tweak never forked. Same
+    household only, on the caller's connection; commits nothing.
     """
     hid = household_id()
     conn.execute(
         "UPDATE recipe_notes SET recipe_id = ? WHERE recipe_id = ? AND household_id = ?",
         (original, fork, hid),
     )
-    # UNIQUE(household_id, recipe_id, member_id): a person who already has a
-    # row on the original keeps it, and the copy's row is dropped with it.
-    conn.execute(
-        "UPDATE OR IGNORE member_recipe_feedback SET recipe_id = ? WHERE recipe_id = ? AND household_id = ?",
-        (original, fork, hid),
-    )
+    said = [
+        f"{r['name'] or 'Someone'}: {r['rating']} {label}" + (f" — {r['notes']}" if r["notes"] else "")
+        for r in conn.execute(
+            "SELECT m.name, f.rating, f.notes FROM member_recipe_feedback f "
+            "LEFT JOIN members m ON m.id = f.member_id AND m.household_id = f.household_id "
+            "WHERE f.recipe_id = ? AND f.household_id = ? ORDER BY f.id",
+            (fork, hid),
+        )
+    ]
     conn.execute("DELETE FROM member_recipe_feedback WHERE recipe_id = ? AND household_id = ?", (fork, hid))
     copy = conn.execute(
         "SELECT rating, feedback_notes, times_cooked, last_cooked_date FROM recipes "
@@ -1216,18 +1237,21 @@ def _carry_fork_history(conn, fork: int, original: int) -> None:
     ).fetchone()
     if not copy:
         return
+    if copy["rating"]:
+        said.append(f"{str(copy['rating']).capitalize()} {label}")
+    if (copy["feedback_notes"] or "").strip():
+        said.append(f"About {label}: {copy['feedback_notes'].strip()}")
+    for note in said:
+        conn.execute(
+            "INSERT INTO recipe_notes (household_id, recipe_id, note_type, note) VALUES (?, ?, 'feedback', ?)",
+            (hid, original, note),
+        )
     conn.execute(
-        "UPDATE recipes SET "
-        "rating = CASE WHEN COALESCE(rating, '') = '' THEN ? ELSE rating END, "
-        "feedback_notes = CASE WHEN ? = '' THEN feedback_notes "
-        "  WHEN COALESCE(feedback_notes, '') = '' THEN ? ELSE feedback_notes || ' | ' || ? END, "
-        "times_cooked = COALESCE(times_cooked, 0) + ?, "
+        "UPDATE recipes SET times_cooked = COALESCE(times_cooked, 0) + ?, "
         "last_cooked_date = CASE WHEN last_cooked_date IS NULL OR ? > last_cooked_date "
         "  THEN COALESCE(?, last_cooked_date) ELSE last_cooked_date END "
         "WHERE id = ? AND household_id = ?",
-        (copy["rating"] or "", copy["feedback_notes"] or "", copy["feedback_notes"] or "",
-         copy["feedback_notes"] or "", int(copy["times_cooked"] or 0),
-         copy["last_cooked_date"], copy["last_cooked_date"], original, hid),
+        (int(copy["times_cooked"] or 0), copy["last_cooked_date"], copy["last_cooked_date"], original, hid),
     )
 
 
@@ -1256,7 +1280,8 @@ def _undo_fork(conn, req, entry, snapshot: dict) -> dict:
             (original, fork, hid),
         )
         after = _resync_users(conn, {int(entry["weekly_plan_id"]): live}) if live else before
-        _carry_fork_history(conn, fork, original)
+        _carry_fork_history(conn, fork, original,
+                            _fork_version_label(entry["date"], req["request_text"]))
         conn.execute("DELETE FROM recipes WHERE id = ? AND household_id = ?", (fork, hid))
         conn.execute(
             "UPDATE recipe_change_requests SET outcome = ? WHERE id = ? AND household_id = ?",
@@ -1294,7 +1319,7 @@ def undo_recipe_change(request_id: int) -> dict:
     try:
         conn.execute("BEGIN IMMEDIATE")
         req = conn.execute(
-            "SELECT id, dish_name, recipe_id, meal_plan_entry_id, outcome, previous_json "
+            "SELECT id, dish_name, recipe_id, meal_plan_entry_id, outcome, previous_json, request_text "
             "FROM recipe_change_requests WHERE id = ? AND household_id = ?",
             (int(request_id), hid),
         ).fetchone()

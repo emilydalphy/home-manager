@@ -16,8 +16,11 @@ why*, not duplicating the diff.
 - **Put it back on a "this meal only" Tweak works after a note or a rating** (2026-10-28, overnight defect hunt; branch
   `overnight/hunt-tweak-undo-1028b`; tests `tests/test_tweak_undo_after_notes.py`). `_undo_fork` deleted the copy while
   `recipe_notes` / `member_recipe_feedback` still pointed at it (no CASCADE) → "FOREIGN KEY constraint failed", 500.
-  `recipe_change._carry_fork_history` now moves them onto the original first: notes as they are; ratings (per person
-  and household) only fill a gap, never overwrite the original's; feedback notes append; cook count carries.
+  `recipe_change._carry_fork_history` keeps them on the original first: notes move as they are; a rating on the copy
+  (per person or household) NEVER becomes a rating on the original — it is saved as a feedback note naming the
+  version ("Sam: disliked the Tuesday version (Shrimp instead of salmon)") and the copy's rating rows go. Why: the
+  verdict was most likely about the change they undid, and 'disliked' is the standing veto (review: moved across,
+  Salmon Bowls became an avoid and left quick dinners). The original's own ratings are never touched; cook count carries.
   Also: undoing an OLDER fork under a newer Tweak (which rewrites the copy in place) deleted both — now refused
   with UNDO_NEWER, as the in-place undo already was. Why: Undo means "not that change", not "forget that night".
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
