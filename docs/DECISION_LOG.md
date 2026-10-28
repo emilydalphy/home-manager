@@ -13,6 +13,7 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Undo on a swap won't put back a dish somebody can't have now** (2026-10-28, branch `overnight/swap-undo-allergy-1028b`; tests `tests/test_swap_undo_allergy.py`). `undo_meal_swap` (one-day and whole-dish) and the chat change card's `undo_proposal` now ask `swap_in_place.undo_blocked` first — the swap door's own `_hard_clash`, whole-household scope — and refuse with "Reid can’t have peanuts, so I can’t put Peanut Noodles back.", nothing changed and the Undo note kept; both routes answer 409 + `detail`. Why: Undo went through `swap_meal_in_plan`, which checks nothing, so an allergy added after a swap was undone straight back onto the week and the list. Open: `runSwapUndo` in shell.js ignores the 409's `detail`, so the screen says nothing.
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
   (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.

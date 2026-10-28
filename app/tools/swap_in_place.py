@@ -1333,6 +1333,50 @@ def pick_gate(pick: dict, entry: dict) -> str | None:
     return None
 
 
+# Said when the allergy check itself could not run on the dish Undo would
+# put back. Fails closed, like _hard_clash: "we couldn't look" is not
+# "nothing was found".
+UNDO_CHECK_FAILED = "I couldn’t check that one against your allergies just now, so I left it as it was."
+
+
+def undo_blocked(names: list[str]) -> str | None:
+    """
+    Why Undo must not put these dishes back, or None when it may.
+
+    Defect hunt 2026-10-28: Undo went back through swap_meal_in_plan, which
+    checks nothing, so Peanut Noodles swapped away, then Reid's peanut
+    allergy added, then Undo, put the peanut dish straight back on the week
+    (and on an approved week's list). The tweak's Undo already refuses this
+    (recipe_change.undo_recipe_change); this is the swap's Undo saying the
+    same, in the same words.
+
+    The SAME gate the swap door picks under (_hard_clash: the dish's saved
+    ingredient list, hard clashes only), and the same scope — every allergy
+    and hard fact in the WHOLE household, not only who is home that night,
+    because that is what the swap's own pick is held to. Not the taste veto:
+    putting back what the household had is not the app suggesting a dish.
+    Asked BEFORE anything is written, so a refusal changes nothing and the
+    Undo is still there once the allergy is sorted.
+    """
+    from . import allergen_gate as _allergen_gate  # imports this module
+    for name in names:
+        clash = _hard_clash({"meal_name": name})
+        if not clash:
+            continue
+        if any(c.get("source") == "check_failed" for c in clash):
+            return UNDO_CHECK_FAILED
+        first = next((c for c in clash if c.get("member")), clash[0])
+        # A hard What-we-know fact names nobody: "This house can't have…",
+        # allergen_gate's own word for it.
+        who = first.get("member") or "This house"
+        word = _allergen_gate.plain_food(first.get("matched_word") or first.get("matched") or "")
+        # No pronoun for the food: "peanuts … has it in" reads wrong, and
+        # the plural is how a person says it (plain_food).
+        return (f"{who} can’t have {word}, so I can’t put {name} back."
+                if word else f"{who} can’t eat {name}, so I can’t put it back.")
+    return None
+
+
 def undo_meal_swap(weekly_plan_id: int, entry_id: int) -> dict:
     """
     Put back the dish that was on this slot before the first in-place swap
@@ -1342,6 +1386,9 @@ def undo_meal_swap(weekly_plan_id: int, entry_id: int) -> dict:
     the grocery reversal, the chain unlink and the plate rules are that
     function's job, and an undo that wrote the row directly would be a
     second, subtly different swap.
+
+    Returns `status` 'refused' with `message` (and nothing written) when the
+    dish coming back is one somebody here can't have now (undo_blocked).
     """
     entry = _entry(weekly_plan_id, entry_id)
     previous = (entry["derived_from"] or {}).get("swapped_from") or {}
@@ -1351,6 +1398,10 @@ def undo_meal_swap(weekly_plan_id: int, entry_id: int) -> dict:
     # Swapped as a whole dish: every day of it goes back, together.
     if (entry["derived_from"] or {}).get("swap_group"):
         return _undo_dish_swap(weekly_plan_id, entry)
+    blocked = undo_blocked([name])
+    if blocked:
+        return {"status": "refused", "message": blocked, "entry_id": entry["entry_id"],
+                "date": entry["date"], "slot": entry["slot"]}
 
     # A change that carried the plate's sides forward carries them back;
     # a swap that left them behind puts back the ones it left.
@@ -2155,6 +2206,12 @@ def _undo_dish_swap(weekly_plan_id: int, entry: dict) -> dict:
         if previous.get("chain_fields") is not None:
             item["chain"] = previous["chain_fields"]
         items.append(item)
+    # Every day goes back together or none does: one day refused is the
+    # whole Undo refused (undo_blocked), before anything is written.
+    blocked = undo_blocked(_dedup([i["new_meal"] for i in items]))
+    if blocked:
+        return {"status": "refused", "message": blocked, "entry_id": entry["entry_id"],
+                "date": entry["date"], "slot": entry["slot"]}
     result = _weekly_plan.replace_dish_on_days(weekly_plan_id, items)
     for sides, new_id in zip(carried, result["entry_ids"]):
         if sides:

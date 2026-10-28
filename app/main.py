@@ -4976,6 +4976,10 @@ def chat_proposal_undo(proposal_id: str):
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     if out.get("status") == "gone":
         raise HTTPException(status_code=404, detail=out["message"])
+    # Refused by the allergy gate: the card's postJson shows a non-2xx as a
+    # failure ("Couldn't undo that"), never "The week is back as it was."
+    if out.get("status") == "refused":
+        raise HTTPException(status_code=409, detail=out["message"])
     return out
 
 
@@ -5042,12 +5046,19 @@ def week_swap_undo(week_start: str, req: SwapUndoRequest):
     """Put back the dish that was on this slot before it was swapped."""
     plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
-        return tools.undo_meal_swap(plan_id, req.entry_id)
+        out = tools.undo_meal_swap(plan_id, req.entry_id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.exception("Swap undo failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    # Refused (an allergy added since the swap rules the old dish out) is a
+    # 409 carrying the sentence, not a 200: runSwapUndo reads every 200 as
+    # "it's back" and would say "Back as it was." over a week that did not
+    # change. On a non-2xx it says nothing changed, which is true.
+    if out.get("status") == "refused":
+        raise HTTPException(status_code=409, detail=out["message"])
+    return out
 
 
 class SwapNightsRequest(BaseModel):

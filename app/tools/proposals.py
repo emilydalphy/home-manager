@@ -510,6 +510,16 @@ def undo_proposal(proposal_id: str) -> dict:
     if not proposal:
         return {"status": "gone", "message": GONE}
     plan_id = proposal["weekly_plan_id"]
+    # All of the card or none of it: a dish one of its rows would put back
+    # that somebody here can't have now (an allergy added since Save)
+    # refuses the whole Undo before any row is written — the swap's own
+    # Undo gate, swap_in_place.undo_blocked.
+    entries = [_slot_entry(plan_id, a["date"], a["slot"]) for a in proposal["applied"]]
+    names = [((e["derived_from"] or {}).get("swapped_from") or {}).get("meal") or ""
+             for e in entries if e is not None]
+    blocked = _swap.undo_blocked([n.strip() for n in names if n.strip()])
+    if blocked:
+        return {"status": "refused", "message": blocked}
     restored: list[dict] = []
     for a in list(proposal["applied"]):
         entry = _slot_entry(plan_id, a["date"], a["slot"])
@@ -518,6 +528,8 @@ def undo_proposal(proposal_id: str) -> dict:
         try:
             result = _swap.undo_meal_swap(plan_id, entry["entry_id"])
         except ValueError:
+            continue
+        if result.get("status") != "restored":
             continue
         restored.append({"date": a["date"], "slot": a["slot"], "meal": result["meal"], "day": result.get("day")})
     proposal["applied"] = []
