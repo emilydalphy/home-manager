@@ -52,7 +52,6 @@ from . import attendance as _attendance
 from . import cooker as _cooker
 from . import inventory as _inventory
 from . import leftovers as _leftovers
-from . import prep_sessions as _prep_sessions
 from . import quantities as _quantities
 from . import recipes as _recipes
 from . import rhythm as _rhythm
@@ -900,11 +899,8 @@ def get_defrost_today() -> list[dict]:
     conn = get_conn()
     rows = conn.execute(
         "SELECT id, task_date, description, related_meal, quantity, inventory_item_id, "
-        "meal_plan_entry_id, status FROM prep_tasks t "
+        "meal_plan_entry_id, status FROM prep_tasks "
         "WHERE household_id = ? AND task_type = 'defrost' AND task_date = ? AND status = 'pending' "
-        # Not food the Kitchen tab has since thrown out, used up or moved
-        # to the fridge — the read Today and the texts take (2026-10-28).
-        f"AND {_prep_sessions.THAW_STILL_OWED_SQL} "
         "ORDER BY id",
         (household_id(), today),
     ).fetchall()
@@ -930,11 +926,9 @@ def get_defrost_schedule(days: int = 7) -> list[dict]:
     end = (today + timedelta(days=max(days, 0))).isoformat()
     conn = get_conn()
     rows = conn.execute(
-        "SELECT id, task_date, description, related_meal, quantity, status FROM prep_tasks t "
+        "SELECT id, task_date, description, related_meal, quantity, status FROM prep_tasks "
         "WHERE household_id = ? AND task_type = 'defrost' AND status = 'pending' "
-        "AND task_date >= ? AND task_date <= ? "
-        f"AND {_prep_sessions.THAW_STILL_OWED_SQL} "
-        "ORDER BY task_date ASC, id ASC",
+        "AND task_date >= ? AND task_date <= ? ORDER BY task_date ASC, id ASC",
         (household_id(), today.isoformat(), end),
     ).fetchall()
     conn.close()

@@ -197,10 +197,11 @@ def get_active_notifications() -> list[dict]:
                     if it["quantity"] else "I’ll work it into this week if you’d like."
                 )
             else:
-                # "Spinach and greek yogurt turn soon", "…, rice and 2 more":
+                # "Spinach and Greek yogurt turn soon", "…, Rice and 2 more":
                 # two used to read "Spinach, Greek yogurt all turn soon", and
                 # a fourth thing was counted in the title and named nowhere.
-                names = [" ".join(e["item"].split()).lower() for e in expiring]
+                # Names keep their own capitals — "Greek" is a proper noun.
+                names = [" ".join(e["item"].split()) for e in expiring]
                 if len(names) <= 3:
                     listed = names[0] if len(names) == 1 else ", ".join(names[:-1]) + " and " + names[-1]
                 else:
