@@ -341,6 +341,55 @@ def step_inventory_expiration(item_id: int, delta_days: int) -> dict:
 # the Inventory screen's own add form, and the photo scanners (receipt,
 # fridge, pantry) behind /api/inventory/scan-*. Chat is still the one that
 # catches what gets said in passing rather than typed in deliberately.
+def _noun_key(unit: str) -> str:
+    """'apples' / 'apple', 'tomatoes' / 'tomato' -> one key."""
+    u = unit.strip().lower()
+    if u.endswith("oes"):
+        return u[:-2]
+    return u[:-1] if u.endswith("s") and not u.endswith("ss") else u
+
+
+def _counted_alike(have_unit: str | None, more_unit: str | None) -> tuple[str | None, str | None, tuple | None]:
+    """
+    The two units an amount on a kitchen row and an amount used from (or
+    added to) it should be read in, when one of them is a bare count. A
+    row is ONE food, so a bare "6" against "12 eggs" counts eggs, and "1
+    apple" off "3 apples" is the same noun. Returns (have_unit, more_unit,
+    forms): forms is (singular, plural) when the two were the same noun
+    spelled two ways, so the result can be written in the right one.
+
+    Why (defect hunt, 2026-10-29): Eggs typed in the Kitchen as "12" and a
+    dozen bought off the list ("1 dozen") merged into "12 + 1 dozen", which
+    nothing parses — and an unparseable amount reads as "all of it", so the
+    next "we used 2 eggs" in chat deleted the whole row. "3 apples" less "1
+    apple" took nothing off. Measured units (lb, cup, g...) are never
+    bridged to a bare number: "2" against "2 lbs" says nothing about how
+    much. A garlic "head" against a bare count is not either: 2 could be
+    heads or cloves.
+    """
+    if have_unit == more_unit or _quantities._measurable_unit(have_unit) or _quantities._measurable_unit(more_unit):
+        return have_unit, more_unit, None
+    if have_unit is None or more_unit is None:
+        unit = have_unit or more_unit
+        group = _quantities._pack_group(unit)
+        if group is None:
+            return unit, unit, None
+        if "egg" in group:
+            return have_unit or "egg", more_unit or "egg", None
+        return have_unit, more_unit, None
+    if (_quantities._pack_group(have_unit) is None and _quantities._pack_group(more_unit) is None
+            and _noun_key(have_unit) == _noun_key(more_unit)):
+        singular, plural = sorted((have_unit, more_unit), key=len)
+        return have_unit, have_unit, (singular, plural)
+    return have_unit, more_unit, None
+
+
+def _counted_format(amount: float, unit: str | None, forms: tuple | None) -> str:
+    if forms:
+        unit = forms[0] if amount <= 1 else forms[1]
+    return _quantities._format_quantity(amount, unit)
+
+
 def _try_subtract_quantity(existing_qty: str, minus_qty: str) -> tuple[str | None, bool]:
     """
     Try to subtract minus_qty from existing_qty for the same inventory item.
@@ -365,20 +414,23 @@ def _try_subtract_quantity(existing_qty: str, minus_qty: str) -> tuple[str | Non
     # eaters of four) and cooking it took nothing off — the Monday walk,
     # 2026-10-26: last Monday's chicken sat in the fridge as on hand, and
     # approving this week left Saturday's stir-fry chicken off the list.
-    used = (_quantities._convert_to_unit(minus_parsed[0], minus_parsed[1], existing_parsed[1])
+    # A bare count against a counted unit ("12" less "2 eggs", "3 apples"
+    # less "1 apple") is read as one: _counted_alike.
+    have_unit, minus_unit, forms = _counted_alike(existing_parsed[1], minus_parsed[1] if minus_parsed else None)
+    used = (_quantities._convert_to_unit(minus_parsed[0], minus_unit, have_unit)
             if minus_parsed else None)
     if used is not None:
         remaining = existing_parsed[0] - used
         if remaining <= 0:
             return None, True
-        if minus_parsed[1] != existing_parsed[1] and abs(remaining * 4 - round(remaining * 4)) > 1e-9:
+        if minus_unit != have_unit and not _clean_in(remaining, have_unit):
             # Across units the difference can be an odd fraction ("0.9375
             # cup", "0.99375 lb"): say it in the finer unit instead (15 tbsp,
             # 15.9 oz). Never rounded up — a tbsp off a cup must come off.
-            finer = _quantities._convert_to_unit(remaining, existing_parsed[1], minus_parsed[1])
+            finer = _quantities._convert_to_unit(remaining, have_unit, minus_unit)
             if finer is not None:
-                return _quantities._format_quantity(round(finer, 1), minus_parsed[1]), True
-        return _quantities._format_quantity(remaining, existing_parsed[1]), True
+                return _quantities._format_quantity(round(finer, 1), minus_unit), True
+        return _counted_format(remaining, have_unit, forms), True
     return existing_qty, False
 
 
@@ -506,6 +558,14 @@ def _quarter_clean(amount: float) -> bool:
     return abs(amount * 4 - round(amount * 4)) <= 1e-9
 
 
+def _clean_in(amount: float, unit: str | None) -> bool:
+    """Whether `amount` reads cleanly in `unit`: a quarter of most things,
+    but only whole dozens — half a dozen eggs is "6 eggs", not "0.5 dozen"."""
+    if unit == "dozen":
+        return abs(amount - round(amount)) <= 1e-9
+    return _quarter_clean(amount)
+
+
 def _merged_quantity(existing_qty: str, adding_qty: str) -> str:
     """
     What a row holds after `adding_qty` lands on it. The grocery list's own
@@ -528,20 +588,24 @@ def _merged_quantity(existing_qty: str, adding_qty: str) -> str:
     more = _quantities._parse_quantity(adding_qty)
     if not have or not more:
         return merged
-    converted = _quantities._convert_to_unit(more[0], more[1], have[1])
+    # "12" + "1 dozen" eggs, "3 apples" + "1 apple": one count (_counted_alike).
+    have_unit, more_unit, forms = _counted_alike(have[1], more[1])
+    converted = _quantities._convert_to_unit(more[0], more_unit, have_unit)
     if converted is None:
         return merged
     total = have[0] + converted
-    in_other = _quantities._convert_to_unit(total, have[1], more[1])
+    if forms:
+        return _counted_format(total, have_unit, forms)
+    in_other = _quantities._convert_to_unit(total, have_unit, more_unit)
     if in_other is None:
-        return _quantities._format_quantity(round(total, 2), have[1])
+        return _quantities._format_quantity(round(total, 2), have_unit)
     # Whichever order the two were bought in, the same answer: the coarser
     # unit when the total lands on a clean quarter there (12 oz + 1 lb =
     # 1.75 lbs, 500 ml + 1 l = 1.5 l), the finer one otherwise.
     (coarse, coarse_unit), (fine, fine_unit) = sorted(
-        [(total, have[1]), (in_other, more[1])], key=lambda pair: pair[0]
+        [(total, have_unit), (in_other, more_unit)], key=lambda pair: pair[0]
     )
-    if _quarter_clean(coarse):
+    if _clean_in(coarse, coarse_unit):
         return _quantities._format_quantity(coarse, coarse_unit)
     return _quantities._format_quantity(round(fine, 1), fine_unit)
 

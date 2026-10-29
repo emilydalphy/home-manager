@@ -13,6 +13,7 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A bare count and a counted unit are one count on a kitchen row** (2026-10-29, branch `overnight/hunt-inventory-1029b`; `inventory._counted_alike`, tests `tests/test_inventory_hunt_2026_10_29.py`). Eggs typed as "12" plus a dozen off the list wrote "12 + 1 dozen"; nothing parses that, so chat's "used 2 eggs" deleted the row. A bare number now counts eggs against egg/dozen and the row's own unit against any other counted unit (can, bag, apples); "apple"/"apples" are one noun; half a dozen reads "6 eggs". Why: a row is one food. A bare number against a measure (lb, cup) or a garlic head is still not guessed.
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
   (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.
