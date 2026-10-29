@@ -3748,6 +3748,48 @@ def _catch_up_unticked_plan_line(conn, item_id: int) -> None:
     )
 
 
+# The receipt a household supply's tick records in place of a kitchen row's.
+SUPPLY_RECEIPT = {"supply": True}
+
+
+def _is_supply_receipt(receipt_json: str | None) -> bool:
+    try:
+        return bool(receipt_json) and json.loads(receipt_json) == SUPPLY_RECEIPT
+    except (TypeError, ValueError):
+        return False
+
+
+def _is_household_supply(conn, item_id: int, item: str) -> bool:
+    """
+    Whether a ticked line is a household supply — dish soap, toilet paper,
+    batteries — that a tick must NOT put in the kitchen (defect hunt
+    2026-10-29). Walking a shop end to end, the dish soap landed on the
+    Kitchen tab as "Pantry · bought today · best by Nov 11", counted in
+    Shop's "Now in the kitchen · Pantry 3 things". The Kitchen is food;
+    supplies are Staples' (CLAUDE.md: staples never touch inventory).
+
+    Stricter than staples' own section on purpose, because a wrong yes here
+    loses food from the kitchen rather than filing a staple under the wrong
+    heading: the whole name is one of staples' household phrases, or its
+    LAST word — the thing itself — is a household word ("dish soap", "AA
+    batteries"; never "sponge cake" or "pad thai noodles"). And a line a
+    planned meal is buying for is food whatever its name says. Not the
+    category: a chat add files dish soap under pantry as often as not.
+    """
+    from . import staples as _staples  # lazy: staples imports this module
+
+    words = _staples._name_words(item)
+    if not words:
+        return False
+    if " ".join(words) not in _staples._HOUSEHOLD_PHRASES and words[-1] not in _staples._HOUSEHOLD_WORDS:
+        return False
+    for_a_meal = conn.execute(
+        "SELECT 1 FROM meal_plan_grocery_links WHERE household_id = ? AND grocery_item_id = ? LIMIT 1",
+        (household_id(), item_id),
+    ).fetchone()
+    return for_a_meal is None
+
+
 def mark_grocery_item(item_id: int, status: str = "purchased") -> dict:
     """
     Update a grocery item's status (needed/in_cart/purchased). Marking
@@ -3759,7 +3801,8 @@ def mark_grocery_item(item_id: int, status: str = "purchased") -> dict:
     when the kitchen row is still exactly as the tick left it, and leaves
     the kitchen alone otherwise (the result says which:
     inventory_added / inventory_restored). See _restore_inventory_from_
-    receipt for the argument.
+    receipt for the argument. A household supply (dish soap, toilet paper —
+    _is_household_supply) never goes in the kitchen: inventory_added False.
     """
     # Before get_conn, so a bad status never opens a connection and never
     # takes the write lock — and so a caller that never reaches the route
@@ -3803,7 +3846,16 @@ def mark_grocery_item(item_id: int, status: str = "purchased") -> dict:
         fields = "status = ?"
         params: list = [status]
         if status == "purchased":
-            if row["inventory_added_at"] is None:
+            if row["inventory_added_at"] is None and _is_household_supply(conn, item_id, row["item"]):
+                # Dish soap is bought, not put in the kitchen. The stamp is
+                # still written — it is also WHEN the line was ticked, which
+                # Shop's checklist and the staples' rhythm read — beside a
+                # receipt that names no kitchen row, so the untick below
+                # has nothing to take back.
+                fields += ", inventory_added_at = datetime('now'), inventory_receipt_json = ?"
+                params.append(json.dumps(SUPPLY_RECEIPT))
+                added = False
+            elif row["inventory_added_at"] is None:
                 receipt = _inventory._add_to_inventory(
                     row["item"], row["quantity"] or "", source="grocery_checkoff", category=row["category"], conn=conn
                 )
@@ -3820,6 +3872,9 @@ def mark_grocery_item(item_id: int, status: str = "purchased") -> dict:
                 # and never taken back out — the status moves, the shelf
                 # does not.
                 added = False
+        elif _is_supply_receipt(row["inventory_receipt_json"]):
+            # A supply's tick never touched the kitchen: just un-stamp it.
+            fields += ", inventory_added_at = NULL, inventory_receipt_json = NULL"
         elif row["status"] == "purchased" or row["inventory_added_at"] is not None:
             # Leaving 'purchased' (or a line whose earlier untick could not
             # restore): try the exact reversal. The stamp clears only when

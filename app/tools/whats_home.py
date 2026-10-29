@@ -61,6 +61,9 @@ _DOW_SHORT = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 _DOW_LONG = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 _MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 _SLOT_ORDER = {"breakfast": 0, "lunch": 1, "snack": 2, "dinner": 3}
+# _day_word names the year from here out (either way): pantry's default
+# shelf life is 180 days and still reads as a plain "Apr 26".
+_YEAR_SHOWN_FROM_DAYS = 183
 
 # Bought, not just added: these sources are a shop.
 _BOUGHT_SOURCES = ("grocery_checkoff", "scan_receipt")
@@ -101,6 +104,13 @@ def _day_word(d: date, today: date, long: bool = True) -> str:
         return "tomorrow"
     if -6 <= delta <= 6:
         return (_DOW_LONG if long else _DOW_SHORT)[d.weekday()]
+    # Half a year or more away, the year is part of the date (defect hunt
+    # 2026-10-29): a tin's default shelf life is 365 days, so every can
+    # ticked off on Shop read "bought today · best by Oct 28" on Oct 28 —
+    # today's own date, a year early. Nearer than that, "Apr 26" can only
+    # mean the one coming (or the one just gone).
+    if abs(delta) >= _YEAR_SHOWN_FROM_DAYS:
+        return f"{_MONTHS[d.month - 1]} {d.day}, {d.year}"
     return f"{_MONTHS[d.month - 1]} {d.day}"
 
 
