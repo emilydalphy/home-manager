@@ -364,33 +364,68 @@ def _counted_alike(have_unit: str | None, more_unit: str | None) -> tuple[str | 
     dozen bought off the list ("1 dozen") merged into "12 + 1 dozen", which
     nothing parses — and an unparseable amount reads as "all of it", so the
     next "we used 2 eggs" in chat deleted the whole row. "3 apples" less "1
-    apple" took nothing off. Only a plain noun (apples, lemons) or eggs is
-    bridged to a bare number. Never a measure ("2" against "2 lbs" says
-    nothing about how much), a garlic head (2 heads or 2 cloves?), or a
-    package or piece word: cooking "8" tortillas off "1 pack" would
-    otherwise have taken eight packs and deleted the row.
+    apple" took nothing off. Only eggs or a plain one-word noun (apples,
+    lemons; _plain_noun) is bridged to a bare number. Never a measure ("2"
+    against "2 lbs" says nothing about how much), a garlic head, or any
+    package or piece word, alone or in front of the food ("1 pack
+    tortillas"): cooking "8" off it would have taken eight packs and
+    deleted the row.
     """
     if have_unit == more_unit or _quantities._measurable_unit(have_unit) or _quantities._measurable_unit(more_unit):
         return have_unit, more_unit, None
     if have_unit is None or more_unit is None:
         unit = have_unit or more_unit
         group = _quantities._pack_group(unit)
-        if group is not None:
-            if "egg" in group:
-                return have_unit or "egg", more_unit or "egg", None
+        if group is not None and "egg" in group:
+            return have_unit or "egg", more_unit or "egg", None
+        if not _plain_noun(unit):
             return have_unit, more_unit, None
-        if _quantities._split_package_size(unit)[0] in _quantities._CONTAINER_UNIT_PLURALS:
-            # A package or a piece (can, bag, pack, slice, bunch): a recipe's
-            # bare "8" off "1 pack" of tortillas is eight tortillas, not
-            # eight packs — so a bare number is never read as one of these.
-            return have_unit, more_unit, None
-        # "3 lemons" less 2 is "1 lemon".
-        return unit, unit, (_noun_key(unit), unit) if _noun_key(unit) != unit else None
-    if (_quantities._pack_group(have_unit) is None and _quantities._pack_group(more_unit) is None
-            and _noun_key(have_unit) == _noun_key(more_unit)):
+        # "3 lemons" less 2 is "1 lemon"; "4" less "1 onion" is "3 onions".
+        singular = _noun_key(unit)
+        return unit, unit, (singular, unit if singular != unit else _noun_plural(unit))
+    if _plain_noun(have_unit) and _plain_noun(more_unit) and _noun_key(have_unit) == _noun_key(more_unit):
         singular, plural = sorted((have_unit, more_unit), key=len)
         return have_unit, have_unit, (singular, plural)
     return have_unit, more_unit, None
+
+
+# Words a bare number must never be read as, beyond the container list
+# and the measures: shorthand for a package or a piece.
+_NOT_A_NOUN = frozenset({
+    "pkg", "pkgs", "sleeve", "sleeves", "case", "cases", "pc", "pcs", "ct", "count",
+    "each", "ea", "serving", "servings", "portion", "portions", "dozen", "egg",
+})
+
+
+def _plain_noun(unit: str | None) -> bool:
+    """
+    An allow-list, not a deny-list (review, 2026-10-29): ONE alphabetic word
+    that is not a container or piece word, a measure, a garlic head/clove or
+    package shorthand — "apples", "lemons", "onion". "pack tortillas",
+    "head garlic", "cans tomatoes" are a package word in front of the food,
+    and reading a bare "8" as one of those deleted the row.
+    """
+    if not unit or not unit.isalpha():
+        return False
+    word = unit.lower()
+    key = _noun_key(word)
+    if word in _NOT_A_NOUN or key in _NOT_A_NOUN:
+        return False
+    if word in _quantities._CONTAINER_UNIT_PLURALS or key in _quantities._CONTAINER_UNIT_PLURALS \
+            or word in _quantities._CONTAINER_UNIT_PLURALS.values():
+        return False
+    if _quantities._measurable_unit(word) or _quantities._pack_group(word) is not None:
+        return False
+    return True
+
+
+def _noun_plural(word: str) -> str:
+    """'onion' -> 'onions', 'tomato' -> 'tomatoes', 'berry' -> 'berries'."""
+    if word.endswith(("ch", "sh", "x", "s")) or word in ("tomato", "potato", "mango"):
+        return word + "es"
+    if word.endswith("y") and len(word) > 2 and word[-2] not in "aeiou":
+        return word[:-1] + "ies"
+    return word + "s"
 
 
 def _counted_format(amount: float, unit: str | None, forms: tuple | None) -> str:

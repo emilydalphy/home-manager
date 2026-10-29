@@ -16,6 +16,8 @@ tick and the chat inventory tools on a throwaway database.
 """
 from __future__ import annotations
 
+import pytest
+
 from app import tools
 
 
@@ -58,6 +60,31 @@ def test_a_bare_number_against_a_measure_is_still_not_guessed():
     assert tools.inventory._try_subtract_quantity("1 pack", "8") == ("1 pack", False)
     # A plain noun is: a bare "2" off "3 lemons" is two lemons.
     assert tools.inventory._try_subtract_quantity("3 lemons", "2") == ("1 lemon", True)
+
+
+
+
+@pytest.mark.parametrize("have, used", [
+    ("1 pack tortillas", "8"), ("1 head garlic", "2"), ("1 stick butter", "2"),
+    ("1 bunch cilantro", "1"), ("1 bag spinach", "1"), ("1 loaf bread", "2"),
+    ("1 carton eggs", "6"), ("1 pkg", "8"), ("1 sleeve", "8"),
+    ("2 cans tomatoes", "1"), ("3 heads garlic", "1"), ("6 cloves garlic", "1"),
+])
+def test_a_bare_number_off_a_package_or_piece_is_left_alone(have, used):
+    # Review, 2026-10-29: a package word in front of the food ("1 pack
+    # tortillas") was read as a plain noun, and cooking "8" deleted the row.
+    assert tools.inventory._try_subtract_quantity(have, used) == (have, False)
+
+
+def test_a_cooked_bare_count_never_deletes_a_package_row():
+    tools.update_inventory("Tortillas", "add", quantity="1 pack tortillas", location="pantry")
+    tools.update_inventory("Tortillas", "use", quantity="8")
+    assert _qty("Tortillas") == "1 pack tortillas"
+
+
+def test_a_singular_noun_is_pluralised_when_the_count_grows():
+    assert tools.inventory._try_subtract_quantity("4", "1 onion") == ("3 onions", True)
+    assert tools.inventory._merged_quantity("1 tomato", "2") == "3 tomatoes"
 
 
 # ---------------------------------------------------------- 2. chat batch
