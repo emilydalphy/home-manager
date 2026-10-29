@@ -13,6 +13,8 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **"One dinner", not "one dinners"** (2026-10-29, defect hunt walking the week changeover; branch `overnight/hunt-rollover-1029`; tests `tests/test_ordinary_week_one_dinner.py`). A draft cooking one dish every night (a Thu–Wed stretch taking over an approved week's end) opened on Plan with "An ordinary week — one dinners across seven nights." `draft_opener._line_one` now says "dinner" for one, and one dinner on one night reads "An ordinary week — one dinner." Why: plural was hardcoded. The changeover itself (Sun 23:30 → Mon 00:30 Toronto/Vancouver/Tokyo with the server in UTC, DST weekend, a 10-day range ending Wednesday, a takeover) showed the right week on Today, Plan, Kitchen, Shop and the share link, with no doubled or lost lines.
+
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
   (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.
