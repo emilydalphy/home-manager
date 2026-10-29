@@ -8332,6 +8332,15 @@ def summarize_chat_actions(before_history: list, after_history: list) -> list[Ch
                     change=f"{item} and {more} more, already thawed" if more else f"{item}, already thawed",
                     tab=None, href="/memory", held=True,
                 )
+            # A batch inventory write names only the entries it changed: "we
+            # used up the milk and the saffron" with no saffron in the
+            # kitchen updated the milk alone, and the card read off the
+            # arguments said "Updated milk and saffron" (defect hunt
+            # 2026-10-29). An all-nothing batch was skipped above.
+            if name == "update_inventory_items" and isinstance(result, dict) \
+                    and isinstance(result.get("updated"), list):
+                args = {"items": [e.get("item") for e in result["updated"]
+                                  if isinstance(e, dict) and not agent._batch_entry_changed_nothing(e)]}
             change = _humanize_change(name, args, result) or _CATEGORY_FALLBACK_CHANGES[category]
             day_date, day_slot = _changed_day(category, args)
             if day_date:

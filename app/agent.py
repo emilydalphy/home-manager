@@ -12073,6 +12073,21 @@ _NOTHING_CHANGED_STATUSES = frozenset({"refused", "needs_confirmation", "nothing
 # 2026-10-24). Only a literal False counts: add_grocery_items' `added` is a
 # list, and an empty one is not this answer.
 _NOTHING_CHANGED_FLAGS = ("deleted", "added", "held")
+# The grocery list's bulk tidies answer with a count, and a count of 0 is
+# the same "nothing changed": "clear the list" on an empty list
+# (clear_grocery_list / clear_stale_grocery_items -> removed_count 0),
+# "tidy the duplicates" with none (consolidate_grocery_list ->
+# lines_merged_away 0), repair_grocery_quantities with nothing mangled
+# (fixed_count 0). Each drew "Grocery updated · Your list has changed" over
+# a list that had not moved (defect hunt 2026-10-29). Only these three
+# names, and only a literal 0 -- no other write answers with them.
+_NOTHING_CHANGED_ZERO_COUNTS = ("removed_count", "lines_merged_away", "fixed_count")
+
+
+def _batch_entry_changed_nothing(entry) -> bool:
+    """One entry of update_inventory_items' `updated` list that wrote nothing:
+    a name the kitchen doesn't hold (found false) or a refused shelf (error)."""
+    return isinstance(entry, dict) and (entry.get("found") is False or "error" in entry)
 
 
 def is_read_only_tool(name: str) -> bool:
@@ -12093,10 +12108,21 @@ def result_changed_nothing(content) -> bool:
         # unless it made the fact hard, which is a change ("added" is False
         # either way, so this answers before _NOTHING_CHANGED_FLAGS).
         return not result.get("made_hard")
+    # update_inventory_items answers {"updated": [one update_inventory
+    # answer per name]}. update_inventory alone saying found false already
+    # drew no card, but the batch wrapped the same answer in a list, so "we
+    # used up the saffron and the truffle oil" with neither in the kitchen
+    # drew "Kitchen updated · Updated saffron and truffle oil" (defect hunt
+    # 2026-10-29). Every entry wrote nothing -> the batch wrote nothing.
+    # (Other writes' `updated` is a bool or a count, never a list.)
+    batch = result.get("updated")
+    if isinstance(batch, list) and all(_batch_entry_changed_nothing(e) for e in batch):
+        return True
     return (
         result.get("status") in _NOTHING_CHANGED_STATUSES
         or result.get("found") is False
         or any(result.get(flag) is False for flag in _NOTHING_CHANGED_FLAGS)
+        or any(type(result.get(k)) is int and result.get(k) == 0 for k in _NOTHING_CHANGED_ZERO_COUNTS)
     )
 
 _CHANGE_VERBS = (
