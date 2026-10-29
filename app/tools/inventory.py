@@ -344,8 +344,10 @@ def step_inventory_expiration(item_id: int, delta_days: int) -> dict:
 def _noun_key(unit: str) -> str:
     """'apples' / 'apple', 'tomatoes' / 'tomato' -> one key."""
     u = unit.strip().lower()
-    if u.endswith("oes"):
+    if u.endswith(("oes", "ches", "shes", "xes")):
         return u[:-2]
+    if u.endswith("ies") and len(u) > 4:
+        return u[:-3] + "y"
     return u[:-1] if u.endswith("s") and not u.endswith("ss") else u
 
 
@@ -362,21 +364,28 @@ def _counted_alike(have_unit: str | None, more_unit: str | None) -> tuple[str | 
     dozen bought off the list ("1 dozen") merged into "12 + 1 dozen", which
     nothing parses — and an unparseable amount reads as "all of it", so the
     next "we used 2 eggs" in chat deleted the whole row. "3 apples" less "1
-    apple" took nothing off. Measured units (lb, cup, g...) are never
-    bridged to a bare number: "2" against "2 lbs" says nothing about how
-    much. A garlic "head" against a bare count is not either: 2 could be
-    heads or cloves.
+    apple" took nothing off. Only a plain noun (apples, lemons) or eggs is
+    bridged to a bare number. Never a measure ("2" against "2 lbs" says
+    nothing about how much), a garlic head (2 heads or 2 cloves?), or a
+    package or piece word: cooking "8" tortillas off "1 pack" would
+    otherwise have taken eight packs and deleted the row.
     """
     if have_unit == more_unit or _quantities._measurable_unit(have_unit) or _quantities._measurable_unit(more_unit):
         return have_unit, more_unit, None
     if have_unit is None or more_unit is None:
         unit = have_unit or more_unit
         group = _quantities._pack_group(unit)
-        if group is None:
-            return unit, unit, None
-        if "egg" in group:
-            return have_unit or "egg", more_unit or "egg", None
-        return have_unit, more_unit, None
+        if group is not None:
+            if "egg" in group:
+                return have_unit or "egg", more_unit or "egg", None
+            return have_unit, more_unit, None
+        if _quantities._split_package_size(unit)[0] in _quantities._CONTAINER_UNIT_PLURALS:
+            # A package or a piece (can, bag, pack, slice, bunch): a recipe's
+            # bare "8" off "1 pack" of tortillas is eight tortillas, not
+            # eight packs — so a bare number is never read as one of these.
+            return have_unit, more_unit, None
+        # "3 lemons" less 2 is "1 lemon".
+        return unit, unit, (_noun_key(unit), unit) if _noun_key(unit) != unit else None
     if (_quantities._pack_group(have_unit) is None and _quantities._pack_group(more_unit) is None
             and _noun_key(have_unit) == _noun_key(more_unit)):
         singular, plural = sorted((have_unit, more_unit), key=len)

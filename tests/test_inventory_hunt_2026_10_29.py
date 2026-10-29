@@ -54,6 +54,10 @@ def test_a_bare_number_against_a_measure_is_still_not_guessed():
     assert tools.inventory._try_subtract_quantity("2 lbs", "1") == ("2 lbs", False)
     assert tools.inventory._try_subtract_quantity("1 head", "2") == ("1 head", False)
     assert tools.inventory._merged_quantity("2 lbs", "2") == "2 lbs + 2"
+    # Nor a package: a recipe's bare "8" tortillas is not eight packs.
+    assert tools.inventory._try_subtract_quantity("1 pack", "8") == ("1 pack", False)
+    # A plain noun is: a bare "2" off "3 lemons" is two lemons.
+    assert tools.inventory._try_subtract_quantity("3 lemons", "2") == ("1 lemon", True)
 
 
 # ---------------------------------------------------------- 2. chat batch
