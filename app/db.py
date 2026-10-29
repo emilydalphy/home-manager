@@ -984,6 +984,10 @@ _MIGRATIONS = [
     # finding 7, 2026-10-27). NULL when the row was not frozen by it, and
     # cleared by any move out of the freezer.
     ("inventory_items", "freeze_undo_json", "TEXT"),
+    # When the household replaced its weekly-plan share link (2026-10-29,
+    # tools.reset_share_link). NULL = the live link. A revoked row is kept,
+    # not deleted, so the old token can never be re-issued and stays a 404.
+    ("share_links", "revoked_at", "TEXT"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people
