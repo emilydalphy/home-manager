@@ -60,9 +60,17 @@ def test_the_household_can_ask_for_a_dish_already_on_the_week(week):
     assert _names(out) == ["Chili", "Fish Tacos"]
 
 
-def test_the_dish_being_swapped_away_on_another_night_does_not_block_it(week):
+def test_the_rest_of_the_week_blocks_a_repeat_but_the_swapped_dish_is_not_offered_back(week):
     # Swapping the Chili night: Pork Chops (DAY1) is the rest of the week,
     # and Chili itself is never offered back (it's `avoid`).
     ask = _asker(_opt("Pork Chops", protein="Pork chops"), _opt("Fish Tacos"))
     out = tools.swap_options(week, _entry_id(week, DAY2), asker=ask)
+    assert _names(out) == ["Fish Tacos"]
+
+
+def test_a_request_that_rules_the_dish_out_does_not_bring_it_back(week):
+    # Review, 2026-10-29: "anything but chili" contains "chili", and the
+    # substring check let the week's Chili back onto the sheet.
+    ask = _asker(_opt("Chili", protein="Ground beef"), _opt("Fish Tacos"))
+    out = tools.swap_options(week, _entry_id(week, DAY1), asker=ask, request="anything but chili")
     assert _names(out) == ["Fish Tacos"]

@@ -42,6 +42,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import threading
 import time
 
@@ -361,6 +362,18 @@ def _rest_of_week(weekly_plan_id: int | None, days: list[dict]) -> set[str]:
     return out
 
 
+_RULED_OUT_RE = re.compile(r"\b(?:but|not|no|except|without|other than|instead of)\s+(?:\w+\s+){0,2}$")
+
+
+def _asks_for(asked: str, name: str) -> bool:
+    """Whether the household's typed request asks for this dish by name —
+    "chili again please", never "anything but chili" (review, 2026-10-29:
+    a plain substring check let a dish the request ruled out back onto the
+    sheet). Whole words only, and not just after "but / not / no…"."""
+    m = re.search(r"\b" + re.escape(name.lower()) + r"\b", asked)
+    return bool(m) and not _RULED_OUT_RE.search(asked[:m.start()])
+
+
 def _gated(entry: dict, raw: list, avoid: list[str], group: list[dict] | None = None,
            weekly_plan_id: int | None = None, request: str = "") -> list[dict] | None:
     """The picks the household may actually have, in the order the model
@@ -404,7 +417,7 @@ def _gated(entry: dict, raw: list, avoid: list[str], group: list[dict] | None = 
                 return None
         if not why and weekly_plan_id:
             why = _swap.cap_gate(weekly_plan_id, pick, days)
-        if not why and name.lower() in week and name.lower() not in asked:
+        if not why and name.lower() in week and not _asks_for(asked, name):
             why = "is already on the week"
         if why:
             logger.warning("swap_options dropped %r: %s", name, why)
