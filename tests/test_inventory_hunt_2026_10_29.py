@@ -119,3 +119,17 @@ def test_an_iso_date_is_kept_and_a_bad_one_is_a_400_on_the_form(signed_in):
     assert _qty("Cream") is None
     # A use never needs a date, so a stray one doesn't block it.
     assert tools.update_inventory("Yogurt", "use", expiration_date="whenever").get("removed") is True
+
+
+# ------------------------------------------------- 3. best-before stepper
+
+def test_a_best_before_step_past_any_date_is_a_400_and_changes_nothing(signed_in):
+    tools.update_inventory("Milk", "add", quantity="1 l", expiration_date="2026-11-03", location="fridge")
+    item_id = [r for r in tools.get_inventory() if r["item"] == "Milk"][0]["id"]
+    for delta in (10 ** 7, -(10 ** 7), 10 ** 12):
+        res = signed_in.post(f"/api/inventory/{item_id}/expiration", json={"delta_days": delta})
+        assert res.status_code == 400, res.text
+        assert "best-before" in res.json()["detail"]
+    assert [r for r in tools.get_inventory() if r["item"] == "Milk"][0]["expiration_date"] == "2026-11-03"
+    res = signed_in.post(f"/api/inventory/{item_id}/expiration", json={"delta_days": 1})
+    assert res.status_code == 200 and res.json()["expiration_date"] == "2026-11-04"

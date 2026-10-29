@@ -313,6 +313,10 @@ def unfreeze_item(undo: dict) -> dict:
     return {"item_id": item_id, "item": row["item"], "undone": True, "location": back_to}
 
 
+class InvalidDateStep(ValueError):
+    """step_inventory_expiration past what a date can hold — a 400."""
+
+
 def step_inventory_expiration(item_id: int, delta_days: int) -> dict:
     """Shift one inventory item's best-before date by delta_days (one tap = one day). Starts from today if the item has no date set yet."""
     conn = get_conn()
@@ -325,7 +329,12 @@ def step_inventory_expiration(item_id: int, delta_days: int) -> dict:
         base_date = date.fromisoformat(base) if base else _today()
     except ValueError:
         base_date = _today()
-    new_date = (base_date + timedelta(days=delta_days)).isoformat()
+    try:
+        new_date = (base_date + timedelta(days=delta_days)).isoformat()
+    except (OverflowError, ValueError):
+        # A step past year 9999 (or before year 1) was a 500 (2026-10-29).
+        conn.close()
+        raise InvalidDateStep("That's further than a best-before date can go.")
     conn.execute(
         "UPDATE inventory_items SET expiration_date = ?, updated_at = datetime('now') "
         "WHERE id = ? AND household_id = ?",
