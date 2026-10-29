@@ -911,6 +911,45 @@ def scan_source(kind: str, location: str | None = None) -> str:
     return known
 
 
+def _written_quantity(quantity) -> str:
+    """
+    A chat tool's quantity as the text a row keeps. The batch tool's
+    entries are free-form objects, and a model writes {"quantity": 6} as
+    often as "6": the number crashed the merge and the subtract
+    ('int' object has no attribute 'strip') partway through a batch, after
+    the entries before it were written (defect hunt, 2026-10-29).
+    """
+    if quantity is None:
+        return ""
+    if isinstance(quantity, bool):
+        raise ValueError("That amount doesn't look right.")
+    if isinstance(quantity, (int, float)):
+        return _quantities._plain_number(float(quantity))
+    if not isinstance(quantity, str):
+        raise ValueError("That amount doesn't look right.")
+    return quantity.strip()
+
+
+def _written_date(expiration_date) -> str | None:
+    """
+    A best-before date as a row keeps it: YYYY-MM-DD, or None for none.
+    "Friday" or "11/03" was stored as given (defect hunt, 2026-10-29), and
+    every reader of the column compares it as an ISO string or parses it —
+    so the yogurt never came up as going off, and the Kitchen dropped its
+    "best by" without a word. A bad date is refused rather than guessed at,
+    so the assistant hears it and can ask or resend.
+    """
+    if expiration_date is None:
+        return None
+    text = str(expiration_date).strip()
+    if not text:
+        return None
+    try:
+        return date.fromisoformat(text[:10]).isoformat()
+    except ValueError:
+        raise ValueError(f"'{text}' isn't a date I can read — give the best-before date as YYYY-MM-DD.")
+
+
 def update_inventory(
     item: str,
     action: str,
@@ -963,6 +1002,9 @@ def update_inventory(
     item = (item or "").strip()
     if not item:
         raise ValueError("Name the item to keep track of.")
+    quantity = _written_quantity(quantity)
+    if action in ("add", "set"):
+        expiration_date = _written_date(expiration_date)
     if location is not None and location.strip():
         location = _normalised_location(location)
     else:
@@ -1059,7 +1101,7 @@ def update_inventory_items(items: list, action: str = "add", source: str = "chat
     results = []
     for raw in items:
         if isinstance(raw, dict):
-            name = (raw.get("item") or "").strip()
+            name = raw.get("item").strip() if isinstance(raw.get("item"), str) else ""
             act = raw.get("action") or action
             qty = raw.get("quantity", "")
             exp = raw.get("expiration_date")
@@ -1067,7 +1109,7 @@ def update_inventory_items(items: list, action: str = "add", source: str = "chat
             loc = raw.get("location")
             src = raw.get("source") or source
         else:
-            name = (raw or "").strip()
+            name = raw.strip() if isinstance(raw, str) else ""
             act = action
             qty = ""
             exp = None
@@ -1079,10 +1121,11 @@ def update_inventory_items(items: list, action: str = "add", source: str = "chat
         try:
             results.append(update_inventory(name, act, quantity=qty, expiration_date=exp,
                                             category=cat, location=loc, source=src))
-        except InvalidInventoryLocation as e:
-            # One entry's bad shelf is that entry's answer, not the batch's:
-            # raising here would leave the entries before it written, and a
-            # retried batch would add those twice.
+        except ValueError as e:
+            # One entry's bad shelf, action, amount or date is that entry's
+            # answer, not the batch's: raising here would leave the entries
+            # before it written, and a retried batch would add those twice
+            # ("use" for "used" did exactly that, 2026-10-29).
             results.append({"item": name, "error": str(e)})
     return {"updated": results}
 

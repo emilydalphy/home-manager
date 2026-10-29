@@ -54,3 +54,37 @@ def test_a_bare_number_against_a_measure_is_still_not_guessed():
     assert tools.inventory._try_subtract_quantity("2 lbs", "1") == ("2 lbs", False)
     assert tools.inventory._try_subtract_quantity("1 head", "2") == ("1 head", False)
     assert tools.inventory._merged_quantity("2 lbs", "2") == "2 lbs + 2"
+
+
+# ---------------------------------------------------------- 2. chat batch
+
+def test_a_numeric_quantity_in_the_batch_is_read_as_its_number():
+    tools.update_inventory_items([{"item": "Eggs", "quantity": 6, "location": "fridge"}])
+    tools.update_inventory_items([{"item": "Eggs", "quantity": 6, "location": "fridge"}])
+    assert _qty("Eggs") == "12"
+    out = tools.update_inventory_items([{"item": "Eggs", "action": "use", "quantity": 2}])
+    assert out["updated"][0]["quantity"] == "10"
+
+
+def test_one_bad_entry_is_that_entrys_answer_and_the_rest_are_written_once():
+    out = tools.update_inventory_items([
+        {"item": "Rice", "quantity": "2 cups"},
+        {"item": "Milk", "action": "used"},
+        {"item": "Yogurt", "quantity": "1 tub", "expiration_date": "Friday"},
+        {"item": "Butter", "quantity": True},
+        7,
+    ])
+    errors = [r for r in out["updated"] if "error" in r]
+    assert [r["item"] for r in errors] == ["Milk", "Yogurt", "Butter"]
+    assert _qty("Rice") == "2 cups"
+    assert _qty("Yogurt") is None and _qty("Butter") is None
+
+
+def test_an_iso_date_is_kept_and_a_bad_one_is_a_400_on_the_form(signed_in):
+    tools.update_inventory("Yogurt", "add", quantity="1 tub", expiration_date="2026-11-03T00:00:00", location="fridge")
+    assert [r for r in tools.get_inventory() if r["item"] == "Yogurt"][0]["expiration_date"] == "2026-11-03"
+    res = signed_in.post("/api/inventory/update", json={"item": "Cream", "action": "add", "expiration_date": "next week"})
+    assert res.status_code == 400
+    assert _qty("Cream") is None
+    # A use never needs a date, so a stray one doesn't block it.
+    assert tools.update_inventory("Yogurt", "use", expiration_date="whenever").get("removed") is True
