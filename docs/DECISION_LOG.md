@@ -13,6 +13,16 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Two phones on one list: an add, a re-tick and a staple answer land whole** (2026-10-29,
+  defect hunt over HTTP with two signed-in adults; branch `overnight/hunt-two-phones-1029b`; tests
+  `tests/test_two_phones_one_list.py`). `add_grocery_item` with no caller connection now takes
+  BEGIN IMMEDIATE before the merge's read (an add racing a tick summed onto the just-BOUGHT line, the
+  extra carton on nobody's list — 26/40 pairs); `record_/unrecord_staple_purchase` re-read the line
+  under BEGIN IMMEDIATE and act on its status as it stands (a put-back's follow-up landing after the
+  re-tick's left a bought staple with no purchase — 5/40); `decide_staple_line`, `remove_staple` and
+  `pause_staple` read under the lock in `db.write()` (a Remove between the read and the event insert
+  was a FOREIGN KEY 500 whose leaked connection 500'd the next list read and add "database is locked").
+  Why: each wrote off a read the other phone could change underneath it.
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
   (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.
