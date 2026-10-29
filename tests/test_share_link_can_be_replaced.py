@@ -110,3 +110,34 @@ def test_the_chat_tool_is_wired():
     assert "reset_share_link" in names
     assert agent.TOOL_FUNCTIONS["reset_share_link"] is tools.reset_share_link
     assert "reset_share_link" in agent.SYSTEM_PROMPT
+
+
+def test_two_replacements_at_once_leave_one_live_link(monkeypatch):
+    # Review, 2026-10-29: as revoke-then-create, two adults tapping Replace
+    # together both found no live row and both inserted — two live links.
+    import itertools
+    import threading
+    from app.tools import sharing
+
+    tools.get_or_create_share_link()
+    gate = threading.Barrier(2, timeout=10)
+    counter = itertools.count()
+
+    def token(_n):
+        gate.wait()  # both calls are past the start before either writes
+        return f"race-token-{next(counter)}"
+
+    monkeypatch.setattr(sharing.secrets, "token_urlsafe", token)
+    threads = [threading.Thread(target=tools.reset_share_link) for _ in range(2)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join(15)
+    conn = get_conn()
+    live = conn.execute(
+        "SELECT token FROM share_links WHERE household_id = 1 AND revoked_at IS NULL"
+    ).fetchall()
+    conn.close()
+    assert len(live) == 1
+    monkeypatch.undo()
+    assert tools.get_or_create_share_link()["token"] == live[0]["token"]

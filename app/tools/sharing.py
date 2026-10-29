@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import json
 import secrets
-from ..db import get_conn
+from ..db import get_conn, write
 from ._shared import find_member_row, household_display_name, household_id, use_household, _absolute_url
 from . import cooker as _cooker
 from . import household as _household
@@ -52,18 +52,24 @@ def reset_share_link() -> dict:
     never come back and /api/share/<old> answers 404 as for a garbage
     token. Only the signed-in household's rows are touched.
     """
-    conn = get_conn()
-    try:
+    # Revoke and issue in ONE immediate transaction (review, 2026-10-29):
+    # as two steps, two adults tapping Replace at once both revoked, both
+    # found no live row, and both inserted — two live links, one of which
+    # the app no longer hands out.
+    token = secrets.token_urlsafe(16)
+    with write() as conn:
+        conn.execute("BEGIN IMMEDIATE")
         cur = conn.execute(
             "UPDATE share_links SET revoked_at = datetime('now') "
             "WHERE household_id = ? AND revoked_at IS NULL",
             (household_id(),),
         )
         had_link = cur.rowcount > 0
-        conn.commit()
-    finally:
-        conn.close()
-    fresh = get_or_create_share_link()
+        conn.execute(
+            "INSERT INTO share_links (household_id, token) VALUES (?, ?)",
+            (household_id(), token),
+        )
+    fresh = {"token": token, "link": _absolute_url(f"/share/{token}")}
     if had_link:
         message = f"Done. The old link doesn't work any more — here's the new one: {fresh['link']}"
     else:
