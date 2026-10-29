@@ -2981,6 +2981,32 @@ _PER_PERSON_COUNT_CEILING = (
 # _counted_pack_share owns that question.
 _PER_PERSON_COUNT_UNITS = frozenset({None, "each", "ct", "count", "pc", "pcs", "piece", "pieces"})
 
+# A count of PORTIONS rather than of a whole thing the dish is built from:
+# a salmon fillet, a chicken breast, a pork chop, a burger bun, a tortilla
+# is one per plate (or two), so a recipe for two that says "2 salmon
+# fillets" eaten by six needs six. count_scale_factor's cap exists for the
+# lemon that flavours a salad for two or for three; applied to a fillet it
+# bought 3 for a table of 6 while the Cook screen (scale_recipe) said 6
+# (defect hunt 2026-10-29). Matched on the HEAD noun — the last word of the
+# name — so "steak sauce" and "chopped" are not portions. Deliberately
+# short: a noun missing here keeps the cap, which is where every count
+# was before.
+_PORTION_COUNT_NOUNS = frozenset({
+    "fillet", "fillets", "filet", "filets", "breast", "breasts", "thigh", "thighs",
+    "drumstick", "drumsticks", "chop", "chops", "steak", "steaks", "cutlet", "cutlets",
+    "patty", "patties", "burger", "burgers", "sausage", "sausages", "bratwurst",
+    "bratwursts", "bun", "buns", "tortilla", "tortillas", "pita", "pitas", "naan",
+    "naans", "flatbread", "flatbreads", "portion", "portions", "serving", "servings",
+})
+
+
+def is_portion_count(item: str) -> bool:
+    """True when a bare count of `item` counts plates' worth (fillets,
+    breasts, chops, buns, tortillas…), so it scales with the eaters like any
+    per-portion amount instead of taking count_scale_factor's cap."""
+    words = re.findall(r"[a-z]+", _clean_item(item))
+    return bool(words) and words[-1] in _PORTION_COUNT_NOUNS
+
 # A name that says a small kind outright, for the nouns
 # _PRODUCE_COUNT_PER_SERVING does not cover. For the six it does cover,
 # _produce_class answers this properly (it knows which words mean the
@@ -5841,7 +5867,10 @@ def _add_recipe_ingredients_for_entries(
         if bare_count and not _households_own_amount(ing):
             core = plausible_count_quantity(ing["item"], core, default_servings)
         parsed_core = _quantities._parse_quantity(core)
-        factor_for_entry = count_scale_for_entry if bare_count else scale_for_entry
+        # A portion (fillet, chop, bun) is a count that DOES scale with the
+        # eaters — the cap is for the whole things a dish is built from.
+        capped_count = bare_count and not is_portion_count(ing["item"])
+        factor_for_entry = count_scale_for_entry if capped_count else scale_for_entry
         # Every meal in this group added together — the same sum the
         # buffer arrives at one share at a time (aromatic ceiling and all,
         # _capped_share), so the kitchen is asked about the week's amount

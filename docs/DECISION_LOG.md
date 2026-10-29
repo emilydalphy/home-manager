@@ -13,6 +13,7 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A fillet each is bought for everyone at the table** (2026-10-29, defect hunt; branch `overnight/hunt-guests-1029b`; tests `tests/test_portion_counts_scale.py`). A recipe for two saying "2 salmon fillets" for 4 home + 2 guests bought 3 while Cook said 6: bare counts took `count_scale_factor`'s cap, Cook's `scale_recipe` scaled per portion. `recipes.is_portion_count` (head noun fillet/breast/thigh/chop/steak/cutlet/patty/burger/sausage/bun/tortilla/pita/naan/flatbread/portion/serving) now takes `servings_scale_factor` in the ingest and the defrost move. Why: the 2026-10-04 cap is for the lemon that flavours a dish; a fillet is one a plate. Lemons, tomatoes, apples keep the cap (Emily's call there is untouched).
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
   (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.

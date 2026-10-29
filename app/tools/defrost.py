@@ -298,7 +298,7 @@ def _night_scale(ing: dict, meal: dict, default_servings) -> float:
         return 1.0
     scale = (
         _attendance.count_scale_factor
-        if parsed[1] in _recipes._PER_PERSON_COUNT_UNITS
+        if parsed[1] in _recipes._PER_PERSON_COUNT_UNITS and not _recipes.is_portion_count(ing.get("item") or "")
         else _attendance.servings_scale_factor
     )
     return scale(meal["date"], meal.get("slot") or "dinner", default_servings)
