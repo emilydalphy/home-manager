@@ -69,3 +69,27 @@ def test_a_lemon_and_a_head_noun_that_is_not_a_portion_keep_the_cap():
     from app.tools import recipes
     assert recipes.is_portion_count("Boneless chicken breasts, halved")
     assert not recipes.is_portion_count("chopped tomatoes")
+
+
+def test_portion_names_as_recipes_really_write_them_scale_together():
+    """Review, 2026-10-29: a comma, a bracket or a two-word bread hid the
+    portion, so one dinner bought 4 buns and 2 hot dogs."""
+    for n in ("Alex", "Sam", "Rae", "Jo"):
+        tools.add_member(n)
+    tools.add_recipe("Cookout", default_servings=2, ingredients=[
+        {"item": "Bone-in, skin-on chicken thighs", "qty": "2"},
+        {"item": "salmon fillet (6 oz)", "qty": "2"},
+        {"item": "pita bread", "qty": "2"},
+        {"item": "hot dogs", "qty": "2"},
+        {"item": "hot dog buns", "qty": "2"},
+        {"item": "tortilla chips", "qty": "1"},
+    ])
+    plan_id = tools.create_weekly_plan(_monday().isoformat())["weekly_plan_id"]
+    tools.plan_meal(WED, "Cookout", slot="dinner", weekly_plan_id=plan_id)
+    tools.approve_weekly_plan(plan_id, "Alex")
+    lines = {k.lower(): v for k, v in _list().items()}
+    for item in ("bone-in, skin-on chicken thighs", "salmon fillet (6 oz)", "pita bread",
+                 "hot dogs", "hot dog buns"):
+        match = next(v for k, v in lines.items() if k.startswith(item.split(" (")[0].split(",")[0]))
+        assert match == "4", (item, match)
+    assert next(v for k, v in lines.items() if k.startswith("tortilla chips")) == "1"

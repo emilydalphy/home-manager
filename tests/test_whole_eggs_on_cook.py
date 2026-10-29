@@ -41,3 +41,11 @@ def test_one_serving_still_gets_an_egg_and_other_counts_keep_their_fractions():
     assert q8["red onion"] == "1.5", "an onion can be halved — only eggs changed"
     assert q8["egg noodles"] == "1.5"
     assert not recipes._is_whole_egg("eggplant")
+
+
+def test_half_an_egg_over_rounds_up_not_to_even():
+    tools.add_recipe("One Egg", default_servings=2, ingredients=[{"item": "eggs", "qty": "1"}],
+                     instructions=["Beat 1 egg."])
+    scaled = tools.scale_recipe("One Egg", 5)
+    assert _qty(scaled)["eggs"] == "3", "2.5 eggs is 3 — Python's round() said 2"
+    assert scaled["scaled_instructions"] == ["Beat 3 eggs."]

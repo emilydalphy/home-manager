@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import re
 import unicodedata
 from fractions import Fraction
@@ -1166,12 +1167,11 @@ def scale_recipe(recipe_name: str, target_servings: int) -> dict:
             # butter cut to a fraction is tablespoons, a clove stays whole,
             # a "1/4 bunch" stays a part, a cup/tbsp/tsp amount is said in
             # the easiest measure ("2 tbsp + 2 tsp").
-            if unit is None and _is_whole_egg(ing.get("item")) and abs(amount - round(amount)) < 1e-9:
+            if unit is None and _is_whole_egg(ing.get("item")):
                 # An egg only comes whole: "2 eggs" for 8 of a 6-serving
                 # bake read "2 ⅔ eggs" on Cook (defect hunt, 2026-10-29).
-                # The clove rule — nearest whole one, never none — as a
-                # count range ("2-3 eggs") already got.
-                terms = [(_step_scaled(amount, ratio, "clove")[0], None)]
+                # Nearest whole one, half up, never none (_whole_eggs).
+                terms = [(_whole_eggs(amount, ratio), None)]
             else:
                 terms = _scaled_measure(amount, ratio, unit, keep_spoons=keep_spoons)
             words = _qty_words_after_amount(qty_text, parsed)
@@ -1738,9 +1738,12 @@ def scale_steps(steps: list, ratio: float, ingredient_items: list[str] | None = 
             # the same rule scale_recipe gives "2 cloves garlic".
             whole_only = "clove" if (noun_m.group("tail") or "").strip().lower().startswith(("clove", "slice", "sprig")) else None
             if _is_whole_egg(noun_m.group("noun") + (noun_m.group("tail") or "")):
-                whole_only = "clove"   # "2 eggs" is never "2 ⅔ eggs" (scale_recipe's rule)
-            new_a = _step_scaled(a, ratio, whole_only)[0]
-            new_b = _step_scaled(b, ratio, whole_only)[0] if b is not None else None
+                # "2 eggs" is never "2 ⅔ eggs" (scale_recipe's rule)
+                new_a = _whole_eggs(a, ratio)
+                new_b = _whole_eggs(b, ratio) if b is not None else None
+            else:
+                new_a = _step_scaled(a, ratio, whole_only)[0]
+                new_b = _step_scaled(b, ratio, whole_only)[0] if b is not None else None
             biggest = new_b if new_b is not None else new_a
             amount = _step_amount_text(new_a)
             if new_b is not None and _step_amount_text(new_b) != amount:
@@ -1851,6 +1854,15 @@ def _is_whole_egg(item) -> bool:
     yolks", "egg whites" — never "egg noodles" or "eggplant"."""
     words = re.findall(r"[a-z]+", _clean_item(str(item or "")))
     return bool(words) and ("egg" in words or "eggs" in words) and words[-1] in _EGG_HEAD_NOUNS
+
+
+def _whole_eggs(amount: float, ratio: float) -> float:
+    """A whole-written egg count scaled: nearest whole egg, half UP (2.5 is
+    3, not Python round()'s 2), never none. A part the recipe wrote ("½
+    egg") scales as plain arithmetic."""
+    if abs(amount - round(amount)) > 1e-9:
+        return amount * ratio
+    return max(1.0, float(math.floor(amount * ratio + 0.5 + 1e-9)))
 
 # Freeform amounts that are honest cooking instructions rather than
 # vagueness — "salt to taste" is how recipes are written, and
@@ -3013,17 +3025,35 @@ _PORTION_COUNT_NOUNS = frozenset({
     "fillet", "fillets", "filet", "filets", "breast", "breasts", "thigh", "thighs",
     "drumstick", "drumsticks", "chop", "chops", "steak", "steaks", "cutlet", "cutlets",
     "patty", "patties", "burger", "burgers", "sausage", "sausages", "bratwurst",
-    "bratwursts", "bun", "buns", "tortilla", "tortillas", "pita", "pitas", "naan",
-    "naans", "flatbread", "flatbreads", "portion", "portions", "serving", "servings",
+    "bratwursts", "link", "links", "bun", "buns", "roll", "rolls", "tortilla", "tortillas",
+    "pita", "pitas", "naan", "naans", "flatbread", "flatbreads", "portion", "portions",
+    "serving", "servings",
+})
+# Two-word heads: "pita bread" and "naan bread" are a pita and a naan each,
+# where "bread" alone is a loaf; "hot dogs" and "taco shells" are one a plate.
+_PORTION_COUNT_PAIRS = frozenset({
+    ("pita", "bread"), ("pitta", "bread"), ("naan", "bread"), ("hot", "dog"), ("hot", "dogs"),
+    ("taco", "shell"), ("taco", "shells"),
 })
 
 
 def is_portion_count(item: str) -> bool:
     """True when a bare count of `item` counts plates' worth (fillets,
     breasts, chops, buns, tortillas…), so it scales with the eaters like any
-    per-portion amount instead of taking count_scale_factor's cap."""
-    words = re.findall(r"[a-z]+", _clean_item(item))
-    return bool(words) and words[-1] in _PORTION_COUNT_NOUNS
+    per-portion amount instead of taking count_scale_factor's cap.
+
+    Read on the head noun of EVERY comma-separated part with brackets
+    dropped: "Bone-in, skin-on chicken thighs" and "salmon fillet (6 oz)"
+    are portions (review, 2026-10-29), "steak sauce", "tortilla chips" and
+    "burger sauce" are not."""
+    text = re.sub(r"\([^)]*\)", " ", str(item or "").lower())
+    for part in text.split(","):
+        words = re.findall(r"[a-z]+", part)
+        if not words:
+            continue
+        if words[-1] in _PORTION_COUNT_NOUNS or tuple(words[-2:]) in _PORTION_COUNT_PAIRS:
+            return True
+    return False
 
 # A name that says a small kind outright, for the nouns
 # _PRODUCE_COUNT_PER_SERVING does not cover. For the six it does cover,
