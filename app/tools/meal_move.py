@@ -692,7 +692,8 @@ def move_options(weekly_plan_id: int, entry_id: int) -> dict:
 MOVE_TOKEN_KEY = "move"
 
 
-def _thaw_notes(thaw: list[dict], today: str, also: list[str] = ()) -> list[str]:
+def _thaw_notes(thaw: list[dict], today: str, also: list[str] = (),
+                meals: dict | None = None) -> list[str]:
     """One line per fridge move that now has to happen EARLIER than it
     did — the only thaw change worth a word (a later one simply shows up
     on its day). "Move the chicken thighs to the fridge today."
@@ -709,6 +710,9 @@ def _thaw_notes(thaw: list[dict], today: str, also: list[str] = ()) -> list[str]
     was a reheat has its own ingredients now) has no before-and-after for
     the diff above to see. Deduplicated, since the ordinary case is the
     same sentence from both halves.
+
+    `meals` is {entry id: (its new date, slot)}, so a meal moved onto TODAY
+    is told it is too late to thaw rather than "… now." (thaw_move_sentence).
     """
     from . import defrost as _defrost  # lazy: it imports weekly_plan, which imports this
 
@@ -716,7 +720,9 @@ def _thaw_notes(thaw: list[dict], today: str, also: list[str] = ()) -> list[str]
     for t in thaw:
         if not t.get("to") or not t.get("from") or t["to"] >= t["from"] or t.get("status") == "done":
             continue
-        note = _defrost.thaw_move_sentence(t.get("description") or "", t["to"], today)
+        meal_date, slot = (meals or {}).get(t.get("entry_id"), (None, None))
+        note = _defrost.thaw_move_sentence(t.get("description") or "", t["to"], today,
+                                           meal_date=meal_date, slot=slot)
         if note and note not in notes:
             notes.append(note)
     for note in also or ():
@@ -825,7 +831,8 @@ def move_meal(weekly_plan_id: int, entry_id: int, to_date: str,
         "said": _said(snap, placement, planned["members"], entry_id),
         "moved": moved,
         "move_id": move_id,
-        "thaw_notes": _thaw_notes(done["thaw"], today, still_owed),
+        "thaw_notes": _thaw_notes(done["thaw"], today, still_owed,
+                                  meals={i: (d, by_id[i]["slot"]) for i, d in placement.items()}),
         "prep_tasks_moved": done["prep_moved"],
         "days": _weekly_plan._menu_days_for(weekly_plan_id, dates),
         "can_undo": True,
