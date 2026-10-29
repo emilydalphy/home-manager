@@ -103,8 +103,16 @@ def _cap(text: str) -> str:
 
 def _made_ahead(chains: dict, source_id: int) -> bool:
     """Is this cook's chain portions the household chose to cook ahead
-    (cook_ahead.set_cook_ahead), rather than a dinner's leftovers?"""
-    return bool((chains["sources"].get(source_id) or {}).get("cook_ahead"))
+    (cook_ahead.set_cook_ahead), rather than a dinner's leftovers?
+
+    Every night, not any: set_cook_ahead keeps a planner leftovers night
+    the picker never offered, so one dinner can feed both kinds. The
+    source-level flag is true if ANY night is ahead, and a sentence that
+    names all of them as "made-ahead portions" mislabels the leftovers
+    night beside its own "Chili leftovers" row — so a mixed chain keeps the
+    older word, which was never wrong about the planner's night."""
+    targets = (chains["sources"].get(source_id) or {}).get("targets") or []
+    return bool(targets) and all(t.get("cook_ahead") for t in targets)
 
 
 def _reheat_words(ahead: bool, count: int = 1) -> tuple[str, str]:
@@ -527,7 +535,8 @@ def _structural_refusal(snap: dict, before: list[dict], after: list[dict],
         if reheat_id not in placement and cook_id not in placement:
             continue
         reheat, cook = by_id_after[reheat_id], by_id_after[cook_id]
-        food, _was = _reheat_words(_made_ahead(snap["chains"], cook_id))
+        # This one night's own word: a reason names a single night.
+        food, _was = _reheat_words(bool((snap["chains"]["leftovers"].get(reheat_id) or {}).get("cook_ahead")))
         if _weekly_plan._eaten_at(cook) >= _weekly_plan._eaten_at(reheat):
             return f"The {short_name(cook['meal'])} would end up after its {food}"
         gap = _leftovers.days_apart(cook["date"], reheat["date"])

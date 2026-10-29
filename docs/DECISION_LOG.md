@@ -17,7 +17,9 @@ why*, not duplicating the diff.
   branch `overnight/hunt-prep-cookahead-1029`; tests `tests/test_move_sheet_says_made_ahead.py`).
   `meal_move` reads the chain's `cook_ahead` flag: "Chili, made ahead" on the day row, "Saturday’s
   made-ahead portion moves with the Chili", toast "…, made-ahead portion to Sunday", and the dimmed-day
-  and chat refusals the same. A planner's leftovers chain keeps "leftovers". Why: Plan and Cook said
+  and chat refusals the same. A planner's leftovers chain keeps "leftovers", and so does a dinner feeding
+  both kinds (only an all-ahead chain says "made ahead"; a dimmed day's reason uses its own night's flag).
+  Why: Plan and Cook said
   "Made ahead — Thursday's Chili" while the Move sheet on the same tab called it leftovers.
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.

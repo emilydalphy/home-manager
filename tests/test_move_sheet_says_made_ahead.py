@@ -86,3 +86,19 @@ def test_a_leftovers_chain_keeps_its_own_words():
     assert sheet["sub"].endswith("Saturday’s leftovers move with the Chili.")
     assert {d["date"]: d for d in sheet["days"]}[SAT]["meal"] == "Chili leftovers"
     assert meal_move.move_meal(w["plan"], w["chili"], FRI)["said"] == "Chili was moved to Friday, leftovers to Sunday"
+
+
+
+def test_a_dinner_feeding_both_kinds_of_night_keeps_the_older_word():
+    # Review follow-up: set_cook_ahead keeps a planner leftovers night it
+    # never offered, so one dinner can feed a leftovers night AND a
+    # made-ahead one, and the source-level flag is true if ANY is ahead.
+    # Calling both "made-ahead portions" contradicted the leftovers night's
+    # own "Chili leftovers" row, so only an all-ahead chain says it.
+    def chains(*flags):
+        return {"sources": {1: {"cook_ahead": any(flags),
+                                "targets": [{"entry_id": 10 + i, "cook_ahead": f} for i, f in enumerate(flags)]}}}
+    assert meal_move._made_ahead(chains(True, True), 1) is True
+    assert meal_move._made_ahead(chains(False, True), 1) is False
+    assert meal_move._made_ahead(chains(False), 1) is False
+    assert meal_move._made_ahead({"sources": {}}, 1) is False
