@@ -998,6 +998,87 @@ def place_off_nights_out(plan_id: int, intake: dict | None, memory: dict | None,
     return placed
 
 
+# ---------- a dish they asked for on a named night ----------
+#
+# "Tacos Tuesday" is "a day ... means those days only" in the prompt, and
+# nothing held it: the model put the tacos on Saturday, cited the words
+# there, and the draft's first line read "Tacos Tuesday Saturday, as you
+# asked." (overnight hunt, 2026-10-29). Rule 8 already moves a dish asked
+# for on a night nobody is home; this is the ordinary case, a night
+# somebody IS home. The dish trades nights with the dinner Pomona chose for
+# the night they named (swap_dinner_nights — ids kept, so groceries,
+# sides, thaws and the cooked tick ride along). A silent repair, as rule 2
+# is: once it is on the night they named, line one's "Tacos Tuesday, as
+# you asked." is true. Only a dinner whose words name exactly ONE weekday
+# and no other meal; a night nobody is home is rule 8's. When the named
+# night can't take it (that dinner is one they asked for too, or cooked,
+# or a cook-and-reheat pair the trade would run backwards) it stays, and
+# the draft says where it is instead of "as you asked".
+NAMED_DAY_KEY = "named_day"
+
+
+def named_day_line(dish: str, on_date: str, named_date: str) -> str:
+    on, named = _weekday(on_date), _weekday(named_date)
+    return f"{dish} is on {on}, not {named} — I couldn’t free up {named} for it."
+
+
+def place_on_named_days(plan_id: int, intake: dict | None, memory: dict | None,
+                        asks: tuple[str | None, ...] = (), report: dict | None = None) -> list[dict]:
+    """Each dinner their words put on one named weekday, on that weekday.
+    Returns [{"meal", "from", "to"}] for every dish moved, and says in
+    report["said_lines"] (with the request taken off line one through
+    report["moved_requests"]) each one that could not be. Never raises."""
+    placed: list[dict] = []
+    try:
+        ids = [r["id"] for r in nights(plan_id, intake, memory)]
+    except Exception:
+        logger.exception("Plan %s: reading the week for named-day requests failed", plan_id)
+        return placed
+    for entry_id in ids:
+        try:
+            rows = nights(plan_id, intake, memory)  # afresh: a trade re-dates rows
+            night = next((r for r in rows if r["id"] == entry_id), None)
+            derived = (night or {}).get("derived") or {}
+            span = str(derived.get("freeform") or "").strip()
+            if (night is None or night["slot_state"] != "planned" or not span
+                    or DAY_OUT_KEY in derived or derived.get("moved_for") or NAMED_DAY_KEY in derived
+                    or night["cooked_status"] == "done" or night["reheat"] or night["source"]):
+                continue
+            if meals_named(derived, asks, night["meal"]) - {"dinner"}:
+                continue
+            named = weekdays_named(derived, asks, night["meal"])
+            if len(named) != 1 or datetime.date.fromisoformat(night["date"]).weekday() in named:
+                continue
+            (weekday,) = named
+            options = [r for r in rows if datetime.date.fromisoformat(r["date"]).weekday() == weekday]
+            if not options or any(r["slot_state"] != "planned" for r in options):
+                continue  # not in this period, or a night nobody is home (rule 8's)
+            target = options[0]
+            moved = False
+            if not (target["cooked_status"] == "done" or _meal_variety.theirs(target["derived"])):
+                result = _weekly_plan.swap_dinner_nights(plan_id, night["date"], target["date"])
+                moved = result.get("status") == "swapped"
+                if not moved:
+                    logger.info("Plan %s: %s and %s would not trade — %s",
+                                plan_id, night["date"], target["date"], result.get("message") or "refused")
+            if moved:
+                _stamp(entry_id, NAMED_DAY_KEY, {"from": night["date"]})
+                placed.append({"meal": night["meal"], "from": night["date"], "to": target["date"]})
+                logger.info("Plan %s: %s was asked for on %s; moved there from %s",
+                            plan_id, night["meal"], target["date"], night["date"])
+            elif report is not None:
+                report.setdefault("moved_requests", []).append({"words": span, "line": ""})
+                line = named_day_line(night["meal"], night["date"], target["date"])
+                lines = report.setdefault("said_lines", [])
+                if line not in lines:
+                    lines.append(line)
+        except ValueError as exc:
+            logger.info("Plan %s: could not put entry %s on its named night — %s", plan_id, entry_id, exc)
+        except Exception:
+            logger.exception("Plan %s: placing entry %s on its named night failed", plan_id, entry_id)
+    return placed
+
+
 # ---------- a dish they asked for at a meal, naming no day (Emily's rule 2) ----------
 #
 # "A request with a meal but no day goes at that meal on a day with enough

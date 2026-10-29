@@ -370,6 +370,68 @@ def freeform_ingredient_requests(text: str | None) -> list[dict]:
     return out
 
 
+# ---------- a typed EXCLUSION ----------
+#
+# "No fish this week" reached the model as an instruction ("an EXCLUSION:
+# honour it by leaving X out of every slot it names") and nothing checked
+# what came back: a salmon dinner stood on the draft without a word
+# (overnight hunt, 2026-10-29). The same stance as the parsers above —
+# only a clause that is NOTHING BUT the exclusion is read: "no X", "skip
+# X", "without X", "nothing with X", "we don't want X", optionally "this
+# week", "please", or one meal ("for dinner"). Anything else — a person
+# ("no fish for Mia"), a day ("no red meat during the week"), a count ("no
+# pasta two nights in a row"), something that isn't a food ("no takeout")
+# — is left to the model, as it always was.
+
+_EXCLUSION_RE = re.compile(
+    r"^(?:(?:please|and|but|also|oh and)\s+)?"
+    r"(?:(?:let's|lets|let us|can we|could we|we'd like to|i'd like to)\s+)?"
+    r"(?:no more|no|without|skip|avoid|nothing with|(?:we |i )?(?:don't|dont|do not) want)\s+"
+    r"(?:any\s+)?(?P<food>[a-z][a-z' -]*?)"
+    r"(?:\s+(?P<meal>for (?:breakfast|lunch|lunches|dinner|dinners|supper)))?"
+    r"(?:\s+(?:this|for the|for this) week)?(?:\s+(?:please|thanks|thank you|at all))?$",
+    re.IGNORECASE,
+)
+_EXCLUSION_SPLIT_RE = re.compile(r",\s*|\s+and\s+(?=(?:no|without|skip|avoid|nothing)\b)", re.IGNORECASE)
+# Known food words that don't name a food to keep off a plate.
+_NOT_A_FOOD = {"cooking", "cook", "takeout", "leftover", "leftovers", "repeat", "repeats", "meal", "meals",
+               "spice", "spicy", "heavy", "fried", "red"}
+
+
+def freeform_exclusions(text: str | None) -> list[dict]:
+    """
+    The foods the household typed to keep off this week, each with the
+    clause it came from and the meals it reaches: [{"words": "No fish this
+    week", "food": "fish", "slots": ("breakfast", "lunch", "dinner",
+    "snack")}]. Only the unmistakable shape (see the note above), and only a
+    food this app knows; one entry per food.
+    """
+    from . import plan_quality as _plan_quality  # lazy: it pulls in the heavier half of the package
+    known = _plan_quality._known_food_words()
+    out: list[dict] = []
+    seen: set[str] = set()
+    for sentence in _REQUEST_SPLIT_RE.split(text or ""):
+        for clause in _EXCLUSION_SPLIT_RE.split(sentence):
+            clause = clause.strip(" ,;:-–—\t").replace("’", "'")
+            m = _EXCLUSION_RE.match(clause)
+            if not m:
+                continue
+            food = " ".join(m.group("food").lower().split())
+            words = food.split()
+            if not words or len(words) > 3 or _DAY_WORD_RE.search(food) or _COUNT_WORD_RE.search(food) \
+                    or _MEAL_WORD_RE.search(food):
+                continue
+            if any(w in _NOT_A_FOOD or _plan_quality._stem(w) not in known for w in words):
+                continue
+            if food in seen:
+                continue
+            seen.add(food)
+            meal = m.group("meal")
+            slots = (_MEAL_OF_WORD[meal.split()[-1].lower()],) if meal else ("breakfast", "lunch", "dinner", "snack")
+            out.append({"words": clause, "food": food, "slots": slots})
+    return out
+
+
 def period_dates(start_date: str, day_count: int = 7) -> list[str]:
     """
     The ISO dates of a planning period: `day_count` days from `start_date`,

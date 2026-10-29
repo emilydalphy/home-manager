@@ -839,6 +839,7 @@ from .week_intake import (  # noqa: F401
     period_dates,
     freeform_meal_scopes,
     freeform_ingredient_requests,
+    freeform_exclusions,
     freeform_day_requests,
     clear_week_intake,
     save_setup_week_answers,
