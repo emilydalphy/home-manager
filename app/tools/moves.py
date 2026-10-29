@@ -1453,9 +1453,16 @@ def featured_move_id(moves: list[dict], now: datetime | None = None) -> str | No
     # next hour wins over everything — the chicken that has to move to the
     # fridge by tonight beats a cook whose window only just opened.
     urgent_by = (now + timedelta(hours=URGENT_HOURS)).isoformat()
+    # A cook that is ON THE STOVE ("Start cooking" tapped, not yet eaten) is
+    # what the household is doing, so it outranks anything else that isn't
+    # urgent. Without this, tomorrow's "Shop before tomorrow" — same weight,
+    # window opening at midnight — won the tie-break and the dock said "Go
+    # shopping" over a dinner already cooking (day walk, 2026-10-29; the
+    # 2026-10-14 fix only took the shop for THIS cook away).
     def _rank(m):
         urgent = bool(m.get("overdue")) or m["window_end"] <= urgent_by
-        return (0 if urgent else 1, -m["weight"], m["window_start"], m["id"])
+        cooking = m["kind"] == "cook" and bool(m.get("started_at"))
+        return (0 if urgent else 1, 0 if cooking else 1, -m["weight"], m["window_start"], m["id"])
     candidates.sort(key=_rank)
     return candidates[0]["id"]
 

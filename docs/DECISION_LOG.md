@@ -13,6 +13,7 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A dinner on the stove is Today's card** (2026-10-29, overnight day walk; branch `overnight/hunt-today-day-1029b`; tests in `tests/test_no_shop_nudge_once_cooking.py`). With tonight's cook started and tomorrow's tortillas still on the list, Next up and the dock were "Shop before tomorrow · Go shopping" (same weight, window open since midnight, so it won the tie). `featured_move_id` now ranks a started, unticked cook first among the non-urgent moves; urgent/overdue still wins. Why: the 2026-10-14 fix took away only the shop for THIS cook.
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
   (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.
