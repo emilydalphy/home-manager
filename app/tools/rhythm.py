@@ -168,7 +168,8 @@ def set_lunch_location(member_name: str, location: str, weekday: str = "", sourc
     Set where a household member typically is at lunchtime: 'home' (a real
     planned meal), 'out' (needs to travel/hold up, i.e. packable), or
     'varies'. Omit weekday for the STANDING answer (what onboarding asks
-    once); pass a specific weekday (e.g. 'Tuesday') to record a per-day
+    once — it covers Monday to Friday only, 2026-10-29; a weekend day is
+    given as its own weekday); pass a specific weekday (e.g. 'Tuesday') to record a per-day
     override without touching the standing pattern — this is how a hybrid
     schedule gets learned exactly when it comes up rather than asked
     upfront (Emily's explicit call, 2026-09-03): "Marcus is in the office

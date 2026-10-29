@@ -221,8 +221,9 @@ def test_breakfast_and_dinner_say_nothing_about_where_because_nothing_records_it
     """GUARD. lunch_location is the only per-person place fact the app has
     and it is about lunch by name; saying nothing about the other meals is
     the honest answer rather than an omission."""
-    _seed_day({"breakfast": "Idli", "lunch": "Chana Masala", "dinner": "Pepper Chicken"})
-    rhythm.set_lunch_location("Arjun", "out")
+    _, day = _seed_day({"breakfast": "Idli", "lunch": "Chana Masala", "dinner": "Pepper Chicken"})
+    # Today's own weekday: the standing answer covers Monday-Friday only.
+    rhythm.set_lunch_location("Arjun", "out", weekday=day.strftime("%A"))
     rows = {r["slot"]: r for r in moves.today_moves()["day_meals"]}
     assert rows["lunch"]["per_person"] is True
     for slot in ("breakfast", "dinner"):
