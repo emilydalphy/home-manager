@@ -1198,7 +1198,7 @@ def attach_named_sides(plan_id: int, moved: list[dict], context: dict | None = N
 # ask.
 
 EXCLUSION_KEY = "kept_off"
-SKIP_RATINGS = {"avoid", "never", "skip", "no", "none"}
+SKIP_RATINGS = {"avoid", "never", "skip"}
 _ALL_SLOTS = ("breakfast", "lunch", "dinner", "snack")
 
 
@@ -1210,7 +1210,7 @@ def skipped_proteins(memory: dict | None) -> list[dict]:
     seen: set[str] = set()
     for key, value in ((memory or {}).get("protein_preferences") or {}).items():
         skip = (value == 1 and not isinstance(value, bool)) if not isinstance(value, str) \
-            else value.strip().lower().split(" ")[0] in SKIP_RATINGS
+            else value.strip().lower() in SKIP_RATINGS
         if not skip:
             continue
         for part in re.split(r"[/,]", str(key)):
@@ -1218,7 +1218,7 @@ def skipped_proteins(memory: dict | None) -> list[dict]:
             if food and food not in seen:
                 seen.add(food)
                 out.append({"words": f"{food} (skipped in Settings)", "food": food, "slots": _ALL_SLOTS,
-                            "names_only": True, "because": f"{food} is a protein you skip"})
+                            "because": f"{food} is a protein you skip"})
     return out
 
 
@@ -1230,37 +1230,60 @@ def _exclusion_avoidance(exclusion: dict) -> dict | None:
     return {"member": None, "label": exclusion["food"], "source": "dislike", "severity": "soft", "terms": terms}
 
 
-def _carries(entry_or_pick: dict, avoidance: dict, names_only: bool) -> bool:
-    """Whether the dish carries the food: its name and main protein, and —
-    for a typed exclusion — its ingredient list. A Skip chip is about the
-    meal's protein, so a cake with an egg in it is not "eggs"."""
+# A match the allergen families make that is no part of what a TASTE
+# exclusion means: "no fish" is not "no Worcestershire" or "no Caesar"
+# (review, 2026-10-29). The allergy gate keeps those; this pass doesn't.
+_HIDDEN_MATCH_WORDS = ("worcestershire", "sauce", "paste", "broth", "stock", "dashi", "bonito",
+                       "gelatin", "gelatine", "lard", "caesar", "pad thai", "nam pla", "dressing")
+# "Beans" on a protein chip is the legume, never the green vegetable.
+_NOT_THE_LEGUME_RE = re.compile(r"\b(?:green|string|french|runner|wax|snap)[\s-]+beans?\b", re.IGNORECASE)
+
+
+def _carries(entry_or_pick: dict, avoidance: dict) -> bool:
+    """Whether the dish IS the food, read off its name and main protein —
+    the same for a typed exclusion and a Skip chip: both are taste, and
+    the allergen gate already reads ingredient lists for what is a safety
+    matter. "Pork-free chili" is not pork (negate_labels), a sauce or a
+    stock that only the allergen families know about doesn't count, and
+    "green beans" is not "beans". An ingredient list is never read."""
     from . import coordination as _coordination
     name = entry_or_pick.get("meal") or entry_or_pick.get("meal_name") or ""
     protein = entry_or_pick.get("main_protein") or ""
-    if _coordination.check_meal_conflicts(f"{name} {protein}".strip(), avoidances=[avoidance]):
+    text = f"{name} {protein}".strip()
+    if _plan_quality._stem(avoidance["label"].split()[-1]) == _plan_quality._stem("beans"):
+        text = _NOT_THE_LEGUME_RE.sub(" ", text)
+    clashes = _coordination.check_meal_conflicts(text, avoidances=[avoidance], negate_labels=True)
+    return any(not any(h in str(c.get("matched_word") or "").lower() for h in _HIDDEN_MATCH_WORDS)
+               for c in clashes)
+
+
+def _food_stems(text: str) -> set[str]:
+    known = _plan_quality._known_food_words()
+    return {s for s in _stems(text) if s in known}
+
+
+def _theirs_besides(derived: dict, exclusion: dict, meal: str | None = None) -> bool:
+    """Is this dish theirs in a way that beats their own exclusion? A meal
+    brought over or a portion they froze, always. Their typed words only
+    when those words are ABOUT this dish — they name a food the dish's name
+    names ("Salmon Wednesday for Nana"), or the excluded food itself ("fish
+    tacos Friday") — never because the dish cites some other request
+    ("Something quick Wednesday" on a salmon bowl, review 2026-10-29), and
+    never the exclusion's own words quoted on it."""
+    derived = derived if isinstance(derived, dict) else {}
+    span = str(derived.get("freeform") or "").strip()
+    rest = {k: v for k, v in derived.items() if k != "freeform"}
+    if _meal_variety.theirs(rest):
         return True
-    if names_only:
+    if not span:
         return False
-    ingredients = entry_or_pick.get("ingredients")
-    if ingredients is None:
-        try:
-            ingredients = json.loads(entry_or_pick.get("ingredients_json") or "[]") or []
-        except (TypeError, ValueError):
-            ingredients = []
-    lines = [i if isinstance(i, dict) else {"item": str(i)} for i in ingredients]
-    lines = [i for i in lines if str(i.get("item") or "").strip()]
-    return bool(lines) and bool(_coordination.check_meal_conflicts(name, ingredients=lines, avoidances=[avoidance]))
-
-
-def _theirs_besides(derived: dict, exclusion: dict) -> bool:
-    """meal_variety.theirs, except that the exclusion's OWN words cited on
-    the dish (the model quoting "No fish this week" on the salmon) are not
-    a request for it."""
-    span = str(derived.get("freeform") or "").strip().lower()
     words = str(exclusion.get("words") or "").strip().lower()
-    if span and words and (span in words or words in span):
-        derived = {k: v for k, v in derived.items() if k != "freeform"}
-    return _meal_variety.theirs(derived)
+    if words and (span.lower() in words or words in span.lower()):
+        return False
+    if _food_stems(span) & _food_stems(meal or ""):
+        return True
+    avoidance = _exclusion_avoidance(exclusion)
+    return bool(avoidance) and _carries({"meal": span}, avoidance)
 
 
 def _weekday_name(meal_date: str) -> str:
@@ -1284,6 +1307,7 @@ def keep_exclusions_off(plan_id: int, exclusions: list[dict], report: dict | Non
     make. Never raises.
     """
     from . import swap_in_place as _swap
+    from . import draft_rules as _draft_rules
 
     out = {"repicked": [], "left": []}
     if not exclusions:
@@ -1294,7 +1318,7 @@ def keep_exclusions_off(plan_id: int, exclusions: list[dict], report: dict | Non
             avoidance = _exclusion_avoidance(exclusion)
             if avoidance is None:
                 continue
-            food, names_only = exclusion["food"], bool(exclusion.get("names_only"))
+            food = exclusion["food"]
             slots = tuple(exclusion.get("slots") or _ALL_SLOTS)
             done: set[int] = set()
             while True:
@@ -1306,14 +1330,14 @@ def keep_exclusions_off(plan_id: int, exclusions: list[dict], report: dict | Non
                         continue
                     if e["id"] in chains["leftovers"]:
                         continue  # a reheat goes with its cook
-                    if _carries(e, avoidance, names_only):
+                    if _carries(e, avoidance):
                         target = e
                         break
                 if target is None:
                     break
                 done.add(target["id"])
                 derived = _parsed(target)
-                if (target["cooked_status"] or "") == "done" or _theirs_besides(derived, exclusion) \
+                if (target["cooked_status"] or "") == "done" or _theirs_besides(derived, exclusion, target["meal"]) \
                         or derived.get("constraint") == _WEEKDAY_LUNCH_CONSTRAINT or derived.get("prep_date"):
                     continue
                 if target["id"] in chains["sources"]:
@@ -1326,7 +1350,7 @@ def keep_exclusions_off(plan_id: int, exclusions: list[dict], report: dict | Non
                     also = [e for e in entries if e["id"] != target["id"] and e["slot_state"] == "planned"
                             and _leftovers.dish_identity(e["meal"]) == name]
                     if any(e["id"] in chains["sources"] or e["id"] in chains["leftovers"]
-                           or (e["cooked_status"] or "") == "done" or _meal_variety.theirs(_parsed(e))
+                           or (e["cooked_status"] or "") == "done" or _theirs_besides(_parsed(e), exclusion, e["meal"])
                            for e in also):
                         out["left"].append(dict(target, food=food))
                         continue
@@ -1334,9 +1358,22 @@ def keep_exclusions_off(plan_id: int, exclusions: list[dict], report: dict | Non
                 nights = [{"date": target["date"], "slot": target["slot"], "entry_id": target["id"]}] + [
                     {"date": e["date"], "slot": e["slot"], "entry_id": e["id"]} for e in also]
 
-                def _reject(candidate, _a=avoidance, _n=nights, _f=food, _o=names_only):
-                    if _carries(candidate, _a, _o):
+                replaced_ids = {n["entry_id"] for n in nights}
+                staying = [e for e in entries if e["id"] not in replaced_ids and e["slot_state"] == "planned"
+                           and e["meal"]]
+                on_week = {_leftovers.dish_identity(e["meal"]) for e in staying}
+                cooks = [e for e in staying if e["slot"] in ("lunch", "dinner") and e["id"] not in chains["leftovers"]]
+
+                def _reject(candidate, _a=avoidance, _n=nights, _f=food, _w=on_week, _c=cooks):
+                    if _carries(candidate, _a):
                         return f"has {_f} in it"
+                    if _leftovers.dish_identity(candidate.get("meal_name")) in _w:
+                        return "already on the week"
+                    protein = (candidate.get("main_protein") or "").strip().lower()
+                    if protein and protein not in ("vegetarian", "vegan", "none", "mixed") and target["slot"] in ("lunch", "dinner") \
+                            and sum(1 for e in _c if (e.get("main_protein") or "").strip().lower() == protein) \
+                            >= _draft_rules.MAX_PER_PROTEIN:
+                        return f"{protein} is on the week twice already"
                     return _swap.cap_gate(plan_id, candidate, _n)
 
                 replaced = _meal_variety._repick_entry(

@@ -384,7 +384,7 @@ def freeform_ingredient_requests(text: str | None) -> list[dict]:
 # — is left to the model, as it always was.
 
 _EXCLUSION_RE = re.compile(
-    r"^(?:(?:please|and|but|also|oh and)\s+)?"
+    r"^(?:(?:please|and|also|oh and)\s+)?"
     r"(?:(?:let's|lets|let us|can we|could we|we'd like to|i'd like to)\s+)?"
     r"(?:no more|no|without|skip|avoid|nothing with|(?:we |i )?(?:don't|dont|do not) want)\s+"
     r"(?:any\s+)?(?P<food>[a-z][a-z' -]*?)"
@@ -393,9 +393,20 @@ _EXCLUSION_RE = re.compile(
     re.IGNORECASE,
 )
 _EXCLUSION_SPLIT_RE = re.compile(r",\s*|\s+and\s+(?=(?:no|without|skip|avoid|nothing)\b)", re.IGNORECASE)
-# Known food words that don't name a food to keep off a plate.
-_NOT_A_FOOD = {"cooking", "cook", "takeout", "leftover", "leftovers", "repeat", "repeats", "meal", "meals",
-               "spice", "spicy", "heavy", "fried", "red"}
+# Known food words that don't name a food to keep off a plate: what isn't
+# a dish at all, the seasonings and pantry basics nearly every dish holds
+# ("Busy week. No salt please" re-picked six dinners — review, 2026-10-29),
+# and the adjectives ("no hot" is not "no Hot Dogs"). Left to the model.
+_NOT_A_FOOD = {
+    "cooking", "cook", "takeout", "leftover", "leftovers", "repeat", "repeats", "meal", "meals",
+    "salt", "pepper", "oil", "olive", "sugar", "butter", "water", "flour", "stock", "broth", "vinegar",
+    "spice", "spices", "herb", "herbs", "seasoning", "sauce", "sauces", "garnish", "ice",
+    "spicy", "heavy", "fried", "red", "hot", "sweet", "fresh", "green", "white", "black", "raw", "cold",
+    "light", "rich", "creamy", "frozen", "plain", "sour", "salty", "dry", "big", "small", "new", "same",
+}
+# A carve-out ("no fish, unless it's salmon", "no pork except bacon") is
+# beyond a clause-by-clause read: the whole sentence is the model's.
+_CARVE_OUT_RE = re.compile(r"\b(?:unless|except|but|other than|apart from|besides|save for)\b", re.IGNORECASE)
 
 
 def freeform_exclusions(text: str | None) -> list[dict]:
@@ -411,6 +422,8 @@ def freeform_exclusions(text: str | None) -> list[dict]:
     out: list[dict] = []
     seen: set[str] = set()
     for sentence in _REQUEST_SPLIT_RE.split(text or ""):
+        if _CARVE_OUT_RE.search(sentence):
+            continue
         for clause in _EXCLUSION_SPLIT_RE.split(sentence):
             clause = clause.strip(" ,;:-–—\t").replace("’", "'")
             m = _EXCLUSION_RE.match(clause)

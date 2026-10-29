@@ -8010,7 +8010,7 @@ def _generate_weekly_plan(
             _typed_requests.keep_exclusions_off(
                 plan_id,
                 tools.freeform_exclusions(asks_text) + _typed_requests.skipped_proteins(household_memory),
-                plan_report, dislikes=household_memory.get("dislikes") or [],
+                plan_report, budget=repick_budget, dislikes=effective_memory.get("dislikes") or [],
             )
 
         # Everything going off that a dish genuinely carries, soonest first,

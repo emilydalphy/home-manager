@@ -1017,8 +1017,13 @@ def place_off_nights_out(plan_id: int, intake: dict | None, memory: dict | None,
 NAMED_DAY_KEY = "named_day"
 
 
-def named_day_line(dish: str, on_date: str, named_date: str) -> str:
-    on, named = _weekday(on_date), _weekday(named_date)
+_WEEKDAY_NAMES = ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+
+
+def named_day_line(dish: str, on_date: str, weekday: int, in_period: bool = True) -> str:
+    on, named = _weekday(on_date), _WEEKDAY_NAMES[weekday]
+    if not in_period:
+        return f"{dish} is on {on} — there’s no {named} in this plan."
     return f"{dish} is on {on}, not {named} — I couldn’t free up {named} for it."
 
 
@@ -1050,17 +1055,24 @@ def place_on_named_days(plan_id: int, intake: dict | None, memory: dict | None,
             if len(named) != 1 or datetime.date.fromisoformat(night["date"]).weekday() in named:
                 continue
             (weekday,) = named
+            # Every night of that weekday in the period, in order; the first
+            # one that will trade takes it. A night nobody is home is never
+            # one (rule 8 owns those, and stamps the dish when it acts).
             options = [r for r in rows if datetime.date.fromisoformat(r["date"]).weekday() == weekday]
-            if not options or any(r["slot_state"] != "planned" for r in options):
-                continue  # not in this period, or a night nobody is home (rule 8's)
-            target = options[0]
-            moved = False
-            if not (target["cooked_status"] == "done" or _meal_variety.theirs(target["derived"])):
-                result = _weekly_plan.swap_dinner_nights(plan_id, night["date"], target["date"])
-                moved = result.get("status") == "swapped"
-                if not moved:
-                    logger.info("Plan %s: %s and %s would not trade — %s",
-                                plan_id, night["date"], target["date"], result.get("message") or "refused")
+            moved, target = False, None
+            for option in options:
+                if (option["slot_state"] != "planned" or option["cooked_status"] == "done"
+                        or _meal_variety.theirs(option["derived"]) or option["reheat"]):
+                    continue
+                try:
+                    result = _weekly_plan.swap_dinner_nights(plan_id, night["date"], option["date"])
+                except ValueError as exc:
+                    result = {"status": "refused", "message": str(exc)}
+                if result.get("status") == "swapped":
+                    moved, target = True, option
+                    break
+                logger.info("Plan %s: %s and %s would not trade — %s",
+                            plan_id, night["date"], option["date"], result.get("message") or "refused")
             if moved:
                 _stamp(entry_id, NAMED_DAY_KEY, {"from": night["date"]})
                 placed.append({"meal": night["meal"], "from": night["date"], "to": target["date"]})
@@ -1068,7 +1080,9 @@ def place_on_named_days(plan_id: int, intake: dict | None, memory: dict | None,
                             plan_id, night["meal"], target["date"], night["date"])
             elif report is not None:
                 report.setdefault("moved_requests", []).append({"words": span, "line": ""})
-                line = named_day_line(night["meal"], night["date"], target["date"])
+                # Whatever stopped it, "as you asked" comes off line one
+                # and the draft says where the dish is.
+                line = named_day_line(night["meal"], night["date"], weekday, in_period=bool(options))
                 lines = report.setdefault("said_lines", [])
                 if line not in lines:
                     lines.append(line)

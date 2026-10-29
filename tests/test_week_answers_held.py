@@ -178,10 +178,10 @@ def test_a_skipped_protein_is_about_the_main_protein_not_an_ingredient():
     """Skip Eggs is not "no cake": the chip is the meal's protein."""
     [skip] = typed_requests.skipped_proteins({"protein_preferences": {"Eggs": 1, "Chicken": 5}})
     avoid = typed_requests._exclusion_avoidance(skip)
-    assert typed_requests._carries({"meal": "Spinach frittata", "main_protein": "eggs"}, avoid, True)
+    assert typed_requests._carries({"meal": "Spinach frittata", "main_protein": "eggs"}, avoid)
     assert not typed_requests._carries(
         {"meal": "Chicken pot pie", "main_protein": "chicken",
-         "ingredients": [{"item": "Egg"}, {"item": "Chicken thighs"}]}, avoid, True)
+         "ingredients": [{"item": "Egg"}, {"item": "Chicken thighs"}]}, avoid)
 
 
 # ---------- "Tacos Tuesday" ----------
@@ -243,3 +243,77 @@ def test_the_exclusion_cited_on_the_dish_it_excludes_does_not_protect_it(week, p
     plan_id = week(_week(wk, {2: ("Baked salmon with rice", "salmon",
                                   {"derived_from": {"freeform": "No fish this week"}})}))
     assert "Baked salmon with rice" not in [d["meal"] for d in _dinners(plan_id)]
+
+
+# ---------- independent review, 2026-10-29 ----------
+
+
+def test_a_fish_dish_citing_some_other_request_is_not_protected(week, picker):
+    """1. Only words ABOUT the dish protect it — not "Something quick Wednesday"."""
+    tools.add_member("Emily")
+    wk = _monday()
+    tools.save_week_intake(wk, freeform="No fish this week. Something quick Wednesday")
+    plan_id = week(_week(wk, {2: ("Quick salmon bowls", "salmon",
+                                  {"derived_from": {"freeform": "Something quick Wednesday"}})}))
+    assert "Quick salmon bowls" not in [d["meal"] for d in _dinners(plan_id)]
+
+
+@pytest.mark.parametrize("text", [
+    "No fish, unless it's salmon",          # 2. a carve-out is the model's
+    "no pork except bacon",
+    "Busy week. No salt please",            # 5. pantry basics and adjectives
+    "no hot", "no sugar", "no oil this week", "no fresh",
+])
+def test_carve_outs_and_pantry_basics_are_left_to_the_model(text):
+    assert tools.freeform_exclusions(text) == []
+
+
+def test_a_named_weekday_outside_the_period_never_reads_as_asked(monkeypatch):
+    """3. A Wednesday-to-Sunday plan has no Tuesday: say where the tacos are."""
+    tools.add_member("Emily")
+    wk = _monday()
+    dates = tools._week_dates(wk)
+    tools.save_week_intake(wk, freeform="Tacos Tuesday please", day_count=7)
+    days = [_slot(d, "dinner", *DINNERS[i]) for i, d in enumerate(dates) if i >= 2]
+    days[3] = _slot(dates[5], "dinner", "Beef tacos", "beef", derived_from={"freeform": "Tacos Tuesday please"})
+    out = agent.GeneratedDays(days)
+    out.report = {"honoured_requests": [{"words": "Tacos Tuesday please", "label": "tacos Tuesday"}],
+                  "unmet_requests": []}
+    monkeypatch.setattr(agent, "generate_weekly_plan_llm", lambda ctx: out)
+    plan_id = agent.generate_weekly_plan(wk, period_start=dates[2], day_count=5)["weekly_plan_id"]
+    opener = " ".join(tools.get_week_menu(plan_id)["draft_opener"])
+    assert "as you asked" not in opener, opener
+    assert "Beef tacos is on Saturday — there’s no Tuesday in this plan." in opener, opener
+
+
+@pytest.mark.parametrize("bad", ["Greek chicken", "Chicken pesto pasta"])
+def test_an_exclusion_re_pick_never_repeats_a_dish_or_a_third_protein(week, picker, bad):
+    """4. "Greek chicken" is already Monday; a third chicken cook is past the rule."""
+    tools.add_member("Emily")
+    wk = _monday()
+    tools.save_week_intake(wk, freeform="No fish this week")
+    _, queue = picker
+    queue.append({"meal_name": bad, "main_protein": "chicken", "prep_time_minutes": 5, "cook_time_minutes": 20})
+    plan_id = week(_week(wk, {2: ("Baked salmon with rice", "salmon", {}),
+                              3: ("Chicken fajitas", "chicken", {})}))
+    meals = [d["meal"] for d in _dinners(plan_id)]
+    assert meals.count("Greek chicken") == 1 and "Chicken pesto pasta" not in meals, meals
+    assert "Red lentil soup" in meals, meals
+
+
+@pytest.mark.parametrize("food,dish,protein", [
+    ("fish", "Thai green curry", "tofu"),       # 6. fish sauce is the allergy gate's, not a taste no
+    ("fish", "Worcestershire burgers", "beef"),
+    ("pork", "Pork-free chili", "beans"),
+    ("chicken", "Tofu stir fry", "tofu"),
+    ("beans", "Chicken with green beans", "chicken"),   # Skip Beans is the legume
+])
+def test_an_exclusion_is_about_what_the_dish_is(food, dish, protein):
+    avoid = typed_requests._exclusion_avoidance({"food": food, "words": f"no {food}"})
+    assert not typed_requests._carries({"meal": dish, "main_protein": protein}, avoid)
+
+
+def test_only_an_exact_skip_word_is_a_skip():
+    found = typed_requests.skipped_proteins({"protein_preferences": {
+        "pork": "avoid", "beef": "none this month", "lamb": "no strong feelings", "tofu": "skip"}})
+    assert sorted(e["food"] for e in found) == ["pork", "tofu"]
