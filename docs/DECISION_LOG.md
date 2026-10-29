@@ -13,6 +13,7 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Inventory sheet's "added …" reads created_at as UTC** (2026-10-29, branch `overnight/hunt-tz-1029b`; `tests/test_inventory_added_when.py`). `inventory.html` parsed SQLite's zoneless UTC `created_at` as the phone's own time, so the day was off by the whole UTC offset: from 8pm on the last of a month in Toronto a thing just added read "added Nov 1", and on the morning of the 1st in Auckland "added Oct 31". `addedWhen()` now appends the `Z`, as `member-share.html`'s `noteWhen` does. Why: the last stamp-reader still doing it; the same hunt ran the 284 dated test files with household 1 in Honolulu (live clock, a day behind UTC) and in Auckland (pinned, a day ahead) and drove a live app in both, and found no server path still on the server's clock — every remaining failure was a test seeding off `date.today()` or a Toronto-only helper.
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
   (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.
