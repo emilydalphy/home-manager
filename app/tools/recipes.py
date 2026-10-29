@@ -37,6 +37,67 @@ def positive_servings(value) -> int | None:
     return value
 
 
+_MINUTES_CAP = 7 * 24 * 60
+_MINUTES_PART = re.compile(
+    r"(half an?|an?|\d+\s+\d+/\d+|\d+/\d+|\d+(?:\.\d+)?)\s*"
+    r"(hours?|hrs?|h|minutes?|mins?|m)(?![a-z])"
+)
+_MINUTES_FILLER = re.compile(r"\b(?:about|around|roughly|approx|approximately|and|or so)\b|[+,.~]")
+
+
+def recipe_minutes(value) -> int | None:
+    """A recipe's prep or cook time as whole minutes (0 or more), or None
+    when it isn't one. 45, "45", 45.0, "45 min", "1 hour", "1 hr 30 min",
+    "1 1/2 hours", "20-25 minutes" (the longer end) and "half an hour" all
+    read; a negative, True, "a while" or more than a week does not.
+
+    The two columns are INTEGER, but SQLite stores whatever it is handed:
+    chat's `cook_time_minutes: "1 hour"` was saved as those words. Every
+    screen that times a dinner adds prep + cook (cooker.cook_total_minutes,
+    Today's moves, the week menu), so one worded time made Today and Meals
+    answer 500 on every day the dish was planned (2026-10-29)."""
+    if isinstance(value, bool) or value is None:
+        return None
+    if isinstance(value, (int, float)):
+        minutes = float(value)
+    elif isinstance(value, str):
+        text = value.strip().lower()
+        text = text.replace("½", " 1/2").replace("¼", " 1/4").replace("¾", " 3/4")
+        # A range is timed by its longer end: the cook needs the time.
+        text = re.sub(r"\d+(?:\.\d+)?\s*(?:-|–|to)\s*(\d+(?:\.\d+)?)", r"\1", text).strip()
+        if re.fullmatch(r"\d+(?:\.\d+)?", text):
+            minutes = float(text)
+        else:
+            parts = _MINUTES_PART.findall(text)
+            # Whatever isn't a number-and-unit has to be filler ("about",
+            # "and"), or the words meant something this can't read.
+            rest = _MINUTES_FILLER.sub(" ", _MINUTES_PART.sub(" ", text))
+            if not parts or rest.strip():
+                return None
+            minutes = 0.0
+            for amount, unit in parts:
+                if amount.startswith("half"):
+                    number = 0.5
+                elif amount in ("a", "an"):
+                    number = 1.0
+                else:
+                    number = 0.0
+                    for piece in amount.split():
+                        if "/" in piece:
+                            top, bottom = piece.split("/")
+                            if not int(bottom):
+                                return None
+                            number += int(top) / int(bottom)
+                        else:
+                            number += float(piece)
+                minutes += number * (60 if unit.startswith("h") else 1)
+    else:
+        return None
+    if minutes != minutes or minutes < 0 or minutes > _MINUTES_CAP:
+        return None
+    return int(round(minutes))
+
+
 def add_recipe_for_chat(*args, override: bool = False, **kwargs) -> dict:
     """
     add_recipe with the one refusal a person is owed in front of it: a
@@ -61,6 +122,11 @@ def add_recipe_for_chat(*args, override: bool = False, **kwargs) -> dict:
     name = kwargs.get("name")
     if name is None and args:
         name = args[0]
+    # A recipe with no name was saved as "" and sat in the box as a blank
+    # row nothing could find again by name (2026-10-29). The review
+    # sheet's route refuses it already; this is chat's door.
+    if not isinstance(name, str) or not name.strip():
+        raise ValueError("A recipe needs a name.")
     ingredients = kwargs.get("ingredients")
     if ingredients is None and len(args) >= 2:
         ingredients = args[1]
@@ -173,6 +239,11 @@ def add_recipe(
     # Every model door (the week, a swap, a big meal) passes its count
     # straight here: a 0 or a negative keeps the default, never saves.
     default_servings = positive_servings(default_servings) or 4
+    # Same for the minutes: "1 hour" saves as 60, and a time that isn't
+    # one ("-5", "a while") is left unsaid rather than stored as words
+    # that every prep + cook sum then crashes on (recipe_minutes).
+    prep_time_minutes = recipe_minutes(prep_time_minutes)
+    cook_time_minutes = recipe_minutes(cook_time_minutes)
     # Marked BEFORE the list is completed from the steps: a line the app
     # adds there is the app's own guess and keeps the check. Any other door
     # has the mark taken OFF: a model handed a saved recipe (get_recipe in
@@ -443,6 +514,20 @@ def update_recipe_details(
             raise ValueError(
                 f"A recipe has to serve at least 1 — {default_servings} isn't a number of servings."
             )
+    # Minutes the same way: "1 hour" saves as 60, and words that aren't a
+    # time are refused in a sentence, never stored — this door is only
+    # ever asked to correct a field, so dropping it would let the reply
+    # say it was saved (recipe_minutes has the 500 they caused).
+    if prep_time_minutes is not None:
+        read = recipe_minutes(prep_time_minutes)
+        if read is None:
+            raise ValueError(f"Prep time has to be a number of minutes — {prep_time_minutes!r} isn't one.")
+        prep_time_minutes = read
+    if cook_time_minutes is not None:
+        read = recipe_minutes(cook_time_minutes)
+        if read is None:
+            raise ValueError(f"Cook time has to be a number of minutes — {cook_time_minutes!r} isn't one.")
+        cook_time_minutes = read
     conn = get_conn()
     existing = conn.execute(
         "SELECT id, instructions_json, advance_prep_step_indices_json, ingredients_json, default_servings FROM recipes "
@@ -617,6 +702,10 @@ def fill_recipe_details(
     # The model's count (or the library's): a 0 or a negative is dropped
     # for 4, as add_recipe does, never saved (2026-10-20).
     default_servings = positive_servings(default_servings) or 4
+    # And its minutes, as add_recipe does: one the writer sent as words
+    # keeps the planner's (the COALESCE below) instead of being stored.
+    prep_time_minutes = recipe_minutes(prep_time_minutes)
+    cook_time_minutes = recipe_minutes(cook_time_minutes)
     # The steps' ingredients on the list, as add_recipe does (2026-10-12).
     # The model wrote these lines, so none is the household's own.
     ingredients = complete_ingredient_list(without_household_marks(ingredients or []), instructions or [], default_servings)
@@ -1106,6 +1195,16 @@ def scale_recipe(recipe_name: str, target_servings: int) -> dict:
     bottles" (Julia, 2026-09-08); it now halves "2 tbsp" to "1 tbsp", and
     the untouched shopping amount rides along as `shopping_qty`.
     """
+    # Chat reaches this with whatever the model sent: 0 or -2 came back as
+    # "-4 tortillas" and "0 lb" for the reply to read out, and "1.5" or "6
+    # people" was Python's own "unsupported operand" text. The stepper's
+    # route refuses below 1 itself; this is the same rule for every door.
+    target = positive_servings(target_servings)
+    if target is None:
+        raise ValueError(
+            f"Scaling needs a whole number of people, at least 1 — {target_servings!r} isn't one."
+        )
+    target_servings = target
     recipe = get_recipe(recipe_name)
     base_servings = recipe["default_servings"] or 4
     if base_servings <= 0:

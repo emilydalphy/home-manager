@@ -639,6 +639,7 @@ from .recipes import (  # noqa: F401
     add_recipe,
     add_recipe_for_chat,
     positive_servings,
+    recipe_minutes,
     attribute_recipe_feedback,
     check_steps_ingredients_consistency,
     complete_ingredient_list,

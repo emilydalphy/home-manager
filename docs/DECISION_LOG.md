@@ -13,6 +13,9 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A recipe's minutes are minutes; chat can't scale to nobody or save a nameless recipe** (2026-10-29, branch `overnight/hunt-recipe-tools-1029`; tests `tests/test_recipe_minutes_and_scale_words.py`).
+  Chat's `update_recipe_details(cook_time_minutes="1 hour")` stored the words; every prep + cook sum then 500'd `/api/today/moves` and `/api/week-menu` on each day the dish was planned. `recipes.recipe_minutes` reads "1 hour"/"1 hr 30 min"/"20-25 minutes" as minutes at add_recipe, fill_recipe_details (unreadable → unsaid) and update_recipe_details (unreadable → refused in a sentence); `db._repair_recipe_minutes` fixes rows already saved as words. `scale_recipe` refuses 0/negative/"1.5" (was "-4 tortillas" or Python's TypeError text); chat's add_recipe refuses a blank name (was saved as "").
+  Why: one sloppy chat argument took down Today and Meals, and replies read out negative amounts.
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
   (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.
