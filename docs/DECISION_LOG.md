@@ -13,6 +13,7 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **"Not ok" in a must-avoid note means no** (2026-10-29, overnight; branch `overnight/allergy-not-ok-means-no-1029`; tests `tests/test_allergy_not_ok_means_no.py`). `_FINE_RE` read the bare word, so "allergic to tree nuts, almonds are not ok either" made almonds an EXCEPTION and almond flour passed the allergy check. `coordination.says_fine` now ignores a fine-word with a negation in the two words before it, and a "but X isn't ok" carve-out is no carve-out at all. Used by `_split_exception` and main's `_exception_in_note`. Why: found by the review of the allergy-note branch; on main already, and it reads the household's words backwards.
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
   (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.

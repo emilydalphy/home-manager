@@ -767,6 +767,32 @@ _CONTRAST_RE = re.compile(
 )
 _FINE_RE = re.compile(r"\b(?:fine|ok|okay|alright|allowed|welcome)\b")
 _FINE_WORDS = frozenset({"fine", "ok", "okay", "alright", "allowed", "welcome"})
+# "almonds are NOT ok either" says the opposite of "almonds are ok", and
+# reading the bare word let it through as an exception (review,
+# 2026-10-29: "allergic to tree nuts, almonds are not ok either" passed
+# almond flour). A fine-word counts only without one of these in the two
+# words before it.
+_NOT_BEFORE_FINE = frozenset({"not", "never", "no", "nor", "isn't", "aren't", "isnt", "arent",
+                              "wasn't", "won't", "don't", "doesn't", "nt", "hardly"})
+
+
+def _fine_words(text: str) -> tuple[bool, bool]:
+    """(says something is fine, says something is NOT fine) for a clause."""
+    text = (text or "").replace("’", "'")
+    fine = negated = False
+    for m in _FINE_RE.finditer(text):
+        before = re.findall(r"[a-z']+", text[:m.start()].lower())[-2:]
+        if any(w in _NOT_BEFORE_FINE or w.endswith("n't") for w in before):
+            negated = True
+        else:
+            fine = True
+    return fine, negated
+
+
+def says_fine(text: str) -> bool:
+    """Whether a clause says something IS fine — "oat milk is fine", never
+    "almonds are not ok". The one reading of _FINE_RE every caller uses."""
+    return _fine_words(text)[0]
 
 
 def _conflict_keywords(phrase: str, drop: set[str] | None = None) -> list[str]:
@@ -820,18 +846,23 @@ def _split_exception(span: str) -> tuple[str, str]:
     m = _CONTRAST_RE.search(span)
     if m:
         tail = span[m.end():]
+        fine, negated = _fine_words(tail)
+        if negated and not fine:
+            # "tree nuts but almonds aren't ok either": no exception at all,
+            # the almonds are one more thing to avoid.
+            return span[:m.start()] + ", " + tail, ""
         # The exception ends where the list goes on: "avoid dairy only when
         # baked, and eggs" still avoids eggs (review, 2026-10-19). Unless
         # the rest is still the exception — "but peanuts and almonds are
         # fine" excepts both.
         cut = re.search(r"[,;]|\band\b|\bor\b|\bplus\b", tail)
-        if cut and not _FINE_RE.search(tail[cut.start():]):
+        if cut and not says_fine(tail[cut.start():]):
             return span[:m.start()] + " " + tail[cut.start():], tail[:cut.start()]
         return span[:m.start()], tail
     # The comma form: "no cow milk for Emily, oat milk is fine".
     for m in re.finditer(r",", span):
         tail = span[m.end():]
-        if _FINE_RE.search(tail):
+        if says_fine(tail):
             return span[:m.start()], tail
     return span, ""
 
