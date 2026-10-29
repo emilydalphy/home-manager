@@ -1092,7 +1092,7 @@ def _after_move(weekly_plan_id: int, moved_ids: list[int]) -> list[str]:
     except Exception:
         logger.exception("Refreshing the draft's flags after a move failed (plan %s)", weekly_plan_id)
     from . import defrost as _defrost
-    return _defrost.resync_plan_thaws(weekly_plan_id, moved_ids)
+    return _defrost.resync_plan_thaws(weekly_plan_id, moved_ids, too_late_today=True)
 
 
 # ---------- chat's door ----------

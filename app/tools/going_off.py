@@ -700,7 +700,7 @@ def swap_for_going_off(item_id: int, entry_id: int, today: datetime.date | None 
         _attendance.resize_after_redate(moved_from)
     except Exception:
         logger.exception("Resizing after the going-off swap failed (plan %s)", plan_id)
-    thaw_now = _defrost.resync_plan_thaws(plan_id, list(moved_from), today=day)
+    thaw_now = _defrost.resync_plan_thaws(plan_id, list(moved_from), today=day, too_late_today=True)
 
     short = _meal_move.short_name(dish)
     if step["kind"] == "open":

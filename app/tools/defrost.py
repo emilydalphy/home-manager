@@ -677,7 +677,8 @@ def thaw_move_sentence(description: str, task_date: str, today: str,
     was toasted at 4pm over tacos swapped onto 7pm — a fridge can't thaw
     that in time, and Now already goes quiet about a missed move on its
     cook's own day (moves._missed_fridge_moves) for the same reason. A move
-    dated today keeps "today" (a skipped cook carried onto tonight).
+    dated today keeps "today". Only the hand doors pass it (resync_plan_
+    thaws' too_late_today) — never the yesterday skip.
     """
     head = (description or "").split(" — ")[0].rstrip(".").strip()
     if not head:
@@ -691,7 +692,8 @@ def thaw_move_sentence(description: str, task_date: str, today: str,
     return f"{head} on {_weekday_name(task_date)}."
 
 
-def resync_plan_thaws(weekly_plan_id: int | None, entry_ids=(), *, today: str | None = None) -> list[str]:
+def resync_plan_thaws(weekly_plan_id: int | None, entry_ids=(), *, today: str | None = None,
+                      too_late_today: bool = False) -> list[str]:
     """
     Recompute this plan's fridge moves after a hand change, and say which
     of the named meals' moves now have to start today or earlier.
@@ -724,9 +726,17 @@ def resync_plan_thaws(weekly_plan_id: int | None, entry_ids=(), *, today: str | 
     Only PENDING rows: a move already ticked done is food already in the
     fridge, and "move the chicken now" about chicken that moved yesterday
     is the app not reading its own records.
+
+    `too_late_today` is for the doors that PUT a meal on today by hand — a
+    swap, the Move sheet, the going-off swap: a gone move for a meal today
+    is said as too late to thaw (thaw_move_sentence's meal_date). Off for
+    the yesterday skip: its cook's move is re-dated back past today by the
+    sync above, and that food was due out days ago and has likely thawed,
+    so "cook something else" would waste it (review, 2026-10-29).
     """
     try:
-        return _resync_plan_thaws(weekly_plan_id, entry_ids, today=today)
+        return _resync_plan_thaws(weekly_plan_id, entry_ids, today=today,
+                                  too_late_today=too_late_today)
     except Exception:
         # The guarantee above is STRUCTURAL rather than a property of where
         # the statements inside happen to sit, and it is this way because it
@@ -744,7 +754,7 @@ def resync_plan_thaws(weekly_plan_id: int | None, entry_ids=(), *, today: str | 
         return []
 
 
-def _resync_plan_thaws(weekly_plan_id, entry_ids, *, today=None) -> list[str]:
+def _resync_plan_thaws(weekly_plan_id, entry_ids, *, today=None, too_late_today=False) -> list[str]:
     """The body of resync_plan_thaws. Its own two try blocks stay, for
     their own log lines; the wrapper above is what makes NEVER RAISES
     true of the lines they do not cover."""
@@ -783,7 +793,8 @@ def _resync_plan_thaws(weekly_plan_id, entry_ids, *, today=None) -> list[str]:
     said = []
     for r in rows:
         sentence = thaw_move_sentence(r["description"], r["task_date"], today,
-                                      meal_date=r["meal_date"], slot=r["slot"])
+                                      meal_date=r["meal_date"] if too_late_today else None,
+                                      slot=r["slot"])
         if sentence and sentence not in said:
             said.append(sentence)
     return said

@@ -177,3 +177,37 @@ def test_the_undo_route(signed_in):
     out = signed_in.post("/api/today/yesterday/answer", json={"entry_id": cook, "answer": "skipped"}).json()
     res = signed_in.post("/api/today/yesterday/undo", json={"undo_entry_id": out["undo_entry_id"]})
     assert res.status_code == 200 and res.json()["status"] == "restored"
+
+
+def test_a_skipped_cooks_overdue_thaw_is_never_called_too_late():
+    """GUARD (review, 2026-10-29) — the real booking pass, no stub. Yesterday's
+    double cook of beef tacos, beef in the freezer, its move due two days
+    ago; skipped onto tonight. The beef was due out days ago and has likely
+    thawed, so the sentence must not be the too-late note ("…or cook
+    something else"): it stays the move itself."""
+    from app.tools import defrost
+    today = household_today()
+    yday = (today - datetime.timedelta(days=1)).isoformat()
+    plan = tools.create_weekly_plan((today - datetime.timedelta(days=3)).isoformat(),
+                                    day_count=5)["weekly_plan_id"]
+    conn = get_conn()
+    conn.execute("UPDATE weekly_plans SET status = 'approved' WHERE id = ?", (plan,))
+    conn.commit()
+    conn.close()
+    tools.add_recipe("Beef Tacos", ingredients=[{"item": "Ground beef", "qty": "1 lb", "category": "meat"}],
+                     prep_time_minutes=10, cook_time_minutes=20, default_servings=4)
+    tools.update_inventory("Ground beef", "add", quantity="2 lbs", category="meat", location="freezer")
+    key = f"{today.isoformat()}:dinner"
+    cook = tools.plan_meal(yday, "Beef Tacos", slot="dinner", weekly_plan_id=plan,
+                           derived_from={"make_double_for": [key]})["entry_id"]
+    tools.plan_meal(today.isoformat(), "Beef Tacos", slot="dinner", weekly_plan_id=plan,
+                    derived_from={"links_to": f"{yday}:dinner"})
+    defrost.sync_defrost_tasks(plan)
+    assert _thaw_dates(cook) and _thaw_dates(cook)[0] < yday, "premise: a pending move, days gone"
+
+    out = tools.answer_yesterday(cook, "skipped", today)
+
+    assert out.get("moved_to", {}).get("date") == today.isoformat()
+    too_late = defrost.too_late_to_thaw_note(today.isoformat(), "dinner", today)
+    assert too_late not in (out.get("thaw_now") or [])
+    assert out.get("thaw_now") == ["Move the Ground beef to the fridge now."], out.get("thaw_now")
