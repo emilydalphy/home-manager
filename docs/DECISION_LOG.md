@@ -13,6 +13,7 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A helper is never what a household is left with, and never deletes it** (2026-10-29, defect hunt; branch `overnight/hunt-onboard-1029b`; tests `tests/test_helper_cant_strand_or_delete.py`). "Remove me" (and the main person's take-out) now needs another adult who LIVES here to stay (`household_deletion._left_with_nobody`, eats_here counted); a helper ("Someone not eating here") gets 403 on `/api/household/delete` and `can_delete: false` (`is_helper` on GET /api/household/leave), but can still remove herself. Why: the family's last adult could leave the nanny holding the children and their allergies with no main person (primary never resolves to a helper), so nobody could take her out again; and the nanny could delete everything while taking one person out was the main person's alone. "Any adult may delete" (2026-09-27) predates helpers (09-30).
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
   (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.
