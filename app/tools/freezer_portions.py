@@ -285,6 +285,42 @@ def portions_to_plan(dates: list[str] | None = None, conn=None) -> list[dict]:
             conn.close()
 
 
+def safe_to_plan(portions: list[dict] | None) -> list[dict]:
+    """
+    The portions the week may be handed: every one whose dish is not a
+    hard clash for this household — an allergy or a must-avoid, matched on
+    the dish's saved recipe list as well as its name
+    (allergen_gate.hard_clashes, strict).
+
+    Allergy door hunt, 2026-10-29: a portion frozen before Sam's peanut
+    allergy was saved ("Thai Noodle Bowl", peanut butter on its recipe) was
+    planned onto a night as "Leftovers from the freezer — Thai Noodle Bowl"
+    with no word anywhere. The night's name is not a recipe, so neither the
+    generation sweep nor the approval check could read its list. The row
+    stays in the freezer, as one past its use-by does: what to do with it
+    is the household's call, but Pomona does not put it on a plate.
+    """
+    from . import allergen_gate as _allergen_gate
+    from . import recipes as _recipes
+
+    portions = list(portions or [])
+    avoidances = _allergen_gate.hard_avoidances()
+    if not avoidances:
+        return portions
+    keep = []
+    for p in portions:
+        dish = (p.get("dish") or "").strip()
+        clashes = _allergen_gate.hard_clashes(
+            dish, ingredients=_recipes.saved_ingredients(dish), avoidances=avoidances,
+        )
+        if clashes:
+            logger.warning("Freezer portion %r has %s — left in the freezer, not planned",
+                           dish, _allergen_gate._food_word(clashes))
+            continue
+        keep.append(p)
+    return keep
+
+
 def _past_use_by(portion: dict, on: str) -> bool:
     """Is this portion past its use-by on `on` (ISO date)? A row with no
     use-by, or one that can't be read, is not — the food-safety date is
@@ -817,7 +853,7 @@ def _queue(portion: dict, days: int) -> None:
 
 __all__ = [
     "KEY", "CONSTRAINT", "SLOT", "MAX_PORTIONS_PER_WEEK", "PORTION_LEAD_HOURS",
-    "USE_SOON_AFTER_DAYS", "portion_on", "portions_to_plan", "choose_nights",
+    "USE_SOON_AFTER_DAYS", "portion_on", "portions_to_plan", "safe_to_plan", "choose_nights",
     "prompt_lines", "apply_to_plan", "defrost_candidates", "portion_eaten",
     "sweep_use_soon",
 ]
