@@ -1812,6 +1812,9 @@ def add_grocery_item(
     trim and a shorter cap (MAX_QUANTITY_LENGTH) -- it has no "must not be
     blank" rule, since an item with no quantity at all is normal.
     """
+    if not (item or "").strip():
+        # Refused before any connection or lock (the same check runs below).
+        raise ValueError("I need a name for that.")
     if conn is None:
         # The write lock from the first read (two phones, 2026-10-29): the
         # merge reads the list's 'needed' lines and then writes the summed
