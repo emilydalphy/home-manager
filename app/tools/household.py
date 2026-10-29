@@ -403,15 +403,24 @@ def last_adult_leaving(name: str, age_group: str) -> str | None:
             them = find_member_row(conn, name)
         except AmbiguousMemberName as e:
             return str(e)
-        adult_ids = [r["id"] for r in conn.execute(
-            "SELECT id FROM members WHERE household_id = ? AND LOWER(TRIM(age_group)) = 'adult'",
+        adults = conn.execute(
+            f"SELECT id, {EATS_HERE_SQL} AS eats_here FROM members "
+            "WHERE household_id = ? AND LOWER(TRIM(age_group)) = 'adult'",
             (household_id(),),
-        )]
+        ).fetchall()
     finally:
         conn.close()
-    if them is not None and adult_ids == [them["id"]]:
-        shown = (them["name"] or "").strip() or (name or "").strip()
+    if them is None:
+        return None
+    shown = (them["name"] or "").strip() or (name or "").strip()
+    if [r["id"] for r in adults] == [them["id"]]:
         return f"{shown} is the only adult here. Add another adult before changing this."
+    # A helper ("Someone not eating here") doesn't count as the adult a
+    # household keeps (defect hunt 2026-10-29, the same rule as
+    # "Remove me" in app/ (_left_with_nobody)): demoting the last adult who
+    # lives here left the nanny as the only adult, with no main person.
+    if [r["id"] for r in adults if r["eats_here"]] == [them["id"]]:
+        return f"{shown} is the only adult who lives here. Add another adult before changing this."
     return None
 
 

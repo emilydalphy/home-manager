@@ -410,6 +410,16 @@ def _left_with_nobody(conn, hid: int, mid: int) -> str | None:
     person left (primary_member never resolves to a helper), so nobody
     could ever take her out again.
     """
+    leaver = conn.execute(
+        f"SELECT {EATS_HERE_SQL} AS eats_here FROM members WHERE id = ? AND household_id = ?",
+        (mid, hid),
+    ).fetchone()
+    if leaver is not None and not leaver["eats_here"]:
+        # A helper can always leave: the household never kept her anyway,
+        # and she can't delete it (HELPER_CANT_DELETE), so refusing here too
+        # would leave a helper who is somehow the only adult (legacy data)
+        # with two refusals pointing at each other (review, 2026-10-29).
+        return None
     others = conn.execute(
         f"SELECT name, {EATS_HERE_SQL} AS eats_here FROM members "
         f"WHERE household_id = ? AND id != ? AND {_ADULT_SQL} ORDER BY id",

@@ -101,3 +101,35 @@ def test_an_adult_living_here_can_still_delete(household):
     res = sam_phone.post("/api/household/delete", json={"confirm": "DELETE"})
     assert res.status_code == 200, res.text
     assert not households.household_exists(household)
+
+
+def test_the_last_adult_living_here_cant_be_made_a_teen_while_a_helper_remains(household):
+    pat = _adult("Pat", household)
+    with tools.use_household(household):
+        tools.add_member("Kid")
+        tools.set_member_age_group("Kid", "child")
+    nan = invites.add_adult(household, "Nan", eats_here=False)
+    nan_phone = _device(nan)
+
+    res = nan_phone.post("/api/memory/member/age-group", json={"name": "Pat", "age_group": "teen"})
+    assert res.status_code == 400
+    assert "only adult who lives here" in res.json()["detail"]
+    with tools.use_household(household):
+        with pytest.raises(Exception, match="only adult who lives here"):
+            tools.set_member_age_group_for_chat("pat", "child")
+    conn = get_conn()
+    try:
+        assert conn.execute("SELECT age_group FROM members WHERE id = ?", (pat,)).fetchone()[0] == "adult"
+    finally:
+        conn.close()
+
+
+def test_a_helper_who_is_somehow_the_only_adult_can_still_leave(household):
+    with tools.use_household(household):
+        tools.add_member("Kid")
+        tools.set_member_age_group("Kid", "child")
+    nan = invites.add_adult(household, "Nan", eats_here=False)
+    nan_phone = _device(nan)
+    state = nan_phone.get("/api/household/leave").json()
+    assert state["can_remove_self"] is True and state["can_delete"] is False
+    assert nan_phone.post("/api/household/remove-me").status_code == 200
