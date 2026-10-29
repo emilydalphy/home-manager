@@ -33,6 +33,20 @@ def test_not_ok_holds_the_food_back(sam, fact):
     assert allergen_gate.hard_clashes("Walnut Salad", [{"item": "walnuts", "qty": "1 cup"}]), fact
 
 
+@pytest.mark.parametrize("fact, dish, item", [
+    # Review, 2026-10-29: a "not ok" food OUTSIDE the first avoidance's
+    # family — the filler words used to ride along in the phrase and match
+    # nothing.
+    ("Sam is allergic to peanuts, sesame is not ok either", "Sesame Noodles", "sesame oil"),
+    ("Sam is allergic to dairy, eggs are not ok", "Omelette", "eggs"),
+    ("Sam is allergic to peanuts but sesame isn't ok either", "Hummus", "tahini"),
+])
+def test_not_ok_holds_a_food_from_another_family(sam, fact, dish, item):
+    tools.add_fact("people", fact, hard=True)
+
+    assert allergen_gate.hard_clashes(dish, [{"item": item, "qty": "1"}]), fact
+
+
 def test_a_plain_fine_is_still_an_exception(sam):
     tools.add_fact("people", "Sam is allergic to tree nuts, almonds are fine", hard=True)
 

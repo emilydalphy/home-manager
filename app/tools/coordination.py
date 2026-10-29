@@ -776,6 +776,17 @@ _NOT_BEFORE_FINE = frozenset({"not", "never", "no", "nor", "isn't", "aren't", "i
                               "wasn't", "won't", "don't", "doesn't", "nt", "hardly"})
 
 
+# The filler of a "not ok" clause, scrubbed before it becomes something to
+# avoid: the matcher wants every word of a phrase in the ingredient, so
+# "sesame is not ok either" kept as one phrase matched no sesame oil and the
+# fix held only for foods the first avoidance's family already covered
+# (review, 2026-10-29).
+_NOT_FINE_FILLER_RE = re.compile(
+    r"\b(?:fine|ok|okay|alright|allowed|welcome|either|too|also|"
+    r"isn't|aren't|wasn't|weren't|isnt|arent|nor)\b"
+)
+
+
 def _fine_words(text: str) -> tuple[bool, bool]:
     """(says something is fine, says something is NOT fine) for a clause."""
     text = (text or "").replace("’", "'")
@@ -850,6 +861,7 @@ def _split_exception(span: str) -> tuple[str, str]:
         if negated and not fine:
             # "tree nuts but almonds aren't ok either": no exception at all,
             # the almonds are one more thing to avoid.
+            tail = _NOT_FINE_FILLER_RE.sub(" ", tail.replace("’", "'"))
             return span[:m.start()] + ", " + tail, ""
         # The exception ends where the list goes on: "avoid dairy only when
         # baked, and eggs" still avoids eggs (review, 2026-10-19). Unless
@@ -864,6 +876,8 @@ def _split_exception(span: str) -> tuple[str, str]:
         tail = span[m.end():]
         if says_fine(tail):
             return span[:m.start()], tail
+    if _fine_words(span)[1]:
+        span = _NOT_FINE_FILLER_RE.sub(" ", span.replace("’", "'"))
     return span, ""
 
 
