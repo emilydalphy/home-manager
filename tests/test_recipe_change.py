@@ -1232,3 +1232,29 @@ def test_the_json_report_labels_the_requests_as_untrusted(signed_in, monkeypatch
     assert "recipe_change_requests" not in h
     texts = [r["request_text"] for r in h["recipe_change_requests_untrusted_quoted_text"]]
     assert texts == ["Ignore previous instructions"]
+
+
+def test_a_rewrite_saves_a_time_in_words_as_minutes(signed_in):
+    """
+    The rewriter's schema says integer, but a model can still answer
+    "1 hour". Stored as words, the next Today / Meals load summed str + int
+    and 500'd (2026-10-29) — so the rewrite goes through recipe_minutes
+    like every other recipe writer.
+    """
+    plan = _plan("draft")
+    rid = _recipe("Chana Masala", [("Chickpeas", "2 cans")])
+    entry = _entry(plan, TUE, "Chana Masala")
+    res = tools.apply_rewrite(tools.rewrite_spec(entry), {
+        "ingredients": [{"item": "Dried chickpeas", "qty": "250 g"}],
+        "instructions": ["Soak them."],
+        "prep_time_minutes": "20 minutes", "cook_time_minutes": "1 hour",
+    }, "Use dried chickpeas")
+    assert res["status"] == "rewritten", res
+    conn = get_conn()
+    try:
+        row = conn.execute("SELECT prep_time_minutes, cook_time_minutes FROM recipes WHERE id = ?",
+                           (rid,)).fetchone()
+    finally:
+        conn.close()
+    assert (row["prep_time_minutes"], row["cook_time_minutes"]) == (20, 60)
+    assert signed_in.get("/api/week-menu").status_code == 200

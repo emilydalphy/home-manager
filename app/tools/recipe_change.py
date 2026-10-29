@@ -1125,7 +1125,11 @@ def apply_rewrite(spec: dict, detail: dict, request_text: str, this_meal_only: b
             "advance_prep_notes = ?, advance_prep_step_indices_json = ?, details_pending = 0 "
             "WHERE id = ? AND household_id = ?",
             (json.dumps(settled), json.dumps(instructions), servings,
-             detail.get("prep_time_minutes"), detail.get("cook_time_minutes"),
+             # Through recipe_minutes like every other recipe writer: a
+             # rewrite answering "1 hour" stored the words, and the next
+             # Today / Meals load summed str + int and 500'd (2026-10-29).
+             _recipes.recipe_minutes(detail.get("prep_time_minutes")),
+             _recipes.recipe_minutes(detail.get("cook_time_minutes")),
              detail.get("advance_prep_notes") or "",
              json.dumps(detail.get("advance_prep_step_indices") or []),
              target_id, hid),
