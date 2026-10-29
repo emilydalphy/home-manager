@@ -19786,6 +19786,13 @@
       // "Cook this" only where cook mode can open it (see mealDockHtml);
       // on a week Cook doesn't hold yet the swap takes the row on its own.
       var cookable = eaten || typeof planCookableNow !== 'function' || planCookableNow();
+      // A reheat night not yet eatable (a day ahead, a draft) has nothing
+      // to mark — the Meal step's dock already says so (mealDockHtml,
+      // leftoversEatenNow), and this card offered "Mark eaten" on
+      // Sunday's freezer night on a Thursday. The swap takes the row.
+      if (entry.source === 'leftovers' && typeof leftoversEatenNow === 'function' && !leftoversEatenNow(day)) {
+        cookable = false;
+      }
       if (!cookable) {
         return '<div class="wk-acts">' +
           '<button type="button" class="wk-act wk-act-primary" data-wk-swap="' + slot + '">' + SWAP_LABEL + '</button>' +

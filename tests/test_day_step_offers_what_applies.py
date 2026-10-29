@@ -138,6 +138,38 @@ def test_the_swap_that_button_called_is_refused_by_the_server():
         tools.swap_meal_in_place(plan_id, night_off["entry_id"])
 
 
+@_needs_node
+def test_a_freezer_night_ahead_offers_no_mark_eaten():
+    """CATCH. The real payload's Sunday freezer night, read a week early:
+    the swap is the row's only action, as on its Meal step."""
+    _plan_id, days = _seed_next_week()
+    sunday = days[6]
+    assert sunday["dinner"]["source"] == "leftovers"
+    out = _acts(sunday, "dinner")
+    assert out["cook"] is False
+    assert out["swap"] is True
+
+
+@_needs_node
+def test_a_reheat_night_today_still_offers_mark_eaten():
+    """GUARD for today (the narrowing is days ahead and drafts only); the
+    draft half is a CATCH — main offered Mark eaten on a draft's reheat."""
+    entry = {"title": "Leftovers — Monday’s Chili", "state": "planned", "source": "leftovers",
+             "meta": "reheat", "entry_id": 4}
+    today = {"date": "2026-10-29", "isPast": False, "isToday": True, "dinner": entry}
+    assert _acts(today)["cook"] is True
+    assert _acts(today, status="draft")["cook"] is False
+
+
+@_needs_node
+def test_an_ordinary_cook_ahead_keeps_cook_this():
+    """GUARD — a real cook on a day ahead still opens its recipe."""
+    entry = {"title": "Chili", "state": "planned", "source": "plan", "meta": "35 min", "entry_id": 5}
+    ahead = {"date": "2026-10-31", "isPast": False, "isToday": False, "dinner": entry}
+    out = _acts(ahead)
+    assert out["cook"] is True and out["swap"] is True
+
+
 def _add_meal(day: dict):
     return _run(
         "var WEEK_SLOTS = ['breakfast', 'lunch', 'dinner'];\n"
