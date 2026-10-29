@@ -133,3 +133,20 @@ def test_a_helper_who_is_somehow_the_only_adult_can_still_leave(household):
     state = nan_phone.get("/api/household/leave").json()
     assert state["can_remove_self"] is True and state["can_delete"] is False
     assert nan_phone.post("/api/household/remove-me").status_code == 200
+
+
+def test_the_leave_dialog_opens_a_helper_on_remove_me_and_offers_her_no_delete():
+    """The server refuses a helper's delete; the dialog shouldn't open on it.
+
+    Checked by eye in Chromium at phone width (2026-10-29): a helper sees
+    "Remove yourself from …? / Remove me" with no "Delete the whole
+    household instead" link; an adult who lives here still opens on Delete.
+    """
+    from pathlib import Path
+    js = (Path(__file__).resolve().parent.parent / "static" / "shell.js").read_text()
+    opener = js[js.index("async function openLeaveDialog()"):]
+    opener = opener[:opener.index("renderLeaveDialog();")]
+    assert "is_helper" in opener and "leaveState.mode = 'remove'" in opener
+    render = js[js.index("function renderLeaveDialog()"):js.index("async function openLeaveDialog()")]
+    remove_branch = render[render.index("leaveState.mode === 'remove'"):render.index("} else {")]
+    assert "d.can_delete === false" in remove_branch

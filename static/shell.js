@@ -31153,7 +31153,10 @@
         '<div class="reset-actions">' + cancel +
           '<button type="button" class="btn-gold" data-leave="remove">Remove me</button>' +
         '</div>' +
-        '<button type="button" class="dialog-cancel-link" data-leave="mode-delete">Delete the whole household instead</button>';
+        // A helper can't delete the household (the server refuses her), so
+        // she isn't offered the way to it.
+        (d.can_delete === false ? '' :
+        '<button type="button" class="dialog-cancel-link" data-leave="mode-delete">Delete the whole household instead</button>');
     } else {
       html = '<h2 class="reset-title" id="leave-title">Delete ' + escapeHtml(d.household_name || 'your household') + '?</h2>' +
         '<p class="reset-note">Everything goes, for everyone in it: plans, shopping lists, recipes, everyone’s details and what you’ve told me in chat. It can’t be undone.</p>' +
@@ -31181,6 +31184,8 @@
     } catch (err) {
       leaveState.data = null;
     }
+    // A helper's way out is removing herself — open there, not on Delete.
+    if (leaveState.data && leaveState.data.is_helper && leaveState.data.can_remove_self) leaveState.mode = 'remove';
     renderLeaveDialog();
     openSheet(document.getElementById('leave-dialog'), document.getElementById('leave-scrim'));
     var input = document.getElementById('leave-confirm-input');
