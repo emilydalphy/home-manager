@@ -168,10 +168,14 @@ def test_a_lunch_where_people_are_in_different_places_is_one_line_each():
     share a line, which is what reproduces the card's own example —
     "Gowthami + Ravi" together, Arjun on his own, all three on one dish.
     """
-    _seed_day({"lunch": "Chana Masala"})
-    rhythm.set_lunch_location("Gowthami", "home")
-    rhythm.set_lunch_location("Ravi", "home")
-    rhythm.set_lunch_location("Arjun", "out")
+    _, day = _seed_day({"lunch": "Chana Masala"})
+    # Today's own weekday, not the standing answer: a standing answer says
+    # nothing about a Saturday or Sunday (2026-10-29), and this test runs
+    # on whatever day it is.
+    weekday = day.strftime("%A")
+    rhythm.set_lunch_location("Gowthami", "home", weekday=weekday)
+    rhythm.set_lunch_location("Ravi", "home", weekday=weekday)
+    rhythm.set_lunch_location("Arjun", "out", weekday=weekday)
     row = moves.today_moves()["day_meals"][0]
     assert row["per_person"] is True
     assert [(ln["who"], ln["where"], ln["dish"]) for ln in row["lines"]] == [

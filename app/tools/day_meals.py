@@ -227,15 +227,17 @@ def _where_for(slot: str, name: str, weekday: str, lunch: dict) -> str:
     rhythm.effective_lunch_location here instead cost a whole
     get_household_rhythm — one connection — PER PERSON PER LUNCH, which is
     exactly the per-row read this repo keeps writing down. The override
-    rule is that function's, restated in one line rather than reimplemented:
-    the weekday's override if one has been learned, else the standing
-    answer, else nothing (never-asked and 'varies' both say nothing, which
-    is honest about today either way).
+    rule is rhythm.lunch_location_on, which takes the entry in hand: the
+    weekday's override if one has been learned, else (Monday to Friday)
+    the standing answer, else nothing (never-asked and 'varies' both say
+    nothing, which is honest about today either way).
     """
     if slot != "lunch":
         return ""
-    entry = lunch.get((name or "").strip()) or {}
-    where = (entry.get("overrides") or {}).get(weekday) or entry.get("standing")
+    # rhythm.lunch_location_on is the rule (a standing answer is a weekday
+    # one, so a Saturday lunch at home isn't "out" — 2026-10-29); it takes
+    # the entry already in hand, so this is still no read per person.
+    where = _rhythm.lunch_location_on(lunch.get((name or "").strip()), weekday)
     return WHERE_WORDS.get((where or "").strip().lower(), "")
 
 

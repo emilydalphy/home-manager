@@ -1003,17 +1003,42 @@ def save_rhythm_answers(
     return get_household_rhythm()
 
 
+# The days a STANDING lunch location speaks for. The only screen that
+# writes one now is setup's "What does each person need for weekday
+# lunches?" (member_needs' bridge), which asks Monday to Friday — a child's
+# "Cold packed" for school is not an answer about Saturday (defect hunt,
+# 2026-10-29: it made Plan a week pre-tick Saturday and Sunday as packed
+# lunches, on a screen that never shows those days so nobody could untick
+# them, and Today said "everyone · out" at a Saturday lunch at home). A
+# weekend day speaks only through its own override ("Sam works Saturdays").
+STANDING_LUNCH_WEEKDAYS = WEEKDAYS[:5]
+
+
+def lunch_location_on(entry: dict | None, weekday: str) -> str | None:
+    """
+    THE rule for one person's lunch location on one weekday, given their
+    entry in get_household_rhythm()["lunch_location"]: the override for that
+    day if one's been learned, else — Monday to Friday only — the standing
+    answer, else None. Takes the entry rather than reading it so a caller
+    holding the whole map (day_meals) pays no read per person.
+    """
+    if not entry:
+        return None
+    override = (entry.get("overrides") or {}).get(weekday)
+    if override:
+        return override
+    return entry.get("standing") if weekday in STANDING_LUNCH_WEEKDAYS else None
+
+
 def effective_lunch_location(member_name: str, weekday: str) -> str | None:
     """
     A member's lunch location for one specific weekday: the override for
-    that day if one's been learned, else the standing answer, else None
-    (never asked/answered at all — not the same as 'varies', which is a
-    real answer).
+    that day if one's been learned, else the standing answer on a weekday
+    (lunch_location_on), else None (never asked/answered at all — not the
+    same as 'varies', which is a real answer).
     """
     rhythm = get_household_rhythm()["lunch_location"].get((member_name or "").strip())
-    if not rhythm:
-        return None
-    return rhythm["overrides"].get(weekday) or rhythm["standing"]
+    return lunch_location_on(rhythm, weekday)
 
 
 def rhythm_completeness_signals() -> dict:
