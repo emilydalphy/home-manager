@@ -274,7 +274,17 @@ def add_store_typical_items(
         # "costco" is the household's "Costco": one key in this map, the
         # same name the item's remembered store will carry.
         store = _stores.canonical_store_name(conn, store)
-        store_items = list(dict.fromkeys(current.get(store, []) + cleaned))
+        # Each item once, by _merge_key — the identity the cross-store drop
+        # below and remove_store_typical_item already use (defect hunt
+        # 2026-10-29). An exact-text merge kept "Milk" and "milk" (or "egg"
+        # beside "eggs") as two chips under one store, and two "usually get
+        # here" suggestions for one thing. The first spelling saved stays.
+        store_items = list(current.get(store, []))
+        seen = {_merge_key(i) for i in store_items}
+        for i in cleaned:
+            if _merge_key(i) not in seen:
+                seen.add(_merge_key(i))
+                store_items.append(i)
         current[store] = store_items
         cleaned_keys = {_merge_key(i) for i in cleaned}
         for other_store in list(current.keys()):
