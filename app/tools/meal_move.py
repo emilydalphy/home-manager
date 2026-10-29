@@ -101,6 +101,27 @@ def _cap(text: str) -> str:
     return text[:1].upper() + text[1:]
 
 
+def _made_ahead(chains: dict, source_id: int) -> bool:
+    """Is this cook's chain portions the household chose to cook ahead
+    (cook_ahead.set_cook_ahead), rather than a dinner's leftovers?"""
+    return bool((chains["sources"].get(source_id) or {}).get("cook_ahead"))
+
+
+def _reheat_words(ahead: bool, count: int = 1) -> tuple[str, str]:
+    """(the noun, its "was/were") for the nights that eat a cook's food.
+
+    A night the household cooked ahead for is "made ahead", never
+    "leftovers" — the Plan tab's own headline for that night ("Made ahead —
+    Thursday's Chili", weekly_plan.build_slot) and the Cook tab's
+    (cooker.py) say so, and Emily's rule is that the screens agree. The
+    Move sheet, opened from that same Plan tab, said "Chili leftovers" and
+    "Saturday's leftovers move with the Chili" about the same night
+    (defect hunt, 2026-10-29)."""
+    if not ahead:
+        return "leftovers", "were"
+    return ("made-ahead portion", "was") if count == 1 else ("made-ahead portions", "were")
+
+
 # ---------- the week, read once ----------
 
 def _snapshot(weekly_plan_id: int, conn) -> dict:
@@ -312,7 +333,9 @@ def plan_move(snap: dict, entry_id: int, to_date: str, today: str,
         raise ValueError("There's no meal there to move.")
     chains = snap["chains"]
     if _is_reheat(source, chains):
-        return {"ok": False, "reason": "Leftovers move with the meal they come from"}
+        ahead = bool((chains["leftovers"].get(source["id"]) or {}).get("cook_ahead"))
+        return {"ok": False, "reason": "A made-ahead portion moves with the meal it comes from"
+                if ahead else "Leftovers move with the meal they come from"}
     if source["date"] < today:
         return {"ok": False, "reason": "Already gone by"}
     # Cooked, or started — a dinner on the stove stays put
@@ -330,6 +353,8 @@ def plan_move(snap: dict, entry_id: int, to_date: str, today: str,
             members.append(row)
     member_pos = {(m["date"], m["slot"]) for m in members}
     dish = short_name(source["meal"])
+    # "Its leftovers" or "Its made-ahead portion" — see _reheat_words.
+    food, was = _reheat_words(_made_ahead(chains, source["id"]), len(members) - 1)
 
     # The day tapped is one of the dish's own leftovers nights. The Move
     # sheet dims it (the row already says "Chicken Stew leftovers"); chat's
@@ -347,11 +372,11 @@ def plan_move(snap: dict, entry_id: int, to_date: str, today: str,
     for m in members:
         new = _shift(m["date"], delta)
         if new > snap["end"]:
-            return {"ok": False, "reason": "Its leftovers would land after this week"}
+            return {"ok": False, "reason": f"Its {food} would land after this week"}
         if new < snap["start"]:
-            return {"ok": False, "reason": "Its leftovers would land before this week"}
+            return {"ok": False, "reason": f"Its {food} would land before this week"}
         if (m["cooked_status"] or "") == "done":
-            return {"ok": False, "reason": "Its leftovers were already had"}
+            return {"ok": False, "reason": f"Its {food} {was} already had"}
         targets[m["id"]] = new
 
     # The rows the moving meal lands on, and the places it leaves.
@@ -380,18 +405,18 @@ def plan_move(snap: dict, entry_id: int, to_date: str, today: str,
             if not _somebody_home(snap, *pos):
                 reason = f"Nobody’s home for {m['slot']}"
                 return {"ok": False, "reason": reason if tapped
-                        else f"Its leftovers would land on {wd}, and nobody’s home"}
+                        else f"Its {food} would land on {wd}, and nobody’s home"}
             if pos[0] < today:
                 return {"ok": False, "reason": "Already gone by" if tapped
-                        else f"Its leftovers would land on {wd}, which has gone by"}
+                        else f"Its {food} would land on {wd}, which has gone by"}
             continue
         if there["slot_state"] == "planned_empty":
             reason = _empty_reason(there, m["slot"])
             if tapped:
                 return {"ok": False, "reason": reason}
             if _nobody_home_row(there):
-                return {"ok": False, "reason": f"Its leftovers would land on {wd}, and nobody’s home"}
-            return {"ok": False, "reason": f"Its leftovers would land on {wd}, which isn’t planned"}
+                return {"ok": False, "reason": f"Its {food} would land on {wd}, and nobody’s home"}
+            return {"ok": False, "reason": f"Its {food} would land on {wd}, which isn’t planned"}
         begun = _weekly_plan.cook_begun(there)
         if begun:
             return {"ok": False, "reason": _BEGUN_SHORT[begun] if tapped
@@ -502,15 +527,16 @@ def _structural_refusal(snap: dict, before: list[dict], after: list[dict],
         if reheat_id not in placement and cook_id not in placement:
             continue
         reheat, cook = by_id_after[reheat_id], by_id_after[cook_id]
+        food, _was = _reheat_words(_made_ahead(snap["chains"], cook_id))
         if _weekly_plan._eaten_at(cook) >= _weekly_plan._eaten_at(reheat):
-            return f"The {short_name(cook['meal'])} would end up after its leftovers"
+            return f"The {short_name(cook['meal'])} would end up after its {food}"
         gap = _leftovers.days_apart(cook["date"], reheat["date"])
         if gap > _leftovers.MAX_LEFTOVER_DAYS:
             was = None
             if pairs_before.get(reheat_id) == cook_id:
                 was = _leftovers.days_apart(by_id_before[cook_id]["date"], by_id_before[reheat_id]["date"])
             if was is None or gap > was:
-                return f"The {short_name(cook['meal'])}’s leftovers would be {gap} days old"
+                return f"The {short_name(cook['meal'])}’s {food} would be {gap} days old"
     # A prepped lunch is cooked on its prep day; it can't be eaten before it.
     for i, d in placement.items():
         prep_date = str(_derived(by_id_before[i]).get("prep_date") or "")
@@ -596,6 +622,8 @@ def _day_meal_label(row: dict | None, snap: dict) -> str:
     meal = (row["meal"] or "").strip()
     src = snap["chains"]["leftovers"].get(row["id"])
     if src:
+        if src.get("cook_ahead"):
+            return f"{src['source']['meal']}, made ahead"
         return f"{src['source']['meal']} leftovers"
     return meal or "Nothing planned"
 
@@ -677,8 +705,12 @@ def move_options(weekly_plan_id: int, entry_id: int) -> dict:
     sub = f"The two {_SLOT_PLURALS.get(slot, slot + 's')} trade places."
     if targets:
         nights = _leftovers._join_days([_weekday(t["date"]) for t in targets])
-        sub += f" {nights}’s leftovers move with the {dish}." if len(targets) == 1 else \
-            f" The leftovers on {nights} move with the {dish}."
+        if _made_ahead(snap["chains"], source["id"]):
+            sub += f" {nights}’s made-ahead portion moves with the {dish}." if len(targets) == 1 else \
+                f" The made-ahead portions on {nights} move with the {dish}."
+        else:
+            sub += f" {nights}’s leftovers move with the {dish}." if len(targets) == 1 else \
+                f" The leftovers on {nights} move with the {dish}."
     return {
         "entry_id": entry_id, "slot": slot, "meal": meal, "date": source["date"],
         "title": f"Move the {dish} to which day?",
@@ -736,12 +768,15 @@ def _said(snap: dict, placement: dict[int, str], members: list[int], source_id: 
     leftovers = [i for i in members if i != source_id]
     if leftovers:
         days = _leftovers._join_days([_weekday(placement[i]) for i in leftovers])
-        return f"{line}, leftovers to {days}"
+        food, _was = _reheat_words(_made_ahead(snap["chains"], source_id), len(leftovers))
+        return f"{line}, {food} to {days}"
     other = [i for i in placement if i not in members]
     if len(other) == 1 and by_id[other[0]]["slot_state"] == "planned":
         o = by_id[other[0]]
-        if o["id"] in snap["chains"]["leftovers"]:
-            return f"{line}, leftovers to {_weekday(placement[o['id']])}"
+        reheat = snap["chains"]["leftovers"].get(o["id"])
+        if reheat:
+            food, _was = _reheat_words(bool(reheat.get("cook_ahead")))
+            return f"{line}, {food} to {_weekday(placement[o['id']])}"
         return f"{line}, {short_name(o['meal'])} to {_weekday(placement[o['id']])}"
     return line
 
@@ -1130,11 +1165,14 @@ def move_meal_for_chat(weekly_plan_id: int, meal_date: str, to_date: str,
         # The night named is a leftovers night; the move belongs to the
         # night that cooks it. Said as the rule, with that night named, so
         # the next call is the right one rather than a guess.
-        cook = (snap["chains"]["leftovers"].get(row["id"]) or {}).get("source")
+        reheat = snap["chains"]["leftovers"].get(row["id"]) or {}
+        cook = reheat.get("source")
         where = f" It's cooked on {_weekday(cook['date'])} ({cook['date']}) — move that night instead." \
             if cook else ""
+        rule = ("A made-ahead portion moves with the meal it comes from." if reheat.get("cook_ahead")
+                else "Leftovers move with the meal they come from.")
         return {"status": "refused",
-                "message": f"Leftovers move with the meal they come from.{where}",
+                "message": f"{rule}{where}",
                 "could_go": []}
     out = move_meal(weekly_plan_id, row["id"], to_date, onto_own_leftovers=True)
     if out.get("status") != "moved":
