@@ -96,6 +96,8 @@ def get_shared_weekly_plan(token: str) -> dict | None:
             conn.close()
         if current is not None:
             plan = _weekly_plan.get_weekly_plan(current["id"])
+            if plan.get("planning_mode") != "component_based":
+                _say_it_as_meals_does(plan)
     shared = {key: plan[key] for key in _SHARED_PLAN_KEYS if key in plan}
     shared["meals"] = [
         {key: meal.get(key) for key in _SHARED_MEAL_KEYS} for meal in plan.get("meals") or []
@@ -107,6 +109,43 @@ def get_shared_weekly_plan(token: str) -> dict | None:
     # own "This week's meals" rather than "Your household's meals".
     shared["household_name"] = household_display_name(household["name"] if household else "")
     return shared
+
+
+def _say_it_as_meals_does(plan: dict) -> None:
+    """
+    Make a day-based plan's `menu` say what the Meals card says for a
+    reheat night (defect hunt, 2026-10-29). Before this the share page read
+    the bare dish name off every row, so a leftovers night read "Beef Chili"
+    — whoever is cooking makes it again — while Meals says "Leftovers —
+    Monday's Beef Chili". A day's second snack never showed either (fixed by
+    sharing `snacks` below). Edits `plan` in place; runs inside
+    use_household, so the chain read is this household's.
+
+    An out night is deliberately NOT named here, although Meals says "Out —
+    nothing to cook": the public link keeps when the house is empty to
+    itself (the 2026-10-11 decision that stripped constraints_notes), so
+    that night simply shows no dinner.
+    """
+    from . import leftovers as _leftovers
+    by_day = {day["date"]: day for day in plan.get("menu") or []}
+    chains = _leftovers.plan_leftover_chains(plan["weekly_plan_id"])["leftovers"]
+    for meal in plan.get("meals") or []:
+        day = by_day.get(meal.get("date"))
+        slot = meal.get("slot")
+        if day is None or slot not in ("breakfast", "lunch", "dinner"):
+            continue
+        leftover = chains.get(meal.get("entry_id"))
+        if leftover and meal.get("slot_state") == "planned":
+            src = leftover["source"]
+            # Same choice of word as Meals: a night cooked ahead on purpose
+            # is "Made ahead", not "Leftovers".
+            headline = (
+                _leftovers.made_ahead_headline(src["meal"], src["date"])
+                if leftover.get("cook_ahead")
+                else _leftovers.leftovers_headline(src["meal"], src["date"])
+            )
+            meal["meal"] = headline
+            day[slot] = headline
 
 
 # What the public link carries: exactly what share.html draws, and nothing
@@ -131,7 +170,9 @@ _SHARED_PLAN_KEYS = (
     "menu_is_suggested", "components",
 )
 _SHARED_MEAL_KEYS = ("date", "slot", "meal")
-_SHARED_MENU_DAY_KEYS = ("date", "breakfast", "lunch", "dinner", "snack")
+# `snacks` is every snack of the day — `snack` holds only the first, so a
+# day's second snack never reached the page (2026-10-29).
+_SHARED_MENU_DAY_KEYS = ("date", "breakfast", "lunch", "dinner", "snack", "snacks")
 
 
 # A personal, tokenized, limited-write link tied to one members row, so a

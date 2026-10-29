@@ -13,6 +13,7 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The share link says "Leftovers — Monday's Beef Chili" and shows every snack** (2026-10-29, defect hunt; branch `overnight/hunt-share-public-1029`; `tests/test_share_says_what_meals_says.py`). `/api/share/<token>` now titles a reheat night with Meals' own headline (`leftovers_headline` / `made_ahead_headline`, via `plan_leftover_chains`) and carries the day's `snacks`; share.html draws every snack. Why: the page read the bare dish ("Beef Chili" twice, so whoever cooks makes it again) and only the first snack. An out night still shows no dinner, unlike Meals' "Out — nothing to cook": when the house is empty stays off the public link (the 2026-10-11 call).
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
   (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.
