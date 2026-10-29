@@ -13,6 +13,7 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **An allergy with a note beside it is still checked** (2026-10-29, branch `overnight/hunt-whatweknow-1029`; tests `tests/test_allergy_note_beside_it.py`). A restriction typed in Preferences › People as "Shellfish (anaphylactic)", "sesame - EpiPen" or "peanuts (airborne too)" — and a must-avoid note like "Sam is allergic to shellfish (anaphylactic)" — was read as one phrase, so the allergy check wanted "anaphylactic" in the dish too and held back nothing. Now a bracket, spaced dash or colon ends a phrase (`coordination._note_breaks`), and note words (`_NOTE_WORDS`: mild, anaphylactic, EpiPen, hives…) are never foods to hunt for. Hard avoidances only; Won't eat keeps its reading. Why: the most serious allergies are the ones people annotate.
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
   (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.
