@@ -129,10 +129,11 @@ def _say_it_as_meals_does(plan: dict) -> None:
     from . import leftovers as _leftovers
     by_day = {day["date"]: day for day in plan.get("menu") or []}
     chains = _leftovers.plan_leftover_chains(plan["weekly_plan_id"])["leftovers"]
+    relabelled_snack_days = set()
     for meal in plan.get("meals") or []:
         day = by_day.get(meal.get("date"))
         slot = meal.get("slot")
-        if day is None or slot not in ("breakfast", "lunch", "dinner"):
+        if day is None or slot not in ("breakfast", "lunch", "dinner", "snack"):
             continue
         leftover = chains.get(meal.get("entry_id"))
         if leftover and meal.get("slot_state") == "planned":
@@ -145,7 +146,21 @@ def _say_it_as_meals_does(plan: dict) -> None:
                 else _leftovers.leftovers_headline(src["meal"], src["date"])
             )
             meal["meal"] = headline
-            day[slot] = headline
+            if slot == "snack":
+                relabelled_snack_days.add(meal.get("date"))
+            else:
+                day[slot] = headline
+    # A day holds more than one snack, so a made-ahead snack can't be
+    # written into `snack` the way a dinner is: rebuild that day's list from
+    # the relabelled rows, in the same order _build_menu read them, so the
+    # page says "Made ahead — Monday's Egg Bites" as Meals does.
+    for date in relabelled_snack_days:
+        day = by_day[date]
+        day["snacks"] = [
+            m["meal"] for m in plan.get("meals") or []
+            if m.get("date") == date and m.get("slot") == "snack" and m.get("meal")
+        ]
+        day["snack"] = day["snacks"][0] if day["snacks"] else day.get("snack")
 
 
 # What the public link carries: exactly what share.html draws, and nothing

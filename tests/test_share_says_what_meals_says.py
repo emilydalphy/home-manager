@@ -88,6 +88,23 @@ def test_a_made_ahead_night_says_made_ahead(client):
     assert _share_menu(client)[days[1]]["dinner"] == "Made ahead — Monday’s Beef Chili"
 
 
+def test_a_made_ahead_snack_says_made_ahead(signed_in):
+    # The reviewer's case: a snack cooked ahead read its bare name on the
+    # share page while Meals said "Made ahead — …".
+    pid, days = _week()
+    tools.add_recipe("Egg Bites", [{"item": "Eggs", "qty": "6"}])
+    first = tools.plan_meal(days[5], "Egg Bites", slot="snack", weekly_plan_id=pid,
+                            derived_from={"make_double_for": [f"{days[6]}:snack"]})
+    tools.plan_meal(days[6], "Egg Bites", slot="snack", weekly_plan_id=pid,
+                    derived_from={"links_to": f"entry_id:{first['entry_id']}", "cook_ahead": True})
+    meals = {d["date"]: [s["title"] for s in d.get("snacks") or []]
+             for d in signed_in.get("/api/week-menu").json()["days"]}
+    shared = _share_menu(signed_in)[days[6]]
+    assert shared["snacks"] == meals[days[6]]
+    assert shared["snacks"][0].startswith("Made ahead") and shared["snack"] == shared["snacks"][0]
+    assert _share_menu(signed_in)[days[0]]["snacks"] == ["Apple Slices", "Hummus Plate"]
+
+
 def test_a_second_household_link_reads_its_own_week(client):
     _week()
     beta = households.create_household("The Beta Testers", "beta-pass")
