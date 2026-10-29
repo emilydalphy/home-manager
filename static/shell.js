@@ -19524,9 +19524,12 @@
   function wkAddMealFor(panel, steps, day) {
     var free = WEEK_SLOTS.filter(function (slot) {
       var e = daySlotEntry(day, slot);
-      // Never a meal that had already gone by when the week was drafted
-      // (the server marks it `past`) — there is nothing left to add it to.
-      return !e || e.state === 'open' || (e.state === 'planned_empty' && e.need !== 'away' && !e.past && !e.meal_off);
+      // Never a planned_empty meal (a night off, out, a meal the usual
+      // week has off): it is not a gap, and chat's plan_meal refuses it
+      // ("That dinner is deliberately empty"), so the sentence this
+      // starts could only end in a refusal. The day-wide ask below is the
+      // way to add to a day with no gap.
+      return !e || e.state === 'open';
     })[0];
     var when = dayName(day.date, { weekday: 'long' });
     if (!free) {
@@ -19762,8 +19765,9 @@
 
   // The two-segment control. Which primary a slot gets is entirely a
   // function of its state: a cook is cooked, a made-ahead night is eaten,
-  // an open slot is answered, and an away night is offered nothing at all —
-  // offering to change it is exactly what the away state exists to prevent.
+  // an open slot is answered, and a planned_empty one (away, out, a night
+  // off, a meal not asked for) is offered nothing at all — it needs no
+  // decision, and offering to change it is what that state exists to prevent.
   function slotActionsHtml(day, slot, apricot) {
     var entry = daySlotEntry(day, slot);
     var primaryCls = 'wk-act wk-act-primary' + (apricot ? ' is-apricot' : '');
@@ -19819,10 +19823,12 @@
       '</div>' + swapLine;
     }
     if (entry && entry.state === 'planned_empty') {
-      // `past`: a meal of the first day that had already gone by when the
-      // week was drafted — nothing to swap into (2026-09-27).
-      if (entry.need === 'away' || day.isPast || entry.past) return '';
-      return '<div class="wk-acts">' + swap + '</div>' + swapLine;
+      // Never a decision (CLAUDE.md): a night off, an out night, a meal
+      // the usual week has off, away or not. Swap here only ever printed
+      // a refusal — swap_in_place answers every planned_empty slot
+      // "There's no meal on that slot to swap." (404). The root's rows
+      // offer nothing on one either.
+      return '';
     }
     if (!entry && !day.isPast) {
       // Nothing here at all. Chat is the way out rather than a dead end —
