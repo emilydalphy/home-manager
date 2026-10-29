@@ -289,6 +289,32 @@ def _collision_message(existing: int) -> str:
     )
 
 
+def forget_member_pointers(conn, household_id: int) -> list[str]:
+    """
+    Clear every column on the household's own row that points at a member
+    (`set_up_by_member_id`, `primary_member_id`, `ai_consent_member_id`, and
+    any added later — found by the `_member_id` suffix, not a list). Returns
+    the columns cleared. Runs on the caller's connection; never commits.
+
+    For the two wipes that keep the `households` row but delete its members
+    (reset_household.py, create_demo_household.py). They used to leave
+    these naming people who no longer existed, and `first_open_state` /
+    `record_setup_adult` only ever claim a NULL setter-up: after a demo
+    reset BOTH adults were greeted as "the other adult" with nobody named
+    as having set it up, and nobody could ever be recorded again (defect
+    hunt 2026-10-29). NULL is what a fresh household has, so the first adult
+    to open the reset household is its setter-up again.
+    """
+    cols = [
+        row[1]
+        for row in conn.execute("PRAGMA table_info(households)")
+        if row[1].endswith("_member_id")
+    ]
+    for col in cols:
+        conn.execute(f"UPDATE households SET {col} = NULL WHERE id = ?", (int(household_id),))
+    return cols
+
+
 def _validate_passphrase(passphrase: str) -> None:
     if not passphrase or len(passphrase) < MIN_PASSPHRASE_LENGTH:
         raise ValueError(
@@ -302,6 +328,7 @@ __all__ = [
     "adult_exists",
     "authenticate",
     "create_household",
+    "forget_member_pointers",
     "hash_passphrase",
     "household_exists",
     "session_still_holds",

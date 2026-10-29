@@ -13,6 +13,7 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A demo reset (or reset_household.py) no longer leaves the household row naming deleted members** (2026-10-29, defect hunt, branch `overnight/hunt-account-data-1029`; tests `tests/test_reset_forgets_member_pointers.py`). Both wipes delete every member but keep `households`, whose `set_up_by_member_id` / `primary_member_id` / `ai_consent_member_id` kept the old ids; the setter-up is only claimed while NULL, so after one reviewer used the demo household every later reset showed BOTH adults the other adult's welcome, setter-up unnamed. New `households.forget_member_pointers` NULLs every `households.*_member_id` (by suffix) inside each wipe. Why: the App Store reviewer's first screen.
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
   (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.
