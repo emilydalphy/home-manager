@@ -220,3 +220,78 @@ def test_an_answer_racing_the_other_phones_remove_is_not_a_500(monkeypatch, deci
         conn.rollback()
     finally:
         conn.close()
+
+
+def test_an_undo_racing_the_other_phones_remove_still_undoes(monkeypatch):
+    # Review follow-up: Undo on the "We have plenty" toast while Maya
+    # removes the staple. Without the lock the Remove ran between the
+    # undo's reads and it answered "nothing to undo" — or 500'd on a
+    # staple that had gone.
+    sid, line = _soap_line()
+    tools.decide_staple_line(line, "plenty")
+    other = _OtherPhone(lambda: tools.remove_staple_by_id(sid))
+    real_row = st._row
+    fired = []
+
+    def row_then_remove(conn, staple_id):
+        out = real_row(conn, staple_id)
+        if staple_id == sid and not fired:
+            fired.append(True)
+            other.go()
+        return out
+
+    monkeypatch.setattr(st, "_row", row_then_remove)
+    out = tools.undo_staple_decision(sid)
+    monkeypatch.setattr(st, "_row", real_row)
+    other.finish()
+
+    assert out["undone"] is True
+    assert _one("SELECT status FROM grocery_items WHERE id = ?", line)["status"] == "needed"
+    assert _one("SELECT id FROM staples WHERE id = ?", sid) is None
+
+
+def test_an_undo_whose_staple_goes_right_after_it_commits_is_not_a_500(monkeypatch):
+    sid, line = _soap_line()
+    tools.decide_staple_line(line, "plenty")
+    real_get_conn = st.get_conn
+    fired = []
+
+    def remove_then_get_conn():
+        # The undo has committed; Maya's Remove lands before its last read.
+        if not fired:
+            fired.append(True)
+            tools.remove_staple_by_id(sid)
+        return real_get_conn()
+
+    monkeypatch.setattr(st, "get_conn", remove_then_get_conn)
+    out = tools.undo_staple_decision(sid)
+    assert fired and out["undone"] is True and out["id"] == sid
+
+
+def test_chats_we_have_plenty_racing_a_remove_is_not_a_500(monkeypatch):
+    sid, _line = _soap_line()
+    other = _OtherPhone(lambda: tools.remove_staple_by_id(sid))
+    real_find = st._find_by_name
+    fired = []
+
+    def find_then_remove(conn, item):
+        out = real_find(conn, item)
+        if not fired:
+            fired.append(True)
+            other.go()
+        return out
+
+    monkeypatch.setattr(st, "_find_by_name", find_then_remove)
+    out = tools.mark_staple_plenty("Dish soap")
+    monkeypatch.setattr(st, "_find_by_name", real_find)
+    other.finish()
+
+    assert out["found"] is True
+    assert _one("SELECT id FROM staples WHERE id = ?", sid) is None
+    conn = get_conn()
+    conn.execute("PRAGMA busy_timeout = 0")
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        conn.rollback()
+    finally:
+        conn.close()

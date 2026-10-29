@@ -1008,14 +1008,13 @@ def mark_staple_plenty(item: str) -> dict:
     date a whole cadence out from today and takes any suggestion line for
     it off the grocery list. Doesn't change the learned rhythm.
     """
-    conn = get_conn()
-    r = _find_by_name(conn, item)
-    if r is None:
-        conn.close()
-        return {"found": False, "item": item}
-    out = _plenty(conn, r["id"], source="chat")
-    conn.commit()
-    conn.close()
+    # Under the write lock from the read: see decide_staple_line.
+    with write() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        r = _find_by_name(conn, item)
+        if r is None:
+            return {"found": False, "item": item}
+        out = _plenty(conn, r["id"], source="chat")
     out["found"] = True
     return out
 
@@ -1278,61 +1277,65 @@ def undo_staple_decision(staple_id: int) -> dict:
     are recomputed from what's left, and the due date goes back to today so
     the next list read re-suggests it.
     """
-    conn = get_conn()
-    r = _row(conn, staple_id)
-    if r is None:
-        conn.close()
-        raise ValueError(f"No staple with id {staple_id}.")
-    # Read before reverse_last_answer deletes it: an answer that cut a
-    # shared line back to the week's part (_trim_to_the_weeks_part) left no
-    # removed row behind, so its receipt is the only record of the row.
-    last = conn.execute(
-        "SELECT receipt_json FROM staple_events WHERE household_id = ? AND staple_id = ? "
-        "AND kind IN ('plenty', 'skipped') ORDER BY id DESC LIMIT 1",
-        (household_id(), staple_id),
-    ).fetchone()
-    if (_bought_since_last_answer(conn, staple_id) or _answered_line_was_ticked(conn, staple_id, last)
-            or not reverse_last_answer(conn, staple_id)):
-        # Nothing to undo: say so, change nothing. (A raw call used to
-        # force the staple due — the 2026-09-11 verifier's case g.) Nor
-        # once it has been BOUGHT since that answer: a purchase overtook
-        # it, and making it due today would put a second line on the list
-        # for the thing just bought (the other phone's stale toast).
-        out = _shape(r)
-        conn.close()
-        out["undone"] = False
-        return out
-    trimmed = None
-    try:
-        trimmed = json.loads((last and last["receipt_json"]) or "{}").get("trimmed")
-    except (TypeError, ValueError, AttributeError):
+    # Under the write lock from the read, like decide_staple_line: the
+    # other phone's Remove landing in the middle deleted the staple under
+    # this and the shape at the end read None (a 500, 6 of 40 pairs).
+    with write() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        r = _row(conn, staple_id)
+        if r is None:
+            raise ValueError(f"No staple with id {staple_id}.")
+        # Read before reverse_last_answer deletes it: an answer that cut a
+        # shared line back to the week's part (_trim_to_the_weeks_part) left no
+        # removed row behind, so its receipt is the only record of the row.
+        last = conn.execute(
+            "SELECT receipt_json FROM staple_events WHERE household_id = ? AND staple_id = ? "
+            "AND kind IN ('plenty', 'skipped') ORDER BY id DESC LIMIT 1",
+            (household_id(), staple_id),
+        ).fetchone()
+        if (_bought_since_last_answer(conn, staple_id) or _answered_line_was_ticked(conn, staple_id, last)
+                or not reverse_last_answer(conn, staple_id)):
+            # Nothing to undo: say so, change nothing. (A raw call used to
+            # force the staple due — the 2026-09-11 verifier's case g.) Nor
+            # once it has been BOUGHT since that answer: a purchase overtook
+            # it, and making it due today would put a second line on the list
+            # for the thing just bought (the other phone's stale toast).
+            out = _shape(r)
+            out["undone"] = False
+            return out
         trimmed = None
-    if trimmed and _untrim(conn, staple_id, trimmed):
-        conn.commit()
-        out = _shape(_row(conn, staple_id))
-        conn.close()
-        out["undone"] = True
-        return out
-    # Put back the very row that was taken off — store, quantity and all —
-    # rather than letting the next list read make a new, blank one.
-    restored = conn.execute(
-        "SELECT id FROM grocery_items WHERE household_id = ? AND staple_id = ? AND status = 'removed' "
-        "ORDER BY removed_at DESC, id DESC LIMIT 1",
-        (household_id(), staple_id),
-    ).fetchone()
-    if restored:
-        conn.execute(
-            "UPDATE grocery_items SET status = 'needed', removed_by = '', removed_at = NULL "
-            "WHERE id = ? AND household_id = ?",
-            (restored["id"], household_id()),
-        )
-    conn.commit()
-    conn.close()
+        try:
+            trimmed = json.loads((last and last["receipt_json"]) or "{}").get("trimmed")
+        except (TypeError, ValueError, AttributeError):
+            trimmed = None
+        if trimmed and _untrim(conn, staple_id, trimmed):
+            out = _shape(_row(conn, staple_id))
+            out["undone"] = True
+            return out
+        # Put back the very row that was taken off — store, quantity and all —
+        # rather than letting the next list read make a new, blank one.
+        restored = conn.execute(
+            "SELECT id FROM grocery_items WHERE household_id = ? AND staple_id = ? AND status = 'removed' "
+            "ORDER BY removed_at DESC, id DESC LIMIT 1",
+            (household_id(), staple_id),
+        ).fetchone()
+        if restored:
+            conn.execute(
+                "UPDATE grocery_items SET status = 'needed', removed_by = '', removed_at = NULL "
+                "WHERE id = ? AND household_id = ?",
+                (restored["id"], household_id()),
+            )
+        undone_row = _row(conn, staple_id)
     if not restored:
         sync_due_staples()
     conn = get_conn()
-    out = _shape(_row(conn, staple_id))
-    conn.close()
+    try:
+        now_row = _row(conn, staple_id)
+    finally:
+        conn.close()
+    # A Remove that landed after the undo committed: the undo happened, so
+    # say so with the staple as the undo left it.
+    out = _shape(now_row or undone_row)
     out["undone"] = True
     return out
 

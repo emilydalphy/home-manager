@@ -22,7 +22,8 @@ why*, not duplicating the diff.
   re-tick's left a bought staple with no purchase — 5/40); `decide_staple_line`, `remove_staple` and
   `pause_staple` read under the lock in `db.write()` (a Remove between the read and the event insert
   was a FOREIGN KEY 500 whose leaked connection 500'd the next list read and add "database is locked").
-  Why: each wrote off a read the other phone could change underneath it.
+  Review round: `undo_staple_decision` (Undo racing Remove: a 500 in 6/40) and chat's `mark_staple_plenty`
+  got the same lock. Why: each wrote off a read the other phone could change underneath it.
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
   (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.
