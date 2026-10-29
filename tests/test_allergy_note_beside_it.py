@@ -67,3 +67,19 @@ def test_a_must_avoid_note_with_a_note_inside_it_still_holds(sam, fact, dish, it
     tools.add_fact("people", fact, hard=True)
 
     assert allergen_gate.hard_clashes(dish, [{"item": item, "qty": "1"}])
+
+
+@pytest.mark.parametrize("fact, dish, item", [
+    # Review, 2026-10-29: a note inside a "but/except" carve-out must not
+    # carry the allergens after it into the exception. Main blocked all of
+    # these; the first cut of this fix let every one through.
+    ("Sam is allergic to peanuts except peanut oil (fine), and sesame", "Sesame Noodles", "sesame oil"),
+    ("Sam is allergic to tree nuts but almonds (ok), and shellfish", "Shrimp Tacos", "shrimp"),
+    ("Sam is allergic to tree nuts but almonds (ok) and shellfish", "Shrimp Tacos", "shrimp"),
+    ("Sam is allergic to tree nuts except almonds (fine) and shellfish", "Shrimp Tacos", "shrimp"),
+    ("Sam is allergic to milk except butter - fine - and eggs", "Omelette", "eggs"),
+])
+def test_a_note_inside_an_exception_keeps_the_later_allergens(sam, fact, dish, item):
+    tools.add_fact("people", fact, hard=True)
+
+    assert allergen_gate.hard_clashes(dish, [{"item": item, "qty": "1"}]), fact

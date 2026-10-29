@@ -887,7 +887,13 @@ def _fact_keywords(text: str, drop: set[str]) -> tuple[list[list[str]], list[str
         if nxt:
             rest = rest[:nxt.start()]
         # "allergic to shellfish (anaphylactic)": the note is not the food.
-        avoid, exception = _split_exception(_note_breaks(rest))
+        # The exception is split off FIRST, on the sentence as typed: run
+        # the note breaks before it and "except peanut oil (fine), and
+        # sesame" cut the exception at the new comma, found "fine" beyond
+        # it, and let sesame through as part of the exception (review,
+        # 2026-10-29 — main still held sesame back).
+        avoid, exception = _split_exception(rest)
+        avoid = _note_breaks(avoid)
         spans.append(avoid)
         if exception:
             exception_spans.append(exception)
