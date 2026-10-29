@@ -3759,6 +3759,10 @@ def _is_supply_receipt(receipt_json: str | None) -> bool:
         return False
 
 
+_FOOD_ENDING_SUPPLY_WORDS = {"sponge", "floss", "foil"}
+_SUPPLY_FLOSS_AND_FOIL = {"dental floss", "kitchen foil", "baking foil", "scrub sponge", "kitchen sponge"}
+
+
 def _is_household_supply(conn, item_id: int, item: str) -> bool:
     """
     Whether a ticked line is a household supply — dish soap, toilet paper,
@@ -3783,6 +3787,14 @@ def _is_household_supply(conn, item_id: int, item: str) -> bool:
         return False
     if " ".join(words) not in _staples._HOUSEHOLD_PHRASES and words[-1] not in _staples._HOUSEHOLD_WORDS:
         return False
+    # Three household words are also the last word of real food: "Victoria
+    # sponge", "Candy floss", "Salmon in foil" (review, 2026-10-29). For
+    # those the name has to say supply outright — a plural "sponges" (no one
+    # buys sponge cakes by that word), or a named floss or foil.
+    if words[-1] in _FOOD_ENDING_SUPPLY_WORDS and " ".join(words) not in _staples._HOUSEHOLD_PHRASES:
+        raw = (item or "").strip().lower().replace(",", " ").split()
+        if raw[-1] != "sponges" and " ".join(raw[-2:]) not in _SUPPLY_FLOSS_AND_FOIL:
+            return False
     for_a_meal = conn.execute(
         "SELECT 1 FROM meal_plan_grocery_links WHERE household_id = ? AND grocery_item_id = ? LIMIT 1",
         (household_id(), item_id),

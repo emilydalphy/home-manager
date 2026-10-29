@@ -22,7 +22,9 @@ why*, not duplicating the diff.
   and no meal ledger link) — still stamps `inventory_added_at` (it is also the tick's time, which
   the checklist and staples read) with receipt `{"supply": true}`, which the untick just clears.
   Why: the Kitchen tab drew "Dish soap · Pantry · best by Nov 11" and Shop counted it in "Now in
-  the kitchen". Last-word rule so "sponge cake" / "pad thai noodles" stay food.
+  the kitchen". Last-word rule so "sponge cake" / "pad thai noodles" stay food; sponge/floss/foil
+  need the name to say supply ("Sponges", "Dental floss", "Tin foil") so "Victoria sponge",
+  "Candy floss", "Salmon in foil" stay food.
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
   (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.

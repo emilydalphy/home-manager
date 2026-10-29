@@ -65,6 +65,17 @@ def test_supplies_by_phrase_or_last_word_food_by_its_own_name():
         assert len(_kitchen(food)) == 1, food
 
 
+def test_cake_floss_and_foil_wrapped_food_are_food():
+    # Review, 2026-10-29: "sponge", "floss" and "foil" end real food names
+    # too; those three only count as supplies when the name says so.
+    for food in ("Victoria sponge", "Candy floss", "Salmon in foil", "Sponge"):
+        _, result = _tick(food, category="pantry")
+        assert result["inventory_added"] is True, food
+    for supply in ("Sponges", "Dental floss", "Tin foil", "Kitchen sponge"):
+        _, result = _tick(supply)
+        assert result["inventory_added"] is False, supply
+
+
 def test_a_line_a_planned_meal_buys_goes_in_the_kitchen_whatever_its_name():
     """The ledger wins: if a recipe needs it, it is food."""
     line = tools.add_grocery_item("Dish soap", "1")
