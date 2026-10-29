@@ -1166,7 +1166,14 @@ def scale_recipe(recipe_name: str, target_servings: int) -> dict:
             # butter cut to a fraction is tablespoons, a clove stays whole,
             # a "1/4 bunch" stays a part, a cup/tbsp/tsp amount is said in
             # the easiest measure ("2 tbsp + 2 tsp").
-            terms = _scaled_measure(amount, ratio, unit, keep_spoons=keep_spoons)
+            if unit is None and _is_whole_egg(ing.get("item")) and abs(amount - round(amount)) < 1e-9:
+                # An egg only comes whole: "2 eggs" for 8 of a 6-serving
+                # bake read "2 ⅔ eggs" on Cook (defect hunt, 2026-10-29).
+                # The clove rule — nearest whole one, never none — as a
+                # count range ("2-3 eggs") already got.
+                terms = [(_step_scaled(amount, ratio, "clove")[0], None)]
+            else:
+                terms = _scaled_measure(amount, ratio, unit, keep_spoons=keep_spoons)
             words = _qty_words_after_amount(qty_text, parsed)
             # Written as a plain number ("0.5 cup"), which every reader of
             # this list parses and the Cook screen shows as "½ cup"
@@ -1730,6 +1737,8 @@ def scale_steps(steps: list, ratio: float, ingredient_items: list[str] | None = 
             # "2 garlic cloves" counts cloves, and a clove only comes whole —
             # the same rule scale_recipe gives "2 cloves garlic".
             whole_only = "clove" if (noun_m.group("tail") or "").strip().lower().startswith(("clove", "slice", "sprig")) else None
+            if _is_whole_egg(noun_m.group("noun") + (noun_m.group("tail") or "")):
+                whole_only = "clove"   # "2 eggs" is never "2 ⅔ eggs" (scale_recipe's rule)
             new_a = _step_scaled(a, ratio, whole_only)[0]
             new_b = _step_scaled(b, ratio, whole_only)[0] if b is not None else None
             biggest = new_b if new_b is not None else new_a
@@ -1833,6 +1842,15 @@ _EXTRA_MEASURED_UNITS = {
 # Of those, the ones that only come whole: you use three cloves of garlic
 # or two, never one and a half.
 _DISCRETE_UNITS = {"stick", "clove", "slice", "sprig", "stalk", "head", "bunch"}
+
+_EGG_HEAD_NOUNS = frozenset({"egg", "eggs", "yolk", "yolks", "white", "whites"})
+
+
+def _is_whole_egg(item) -> bool:
+    """An ingredient counted in whole eggs — "eggs", "large eggs", "egg
+    yolks", "egg whites" — never "egg noodles" or "eggplant"."""
+    words = re.findall(r"[a-z]+", _clean_item(str(item or "")))
+    return bool(words) and ("egg" in words or "eggs" in words) and words[-1] in _EGG_HEAD_NOUNS
 
 # Freeform amounts that are honest cooking instructions rather than
 # vagueness — "salt to taste" is how recipes are written, and
