@@ -581,6 +581,15 @@ def parse_instructions(value) -> list[str]:
 
     def walk(node):
         if isinstance(node, str):
+            # Some sites put the whole method in ONE string of HTML —
+            # "<ol><li>Preheat…</li><li>Mix…</li></ol>", or <p>s, or <br>s.
+            # The tag strip alone ran every step into one, and cook mode
+            # showed the whole recipe as "Step 1 of 1" (defect hunt,
+            # 2026-10-30). A block tag is a line break, raw or escaped.
+            node = re.sub(
+                r"(?:<|&lt;)(?:br\s*/?|/?(?:p|li|ol|ul|div|h[1-6])\b[^<>&]*)(?:>|&gt;)",
+                "\n", node, flags=re.I,
+            )
             for line in re.split(r"\n+", node):
                 line = _clean_text(line)
                 if line:
@@ -668,11 +677,31 @@ _WORD_AMOUNT_RE = re.compile(
 )
 
 
+def _proper_mixed(m: re.Match) -> str:
+    whole, num, den = m.group(1), int(m.group(2)), int(m.group(3))
+    return f"{whole} {num}/{den}" if 0 < num < den else m.group(0)
+
+
 def _normalise_fractions(text: str) -> str:
+    # Entities before glyphs. A page's JSON-LD written with its escaping on
+    # says "1&frac12; cups flour" or "1&#189; cups"; decoded after this
+    # pass (in _clean_text), the "½" arrived too late to be read and the
+    # line saved as "1" of "½ cups flour" (defect hunt, 2026-10-30).
+    text = _ENTITY_RE.sub(lambda m: _html.unescape(m.group(0)), text or "")
+    # U+2044, the fraction slash: "1⁄2 cup" is how a typeset page (and a
+    # few recipe plugins) write a half. Unread, the "⁄2 cup sugar" landed
+    # on the item with a bare "1" for the amount.
+    text = text.replace("⁄", "/")
+    # "1-1/2 cups" is the US way to write one and a half, not a range from
+    # one down to a half — a range never runs downhill. Read as a range it
+    # bought its "top end", half a cup. Only a whole number then a proper
+    # fraction; "1/2-1 cup" is a real range and is left alone. Run after
+    # the glyphs, so "1-½ cups" is caught too (review, 2026-10-30).
     for glyph, ascii_ in _UNICODE_FRACTIONS.items():
         # "1½" is one and a half, "½" alone is a half.
         text = re.sub(rf"(\d)\s*{glyph}", rf"\1 {ascii_}", text)
         text = text.replace(glyph, ascii_)
+    text = re.sub(r"(?<![\d/.])(\d+)\s*[-–]\s*(\d+)/(\d+)(?![\d/])", _proper_mixed, text)
     return text
 
 
