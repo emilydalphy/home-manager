@@ -875,3 +875,41 @@ def test_the_morning_toggle_is_a_44px_button_in_tokens_only():
 def test_the_sends_table_is_wiped_between_tests():
     from conftest import _TABLES
     assert "morning_text_sends" in _TABLES
+
+
+# ---------- a night written as leftovers by name ----------
+
+def _seed_reheat_night(dish: str, *, chain: bool) -> None:
+    plan_id = tools.create_weekly_plan(WEEK_START)["weekly_plan_id"]
+    if chain:
+        tools.add_recipe(dish, ingredients=[{"item": "Beef", "qty": "1 lb"}],
+                         prep_time_minutes=10, cook_time_minutes=20)
+        yesterday = (TODAY - dt.timedelta(days=1)).isoformat()
+        tools.plan_meal(yesterday, dish, slot="dinner", weekly_plan_id=plan_id)
+        tools.plan_meal(ISO_TODAY, dish, slot="dinner", weekly_plan_id=plan_id)
+        conn = get_conn()
+        ids = {r["date"]: r["id"] for r in conn.execute(
+            "SELECT id, date FROM meal_plan_entries WHERE household_id = ? AND slot = 'dinner'",
+            (tools.household_id(),))}
+        conn.close()
+        tools.set_cook_ahead(ids[yesterday], [ids[ISO_TODAY]])
+    else:
+        tools.plan_meal(ISO_TODAY, dish, slot="dinner", weekly_plan_id=plan_id)
+
+
+def test_a_night_named_leftovers_says_leftovers_once():
+    """Overnight hunt, 2026-10-30: "Leftover chili" planned from the chat
+    (no recipe, no source night) texted "Tonight: Leftover chili,
+    leftovers." The name already says it."""
+    _adults("Emily")
+    _seed_reheat_night("Leftover chili", chain=False)
+    text = tools.build_morning_text(datetime.combine(TODAY, dt.time(7, 0)), link=False, parts=["meals"])
+    assert text == "Tonight: Leftover chili."
+
+
+def test_a_reheat_with_a_source_night_still_says_where_it_came_from():
+    _adults("Emily")
+    _seed_reheat_night("Bulgogi", chain=True)
+    yesterday = (TODAY - dt.timedelta(days=1)).strftime("%A")
+    text = tools.build_morning_text(datetime.combine(TODAY, dt.time(7, 0)), link=False, parts=["meals"])
+    assert text == f"Tonight: Bulgogi, made ahead {yesterday}."
