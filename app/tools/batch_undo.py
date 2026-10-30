@@ -593,9 +593,21 @@ def rebatch(undo: dict) -> dict:
     # lettuce off the list, which is worse than the state the undo is
     # undoing to. (That a chained night's side is never bought at all is
     # pre-existing and its own card.)
+    def _ids(value) -> list[int]:
+        # Only a list of ids is one: a bare number here was a 500
+        # ("'int' object is not iterable" — route crash sweep, 2026-10-30).
+        if not isinstance(value, list):
+            return []
+        return [e for e in value if isinstance(e, int) and not isinstance(e, bool)]
+
     for dish in undo.get("dishes") or []:
         source_id = dish.get("source_entry_id")
-        covered = [e for e in (dish.get("covered_entry_ids") or []) if isinstance(e, int)]
+        covered = _ids(dish.get("covered_entry_ids"))
+        if not covered:
+            # set_cook_ahead with no days CLEARS the batch — the opposite
+            # of putting it back. Every payload unbatch hands out names
+            # its days, so an empty list is a hand-written one.
+            return {"status": "refused", "said": "There’s nothing to put back."}
         result = _cook_ahead.set_cook_ahead(source_id, covered)
         if isinstance(result, str):
             return {"status": "refused", "said": result}
@@ -605,7 +617,7 @@ def rebatch(undo: dict) -> dict:
         _defrost.restate_frozen_after_batch_change(plan_id, [source_id, *covered])
     for comp in undo.get("components") or []:
         key = comp.get("key") or ""
-        entry_ids = [e for e in (comp.get("entry_ids") or []) if isinstance(e, int)]
+        entry_ids = _ids(comp.get("entry_ids"))
         result = _batch_components.set_batch_component(plan_id, key, entry_ids)
         if isinstance(result, str):
             return {"status": "refused", "said": result}
