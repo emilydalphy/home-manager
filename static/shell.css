@@ -12536,3 +12536,28 @@ button.wk-qrow:hover .wk-qrow-name { color: var(--ink-strong); }
 .gro-rowsheet .gro-rowmenu-qty { padding: 0; }
 .gro-rowsheet .gro-pills.open { padding: 0; }
 
+/* ---------- Today: quiet rows ---------- */
+/* A meals row is a button now: the eyebrow and the dish on the left, a
+   chevron at the right; who it is for is in its sheet. */
+button.day-meal { flex-direction: row; align-items: center; gap: 10px; cursor: pointer; }
+.day-meal-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.day-meal-chev { flex: 0 0 auto; display: flex; color: var(--ink-inactive); }
+.day-meal-chev svg { width: 17px; height: 17px; }
+/* "Shop today · Costco, T&T ›": the shopping-day Shop card as one line. */
+.day-shoptoday {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 60px;
+  padding: 12px 18px;
+  margin: 0;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.day-shoptoday-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+/* The row's sheet: its one action, full width. */
+.quiet-act { width: 100%; }

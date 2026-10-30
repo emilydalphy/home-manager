@@ -100,7 +100,10 @@ def _planned_empty(plan_id, day, slot):
 
 def test_today_groups_the_row_with_the_meals_and_opens_plan_on_tap():
     src = Path(__file__).resolve().parents[1].joinpath("static", "shell.js").read_text()
-    assert "var COOK_KINDS = { cook: 1, reheat: 1, open_slot: 1 };" in src
+    # Since the declutter (2026-10-30) Cook and Prep are one To do list, so
+    # the open slot sits in it, in its place in the day (dayGroupsHtml
+    # draws every non-shop move there); its action still lands on Plan.
+    assert "var todos = dayStripOrder(moves.filter(function (m) { return m.kind !== 'shop'; }));" in src
     assert "focusChangedWeekDay(target.planDay.date, target.planDay.slot, { schedule: true })" in src
 
 
@@ -130,33 +133,27 @@ console.log(JSON.stringify({
     assert "todayShownMoves(panel, data).length" in _fn(src, "todayIsEmpty")
 
 
-def test_on_a_draft_the_row_opens_the_schedule_on_that_day_where_pick_is():
-    """Review 2026-10-13: a draft opens on Meals by category, which has no
-    per-day rows, so the focus found nothing and stopped silently."""
+def test_the_row_opens_plan_on_that_day_and_rings_its_pick():
+    """Review 2026-10-13: the focus has to land where the slot's Pick is.
+    Since the declutter (2026-10-30) a draft and an approved week are one
+    Plan screen with a day bar, so the focus selects THAT day (planDay) and
+    rings the open slot's own row there — whichever way it came in."""
     import json
     import nodeharness
 
     src = Path(__file__).resolve().parents[1].joinpath("static", "shell.js").read_text()
-    out = json.loads(nodeharness.run_node(_fn(src, "draftView") + _fn(src, "applyPendingDayFocus") + """
-var weekState = { days: [{ date: '2026-10-12' }, { date: '2026-10-13' }], draftView: 'menu', draftViewPlanId: 7,
+    out = json.loads(nodeharness.run_node(_fn(src, "applyPendingDayFocus") + """
+var weekState = { days: [{ date: '2026-10-12' }, { date: '2026-10-13' }], planDay: null,
                   data: { weekly_plan_id: 7, status: 'draft' }, pendingDayFocus: null };
 var reviewState = { dayIndex: null };
 var went = [];
-function weekPlanState(d) { return d.status === 'approved' ? 'set' : 'draft'; }
-function goMealsStep(step, opts) { went.push([step, opts.dayIndex, weekState.draftView]); }
-var rows = { '1': { classList: { add: function () { rows.ringed = 1; }, remove: function () {} } } };
+function goMealsStep(step, opts) { went.push([step, opts.dayIndex, weekState.planDay]); }
+var row = { classList: { add: function () { row.ringed = 1; }, remove: function () {} } };
 var panel = { querySelector: function (sel) {
-  if (sel === '[data-wk-card="1"]') return { querySelector: function (s) { return s.indexOf('lunch') !== -1 ? rows['1'] : null; } };
-  return null; } };
+  return sel === '[data-wk-pick="lunch"][data-wk-day-index="1"]' ? row : null; } };
 function setTimeout() {}
 weekState.pendingDayFocus = { date: '2026-10-13', slot: 'lunch', schedule: true };
 applyPendingDayFocus(panel);
-var first = { view: weekState.draftView, keyed: weekState.draftViewPlanId, day: reviewState.dayIndex, went: went.slice(), ringed: !!rows.ringed };
-// A chat change's focus (no `schedule`) leaves the draft's view alone.
-weekState.draftView = 'menu'; went = [];
-weekState.pendingDayFocus = { date: '2026-10-13', slot: 'lunch' };
-applyPendingDayFocus(panel);
-console.log(JSON.stringify({ first: first, chat: weekState.draftView }));
+console.log(JSON.stringify({ day: weekState.planDay, went: went, ringed: !!row.ringed }));
 """, timeout=30).stdout)
-    assert out["first"] == {"view": "days", "keyed": 7, "day": 1, "went": [["week", 1, "days"]], "ringed": True}
-    assert out["chat"] == "menu"
+    assert out == {"day": 1, "went": [["week", 1, 1]], "ringed": True}

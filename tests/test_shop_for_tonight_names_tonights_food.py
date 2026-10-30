@@ -114,8 +114,11 @@ def test_a_stop_with_nothing_for_tonight_names_nothing_and_comes_last():
 
 
 def test_a_store_with_nothing_for_tonight_shows_no_bare_ellipsis():
-    """The row's "…" says "and more besides the names" -- with no names it
-    would be a lone ellipsis under the store."""
+    """The row's "…" said "and more besides the names" -- with no names it
+    would have been a lone ellipsis under the store. Since the declutter
+    (2026-10-30) Today's shop is one line naming the stores alone ("Shop
+    today · Costco, T&T"), so no item names and no ellipsis reach it."""
     from test_kitchen_and_preferences import _function
-    fn = _function("todayShopRowsHtml")
-    assert "var meta = items ? items +" in fn
+    fn = _function("todayShopTodayHtml")
+    assert "…" not in fn and "stop.items" not in fn
+    assert "stop.store || 'Any store'" in fn

@@ -715,6 +715,7 @@ _TODAY_PRELUDE = (
     + _slice("  // ---------- Today: Shop and Cook ----------", "  function tomorrowCardHtml(")
     + _fn("moveRecipeTarget") + "\n"
     + _fn("moveDishHtml") + "\n"
+    + _fn("quietSheetHeadHtml") + "\n"
     + "function openRecipeFor() {}\n"
 )
 
@@ -740,35 +741,35 @@ def _move(kind, id_, title, **extra):
 
 
 @_needs_node
-def test_todays_cook_row_says_whose_it_is_in_the_rows_own_meta_line():
+def test_todays_cook_says_whose_it_is_in_its_sheet_and_not_on_the_row():
     """
-    CATCH, and it runs the screen's own builder rather than reading the
-    source for a marker: the name has to actually appear, in the row's one
-    clock-free line, in that line's own ink.
+    CATCH, and it runs the screen's own builders rather than reading the
+    source for a marker. Since the declutter (Emily, 2026-10-30) the row is
+    the tick, the task and one short note; whose it is lives in the sheet
+    tapping the row opens (todayMoveSheetHtml).
     """
     move = _move("cook", "cook:1", "Chicken Skewers", meta="35 min",
                  owner=2, owner_name="Vineeth")
-    html = _node("console.log(JSON.stringify(dayStripNodeHtml(%s, 'later')));" % json.dumps(move))
-
-    assert "Vineeth’s cooking · 35 min" in html
-    # In the meta line, not in a badge, a chip or an element of its own.
-    meta = re.search(r'<span class="day-node-meta">([^<]*)</span>', html).group(1)
-    assert meta == "Vineeth’s cooking · 35 min"
-    assert "owner" not in html and "unassigned" not in html.lower()
+    out = _node("console.log(JSON.stringify({ row: dayStripNodeHtml(%s, 'later'), sheet: todayMoveSheetHtml(%s) }));"
+                % (json.dumps(move), json.dumps(move)))
+    assert "Vineeth" not in out["row"]
+    meta = re.search(r'<span class="day-node-meta">([^<]*)</span>', out["row"]).group(1)
+    assert meta == "35 min"
+    assert "Vineeth’s cooking" in out["sheet"]
+    assert "owner" not in out["sheet"] and "unassigned" not in out["sheet"].lower()
 
 
 @_needs_node
 def test_a_cook_already_done_says_whose_it_was_not_that_they_are_cooking():
     """
-    CATCH. "Emily\u2019s cooking" under a strikethrough on a dinner already
-    eaten is a thing that isn't true (\u00a78). A done cook takes the plain
-    possessive — whose it was — and deliberately not a past tense, since
-    who actually ticked it is slice 3's question and not a word's.
+    CATCH. "Emily\u2019s cooking" on a dinner already eaten is a thing that
+    isn't true (\u00a78). A done cook takes the plain possessive — whose it
+    was — and deliberately not a past tense. Said in the row's sheet.
     """
     move = _move("cook", "cook:1", "Chicken Skewers", meta="35 min", done=True,
                  owner=1, owner_name="Emily")
-    html = _node("console.log(JSON.stringify(dayStripNodeHtml(%s, 'done')));" % json.dumps(move))
-    assert "Emily\u2019s \u00b7 35 min" in html
+    html = _node("console.log(JSON.stringify(todayMoveSheetHtml(%s)));" % json.dumps(move))
+    assert "Emily\u2019s" in html
     assert "cooking" not in html
 
 
@@ -780,10 +781,10 @@ def test_a_fridge_move_says_only_whose_it_is_because_it_is_not_cooking():
     move = _move("fridge", "fridge:4", "Move the chicken to the fridge",
                  meta="for Thursday’s skewers", reason="for Thursday’s skewers",
                  owner=1, owner_name="Emily")
-    html = _node("console.log(JSON.stringify(dayStripNodeHtml(%s, 'later')));" % json.dumps(move))
-
-    assert "Emily’s · for Thursday’s skewers" in html
+    html = _node("console.log(JSON.stringify(todayMoveSheetHtml(%s)));" % json.dumps(move))
+    assert "Emily’s" in html
     assert "cooking" not in html
+    assert html.count("for Thursday’s skewers") == 1, "the reason IS the meta — said once"
 
 
 @_needs_node

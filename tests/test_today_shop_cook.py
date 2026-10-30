@@ -183,12 +183,11 @@ def _payload(featured, moves=None, **extra):
     return data
 
 
-def _nodes(strip: str) -> list[tuple[str, str, str]]:
-    """(state, move id, tag) for every row, top to bottom."""
-    return re.findall(
-        r'<div class="day-node is-(done|now|later)" data-move-id="([^"]+)">.*?<span class="day-node-tag">([^<]*)</span></div>',
-        strip,
-    )
+def _nodes(strip: str) -> list[tuple[str, str]]:
+    """(state, move id) for every row, top to bottom. (A row's third part,
+    its Morning / Afternoon / Evening tag, went with the declutter,
+    2026-10-30.)"""
+    return re.findall(r'<div class="day-node is-(done|now|later)" data-move-id="([^"]+)">', strip)
 
 
 def _groups(strip: str) -> list[tuple[str, str, str]]:
@@ -201,7 +200,7 @@ def _groups(strip: str) -> list[tuple[str, str, str]]:
     `meals`; it carries no count, by Emily's 2026-09-24 no-score rule.
     """
     return re.findall(
-        r'<div class="shell-card day-group day-(?:group-)?(shop|cook|prep|meals)"><div class="day-group-head">'
+        r'<div class="shell-card day-group day-(?:group-)?(shop|cook|prep|meals|todo)"><div class="day-group-head">'
         r'<span class="day-group-icon"><svg.*?</svg></span><span class="day-group-title">([^<]*)</span>'
         r'(?:<span class="day-group-count">([^<]*)</span>)?</div>',
         strip,
@@ -218,48 +217,34 @@ def _row(strip: str, move_id: str, nth: int = 0) -> str:
 
 @_needs_node
 def test_the_sections_and_the_states_read_off_done_and_featured():
-    """RENAMED 2026-10-05, from
-    test_two_groups_shop_then_cook_and_the_states_read_off_done_and_featured.
-
-    The TRIPWIRE fired and the claim in the old name is the one this card
-    deliberately replaced: Today is four sections now — the day's meals,
-    Cook, Prep, then Shop (the fourth is the celadon LINE on a day the
-    household does not shop; this payload carries no `shop` block, so the
-    card is drawn, which is the backward-compatible default). What this
-    test still guards, and what it guarded before, is UNCHANGED and is
-    asserted in full below: the states read off `done` and `featured`,
-    exactly one row is tinted, and the rows run top to bottom down the day
-    inside each card. See tests/test_today_days_meals.py for the order
-    itself.
-    """
+    """UPDATED 2026-10-30 (the declutter): the day's meals, then ONE "To do"
+    card — Cook and Prep together, top to bottom down the day — then Shop,
+    which on a shopping day is one line ("Shop today · Costco"). What this
+    test guards is unchanged: the states read off `done` and `featured`,
+    exactly one row is tinted, and the rows run down the day."""
     out = _node(_prelude() + "console.log(JSON.stringify(render(" + json.dumps(_payload("cook:13")) + ")));")
     strip = out["strip"]
     assert strip.startswith('<div class="day-groups">')
-    assert _groups(strip) == [
-        ("meals", "Today’s meals", ""), ("cook", "Cook", ""),
-        ("prep", "Prep", ""), ("shop", "Shop", "1 stop"),
-    ]
+    assert _groups(strip) == [("meals", "Today’s meals", ""), ("todo", "To do", "")]
+    assert 'class="shell-card day-shoptoday"' in strip
     nodes = _nodes(strip)
-    assert [n[1] for n in nodes] == ["reheat:11", "cook:12", "cook:13", "fridge:4", "shop:2026-09-13"], (
-        "Cook top to bottom down the day (breakfast, lunch, dinner); then the "
-        "fridge move in Prep, where it moved from Cook on 2026-10-05; then the shop"
+    assert [n[1] for n in nodes] == ["reheat:11", "cook:12", "cook:13", "fridge:4"], (
+        "one list down the day: breakfast, lunch, dinner, then the fridge move (by tonight)"
     )
     states = dict((n[1], n[0]) for n in nodes)
-    assert states == {
-        "shop:2026-09-13": "later", "reheat:11": "done", "cook:12": "later",
-        "cook:13": "now", "fridge:4": "later",
-    }
+    assert states == {"reheat:11": "done", "cook:12": "later", "cook:13": "now", "fridge:4": "later"}
     # No score on Now (Emily, 2026-09-24): the band carries no line.
     assert out["sub"] == ""
-    assert "day-group-count\">0 of" not in strip and " of 5" not in strip
-    # The head: the bag / the pot in a 32px sand tile (CSS), the title in
-    # the display face, the count at the right.
+    assert "day-group-count" not in strip
     head = strip.split('<div class="day-group-head">', 1)[1].split("</div>", 1)[0]
     assert head.count("<svg") == 1 and 'stroke-width="2.2"' in head
 
 
 @_needs_node
-def test_the_shop_card_draws_one_row_per_store_stop_and_opens_the_list():
+def test_the_shop_card_is_one_line_naming_the_stores_and_opens_the_list():
+    """The declutter (2026-10-30): "Shop today · Costco, Any store ›" — one
+    line, the stores the list will take them to, a tap opens Shop. It was
+    one row per store stop."""
     moves = _day()
     moves[0]["stops"] = [
         {"store": "Costco", "count": 6, "items": ["orzo", "salmon", "black beans"]},
@@ -267,68 +252,47 @@ def test_the_shop_card_draws_one_row_per_store_stop_and_opens_the_list():
     ]
     out = _node(_prelude() + "console.log(JSON.stringify(render(" + json.dumps(_payload("cook:13", moves)) + ")));")
     strip = out["strip"]
-    # The shop card is the LAST of Today's four sections since 2026-10-05
-    # (it was the first). Its own claim — one row per store stop, each
-    # opening the list — is untouched.
-    assert _groups(strip)[-1] == ("shop", "Shop", "2 stops")
-    first = _row(strip, "shop:2026-09-13", 0)
-    second = _row(strip, "shop:2026-09-13", 1)
-    assert '<span class="day-node-title">Costco · 6 things</span><span class="day-node-meta">orzo, salmon, black beans…</span>' in first
-    assert '<span class="day-node-title">Any store · 2 things</span><span class="day-node-meta">lemons, dish soap</span>' in second
-    # The body opens the list (runTodayMoveAction → activateTab('grocery')),
-    # not a button in the row; the shop's tick is a plain mark (not tickable).
-    for row in (first, second):
-        assert 'class="day-node-text day-node-open" data-move-action="shop:2026-09-13"' in row
-        assert '<span class="day-tick" aria-hidden="true">' in row and "data-move-tick" not in row
+    line = strip.split('class="shell-card day-shoptoday"', 1)[1]
+    assert '<span class="day-meal-dish">Costco, Any store</span>' in line
+    assert "Shop today" in line and 'data-shop-open="1"' in strip
+    assert 'data-move-id="shop:' not in strip, "the shop is a line, not a row with a tick"
     assert "Open the list" not in strip
 
 
 @_needs_node
 def test_a_group_with_nothing_in_it_is_not_drawn():
-    """UPDATED 2026-10-05 for Today's four sections. The claim is the same
-    one and is still measured both ways: a group with no moves in it is
-    absent from the markup, not an empty card. The MEALS card is the one
-    exception and is drawn always — on a day with nothing planned it reads
-    "Nothing planned today", which the card asked for in those words (see
-    tests/test_today_days_meals.py)."""
+    """A card with nothing in it is absent, not empty. The MEALS card is the
+    one exception and is drawn always (tests/test_today_days_meals.py)."""
     moves = [m for m in _day() if m["kind"] != "shop"]
     out = _node(_prelude() + "console.log(JSON.stringify(render(" + json.dumps(_payload("cook:13", moves)) + ")));")
-    keys = [g[0] for g in _groups(out["strip"])]
-    assert keys == ["meals", "cook", "prep"], "no shop moves, no shop card"
+    assert [g[0] for g in _groups(out["strip"])] == ["meals", "todo"]
+    assert "day-shoptoday" not in out["strip"], "no shop moves, no shop line"
     only_shop = [m for m in _day() if m["kind"] == "shop"]
     out = _node(_prelude() + "console.log(JSON.stringify(render(" + json.dumps(_payload(None, only_shop)) + ")));")
-    assert _groups(out["strip"]) == [("meals", "Today’s meals", ""), ("shop", "Shop", "1 stop")], (
-        "nothing to cook and nothing to prep, so neither card is drawn"
-    )
+    assert _groups(out["strip"]) == [("meals", "Today’s meals", "")], "nothing to do, so no To do card"
+    assert "day-shoptoday" in out["strip"]
 
 
 @_needs_node
 def test_exactly_one_row_is_tinted_and_it_is_the_next_up_move():
     out = _node(_prelude() + "console.log(JSON.stringify(render(" + json.dumps(_payload("cook:13")) + ")));")
     strip = out["strip"]
-    assert strip.count('"day-node is-now"') == 1, "§2b S3: one tinted row, ever, across both groups"
+    assert strip.count('"day-node is-now"') == 1, "§2b S3: one tinted row, ever"
     assert strip.count("day-node-eyebrow") == 1
     row = _row(strip, "cook:13")
-    assert '<button type="button" class="day-node-text day-node-open" data-move-action="cook:13">' in row
+    # The row opens its sheet (2026-10-30); the dock runs the action.
+    assert '<button type="button" class="day-node-text day-node-open" data-move-sheet="cook:13">' in row
     assert '<span class="day-node-eyebrow">Now</span>' in row, "S6: the tint carries the word for it"
     assert '<span class="day-node-title">Chicken Skewers</span>' in row
     assert '<span class="day-node-meta">35 min</span>' in row
-    # A later row has no eyebrow — title and meta only.
     later = _row(strip, "cook:12")
     assert "day-node-eyebrow" not in later
-    assert '<button type="button" class="day-node-text day-node-open" data-move-action="cook:12">' in later
-    # A featured shop with two stops tints its first row only.
-    moves = _day()
-    moves[0]["stops"].append({"store": "Loblaws", "count": 1, "items": ["milk"]})
-    out = _node(_prelude() + "console.log(JSON.stringify(render(" + json.dumps(_payload("shop:2026-09-13", moves)) + ")));")
-    assert out["strip"].count('"day-node is-now"') == 1
-    # Read off the SHOP card rather than off the top of the strip: Cook and
-    # Prep come above it since 2026-10-05, so the strip's first two rows are
-    # no longer the shop's first two. The claim — a featured shop tints its
-    # first stop and nothing else — is the same one, measured where it is
-    # actually made.
-    shop_card = out["strip"].split('day-group day-group-shop"', 1)[1]
-    assert [n[0] for n in _nodes(shop_card)][:2] == ["now", "later"]
+    assert '<button type="button" class="day-node-text day-node-open" data-move-sheet="cook:12">' in later
+    # A featured shop is the shop line and the dock's "Go shopping": no row
+    # in To do is tinted for it.
+    out = _node(_prelude() + "console.log(JSON.stringify(render(" + json.dumps(_payload("shop:2026-09-13")) + ")));")
+    assert out["strip"].count('"day-node is-now"') == 0
+    assert "Go shopping" in out["dock"]
 
 
 @_needs_node
@@ -356,13 +320,17 @@ def test_the_dot_is_the_tick_and_says_the_state():
     for row in (done, now):
         assert '<span class="day-dot"><span class="day-dot-icon"><svg' in row
         assert '<span class="day-dot-tick"><svg' in row
-        # The tick comes first in the row, then the body, then the tag.
-        assert row.index("day-tick") < row.index("day-node-text") < row.index("day-node-tag")
-    # The shop has nothing behind its tick (moves.py's `tickable`): a plain
+        # The tick comes first in the row, then the body — and nothing after
+        # it: no tag, no who-button (2026-10-30).
+        assert row.index("day-tick") < row.index("day-node-text")
+        assert "day-node-tag" not in row and "day-node-who" not in row
+    # A move with nothing behind its tick (moves.py's `tickable`) is a plain
     # mark on the row, not a button.
-    shop = _row(strip, "shop:2026-09-13")
-    assert shop.startswith('<span class="day-tick" aria-hidden="true"><span class="day-dot">')
-    assert "data-move-tick" not in shop and "<button" not in shop.split("</span></span></span>", 1)[0]
+    moves = _day()
+    moves[1]["tickable"] = False
+    plain = _row(_node(_prelude() + "console.log(JSON.stringify(render(" + json.dumps(_payload(None, moves)) + ")));")["strip"], "fridge:4")
+    assert plain.startswith('<span class="day-tick" aria-hidden="true"><span class="day-dot">')
+    assert "data-move-tick" not in plain
 
 
 @_needs_node
@@ -397,10 +365,10 @@ def test_the_dock_carries_the_next_up_moves_action_and_follows_it():
     assert out["c"] == '<button type="button" class="dock-primary" data-move-action="shop:2026-09-13">Go shopping</button>'
     # And the tint moved with it.
     assert [n for n in _nodes(out["bStrip"]) if n[0] == "now"][0][1] == "fridge:4"
-    # The row's body runs the same action as the dock (one thing, two
-    # places to reach it), and never carries a button of its own.
+    # The row's body opens its sheet (2026-10-30) — the action is in the
+    # sheet and the dock — and never carries a button of its own.
     row = _row(out["bStrip"], "fridge:4")
-    body = row.split('<button type="button" class="day-node-text day-node-open" data-move-action="fridge:4">', 1)[1].split("</button>", 1)[0]
+    body = row.split('<button type="button" class="day-node-text day-node-open" data-move-sheet="fridge:4">', 1)[1].split("</button>", 1)[0]
     assert "dock-primary" not in body and "<button" not in body
     # A fridge move's reason IS its meta line — said once, not twice.
     assert body.count("for Thursday’s skewers") == 1
@@ -422,7 +390,7 @@ def test_nothing_left_today_names_tomorrow_after_the_strip():
     # UPDATED 2026-10-05: four sections (the fridge move is Prep's now).
     # This test's own claim — the tomorrow card sits AFTER them — is below
     # and unchanged.
-    assert [g[0] for g in _groups(strip)] == ["meals", "cook", "prep"]
+    assert [g[0] for g in _groups(strip)] == ["meals", "todo"]
     assert strip.index("</div></div>") < strip.index('class="shell-card tomorrow-card"'), "the tomorrow card sits after the groups"
     assert 'data-move-dish="cook:20">Pancakes</button>' in strip
     assert out["dockHidden"] is True
@@ -433,68 +401,36 @@ def test_nothing_left_today_names_tomorrow_after_the_strip():
 # --------------------------------------------------------------------------
 
 @_needs_node
-def test_the_tag_says_which_part_of_the_day_and_no_row_prints_a_clock():
-    out = _node(_prelude() + "console.log(JSON.stringify(render(" + json.dumps(_payload("cook:13")) + ")));")
-    tags = dict((n[1], n[2]) for n in _nodes(out["strip"]))
-    assert tags == {
-        "shop:2026-09-13": "Evening",    # by the dinner cook's start, 5:55
-        "reheat:11": "Morning",          # breakfast at 8:00
-        "cook:12": "Afternoon",          # lunch on the table at noon
-        "cook:13": "Evening",            # dinner: window_start 5:55 + 35 min = 6:30
-        "fridge:4": "Evening",           # by tonight
-    }
-    text = re.sub(r"<[^>]+>", " ", out["strip"])
-    assert not re.search(r"\b\d{1,2}:\d{2}\b", text), "a clock on a row — the tag says the part of the day now"
-    assert "Noon" not in text and "Tonight" not in text
+def test_no_row_carries_a_time_of_day_tag_and_the_only_clock_is_when_to_start():
+    """The declutter (Emily, 2026-10-30): the Morning / Afternoon / Evening
+    tag came off every row; a row's one short note is what helps — "start
+    5:55" on a cook still to do (the server's own start-by chip)."""
+    moves = _day()
+    moves[4]["chips"] = ["35 min", "Start by 5:55"]
+    out = _node(_prelude() + "console.log(JSON.stringify(render(" + json.dumps(_payload("cook:13", moves)) + ")));")
+    strip = out["strip"]
+    for word in ("day-node-tag", "Morning", "Afternoon", "Evening", "Any time"):
+        assert word not in strip, word
+    assert '<span class="day-node-meta">start 5:55</span>' in _row(strip, "cook:13")
+    text = re.sub(r"<[^>]+>", " ", strip)
+    assert re.findall(r"\b\d{1,2}:\d{2}\b", text) == ["5:55"]
 
 
 @_needs_node
-def test_the_time_of_day_mapping_is_one_function_and_dinner_lands_in_evening():
-    """moveTimeOfDay is the one mapping: before noon Morning, noon to five
-    Afternoon, five on Evening; a shop nothing is waiting on is Any time;
-    a fridge or prep move (by tonight) is Evening. Dinner is Evening for
-    every dinner_window the household can pick (moves._dinner_clock: 5:30,
-    7:00, 8:00; the 6:30 default) — asserted here so the rhythm answer and
-    the tag can't drift apart."""
+def test_the_day_is_ordered_by_when_each_move_lands():
+    """dayStripOrder: a cook by when it lands, a prep or fridge move by its
+    deadline (by tonight). The tag that read off the same clock went on
+    2026-10-30; the order did not."""
     script = _prelude() + (
-        "function tag(o) { return moveTimeOfDay(o); }\n"
-        "console.log(JSON.stringify({\n"
-        "  early: tag({ kind: 'reheat', window_start: '2026-09-13T00:30:00' }),\n"
-        "  lateMorning: tag({ kind: 'reheat', window_start: '2026-09-13T11:59:00' }),\n"
-        "  noon: tag({ kind: 'cook', window_start: '2026-09-13T12:00:00', duration_min: 0 }),\n"
-        "  four59: tag({ kind: 'reheat', window_start: '2026-09-13T16:59:00' }),\n"
-        "  five: tag({ kind: 'reheat', window_start: '2026-09-13T17:00:00' }),\n"
-        "  cookCrossesNoon: tag({ kind: 'cook', window_start: '2026-09-13T11:30:00', duration_min: 45 }),\n"
-        "  dinners: ['17:30', '19:00', '20:00', '18:30'].map(function (t) {\n"
-        "    return tag({ kind: 'cook', window_start: '2026-09-13T' + t + ':00', duration_min: 0 });\n"
-        "  }),\n"
-        "  prep: tag({ kind: 'prep', window_start: '2026-09-13T00:00:00', window_end: '2026-09-13T22:00:00' }),\n"
-        "  fridge: tag({ kind: 'fridge', window_start: '2026-09-13T00:00:00', window_end: '2026-09-13T22:00:00', overdue: true }),\n"
-        "  standingList: tag({ kind: 'shop', timed: false, window_start: '2026-09-13T00:00:00', window_end: '2026-09-13T23:59:00' }),\n"
-        "  shopByBreakfast: tag({ kind: 'shop', timed: true, window_start: '2026-09-13T00:00:00', window_end: '2026-09-13T07:40:00' }),\n"
-        "  shopByDinner: tag({ kind: 'shop', timed: true, window_start: '2026-09-13T00:00:00', window_end: '2026-09-13T17:55:00' }),\n"
-        "  broken: tag({ kind: 'cook', window_start: 'nonsense', time_label: 'by tonight' }),\n"
-        "  order: dayStripOrder([\n"
+        "console.log(JSON.stringify(dayStripOrder([\n"
         "    { id: 'p', kind: 'prep', window_start: '2026-09-13T00:00:00', window_end: '2026-09-13T22:00:00' },\n"
         "    { id: 'd', kind: 'cook', window_start: '2026-09-13T18:00:00', duration_min: 30 },\n"
         "    { id: 'b', kind: 'reheat', window_start: '2026-09-13T08:00:00' }\n"
-        "  ]).map(function (m) { return m.id; })\n"
-        "}));"
+        "  ]).map(function (m) { return m.id; })));"
     )
-    out = _node(script)
-    assert out["early"] == "Morning" and out["lateMorning"] == "Morning"
-    assert out["noon"] == "Afternoon" and out["four59"] == "Afternoon"
-    assert out["five"] == "Evening"
-    assert out["cookCrossesNoon"] == "Afternoon", "a cook is tagged by when it lands, not when it starts"
-    assert out["dinners"] == ["Evening"] * 4
-    assert out["prep"] == "Evening" and out["fridge"] == "Evening"
-    assert out["standingList"] == "Any time"
-    assert out["shopByBreakfast"] == "Morning" and out["shopByDinner"] == "Evening"
-    assert out["broken"] == "Any time", "an unreadable clock is no part of the day"
-    assert out["order"] == ["b", "d", "p"]
-    # The clock formatter is gone with the rail — nothing prints "6:30".
+    assert _node(script) == ["b", "d", "p"]
     assert "function moveStripTime(" not in SHELL_JS
-    assert SHELL_JS.count("function moveTimeOfDay(") == 1
+    assert "function moveTimeOfDay(" not in SHELL_JS
 
 
 # --------------------------------------------------------------------------

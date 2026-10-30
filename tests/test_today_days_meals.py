@@ -516,6 +516,7 @@ _PRELUDE = (
     + _region("  // ---------- Today: Shop and Cook ----------", "  function tomorrowCardHtml(")
     + _fn("moveRecipeTarget")
     + _fn("moveDishHtml")
+    + _fn("quietSheetHeadHtml")
     + "function openRecipeFor() {}\n"
 )
 
@@ -527,16 +528,18 @@ def _node(script: str):
 
 
 _SECTION_RE = re.compile(
-    r'class="shell-card day-group day-(meals|group-cook|group-prep|group-shop)"'
+    r'class="shell-card day-group day-(meals|group-todo|group-cook|group-prep|group-shop)"'
     r'|class="shell-card (day-shopline)(?: is-unset)?"'
+    r'|class="shell-card (day-shoptoday)"'
 )
 
 
 def _groups(html: str) -> list[str]:
     """The key of every section card, top to bottom. The meals card is
-    `day-meals`; a group is `day-group-<key>`; the shop LINE is
-    `day-shopline`."""
-    return [(m.group(1) or "shopline") for m in _SECTION_RE.finditer(html)]
+    `day-meals`; a group is `day-group-<key>` (since 2026-10-30 Cook and
+    Prep are one, `group-todo`); the shop LINE is `day-shopline`, and on
+    shop day the one-line Shop card is `day-shoptoday`."""
+    return [(m.group(1) or ("shopline" if m.group(2) else "shoptoday")) for m in _SECTION_RE.finditer(html)]
 
 
 def _render(moves_list, featured=None, shop=None, day_meals_rows=None):
@@ -618,7 +621,8 @@ def test_the_four_sections_are_in_the_cards_order():
     """CATCH (mutation 1) — the section order the card names. It was Shop
     first, Cook second, prep rows inside Cook, and no meals card."""
     html = _render(_full_day(), None, _SHOP_OFF, _MEAL_ROWS)
-    assert _groups(html) == ["meals", "group-cook", "group-prep", "shopline"]
+    # Since the declutter (2026-10-30) Cook and Prep are one To do card.
+    assert _groups(html) == ["meals", "group-todo", "shopline"]
 
 
 @_needs_node
@@ -626,34 +630,35 @@ def test_on_shopping_day_the_fourth_section_is_the_shop_card():
     """CATCH (mutation 6). Same four slots; the last one is the card with
     its store stops rather than the line."""
     html = _render(_full_day(), None, _SHOP_ON, _MEAL_ROWS)
-    assert _groups(html) == ["meals", "group-cook", "group-prep", "group-shop"]
+    assert _groups(html) == ["meals", "group-todo", "shoptoday"]
     assert "day-shopline" not in html
-    assert '<span class="day-node-title">Costco · 6 things</span>' in html
+    # One line since 2026-10-30: "Shop today · Costco".
+    shop = html.split('class="shell-card day-shoptoday"', 1)[1]
+    assert "Shop today" in shop and '<span class="day-meal-dish">Costco</span>' in shop
+    assert 'data-shop-open="1"' in html
 
 
 @_needs_node
-def test_prep_is_its_own_card_and_not_rows_inside_cook():
-    """CATCH (mutation 4). Measured before: the fridge move and the soak
-    were rows in the Cook card."""
+def test_cook_and_prep_are_one_to_do_card():
+    """The declutter (Emily, 2026-10-30): Cook and Prep became one "To do"
+    list, top to bottom down the day. (Until then prep had its own card —
+    mutation 4 of the 2026-10-05 card.)"""
     html = _render(_full_day(), None, _SHOP_OFF, _MEAL_ROWS)
-    cook = html.split('day-group-cook"', 1)[1].split('class="shell-card', 1)[0]
-    prep = html.split('day-group-prep"', 1)[1].split('class="shell-card', 1)[0]
-    assert "cook:13" in cook and "reheat:11" in cook
-    assert "fridge:4" not in cook and "prep:9" not in cook
-    assert "fridge:4" in prep and "prep:9" in prep
-    # What each prep move is FOR, which is the card's own requirement.
-    assert "for Thursday’s skewers" in prep and "for Wednesday" in prep
+    todo = html.split('day-group-todo"', 1)[1].split('class="shell-card', 1)[0]
+    for move_id in ("cook:13", "reheat:11", "fridge:4", "prep:9"):
+        assert move_id in todo, move_id
+    assert "day-group-cook" not in html and "day-group-prep" not in html
+    # What each prep move is FOR — its one short note.
+    assert "for Thursday’s skewers" in todo and "for Wednesday" in todo
     # Ticking works as today's move ticks do — the same button, unchanged.
-    assert 'data-move-tick="fridge:4"' in prep and 'data-move-tick="prep:9"' in prep
+    assert 'data-move-tick="fridge:4"' in todo and 'data-move-tick="prep:9"' in todo
 
 
 @_needs_node
-def test_a_day_with_no_prep_draws_no_prep_card():
-    """CATCH — "Hidden when there is no prep today.\""""
+def test_a_day_with_no_prep_is_still_one_to_do_card():
     day = [m for m in _full_day() if m["kind"] not in ("fridge", "prep")]
     html = _render(day, None, _SHOP_OFF, _MEAL_ROWS)
-    assert _groups(html) == ["meals", "group-cook", "shopline"]
-    assert "day-group-prep" not in html
+    assert _groups(html) == ["meals", "group-todo", "shopline"]
 
 
 @_needs_node
@@ -668,8 +673,12 @@ def test_a_reheat_says_reheat_and_is_never_a_way_into_a_recipe():
     assert "day-node-eyebrow" not in row, "that one is the tinted row's word, and there is one"
     leftovers = [dict(_MEAL_ROWS[3], is_leftovers=True, note="leftovers from Sunday")]
     html = _render([], None, None, leftovers)
-    assert "leftovers from Sunday" in html
-    assert "data-meal-open" not in html, "nothing to open — a reheat has no recipe screen"
+    # Emily's standing copy rule (2026-10-30): just "Leftovers", never where from.
+    assert '<span class="day-meal-note">Leftovers</span>' in html
+    assert "leftovers from Sunday" not in html
+    sheet = _node("console.log(JSON.stringify(todayMealSheetHtml(%s)));" % json.dumps(leftovers[0]))
+    assert "data-meal-recipe" not in sheet, "nothing to open — a reheat has no recipe screen"
+    assert "from Sunday" not in sheet
 
 
 @_needs_node
@@ -682,10 +691,14 @@ def test_a_cook_row_says_when_to_start_and_the_batch_line():
     day[-1]["reason"] = "Cooking for 6 — covers Thursday"
     html = _render(day, None, _SHOP_OFF, _MEAL_ROWS)
     row = html.split('data-move-id="cook:13">', 1)[1]
-    assert '<span class="day-node-meta">35 min</span>' in row, "the total time"
-    assert '<span class="day-node-meta day-node-why">Start by 5:55 · Cooking for 6 — covers Thursday</span>' in row
+    # The row's one short note is when to start (2026-10-30); the total
+    # time and the batch line are in the row's sheet.
+    assert '<span class="day-node-meta">start 5:55</span>' in row
+    assert "Cooking for 6" not in row
+    sheet = _node("console.log(JSON.stringify(todayMoveSheetHtml(%s)));" % json.dumps(day[-1]))
+    assert "Start by 5:55 · 35 min · Cooking for 6 — covers Thursday" in sheet
     # Not a second implementation of the clock.
-    assert "setMinutes" not in _fn("dayNodeWhyHtml")
+    assert "setMinutes" not in _fn("dayNodeNote") and "setMinutes" not in _fn("todayMoveSheetHtml")
 
 
 @_needs_node
@@ -699,35 +712,41 @@ def test_the_meals_card_reads_breakfast_lunch_snacks_dinner():
     ]
     # Snacks, household-wide today, name both dishes on one row.
     assert '<span class="day-meal-dish">Apple Slices, Roasted Chana</span>' in card
-    # The grey note is the server's sentence, not one composed here.
-    assert "makes tomorrow&#039;s lunch" in card or "makes tomorrow's lunch" in card
+    # Each row is the eyebrow, the dish and a chevron (2026-10-30); the
+    # grey note — the server's sentence — is in the row's sheet.
+    assert card.count("day-meal-chev") == 4
+    sheet = _node("console.log(JSON.stringify(todayMealSheetHtml(%s)));" % json.dumps(_MEAL_ROWS[3]))
+    assert "makes tomorrow&#039;s lunch" in sheet or "makes tomorrow's lunch" in sheet
 
 
 @_needs_node
-def test_the_per_person_lunch_is_the_label_above_one_line_each():
-    """CATCH (mutation 3) — Emily, 2026-10-04: the meal label sits above one
-    line per person, a round initial, the name, where they will be in grey,
-    and the dish on the line below."""
+def test_the_per_person_lines_are_in_the_meals_sheet_not_on_the_row():
+    """Emily, 2026-10-04: one line per person — the name, where they will
+    be, the dish. Since 2026-10-30 (the declutter) those lines are in the
+    sheet the row opens; the row is the label and the dish."""
     html = _render([], None, None, _MEAL_ROWS)
-    block = html.split('class="day-meal is-people"', 1)[1].split('</div>', 1)[0]
-    assert '<span class="day-meal-slot">Lunch</span>' in block
-    assert block.count('class="day-meal-line') == 2, "one line per group, not one collapsed row"
-    assert '<span class="day-meal-initial">G</span><span class="day-meal-initial">R</span>' in block
-    assert "Gowthami + Ravi · at home" in block
-    assert "Arjun · out" in block
-    assert block.count('<span class="day-meal-dish">Chana Masala</span>') == 2
+    row = html.split('data-meal-sheet="1"', 1)[1].split("</button>", 1)[0]
+    assert '<span class="day-meal-slot">Lunch</span>' in row
+    assert '<span class="day-meal-dish">Chana Masala</span>' in row
+    assert "Gowthami" not in row and "day-meal-initial" not in row
+    sheet = _node("console.log(JSON.stringify(todayMealSheetHtml(%s)));" % json.dumps(_MEAL_ROWS[1]))
+    assert sheet.count('class="quiet-line"') == 2, "one line per group, not one collapsed row"
+    assert "Gowthami + Ravi · at home" in sheet
+    assert "Arjun · out" in sheet
 
 
 @_needs_node
-def test_everyone_is_one_row_and_tapping_it_opens_that_meal():
-    """CATCH. "Tapping a row opens that meal" — through openRecipeFor, the
-    one door to the one screen with a recipe on it."""
+def test_a_row_opens_its_sheet_and_the_sheet_opens_that_meal():
+    """"Tapping a row opens that meal" — now one tap further: the row opens
+    its sheet, whose "See the recipe" goes through openRecipeFor, the one
+    door to the one screen with a recipe on it."""
     html = _render([], None, None, _MEAL_ROWS)
-    first = html.split('class="day-meal day-meal-open"', 1)[1].split("</button>", 1)[0]
-    assert 'data-meal-open="1"' in html
+    first = html.split('data-meal-sheet="0"', 1)[1].split("</button>", 1)[0]
     assert '<span class="day-meal-dish">Idli</span>' in first
-    assert '<span class="day-meal-note">everyone</span>' in first
-    assert "openRecipeFor" in _fn("renderTodayMoves")
+    sheet = _node("console.log(JSON.stringify(todayMealSheetHtml(%s)));" % json.dumps(_MEAL_ROWS[0]))
+    assert "everyone" in sheet and 'data-meal-recipe="1"' in sheet
+    assert "openTodayMealSheet" in _fn("renderTodayMoves")
+    assert "openRecipeFor" in _fn("openTodayMealSheet")
 
 
 @_needs_node
@@ -765,7 +784,7 @@ def test_on_shopping_day_with_nothing_to_buy_there_is_no_shop_section_at_all():
     with itself (§8)."""
     day = [m for m in _full_day() if m["kind"] != "shop"]
     html = _render(day, None, _SHOP_ON, _MEAL_ROWS)
-    assert _groups(html) == ["meals", "group-cook", "group-prep"]
+    assert _groups(html) == ["meals", "group-todo"]
     assert "day-shopline" not in html and "You shop on" not in html
     # The guard is todayShopLineHtml's own, so it holds however it is called.
     assert _node("console.log(JSON.stringify(todayShopLineHtml(%s)));"
@@ -789,7 +808,7 @@ def test_nothing_in_the_four_sections_is_an_apricot_fill():
     action). Source-level: none of these builders reaches for the dock's
     classes, and the CSS for each new block takes celadon or a token ink."""
     for name in ("todayMealsCardHtml", "todayMealRowHtml", "todayShopLineHtml",
-                 "dayNodeWhyHtml", "dayGroupsHtml"):
+                 "todayShopTodayHtml", "dayNodeNote", "dayGroupsHtml"):
         src = _fn(name)
         assert "dock-primary" not in src and "btn-gold" not in src
     block = SHELL_CSS.split("TODAY'S MEALS", 1)[1].split("Give the last row", 1)[0]
@@ -806,14 +825,15 @@ def test_no_section_carries_a_count_of_done_things():
     day[1]["done"] = True
     day[3]["done"] = True
     html = _render(day, None, _SHOP_OFF, _MEAL_ROWS)
-    for key in ("cook", "prep", "meals"):
+    for key in ("todo", "meals"):
         marker = 'day-meals"' if key == "meals" else 'day-group-%s"' % key
         card = html.split(marker, 1)[1].split('class="shell-card', 1)[0]
         assert "day-group-count" not in card, f"{key} must carry no count"
     assert not re.search(r"\d+ of \d+", html)
-    # Shop's "N stops" is where you are going, not a score — it stays.
+    # On shop day the Shop card is one line naming where you are going
+    # (2026-10-30) — still no score.
     on = _render(day, None, _SHOP_ON, _MEAL_ROWS)
-    assert '<span class="day-group-count">1 stop</span>' in on
+    assert "day-group-count" not in on and "Shop today" in on
 
 
 @_needs_node
@@ -826,7 +846,7 @@ def test_the_region_marker_two_harnesses_lift_this_code_by_is_intact():
     assert "  // ---------- Today: Shop and Cook ----------" in SHELL_JS
     i = SHELL_JS.index("  // ---------- Today: Shop and Cook ----------")
     region = SHELL_JS[i:SHELL_JS.index("  function tomorrowCardHtml(", i)]
-    for name in ("todayMealsCardHtml", "todayMealRowHtml", "todayMealWhoHtml",
-                 "todayMealTarget", "todayShopLineHtml", "dayNodeWhyHtml",
-                 "COOK_KINDS", "DAY_GROUPS"):
+    for name in ("todayMealsCardHtml", "todayMealRowHtml", "todayMealSheetHtml",
+                 "todayMealTarget", "todayShopLineHtml", "todayShopTodayHtml", "dayNodeNote",
+                 "todayMoveSheetHtml", "DAY_GROUPS"):
         assert name in region, f"{name} must live inside the lifted region"
