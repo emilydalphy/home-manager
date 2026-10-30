@@ -2044,7 +2044,7 @@ def _exception_in_note(note: str, food: str) -> str:
     if not c:
         return ""
     tail = re.split(r",|\band\b|\bor\b", clause[c.end():], maxsplit=1)[0]
-    if c.group(0) == "but" and not _coordination._FINE_RE.search(tail):
+    if c.group(0) == "but" and not _coordination.says_fine(tail):
         return ""
     tail = _EXCEPTION_TAIL_RE.sub("", tail.strip())
     tail = _EXCEPTION_LEAD_RE.sub("", tail).strip(" ,'\"")
