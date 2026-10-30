@@ -439,7 +439,7 @@ UNPROTECTED_WRITERS: dict[str, list[str]] = {
     ],
     "app/tools/grocery.py": [
         "_recompute_plan_line_from_ledger", "_reverse_meal_grocery_contributions",
-        "add_grocery_item", "clear_grocery_list", "clear_stale_grocery_items",
+        "clear_grocery_list", "clear_stale_grocery_items",
         "consolidate_grocery_list", "drop_carried_over_item", "exclude_grocery_item",
         "include_grocery_item", "keep_carried_over_item",
         "move_grocery_item_to_inventory", "remove_grocery_item",
@@ -507,9 +507,7 @@ UNPROTECTED_WRITERS: dict[str, list[str]] = {
         "list_spices_this_week", "tick_spice"
     ],
     "app/tools/staples.py": [
-        "add_staple", "decide_staple_line", "mark_staple_plenty", "pause_staple",
-        "record_staple_purchase", "remove_staple", "sync_due_staples",
-        "undo_staple_decision", "unrecord_staple_purchase"
+        "add_staple", "sync_due_staples"
     ],
     "app/tools/stores.py": [
         "close_shopping_trip", "set_item_store"
@@ -545,7 +543,6 @@ UNPROTECTED_WRITERS: dict[str, list[str]] = {
 _OWN_CONN_FALLBACK: frozenset[tuple[str, str]] = frozenset({
     ("app/tools/grocery.py", "_recompute_plan_line_from_ledger"),
     ("app/tools/grocery.py", "_reverse_meal_grocery_contributions"),
-    ("app/tools/grocery.py", "add_grocery_item"),
     ("app/tools/grocery.py", "set_aside_carried_over_items"),
     ("app/tools/held.py", "hold_thing"),
     ("app/tools/inventory.py", "_add_to_inventory"),

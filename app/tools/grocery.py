@@ -1797,8 +1797,9 @@ def add_grocery_item(
     transaction, and every line that ingest lands has to be written on that
     connection — a second connection writing while the first holds the
     write lock is the "database is locked" trap. Given a connection this
-    reads and writes on it and neither commits nor closes; left unset,
-    every other call site behaves exactly as before.
+    reads and writes on it and neither commits nor closes; left unset, it
+    opens its own, takes the write lock before the merge's read, and
+    commits.
 
     `item` is trimmed and, once trimmed, must not be blank -- a stray tap
     or a mis-parsed scanned receipt line shouldn't be able to leave a
@@ -1811,6 +1812,25 @@ def add_grocery_item(
     trim and a shorter cap (MAX_QUANTITY_LENGTH) -- it has no "must not be
     blank" rule, since an item with no quantity at all is normal.
     """
+    if not (item or "").strip():
+        # Refused before any connection or lock (the same check runs below).
+        raise ValueError("I need a name for that.")
+    if conn is None:
+        # The write lock from the first read (two phones, 2026-10-29): the
+        # merge reads the list's 'needed' lines and then writes the summed
+        # amount onto the one it matched. Without the lock the other
+        # phone's tick could land in between — the add then summed onto a
+        # line already BOUGHT, the shopper's kitchen got the old amount,
+        # and the extra carton was on nobody's list (26 of 40 concurrent
+        # add+tick pairs over HTTP). Under it, an add that loses the race
+        # to a tick sees the line gone from 'needed' and starts its own.
+        with write() as own:
+            own.execute("BEGIN IMMEDIATE")
+            return add_grocery_item(
+                item, quantity=quantity, category=category, added_by=added_by,
+                source_weekly_plan_id=source_weekly_plan_id, quantity_mode=quantity_mode,
+                conn=own, report_previous=report_previous,
+            )
     item = (item or "").strip()
     if not item:
         raise ValueError("I need a name for that.")
@@ -1834,9 +1854,6 @@ def add_grocery_item(
         item = _pantry.canonical_name(item)
     if _pantry.is_canned(item):
         category = "canned"
-    own_conn = conn is None
-    if own_conn:
-        conn = get_conn()
     # Compared in Python rather than SQL because the comparison is a
     # normalised key, not a column value. The 'needed' list is a shopping
     # list -- tens of rows -- so reading it to find one match is cheaper
@@ -1953,9 +1970,6 @@ def add_grocery_item(
         # The name on the line now, not the one just asked for: saying
         # "item" back means the line the shopper will actually see.
         item_name = line_name
-        if own_conn:
-            conn.commit()
-            conn.close()
         result = {"item_id": item_id, "item": item_name, "quantity": merged_qty, "merged": True, "units_reconciled": merged}
         if report_previous:
             # What the line read before this add, and whether it was the
@@ -1986,9 +2000,6 @@ def add_grocery_item(
         (household_id(), item, quantity, category, acting_name(added_by) or "user", source_weekly_plan_id, preferred_store, status),
     )
     item_id = cur.lastrowid
-    if own_conn:
-        conn.commit()
-        conn.close()
     return {"item_id": item_id, "item": item, "quantity": quantity, "merged": False, "units_reconciled": True}
 
 

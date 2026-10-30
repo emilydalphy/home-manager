@@ -70,7 +70,7 @@ import logging
 import statistics
 from datetime import date, timedelta
 
-from ..db import get_conn
+from ..db import get_conn, write
 from ._shared import household_id, require_household_row
 from . import grocery as _grocery
 from . import quantities as _quantities
@@ -989,18 +989,19 @@ def remove_staple(item: str) -> dict:
     staple and its history are deleted; a line already on the grocery list
     for it is left alone (it is still a thing to buy this trip).
     """
-    conn = get_conn()
-    r = _find_by_name(conn, item)
-    if r is None:
-        conn.close()
-        return {"found": False, "item": item}
-    conn.execute("UPDATE grocery_items SET staple_id = NULL WHERE household_id = ? AND staple_id = ?", (household_id(), r["id"]))
-    conn.execute("DELETE FROM staple_events WHERE household_id = ? AND staple_id = ?", (household_id(), r["id"]))
-    conn.execute(
-        "DELETE FROM staples WHERE id = ? AND household_id = ?", (r["id"], household_id())
-    )
-    conn.commit()
-    conn.close()
+    # Under the write lock from the read: see decide_staple_line, which
+    # takes it too, so a "We have plenty" from the other phone lands wholly
+    # before this or not at all.
+    with write() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        r = _find_by_name(conn, item)
+        if r is None:
+            return {"found": False, "item": item}
+        conn.execute("UPDATE grocery_items SET staple_id = NULL WHERE household_id = ? AND staple_id = ?", (household_id(), r["id"]))
+        conn.execute("DELETE FROM staple_events WHERE household_id = ? AND staple_id = ?", (household_id(), r["id"]))
+        conn.execute(
+            "DELETE FROM staples WHERE id = ? AND household_id = ?", (r["id"], household_id())
+        )
     return {"found": True, "item": r["item"], "removed": True}
 
 
@@ -1010,14 +1011,13 @@ def mark_staple_plenty(item: str) -> dict:
     date a whole cadence out from today and takes any suggestion line for
     it off the grocery list. Doesn't change the learned rhythm.
     """
-    conn = get_conn()
-    r = _find_by_name(conn, item)
-    if r is None:
-        conn.close()
-        return {"found": False, "item": item}
-    out = _plenty(conn, r["id"], source="chat")
-    conn.commit()
-    conn.close()
+    # Under the write lock from the read: see decide_staple_line.
+    with write() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        r = _find_by_name(conn, item)
+        if r is None:
+            return {"found": False, "item": item}
+        out = _plenty(conn, r["id"], source="chat")
     out["found"] = True
     return out
 
@@ -1236,35 +1236,39 @@ def decide_staple_line(item_id: int, decision: str) -> dict:
     """
     if decision not in ("plenty", "skip"):
         raise ValueError("decision must be 'plenty' or 'skip'.")
-    conn = get_conn()
-    line = conn.execute(
-        "SELECT id, item, staple_id, status FROM grocery_items WHERE id = ? AND household_id = ?",
-        (item_id, household_id()),
-    ).fetchone()
-    if line is None:
-        conn.close()
-        raise ValueError(f"No grocery list item with id {item_id}.")
-    staple = _row(conn, line["staple_id"]) if line["staple_id"] else _find_by_name(conn, line["item"])
-    if staple is None:
-        conn.close()
-        raise ValueError(f"{line['item']} isn't a staple.")
-    if line["status"] != "needed":
-        # The answer is about a line still on the list to buy. Two phones
-        # hold one list: the other adult ticked it (or already answered)
-        # while this screen still showed the buttons. Answering anyway
-        # pulled a just-bought 3-week staple back to "ask again next week",
-        # counted a skip toward the auto-pause (twice for two phones), and
-        # the toast's Undo then made it due today — a second line for the
-        # thing just bought. Nothing changes; the result says why.
-        out = _shape(staple)
-        conn.close()
-        out["decision"] = decision
-        out["unchanged"] = True
-        out["line_status"] = line["status"]
-        return out
-    out = _plenty(conn, staple["id"], "tap") if decision == "plenty" else _skip(conn, staple["id"], "tap")
-    conn.commit()
-    conn.close()
+    # The write lock from the first read, and a connection that closes
+    # however this leaves (two phones, 2026-10-29): the other adult's
+    # "Remove staple" landing between the read below and the event insert
+    # deleted the staple under it — a FOREIGN KEY failure, a 500 on this
+    # phone, and the leaked connection kept the write lock long enough to
+    # 500 the next list read and add too. Under the lock, a remove that won
+    # the race leaves this line not a staple ("isn't a staple" below), and
+    # a remove that lost it waits and deletes the answered staple.
+    with write() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        line = conn.execute(
+            "SELECT id, item, staple_id, status FROM grocery_items WHERE id = ? AND household_id = ?",
+            (item_id, household_id()),
+        ).fetchone()
+        if line is None:
+            raise ValueError(f"No grocery list item with id {item_id}.")
+        staple = _row(conn, line["staple_id"]) if line["staple_id"] else _find_by_name(conn, line["item"])
+        if staple is None:
+            raise ValueError(f"{line['item']} isn't a staple.")
+        if line["status"] != "needed":
+            # The answer is about a line still on the list to buy. Two phones
+            # hold one list: the other adult ticked it (or already answered)
+            # while this screen still showed the buttons. Answering anyway
+            # pulled a just-bought 3-week staple back to "ask again next week",
+            # counted a skip toward the auto-pause (twice for two phones), and
+            # the toast's Undo then made it due today — a second line for the
+            # thing just bought. Nothing changes; the result says why.
+            out = _shape(staple)
+            out["decision"] = decision
+            out["unchanged"] = True
+            out["line_status"] = line["status"]
+            return out
+        out = _plenty(conn, staple["id"], "tap") if decision == "plenty" else _skip(conn, staple["id"], "tap")
     out["decision"] = decision
     return out
 
@@ -1276,61 +1280,65 @@ def undo_staple_decision(staple_id: int) -> dict:
     are recomputed from what's left, and the due date goes back to today so
     the next list read re-suggests it.
     """
-    conn = get_conn()
-    r = _row(conn, staple_id)
-    if r is None:
-        conn.close()
-        raise ValueError(f"No staple with id {staple_id}.")
-    # Read before reverse_last_answer deletes it: an answer that cut a
-    # shared line back to the week's part (_trim_to_the_weeks_part) left no
-    # removed row behind, so its receipt is the only record of the row.
-    last = conn.execute(
-        "SELECT receipt_json FROM staple_events WHERE household_id = ? AND staple_id = ? "
-        "AND kind IN ('plenty', 'skipped') ORDER BY id DESC LIMIT 1",
-        (household_id(), staple_id),
-    ).fetchone()
-    if (_bought_since_last_answer(conn, staple_id) or _answered_line_was_ticked(conn, staple_id, last)
-            or not reverse_last_answer(conn, staple_id)):
-        # Nothing to undo: say so, change nothing. (A raw call used to
-        # force the staple due — the 2026-09-11 verifier's case g.) Nor
-        # once it has been BOUGHT since that answer: a purchase overtook
-        # it, and making it due today would put a second line on the list
-        # for the thing just bought (the other phone's stale toast).
-        out = _shape(r)
-        conn.close()
-        out["undone"] = False
-        return out
-    trimmed = None
-    try:
-        trimmed = json.loads((last and last["receipt_json"]) or "{}").get("trimmed")
-    except (TypeError, ValueError, AttributeError):
+    # Under the write lock from the read, like decide_staple_line: the
+    # other phone's Remove landing in the middle deleted the staple under
+    # this and the shape at the end read None (a 500, 6 of 40 pairs).
+    with write() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        r = _row(conn, staple_id)
+        if r is None:
+            raise ValueError(f"No staple with id {staple_id}.")
+        # Read before reverse_last_answer deletes it: an answer that cut a
+        # shared line back to the week's part (_trim_to_the_weeks_part) left no
+        # removed row behind, so its receipt is the only record of the row.
+        last = conn.execute(
+            "SELECT receipt_json FROM staple_events WHERE household_id = ? AND staple_id = ? "
+            "AND kind IN ('plenty', 'skipped') ORDER BY id DESC LIMIT 1",
+            (household_id(), staple_id),
+        ).fetchone()
+        if (_bought_since_last_answer(conn, staple_id) or _answered_line_was_ticked(conn, staple_id, last)
+                or not reverse_last_answer(conn, staple_id)):
+            # Nothing to undo: say so, change nothing. (A raw call used to
+            # force the staple due — the 2026-09-11 verifier's case g.) Nor
+            # once it has been BOUGHT since that answer: a purchase overtook
+            # it, and making it due today would put a second line on the list
+            # for the thing just bought (the other phone's stale toast).
+            out = _shape(r)
+            out["undone"] = False
+            return out
         trimmed = None
-    if trimmed and _untrim(conn, staple_id, trimmed):
-        conn.commit()
-        out = _shape(_row(conn, staple_id))
-        conn.close()
-        out["undone"] = True
-        return out
-    # Put back the very row that was taken off — store, quantity and all —
-    # rather than letting the next list read make a new, blank one.
-    restored = conn.execute(
-        "SELECT id FROM grocery_items WHERE household_id = ? AND staple_id = ? AND status = 'removed' "
-        "ORDER BY removed_at DESC, id DESC LIMIT 1",
-        (household_id(), staple_id),
-    ).fetchone()
-    if restored:
-        conn.execute(
-            "UPDATE grocery_items SET status = 'needed', removed_by = '', removed_at = NULL "
-            "WHERE id = ? AND household_id = ?",
-            (restored["id"], household_id()),
-        )
-    conn.commit()
-    conn.close()
+        try:
+            trimmed = json.loads((last and last["receipt_json"]) or "{}").get("trimmed")
+        except (TypeError, ValueError, AttributeError):
+            trimmed = None
+        if trimmed and _untrim(conn, staple_id, trimmed):
+            out = _shape(_row(conn, staple_id))
+            out["undone"] = True
+            return out
+        # Put back the very row that was taken off — store, quantity and all —
+        # rather than letting the next list read make a new, blank one.
+        restored = conn.execute(
+            "SELECT id FROM grocery_items WHERE household_id = ? AND staple_id = ? AND status = 'removed' "
+            "ORDER BY removed_at DESC, id DESC LIMIT 1",
+            (household_id(), staple_id),
+        ).fetchone()
+        if restored:
+            conn.execute(
+                "UPDATE grocery_items SET status = 'needed', removed_by = '', removed_at = NULL "
+                "WHERE id = ? AND household_id = ?",
+                (restored["id"], household_id()),
+            )
+        undone_row = _row(conn, staple_id)
     if not restored:
         sync_due_staples()
     conn = get_conn()
-    out = _shape(_row(conn, staple_id))
-    conn.close()
+    try:
+        now_row = _row(conn, staple_id)
+    finally:
+        conn.close()
+    # A Remove that landed after the undo committed: the undo happened, so
+    # say so with the staple as the undo left it.
+    out = _shape(now_row or undone_row)
     out["undone"] = True
     return out
 
@@ -1462,34 +1470,34 @@ def pause_staple(staple_id: int, paused: bool = True) -> dict:
     skip streak and makes it due today if its date has passed."""
     # Before get_conn (see list_staples): Resume may put today's line back.
     today = _today()
-    conn = get_conn()
-    r = _row(conn, staple_id)
-    if r is None:
-        conn.close()
-        raise ValueError(f"No staple with id {staple_id}.")
-    if paused:
-        conn.execute(
-            "UPDATE staples SET paused = 1, updated_at = datetime('now') "
-            "WHERE id = ? AND household_id = ?",
-            (staple_id, household_id()),
-        )
-        _event(conn, staple_id, "paused", "tap")
-        _drop_suggestion_lines(conn, staple_id)
-    else:
-        conn.execute(
-            "UPDATE staples SET paused = 0, skip_streak = 0, updated_at = datetime('now') "
-            "WHERE id = ? AND household_id = ?",
-            (staple_id, household_id()),
-        )
-        _event(conn, staple_id, "resumed", "tap")
-        if _is_due(_row(conn, staple_id)):
-            # Pause took its line off (_drop_suggestion_lines); Resume the
-            # same day puts that line back rather than waiting a day.
-            _back_on_the_list(conn, staple_id, today)
-    conn.commit()
-    out = _shape(_row(conn, staple_id))
-    conn.close()
-    return out
+    # Under the write lock from the read, like decide_staple_line: the
+    # other phone's Remove landing between the read and the event insert
+    # was a FOREIGN KEY 500 that leaked the write lock.
+    with write() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        r = _row(conn, staple_id)
+        if r is None:
+            raise ValueError(f"No staple with id {staple_id}.")
+        if paused:
+            conn.execute(
+                "UPDATE staples SET paused = 1, updated_at = datetime('now') "
+                "WHERE id = ? AND household_id = ?",
+                (staple_id, household_id()),
+            )
+            _event(conn, staple_id, "paused", "tap")
+            _drop_suggestion_lines(conn, staple_id)
+        else:
+            conn.execute(
+                "UPDATE staples SET paused = 0, skip_streak = 0, updated_at = datetime('now') "
+                "WHERE id = ? AND household_id = ?",
+                (staple_id, household_id()),
+            )
+            _event(conn, staple_id, "resumed", "tap")
+            if _is_due(_row(conn, staple_id)):
+                # Pause took its line off (_drop_suggestion_lines); Resume the
+                # same day puts that line back rather than waiting a day.
+                _back_on_the_list(conn, staple_id, today)
+        return _shape(_row(conn, staple_id))
 
 
 def remove_staple_by_id(staple_id: int) -> dict:
@@ -1527,48 +1535,74 @@ def record_staple_purchase(
     grocery_item_id goes NULL and no untick removes it, because something
     else also bought it.
     """
-    conn = get_conn()
-    r = _row(conn, staple_id) if staple_id else None
-    if r is None:
-        r = _find_by_name(conn, item)
-    if r is None and _spices.is_assumed(item):
-        r = _create_spice_staple(conn, item, category, except_line_id=grocery_item_id)
-    if r is None:
-        conn.close()
-        return None
     today = _iso(_today())
-    already = conn.execute(
-        "SELECT id, grocery_item_id FROM staple_events WHERE household_id = ? AND staple_id = ? "
-        "AND kind = 'bought' AND on_date = ?",
-        (household_id(), r["id"], today),
-    ).fetchone()
-    event_id = None
-    before = _rhythm_snapshot(r)
-    if not already:
-        event_id = _event(conn, r["id"], "bought", source, today, grocery_item_id=grocery_item_id)
-    elif already["grocery_item_id"] is not None and already["grocery_item_id"] != grocery_item_id:
+    conn = get_conn()
+    try:
+        # The write lock from the first read, and the line read again under
+        # it (two phones, 2026-10-29): this runs AFTER mark_grocery_item's
+        # commit, on its own connection, so a tick racing the other phone's
+        # Put back can land here after the untick's unrecord has already
+        # run — or the untick's unrecord after this. Each side therefore
+        # acts on the line as it stands NOW: a line no longer bought
+        # teaches nothing, and unrecord_staple_purchase leaves a line that
+        # is bought again alone. Whichever runs last sees the final status,
+        # so the staple always ends agreeing with the list.
+        conn.execute("BEGIN IMMEDIATE")
+        if grocery_item_id is not None and _line_status(conn, grocery_item_id) != "purchased":
+            conn.rollback()
+            return None
+        r = _row(conn, staple_id) if staple_id else None
+        if r is None:
+            r = _find_by_name(conn, item)
+        if r is None and _spices.is_assumed(item):
+            r = _create_spice_staple(conn, item, category, except_line_id=grocery_item_id)
+        if r is None:
+            conn.rollback()
+            return None
+        already = conn.execute(
+            "SELECT id, grocery_item_id FROM staple_events WHERE household_id = ? AND staple_id = ? "
+            "AND kind = 'bought' AND on_date = ?",
+            (household_id(), r["id"], today),
+        ).fetchone()
+        event_id = None
+        before = _rhythm_snapshot(r)
+        if not already:
+            event_id = _event(conn, r["id"], "bought", source, today, grocery_item_id=grocery_item_id)
+        elif already["grocery_item_id"] is not None and already["grocery_item_id"] != grocery_item_id:
+            conn.execute(
+                "UPDATE staple_events SET grocery_item_id = NULL "
+                "WHERE id = ? AND household_id = ?",
+                (already["id"], household_id()),
+            )
         conn.execute(
-            "UPDATE staple_events SET grocery_item_id = NULL "
+            "UPDATE staples SET last_bought_at = ?, skip_streak = 0, updated_at = datetime('now') "
             "WHERE id = ? AND household_id = ?",
-            (already["id"], household_id()),
+            (today, r["id"], household_id()),
         )
-    conn.execute(
-        "UPDATE staples SET last_bought_at = ?, skip_streak = 0, updated_at = datetime('now') "
-        "WHERE id = ? AND household_id = ?",
-        (today, r["id"], household_id()),
-    )
-    _relearn(conn, r["id"])
-    after_row = _row(conn, r["id"])
-    if event_id is not None:
-        conn.execute(
-            "UPDATE staple_events SET receipt_json = ? WHERE id = ? AND household_id = ?",
-            (json.dumps({"before": before, "after": _rhythm_snapshot(after_row)}),
-             event_id, household_id()),
-        )
-    conn.commit()
-    out = _shape(after_row)
-    conn.close()
-    return out
+        _relearn(conn, r["id"])
+        after_row = _row(conn, r["id"])
+        if event_id is not None:
+            conn.execute(
+                "UPDATE staple_events SET receipt_json = ? WHERE id = ? AND household_id = ?",
+                (json.dumps({"before": before, "after": _rhythm_snapshot(after_row)}),
+                 event_id, household_id()),
+            )
+        conn.commit()
+        return _shape(after_row)
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def _line_status(conn, grocery_item_id: int) -> str | None:
+    """The grocery line's status as committed now (None when it is gone)."""
+    row = conn.execute(
+        "SELECT status FROM grocery_items WHERE id = ? AND household_id = ?",
+        (grocery_item_id, household_id()),
+    ).fetchone()
+    return row["status"] if row else None
 
 
 def unrecord_staple_purchase(item: str, staple_id: int | None = None, grocery_item_id: int | None = None) -> dict | None:
@@ -1591,54 +1625,66 @@ def unrecord_staple_purchase(item: str, staple_id: int | None = None, grocery_it
     """
     if grocery_item_id is None:
         return None
+    today = _iso(_today())
     conn = get_conn()
-    r = _row(conn, staple_id) if staple_id else None
-    if r is None:
-        r = _find_by_name(conn, item)
-    if r is None:
-        conn.close()
-        return None
-    ev = conn.execute(
-        "SELECT id, receipt_json FROM staple_events WHERE household_id = ? AND staple_id = ? AND kind = 'bought' "
-        "AND on_date = ? AND grocery_item_id = ?",
-        (household_id(), r["id"], _iso(_today()), grocery_item_id),
-    ).fetchone()
-    if ev is None:
-        out = _shape(r)
-        conn.close()
-        out["unrecorded"] = False
-        return out
-    conn.execute(
-        "DELETE FROM staple_events WHERE id = ? AND household_id = ?",
-        (ev["id"], household_id()),
-    )
     try:
-        receipt = json.loads(ev["receipt_json"] or "{}")
-    except (TypeError, ValueError):
-        receipt = {}
-    before, after = receipt.get("before") or {}, receipt.get("after") or {}
-    if before and after and _rhythm_snapshot(r) == after:
+        # Same lock and same re-read as record_staple_purchase: a line the
+        # other phone has ticked again since this untick committed keeps
+        # its bought event.
+        conn.execute("BEGIN IMMEDIATE")
+        r = _row(conn, staple_id) if staple_id else None
+        if r is None:
+            r = _find_by_name(conn, item)
+        if r is None:
+            conn.rollback()
+            return None
+        ev = None
+        if _line_status(conn, grocery_item_id) != "purchased":
+            ev = conn.execute(
+                "SELECT id, receipt_json FROM staple_events WHERE household_id = ? AND staple_id = ? AND kind = 'bought' "
+                "AND on_date = ? AND grocery_item_id = ?",
+                (household_id(), r["id"], today, grocery_item_id),
+            ).fetchone()
+        if ev is None:
+            conn.rollback()
+            out = _shape(r)
+            out["unrecorded"] = False
+            return out
         conn.execute(
-            f"UPDATE staples SET {', '.join(f'{k} = ?' for k in _RHYTHM_FIELDS)}, updated_at = datetime('now') "
-            "WHERE id = ? AND household_id = ?",
-            (*(before[k] for k in _RHYTHM_FIELDS), r["id"], household_id()),
+            "DELETE FROM staple_events WHERE id = ? AND household_id = ?",
+            (ev["id"], household_id()),
         )
-    else:
-        # last_bought_at was set to today by the tick; _relearn takes the
-        # latest date still on record when there is one, and otherwise
-        # keeps what it finds — so clear it first rather than let a date
-        # that did not happen anchor next_due.
-        conn.execute(
-            "UPDATE staples SET last_bought_at = NULL, updated_at = datetime('now') "
-            "WHERE id = ? AND household_id = ?",
-            (r["id"], household_id()),
-        )
-        _relearn(conn, r["id"])
-    conn.commit()
-    out = _shape(_row(conn, r["id"]))
-    conn.close()
-    out["unrecorded"] = True
-    return out
+        try:
+            receipt = json.loads(ev["receipt_json"] or "{}")
+        except (TypeError, ValueError):
+            receipt = {}
+        before, after = receipt.get("before") or {}, receipt.get("after") or {}
+        if before and after and _rhythm_snapshot(r) == after:
+            conn.execute(
+                f"UPDATE staples SET {', '.join(f'{k} = ?' for k in _RHYTHM_FIELDS)}, updated_at = datetime('now') "
+                "WHERE id = ? AND household_id = ?",
+                (*(before[k] for k in _RHYTHM_FIELDS), r["id"], household_id()),
+            )
+        else:
+            # last_bought_at was set to today by the tick; _relearn takes the
+            # latest date still on record when there is one, and otherwise
+            # keeps what it finds — so clear it first rather than let a date
+            # that did not happen anchor next_due.
+            conn.execute(
+                "UPDATE staples SET last_bought_at = NULL, updated_at = datetime('now') "
+                "WHERE id = ? AND household_id = ?",
+                (r["id"], household_id()),
+            )
+            _relearn(conn, r["id"])
+        conn.commit()
+        out = _shape(_row(conn, r["id"]))
+        out["unrecorded"] = True
+        return out
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
 
 def sync_due_staples() -> dict:
