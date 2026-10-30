@@ -916,7 +916,10 @@ CREATE TABLE IF NOT EXISTS share_links (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     household_id INTEGER NOT NULL REFERENCES households(id),
     token TEXT NOT NULL UNIQUE,
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    -- Set when the household replaces the link (reset_share_link): the old
+    -- token stops working at once. NULL = the household's live link.
+    revoked_at TEXT
 );
 
 -- Phase 4, §4.1: Eater self-service — a personal, tokenized link tied to a

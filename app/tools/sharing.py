@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import json
 import secrets
-from ..db import get_conn
+from ..db import get_conn, write
 from ._shared import find_member_row, household_display_name, household_id, use_household, _absolute_url
 from . import cooker as _cooker
 from . import household as _household
@@ -19,10 +19,13 @@ def get_or_create_share_link() -> dict:
     a specific plan, so the same link keeps working and always shows
     whichever plan is most recent as new weeks get generated. No login is
     involved; anyone with the link can view the current plan, nothing else.
+    A link the household replaced (reset_share_link) is never handed out
+    again: only a row with no revoked_at counts.
     """
     conn = get_conn()
     row = conn.execute(
-        "SELECT token FROM share_links WHERE household_id = ? ORDER BY created_at ASC LIMIT 1",
+        "SELECT token FROM share_links WHERE household_id = ? AND revoked_at IS NULL "
+        "ORDER BY created_at ASC, id ASC LIMIT 1",
         (household_id(),),
     ).fetchone()
     if row:
@@ -36,6 +39,42 @@ def get_or_create_share_link() -> dict:
         conn.commit()
     conn.close()
     return {"token": token, "link": _absolute_url(f"/share/{token}")}
+
+
+def reset_share_link() -> dict:
+    """
+    Replace this household's weekly-plan share link: every link handed out
+    so far stops working at once, and a fresh one is issued. For "stop the
+    old link" / "the babysitter doesn't need it any more" — the link is
+    standing, so without this whoever once had it saw every future week.
+
+    The old rows are marked revoked_at, not deleted, so a retired token can
+    never come back and /api/share/<old> answers 404 as for a garbage
+    token. Only the signed-in household's rows are touched.
+    """
+    # Revoke and issue in ONE immediate transaction (review, 2026-10-29):
+    # as two steps, two adults tapping Replace at once both revoked, both
+    # found no live row, and both inserted — two live links, one of which
+    # the app no longer hands out.
+    token = secrets.token_urlsafe(16)
+    with write() as conn:
+        conn.execute("BEGIN IMMEDIATE")
+        cur = conn.execute(
+            "UPDATE share_links SET revoked_at = datetime('now') "
+            "WHERE household_id = ? AND revoked_at IS NULL",
+            (household_id(),),
+        )
+        had_link = cur.rowcount > 0
+        conn.execute(
+            "INSERT INTO share_links (household_id, token) VALUES (?, ?)",
+            (household_id(), token),
+        )
+    fresh = {"token": token, "link": _absolute_url(f"/share/{token}")}
+    if had_link:
+        message = f"Done. The old link doesn't work any more — here's the new one: {fresh['link']}"
+    else:
+        message = f"There wasn't a link out yet. Here's one to share: {fresh['link']}"
+    return {**fresh, "old_link_stopped": had_link, "message": message}
 
 
 def get_shared_weekly_plan(token: str) -> dict | None:
@@ -59,7 +98,11 @@ def get_shared_weekly_plan(token: str) -> dict | None:
     the exact leak this ticket exists to prevent.
     """
     conn = get_conn()
-    row = conn.execute("SELECT household_id FROM share_links WHERE token = ?", (token,)).fetchone()
+    # A replaced link (revoked_at set) reads exactly as a token that never
+    # existed: 404, nothing about the household.
+    row = conn.execute(
+        "SELECT household_id FROM share_links WHERE token = ? AND revoked_at IS NULL", (token,)
+    ).fetchone()
     household = None
     if row:
         household = conn.execute(

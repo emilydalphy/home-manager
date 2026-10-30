@@ -7872,6 +7872,17 @@ def get_share_link():
     return result
 
 
+@app.post("/api/share-link/replace")
+def replace_share_link():
+    """Signed-in: retire this household's share link (the old token 404s at once) and issue a fresh one."""
+    try:
+        result = tools.reset_share_link()
+    except Exception as e:
+        logger.exception("Share link replace failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return result
+
+
 @app.get("/api/share/{token}")
 def get_shared_plan(token: str):
     """Public, read-only: resolve a share token to the household's current weekly plan. No auth."""
@@ -8018,7 +8029,7 @@ _MEMORY_HREF_TOOLS = {
     "set_household_meal_preferences", "add_food_dislikes", "add_usual_stores", "add_store_typical_items",
     "remove_store_typical_item", "set_chores_profile", "edit_preference", "delete_preference",
     "get_or_create_member_share_link", "revoke_member_share_link", "regenerate_member_share_link",
-    "set_morning_text",
+    "reset_share_link", "set_morning_text",
 }
 # The writes that are a fact ABOUT the household rather than a change to a
 # screen: what the chat shows as "Remembered · …" with a way to correct it.
@@ -8354,6 +8365,10 @@ def summarize_chat_actions(before_history: list, after_history: list) -> list[Ch
                     tab=None, href="/memory", held=True,
                 )
             change = _humanize_change(name, args, result) or _CATEGORY_FALLBACK_CHANGES[category]
+            if name == "reset_share_link":
+                # Its result's `message` is the whole reply, link and all;
+                # the card only needs to say what changed.
+                change = "Share link replaced"
             day_date, day_slot = _changed_day(category, args)
             if day_date:
                 week_days_touched.append((day_date, day_slot))

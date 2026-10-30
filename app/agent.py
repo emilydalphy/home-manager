@@ -1339,7 +1339,9 @@ URL already; never type out, guess, or reconstruct a URL yourself, you have no w
 this app's actual domain and will get it wrong. It's a personal, standing link scoped to just \
 that person's own restrictions/notes, not the whole household. Use revoke_member_share_link or \
 regenerate_member_share_link if they want it shut off or replaced (e.g. it was shared \
-somewhere it shouldn't have been). Use get_member_notes to check what a member has said via \
+somewhere it shouldn't have been). If they want the household's weekly-menu share link \
+(the one a babysitter or grandparent was given) shut off or replaced, use reset_share_link and \
+reply with its `message`. Use get_member_notes to check what a member has said via \
 their link if asked, or when it's relevant to a suggestion.
 
 What the app knows (memory transparency):
@@ -2422,6 +2424,11 @@ TOOL_DEFINITIONS = [
             "properties": {"member_name": {"type": "string"}},
             "required": ["member_name"],
         },
+    },
+    {
+        "name": "reset_share_link",
+        "description": "Replace the household's read-only weekly-menu share link (the /share/ link handed to a babysitter, nanny or grandparent): every old link stops working immediately and a fresh one is issued. Use when they say \"stop the old link\", \"the nanny shouldn't see it any more\" or \"make a new share link\". Reply with the result's `message` — it says the old link no longer works and carries the new `link`, which is the real, absolute URL; never type out or guess a URL yourself.",
+        "input_schema": {"type": "object", "properties": {}},
     },
     {
         "name": "get_member_notes",
@@ -11301,6 +11308,7 @@ TOOL_FUNCTIONS = {
     "get_or_create_member_share_link": tools.get_or_create_member_share_link,
     "revoke_member_share_link": tools.revoke_member_share_link,
     "regenerate_member_share_link": tools.regenerate_member_share_link,
+    "reset_share_link": tools.reset_share_link,
     "get_member_notes": tools.get_member_notes,
     "get_household_memory": tools.get_household_memory,
     "get_facts": tools.get_facts,

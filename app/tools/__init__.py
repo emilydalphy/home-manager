@@ -724,6 +724,7 @@ from .sharing import (  # noqa: F401
     get_or_create_share_link,
     get_shared_weekly_plan,
     regenerate_member_share_link,
+    reset_share_link,
     resolve_member_share_link,
     revoke_member_share_link,
 )
