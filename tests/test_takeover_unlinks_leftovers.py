@@ -172,3 +172,54 @@ def test_a_moved_cook_still_feeds_the_nights_after_it(monkeypatch):
     assert _derived(mon)["make_double_for"] == [f"{WED}:dinner"]
     assert _derived(wed)["links_to"] == f"{TUE}:dinner"
     assert _beef() == "2 lbs"  # Tuesday's table plus Wednesday's reheat
+
+
+# ---- the freezer step's answer survives the re-sizing (review, 2026-10-30) ----
+# The re-size re-ingests the cook's recipe-week, and a line the freezer step
+# set aside is not one the ingest merges into: without the restate after the
+# takeover's commit, the list gained "Salmon fillets 8 oz" to buy beside the
+# fish the household had said was in the freezer.
+
+def _salmon_week(targets: list[str], cook_day: str) -> tuple[int, int]:
+    for n in ("Emily", "Sam"):
+        tools.add_member(n)
+    tools.add_recipe(
+        "Salmon Bowls",
+        ingredients=[{"item": "Salmon fillets", "qty": "8 oz", "category": "seafood"}],
+        instructions=["Bake the salmon."], default_servings=2,
+    )
+    tools.add_recipe("Katsu", ingredients=[{"item": "crackers", "qty": "1 bag"}], default_servings=2)
+    plan_id = tools.create_weekly_plan(MON.isoformat())["weekly_plan_id"]
+    cook = tools.plan_meal(cook_day, "Salmon Bowls", slot="dinner", weekly_plan_id=plan_id)["entry_id"]
+    for day in targets:
+        tools.plan_meal(day, "Salmon Bowls", slot="dinner", weekly_plan_id=plan_id,
+                        derived_from={"links_to": f"{cook_day}:dinner"})
+    tools.repair_leftover_chains(plan_id)
+    tools.approve_weekly_plan(plan_id, approved_by="Emily", confirm_hard_conflicts=True)
+    assert tools.plan_leftover_chains(plan_id)["leftovers"], "premise: a reheat night"
+    tools.confirm_frozen_items(plan_id, ["Salmon fillets"])
+    return plan_id, cook
+
+
+def _salmon_to_buy() -> list[str]:
+    return [g["quantity"] for g in tools.list_grocery_list(status="needed") if g["item"] == "Salmon fillets"]
+
+
+def test_a_frozen_batch_is_not_bought_when_its_reheat_night_goes(monkeypatch):
+    plan_id, wed = _salmon_week([FRI], WED)
+    assert _salmon_to_buy() == [], "premise: the salmon is in the freezer"
+
+    _take_over_from(THU, 4, monkeypatch)
+
+    assert "make_double_for" not in _derived(wed)
+    assert _salmon_to_buy() == [], "the household said the salmon is in the freezer"
+
+
+def test_a_frozen_batch_is_not_bought_when_its_cook_moves(monkeypatch):
+    plan_id, mon = _salmon_week([TUE], MON.isoformat())
+    assert _salmon_to_buy() == []
+
+    _take_over_from(MON.isoformat(), 1, monkeypatch)
+
+    assert _row(mon)["date"] == TUE
+    assert _salmon_to_buy() == [], "the household said the salmon is in the freezer"

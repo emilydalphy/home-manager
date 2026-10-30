@@ -4495,6 +4495,11 @@ def retire_overlapping_plans(
         # "dinners" from "meals" off what genuinely happened, not off a
         # preview taken before the tap. See _release_plan_days.
         "meal_slots_removed": [],
+        # (plan, cook, night) for every batch a leftover chain re-sized —
+        # the freezer step's answer has to be put back on each AFTER the
+        # commit (restate_takeover_freezer_answers). Popped by whoever
+        # does that; never part of what a screen reads.
+        "rescaled_batches": [],
     }
     decisions = _plan_takeover(new_plan_id, period_start, day_count, drafts_only=drafts_only, conn=conn)
     if not decisions:
@@ -4530,7 +4535,26 @@ def retire_overlapping_plans(
         raise
     finally:
         conn.close()
+    restate_takeover_freezer_answers(result)
     return _finish_takeover_result(result, new_plan_id)
+
+
+def restate_takeover_freezer_answers(took_over: dict | None) -> None:
+    """
+    After a takeover has COMMITTED: put the freezer step's answer back on
+    every batch a leftover chain re-sized (_release_plan_days). The rescale
+    re-ingests the cook's recipe-week, and a line the step set aside
+    ("Salmon fillets: in the freezer") is not one the ingest merges into,
+    so without this the list gained a fresh "Salmon fillets 8 oz" to buy
+    beside the fish the household had said was in the freezer (review of
+    overnight/hunt-periods-1030c). _keep_freezer_answer_after_rescale opens
+    its own connections, so it cannot run inside the takeover's
+    transaction; both callers — retire_overlapping_plans' own commit and
+    the approval's — call this right after theirs. Pops the pairs, so the
+    result a screen reads is the shape it always was.
+    """
+    for plan_id, source_id, night_id in (took_over or {}).pop("rescaled_batches", None) or []:
+        _keep_freezer_answer_after_rescale(plan_id, source_id, night_id)
 
 
 def _finish_takeover_result(result: dict, new_plan_id: int) -> dict:
@@ -4791,6 +4815,9 @@ def _apply_takeover(conn, result: dict, decisions: list[dict], new_plan_id: int,
         result["grocery_trimmed"].extend(removal["grocery_trimmed"])
         result["grocery_kept_bought"].extend(removal["grocery_kept_bought"])
         result["meal_slots_removed"].extend(removal["meal_slots_removed"])
+        result["rescaled_batches"].extend(
+            (other_id, source_id, night_id) for source_id, night_id in removal["rescaled_batches"]
+        )
         result["surrendered_dates"].extend(surrendered)
         result["orphaned_dates"].extend(orphaned)
 
@@ -4860,7 +4887,7 @@ def _release_plan_days(plan_id: int, dates: list[str], include_components: bool 
     if not dates:
         return {
             "meals_removed": 0, "grocery_removed": [], "grocery_trimmed": [], "grocery_kept_bought": [],
-            "meal_slots_removed": [],
+            "meal_slots_removed": [], "rescaled_batches": [],
         }
     own_conn = conn is None
     if own_conn:
@@ -4935,6 +4962,7 @@ def _release_plan_days(plan_id: int, dates: list[str], include_components: bool 
                 (household_id(), *entry_ids),
             )
         # Only an approved plan has a line to re-size: a draft bought nothing.
+        rescaled_batches: list[tuple[int, int]] = []
         if kept_cooks or moved_cooks:
             plan_row = conn.execute(
                 "SELECT status FROM weekly_plans WHERE id = ? AND household_id = ?",
@@ -4943,6 +4971,7 @@ def _release_plan_days(plan_id: int, dates: list[str], include_components: bool 
             if plan_row and plan_row["status"] == "approved":
                 for source_id, entry_id in [*moved_cooks, *kept_cooks]:
                     _rescale_leftover_source_grocery(source_id, entry_id, conn=conn)
+                    rescaled_batches.append((source_id, entry_id))
         if own_conn:
             conn.commit()
     finally:
@@ -4954,6 +4983,9 @@ def _release_plan_days(plan_id: int, dates: list[str], include_components: bool 
         "grocery_trimmed": trimmed_items,
         "grocery_kept_bought": kept_bought,
         "meal_slots_removed": meal_slots_removed,
+        # (cook, night) pairs re-sized above; their freezer answers are put
+        # back after the commit (restate_takeover_freezer_answers).
+        "rescaled_batches": rescaled_batches,
     }
 
 
@@ -8521,6 +8553,10 @@ def _settle_weekly_plan_approval(
         raise
     finally:
         conn.close()
+    # The takeover ran on this approval's transaction; any batch it
+    # re-sized gets its freezer answer back now that it has committed.
+    if isinstance(result, dict):
+        restate_takeover_freezer_answers(result.get("took_over"))
     return result
 
 
