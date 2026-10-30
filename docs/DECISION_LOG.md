@@ -103,6 +103,8 @@ why*, not duplicating the diff.
   Salmon Bowls became an avoid and left quick dinners). The original's own ratings are never touched; cook count carries.
   Also: undoing an OLDER fork under a newer Tweak (which rewrites the copy in place) deleted both — now refused
   with UNDO_NEWER, as the in-place undo already was. Why: Undo means "not that change", not "forget that night".
+- **Settings typos are a polite 400** (2026-10-28, branch `overnight/hunt-settings-limits-1028b`; tests `tests/test_settings_typos_refused.py`). A time limit past 1440 minutes (and 1e400, a 500 before) is refused in `edit_preference`; a "+0…" phone is refused by `digest.normalise_phone`; snacks of `true`/`2.7` are refused by `member_needs._clean_snacks`; goals `null` is refused like notes ("an empty string clears it") instead of being stored as "None".
+  Why: each one was a broken save or a stored value nobody said, and a +0 number fails at Twilio every morning with nothing on the screen.
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
   (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.

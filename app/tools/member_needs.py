@@ -113,6 +113,11 @@ def validate_member_needs(lunch_needs: dict | None = None, snacks: dict | None =
 
 
 def _clean_snacks(n, who: str) -> int:
+    # A count, not anything int() will take: True was stored as 1 snack and
+    # 2.7 as 2, a number nobody said (defect hunt, 2026-10-28). A digit
+    # string ("2") is still a whole number and still reads as one.
+    if isinstance(n, bool) or (isinstance(n, float) and not n.is_integer()):
+        raise ValueError(f"{who}'s snacks a day must be 0 to {SNACKS_MAX}.")
     try:
         n = int(n)
     except (TypeError, ValueError):

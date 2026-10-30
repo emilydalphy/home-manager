@@ -543,6 +543,14 @@ def set_member_age(name: str, age_years=None, include_in_meals: bool | None = No
 
 def set_household_goals(goals: str) -> dict:
     """Save freeform household goals for using this app (e.g. 'stay on top of chores, eat healthier, waste less food')."""
+    # Words or nothing, the same refusal notes and the other free-text
+    # answers give (memory.edit_preference): a null from "What we know" was
+    # str()'d into the word "None" and shown back as the household's goals
+    # (defect hunt, 2026-10-28). An empty string is how goals get cleared.
+    if not isinstance(goals, str):
+        raise ValueError(
+            f"That didn't save: goals needs some words (an empty string clears it), not {goals!r}."
+        )
     conn = get_conn()
     conn.execute("UPDATE households SET goals = ? WHERE id = ?", (goals, household_id()))
     conn.commit()
