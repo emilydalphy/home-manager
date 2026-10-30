@@ -2018,22 +2018,44 @@ def add_grocery_items(items: list, category: str = "other", added_by: str = "use
     fallback for entries you didn't categorize individually. Quantities
     are consolidated with any matching item already on the list rather
     than creating duplicate lines (see add_grocery_item).
+
+    An entry that can't be added is that entry's answer, in `failed`
+    ({"item", "error"}), and the rest are still added — as
+    update_inventory_items does. Raising on it left the entries before it
+    saved, and the retried batch merged them up a second time (hunt
+    2026-10-30). Only a batch with nothing added at all raises, so a turn
+    that saved nothing draws no "Added" card.
     """
-    added, merged = [], []
+    added, merged, failed = [], [], []
     for raw in items:
         if isinstance(raw, dict):
-            name = (raw.get("item") or "").strip()
+            name = raw.get("item") or ""
             qty = raw.get("quantity", "")
             cat = raw.get("category") or category
         else:
-            name = (raw or "").strip()
+            name = raw or ""
             qty = ""
             cat = category
-        if not name:
+        try:
+            if not isinstance(name, str):
+                raise ValueError(f"{name!r} isn't an item name.")
+            name = name.strip()
+            if not name:
+                continue
+            qty = quantity_text(qty)
+            if qty is not None and not isinstance(qty, str):
+                raise ValueError(f"{qty!r} isn't an amount — give it as text, like \"2 cups\".")
+            result = add_grocery_item(name, quantity=qty, category=cat, added_by=added_by)
+        except ValueError as e:
+            failed.append({"item": name if isinstance(name, str) else repr(name), "error": str(e)})
             continue
-        result = add_grocery_item(name, quantity=qty, category=cat, added_by=added_by)
         (merged if result["merged"] else added).append(name)
-    return {"added": added, "merged_with_existing": merged}
+    if failed and not (added or merged):
+        raise ValueError(" ".join(f["error"] for f in failed))
+    answer = {"added": added, "merged_with_existing": merged}
+    if failed:
+        answer["failed"] = failed
+    return answer
 
 
 def list_built_at() -> str:

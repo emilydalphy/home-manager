@@ -13,6 +13,8 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **One bad entry in a chat grocery batch is that entry's answer** (2026-10-30, hunt; branch `overnight/grocery-batch-1030`; tests `tests/test_chat_args_hunt_2026_10_30.py`). `add_grocery_items` raised on the first bad entry (`{"item": 12}`, a dict amount) with the earlier ones saved, and the model's retry merged those up a second time (Milk 1 -> 2). Now every good entry is added once and each bad one comes back in `failed` ({item, error}), as `update_inventory_items` does; a batch with nothing added still raises, so no card is drawn.
+  Why: a half-saved batch plus a retry is a silently doubled list.
 - **Chat tools refuse a blank dish and a worded use-by; a number amount is read** (2026-10-30, hunt; branch `overnight/chat-args-1030`; tests `tests/test_chat_args_hunt_2026_10_30.py`). `swap_meal_in_plan(new_meal="")` deleted the dinner and its groceries for a meal-less "planned" row, and `plan_meal(meal="  ")` planted one — both now refuse (`weekly_plan.chat_dish_name`, as `resolve_open_slot` always did). `update_inventory` stored "11/02"/"tomorrow" as the use-by, which the text compare read as expired / never; now YYYY-MM-DD or `InvalidUseByDate` (per entry in a batch). `quantity: 12` crashed the grocery adds (`grocery.quantity_text`).
   Why: what a model sends is a request, not a guarantee; each was a success reply over wrong data or an apology over a crash.
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
