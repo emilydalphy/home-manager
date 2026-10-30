@@ -146,4 +146,8 @@ def test_a_partly_added_batch_still_draws_the_grocery_card():
         {"role": "assistant", "content": [{"type": "tool_use", "id": "t1", "name": "add_grocery_items", "input": args}]},
         {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "t1", "content": __import__("json").dumps(result)}]},
     ]
-    assert [a.tab for a in app_main.summarize_chat_actions([], after)] == ["grocery"]
+    cards = app_main.summarize_chat_actions([], after)
+    assert [a.tab for a in cards] == ["grocery"]
+    # The card names what went on the list, not the entry that was refused.
+    text = " ".join(str(getattr(a, f, "") or "") for a in cards for f in ("change",))
+    assert "Milk" in text and "12" not in text, text

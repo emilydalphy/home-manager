@@ -8110,7 +8110,16 @@ def _humanize_change(tool_name: str, args: dict, result) -> str | None:
     sentence distinct from the kicker, rather than printing the kicker
     twice."""
     noun = None
-    for field in _CHANGE_TEXT_FIELDS:
+    # A batch that partly failed (add_grocery_items' "failed" key) names
+    # what was actually saved, from its result — the arguments still hold
+    # the entry that was refused, and "Added milk and eggs" over eggs that
+    # never went on the list is the card claiming a change that didn't
+    # happen (2026-10-30).
+    if isinstance(result, dict) and result.get("failed"):
+        noun = _noun_from_value(
+            list(result.get("added") or []) + list(result.get("merged_with_existing") or [])
+        )
+    for field in ([] if noun else _CHANGE_TEXT_FIELDS):
         noun = _noun_from_value(args.get(field) if isinstance(args, dict) else None)
         if noun:
             break
