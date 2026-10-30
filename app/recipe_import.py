@@ -695,12 +695,13 @@ def _normalise_fractions(text: str) -> str:
     # "1-1/2 cups" is the US way to write one and a half, not a range from
     # one down to a half — a range never runs downhill. Read as a range it
     # bought its "top end", half a cup. Only a whole number then a proper
-    # fraction; "1/2-1 cup" is a real range and is left alone.
-    text = re.sub(r"(?<![\d/.])(\d+)\s*[-–]\s*(\d+)/(\d+)(?![\d/])", _proper_mixed, text)
+    # fraction; "1/2-1 cup" is a real range and is left alone. Run after
+    # the glyphs, so "1-½ cups" is caught too (review, 2026-10-30).
     for glyph, ascii_ in _UNICODE_FRACTIONS.items():
         # "1½" is one and a half, "½" alone is a half.
         text = re.sub(rf"(\d)\s*{glyph}", rf"\1 {ascii_}", text)
         text = text.replace(glyph, ascii_)
+    text = re.sub(r"(?<![\d/.])(\d+)\s*[-–]\s*(\d+)/(\d+)(?![\d/])", _proper_mixed, text)
     return text
 
 

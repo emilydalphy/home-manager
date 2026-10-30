@@ -62,6 +62,7 @@ def test_the_rest_of_the_saved_page_reads_as_before():
 
 def test_a_model_read_amount_and_a_written_time_take_the_same_reading():
     assert ri.normalise_amount("1-1/2 cups") == "1 1/2 cups"
+    assert ri.normalise_amount("1-½ cups") == "1 1/2 cups"
     assert ri.normalise_amount("2-3 cloves") == "3 cloves"  # a range, unchanged
     assert ri.parse_duration_minutes("1-1/2 hours") == 90
 
