@@ -660,6 +660,21 @@ def save_week_intake(
         skipped_days = sorted(set(skipped_days))
         if len(skipped_days) >= len(week_days):
             raise ValueError("At least one day has to stay in the plan.")
+    # The three plain lists, checked for shape the way skipped_days is
+    # (route crash sweep, 2026-10-30). A packed-lunch day that was an
+    # object 500'd this save (`d not in skipped` hashes it), and a mood
+    # that was one saved fine and then 500'd every generate for the week
+    # (agent._intake_generation_context looks each mood up in
+    # MOOD_GUIDANCE). Only a hand-written call sends either; the screens
+    # send ISO dates and words.
+    if packed_lunch_days is not None:
+        if not isinstance(packed_lunch_days, list) or not all(isinstance(d, str) for d in packed_lunch_days):
+            raise ValueError("packed_lunch_days must be a list of ISO dates.")
+        for day in packed_lunch_days:
+            date.fromisoformat(day)
+    for key, words in (("moods", moods), ("cuisines", cuisines)):
+        if words is not None and (not isinstance(words, list) or not all(isinstance(w, str) for w in words)):
+            raise ValueError(f"{key} must be a list of words.")
     for day, tags in (night_tags or {}).items():
         date.fromisoformat(day)  # keyed by ISO date, never by weekday
         # A tag on a date outside the PERIOD it's being saved for would
