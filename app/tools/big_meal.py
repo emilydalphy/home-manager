@@ -905,7 +905,7 @@ def refresh_menu(saved: dict, proposer=None) -> dict:
         _delete_prep(entry_id, d)
         if main is not None and not dish_conflicts(main["name"], main["ingredients"], notes):
             _recipe_for_main(main, name)
-            _wp.clear_plan_slot(plan_id, d, "dinner")
+            _clear_main_slot(plan_id, d)
             planned = _meal_plans.plan_meal(
                 d, main["name"], slot="dinner", weekly_plan_id=plan_id,
                 add_ingredients_to_grocery_list=False, food_groups=main["food_groups"] or None,
@@ -917,7 +917,7 @@ def refresh_menu(saved: dict, proposer=None) -> dict:
             menu["entry_id"] = entry_id
             menu["main"] = _main_timing(main, _entry_by_id(entry_id))
         else:
-            _wp.clear_plan_slot(plan_id, d, "dinner")
+            freed = _clear_main_slot(plan_id, d)
             _wp.plan_slot_open(
                 weekly_plan_id=plan_id, meal_date=d, slot="dinner",
                 open_reason=f"You’re hosting {name} for {eaters} — what’s the main? {main_name} clashed with {main_clashes[0]['restriction']}. Tell me and I’ll build the rest around it.",
@@ -926,6 +926,9 @@ def refresh_menu(saved: dict, proposer=None) -> dict:
             menu.update({"entry_id": None, "status": "none", "eaters": eaters, "dropped": dropped, "conflicts": conflicts,
                          "note": f"I’ve taken {main_name} off — it clashed with {main_clashes[0]['restriction']}. Tell me the main and I’ll build the rest around it."})
             _save_menu(d, menu)
+            if freed and approved:
+                # No main to _buy for, but the nights it fed buy for themselves.
+                _wp._reingest_unlinked_entries(plan_id)
             return {"menu": "refreshed", "dropped": dropped, "conflicts": conflicts, "replaced": [], "eaters": eaters}
 
     # The sides and the sweet.
@@ -962,6 +965,40 @@ def refresh_menu(saved: dict, proposer=None) -> dict:
         _buy(entry_id, plan_id)
     spread_prep(d)
     return {"menu": "refreshed", "dropped": dropped, "conflicts": conflicts, "replaced": replaced, "eaters": eaters}
+
+
+def _clear_main_slot(plan_id: int, date_str: str) -> list[int]:
+    """
+    Take the big meal's main off its night before another main (or an open
+    question) takes its place. A main cooked big for later nights — the
+    turkey Tuesday was eating — loses its whole batch from the list here,
+    so the nights it fed become ordinary nights of their own dish first
+    (weekly_plan.release_fed_nights, the swap's rule) and are re-bought by
+    the caller's _buy on an approved week. Without it a guest's note that
+    swapped the turkey for a ham left Tuesday "Leftovers from Monday",
+    now naming the ham. Returns the freed nights.
+    """
+    conn = get_conn()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        rows = conn.execute(
+            "SELECT id FROM meal_plan_entries WHERE weekly_plan_id = ? AND date = ? AND slot = 'dinner' "
+            "AND household_id = ? AND component_category IS NULL",
+            (plan_id, date_str, household_id()),
+        ).fetchall()
+        freed = _weekly_plan.release_fed_nights(conn, plan_id, [r["id"] for r in rows])
+        # On the same transaction: the fed nights let go and the main goes,
+        # or neither does.
+        _weekly_plan.clear_plan_slot(plan_id, date_str, "dinner", conn=conn)
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+    if freed:
+        _weekly_plan._defrost_resync(plan_id, freed)
+    return freed
 
 
 def _buy(entry_id: int, plan_id: int) -> None:
@@ -1768,7 +1805,7 @@ def set_big_meal_dish(
         _recipe_for_main(main, holiday_name)
         sides = _plates.get_sides(entry["id"])
         _delete_prep(entry["id"], date_str)
-        _weekly_plan.clear_plan_slot(plan_id, date_str, "dinner")
+        _clear_main_slot(plan_id, date_str)
         planned = _meal_plans.plan_meal(
             date_str, main["name"], slot="dinner", weekly_plan_id=plan_id,
             add_ingredients_to_grocery_list=False, food_groups=main["food_groups"] or None,

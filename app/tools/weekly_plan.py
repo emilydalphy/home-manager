@@ -8959,6 +8959,36 @@ def swap_meal_in_plan(
     return result
 
 
+def release_fed_nights(conn, weekly_plan_id: int, entry_ids: list[int]) -> list[int]:
+    """
+    The nights a cook about to come off the plan was feeding, made ordinary
+    nights of their own dish — _replace_slot_entries' rule for a swapped
+    cook, for a door that clears the cook WITHOUT a swap: a holiday answer
+    changing (holidays._reopen) and the big meal changing its main. Neither
+    did this, so "we're not hosting after all" left Tuesday as "Leftovers
+    from Monday" over an open Monday, with not one ingredient bought for it
+    (the cook's whole batch had just been reversed off the list).
+
+    Must run BEFORE the cook is deleted: it reads the chain while the cook
+    is still there. Returns the freed nights' ids; the caller re-buys them
+    on an approved week (_reingest_unlinked_entries) once the cook is gone.
+    On the caller's connection; commits nothing.
+    """
+    from . import leftovers as _leftovers
+
+    ids = [int(i) for i in entry_ids]
+    if not ids:
+        return []
+    sources = _leftovers.plan_leftover_chains(weekly_plan_id, conn=conn)["sources"]
+    freed: list[int] = []
+    for old_id in ids:
+        for target in (sources.get(old_id) or {}).get("targets") or []:
+            if target["entry_id"] not in ids and target["entry_id"] not in freed:
+                _clear_leftover_link(conn, target["entry_id"])
+                freed.append(target["entry_id"])
+    return freed
+
+
 def _clear_leftover_link(conn, entry_id: int) -> None:
     """Take a reheat night's own half of a leftover chain off it (links_to,
     cook_ahead) — its cook is being replaced and does not feed it any more.
