@@ -417,6 +417,7 @@ function ready(payload) {
 }
 function stepTitle() { const m = /gro-bs-title">([^<]*)</.exec(screenHtml()); return m ? m[1] : null; }
 function dockOf() { return groDockHtml(groceryState.data, groScreenStep()); }
+function bandOf() { return groBandExtrasHtml(groceryState.data); }
 """
 
 
@@ -427,18 +428,24 @@ def _screen(body: str):
 
 
 @needs_node
-def test_the_dock_says_before_you_shop_until_the_pass_is_done_then_sort_the_list_n():
-    """CATCH. The tester could not find the sort: the list's one apricot now
-    names the next thing."""
+def test_before_you_go_is_in_the_band_and_pick_stores_on_the_anywhere_card():
+    """UPDATED 2026-10-30 (the declutter, Emily's "Shop with store filter"):
+    the pass is "Before you go ›" in the band and the sort is "Pick stores"
+    in the Anywhere card's head — each one tap away, and neither is the
+    dock's button any more (the dock is "+ Add something" alone)."""
     out = _screen("""
 ready();
-const first = dockOf();
+const first = { band: bandOf(), dock: dockOf() };
 groceryState.data.beforeShop.done = true;
-const after = dockOf();
+const after = { band: bandOf(), dock: dockOf(), list: groListHtml(groceryState.data) };
 console.log(JSON.stringify({ first: first, after: after }));
 """)
-    assert 'data-gro="goto-beforeshop"' in out["first"] and "Before you shop" in out["first"]
-    assert 'data-gro="goto-sort"' in out["after"] and "Sort the list (5)" in out["after"]
+    assert 'data-gro="goto-beforeshop"' in out["first"]["band"] and "Before you go" in out["first"]["band"]
+    assert "goto-beforeshop" not in out["first"]["dock"] and "dock-primary" not in out["first"]["dock"]
+    # A second look before leaving is still a look: the link stays once run.
+    assert 'data-gro="goto-beforeshop"' in out["after"]["band"]
+    assert "goto-sort" not in out["after"]["dock"]
+    assert 'data-gro="goto-sort">Pick stores<' in out["after"]["list"]
 
 
 @needs_node
@@ -612,11 +619,11 @@ def test_a_one_shop_household_with_something_to_ask_is_offered_the_pass(shops):
     """CATCH — red on main, where the dock needed something unsorted."""
     out = _screen(_one_shop(shops) + """
 readyOneShop();
-console.log(JSON.stringify({ dock: dockOf(), unsorted: groUnsorted(groceryState.data).length }));
+console.log(JSON.stringify({ dock: dockOf(), band: bandOf(), unsorted: groUnsorted(groceryState.data).length }));
 """)
     assert out["unsorted"] == 0
-    assert 'data-gro="goto-beforeshop"' in out["dock"] and "Before you shop" in out["dock"]
-    assert "goto-sort" not in out["dock"]
+    assert 'data-gro="goto-beforeshop"' in out["band"] and "Before you go" in out["band"]
+    assert "goto-sort" not in out["dock"] and "goto-sort" not in out["band"]
 
 
 @needs_node
@@ -624,7 +631,7 @@ def test_a_one_shop_household_with_nothing_to_ask_sees_no_button():
     out = _screen(_one_shop("['Costco']") + """
 const p = bsPayload(); p.regulars.choices = []; p.spices.choices = []; p.have.rows = [];
 readyOneShop(p);
-const nothing = dockOf();
+const nothing = dockOf() + bandOf();
 groceryState.bsData = bsPayload();
 groceryState.data.beforeShop.done = true;
 console.log(JSON.stringify({ nothing: nothing, done: dockOf() }));

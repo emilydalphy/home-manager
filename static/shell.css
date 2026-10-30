@@ -12451,3 +12451,88 @@ button.wk-qrow:hover .wk-qrow-name { color: var(--ink-strong); }
 .wk-plan .wk-unfit { box-shadow: none; }
 .wk-plan .wk-notes, .wk-plan .wk-use-up-line, .wk-plan .wk-use-up-past, .wk-plan .week-suggested-note { margin-left: 20px; margin-right: 20px; }
 
+/* ---------- Shop: one list, store chips as a filter ---------- */
+/* "Before you go ›" and the chips ride in the band (groBandExtrasHtml).
+   The link is --apricot-light on spruce (7.81:1 light / 6.41:1 dark, the
+   band's own figures); a chip off is --ivory-ink on --spruce-raised, a
+   chip on is --spruce on --ivory-ink — the band's two inks swapped. */
+.gro-band-extras { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+.gro-band-extras[hidden] { display: none; }
+.gro-band-links { display: flex; }
+.gro-band-link {
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--apricot-light);
+  cursor: pointer;
+}
+.gro-chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin: 0 -20px;
+  padding: 0 20px 2px;
+}
+.gro-chips::-webkit-scrollbar { display: none; }
+.gro-chip {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--spruce-raised);
+  color: var(--ivory-ink);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.gro-chip:hover { background: var(--spruce-hover); }
+.gro-chip.is-on { background: var(--ivory-ink); color: var(--spruce); font-weight: 700; }
+/* "Pick stores" in the Anywhere card's head: a quiet link, the way into
+   Sort them all. */
+.gro-card-link {
+  margin-left: auto;
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--apricot-label);
+  cursor: pointer;
+}
+.gro-card-link:hover { color: var(--apricot-label-hover); }
+.gro-card-link + .gro-store-count { margin-left: 0; }
+/* A row: the box, then the name and the amount as ONE button that opens
+   the row's sheet. No ⋯ on any line. */
+.gro-line-open {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.gro-line-open .gro-name { display: block; }
+.gro-line-open .gro-line-weeks { display: block; }
+/* The row's answers, in the quiet sheet rather than under the row. */
+.gro-rowsheet .gro-rowmenu { padding: 0; border-top: 0; display: flex; flex-direction: column; gap: 14px; }
+.gro-rowsheet .gro-rowmenu-qty { padding: 0; }
+.gro-rowsheet .gro-pills.open { padding: 0; }
+

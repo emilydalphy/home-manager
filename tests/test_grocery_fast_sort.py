@@ -417,8 +417,9 @@ console.log(JSON.stringify({
 
 @_needs_node
 def test_an_anywhere_row_can_still_be_changed_back_to_a_shop():
-    """The ⋯ is the only control that can move a row, so the card is only
-    worth having if its rows carry one."""
+    """The row's sheet is the one control that can move a row (since
+    2026-10-30 the name opens it — there is no ⋯), so the card is only
+    worth having if its rows open one."""
     out = _node("""
 setUp(0, [{ store: 'Costco', items: [{ id: 1, item: 'Eggs', quantity: '1', store: 'Costco', status: 'needed' }] }]);
 groceryState.data.stores.Unassigned.sections[0].items = [
@@ -428,7 +429,7 @@ groceryState.openRowId = '2';
 const html = groListHtml(groceryState.data);
 console.log(JSON.stringify({
   hasRowMenuButton: html.indexOf('data-gro="row-menu" data-id="2"') !== -1,
-  offersAShop: /data-gro="row-store" data-id="2" data-store="Costco"/.test(html)
+  offersAShop: /data-gro="row-store" data-id="2" data-store="Costco"/.test(screenHtml())
 }));
 """)
     assert out["hasRowMenuButton"] is True
@@ -457,7 +458,8 @@ console.log(JSON.stringify({
 def test_rows_still_waiting_to_be_sorted_sit_on_the_anywhere_card_and_in_the_queue():
     """An unanswered row is on the list once, on the "Anywhere" card beside
     the "Any" ones (2026-09-18 — the "Not sorted yet" card folded into it),
-    and it is still in the queue the sort row counts."""
+    and it is still in the queue "Pick stores" leads to (the card's head,
+    since the "N things to sort" row went on 2026-10-30)."""
     out = _node("""
 setUp(0, [{ store: 'Costco', items: [{ id: 1, item: 'Eggs', quantity: '1', store: 'Costco', status: 'needed' }] }]);
 groceryState.data.stores.Unassigned.sections[0].items = [
@@ -470,7 +472,7 @@ console.log(JSON.stringify({
   cards: cards(html),
   counts: counts(html),
   notSortedYet: html.indexOf('Not sorted yet') !== -1,
-  sortRow: html.indexOf('1 thing to sort') !== -1,
+  sortRow: html.indexOf('data-gro="goto-sort">Pick stores<') !== -1,
   inTheQueue: groUnsorted(groceryState.data).length
 }));
 """)

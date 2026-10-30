@@ -553,7 +553,7 @@ def test_grocery_screen_source_markers():
         'data-gro="staple-decide" data-decision="skip"',
         "We have plenty",
         "Not this trip",
-        "Make it a staple",
+        "Make it a regular",
         "function wwkRegularsHtml",  # Settings → Regulars (2026-10-05) replaced the Shop foot card
         "/api/grocery-list/' + stLineId + '/staple",
         "/api/staples/' + stResult.id + '/undo",

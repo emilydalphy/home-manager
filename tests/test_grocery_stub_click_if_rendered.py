@@ -358,7 +358,7 @@ def test_a_shop_name_with_an_ampersand_is_compared_the_way_the_markup_writes_it(
     out = run(_TRIED + """
 setUp(2, [], ['M&S', 'Costco']);
 groceryState.openRowId = '1';
-const pill = groListHtml(groceryState.data).indexOf('data-store="M&amp;S"') !== -1;
+const pill = screenHtml().indexOf('data-store="M&amp;S"') !== -1;  // in the row's sheet since 2026-10-30
 const real = tried(function () { clickIfRendered({ gro: 'row-store', id: '1', store: 'M&S' }); });
 const made_up = tried(function () { clickIfRendered({ gro: 'row-store', id: '1', store: 'M&Q' }); });
 settle(function () {

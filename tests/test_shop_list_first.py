@@ -298,10 +298,13 @@ loadGrocery().then(function () {
     card = out["card"]
     assert "Milk" in card and "Foil" in card
     assert '<span class="gro-line-qty">2 L</span>' in card
-    assert card.count('data-gro="row-menu"') == 2, "each row keeps its ⋯, which is how one gets a store from here"
+    assert card.count('data-gro="row-menu"') == 2, "each row's name opens its sheet, which is how one gets a store from here"
     assert card.count('data-gro="line-tick"') == 4, "and its tick (the row and its box)"
     a, b, c = out["order"]
-    assert 0 <= a < b < c, "the sort row at the top, the stores, then the loose things"
+    # "Pick stores" is in the Anywhere card's head since 2026-10-30 (the
+    # "N things to sort" row above the cards went): the stores, then the
+    # loose things with their way to a store.
+    assert 0 <= b < c < a, "the stores, then the loose things, Pick stores in their card"
 
 
 @_needs_node
@@ -340,17 +343,12 @@ loadGrocery().then(function () {
     assert out["cards"] == ["Anywhere"]
     assert out["ticks"] == 2
     assert out["band"] == "2 things."
-    # 2026-10-05, card 13 ("Before you shop"): LIST's dock now carries ONE
-    # apricot — the pass in front of sorting, or "Sort the list (N)" when
-    # there is nothing left to ask. Gowthami's household: "Sorting option
-    # is hidden and needs to be clearer that's the next step." So the
-    # claim below is narrowed to what it was always about rather than
-    # dropped: the root grows no action of its OWN (ticking a row is
-    # still it, and the add is still an outline), and the one apricot
-    # there now is the sort, asserted positively.
+    # 2026-10-30 (the declutter, Emily's "Shop with store filter"): LIST's
+    # dock is "+ Add something" alone — the chat button floats beside it.
+    # The pass is "Before you go ›" in the band and the sort is "Pick
+    # stores" in the Anywhere card's head; neither is the dock's button.
     assert 'data-gro="add-open"' in out["dock"], "the dock holds Add something"
-    assert out["dock"].count("dock-primary") == 1 and 'data-gro="goto-sort"' in out["dock"], \
-        "ticking a row is still the list's action; the dock's one apricot is the sort"
+    assert "dock-primary" not in out["dock"] and "goto-sort" not in out["dock"], "ticking a row is still the list's action"
     assert "start-trip" not in out["dock"]
 
 
