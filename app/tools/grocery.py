@@ -1754,6 +1754,21 @@ def _restate_lines_for_new_shares(conn, before_by_line: dict[int, list[str]]) ->
     return changed
 
 
+def quantity_text(quantity):
+    """
+    An amount as the text every grocery reader expects. A model's JSON
+    number (`"quantity": 12`) reached `.strip()` and crashed the add — in
+    add_grocery_items too, where read_tool_input's top-level reading never
+    looks (hunt 2026-10-30). 12 -> "12", 1.5 -> "1.5", 2.0 -> "2"; anything
+    that is not a number is handed back as it came.
+    """
+    if isinstance(quantity, bool) or not isinstance(quantity, (int, float)):
+        return quantity
+    if isinstance(quantity, float) and quantity.is_integer():
+        return str(int(quantity))
+    return str(quantity)
+
+
 def add_grocery_item(
     item: str,
     quantity: str = "",
@@ -1816,7 +1831,7 @@ def add_grocery_item(
         raise ValueError("I need a name for that.")
     if len(item) > MAX_ITEM_NAME_LENGTH:
         item = item[:MAX_ITEM_NAME_LENGTH].rstrip()
-    quantity = (quantity or "").strip()
+    quantity = (quantity_text(quantity) or "").strip()
     if len(quantity) > MAX_QUANTITY_LENGTH:
         quantity = quantity[:MAX_QUANTITY_LENGTH].rstrip()
     if source_weekly_plan_id is None:
@@ -3897,7 +3912,7 @@ def update_grocery_item(item_id: int, quantity: str | None = None, category: str
         raise ValueError(f"No grocery list item with id {item_id}.")
     if quantity is not None:
         # Typed into the row's box: "24 pack" is one pack of 24.
-        quantity = _quantities.typed_multipack(quantity)
+        quantity = _quantities.typed_multipack(quantity_text(quantity))
     if quantity is not None and _quantities.same_shown_quantity(
         row["item"] or "", quantity.strip(), row["quantity"] or ""
     ):

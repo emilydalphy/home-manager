@@ -9308,6 +9308,21 @@ def restore_leftover_chain(weekly_plan_id: int, cook_id: int, chain: dict) -> li
     return [r["id"] for r in relinked]
 
 
+def chat_dish_name(meal) -> str:
+    """
+    The dish a chat plan_meal / swap names, trimmed — or ValueError when
+    there is none. A model sends "", "   " or null for a dish it lost
+    track of; the bare functions took it as a freeform meal, so a swap
+    DELETED the planned dinner (and its groceries) and wrote a "planned"
+    row with no meal on it, and the chat said it was done (hunt
+    2026-10-30). The screens' own door, resolve_open_slot, has always
+    refused a blank choice; this is the chat doors agreeing with it.
+    """
+    if not isinstance(meal, str) or not meal.strip():
+        raise ValueError("Which dish? I need its name to put it on the plan.")
+    return meal.strip()
+
+
 def swap_meal_in_plan_for_chat(*args, override: bool = False, repeat: bool = False, **kwargs) -> dict:
     """
     swap_meal_in_plan with the two refusals a PERSON is owed in front of
@@ -9354,9 +9369,14 @@ def swap_meal_in_plan_for_chat(*args, override: bool = False, repeat: bool = Fal
     new_meal = kwargs.get("new_meal")
     if new_meal is None and len(args) >= 3:
         new_meal = args[2]
-    if isinstance(new_meal, str):
-        from . import allergen_gate as _allergen_gate
-        _allergen_gate.refuse_if_clashing(new_meal, override=override)
+    # A blank dish is refused, not swapped in (see chat_dish_name).
+    new_meal = chat_dish_name(new_meal)
+    if len(args) >= 3:
+        args = (*args[:2], new_meal, *args[3:])
+    else:
+        kwargs["new_meal"] = new_meal
+    from . import allergen_gate as _allergen_gate
+    _allergen_gate.refuse_if_clashing(new_meal, override=override)
     if not repeat:
         _refuse_a_second_copy(args, kwargs, new_meal)
     widened = _chat_swap_along_the_chain(args, kwargs, new_meal)

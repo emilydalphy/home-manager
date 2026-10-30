@@ -13,6 +13,8 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Chat tools refuse a blank dish and a worded use-by; a number amount is read** (2026-10-30, hunt; branch `overnight/chat-args-1030`; tests `tests/test_chat_args_hunt_2026_10_30.py`). `swap_meal_in_plan(new_meal="")` deleted the dinner and its groceries for a meal-less "planned" row, and `plan_meal(meal="  ")` planted one — both now refuse (`weekly_plan.chat_dish_name`, as `resolve_open_slot` always did). `update_inventory` stored "11/02"/"tomorrow" as the use-by, which the text compare read as expired / never; now YYYY-MM-DD or `InvalidUseByDate` (per entry in a batch). `quantity: 12` crashed the grocery adds (`grocery.quantity_text`).
+  Why: what a model sends is a request, not a guarantee; each was a success reply over wrong data or an apology over a crash.
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
   (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.

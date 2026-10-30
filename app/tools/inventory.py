@@ -121,6 +121,38 @@ class InvalidInventoryLocation(ValueError):
     so the route can answer 400 for it and keep 404 for a missing row."""
 
 
+class InvalidUseByDate(ValueError):
+    """A use-by that is not a calendar day. Its own type so a batch can
+    answer it per entry, as it does a bad shelf."""
+
+
+_ISO_DAY_AT_START = re.compile(r"\s*(\d{4}-\d{2}-\d{2})(?:[T ][0-9:.+\-Z]*)?\s*")
+
+
+def _use_by_day(expiration_date) -> str | None:
+    """
+    A use-by as the YYYY-MM-DD every reader compares, None for none — or
+    InvalidUseByDate. Stored as sent until 2026-10-30 (hunt): the expiring
+    list compares dates as text, so a model's "11/02" sorted before every
+    real day and read EXPIRED, "tomorrow" sorted after them and never
+    expired, and Kitchen drew neither. Refused rather than guessed: "11/02"
+    is Nov 2 or Feb 11 depending on who said it.
+    """
+    if expiration_date is None:
+        return None
+    if not isinstance(expiration_date, str):
+        raise InvalidUseByDate(f"{expiration_date!r} isn't a use-by date — give it as YYYY-MM-DD.")
+    if not expiration_date.strip():
+        return None
+    m = _ISO_DAY_AT_START.fullmatch(expiration_date)
+    if m:
+        try:
+            return date.fromisoformat(m.group(1)).isoformat()
+        except ValueError:
+            pass
+    raise InvalidUseByDate(f"{expiration_date!r} isn't a use-by date — give it as YYYY-MM-DD.")
+
+
 # A thawed thing with no shelf life of its own (a cooked portion, a bag of
 # frozen peas): three days in the fridge, the leftovers rule of thumb.
 THAWED_KEEPS_DAYS = 3
@@ -903,6 +935,7 @@ def update_inventory(
         location = _normalised_location(location)
     else:
         location = None
+    expiration_date = _use_by_day(expiration_date)
     if action == "add":
         # The receipt fields (fresh/before/after) are mark_grocery_item's
         # business, not the chat agent's — keep this tool's answer as it was.
@@ -1015,8 +1048,8 @@ def update_inventory_items(items: list, action: str = "add", source: str = "chat
         try:
             results.append(update_inventory(name, act, quantity=qty, expiration_date=exp,
                                             category=cat, location=loc, source=src))
-        except InvalidInventoryLocation as e:
-            # One entry's bad shelf is that entry's answer, not the batch's:
+        except (InvalidInventoryLocation, InvalidUseByDate) as e:
+            # One entry's bad shelf (or use-by) is that entry's answer, not the batch's:
             # raising here would leave the entries before it written, and a
             # retried batch would add those twice.
             results.append({"item": name, "error": str(e)})

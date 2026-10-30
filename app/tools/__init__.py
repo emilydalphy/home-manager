@@ -408,6 +408,7 @@ from .household import (  # noqa: F401
 from .inventory import (  # noqa: F401
     CannotFreeze,
     InvalidInventoryLocation,
+    InvalidUseByDate,
     freeze_item,
     unfreeze_item,
     _LEADING_NUM_RE,
