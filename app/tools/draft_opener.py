@@ -470,9 +470,18 @@ def _line_one(entries: list[dict], intake: dict | None, period: list[str], days:
         nights = len({e["date"] for e in dinners})
         if not dinners:
             return "Your week’s here."
+        # One dish is "one dinner", not "one dinners" (defect hunt
+        # 2026-10-29): a period cooking one dish every night — a short
+        # takeover stretch, a household that batches one big pot — read
+        # "An ordinary week — one dinners across seven nights." And one
+        # dinner on one night has nothing to not repeat, so it says only
+        # that. `nights` is never one when it differs from `distinct`.
+        noun = "dinner" if distinct == 1 else "dinners"
         if distinct == nights:
-            return f"An ordinary week — {number_word(distinct)} dinners, none repeated."
-        return f"An ordinary week — {number_word(distinct)} dinners across {number_word(nights)} nights."
+            if distinct == 1:
+                return "An ordinary week — one dinner."
+            return f"An ordinary week — {number_word(distinct)} {noun}, none repeated."
+        return f"An ordinary week — {number_word(distinct)} {noun} across {number_word(nights)} nights."
 
     def build(ask: list[tuple[str, str]], more: list[str], with_days: bool) -> str:
         parts = [f"{label} {where}".strip() if with_days else label for label, where in ask]
