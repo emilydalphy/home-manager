@@ -76,7 +76,10 @@ def test_fractions_ranges_and_whole_things_follow_scale_recipes_rules():
     # A clove only comes whole (scale_recipe's _DISCRETE_UNITS); a stick
     # cut to a fraction is tablespoons.
     assert got[1] == "Mince 2 garlic cloves; melt 3 tbsp butter."
-    assert got[2] == "Beat 1 ½ eggs."
+    # An egg only comes whole too (2026-10-29): scale_recipe's chip says
+    # "2" for 1.5 eggs, so the step does. Was "Beat 1 ½ eggs." — pinned
+    # before eggs took the clove rule; the claim (step agrees with chip) holds.
+    assert got[2] == "Beat 2 eggs."
 
 
 def test_the_count_word_agrees_with_the_new_number():
