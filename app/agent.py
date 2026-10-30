@@ -2969,7 +2969,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "set_lunch_location",
-        "description": "Set (or correct) where a household member typically is at lunchtime: 'home' (a real planned meal), 'out' (needs to travel/pack), or 'varies'. Omit weekday for the household's standing answer (onboarding); pass a specific weekday to record a hybrid-schedule override without changing the standing pattern — e.g. \"Marcus is in the office Tuesdays now\" is set_lunch_location(member_name='Marcus', location='out', weekday='Tuesday'). Calling this again for the same member/weekday is how a correction works.",
+        "description": "Set (or correct) where a household member typically is at lunchtime: 'home' (a real planned meal), 'out' (needs to travel/pack), or 'varies'. Omit weekday for the household's standing answer (onboarding; it covers Monday–Friday only — give Saturday/Sunday as their own weekdays); pass a specific weekday to record a hybrid-schedule override without changing the standing pattern — e.g. \"Marcus is in the office Tuesdays now\" is set_lunch_location(member_name='Marcus', location='out', weekday='Tuesday'). Calling this again for the same member/weekday is how a correction works.",
         "input_schema": {
             "type": "object",
             "properties": {

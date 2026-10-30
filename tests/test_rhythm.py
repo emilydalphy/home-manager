@@ -345,7 +345,9 @@ def test_week_intake_prefill_suggests_packed_lunches_from_rhythm():
 
     prefill = tools.get_week_intake_prefill(week)
     suggestions = prefill["rhythm_packed_lunch_suggestions"]
-    assert len(suggestions) == 7
+    # Monday to Friday: a standing answer is a weekday one (2026-10-29,
+    # tests/test_weekend_lunch_not_packed.py) — it used to be all seven.
+    assert len(suggestions) == 5
     assert all(s["suggested_packed"] for s in suggestions)
     assert all(s["out"] == ["Emily"] for s in suggestions)
 

@@ -1240,8 +1240,9 @@ def _rhythm_packed_lunch_suggestions(week_start: str, day_count: int = 7) -> lis
 
     Per adult member with a lunch_location fact on record, resolves their
     effective location for that weekday (a per-weekday override if one's
-    been learned, else the standing answer — see
-    rhythm.effective_lunch_location). A day is suggested "packed" only when
+    been learned, else the standing answer on Monday to Friday only — see
+    rhythm.effective_lunch_location; a weekend day with no override of its
+    own gets no suggestion, 2026-10-29). A day is suggested "packed" only when
     at least one adult resolves 'out' and none resolve 'home' — a mixed
     household (one home, one out) is a real judgment call about what
     "packed lunch day" even means for two people eating differently, so
