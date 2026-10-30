@@ -13,6 +13,8 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **"Have it" never un-buys a line** (2026-10-30, branch `overnight/hunt-preshop-offline-1030c`; `tests/test_pre_shop_undo_once.py`). `drop_grocery_item_pre_shop` leaves a `purchased` line as it is and answers with its real status.
+  Why: a stale pre-shop card on the other phone turned a ticked line into "Already had on hand", off the trip's bought list. (The shell still toasts "moved"; shell.js was not this pass's to edit.)
 - **A "½" a person adds is half** (2026-10-30, branch `overnight/hunt-preshop-offline-1030c`; `tests/test_grocery_glyph_fractions.py`). A standing want's quantity (add, scan confirm, the row's box) is spelled `1/2` via `recipes._ascii_fractions` before it is read.
   Why: the list's parsers read no glyphs, so a scanned "½ lb" butter never tidied and the next "1 lb" stood beside it as "½ lb + 1 lb".
 - **A pre-shop Undo only undoes a drop** (2026-10-30, branch `overnight/hunt-preshop-offline-1030c`; `tests/test_pre_shop_undo_once.py`, one in `tests/test_staples.py`). `undo_pre_shop_drop` is a no-op on a line that is not `removed`.

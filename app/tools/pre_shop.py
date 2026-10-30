@@ -389,11 +389,16 @@ def drop_grocery_item_pre_shop(item_id: int, author: str = "") -> dict:
     # kitchen empty and both add the food to it.
     try:
         conn.execute("BEGIN IMMEDIATE")
+        # Only a line still to buy. A BOUGHT line is not "already home" — the
+        # other adult's phone still showing yesterday's pre-shop card turned a
+        # ticked yogurt into an "Already had on hand" one, off the trip's
+        # bought list (defect hunt, 2026-10-30). The freezer step, the other
+        # caller, only ever reads lines still to buy.
         # A staple's line dropped here means "we already have it" — say so to the
         # staple, or the next list read puts the line straight back.
         line = conn.execute(
             "SELECT id, staple_id, item, quantity, category FROM grocery_items "
-            "WHERE id = ? AND household_id = ? AND status != 'removed'",
+            "WHERE id = ? AND household_id = ? AND status NOT IN ('removed', 'purchased')",
             (item_id, household_id()),
         ).fetchone()
         if line is not None and line["staple_id"]:
@@ -402,9 +407,13 @@ def drop_grocery_item_pre_shop(item_id: int, author: str = "") -> dict:
         who = acting_name(author) or ""
         changed = conn.execute(
             "UPDATE grocery_items SET status = 'removed', removed_by = ?, removed_at = datetime('now') "
-            "WHERE id = ? AND household_id = ? AND status != 'removed'",
+            "WHERE id = ? AND household_id = ? AND status NOT IN ('removed', 'purchased')",
             (who, item_id, household_id()),
         ).rowcount
+        status = "removed" if changed else conn.execute(
+            "SELECT status FROM grocery_items WHERE id = ? AND household_id = ?",
+            (item_id, household_id()),
+        ).fetchone()["status"]
         # "Already have it" counts as what's home (Emily, 2026-10-25, lifting
         # policy 2026-09-01): the kitchen row is confirmed, or added in its
         # likely place, with a receipt the undo reverses exactly. Only on the
@@ -434,7 +443,7 @@ def drop_grocery_item_pre_shop(item_id: int, author: str = "") -> dict:
         raise
     finally:
         conn.close()
-    return {"item_id": item_id, "status": "removed"}
+    return {"item_id": item_id, "status": status}
 
 
 def undo_pre_shop_drop(item_id: int) -> dict:

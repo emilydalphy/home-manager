@@ -38,3 +38,15 @@ def test_undo_still_puts_a_dropped_line_back(signed_in):
     assert _status(item_id) == "removed"
     assert c.post(f"/api/grocery-list/{item_id}/pre-shop-undo").json()["status"] == "needed"
     assert _status(item_id) == "needed"
+
+
+def test_a_stale_drop_on_a_bought_line_leaves_it_bought(signed_in):
+    # The other phone's pre-shop card, read before the shop: "Have it" on a
+    # line already ticked in the store is not "already home".
+    c = signed_in
+    item_id = c.post("/api/grocery-list/add", json={"item": "Sourdough", "quantity": "1"}).json()["item_id"]
+    c.post(f"/api/grocery-list/{item_id}/status", json={"status": "purchased"})
+    r = c.post(f"/api/grocery-list/{item_id}/pre-shop", json={"decision": "drop"})
+    assert r.status_code == 200 and r.json()["status"] == "purchased"
+    assert _status(item_id) == "purchased"
+    assert tools.get_already_have_decisions() == []
