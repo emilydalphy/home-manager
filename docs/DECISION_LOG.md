@@ -83,6 +83,14 @@ why*, not duplicating the diff.
   `/api/recipes/scale?servings=1000000` ate 10 GB. Nothing up to 5 cups changed (checked
   every ⅛ tsp to 12 cups against the old function).
 - **A person first named by a restriction or an age group is added through add_member** (2026-10-28, overnight defect hunt; branch `overnight/hunt-members-settings-1028b`; tests `tests/test_new_person_through_any_door.py`). `household._member_id_or_added` finds the person or calls `add_member`; `set_member_dietary_restrictions` and `set_member_age_group` use it instead of inserting the row themselves. Why: chat's "Linda's allergic to shellfish" about someone new skipped `reconcile_membership` (a night everyone else was out of stayed "nobody's home" with Linda at it) and, for restrictions, `list_follows_membership` (Cook counted 3, the approved list bought for 2). Same branch: chat's `set_morning_text(name=…)` matches through `find_member_row` among the adults, so "Zoe" finds Zoé.
+- **A staple wanted again the same day goes back on the list that day** (2026-10-28, defect hunt; branch
+  `overnight/hunt-staples-stores-1028b`; tests `tests/test_staple_wanted_again_today.py`). "We have plenty" in the
+  morning, then "we're out of dish soap" in chat (`add_staple` running_low), read "probably running low" with no line
+  until tomorrow: `sync_due_staples` treats a line taken off today as the trip's answer. Same with Pause then Resume.
+  `staples._back_on_the_list` now puts that very row back (store, amount kept) when nothing else covers it — only a
+  row taken off today (household clock), and never while a row of the same thing waits with its own Put back ("Maybe
+  already home", review: restoring beside it made two Oats lines once tapped). `_what_covers` is sync's cover test.
+
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
   (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.
