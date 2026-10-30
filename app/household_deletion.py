@@ -70,7 +70,7 @@ import logging
 import sqlite3
 
 from .db import get_conn
-from .tools._shared import DEFAULT_HOUSEHOLD_ID
+from .tools._shared import DEFAULT_HOUSEHOLD_ID, EATS_HERE_SQL
 
 # The tables that belong to no household, on purpose: the Shared Recipe
 # Library (2026-10-19). An entry is only a dish — never a household id, a
@@ -346,6 +346,33 @@ def _same(item, value) -> bool:
     return isinstance(item, str) and item.strip().casefold() == str(value).strip().casefold()
 
 
+HELPER_CANT_DELETE = (
+    "Only the people who live here can delete the household. "
+    "You can remove just yourself instead."
+)
+
+
+def is_helper(household_id: int, member_id: int | None) -> bool:
+    """
+    Is this adult a helper — invited as "Someone not eating here"
+    (members.eats_here = 0)? A helper can leave, but never delete the
+    household they help out in (defect hunt 2026-10-29): taking someone
+    else out was already the main person's alone, while deleting everyone's
+    everything, for good, was open to the nanny.
+    """
+    if member_id is None:
+        return False
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            f"SELECT {EATS_HERE_SQL} AS eats_here FROM members WHERE id = ? AND household_id = ? AND {_ADULT_SQL}",
+            (int(member_id), int(household_id)),
+        ).fetchone()
+    finally:
+        conn.close()
+    return row is not None and not row["eats_here"]
+
+
 def removal_check(household_id: int, member_id: int | None) -> str | None:
     """
     Why this adult can't leave this household right now, as a sentence —
@@ -362,17 +389,53 @@ def removal_check(household_id: int, member_id: int | None) -> str | None:
             f"SELECT id FROM members WHERE id = ? AND household_id = ? AND {_ADULT_SQL}",
             (int(member_id), hid),
         ).fetchone()
-        others = conn.execute(
-            f"SELECT COUNT(*) FROM members WHERE household_id = ? AND id != ? AND {_ADULT_SQL}",
-            (hid, int(member_id)),
-        ).fetchone()[0]
+        problem = _left_with_nobody(conn, hid, int(member_id))
     finally:
         conn.close()
     if me is None:
         return "You're not one of the adults in this household."
-    if others == 0:
+    return problem
+
+
+def _left_with_nobody(conn, hid: int, mid: int) -> str | None:
+    """
+    Why this household can't lose this adult — it would keep no adult who
+    LIVES here — as a sentence, or None.
+
+    A helper invited as "Someone not eating here" (members.eats_here = 0:
+    a nanny, a grandparent who helps with dinners) does not count as
+    somebody the household is left with (defect hunt 2026-10-29). Counting
+    them let the family's last adult "Remove me" and hand the household —
+    the children, their allergies, everything — to the nanny, with no main
+    person left (primary_member never resolves to a helper), so nobody
+    could ever take her out again.
+    """
+    leaver = conn.execute(
+        f"SELECT {EATS_HERE_SQL} AS eats_here FROM members WHERE id = ? AND household_id = ?",
+        (mid, hid),
+    ).fetchone()
+    if leaver is not None and not leaver["eats_here"]:
+        # A helper can always leave: the household never kept her anyway,
+        # and she can't delete it (HELPER_CANT_DELETE), so refusing here too
+        # would leave a helper who is somehow the only adult (legacy data)
+        # with two refusals pointing at each other (review, 2026-10-29).
+        return None
+    others = conn.execute(
+        f"SELECT name, {EATS_HERE_SQL} AS eats_here FROM members "
+        f"WHERE household_id = ? AND id != ? AND {_ADULT_SQL} ORDER BY id",
+        (hid, mid),
+    ).fetchall()
+    if any(r["eats_here"] for r in others):
+        return None
+    helpers = [r["name"] for r in others]
+    if not helpers:
         return "You're the only adult here, so the household would be left with nobody. Delete the household instead."
-    return None
+    names = helpers[0] if len(helpers) == 1 else ", ".join(helpers[:-1]) + " and " + helpers[-1]
+    return (
+        f"You're the only adult who lives here, so the household would be left with just {names}, "
+        f"who help{'s' if len(helpers) == 1 else ''} out. Take {'them' if len(helpers) > 1 else names} "
+        "out first, or delete the household instead."
+    )
 
 
 def remove_member(household_id: int, member_id: int, by_member_id: int | None = None) -> dict:
@@ -417,15 +480,11 @@ def _remove_member(household_id: int, member_id: int, by_member_id: int | None =
                 f"SELECT name FROM members WHERE id = ? AND household_id = ? AND {_ADULT_SQL}",
                 (mid, hid),
             ).fetchone()
-            others = conn.execute(
-                f"SELECT COUNT(*) FROM members WHERE household_id = ? AND id != ? AND {_ADULT_SQL}",
-                (hid, mid),
-            ).fetchone()[0]
-            if row is None or others == 0:
-                raise DeletionRefused(
-                    "You're the only adult here, so the household would be left with nobody. "
-                    "Delete the household instead."
-                )
+            if row is None:
+                raise DeletionRefused("You're not one of the adults in this household.")
+            problem = _left_with_nobody(conn, hid, mid)
+            if problem:
+                raise DeletionRefused(problem)
             name = row[0]
             _drop_their_own_trips_and_needs(conn, hid, mid, touched)
             # "I've got tonight" said by (or about) the person leaving goes
@@ -502,4 +561,6 @@ __all__ = [
     "is_protected",
     "remove_member",
     "removal_check",
+    "is_helper",
+    "HELPER_CANT_DELETE",
 ]

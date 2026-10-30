@@ -10382,6 +10382,7 @@ def _leave_state() -> dict:
     adults = tools.household_adults()
     you = tools.current_member()
     protected = household_deletion.is_protected(household)
+    helper = you is not None and household_deletion.is_helper(household, you["id"])
     return {
         # Lowercase for a household with no name of its own, so the dialog
         # reads "Delete your household?" / "Remove yourself from your
@@ -10393,7 +10394,10 @@ def _leave_state() -> dict:
         # who's asking first; a house with no adults yet (setup abandoned)
         # can still be deleted by whoever holds its passphrase.
         "needs_pick": you is None and len(adults) > 0,
-        "can_delete": not protected and (you is not None or len(adults) == 0),
+        # ...except a helper ("Someone not eating here"), who can leave but
+        # never delete the household they help out in (2026-10-29).
+        "can_delete": not protected and not helper and (you is not None or len(adults) == 0),
+        "is_helper": helper,
         "can_remove_self": (
             you is not None
             and household_deletion.removal_check(household, you["id"]) is None
@@ -10445,6 +10449,8 @@ def delete_my_household(req: DeleteHouseholdRequest, request: Request):
     state = _leave_state()
     if state["protected"]:
         raise HTTPException(status_code=403, detail="This household can't be deleted from inside Pomona.")
+    if state["is_helper"]:
+        raise HTTPException(status_code=403, detail=household_deletion.HELPER_CANT_DELETE)
     if not state["can_delete"]:
         raise HTTPException(status_code=400, detail="Tell me who you are first, then try again.")
     try:
