@@ -18,8 +18,13 @@ from app.tools import already_home
 
 
 def _monday() -> datetime.date:
-    today = household_today()
-    return today - datetime.timedelta(days=today.weekday())
+    """The start of the test's plan period. NOT the calendar Monday: a plan
+    is seven days from its start, and the nights these tests plan are today
+    to today + 3, so a Monday start left them outside the period from
+    Friday on (plan_meal refuses a night off its plan) and the file went red
+    every Friday-Sunday — CI's `sunday` job included. Two days back keeps
+    yesterday-and-earlier and the next four nights inside one period."""
+    return household_today() - datetime.timedelta(days=2)
 
 
 def _day(n: int) -> str:
@@ -246,9 +251,8 @@ def _two_taco_nights_two_pounds_home():
     tools.update_inventory("Ground beef", "add", quantity="2 lbs", location="fridge")
     today = household_today()
     d0, d2, d3 = (today + datetime.timedelta(days=n) for n in (0, 2, 3))
-    monday = today - datetime.timedelta(days=today.weekday())
     plan_id = _week([(d0.isoformat(), "Beef Tacos"), (d2.isoformat(), "Beef Tacos"),
-                     (d3.isoformat(), "Pasta")], week_start=monday.isoformat())
+                     (d3.isoformat(), "Pasta")], week_start=_monday().isoformat())
     conn = db.get_conn()
     tonight = conn.execute(
         "SELECT id FROM meal_plan_entries WHERE weekly_plan_id = ? AND date = ? AND slot = 'dinner'",
