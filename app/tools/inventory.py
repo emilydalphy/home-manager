@@ -1087,10 +1087,14 @@ def update_inventory(
         location = _normalised_location(location)
     else:
         location = None
-    # One rule for a use-by, on every action. A second, looser check
-    # (date.fromisoformat, which on 3.11 also takes "20261102") ran ahead of
-    # this one after two hunts landed together (merge 2026-10-30).
-    expiration_date = _use_by_day(expiration_date)
+    # One rule for a use-by. A second, looser check (date.fromisoformat,
+    # which on 3.11 also takes "20261102") ran ahead of this one after two
+    # hunts landed together (merge 2026-10-30). A use or remove never reads
+    # the date, so a stray one there is dropped rather than refused.
+    if action in ("add", "set"):
+        expiration_date = _use_by_day(expiration_date)
+    else:
+        expiration_date = None
     if action == "add":
         # The receipt fields (fresh/before/after) are mark_grocery_item's
         # business, not the chat agent's — keep this tool's answer as it was.
