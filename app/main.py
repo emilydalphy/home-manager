@@ -425,6 +425,12 @@ async def security_headers(request: Request, call_next):
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     if _is_https(request):
         response.headers["Strict-Transport-Security"] = "max-age=31536000"
+    if request.url.path == "/static/service-worker.js":
+        # Lets shell.js register the worker with scope "/" — without it a
+        # worker served from /static/ may only control /static/, which is
+        # no page the household opens, and an offline reload of Shop got
+        # the browser's own "no internet" page (2026-10-30).
+        response.headers["Service-Worker-Allowed"] = "/"
     return response
 
 

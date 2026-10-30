@@ -6111,6 +6111,17 @@
     }
   }
 
+  // The phone's copy of the shops answer (grocery-offline.js saveShops).
+  // Written on every read of /api/memory, and ALSO the moment the
+  // household changes the answer on this screen (2026-10-30): before, it
+  // was only refreshed by the next read, so a household that answered
+  // "Where do you usually shop?" in the store and then lost signal got the
+  // card back over the list on the next reload, with the shops it had
+  // just picked gone — the read that would have saved them never came.
+  function groSaveShopsCopy() {
+    if (groOffline) groOffline.saveShops({ usualStores: groceryState.usualStores, dismissed: groceryState.storesPromptDismissed });
+  }
+
   async function groLoadUsualStores() {
     try {
       var res = await Api.fetch('/api/memory');
@@ -6124,7 +6135,7 @@
       // Kept with the list's copy: with no signal this request fails, and
       // an empty answer here would put the "where do you shop?" card up
       // over the list — see grocery-offline.js.
-      if (groOffline) groOffline.saveShops({ usualStores: groceryState.usualStores, dismissed: groceryState.storesPromptDismissed });
+      groSaveShopsCopy();
       // The shops and the list load side by side; whichever lands second
       // decides whether the leftovers question comes first
       // (groMaybeCarryFirst is a no-op once the tab has left the list).
@@ -6235,9 +6246,19 @@
   // `opts.background` — a re-read nobody on this screen asked for (a chat
   // turn, another tab's tap). It does everything a load does EXCEPT open a
   // step: see refreshGroceryPanel for what that was costing.
+  // Every read of the list is numbered, and only the newest one may draw
+  // (2026-10-30). Each tick re-reads the list once its write lands, so two
+  // quick ticks on a weak signal are two reads in flight — and replies
+  // don't come back in order. The first tick's read, answered by the
+  // server BEFORE the second tick's write, could land last and draw the
+  // second line unticked again, and it stayed that way (the server had the
+  // tick; the screen said otherwise, and so did "2 of 5"). Driven in
+  // chromium with the first read's reply held two seconds.
+  var groLoadSeq = 0;
   async function loadGrocery(opts) {
     var panel = groPanel();
     if (!panel || !panel.dataset.built) return;
+    var seq = ++groLoadSeq;
     try {
       // "Before you shop" is read AFTER the list: the list read is what puts
       // due regulars on (sync_due_staples), and read in parallel the steps
@@ -6246,6 +6267,9 @@
         groLoadAllData().then(function (d) { return groLoadBeforeShop().then(function () { return d; }); }),
         groLoadPreShopFlags(), groLoadAlreadyHaveSummary(), groLoadStaples(), groLoadCarried(), groLoadSpices()
       ]);
+      // A newer read started while this one was out: its answer is the
+      // fresher one, and it draws when it lands.
+      if (seq !== groLoadSeq) return;
       // The server's answer is the copy; what the screen shows is that plus
       // any ticks still waiting to be sent, so a tick made a moment ago in
       // a dead zone doesn't vanish the instant one bar comes back.
@@ -6262,6 +6286,7 @@
       if (groListDone(groceryState.data)) await groLoadKitchenNow();
       else groceryState.kitchenNow = undefined;
     } catch (err) {
+      if (seq !== groLoadSeq) return;
       var copy = groOffline && groIsNetworkError(err) ? groOffline.readList() : null;
       if (copy) {
         // No signal, but the list is still here — the phone's own copy with
@@ -8875,8 +8900,14 @@
     if (storesWriteTrailing) return storesWriteTrailing;
     var send = function () {
       storesWriteTrailing = null;
+      var sent = groceryState.usualStores.slice();
       return groPost('/api/memory/edit', {
-        field: 'usual_stores', value: groceryState.usualStores.slice()
+        field: 'usual_stores', value: sent
+      }).then(function (res) {
+        // Saved on the server: the phone's copy says the same (only what
+        // was SENT — a tap still waiting behind this one is not saved yet).
+        if (groOffline) groOffline.saveShops({ usualStores: sent, dismissed: groceryState.storesPromptDismissed });
+        return res;
       });
     };
     // .then(send, send): the write behind a FAILED one still has to go out,
@@ -10319,6 +10350,7 @@
         // Kitchen sheet shouldn't be asked all over again.
         groPost('/api/memory/stores-prompt-dismiss', {}).then(function () {
           groceryState.storesPromptDismissed = true;
+          groSaveShopsCopy();
           groSetStoresPromptOpen(false);
           renderGrocery();
         }).catch(function () {
@@ -10626,6 +10658,8 @@
     if (groceryState.usualStores.indexOf(name) === -1) {
       groceryState.usualStores = groceryState.usualStores.concat([name]);
     }
+    // What we know saved it on the server before calling here.
+    groSaveShopsCopy();
     var back = groceryState.storeReturn;
     groceryState.storeReturn = null;
     if (!back || back.step !== groceryState.step) { renderGrocery(); return; }
@@ -32884,7 +32918,14 @@
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('/static/service-worker.js').then(function (reg) {
+      // scope '/' (2026-10-30): a worker's default scope is its own folder,
+      // so registered bare from /static/ it controlled /static/ only —
+      // never "/", "/grocery" or any page the household actually opens,
+      // and a reload in a store with no signal got the browser's own
+      // offline page instead of the cached shell and the list's offline
+      // copy. The server allows the wider scope with a
+      // Service-Worker-Allowed header (app/main.py, security_headers).
+      navigator.serviceWorker.register('/static/service-worker.js', { scope: '/' }).then(function (reg) {
         // Returned, so the .catch below covers it. update() rejects with a
         // TypeError the browser writes (no stack) when its job fails, and
         // the first open is when that happens: no worker yet, register()

@@ -13,6 +13,11 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Shopping with a bad signal: three holes closed** (2026-10-30, branch `overnight/offline-1030`; tests in `tests/test_grocery_offline.py`).
+  (1) The service worker never controlled a page: registered from `/static/` with no scope, its scope was `/static/`, so an offline reload of Shop got the browser's "no internet" page and the list's offline copy was never reached. Now `register(..., { scope: '/' })` + `Service-Worker-Allowed: /` on the worker (security_headers); the worker skips non-GETs (POST /login is a navigation now); cache `v8`.
+  (2) The offline shops copy was only written on a read of /api/memory, so shops picked / "One list is fine" answered on Shop and then a signal drop + reload put the shops card back over the list. Written on each change now (`groSaveShopsCopy`).
+  (3) Two quick ticks = two list re-reads in flight; the older reply landing last un-ticked the second line on screen for good. `loadGrocery` numbers its reads; only the newest draws.
+  Why: each reproduced in chromium at 390px with `context.setOffline` / a held reply.
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
   (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.
