@@ -1221,9 +1221,15 @@ def undo_resolve(plan_id: int, item_id: int, undo: dict | None = None) -> dict:
     cand = _offered(record, int(item_id))
     resolution = record["resolved"].get(str(cand["id"])) or {}
     action = resolution.get("action")
-    undo = undo or {}
-    if action == "frozen" and undo.get("freeze"):
-        _inventory.unfreeze_item(undo["freeze"])
+    if action == "frozen":
+        # Which row to thaw is the week's own record (cand), never the
+        # client's token: handing the token's `freeze` on used to answer 500
+        # when it was not a dict, thaw whatever other freezer row it named,
+        # and — sent empty — put the row back on "Couldn't fit these" while
+        # it stayed in the freezer. unfreeze_item reads only item_id, and
+        # the date it puts back is the record freeze_item kept on the row.
+        # `undo` is still accepted (the screen sends it) and ignored here.
+        _inventory.unfreeze_item({"item_id": cand["id"]})
     elif action == "side":
         entry_id = resolution.get("entry_id")
         conn = get_conn()
