@@ -7655,7 +7655,10 @@ def _generate_weekly_plan(
     if household_memory.get("planning_mode") != "component_based":
         period = tools.period_dates(content_start_date, day_count)
         frozen_portions, _left_frozen = _freezer_portions.choose_nights(
-            _freezer_portions.portions_to_plan(period), period, intake,
+            # Never a portion somebody at the table can't have
+            # (freezer_portions.safe_to_plan): its night's name is not a
+            # recipe, so nothing downstream can read its list.
+            _freezer_portions.safe_to_plan(_freezer_portions.portions_to_plan(period)), period, intake,
             slot_needs=context["slot_needs"],
             holidays=tools.holidays_for_period(content_start_date, day_count),
             zero_slots={
