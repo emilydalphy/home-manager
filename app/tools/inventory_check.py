@@ -298,6 +298,13 @@ def answer(gone=None, confirmed=None) -> dict:
             if cur.rowcount:
                 stamped.append(i)
         conn.commit()
-        return {"removed": removed, "confirmed": stamped}
     finally:
         conn.close()
+    if removed:
+        # "Gone" lines Shop had set aside as "Already home" go back on the
+        # list (already_home.recheck_set_aside); each Undo re-judges them.
+        from . import already_home as _already_home
+        lines = _already_home.recheck_set_aside()
+        for r in removed:
+            r["undo"]["set_aside_again"] = lines
+    return {"removed": removed, "confirmed": stamped}

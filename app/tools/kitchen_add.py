@@ -548,6 +548,9 @@ def add_items(items: list, kind: str) -> dict:
             res = _inventory._add_to_inventory(
                 r["item"], r["quantity"], source=_source(kind, r["location"]),
                 category=r["category"], location=where, conn=conn,
+                # Bought onto a row already there: stamped, so Shop's
+                # "Already home" trusts it; the undo restores the old value.
+                confirm_on_merge=True,
             )
             record(res["item_id"], bool(res["fresh"]), before)
             added += 1
@@ -614,6 +617,10 @@ def undo_added(undo: dict) -> dict:
             "UPDATE kitchen_add_receipts SET undone_at = datetime('now') WHERE id = ? AND household_id = ?",
             (receipt_id, household_id()),
         )
+        # Taking the add back is the kitchen having less: a Shop "Already
+        # home" line the added food covered goes back on the list.
+        from . import already_home as _already_home
+        _already_home.recheck_set_aside(conn=conn)
     return {"undone": undone}
 
 

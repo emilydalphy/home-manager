@@ -364,7 +364,15 @@ def test_re_approving_does_not_add_what_was_skipped_as_already_owned():
     tools.add_recipe("Chili", ingredients=[{"item": "beans", "qty": "1 tin"}])
     tools.plan_meal(_today(), "Chili", slot="dinner", weekly_plan_id=plan_id)
     tools.approve_weekly_plan(plan_id)
-    tools.update_inventory("beans", action="remove")  # ate them
+    # Ate them: the chili is marked cooked first, so "we're out" leaves no
+    # meal still to come wanting beans (already_home.recheck_set_aside).
+    from app.db import get_conn
+    conn = get_conn()
+    entry_id = conn.execute("SELECT id FROM meal_plan_entries WHERE weekly_plan_id = ?",
+                            (plan_id,)).fetchone()["id"]
+    conn.close()
+    tools.check_off_meal(entry_id, "done")
+    tools.update_inventory("beans", action="remove")
 
     result = tools.approve_weekly_plan(plan_id)
 
