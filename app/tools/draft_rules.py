@@ -110,7 +110,14 @@ def _repick(plan_id: int, row: dict, because: str, extra: dict, picker, ok) -> s
             pick = outcome.get("pick")
             if not pick:
                 return None
-            if not ok(pick):
+            # The slot's own time limit, held and not only told. Both passes
+            # here run AFTER cap_enforce, so a pick that runs long is never
+            # put right later: "not chicken again" put a 75-minute braise
+            # on a 20-minute rush Wednesday (hunt, 2026-10-28). The context
+            # already carries `max_minutes`; told is not prevented. The
+            # same gate the swap and the cuisine re-pick use; a pick with
+            # no minutes isn't refused on a guess.
+            if not ok(pick) or _swap.cap_gate(plan_id, pick, [entry]):
                 tried.append(pick["meal_name"])
                 continue
             serves = _swap._table_for(row["date"], row["slot"])["serves"]

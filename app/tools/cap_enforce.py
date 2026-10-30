@@ -619,6 +619,37 @@ def weekdays_named(derived: dict, asks: tuple[str | None, ...] = (), meal: str |
     }
 
 
+def dinners_named_relatively(derived: dict, asks: tuple[str | None, ...] = (),
+                             meal: str | None = None) -> set[str]:
+    """
+    The dates whose DINNER their words for this dish named as "today",
+    "tonight" or "tomorrow" — the same clauses weekdays_named reads,
+    resolved on the household's clock by week_intake.freeform_day_requests
+    (so "not tomorrow", "we're out tomorrow" and "tomorrow for lunch" name
+    no dinner here, exactly as they pin none at generation).
+
+    Rule 8 needs it because a "tomorrow" that lands on a night out is
+    deliberately NOT pinned (agent.generate_weekly_plan: pinning it put
+    the dish on the night and the out pass deleted it), so it reaches this
+    pass as an ordinary typed dish — and weekdays_named knows no
+    "tomorrow". Without this, "Tacos tomorrow" with tomorrow out stayed
+    wherever the model put it, said nothing, and line one told them
+    "Tacos … Saturday, as you asked" (hunt, 2026-10-28).
+    """
+    from . import today_meals as _today_meals  # lazy: it reaches cooker
+    from . import week_intake as _week_intake  # lazy: it reaches the whole app
+    clauses, _stems = _clauses_about(derived if isinstance(derived, dict) else {}, asks, meal, strict=True)
+    if not clauses:
+        return set()
+    today = _today_meals.household_now().date()
+    window = [today.isoformat(), (today + datetime.timedelta(days=1)).isoformat()]
+    return {
+        r["date"] for c in clauses
+        for r in _week_intake.freeform_day_requests(c, window, today.isoformat())
+        if r.get("slot") == "dinner"
+    }
+
+
 def longest_nights(night: dict, rows: list[dict]) -> list[str] | None:
     """
     The week's longest nights, earliest first, when this dish fits NONE of
@@ -913,7 +944,8 @@ def place_off_nights_out(plan_id: int, intake: dict | None, memory: dict | None,
     def _said(derived: dict, meal: str, from_date: str) -> bool:
         if derived.get("moved_for"):
             return True  # "tomorrow" (typed_requests.place_day_requests): a day they named
-        return datetime.date.fromisoformat(from_date).weekday() in weekdays_named(derived, asks, meal)
+        return (datetime.date.fromisoformat(from_date).weekday() in weekdays_named(derived, asks, meal)
+                or from_date in dinners_named_relatively(derived, asks, meal))
 
     def _record(derived: dict, meal: str, from_date: str, to_date: str, said: bool) -> None:
         placed.append({"meal": meal, "from": from_date, "to": to_date, "said": said})
@@ -972,9 +1004,13 @@ def place_off_nights_out(plan_id: int, intake: dict | None, memory: dict | None,
                     or (night.get("cooked_status") or "") == "done" or night.get("reheat") or night.get("source")):
                 continue
             named = weekdays_named(derived, asks, night["meal"])
-            if datetime.date.fromisoformat(night["date"]).weekday() in named:
+            # "Tomorrow" is a day they named as surely as "Thursday" is —
+            # see dinners_named_relatively.
+            relative = dinners_named_relatively(derived, asks, night["meal"])
+            if datetime.date.fromisoformat(night["date"]).weekday() in named or night["date"] in relative:
                 continue  # they asked for this night too
-            asked_on = sorted(d for d in nobody_home if datetime.date.fromisoformat(d).weekday() in named)
+            asked_on = sorted(d for d in nobody_home
+                              if datetime.date.fromisoformat(d).weekday() in named or d in relative)
             if not asked_on:
                 continue
             from_date = asked_on[0]

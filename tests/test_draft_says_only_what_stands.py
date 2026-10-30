@@ -179,8 +179,9 @@ def test_a_requested_dish_that_stays_is_still_credited(household, picker, monkey
 @pytest.mark.real_time_of_day
 def test_tomorrow_is_not_pinned_onto_a_night_tagged_out(household, picker, monkeypatch, frozen_today):
     """CATCH. "Lamb curry tomorrow." with tomorrow tagged out: the curry used
-    to be moved onto Monday and then cleared with the night. It stays where
-    the model put it, still credited, and no line claims a move."""
+    to be moved onto Monday and then cleared with the night. It is never
+    pinned onto the night out; since snag rule 8 covers "tomorrow" it moves
+    to the nearest home night with a line, and "as you asked" is not said."""
     frozen_today(household_pin(9, 0, on=datetime.date(2026, 9, 27)))
     words = "Lamb curry tomorrow."
     tools.save_week_intake(SUNDAY, day_count=6, freeform=words, night_tags={PERIOD[1]: ["out"]})
@@ -193,7 +194,15 @@ def test_tomorrow_is_not_pinned_onto_a_night_tagged_out(household, picker, monke
     assert "Lamb Curry" in _all_dinners(plan_id)
     opener = tools.get_week_menu(plan_id)["draft_opener"]
     assert not any("I moved" in line for line in opener), opener
-    assert opener[0].startswith("Lamb curry Wednesday, as you asked"), opener
+    # Snag rule 8 (hunt, 2026-10-28): "tomorrow" named Monday as surely as
+    # "Monday" would have, so the curry goes to the nearest night someone is
+    # home (Sunday and Tuesday tie; the later wins) and the draft's flag
+    # says so. It used to stay on the model's Wednesday with line one saying
+    # "Lamb curry Wednesday, as you asked" — not what they asked.
+    assert _dinner(plan_id, PERIOD[2])["meal"] == "Lamb Curry"
+    assert [f["text"] for f in tools.get_week_menu(plan_id).get("draft_flags") or []] == [
+        "You're out Monday, so Lamb Curry moved to Tuesday."]
+    assert not any("as you asked" in line for line in opener), opener
 
 
 @pytest.mark.real_time_of_day
