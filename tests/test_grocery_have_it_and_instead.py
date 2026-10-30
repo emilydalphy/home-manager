@@ -316,7 +316,7 @@ setUp(3);
 groceryState.step = 'sortall';
 const all = groSortAllHtml(groceryState.data);
 groceryState.openRowId = '2';
-const menu = groRowMenuHtml(groceryState.data.stores.Unassigned.sections[0].items[1], groceryState.data);
+const menu = groRowMenuHtml(groceryState.data.stores.Unassigned.sections[0].items[1], groceryState.data);  // the row's sheet
 console.log(JSON.stringify({ all: all, menu: menu }));
 """)
     for name, html in out.items():

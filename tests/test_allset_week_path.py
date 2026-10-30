@@ -149,8 +149,10 @@ def test_an_approved_week_docks_open_grocery_list_where_approve_was():
     assert 'id="week-approve-btn">Approve the week</button>' in out["draft"]
     assert "wk-review-go" not in out["draft"]
     assert out["none"] == ""
-    # One dock on the review, whichever state it is in (test_nav_v2_back_and_dock).
-    assert SHELL_JS.count('<div class="wk-decide dock">') == 1
+    # The review's dock and the Plan root's (planDockHtml, 2026-10-30 — a
+    # draft's Approve alone) are the two .wk-decide docks
+    # (test_nav_v2_back_and_dock).
+    assert SHELL_JS.count('<div class="wk-decide dock">') == 2
 
 
 def test_the_review_dock_opens_the_list_and_never_the_freezer_step_first():

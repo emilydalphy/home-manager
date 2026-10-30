@@ -233,23 +233,23 @@ _ADULTS = "var shellWho = { adults: [{id: 1, name: 'Emily'}, {id: 2, name: 'Vine
 
 
 @_needs_node
-def test_a_row_still_to_do_has_the_door_and_a_reheat_or_done_row_does_not():
+def test_a_move_still_to_do_has_the_door_in_its_sheet_and_a_reheat_or_done_one_does_not():
+    """The declutter (Emily, 2026-10-30): the who-button came off every row;
+    "Who's on it" is the sheet tapping the row opens."""
     rows = {
         "cook": _move("cook", "cook:1", "Chicken Skewers", meta="35 min", owner=1, owner_name="Emily"),
         "cook_nobody": _move("cook", "cook:2", "Salad", meta="10 min"),
         "done": _move("cook", "cook:3", "Toast", meta="5 min", done=True),
         "reheat": _move("reheat", "reheat:4", "Leftovers", meta="reheat"),
     }
-    out = _node(_ADULTS + "console.log(JSON.stringify({%s}));" % ",".join(
-        "%s: dayStripNodeHtml(%s, %s)" % (k, json.dumps(m), "'done'" if m["done"] else "'later'")
-        for k, m in rows.items()))
+    out = _node(_ADULTS + "console.log(JSON.stringify({%s, row: dayStripNodeHtml(%s, 'later')}));" % (",".join(
+        "%s: todayMoveSheetHtml(%s)" % (k, json.dumps(m)) for k, m in rows.items()), json.dumps(rows["cook"])))
     assert 'data-move-who="cook:1"' in out["cook"]
-    assert 'aria-label="Who’s on it? Emily"' in out["cook"]
-    assert 'aria-label="Who’s on it? Nobody yet"' in out["cook_nobody"]
+    assert "Who’s on it" in out["cook"] and ">Emily<" in out["cook"]
+    assert ">Nobody yet<" in out["cook_nobody"]
     assert "data-move-who" not in out["done"]
     assert "data-move-who" not in out["reheat"]
-    # The name is still the meta line's, not the door's.
-    assert re.search(r'<span class="day-node-meta">Emily’s cooking · 35 min</span>', out["cook"])
+    assert "data-move-who" not in out["row"] and "day-node-who" not in out["row"], "no door on the row"
 
 
 @_needs_node
@@ -261,14 +261,17 @@ def test_no_adults_on_record_no_door():
 
 
 @_needs_node
-def test_a_shop_has_one_door_and_says_whose_it_is_on_its_first_stop():
+def test_on_shop_day_the_shop_is_one_line_that_opens_shop():
+    """The declutter (Emily, 2026-10-30): on shop day the Shop card is one
+    line, "Shop today · Costco, Metro ›", and a tap opens Shop — it carries
+    no who-button (whose shop it is is not on Today's line; noted in the
+    branch's PR)."""
     move = _move("shop", "shop:x", "Shop for tonight", tickable=False, owner=2, owner_name="Vineeth",
                  stops=[{"store": "Costco", "count": 2, "items": ["orzo", "salmon"]},
                         {"store": "Metro", "count": 1, "items": ["milk"]}])
-    html = _node(_ADULTS + "console.log(JSON.stringify(todayShopRowsHtml(%s, 'later')));" % json.dumps(move))
-    assert html.count("data-move-who") == 1
-    assert "Vineeth’s · orzo, salmon" in html
-    assert html.count("Vineeth’s") == 1
+    html = _node(_ADULTS + "console.log(JSON.stringify(todayShopTodayHtml([%s])));" % json.dumps(move))
+    assert "Costco, Metro" in html and 'data-shop-open="1"' in html
+    assert "data-move-who" not in html
 
 
 @_needs_node

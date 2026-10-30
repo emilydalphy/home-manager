@@ -213,6 +213,16 @@ run rather than a vibe. They apply to every screen, mockup or built.*
   attendance, holiday and away saves). Still open: a Save button under the open-slot
   options (they apply on tap today). Start cooking records the real start since 2026-09-13
   (branch `worktree-real-start-time`) and says so once, only when the clock moved.
+- **S11 · Quiet rows: one button stands out, the rest is one tap in.** *(Emily,
+  2026-10-30, approving the "Combined" Plan, Shop and Today mockups on the Less clutter
+  canvas.)* A screen has one button that stands out (its dock's primary); a row carries
+  its name, one short line and, where it opens something, a chevron — never a row of
+  buttons. Everything a row can do is in the sheet tapping it opens (`openQuietSheet` in
+  `shell.js`; Plan's Swap / Tweak / Move / See the recipe, Shop's store, amount and
+  answers, Today's who's-on-it and action). Ticking stays on the row: a tick is the one
+  thing a list row is for. And a leftover meal's row says just **"Leftovers"** — never
+  "Leftovers from Thursday's dinner" (standing copy rule, everywhere). **Test:** cover
+  the dock — is anything left on the screen that looks like a button on every row?
 
 ---
 

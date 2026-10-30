@@ -140,6 +140,13 @@ def _harness() -> str:
         + _extract("escapeHtml", SHELL_JS) + "\n"
         + _extract("mealsMoreRowHtml", SHELL_JS) + "\n"
         + _extract("mealsMoreGroupHtml", SHELL_JS) + "\n"
+        # "Plan the week after" (2026-10-30) reads the next stretch.
+        + "function nextPeriodFor() { return { start_date: '2026-09-28', day_count: 7 }; }\n"
+        + "function planNextLabel() { return 'Plan next week'; }\n"
+        + "function dayName() { return 'Monday, Sep 28'; }\n"
+        + "function planNextWeek() { CALLS.push(['planNextWeek']); }\n"
+        + _extract("planAfterTitle", SHELL_JS) + "\n"
+        + _extract("planAfterLine", SHELL_JS) + "\n"
         + _extract("renderMealsMoreSheet", SHELL_JS) + "\n"
         + _HARNESS_TAIL
     )
@@ -188,7 +195,10 @@ console.log(JSON.stringify(ROWS.innerHTML));
 
 
 @_needs_node
-def test_an_approved_week_shows_reopen_and_check_under_this_week():
+def test_an_approved_week_shows_reopen_and_plan_the_week_after_under_this_week():
+    """UPDATED 2026-10-30 (the declutter): "Check the week" folded into
+    "See the whole week" (the Plan root shows every meal by the week or by
+    the day), and "Plan the week after" came in from the approved dock."""
     data = {"weekly_plan_id": 9, "status": "approved"}
     out = _run(_harness() + f"""
 var weekState = {{ data: {json.dumps(data)} }};
@@ -197,7 +207,9 @@ tap('wk-more-reopen');
 console.log(JSON.stringify({{ html: ROWS.innerHTML, calls: CALLS }}));
 """)
     assert ">This week<" in out["html"]
-    assert 'id="wk-more-reopen"' in out["html"] and 'id="wk-more-check"' in out["html"]
+    assert 'id="wk-more-reopen"' in out["html"] and 'id="wk-more-plan-next"' in out["html"]
+    assert 'id="wk-more-check"' not in out["html"]
+    assert ">Plan the week after<" in out["html"] and "Starts Monday, Sep 28" in out["html"]
     # Never both eyebrows' week-scoped rows at once.
     assert "wk-more-try-again" not in out["html"] and "wk-more-discard" not in out["html"]
     assert out["calls"] == [["closeMealsMoreSheet"], ["reopenWeek", {"id": "week-panel"}, data]]

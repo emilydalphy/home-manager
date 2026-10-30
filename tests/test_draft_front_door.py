@@ -2,9 +2,9 @@
 The draft's front door (Emily, 2026-09-21 — boards A2, C2, C3), run
 against shell.js's own renderers under node:
 
-  1. Re-plan is one tap from the draft — an apricot pill in the band, on a
-     draft and on an approved week, opening the intake for the week on
-     screen; "Re-plan this week" and "Pick my own days" leave More ···.
+  1. (Since 2026-10-30, the declutter) the band carries More ··· only —
+     the Re-plan pill and the Meals | Schedule toggle went; re-planning is
+     More's "Change my answers" and "Try again".
   2. "What we're eating" is the front door again, "Which days" behind the
      toggle: the band carries the opener and the two-way toggle; the menu
      is three cards (Snacks when there are any), one row per dish with the
@@ -54,19 +54,15 @@ def _band_prelude() -> str:
         + "function renderMealsStep() { CALLS.push(['render']); }\n"
         + _extract("weekPlanState", SHELL_JS) + "\n"
         + _extract_var("WK_ICONS", SHELL_JS) + "\n"
-        + _extract_var("DRAFT_VIEWS", SHELL_JS) + "\n"
         + _extract("draftView", SHELL_JS) + "\n"
         + _extract("weekBandExtras", SHELL_JS) + "\n"
-        + _extract("bandNextLabel", SHELL_JS) + "\n"
-        + _extract("weekReplanPillHtml", SHELL_JS) + "\n"
-        + _extract("weekBandActionsHtml", SHELL_JS) + "\n"
+        + _extract("weekBandMoreHtml", SHELL_JS) + "\n"
+        + "function openMealsMoreSheet() { CALLS.push(['more']); }\n"
         + _extract("planEntryLabel", SHELL_JS) + "\n"
         + _extract("addDaysLocal", SHELL_JS) + "\n"
         + _extract("nextPeriodFor", SHELL_JS) + "\n"
         + _extract("planNextLabel", SHELL_JS) + "\n"
         + _extract("planNextWeek", SHELL_JS) + "\n"
-        + _extract("weekDraftSegHtml", SHELL_JS) + "\n"
-        + _extract("weekBandTailHtml", SHELL_JS) + "\n"
         + _extract("fillWeekBandExtras", SHELL_JS) + "\n"
         + _extract("replanWeek", SHELL_JS) + "\n"
     )
@@ -87,6 +83,7 @@ function makeBand() {
   var top = el('root-band-top');
   var band = el('root-band');
   var pill = el('wk-replan');
+  var more = el('wk-band-more');
   var planNext = el('wk-band-plan-next');
   var menuBtn = el('seg'); menuBtn.attrs['data-wk-view'] = 'menu';
   var daysBtn = el('seg'); daysBtn.attrs['data-wk-view'] = 'days';
@@ -94,6 +91,7 @@ function makeBand() {
     if (sel === '.root-band-tools') return tools;
     if (sel === '.root-band-top') return top;
     if (sel === '#wk-replan') return band.html.indexOf('id="wk-replan"') !== -1 ? pill : null;
+    if (sel === '#wk-band-more') return band.html.indexOf('id="wk-band-more"') !== -1 ? more : null;
     if (sel === '#wk-band-plan-next') return band.html.indexOf('id="wk-band-plan-next"') !== -1 ? planNext : null;
     return null;
   };
@@ -106,69 +104,42 @@ function makeBand() {
   // The tools' inserts count as the band's for the pill lookup.
   tools.insertAdjacentHTML = function (where, html) { tools.html += html; band.html += '|tools:' + html; };
   top.insertAdjacentHTML = function (where, html) { top.html += '|' + where + ':' + html; band.html += '|top-' + where + ':' + html; };
-  return { slot: slot, band: band, tools: tools, top: top, pill: pill, planNext: planNext, menuBtn: menuBtn, daysBtn: daysBtn };
+  return { slot: slot, band: band, tools: tools, top: top, pill: pill, more: more, planNext: planNext, menuBtn: menuBtn, daysBtn: daysBtn };
 }
 """
 
 
 # ---------------------------------------------------------------------------
-# 1. Re-plan is one tap from the draft
+# 1. The band (since the declutter, Emily 2026-10-30): More ··· and nothing
+#    else — the Re-plan pill, the draft's "Plan the week" and the Meals |
+#    Schedule toggle went. Re-planning is More's "Change my answers" /
+#    "Try again"; the Plan root (planWeekHtml) is tests/test_declutter_2026_10_30.py.
 # ---------------------------------------------------------------------------
 
 @_needs_node
-def test_the_pill_sits_in_the_band_on_a_draft_and_on_an_approved_week_but_not_on_an_empty_plan():
+def test_the_band_carries_more_on_a_draft_and_an_approved_week_and_nothing_on_an_empty_plan():
     days = _week()
-    out = _run(_band_prelude() + f"""
-console.log(JSON.stringify({{
-  draft: weekBandExtras({json.dumps(_draft(days))}),
-  set: weekBandExtras({json.dumps(_approved(days))}),
-  none: weekBandExtras({{}}),
-  pill: weekReplanPillHtml()
-}}));""")
-    assert out["draft"]["pill"] is True and out["set"]["pill"] is True
-    assert out["none"] is None, "no plan, nothing to re-plan — the entry card is the way in"
-    pill = out["pill"]
-    assert pill.startswith('<button type="button" class="wk-replan" id="wk-replan"')
-    assert "<svg" in pill and pill.endswith("Re-plan</button>"), "the swap icon and the word"
-
-
-@_needs_node
-def test_the_pill_goes_first_in_the_bands_tools_and_opens_the_intake_for_the_week_on_screen():
-    # On an approved week the pill sits in the tools, top right. (A draft's
-    # pill moved to the row under the brand, beside "Plan next week",
-    # 2026-09-27 — see test_plan_next_on_draft.py.)
-    days = _week()
-    data = dict(_approved(days), period_start_date="2026-09-21", week_start_date="2026-09-21", day_count=5)
     out = _run(_band_prelude() + _BAND_DOM + f"""
-weekState.data = {json.dumps(data)};
+var res = {{ draft: weekBandExtras({json.dumps(_draft(days))}),
+  set: weekBandExtras({json.dumps(_approved(days))}), none: weekBandExtras({{}}) }};
+weekState.data = {json.dumps(_draft(days))};
 var b = makeBand();
 fillWeekBandExtras({{}}, b.slot, weekBandExtras(weekState.data));
-b.pill.handlers.click();
-console.log(JSON.stringify({{ tools: b.tools.html, calls: CALLS }}));""")
-    assert out["tools"].startswith('<button type="button" class="wk-replan"'), "top right, before the gear"
-    assert out["calls"] == [["2026-09-21", 5]], "the plan's own start and length"
+b.more.handlers.click();
+res.tools = b.tools.html; res.top = b.top.html; res.calls = CALLS;
+console.log(JSON.stringify(res));""")
+    assert out["draft"] == {"more": True} and out["set"] == {"more": True}
+    assert out["none"] is None
+    assert out["tools"].startswith('<button type="button" class="root-band-more" id="wk-band-more"'), "top right, before the gear"
+    assert "wk-replan" not in out["tools"] and out["top"] == "", "no pill, no second row under the brand"
+    assert out["calls"] == [["more"]]
 
 
-def test_the_pill_is_the_one_road_and_re_plan_left_the_more_sheet():
-    """Since 2026-09-21 (board D4) the dock's quiet "Plan it differently"
-    is gone too — it was the pill under a second name — so the pill is the
-    only caller of replanWeek."""
+def test_re_planning_is_in_more_and_the_pills_are_gone():
     fill = _extract("fillWeekBandExtras", SHELL_JS)
-    assert "tools.insertAdjacentHTML('afterbegin', weekReplanPillHtml())" in fill
-    assert "top.insertAdjacentHTML('afterend', weekBandActionsHtml(extras.next))" in fill
-    assert "pill.addEventListener('click', function () { replanWeek(); })" in fill
-    wiring = _extract("wireMealsStep", SHELL_JS)
-    assert "'#wk-plan-differently'" not in wiring and ">Plan it differently<" not in SHELL_JS
-    assert SHELL_JS.count("{ replanWeek(); }") == 1, "one door: the band's pill"
-    replan = _extract("replanWeek", SHELL_JS)
-    assert "startPlanningWeek(start, dayCount)" in replan
+    for gone in ("weekReplanPillHtml", "weekBandActionsHtml", "data-wk-view", "replanWeek"):
+        assert gone not in fill, gone
     sheet = _extract("renderMealsMoreSheet", SHELL_JS)
-    for gone in ("wk-more-replan", "week-period-open", "PERIOD_PICKER_COPY", "wirePeriodPicker", "planEntryLabel"):
-        assert gone not in sheet, gone
-    # Mockup "10C" (2026-09-25): "Drop this draft" was renamed "Keep my
-    # approved week" and every row now carries an icon and a
-    # what-happens-next line — see test_the_more_sheet_is_icon_rows_
-    # under_two_eyebrows below for the fuller check.
     for kept in ("'wk-more-try-again', WK_ICONS.redo, 'Try again'",
                  "'wk-more-change', WK_ICONS.pencil, 'Change my answers'",
                  "'wk-more-discard', WK_ICONS.bin, 'Keep my approved week'",
@@ -177,38 +148,14 @@ def test_the_pill_is_the_one_road_and_re_plan_left_the_more_sheet():
                  "'wk-more-reset', WK_ICONS.resetArrow, 'Start over'",
                  "'wk-more-help', WK_ICONS.help, 'Need a hand?'"):
         assert kept in sheet, kept
+    assert "wk-more-check" not in sheet, "Check the week folded into See the whole week"
+    assert "'wk-more-plan-next'" in sheet
 
-
-def test_the_pill_is_a_real_44px_button_in_the_bands_accent():
-    rule = SHELL_CSS[SHELL_CSS.index(".wk-replan {"):SHELL_CSS.index("}", SHELL_CSS.index(".wk-replan {"))]
-    assert "height: 36px" in rule and "background: var(--apricot-light)" in rule and "color: var(--on-accent-ink)" in rule
-    assert '.wk-replan::before { content: ""; position: absolute; inset: -4px 0; }' in SHELL_CSS
-    assert re.search(r"#[0-9a-fA-F]{3,6}\b", rule) is None, "every colour goes through a token"
 
 
 # ---------------------------------------------------------------------------
 # 2. What we're eating is the front door; Which days behind the toggle
 # ---------------------------------------------------------------------------
-
-@_needs_node
-def test_the_band_carries_the_opener_and_the_toggle_with_what_were_eating_selected():
-    days = _week()
-    data = dict(_draft(days), draft_opener=["Mexican for lunch Mon–Thu, as you asked.", "Nine new dishes — nothing from the last two weeks."])
-    out = _run(_band_prelude() + f"""
-var extras = weekBandExtras({json.dumps(data)});
-console.log(JSON.stringify({{ extras: extras, tail: weekBandTailHtml(extras), set: weekBandTailHtml(weekBandExtras({json.dumps(_approved(days))})) }}));""")
-    # draft_opener is still computed and still on extras.lead (declutter,
-    # 2026-09-25: Emily asked the summary paragraph off the draft's band —
-    # only the display goes; the underlying field still feeds anything
-    # else that reads it), but weekBandTailHtml no longer draws it.
-    assert out["extras"]["view"] == "menu" and out["extras"]["lead"] == data["draft_opener"]
-    tail = out["tail"]
-    assert "wk-draft-lead" not in tail, "the opener paragraph is no longer shown"
-    assert re.search(r'class="wk-draft-seg-btn is-on" role="tab" aria-selected="true" data-wk-view="menu">Meals<', tail)
-    assert re.search(r'class="wk-draft-seg-btn" role="tab" aria-selected="false" data-wk-view="days">Schedule<', tail)
-    assert tail.count("wk-draft-seg-btn") == 2
-    assert out["set"] == "", "an approved week has no toggle and no opener"
-
 
 @_needs_node
 def test_the_toggle_remembers_its_side_for_the_session_and_a_new_draft_opens_on_the_menu():
@@ -221,21 +168,6 @@ var b = { weekly_plan_id: 8, status: 'draft', days: [{}] };
 var fresh = draftView(b);
 console.log(JSON.stringify([first, again, fresh]));""")
     assert out == ["menu", "days", "menu"]
-
-
-@_needs_node
-def test_a_tap_on_the_toggle_switches_the_view_and_redraws_the_root():
-    days = _week()
-    out = _run(_band_prelude() + _BAND_DOM + f"""
-weekState.data = {json.dumps(_draft(days))};
-var b = makeBand();
-fillWeekBandExtras({{}}, b.slot, weekBandExtras(weekState.data));
-b.menuBtn.handlers.click();
-var same = CALLS.slice();
-b.daysBtn.handlers.click();
-console.log(JSON.stringify({{ same: same, view: weekState.draftView, calls: CALLS }}));""")
-    assert out["same"] == [], "tapping the side already selected does nothing"
-    assert out["view"] == "days" and out["calls"] == [["render"]]
 
 
 def _menu_week():
@@ -311,19 +243,6 @@ def test_a_tap_inside_a_menu_row_is_about_the_dishs_first_day_ahead():
                + "var day = wkDayForTap(btn);\n"
                + "console.log(JSON.stringify([day.date, weekState.selectedIndex]));")
     assert out == [_WED, 2]
-
-
-def test_the_toggle_and_the_dock_more_follow_the_system():
-    seg = SHELL_CSS[SHELL_CSS.index(".wk-draft-seg-btn {"):SHELL_CSS.index("}", SHELL_CSS.index(".wk-draft-seg-btn {"))]
-    assert "min-height: 44px" in seg, "rule 6 — the board's 38px is not a tap target"
-    assert ".wk-draft-seg-btn.is-on { background: var(--surface); color: var(--ink-strong); }" in SHELL_CSS
-    track = SHELL_CSS[SHELL_CSS.index(".wk-draft-seg {"):SHELL_CSS.index("}", SHELL_CSS.index(".wk-draft-seg {"))]
-    assert "background: var(--spruce-raised)" in track, "chips on spruce only"
-    more = SHELL_CSS[SHELL_CSS.index(".wk-dock-more {"):SHELL_CSS.index("}", SHELL_CSS.index(".wk-dock-more {"))]
-    assert "width: 48px" in more and "height: 48px" in more, "rule 6, with room to spare"
-    assert "border-radius: var(--radius-pill)" in more
-    section = SHELL_CSS[SHELL_CSS.index("The draft's front door"):SHELL_CSS.index(".wk-dock-more:hover")]
-    assert re.search(r":\s*#[0-9a-fA-F]{3,6}\b", section) is None, "every colour goes through a token"
 
 
 # ---------------------------------------------------------------------------

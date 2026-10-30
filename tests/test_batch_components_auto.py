@@ -426,4 +426,7 @@ def test_the_approve_toast_leaves_the_batched_line_to_all_set():
     body = body[: body.index("\n  }\n")]
     assert "batched_line" not in body and "batchedLine" not in body
     assert "var approvedToast = 'Meals for the week are saved' +" in body
-    assert "showToast(approvedToast, null, (approval.conflicts_note || takeoverNote) ? 9000 : 6000);" in body
+    # Since 2026-10-30 approving stays on Plan, so the toast carries the
+    # way to the list ("See the list"); the hold is unchanged.
+    assert "(approval.conflicts_note || takeoverNote) ? 9000 : 6000);" in body
+    assert "showToast(approvedToast, { label: 'See the list'" in body

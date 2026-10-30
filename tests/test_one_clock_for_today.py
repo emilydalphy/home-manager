@@ -24,7 +24,7 @@ from app.tools import cooker as _cooker
 
 from test_plan_cards_2026_09_18 import _run
 from test_week_seven_tiles import _extract
-from test_plan_next_on_draft import SHELL_JS
+from test_plan_cards_2026_09_18 import SHELL_JS
 
 _needs_node = pytest.mark.skipif(shutil.which("node") is None, reason="node is needed to run the functions")
 

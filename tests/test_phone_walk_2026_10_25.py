@@ -192,8 +192,11 @@ def test_escape_in_a_field_with_words_in_it_keeps_the_sheet_and_the_words():
 def test_every_listed_scrim_is_a_real_scrim_the_shell_has():
     # The list is ids, so a renamed scrim would fail silently: check each.
     html = (REPO / "static" / "shell.html").read_text(encoding="utf-8")
-    ids = re.findall(r"'([a-z-]+-scrim)'", _ESC)
-    assert len(ids) == 11  # + the Kitchen tab's item sheet (2026-10-26)
+    listed = re.search(r"ESCAPE_CLOSES_SCRIMS = \[(.*?)\]", _ESC, re.S).group(1)
+    ids = re.findall(r"'([a-z-]+-scrim)'", listed)
+    # + the Kitchen tab's item sheet (2026-10-26), + the quiet sheet a row
+    # opens on Plan, Shop and Today (2026-10-30)
+    assert len(ids) == 12
     for sid in ids:
         assert f'id="{sid}"' in html or f"id = '{sid}'" in SHELL_JS, sid
 
