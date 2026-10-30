@@ -3942,14 +3942,33 @@ def remove_grocery_item(item_id: int) -> dict:
     conn = get_conn()
     require_household_row(conn, "grocery_items", item_id, label="grocery list item")
     row = conn.execute(
-        "SELECT id, staple_id, status, removed_by FROM grocery_items WHERE id = ? AND household_id = ?",
+        "SELECT id, item, staple_id, status, removed_by, source_weekly_plan_id FROM grocery_items "
+        "WHERE id = ? AND household_id = ?",
         (item_id, household_id()),
     ).fetchone()
+    from . import staples as _staples
+    covered = _staples.due_staple_this_line_covers(conn, row) if row is not None else None
+    if covered is not None:
+        # A person's own "eggs" was what kept the due Eggs staple off the
+        # list; deleting it outright put "Eggs · Probably running low"
+        # straight back on the next read — the household had just said no
+        # eggs this trip (defect hunt, 2026-10-30). The line becomes the
+        # staple's (a person's line may carry staple_id) and goes the
+        # staple line's way below: not this trip, and Undo brings back
+        # this very row, their amount on it.
+        conn.execute(
+            "UPDATE grocery_items SET staple_id = ? WHERE id = ? AND household_id = ?",
+            (covered, item_id, household_id()),
+        )
+        row = conn.execute(
+            "SELECT id, item, staple_id, status, removed_by, source_weekly_plan_id FROM grocery_items "
+            "WHERE id = ? AND household_id = ?",
+            (item_id, household_id()),
+        ).fetchone()
     if row is not None and row["staple_id"] and row["status"] == "needed":
         # Removing a staple's suggestion is "not this trip" — otherwise the
         # next list read would put it straight back. Soft-removed rather
         # than deleted, so the staple's own Undo can restore it.
-        from . import staples as _staples
         _staples.note_line_removed(conn, row, how="skip")
         conn.execute(
             "UPDATE grocery_items SET status = 'removed', removed_by = ?, removed_at = datetime('now') "
