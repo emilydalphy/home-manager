@@ -590,3 +590,42 @@ def test_sign_out_lands_on_a_page_that_forgets_the_drafts(client):
     assert re.search(r"signed_out=1[\s\S]{0,200}forgetOnboardingDrafts\(\)", _LOGIN)
     # Goodbye is only ever reached after a delete or a leave.
     assert "forgetOnboardingDrafts();" in _GOODBYE
+
+
+def _fn(page: str, name: str) -> str:
+    start = page.index("function " + name + "(")
+    depth, j = 0, page.index("{", start)
+    while True:
+        depth += {"{": 1, "}": -1}.get(page[j], 0)
+        if depth == 0:
+            break
+        j += 1
+    return page[start:j + 1]
+
+
+@pytest.mark.parametrize("page", [_LOGIN, _GOODBYE], ids=["login", "goodbye"])
+def test_the_signed_out_pages_forget_the_grocery_copy(page):
+    """Since the worker opens the cached shell offline (2026-10-30), a
+    grocery copy left behind by a sign-out that never went through the
+    shell's own Sign out (onboarding's "Not you? Sign out", /logout typed)
+    showed the last household's list to a signed-out phone with no signal."""
+    script = _fn(page, "forgetGroceryCopy") + r"""
+const STORE = new Map([['pomona.grocery.copy.h1', '{}'], ['pomona.grocery.queue.h1', '[]'],
+  ['pomona.grocery.shops.h1', '{}'], ['pomona.grocery.household', '1'], ['pomona-appearance', 'dark']]);
+const window = { localStorage: {
+  get length() { return STORE.size; }, key(i) { return [...STORE.keys()][i] || null; },
+  removeItem(k) { STORE.delete(k); }, getItem(k) { return STORE.get(k) || null; } } };
+forgetGroceryCopy();
+const left = [...STORE.keys()];
+window.localStorage = { get length() { throw new Error('SecurityError'); } };
+forgetGroceryCopy();   // a private window: no throw
+console.log(JSON.stringify(left));
+"""
+    res = nodeharness.run_node(script, timeout=30)
+    assert res.returncode == 0, res.stderr
+    assert json.loads(res.stdout) == ["pomona-appearance"]
+
+
+def test_the_grocery_copy_is_forgotten_only_on_a_signed_out_landing():
+    assert re.search(r"signed_out=1[\s\S]{0,200}forgetGroceryCopy\(\)", _LOGIN)
+    assert "\nforgetGroceryCopy();" in _GOODBYE

@@ -48,7 +48,17 @@
 // never cached here: the grocery list's offline copy is page-level
 // (static/grocery-offline.js), where it can be keyed per household and
 // carry the ticks made without signal.
-const CACHE_NAME = "pomona-shell-v7";
+//
+// v7 -> v8 (2026-10-30): the worker never controlled a single page. shell.js
+// registered it from /static/ with no scope, and a worker's default scope is
+// its own folder — so "/", "/grocery" and the rest were never its clients,
+// the fallback above never ran, and a reload in a store with no signal got
+// the browser's offline page. It is registered with scope "/" now (the
+// server sends Service-Worker-Allowed: /). Seeing the whole site means it
+// now sees non-GET requests too (the sign-in form's POST /login is a
+// navigation): those go straight to the network, untouched — the Cache API
+// refuses to store a POST, and replaying one from cache would be wrong.
+const CACHE_NAME = "pomona-shell-v8";
 // Where an offline navigation lands when its own URL was never cached.
 // Every entry serves shell.html; the order only decides which copy is tried
 // first.
@@ -98,6 +108,8 @@ self.addEventListener("fetch", (event) => {
 
   // Never cache API calls — always hit the network for live data.
   if (url.pathname.startsWith("/api/")) return;
+  // Only GETs are cached or served from cache (see the v8 note above).
+  if (event.request.method && event.request.method !== "GET") return;
 
   const isVersioned =
     event.request.mode === "navigate" ||
@@ -117,7 +129,10 @@ self.addEventListener("fetch", (event) => {
           // A navigation that ended somewhere else (signed out -> /login)
           // is not the shell, and caching it under the shell's URL would
           // make the offline fallback a sign-in screen.
-          if (!isNavigation || (res.ok && !res.redirected)) {
+          // And only a good answer, for scripts and styles too (review,
+          // 2026-10-30): a 401/404/5xx stored over the good shell.js would
+          // be what an offline reload ran.
+          if (res.ok && (!isNavigation || !res.redirected)) {
             const copy = res.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
           }

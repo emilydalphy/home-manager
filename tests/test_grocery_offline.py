@@ -409,7 +409,9 @@ def test_the_shops_answer_is_kept_with_the_copy():
 def test_the_shell_reads_the_kept_shops_answer_when_memory_cannot_load():
     block = SHELL_JS[SHELL_JS.index("async function groLoadUsualStores()"):]
     block = block[:block.index("async function groLoadStorePrefs()")]
-    assert "groOffline.saveShops({ usualStores: groceryState.usualStores, dismissed: groceryState.storesPromptDismissed })" in block
+    # The save is groSaveShopsCopy since 2026-10-30 (it is also called when
+    # the answer changes on Shop — see the two "survive(s) a reload" tests).
+    assert "groSaveShopsCopy();" in block
     assert "groOffline.readShops()" in block
 
 
@@ -512,9 +514,67 @@ def test_a_signed_out_redirect_is_never_cached_as_the_shell():
     assert got == {"cachedLogin": False, "cachedShell": "shell"}
 
 
+@_needs_node
+def test_a_post_navigation_goes_straight_to_the_network():
+    """Scoped to the whole site (2026-10-30), the worker sees the sign-in
+    form's POST /login, which is a navigation. It must not answer it: the
+    Cache API refuses to store a POST, and an offline POST must never be
+    'answered' with the cached shell."""
+    got = _node(_SW_HARNESS + """
+      const ev = { request: { url: 'http://app.test/login', mode: 'navigate', method: 'POST' }, responded: null,
+        respondWith(p) { this.responded = Promise.resolve(p); } };
+      listeners.fetch(ev);
+      const get = fetchEvent('/grocery', 'navigate');
+      out({ post: ev.responded === null, get: get.responded !== null });
+    """)
+    assert got == {"post": True, "get": True}
+
+
+def test_the_worker_is_registered_for_the_whole_site():
+    """Registered bare from /static/, its scope was /static/ — it never
+    controlled "/" or "/grocery", so an offline reload of Shop got the
+    browser's 'no internet' page (driven in chromium, 2026-10-30:
+    registration scope http://host/static/, controller null on /grocery)."""
+    assert "navigator.serviceWorker.register('/static/service-worker.js', { scope: '/' })" in SHELL_JS
+
+
+def test_the_server_allows_the_worker_a_site_wide_scope(client):
+    """Without this header the browser refuses scope '/' for a script
+    served from /static/ — the register call above would reject and no
+    worker would be installed at all. Public path: the sign-in page
+    registers nothing, but a signed-out update check must still see it."""
+    res = client.get("/static/service-worker.js")
+    assert res.status_code == 200
+    assert res.headers.get("Service-Worker-Allowed") == "/"
+    # Only the worker: every other file keeps the default.
+    assert "Service-Worker-Allowed" not in client.get("/static/api.js").headers
+
+
+@_needs_node
+def test_a_failed_script_response_never_replaces_the_cached_good_copy():
+    """Review: every non-navigation .js/.css answer was cached, a 401, 404
+    or 500 included — over the good copy an offline reload would run."""
+    got = _node(_SW_HARNESS + """
+      (async () => {
+        store.set('http://app.test/static/shell.js', { ok: true, body: 'good' });
+        for (const status of [401, 404, 500]) {
+          fetch = async () => ({ ok: false, status, redirected: false, clone() { return this; }, body: 'bad' });
+          await fetchEvent('/static/shell.js').responded;
+          await new Promise((r) => setTimeout(r, 5));
+        }
+        const afterBad = store.get('http://app.test/static/shell.js').body;
+        fetch = async () => ({ ok: true, status: 200, redirected: false, clone() { return this; }, body: 'new' });
+        await fetchEvent('/static/shell.js').responded;
+        await new Promise((r) => setTimeout(r, 5));
+        out({ afterBad, afterGood: store.get('http://app.test/static/shell.js').body });
+      })();
+    """)
+    assert got == {"afterBad": "good", "afterGood": "new"}
+
+
 def test_service_worker_cache_version_was_bumped_for_the_new_fallback():
     src = SW.read_text(encoding="utf-8")
-    assert 'const CACHE_NAME = "pomona-shell-v7";' in src
+    assert 'const CACHE_NAME = "pomona-shell-v8";' in src
     assert 'if (url.pathname.startsWith("/api/")) return;' in src
 
 
@@ -792,6 +852,119 @@ def test_the_shops_answer_survives_a_reload_with_no_signal():
     """)
     assert got["online"] == {"shops": ["Loblaws"], "card": False}
     assert got["offline"] == {"shops": ["Loblaws"], "card": False}
+
+
+# A first visit: /api/memory answers no shops and the question unanswered.
+_FIRST_VISIT_MEMORY = """
+const _aliveFetch = fetch;
+fetch = (url, opts) => (ALIVE && url === '/api/memory'
+  ? Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({ usual_stores: [], stores_prompt_dismissed: false }) })
+  : _aliveFetch(url, opts));
+function offlineReload() {
+  ALIVE = false;
+  groceryState.usualStores = []; groceryState.storesPromptDismissed = false; groceryState.storesPromptOpen = false;
+  return groLoadUsualStores();
+}
+"""
+
+
+@_needs_node
+def test_shops_picked_in_the_store_survive_a_reload_with_no_signal():
+    """The shops copy was only written when /api/memory was READ, so shops
+    picked on this screen were not in it until the next read — answer the
+    card in the store, lose signal, reload: the card was back over the
+    list and the shops just picked were gone (driven in chromium,
+    2026-10-30)."""
+    got = _run_shell(_FIRST_VISIT_MEMORY + """
+      (async () => {
+        await groLoadUsualStores();
+        const before = groStoresPromptShouldShow();
+        await groSetUsualStores(['Loblaws', 'Costco']);
+        await offlineReload();
+        out({ before, shops: groceryState.usualStores, card: groStoresPromptShouldShow() });
+      })();
+    """)
+    assert got == {"before": True, "shops": ["Loblaws", "Costco"], "card": False}
+
+
+@_needs_node
+def test_one_list_is_fine_survives_a_reload_with_no_signal():
+    got = _run_shell(_FIRST_VISIT_MEMORY + """
+      (async () => {
+        await groLoadUsualStores();
+        const el = { dataset: { gro: 'stores-prompt-done' }, disabled: false };
+        onGroceryClick({ target: { closest: () => el } });
+        await new Promise((r) => setTimeout(r, 30));
+        await offlineReload();
+        out({ dismissed: groceryState.storesPromptDismissed, card: groStoresPromptShouldShow() });
+      })();
+    """)
+    assert got == {"dismissed": True, "card": False}
+
+
+@_needs_node
+def test_a_slow_older_read_of_the_list_never_draws_over_a_newer_one():
+    """Two quick ticks on a weak signal are two re-reads in flight. The
+    first one's reply, read by the server before the second tick's write,
+    landed LAST and drew that second line unticked again — for good (driven
+    in chromium, 2026-10-30: Eggs ticked and saved, the screen showed it
+    unticked). Here the older read's reply is held while a newer read sees
+    the server's later truth (Milk gone); the older reply must not win."""
+    got = _run_shell("""
+      (async () => {
+        await loadGrocery();
+        const _f = fetch;
+        let release = null;
+        const stale = JSON.parse(JSON.stringify(FIXTURE));
+        fetch = (url, opts) => (url.startsWith('/api/grocery-list/by-store') && !release
+          ? new Promise((r) => { release = () => r({ ok: true, status: 200, json: () => Promise.resolve(stale) }); })
+          : _f(url, opts));
+        const older = loadGrocery();
+        await new Promise((r) => setTimeout(r, 10));
+        FIXTURE.stores[0].sections = FIXTURE.stores[0].sections.slice(0, 1);   // Milk: the server's later answer
+        await loadGrocery();
+        const newer = groceryState.data.stores.Loblaws.sections.map((s) => s.items.map((it) => it.item));
+        release();
+        await older;
+        out({ newer, after: groceryState.data.stores.Loblaws.sections.map((s) => s.items.map((it) => it.item)) });
+      })();
+    """)
+    assert got["newer"] == [["Bananas"]]
+    assert got["after"] == [["Bananas"]], "the older, slower reply drew over the newer one"
+
+
+@_needs_node
+def test_an_older_good_read_still_draws_when_the_newer_one_failed():
+    """Review of the guard above: it dropped every read older than the last
+    one STARTED. Older read held, newer read cut off (the connection
+    blipped): "No signal" went up and stayed up on a good connection, and
+    the older good answer never drew. It must draw and clear the line."""
+    got = _run_shell("""
+      (async () => {
+        await loadGrocery();
+        const _f = fetch;
+        let release = null, calls = 0;
+        fetch = (url, opts) => {
+          if (!url.startsWith('/api/grocery-list/by-store')) return _f(url, opts);
+          calls += 1;
+          if (calls === 1) return new Promise((r) => { release = () => r(_f(url, opts)); });
+          return Promise.reject(new TypeError('Failed to fetch'));
+        };
+        FIXTURE.stores[0].sections = FIXTURE.stores[0].sections.slice(0, 1);   // the server's newer truth
+        const older = loadGrocery();
+        await new Promise((r) => setTimeout(r, 10));
+        await loadGrocery();                                                   // fails: no signal
+        const between = { offline: groceryState.offline, line: LINE.hidden };
+        release();
+        await older;
+        out({ between, offline: groceryState.offline, line: LINE.hidden,
+              items: groceryState.data.stores.Loblaws.sections.map((s) => s.items.map((it) => it.item)) });
+      })();
+    """)
+    assert got["between"] == {"offline": True, "line": False}
+    assert got["offline"] is False, "the No signal line stayed up after a good answer landed"
+    assert got["line"] is True
+    assert got["items"] == [["Bananas"]], "the older good read never drew"
 
 
 @_needs_node

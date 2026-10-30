@@ -444,6 +444,23 @@
 // Every onboarding draft on this device goes (static/onboarding.html keeps
 // one per household while setup is unfinished, with allergies, ages and
 // helpers' phone numbers in it). Wrapped: a private window has no storage.
+// The grocery list's offline copy, its unsent ticks and the shops answer
+// (every pomona.grocery.* key — static/grocery-offline.js; the same keys
+// shell.js's groForgetOffline clears on its own Sign out). The worker opens
+// the cached shell with no signal (2026-10-30), so a copy left here after
+// a sign-out reached any other way — onboarding's "Not you? Sign out",
+// /logout typed, a delete or leave — would show the last household's list
+// to whoever picks up the phone offline. Wrapped: private mode.
+function forgetGroceryCopy() {
+  try {
+    var store = window.localStorage, gone = [], i, k;
+    for (i = 0; i < store.length; i++) {
+      k = store.key(i);
+      if (k && k.indexOf('pomona.grocery.') === 0) gone.push(k);
+    }
+    for (i = 0; i < gone.length; i++) store.removeItem(gone[i]);
+  } catch (e) { /* private mode */ }
+}
 function forgetOnboardingDrafts() {
   try {
     var store = window.localStorage, gone = [], i, k;
@@ -456,7 +473,7 @@ function forgetOnboardingDrafts() {
 }
 // Only on the landing from /logout (?signed_out=1, 2026-10-09), not on
 // every visit: a session that ran out mid-setup signs back in to its draft.
-if (/(?:^|[?&])signed_out=1(?:&|$)/.test(window.location.search || '')) forgetOnboardingDrafts();
+if (/(?:^|[?&])signed_out=1(?:&|$)/.test(window.location.search || '')) { forgetOnboardingDrafts(); forgetGroceryCopy(); }
 </script>
 <script>
 /*
