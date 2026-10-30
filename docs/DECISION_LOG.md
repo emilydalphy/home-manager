@@ -13,6 +13,8 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A "½" a person adds is half** (2026-10-30, branch `overnight/hunt-preshop-offline-1030c`; `tests/test_grocery_glyph_fractions.py`). A standing want's quantity (add, scan confirm, the row's box) is spelled `1/2` via `recipes._ascii_fractions` before it is read.
+  Why: the list's parsers read no glyphs, so a scanned "½ lb" butter never tidied and the next "1 lb" stood beside it as "½ lb + 1 lb".
 - **A pre-shop Undo only undoes a drop** (2026-10-30, branch `overnight/hunt-preshop-offline-1030c`; `tests/test_pre_shop_undo_once.py`, one in `tests/test_staples.py`). `undo_pre_shop_drop` is a no-op on a line that is not `removed`.
   Why: a second Undo (double tap, or the other phone's stale "Already had on hand") put a BOUGHT line back to buy, and on a staple took back the previous trip's "plenty".
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:

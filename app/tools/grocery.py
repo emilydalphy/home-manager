@@ -1822,6 +1822,12 @@ def add_grocery_item(
     if source_weekly_plan_id is None:
         # A person's "24 pack" is one pack of 24, not 24 packs.
         quantity = _quantities.typed_multipack(quantity)
+        # A scanned recipe screenshot's "½ lb" is half a pound. The list's
+        # parsers read only "1/2": left as a glyph it never tidied ("½ lb"
+        # beside every other line's "8 oz") and the next add of the same
+        # thing stood beside it, "½ lb + 1 lb" (defect hunt, 2026-10-30).
+        from . import recipes as _recipes
+        quantity = _recipes._ascii_fractions(quantity)
     quantity = _quantities._normalize_grocery_quantity(quantity)
     # A recipe's "light soy sauce", "dark soy sauce" and "tamari" are one
     # bottle on the list (Emily, 2026-10-18) — renamed before the merge key
@@ -3896,8 +3902,11 @@ def update_grocery_item(item_id: int, quantity: str | None = None, category: str
         conn.close()
         raise ValueError(f"No grocery list item with id {item_id}.")
     if quantity is not None:
-        # Typed into the row's box: "24 pack" is one pack of 24.
+        # Typed into the row's box: "24 pack" is one pack of 24, and "1½ lb"
+        # is "1 1/2 lb" (see add_grocery_item).
         quantity = _quantities.typed_multipack(quantity)
+        from . import recipes as _recipes
+        quantity = _recipes._ascii_fractions(quantity)
     if quantity is not None and _quantities.same_shown_quantity(
         row["item"] or "", quantity.strip(), row["quantity"] or ""
     ):
