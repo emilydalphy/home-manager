@@ -35,6 +35,15 @@ why*, not duplicating the diff.
   Shop after a Kitchen action or Undo that moved a line (`homeMovedTheList`), after the add's Undo, and
   for chat's `home`-tagged inventory cards.
   Why: Kitchen and Shop contradicted each other, and the wrong side was "don't buy it".
+- **The diet check reads "Vegetarian diet"** (2026-10-28, defect hunt; branch
+  `overnight/hunt-moves-diet-1028`; tests `tests/test_diet_check_reads_the_diet.py`).
+  `coordination._diet_word` read only a ONE-word restriction, so a member saved as "Vegetarian
+  diet", "Lacto-ovo vegetarian", "Vegan diet" or "plant based diet" got the literal words and no
+  check: Chicken Tacos went through every door. A diet word plus only `_DIET_FILLER` words (diet,
+  lacto, ovo, strict…) is now the diet; never "mostly", "pollo" or a food ("vegetarian meat" is a
+  won't-eat). Not changed: duck/quail eggs, no-chicken broth and soy chorizo are still held for a
+  vegetarian — a first attempt to allow them let real chicken through ("chicken egg-fried rice");
+  it's a decision card now.
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
   (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.

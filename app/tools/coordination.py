@@ -359,10 +359,32 @@ _DIET_LABELS = frozenset(_DIET_FAMILIES) | {"plant based"}
 _VEGAN_LABELS = frozenset({"vegan", "plant based"})
 
 
+# Words that say nothing more than the diet itself, so "Vegetarian diet",
+# "Lacto-ovo vegetarian" and "Vegan diet" are the diet (defect hunt,
+# 2026-10-28). Read as a phrase, those three matched only the literal
+# words — a member saved as "Vegetarian diet" had Chicken Tacos planned,
+# swapped in and copied with no word from any door. Deliberately not here:
+# "mostly", "pollo" (a pollotarian eats chicken), "except", or any food —
+# "vegetarian meat" is somebody's won't-eat, not a diet. Lacto and ovo are
+# the vegetarian's meat-and-fish check; the eggs a lacto-vegetarian also
+# skips are not read from them.
+_DIET_FILLER = frozenset({"diet", "diets", "lacto", "ovo", "strict", "strictly", "fully",
+                          "totally", "completely", "entirely", "lifestyle"})
+
+
 def _diet_word(phrase: list[str]) -> str | None:
-    """The diet a one-word restriction names ("Vegetarians" too), or None.
-    "veggie" only as written: "veggies" are vegetables."""
-    if len(phrase) != 1:
+    """The diet a restriction names ("Vegetarians", "Vegetarian diet",
+    "Lacto-ovo vegetarian", "Plant-based diet" too), or None. "veggie"
+    only as written: "veggies" are vegetables."""
+    if len(phrase) > 1:
+        words = list(phrase)
+        if words[:2] == ["plant", "based"]:
+            words = ["vegan"] + words[2:]
+        diets = [d for d in (_diet_word([w]) for w in words) if d]
+        if len(diets) == 1 and all(w in _DIET_FILLER for w in words if not _diet_word([w])):
+            return diets[0]
+        return None
+    if not phrase:
         return None
     word = phrase[0]
     if word in _DIET_FAMILIES:
