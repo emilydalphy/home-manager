@@ -96,6 +96,23 @@
 // Every onboarding draft on this device goes (static/onboarding.html keeps
 // one per household while setup is unfinished, with allergies, ages and
 // helpers' phone numbers in it). Wrapped: a private window has no storage.
+// The grocery list's offline copy, its unsent ticks and the shops answer
+// (every pomona.grocery.* key — static/grocery-offline.js; the same keys
+// shell.js's groForgetOffline clears on its own Sign out). The worker opens
+// the cached shell with no signal (2026-10-30), so a copy left here after
+// a sign-out reached any other way — onboarding's "Not you? Sign out",
+// /logout typed, a delete or leave — would show the last household's list
+// to whoever picks up the phone offline. Wrapped: private mode.
+function forgetGroceryCopy() {
+  try {
+    var store = window.localStorage, gone = [], i, k;
+    for (i = 0; i < store.length; i++) {
+      k = store.key(i);
+      if (k && k.indexOf('pomona.grocery.') === 0) gone.push(k);
+    }
+    for (i = 0; i < gone.length; i++) store.removeItem(gone[i]);
+  } catch (e) { /* private mode */ }
+}
 function forgetOnboardingDrafts() {
   try {
     var store = window.localStorage, gone = [], i, k;
@@ -108,6 +125,7 @@ function forgetOnboardingDrafts() {
 }
 // Only reached after a delete or a leave (2026-10-09).
 forgetOnboardingDrafts();
+forgetGroceryCopy();
 (function () {
   var left = /(?:^|[?&])left=1(?:&|$)/.test(window.location.search || '');
   document.getElementById('gb-deleted').hidden = left;

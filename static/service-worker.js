@@ -129,7 +129,10 @@ self.addEventListener("fetch", (event) => {
           // A navigation that ended somewhere else (signed out -> /login)
           // is not the shell, and caching it under the shell's URL would
           // make the offline fallback a sign-in screen.
-          if (!isNavigation || (res.ok && !res.redirected)) {
+          // And only a good answer, for scripts and styles too (review,
+          // 2026-10-30): a 401/404/5xx stored over the good shell.js would
+          // be what an offline reload ran.
+          if (res.ok && (!isNavigation || !res.redirected)) {
             const copy = res.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
           }

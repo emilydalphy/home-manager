@@ -6254,7 +6254,13 @@
   // second line unticked again, and it stayed that way (the server had the
   // tick; the screen said otherwise, and so did "2 of 5"). Driven in
   // chromium with the first read's reply held two seconds.
+  // Two counters, not one (review, same night): the last read STARTED and
+  // the last one DRAWN. An answer draws when it is newer than anything
+  // drawn so far — so an older good read still draws when the newer one
+  // failed — and a failure shows the no-signal state only when no newer
+  // read has started, so it can't put "No signal" up over a good answer.
   var groLoadSeq = 0;
+  var groLoadDrawnSeq = 0;
   async function loadGrocery(opts) {
     var panel = groPanel();
     if (!panel || !panel.dataset.built) return;
@@ -6267,9 +6273,9 @@
         groLoadAllData().then(function (d) { return groLoadBeforeShop().then(function () { return d; }); }),
         groLoadPreShopFlags(), groLoadAlreadyHaveSummary(), groLoadStaples(), groLoadCarried(), groLoadSpices()
       ]);
-      // A newer read started while this one was out: its answer is the
-      // fresher one, and it draws when it lands.
-      if (seq !== groLoadSeq) return;
+      // A newer answer has already drawn: this one is staler.
+      if (seq <= groLoadDrawnSeq) return;
+      groLoadDrawnSeq = seq;
       // The server's answer is the copy; what the screen shows is that plus
       // any ticks still waiting to be sent, so a tick made a moment ago in
       // a dead zone doesn't vanish the instant one bar comes back.
@@ -6286,7 +6292,8 @@
       if (groListDone(groceryState.data)) await groLoadKitchenNow();
       else groceryState.kitchenNow = undefined;
     } catch (err) {
-      if (seq !== groLoadSeq) return;
+      // A newer read is out (it decides), or a newer answer already drew.
+      if (seq !== groLoadSeq || seq <= groLoadDrawnSeq) return;
       var copy = groOffline && groIsNetworkError(err) ? groOffline.readList() : null;
       if (copy) {
         // No signal, but the list is still here — the phone's own copy with

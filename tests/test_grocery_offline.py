@@ -550,6 +550,28 @@ def test_the_server_allows_the_worker_a_site_wide_scope(client):
     assert "Service-Worker-Allowed" not in client.get("/static/api.js").headers
 
 
+@_needs_node
+def test_a_failed_script_response_never_replaces_the_cached_good_copy():
+    """Review: every non-navigation .js/.css answer was cached, a 401, 404
+    or 500 included — over the good copy an offline reload would run."""
+    got = _node(_SW_HARNESS + """
+      (async () => {
+        store.set('http://app.test/static/shell.js', { ok: true, body: 'good' });
+        for (const status of [401, 404, 500]) {
+          fetch = async () => ({ ok: false, status, redirected: false, clone() { return this; }, body: 'bad' });
+          await fetchEvent('/static/shell.js').responded;
+          await new Promise((r) => setTimeout(r, 5));
+        }
+        const afterBad = store.get('http://app.test/static/shell.js').body;
+        fetch = async () => ({ ok: true, status: 200, redirected: false, clone() { return this; }, body: 'new' });
+        await fetchEvent('/static/shell.js').responded;
+        await new Promise((r) => setTimeout(r, 5));
+        out({ afterBad, afterGood: store.get('http://app.test/static/shell.js').body });
+      })();
+    """)
+    assert got == {"afterBad": "good", "afterGood": "new"}
+
+
 def test_service_worker_cache_version_was_bumped_for_the_new_fallback():
     src = SW.read_text(encoding="utf-8")
     assert 'const CACHE_NAME = "pomona-shell-v8";' in src
@@ -909,6 +931,40 @@ def test_a_slow_older_read_of_the_list_never_draws_over_a_newer_one():
     """)
     assert got["newer"] == [["Bananas"]]
     assert got["after"] == [["Bananas"]], "the older, slower reply drew over the newer one"
+
+
+@_needs_node
+def test_an_older_good_read_still_draws_when_the_newer_one_failed():
+    """Review of the guard above: it dropped every read older than the last
+    one STARTED. Older read held, newer read cut off (the connection
+    blipped): "No signal" went up and stayed up on a good connection, and
+    the older good answer never drew. It must draw and clear the line."""
+    got = _run_shell("""
+      (async () => {
+        await loadGrocery();
+        const _f = fetch;
+        let release = null, calls = 0;
+        fetch = (url, opts) => {
+          if (!url.startsWith('/api/grocery-list/by-store')) return _f(url, opts);
+          calls += 1;
+          if (calls === 1) return new Promise((r) => { release = () => r(_f(url, opts)); });
+          return Promise.reject(new TypeError('Failed to fetch'));
+        };
+        FIXTURE.stores[0].sections = FIXTURE.stores[0].sections.slice(0, 1);   // the server's newer truth
+        const older = loadGrocery();
+        await new Promise((r) => setTimeout(r, 10));
+        await loadGrocery();                                                   // fails: no signal
+        const between = { offline: groceryState.offline, line: LINE.hidden };
+        release();
+        await older;
+        out({ between, offline: groceryState.offline, line: LINE.hidden,
+              items: groceryState.data.stores.Loblaws.sections.map((s) => s.items.map((it) => it.item)) });
+      })();
+    """)
+    assert got["between"] == {"offline": True, "line": False}
+    assert got["offline"] is False, "the No signal line stayed up after a good answer landed"
+    assert got["line"] is True
+    assert got["items"] == [["Bananas"]], "the older good read never drew"
 
 
 @_needs_node
