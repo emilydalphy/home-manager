@@ -1095,6 +1095,31 @@ def _delete_blank_grocery_items(conn):
     conn.execute("DELETE FROM grocery_items WHERE TRIM(item) = ''")
 
 
+def _repair_recipe_minutes(conn):
+    """
+    One-time repair (2026-10-29): before tools.recipes.recipe_minutes, a
+    chat save of `cook_time_minutes: "1 hour"` was stored as those words in
+    the INTEGER column, and every prep + cook sum (Today's moves, the week
+    menu) then answered 500 on each day the dish was planned. Words that
+    read as a time are saved as minutes; anything else (and a negative)
+    becomes "nothing says how long it takes". Idempotent: only rows whose
+    value isn't a whole number of minutes are touched.
+    """
+    from .tools.recipes import recipe_minutes
+    for column in ("prep_time_minutes", "cook_time_minutes"):
+        rows = conn.execute(
+            f"SELECT id, household_id, {column} AS v FROM recipes WHERE {column} IS NOT NULL "
+            f"AND (typeof({column}) != 'integer' OR {column} < 0)"
+        ).fetchall()
+        for row in rows:
+            # Scoped to the row's own household, so this needs no place on
+            # the scope sweep's cross-household list.
+            conn.execute(
+                f"UPDATE recipes SET {column} = ? WHERE id = ? AND household_id = ?",
+                (recipe_minutes(row["v"]), row["id"], row["household_id"]),
+            )
+
+
 _REPEATS_TOLERANCE_TO_LEFTOVERS_STANCE = {
     "cook_once_eat_twice": "love_them",
     "one_a_week": "fine_sometimes",
@@ -1409,6 +1434,7 @@ def _run_migrations(conn):
     _backfill_member_colors(conn)
     _merge_duplicate_item_store_preferences(conn)
     _delete_blank_grocery_items(conn)
+    _repair_recipe_minutes(conn)
     _migrate_repeats_tolerance_to_leftovers_stance(conn)
     _migrate_planning_anchor_values(conn)
     _backfill_allergy_notes_from_facts(conn)

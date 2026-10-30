@@ -11094,8 +11094,11 @@ def update_recipe_details_from_chat(recipe_name: str, instructions: list[str] | 
         logger.info("Chat steps writer wrote the steps of %r in %.2fs (attempt %d)",
                     recipe["name"], time.perf_counter() - started, attempt)
         fields = {
-            "prep_time_minutes": detail.get("prep_time_minutes"),
-            "cook_time_minutes": detail.get("cook_time_minutes"),
+            # The writer's minutes read here, not refused below: a time it
+            # wrote in words it can't be held to must not cost the steps
+            # (update_recipe_details refuses words the PERSON sent).
+            "prep_time_minutes": tools.recipe_minutes(detail.get("prep_time_minutes")),
+            "cook_time_minutes": tools.recipe_minutes(detail.get("cook_time_minutes")),
             "advance_prep_notes": detail.get("advance_prep_notes"),
             "advance_prep_step_indices": detail.get("advance_prep_step_indices"),
         }
