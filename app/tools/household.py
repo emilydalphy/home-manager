@@ -212,8 +212,8 @@ def set_member_dietary_restrictions(name: str, restrictions: list[str], replace:
     (initial setup or a full redo), not for an ad hoc mention. Pass an
     empty list with replace=True to clear all restrictions for someone.
     """
+    member_id = _member_id_or_added(name)
     conn = get_conn()
-    member_id = _get_or_create_member(conn, name)
     # The reply names them as stored ("Theo"), not as typed ("theo").
     name = conn.execute(
         "SELECT name FROM members WHERE id = ? AND household_id = ?", (member_id, household_id()),
@@ -326,9 +326,9 @@ def set_member_age_group(name: str, age_group: str) -> dict:
     # (a Child with no age is asked the next time Settings opens).
     if (age_group or "").strip().lower() in LITTLE_ONE_WORDS:
         age_group = "child"
+    member_id = _member_id_or_added(name)
     conn = get_conn()
     try:
-        member_id = _get_or_create_member(conn, name)
         conn.execute(
             "UPDATE members SET age_group = ? WHERE id = ? AND household_id = ?",
             (age_group, member_id, household_id()),
@@ -611,6 +611,33 @@ def list_pets() -> list[dict]:
 
 BLANK_MEMBER_NAME = "I need their name first — who is this about?"
 BLANK_PET_NAME = "I need the pet's name first — what are they called?"
+
+
+def _member_id_or_added(name: str) -> int:
+    """
+    The person called `name`, or a new one added THROUGH add_member — for
+    the two chat writes that may name somebody not saved yet ("Linda's
+    staying with us, she's allergic to shellfish" -> restrictions; "add
+    Linda as an adult" -> age group).
+
+    Both used to insert the row themselves (_get_or_create_member), which
+    skipped what adding a person does: the stored slots' away needs were
+    never re-derived, so a dinner everyone else is out of stayed "nobody's
+    home, nothing planned" with the new person at the table; and the
+    restrictions path also skipped list_follows_membership, so an approved
+    week's shopping stayed bought for one fewer than Cook counted (defect
+    hunt 2026-10-28). add_member is the one door that does both.
+    """
+    if not (name or "").strip():
+        raise ValueError(BLANK_MEMBER_NAME)
+    conn = get_conn()
+    try:
+        row = find_member_row(conn, name)
+    finally:
+        conn.close()
+    if row:
+        return row["id"]
+    return add_member(name)["member_id"]
 
 
 def _get_or_create_member(conn, name: str) -> int:
