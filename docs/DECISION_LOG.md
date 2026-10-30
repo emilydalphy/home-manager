@@ -13,6 +13,10 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The morning text says "leftovers" once on a night named for them** (2026-10-30,
+  overnight hunt; branch `overnight/hunt-nudge-1030c`; tests in `tests/test_morning_text.py`).
+  "Leftover chili" planned by name texted "Tonight: Leftover chili, leftovers." — the bare
+  provenance word (no source night) is now left off; "made ahead Thursday" etc. unchanged.
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
   (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.

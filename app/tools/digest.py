@@ -665,7 +665,12 @@ def _digest_parts(now_local: datetime, included) -> list[tuple[str, str]]:
             parts.append(("meals", f"Tonight: {_tidy(dinner_cook['title'])}.{_allergy_clause(dinner_cook)}"))
         elif dinner_reheat:
             provenance = _tidy(dinner_reheat["detail"]).split(",")[0]
-            parts.append(("meals", f"Tonight: {_tidy(dinner_reheat['title'])}, {provenance}.{_allergy_clause(dinner_reheat)}"))
+            # The bare "leftovers" is a night written as leftovers BY NAME
+            # (day_meals.provenance_note: no source night to point at), and
+            # that name already says so — "Leftover chili" texted "Tonight:
+            # Leftover chili, leftovers." (overnight hunt, 2026-10-30).
+            said = f", {provenance}" if provenance and provenance.casefold() != "leftovers" else ""
+            parts.append(("meals", f"Tonight: {_tidy(dinner_reheat['title'])}{said}.{_allergy_clause(dinner_reheat)}"))
         elif _takeout_tonight(payload):
             # A takeout night is no move (moves._cook_and_reheat_moves), so
             # it is read off Today's own meals row: named, never a start.
