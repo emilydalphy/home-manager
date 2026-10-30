@@ -1461,7 +1461,16 @@ def _easiest_volume(tsp: float) -> list[tuple[float, str]]:
                     if v2 >= _KITCHEN_MEASURES[i][1]:
                         continue
                     candidates.append((v1 + v2, s1 + s2, 2, f1 + f2, j, [t1, t2]))
-    close = [c for c in candidates if lo <= c[0] <= hi]
+    # ...and never off by a whole one of the smallest measure it names
+    # (defect hunt, 2026-10-28). 2 cups + 2 tbsp is 102 tsp, and 5% of that
+    # is more than a tablespoon, so "2 cups + 1 tbsp" (one scoop fewer) won:
+    # a cook told "+ 1 tbsp" reaches for that spoon once, and the second
+    # scoop the recipe needed is just gone. Rounding to a spoon the drawer
+    # has is the point; leaving out one the answer itself uses is not.
+    close = [
+        c for c in candidates
+        if lo <= c[0] <= hi and abs(c[0] - tsp) < _KITCHEN_MEASURES[c[4]][1] - 1e-9
+    ]
     if close:
         best = min(close, key=lambda c: (c[1], c[2], c[3], abs(c[0] - tsp), c[4]))
     else:
