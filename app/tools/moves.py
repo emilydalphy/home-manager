@@ -1340,7 +1340,8 @@ def _stamp_owners(moves: list[dict], owners) -> list[dict]:
         if said is not None:
             member_id, name = said
         elif kind == "cook":
-            member_id, name = owners.for_meal({"date": move.get("date"), "is_leftovers": False})
+            member_id, name = owners.for_meal({"date": move.get("date"), "is_leftovers": False,
+                                               "entry_id": move.get("entry_id")})
         elif kind in ("fridge", "prep"):
             # _prep_moves copies prep_tasks.meal_plan_entry_id onto the
             # move as `entry_id`, so the link to the meal this is for is

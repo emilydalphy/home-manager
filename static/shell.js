@@ -2674,6 +2674,9 @@
       refreshTodayMoves();
       refreshKitchenPanel();
       refreshWeekPanel({ kitchenFresh: true });
+      // Un-marked, yesterday's meal is a question again (a "We had it"
+      // taken back from the yesterday card itself, most often).
+      refreshYesterdayCheck();
       showToast('Put it back.');
     } catch (err) {
       console.warn('Undoing marked eaten failed:', err);
@@ -3954,10 +3957,11 @@
 
   // Optimistic (§6, the common case never waits): the row leaves on the
   // tap, and the card with it when it was the last. A failed save puts it
-  // back and says so. The toast names the meal (S10); there is no Undo,
-  // because Today's own cooked tick has none either — except when a skip
-  // moved a double-batch cook onto the night it fed (out.moved_to): that
-  // rewrote the plan, so it carries one (undoYesterdaySkip).
+  // back and says so. The toast names the meal (S10). "We had it" that took
+  // food out of the kitchen carries the eaten tick's own Undo
+  // (toastMarkedEaten); a plain skip has none; and a skip that moved a
+  // double-batch cook onto the night it fed (out.moved_to) rewrote the
+  // plan, so it carries one (undoYesterdaySkip).
   async function answerYesterday(panel, entryId, answer) {
     var data = panel._yesterday;
     if (!data || !data.meals) return;
@@ -4002,7 +4006,12 @@
         refreshStaleTabsFromActions([{ tab: 'week' }, { tab: 'kitchen' }]);
         return;
       }
-      showToast(markedLine(meal.meal, answer === 'had' ? 'cooked' : 'skipped'));
+      // "We had it" is the eaten tick, so it says what came out of the
+      // kitchen with the same Undo every other eaten tick offers
+      // (toastMarkedEaten; undoMarkedEaten asks this card again).
+      if (!(answer === 'had' && toastMarkedEaten(meal.meal, out.kitchen_took, entryId))) {
+        showToast(markedLine(meal.meal, answer === 'had' ? 'cooked' : 'skipped'));
+      }
       // A cooked tick moves what Plan and Cook show (and the pantry).
       if (answer === 'had') refreshStaleTabsFromActions([{ tab: 'week' }, { tab: 'kitchen' }]);
     } catch (err) {

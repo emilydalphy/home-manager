@@ -200,6 +200,10 @@ class MoveOwners:
         # card carries `entry_ids` and every other carries `entry_id` —
         # the same reading cooker.start_cooking makes of one.
         self._cook_date_by_entry: dict[int, str] = {}
+        # entry_id -> the adults that night's attendance says are OUT
+        # (casefolded names, off the view's own `attendance`), so a default
+        # owner who isn't home is never named or credited — see for_meal.
+        self._absent_by_entry: dict[int, set[str]] = {}
         cook_days: set[str] = set()
         floor = ((view or {}).get("period_start_date") or "") if view else ""
         for meal in (view or {}).get("meals") or []:
@@ -209,6 +213,10 @@ class MoveOwners:
             for entry_id in (meal.get("entry_ids") or [meal.get("entry_id")]):
                 if entry_id is not None:
                     self._cook_date_by_entry[entry_id] = day
+                    self._absent_by_entry[entry_id] = {
+                        str(n).strip().casefold()
+                        for n in ((meal.get("attendance") or {}).get("absent_names") or [])
+                    }
                     if meal.get("entry_id") is not None:
                         self._cook_move_by_entry[entry_id] = f"cook:{meal['entry_id']}"
             # A cook day from BEFORE the plan's period is a leftover of an
@@ -270,9 +278,30 @@ class MoveOwners:
 
     def for_meal(self, meal: dict) -> tuple[int | None, str | None]:
         """(member id, name) for a cook, or (None, None). A reheat is never
-        a cook — see the module docstring."""
+        a cook — see the module docstring.
+
+        A DEFAULT OWNER WHO IS OUT THAT NIGHT OWNS NOTHING (defect hunt
+        2026-10-28). `cooking_role` is a standing answer and knows nothing
+        about the week: with "Vineeth cooks" and Vineeth marked out for
+        Thursday, Today and Cook said "Vineeth's cooking" over a dinner only
+        Emily was home for, and her tick was credited to him in
+        move_credits. Under `turns` the night's turn-holder can be the one
+        away. Nobody, not the adult who IS home: who cooks a night the cook
+        is out is a thing nobody said, and "Who's on it?" (an override,
+        which this never second-guesses) is where it gets said. `entry_id`
+        is how the night's attendance is found; a meal without one keeps
+        the default.
+        """
         if not _is_a_cook(meal):
             return (None, None)
+        member_id, name = self._default_for_meal(meal)
+        absent = self._absent_by_entry.get(meal.get("entry_id")) or set()
+        if name and name.strip().casefold() in absent:
+            return (None, None)
+        return (member_id, name)
+
+    def _default_for_meal(self, meal: dict) -> tuple[int | None, str | None]:
+        """The cooking_role answer for this cook, before attendance."""
         if self.value == "one_person":
             if not self.who:
                 return (None, None)
@@ -318,7 +347,7 @@ class MoveOwners:
         said = self.override(self._cook_move_by_entry.get(entry_id), day)
         if said is not None:
             return said
-        return self.for_meal({"date": day, "is_leftovers": False})
+        return self.for_meal({"date": day, "is_leftovers": False, "entry_id": entry_id})
 
 
 def resolve(view: dict | None = None, rhythm: dict | None = None) -> MoveOwners:
