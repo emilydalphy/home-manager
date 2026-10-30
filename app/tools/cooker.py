@@ -301,6 +301,41 @@ def deplete_inventory_for_meal(entry_id: int) -> dict:
     night = {"date": entry["date"], "slot": entry["slot"]}
 
     inventory = _inventory.get_inventory()
+    # WHICH ROW the food comes off (overnight defect hunt, 2026-10-28).
+    # get_inventory is ORDER BY item, so with Beef Mince in the freezer AND
+    # the fridge the first-matched row was whichever SQLite returned first —
+    # the older freezer pack. Cooking tonight from the fridge deleted the pack
+    # being saved for Saturday, Kitchen showed it gone and the fridge pack
+    # still there, and the next sync dropped Saturday's "Move the Beef Mince
+    # to the fridge" — a dinner with frozen meat. So, stably re-ordered (the
+    # matcher takes the first exact match and ranks loose ones stably):
+    #   1. a freezer row THIS night's own fridge move was ticked done for —
+    #      it was thawed for this dinner, so it is what got cooked (a done
+    #      move leaves the row filed under freezer; nothing re-files it);
+    #   2. any non-freezer row — fresh food is what a cook reaches for;
+    #   3. any other freezer row, only when nothing else matches.
+    # A PENDING move is not rule 1: nobody moved it, and with the same food
+    # in the fridge that is what was cooked. The receipt (`before`, by id)
+    # follows whichever row this picks, so Undo puts back the right one.
+    conn = get_conn()
+    try:
+        thawed_for_tonight = {
+            r["inventory_item_id"] for r in conn.execute(
+                "SELECT inventory_item_id FROM prep_tasks WHERE household_id = ? "
+                "AND task_type = 'defrost' AND status = 'done' "
+                "AND meal_plan_entry_id = ? AND inventory_item_id IS NOT NULL",
+                (household_id(), entry_id),
+            ).fetchall()
+        }
+    finally:
+        conn.close()
+
+    def _row_order(row):
+        if row["id"] in thawed_for_tonight:
+            return 0
+        return 2 if (row.get("location") or "").strip().lower() == "freezer" else 1
+
+    inventory = sorted(inventory, key=_row_order)
     # queued_for_review stays on the result for the callers that read it,
     # but it is always empty now: nothing here asks the household anything.
     depleted, queued, left_alone = [], [], []
