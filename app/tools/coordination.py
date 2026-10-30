@@ -812,6 +812,30 @@ def _conflict_keywords(phrase: str, drop: set[str] | None = None) -> list[str]:
 # only a word to ignore.
 _PHRASE_SPLIT_RE = re.compile(r"[,;/]|\band\b|\bor\b|\bplus\b|\bas\s+well\s+as\b")
 
+# A note written beside an allergy — "Shellfish (anaphylactic)", "sesame -
+# EpiPen", "Peanuts: airborne too" — is about the allergy, not part of the
+# food's name (defect hunt 2026-10-29). Read as one phrase, the note's words
+# had to appear in the dish too, so "shellfish anaphylactic" found no shrimp
+# and the person's most serious allergy was checked against nothing. A
+# bracket, a spaced dash or a colon therefore ends a phrase the way a comma
+# does (a hyphen inside a word, "gluten-free", is untouched), and the words
+# such a note is made of are not foods to hunt for. Hard avoidances only:
+# a Won't eat note keeps its old reading.
+_NOTE_BREAK_RE = re.compile(r"[()\[\]:]|\s-+\s|[–—]")
+_NOTE_WORDS = frozenset({
+    "mild", "mildly", "moderate", "anaphylactic", "anaphylaxis", "reaction",
+    "reactions", "react", "reacts", "epipen", "epipens", "epi", "pen", "pens",
+    "carries", "carry", "hives", "rash", "airborne", "please", "too", "also",
+    "even", "very", "extremely", "really", "serious", "seriously", "life",
+    "threatening", "diagnosed", "confirmed", "medical", "trace", "traces",
+    "contact", "cross", "contamination", "small", "amounts",
+})
+
+
+def _note_breaks(text: str) -> str:
+    """A hard avoidance with its notes set off by commas (see _NOTE_BREAK_RE)."""
+    return _NOTE_BREAK_RE.sub(",", text or "")
+
 
 def _conflict_phrases(text: str, drop: set[str] | None = None) -> list[list[str]]:
     """
@@ -884,7 +908,14 @@ def _fact_keywords(text: str, drop: set[str]) -> tuple[list[list[str]], list[str
         nxt = _AVOIDANCE_TRIGGER_RE.search(rest)
         if nxt:
             rest = rest[:nxt.start()]
+        # "allergic to shellfish (anaphylactic)": the note is not the food.
+        # The exception is split off FIRST, on the sentence as typed: run
+        # the note breaks before it and "except peanut oil (fine), and
+        # sesame" cut the exception at the new comma, found "fine" beyond
+        # it, and let sesame through as part of the exception (review,
+        # 2026-10-29 — main still held sesame back).
         avoid, exception = _split_exception(rest)
+        avoid = _note_breaks(avoid)
         spans.append(avoid)
         if exception:
             exception_spans.append(exception)
@@ -898,7 +929,7 @@ def _fact_keywords(text: str, drop: set[str]) -> tuple[list[list[str]], list[str
     phrases: list[list[str]] = []
     seen: set[tuple[str, ...]] = set()
     for span in spans:
-        for words in _conflict_phrases(span, drop=drop):
+        for words in _conflict_phrases(span, drop=drop | _NOTE_WORDS):
             key = tuple(words)
             if key not in seen:
                 seen.add(key)
@@ -1285,7 +1316,7 @@ def _avoidances() -> list[dict]:
             # meant to be one restriction per list entry, so "red meat" is a
             # food and not two — and the comma/"and" split above still reads
             # "no dairy, no eggs" typed into a single box as two things.
-            terms = _match_terms(_conflict_phrases(restriction, drop=name_words))
+            terms = _match_terms(_conflict_phrases(_note_breaks(restriction), drop=name_words | _NOTE_WORDS))
             if not terms:
                 continue
             out.append({
