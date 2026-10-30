@@ -1189,6 +1189,36 @@ def _is_due(r) -> bool:
     return bool(r is not None and not r["paused"] and (r["next_due_at"] or "") <= _iso(_today()))
 
 
+def due_staple_this_line_covers(conn, line_row) -> int | None:
+    """
+    The id of the due staple a person's own line is standing in for, or
+    None. sync_due_staples counts a still-needed line of the household's
+    own (no week behind it) as cover for a staple by the same name — so
+    taking THAT line off is the staple's answer too (remove_grocery_item).
+    None when the line is already some staple's, a week's, carries meals,
+    the staple isn't due (sync would not add it, nothing to answer), is
+    kept by the list's sections (never added on its own), or already has
+    a line of its own on the list.
+    """
+    if (line_row["staple_id"] or line_row["status"] != "needed"
+            or line_row["source_weekly_plan_id"] is not None):
+        return None
+    r = _find_by_name(conn, line_row["item"])
+    if r is None or not _is_due(r) or in_rack(r):
+        return None
+    hid = household_id()
+    if conn.execute(
+        "SELECT 1 FROM meal_plan_grocery_links WHERE grocery_item_id = ? AND household_id = ? LIMIT 1",
+        (line_row["id"], hid),
+    ).fetchone() or conn.execute(
+        "SELECT 1 FROM grocery_items WHERE household_id = ? AND staple_id = ? AND id != ? "
+        "AND status IN ('needed', 'in_cart')",
+        (hid, r["id"], line_row["id"]),
+    ).fetchone():
+        return None
+    return r["id"]
+
+
 def note_line_removed(conn, line_row, how: str) -> None:
     """
     A person took a staple's line off the list by some OTHER route — the
@@ -1574,8 +1604,19 @@ def record_staple_purchase(
                 "WHERE id = ? AND household_id = ?",
                 (already["id"], household_id()),
             )
+        # A purchase answers the pause three "Not this trip"s brought on, so it
+        # lifts it. That pause stands for "they may not buy this any more"; a
+        # tick says they do. Left on, coffee skipped three weeks running and
+        # then typed and bought stayed "paused" for good — skip streak back to
+        # 0, next due a cadence out, and never on the list again (defect hunt,
+        # 2026-10-30, ten simulated weeks). A pause a PERSON chose (Regulars →
+        # Pause) is theirs and stays. Decided by the newest pause/resume event
+        # rather than a new 'resumed' row, so an untick (which puts `paused`
+        # back from the receipt) leaves the next purchase reading it the same.
+        lift_auto_pause = bool(r["paused"]) and _paused_by_skips(conn, r["id"])
         conn.execute(
-            "UPDATE staples SET last_bought_at = ?, skip_streak = 0, updated_at = datetime('now') "
+            "UPDATE staples SET last_bought_at = ?, skip_streak = 0, "
+            f"{'paused = 0, ' if lift_auto_pause else ''}updated_at = datetime('now') "
             "WHERE id = ? AND household_id = ?",
             (today, r["id"], household_id()),
         )
@@ -1603,6 +1644,17 @@ def _line_status(conn, grocery_item_id: int) -> str | None:
         (grocery_item_id, household_id()),
     ).fetchone()
     return row["status"] if row else None
+
+
+def _paused_by_skips(conn, staple_id: int) -> bool:
+    """True when the staple's newest pause/resume is the automatic pause a
+    third skip in a row wrote (_skip) — not a person's own Pause."""
+    row = conn.execute(
+        "SELECT kind, source FROM staple_events WHERE household_id = ? AND staple_id = ? "
+        "AND kind IN ('paused', 'resumed') ORDER BY id DESC LIMIT 1",
+        (household_id(), staple_id),
+    ).fetchone()
+    return row is not None and row["kind"] == "paused" and row["source"] == "auto"
 
 
 def unrecord_staple_purchase(item: str, staple_id: int | None = None, grocery_item_id: int | None = None) -> dict | None:
