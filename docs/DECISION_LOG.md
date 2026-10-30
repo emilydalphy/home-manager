@@ -13,6 +13,9 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Merge seam: one rule for a chat use-by date** (2026-10-30, branch `merge-overnight-2026-10-30`).
+  `hunt-inventory-1029b`'s `_written_date` and `chat-args-1030`'s `_use_by_day` both guarded `update_inventory`; the looser one ran first and
+  3.11's `date.fromisoformat` turned "20261102" into a real day, so the stricter refusal never fired. `_written_date` removed; `_use_by_day` runs on every action.
 - **Today's going-off card: one food is one food, a too-late dinner is no plan, an emptied row is not food** (2026-10-28, branch `overnight/hunt-goingoff-1028`; tests `tests/test_going_off_hunt_fixes.py`). Three defects in `going_off.py`, found driving `/api/today/going-off` on a seeded DB:
   (1) "Leave it" on the card brought the identical swap straight back for a second row of the same food ("Spinach" + "Baby spinach"), and the line could name that row under the card. Leave now covers the same food on every row (`_same_food`, the card's own matcher), and leaving the CARD also stands its swap down for the day (`LEAVE_SWAP_KEY`, by skipped entry id) — other food that dinner uses falls to the line.
   (2) Any cook ahead on any live plan counted as "a plan for it", so next week's draft spinach salad silenced the card and the line for spinach turning tomorrow. A plan now has to be dated on or before the food's date (close to the draft's "too late" rule, though use_up's `use_by` is the day BEFORE it turns, so a meal on the turn day counts here and not there). `test_food_a_later_dinner_still_uses…` moved its omelette from dinner day +3 to lunch day +1 to keep testing what it names without a second dinner in a slot.

@@ -1030,26 +1030,6 @@ def _written_quantity(quantity) -> str:
     return quantity.strip()
 
 
-def _written_date(expiration_date) -> str | None:
-    """
-    A best-before date as a row keeps it: YYYY-MM-DD, or None for none.
-    "Friday" or "11/03" was stored as given (defect hunt, 2026-10-29), and
-    every reader of the column compares it as an ISO string or parses it —
-    so the yogurt never came up as going off, and the Kitchen dropped its
-    "best by" without a word. A bad date is refused rather than guessed at,
-    so the assistant hears it and can ask or resend.
-    """
-    if expiration_date is None:
-        return None
-    text = str(expiration_date).strip()
-    if not text:
-        return None
-    try:
-        return date.fromisoformat(text[:10]).isoformat()
-    except ValueError:
-        raise ValueError(f"'{text}' isn't a date I can read — give the best-before date as YYYY-MM-DD.")
-
-
 def update_inventory(
     item: str,
     action: str,
@@ -1103,12 +1083,13 @@ def update_inventory(
     if not item:
         raise ValueError("Name the item to keep track of.")
     quantity = _written_quantity(quantity)
-    if action in ("add", "set"):
-        expiration_date = _written_date(expiration_date)
     if location is not None and location.strip():
         location = _normalised_location(location)
     else:
         location = None
+    # One rule for a use-by, on every action. A second, looser check
+    # (date.fromisoformat, which on 3.11 also takes "20261102") ran ahead of
+    # this one after two hunts landed together (merge 2026-10-30).
     expiration_date = _use_by_day(expiration_date)
     if action == "add":
         # The receipt fields (fresh/before/after) are mark_grocery_item's
