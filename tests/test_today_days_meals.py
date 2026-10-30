@@ -755,6 +755,11 @@ def test_a_household_with_no_shopping_day_is_offered_the_setting():
     assert 'data-shop-setting="1"' in html
     wiring = _fn("renderTodayMoves")
     assert "data-shop-setting" in wiring and "openKitchenSheet('memory', 'rhythm')" in wiring
+    # And it lands ON the Grocery shop chips, not the top of Your rhythm
+    # (phone walk, 2026-10-30: a screen and a half of meal grids above them).
+    assert "wwkState.scrollAnchor = 'shop-day'" in wiring
+    assert 'data-wwk-anchor="shop-day"' in _fn("wwkRhythmHtml")
+    assert "data-wwk-anchor" in _fn("wwkScrollTo")
 
 
 @_needs_node

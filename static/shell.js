@@ -3583,7 +3583,10 @@
         // (wwkRhythmHtml's "Grocery shop" chips), which is where the
         // onboarding step writes it — so this opens that, rather than
         // being a second place to answer the same question.
-        if (typeof openKitchenSheet === 'function') openKitchenSheet('memory', 'rhythm');
+        if (typeof openKitchenSheet === 'function') {
+          wwkState.scrollAnchor = 'shop-day';
+          openKitchenSheet('memory', 'rhythm');
+        }
       });
     });
   }
@@ -12570,6 +12573,7 @@
     hoursEdit: null,       // the Stores section's open hours editor (wwkHoursHtml)
     addNext: null,         // a "+ Add" chip kind to open as soon as it renders (wwkFocusAdd)
     scrollTo: null,        // section to bring into view once answers are in
+    scrollAnchor: null,    // one row inside it to land on instead (data-wwk-anchor), used once
     seq: 0,                // last request issued — a late reply never wins
     needs: null,           // per-person lunch needs + snacks a day (/api/member-needs)
     lunchByDay: {}         // name -> true while "Different on some days?" is open for them
@@ -13079,6 +13083,18 @@
     setTimeout(function () {
       var body = document.getElementById('wwk-body');
       var el = body && body.querySelector('.wwk-section[data-section="' + key + '"]');
+      // A way in that is about ONE row of a long section lands on that row:
+      // Today's "No shopping day set. Pick one" opened Your rhythm at its
+      // top, with the Grocery shop chips a screen and a half below the
+      // breakfast and lunch grids at 390px (phone walk, 2026-10-30).
+      var anchor = wwkState.scrollAnchor;
+      wwkState.scrollAnchor = null;
+      var row = el && anchor ? el.querySelector('[data-wwk-anchor="' + anchor + '"]') : null;
+      if (row) {
+        // By the rects: the row's offsetParent need not be the body's.
+        body.scrollTop = Math.max(0, body.scrollTop + row.getBoundingClientRect().top - body.getBoundingClientRect().top);
+        return;
+      }
       if (el) body.scrollTop = Math.max(0, el.offsetTop - body.offsetTop);
     }, motionMs('--motion-base') + 20);
   }
@@ -14320,7 +14336,7 @@
     // defaults the anchor to the day before the shop). Tapping the day
     // that's already on clears it, which is how a single-pick row is
     // correctable at all; clearing the main shop clears the top-up with it.
-    html += wwkLead('Grocery shop') + wwkNote('I’ll have the list ready the day before.') + '<div class="wwk-chips">' +
+    html += wwkLead('Grocery shop').replace('<p class="wwk-lead"', '<p class="wwk-lead" data-wwk-anchor="shop-day"') + wwkNote('I’ll have the list ready the day before.') + '<div class="wwk-chips">' +
       WWK_SHOP_DAYS.map(function (o) { return wwkChip(o.label, 'data-wwk="shop-day" data-value="' + o.key + '"', r.shop_day === o.key ? 'on' : ''); }).join('') + '</div>';
     if (r.shop_day) {
       html += wwkLead('Top-up shop') + '<div class="wwk-chips">' +
@@ -19502,7 +19518,11 @@
         { label: 'Undo', onClick: function () { runMoveMealUndo(panel, weekStart, out.move_id, out.said, planId); } },
         thaw ? MOVE_THAW_TOAST_MS : MOVE_TOAST_MS);
       await loadWeekMenu(panel);
-      refreshTodayMoves();
+      // Not just the moves: a meal moved onto tonight's open dinner settles
+      // Today's "Tonight's dinner needs your call" card, which is the
+      // needs-you band's (phone walk 2026-10-30: the card stayed up over
+      // "Today's meals · Pesto Pasta" until a reload).
+      refreshTonightFromPlan();
       // A meal that moved onto a different-size table is bought for it now
       // (2026-10-24): Shop builds once per page load, so tell it.
       if (out.list_changed) refreshGroceryPanel();
@@ -19536,7 +19556,7 @@
       renderMealsStep(panel);
       showToast(out.said || 'Back as it was');
       await loadWeekMenu(panel);
-      refreshTodayMoves();
+      refreshTonightFromPlan();
       if (out.list_changed) refreshGroceryPanel();
     } catch (err) {
       console.warn('Undoing a meal move failed:', err);

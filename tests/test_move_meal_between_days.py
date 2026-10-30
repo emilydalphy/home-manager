@@ -527,3 +527,15 @@ def test_a_freezer_portion_is_not_judged_by_the_fridge_days_and_its_name_follows
     meal_move.move_meal(plan, chili, TUE)
     assert _meal(FRI)["id"] == frozen
     assert _meal(FRI)["meal"] == leftovers.freezer_night_name("Turkey Chili", TUE)
+
+
+def test_a_move_and_its_undo_re_read_todays_needs_you_band_too():
+    """Phone walk, 2026-10-30: a meal moved onto tonight's open dinner left
+    Today's "Tonight’s dinner needs your call" card up beside "Today’s meals
+    · Pesto Pasta" until a reload — the move re-read Today's moves and not
+    the band. refreshTonightFromPlan is the helper that re-reads both."""
+    for name in ("runMoveMeal", "runMoveMealUndo"):
+        body = _extract(name, SHELL_JS)
+        assert "refreshTonightFromPlan();" in body, name
+    tonight = _extract("refreshTonightFromPlan", SHELL_JS)
+    assert "loadNeedsYou(panels.today)" in tonight and "refreshTodayMoves()" in tonight
