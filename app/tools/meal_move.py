@@ -793,18 +793,21 @@ def move_meal(weekly_plan_id: int, entry_id: int, to_date: str,
         opens = planned.get("opens") or []
         n = len(placement)
         cuts = _prep_cuts_that_will_shift(conn, weekly_plan_id, snap, placement)
+        traded = _open_questions_traded(conn, snap, placement, planned["members"])
         done = _weekly_plan._redate_plan_rows(
             conn, weekly_plan_id, snap["rows"], placement,
             token_for=lambda r: {"date": r["date"], "at": at, MOVE_TOKEN_KEY: move_id,
                                  "to": placement[r["id"]], "n": n, "source": entry_id,
                                  **({"opened": [f"{d}:{sl}" for d, sl in opens]} if opens else {}),
-                                 **({"prep_cuts": cuts[r["id"]]} if cuts.get(r["id"]) else {})},
+                                 **({"prep_cuts": cuts[r["id"]]} if cuts.get(r["id"]) else {}),
+                                 **({"was_open": traded[r["id"]]} if r["id"] in traded else {})},
             move_prep_cuts=True,
         )
         if "refused" in done:
             conn.rollback()
             return {"status": "refused", "message": done["refused"]}
         _open_the_days_left_behind(conn, weekly_plan_id, snap, opens, entry_id, placement, move_id)
+        _resay_traded_questions(conn, snap, traded, entry_id, placement)
         _resay_freezer_nights(conn, snap, placement)
         conn.commit()
     except Exception:
@@ -873,6 +876,77 @@ def _open_the_days_left_behind(conn, weekly_plan_id: int, snap: dict,
             derived_from={"constraint": MOVE_OPENED_CONSTRAINT, MOVE_TOKEN_KEY: move_id,
                           "moved": source_id},
             conn=conn,
+        )
+
+
+def _open_questions_traded(conn, snap: dict, placement: dict[int, str], members: list) -> dict:
+    """{entry id: {"reason", "constraint"}} for each OPEN row this move
+    trades onto the day the meal left — its question as it stands, kept on
+    the Undo token so Undo can put it back word for word.
+
+    An open row's sentence is about its own day ("Thursday was going to be
+    leftovers from Wednesday’s Weeknight Chili, and Wednesday’s gone — what
+    would you like instead?"), and trading places carried it to Friday
+    unchanged, where Today asked it about "Tomorrow" (phone walk,
+    2026-10-30)."""
+    by_id = {r["id"]: r for r in snap["rows"]}
+    out: dict[int, dict] = {}
+    for i, d in placement.items():
+        r = by_id.get(i)
+        if i in members or r is None or r["slot_state"] != "open" or d == r["date"]:
+            continue
+        row = conn.execute(
+            "SELECT open_reason FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+            (i, household_id()),
+        ).fetchone()
+        out[i] = {"reason": (row["open_reason"] if row else None),
+                  "constraint": _derived(r).get("constraint")}
+    return out
+
+
+def _resay_traded_questions(conn, snap: dict, traded: dict, source_id: int,
+                            placement: dict[int, str]) -> None:
+    """Each traded open row now stands on the day the meal left, so it asks
+    what a day a move leaves asks (_open_the_days_left_behind's sentence and
+    constraint): "You moved the Pesto Pasta to Thursday, so this one is
+    yours to fill." Everything else on the row — its options, the move's
+    own Undo token — stays."""
+    if not traded:
+        return
+    by_id = {r["id"]: r for r in snap["rows"]}
+    dish = short_name(by_id[source_id]["meal"]) if source_id in by_id else "that meal"
+    reason = _opened_reason(dish, placement.get(source_id) or "")
+    for i in traded:
+        row = conn.execute(
+            "SELECT derived_from_json FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+            (i, household_id()),
+        ).fetchone()
+        derived = _derived(dict(row)) if row else {}
+        derived["constraint"] = MOVE_OPENED_CONSTRAINT
+        conn.execute(
+            "UPDATE meal_plan_entries SET open_reason = ?, derived_from_json = ? WHERE id = ? AND household_id = ?",
+            (reason, json.dumps(derived), i, household_id()),
+        )
+
+
+def _restore_traded_questions(conn, restore: dict) -> None:
+    """Undo's half: each traded open row is back on its own day, so it asks
+    its own question again."""
+    for i, was in restore.items():
+        row = conn.execute(
+            "SELECT derived_from_json FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+            (i, household_id()),
+        ).fetchone()
+        if row is None:
+            continue
+        derived = _derived(dict(row))
+        if was.get("constraint") is None:
+            derived.pop("constraint", None)
+        else:
+            derived["constraint"] = was["constraint"]
+        conn.execute(
+            "UPDATE meal_plan_entries SET open_reason = ?, derived_from_json = ? WHERE id = ? AND household_id = ?",
+            (was.get("reason"), json.dumps(derived), i, household_id()),
         )
 
 
@@ -949,6 +1023,7 @@ def undo_meal_move(weekly_plan_id: int, move_id: str) -> dict:
         expected = None
         source_id = None
         restore_cuts: dict[str, str] = {}
+        restore_open: dict[int, dict] = {}
         opened: list[str] = []
         for r in snap["rows"]:
             token = _derived(r).get(_weekly_plan.NIGHTS_MOVED_KEY) or {}
@@ -965,6 +1040,8 @@ def undo_meal_move(weekly_plan_id: int, move_id: str) -> dict:
                 raise ValueError("That meal is cooking now, so it stays where it is.")
             placement[r["id"]] = token.get("date")
             restore_cuts.update(token.get("prep_cuts") or {})
+            if isinstance(token.get("was_open"), dict):
+                restore_open[r["id"]] = token["was_open"]
             for pos in token.get("opened") or []:
                 if pos not in opened:
                     opened.append(pos)
@@ -1011,6 +1088,7 @@ def undo_meal_move(weekly_plan_id: int, move_id: str) -> dict:
         if "refused" in done:
             conn.rollback()
             return {"status": "refused", "message": done["refused"]}
+        _restore_traded_questions(conn, restore_open)
         # A prep cut the move carried earlier goes back to the day it was on.
         for task_id, was in restore_cuts.items():
             conn.execute(

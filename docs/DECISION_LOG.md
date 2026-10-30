@@ -13,6 +13,10 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Phone walk at 390px: three small fixes** (2026-10-30, branch `overnight/phone-walk-1030`).
+  (1) A Move that trades with an open dinner re-says that question for the day the meal left ("You moved the Pesto Pasta to Thursday, so this one is yours to fill.", constraint `moved_away`); Undo puts the old words back (`meal_move._resay_traded_questions` / `_restore_traded_questions`, token `was_open`). Why: Friday's card read "Thursday was going to be leftovers from Wednesday's…".
+  (2) Plan's Move and its Undo re-read Today's needs-you band too (`refreshTonightFromPlan`). Why: "Tonight's dinner needs your call" stayed up beside "Today's meals · Pesto Pasta" until a reload.
+  (3) "Use these first" says "by next Thursday" a week out (`grocery._day_name`), and Today's "Pick one" lands on the Grocery shop chips (`wwkState.scrollAnchor`). Why: milk (7 days) read "by Thursday" on a Thursday; the chips were a screen and a half below.
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
   (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.

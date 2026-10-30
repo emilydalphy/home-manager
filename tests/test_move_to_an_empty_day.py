@@ -310,6 +310,51 @@ def test_undo_of_an_ordinary_swap_still_opens_nothing():
     assert _row(TUE)["slot_state"] == "planned" and _row(WED)["slot_state"] == "planned"
 
 
+def _week_with_an_open_thursday() -> dict:
+    """Thursday handed back the way approval hands back a reheat whose cook
+    night went by (weekly_plan.COOK_NIGHT_GONE) — a question about its own
+    day, said word for word on Today."""
+    w = _week()
+    tools.plan_slot_open(
+        w["plan"], THU, "dinner",
+        "Thursday was going to be leftovers from Wednesday’s Pasta Bake, "
+        "and Wednesday’s gone — what would you like instead?",
+        derived_from={"constraint": tools.weekly_plan.COOK_NIGHT_GONE, "dish": "Pasta Bake"},
+    )
+    return w
+
+
+def test_an_open_question_traded_to_the_day_left_asks_that_days_question():
+    """Phone walk, 2026-10-30: Pesto Pasta moved onto tonight's open dinner,
+    and Friday's card then read "Tomorrow’s dinner needs your call —
+    Thursday was going to be leftovers from Wednesday’s…". The question
+    that lands on the day a meal left is the one that day asks."""
+    w = _week_with_an_open_thursday()
+    thu_question = _row(THU)
+
+    meal_move.move_meal(w["plan"], w["ids"][TUE], THU)
+
+    left = _row(TUE)
+    assert left["id"] == thu_question["id"] and left["slot_state"] == "open"
+    assert left["open_reason"] == "You moved the Tacos to Thursday, so this one is yours to fill."
+    assert left["derived"]["constraint"] == meal_move.MOVE_OPENED_CONSTRAINT
+    assert left["derived"].get("dish") == "Pasta Bake", "the rest of the row stays"
+    assert tools.audit_plan_slots(w["plan"])["duplicated"] == []
+
+
+def test_undo_gives_the_traded_question_back_its_own_words():
+    w = _week_with_an_open_thursday()
+    before = _row(THU)
+    out = meal_move.move_meal(w["plan"], w["ids"][TUE], THU)
+
+    assert meal_move.undo_meal_move(w["plan"], out["move_id"])["status"] == "restored"
+    back = _row(THU)
+    assert back["id"] == before["id"]
+    assert back["open_reason"] == before["open_reason"]
+    assert back["derived"] == before["derived"]
+    assert _row(TUE)["id"] == w["ids"][TUE] and _row(TUE)["slot_state"] == "planned"
+
+
 # ----------------------------------------------------------- what the sheet says
 
 def test_every_blocked_day_says_its_reason_in_the_line_under_it():

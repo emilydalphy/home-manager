@@ -167,3 +167,26 @@ def test_a_thing_already_past_its_date_is_not_one_to_use_first():
     now = tools.kitchen_from_this_shop()
     assert "Chicken thighs" not in [u["item"] for u in now["use_first"]]
     assert now["total"] == 2, "it still counts as in the kitchen"
+
+
+def test_a_week_out_is_next_weekday_never_todays_name():
+    # Milk keeps seven days, so on every shop its "by <day>" fell on
+    # today's own weekday: "Milk · by Thursday", read on a Thursday as
+    # today (phone walk, 2026-10-30).
+    _bought("Milk", "dairy", "1")
+    conn = get_conn()
+    conn.execute("UPDATE inventory_items SET expiration_date = ? WHERE item = 'Milk'", (household_date(7),))
+    conn.commit()
+    conn.close()
+
+    weekday = household_today().strftime("%A")
+    milk = {u["item"]: u for u in tools.kitchen_from_this_shop()["use_first"]}["Milk"]
+    assert milk["plan"] == f"by next {weekday}"
+
+
+def test_six_days_out_is_the_bare_weekday():
+    from datetime import timedelta
+    from app.tools.grocery import _use_by_words
+    today = household_today()
+    six = today + timedelta(days=6)
+    assert _use_by_words(six, today) == "by " + six.strftime("%A")

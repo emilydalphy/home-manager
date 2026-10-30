@@ -2159,20 +2159,30 @@ USE_FIRST_WITHIN_DAYS = 7
 USE_FIRST_MAX = 3
 
 
+def _day_name(on: date, today: date) -> str:
+    """The weekday a person would say for `on`: "Thursday" within the
+    coming six days, "next Thursday" a week or more out. A week out is
+    today's own weekday, so the bare name read as TODAY — milk keeps seven
+    days, and every shop said "Milk · by Thursday" on a Thursday (phone
+    walk, 2026-10-30)."""
+    name = on.strftime("%A")
+    return "next " + name if (on - today).days >= 7 else name
+
+
 def _use_by_words(expires: date, today: date) -> str:
     gap = (expires - today).days
     if gap <= 0:
         return "today"
     if gap == 1:
         return "by tomorrow"
-    return "by " + expires.strftime("%A")
+    return "by " + _day_name(expires, today)
 
 
 def _meal_words(slot: str, on: date, today: date) -> str:
     gap = (on - today).days
     if slot == "dinner" and gap == 0:
         return "in tonight’s dinner"
-    day = "today’s" if gap == 0 else "tomorrow’s" if gap == 1 else on.strftime("%A") + "’s"
+    day = "today’s" if gap == 0 else "tomorrow’s" if gap == 1 else _day_name(on, today) + "’s"
     return f"in {day} {slot}"
 
 
