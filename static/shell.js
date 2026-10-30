@@ -416,14 +416,16 @@
     if (quietSheetEl) return;
     quietScrimEl = document.createElement('div');
     quietScrimEl.id = 'quiet-scrim';
+    quietScrimEl.className = 'quiet-scrim';
     quietScrimEl.hidden = true;
     quietSheetEl = document.createElement('div');
     quietSheetEl.id = 'quiet-sheet';
+    quietSheetEl.className = 'quiet-sheet';
     quietSheetEl.hidden = true;
     quietSheetEl.setAttribute('role', 'dialog');
     quietSheetEl.setAttribute('aria-modal', 'true');
     quietSheetEl.setAttribute('aria-labelledby', 'quiet-sheet-title');
-    quietSheetEl.innerHTML = '<div class="ask-sheet-handle" id="quiet-sheet-handle"></div><div id="quiet-sheet-body"></div>';
+    quietSheetEl.innerHTML = '<div class="ask-sheet-handle" id="quiet-sheet-handle"></div><div class="quiet-sheet-body" id="quiet-sheet-body"></div>';
     document.body.appendChild(quietScrimEl);
     document.body.appendChild(quietSheetEl);
     quietScrimEl.addEventListener('click', closeQuietSheet);
@@ -17675,7 +17677,7 @@
     '</div>';
   }
 
-  // The Plan root. With no plan, the plan-a-week entry (rendered into
+  // The Plan root. NOTHING YET: the plan-a-week entry (rendered into
   // #week-plan-row by renderPlanWeekEntry after this lands) and More.
   // With one — a draft or an approved week alike — the one screen
   // (planWeekHtml, Emily 2026-10-30): approving changes the badge and the

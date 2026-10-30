@@ -119,6 +119,8 @@ def test_the_soft_note_is_unaffected_by_the_per_day_gate():
 
 
 def test_the_call_site_hands_the_selected_day_to_the_notes_row():
-    """Source tripwire for the wiring itself: weekStepHtml must pass the
-    day actually on screen, not just the week payload."""
-    assert "weekNotesHtml(data, days[selected])" in SHELL_JS
+    """Source tripwire for the wiring itself: the Plan root must pass the
+    day actually on screen, not just the week payload (since 2026-10-30
+    planNotesHtml: the selected day, or on Week the first day with sides)."""
+    assert "var noteDay = sel !== null ? days[sel] : days.filter(_dayHasPlateSides)[0];" in SHELL_JS
+    assert "weekNotesHtml(data, noteDay)" in SHELL_JS

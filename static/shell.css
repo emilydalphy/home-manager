@@ -12212,7 +12212,7 @@ body.first-open-active { overflow: hidden; }
 
 /* ---------- The quiet sheet: a row's options (openQuietSheet) ----------
    The swap sheet's own frame, so every bottom sheet reads as one family. */
-#quiet-scrim {
+.quiet-scrim {
   position: fixed;
   inset: 0;
   background: var(--scrim);
@@ -12220,8 +12220,8 @@ body.first-open-active { overflow: hidden; }
   opacity: 0;
   transition: opacity var(--motion-base) var(--motion-ease);
 }
-#quiet-scrim.is-open { opacity: 1; }
-#quiet-sheet {
+.quiet-scrim.is-open { opacity: 1; }
+.quiet-sheet {
   position: fixed;
   left: 0;
   right: 0;
@@ -12239,11 +12239,11 @@ body.first-open-active { overflow: hidden; }
   translate: 0 100%;
   transition: translate var(--motion-base) var(--motion-ease);
 }
-#quiet-sheet.is-open { translate: 0 0; }
-#quiet-scrim[hidden], #quiet-sheet[hidden] { display: none; }
-#quiet-sheet-body { display: flex; flex-direction: column; gap: 12px; }
+.quiet-sheet.is-open { translate: 0 0; }
+.quiet-scrim[hidden], .quiet-sheet[hidden] { display: none; }
+.quiet-sheet-body { display: flex; flex-direction: column; gap: 12px; }
 @media (min-width: 768px) {
-  #quiet-sheet {
+  .quiet-sheet {
     left: 50%;
     right: auto;
     transform: translateX(-50%);
