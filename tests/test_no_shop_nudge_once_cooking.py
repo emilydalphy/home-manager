@@ -110,3 +110,59 @@ def test_the_list_itself_is_untouched_by_a_start():
     _start_tonight()
     tools.today_moves(now=_at(16))
     assert [r["item"] for r in tools.list_grocery_list(status="needed")] == before
+
+
+def _tonight_id() -> str:
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT id FROM meal_plan_entries WHERE household_id = ? AND date = ? AND slot = 'dinner'",
+        (tools.household_id(), household_today().isoformat()),
+    ).fetchone()
+    conn.close()
+    return f"cook:{row['id']}"
+
+
+def test_a_started_dinner_is_the_card_over_tomorrows_shop():
+    """CATCH (day walk, 2026-10-29). The roast is on and tomorrow's shrimp is
+    still on the list: "Shop before tomorrow" stays a row, but Next up — and
+    the dock's button — is the dinner on the stove, not "Go shopping"."""
+    _seed(tomorrow_too=True)
+    _start_tonight()
+    payload = tools.today_moves(now=_at(16))
+    assert any(m["kind"] == "shop" for m in payload["moves"]), "the shop row stays"
+    assert payload["featured"] == _tonight_id()
+
+
+def test_before_the_start_tomorrows_shop_still_leads():
+    """GUARD. Not started: the ranking is as it was — the shop (window open
+    since midnight) wins the tie with tonight's cook."""
+    _seed(tomorrow_too=True)
+    payload = tools.today_moves(now=_at(15))
+    tonight = next(m for m in payload["moves"] if m["id"] == _tonight_id())
+    assert tonight["started_at"] is None
+    assert payload["featured"].startswith("shop:")
+
+
+def test_an_overdue_fridge_move_still_beats_the_started_dinner():
+    """GUARD. Urgent stays first: a fridge move gone past "by tonight" is
+    still the card while the roast cooks — it is the one thing that can't
+    wait."""
+    _seed()
+    conn = get_conn()
+    plan_id = conn.execute("SELECT id FROM weekly_plans WHERE household_id = ?",
+                           (tools.household_id(),)).fetchone()["id"]
+    task = conn.execute(
+        "INSERT INTO prep_tasks (household_id, weekly_plan_id, task_date, description, related_meal, "
+        "status, task_type) VALUES (?, ?, ?, 'Move the shrimp to the fridge — for tomorrow.', "
+        "'Garlic Butter Shrimp', 'pending', 'defrost')",
+        (tools.household_id(), plan_id, household_today().isoformat()),
+    ).lastrowid
+    conn.commit()
+    conn.close()
+    _start_tonight()
+    payload = tools.today_moves(now=_at(18))
+    assert next(m for m in payload["moves"] if m["id"] == f"fridge:{task}")["overdue"]
+    assert payload["featured"] == f"fridge:{task}"
+    # ...and only the fridge move: with it ticked, the roast is the card.
+    tools.set_move_done(f"fridge:{task}", True)
+    assert tools.today_moves(now=_at(18))["featured"] == _tonight_id()

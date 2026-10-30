@@ -1296,3 +1296,52 @@ def test_a_failure_part_way_through_the_sync_leaves_the_write_lock_free(frozen_k
         ) from None
     finally:
         probe.close()
+
+
+# ======================================================================
+# A frozen cook pulled onto TONIGHT is told it is too late (day walk,
+# 2026-10-29)
+# ======================================================================
+
+def test_a_nights_swap_onto_tonight_says_too_late_not_now(frozen_kitchen):
+    """
+    CATCH. Today's "Something else" trades tonight with a night whose dish
+    is still in the freezer. The shift puts its fridge move on a day that
+    has gone, and the toast said "Move the Chicken thighs to the fridge
+    now." over a dinner a few hours off — the too-late note is the true one.
+    """
+    plan_id = _plan((_d(3), "Chicken Skewers"), (_d(0), "Bean Chili"))
+
+    result = tools.swap_dinner_nights(plan_id, _d(3), _d(0))
+
+    assert result["status"] == "swapped"
+    assert _defrost_rows(plan_id)[0]["task_date"] < household_today().isoformat(), \
+        "premise: the move's day has gone"
+    assert result["thaw_now"] == [df.too_late_to_thaw_note(_d(0), "dinner", household_today())]
+    assert "tonight" in result["thaw_now"][0]
+
+
+def test_the_move_sheet_onto_today_says_too_late_not_now(frozen_kitchen):
+    """CATCH. The same fact through the Move sheet's own line."""
+    plan_id = _plan((_d(3), "Chicken Skewers"), (_d(1), "Bean Chili"))
+
+    out = meal_move.move_meal(plan_id, _entry(plan_id, _d(3))["id"], _d(0))
+
+    assert out["status"] == "moved", out
+    assert out["thaw_notes"] == [df.too_late_to_thaw_note(_d(0), "dinner", household_today())]
+
+
+def test_the_sentence_reads_the_meals_day_only_when_the_move_day_has_gone():
+    """GUARD on thaw_move_sentence itself: a meal tomorrow still gets "now";
+    a move dated today for tonight keeps "today"; with no meal date the
+    wording is exactly as it was."""
+    desc = "Move the Chicken thighs to the fridge — for Thursday's Chicken Skewers."
+    today = "2026-10-01"
+    assert df.thaw_move_sentence(desc, "2026-09-30", today, meal_date="2026-10-02") == \
+        "Move the Chicken thighs to the fridge now."
+    assert df.thaw_move_sentence(desc, today, today, meal_date=today) == \
+        "Move the Chicken thighs to the fridge today."
+    assert df.thaw_move_sentence(desc, "2026-09-30", today, meal_date=today, slot="dinner") == \
+        df.too_late_to_thaw_note(today, "dinner", datetime.date(2026, 10, 1))
+    assert df.thaw_move_sentence(desc, "2026-09-30", today) == \
+        "Move the Chicken thighs to the fridge now."

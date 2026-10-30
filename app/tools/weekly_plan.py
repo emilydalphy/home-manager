@@ -8812,7 +8812,7 @@ def _defrost_resync(weekly_plan_id: int, entry_ids: list) -> list[str]:
     be a cycle."""
     from . import defrost as _defrost
 
-    return _defrost.resync_plan_thaws(weekly_plan_id, entry_ids)
+    return _defrost.resync_plan_thaws(weekly_plan_id, entry_ids, too_late_today=True)
 
 
 def swap_meal_in_plan(

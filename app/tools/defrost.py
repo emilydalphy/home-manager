@@ -647,7 +647,8 @@ def sync_defrost_tasks(weekly_plan_id: int) -> dict:
 # reminder at all unless somebody says so.
 
 
-def thaw_move_sentence(description: str, task_date: str, today: str) -> str | None:
+def thaw_move_sentence(description: str, task_date: str, today: str,
+                       meal_date: str | None = None, slot: str | None = None) -> str | None:
     """
     One fridge move, said as an instruction for when it has to happen:
     "Move the chicken thighs to the fridge today." / "… now." / "… on
@@ -669,10 +670,21 @@ def thaw_move_sentence(description: str, task_date: str, today: str) -> str | No
     meal_move._thaw_notes, which had it first: three sentences for one
     fact is how two screens end up telling a household different things
     about the same chicken.
+
+    `meal_date` (and its `slot`), when the caller knows it: a move whose day
+    has GONE for a meal that is TODAY gets the too-late note instead of
+    "now" (day walk, 2026-10-29). "Move the Cod fillets to the fridge now."
+    was toasted at 4pm over tacos swapped onto 7pm — a fridge can't thaw
+    that in time, and Now already goes quiet about a missed move on its
+    cook's own day (moves._missed_fridge_moves) for the same reason. A move
+    dated today keeps "today". Only the hand doors pass it (resync_plan_
+    thaws' too_late_today) — never the yesterday skip.
     """
     head = (description or "").split(" — ")[0].rstrip(".").strip()
     if not head:
         return None
+    if meal_date and meal_date <= today and (not task_date or task_date < today):
+        return too_late_to_thaw_note(meal_date, slot, date.fromisoformat(today))
     if not task_date or task_date < today:
         return f"{head} now."
     if task_date == today:
@@ -719,7 +731,8 @@ def resync_live_plan_thaws() -> None:
         logger.exception("Re-reading the live plans' fridge moves after a kitchen change failed; the change is written")
 
 
-def resync_plan_thaws(weekly_plan_id: int | None, entry_ids=(), *, today: str | None = None) -> list[str]:
+def resync_plan_thaws(weekly_plan_id: int | None, entry_ids=(), *, today: str | None = None,
+                      too_late_today: bool = False) -> list[str]:
     """
     Recompute this plan's fridge moves after a hand change, and say which
     of the named meals' moves now have to start today or earlier.
@@ -752,9 +765,17 @@ def resync_plan_thaws(weekly_plan_id: int | None, entry_ids=(), *, today: str | 
     Only PENDING rows: a move already ticked done is food already in the
     fridge, and "move the chicken now" about chicken that moved yesterday
     is the app not reading its own records.
+
+    `too_late_today` is for the doors that PUT a meal on today by hand — a
+    swap, the Move sheet, the going-off swap: a gone move for a meal today
+    is said as too late to thaw (thaw_move_sentence's meal_date). Off for
+    the yesterday skip: its cook's move is re-dated back past today by the
+    sync above, and that food was due out days ago and has likely thawed,
+    so "cook something else" would waste it (review, 2026-10-29).
     """
     try:
-        return _resync_plan_thaws(weekly_plan_id, entry_ids, today=today)
+        return _resync_plan_thaws(weekly_plan_id, entry_ids, today=today,
+                                  too_late_today=too_late_today)
     except Exception:
         # The guarantee above is STRUCTURAL rather than a property of where
         # the statements inside happen to sit, and it is this way because it
@@ -772,7 +793,7 @@ def resync_plan_thaws(weekly_plan_id: int | None, entry_ids=(), *, today: str | 
         return []
 
 
-def _resync_plan_thaws(weekly_plan_id, entry_ids, *, today=None) -> list[str]:
+def _resync_plan_thaws(weekly_plan_id, entry_ids, *, today=None, too_late_today=False) -> list[str]:
     """The body of resync_plan_thaws. Its own two try blocks stay, for
     their own log lines; the wrapper above is what makes NEVER RAISES
     true of the lines they do not cover."""
@@ -796,10 +817,11 @@ def _resync_plan_thaws(weekly_plan_id, entry_ids, *, today=None) -> list[str]:
         conn = get_conn()
         try:
             rows = conn.execute(
-                "SELECT task_date, description FROM prep_tasks "
-                "WHERE household_id = ? AND weekly_plan_id = ? AND task_type = 'defrost' "
-                f"AND status = 'pending' AND meal_plan_entry_id IN ({','.join('?' * len(ids))}) "
-                "AND task_date <= ? ORDER BY task_date, id",
+                "SELECT t.task_date, t.description, m.date AS meal_date, m.slot FROM prep_tasks t "
+                "LEFT JOIN meal_plan_entries m ON m.id = t.meal_plan_entry_id AND m.household_id = t.household_id "
+                "WHERE t.household_id = ? AND t.weekly_plan_id = ? AND t.task_type = 'defrost' "
+                f"AND t.status = 'pending' AND t.meal_plan_entry_id IN ({','.join('?' * len(ids))}) "
+                "AND t.task_date <= ? ORDER BY t.task_date, t.id",
                 (household_id(), weekly_plan_id, *ids, today),
             ).fetchall()
         finally:
@@ -809,7 +831,9 @@ def _resync_plan_thaws(weekly_plan_id, entry_ids, *, today=None) -> list[str]:
         return []
     said = []
     for r in rows:
-        sentence = thaw_move_sentence(r["description"], r["task_date"], today)
+        sentence = thaw_move_sentence(r["description"], r["task_date"], today,
+                                      meal_date=r["meal_date"] if too_late_today else None,
+                                      slot=r["slot"])
         if sentence and sentence not in said:
             said.append(sentence)
     return said
