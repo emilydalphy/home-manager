@@ -12389,6 +12389,7 @@ body.first-open-active { overflow: hidden; }
   color: var(--ink);
 }
 button.wk-qrow { cursor: pointer; }
+.wk-qrow[hidden], .wk-qline[hidden] { display: none; }
 button.wk-qrow:hover .wk-qrow-name { color: var(--ink-strong); }
 .wk-qrow-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .wk-qrow-name { font-family: var(--font-body); font-size: 15px; font-weight: 600; line-height: 1.3; color: var(--ink); }

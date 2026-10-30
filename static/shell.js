@@ -8021,8 +8021,12 @@
         }
       });
     }, function () {
+      // Closed by the scrim, the x or Escape: the list lets go of the row
+      // too. (When this sync closed it, the row was already let go.)
+      var was = groceryState.openRowId;
       groceryState.openRowId = null;
       groceryState.substOpenId = null;
+      if (was) renderGrocery();
     }, 'gro-row');
     if (body) {
       body.setAttribute('data-html', html);
@@ -10225,7 +10229,9 @@
               return groPost('/api/grocery-list/' + w.id + '/update', { quantity: w.quantity });
             }));
           }, "Couldn't save that — try again.").then(function (ok) {
-            if (!ok) return;
+            // The sheet is not redrawn on a failure, so the button comes
+            // back by hand (2026-10-30).
+            if (!ok) { el.disabled = false; return; }
             groceryState.openRowId = null;
             renderGrocery();
           });
@@ -10238,7 +10244,7 @@
         groDo(function () {
           return groPost('/api/grocery-list/' + id + '/update', { quantity: rowQty });
         }, "Couldn't save that — try again.").then(function (ok) {
-          if (!ok) return;
+          if (!ok) { el.disabled = false; return; }
           groceryState.openRowId = null;
           renderGrocery();
         });
@@ -10268,7 +10274,7 @@
             return groPost('/api/grocery-list/' + one + '/store', { store: rowStore });
           });
         }, "Couldn't move that — try again.").then(function (ok) {
-          if (!ok) return;
+          if (!ok) { el.disabled = false; return; }
           if (rowItem && rowStore) groRememberLocally(rowItem.item, rowStore);
           groceryState.openRowId = null;
           renderGrocery();
@@ -16756,7 +16762,7 @@
     draftView: 'menu', draftViewPlanId: null,
     // The Plan root's day bar (planWeekHtml, 2026-10-30): null is Week,
     // a number is that day. planSnacksOpen: the week's snacks unfolded.
-    planDay: null, planSnacksOpen: false,
+    planDay: null, planSnacksOpen: false, planDayPlanId: null,
     // A pin by PLAN, not by date: "See next week's draft" (planNextWeek).
     // Wins over showWeekStart, and lets go once that plan is approved.
     showPlanId: null
@@ -18698,6 +18704,8 @@
     var snack = isSnackSlot(slot);
     if (entry && entry.state === 'planned') {
       var name = mealDisplayName(entry);
+      // A snack's row is its swap, and a day gone by has nothing to swap.
+      if (snack && day.isPast) return planRowHtml({ name: name, meta: planRowMeta(entry), past: true });
       return planRowHtml({
         attrs: (snack ? ' data-plan-snack="' : ' data-plan-row="') + slot + '"' + at,
         eyebrow: eyebrow, name: name, meta: planRowMeta(entry), changed: changed,
@@ -18820,11 +18828,11 @@
     days.forEach(function (day) {
       if (day.before_plan_start) return;
       var n = (day.snacks || []).filter(function (e) { return e && e.state === 'planned'; }).length;
-      if (!(day.snacks || []).length) return;
+      if (!n) return;
       counts.push(n);
       total += n;
     });
-    if (!counts.length) return '';
+    if (!total) return '';
     var even = counts.every(function (n) { return n === counts[0]; });
     var summary = [even && counts[0] ? counts[0] + ' a day' : '', total + ' in all'].filter(Boolean).join(' · ');
     var open = !!weekState.planSnacksOpen;
@@ -24269,6 +24277,13 @@
 
   function renderWeekMenu(panel, data) {
     weekState.data = data;
+    // A different plan opens on Week, snacks folded (the day bar's choice
+    // belongs to the week it was made on).
+    if (weekState.planDayPlanId !== data.weekly_plan_id) {
+      weekState.planDayPlanId = data.weekly_plan_id;
+      weekState.planDay = null;
+      weekState.planSnacksOpen = false;
+    }
     setDishIndex(data);
     var todayStr = todayLocalStr();
     var days = (data.days || []).map(function (d) { return Object.assign({}, d, classifyDay(d, todayStr)); });

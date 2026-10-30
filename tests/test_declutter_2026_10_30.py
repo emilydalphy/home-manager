@@ -201,7 +201,8 @@ def test_the_weeks_snacks_fold_to_one_line_and_open_in_place():
     assert 'data-plan-snacks="1" aria-expanded="false"' in out["shut"]
     assert "data-plan-snack=" not in out["shut"]
     assert 'aria-expanded="true"' in out["open"]
-    assert out["open"].count("data-plan-snack=") == 8
+    assert out["open"].count("data-plan-snack=") == 6, "Monday has gone by: its two are lines, not swaps"
+    assert "Apple" in out["open"] and "Yogurt" in out["open"]
     assert len(re.findall(r'class="wk-pgroup[ "]', out["open"])) == 4, "per-day rows, styled like the meal rows"
 
 
@@ -506,3 +507,22 @@ def test_on_shop_day_the_shop_card_is_one_line_naming_the_stores():
     assert "day-group-shop" not in html
     assert "Shop today" in html and "Costco, T&amp;T" in html
     assert 'data-shop-open="1"' in html
+
+
+@_needs_node
+def test_a_past_days_snack_is_a_line_not_a_swap_and_unplanned_snacks_draw_no_card():
+    out = _plan(
+        "var past = planSnackRows(DAYS[0], 0);\n"
+        "var empty = DAYS.map(function (d) { return Object.assign({}, d, { snacks: [{ state: 'planned_empty', title: 'None' }] }); });\n"
+        "console.log(JSON.stringify({ past: past, empty: planSnacksHtml(empty, null) }));"
+    )
+    assert "data-plan-snack" not in out["past"], "nothing to swap on a day gone by"
+    assert "Apple" in out["past"]
+    assert out["empty"] == "", "no '0 in all' card"
+
+
+def test_a_failed_store_pick_or_amount_save_gives_the_button_back():
+    for marker in ("case 'row-qty': {", "case 'row-store': {"):
+        start = SHELL_JS.index(marker)
+        body = SHELL_JS[start:SHELL_JS.index("\n      case '", start + 10)]
+        assert "if (!ok) { el.disabled = false; return; }" in body, marker
