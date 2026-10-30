@@ -1415,6 +1415,11 @@ _KITCHEN_MEASURES = (
 )
 _MEASURE_SHORT = 0.05   # never short by more than this
 _MEASURE_OVER = 0.05
+# ...and never by more than a quarter cup, however big the pot (defect hunt,
+# 2026-10-28). 5% of 24 cups is more than a cup, so a soup's "12 cups water"
+# doubled said "23 cups" — one scoop fewer than 24, a whole cup short. Below
+# 5 cups 5% is under a quarter cup already, so nothing smaller moves.
+_MEASURE_SLACK_MAX_TSP = 12.0
 
 
 def _easiest_volume(tsp: float) -> list[tuple[float, str]]:
@@ -1423,10 +1428,20 @@ def _easiest_volume(tsp: float) -> list[tuple[float, str]]:
     "tsp")]. See the block comment above for the rule."""
     if tsp <= 0:
         return [(0.0, "tsp")]
+    lo = tsp - min(tsp * _MEASURE_SHORT, _MEASURE_SLACK_MAX_TSP) - 1e-9
+    hi = tsp + min(tsp * _MEASURE_OVER, _MEASURE_SLACK_MAX_TSP) + 1e-9
     terms_by_unit = []
     for unit, size, parts in _KITCHEN_MEASURES:
         terms = []
-        for whole in range(0, int(tsp * (1 + _MEASURE_OVER) / size) + 2):
+        # Only the counts that can matter: a small one (the top-up after a
+        # bigger measure, under one cup) and the ones near the amount itself.
+        # Every count from 0 up used to be listed and paired, which is
+        # quadratic in the amount — 100 cups took two seconds, and a
+        # stepper asked for a million servings ate 10 GB and took the
+        # server down with it (defect hunt, 2026-10-28).
+        small = range(0, int(_KITCHEN_MEASURES[0][1] / size) + 2)
+        near = range(max(0, int(lo / size) - 2), int(hi / size) + 2)
+        for whole in sorted(set(small) | set(near)):
             for part, part_scoops in parts:
                 n = whole + part
                 if n <= 0:
@@ -1439,14 +1454,13 @@ def _easiest_volume(tsp: float) -> list[tuple[float, str]]:
             candidates.append((value, scoops, 1, fracs, i, [term]))
         for j in range(i + 1, len(terms_by_unit)):
             for v1, s1, f1, t1 in terms:
-                if v1 > tsp * (1 + _MEASURE_OVER):
+                if v1 > hi:
                     continue
                 for v2, s2, f2, t2 in terms_by_unit[j]:
                     # The second measure tops up less than one of the first.
                     if v2 >= _KITCHEN_MEASURES[i][1]:
                         continue
                     candidates.append((v1 + v2, s1 + s2, 2, f1 + f2, j, [t1, t2]))
-    lo, hi = tsp * (1 - _MEASURE_SHORT) - 1e-9, tsp * (1 + _MEASURE_OVER) + 1e-9
     close = [c for c in candidates if lo <= c[0] <= hi]
     if close:
         best = min(close, key=lambda c: (c[1], c[2], c[3], abs(c[0] - tsp), c[4]))
