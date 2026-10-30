@@ -890,6 +890,9 @@ def _take_out(item_id: int, how: str) -> dict:
     # now, not at the next approval (already_home.recheck_set_aside).
     from . import already_home as _already_home
     lines = _already_home.recheck_set_aside()
+    # And its fridge move, if a plan booked one off this row (2026-10-28).
+    from . import defrost as _defrost
+    _defrost.resync_live_plan_thaws()
     return {"item_id": item_id, "item": before["item"], "removed": True, "how": how,
             "undo": {"kind": "removed", "item_id": item_id, "removal_id": removal_id,
                      "set_aside_again": lines}}
@@ -945,6 +948,10 @@ def restore_item(undo: dict) -> dict:
         with write() as conn:
             _already_home.set_aside_again(conn, again)
             _already_home.recheck_set_aside(conn=conn)
+    if (undo or {}).get("kind") == "removed" and result.get("undone"):
+        # Back in the kitchen: the fridge move its "gone" swept comes back.
+        from . import defrost as _defrost
+        _defrost.resync_live_plan_thaws()
     return result
 
 

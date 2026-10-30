@@ -211,6 +211,7 @@ def _page_harness(check_items, use_up):
     return """
 var weekStart = '2099-01-05', dayCount = 7, preStep = '', shown = [], posted = [];
 var preCheck = { items: [], gone: [] }, preUseUp = { shown: false, items: [], off: [] };
+var useUpOffHere = null;
 var PRE_COPY = { saveFailed: 'x' };
 function renderCheckChips() {} function renderUseUpChips() {}
 function showPreSection(w) { preStep = w; shown.push(w); }
@@ -260,3 +261,47 @@ def test_page_sends_use_up_off_only_when_the_step_showed():
                   "From your last shop and what you&rsquo;ve cooked since. Something wrong? Tap it."):
         assert words in PAGE, words
     assert "plan: 'Plan the week'" in PAGE and "next: 'Next'" in PAGE and "gone: ' · gone'" in PAGE
+
+
+def _back_and_again(check_items, use_up, tap):
+    """Draft my week, a tap, "‹ Same as last week?" (crumbTap → showSame
+    clears preStep), Draft my week again: what the step opens with."""
+    script = _page_harness(check_items, use_up).replace(
+        "var second = first ? await preDraftStep() : null;",
+        tap + " preStep = ''; var second = await preDraftStep();",
+    ).replace("useUpShown: preUseUp.shown", "useUpShown: preUseUp.shown, off: preUseUp.off, gone: preCheck.gone")
+    return json.loads(nodeharness.run_node(script).stdout.strip().splitlines()[-1])
+
+
+@_needs_node
+def test_a_use_up_switch_survives_going_back_and_drafting_again():
+    """CATCH (hunt 2026-10-28) — switched Ground beef off, went back,
+    tapped Draft my week again: the beef was back on, and the draft used it."""
+    use = {"items": [{"id": 7, "label": "Chicken · freezer"}, {"id": 8, "label": "Ground beef · freezer"}], "off": []}
+    out = _back_and_again([], use, "preUseUp.off.push(8); useUpOffHere = preUseUp.off.slice();")
+    assert out["shown"] == ["useup", "useup"]
+    assert out["off"] == [8]
+
+
+@_needs_node
+def test_switching_one_back_on_wins_over_the_saved_off_list():
+    """CATCH — switched back on this visit: the saved off list no longer wins."""
+    use = {"items": [{"id": 8, "label": "Ground beef · freezer"}], "off": [8]}
+    out = _back_and_again([], use, "preUseUp.off = []; useUpOffHere = [];")
+    assert out["off"] == []
+
+
+@_needs_node
+def test_a_gone_tap_on_the_check_survives_going_back():
+    """CATCH (hunt 2026-10-28) — Back from the check is not an answer, and not a reset either."""
+    items = [{"id": 1, "label": "Hummus"}, {"id": 2, "label": "Cheddar"}]
+    out = _back_and_again(items, {"items": [], "off": []}, "preCheck.gone.push(1);")
+    assert out["shown"] == ["check", "check"]
+    assert out["gone"] == [1]
+    assert out["posted"] == [], "nothing is answered until Next"
+
+
+def test_the_page_remembers_a_tap_this_visit():
+    """The page's own lines, which the harness above runs extracted."""
+    assert "useUpOffHere = preUseUp.off.slice();" in PAGE
+    assert "var off = (useUpOffHere || (res && res.off) || [])" in PAGE

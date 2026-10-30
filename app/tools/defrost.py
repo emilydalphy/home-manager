@@ -680,6 +680,45 @@ def thaw_move_sentence(description: str, task_date: str, today: str) -> str | No
     return f"{head} on {_weekday_name(task_date)}."
 
 
+def resync_live_plan_thaws() -> None:
+    """
+    A kitchen row just left the kitchen ("gone" on Plan the week's quick
+    check, the Kitchen tab's Used it up / Threw it out, chat's "we're out",
+    the Inventory view's delete) or came back by Undo: every live plan
+    still running re-reads its fridge moves (resync_plan_thaws). A pending
+    "Move the Chicken Thighs to the fridge" booked off a freezer row the
+    household just said is gone is swept; Undo books it again.
+
+    Until this (hunt 2026-10-28) the move stayed — on Today, the prep
+    session and the evening text — until some unrelated plan change re-ran
+    sync_defrost_tasks. Shop's "Already home" half of the same answer is
+    already_home.recheck_set_aside's.
+
+    Call it with no connection open (sync_defrost_tasks opens its own; a
+    nested get_conn in an open write is how this repo earns "database is
+    locked"). Never raises: the kitchen write it follows has happened.
+    """
+    from . import weekly_plan as _weekly_plan
+
+    try:
+        today = _cooker.household_today()
+        conn = get_conn()
+        try:
+            plans = conn.execute(
+                "SELECT * FROM weekly_plans WHERE household_id = ? AND status IN ('draft', 'approved')",
+                (household_id(),),
+            ).fetchall()
+        finally:
+            conn.close()
+        for plan in plans:
+            start, days = _weekly_plan.plan_period(plan)
+            if days <= 0 or date.fromisoformat(start) + timedelta(days=days - 1) < today:
+                continue
+            resync_plan_thaws(plan["id"])
+    except Exception:
+        logger.exception("Re-reading the live plans' fridge moves after a kitchen change failed; the change is written")
+
+
 def resync_plan_thaws(weekly_plan_id: int | None, entry_ids=(), *, today: str | None = None) -> list[str]:
     """
     Recompute this plan's fridge moves after a hand change, and say which

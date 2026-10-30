@@ -984,6 +984,9 @@ def update_inventory(
             _already_home.recheck_set_aside(conn=conn)
             conn.commit()
             conn.close()
+            # Its fridge move goes too (defrost.resync_live_plan_thaws).
+            from . import defrost as _defrost
+            _defrost.resync_live_plan_thaws()
             return {"item": item, "removed": True}
         # A partial use is the household's own count too (counted_on).
         conn.execute(
@@ -1210,4 +1213,6 @@ def remove_inventory_item(item_id: int) -> dict:
     conn.commit()
     conn.close()
     _already_home.recheck_set_aside()
+    from . import defrost as _defrost
+    _defrost.resync_live_plan_thaws()
     return {"item_id": item_id, "removed": True}

@@ -22,6 +22,16 @@ why*, not duplicating the diff.
   (2) `whats_home.amount_level` read any ".5"/".25"/"1/2" as the amount: 3.25 lbs of chicken said "almost gone", 1.5 L of milk "about half" — the totals `_merged_quantity` writes. A fraction now counts only when no whole number stands before it.
   (3) `eaten_receipt._add_onto` (Undo onto a row changed since the tick) used the grocery join, writing "2 lbs + 12 oz"; it uses `inventory._merged_quantity` now.
   Not changed: the add toast's "Eggs was added to the fridge." — whether plural names say "were" is an open decision card (Emily), so it stays as it is.
+- **"Gone" takes its fridge move with it; Back keeps the pre-draft taps** (2026-10-28, branch
+  `overnight/hunt-planweek-1028`, merged over `overnight/hunt-whatshome-1028`; tests
+  `tests/test_kitchen_gone_resettles_plans.py`, `tests/test_pre_draft_check.py`).
+  (1) A freezer row said gone (Plan the week's quick check, the Kitchen tab's Used it up / Threw it out, chat's
+  "we're out", the Inventory delete) left its pending "Move the chicken thighs to the fridge" on Today and the
+  evening text until some unrelated plan change re-ran `sync_defrost_tasks`. Those doors (and the Kitchen Undo)
+  now call `defrost.resync_live_plan_thaws`; Shop's half is the whatshome branch's `recheck_set_aside`.
+  (2) `static/plan-week.html`: "‹ Same as last week?" from either pre-draft step and Draft my week again reset the
+  taps — a switched-off Use these up chip came back on and was drafted. This visit's taps now stand (`useUpOffHere`,
+  `preCheck.gone` kept for chips still shown).
 - **Shop's "Already home" follows the kitchen between approvals** (2026-10-28, defect hunt; branch
   `overnight/hunt-whatshome-1028`; tests `tests/test_already_home_kitchen_says_less.py`).
   (1) The B4 pass only ran inside an ingest, so "Used it up" / "Threw it out", the check's "gone", chat's

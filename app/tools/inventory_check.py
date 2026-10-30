@@ -307,4 +307,7 @@ def answer(gone=None, confirmed=None) -> dict:
         lines = _already_home.recheck_set_aside()
         for r in removed:
             r["undo"]["set_aside_again"] = lines
+        # And a fridge move booked off a gone freezer row goes with it.
+        from . import defrost as _defrost
+        _defrost.resync_live_plan_thaws()
     return {"removed": removed, "confirmed": stamped}

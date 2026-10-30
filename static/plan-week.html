@@ -5163,6 +5163,11 @@ body.toast-up { padding-bottom: 260px; }
   var preStep = '';
   var preCheck = { items: [], gone: [] };
   var preUseUp = { shown: false, items: [], off: [] };
+  // The switches as this visit left them, so "‹ Same as last week?" and
+  // back in again is not a fresh set of chips (hunt 2026-10-28: a chip
+  // switched off came back on, and the draft used it). null until a chip
+  // is tapped; the saved intake's list stands until then.
+  var useUpOffHere = null;
 
   function preEyebrow() {
     return weekStart > todayIso() ? PRE_COPY.eyebrowNext : PRE_COPY.eyebrowThis;
@@ -5219,6 +5224,7 @@ body.toast-up { padding-bottom: 260px; }
     var chip = e.target.closest('.chip[data-id]');
     if (!chip) return;
     toggleIn(preUseUp.off, Number(chip.getAttribute('data-id')));
+    useUpOffHere = preUseUp.off.slice();
     renderUseUpChips();
   });
 
@@ -5231,7 +5237,10 @@ body.toast-up { padding-bottom: 260px; }
     } catch (err) {
       console.warn('Quick check list failed; planning without it:', err);
     }
-    preCheck = { items: items.slice(0, 5), gone: [] };
+    // A tap made before "‹ Same as last week?" is still a tap.
+    var shown = items.slice(0, 5).map(function (c) { return c.id; });
+    var gone = preCheck.gone.filter(function (id) { return shown.indexOf(id) !== -1; });
+    preCheck = { items: items.slice(0, 5), gone: gone };
     if (!preCheck.items.length) return false;
     renderCheckChips();
     showPreSection('check');
@@ -5260,7 +5269,8 @@ body.toast-up { padding-bottom: 260px; }
     var ids = items.map(function (c) { return c.id; });
     // A chip switched off earlier for this week (a draft that fell over,
     // Re-plan) opens off again; one that is no longer offered drops out.
-    var off = ((res && res.off) || []).map(Number).filter(function (id) { return ids.indexOf(id) !== -1; });
+    // This visit's own switches win over the saved ones (useUpOffHere).
+    var off = (useUpOffHere || (res && res.off) || []).map(Number).filter(function (id) { return ids.indexOf(id) !== -1; });
     preUseUp = { shown: !!items.length, items: items, off: off };
     if (!items.length) return false;
     renderUseUpChips();
