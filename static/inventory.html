@@ -527,13 +527,22 @@ function closeItemSheet() {
 document.getElementById('inv-scrim').addEventListener('click', closeItemSheet);
 document.getElementById('inv-sheet-close').addEventListener('click', closeItemSheet);
 
+// "added this month" / "added Oct 31" / "added earlier". created_at is
+// SQLite's datetime('now') — UTC with no zone — so it is read as UTC: read
+// as the phone's own time it is off by the whole UTC offset, and from 8pm
+// on the last of a month in Toronto a thing just added read "added Nov 1".
+function addedWhen(stamp, now) {
+  const created = stamp ? new Date(String(stamp).replace(' ', 'T') + 'Z') : null;
+  if (!created || isNaN(created)) return 'added earlier';
+  now = now || new Date();
+  if (created.getFullYear() === now.getFullYear() && created.getMonth() === now.getMonth()) return 'added this month';
+  return 'added ' + created.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
 function renderSheet() {
   const it = currentItem;
-  const created = it.created_at ? new Date(it.created_at.replace(' ', 'T')) : null;
-  const now = new Date();
-  const sameMonth = created && created.getFullYear() === now.getFullYear() && created.getMonth() === now.getMonth();
   const kickerLoc = LOCATION_LABELS[it.location] || 'Pantry';
-  document.getElementById('inv-sheet-kicker').textContent = `${kickerLoc} · ${sameMonth ? 'added this month' : 'added ' + (created ? created.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'earlier')}`;
+  document.getElementById('inv-sheet-kicker').textContent = `${kickerLoc} · ${addedWhen(it.created_at)}`;
   document.getElementById('inv-sheet-name').textContent = it.item;
 
   const m = /^\s*([\d.]+)/.exec(it.quantity || '');
