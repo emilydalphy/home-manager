@@ -6692,6 +6692,8 @@ def step_inventory_expiration_view(item_id: int, req: InventoryExpirationStepReq
     """Shift an inventory item's best-before date by one day per tap (design_handoff_home_manager §6)."""
     try:
         result = tools.step_inventory_expiration(item_id, req.delta_days)
+    except tools.inventory.InvalidDateStep as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.exception("Inventory expiration step failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
