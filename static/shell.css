@@ -9977,109 +9977,15 @@ button.cook-badge-tap::after { content: ""; position: absolute; inset: -10px -6p
 .wk-dot-page { width: 6px; height: 6px; border-radius: var(--radius-pill); background: var(--hairline-deep); }
 .wk-dot-page.is-on { background: var(--apricot); width: 18px; }
 
-/* ---------- The draft's front door (Emily, 2026-09-21, boards A2/C2/C3) ----------
-   Three things ride in the Plan root's band (fillWeekBandExtras in
-   shell.js): the Re-plan pill top right, the draft's two-line opener,
-   and the What we're eating | Which days toggle. Under it, What we're
-   eating is the menu by meal type (.wk-menu); Which days is the
-   carousel above, unchanged. Every value is a token already measured on
-   the surface it sits on:
-     .wk-replan      --on-accent-ink on --apricot-light (the board's
-                     .mini.ap on spruce): 9.1 light / 9.1 dark. The one
-                     apricot fill in the band; the dock's Approve is the
-                     screen's primary (rule 5) — the board makes this
-                     call, and it is noted as one.
-     .wk-draft-lead  --ivory-ink-muted on --spruce: 10.18 light / 8.17 dark.
-     .wk-draft-seg   the track is --spruce-raised (chips on spruce only,
-                     §1); an unselected half is --ivory-ink-muted on it
-                     (8.62 / 6.52); the selected half is --surface with
-                     --ink-strong (13.5 light; in dark a --surface pill on
-                     the raised spruce with --ink-strong, 12.2).
+/* ---------- The menu by meal type (.wk-menu) ----------
+   The draft's band pills (Re-plan, "Plan the week") and its Meals |
+   Schedule toggle went on 2026-10-30 (the declutter); the Plan root is
+   planWeekHtml now (its styles are at the foot of this file). The menu
+   below is still drawn by the review step.
      .wk-menu-head   the eyebrow, --ink-muted on --surface (§3).
      .wk-dock-more   --ink-strong on --surface inside a --hairline-strong
                      ring, the outline-button vocabulary (.wk-plan-next,
                      .wk-swap-else) as a 48px circle. */
-.wk-replan {
-  position: relative;
-  height: 36px;
-  padding: 0 12px 0 10px;
-  border: 0;
-  border-radius: var(--radius-control);
-  background: var(--apricot-light);
-  color: var(--on-accent-ink);
-  font-family: var(--font-body);
-  font-weight: 700;
-  font-size: 14px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
-}
-/* The 44px target around the 36px box (rule 6), as .wk-mini does. */
-.wk-replan::before { content: ""; position: absolute; inset: -4px 0; }
-.wk-replan svg { width: 16px; height: 16px; flex: 0 0 auto; }
-.wk-replan:hover { background: var(--apricot); }
-/* A draft's band actions (Emily, 2026-09-27): Re-plan and "Plan next
-   week" as one row under the brand row — at 375px the two pills do not
-   fit beside the brand, the Draft chip, the bell and the gear. The top
-   margin keeps the pills' 44px ::before targets clear of the 44px row
-   above. .wk-band-next is the secondary: --ivory-ink on --spruce-raised
-   (chips on spruce only, §1), 9.86 light / 7.49 dark — never apricot,
-   the dock's Approve is the screen's one (rule 5). Same 36px box and
-   44px target as .wk-replan. */
-.wk-band-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 6px 0 4px;
-}
-.wk-band-next {
-  position: relative;
-  height: 36px;
-  padding: 0 14px;
-  border: 0;
-  border-radius: var(--radius-control);
-  background: var(--spruce-raised);
-  color: var(--ivory-ink);
-  font-family: var(--font-body);
-  font-weight: 700;
-  font-size: 14px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.wk-band-next::before { content: ""; position: absolute; inset: -4px 0; }
-.wk-band-next:hover { background: var(--spruce-hover); }
-.wk-draft-lead {
-  font-family: var(--font-body);
-  font-weight: 500;
-  font-size: 15px;
-  line-height: 1.45;
-  color: var(--ivory-ink-muted);
-  margin: 8px 0 0;
-}
-.wk-draft-seg {
-  display: flex;
-  gap: 3px;
-  margin: 12px 0 0;
-  padding: 3px;
-  border-radius: var(--radius-control);
-  background: var(--spruce-raised);
-}
-.wk-draft-seg-btn {
-  flex: 1 1 0;
-  min-width: 0;
-  min-height: 44px;
-  border: 0;
-  border-radius: var(--radius-chip);
-  background: none;
-  color: var(--ivory-ink-muted);
-  font-family: var(--font-body);
-  font-weight: 700;
-  font-size: 14px;
-  cursor: pointer;
-}
-.wk-draft-seg-btn.is-on { background: var(--surface); color: var(--ink-strong); }
 .wk-menu { display: flex; flex-direction: column; gap: 12px; padding: 14px 20px 0; }
 .wk-menu-card { padding: 12px 16px 6px; }
 .wk-menu-head {
@@ -12426,4 +12332,122 @@ body.first-open-active { overflow: hidden; }
 }
 .quiet-line:first-child { border-top: 0; }
 .quiet-line-sub { font-size: 13px; color: var(--ink-secondary); }
+
+/* ---------- Plan: one screen, the week or a day (planWeekHtml) ---------- */
+/* More ··· in the band, beside the gear: the gear's own dress on spruce. */
+.root-band-more {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: var(--radius-tile);
+  background: var(--spruce-raised);
+  color: var(--ivory-ink-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+.root-band-more:hover { background: var(--spruce-hover); }
+.root-band-more svg { width: 18px; height: 18px; }
+.wk-plan { display: flex; flex-direction: column; gap: 12px; padding: 14px 0 0; }
+.wk-plan .wk-strip { margin: 0 16px; gap: 4px; }
+.wk-plan .wk-strip.is-long { margin: 0; padding: 0 16px; }
+.wk-daybar .wk-tile { padding: 8px 0 7px; }
+.wk-pview-title {
+  margin: 4px 20px 0;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  line-height: 1.15;
+  color: var(--ink);
+}
+.wk-pday-tags { margin: -6px 20px 0; font-family: var(--font-body); font-size: 13px; line-height: 1.4; color: var(--ink-secondary); }
+.wk-pcards { display: flex; flex-direction: column; gap: 12px; padding: 0 16px; }
+.wk-pcard { padding: 12px 16px 4px; }
+.wk-pcard .wk-menu-head + .wk-qrow,
+.wk-pcard .wk-menu-head + .wk-qrow-open .wk-qrow,
+.wk-pcard .wk-menu-head + .wk-pgroup { border-top: 0; }
+/* One quiet row: the slot's eyebrow, the dish, one short line, a chevron.
+   The whole row is the 52px tap target (rule 6); nothing else on it is a
+   button. */
+.wk-qrow {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 52px;
+  padding: 8px 0;
+  border: 0;
+  border-top: 1.5px solid var(--hairline);
+  background: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  font: inherit;
+  color: var(--ink);
+}
+button.wk-qrow { cursor: pointer; }
+button.wk-qrow:hover .wk-qrow-name { color: var(--ink-strong); }
+.wk-qrow-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.wk-qrow-name { font-family: var(--font-body); font-size: 15px; font-weight: 600; line-height: 1.3; color: var(--ink); }
+.wk-qrow.is-quiet .wk-qrow-name { font-weight: 500; color: var(--ink-secondary); }
+.wk-qrow.is-past .wk-qrow-name { color: var(--ink-done); }
+.wk-qrow.is-done .wk-qrow-name { color: var(--ink-done); text-decoration: line-through; }
+.wk-qrow .wk-row-eyebrow .wk-changed { margin-left: 8px; }
+.wk-qrow-chev { flex: 0 0 auto; display: flex; color: var(--ink-inactive); }
+.wk-qrow-chev svg { width: 16px; height: 16px; }
+.wk-snacks-chev svg { transition: rotate var(--motion-base) var(--motion-ease); }
+.wk-snacks-chev.is-open svg { rotate: 90deg; }
+/* The week's Lunch & dinner: one group per day, the day at the left. */
+.wk-pgroup { display: flex; gap: 10px; border-top: 1.5px solid var(--hairline); }
+.wk-pgroup-day {
+  flex: 0 0 40px;
+  padding-top: 15px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink-strong);
+}
+.wk-pgroup.is-today .wk-pgroup-day { color: var(--apricot-label); }
+.wk-pgroup.is-past .wk-pgroup-day { color: var(--ink-done); }
+.wk-pgroup-rows { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+.wk-pgroup-rows > .wk-qrow:first-child,
+.wk-pgroup-rows > .wk-qrow-open:first-child .wk-qrow { border-top: 0; }
+.wk-pgroup-rows .wk-qrow { min-height: 48px; padding: 6px 0; }
+.wk-qrow-open .wk-slot-open { padding-bottom: 8px; }
+/* The extras, as quiet single lines: "+ Add a meal", and the flags and
+   "Couldn't fit these" without their tint, so nothing on the screen
+   competes with Approve. */
+.wk-qline {
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--apricot-label);
+  cursor: pointer;
+}
+.wk-qline svg { width: 16px; height: 16px; }
+.wk-plan .wk-flags { padding-inline: 20px; margin: 0; }
+.wk-plan .wk-flag { background: none; border: 0; border-left: 0; padding: 0; gap: 2px; }
+.wk-plan .wk-flag-acts { gap: 4px 12px; }
+.wk-plan .wk-flag .wk-mini.is-ghost {
+  height: auto;
+  min-height: 32px;
+  padding: 0;
+  background: none;
+  border: 0;
+  font-weight: 600;
+  color: var(--apricot-label);
+}
+.wk-plan .wk-unfit { box-shadow: none; }
+.wk-plan .wk-notes, .wk-plan .wk-use-up-line, .wk-plan .wk-use-up-past, .wk-plan .week-suggested-note { margin-left: 20px; margin-right: 20px; }
 

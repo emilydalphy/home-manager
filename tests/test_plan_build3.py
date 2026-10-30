@@ -22,10 +22,16 @@ def _fn(name):
     return SHELL_JS[start:end]
 
 
-def test_a_draft_root_is_the_review_with_no_crumb_and_approve_in_the_dock():
+def test_a_draft_root_has_no_crumb_and_approve_in_the_dock():
+    # Since the declutter (2026-10-30) a draft's root is the one Plan
+    # screen (planWeekHtml through weekStepHtml), the same as an approved
+    # week's; its dock is Approve (planDockHtml). The deeper review step
+    # still draws through reviewStepHtml.
     step = _fn("renderMealsStep")
     assert "if (weekState.step === 'review' && draft) weekState.step = 'week';" in step
-    assert "steps.innerHTML = reviewStepHtml(data, weekState.days, true);" in step
+    assert "steps.innerHTML = weekStepHtml(data, weekState.days);" in step
+    assert "return planWeekHtml(data, days);" in _fn("weekStepHtml")
+    assert 'id="week-approve-btn"' in _fn("planDockHtml")
     review = _fn("reviewStepHtml")
     # The root form has no in-flow title since the root band (2026-09-11):
     # the week's dates, title and DRAFT chip are the band's. Only the

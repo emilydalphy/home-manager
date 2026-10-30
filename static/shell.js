@@ -16566,6 +16566,9 @@
     // days), remembered for this page session and reset for a new draft
     // (draftView; draftViewPlanId is the plan it was last set for).
     draftView: 'menu', draftViewPlanId: null,
+    // The Plan root's day bar (planWeekHtml, 2026-10-30): null is Week,
+    // a number is that day. planSnacksOpen: the week's snacks unfolded.
+    planDay: null, planSnacksOpen: false,
     // A pin by PLAN, not by date: "See next week's draft" (planNextWeek).
     // Wins over showWeekStart, and lets go once that plan is approved.
     showPlanId: null
@@ -17223,30 +17226,25 @@
     };
   }
 
-  // ---------- The band's own controls on the Plan root ----------
-  // Emily, 2026-09-21 (boards A2, C2, C3). Three things the generic band
-  // (rootBandHtml) does not know about, filled into it after it is built:
-  //
-  //  * the Re-plan pill, top right, on a draft AND on an approved week —
-  //    "I want to re-plan my week, but the option to do so is really
-  //    hidden" (it lived under More ···). One tap opens the intake with
-  //    last time's answers in place (startPlanningWeek → /plan-week, which
-  //    prefills from the week's current intake revision).
-  //  * the draft's opener — two short lines saying what it planned around
-  //    and one thing worth knowing (get_week_menu's draft_opener, built
-  //    server-side from the intake and the rows so it cannot describe a
-  //    week that wasn't made).
-  //  * the two-way toggle, What we're eating | Which days — the by-type
-  //    menu is the front door (Emily's decision D, 2026-09-15, and again
-  //    2026-09-21); the day cards sit behind it.
+  // ---------- The band's own control on the Plan root: More ··· ----------
+  // Since the declutter (Emily, 2026-10-30) the band carries one thing of
+  // its own: More ···, top right beside the gear, on a draft and on an
+  // approved week alike. The Re-plan pill, the draft's "Plan the week"
+  // pill and the Meals | Schedule toggle came off it — re-planning is
+  // "Change my answers" / "Try again" in More, the week after is "Plan the
+  // week after", and the one screen shows the week or a day from its own
+  // day bar (planWeekHtml).
   //
   // weekBandExtras says WHAT (a plain object, so renderMealsStep can fold
   // it into the band's rebuild key); fillWeekBandExtras draws and wires it.
-  // The toggle's side is remembered for the session only (weekState.
-  // draftView, in memory), and a NEW draft opens on What we're eating —
-  // weekState.draftViewPlanId is how a new plan id resets it.
-  var DRAFT_VIEWS = { menu: 'Meals', days: 'Schedule' };
+  function weekBandExtras(data) {
+    if (weekPlanState(data) === 'none') return null;
+    return { more: true };
+  }
 
+  // Which view the old draft review (reviewStepHtml) opens on. The root no
+  // longer uses it — the Plan root is planWeekHtml — but the deeper
+  // review step still draws through reviewStepHtml.
   function draftView(data) {
     var id = data && data.weekly_plan_id;
     if (weekState.draftViewPlanId !== id) {
@@ -17256,71 +17254,9 @@
     return weekState.draftView === 'days' ? 'days' : 'menu';
   }
 
-  // `next` (a draft only — Emily, 2026-09-27): the label of the band's
-  // "Plan next week", the same words as the approved dock's #wk-plan-next
-  // (planNextLabel over nextPeriodFor), so a draft on screen is no longer
-  // a dead end for planning the week after it.
-  function weekBandExtras(data) {
-    var state = weekPlanState(data);
-    if (state === 'none') return null;
-    var draft = state === 'draft';
-    return {
-      pill: true,
-      lead: draft ? (data.draft_opener || []).filter(Boolean) : [],
-      view: draft ? draftView(data) : null,
-      next: draft ? bandNextLabel(planNextLabel(nextPeriodFor(data, data.days))) : null
-    };
-  }
-
-  // The draft band's button reads "Plan the week" (Emily, 2026-09-27),
-  // not "Plan next week" — the dates under it already say which week the
-  // draft is. Only the plain seven-day wording changes; "Re-plan next
-  // week" and a shorter horizon's "Plan the 3 after" keep theirs, since
-  // those say something the short label would lose. The approved dock's
-  // button is unchanged.
-  function bandNextLabel(label) {
-    return label === 'Plan next week' ? 'Plan the week' : label;
-  }
-
-  function weekReplanPillHtml() {
-    return '<button type="button" class="wk-replan" id="wk-replan" aria-label="Re-plan this week">' +
-      WK_ICONS.swap + 'Re-plan</button>';
-  }
-
-  // A draft's band actions: Re-plan and "Plan next week" side by side on
-  // their own row under the brand row (Emily, 2026-09-27 — at 375px the
-  // brand, the Draft chip, two pills, the bell and the gear do not fit on
-  // one line). Re-plan keeps its look; "Plan next week" is a spruce-raised
-  // chip in ivory ink — never apricot, the dock's Approve is the screen's
-  // one (rule 5). An approved week keeps Re-plan in the tools, top right,
-  // and "Plan next week" in its dock.
-  function weekBandActionsHtml(nextLabel) {
-    return '<div class="wk-band-actions">' + weekReplanPillHtml() +
-      '<button type="button" class="wk-band-next" id="wk-band-plan-next"' +
-        (nextLabel === 'Plan the week' ? ' aria-label="Plan next week"' : '') + '>' + escapeHtml(nextLabel) + '</button>' +
-    '</div>';
-  }
-
-  function weekDraftSegHtml(view) {
-    return '<div class="wk-draft-seg" role="tablist" aria-label="How to read the draft">' +
-      ['menu', 'days'].map(function (key) {
-        var on = key === view;
-        return '<button type="button" class="wk-draft-seg-btn' + (on ? ' is-on' : '') + '" role="tab" ' +
-          'aria-selected="' + (on ? 'true' : 'false') + '" data-wk-view="' + key + '">' +
-          escapeHtml(DRAFT_VIEWS[key]) + '</button>';
-      }).join('') +
-    '</div>';
-  }
-
-  // The opener paragraph (extras.lead — get_week_menu's draft_opener) is
-  // no longer shown here (declutter, 2026-09-25: Emily asked the summary
-  // paragraph off the draft's band, keeping the date line, Re-plan and
-  // the What we're eating | Which days toggle). draft_opener itself is
-  // still computed server-side and still on the data — this just stops
-  // drawing it.
-  function weekBandTailHtml(extras) {
-    if (!extras || !extras.view) return '';
-    return weekDraftSegHtml(extras.view);
+  function weekBandMoreHtml() {
+    return '<button type="button" class="root-band-more" id="wk-band-more" aria-haspopup="dialog" aria-label="More">' +
+      WK_ICONS.more + '</button>';
   }
 
   function fillWeekBandExtras(panel, bandSlot, extras) {
@@ -17328,23 +17264,9 @@
     var band = bandSlot.querySelector('.root-band');
     if (!band) return;
     var tools = band.querySelector('.root-band-tools');
-    var top = band.querySelector('.root-band-top');
-    if (extras.pill && extras.next && top) top.insertAdjacentHTML('afterend', weekBandActionsHtml(extras.next));
-    else if (extras.pill && tools) tools.insertAdjacentHTML('afterbegin', weekReplanPillHtml());
-    var tail = weekBandTailHtml(extras);
-    if (tail) band.insertAdjacentHTML('beforeend', tail);
-    var pill = band.querySelector('#wk-replan');
-    if (pill) pill.addEventListener('click', function () { replanWeek(); });
-    var planNext = band.querySelector('#wk-band-plan-next');
-    if (planNext) planNext.addEventListener('click', function () { planNextWeek(); });
-    band.querySelectorAll('[data-wk-view]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var to = btn.getAttribute('data-wk-view') === 'days' ? 'days' : 'menu';
-        if (to === weekState.draftView) return;
-        weekState.draftView = to;
-        renderMealsStep(panel);
-      });
-    });
+    if (extras.more && tools) tools.insertAdjacentHTML('afterbegin', weekBandMoreHtml());
+    var more = band.querySelector('#wk-band-more');
+    if (more) more.addEventListener('click', function () { openMealsMoreSheet(); });
   }
 
   // The one road into re-planning — the band's Re-plan pill (the dock's
@@ -17559,34 +17481,21 @@
     '</div>';
   }
 
+  // The Plan root. With no plan, the plan-a-week entry (rendered into
+  // #week-plan-row by renderPlanWeekEntry after this lands) and More.
+  // With one — a draft or an approved week alike — the one screen
+  // (planWeekHtml, Emily 2026-10-30): approving changes the badge and the
+  // dock, never the layout. Until then a draft's root was the review
+  // (reviewStepHtml) and an approved week's was the seven-tile strip.
   function weekStepHtml(data, days) {
-    var state = weekPlanState(data);
-    // NOTHING YET: the card has nothing to be, so the existing plan-a-week
-    // entry takes its place — same buttons, same handlers, rendered into
-    // #week-plan-row by renderPlanWeekEntry after this lands.
-    if (state === 'none') {
+    if (weekPlanState(data) === 'none') {
       return '<div id="week-plan-row"></div>' +
         // Setup and the other rare actions stay one tap away here too.
         '<div class="wk-foot wk-foot-solo">' +
           '<button type="button" class="wk-foot-more" id="wk-more" aria-haspopup="dialog">More ···</button>' +
         '</div>';
     }
-    // The link's span is the SERVER's next_period, not this plan's length
-    // — a two-day plan on screen was offering "the 2 after" (Emily, Sunday
-    // 2026-09-13) while Now asked about the whole week. See
-    // weekly_plan.next_period_after; nextPeriodFor keeps the old arithmetic
-    // only as the fallback for a payload without it.
-    var next = nextPeriodFor(data, days);
-    var selected = mealsCurrentDay() ? weekState.selectedIndex : 0;
-    return weekSuggestedNoteHtml(data) + planEndsLineHtml(data) +
-      weekStripHtml(days, selected) +
-      (days[selected] ? weekDayHtml(days[selected], selected, data) : '') +
-      weekNotesHtml(data, days[selected]) +
-      // Everything rare is one tap away and nothing rare is on the page:
-      // the rare actions sit behind the dock's round More (weekDecideHtml,
-      // since 2026-09-21 board D4 — the same one-row dock as the draft's),
-      // no longer in a quiet row of their own above the dock.
-      weekDecideHtml(data, next);
+    return planWeekHtml(data, days);
   }
 
   // The stretch "Plan next week ›" offers under a plan: the server's
@@ -17595,9 +17504,9 @@
   // arithmetic fallback
   // is the pre-2026-09-13 behaviour, kept only so a stale cached payload
   // still gets a working link.
-  // The "Plan next week" button's words and its tap — one pair for the
-  // approved dock's #wk-plan-next and the draft band's #wk-band-plan-next,
-  // so both say and open the same stretch (the server's next_period).
+  // The "Plan next week" words and its tap — the approved More sheet's
+  // "Plan the week after" (planAfterTitle, since 2026-10-30) reads them,
+  // so it says and opens the same stretch (the server's next_period).
   // When next week already has a plan the label reads "Re-plan next week"
   // (planEntryLabel), and the tap opens its intake like any Re-plan.
   // A stretch whose plan is still a DRAFT (next.draft_plan_id, from
@@ -17605,7 +17514,6 @@
   // the button opens it, with its Approve, rather than re-asking the
   // questions and drafting over it (defect hunt 2026-10-07 — after leaving
   // the screen, "Re-plan next week" was the only way back to a draft).
-  // Re-plan is still the pill inside the draft.
   function planNextLabel(next) {
     next = next || {};
     // A plan that stops before its week does: the button names the day it
@@ -17636,9 +17544,8 @@
 
   // "This plan ends Friday." — one quiet line on the Plan root when the
   // plan stops before its week does, so the empty days after it are
-  // explained. Its next step is the button already on screen (the
-  // approved dock's #wk-plan-next, the draft band's #wk-band-plan-next),
-  // which planNextLabel names "Plan from Saturday" in this state.
+  // explained. Its next step is More's "Plan the week after", which
+  // planNextLabel names "Plan from Saturday" in this state.
   function planEndsLineHtml(data) {
     var next = nextPeriodFor(data || {}, (data || {}).days);
     if (!planEndsEarly(next)) return '';
@@ -18510,6 +18417,384 @@
         '</div>';
       }).join('') +
     '</div>';
+  }
+
+  // ---------- PLAN: one screen for a draft and an approved week ----------
+  // Emily, 2026-10-30 ("Combined · Plan: one screen, week or day", approved
+  // on the Less clutter canvas). A draft and an approved week are the SAME
+  // screen: approving changes the band's badge and the dock, never the
+  // layout. On top, a day bar — Week (the default), then each day — and
+  // under it the meals as quiet cards: Breakfast, Lunch & dinner, Snacks.
+  // A row is the slot, the dish, one short line and a chevron. Every
+  // change is one tap in — the row's sheet (openPlanRowSheet: Swap, Tweak,
+  // Move, See the recipe) — and never a button on every row. One button
+  // per screen stands out: the dock's Approve on a draft, nothing on an
+  // approved week.
+  //
+  // weekState.planDay: null for Week, else the day's index. Page-view
+  // state, like selectedIndex (which follows it, so "+ Add a meal" and a
+  // Meal step opened from a day know the day).
+  function planDayIndex(days) {
+    var v = weekState.planDay;
+    return (typeof v === 'number' && days && days[v]) ? v : null;
+  }
+
+  // The day bar: "Week / All" then one tile per day (the strip's own tile,
+  // TODAY on today's). It scrolls sideways past seven, like the strip.
+  function planDayBarHtml(days, sel) {
+    var week = '<button type="button" class="wk-tile wk-daybar-week' + (sel === null ? ' is-selected' : '') +
+        '" data-plan-day="week" aria-pressed="' + (sel === null ? 'true' : 'false') + '" aria-label="The whole week">' +
+      '<span class="wk-tile-dow">WEEK</span><span class="wk-tile-num">All</span>' +
+    '</button>';
+    return '<div class="wk-strip wk-daybar' + (days.length > 7 ? ' is-long' : '') + '" role="group" aria-label="Show the week or one day">' +
+      week + days.map(function (day, i) {
+        var on = sel === i;
+        var label = dayName(day.date, { weekday: 'long', month: 'long', day: 'numeric' }) + (day.isToday ? ', today' : '');
+        return '<button type="button" class="wk-tile' + (day.isToday ? ' is-today' : '') + (day.isPast ? ' is-past' : '') +
+            (on ? ' is-selected' : '') + '" data-plan-day="' + i + '" aria-pressed="' + (on ? 'true' : 'false') + '" ' +
+            'aria-label="' + escapeHtml(label) + '">' +
+          '<span class="wk-tile-dow">' + (day.isToday ? 'TODAY' : dayName(day.date, { weekday: 'short' }).slice(0, 3).toUpperCase()) + '</span>' +
+          '<span class="wk-tile-num">' + dayName(day.date, { day: 'numeric' }) + '</span>' +
+        '</button>';
+      }).join('') +
+    '</div>';
+  }
+
+  // The one short line under a dish: its time — or, for a night eating a
+  // batch cooked earlier, just "Leftovers" (Emily's standing copy rule,
+  // 2026-10-30: never "Leftovers from Thursday's dinner"). A batch made
+  // ahead on purpose keeps the Cook tab's word for it.
+  function planRowMeta(entry) {
+    if (!entry || entry.state !== 'planned') return '';
+    var src = entry.leftover_from;
+    if (src && src.date) return src.cook_ahead ? 'Made ahead' : 'Leftovers';
+    if (entry.source === 'leftovers') return 'Leftovers';
+    if (entry.source === 'takeout') return 'Takeout';
+    return entry.meta || '';
+  }
+
+  function planIsReheat(entry) {
+    return !!(entry && ((entry.leftover_from && entry.leftover_from.date) || entry.source === 'leftovers'));
+  }
+
+  // One quiet row. `o.attrs` makes it a button (with the chevron); without
+  // it the row is a line to read. `o.label` is what a screen reader hears.
+  function planRowHtml(o) {
+    var tappable = !!o.attrs;
+    var open = tappable ? 'button type="button"' : 'div';
+    var close = tappable ? 'button' : 'div';
+    var eyebrow = (o.eyebrow || o.changed)
+      ? '<span class="wk-row-eyebrow">' + escapeHtml(o.eyebrow || '') +
+          (o.changed ? '<span class="wk-changed">Changed</span>' : '') + '</span>'
+      : '';
+    return '<' + open + ' class="wk-qrow' + (o.quiet ? ' is-quiet' : '') + (o.past ? ' is-past' : '') +
+        (o.done ? ' is-done' : '') + '"' + (o.attrs || '') +
+        (tappable && o.label ? ' aria-label="' + escapeHtml(o.label) + '"' : '') + '>' +
+      '<span class="wk-qrow-text">' + eyebrow +
+        '<span class="wk-qrow-name">' + escapeHtml(o.name) + '</span>' +
+        (o.meta ? '<span class="wk-row-meta">' + escapeHtml(o.meta) + '</span>' : '') +
+      '</span>' +
+      (tappable ? '<span class="wk-qrow-chev" aria-hidden="true">' + WK_ICONS.chev + '</span>' : '') +
+    '</' + close + '>';
+  }
+
+  // One slot of one day as a row. A slot is never absent (CLAUDE.md): a
+  // planned meal opens its sheet; an open one is a decision, and its row
+  // reveals the app's own options under it (the wk-open box, as Pick did);
+  // a meal nobody is home for is a quiet line; a meal the household asked
+  // none of is not drawn at all.
+  function planSlotRowHtml(day, i, slot, eyebrow) {
+    var entry = daySlotEntry(day, slot);
+    var changed = typeof wasRecentlyChanged === 'function' && wasRecentlyChanged(day.date, slot);
+    var at = ' data-wk-day-index="' + i + '"';
+    var snack = isSnackSlot(slot);
+    if (entry && entry.state === 'planned') {
+      var name = mealDisplayName(entry);
+      return planRowHtml({
+        attrs: (snack ? ' data-plan-snack="' : ' data-plan-row="') + slot + '"' + at,
+        eyebrow: eyebrow, name: name, meta: planRowMeta(entry), changed: changed,
+        past: day.isPast, done: !!entry.cooked,
+        label: (eyebrow ? eyebrow + ', ' : '') + name + (snack ? ' — swap it' : ' — change it')
+      });
+    }
+    if (entry && entry.state === 'open') {
+      return '<div class="wk-qrow-open" data-wk-card="' + i + '">' +
+        planRowHtml({ attrs: ' data-wk-pick="' + slot + '"' + at, eyebrow: eyebrow, name: 'Your call',
+          meta: 'Tap to pick', quiet: true, label: 'Pick ' + slotWord(slot) }) +
+        '<div class="wk-slot-open" id="wk-open-' + slot + '" hidden>' + openSlotCardHtml(day.date, slot, entry) + '</div>' +
+      '</div>';
+    }
+    if (entry && entry.state === 'planned_empty') {
+      if (entry.meal_off) return '';
+      return planRowHtml({ eyebrow: eyebrow, name: awayLineFor(entry) || entry.title || 'Nothing planned', quiet: true });
+    }
+    if (day.isPast || day.before_plan_start) {
+      return planRowHtml({ eyebrow: eyebrow, name: pastEmptyWord(day), quiet: true });
+    }
+    return planRowHtml({ attrs: ' data-wk-ask="' + slotWord(slot) + '"' + at, eyebrow: eyebrow, name: 'Nothing yet',
+      meta: 'Tap to ask for one', quiet: true, label: 'Ask for a ' + slotWord(slot) });
+  }
+
+  // A day's label at the left of a Lunch & dinner (or Snacks) group.
+  function planDayLabel(day) {
+    return day.isToday ? 'Today' : dayName(day.date, { weekday: 'short' }).slice(0, 3);
+  }
+
+  function planDayGroupHtml(day, rows) {
+    return '<div class="wk-pgroup' + (day.isToday ? ' is-today' : '') + (day.isPast ? ' is-past' : '') + '">' +
+      '<span class="wk-pgroup-day">' + escapeHtml(planDayLabel(day)) + '</span>' +
+      '<div class="wk-pgroup-rows">' + rows + '</div>' +
+    '</div>';
+  }
+
+  function planCardHtml(cls, head, body) {
+    if (!body) return '';
+    return '<div class="shell-card wk-pcard ' + cls + '">' +
+      (head ? '<span class="wk-menu-head">' + escapeHtml(head) + '</span>' : '') + body +
+    '</div>';
+  }
+
+  // BREAKFAST. The week: each breakfast once, with its days ("Mon, Tue ·
+  // 13 min" — wkMenuGroups' dish, the menu's own days phrase). A day: that
+  // day's. A row standing for several days still ahead is the whole dish:
+  // its sheet's Swap changes every one of them (data-plan-dates).
+  function planBreakfastHtml(days, sel) {
+    if (sel !== null) return planCardHtml('wk-pcard-breakfast', 'Breakfast', planSlotRowHtml(days[sel], sel, 'breakfast', ''));
+    var group = wkMenuGroups(days).filter(function (g) { return g.slot === 'breakfast'; })[0];
+    var rows = (group ? group.dishes : []).map(function (dish) {
+      var first = dish.days.filter(function (d) { return !d.past; })[0] || dish.days[0];
+      var ahead = dish.days.filter(function (d) { return !d.past; });
+      var fact = dish.isLeftover ? planRowMeta(first.entry) : wkMenuFact(dish);
+      var changed = typeof wasRecentlyChanged === 'function' &&
+        dish.days.some(function (d) { return wasRecentlyChanged(d.date, d.key); });
+      return planRowHtml({
+        attrs: ' data-plan-row="' + first.key + '" data-wk-day-index="' + first.index + '"' +
+          (ahead.length > 1 ? ' data-plan-dates="' + escapeHtml(ahead.map(function (d) { return d.date; }).join(',')) + '"' : '') +
+          (dish.isLeftover ? ' data-plan-reheat="1"' : ''),
+        name: dish.name, changed: changed, past: !ahead.length,
+        meta: [wkMenuDaysPhrase(dish, days), fact].filter(Boolean).join(' · '),
+        label: 'Breakfast, ' + dish.name + ' — change it'
+      });
+    }).join('');
+    // A morning handed back is a decision, so it is never folded into a
+    // dish: it gets its own row, named by its day.
+    days.forEach(function (day, i) {
+      var e = day.breakfast;
+      if (e && e.state === 'open' && !day.before_plan_start) {
+        rows += planSlotRowHtml(day, i, 'breakfast', dayName(day.date, { weekday: 'long' }));
+      }
+    });
+    return planCardHtml('wk-pcard-breakfast', 'Breakfast', rows);
+  }
+
+  // LUNCH & DINNER. The week: one group per day, the day at the left and
+  // its lunch and dinner beside it. A day: those two rows. A day with
+  // nothing to cook says so in one line; a day left out that Pomona can
+  // still fill offers to (the old card's "Build a plan", as a quiet row).
+  function planMainsDayRows(day, i) {
+    if (wkDayCanBuild(day, {})) {
+      return planRowHtml({ attrs: ' data-wk-build-day="' + escapeHtml(day.date) + '" data-wk-day-index="' + i + '"',
+        name: 'Nothing planned yet', meta: 'Tap to build a plan', quiet: true,
+        label: 'Build a plan for ' + dayName(day.date, { weekday: 'long' }) });
+    }
+    if (reviewDayIsClosed(day)) {
+      var anyShown = ['lunch', 'dinner'].some(function (s) { return day[s] && !day[s].meal_off; });
+      return anyShown ? planRowHtml({ name: reviewClosedLine(day), quiet: true, past: day.isPast }) : '';
+    }
+    return ['lunch', 'dinner'].map(function (slot) {
+      return planSlotRowHtml(day, i, slot, SLOT_LABELS[slot]);
+    }).join('');
+  }
+
+  function planMainsHtml(days, sel) {
+    if (sel !== null) return planCardHtml('wk-pcard-mains', 'Lunch & dinner', planMainsDayRows(days[sel], sel));
+    var body = days.map(function (day, i) {
+      if (day.before_plan_start) return '';
+      var rows = planMainsDayRows(day, i);
+      return rows ? planDayGroupHtml(day, rows) : '';
+    }).join('');
+    return planCardHtml('wk-pcard-mains', 'Lunch & dinner', body);
+  }
+
+  // SNACKS. The week: folded to one line ("2 a day · 14 in all"); a tap
+  // opens the per-day rows (weekState.planSnacksOpen, page-view only). A
+  // day: that day's snacks as rows. A snack's row opens its swap.
+  function planSnackRows(day, i) {
+    return (day.snacks || []).map(function (_, n) {
+      return planSlotRowHtml(day, i, snackSlotKey(n), '');
+    }).join('');
+  }
+
+  function planSnacksHtml(days, sel) {
+    if (sel !== null) return planCardHtml('wk-pcard-snacks', 'Snacks', planSnackRows(days[sel], sel));
+    var counts = [];
+    var total = 0;
+    days.forEach(function (day) {
+      if (day.before_plan_start) return;
+      var n = (day.snacks || []).filter(function (e) { return e && e.state === 'planned'; }).length;
+      if (!(day.snacks || []).length) return;
+      counts.push(n);
+      total += n;
+    });
+    if (!counts.length) return '';
+    var even = counts.every(function (n) { return n === counts[0]; });
+    var summary = [even && counts[0] ? counts[0] + ' a day' : '', total + ' in all'].filter(Boolean).join(' · ');
+    var open = !!weekState.planSnacksOpen;
+    var body = open ? days.map(function (day, i) {
+      if (day.before_plan_start) return '';
+      var rows = planSnackRows(day, i);
+      return rows ? planDayGroupHtml(day, rows) : '';
+    }).join('') : '';
+    return '<div class="shell-card wk-pcard wk-pcard-snacks">' +
+      '<button type="button" class="wk-qrow wk-snacks-fold" data-plan-snacks="1" aria-expanded="' + (open ? 'true' : 'false') + '">' +
+        '<span class="wk-qrow-text">' +
+          '<span class="wk-row-eyebrow">Snacks</span>' +
+          '<span class="wk-qrow-name">' + escapeHtml(summary) + '</span>' +
+        '</span>' +
+        '<span class="wk-qrow-chev wk-snacks-chev' + (open ? ' is-open' : '') + '" aria-hidden="true">' + WK_ICONS.chev + '</span>' +
+      '</button>' +
+      body +
+    '</div>';
+  }
+
+  // The day's own words, in day view only: the holiday, who is out, a
+  // bigger table (reviewTileTags — the same words the day cards used).
+  function planDayTagsHtml(day) {
+    var tags = reviewTileTags(day);
+    if (!tags.length) return '';
+    return '<p class="wk-pday-tags">' + escapeHtml(tags.join(' · ')) + '</p>';
+  }
+
+  // The notes above the cards, said once: on a draft the flags and the
+  // soft line (draft-only, from the server); on an approved week the
+  // plates note and anything weekNotesHtml carries.
+  function planNotesHtml(data, days, sel) {
+    if (weekPlanState(data) === 'draft') {
+      return weekFlagsHtml(data) + draftSoftNoteHtml(data) +
+        (typeof wkUseUpLineHtml === 'function' ? wkUseUpLineHtml(data) : '');
+    }
+    var noteDay = sel !== null ? days[sel] : days.filter(_dayHasPlateSides)[0];
+    return noteDay ? weekNotesHtml(data, noteDay) : '';
+  }
+
+  // The dock: Approve on a draft (the screen's one apricot — the same
+  // .wk-decide shell and #week-approve-btn approveWeek and
+  // showApproveConfirm look for), and nothing on an approved week but the
+  // chat button that floats on every screen. More ··· is in the band.
+  function planDockHtml(data) {
+    if (weekPlanState(data) !== 'draft') return '';
+    var openCount = countOpenSlots(data);
+    return '<div class="wk-decide dock">' +
+      '<div class="wk-dock-row">' +
+        '<button type="button" class="btn-gold week-approve-btn" id="week-approve-btn">' +
+          (openCount ? escapeHtml(approveWithOpenLabel(data, openCount)) : 'Approve the week') +
+        '</button>' +
+      '</div>' +
+      '<div class="week-redo-waiting waiting-line" id="week-redo-waiting" hidden></div>' +
+    '</div>';
+  }
+
+  function planWeekHtml(data, days) {
+    days = days || [];
+    var sel = planDayIndex(days);
+    var approved = weekPlanState(data) === 'set';
+    var day = sel !== null ? days[sel] : null;
+    var cards = planBreakfastHtml(days, sel) + planMainsHtml(days, sel) + planSnacksHtml(days, sel);
+    return '<div class="wk-plan">' +
+      weekSuggestedNoteHtml(data) + planEndsLineHtml(data) + planNotesHtml(data, days, sel) +
+      planDayBarHtml(days, sel) +
+      '<h2 class="wk-pview-title">' + escapeHtml(day ? dayName(day.date, { weekday: 'long' }) : 'The whole week') + '</h2>' +
+      (day ? planDayTagsHtml(day) : '') +
+      '<div class="wk-pcards">' +
+        (cards || '<div class="rv-empty">Nothing planned yet.</div>') +
+        (day && !day.isPast ? '<button type="button" class="wk-qline" data-wk-add-meal="1">' + WK_ICONS.plus + 'Add a meal</button>' : '') +
+        (approved ? weekFreezerRowHtml(data, days) : '') +
+        (!approved && typeof wkCouldntFitHtml === 'function' ? wkCouldntFitHtml(data) : '') +
+      '</div>' +
+    '</div>' + planDockHtml(data);
+  }
+
+  // ---------- The row's sheet: everything a meal can do, one tap in ----------
+  // Swap, Tweak, Move, and the recipe — each only where it can do
+  // something (Move: a lunch or dinner still ahead that is a cook of its
+  // own, wkCanMove; Tweak: where the plate can change, plateCanChange, and
+  // on a whole-dish breakfast only when it is one cook ahead). Each opens
+  // the sheet it always opened (openSwapSheet, openTweakSheet,
+  // openMoveSheet), unchanged, so their toasts, Undo and the row's
+  // "Changed" still happen exactly as before. `opts.dates`: a breakfast
+  // standing for several days ahead — Swap means the dish on all of them.
+  function planRowSheetOptions(day, slot, opts) {
+    opts = opts || {};
+    var entry = daySlotEntry(day, slot);
+    var out = [];
+    if (!entry || entry.state !== 'planned') return out;
+    var whole = !!(opts.dates && opts.dates.length > 1);
+    if (!day.isPast && !opts.reheat) out.push('swap');
+    var oneCook = true;
+    if (whole) {
+      oneCook = opts.dates.filter(function (date) {
+        var d = (weekState.days || []).filter(function (x) { return x.date === date; })[0];
+        var e = d && daySlotEntry(d, slot);
+        return e && !planIsReheat(e);
+      }).length <= 1;
+    }
+    if (!day.isPast && oneCook && typeof plateCanChange === 'function' && plateCanChange(day, slot, entry)) out.push('tweak');
+    if (!isSnackSlot(slot) && slot !== 'breakfast' && typeof wkCanMove === 'function' && wkCanMove(day, slot, entry)) out.push('move');
+    return out;
+  }
+
+  var PLAN_SHEET_OPTS = {
+    swap: { icon: 'swap', title: 'Swap', sub: 'Pick something else' },
+    tweak: { icon: 'tweak', title: 'Tweak', sub: 'Change a part, or tell me what to change' },
+    move: { icon: 'move', title: 'Move', sub: 'Put it on another day' }
+  };
+
+  function planRowSheetHtml(day, slot, opts) {
+    opts = opts || {};
+    var entry = daySlotEntry(day, slot);
+    var when = opts.dates && opts.dates.length > 1
+      ? wkDaysPhrase({ slot: slotWord(slot), days: opts.dates.map(function (date) {
+          var idx = -1;
+          (weekState.days || []).forEach(function (d, n) { if (d.date === date) idx = n; });
+          return { index: idx };
+        }).filter(function (d) { return d.index >= 0; }) }, weekState.days || [])
+      : dayName(day.date, { weekday: 'long' });
+    var rows = planRowSheetOptions(day, slot, opts).map(function (key) {
+      var o = PLAN_SHEET_OPTS[key];
+      return '<button type="button" class="quiet-opt" data-plan-opt="' + key + '">' +
+        '<span class="quiet-opt-icon">' + WK_ICONS[o.icon] + '</span>' +
+        '<span class="quiet-opt-text"><span class="quiet-opt-title">' + escapeHtml(o.title) + '</span>' +
+          '<span class="quiet-opt-sub">' + escapeHtml(o.sub) + '</span></span>' +
+      '</button>';
+    }).join('');
+    return quietSheetHeadHtml(slotEyebrowLabel(day, slot) + ' · ' + when, mealDisplayName(entry)) +
+      (rows ? '<div class="quiet-opts">' + rows + '</div>' : '') +
+      '<button type="button" class="quiet-link" data-plan-opt="recipe">See the recipe</button>';
+  }
+
+  function openPlanRowSheet(panel, day, slot, opts) {
+    opts = opts || {};
+    var entry = daySlotEntry(day, slot);
+    if (!entry || entry.state !== 'planned') return;
+    var index = (weekState.days || []).indexOf(day);
+    openQuietSheet(planRowSheetHtml(day, slot, opts), function (body) {
+      body.querySelectorAll('[data-plan-opt]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var key = btn.getAttribute('data-plan-opt');
+          closeQuietSheet();
+          if (key === 'swap') {
+            openSwapSheet(panel, day, slot, opts.dates && opts.dates.length > 1 ? { wholeDish: true, dates: opts.dates } : null);
+          } else if (key === 'tweak') {
+            openTweakSheet(panel, day, slot);
+          } else if (key === 'move') {
+            openMoveSheet(panel, day, slot);
+          } else if (key === 'recipe') {
+            goMealsStep('meal', { slot: slot, back: 'week', dayIndex: index >= 0 ? index : undefined,
+              wholeDish: !!(opts.dates && opts.dates.length > 1 && !opts.reheat) });
+          }
+        });
+      });
+    });
   }
 
   // The day tabs above the carousel: 36px, sand, the one in view apricot.
@@ -20963,6 +21248,8 @@
     // 'review' step and a draft's own root (folds to 'week' just above,
     // same screen) — so the flag tracks "is reviewStepHtml on screen",
     // not one step name. Day/Meal steps and the plain week root untouched.
+    // Since 2026-10-30 a draft's root is planWeekHtml, whose dock (Approve)
+    // needs the same room; an approved root has no dock at all.
     var usesReviewLayout = weekState.step === 'review' || (weekState.step === 'week' && draft);
     panel.classList.toggle('is-review-layout', usesReviewLayout);
     // And the Meal step's dock (mealDockHtml), for the same reason: one
@@ -20986,7 +21273,7 @@
       if (onRoot) {
         var parts = weekBandParts(weekBandData(data), weekState.days || []);
         if (onChores) parts = planChoresBandParts(parts);
-        // The Re-plan pill, the draft's opener and its toggle ride in the
+        // More ··· (the declutter, 2026-10-30) rides in the
         // band too (weekBandExtras) — on Meals only, never over Chores.
         var extras = onChores ? null : weekBandExtras(data);
         var key = JSON.stringify([parts, extras]);
@@ -21022,8 +21309,6 @@
       steps.innerHTML = freezerStepHtml(data);
       ensureDefrostAskItems(panel, data); // re-renders the step once the items land
       wireFreezerStep(panel, steps, data);
-    } else if (draft) {
-      steps.innerHTML = reviewStepHtml(data, weekState.days, true);
     } else {
       steps.innerHTML = weekStepHtml(data, weekState.days);
       if (weekPlanState(data) === 'none') renderPlanWeekEntry(steps, data);
@@ -21049,6 +21334,45 @@
         if (idx === weekState.selectedIndex) return;
         weekState.selectedIndex = idx;
         replaceMealsStepHistory();
+        renderMealsStep(panel);
+      });
+    });
+    // The Plan root's day bar (planDayBarHtml): Week, or one day, in
+    // place — the same screen redrawn, no history entry of its own.
+    steps.querySelectorAll('[data-plan-day]').forEach(function (tile) {
+      tile.addEventListener('click', function () {
+        var v = tile.getAttribute('data-plan-day');
+        var idx = v === 'week' ? null : Number(v);
+        if (idx === weekState.planDay || (idx === null && weekState.planDay == null)) return;
+        weekState.planDay = idx;
+        if (idx !== null) weekState.selectedIndex = idx;
+        replaceMealsStepHistory();
+        renderMealsStep(panel);
+      });
+    });
+    // A meal's row: its one sheet (openPlanRowSheet).
+    steps.querySelectorAll('[data-plan-row]').forEach(function (row) {
+      row.addEventListener('click', function () {
+        var day = wkDayForTap(row);
+        if (!day) return;
+        var dates = row.getAttribute('data-plan-dates');
+        openPlanRowSheet(panel, day, row.getAttribute('data-plan-row'), {
+          dates: dates ? dates.split(',') : null,
+          reheat: row.hasAttribute('data-plan-reheat')
+        });
+      });
+    });
+    // A snack's row opens the snack swap, as the snack's Swap always did.
+    steps.querySelectorAll('[data-plan-snack]').forEach(function (row) {
+      row.addEventListener('click', function () {
+        var day = wkDayForTap(row);
+        if (day) openSwapSheet(panel, day, row.getAttribute('data-plan-snack'));
+      });
+    });
+    // The week's snacks, folded to one line, open and close in place.
+    steps.querySelectorAll('[data-plan-snacks]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        weekState.planSnacksOpen = !weekState.planSnacksOpen;
         renderMealsStep(panel);
       });
     });
@@ -22336,6 +22660,24 @@
   // your setup, Start over, Need a hand? — two eyebrows: the week on
   // screen's own rare moves ("This draft"/"This week"), then everything
   // else that doesn't belong to one week in particular.
+  // "Plan the week after" — the More row that took over the approved
+  // dock's "Plan next week". A household planning a shorter stretch keeps
+  // the label that names it ("Plan the 3 after", "Plan from Saturday");
+  // the line under it says when it starts, and whether there is a draft
+  // or a plan there already (planNextLabel's own cases, said plainly).
+  function planAfterTitle(next) {
+    var label = planNextLabel(next);
+    return /next week/.test(label) ? 'Plan the week after' : label;
+  }
+
+  function planAfterLine(next) {
+    next = next || {};
+    var starts = next.start_date ? 'Starts ' + dayName(next.start_date, { weekday: 'long', month: 'short', day: 'numeric' }) : '';
+    var state = next.draft_plan_id ? 'its draft is waiting'
+      : next.is_planned ? 'already planned — this opens its questions' : '';
+    return [starts, state].filter(Boolean).join(' · ') || 'Opens the questions for the week after this one.';
+  }
+
   function renderMealsMoreSheet() {
     var rows = document.getElementById('meals-more-rows');
     if (!rows) return;
@@ -22343,6 +22685,7 @@
     var hasPlan = !!data.weekly_plan_id;
     var isDraft = hasPlan && data.status !== 'approved';
     var isApproved = hasPlan && data.status === 'approved';
+    var next = isApproved ? nextPeriodFor(data, weekState.days || []) : null;
 
     var weekRows = '';
     if (isDraft) {
@@ -22370,11 +22713,17 @@
       // anything off the shopping list — re-approving only adds what's
       // new, and removing something somebody may already have bought is
       // worse than a slightly long list.
+      // "Check the week" folded into "See the whole week" (Emily,
+      // 2026-10-30): the Plan root shows every meal, by the week or by the
+      // day, so a second look-it-over screen said the same thing twice.
+      // "Plan the week after" came in from the approved dock, which is
+      // only the chat button now — the same stretch and the same tap as
+      // the dock's old "Plan next week" (planNextWeek).
       weekRows =
         mealsMoreRowHtml('wk-more-reopen', WK_ICONS.unlock, 'Reopen the week',
           "Opens it up to change again. Nothing comes off your grocery list.") +
-        mealsMoreRowHtml('wk-more-check', WK_ICONS.checklist, 'Check the week',
-          'Every dinner, day by day, so you can look it over.');
+        mealsMoreRowHtml('wk-more-plan-next', WK_ICONS.calendar, planAfterTitle(next),
+          planAfterLine(next));
     }
 
     rows.innerHTML =
@@ -22402,7 +22751,7 @@
     });
     on('wk-more-discard', function () { closeMealsMoreSheet(); discardDraft(panel, data); });
     on('wk-more-reopen', function () { closeMealsMoreSheet(); reopenWeek(panel, data); });
-    on('wk-more-check', function () { closeMealsMoreSheet(); goMealsStep('review'); });
+    on('wk-more-plan-next', function () { closeMealsMoreSheet(); planNextWeek(); });
     on('wk-more-whole-week', function () { closeMealsMoreSheet(); openWeekSheet(); });
     // Adjust your setup opens the Preferences sheet — the household's
     // settings behind the header gear (openPrefsSheet) — never the
@@ -23647,12 +23996,14 @@
       // what the app has no other record of has just changed.
       defrostAskState.items = null;
       defrostAskState.selected = {};
-      // Straight to the list (2b = A). The All set screen this used to land
-      // on is no longer a stop on the way; Plan reopens on its root, where
-      // the freezer row asks its question quietly.
+      // Approving keeps the screen (Emily, 2026-10-30, "Combined · Plan"):
+      // the same Plan root, its badge now Approved and its dock just the
+      // chat button. The list is one tap away on the toast — and on the
+      // Shop tab, where it was just built. (2b = A, 2026-10-12, opened the
+      // list straight away; the approved design keeps the person here.)
       weekState.step = 'week';
-      goGroceryList();
-      showToast(approvedToast, null, (approval.conflicts_note || takeoverNote) ? 9000 : 6000);
+      showToast(approvedToast, { label: 'See the list', onClick: function () { goGroceryList(); } },
+        (approval.conflicts_note || takeoverNote) ? 9000 : 6000);
       await loadWeekMenu(panel);
       // The notifications ask's moment (iPhone app only; see offerPush):
       // a week is settled, so there's a morning note and a dinner nudge to
@@ -27651,10 +28002,8 @@
   // is async): renderWeekMenu drains it once the days actually exist, and
   // the direct call below covers the already-built case, whichever wins.
   //
-  // `opts.schedule` (Today's open-slot row): land where the slot's Pick is.
-  // A draft opens on Meals by category, which has no per-day rows and no
-  // Pick, so the focus there found nothing and silently stopped; with it
-  // the draft is switched to its Schedule view first (applyPendingDayFocus).
+  // `opts.schedule` (Today's open-slot row): land where the slot's Pick is
+  // — the Plan root's view of that day, which has the slot's own row.
   function focusChangedWeekDay(date, slot, opts) {
     weekState.pendingDayFocus = date ? { date: date, slot: slot || 'dinner', schedule: !!(opts && opts.schedule) } : null;
     activateTab('week', true);
@@ -27669,28 +28018,17 @@
     weekState.days.forEach(function (d, i) { if (d.date === pending.date) index = i; });
     if (index < 0) return; // the change landed outside the week on screen
     weekState.pendingDayFocus = null;
-    // A draft on its Meals-by-category view: Schedule first, keyed to this
-    // plan so draftView() keeps it rather than resetting to the menu.
-    var data = weekState.data;
-    if (pending.schedule && data && weekPlanState(data) === 'draft' && draftView(data) === 'menu') {
-      weekState.draftView = 'days';
-      weekState.draftViewPlanId = data.weekly_plan_id;
-    }
-    // The Schedule is a carousel of every day: open it on this one
-    // (wireReviewCarousel lands on reviewState.dayIndex).
+    // The Plan root shows that day (its day bar, planWeekHtml) — the
+    // changed meal is legible right there, with no step to go back from.
+    weekState.planDay = index;
     if (pending.schedule) reviewState.dayIndex = index;
-    // The root shows the day in full under its strip (2026-09-14), so a
-    // changed meal is legible right there: select that day and stay — no
-    // step to go back from. (Until then this opened the Day step, because
-    // the root's rows truncated every name to one line.)
     goMealsStep('week', { dayIndex: index, replace: true });
-    // The row on the root's day card (2026-09-18) — the Day step's slot
-    // cards are one tap in and not what is on screen here.
-    // Inside that day's card when the screen is the Schedule carousel, whose
-    // every card has the same rows — the first match would be Monday's.
-    var scope = panel.querySelector('[data-wk-card="' + index + '"]') || panel;
-    var target = scope.querySelector('.wk-row[data-wk-row="' + pending.slot + '"]') ||
-      scope.querySelector('.wk-slot-card[data-wk-slot="' + pending.slot + '"]');
+    // The row on that day: the meal's own row, or an open slot's.
+    var target = panel.querySelector('[data-plan-row="' + pending.slot + '"][data-wk-day-index="' + index + '"]') ||
+      panel.querySelector('[data-plan-snack="' + pending.slot + '"][data-wk-day-index="' + index + '"]') ||
+      panel.querySelector('[data-wk-pick="' + pending.slot + '"][data-wk-day-index="' + index + '"]') ||
+      panel.querySelector('.wk-row[data-wk-row="' + pending.slot + '"]') ||
+      panel.querySelector('.wk-slot-card[data-wk-slot="' + pending.slot + '"]');
     if (!target) return;
     target.classList.add('just-changed');
     // Long enough to notice, short enough that it's gone before it can be
