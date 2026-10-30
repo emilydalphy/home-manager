@@ -177,3 +177,84 @@ def test_undoing_the_older_tweak_under_a_newer_one_is_refused_not_both_thrown_aw
     assert signed_in.post("/api/meal-recipe/undo", json={"request_id": first["request_id"]}).json()["status"] == "undone"
     assert _entry_recipe_id(tue) == tacos
     assert _rows("SELECT id FROM recipes WHERE id = ?", fork) == []
+
+
+# ---------- the allergy gate on a this-meal-only undo ----------
+#
+# The in-place undo has always refused to restore a recipe someone here
+# can't have; the this-meal-only undo (repoint the night at the original,
+# delete the copy) skipped that check, so "no peanuts, this meal only" then
+# Undo put the peanut dish straight back on that night. Same gate, same
+# sentence, household-wide like the in-place one.
+
+_NO_PEANUT = {
+    "ingredients": [{"item": "Sunflower butter", "qty": "3 tbsp"}, {"item": "Noodles", "qty": "400 g"}],
+    "instructions": ["Cook the noodles.", "Toss with the sunflower butter."],
+    "default_servings": 4,
+}
+
+
+def _satay_twice(monkeypatch, allergy=None):
+    if allergy:
+        # Before the week is planned, so the list is scaled for the same
+        # household the Tweak and the Undo re-derive it for.
+        _reid_allergic_to(allergy)
+    plan = _plan("approved")
+    # Not "Satay": the matcher reads that name as peanut on its own, and the
+    # Tweak itself would then refuse while the allergy is already on file.
+    satay = _recipe("Weeknight Noodles", [("Peanut butter", "3 tbsp"), ("Noodles", "400 g")])
+    tue = _meal(plan, TUE, "Weeknight Noodles", buy=True)
+    _meal(plan, WED, "Weeknight Noodles", buy=True)
+    monkeypatch.setattr(agent, "generate_recipe_details_llm", _writer(_NO_PEANUT))
+    return satay, tue
+
+
+def _reid_allergic_to(word):
+    tools.add_member("Reid")
+    tools.set_member_age_group("Reid", "child")
+    tools.set_member_dietary_restrictions("Reid", [f"allergy: {word}"])
+
+
+def _outcomes():
+    return [r["outcome"] for r in _rows("SELECT outcome FROM recipe_change_requests ORDER BY id")]
+
+
+@pytest.mark.parametrize("allergy_first", [True, False], ids=["allergy-before-tweak", "allergy-after-tweak"])
+def test_undo_of_a_this_meal_only_copy_refuses_the_dish_someone_cant_have(
+        signed_in, monkeypatch, allergy_first):
+    satay, tue = _satay_twice(monkeypatch, allergy="peanut" if allergy_first else None)
+    body = _post(signed_in, tue, "No peanuts").json()
+    assert body["forked"] is True, body
+    fork = _entry_recipe_id(tue)
+    if not allergy_first:
+        _reid_allergic_to("peanut")
+    list_before, outcomes_before = _list(), _outcomes()
+
+    res = signed_in.post("/api/meal-recipe/undo", json={"request_id": body["request_id"]})
+
+    assert res.status_code == 200, res.text
+    out = res.json()
+    assert out["status"] == "refused", out
+    # The in-place undo's own sentence, word for word.
+    assert out["said"] == "Reid can’t have peanut, and the old recipe has it in, so I can’t put it back.", out
+    # Nothing moved: the night stays on the copy, the copy is kept, the
+    # list is as it was, and the change is still Undo-able later.
+    assert _entry_recipe_id(tue) == fork
+    assert _rows("SELECT id FROM recipes WHERE id = ?", fork) == [{"id": fork}]
+    assert _list() == list_before
+    assert _outcomes() == outcomes_before
+
+
+def test_undo_of_a_this_meal_only_copy_still_works_when_the_allergy_is_not_in_the_original(
+        signed_in, monkeypatch):
+    satay, tue = _satay_twice(monkeypatch, allergy="shellfish")
+    list_before = _list()
+    body = _post(signed_in, tue, "No peanuts").json()
+    fork = _entry_recipe_id(tue)
+
+    out = signed_in.post("/api/meal-recipe/undo", json={"request_id": body["request_id"]}).json()
+
+    assert out["status"] == "undone", out
+    assert _entry_recipe_id(tue) == satay
+    assert _rows("SELECT id FROM recipes WHERE id = ?", fork) == []
+    assert _list() == list_before

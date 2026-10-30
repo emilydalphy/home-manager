@@ -93,6 +93,12 @@ why*, not duplicating the diff.
 
 - **A standing cook who is out that night is not that night's cook** (2026-10-28, defect hunt; branch `overnight/hunt-taste-feedback-1028b`; tests `tests/test_away_cook_owns_nothing.py`). `move_owner.MoveOwners.for_meal` now drops a DEFAULT owner (`cooking_role` one_person / turns) listed in that meal's `attendance.absent_names`, and the fridge/prep behind that cook with it; a "Who's on it?" override still stands. Why: with "Vineeth cooks" and Vineeth out, Today and Cook said he was cooking and Emily's tick was credited to him in `move_credits`; under turns the away turn-holder owned the night. Nobody, not the adult who is home — Emily's call if she'd rather hand it to them.
 - **"We had it" on the yesterday card says what it took, with Undo** (2026-10-28, defect hunt; branch `overnight/hunt-taste-feedback-1028b`; tests `tests/test_yesterday_had_it_names_what_it_took.py`). `answer_yesterday` passes on `check_off_meal`'s `kitchen_took`; shell.js shows `toastMarkedEaten` and `undoMarkedEaten` re-asks the card. Why: A2 (2026-10-26) missed this door, so it emptied the shelves in silence with no way back.
+- **Put it back on a "this meal only" Tweak runs the allergy gate** (2026-10-28, overnight defect hunt; branch
+  `overnight/undo-allergy-check-1028b`, stacked on `overnight/hunt-tweak-undo-1028b`; tests in
+  `tests/test_tweak_undo_after_notes.py`). `_undo_fork` repointed the night at the original with no check, so "no
+  peanuts, this meal only" then Undo put the peanut dish back after an allergy was on file. Now the same refusal as the
+  in-place undo (one helper, `_undo_blocked`, same sentence; household-wide, no attendance read, as in place), checked on
+  the original as it stands now; nothing written. Why: Undo must not be the one door past an allergy.
 - **Put it back on a "this meal only" Tweak works after a note or a rating** (2026-10-28, overnight defect hunt; branch
   `overnight/hunt-tweak-undo-1028b`; tests `tests/test_tweak_undo_after_notes.py`). `_undo_fork` deleted the copy while
   `recipe_notes` / `member_recipe_feedback` still pointed at it (no CASCADE) → "FOREIGN KEY constraint failed", 500.
