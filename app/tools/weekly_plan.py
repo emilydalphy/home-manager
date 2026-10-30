@@ -4866,6 +4866,7 @@ def _release_plan_days(plan_id: int, dates: list[str], include_components: bool 
     if own_conn:
         conn = get_conn()
     try:
+        moved_cooks = [] if include_components else _move_cooks_onto_kept_nights(conn, plan_id, dates)
         placeholders = ",".join("?" * len(dates))
         entry_rows = conn.execute(
             f"SELECT id, slot, slot_state, component_category, recipe_id, freeform_meal "
@@ -4900,6 +4901,22 @@ def _release_plan_days(plan_id: int, dates: list[str], include_components: bool 
                 ).fetchall()
             ]
 
+        # A reheat night going while the night that cooks for it stays —
+        # Tuesday's wraps made double for a Friday this takeover hands to
+        # the newer period. Every other door that takes a reheat night away
+        # tells its cook first (_unlink_leftover_target); this one deleted
+        # the row and left Tuesday saying "make double — Friday eats the
+        # leftovers" over another plan's Friday, still buying the double
+        # batch (defect hunt 2026-10-30). Unlinked here, while the rows can
+        # still be read; the cook's line is re-sized below, once the
+        # surrendered nights are off the ledger — drop_dish_from_day's order.
+        gone = set(entry_ids)
+        kept_cooks: list[tuple[int, int]] = []
+        for entry_id in entry_ids:
+            source_id = _unlink_leftover_target(plan_id, entry_id, conn=conn)
+            if source_id is not None and source_id not in gone:
+                kept_cooks.append((source_id, entry_id))
+
         removed_items, trimmed_items = [], []
         for entry_id in entry_ids:
             reversal = _grocery._reverse_meal_grocery_contributions(entry_id, conn=conn)
@@ -4917,6 +4934,15 @@ def _release_plan_days(plan_id: int, dates: list[str], include_components: bool 
                 f"DELETE FROM meal_plan_entries WHERE household_id = ? AND id IN ({entry_placeholders})",
                 (household_id(), *entry_ids),
             )
+        # Only an approved plan has a line to re-size: a draft bought nothing.
+        if kept_cooks or moved_cooks:
+            plan_row = conn.execute(
+                "SELECT status FROM weekly_plans WHERE id = ? AND household_id = ?",
+                (plan_id, household_id()),
+            ).fetchone()
+            if plan_row and plan_row["status"] == "approved":
+                for source_id, entry_id in [*moved_cooks, *kept_cooks]:
+                    _rescale_leftover_source_grocery(source_id, entry_id, conn=conn)
         if own_conn:
             conn.commit()
     finally:
@@ -4929,6 +4955,47 @@ def _release_plan_days(plan_id: int, dates: list[str], include_components: bool 
         "grocery_kept_bought": kept_bought,
         "meal_slots_removed": meal_slots_removed,
     }
+
+
+def _move_cooks_onto_kept_nights(conn, plan_id: int, dates: list[str]) -> list[tuple[int, int]]:
+    """
+    A cook night a takeover surrenders while a night it was feeding stays:
+    Monday's wraps made double for Wednesday, and the new period takes
+    Monday only. The takeover deleted Monday and left Wednesday a reheat
+    of a batch nobody would cook — "Bulgogi Wraps" on the screen, nothing
+    on the list for it (defect hunt 2026-10-30). Emily's option A
+    (2026-09-22) is the answer every other door already gives: the cook
+    moves onto the first night it was feeding, and any later night keeps
+    eating from it (move_cook_onto_fed_night, the "−"'s own steps, on the
+    takeover's transaction).
+
+    A cook already ticked or started is left alone — that food is real,
+    and moving the tick onto a later night would say it was cooked then.
+    Returns (cook, night it landed on) pairs for the caller to re-size
+    once the surrendered nights are off the ledger.
+    """
+    from . import leftovers as _leftovers
+
+    gone = set(dates)
+    moved: list[tuple[int, int]] = []
+    sources = _leftovers.plan_leftover_chains(plan_id, conn=conn)["sources"]
+    for source_id, source in sources.items():
+        if source["date"] not in gone:
+            continue
+        kept = [t for t in fed_nights_in_eating_order(source, source["date"]) if t["date"] not in gone]
+        if not kept:
+            continue
+        row = conn.execute(
+            "SELECT cooked_status, cook_started_at FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+            (source_id, household_id()),
+        ).fetchone()
+        if row is None or cook_begun(row):
+            continue
+        target = kept[0]
+        _unlink_leftover_target(plan_id, target["entry_id"], conn=conn)
+        move_cook_onto_fed_night(conn, plan_id, source_id, source["date"], source["slot"], target)
+        moved.append((source_id, target["entry_id"]))
+    return moved
 
 
 def _plan_row_by_id(weekly_plan_id: int):
