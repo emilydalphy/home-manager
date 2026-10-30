@@ -295,8 +295,13 @@ def test_a_dinner_that_was_cooked_is_not_a_skipped_one():
 
 
 def test_food_a_later_dinner_still_uses_gets_no_card_and_no_line():
+    # On or before the day it turns (tomorrow) — tomorrow's lunch, since
+    # its dinner is the chili's reheat. A meal after that is no plan for
+    # it — tests/test_going_off_hunt_fixes.py.
     plan, pasta, chili, fed, spinach = _double_cook_week()
-    _meal(plan, 3, "Spinach Omelette", recipe_items=["Spinach", "Eggs"])
+    _recipe("Spinach Omelette", "Spinach", "Eggs")
+    tools.plan_meal(_d(1), "Spinach Omelette", slot="lunch", weekly_plan_id=plan)
+    assert not tools.audit_plan_slots(plan).get("duplicated"), "premise: one meal per slot"
     out = tools.today_going_off()
     assert out["card"] is None and out["line"] is None
 

@@ -13,6 +13,10 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Today's going-off card: one food is one food, a too-late dinner is no plan, an emptied row is not food** (2026-10-28, branch `overnight/hunt-goingoff-1028`; tests `tests/test_going_off_hunt_fixes.py`). Three defects in `going_off.py`, found driving `/api/today/going-off` on a seeded DB:
+  (1) "Leave it" on the card brought the identical swap straight back for a second row of the same food ("Spinach" + "Baby spinach"), and the line could name that row under the card. Leave now covers the same food on every row (`_same_food`, the card's own matcher), and leaving the CARD also stands its swap down for the day (`LEAVE_SWAP_KEY`, by skipped entry id) — other food that dinner uses falls to the line.
+  (2) Any cook ahead on any live plan counted as "a plan for it", so next week's draft spinach salad silenced the card and the line for spinach turning tomorrow. A plan now has to be dated on or before the food's date (close to the draft's "too late" rule, though use_up's `use_by` is the day BEFORE it turns, so a meal on the turn day counts here and not there). `test_food_a_later_dinner_still_uses…` moved its omelette from dinner day +3 to lunch day +1 to keep testing what it names without a second dinner in a slot.
+  (3) An emptied "0" row ("set milk to 0") was "best used by tomorrow"; it is skipped, as the Kitchen tab skips it.
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
   (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.
