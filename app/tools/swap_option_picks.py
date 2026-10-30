@@ -42,6 +42,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import threading
 import time
 
@@ -344,16 +345,56 @@ def _still_offerable(options: list[dict]) -> list[dict] | None:
     return out
 
 
+def _rest_of_week(weekly_plan_id: int | None, days: list[dict]) -> set[str]:
+    """The dishes planned on the week's OTHER meals, lower-cased — what the
+    model is told as `week_other_dishes` ("Don't repeat one"). The meals
+    being swapped are left out (their dish is going), and so are open and
+    deliberately-empty slots, which hold no dish."""
+    if not weekly_plan_id:
+        return set()
+    swapping = {d["entry_id"] for d in days}
+    out = set()
+    for meal in _weekly_plan.get_weekly_plan(weekly_plan_id).get("meals") or []:
+        name = (meal.get("meal") or "").strip().lower()
+        if (name and meal.get("entry_id") not in swapping
+                and meal.get("slot_state") not in ("planned_empty", "open")):
+            out.add(name)
+    return out
+
+
+_RULED_OUT_RE = re.compile(r"\b(?:but|not|no|except|without|other than|instead of)\s+(?:\w+\s+){0,2}$")
+
+
+def _asks_for(asked: str, name: str) -> bool:
+    """Whether the household's typed request asks for this dish by name —
+    "chili again please", never "anything but chili" (review, 2026-10-29:
+    a plain substring check let a dish the request ruled out back onto the
+    sheet). Whole words only, and not just after "but / not / no…"."""
+    m = re.search(r"\b" + re.escape(name.lower()) + r"\b", asked)
+    return bool(m) and not _RULED_OUT_RE.search(asked[:m.start()])
+
+
 def _gated(entry: dict, raw: list, avoid: list[str], group: list[dict] | None = None,
-           weekly_plan_id: int | None = None) -> list[dict] | None:
+           weekly_plan_id: int | None = None, request: str = "") -> list[dict] | None:
     """The picks the household may actually have, in the order the model
     gave them, at most OPTION_COUNT, none repeating `avoid` or each other.
-    For a whole dish (`group`, more than one day) every day's table is
-    gated, and a pick longer than any day's own cap is dropped — asked
-    under the lowest cap, but a pick that ignores it is still not shown."""
+    Every day's table is gated, and a pick longer than any day's own cap
+    is dropped — asked under the cap (the lowest, for a whole dish), but a
+    pick that ignores it is still not shown.
+
+    That cap check used to run for a whole dish only, so a one-night Swap
+    on a 30-minute rush night offered a 90-minute braise, and tapping it
+    put it on the week (a tapped card is the household's own pick, never
+    refused for time — over_cap_said). The cap is the rule for what
+    Pomona OFFERS; this is where the offer is made. Same for a dish
+    already planned elsewhere in the week: the model is told not to repeat
+    one (`week_other_dishes`), and a prompt instruction is a request, not
+    a guarantee — unless the household's own words in the box name it."""
     days = group if group and len(group) > 1 else [entry]
     out: list[dict] = []
     seen = {a.strip().lower() for a in avoid}
+    week = _rest_of_week(weekly_plan_id, days)
+    asked = (request or "").lower()
     # Read once for the whole set, not per pick. None (or a check that
     # can't run) is the whole set unchecked: answered None, shown nothing.
     avoidances = _swap.offer_avoidances()
@@ -374,8 +415,10 @@ def _gated(entry: dict, raw: list, avoid: list[str], group: list[dict] | None = 
             why = _offer_why(pick, avoidances)
             if why == _swap.CHECK_FAILED:
                 return None
-        if not why and len(days) > 1:
+        if not why and weekly_plan_id:
             why = _swap.cap_gate(weekly_plan_id, pick, days)
+        if not why and name.lower() in week and not _asks_for(asked, name):
+            why = "is already on the week"
         if why:
             logger.warning("swap_options dropped %r: %s", name, why)
             continue
@@ -509,7 +552,7 @@ def _swap_options_locked(weekly_plan_id: int, entry: dict, avoid: list[str] | No
         logger.exception("Asking for swap options failed; the sheet will offer the chat only")
         raw = []
         unavailable = True
-    options = _gated(entry, raw, tried, group, weekly_plan_id)
+    options = _gated(entry, raw, tried, group, weekly_plan_id, request)
     if options is None:
         # The household check couldn't run: nothing unchecked is shown and
         # nothing cached, so the next open asks again.

@@ -230,12 +230,16 @@ def test_a_pick_that_already_carries_its_steps_is_not_written_out_again(week):
 
 
 def test_a_pick_naming_a_saved_dish_is_not_written_out(week):
-    """`Chili` is already the household's; there is nothing to write."""
+    """`Beef Stew` is already the household's; there is nothing to write.
+    (Was the fixture's Chili — but Chili is on the week's other night, and
+    a dish already on the week is no longer offered, 2026-10-29.)"""
+    tools.add_recipe("Beef Stew", ingredients=[{"item": "Beef", "qty": "1 lb", "category": "meat/seafood"}],
+                     food_groups=["protein"], instructions=["Stew it."], prep_time_minutes=10, cook_time_minutes=20)
     entry_id = _entry_id(week, DAY1)
-    tools.swap_options(week, entry_id, asker=_asker(_option("Chili", protein="Ground beef")))
+    tools.swap_options(week, entry_id, asker=_asker(_option("Beef Stew", protein="Beef")))
     write = _writer()
     out = sop.choose_swap_option(week, entry_id, 0, writer=write)
-    assert out["status"] == "swapped" and out["meal"] == "Chili"
+    assert out["status"] == "swapped" and out["meal"] == "Beef Stew"
     assert write.calls == []
 
 
