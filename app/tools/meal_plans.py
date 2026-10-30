@@ -33,8 +33,13 @@ def plan_meal_for_chat(*args, override: bool = False, **kwargs) -> dict:
     meal = kwargs.get("meal")
     if meal is None and len(args) >= 2:
         meal = args[1]
-    if isinstance(meal, str):
-        _allergen_gate.refuse_if_clashing(meal, override=override)
+    # A blank dish is refused, not planted as an empty dinner.
+    meal = _weekly_plan.chat_dish_name(meal)
+    if len(args) >= 2:
+        args = (args[0], meal, *args[2:])
+    else:
+        kwargs["meal"] = meal
+    _allergen_gate.refuse_if_clashing(meal, override=override)
     import inspect
     bound = inspect.signature(plan_meal).bind(*args, **kwargs)
     bound.apply_defaults()
