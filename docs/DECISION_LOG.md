@@ -207,6 +207,17 @@ why*, not duplicating the diff.
   (3) "Use these first" says "by next Thursday" a week out (`grocery._day_name`), and Today's "Pick one" lands on the Grocery shop chips (`wwkState.scrollAnchor`). Why: milk (7 days) read "by Thursday" on a Thursday; the chips were a screen and a half below.
 - **The clock change (Toronto falls back 2026-11-01) checked: the app's local-time math holds; one dated test file did not** (2026-10-30, branch `overnight/dst-1030`). Morning text and evening nudge driven every 5 minutes from Oct 31 20:00 to Nov 3 01:00 Toronto (and a 01:30 send time inside the repeated hour): one send per day each, at 07:00 / 17:30 / the long cook's own start; ICS weekly rules (TZID, UTC, London) land right either side. Everything runs on naive household wall time, so no fixed offset is captured anywhere. The defect was `tests/test_already_home_list.py`: its plan started on the calendar Monday while it planned today to today+3, so `plan_meal` refused the nights outside the 7-day period — 1 red on Friday, 4 Saturday, 15 Sunday (CI's `sunday` job, which resolves to Nov 1 this weekend). The helper now starts the period two days back.
   Why: a weekday-shaped test fixture is a calendar bug in the suite, not the app; the green run on a Monday-Thursday hid it.
+- **Route gaps, third pass: B's own week can't reach A's meals or kitchen**
+  (2026-10-30; branch `overnight/route-gaps-1030`; tests
+  `tests/test_route_gaps_2026_10_30.py`). Every route outside the paused area is requested
+  by some test; the gap was routes the isolation attack never got past the
+  door (111 only ever answered 4xx). The 12 week-entry routes (swap, move,
+  drop/add a day, sides, change part) fill every int with one id, so A's
+  entry always came with a foreign plan id and the PLAN was refused first;
+  now B sends its own plan id with A's entries, and its own entry with A's as
+  target. Plus location / amount / use-up with valid words. No defect found;
+  mutation-checked (unscoped swap lookup goes red; an unscoped add-a-day
+  target is caught by a second slot check, so A stays safe).
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
   (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.
