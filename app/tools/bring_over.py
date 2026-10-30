@@ -192,8 +192,46 @@ def bought_items(entry_ids: list[int], conn=None) -> set[str]:
             today = _cooker.household_today(conn=conn).isoformat()
             fresh: set[str] = set()
             stale: set[str] = set()
+            # Since 2026-10-28 "Yes, freezing it" also files the pack in the
+            # Freezer (defrost._freeze_ticked_pack), and ticking its fridge
+            # move done moves no kitchen row — so a freezer row is no
+            # longer proof the food is still frozen. Where a move for these
+            # meals has been done, or sat unticked past the trusted window
+            # (it may have been done untold), the food is counted from that
+            # move's day at its fridge life, as the use-by rule below would.
+            from . import defrost as _defrost
+            from . import inventory as _inventory
+
+            trusted_from = (date.fromisoformat(today) - timedelta(days=PENDING_MOVE_TRUSTED_DAYS)).isoformat()
+            thawed_on: dict[str, str] = {}
+            for t in conn.execute(
+                f"SELECT description, task_date FROM prep_tasks WHERE household_id = ? AND task_type = 'defrost' "
+                f"AND (status = 'done' OR (status = 'pending' AND task_date < ?)) "
+                f"AND meal_plan_entry_id IN ({marks})",
+                (household_id(), trusted_from, *ids),
+            ).fetchall():
+                thawing = _defrost.thawed_item(t["description"])
+                for k in bought:
+                    if _defrost._matches_selected_item(thawing, {k}):
+                        thawed_on[k] = min(thawed_on.get(k, t["task_date"]), t["task_date"])
+            # Only the rows the Shop's yes itself froze: the household's own
+            # freezer stock (or a tick merged into it, which the yes leaves
+            # where it is) keeps "a freezer row is never stale" — a move for
+            # this dinner says nothing about the rest of the bag.
+            shop_frozen: set[int] = set()
+            for g in conn.execute(
+                f"SELECT DISTINCT g.inventory_receipt_json FROM meal_plan_grocery_links l "
+                f"JOIN grocery_items g ON g.id = l.grocery_item_id AND g.household_id = l.household_id "
+                f"WHERE l.household_id = ? AND l.meal_plan_entry_id IN ({marks}) AND g.status = 'purchased' "
+                f"AND json_extract(g.inventory_receipt_json, '$.freezing.froze') = 1",
+                (household_id(), *ids),
+            ).fetchall():
+                try:
+                    shop_frozen.add(int(json.loads(g["inventory_receipt_json"])["inventory_id"]))
+                except (TypeError, ValueError, KeyError):
+                    continue
             for r in conn.execute(
-                "SELECT item, expiration_date, category, location FROM inventory_items WHERE household_id = ?",
+                "SELECT id, item, expiration_date, category, location FROM inventory_items WHERE household_id = ?",
                 (household_id(),),
             ).fetchall():
                 key = (r["item"] or "").strip().lower()
@@ -201,6 +239,11 @@ def bought_items(entry_ids: list[int], conn=None) -> set[str]:
                     continue
                 use_by = (r["expiration_date"] or "").strip()
                 frozen = _quantities._display_location(dict(r)).strip().lower() == "freezer"
+                if frozen and key in thawed_on and r["id"] in shop_frozen:
+                    out = _inventory._freezer_door_date(dict(r), "fridge")
+                    keeps = (date.fromisoformat(out) - _inventory._today()).days if out else 0
+                    use_by = (date.fromisoformat(thawed_on[key][:10]) + timedelta(days=keeps)).isoformat()
+                    frozen = False
                 (stale if use_by and use_by < today and not frozen else fresh).add(key)
             # "Yes, freezing it" on the Shop checklist books the fridge move
             # and nothing else (defrost.book_defrost_for_grocery_line): the
@@ -213,8 +256,6 @@ def bought_items(entry_ids: list[int], conn=None) -> set[str]:
             # well have been done without the tick, and chicken thawed for
             # days is the use-by rule's to answer (re-bought), not this.
             if stale - fresh:
-                from . import defrost as _defrost
-
                 trusted_from = (date.fromisoformat(today) - timedelta(days=PENDING_MOVE_TRUSTED_DAYS)).isoformat()
                 for r in conn.execute(
                     f"SELECT description FROM prep_tasks WHERE household_id = ? AND task_type = 'defrost' "

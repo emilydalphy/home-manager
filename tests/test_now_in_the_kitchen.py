@@ -57,9 +57,12 @@ def test_counts_by_place_are_what_this_shops_ticks_added():
     tools.add_grocery_item("Lemons", quantity="3", category="produce")  # not ticked
 
     now = tools.kitchen_from_this_shop()
-    assert now["total"] == 4
-    assert [p["place"] for p in now["places"]] == ["fridge", "freezer", "pantry"], "the card's order"
-    assert _places(now) == {"fridge": 2, "freezer": 1, "pantry": 1}
+    # The rice became a pantry staple on its tick (staples._create_spice_
+    # staple) and the Kitchen tab never draws a staple, so neither does
+    # the card (defect hunt 2026-10-28: "Pantry · 1" above "Pantry · 0").
+    assert now["total"] == 3
+    assert [p["place"] for p in now["places"]] == ["fridge", "freezer"], "the card's order"
+    assert _places(now) == {"fridge": 2, "freezer": 1}
 
 
 def test_untick_takes_it_back_out_and_retick_counts_it_once():

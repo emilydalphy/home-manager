@@ -2172,7 +2172,9 @@ def _meal_words(slot: str, on: date, today: date) -> str:
     gap = (on - today).days
     if slot == "dinner" and gap == 0:
         return "in tonight’s dinner"
-    day = "today’s" if gap == 0 else "tomorrow’s" if gap == 1 else on.strftime("%A") + "’s"
+    # A week out is today's weekday again: "next" says which one.
+    day = ("today’s" if gap == 0 else "tomorrow’s" if gap == 1
+           else ("next " if gap >= 7 else "") + on.strftime("%A") + "’s")
     return f"in {day} {slot}"
 
 
@@ -2215,6 +2217,17 @@ def kitchen_from_this_shop() -> dict:
                 f"WHERE household_id = ? AND id IN ({marks})",
                 (household_id(), *line_ids_by_row),
             ).fetchall()]
+        # What the Kitchen tab shows, and nothing else (defect hunt
+        # 2026-10-28): a staple or a spice is kept by Staples and never
+        # drawn there (whats_home._shown_rows, the same two tests), so the
+        # card read "Pantry · 1 thing" for the coffee and "See what's home"
+        # opened on "Pantry · 0". Ticking coffee is what makes it a staple.
+        from . import spices as _spices  # lazy: both import this module
+        from . import use_up as _use_up
+
+        staples = _use_up._staple_keys(conn)
+        rows = [r for r in rows if (r["item"] or "").strip()
+                and not _use_up.is_staple(r["item"].strip(), staples) and not _spices.is_spice(r["item"].strip())]
         today = _household_today(conn=conn)
         counts: dict[str, int] = {}
         for r in rows:
@@ -2242,17 +2255,22 @@ def kitchen_from_this_shop() -> dict:
             line_ids = line_ids_by_row[r["id"]]
             marks = ",".join("?" * len(line_ids))
             # The earliest meal still ahead that this line was bought for,
-            # read off the per-meal ledger — never a name match.
+            # read off the per-meal ledger — never a name match — and only
+            # one on or before the food's own date (defect hunt 2026-10-28):
+            # Sunday's shop for Saturday's chicken read "Chicken thighs · in
+            # Saturday's dinner" on a pack good till Tuesday, which is advice
+            # to let it go off; and a bare weekday a week out read as this
+            # week's. Past its date, the date is the plan.
             meal = conn.execute(
                 "SELECT e.date, e.slot, e.component_category FROM meal_plan_grocery_links l "
                 "JOIN meal_plan_entries e ON e.id = l.meal_plan_entry_id "
                 "LEFT JOIN weekly_plans w ON w.id = e.weekly_plan_id "
                 f"WHERE l.household_id = ? AND l.grocery_item_id IN ({marks}) "
                 "AND e.slot_state = 'planned' AND e.cooked_status = 'pending' AND e.date >= ? "
-                "AND (w.id IS NULL OR w.status != 'retired') "
+                "AND e.date <= ? AND (w.id IS NULL OR w.status != 'retired') "
                 "ORDER BY e.date, CASE e.slot WHEN 'breakfast' THEN 0 WHEN 'lunch' THEN 1 "
                 "WHEN 'snack' THEN 2 ELSE 3 END LIMIT 1",
-                (household_id(), *line_ids, today.isoformat()),
+                (household_id(), *line_ids, today.isoformat(), expires.isoformat()),
             ).fetchone()
             use_by = _use_by_words(expires, today)
             if meal is None:
@@ -3592,7 +3610,7 @@ def clear_grocery_list(status: str = "needed") -> dict:
 RESTORED, ROW_GONE, LEFT_ALONE = "restored", "gone", "left"
 
 
-def _restore_inventory_from_receipt(conn, receipt_json: str | None) -> str:
+def _restore_inventory_from_receipt(conn, receipt_json: str | None, item_id: int | None = None) -> str:
     """
     Reverse exactly the inventory write a purchased tick recorded, on the
     caller's connection. Returns one of three answers, because the caller
@@ -3643,7 +3661,9 @@ def _restore_inventory_from_receipt(conn, receipt_json: str | None) -> str:
     current = _inventory._receipt_snapshot(conn, inventory_id)
     if current is None:
         return ROW_GONE
-    if current.get("rev") != after.get("rev") or current.get("quantity") != after.get("quantity"):
+    if not _same_state(current, after):
+        if item_id is not None and _untick_from_under(conn, item_id, receipt, current):
+            return RESTORED
         return LEFT_ALONE
     if receipt.get("fresh"):
         conn.execute(
@@ -3665,7 +3685,101 @@ def _restore_inventory_from_receipt(conn, receipt_json: str | None) -> str:
             household_id(),
         ),
     )
+    if item_id is not None:
+        # The row reads what the tick underneath left it at again — but the
+        # restore bumped its rev, so hand that tick the row as it is now.
+        under = _stacked_tick(conn, item_id, inventory_id, after_state=before)
+        if under is not None:
+            under_id, under_receipt = under
+            under_receipt["after"] = _inventory._receipt_snapshot(conn, inventory_id)
+            _save_tick_receipt(conn, under_id, under_receipt)
     return RESTORED
+
+
+# Two ticks on ONE kitchen row (defect hunt 2026-10-28). A row's ticks
+# merge: two weeks' onion lines behind one Shop row (week_lines — ticked
+# and unticked together, in whatever order the two posts land), or a
+# person's "12" eggs beside a recipe's "2 cups". Each tick's receipt is
+# exact about its own write only, so whichever untick went second found
+# the row changed by the first and left it — both lines back on the list
+# and the eggs still "12" in the kitchen, for good (its stamp stays, so
+# the re-tick adds nothing either). The receipts chain: the later tick's
+# `before` is the earlier tick's `after`. These two helpers follow that
+# chain one link, and only while every state on it still reads exactly
+# (rev and quantity) — anything else wrote to the row since, and that is
+# left alone exactly as before.
+def _same_state(a: dict | None, b: dict | None) -> bool:
+    return bool(a) and bool(b) and a.get("rev") == b.get("rev") and a.get("quantity") == b.get("quantity")
+
+
+def _stacked_tick(conn, item_id: int, inventory_id, *, after_state: dict | None = None,
+                  before_state: dict | None = None):
+    """The other still-stamped tick on this kitchen row whose receipt's
+    `after` (or `before`) is exactly this state: (line id, receipt)."""
+    for r in conn.execute(
+        "SELECT id, inventory_receipt_json FROM grocery_items WHERE household_id = ? AND id != ? "
+        "AND inventory_added_at IS NOT NULL AND inventory_receipt_json IS NOT NULL "
+        "AND json_extract(inventory_receipt_json, '$.inventory_id') = ?",
+        (household_id(), item_id, inventory_id),
+    ).fetchall():
+        try:
+            other = json.loads(r["inventory_receipt_json"])
+        except (TypeError, ValueError):
+            continue
+        if after_state is not None and _same_state(other.get("after"), after_state):
+            return r["id"], other
+        if before_state is not None and _same_state(other.get("before"), before_state):
+            return r["id"], other
+    return None
+
+
+def _save_tick_receipt(conn, item_id: int, receipt: dict) -> None:
+    conn.execute(
+        "UPDATE grocery_items SET inventory_receipt_json = ? WHERE id = ? AND household_id = ?",
+        (json.dumps(receipt), item_id, household_id()),
+    )
+
+
+def _untick_from_under(conn, item_id: int, receipt: dict, current: dict) -> bool:
+    """
+    Take an earlier tick back out from under the one later tick that sits
+    exactly on top of it: the row becomes what it would read had only the
+    later tick happened — the earlier tick's before-state with the later
+    line's amount merged onto it (just that amount, for a row the earlier
+    tick created) — and the later tick's receipt now starts where the
+    earlier one did, so its own untick still reverses exactly. Only when
+    replaying the later tick onto the earlier one's after-state reproduces
+    the row as it reads now (its amount was not edited since, nothing else
+    landed between). True when it did.
+    """
+    inventory_id = receipt.get("inventory_id")
+    after = receipt.get("after") or {}
+    top = _stacked_tick(conn, item_id, inventory_id, before_state=after)
+    if top is None:
+        return False
+    top_id, top_receipt = top
+    if not _same_state(top_receipt.get("after"), current):
+        return False
+    line = conn.execute(
+        "SELECT quantity FROM grocery_items WHERE id = ? AND household_id = ?", (top_id, household_id()),
+    ).fetchone()
+    added = (line["quantity"] or "") if line else ""
+    if _inventory._merged_quantity(after.get("quantity") or "", added) != (current.get("quantity") or ""):
+        return False
+    fresh = bool(receipt.get("fresh"))
+    before = receipt.get("before") or {}
+    if not fresh and not before:
+        return False
+    quantity = added if fresh else _inventory._merged_quantity(before.get("quantity") or "", added)
+    conn.execute(
+        "UPDATE inventory_items SET quantity = ?, updated_at = datetime('now') WHERE id = ? AND household_id = ?",
+        (quantity, inventory_id, household_id()),
+    )
+    top_receipt["fresh"] = fresh
+    top_receipt["before"] = None if fresh else before
+    top_receipt["after"] = _inventory._receipt_snapshot(conn, inventory_id)
+    _save_tick_receipt(conn, top_id, top_receipt)
+    return True
 
 
 # The three statuses the SHOPPER moves a line between. Deliberately not
@@ -3830,10 +3944,20 @@ def mark_grocery_item(item_id: int, status: str = "purchased") -> dict:
             # the helper). A line bought before the stamp existed has no
             # receipt, so this reports inventory_restored: False rather than
             # staying quiet.
-            outcome = _restore_inventory_from_receipt(conn, row["inventory_receipt_json"])
+            outcome = _restore_inventory_from_receipt(conn, row["inventory_receipt_json"], item_id)
             restored = outcome == RESTORED
             if outcome in (RESTORED, ROW_GONE):
                 fields += ", inventory_added_at = NULL, inventory_receipt_json = NULL"
+            # Not bought after all: the fridge move this line's "Yes,
+            # freezing it" booked goes too, whatever the shelf says — no
+            # pack, nothing to thaw (defrost.cancel_ticked_pack_move).
+            from . import defrost as _defrost  # lazy: defrost imports this module
+
+            if _defrost.cancel_ticked_pack_move(conn, row["inventory_receipt_json"]) and outcome == LEFT_ALONE:
+                kept = json.loads(row["inventory_receipt_json"])
+                kept.pop(_defrost.FREEZING_RECEIPT_KEY, None)
+                fields += ", inventory_receipt_json = ?"
+                params.append(json.dumps(kept))
         conn.execute(
             f"UPDATE grocery_items SET {fields} WHERE id = ? AND household_id = ?",
             (*params, item_id, household_id()),

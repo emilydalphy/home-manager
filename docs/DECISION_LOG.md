@@ -58,6 +58,23 @@ why*, not duplicating the diff.
 - **The bell's "turns soon" never names a staple or a spice** (2026-10-28, branch `overnight/hunt-digest-1028`; tests `tests/test_texts_read_the_kitchen.py`). `notifications.get_active_notifications` now skips staples and spices (`use_up.is_staple`, `spices.is_spice`), the rule `going_off.going_off_items` and the Kitchen tab keep; the morning text reads this title, so it said "Your whole milk turns soon" about a Milk staple neither screen names. The many-item body reads "Spinach and Greek yogurt turn soon" / "…, X and 2 more" (was "Spinach, Greek yogurt all turn soon", and a fourth item counted but never named); names keep their own capitals.
   Not changed: hiding a fridge move at read time was tried and dropped — cooking can drain the freezer row by name (deplete_inventory_for_meal ignores location), which hid a thaw still owed; the gone-food case is fixed at the source on overnight/hunt-planweek-1028.
 - **Cooking takes from the fridge row, not the frozen pack** (2026-10-28, branch `overnight/cook-takes-from-fridge`; tests `tests/test_cook_takes_from_fridge.py`). `cooker.deplete_inventory_for_meal` took the first name match off `get_inventory` (ORDER BY item), so Beef Mince in freezer (older row) + fridge lost the FREEZER pack on tonight's cook, and the next sync dropped Saturday's fridge move. Now rows are stably ordered before matching: a freezer row THIS entry's own fridge move was ticked done for, then any non-freezer row, then other freezer rows. A pending move does not count (nobody moved it). The eaten receipt is keyed by the row taken, so Undo puts back the fridge pack. Not fixed: `defrost._candidates_from_plan` still books a fridge move for a night the fridge already covers.
+- **The shop's hand-off to the kitchen tells the truth** (2026-10-28, defect hunt; branch
+  `overnight/hunt-shop-home-1028`; tests `tests/test_shop_hands_food_home_1028.py`). Found driving
+  Shop → tick → "Freezing it?" → card → Kitchen over HTTP and at 390px. (1) "Yes, freezing it" booked
+  only the move: the pack stayed in the Fridge on a 2-day date ("Now in the kitchen" said Fridge + use
+  first; Kitchen said going off), and an untick left the move on Today for chicken still on the list.
+  Now the yes freezes the row the tick CREATED (`defrost._freeze_ticked_pack`, re-snapshotting the
+  tick's receipt so the untick still reverses), Put back unfreezes it, and the untick cancels the move
+  (receipt key `freezing`). A merged row or "Freezing some?" moves nothing, as before. `bring_over.bought_items`
+  counts the pack the yes froze (receipt `freezing.froze`) as thawed once its move is done or overdue;
+  every other freezer row (the household's own bag, a merged tick) stays never-stale (review fix). (2) Two ticks on
+  one kitchen row (two weeks' lines behind one Shop row; "12" eggs beside "2 cups") — unticking both
+  left the first amount in the kitchen for good, either order. The receipts chain (later `before` =
+  earlier `after`): `grocery._untick_from_under` / `_stacked_tick` follow one link while every state
+  still reads exactly. (3) "Use these first" named a dinner after the food's date ("in Saturday's
+  dinner" on chicken good till Tuesday); now only a meal on/before it, else "by <day>", and "next
+  <day>" a week out. (4) The card counted staples/spices the Kitchen tab never shows (ticked coffee
+  becomes a staple): "Pantry · 1" over "Pantry · 0". Same filter as `whats_home._shown_rows`.
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
   (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.

@@ -2310,7 +2310,8 @@ def mark_defrost_asked(weekly_plan_id: int) -> None:
 # confirm_frozen_items writes for the freezer step: inventory_item_id
 # NULL (the household's move, not one booked off a kitchen row; this
 # answer writes no kitchen row of its own — the bought tick already put
-# the pack in the kitchen), keyed by the
+# the pack in the kitchen, and the yes moves that row to the Freezer:
+# _freeze_ticked_pack), keyed by the
 # meal's entry and the same _describe() string, so the two doors cannot
 # book one move twice and sync_defrost_tasks never sweeps it.
 #
@@ -2563,6 +2564,137 @@ class FreezingNotOffered(ValueError):
     already booked. The message is the plain reason."""
 
 
+# The kitchen half of "Yes, freezing it" (defect hunt 2026-10-28). The
+# yes used to book only the move: the tick had filed the pack in the
+# Fridge with a two-day fridge date, so Shop's "Now in the kitchen" said
+# "Fridge · Use these first: Chicken thighs" about a pack the household had
+# just said was going in the freezer, and the Kitchen called it going off
+# by Friday. Now the yes moves the row the tick wrote into the Freezer
+# (inventory.freeze_item: frozen today, the freezer date), and the tick's
+# own receipt (grocery_items.inventory_receipt_json) is re-read after the
+# move and remembers the booking under "freezing" — so an untick still
+# takes the pack back out exactly (its rev proof would otherwise fail on
+# the move) and cancels the move it booked (cancel_ticked_pack_move), and
+# Put back moves the pack back. Only a row the tick CREATED and nobody has
+# touched since: a tick merged into chicken already in the fridge cannot
+# say which half is the new pack, and "Freezing some?" keeps a sooner
+# night's share in the fridge — both leave the shelf as it is and book the
+# move alone, as before.
+FREEZING_RECEIPT_KEY = "freezing"
+
+
+def _ticked_receipt(conn, item_id: int) -> dict | None:
+    row = conn.execute(
+        "SELECT status, inventory_receipt_json FROM grocery_items WHERE id = ? AND household_id = ?",
+        (item_id, household_id()),
+    ).fetchone()
+    if row is None or row["status"] != "purchased" or not row["inventory_receipt_json"]:
+        return None
+    try:
+        receipt = json.loads(row["inventory_receipt_json"])
+    except (TypeError, ValueError):
+        return None
+    return receipt if isinstance(receipt, dict) and receipt.get("inventory_id") else None
+
+
+def _save_receipt(conn, item_id: int, receipt: dict) -> None:
+    conn.execute(
+        "UPDATE grocery_items SET inventory_receipt_json = ? WHERE id = ? AND household_id = ?",
+        (json.dumps(receipt), item_id, household_id()),
+    )
+
+
+def _freeze_ticked_pack(item_id: int, prep_task_id: int, whole_pack: bool) -> bool:
+    """Move the row this line's tick created into the Freezer, and record
+    the booking on the tick's receipt. True when the row moved. Opens its
+    own connections (freeze_item does) — call with none open."""
+    conn = get_conn()
+    try:
+        receipt = _ticked_receipt(conn, item_id)
+        if receipt is None:
+            return False
+        inventory_id = receipt["inventory_id"]
+        current = _inventory._receipt_snapshot(conn, inventory_id)
+        place = conn.execute(
+            "SELECT location, category FROM inventory_items WHERE id = ? AND household_id = ?",
+            (inventory_id, household_id()),
+        ).fetchone()
+    finally:
+        conn.close()
+    after = receipt.get("after") or {}
+    movable = bool(
+        whole_pack and receipt.get("fresh") and current is not None and place is not None
+        and current.get("rev") == after.get("rev") and current.get("quantity") == after.get("quantity")
+        and _quantities._display_location(dict(place)).strip().lower() != "freezer"
+    )
+    if movable:
+        _inventory.freeze_item(inventory_id)
+    with write() as conn:
+        receipt = _ticked_receipt(conn, item_id)
+        if receipt is None:
+            return False
+        record = {"prep_task_id": prep_task_id, "froze": movable}
+        if movable:
+            # The move is this tick's own doing: the untick's proof is the
+            # row as it reads now.
+            receipt["after"] = record["after"] = _inventory._receipt_snapshot(conn, inventory_id)
+        receipt[FREEZING_RECEIPT_KEY] = record
+        _save_receipt(conn, item_id, receipt)
+    return movable
+
+
+def _unfreeze_ticked_pack(item_id: int) -> bool:
+    """Put back: the pack the yes froze goes back to its shelf with its old
+    date (inventory.unfreeze_item), while nobody has touched it since; the
+    receipt forgets the booking either way. True when the row moved."""
+    conn = get_conn()
+    try:
+        receipt = _ticked_receipt(conn, item_id)
+        record = (receipt or {}).get(FREEZING_RECEIPT_KEY)
+        if not record:
+            return False
+        inventory_id = receipt["inventory_id"]
+        current = _inventory._receipt_snapshot(conn, inventory_id)
+    finally:
+        conn.close()
+    moved = False
+    if record.get("froze") and current is not None and current == record.get("after"):
+        moved = bool(_inventory.unfreeze_item({"item_id": inventory_id}).get("undone"))
+    with write() as conn:
+        receipt = _ticked_receipt(conn, item_id)
+        if receipt is None:
+            return moved
+        receipt.pop(FREEZING_RECEIPT_KEY, None)
+        if moved:
+            receipt["after"] = _inventory._receipt_snapshot(conn, inventory_id)
+        _save_receipt(conn, item_id, receipt)
+    return moved
+
+
+def cancel_ticked_pack_move(conn, receipt_json: str | None) -> int | None:
+    """
+    On the caller's connection (grocery.mark_grocery_item's untick): the
+    fridge move this line's "Yes, freezing it" booked, while it is still
+    pending — the pack was not bought after all, so there is nothing to
+    move, and Today would otherwise say "Move the chicken thighs to the
+    fridge" about chicken that is still on the list. A move already ticked
+    done is the household's record and stays. Returns the task removed.
+    """
+    try:
+        record = (json.loads(receipt_json or "null") or {}).get(FREEZING_RECEIPT_KEY)
+    except (TypeError, ValueError, AttributeError):
+        return None
+    task_id = (record or {}).get("prep_task_id") if isinstance(record, dict) else None
+    if not task_id:
+        return None
+    gone = conn.execute(
+        "DELETE FROM prep_tasks WHERE id = ? AND household_id = ? AND task_type = 'defrost' "
+        "AND status = 'pending'",
+        (task_id, household_id()),
+    ).rowcount
+    return task_id if gone else None
+
+
 def book_defrost_for_grocery_line(item_id: int, freezing: bool) -> dict:
     """
     The checklist's answer for one line. `freezing` True books the defrost
@@ -2571,7 +2703,8 @@ def book_defrost_for_grocery_line(item_id: int, freezing: bool) -> dict:
     entry and _describe), updated in place if it exists. False is "Put
     back": the pending move this ask (or any door) booked for that meal
     and ingredient is removed; a done one is left alone, and nothing to
-    remove is an ordinary answer. "Straight to the fridge" never reaches
+    remove is an ordinary answer. Both also move the pack the tick put in
+    the kitchen — into the Freezer, and back (_freeze_ticked_pack). "Straight to the fridge" never reaches
     here — it writes nothing.
 
     Raises ValueError for a line this household does not have (the
@@ -2604,8 +2737,15 @@ def book_defrost_for_grocery_line(item_id: int, freezing: bool) -> dict:
                     )
                     conn.commit()
                     removed = row["id"]
-            return {"item_id": item_id, "freezing": False, "removed_prep_task_id": removed}
+    finally:
+        conn.close()
+    if not freezing:
+        # And the pack the yes put in the Freezer goes back on its shelf.
+        _unfreeze_ticked_pack(item_id)
+        return {"item_id": item_id, "freezing": False, "removed_prep_task_id": removed}
 
+    conn = get_conn()
+    try:
         if not _is_meat_ingredient(line):
             raise FreezingNotOffered("That's not something to thaw.")
         meal = _grocery_line_first_meal(conn, item_id, line["item"].strip(), today, dinner_window)
@@ -2627,6 +2767,12 @@ def book_defrost_for_grocery_line(item_id: int, freezing: bool) -> dict:
         if date.fromisoformat(move_date_str) < today:
             # The night it is about, not always "tonight" (2026-10-10).
             raise FreezingNotOffered(too_late_to_thaw_note(meal["date"], "dinner", today))
+        # "Freezing some?" — a sooner night still ahead keeps its share in
+        # the fridge (freezing_offer_for_grocery_line's keep_fresh), so the
+        # pack is not moved whole; see _freeze_ticked_pack.
+        whole_pack = not any(
+            today.isoformat() <= m["date"] < meal["date"] for m in _grocery_line_meals(conn, item_id)
+        )
     finally:
         conn.close()
 
@@ -2647,6 +2793,7 @@ def book_defrost_for_grocery_line(item_id: int, freezing: bool) -> dict:
         conn.commit()
     finally:
         conn.close()
+    _freeze_ticked_pack(item_id, cur.lastrowid, whole_pack)
     return {
         "item_id": item_id, "freezing": True, "prep_task_id": cur.lastrowid,
         "task_date": move_date_str, "move_label": _move_label(move_date_str, today),
