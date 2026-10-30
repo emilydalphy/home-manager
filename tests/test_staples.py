@@ -442,6 +442,28 @@ def test_pre_shop_undo_on_a_staple_line_takes_the_plenty_back():
     assert needed_names() == ["Oat milk"]
 
 
+def test_a_second_pre_shop_undo_leaves_the_staples_older_answer_alone():
+    # Defect hunt 2026-10-30: Undo tapped twice (or "Put back on the list"
+    # from a second phone) ran reverse_last_answer twice — the second pass
+    # deleted the PREVIOUS trip's "We have plenty" and made the staple due.
+    s, line = _due_line(every_days=21)
+    tools.decide_staple_line(line["id"], "plenty")          # last trip's answer
+    travel(21)
+    tools.get_grocery_list_by_section(status="needed")
+    (line,) = staple_lines()
+    tools.drop_grocery_item_pre_shop(line["id"], author="Emily")
+    tools.undo_pre_shop_drop(line["id"])
+    conn = get_conn()
+    kinds = lambda: [r["kind"] for r in conn.execute(
+        "SELECT kind FROM staple_events WHERE staple_id = ? ORDER BY id", (s["id"],))]
+    before = kinds()
+    assert before.count("plenty") == 1
+    tools.undo_pre_shop_drop(line["id"])
+    assert kinds() == before
+    conn.close()
+    assert needed_names() == ["Oat milk"]
+
+
 def test_removing_a_bought_staple_line_is_just_a_delete():
     s, line = _due_line(every_days=21)
     tools.mark_grocery_item(line["id"], "purchased")

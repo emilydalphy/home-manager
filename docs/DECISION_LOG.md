@@ -224,6 +224,12 @@ why*, not duplicating the diff.
   (3) Two quick ticks = two list re-reads in flight; the older reply landing last un-ticked the second line on screen for good. `loadGrocery` numbers its reads; only the newest draws.
   Review fixes, same branch: the read guard tracks the last read DRAWN too (an older good read draws when a newer one failed; a failure shows "No signal" only if no newer read started); login.html (`?signed_out=1`) and goodbye.html clear every `pomona.grocery.*` key (a sign-out not via the shell left the copy for an offline reload); the worker caches only `res.ok` answers.
   Why: each reproduced in chromium at 390px with `context.setOffline` / a held reply.
+- **"Have it" never un-buys a line** (2026-10-30, branch `overnight/hunt-preshop-offline-1030c`; `tests/test_pre_shop_undo_once.py`). `drop_grocery_item_pre_shop` leaves a `purchased` line as it is and answers with its real status.
+  Why: a stale pre-shop card on the other phone turned a ticked line into "Already had on hand", off the trip's bought list. (The shell still toasts "moved"; shell.js was not this pass's to edit.)
+- **A "½" a person adds is half** (2026-10-30, branch `overnight/hunt-preshop-offline-1030c`; `tests/test_grocery_glyph_fractions.py`). A standing want's quantity (add, scan confirm, the row's box) is spelled `1/2` via `recipes._ascii_fractions` before it is read.
+  Why: the list's parsers read no glyphs, so a scanned "½ lb" butter never tidied and the next "1 lb" stood beside it as "½ lb + 1 lb".
+- **A pre-shop Undo only undoes a drop** (2026-10-30, branch `overnight/hunt-preshop-offline-1030c`; `tests/test_pre_shop_undo_once.py`, one in `tests/test_staples.py`). `undo_pre_shop_drop` is a no-op on a line that is not `removed`.
+  Why: a second Undo (double tap, or the other phone's stale "Already had on hand") put a BOUGHT line back to buy, and on a staple took back the previous trip's "plenty".
 - **Inventory merge seams fixed** (2026-10-27, branch `merge-inventory-2026-10-27`; tests `tests/test_inventory_merge_seams.py`). Six places two of the nine inventory branches disagreed once merged:
   (1) Today's `going_off.dinner_uses` read a `derived_from["uses"]` nobody writes; it now merges B2/B3's dish-stamped tags (`use_up.live_uses`, by inventory id) with the recipe match, and the dead `uses` read is gone.
   (2) `going_off_items` skips staples and spices (`use_up.is_staple`, `spices.is_spice`), as the Kitchen tab does.
