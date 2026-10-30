@@ -8012,6 +8012,16 @@ def _generate_weekly_plan(
                 if effective_memory.get("meal_counts_set") and effective_memory.get(field)
                 and not _meal_variety.asks_for_a_count(*count_asks, slot=slot)
             })
+            # What they said to keep OFF the week — "No fish this week", a
+            # protein set to Skip — held, not only told (the prompt says
+            # both; nothing checked either). LAST of the re-picking passes,
+            # so no later one puts the food back; see typed_requests.
+            # keep_exclusions_off, which says what it could not replace.
+            _typed_requests.keep_exclusions_off(
+                plan_id,
+                tools.freeform_exclusions(asks_text) + _typed_requests.skipped_proteins(household_memory),
+                plan_report, budget=repick_budget, dislikes=effective_memory.get("dislikes") or [],
+            )
 
         # Everything going off that a dish genuinely carries, soonest first,
         # and what could not fit (Loop Board B2/B3). LAST of the passes that
@@ -8434,6 +8444,14 @@ def _finish_week_slots(
     # Swallows its own failures.
     _cap_enforce.place_off_nights_out(
         plan_id, intake, household_memory, nobody_home, asked_on_nights_out,
+        asks=((context or {}).get("constraints_notes"), (intake or {}).get("freeform")), report=report,
+    )
+    # A dinner they named a night for ("Tacos Tuesday") goes on that night
+    # when the model put it elsewhere — after rule 8, which owns a named
+    # night nobody is home; before every pass that reads it as theirs.
+    # See cap_enforce.place_on_named_days; it swallows its own failures.
+    _cap_enforce.place_on_named_days(
+        plan_id, intake, household_memory,
         asks=((context or {}).get("constraints_notes"), (intake or {}).get("freeform")), report=report,
     )
 
