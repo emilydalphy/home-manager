@@ -13,6 +13,8 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Test clock: `test_the_route_answers_with_the_view_and_the_receipt` failed 23:25–24:00 UTC** (2026-10-30, branch `merge-overnight-2026-10-30`).
+  Its household is on UTC, so a 35-minute cook started then is on the table tomorrow; it asserted today's date. Now asserts started + 35 min. No app change.
 - **Merge seam: one rule for a chat use-by date** (2026-10-30, branch `merge-overnight-2026-10-30`).
   `hunt-inventory-1029b`'s `_written_date` and `chat-args-1030`'s `_use_by_day` both guarded `update_inventory`; the looser one ran first and
   3.11's `date.fromisoformat` turned "20261102" into a real day, so the stricter refusal never fired. `_written_date` removed; `_use_by_day` checks add/set, and a use/remove drops a stray date (1029b's rule).

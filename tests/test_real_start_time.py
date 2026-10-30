@@ -315,7 +315,11 @@ def test_the_route_answers_with_the_view_and_the_receipt(signed_in, tonight):
     body = res.json()
     assert body["already_started"] is False
     assert body["started_at"] and body["started_at"].startswith(hh_today + "T")
-    assert body["on_the_table"] and body["on_the_table"].startswith(hh_today + "T")
+    # Started plus the card's 35 minutes — not "starts with today": a start
+    # after 23:25 on this UTC household is on the table tomorrow.
+    assert body["on_the_table"] == (
+        datetime.datetime.fromisoformat(body["started_at"]) + datetime.timedelta(minutes=35)
+    ).isoformat(timespec="seconds")
     assert body["meals"][0]["cook_started_at"] == body["started_at"]
     assert _started_at(tonight) == body["started_at"]
     # The second tap: the same time, and the shell is told it is a repeat.
