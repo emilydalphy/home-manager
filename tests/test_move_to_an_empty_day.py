@@ -437,3 +437,24 @@ def test_the_grocery_list_is_untouched_by_a_move_onto_an_empty_day():
         (tools.household_id(),)).fetchall()]
     conn.close()
     assert after == before
+
+
+def test_a_nights_swap_with_an_open_dinner_re_says_its_question_too():
+    """The Plan tiles' drag and chat's swap_dinner_nights trade two nights
+    through weekly_plan._apply_dinner_nights_swap, not move_meal — and
+    carried Thursday's "was going to be leftovers…" onto Tuesday the same
+    way (overnight, 2026-10-30). Undo gives it back its own words."""
+    w = _week_with_an_open_thursday()
+    before = _row(THU)
+
+    assert tools.swap_dinner_nights(w["plan"], TUE, THU)["status"] == "swapped"
+    left = _row(TUE)
+    assert left["id"] == before["id"] and left["slot_state"] == "open"
+    assert left["open_reason"] == "You moved the Tacos to Thursday, so this one is yours to fill."
+    assert left["derived"]["constraint"] == meal_move.MOVE_OPENED_CONSTRAINT
+    assert left["derived"].get("dish") == "Pasta Bake"
+
+    assert tools.undo_dinner_nights_swap(w["plan"], TUE, THU)["status"] == "restored"
+    back = _row(THU)
+    assert back["id"] == before["id"] and back["open_reason"] == before["open_reason"]
+    assert back["derived"] == before["derived"]

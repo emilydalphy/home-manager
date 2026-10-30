@@ -10632,9 +10632,30 @@ def _apply_dinner_nights_swap(
             cut_moves = _nights_swap_prep_cut_moves(
                 conn, weekly_plan_id, new_date, today or _household_today(conn).isoformat())
             restore_cuts = {}
+        # An OPEN dinner traded onto the other night re-says its question
+        # for the night it is on now, and Undo gives it back its own words —
+        # the Move sheet's rule (meal_move._open_questions_traded), one copy.
+        # Lazy import: meal_move imports us.
+        from . import meal_move as _meal_move
+        snap = {"rows": [dict(r) for r in rows]}
+        dish_id = next((r["id"] for r in moving if r["slot_state"] != "open"), None)
+        if undo:
+            traded: dict = {}
+            restore_open = {}
+            for r in moving:
+                was = (json.loads(r["derived_from_json"] or "{}").get(NIGHTS_MOVED_KEY) or {}).get("was_open")
+                if isinstance(was, dict):
+                    restore_open[r["id"]] = was
+        else:
+            # Two open nights traded have no dish to name; left as they are.
+            traded = (_meal_move._open_questions_traded(conn, snap, new_date, [])
+                      if dish_id is not None else {})
+            restore_open = {}
 
         def _token(r):
             token = {"date": r["date"], "at": now_iso}
+            if r["id"] in traded:
+                token["was_open"] = traded[r["id"]]
             cuts = cut_moves.get(r["id"])
             if cuts:
                 token["prep_cuts"] = {
@@ -10662,11 +10683,12 @@ def _apply_dinner_nights_swap(
             if own_conn:
                 conn.rollback()
             return {"status": "ok", "date_a": date_a, "date_b": date_b}
+        _meal_move._resay_traded_questions(conn, snap, traded, dish_id, new_date)
+        _meal_move._restore_traded_questions(conn, restore_open)
         # A freezer night names its cook's day ("— Monday’s Turkey Chili");
         # the Move sheet re-says it when the cook moves, and so does this
-        # (an Undo re-says it back). Lazy import: meal_move imports us.
-        from . import meal_move as _meal_move
-        _meal_move._resay_freezer_nights(conn, {"rows": [dict(r) for r in rows]}, new_date)
+        # (an Undo re-says it back).
+        _meal_move._resay_freezer_nights(conn, snap, new_date)
         prep_moved = done["prep_moved"]
         for cuts in cut_moves.values():
             for tid, m in cuts.items():

@@ -13,6 +13,7 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A nights swap with an open dinner re-says its question too** (2026-10-30, branch `overnight/swap-open-words-1030`). `weekly_plan._apply_dinner_nights_swap` (Plan tiles' drag, chat `swap_dinner_nights`, their Undo) now runs the Move sheet's `meal_move._open_questions_traded` / `_resay_traded_questions` / `_restore_traded_questions`, token `was_open`. Why: dragging Tacos onto an open Thursday carried "Thursday was going to be leftovers…" onto Tuesday; the parent fix covered only `move_meal`. Two open nights traded are left alone (no dish to name); cap_enforce never trades an open night.
 - **Phone walk at 390px: three small fixes** (2026-10-30, branch `overnight/phone-walk-1030`).
   (1) A Move that trades with an open dinner re-says that question for the day the meal left ("You moved the Pesto Pasta to Thursday, so this one is yours to fill.", constraint `moved_away`); Undo puts the old words back (`meal_move._resay_traded_questions` / `_restore_traded_questions`, token `was_open`). Why: Friday's card read "Thursday was going to be leftovers from Wednesday's…".
   (2) Plan's Move and its Undo re-read Today's needs-you band too (`refreshTonightFromPlan`). Why: "Tonight's dinner needs your call" stayed up beside "Today's meals · Pesto Pasta" until a reload.
