@@ -155,6 +155,24 @@ def get_active_notifications() -> list[dict]:
     # 2026-10-22). The spec's trigger is food REACHING two days from its
     # date (NOTIFICATIONS.md #2); food already past it is Kitchen's to show.
     expiring = [e for e in _inventory.get_expiring_soon(days=2) if e["status"] == "expiring_soon"]
+    # Never a staple or a spice — the rule Today's going-off line and the
+    # Kitchen tab already keep (going_off.going_off_items). Without it the
+    # bell, and the morning text that reads this title, said "Your whole
+    # milk turns soon" about a Milk staple neither screen will name
+    # (overnight hunt, 2026-10-28). Imported here: use_up reaches back
+    # into the plan modules, which reach this one.
+    if expiring:
+        from . import spices as _spices
+        from . import use_up as _use_up
+
+        conn = get_conn()
+        try:
+            staples = _use_up._staple_keys(conn)
+        finally:
+            conn.close()
+        expiring = [e for e in expiring
+                    if not _use_up.is_staple(e.get("item") or "", staples)
+                    and not _spices.is_spice(e.get("item") or "")]
     if expiring:
         today_iso = _today().isoformat()
         key = f"expiring:{today_iso}"
@@ -179,9 +197,17 @@ def get_active_notifications() -> list[dict]:
                     if it["quantity"] else "I’ll work it into this week if you’d like."
                 )
             else:
-                names = ", ".join(e["item"] for e in expiring[:3])
+                # "Spinach and Greek yogurt turn soon", "…, Rice and 2 more":
+                # two used to read "Spinach, Greek yogurt all turn soon", and
+                # a fourth thing was counted in the title and named nowhere.
+                # Names keep their own capitals — "Greek" is a proper noun.
+                names = [" ".join(e["item"].split()) for e in expiring]
+                if len(names) <= 3:
+                    listed = names[0] if len(names) == 1 else ", ".join(names[:-1]) + " and " + names[-1]
+                else:
+                    listed = f"{names[0]}, {names[1]} and {len(names) - 2} more"
                 title = f"{len(expiring)} things to use this week"
-                body = f"{names} all turn soon — I’ll work them into this week if you’d like."
+                body = f"{listed[:1].upper()}{listed[1:]} turn soon — I’ll work them into this week if you’d like."
             out.append({
                 "key": key, "type": "expiring_soon", "title": title, "body": body,
                 "href": "/inventory", "action_label": "Plan a meal with it",
