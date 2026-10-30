@@ -43,6 +43,7 @@ from app.db import (
     how_to_run_on_production,
     misplaced_db_path_error,
 )
+from app import households
 from app.tools._shared import DEFAULT_HOUSEHOLD_ID
 
 
@@ -123,6 +124,9 @@ def main():
     # exist; wiping it would orphan the passphrase that signs into it),
     # just reset its freeform goals field.
     conn.execute("UPDATE households SET goals = '' WHERE id = ?", (household_id,))
+    # The members are gone, so nothing on the household row may still name
+    # one (households.forget_member_pointers says what that broke).
+    households.forget_member_pointers(conn, household_id)
     conn.commit()
     conn.close()
     # The recipe page photos live on disk beside the database, indexed by

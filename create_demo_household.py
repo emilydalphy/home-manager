@@ -164,6 +164,9 @@ def _wipe_household_data(household_id: int) -> None:
         if "household_id" in cols:
             conn.execute(f"DELETE FROM {t} WHERE household_id = ?", (household_id,))
     conn.execute("UPDATE households SET goals = '' WHERE id = ?", (household_id,))
+    # The members are gone, so nothing on the household row may still name
+    # one (households.forget_member_pointers says what that broke).
+    households.forget_member_pointers(conn, household_id)
     conn.commit()
     conn.close()
     # Recipe photos live on disk beside the database, indexed by the rows
