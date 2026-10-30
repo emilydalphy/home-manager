@@ -468,10 +468,19 @@ def undo_pre_shop_drop(item_id: int) -> dict:
     try:
         conn.execute("BEGIN IMMEDIATE")
         row = conn.execute(
-            "SELECT item, already_have_inventory_id, staple_id, removed_by, source_weekly_plan_id "
+            "SELECT item, status, already_have_inventory_id, staple_id, removed_by, source_weekly_plan_id "
             "FROM grocery_items WHERE id = ? AND household_id = ?",
             (item_id, household_id()),
         ).fetchone()
+        if row is not None and row["status"] != "removed":
+            # Already back on the list — a second tap on Undo, or the other
+            # adult's phone still showing "Already had on hand" after this one
+            # put it back and ticked it bought. Nothing to undo: putting a
+            # BOUGHT line back to 'needed' had Shop ask for yogurt already in
+            # the fridge, and a second pass took back an older staple answer
+            # (reverse_last_answer reads the latest one, whichever it is).
+            conn.rollback()
+            return {"item_id": item_id, "status": row["status"], "moves_cancelled": 0}
         # The kitchen half of "already have it" goes back exactly as it came
         # (inventory.release_already_home): a row the answer created comes out
         # while nobody has touched it since; a row it only confirmed stays. For
