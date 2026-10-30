@@ -161,9 +161,12 @@ def _twin(conn, row: dict):
 
 
 def _add_onto(conn, row_id: int, have: str, amount: str) -> None:
-    from . import grocery as _grocery
-
-    merged, _ = _grocery._try_consolidate_quantity(have or "", amount)
+    # inventory._merged_quantity, not the grocery list's join: a dinner
+    # that took "12 oz" put back onto a row since re-bought to "2 lbs" was
+    # written "2 lbs + 12 oz", which nothing parses — the next dinner then
+    # took nothing off it (defect hunt, 2026-10-28; the same join
+    # _merged_quantity's own docstring retired for a shop tick).
+    merged = _inventory._merged_quantity(have or "", amount)
     conn.execute(
         "UPDATE inventory_items SET quantity = ?, updated_at = datetime('now') WHERE id = ? AND household_id = ?",
         (merged, row_id, household_id()),

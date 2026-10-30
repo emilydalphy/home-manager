@@ -317,6 +317,12 @@ _QTY_NUMBER_RE = re.compile(r"^\s*(\d+(?:\.\d+)?)")
 # A size or a fat percentage is not part of what the thing IS: "milk 2%" and
 # "Milk" are the same row, as are "Eggs 12 pack" and "eggs".
 _SIZE_TOKEN_RE = re.compile(r"\S*\d\S*|%")
+# How many come in the pack a receipt line names, at the END of the name:
+# "Eggs 12 pack", "Yogurt 6-pack", "Eggs 18 ct". The number alone went with
+# _SIZE_TOKEN_RE and left the word, so "Eggs 12 pack" keyed as "eggs pack"
+# and a purchase made a second Eggs row beside the first (defect hunt,
+# 2026-10-28). End only: "12 pack of eggs" is Type it's "12 pack" of eggs.
+_PACK_RE = re.compile(r"\s+(\d+)\s*-?\s*(?:pack|pk|ct|count)\.?$", re.IGNORECASE)
 
 
 def _source(kind: str, location: str) -> str:
@@ -393,6 +399,39 @@ def _clean_rows(items, kind: str) -> list[dict]:
     if not rows:
         raise ValueError("Nothing was ticked.")
     return rows
+
+
+def _is_count(qty: str) -> bool:
+    return not (qty or "").strip() or bool(re.fullmatch(r"\d+", (qty or "").strip()))
+
+
+def _unpack(conn, r: dict, where: str | None) -> None:
+    """
+    A PURCHASE of "Eggs 12 pack" × 1 is twelve eggs (defect hunt,
+    2026-10-28): when the food without its pack is already tracked as a
+    plain count (or with no amount), the row becomes that food and the
+    amount the count — 1 pack onto "Eggs · 12" is 24, not a second
+    "Eggs 12 pack" row. An amount equal to the pack ("Eggs 18 ct" × 18) is
+    already the count. Anything else is left exactly as said, so it keeps
+    its own row: "Chicken breast 4 pack" never lands on "Chicken breast ·
+    2 lbs" (that sum, "2 lbs + 4", is one nothing can read). Never for a
+    shelf photo, which counts what is there.
+    """
+    pack = _PACK_RE.search(r["item"])
+    if not pack or not _is_count(r["quantity"]):
+        return
+    base = _clean_name(r["item"][: pack.start()])
+    if not base:
+        return
+    found = _existing(conn, base, where) or (_existing(conn, base, None) if where else None)
+    if found is not None and not _is_count(found["quantity"]):
+        return
+    size = int(pack.group(1))
+    packs = int(r["quantity"]) if r["quantity"] else 1
+    total = size if packs == size else size * packs
+    if total > 10000:
+        raise ValueError("That amount doesn't look right.")
+    r["item"], r["quantity"] = base[:1].upper() + base[1:], str(total)
 
 
 def _existing(conn, name: str, location: str | None):
@@ -475,6 +514,8 @@ def add_items(items: list, kind: str) -> dict:
         fields = _restore_fields(conn)
         for r in rows:
             where = r["location"] or None
+            if kind not in SHELF_KINDS:
+                _unpack(conn, r, where)
             found = _existing(conn, r["item"], where)
             if kind in SHELF_KINDS and found is not None:
                 before = {f: found[f] for f in fields}

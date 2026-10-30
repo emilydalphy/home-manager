@@ -383,8 +383,16 @@ def _freezer_line(row: dict, plan: dict | None, today: date, conn) -> str:
     return AMOUNT_WORDS[amount_level(row)]
 
 
-_HALF_RE = re.compile(r"\bhalf\b|½|\b0?\.5\b|\b1/2\b", re.I)
-_LOW_RE = re.compile(r"\balmost\b|\bnearly\b|\ba little\b|\ba bit\b|\blow\b|\bscraps?\b|¼|\b1/4\b|\b0?\.25\b", re.I)
+# A fraction is "half" / "almost gone" only when it IS the amount: "½ bag",
+# "0.25 kg". After a whole number it is part of a bigger one — "1.5 L",
+# "3.25 lbs", "1 1/2 cups" — and the merge writes exactly those totals
+# (inventory._merged_quantity: 2 lbs + 1.25 lbs), so 3.25 lbs of chicken
+# read "almost gone" on the Kitchen tab (defect hunt, 2026-10-28).
+_WHOLE_BEFORE = r"(?<![\d.])(?<!\d )"
+_HALF_RE = re.compile(r"\bhalf\b|" + _WHOLE_BEFORE + r"(?:½|0?\.5\b|\b1/2\b)", re.I)
+_LOW_RE = re.compile(
+    r"\balmost\b|\bnearly\b|\ba little\b|\ba bit\b|\blow\b|\bscraps?\b|"
+    + _WHOLE_BEFORE + r"(?:¼|0?\.25\b|\b1/4\b)", re.I)
 
 
 def amount_level(row: dict) -> str:
