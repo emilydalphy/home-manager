@@ -446,7 +446,9 @@ def _prepare(grid, variety, snacks_per_day, prep, pending_names=None) -> dict:
                 raise ValueError(f"variety meal must be one of {', '.join(MEALS)}, not {meal!r}.")
             if isinstance(choice, dict):
                 choice = choice.get("choice")
-            if choice is not None and choice not in VARIETY_CHOICES[meal]:
+            # A list here was a 500 (`in` hashes it — route crash sweep,
+            # 2026-10-30); anything but a word is the same wrong answer.
+            if choice is not None and (not isinstance(choice, str) or choice not in VARIETY_CHOICES[meal]):
                 raise ValueError(
                     f"{meal} variety must be one of {', '.join(VARIETY_CHOICES[meal])}, not {choice!r}."
                 )
@@ -466,7 +468,12 @@ def _prepare(grid, variety, snacks_per_day, prep, pending_names=None) -> dict:
             raise ValueError("prep must be an object with days and length.")
         raw_days = prep.get("days") or []
         length = prep.get("length")
-        if raw_days and length is not None and length not in PREP_LENGTHS:
+        # Days that aren't a list (a bare 5 was a 500, iterated below) and
+        # a length that isn't a word are refused like any other bad prep
+        # answer (route crash sweep, 2026-10-30).
+        if not isinstance(raw_days, list):
+            raise ValueError("prep must be an object with days and length.")
+        if raw_days and length is not None and (not isinstance(length, str) or length not in PREP_LENGTHS):
             raise ValueError(f"prep length must be one of {', '.join(PREP_LENGTHS)}, or null.")
         minutes = PREP_LENGTHS.get(length) if length else None
         prep_days = _rhythm._normalize_prep_days([{"weekday": d, "minutes": minutes} for d in raw_days])
