@@ -116,3 +116,38 @@ def test_a_number_quantity_is_read_as_that_amount():
     eggs = _rows("SELECT id FROM grocery_items WHERE item = 'Eggs'")[0]["id"]
     _call("update_grocery_item", item_id=eggs, quantity=18)
     assert _rows("SELECT quantity FROM grocery_items WHERE id = ?", eggs)[0]["quantity"] == "18"
+
+
+# --- 4. One bad entry in a grocery batch ------------------------------------
+# add_grocery_items raised on the first bad entry with the ones before it
+# already saved; the model retried the batch and those lines merged up
+# (Milk 1 -> 2). Now each entry is its own answer, as update_inventory_items.
+
+@pytest.mark.parametrize("bad", [{"item": 12}, {"item": "Bread", "quantity": {"amount": 2}}, 7])
+def test_one_bad_entry_in_a_grocery_batch_is_that_entry_s_answer(bad):
+    result = _call("add_grocery_items", items=[{"item": "Milk", "quantity": "1"}, bad, "Eggs"])
+    assert result["added"] == ["Milk", "Eggs"]
+    assert len(result["failed"]) == 1 and result["failed"][0]["error"]
+    rows = {r["item"]: r["quantity"] for r in _rows("SELECT item, quantity FROM grocery_items")}
+    assert rows == {"Milk": "1", "Eggs": ""}
+
+
+def test_a_grocery_batch_with_nothing_good_saves_nothing_and_says_why():
+    with pytest.raises(ValueError, match="isn't an item name"):
+        _call("add_grocery_items", items=[{"item": 12}])
+    assert _rows("SELECT item FROM grocery_items") == []
+
+
+def test_a_partly_added_batch_still_draws_the_grocery_card():
+    from app import main as app_main
+    args = {"items": ["Milk", {"item": 12}]}
+    result = _call("add_grocery_items", **args)
+    after = [
+        {"role": "assistant", "content": [{"type": "tool_use", "id": "t1", "name": "add_grocery_items", "input": args}]},
+        {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "t1", "content": __import__("json").dumps(result)}]},
+    ]
+    cards = app_main.summarize_chat_actions([], after)
+    assert [a.tab for a in cards] == ["grocery"]
+    # The card names what went on the list, not the entry that was refused.
+    text = " ".join(str(getattr(a, f, "") or "") for a in cards for f in ("change",))
+    assert "Milk" in text and "12" not in text, text
