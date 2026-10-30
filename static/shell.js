@@ -367,7 +367,7 @@
   // dismissSwapSheet) holds against the key too. Listed innermost first —
   // a swap opened from the whole-week sheet closes before the week does.
   var ESCAPE_CLOSES_SCRIMS = [
-    'wk-swap-scrim', 'wk-tweak-scrim', 'wk-add-scrim', 'gro-scan-scrim',
+    'quiet-scrim', 'wk-swap-scrim', 'wk-tweak-scrim', 'wk-add-scrim', 'gro-scan-scrim',
     'gro-add-scrim', 'tonight-scrim', 'cook-more-scrim', 'meals-more-scrim',
     'week-sheet-scrim', 'notif-scrim', 'home-item-scrim'
   ];
@@ -402,6 +402,74 @@
       var t = e.target;
       if (t && t.closest && !t.closest('[role="dialog"]')) escapeOpener = t;
     });
+  }
+
+  // ---------- The quiet sheet: one row's options, one tap in ----------
+  // The declutter (Emily, 2026-10-30): a row on Plan, Shop or Today carries
+  // no buttons of its own — tapping it opens this sheet, and the row's
+  // options live here. Built once, body level, like the swap sheet; each
+  // screen hands it the markup and wires what it drew (`wire(body)`).
+  var quietSheetEl = null;
+  var quietScrimEl = null;
+
+  function buildQuietSheet() {
+    if (quietSheetEl) return;
+    quietScrimEl = document.createElement('div');
+    quietScrimEl.id = 'quiet-scrim';
+    quietScrimEl.hidden = true;
+    quietSheetEl = document.createElement('div');
+    quietSheetEl.id = 'quiet-sheet';
+    quietSheetEl.hidden = true;
+    quietSheetEl.setAttribute('role', 'dialog');
+    quietSheetEl.setAttribute('aria-modal', 'true');
+    quietSheetEl.setAttribute('aria-labelledby', 'quiet-sheet-title');
+    quietSheetEl.innerHTML = '<div class="ask-sheet-handle" id="quiet-sheet-handle"></div><div id="quiet-sheet-body"></div>';
+    document.body.appendChild(quietScrimEl);
+    document.body.appendChild(quietSheetEl);
+    quietScrimEl.addEventListener('click', closeQuietSheet);
+    document.getElementById('quiet-sheet-handle').addEventListener('click', closeQuietSheet);
+  }
+
+  // The head every quiet sheet shares: an eyebrow saying where the thing
+  // is ("Dinner · Monday", "4 lbs", "Lunch"), the thing's name, and the x.
+  function quietSheetHeadHtml(eyebrow, title) {
+    return '<div class="quiet-head">' +
+      '<div class="quiet-head-text">' +
+        (eyebrow ? '<p class="wk-swap-eyebrow quiet-eyebrow">' + escapeHtml(eyebrow) + '</p>' : '') +
+        '<h2 class="wk-swap-title" id="quiet-sheet-title">' + escapeHtml(title || '') + '</h2>' +
+      '</div>' +
+      '<button type="button" class="kit-sheet-close" data-quiet-close="1" aria-label="Close">&times;</button>' +
+    '</div>';
+  }
+
+  // `onClose` runs once when the sheet closes (a scrim tap, the x, or
+  // closeQuietSheet), so a screen holding "which row is open" lets go of
+  // it; `key` names whose sheet it is (Shop redraws its own in place).
+  var quietSheetOnClose = null;
+
+  function openQuietSheet(html, wire, onClose, key) {
+    buildQuietSheet();
+    if (typeof closeAskSheet === 'function') closeAskSheet();
+    var body = document.getElementById('quiet-sheet-body');
+    body.removeAttribute('data-html');
+    quietSheetEl.setAttribute('data-for', key || '');
+    body.innerHTML = html;
+    body.querySelectorAll('[data-quiet-close]').forEach(function (btn) {
+      btn.addEventListener('click', closeQuietSheet);
+    });
+    quietSheetOnClose = onClose || null;
+    if (wire) wire(body);
+    openSheet(quietSheetEl, quietScrimEl);
+    return body;
+  }
+
+  function closeQuietSheet() {
+    if (!quietSheetEl) return;
+    var done = quietSheetOnClose;
+    quietSheetOnClose = null;
+    quietSheetEl.setAttribute('data-for', '');
+    closeSheet(quietSheetEl, quietScrimEl);
+    if (done) done();
   }
 
   // ---------- One level at a time: the sheet stack (2026-10-05) ----------
