@@ -620,8 +620,10 @@ def count_line(used: int, total: int, unfit: list[str] | None = None) -> str:
         if not names:
             return "" if used == 0 else count_line(used, total)
         if used == 0:
-            if len(names) == 1:
+            if len(names) == 1 and _verb(names[0]) == "was":
                 return f"{_cap(_names_phrase(names, 'and'))} is going off and nothing this week uses it."
+            if len(names) == 1:
+                return f"{_cap(_names_phrase(names, 'and'))} are going off and nothing this week uses them."
             return f"{_cap(_names_phrase(names, 'and'))} are going off and nothing this week uses them."
         return f"{count_line(used, total)} Nothing uses {_names_phrase(names, 'or')}."
     if used >= total:
@@ -1117,7 +1119,7 @@ def plan_summary(plan_id: int) -> dict | None:
             past.append(line)
     unfit = []
     for r in rows:
-        name = short_name(r["item"])
+        name = short_name(r["item"]) or (r["item"] or "").strip().lower()
         if name and name not in unfit:
             unfit.append(name)
     return {"total": len(offered), "used": n_used, "line": count_line(n_used, len(offered), unfit),

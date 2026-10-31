@@ -206,6 +206,11 @@ def _movable(row: dict, chains: dict, night_tags: dict) -> bool:
     return True
 
 
+def _uses_up(row: dict) -> bool:
+    derived = _derived(row)
+    return bool(derived.get("use_up_ids") or derived.get("use_up"))
+
+
 def _cap(caps: dict | None, d: str, slot: str) -> int | None:
     return (caps or {}).get((d, slot)) if caps else None
 
@@ -271,7 +276,11 @@ def _arrange_slot(plan_id, slot, period, preps, breakfast_prep, night_tags, caps
         # Before the first window (Emily's Sunday breakfast, ahead of the
         # Sunday prep): no batch can reach it, so a batch day there is a
         # day to bring into the window.
-        before = [d for d in period if d < first_window_start] if i == 0 else []
+        # Breakfast only reaches the prep day's own morning (before the
+        # evening prep); its lunch and dinner are where a batch is COOKED
+        # (weekday_lunches._prep_day_cook), so they stay out of it.
+        edge = first_window_start if slot == "breakfast" else preps[0]
+        before = [d for d in period if d < edge] if i == 0 else []
         if not stretch:
             continue
         chains = _leftovers.plan_leftover_chains(plan_id)
@@ -339,10 +348,14 @@ def _arrange_slot(plan_id, slot, period, preps, breakfast_prep, night_tags, caps
                 )
                 out["filled"].append({"slot": slot, "date": w, "was": here["meal"], "now": source["meal"],
                                       "prep_date": prep})
-                # The row is new; re-read before anything else trades it.
-                fresh = [r for r in _load(plan_id, slot) if r["date"] == w]
-                if len(fresh) == 1:
-                    single[w] = movable[w] = fresh[0]
+                # The row is new; re-read the meal before anything else
+                # counts or trades it.
+                chains = _leftovers.plan_leftover_chains(plan_id)
+                by_date = {}
+                for r in _load(plan_id, slot):
+                    by_date.setdefault(r["date"], []).append(r)
+                single = {d: rs[0] for d, rs in by_date.items() if len(rs) == 1 and d in period_set}
+                movable = {d: r for d, r in single.items() if _movable(r, chains, night_tags)}
         claimed.update(w for w in win if w in single and _key(single[w]["meal"]) == dish)
 
 
@@ -362,7 +375,8 @@ def _pick_batch(slot, prep, stretch, before, single, movable, period, breakfast_
     reachable = [d for d in stretch + before if d in single and d not in claimed]
     counts: dict[str, int] = {}
     names: dict[str, str] = {}
-    for d, r in single.items():
+    for d in reachable:
+        r = single[d]
         k = _key(r["meal"])
         if r["slot_state"] == "planned" and k:
             counts[k] = counts.get(k, 0) + 1
@@ -398,6 +412,11 @@ def _trade_ok(plan_id, slot, batch_row, other_row, s, w, win, dish, single, caps
     if not _fits(_minutes(batch_row), cap_here):
         return False
     if not _fits(_minutes(other_row), _cap(caps, s, slot)):
+        return False
+    # Food going off is eaten by its date: a dish the model planned to use
+    # it up (derived_from.use_up_ids, checked later by use_up.reconcile)
+    # never moves later in the week.
+    if (s > w and _uses_up(other_row)) or (w > s and _uses_up(batch_row)):
         return False
     if slot in _leftovers.RUN_SLOTS:
         keys = _leftovers.run_keys(plan_id)

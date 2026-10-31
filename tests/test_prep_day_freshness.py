@@ -330,9 +330,58 @@ def test_a_breakfast_batch_after_a_prep_day_is_made_on_it():
     sunday = next(s for s in sessions if s["date"] == sunday_before)
     item = next(i for i in sunday["items"] if i["entry_id"] == ids[(d[0], "breakfast")])
     assert item["line"] == "For Monday, Tuesday and Wednesday’s breakfasts."
-    # Un-batched, it is Monday's own cook again.
+    # Un-batched, it is Monday's own cook again — the stamp goes with it.
     cook_ahead.set_cook_ahead(ids[(d[0], "breakfast")], [])
     assert ids[(d[0], "breakfast")] not in weekday_lunches.prepped_batch_by_cook(plan_id)
+    assert "prep_date" not in _derived(ids[(d[0], "breakfast")])
+
+
+@ON_MONDAY
+def test_a_second_prep_days_batch_keeps_its_own_window():
+    """Sunday and Wednesday prep, bites every morning: Thursday's batch was
+    made Wednesday, so it reaches Saturday, not Sunday."""
+    for n in ("Emily", "Vineeth"):
+        tools.add_member(n)
+    tools.set_prep_days([{"weekday": "sunday", "minutes": 90}, {"weekday": "wednesday", "minutes": 60}])
+    tools.add_recipe(BITES, ingredients=[{"item": "egg whites", "qty": "1 cup"}], default_servings=2,
+                     prep_time_minutes=10, cook_time_minutes=20, instructions=["Bake."])
+    d = _days(_monday())
+    plan_id, ids = _plan(d[0], [(x, BITES, "breakfast") for x in d])
+
+    cook_ahead.apply_prep_day_batches(plan_id)
+
+    assert _derived(ids[(d[3], "breakfast")])["make_double_for"] == [f"{d[4]}:breakfast", f"{d[5]}:breakfast"]
+    assert "links_to" not in _derived(ids[(d[6], "breakfast")])
+
+
+def test_a_dish_using_food_going_off_is_never_moved_later():
+    _sunday_prep()
+    d = _days(_monday())
+    names = ["Chili", "Spinach Pasta", "Tacos", "Fish", "Chili", "Pizza", "Curry"]
+    plan_id, ids = _plan(d[0], [(x, n, "dinner") for x, n in zip(d, names)])
+    conn = db.get_conn()
+    conn.execute("UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ?",
+                 (json.dumps({"use_up_ids": [1]}), ids[(d[1], "dinner")]))
+    conn.commit()
+    conn.close()
+
+    prep_freshness.keep_prepped_first(plan_id, d)
+
+    got = _slot(plan_id, "dinner")
+    assert got[d[1]] == "Spinach Pasta"
+    assert got[d[2]] == "Chili" and got[d[4]] == "Tacos"   # the next window night traded instead
+
+
+def test_the_prep_evenings_own_dinner_stays():
+    """A Sunday-start week: Sunday's dinner is cooked on the prep evening."""
+    _sunday_prep()
+    d = _days(_sunday())
+    names = ["Chili", "Tacos", "Fish", "Pizza", "Chili", "Curry", "Dal"]
+    plan_id, _ = _plan(d[0], [(x, n, "dinner") for x, n in zip(d, names)])
+
+    prep_freshness.keep_prepped_first(plan_id, d)
+
+    assert _slot(plan_id, "dinner")[d[0]] == "Chili"
 
 
 # ---------- the draft says it ----------

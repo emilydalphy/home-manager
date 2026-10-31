@@ -6759,10 +6759,13 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
     # cook's own stamp (cook_ahead._stamp_breakfast_prep_day).
     from . import prep_freshness as _prep_freshness  # lazy: it reaches back here
     from . import rhythm as _rhythm
+    from . import usual_week as _usual_week
     breakfast_notes: dict[int, str] = {}
     if plan["status"] != "approved":
         try:
-            _bf_rhythm = _rhythm.get_household_rhythm()
+            # This week's own prep days when they were changed for it only.
+            with _usual_week.for_plan(plan["weekly_plan_id"]):
+                _bf_rhythm = _rhythm.get_household_rhythm()
             breakfast_notes = _prep_freshness.draft_batch_notes(
                 rows, _bf_rhythm.get("prep_days"), _bf_rhythm.get("breakfast_prep"),
                 _week_intake.period_dates(plan["period_start_date"], plan["day_count"]),

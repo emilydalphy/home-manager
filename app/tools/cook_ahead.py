@@ -431,12 +431,13 @@ def apply_prep_day_batches(weekly_plan_id: int) -> dict:
             # Counted from the prep day when the batch is made there
             # (_made_on_prep_day): egg bites made Sunday reach Wednesday,
             # and Monday's cook entry covers Tuesday and Wednesday.
-            reach = first_reach = None
+            reach_from = None
             if item["slot"] == "breakfast":
-                reach = first_reach = _breakfast_prep.mornings_after(item["dish"])
-                if _made_on_prep_day(item["first"]["date"], prep_days):
-                    first_reach = reach - 1
-            for first, covered in _within_three_days(dict(item, later=later), reach, first_reach):
+                keeps = _breakfast_prep.mornings_after(item["dish"])
+
+                def reach_from(cook_date, _keeps=keeps):
+                    return _keeps - 1 if _made_on_prep_day(cook_date, prep_days) else _keeps
+            for first, covered in _within_three_days(dict(item, later=later), reach_from):
                 if not covered:
                     continue
                 result = set_cook_ahead(first["entry_id"], [d["entry_id"] for d in covered])
@@ -464,8 +465,7 @@ def apply_prep_day_batches(weekly_plan_id: int) -> dict:
             "refused": refused, "declined": declined}
 
 
-def _within_three_days(item: dict, reach: int | None = None,
-                       first_reach: int | None = None) -> list[tuple[dict, list[dict]]]:
+def _within_three_days(item: dict, reach_from=None) -> list[tuple[dict, list[dict]]]:
     """
     One repeated dish's days as batches no portion of which is eaten more
     than leftovers.MAX_LEFTOVER_DAYS (3) days after it was cooked (Emily,
@@ -473,17 +473,20 @@ def _within_three_days(item: dict, reach: int | None = None,
     first day past three days on cooks again. [(cook day, days it covers)].
     Until then one batch on Monday could cover Sunday.
 
-    `reach` shortens the three days for a dish that keeps less (a
-    breakfast, breakfast_prep.mornings_after); it is never longer.
-    `first_reach` is the first batch's, when it was made the day before
-    its cook entry (a prep-day breakfast batch).
+    `reach_from(cook_date)` shortens the three days for a dish that keeps
+    less (a breakfast, breakfast_prep.mornings_after — a day less again
+    when the batch is made on the prep day before its cook entry); it is
+    never longer.
     """
-    limit = _leftovers.MAX_LEFTOVER_DAYS if reach is None else min(reach, _leftovers.MAX_LEFTOVER_DAYS)
-    first_limit = limit if first_reach is None else min(first_reach, limit)
+    def limit(cook_date: str) -> int:
+        if reach_from is None:
+            return _leftovers.MAX_LEFTOVER_DAYS
+        return min(reach_from(cook_date), _leftovers.MAX_LEFTOVER_DAYS)
+
     batches: list[tuple[dict, list[dict]]] = [(item["first"], [])]
     for day in sorted(item["later"], key=lambda d: d["date"]):
         cook = batches[-1][0]
-        if _leftovers.days_apart(cook["date"], day["date"]) <= (first_limit if len(batches) == 1 else limit):
+        if _leftovers.days_apart(cook["date"], day["date"]) <= limit(cook["date"]):
             batches[-1][1].append(day)
         else:
             batches.append((day, []))
@@ -792,6 +795,11 @@ def set_cook_ahead(source_entry_id: int, covered_entry_ids: list[int]) -> dict |
     else:
         source_derived.pop("make_double_for", None)
         source_derived.pop("make_double_note", None)
+        # A breakfast un-batched is that morning's own cook: it was only
+        # "made Sunday" as a batch (_stamp_breakfast_prep_day).
+        if source_row["slot"] == "breakfast":
+            source_derived.pop("prep_date", None)
+            source_derived.pop("prep_day", None)
     _save_derived(source_entry_id, source_derived)
 
     chosen_ids = {r["id"] for r in chosen}
