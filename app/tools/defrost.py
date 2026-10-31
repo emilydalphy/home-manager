@@ -1054,19 +1054,49 @@ def too_late_to_thaw_note(meal_date: str, slot: str | None, today: date) -> str:
     return TOO_LATE_TO_THAW_TEMPLATE.format(when=when)
 
 
-def _booked_move_descriptions(conn, weekly_plan_id: int) -> set[str]:
-    """Every fridge move on file for this plan, by either door (the
-    household's yes or tracked inventory), pending or done — the
-    _describe() strings, which is how this module keys a move."""
-    rows = conn.execute(
-        "SELECT description FROM prep_tasks WHERE household_id = ? AND weekly_plan_id = ? "
-        f"AND task_type = 'defrost' AND status IN ({','.join('?' * len(_SETTLED_DEFROST_STATUSES))})",
+def _move_keys(rows) -> set[tuple[str, str | None]]:
+    """
+    (description, meal date) for each fridge-move row — how this module
+    keys a move NIGHT. Rows carry `description` and `meal_date` (the
+    entry's date off a LEFT JOIN; None for a row with no entry, which
+    then matches every night of its description, the old reading).
+
+    The description alone is not a night. _describe names the day by
+    WEEKDAY ("for Monday's Beef Tacos"), so in a two-week period the
+    same dish on both Mondays is one string — and keyed by it, the first
+    Monday's settled move (or its run-out thaw) settled the second
+    Monday too: the freezer step never asked about it, and nothing told
+    the household to take that week's beef out (defect hunt 2026-10-31,
+    a 14-day plan).
+    """
+    return {((r["description"] or ""), r["meal_date"]) for r in rows}
+
+
+def _has_move(keys: set[tuple[str, str | None]], description: str, meal_date: str) -> bool:
+    """Is there a move on `keys` for this night — its own, or a row with no entry to say which night."""
+    return (description, meal_date) in keys or (description, None) in keys
+
+
+def _move_rows(conn, weekly_plan_id: int):
+    """This plan's fridge moves, pending or done, each with its entry's date (for _move_keys)."""
+    return conn.execute(
+        "SELECT p.description, p.inventory_item_id, e.date AS meal_date FROM prep_tasks p "
+        "LEFT JOIN meal_plan_entries e ON e.id = p.meal_plan_entry_id AND e.household_id = p.household_id "
+        "WHERE p.household_id = ? AND p.weekly_plan_id = ? AND p.task_type = 'defrost' "
+        f"AND p.status IN ({','.join('?' * len(_SETTLED_DEFROST_STATUSES))})",
         (household_id(), weekly_plan_id, *_SETTLED_DEFROST_STATUSES),
     ).fetchall()
-    return {(r["description"] or "") for r in rows}
 
 
-def _needs_food_the_freezer_cannot_reach(night: dict, description: str, booked: set[str],
+def _booked_move_descriptions(conn, weekly_plan_id: int) -> set[tuple[str, str | None]]:
+    """Every fridge move on file for this plan, by either door (the
+    household's yes or tracked inventory), pending or done — as
+    _move_keys, (description, meal date), which is how this module keys a
+    move night."""
+    return _move_keys(_move_rows(conn, weekly_plan_id))
+
+
+def _needs_food_the_freezer_cannot_reach(night: dict, description: str, booked: set[tuple[str, str | None]],
                                          today: date) -> bool:
     """
     A cook night whose thaw has run out of time, that is still to be eaten,
@@ -1083,7 +1113,7 @@ def _needs_food_the_freezer_cannot_reach(night: dict, description: str, booked: 
         return False
     if (night.get("cooked_status") or "pending") == "done":
         return False
-    return description not in booked
+    return not _has_move(booked, description, night.get("date") or "")
 
 
 def _is_meat_ingredient(ing: dict) -> bool:
@@ -1283,10 +1313,12 @@ def _covered_at_home(need: dict[str, tuple[float, str | None] | None], weekly_pl
     return {key for key, want in need.items() if stock.covers(key, want)}
 
 
-def _settled_nights(weekly_plan_id: int, by_item: dict[str, dict]) -> tuple[set[str], set[str]]:
+def _settled_nights(weekly_plan_id: int, by_item: dict[str, dict]) -> tuple[set, set]:
     """
-    Two sets of the very _describe() strings confirm_frozen_items de-dupes
-    with — so the ask and the write cannot drift about which move is which.
+    Two sets of moves, keyed (the _describe() string, the meal's date) —
+    _move_keys, read with _has_move — so the ask and the write cannot drift
+    about which move is which, and the same dish on the same weekday a week
+    apart is two nights rather than one.
 
       * settled — the MOVES this ask has nothing left to say about: a move
         the app booked itself off tracked freezer inventory
@@ -1321,15 +1353,10 @@ def _settled_nights(weekly_plan_id: int, by_item: dict[str, dict]) -> tuple[set[
     """
     today = _cooker.household_today()
     conn = get_conn()
-    rows = conn.execute(
-        "SELECT description, inventory_item_id FROM prep_tasks WHERE household_id = ? "
-        "AND weekly_plan_id = ? AND task_type = 'defrost' "
-        f"AND status IN ({','.join('?' * len(_SETTLED_DEFROST_STATUSES))})",
-        (household_id(), weekly_plan_id, *_SETTLED_DEFROST_STATUSES),
-    ).fetchall()
+    rows = _move_rows(conn, weekly_plan_id)
     conn.close()
-    settled = {(r["description"] or "") for r in rows if r["inventory_item_id"] is not None}
-    frozen = {(r["description"] or "") for r in rows if r["inventory_item_id"] is None}
+    settled = _move_keys(r for r in rows if r["inventory_item_id"] is not None)
+    frozen = _move_keys(r for r in rows if r["inventory_item_id"] is None)
 
     dinner_window = _rhythm.get_household_rhythm().get("dinner_window")
     for entry in by_item.values():
@@ -1337,7 +1364,7 @@ def _settled_nights(weekly_plan_id: int, by_item: dict[str, dict]) -> tuple[set[
         for night in entry["nights"]:
             move = _move_date(night["date"], lead_hours, dinner_window)
             if date.fromisoformat(move) < today:
-                settled.add(_describe(entry["item"], night["meal"], night["date"]))
+                settled.add((_describe(entry["item"], night["meal"], night["date"]), night["date"]))
     return settled, frozen
 
 
@@ -1536,11 +1563,11 @@ def meat_items_for_plan(weekly_plan_id: int) -> list[dict]:
         nights = []
         for n in entry["nights"]:
             description = _describe(entry["item"], n["meal"], n["date"])
-            if description in settled:
+            if _has_move(settled, description, n["date"]):
                 continue
             move = _move_date(n["date"], lead_hours, dinner_window)
             nights.append(dict(n, move_date=move, move_weekday=_weekday_name(move)))
-            if description in frozen_nights:
+            if _has_move(frozen_nights, description, n["date"]):
                 frozen = True
         if nights:
             own = _plans_part_on(lines[key])
