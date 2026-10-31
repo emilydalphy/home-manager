@@ -585,11 +585,45 @@ def must_use_for(derived, meal: str | None) -> list[str]:
     return out
 
 
-def count_line(used: int, total: int) -> str:
+# How many names the draft's line says before "and 3 more".
+LINE_NAMES = 3
+
+
+def _names_phrase(names: list[str], joiner: str) -> str:
+    """ "the spinach, milk and water" / "the spinach, milk and 3 more"."""
+    if len(names) > LINE_NAMES:
+        shown = names[:LINE_NAMES - 1] + [f"{len(names) - (LINE_NAMES - 1)} more"]
+    else:
+        shown = list(names)
+    if len(shown) == 1:
+        return f"the {shown[0]}"
+    return f"the {', '.join(shown[:-1])} {joiner} {shown[-1]}"
+
+
+def count_line(used: int, total: int, unfit: list[str] | None = None) -> str:
     """The draft's subtitle (Option B mockup): "Uses 6 of the 8 things
-    going off." / "Uses all 8 things going off." """
+    going off." / "Uses all 8 things going off."
+
+    With `unfit` — the short names of what's still waiting for a Freeze it
+    or Let it go — the line NAMES them, because it is also the way to them:
+    the Plan shows it as one tap that opens those rows (Emily's 2026-10-31
+    screenshot: a lone "Couldn't fit the 5 things going off." with no names
+    and nothing to tap). "The spinach and milk are going off and nothing
+    this week uses them." / "Uses 6 of the 8 things going off. Nothing uses
+    the cabbage or cilantro." Nothing used and nothing left to decide says
+    nothing: every one of them has been frozen or let go.
+    """
     if total <= 0:
         return ""
+    if unfit is not None:
+        names = [n for n in unfit if n]
+        if not names:
+            return "" if used == 0 else count_line(used, total)
+        if used == 0:
+            if len(names) == 1:
+                return f"{_cap(_names_phrase(names, 'and'))} is going off and nothing this week uses it."
+            return f"{_cap(_names_phrase(names, 'and'))} are going off and nothing this week uses them."
+        return f"{count_line(used, total)} Nothing uses {_names_phrase(names, 'or')}."
     if used >= total:
         return "Uses the one thing going off." if total == 1 else f"Uses all {total} things going off."
     if used == 0:
@@ -1081,7 +1115,12 @@ def plan_summary(plan_id: int) -> dict | None:
         line = past_date_line(dict(p, date=e["date"], slot=e["slot"]))
         if line and line not in past:
             past.append(line)
-    return {"total": len(offered), "used": n_used, "line": count_line(n_used, len(offered)),
+    unfit = []
+    for r in rows:
+        name = short_name(r["item"])
+        if name and name not in unfit:
+            unfit.append(name)
+    return {"total": len(offered), "used": n_used, "line": count_line(n_used, len(offered), unfit),
             "couldnt_fit": rows, "past_date": past}
 
 

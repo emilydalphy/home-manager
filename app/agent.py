@@ -3876,6 +3876,17 @@ repeated breakfast is cooked again each morning, never batched. Either way, NEVE
 breakfast that only works fresh (toast, scrambled, fried or poached eggs, pancakes, a \
 smoothie) as a make-ahead batch — those are made the morning they're eaten. Blank means \
 unknown: lean make-ahead when the household has prep days, fresh when it doesn't.
+- PREPPED FOOD IS EATEN FIRST, for every meal, when household_memory.rhythm.prep_days is set. \
+Food is prepped on the evening of a prep day and eaten from the next day on, for as long as it \
+keeps in the fridge: three days for a cooked batch, egg bites, a frittata, baked oatmeal, \
+muffins or breakfast burritos (a Sunday prep feeds Monday to Wednesday), two for overnight \
+oats, one for a yogurt parfait. So a dish made on a prep day — a repeated breakfast, a batch \
+lunch, a batch dinner — goes on the days right after that prep day, inside its window, and \
+dishes that only work fresh go on the days after it. Breakfast, unless breakfast_prep is \
+"fresh": ONE make-ahead breakfast covers the mornings in each prep day's window (egg bites \
+Monday to Wednesday after a Sunday prep), and the other mornings are quick fresh breakfasts, \
+or a second batch after a second prep day — never a split that leaves the batch off the \
+mornings right after the prep day.
 - household_memory's `weeknight_max_minutes`, when non-zero, is a real cap on Monday-Friday \
 dinners in prep+cook minutes. A `rush` tag never raises it: a rush weeknight is {rush_max} \
 minutes or this cap, whichever is lower. An `unrushed` tag lifts it for that one night. Nothing \
@@ -8902,6 +8913,23 @@ def _finish_week_slots(
     # BEFORE the plates pass, so sides land on the cooks it settles. Leaves
     # a week it can't improve exactly as it is. See tools/leftovers_spread.py.
     _leftovers_spread.spread_dinners(plan_id, intake, caps=fill_caps, target=count_targets.get("dinner"))
+
+    # Prepped food is eaten first (Emily, 2026-10-31: egg bites made Sunday
+    # are Monday to Wednesday, the other mornings fresh). A prep day's batch
+    # is traded onto the days right after it, inside how long it keeps, and
+    # a breakfast batch covers every morning it keeps. Trades and copies of
+    # the week's own dishes only — no model call, no new dish. AFTER every
+    # pass that picks or places a dish (the counts, the runs, the dinner
+    # spread), whose rules it keeps itself; BEFORE the plates pass, so sides
+    # land where the dishes end up. See tools/prep_freshness.py.
+    from .tools import prep_freshness as _prep_freshness
+    _prep_freshness.keep_prepped_first(
+        plan_id, dates, intake, caps=fill_caps,
+        batch_caps={
+            (d, slot): _meal_minutes_cap(d, slot, intake, household_memory, is_leftovers=True)
+            for d in dates for slot in _meal_variety.COUNT_FIELDS
+        },
+    )
 
     # "Every meal is a full plate" (Emily, 2026-09-05) — any planned meal
     # whose own food_groups fall short of the household's plate rule gets a

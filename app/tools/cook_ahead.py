@@ -39,7 +39,7 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import date
+from datetime import date, timedelta
 
 from ..db import get_conn
 from ._shared import household_id
@@ -425,7 +425,18 @@ def apply_prep_day_batches(weekly_plan_id: int) -> dict:
             if not later:
                 declined.append({"kind": "dish", "dish": item["dish"]})
                 continue
-            for first, covered in _within_three_days(dict(item, later=later)):
+            # A breakfast batch reaches only as far as it keeps (Emily,
+            # 2026-10-31: egg bites three mornings, overnight oats two —
+            # breakfast_prep.mornings_after); every other batch, three days.
+            # Counted from the prep day when the batch is made there
+            # (_made_on_prep_day): egg bites made Sunday reach Wednesday,
+            # and Monday's cook entry covers Tuesday and Wednesday.
+            reach = first_reach = None
+            if item["slot"] == "breakfast":
+                reach = first_reach = _breakfast_prep.mornings_after(item["dish"])
+                if _made_on_prep_day(item["first"]["date"], prep_days):
+                    first_reach = reach - 1
+            for first, covered in _within_three_days(dict(item, later=later), reach, first_reach):
                 if not covered:
                     continue
                 result = set_cook_ahead(first["entry_id"], [d["entry_id"] for d in covered])
@@ -433,6 +444,8 @@ def apply_prep_day_batches(weekly_plan_id: int) -> dict:
                     refused.append({"source_entry_id": first["entry_id"], "dish": item["dish"], "note": result})
                 else:
                     applied.append(dict(result, dish=item["dish"]))
+                    if item["slot"] == "breakfast":
+                        _stamp_breakfast_prep_day(first, prep_days)
         for comp in _batch_components.shared_components(weekly_plan_id):
             if comp["batched"]:
                 continue
@@ -451,22 +464,68 @@ def apply_prep_day_batches(weekly_plan_id: int) -> dict:
             "refused": refused, "declined": declined}
 
 
-def _within_three_days(item: dict) -> list[tuple[dict, list[dict]]]:
+def _within_three_days(item: dict, reach: int | None = None,
+                       first_reach: int | None = None) -> list[tuple[dict, list[dict]]]:
     """
     One repeated dish's days as batches no portion of which is eaten more
     than leftovers.MAX_LEFTOVER_DAYS (3) days after it was cooked (Emily,
     2026-09-23, the food-safety default): the first day cooks, and the
     first day past three days on cooks again. [(cook day, days it covers)].
     Until then one batch on Monday could cover Sunday.
+
+    `reach` shortens the three days for a dish that keeps less (a
+    breakfast, breakfast_prep.mornings_after); it is never longer.
+    `first_reach` is the first batch's, when it was made the day before
+    its cook entry (a prep-day breakfast batch).
     """
+    limit = _leftovers.MAX_LEFTOVER_DAYS if reach is None else min(reach, _leftovers.MAX_LEFTOVER_DAYS)
+    first_limit = limit if first_reach is None else min(first_reach, limit)
     batches: list[tuple[dict, list[dict]]] = [(item["first"], [])]
     for day in sorted(item["later"], key=lambda d: d["date"]):
         cook = batches[-1][0]
-        if _leftovers.days_apart(cook["date"], day["date"]) <= _leftovers.MAX_LEFTOVER_DAYS:
+        if _leftovers.days_apart(cook["date"], day["date"]) <= (first_limit if len(batches) == 1 else limit):
             batches[-1][1].append(day)
         else:
             batches.append((day, []))
     return batches
+
+
+def _made_on_prep_day(cook_date: str, prep_days) -> str | None:
+    """The prep weekday the day before `cook_date`, when there is one."""
+    from . import weekday_lunches as _weekday_lunches
+    from . import prep_freshness as _prep_freshness
+
+    found = _weekday_lunches.prep_day_for(cook_date, sorted(_prep_freshness.prep_weekdays(prep_days)))
+    return found[0] if found and found[1] == 1 else None
+
+
+def _stamp_breakfast_prep_day(first: dict, prep_days) -> None:
+    """
+    A breakfast batch whose first morning is the day after a prep day is
+    MADE on that prep day (Emily, 2026-10-31: "I'll make the egg bites on
+    the Sunday then can eat them Monday - Wednesday"). The chain can't hold
+    a cook on a day the dish isn't eaten, so the cook stays on Monday's
+    breakfast and carries the prep day, exactly as a prepped lunch's cook
+    does (weekday_lunches.apply_to_plan): derived_from.prep_date /
+    .prep_day. weekday_lunches.prepped_batches reads it back, so Sunday's
+    prep session lists the batch and Monday's card reads "prepped Sunday"
+    rather than "cook this" (cooker._apply_prepped_lunches, moves.py).
+    """
+    prep_day = _made_on_prep_day(first["date"], prep_days)
+    if not prep_day:
+        return
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT derived_from_json FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+        (first["entry_id"], household_id()),
+    ).fetchone()
+    conn.close()
+    if row is None:
+        return
+    derived = _derived(row)
+    derived["prep_date"] = (date.fromisoformat(first["date"]) - timedelta(days=1)).isoformat()
+    derived["prep_day"] = prep_day
+    _save_derived(first["entry_id"], derived)
 
 
 def batched_dishes(weekly_plan_id: int) -> list[dict]:
