@@ -1130,6 +1130,48 @@ def _repair_recipe_minutes(conn):
                 f"UPDATE recipes SET {column} = ? WHERE id = ? AND household_id = ?",
                 (recipe_minutes(row["v"]), row["id"], row["household_id"]),
             )
+_WEEKDAY_FORK_RE = re.compile(
+    r"^(?P<base>.*\S) \((?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|this one)\)(?: \d+)?$"
+)
+
+
+def _repair_weekday_fork_names(conn):
+    """
+    One-time repair (Loop Board, 2026-10-31): before recipe_change.FORK_MARK,
+    a Tweak "this meal only" copy of a shared recipe was named after its
+    day — "Greek Yogurt Parfait with Berries and Granola (Wednesday)" — and
+    since the name is the dish's name on every screen, the weekday read as
+    part of the dish. Each such copy is renamed "<dish> (your way)", the
+    name a copy gets now (numbered when the household already has one).
+
+    Only a copy: the name without its day must be another recipe of the
+    SAME household, so a dish someone named "Pizza (Friday)" themselves is
+    left alone. Scoped per household; idempotent — once renamed, nothing
+    matches the day pattern again.
+    """
+    rows = conn.execute(
+        "SELECT id, household_id, name FROM recipes WHERE name LIKE '%day)%' OR name LIKE '%(this one)%'"
+    ).fetchall()
+    for row in rows:
+        m = _WEEKDAY_FORK_RE.match(row["name"] or "")
+        if not m:
+            continue
+        hid = row["household_id"]
+        base = m.group("base")
+        names = {str(r["name"] or "").strip().lower(): r["id"] for r in conn.execute(
+            "SELECT id, name FROM recipes WHERE household_id = ?", (hid,))}
+        original = names.get(base.strip().lower())
+        if original is None or original == row["id"]:
+            continue
+        new, n = f"{base} (your way)", 2
+        while new.lower() in names:
+            new, n = f"{base} (your way) {n}", n + 1
+        conn.execute(
+            "UPDATE recipes SET name = ? WHERE id = ? AND household_id = ?",
+            (new, row["id"], hid),
+        )
+
+
 def _respell_grocery_stores_as_usual(conn):
     """
     One-off cleanup (Emily 2026-10-26, Loop Board "costco" spelling card):
@@ -1493,6 +1535,7 @@ def _run_migrations(conn):
     _merge_duplicate_item_store_preferences(conn)
     _delete_blank_grocery_items(conn)
     _repair_recipe_minutes(conn)
+    _repair_weekday_fork_names(conn)
     _respell_grocery_stores_as_usual(conn)
     _migrate_repeats_tolerance_to_leftovers_stance(conn)
     _migrate_planning_anchor_values(conn)
