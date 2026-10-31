@@ -71,18 +71,17 @@ def test_the_drafts_dock_is_one_row_approve_then_the_round_more_on_both_toggle_s
 
 
 @_needs_node
-def test_the_approved_root_gets_the_same_row_plan_next_week_then_more_and_no_foot_above():
-    days = _week()
-    nxt = {"start_date": "2026-09-28", "day_count": 7, "is_current_period": False, "is_planned": False}
-    html = _run(_prelude() + f"console.log(JSON.stringify(weekDecideHtml({json.dumps(_approved(days))}, {json.dumps(nxt)})));")
-    assert html.startswith('<div class="dock wk-root-dock"><div class="wk-dock-row">')
-    assert html.index('id="wk-plan-next"') < html.index(_MORE)
-    assert "btn-gold" not in html and "dock-primary" not in html, "no apricot on a settled week"
-    # The root no longer renders a foot of its own above the dock.
+def test_the_approved_root_has_no_dock_and_more_is_in_the_band():
+    """UPDATED 2026-10-30 (the declutter, Emily's "Combined · Plan"): an
+    approved week's dock is the chat button alone — "Plan next week" moved
+    into More as "Plan the week after", and More ··· moved into the band.
+    (weekDecideHtml, the old approved dock, is no longer drawn.)"""
     root = _extract("weekStepHtml", SHELL_JS)
-    tail = root[root.index("weekNotesHtml(data, days[selected])"):]
-    assert "wk-foot" not in tail and 'id="wk-more"' not in tail
-    assert "weekDecideHtml(data, next);" in tail
+    assert "weekDecideHtml" not in root and "return planWeekHtml(data, days);" in root
+    dock = _extract("planDockHtml", SHELL_JS)
+    assert "if (weekPlanState(data) !== 'draft') return '';" in dock
+    assert "wkDockMoreHtml" not in dock, "More is the band's (weekBandMoreHtml)"
+    assert "id=\"wk-band-more\"" in _extract("weekBandMoreHtml", SHELL_JS)
 
 
 def test_the_more_button_is_48px_round_and_the_row_lets_the_primary_fill():
@@ -106,11 +105,13 @@ def test_the_more_button_is_48px_round_and_the_row_lets_the_primary_fill():
     assert SHELL_JS.count("wkDockMoreHtml() +") == 2, "the draft's dock and the approved root's"
 
 
-def test_the_quiet_line_left_the_source_and_the_pill_is_the_one_door_to_the_intake():
+def test_the_quiet_line_left_the_source_and_the_intake_is_behind_more():
+    # The band's Re-plan pill went too (the declutter, 2026-10-30): the way
+    # back into the intake is More's "Change my answers".
     assert ">Plan it differently<" not in SHELL_JS
     assert ".wk-dock-quiet" not in SHELL_CSS and ".wk-dock-link" not in SHELL_CSS
-    assert SHELL_JS.count("{ replanWeek(); }") == 1
-    assert "pill.addEventListener('click', function () { replanWeek(); })" in _extract("fillWeekBandExtras", SHELL_JS)
+    assert "replanWeek" not in _extract("fillWeekBandExtras", SHELL_JS)
+    assert "startPlanningWeek(data.week_start_date, data.day_count || 7);" in _extract("renderMealsMoreSheet", SHELL_JS)
 
 
 # ---------------------------------------------------------------------------

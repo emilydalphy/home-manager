@@ -26,7 +26,7 @@ from app.tools import weekly_plan as _weekly_plan
 from test_plan_cards_2026_09_18 import _run, _week, _approved
 from test_week_seven_tiles import _extract
 from test_draft_front_door import _band_prelude
-from test_plan_next_on_draft import SHELL_JS
+from test_plan_cards_2026_09_18 import SHELL_JS
 
 _needs_node = pytest.mark.skipif(shutil.which("node") is None, reason="node is needed to run the renderers")
 
@@ -65,23 +65,28 @@ _DRAFT_NEXT = {"start_date": "2026-09-28", "day_count": 7, "is_current_period": 
 
 
 @_needs_node
-def test_the_dock_reads_see_next_weeks_draft_and_opens_it():
-    """CATCH. The dock's words, and its tap pins the draft and loads it
-    instead of starting the questions over."""
+def test_plan_the_week_after_says_its_draft_is_waiting_and_opens_it():
+    """CATCH. The approved dock's "See next week's draft" moved into More
+    as "Plan the week after" (the declutter, 2026-10-30): its line says
+    the draft is waiting, and its tap pins the draft and loads it instead
+    of starting the questions over."""
     days = _week()
     out = _run(_band_prelude()
-               + _extract("weekDecideHtml", SHELL_JS) + "\n"
-               + "function wkDockMoreHtml() { return ''; }\n"
+               + _extract("planAfterTitle", SHELL_JS) + "\n"
+               + _extract("planAfterLine", SHELL_JS) + "\n"
                + "var panels = { week: {} };\n"
+               + "function dayName(d) { return 'Monday, Sep 28'; }\n"
                + "function loadWeekMenu(p) { CALLS.push(['load', weekState.showPlanId, weekState.showWeekStart]); }\n"
                + f"""
 var data = {json.dumps(dict(_approved(days), next_period=_DRAFT_NEXT))};
 weekState.data = data;
-var html = weekDecideHtml(data, nextPeriodFor(data, data.days));
+var next = nextPeriodFor(data, data.days);
+var title = planAfterTitle(next), line = planAfterLine(next);
 planNextWeek();
-console.log(JSON.stringify({{ html: html, calls: CALLS,
+console.log(JSON.stringify({{ title: title, line: line, calls: CALLS,
   plain: planNextLabel({json.dumps(dict(_DRAFT_NEXT, draft_plan_id=None))}) }}));""")
-    assert "See next week’s draft" in out["html"]
+    assert out["title"] == "Plan the week after"
+    assert "its draft is waiting" in out["line"] and out["line"].startswith("Starts ")
     assert out["calls"] == [["load", 9, None]], "opens the draft BY ITS ID, never the questions"
     assert out["plain"] == "Re-plan next week", "an approved next week still re-plans"
 

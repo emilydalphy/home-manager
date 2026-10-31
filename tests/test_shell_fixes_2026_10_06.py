@@ -211,5 +211,7 @@ def test_a_day_before_the_plan_began_reads_quietly_not_as_a_gap():
 
 
 def test_every_past_empty_slot_goes_through_the_one_word():
-    assert SHELL_JS.count("pastEmptyWord(day)") == 4  # the definition and three uses
+    # The definition, three uses on the day cards, and the Plan root's
+    # quiet rows (planSlotRowHtml, 2026-10-30).
+    assert SHELL_JS.count("pastEmptyWord(day)") == 5
     assert "day.isPast ? 'Not planned'" not in SHELL_JS

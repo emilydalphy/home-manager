@@ -196,11 +196,12 @@ def test_the_dock_is_one_component_not_one_per_screen():
 def test_all_three_docked_screens_use_the_shared_box():
     """Cook, Plan (both the Week root and the Review step) and Shop."""
     assert '<div class="dock cook-dock">' in SHELL_JS
-    # One since 2026-09-11: a draft's root is the review, so only
-    # reviewDecideHtml docks an Approve button (the week root has none).
-    assert SHELL_JS.count('<div class="wk-decide dock">') == 1, (
-        "the Review docks the Approve button, and nothing else does"
-    )
+    # Two since 2026-10-30: the Plan root (planDockHtml — a draft's
+    # Approve; an approved week has no dock) and the deeper review step
+    # (reviewDecideHtml). Both are the same .wk-decide shell that
+    # approveWeek and showApproveConfirm look for.
+    assert SHELL_JS.count('<div class="wk-decide dock">') == 2
+    assert "function planDockHtml(" in SHELL_JS and "function reviewDecideHtml(" in SHELL_JS
     assert '<div class="dock wk-allset-dock">' in SHELL_JS  # the All set screen's own
     assert '<div class="dock gro-dock" id="gro-dock">' in SHELL_JS
 
@@ -208,15 +209,6 @@ def test_all_three_docked_screens_use_the_shared_box():
 def _gro_dock_body():
     start = SHELL_JS.index("function groDockHtml(")
     end = SHELL_JS.index('// ---------- "Maybe already home" ----------', start)
-    return SHELL_JS[start:end]
-
-
-def _before_shop_dock_body():
-    """What LIST's one primary says and does (card 13, 2026-10-05) — the
-    dock delegates to it, so the no-dock rule is partly this function's
-    now."""
-    start = SHELL_JS.index("function beforeShopDockHtml(")
-    end = SHELL_JS.index("function beforeShopIsDone(", start)
     return SHELL_JS[start:end]
 
 
@@ -268,7 +260,7 @@ def test_the_dock_is_the_last_thing_in_its_container():
     # Plan's two docks: the call that builds them ends its function's return
     # expression, so what follows is ";" and never " +" (another chunk of
     # markup concatenated after the strip).
-    for fn, call in (("weekStepHtml", "weekDecideHtml(data, next)"),
+    for fn, call in (("planWeekHtml", "planDockHtml(data)"),
                      ("reviewStepHtml", "reviewDecideHtml(data)")):
         body = SHELL_JS[SHELL_JS.index("function %s(" % fn):]
         at = body.index(call) + len(call)
@@ -302,30 +294,23 @@ def test_a_screen_with_no_single_action_has_no_dock():
     not find the sort step, so the dock says what to do next. The rule
     this test is named for is untouched: a screen with no single action
     still has no dock, and Shop's LIST with nothing left to sort still
-    has no action of its own (beforeShopDockHtml returns '' on an empty
-    `groUnsorted`, which is asserted below). What changed is that a list
-    with unsorted things on it DOES have a single next action.
+    has no action of its own. What changed is that a list with unsorted
+    things on it DOES have a single next action.
+
+    2026-10-30 (the declutter): and that went again — the pass is "Before
+    you go ›" in the band and the sort "Pick stores" on the Anywhere card,
+    so LIST's dock is "+ Add something" alone.
     """
     dock = _gro_dock_body()
     assert "start-trip" not in dock
     assert "!groStoresPromptShouldShow() &&" in dock, "never over the shops question"
     after_plan = dock.split("data-gro=\"goto-plan\"", 1)[1]
-    assert "return beforeShopDockHtml(data) + groAddButtonHtml();" in after_plan[:600], \
-        "LIST's dock is the pass's one primary plus the add button"
-    # Nothing to sort, nothing to say: the one primary stands down and the
-    # add outline is the whole dock, exactly as it was before card 13.
-    #
-    # 2026-10-06 (one-shop households get the pass too): the stand-down is
-    # now two lines — never over the shops question, and nothing to sort AND
-    # no pass to offer means no action. A one-shop household's pass is the
-    # one new single action; behaviour is pinned in test_before_you_shop.py.
-    pass_dock = _before_shop_dock_body()
-    assert "if (groStoresPromptShouldShow()) return '';" in pass_dock, \
-        "never over the shops question"
-    assert "dock-primary" not in pass_dock.split("return '';", 1)[0], \
-        "and the stand-down comes before any button is built"
-    assert "if (!unsorted) return '';" in pass_dock, \
-        "no sort to offer (and no pass) means no dock action"
+    # 2026-10-30 (the declutter): LIST's dock is "+ Add something" alone.
+    # The pass is "Before you go ›" in the band (groBeforeYouGoHtml) and
+    # the sort is "Pick stores" on the Anywhere card — one tap away, and
+    # neither is the screen's button.
+    assert "return groAddButtonHtml();" in after_plan[:900], "LIST's dock is the add button alone"
+    assert "beforeShopDockHtml" not in SHELL_JS
     sortall = dock.split("if (step === 'sortall') {", 1)[1]
     assert "return '';" in sortall[:120], "SORT ALL with rows left renders no dock"
     assert ".gro-dock:empty { display: none; }" in SHELL_CSS

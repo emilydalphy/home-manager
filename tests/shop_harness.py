@@ -77,6 +77,16 @@ def cook_progress() -> str:
     return SHELL_JS[start:end] + "\n"
 
 
+def quiet_head() -> str:
+    """The quiet sheet's head (quietSheetHeadHtml, static/shell.js) — the
+    row's sheet draws its name and amount through it (2026-10-30). It
+    lives outside grocery_block(), so it is sliced in here, never
+    retyped."""
+    start = SHELL_JS.index("  function quietSheetHeadHtml(")
+    end = SHELL_JS.index("\n  // `onClose` runs once when the sheet closes", start)
+    return SHELL_JS[start:end] + "\n"
+
+
 STUB = """
 function escapeHtml(s){return String(s == null ? '' : s)
   .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -125,7 +135,7 @@ function bandDateLabel() { return 'Friday, Sep 18'; }
 function emptyMomentHtml(icon, sentence, detail) { return '<div class="empty-moment">' + sentence + '</div>'; }
 """ + toast_core()
 
-CLICK = """
+CLICK = quiet_head() + """
 function fakeEl(dataset, row) {
   return {
     dataset: dataset, disabled: false,
@@ -188,7 +198,14 @@ function screenHtml() {
   // it is built at body level, outside this panel.
   const back = step === 'list' ? '' : groHeadFor(data, step).back;
   const crumb = back ? '<button class="crumb" id="gro-back" data-gro="step-back">' + back + '</button>' : '';
-  return crumb + body + groDockHtml(data, step);
+  // Since 2026-10-30 the root's band carries "Before you go ›" and the
+  // store chips (groBandExtrasHtml), and a row's answers are in its sheet
+  // (groRowMenuHtml, open while groceryState.openRowId names the row —
+  // groSyncRowSheet). Both are on the screen, so a test can tap them.
+  const band = step === 'list' ? groBandExtrasHtml(data) : '';
+  const openLine = step === 'list' && groceryState.openRowId ? groFindLine(groceryState.openRowId) : null;
+  const sheet = openLine ? groRowMenuHtml(openLine, data) : '';
+  return band + crumb + body + groDockHtml(data, step) + sheet;
 }
 
 // Every opening tag on the screen that carries this action.

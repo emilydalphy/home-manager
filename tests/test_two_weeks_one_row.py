@@ -148,10 +148,10 @@ const rows = (html.match(/data-gro="line-tick" data-id="\\d+"/g) || []).filter(f
 clickIfRendered({ gro: 'line-tick', id: '11', bought: '0' });
 settle(function () {
   console.log(JSON.stringify({
-    onionRows: (html.match(/<p class="gro-name">Onions<\\/p>/g) || []).length,
-    note: /<p class="gro-line-weeks">([^<]*)<\\/p>/.exec(html)[1],
-    qty: /gro-name">Onions<\\/p><p class="gro-line-weeks">[^<]*<\\/p><\\/div><span class="gro-line-qty">([^<]*)</.exec(html)[1],
-    carrotsPlain: html.indexOf('<p class="gro-name">Carrots</p><span class="gro-line-qty">4</span>') !== -1,
+    onionRows: (html.match(/<span class="gro-name">Onions<\\/span>/g) || []).length,
+    note: /<span class="gro-line-weeks">([^<]*)<\\/span>/.exec(html)[1],
+    qty: /gro-name">Onions<\\/span><span class="gro-line-weeks">[^<]*<\\/span><\\/span><span class="gro-line-qty">([^<]*)</.exec(html)[1],
+    carrotsPlain: html.indexOf('<span class="gro-name">Carrots</span><span class="gro-line-qty">4</span>') !== -1,
     ticked: purchases().sort()
   }));
 });

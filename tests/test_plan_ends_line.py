@@ -176,7 +176,9 @@ console.log(JSON.stringify([{json.dumps(whole)}, {json.dumps(held)}, {json.dumps
 
 
 def test_both_roots_carry_the_line_above_the_week():
-    assert "weekSuggestedNoteHtml(data) + planEndsLineHtml(data) +" in _function("weekStepHtml")
+    # One Plan root for a draft and an approved week since 2026-10-30.
+    assert "return planWeekHtml(data, days);" in _function("weekStepHtml")
+    assert "weekSuggestedNoteHtml(data) + planEndsLineHtml(data) +" in _function("planWeekHtml")
     assert "draftSoftNoteHtml(data) + planEndsLineHtml(data)" in _function("reviewStepHtml")
 
 

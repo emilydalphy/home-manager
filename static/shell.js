@@ -367,7 +367,7 @@
   // dismissSwapSheet) holds against the key too. Listed innermost first —
   // a swap opened from the whole-week sheet closes before the week does.
   var ESCAPE_CLOSES_SCRIMS = [
-    'wk-swap-scrim', 'wk-tweak-scrim', 'wk-add-scrim', 'gro-scan-scrim',
+    'quiet-scrim', 'wk-swap-scrim', 'wk-tweak-scrim', 'wk-add-scrim', 'gro-scan-scrim',
     'gro-add-scrim', 'tonight-scrim', 'cook-more-scrim', 'meals-more-scrim',
     'week-sheet-scrim', 'notif-scrim', 'home-item-scrim'
   ];
@@ -402,6 +402,76 @@
       var t = e.target;
       if (t && t.closest && !t.closest('[role="dialog"]')) escapeOpener = t;
     });
+  }
+
+  // ---------- The quiet sheet: one row's options, one tap in ----------
+  // The declutter (Emily, 2026-10-30): a row on Plan, Shop or Today carries
+  // no buttons of its own — tapping it opens this sheet, and the row's
+  // options live here. Built once, body level, like the swap sheet; each
+  // screen hands it the markup and wires what it drew (`wire(body)`).
+  var quietSheetEl = null;
+  var quietScrimEl = null;
+
+  function buildQuietSheet() {
+    if (quietSheetEl) return;
+    quietScrimEl = document.createElement('div');
+    quietScrimEl.id = 'quiet-scrim';
+    quietScrimEl.className = 'quiet-scrim';
+    quietScrimEl.hidden = true;
+    quietSheetEl = document.createElement('div');
+    quietSheetEl.id = 'quiet-sheet';
+    quietSheetEl.className = 'quiet-sheet';
+    quietSheetEl.hidden = true;
+    quietSheetEl.setAttribute('role', 'dialog');
+    quietSheetEl.setAttribute('aria-modal', 'true');
+    quietSheetEl.setAttribute('aria-labelledby', 'quiet-sheet-title');
+    quietSheetEl.innerHTML = '<div class="ask-sheet-handle" id="quiet-sheet-handle"></div><div class="quiet-sheet-body" id="quiet-sheet-body"></div>';
+    document.body.appendChild(quietScrimEl);
+    document.body.appendChild(quietSheetEl);
+    quietScrimEl.addEventListener('click', closeQuietSheet);
+    document.getElementById('quiet-sheet-handle').addEventListener('click', closeQuietSheet);
+  }
+
+  // The head every quiet sheet shares: an eyebrow saying where the thing
+  // is ("Dinner · Monday", "4 lbs", "Lunch"), the thing's name, and the x.
+  function quietSheetHeadHtml(eyebrow, title) {
+    return '<div class="quiet-head">' +
+      '<div class="quiet-head-text">' +
+        (eyebrow ? '<p class="wk-swap-eyebrow quiet-eyebrow">' + escapeHtml(eyebrow) + '</p>' : '') +
+        '<h2 class="wk-swap-title" id="quiet-sheet-title">' + escapeHtml(title || '') + '</h2>' +
+      '</div>' +
+      '<button type="button" class="kit-sheet-close" data-quiet-close="1" aria-label="Close">&times;</button>' +
+    '</div>';
+  }
+
+  // `onClose` runs once when the sheet closes (a scrim tap, the x, or
+  // closeQuietSheet), so a screen holding "which row is open" lets go of
+  // it; `key` names whose sheet it is (Shop redraws its own in place).
+  var quietSheetOnClose = null;
+
+  function openQuietSheet(html, wire, onClose, key) {
+    buildQuietSheet();
+    if (typeof closeAskSheet === 'function') closeAskSheet();
+    var body = document.getElementById('quiet-sheet-body');
+    body.removeAttribute('data-html');
+    quietSheetEl.setAttribute('data-for', key || '');
+    body.innerHTML = html;
+    body.querySelectorAll('[data-quiet-close]').forEach(function (btn) {
+      btn.addEventListener('click', closeQuietSheet);
+    });
+    quietSheetOnClose = onClose || null;
+    if (wire) wire(body);
+    openSheet(quietSheetEl, quietScrimEl);
+    return body;
+  }
+
+  function closeQuietSheet() {
+    if (!quietSheetEl) return;
+    var done = quietSheetOnClose;
+    quietSheetOnClose = null;
+    quietSheetEl.setAttribute('data-for', '');
+    closeSheet(quietSheetEl, quietScrimEl);
+    if (done) done();
   }
 
   // ---------- One level at a time: the sheet stack (2026-10-05) ----------
@@ -2813,10 +2883,11 @@
   // A group with nothing in it is not drawn. Each row is the move's tick on the
   // left (44px of tap around 28px of dot, Rule 6 — the dot says the state:
   // done = celadon with a tick, now = apricot with the kind's icon, later =
-  // surface with a hairline), the title and one clock-free meta line, and
-  // a MORNING / AFTERNOON / EVENING tag at the right where the strip used
-  // to print a clock (moveTimeOfDay). The next-up move is the ONE tinted
-  // row across both groups (celadon-tint, a NOW eyebrow — §2b S3/S6), and
+  // surface with a hairline), the title and one clock-free meta line. (A
+  // MORNING / AFTERNOON / EVENING tag sat at the right until 2026-10-30,
+  // when the declutter took it off with the who-button; Cook and Prep are
+  // one To do card since then.) The next-up move is the ONE tinted
+  // row (celadon-tint, a NOW eyebrow — §2b S3/S6), and
   // its action stays in the dock. Until 2026-09-17 this was one strip down
   // the day with a time rail ("Now · A · The day as a strip").
   //
@@ -2896,7 +2967,14 @@
   // thing that is not true (§8). What the card asked for by that name —
   // tonight's cook with its start time, its total time and the batch line —
   // is on the row itself (dayNodeWhyHtml).
+  //
+  // Since the declutter (Emily, 2026-10-30) Cook and Prep are ONE card,
+  // "To do" — every task the day has, top to bottom down the day — and the
+  // Shop card is one line on the household's shopping day
+  // (todayShopTodayHtml). `cook` and `prep` stay for the words a row's
+  // sheet uses about its own kind.
   var DAY_GROUPS = {
+    todo: { title: 'To do', icon: MOVE_ICONS.cook },
     cook: { title: 'Cook', icon: MOVE_ICONS.cook },
     prep: { title: 'Prep', icon: MOVE_ICONS.prep },
     shop: { title: 'Shop', icon: MOVE_ICONS.shop }
@@ -2941,25 +3019,6 @@
     if (isNaN(at.getTime())) return null;
     if (move.kind === 'cook') at.setMinutes(at.getMinutes() + (move.duration_min || 0));
     return at;
-  }
-
-  // The tag at the right of a row: which part of the day, never a clock
-  // (Emily, 2026-09-17 — "6:30" on every row was the strip reading like a
-  // timetable). One mapping, here and nowhere else: before noon is
-  // Morning, noon to five is Afternoon, five on is Evening. A fridge or
-  // prep move is "by tonight" (window_end 22:00, moves.py), so it lands in
-  // Evening; dinner lands in Evening because the household's dinner clock
-  // (the dinner_window rhythm fact, moves._dinner_clock) is five or later.
-  // A shop with no clock — the standing list, nothing today waiting on it
-  // (`timed` false) — is "Any time"; a shop with a deadline reads off it.
-  function moveTimeOfDay(move) {
-    if (move.kind === 'shop' && move.timed === false) return 'Any time';
-    var at = moveStripAt(move);
-    if (!at) return 'Any time';
-    var h = at.getHours();
-    if (h < 12) return 'Morning';
-    if (h < 17) return 'Afternoon';
-    return 'Evening';
   }
 
   // Top to bottom down the day. The server's order (moves.py, by
@@ -3010,13 +3069,6 @@
     return adults.length > 0;
   }
 
-  function moveWhoButtonHtml(move) {
-    if (!moveCanChangeWho(move)) return '';
-    var now = move.owner_name ? String(move.owner_name) : 'Nobody yet';
-    return '<button type="button" class="day-node-who" data-move-who="' + escapeHtml(move.id) + '" ' +
-      'aria-label="' + escapeHtml('Who’s on it? ' + now) + '">' + WHO_ICON + '</button>';
-  }
-
   // One row. `state` is 'done', 'now' (the next-up move — exactly one row
   // ever, across both groups, §2b S3) or 'later'. The row's body is the tap
   // target for "open this move" (52px+, Rule 6): a pending row runs the
@@ -3026,49 +3078,33 @@
   // 2026-09-09) and the dot undoes. `text` overrides the title and meta
   // (a shop's store stops — todayShopRowsHtml); the tick, the tag and the
   // state are the move's either way.
-  // The quiet line under a row's meta: what the move is FOR, and — on a
-  // cook still to do — when to start it. ONE function for both states, so
-  // the tinted row and a plain one can never say different amounts about
-  // the same cook.
-  //
-  // The start time is read off `move.chips` (moves.py: "Start by 5:45", or
-  // "Started 6:02" once "Start cooking" has been tapped), never re-derived
-  // here — the start-by arithmetic is the server's precisely so Today and
-  // Cook cannot disagree about when to start, and a second implementation
-  // of it in the browser is the thing that rule exists to prevent. The
-  // minutes are already the row's meta line, so they are not said twice.
-  //
-  // `indexOf(...) === -1`, not `!== 0`: a fridge move's reason IS its meta
-  // line, and once the owner clause leads that line the reason is no
-  // longer at position 0 — `!== 0` would have printed it twice.
-  // Behaviour-identical for every move without an owner (the reason either
-  // starts the line or appears nowhere in it).
-  function dayNodeWhyHtml(move, state, metaLine) {
-    var bits = [];
+  // The one short note a To do row carries (Emily, 2026-10-30, "Today,
+  // quiet rows"): on a cook still to do, when to start it ("start 5:45" —
+  // the server's own start-by chip, never re-derived here); otherwise the
+  // server's clock-free meta ("for Thursday's skewers", "25 min"). Whose
+  // move it is and why it is there moved into the row's sheet
+  // (openTodayMoveSheet), with the who-button.
+  function dayNodeNote(move, state) {
     if (move.kind === 'cook' && state !== 'done') {
       var start = (move.chips || []).filter(function (c) { return /^Start/.test(c); })[0];
-      if (start) bits.push(start);
+      if (start) return start.replace(/^Start(ed)? by /, 'start ').replace(/^Started /, 'started ');
     }
-    // The double-batch line ("Cooking for 6 — covers tonight and leftovers
-    // on Thursday") — a fact about the cook, not the planner explaining
-    // itself.
-    if (move.reason && String(metaLine || '').indexOf(move.reason) === -1) bits.push(move.reason);
-    if (!bits.length) return '';
-    return '<span class="day-node-meta day-node-why">' + escapeHtml(bits.join(' · ')) + '</span>';
+    return move.meta != null ? move.meta : (move.detail || '');
   }
 
   function dayStripNodeHtml(move, state, text) {
     var id = escapeHtml(move.id);
     var title = escapeHtml((text && text.title) || move.title);
-    var metaLine = text ? (text.meta || '') : moveMetaLine(move);
+    var metaLine = text ? (text.meta || '') : dayNodeNote(move, state);
     var meta = metaLine ? '<span class="day-node-meta">' + escapeHtml(metaLine) + '</span>' : '';
     var body;
     // A shop stop's hours line ("by 5:30 · Farm Boy closes at 5:30" —
     // moves._hours_line, only when the store's hours change the answer)
     // sits where a cook's start time does: the quiet line under the meta.
+    // Every other row's "why" is in its sheet now (2026-10-30).
     var why = (text && text.why)
       ? '<span class="day-node-meta day-node-why">' + escapeHtml(text.why) + '</span>'
-      : dayNodeWhyHtml(move, state, metaLine);
+      : '';
     // A reheat says so where the row starts (the card, 2026-10-04:
     // "Leftover/reheat meals show as 'Reheat' rows here"). Its own class,
     // NOT .day-node-eyebrow: that one is the tinted row's word for itself,
@@ -3079,10 +3115,10 @@
     var kindWord = (move.kind === 'reheat' && !move.prepped) ?
       '<span class="day-node-kind">Reheat</span>' : '';
     if (state === 'now') {
-      // The one tinted row: the word for it (S6), the title, the meta, and
-      // what the move is FOR — a batch's "covers Thursday" — under them,
-      // here only, the way the old card's accent line did.
-      body = '<button type="button" class="day-node-text day-node-open" data-move-action="' + id + '">' +
+      // The one tinted row: the word for it (S6), the title and its note.
+      // Tapping a row opens its sheet (openTodayMoveSheet) — what it is
+      // for, who is on it, and its action — since 2026-10-30.
+      body = '<button type="button" class="day-node-text day-node-open" data-move-sheet="' + id + '">' +
         '<span class="day-node-eyebrow">Now</span>' +
         '<span class="day-node-title">' + title + '</span>' +
         meta + why +
@@ -3090,7 +3126,7 @@
     } else if (state === 'done') {
       body = '<span class="day-node-text">' + kindWord + moveDishHtml(move, 'day-node-title') + meta + '</span>';
     } else {
-      body = '<button type="button" class="day-node-text day-node-open" data-move-action="' + id + '">' +
+      body = '<button type="button" class="day-node-text day-node-open" data-move-sheet="' + id + '">' +
         kindWord +
         '<span class="day-node-title">' + title + '</span>' + meta + why +
       '</button>';
@@ -3099,47 +3135,13 @@
     // why it handed the meal back — so it wraps rather than ellipsing
     // halfway through it (shell.css .day-node.is-open-slot).
     var kindCls = move.kind === 'open_slot' ? ' is-open-slot' : '';
+    // No who-button and no Morning / Afternoon / Evening tag on the row
+    // (Emily, 2026-10-30): the tick, the task, one note. Who is on it is
+    // in the row's sheet.
     return '<div class="day-node is-' + state + kindCls + '" data-move-id="' + id + '">' +
       moveTickHtml(move) +
       body +
-      // A shop's second and later store rows are the same move: one door
-      // to it, on the first (todayShopRowsHtml).
-      ((text && text.noWho) ? '' : moveWhoButtonHtml(move)) +
-      '<span class="day-node-tag">' + escapeHtml(moveTimeOfDay(move)) + '</span>' +
     '</div>';
-  }
-
-  // The Shop group's rows: one per store stop of the list ("Costco · 6
-  // things", then the first few things — moves.py `stops`), each opening
-  // the list. A shop with no stops on it (a holiday's own shop row, a
-  // cached payload) is one row of its own. Only the first row of a
-  // featured shop is the tinted one — one across both groups.
-  function todayShopRowsHtml(move, state) {
-    var stops = move.stops || [];
-    if (!stops.length) return dayStripNodeHtml(move, state);
-    return stops.map(function (stop, i) {
-      var n = stop.count || (stop.items || []).length;
-      var name = stop.store || 'Any store';
-      var items = (stop.items || []).join(', ');
-      // A store holding none of tonight's food names nothing (moves.py
-      // names only tonight's lines) — a bare "…" there would read as a
-      // name that failed to load.
-      var meta = items ? items + (n > (stop.items || []).length ? '…' : '') : '';
-      // Whose the shop is, when somebody said (slice 2), leads the first
-      // stop's line the way it leads every other row's — once per move.
-      var whose = i ? '' : moveOwnerClause(move);
-      return dayStripNodeHtml(move, (state === 'now' && i) ? 'later' : state, {
-        title: name + ' · ' + n + (n === 1 ? ' thing' : ' things'),
-        meta: whose ? (meta ? whose + ' · ' + meta : whose) : meta,
-        why: stop.hours_line || '',
-        noWho: i > 0
-      });
-    }).join('');
-  }
-
-  // How many rows the Shop group draws for a move — the card's "N stops".
-  function todayShopStops(move) {
-    return Math.max(1, (move.stops || []).length);
   }
 
   // One group card: the icon in its sand tile, the title, the count at
@@ -3155,13 +3157,6 @@
       rows +
     '</div>';
   }
-
-  // Which group a move belongs in. Cooking and reheating are Cook; a
-  // fridge move, a soak, a marinade and a batch-prep task are Prep. Until
-  // 2026-10-05 the second list was rows inside the first.
-  // An open slot is a meal still to decide, so it sits with the meals, in
-  // its own place in the day (Emily, 2026-10-12: a row, not a card).
-  var COOK_KINDS = { cook: 1, reheat: 1, open_slot: 1 };
 
   // THE DAY'S MEALS — the first card on Today, and the one the card is
   // named after. One row per planned meal (moves.py's payload carries them
@@ -3180,55 +3175,128 @@
   // no per-person dish at all (meal_plan_entries has no member column), and
   // `lunch_location` is 'home' | 'out' | 'varies' — there is no "office",
   // no "school" and no "nut-free thermos" anywhere in it. A line says what
-  // is on record and nothing else (§8).
-  function todayMealWhoHtml(line) {
-    var initials = (line.initials || []).map(function (i) {
-      return '<span class="day-meal-initial">' + escapeHtml(i) + '</span>';
-    }).join('');
-    var bits = [line.who, line.where].filter(Boolean).join(' · ');
-    return '<span class="day-meal-who">' + initials +
-      '<span class="day-meal-names">' + escapeHtml(bits) + '</span>' +
-    '</span>';
+  // is on record and nothing else (§8) — said in the meal's sheet.
+  //
+  // One row (Emily, 2026-10-30, "Today, quiet rows"): the meal's eyebrow,
+  // the dish, a chevron. A reheat says just "Leftovers" under it — never
+  // where from (her standing copy rule). Who it is for and where each
+  // person will be moved into the row's sheet (openTodayMealSheet), with
+  // the way into the recipe. `i` is the row's place in day_meals.
+  // The row's chevron — Today's own, so the region stands alone (rule 7).
+  var DAY_CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" ' +
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
+
+  function todayMealIsLeftovers(row) {
+    return !!(row && row.is_leftovers);
   }
 
-  // One row. Tapping it opens that meal — through openRecipeFor, the one
-  // door to the one screen in this app with a recipe on it (Emily,
-  // 2026-09-09). A reheat has no recipe behind it, so that row is a plain
-  // span rather than a button that would go nowhere: the same rule
-  // moveRecipeTarget makes for every dish name on Today, and the reason the
-  // row says "leftovers from Sunday" instead.
-  function todayMealRowHtml(row) {
-    var label = '<span class="day-meal-slot">' + escapeHtml(row.label) + '</span>';
-    var note = row.note ? '<span class="day-meal-note">' + escapeHtml(row.note) + '</span>' : '';
-    var open = todayMealTarget(row) ? ' day-meal-open' : '';
-    var tag = todayMealTarget(row) ? 'button type="button"' : 'span';
-    var close = todayMealTarget(row) ? 'button' : 'span';
-    var attr = todayMealTarget(row) ? ' data-meal-open="' + escapeHtml(String(row.entry_id)) + '"' : '';
-    if (row.per_person) {
-      // The meal label above one line per person (Emily, 2026-10-04): the
-      // round initial, the name, where they will be in grey, and the dish
-      // on the line below. People who share both a dish and a place share
-      // a line ("Gowthami + Ravi") — see day_meals._lines_for.
-      return '<div class="day-meal is-people">' + label +
-        row.lines.map(function (line) {
-          return '<' + tag + ' class="day-meal-line' + open + '"' + attr + '>' +
-            todayMealWhoHtml(line) +
-            '<span class="day-meal-dish">' + escapeHtml(line.dish) + '</span>' +
-          '</' + close + '>';
-        }).join('') +
-        note +
+  function todayMealRowHtml(row, i) {
+    var dishes = row.per_person
+      ? (row.lines || []).map(function (l) { return l.dish; }).filter(function (d, n, all) { return d && all.indexOf(d) === n; })
+      : (row.dishes || []);
+    return '<button type="button" class="day-meal day-meal-open" data-meal-sheet="' + i + '" ' +
+        'aria-label="' + escapeHtml(row.label + ', ' + dishes.join(', ')) + '">' +
+      '<span class="day-meal-text">' +
+        '<span class="day-meal-slot">' + escapeHtml(row.label) + '</span>' +
+        '<span class="day-meal-dish">' + escapeHtml(dishes.join(', ')) + '</span>' +
+        (todayMealIsLeftovers(row) ? '<span class="day-meal-note">Leftovers</span>' : '') +
+      '</span>' +
+      '<span class="day-meal-chev" aria-hidden="true">' + DAY_CHEV + '</span>' +
+    '</button>';
+  }
+
+  // The meal's sheet: who it is for and where they'll be (the server's
+  // own words, day_meals.py — nothing composed here), then the recipe
+  // when there is one behind it (todayMealTarget: a reheat has none).
+  function todayMealSheetHtml(row) {
+    var lines = (row.per_person ? row.lines : (row.lines || []).slice(0, 1)).map(function (line) {
+      var who = [line.who, line.where].filter(Boolean).join(' · ');
+      return '<div class="quiet-line">' +
+        '<span>' + escapeHtml(row.per_person ? line.dish : (row.dishes || []).join(', ')) + '</span>' +
+        (who ? '<span class="quiet-line-sub">' + escapeHtml(who) + '</span>' : '') +
       '</div>';
+    }).join('');
+    var note = todayMealIsLeftovers(row) ? 'Leftovers' : (row.note || '');
+    var title = row.per_person
+      ? (row.lines || []).map(function (l) { return l.dish; }).filter(function (d, n, all) { return d && all.indexOf(d) === n; }).join(', ')
+      : (row.dishes || []).join(', ');
+    return quietSheetHeadHtml(row.label, title) +
+      (note ? '<p class="wk-swap-sub">' + escapeHtml(note) + '</p>' : '') +
+      (lines ? '<div class="quiet-section"><span class="quiet-section-head">Who’s eating</span>' +
+        '<div class="quiet-lines">' + lines + '</div></div>' : '') +
+      (todayMealTarget(row) ? '<button type="button" class="quiet-link" data-meal-recipe="1">See the recipe</button>' : '');
+  }
+
+  function openTodayMealSheet(row) {
+    if (!row) return;
+    openQuietSheet(todayMealSheetHtml(row), function (body) {
+      var go = body.querySelector('[data-meal-recipe]');
+      if (go) go.addEventListener('click', function () {
+        closeQuietSheet();
+        var target = todayMealTarget(row);
+        if (target) openRecipeFor(target, { label: 'Today', tab: 'today' });
+      });
+    }, null, 'today-meal');
+  }
+
+  // A To do row's sheet: the task, its note and what it is for, who is on
+  // it (the who-button's question, askWhoDialog, one tap further), its
+  // action, and the recipe where there is one.
+  var DAY_KIND_WORDS = { cook: 'Cook', reheat: 'Reheat', fridge: 'Prep', prep: 'Prep', open_slot: 'Meal', shop: 'Shop' };
+
+  function todayMoveSheetHtml(move) {
+    // The sheet says it in full: "Start by 6:10", the server's meta, and
+    // what the move is for ("Cooking for 6 — covers tonight and leftovers
+    // on Thursday").
+    var bits = [];
+    if (move.kind === 'cook' && !move.done) {
+      var start = (move.chips || []).filter(function (c) { return /^Start/.test(c); })[0];
+      if (start) bits.push(start);
     }
-    var who = (row.lines[0] && row.lines[0].who) || '';
-    var where = (row.lines[0] && row.lines[0].where) || '';
-    // "everyone", or the names when it is not everyone ("Gowthami + Ravi"),
-    // then where they will be, then where the food came from — one grey
-    // line, the card's "short grey note".
-    var sub = [who, where, row.note].filter(Boolean).join(' · ');
-    return '<' + tag + ' class="day-meal' + open + '"' + attr + '>' + label +
-      '<span class="day-meal-dish">' + escapeHtml(row.dishes.join(', ')) + '</span>' +
-      (sub ? '<span class="day-meal-note">' + escapeHtml(sub) + '</span>' : '') +
-    '</' + close + '>';
+    var meta = move.meta != null ? move.meta : (move.detail || '');
+    if (meta) bits.push(meta);
+    if (move.reason && bits.join(' ').indexOf(move.reason) === -1) bits.push(move.reason);
+    var who = moveCanChangeWho(move)
+      ? '<div class="quiet-section"><span class="quiet-section-head">Who’s on it</span>' +
+          '<button type="button" class="quiet-opt" data-move-who="' + escapeHtml(move.id) + '">' +
+            '<span class="quiet-opt-icon">' + WHO_ICON + '</span>' +
+            '<span class="quiet-opt-text"><span class="quiet-opt-title">' +
+              escapeHtml(move.owner_name ? String(move.owner_name) : 'Nobody yet') + '</span>' +
+              '<span class="quiet-opt-sub">Tap to change</span></span>' +
+          '</button></div>'
+      : (move.owner_name ? '<p class="wk-swap-sub">' + escapeHtml(moveOwnerClause(move)) + '</p>' : '');
+    var label = move.action && move.action.label;
+    var act = !move.done && label
+      ? '<button type="button" class="btn-primary quiet-act" data-move-run="' + escapeHtml(move.id) + '">' + escapeHtml(label) + '</button>'
+      : '';
+    var recipe = moveRecipeTarget(move) && (!move.action || !move.action.target || !move.action.target.cookFocus || move.done)
+      ? '<button type="button" class="quiet-link" data-move-recipe="' + escapeHtml(move.id) + '">See the recipe</button>'
+      : '';
+    return quietSheetHeadHtml(DAY_KIND_WORDS[move.kind] || 'To do', move.title) +
+      (bits.length ? '<p class="wk-swap-sub">' + escapeHtml(bits.join(' · ')) + '</p>' : '') +
+      who + act + recipe;
+  }
+
+  function openTodayMoveSheet(panel, moveId) {
+    var move = todayMoveById(panel, moveId);
+    if (!move) return;
+    openQuietSheet(todayMoveSheetHtml(move), function (body) {
+      var who = body.querySelector('[data-move-who]');
+      if (who) who.addEventListener('click', function () {
+        closeQuietSheet();
+        openTodayMoveWho(panel, moveId);
+      });
+      var run = body.querySelector('[data-move-run]');
+      if (run) run.addEventListener('click', function () {
+        closeQuietSheet();
+        runTodayMoveAction(panel, moveId);
+      });
+      var recipe = body.querySelector('[data-move-recipe]');
+      if (recipe) recipe.addEventListener('click', function () {
+        closeQuietSheet();
+        openRecipeFor(moveRecipeTarget(move), { label: 'Today', tab: 'today' });
+      });
+    }, null, 'today-move');
   }
 
   // The cookFocus payload a meals row opens, or null when there is no
@@ -3249,7 +3317,7 @@
       // Nothing planned is a sentence, not an empty card. The day's own
       // empty moment still applies over it (renderTodayEmpty) — that one
       // is the offer to do something about it.
-      (rows.length ? rows.map(todayMealRowHtml).join('')
+      (rows.length ? rows.map(function (row, i) { return todayMealRowHtml(row, i); }).join('')
                    : '<div class="day-meal is-none"><span class="day-meal-dish">Nothing planned today</span></div>') +
     '</div>';
   }
@@ -3280,32 +3348,47 @@
   // The day, card by card: the meals, then Cook, then Prep, then Shop —
   // and on a day the household does not shop, Shop is the celadon line
   // rather than the card. A group with nothing in it is not drawn.
+  // "Shop today · Costco, T&T ›" — the Shop card on the household's
+  // shopping day, as one line (Emily, 2026-10-30): the stores the list
+  // will take them to, and a tap opens Shop. The stores are the server's
+  // stops (moves.py `stops`); a shop with none names itself.
+  function todayShopTodayHtml(shops) {
+    var names = [];
+    shops.forEach(function (m) {
+      (m.stops || []).forEach(function (stop) {
+        var name = stop.store || 'Any store';
+        if (names.indexOf(name) === -1) names.push(name);
+      });
+    });
+    var line = names.length ? names.join(', ') : (shops[0] && shops[0].title) || 'The list';
+    return '<button type="button" class="shell-card day-shoptoday" data-shop-open="1" ' +
+        'aria-label="' + escapeHtml('Shop today: ' + line) + '">' +
+      '<span class="day-shoptoday-text">' +
+        '<span class="day-meal-slot">Shop today</span>' +
+        '<span class="day-meal-dish">' + escapeHtml(line) + '</span>' +
+      '</span>' +
+      '<span class="day-meal-chev" aria-hidden="true">' + DAY_CHEV + '</span>' +
+    '</button>';
+  }
+
   function dayGroupsHtml(moves, featured, shop, dayMeals) {
     var stateOf = function (m) { return m.done ? 'done' : (featured && m.id === featured.id ? 'now' : 'later'); };
     var shops = moves.filter(function (m) { return m.kind === 'shop'; });
-    var cooks = dayStripOrder(moves.filter(function (m) { return COOK_KINDS[m.kind]; }));
-    var preps = dayStripOrder(moves.filter(function (m) { return m.kind !== 'shop' && !COOK_KINDS[m.kind]; }));
+    // Cook and Prep as one To do list, in the order they sit on the day
+    // (Emily, 2026-10-30). No count: the ticks are the progress, and
+    // nothing on Today is a score (Emily, 2026-09-24).
+    var todos = dayStripOrder(moves.filter(function (m) { return m.kind !== 'shop'; }));
     var html = todayMealsCardHtml(dayMeals || []);
-    if (cooks.length) {
-      // No count on Cook: the ticks are the progress (same call as the
-      // band). Nothing on Today is a score (Emily, 2026-09-24).
-      html += dayGroupHtml('cook', '',
-        cooks.map(function (m) { return dayStripNodeHtml(m, stateOf(m)); }).join(''));
-    }
-    if (preps.length) {
-      // No count here either, and for the same reason — a checklist of
-      // today's prep is not "1 of 3 done".
-      html += dayGroupHtml('prep', '',
-        preps.map(function (m) { return dayStripNodeHtml(m, stateOf(m)); }).join(''));
+    if (todos.length) {
+      html += dayGroupHtml('todo', '',
+        todos.map(function (m) { return dayStripNodeHtml(m, stateOf(m)); }).join(''));
     }
     // A day with no moves at all is the empty moment's, not a card's: the
     // shop line would read "You shop on Saturday" over a screen already
     // saying there is nothing on today.
     if (!moves.length) return html;
     if (shops.length && (!shop || shop.is_shop_day)) {
-      var stops = shops.reduce(function (n, m) { return n + todayShopStops(m); }, 0);
-      html += dayGroupHtml('shop', stops + (stops === 1 ? ' stop' : ' stops'),
-        shops.map(function (m) { return todayShopRowsHtml(m, stateOf(m)); }).join(''));
+      html += todayShopTodayHtml(shops);
     } else {
       html += todayShopLineHtml(shop);
     }
@@ -3548,10 +3631,16 @@
         runTodayMoveAction(panel, btn.getAttribute('data-move-action'));
       });
     });
-    panel.querySelectorAll('[data-move-who]').forEach(function (btn) {
+    // A To do row opens its sheet (openTodayMoveSheet): who is on it and
+    // the row's action live there since 2026-10-30.
+    panel.querySelectorAll('[data-move-sheet]').forEach(function (btn) {
       btn.addEventListener('click', function () {
-        openTodayMoveWho(panel, btn.getAttribute('data-move-who'));
+        openTodayMoveSheet(panel, btn.getAttribute('data-move-sheet'));
       });
+    });
+    // "Shop today · Costco, T&T ›" opens Shop.
+    panel.querySelectorAll('[data-shop-open]').forEach(function (btn) {
+      btn.addEventListener('click', function () { activateTab('grocery', true); });
     });
     // The dish name itself, wherever Today prints one — a done node,
     // tomorrow's first move. Straight to the recipe,
@@ -3564,14 +3653,12 @@
         if (move) openRecipeFor(moveRecipeTarget(move), { label: 'Today', tab: 'today' });
       });
     });
-    // A meals row opens that meal (todayMealTarget) — the same door every
-    // dish name on Today uses, so the back link reads "‹ Today".
-    panel.querySelectorAll('[data-meal-open]').forEach(function (btn) {
+    // A meals row opens its sheet (openTodayMealSheet): who it is for,
+    // and the recipe — the same door every dish name on Today uses, so
+    // the back link reads "‹ Today".
+    panel.querySelectorAll('[data-meal-sheet]').forEach(function (btn) {
       btn.addEventListener('click', function () {
-        var id = btn.getAttribute('data-meal-open');
-        var row = (data.day_meals || []).filter(function (r) { return String(r.entry_id) === id; })[0];
-        var target = todayMealTarget(row);
-        if (target) openRecipeFor(target, { label: 'Today', tab: 'today' });
+        openTodayMealSheet((data.day_meals || [])[Number(btn.getAttribute('data-meal-sheet'))]);
       });
     });
     // "No shopping day set. Pick one" — straight to where that question
@@ -5407,6 +5494,10 @@
     // tick landed on — the add sheet's first guess at "where do you get
     // it?" (groWatchStoreCards, groTickLine).
     storeInView: null,
+    // The band's store chips (Emily, 2026-10-30): null is All, a store's
+    // name filters the list to its card, GRO_FILTER_ANYWHERE to the loose
+    // pile's. Page-view state.
+    storeFilter: null,
     preShopFlags: [],
     preShopOpen: false,
     preShopExpanded: false,
@@ -6037,7 +6128,11 @@
         // the gear rides in it. What used to be the head's TO SORT badge
         // is a row at the top of the list now (groSortRowHtml): the band
         // carries no button.
-        rootBandHtml({ id: 'gro-band', title: 'Shop' }) +
+        // The band (Emily, 2026-10-30, "Shop with store filter"): "Before
+        // you go ›" beside the title, and the store chips under it — both
+        // drawn by renderGrocery into the slot groBandExtrasHtml fills.
+        rootBandHtml({ id: 'gro-band', title: 'Shop' }).replace('</header>',
+          '<div class="gro-band-extras" id="gro-band-extras"></div></header>') +
         '<button type="button" class="crumb" id="gro-back" data-gro="step-back" hidden></button>' +
         '<div class="gro-head" id="gro-head" hidden>' +
           '<div class="gro-head-row">' +
@@ -6512,6 +6607,15 @@
     if (onRoot) {
       setRootBand(panel, 'gro-band', { eyebrow: '', sub: '' });
       back.hidden = true;
+      var extras = panel.querySelector('#gro-band-extras');
+      if (extras) {
+        var extrasHtml = groBandExtrasHtml(data);
+        if (extras.dataset.html !== extrasHtml) {
+          extras.innerHTML = extrasHtml;
+          extras.dataset.html = extrasHtml;
+        }
+        extras.hidden = !extrasHtml;
+      }
     } else {
       var headFor = groHeadFor(data, step);
       back.hidden = !headFor.back;
@@ -6545,6 +6649,7 @@
     // — ticking a row is the action — except "Go to Plan" over an empty
     // list.
     dock.innerHTML = groDockHtml(data, step);
+    groSyncRowSheet(data);
 
     if (scrollEl) scrollEl.scrollTop = keepScroll;
   }
@@ -6953,28 +7058,84 @@
     });
   }
 
-  // What LIST's one primary says and does. Three states, and the middle
-  // one is the point: a pass worth running, a pass already run, and
-  // nothing to sort at all.
-  //
-  // A household with one shop or none (groCanSort false) never has
-  // anything to sort, and used to never see the pass either — but the pass
-  // is also the inventory check (regulars, spices and oils, already have
-  // it), so it is offered to them whenever it has something to ask, and
-  // ends on Done rather than the sort (Emily, 2026-10-05; Loop Board
-  // "Shop: one-store households get Before you shop too"). Multi-shop
-  // households are unchanged: the pass rides in front of the sort.
-  function beforeShopDockHtml(data) {
+  // "Before you go ›", in the Shop band beside the title (Emily,
+  // 2026-10-30). It was the list's apricot "Before you shop" in the dock;
+  // now it is a quiet link, there whenever the pass has something to ask —
+  // the regulars, the spices and oils, already have it — whether or not it
+  // was run this week (a second look before leaving is still a look), and
+  // never over the first-run shops question. The pass is still the
+  // inventory check for a one-shop household too (Emily, 2026-10-05).
+  var BEFORE_YOU_GO_LABEL = 'Before you go';
+
+  function groBeforeYouGoHtml(data) {
     if (groStoresPromptShouldShow()) return '';
-    var unsorted = groUnsorted(data).length;
-    var passDue = beforeShopSteps(data).length && !beforeShopIsDone(data);
-    if (passDue && (unsorted || !groCanSort(data))) {
-      return '<button type="button" class="dock-primary" data-gro="goto-beforeshop">' +
-        escapeHtml(BEFORE_SHOP_LABEL) + '</button>';
+    if (!beforeShopSteps(data).length) return '';
+    return '<button type="button" class="gro-band-link" data-gro="goto-beforeshop">' +
+      escapeHtml(BEFORE_YOU_GO_LABEL) + ' <span aria-hidden="true">›</span></button>';
+  }
+
+  // ---------- The band's store chips: one list, filtered ----------
+  // Emily, 2026-10-30 ("Shop with store filter"): "All · N" first (the
+  // default), then one chip per card with something still to buy —
+  // "Costco · 2", "Anywhere · 92". A chip shows that card alone; All shows
+  // every card. N is what is left to buy, never a score of what's done.
+  // Only drawn when there are two cards to choose between.
+  var GRO_FILTER_ANYWHERE = '*anywhere*';
+
+  // The cards LIST draws, by key, in stop order — the store's name, or
+  // GRO_ANYWHERE_KEY for the loose pile once there are store cards for it
+  // to sit beside (a one-shop household's pile is inside that shop's card).
+  function groCardKeys(data) {
+    var stops = groStoresOnList(data);
+    var loose = groLooseLineItems(data);
+    var folded = stops.some(function (name) { return groSoleStore(data) === name || groIsStandIn(data, name); });
+    var keys = stops.filter(function (name) { return groStoreLineItems(data, name).length > 0; });
+    if (loose.length && !folded) keys.push(GRO_ANYWHERE_KEY);
+    return keys;
+  }
+
+  function groFilterKey(key) { return key === GRO_ANYWHERE_KEY ? GRO_FILTER_ANYWHERE : key; }
+  function groKeyOfFilter(filter) { return filter === GRO_FILTER_ANYWHERE ? GRO_ANYWHERE_KEY : filter; }
+
+  // The card key the list is filtered to, or null for All. A filter whose
+  // card has gone lets go.
+  function groActiveFilter(data) {
+    var f = groceryState.storeFilter;
+    if (f === null || f === undefined) return null;
+    var key = groKeyOfFilter(f);
+    if (groCardKeys(data).indexOf(key) === -1) { groceryState.storeFilter = null; return null; }
+    return key;
+  }
+
+  function groLeftOn(data, key) {
+    return groCardLines(data, key).filter(function (it) { return !groIsBought(it); }).length;
+  }
+
+  function groStoreChipsHtml(data) {
+    var keys = groCardKeys(data);
+    if (keys.length < 2) return '';
+    var active = groActiveFilter(data);
+    var chips = [];
+    var all = keys.reduce(function (n, key) { return n + groLeftOn(data, key); }, 0);
+    function chip(filter, label, n, on) {
+      return '<button type="button" class="gro-chip' + (on ? ' is-on' : '') + '" data-gro="store-filter" ' +
+        'data-filter="' + escapeHtml(filter) + '" aria-pressed="' + (on ? 'true' : 'false') + '">' +
+        escapeHtml(label + ' · ' + n) + '</button>';
     }
-    if (!unsorted) return '';
-    return '<button type="button" class="dock-primary" data-gro="goto-sort">' +
-      'Sort the list (' + unsorted + ')</button>';
+    chips.push(chip('', 'All', all, active === null));
+    keys.forEach(function (key) {
+      var n = groLeftOn(data, key);
+      if (!n && active !== key) return;
+      chips.push(chip(groFilterKey(key), key === GRO_ANYWHERE_KEY ? GRO_ANYWHERE_CARD : key, n, active === key));
+    });
+    return '<div class="gro-chips" role="group" aria-label="Show one store">' + chips.join('') + '</div>';
+  }
+
+  function groBandExtrasHtml(data) {
+    var link = groBeforeYouGoHtml(data);
+    var chips = groStoreChipsHtml(data);
+    if (!link && !chips) return '';
+    return (link ? '<div class="gro-band-links">' + link + '</div>' : '') + chips;
   }
 
   // The last step's primary: the sort it was in front of, or — with
@@ -7122,7 +7283,9 @@
     }
 
     html += groCarryRowHtml(data);
-    html += groSortRowHtml(data);
+    // The "N things to sort / They don't have a store yet" row is gone
+    // (Emily, 2026-10-30): "Pick stores" in the Anywhere card's head is the
+    // way into Sort them all now (groAnywhereCardHtml).
     html += groDuplicatesHtml(data);
 
     // One card per store in stop order, then the loose pile last — for
@@ -7134,9 +7297,12 @@
     // bought is rolled up to one line BELOW the cards still to do
     // (groRolledCardHtml), in the same order — except for the beat after
     // its last tick, when it stays where it was (groceryState.doneBeat).
-    var folded = stops.some(function (name) { return groSoleStore(data) === name || groIsStandIn(data, name); });
-    var keys = stops.filter(function (name) { return groStoreLineItems(data, name).length > 0; });
-    if (loose.length && !folded) keys.push(GRO_ANYWHERE_KEY);
+    var keys = groCardKeys(data);
+    // A store chip in the band shows that store's card alone (Emily,
+    // 2026-10-30). A filter whose card has gone (its last line removed,
+    // sorted elsewhere) lets go rather than showing nothing.
+    var filter = groActiveFilter(data);
+    if (filter !== null) keys = keys.filter(function (key) { return key === filter; });
     var rolled = keys.filter(function (key) { return groCardRolled(data, key); });
     keys.forEach(function (key) {
       if (rolled.indexOf(key) !== -1) return;
@@ -7346,13 +7512,14 @@
   // reads as two trips without a row appearing twice. The grouping key is
   // the row's shop_timing, stamped by the server; nothing here decides
   // what keeps.
-  function groCardHtml(data, name, title, doneLabel, items, extraClass) {
+  function groCardHtml(data, name, title, doneLabel, items, extraClass, headExtra) {
     var bought = items.filter(groIsBought).length;
     var done = items.length > 0 && bought === items.length;
     return '<div class="gro-store' + (extraClass ? ' ' + extraClass : '') + (done ? ' is-done' : '') + '"' +
         (name ? ' data-store="' + escapeHtml(name) + '"' : '') + '>' +
       '<div class="gro-card-head">' +
         '<span class="gro-store-name">' + escapeHtml(done ? doneLabel : title) + '</span>' +
+        (done ? '' : (headExtra || '')) +
         '<span class="gro-store-count">' + bought + ' of ' + items.length + '</span>' +
       '</div>' +
       '<div class="gro-card-rows">' + groCardRowsHtml(items, data) + '</div>' +
@@ -7418,8 +7585,15 @@
   // list, and without this card they were on no screen at all. The
   // "N things to sort" row above the cards is the way to give the
   // unasked ones a store; the row's ⋯ does it one at a time.
+  // "Pick stores" in its head (Emily, 2026-10-30): the quiet way into
+  // Sort them all, where the "N things to sort" row above the cards used
+  // to be — only while something has no store yet and sorting is a
+  // question here at all (groUnsorted), never over the shops question.
   function groAnywhereCardHtml(data, items) {
-    return groCardHtml(data, '', GRO_ANYWHERE_CARD, GRO_ANYWHERE_DONE, groSortLines(items), 'gro-anywhere');
+    var pick = groUnsorted(data).length && !groStoresPromptShouldShow()
+      ? '<button type="button" class="gro-card-link" data-gro="goto-sort">Pick stores</button>'
+      : '';
+    return groCardHtml(data, '', GRO_ANYWHERE_CARD, GRO_ANYWHERE_DONE, groSortLines(items), 'gro-anywhere', pick);
   }
 
   // ---------- A done card, rolled up ----------
@@ -7486,12 +7660,12 @@
     '</div>';
   }
 
-  // One row of a card: the box, the name, the amount, and the quiet ⋯
-  // that opens the row's own actions (groRowMenuHtml). The whole row is
-  // the tick (data-gro="line-tick" on the row and on the box, the way
-  // the trip's rows worked), so a thumb lands anywhere; the ⋯ is its own
-  // 44px target at the end. A staple Pomona put on the list keeps its
-  // line underneath (groStapleLineHtml).
+  // One row of a card: the box, then the name and the amount (Emily,
+  // 2026-10-30 — no ⋯ on every line). The box is the tick (data-gro=
+  // "line-tick", on the row too, so the row's edges still tick); the name
+  // and amount are one button that opens the row's sheet (groRowMenuHtml
+  // in the quiet sheet — groSyncRowSheet). A staple Pomona put on the
+  // list keeps its line underneath (groStapleLineHtml).
   function groLineHtml(it, data) {
     var id = String(it.id);
     var bought = groIsBought(it);
@@ -7510,22 +7684,26 @@
         'data-bought="' + (bought ? '1' : '0') + '" ' +
         'aria-label="' + escapeHtml((bought ? 'Put ' + it.item + ' back on the list' : 'Bought ' + it.item)) + '">' +
         (bought ? GRO_ICONS.tick : '') + '</button>' +
-      (it.week_note
-        ? '<div class="gro-line-text"><p class="gro-name">' + escapeHtml(it.item) + '</p>' +
-            '<p class="gro-line-weeks">' + escapeHtml(it.week_note) + '</p></div>'
-        : '<p class="gro-name">' + escapeHtml(it.item) + '</p>') +
-      (it.quantity ? '<span class="gro-line-qty">' + escapeHtml(String(it.quantity).replace(/(\d|[½⅓⅔¼¾⅛⅜⅝⅞])(\s*)l\b/g, '$1$2L')) + '</span>' : '') +
-      '<button type="button" class="gro-rowmore" data-gro="row-menu" data-id="' + id + '" ' +
-        'aria-expanded="' + open + '" aria-label="More for ' + escapeHtml(it.item) + '">' +
-        GRO_ICONS.dots + '</button>' +
+      '<button type="button" class="gro-line-open" data-gro="row-menu" data-id="' + id + '" ' +
+        'aria-haspopup="dialog" aria-expanded="' + open + '" aria-label="' + escapeHtml(it.item + (it.quantity ? ', ' + it.quantity : '') + ' — change it') + '">' +
+        (it.week_note
+          ? '<span class="gro-line-text"><span class="gro-name">' + escapeHtml(it.item) + '</span>' +
+              '<span class="gro-line-weeks">' + escapeHtml(it.week_note) + '</span></span>'
+          : '<span class="gro-name">' + escapeHtml(it.item) + '</span>') +
+        (it.quantity ? '<span class="gro-line-qty">' + escapeHtml(groQtyText(it.quantity)) + '</span>' : '') +
+      '</button>' +
     '</div>' +
     // "Maybe already home", on the row it is about (groFlagHtml). First
     // of the row's three possible notes because it is the only one that
     // is a question about whether to buy the thing at all.
     groFlagHtml(it) +
     (staple && !bought ? groStapleLineHtml(it) : '') +
-    (groceryState.freezing && groceryState.freezing.id === id ? groFreezingHtml(groceryState.freezing) : '') +
-    (open ? groRowMenuHtml(it, data) : '');
+    (groceryState.freezing && groceryState.freezing.id === id ? groFreezingHtml(groceryState.freezing) : '');
+  }
+
+  // "2 l" reads "2 L" — a litre's own capital.
+  function groQtyText(q) {
+    return String(q).replace(/(\d|[½⅓⅔¼¾⅛⅜⅝⅞])(\s*)l\b/g, '$1$2L');
   }
 
   // ---------- "Freezing it?" (Loop Board 3e21f4c0, mockup F-C) ----------
@@ -7764,6 +7942,12 @@
   //   remove the line    -> POST /api/grocery-list/{id}/remove   (with an undo)
   // Quiet throughout — no apricot anywhere in it (Rule 5): a row action
   // is never the thing the screen is for.
+  // The row's sheet (Emily, 2026-10-30, "Shop with store filter"): what the
+  // ⋯ on every line used to open under the row, now one tap on the name —
+  // the same answers, the same data-gro actions, in the quiet sheet. WHERE
+  // first (every store, and "Any store"), then the amount, then the
+  // answers: already have it, getting it elsewhere, something else
+  // instead, make it a regular, remove.
   function groRowMenuHtml(it, data) {
     var id = String(it.id);
     // A row standing for two weeks gets a box per week: each week's
@@ -7787,44 +7971,119 @@
             'aria-label="Quantity for ' + escapeHtml(it.item) + '" />' +
           '<button type="button" class="gro-rowmenu-save" data-gro="row-qty" data-id="' + id + '">Save</button>' +
         '</div>';
+    var here = it.store || '';
+    function storePill(n, label, aria) {
+      var on = here === n;
+      return '<button type="button" class="gro-pill' + (on ? ' gro-pill-on' : '') + '" data-gro="row-store" data-id="' + id + '" ' +
+        'data-store="' + escapeHtml(n) + '" aria-pressed="' + on + '" ' +
+        'aria-label="' + escapeHtml(aria) + '">' + escapeHtml(label) + '</button>';
+    }
     return '<div class="gro-rowmenu" data-menu-for="' + id + '">' +
-      qtyHtml +
-      '<div class="gro-pills open">' +
-        groPillStores(data).map(function (n) {
-          return '<button type="button" class="gro-pill" data-gro="row-store" data-id="' + id + '" ' +
-            'data-store="' + escapeHtml(n) + '" ' +
-            'aria-label="Buy ' + escapeHtml(it.item) + ' at ' + escapeHtml(n) + '">' + escapeHtml(n) + '</button>';
-        }).join('') +
-        '<button type="button" class="gro-pill" data-gro="row-store" data-id="' + id + '" data-store="" ' +
-          'aria-label="No particular store for ' + escapeHtml(it.item) + '">Any</button>' +
-        groElsewherePillHtml('row-exclude', it) +
+      quietSheetHeadHtml(it.quantity ? groQtyText(it.quantity) : 'On the list', it.item) +
+      '<div class="quiet-section">' +
+        '<span class="quiet-section-head">Where</span>' +
+        '<div class="gro-pills open">' +
+          groPillStores(data).map(function (n) {
+            return storePill(n, n, 'Buy ' + it.item + ' at ' + n);
+          }).join('') +
+          storePill('', 'Any store', 'No particular store for ' + it.item) +
+        '</div>' +
       '</div>' +
-      // The two answers sorting offers, here too — for a one-shop
-      // household this row is the only place they can be given.
+      '<div class="quiet-section">' +
+        '<span class="quiet-section-head">How much</span>' +
+        qtyHtml +
+      '</div>' +
+      // The answers sorting offers, here too — for a one-shop household
+      // this sheet is the only place they can be given.
       '<div class="gro-pills open gro-rowmenu-answers">' +
-        groHaveItPillHtml(it) + groSubstPillHtml(it) +
+        groHaveItPillHtml(it) + groElsewherePillHtml('row-exclude', it) + groSubstPillHtml(it) +
       '</div>' +
       (groceryState.substOpenId === id ? groSubstFieldHtml(it) : '') +
       '<div class="gro-rowmenu-foot">' +
-        // A tap on a thing you buy is how a staple gets made without a
+        // A tap on a thing you buy is how a regular gets made without a
         // form (the other way is telling the assistant). Hidden once it
-        // is one — the Staples card below the list is where it lives then.
-        // A line a staple already owns (a substitute keeps its staple_id)
-        // counts as one even under another name.
-        // Not on a two-weeks row: a staple is one line with one amount,
-        // and this row is two weeks' lines and their total.
+        // is one — Settings → Regulars is where it lives then. A line a
+        // regular already owns (a substitute keeps its staple_id) counts as
+        // one even under another name. Not on a two-weeks row: a regular is
+        // one line with one amount, and this row is two weeks' lines.
         (it.staple_id || groIsStapleName(it.item)
-          ? '<span class="gro-rowmenu-note">One of your staples</span>'
+          ? '<span class="gro-rowmenu-note">One of your regulars</span>'
           : (it.week_parts && it.week_parts.length) ? ''
           : '<button type="button" class="gro-rowmenu-staple" data-gro="row-staple" data-id="' + id + '" ' +
               'data-name="' + escapeHtml(it.item) + '" data-qty="' + escapeHtml(it.quantity || '') + '" ' +
-              'data-cat="' + escapeHtml(it.category || 'other') + '">Make it a staple</button>') +
+              'data-cat="' + escapeHtml(it.category || 'other') + '">Make it a regular</button>') +
         '<button type="button" class="gro-rowmenu-remove" data-gro="row-remove" data-id="' + id + '" ' +
           'data-name="' + escapeHtml(it.item) + '" data-qty="' + escapeHtml(it.quantity || '') + '" ' +
           'data-cat="' + escapeHtml(it.category || 'other') + '" data-store="' + escapeHtml(it.store || '') + '">' +
           'Remove</button>' +
       '</div>' +
     '</div>';
+  }
+
+  // The row's sheet follows groceryState.openRowId: open while a row is
+  // open, redrawn when what it says changes (a store picked elsewhere, the
+  // "What instead?" box opened), closed the moment a handler sets it back
+  // to null — every answer in it already does, so none of them needs to
+  // know the sheet exists. A scrim tap closes it the other way round.
+  // Typing in its boxes survives a redraw (groCaptureSubstInput).
+  function groRowSheetRoot() {
+    if (typeof document === 'undefined' || !document.getElementById) return null;
+    var sheet = document.getElementById('quiet-sheet');
+    if (!sheet || sheet.hidden || sheet.getAttribute('data-for') !== 'gro-row') return null;
+    return document.getElementById('quiet-sheet-body');
+  }
+
+  // A box the handlers read — in the row's sheet when it is open, else on
+  // the panel (Sort them all's own "What instead?").
+  function groFindInput(selector) {
+    var sheet = groRowSheetRoot();
+    var hit = sheet && sheet.querySelector(selector);
+    if (hit) return hit;
+    var panel = groPanel();
+    return panel ? panel.querySelector(selector) : null;
+  }
+
+  function groSyncRowSheet(data) {
+    if (typeof document === 'undefined' || typeof openQuietSheet !== 'function') return;
+    var id = groceryState.openRowId;
+    var line = id && groceryState.step === 'list' ? groFindLine(id) : null;
+    var open = groRowSheetRoot();
+    if (!line) {
+      groceryState.openRowId = null;
+      if (open) closeQuietSheet();
+      return;
+    }
+    var html = groRowMenuHtml(line, data);
+    if (open && open.getAttribute('data-html') === html) return;
+    var typed = open ? groCaptureSubstInput(open) : null;
+    var body = openQuietSheet('<div class="gro-rowsheet">' + html + '</div>', function (b) {
+      var wrap = b.querySelector('.gro-rowsheet');
+      wrap.addEventListener('click', onGroceryClick);
+      wrap.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter') return;
+        if (e.target.classList && e.target.classList.contains('gro-subst-input')) {
+          e.preventDefault();
+          var go = e.target.closest('.gro-subst');
+          go = go && go.querySelector('[data-gro="subst-save"][data-have="0"]');
+          if (go) go.click();
+        } else if (e.target.classList && e.target.classList.contains('gro-rowmenu-input')) {
+          e.preventDefault();
+          var save = wrap.querySelector('[data-gro="row-qty"]');
+          if (save) save.click();
+        }
+      });
+    }, function () {
+      // Closed by the scrim, the x or Escape: the list lets go of the row
+      // too. (When this sync closed it, the row was already let go.)
+      var was = groceryState.openRowId;
+      groceryState.openRowId = null;
+      groceryState.substOpenId = null;
+      if (was) renderGrocery();
+    }, 'gro-row');
+    if (body) {
+      body.setAttribute('data-html', html);
+      groRestoreSubstInput(body, typed);
+    }
   }
 
   // Same idea as the server's merge key, at the strength this needs: case,
@@ -8496,14 +8755,12 @@
           !groceryState.spices.items.length) {
         return '<button type="button" class="dock-primary" data-gro="goto-plan">Go to Plan</button>' + groAddButtonHtml();
       }
-      // The pass in front of sorting, or — once it is done, or when there
-      // is nothing to ask — the sort itself (beforeShopDockHtml, card 13).
-      // It is the list's ONE apricot and can never coexist with "Go to
-      // Plan" above (that branch needs an empty list; this one needs
-      // something unsorted, or a one-shop pass) or with the shops
-      // question's own primary
-      // (its own guard). "Add something" stays the outline beside it.
-      return beforeShopDockHtml(data) + groAddButtonHtml();
+      // "+ Add something" and the chat button, nothing else (Emily,
+      // 2026-10-30): "Before you go ›" is in the band now and "Pick
+      // stores" in the Anywhere card's head — the pass and the sort are
+      // each one tap away and neither is the screen's button. Ticking a
+      // row is the action.
+      return groAddButtonHtml();
     }
     if (step === 'beforeshop') return beforeShopStepDockHtml(data);
     // SORT ALL writes every answer as it is tapped, so there is nothing
@@ -9997,7 +10254,14 @@
         groScanOpenPicker();
         return;
 
-      // ----- the LIST row's quiet ⋯ (see groRowMenuHtml) -----
+      // ----- the band's store chips (groStoreChipsHtml) -----
+      case 'store-filter':
+        groceryState.storeFilter = el.dataset.filter ? el.dataset.filter : null;
+        renderGrocery();
+        if (scrollEl) scrollEl.scrollTop = 0;
+        return;
+
+      // ----- a LIST row's name: its sheet (groRowMenuHtml, groSyncRowSheet) -----
       case 'row-menu':
         groceryState.openRowId = groceryState.openRowId === id ? null : id;
         groceryState.substOpenId = null;
@@ -10008,12 +10272,11 @@
         return;
 
       case 'row-qty': {
-        var rowQtyPanel = groPanel();
         var rowQtyLine = groFindLine(id);
         if (rowQtyLine && rowQtyLine.week_parts && rowQtyLine.week_parts.length) {
           // Two weeks' row: only the boxes somebody changed are written.
           var weekQtys = rowQtyLine.week_parts.map(function (part) {
-            var box = rowQtyPanel && rowQtyPanel.querySelector('#gro-rowqty-' + part.id);
+            var box = groFindInput('#gro-rowqty-' + part.id);
             return box && box.value.trim() !== (box.getAttribute('data-was') || '')
               ? { id: part.id, quantity: box.value.trim() } : null;
           }).filter(Boolean);
@@ -10024,20 +10287,22 @@
               return groPost('/api/grocery-list/' + w.id + '/update', { quantity: w.quantity });
             }));
           }, "Couldn't save that — try again.").then(function (ok) {
-            if (!ok) return;
+            // The sheet is not redrawn on a failure, so the button comes
+            // back by hand (2026-10-30).
+            if (!ok) { el.disabled = false; return; }
             groceryState.openRowId = null;
             renderGrocery();
           });
           return;
         }
-        var rowQtyInput = rowQtyPanel && rowQtyPanel.querySelector('#gro-rowqty-' + id);
+        var rowQtyInput = groFindInput('#gro-rowqty-' + id);
         if (!rowQtyInput) return;
         var rowQty = rowQtyInput.value.trim();
         el.disabled = true;
         groDo(function () {
           return groPost('/api/grocery-list/' + id + '/update', { quantity: rowQty });
         }, "Couldn't save that — try again.").then(function (ok) {
-          if (!ok) return;
+          if (!ok) { el.disabled = false; return; }
           groceryState.openRowId = null;
           renderGrocery();
         });
@@ -10067,7 +10332,7 @@
             return groPost('/api/grocery-list/' + one + '/store', { store: rowStore });
           });
         }, "Couldn't move that — try again.").then(function (ok) {
-          if (!ok) return;
+          if (!ok) { el.disabled = false; return; }
           if (rowItem && rowStore) groRememberLocally(rowItem.item, rowStore);
           groceryState.openRowId = null;
           renderGrocery();
@@ -10436,14 +10701,13 @@
         groceryState.substOpenId = groceryState.substOpenId === id ? null : id;
         renderGrocery();
         if (groceryState.substOpenId === id) {
-          var substInput = groPanel() && groPanel().querySelector('#gro-subst-' + id);
+          var substInput = groFindInput('#gro-subst-' + id);
           if (substInput) substInput.focus();
         }
         return;
 
       case 'subst-save': {
-        var substPanel = groPanel();
-        var substField = substPanel && substPanel.querySelector('#gro-subst-' + id);
+        var substField = groFindInput('#gro-subst-' + id);
         var alternative = substField ? substField.value.trim() : '';
         if (!alternative) { if (substField) substField.focus(); return; }
         var substHave = el.dataset.have === '1';
@@ -16583,6 +16847,9 @@
     // days), remembered for this page session and reset for a new draft
     // (draftView; draftViewPlanId is the plan it was last set for).
     draftView: 'menu', draftViewPlanId: null,
+    // The Plan root's day bar (planWeekHtml, 2026-10-30): null is Week,
+    // a number is that day. planSnacksOpen: the week's snacks unfolded.
+    planDay: null, planSnacksOpen: false, planDayPlanId: null,
     // A pin by PLAN, not by date: "See next week's draft" (planNextWeek).
     // Wins over showWeekStart, and lets go once that plan is approved.
     showPlanId: null
@@ -17240,30 +17507,25 @@
     };
   }
 
-  // ---------- The band's own controls on the Plan root ----------
-  // Emily, 2026-09-21 (boards A2, C2, C3). Three things the generic band
-  // (rootBandHtml) does not know about, filled into it after it is built:
-  //
-  //  * the Re-plan pill, top right, on a draft AND on an approved week —
-  //    "I want to re-plan my week, but the option to do so is really
-  //    hidden" (it lived under More ···). One tap opens the intake with
-  //    last time's answers in place (startPlanningWeek → /plan-week, which
-  //    prefills from the week's current intake revision).
-  //  * the draft's opener — two short lines saying what it planned around
-  //    and one thing worth knowing (get_week_menu's draft_opener, built
-  //    server-side from the intake and the rows so it cannot describe a
-  //    week that wasn't made).
-  //  * the two-way toggle, What we're eating | Which days — the by-type
-  //    menu is the front door (Emily's decision D, 2026-09-15, and again
-  //    2026-09-21); the day cards sit behind it.
+  // ---------- The band's own control on the Plan root: More ··· ----------
+  // Since the declutter (Emily, 2026-10-30) the band carries one thing of
+  // its own: More ···, top right beside the gear, on a draft and on an
+  // approved week alike. The Re-plan pill, the draft's "Plan the week"
+  // pill and the Meals | Schedule toggle came off it — re-planning is
+  // "Change my answers" / "Try again" in More, the week after is "Plan the
+  // week after", and the one screen shows the week or a day from its own
+  // day bar (planWeekHtml).
   //
   // weekBandExtras says WHAT (a plain object, so renderMealsStep can fold
   // it into the band's rebuild key); fillWeekBandExtras draws and wires it.
-  // The toggle's side is remembered for the session only (weekState.
-  // draftView, in memory), and a NEW draft opens on What we're eating —
-  // weekState.draftViewPlanId is how a new plan id resets it.
-  var DRAFT_VIEWS = { menu: 'Meals', days: 'Schedule' };
+  function weekBandExtras(data) {
+    if (weekPlanState(data) === 'none') return null;
+    return { more: true };
+  }
 
+  // Which view the old draft review (reviewStepHtml) opens on. The root no
+  // longer uses it — the Plan root is planWeekHtml — but the deeper
+  // review step still draws through reviewStepHtml.
   function draftView(data) {
     var id = data && data.weekly_plan_id;
     if (weekState.draftViewPlanId !== id) {
@@ -17273,71 +17535,9 @@
     return weekState.draftView === 'days' ? 'days' : 'menu';
   }
 
-  // `next` (a draft only — Emily, 2026-09-27): the label of the band's
-  // "Plan next week", the same words as the approved dock's #wk-plan-next
-  // (planNextLabel over nextPeriodFor), so a draft on screen is no longer
-  // a dead end for planning the week after it.
-  function weekBandExtras(data) {
-    var state = weekPlanState(data);
-    if (state === 'none') return null;
-    var draft = state === 'draft';
-    return {
-      pill: true,
-      lead: draft ? (data.draft_opener || []).filter(Boolean) : [],
-      view: draft ? draftView(data) : null,
-      next: draft ? bandNextLabel(planNextLabel(nextPeriodFor(data, data.days))) : null
-    };
-  }
-
-  // The draft band's button reads "Plan the week" (Emily, 2026-09-27),
-  // not "Plan next week" — the dates under it already say which week the
-  // draft is. Only the plain seven-day wording changes; "Re-plan next
-  // week" and a shorter horizon's "Plan the 3 after" keep theirs, since
-  // those say something the short label would lose. The approved dock's
-  // button is unchanged.
-  function bandNextLabel(label) {
-    return label === 'Plan next week' ? 'Plan the week' : label;
-  }
-
-  function weekReplanPillHtml() {
-    return '<button type="button" class="wk-replan" id="wk-replan" aria-label="Re-plan this week">' +
-      WK_ICONS.swap + 'Re-plan</button>';
-  }
-
-  // A draft's band actions: Re-plan and "Plan next week" side by side on
-  // their own row under the brand row (Emily, 2026-09-27 — at 375px the
-  // brand, the Draft chip, two pills, the bell and the gear do not fit on
-  // one line). Re-plan keeps its look; "Plan next week" is a spruce-raised
-  // chip in ivory ink — never apricot, the dock's Approve is the screen's
-  // one (rule 5). An approved week keeps Re-plan in the tools, top right,
-  // and "Plan next week" in its dock.
-  function weekBandActionsHtml(nextLabel) {
-    return '<div class="wk-band-actions">' + weekReplanPillHtml() +
-      '<button type="button" class="wk-band-next" id="wk-band-plan-next"' +
-        (nextLabel === 'Plan the week' ? ' aria-label="Plan next week"' : '') + '>' + escapeHtml(nextLabel) + '</button>' +
-    '</div>';
-  }
-
-  function weekDraftSegHtml(view) {
-    return '<div class="wk-draft-seg" role="tablist" aria-label="How to read the draft">' +
-      ['menu', 'days'].map(function (key) {
-        var on = key === view;
-        return '<button type="button" class="wk-draft-seg-btn' + (on ? ' is-on' : '') + '" role="tab" ' +
-          'aria-selected="' + (on ? 'true' : 'false') + '" data-wk-view="' + key + '">' +
-          escapeHtml(DRAFT_VIEWS[key]) + '</button>';
-      }).join('') +
-    '</div>';
-  }
-
-  // The opener paragraph (extras.lead — get_week_menu's draft_opener) is
-  // no longer shown here (declutter, 2026-09-25: Emily asked the summary
-  // paragraph off the draft's band, keeping the date line, Re-plan and
-  // the What we're eating | Which days toggle). draft_opener itself is
-  // still computed server-side and still on the data — this just stops
-  // drawing it.
-  function weekBandTailHtml(extras) {
-    if (!extras || !extras.view) return '';
-    return weekDraftSegHtml(extras.view);
+  function weekBandMoreHtml() {
+    return '<button type="button" class="root-band-more" id="wk-band-more" aria-haspopup="dialog" aria-label="More">' +
+      WK_ICONS.more + '</button>';
   }
 
   function fillWeekBandExtras(panel, bandSlot, extras) {
@@ -17345,23 +17545,9 @@
     var band = bandSlot.querySelector('.root-band');
     if (!band) return;
     var tools = band.querySelector('.root-band-tools');
-    var top = band.querySelector('.root-band-top');
-    if (extras.pill && extras.next && top) top.insertAdjacentHTML('afterend', weekBandActionsHtml(extras.next));
-    else if (extras.pill && tools) tools.insertAdjacentHTML('afterbegin', weekReplanPillHtml());
-    var tail = weekBandTailHtml(extras);
-    if (tail) band.insertAdjacentHTML('beforeend', tail);
-    var pill = band.querySelector('#wk-replan');
-    if (pill) pill.addEventListener('click', function () { replanWeek(); });
-    var planNext = band.querySelector('#wk-band-plan-next');
-    if (planNext) planNext.addEventListener('click', function () { planNextWeek(); });
-    band.querySelectorAll('[data-wk-view]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var to = btn.getAttribute('data-wk-view') === 'days' ? 'days' : 'menu';
-        if (to === weekState.draftView) return;
-        weekState.draftView = to;
-        renderMealsStep(panel);
-      });
-    });
+    if (extras.more && tools) tools.insertAdjacentHTML('afterbegin', weekBandMoreHtml());
+    var more = band.querySelector('#wk-band-more');
+    if (more) more.addEventListener('click', function () { openMealsMoreSheet(); });
   }
 
   // The one road into re-planning — the band's Re-plan pill (the dock's
@@ -17576,34 +17762,21 @@
     '</div>';
   }
 
+  // The Plan root. NOTHING YET: the plan-a-week entry (rendered into
+  // #week-plan-row by renderPlanWeekEntry after this lands) and More.
+  // With one — a draft or an approved week alike — the one screen
+  // (planWeekHtml, Emily 2026-10-30): approving changes the badge and the
+  // dock, never the layout. Until then a draft's root was the review
+  // (reviewStepHtml) and an approved week's was the seven-tile strip.
   function weekStepHtml(data, days) {
-    var state = weekPlanState(data);
-    // NOTHING YET: the card has nothing to be, so the existing plan-a-week
-    // entry takes its place — same buttons, same handlers, rendered into
-    // #week-plan-row by renderPlanWeekEntry after this lands.
-    if (state === 'none') {
+    if (weekPlanState(data) === 'none') {
       return '<div id="week-plan-row"></div>' +
         // Setup and the other rare actions stay one tap away here too.
         '<div class="wk-foot wk-foot-solo">' +
           '<button type="button" class="wk-foot-more" id="wk-more" aria-haspopup="dialog">More ···</button>' +
         '</div>';
     }
-    // The link's span is the SERVER's next_period, not this plan's length
-    // — a two-day plan on screen was offering "the 2 after" (Emily, Sunday
-    // 2026-09-13) while Now asked about the whole week. See
-    // weekly_plan.next_period_after; nextPeriodFor keeps the old arithmetic
-    // only as the fallback for a payload without it.
-    var next = nextPeriodFor(data, days);
-    var selected = mealsCurrentDay() ? weekState.selectedIndex : 0;
-    return weekSuggestedNoteHtml(data) + planEndsLineHtml(data) +
-      weekStripHtml(days, selected) +
-      (days[selected] ? weekDayHtml(days[selected], selected, data) : '') +
-      weekNotesHtml(data, days[selected]) +
-      // Everything rare is one tap away and nothing rare is on the page:
-      // the rare actions sit behind the dock's round More (weekDecideHtml,
-      // since 2026-09-21 board D4 — the same one-row dock as the draft's),
-      // no longer in a quiet row of their own above the dock.
-      weekDecideHtml(data, next);
+    return planWeekHtml(data, days);
   }
 
   // The stretch "Plan next week ›" offers under a plan: the server's
@@ -17612,9 +17785,9 @@
   // arithmetic fallback
   // is the pre-2026-09-13 behaviour, kept only so a stale cached payload
   // still gets a working link.
-  // The "Plan next week" button's words and its tap — one pair for the
-  // approved dock's #wk-plan-next and the draft band's #wk-band-plan-next,
-  // so both say and open the same stretch (the server's next_period).
+  // The "Plan next week" words and its tap — the approved More sheet's
+  // "Plan the week after" (planAfterTitle, since 2026-10-30) reads them,
+  // so it says and opens the same stretch (the server's next_period).
   // When next week already has a plan the label reads "Re-plan next week"
   // (planEntryLabel), and the tap opens its intake like any Re-plan.
   // A stretch whose plan is still a DRAFT (next.draft_plan_id, from
@@ -17622,7 +17795,6 @@
   // the button opens it, with its Approve, rather than re-asking the
   // questions and drafting over it (defect hunt 2026-10-07 — after leaving
   // the screen, "Re-plan next week" was the only way back to a draft).
-  // Re-plan is still the pill inside the draft.
   function planNextLabel(next) {
     next = next || {};
     // A plan that stops before its week does: the button names the day it
@@ -17653,9 +17825,8 @@
 
   // "This plan ends Friday." — one quiet line on the Plan root when the
   // plan stops before its week does, so the empty days after it are
-  // explained. Its next step is the button already on screen (the
-  // approved dock's #wk-plan-next, the draft band's #wk-band-plan-next),
-  // which planNextLabel names "Plan from Saturday" in this state.
+  // explained. Its next step is More's "Plan the week after", which
+  // planNextLabel names "Plan from Saturday" in this state.
   function planEndsLineHtml(data) {
     var next = nextPeriodFor(data || {}, (data || {}).days);
     if (!planEndsEarly(next)) return '';
@@ -18527,6 +18698,386 @@
         '</div>';
       }).join('') +
     '</div>';
+  }
+
+  // ---------- PLAN: one screen for a draft and an approved week ----------
+  // Emily, 2026-10-30 ("Combined · Plan: one screen, week or day", approved
+  // on the Less clutter canvas). A draft and an approved week are the SAME
+  // screen: approving changes the band's badge and the dock, never the
+  // layout. On top, a day bar — Week (the default), then each day — and
+  // under it the meals as quiet cards: Breakfast, Lunch & dinner, Snacks.
+  // A row is the slot, the dish, one short line and a chevron. Every
+  // change is one tap in — the row's sheet (openPlanRowSheet: Swap, Tweak,
+  // Move, See the recipe) — and never a button on every row. One button
+  // per screen stands out: the dock's Approve on a draft, nothing on an
+  // approved week.
+  //
+  // weekState.planDay: null for Week, else the day's index. Page-view
+  // state, like selectedIndex (which follows it, so "+ Add a meal" and a
+  // Meal step opened from a day know the day).
+  function planDayIndex(days) {
+    var v = weekState.planDay;
+    return (typeof v === 'number' && days && days[v]) ? v : null;
+  }
+
+  // The day bar: "Week / All" then one tile per day (the strip's own tile,
+  // TODAY on today's). It scrolls sideways past seven, like the strip.
+  function planDayBarHtml(days, sel) {
+    var week = '<button type="button" class="wk-tile wk-daybar-week' + (sel === null ? ' is-selected' : '') +
+        '" data-plan-day="week" aria-pressed="' + (sel === null ? 'true' : 'false') + '" aria-label="The whole week">' +
+      '<span class="wk-tile-dow">WEEK</span><span class="wk-tile-num">All</span>' +
+    '</button>';
+    return '<div class="wk-strip wk-daybar' + (days.length > 7 ? ' is-long' : '') + '" role="group" aria-label="Show the week or one day">' +
+      week + days.map(function (day, i) {
+        var on = sel === i;
+        var label = dayName(day.date, { weekday: 'long', month: 'long', day: 'numeric' }) + (day.isToday ? ', today' : '');
+        return '<button type="button" class="wk-tile' + (day.isToday ? ' is-today' : '') + (day.isPast ? ' is-past' : '') +
+            (on ? ' is-selected' : '') + '" data-plan-day="' + i + '" aria-pressed="' + (on ? 'true' : 'false') + '" ' +
+            'aria-label="' + escapeHtml(label) + '">' +
+          '<span class="wk-tile-dow">' + (day.isToday ? 'TODAY' : dayName(day.date, { weekday: 'short' }).slice(0, 3).toUpperCase()) + '</span>' +
+          '<span class="wk-tile-num">' + dayName(day.date, { day: 'numeric' }) + '</span>' +
+        '</button>';
+      }).join('') +
+    '</div>';
+  }
+
+  // The one short line under a dish: its time — or, for a night eating a
+  // batch cooked earlier, just "Leftovers" (Emily's standing copy rule,
+  // 2026-10-30: never "Leftovers from Thursday's dinner"). A batch made
+  // ahead on purpose keeps the Cook tab's word for it.
+  function planRowMeta(entry) {
+    if (!entry || entry.state !== 'planned') return '';
+    var src = entry.leftover_from;
+    if (src && src.date) return src.cook_ahead ? 'Made ahead' : 'Leftovers';
+    if (entry.source === 'leftovers') return 'Leftovers';
+    if (entry.source === 'takeout') return 'Takeout';
+    return entry.meta || '';
+  }
+
+  function planIsReheat(entry) {
+    return !!(entry && ((entry.leftover_from && entry.leftover_from.date) || entry.source === 'leftovers'));
+  }
+
+  // One quiet row. `o.attrs` makes it a button (with the chevron); without
+  // it the row is a line to read. `o.label` is what a screen reader hears.
+  function planRowHtml(o) {
+    var tappable = !!o.attrs;
+    var open = tappable ? 'button type="button"' : 'div';
+    var close = tappable ? 'button' : 'div';
+    var eyebrow = (o.eyebrow || o.changed)
+      ? '<span class="wk-row-eyebrow">' + escapeHtml(o.eyebrow || '') +
+          (o.changed ? '<span class="wk-changed">Changed</span>' : '') + '</span>'
+      : '';
+    return '<' + open + ' class="wk-qrow' + (o.quiet ? ' is-quiet' : '') + (o.past ? ' is-past' : '') +
+        (o.done ? ' is-done' : '') + '"' + (o.attrs || '') +
+        (tappable && o.label ? ' aria-label="' + escapeHtml(o.label) + '"' : '') + '>' +
+      '<span class="wk-qrow-text">' + eyebrow +
+        '<span class="wk-qrow-name">' + escapeHtml(o.name) + '</span>' +
+        (o.meta ? '<span class="wk-row-meta">' + escapeHtml(o.meta) + '</span>' : '') +
+      '</span>' +
+      (tappable ? '<span class="wk-qrow-chev" aria-hidden="true">' + WK_ICONS.chev + '</span>' : '') +
+    '</' + close + '>';
+  }
+
+  // One slot of one day as a row. A slot is never absent (CLAUDE.md): a
+  // planned meal opens its sheet; an open one is a decision, and its row
+  // reveals the app's own options under it (the wk-open box, as Pick did);
+  // a meal nobody is home for is a quiet line; a meal the household asked
+  // none of is not drawn at all.
+  function planSlotRowHtml(day, i, slot, eyebrow) {
+    var entry = daySlotEntry(day, slot);
+    var changed = typeof wasRecentlyChanged === 'function' && wasRecentlyChanged(day.date, slot);
+    var at = ' data-wk-day-index="' + i + '"';
+    var snack = isSnackSlot(slot);
+    if (entry && entry.state === 'planned') {
+      var name = mealDisplayName(entry);
+      // A snack's row is its swap, and a day gone by has nothing to swap.
+      if (snack && day.isPast) return planRowHtml({ name: name, meta: planRowMeta(entry), past: true });
+      return planRowHtml({
+        attrs: (snack ? ' data-plan-snack="' : ' data-plan-row="') + slot + '"' + at,
+        eyebrow: eyebrow, name: name, meta: planRowMeta(entry), changed: changed,
+        past: day.isPast, done: !!entry.cooked,
+        label: (eyebrow ? eyebrow + ', ' : '') + name + (snack ? ' — swap it' : ' — change it')
+      });
+    }
+    if (entry && entry.state === 'open') {
+      return '<div class="wk-qrow-open" data-wk-card="' + i + '">' +
+        planRowHtml({ attrs: ' data-wk-pick="' + slot + '"' + at, eyebrow: eyebrow, name: 'Your call',
+          meta: 'Tap to pick', quiet: true, label: 'Pick ' + slotWord(slot) }) +
+        '<div class="wk-slot-open" id="wk-open-' + slot + '" hidden>' + openSlotCardHtml(day.date, slot, entry) + '</div>' +
+      '</div>';
+    }
+    if (entry && entry.state === 'planned_empty') {
+      if (entry.meal_off) return '';
+      return planRowHtml({ eyebrow: eyebrow, name: awayLineFor(entry) || entry.title || 'Nothing planned', quiet: true });
+    }
+    if (day.isPast || day.before_plan_start) {
+      return planRowHtml({ eyebrow: eyebrow, name: pastEmptyWord(day), quiet: true });
+    }
+    return planRowHtml({ attrs: ' data-wk-ask="' + slotWord(slot) + '"' + at, eyebrow: eyebrow, name: 'Nothing yet',
+      meta: 'Tap to ask for one', quiet: true, label: 'Ask for a ' + slotWord(slot) });
+  }
+
+  // A day's label at the left of a Lunch & dinner (or Snacks) group.
+  function planDayLabel(day) {
+    return day.isToday ? 'Today' : dayName(day.date, { weekday: 'short' }).slice(0, 3);
+  }
+
+  function planDayGroupHtml(day, rows) {
+    return '<div class="wk-pgroup' + (day.isToday ? ' is-today' : '') + (day.isPast ? ' is-past' : '') + '">' +
+      '<span class="wk-pgroup-day">' + escapeHtml(planDayLabel(day)) + '</span>' +
+      '<div class="wk-pgroup-rows">' + rows + '</div>' +
+    '</div>';
+  }
+
+  function planCardHtml(cls, head, body) {
+    if (!body) return '';
+    return '<div class="shell-card wk-pcard ' + cls + '">' +
+      (head ? '<span class="wk-menu-head">' + escapeHtml(head) + '</span>' : '') + body +
+    '</div>';
+  }
+
+  // BREAKFAST. The week: each breakfast once, with its days ("Mon, Tue ·
+  // 13 min" — wkMenuGroups' dish, the menu's own days phrase). A day: that
+  // day's. A row standing for several days still ahead is the whole dish:
+  // its sheet's Swap changes every one of them (data-plan-dates).
+  function planBreakfastHtml(days, sel) {
+    if (sel !== null) return planCardHtml('wk-pcard-breakfast', 'Breakfast', planSlotRowHtml(days[sel], sel, 'breakfast', ''));
+    var group = wkMenuGroups(days).filter(function (g) { return g.slot === 'breakfast'; })[0];
+    var rows = (group ? group.dishes : []).map(function (dish) {
+      var first = dish.days.filter(function (d) { return !d.past; })[0] || dish.days[0];
+      var ahead = dish.days.filter(function (d) { return !d.past; });
+      var fact = dish.isLeftover ? planRowMeta(first.entry) : wkMenuFact(dish);
+      var changed = typeof wasRecentlyChanged === 'function' &&
+        dish.days.some(function (d) { return wasRecentlyChanged(d.date, d.key); });
+      return planRowHtml({
+        attrs: ' data-plan-row="' + first.key + '" data-wk-day-index="' + first.index + '"' +
+          (ahead.length > 1 ? ' data-plan-dates="' + escapeHtml(ahead.map(function (d) { return d.date; }).join(',')) + '"' : '') +
+          (dish.isLeftover ? ' data-plan-reheat="1"' : ''),
+        name: dish.name, changed: changed, past: !ahead.length,
+        meta: [wkMenuDaysPhrase(dish, days), fact].filter(Boolean).join(' · '),
+        label: 'Breakfast, ' + dish.name + ' — change it'
+      });
+    }).join('');
+    // A morning handed back is a decision, so it is never folded into a
+    // dish: it gets its own row, named by its day.
+    days.forEach(function (day, i) {
+      var e = day.breakfast;
+      if (e && e.state === 'open' && !day.before_plan_start) {
+        rows += planSlotRowHtml(day, i, 'breakfast', dayName(day.date, { weekday: 'long' }));
+      }
+    });
+    return planCardHtml('wk-pcard-breakfast', 'Breakfast', rows);
+  }
+
+  // LUNCH & DINNER. The week: one group per day, the day at the left and
+  // its lunch and dinner beside it. A day: those two rows. A day with
+  // nothing to cook says so in one line; a day left out that Pomona can
+  // still fill offers to (the old card's "Build a plan", as a quiet row).
+  function planMainsDayRows(day, i) {
+    if (wkDayCanBuild(day, {})) {
+      return planRowHtml({ attrs: ' data-wk-build-day="' + escapeHtml(day.date) + '" data-wk-day-index="' + i + '"',
+        name: 'Nothing planned yet', meta: 'Tap to build a plan', quiet: true,
+        label: 'Build a plan for ' + dayName(day.date, { weekday: 'long' }) });
+    }
+    if (reviewDayIsClosed(day)) {
+      var anyShown = ['lunch', 'dinner'].some(function (s) { return day[s] && !day[s].meal_off; });
+      return anyShown ? planRowHtml({ name: reviewClosedLine(day), quiet: true, past: day.isPast }) : '';
+    }
+    return ['lunch', 'dinner'].map(function (slot) {
+      return planSlotRowHtml(day, i, slot, SLOT_LABELS[slot]);
+    }).join('');
+  }
+
+  function planMainsHtml(days, sel) {
+    if (sel !== null) return planCardHtml('wk-pcard-mains', 'Lunch & dinner', planMainsDayRows(days[sel], sel));
+    var body = days.map(function (day, i) {
+      if (day.before_plan_start) return '';
+      var rows = planMainsDayRows(day, i);
+      return rows ? planDayGroupHtml(day, rows) : '';
+    }).join('');
+    return planCardHtml('wk-pcard-mains', 'Lunch & dinner', body);
+  }
+
+  // SNACKS. The week: folded to one line ("2 a day · 14 in all"); a tap
+  // opens the per-day rows (weekState.planSnacksOpen, page-view only). A
+  // day: that day's snacks as rows. A snack's row opens its swap.
+  function planSnackRows(day, i) {
+    return (day.snacks || []).map(function (_, n) {
+      return planSlotRowHtml(day, i, snackSlotKey(n), '');
+    }).join('');
+  }
+
+  function planSnacksHtml(days, sel) {
+    if (sel !== null) return planCardHtml('wk-pcard-snacks', 'Snacks', planSnackRows(days[sel], sel));
+    var counts = [];
+    var total = 0;
+    days.forEach(function (day) {
+      if (day.before_plan_start) return;
+      var n = (day.snacks || []).filter(function (e) { return e && e.state === 'planned'; }).length;
+      if (!n) return;
+      counts.push(n);
+      total += n;
+    });
+    if (!total) return '';
+    var even = counts.every(function (n) { return n === counts[0]; });
+    var summary = [even && counts[0] ? counts[0] + ' a day' : '', total + ' in all'].filter(Boolean).join(' · ');
+    var open = !!weekState.planSnacksOpen;
+    var body = open ? days.map(function (day, i) {
+      if (day.before_plan_start) return '';
+      var rows = planSnackRows(day, i);
+      return rows ? planDayGroupHtml(day, rows) : '';
+    }).join('') : '';
+    return '<div class="shell-card wk-pcard wk-pcard-snacks">' +
+      '<button type="button" class="wk-qrow wk-snacks-fold" data-plan-snacks="1" aria-expanded="' + (open ? 'true' : 'false') + '">' +
+        '<span class="wk-qrow-text">' +
+          '<span class="wk-row-eyebrow">Snacks</span>' +
+          '<span class="wk-qrow-name">' + escapeHtml(summary) + '</span>' +
+        '</span>' +
+        '<span class="wk-qrow-chev wk-snacks-chev' + (open ? ' is-open' : '') + '" aria-hidden="true">' + WK_ICONS.chev + '</span>' +
+      '</button>' +
+      body +
+    '</div>';
+  }
+
+  // The day's own words, in day view only: the holiday, who is out, a
+  // bigger table (reviewTileTags — the same words the day cards used).
+  function planDayTagsHtml(day) {
+    var tags = reviewTileTags(day);
+    if (!tags.length) return '';
+    return '<p class="wk-pday-tags">' + escapeHtml(tags.join(' · ')) + '</p>';
+  }
+
+  // The notes above the cards, said once: on a draft the flags and the
+  // soft line (draft-only, from the server); on an approved week the
+  // plates note and anything weekNotesHtml carries.
+  function planNotesHtml(data, days, sel) {
+    if (weekPlanState(data) === 'draft') {
+      return weekFlagsHtml(data) + draftSoftNoteHtml(data) +
+        (typeof wkUseUpLineHtml === 'function' ? wkUseUpLineHtml(data) : '');
+    }
+    var noteDay = sel !== null ? days[sel] : days.filter(_dayHasPlateSides)[0];
+    return noteDay ? weekNotesHtml(data, noteDay) : '';
+  }
+
+  // The dock: Approve on a draft (the screen's one apricot — the same
+  // .wk-decide shell and #week-approve-btn approveWeek and
+  // showApproveConfirm look for), and nothing on an approved week but the
+  // chat button that floats on every screen. More ··· is in the band.
+  function planDockHtml(data) {
+    if (weekPlanState(data) !== 'draft') return '';
+    var openCount = countOpenSlots(data);
+    return '<div class="wk-decide dock">' +
+      '<div class="wk-dock-row">' +
+        '<button type="button" class="btn-gold week-approve-btn" id="week-approve-btn">' +
+          (openCount ? escapeHtml(approveWithOpenLabel(data, openCount)) : 'Approve the week') +
+        '</button>' +
+      '</div>' +
+      '<div class="week-redo-waiting waiting-line" id="week-redo-waiting" hidden></div>' +
+    '</div>';
+  }
+
+  function planWeekHtml(data, days) {
+    days = days || [];
+    var sel = planDayIndex(days);
+    var approved = weekPlanState(data) === 'set';
+    var day = sel !== null ? days[sel] : null;
+    var cards = planBreakfastHtml(days, sel) + planMainsHtml(days, sel) + planSnacksHtml(days, sel);
+    return '<div class="wk-plan">' +
+      weekSuggestedNoteHtml(data) + planEndsLineHtml(data) + planNotesHtml(data, days, sel) +
+      planDayBarHtml(days, sel) +
+      '<h2 class="wk-pview-title">' + escapeHtml(day ? dayName(day.date, { weekday: 'long' }) : 'The whole week') + '</h2>' +
+      (day ? planDayTagsHtml(day) : '') +
+      '<div class="wk-pcards">' +
+        (cards || '<div class="rv-empty">Nothing planned yet.</div>') +
+        (day && !day.isPast ? '<button type="button" class="wk-qline" data-wk-add-meal="1">' + WK_ICONS.plus + 'Add a meal</button>' : '') +
+        (approved ? weekFreezerRowHtml(data, days) : '') +
+        (!approved && typeof wkCouldntFitHtml === 'function' ? wkCouldntFitHtml(data) : '') +
+      '</div>' +
+    '</div>' + planDockHtml(data);
+  }
+
+  // ---------- The row's sheet: everything a meal can do, one tap in ----------
+  // Swap, Tweak, Move, and the recipe — each only where it can do
+  // something (Move: a lunch or dinner still ahead that is a cook of its
+  // own, wkCanMove; Tweak: where the plate can change, plateCanChange, and
+  // on a whole-dish breakfast only when it is one cook ahead). Each opens
+  // the sheet it always opened (openSwapSheet, openTweakSheet,
+  // openMoveSheet), unchanged, so their toasts, Undo and the row's
+  // "Changed" still happen exactly as before. `opts.dates`: a breakfast
+  // standing for several days ahead — Swap means the dish on all of them.
+  function planRowSheetOptions(day, slot, opts) {
+    opts = opts || {};
+    var entry = daySlotEntry(day, slot);
+    var out = [];
+    if (!entry || entry.state !== 'planned') return out;
+    var whole = !!(opts.dates && opts.dates.length > 1);
+    if (!day.isPast && !opts.reheat) out.push('swap');
+    var oneCook = true;
+    if (whole) {
+      oneCook = opts.dates.filter(function (date) {
+        var d = (weekState.days || []).filter(function (x) { return x.date === date; })[0];
+        var e = d && daySlotEntry(d, slot);
+        return e && !planIsReheat(e);
+      }).length <= 1;
+    }
+    if (!day.isPast && oneCook && typeof plateCanChange === 'function' && plateCanChange(day, slot, entry)) out.push('tweak');
+    if (!isSnackSlot(slot) && slot !== 'breakfast' && typeof wkCanMove === 'function' && wkCanMove(day, slot, entry)) out.push('move');
+    return out;
+  }
+
+  var PLAN_SHEET_OPTS = {
+    swap: { icon: 'swap', title: 'Swap', sub: 'Pick something else' },
+    tweak: { icon: 'tweak', title: 'Tweak', sub: 'Change a part, or tell me what to change' },
+    move: { icon: 'move', title: 'Move', sub: 'Put it on another day' }
+  };
+
+  function planRowSheetHtml(day, slot, opts) {
+    opts = opts || {};
+    var entry = daySlotEntry(day, slot);
+    var when = opts.dates && opts.dates.length > 1
+      ? wkDaysPhrase({ slot: slotWord(slot), days: opts.dates.map(function (date) {
+          var idx = -1;
+          (weekState.days || []).forEach(function (d, n) { if (d.date === date) idx = n; });
+          return { index: idx };
+        }).filter(function (d) { return d.index >= 0; }) }, weekState.days || [])
+      : dayName(day.date, { weekday: 'long' });
+    var rows = planRowSheetOptions(day, slot, opts).map(function (key) {
+      var o = PLAN_SHEET_OPTS[key];
+      return '<button type="button" class="quiet-opt" data-plan-opt="' + key + '">' +
+        '<span class="quiet-opt-icon">' + WK_ICONS[o.icon] + '</span>' +
+        '<span class="quiet-opt-text"><span class="quiet-opt-title">' + escapeHtml(o.title) + '</span>' +
+          '<span class="quiet-opt-sub">' + escapeHtml(o.sub) + '</span></span>' +
+      '</button>';
+    }).join('');
+    return quietSheetHeadHtml(slotEyebrowLabel(day, slot) + ' · ' + when, mealDisplayName(entry)) +
+      (rows ? '<div class="quiet-opts">' + rows + '</div>' : '') +
+      '<button type="button" class="quiet-link" data-plan-opt="recipe">See the recipe</button>';
+  }
+
+  function openPlanRowSheet(panel, day, slot, opts) {
+    opts = opts || {};
+    var entry = daySlotEntry(day, slot);
+    if (!entry || entry.state !== 'planned') return;
+    var index = (weekState.days || []).indexOf(day);
+    openQuietSheet(planRowSheetHtml(day, slot, opts), function (body) {
+      body.querySelectorAll('[data-plan-opt]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var key = btn.getAttribute('data-plan-opt');
+          closeQuietSheet();
+          if (key === 'swap') {
+            openSwapSheet(panel, day, slot, opts.dates && opts.dates.length > 1 ? { wholeDish: true, dates: opts.dates } : null);
+          } else if (key === 'tweak') {
+            openTweakSheet(panel, day, slot);
+          } else if (key === 'move') {
+            openMoveSheet(panel, day, slot);
+          } else if (key === 'recipe') {
+            goMealsStep('meal', { slot: slot, back: 'week', dayIndex: index >= 0 ? index : undefined,
+              wholeDish: !!(opts.dates && opts.dates.length > 1 && !opts.reheat) });
+          }
+        });
+      });
+    });
   }
 
   // The day tabs above the carousel: 36px, sand, the one in view apricot.
@@ -20997,6 +21548,8 @@
     // 'review' step and a draft's own root (folds to 'week' just above,
     // same screen) — so the flag tracks "is reviewStepHtml on screen",
     // not one step name. Day/Meal steps and the plain week root untouched.
+    // Since 2026-10-30 a draft's root is planWeekHtml, whose dock (Approve)
+    // needs the same room; an approved root has no dock at all.
     var usesReviewLayout = weekState.step === 'review' || (weekState.step === 'week' && draft);
     panel.classList.toggle('is-review-layout', usesReviewLayout);
     // And the Meal step's dock (mealDockHtml), for the same reason: one
@@ -21020,7 +21573,7 @@
       if (onRoot) {
         var parts = weekBandParts(weekBandData(data), weekState.days || []);
         if (onChores) parts = planChoresBandParts(parts);
-        // The Re-plan pill, the draft's opener and its toggle ride in the
+        // More ··· (the declutter, 2026-10-30) rides in the
         // band too (weekBandExtras) — on Meals only, never over Chores.
         var extras = onChores ? null : weekBandExtras(data);
         var key = JSON.stringify([parts, extras]);
@@ -21056,8 +21609,6 @@
       steps.innerHTML = freezerStepHtml(data);
       ensureDefrostAskItems(panel, data); // re-renders the step once the items land
       wireFreezerStep(panel, steps, data);
-    } else if (draft) {
-      steps.innerHTML = reviewStepHtml(data, weekState.days, true);
     } else {
       steps.innerHTML = weekStepHtml(data, weekState.days);
       if (weekPlanState(data) === 'none') renderPlanWeekEntry(steps, data);
@@ -21083,6 +21634,45 @@
         if (idx === weekState.selectedIndex) return;
         weekState.selectedIndex = idx;
         replaceMealsStepHistory();
+        renderMealsStep(panel);
+      });
+    });
+    // The Plan root's day bar (planDayBarHtml): Week, or one day, in
+    // place — the same screen redrawn, no history entry of its own.
+    steps.querySelectorAll('[data-plan-day]').forEach(function (tile) {
+      tile.addEventListener('click', function () {
+        var v = tile.getAttribute('data-plan-day');
+        var idx = v === 'week' ? null : Number(v);
+        if (idx === weekState.planDay || (idx === null && weekState.planDay == null)) return;
+        weekState.planDay = idx;
+        if (idx !== null) weekState.selectedIndex = idx;
+        replaceMealsStepHistory();
+        renderMealsStep(panel);
+      });
+    });
+    // A meal's row: its one sheet (openPlanRowSheet).
+    steps.querySelectorAll('[data-plan-row]').forEach(function (row) {
+      row.addEventListener('click', function () {
+        var day = wkDayForTap(row);
+        if (!day) return;
+        var dates = row.getAttribute('data-plan-dates');
+        openPlanRowSheet(panel, day, row.getAttribute('data-plan-row'), {
+          dates: dates ? dates.split(',') : null,
+          reheat: row.hasAttribute('data-plan-reheat')
+        });
+      });
+    });
+    // A snack's row opens the snack swap, as the snack's Swap always did.
+    steps.querySelectorAll('[data-plan-snack]').forEach(function (row) {
+      row.addEventListener('click', function () {
+        var day = wkDayForTap(row);
+        if (day) openSwapSheet(panel, day, row.getAttribute('data-plan-snack'));
+      });
+    });
+    // The week's snacks, folded to one line, open and close in place.
+    steps.querySelectorAll('[data-plan-snacks]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        weekState.planSnacksOpen = !weekState.planSnacksOpen;
         renderMealsStep(panel);
       });
     });
@@ -22381,6 +22971,24 @@
   // your setup, Start over, Need a hand? — two eyebrows: the week on
   // screen's own rare moves ("This draft"/"This week"), then everything
   // else that doesn't belong to one week in particular.
+  // "Plan the week after" — the More row that took over the approved
+  // dock's "Plan next week". A household planning a shorter stretch keeps
+  // the label that names it ("Plan the 3 after", "Plan from Saturday");
+  // the line under it says when it starts, and whether there is a draft
+  // or a plan there already (planNextLabel's own cases, said plainly).
+  function planAfterTitle(next) {
+    var label = planNextLabel(next);
+    return /next week/.test(label) ? 'Plan the week after' : label;
+  }
+
+  function planAfterLine(next) {
+    next = next || {};
+    var starts = next.start_date ? 'Starts ' + dayName(next.start_date, { weekday: 'long', month: 'short', day: 'numeric' }) : '';
+    var state = next.draft_plan_id ? 'its draft is waiting'
+      : next.is_planned ? 'already planned — this opens its questions' : '';
+    return [starts, state].filter(Boolean).join(' · ') || 'Opens the questions for the week after this one.';
+  }
+
   function renderMealsMoreSheet() {
     var rows = document.getElementById('meals-more-rows');
     if (!rows) return;
@@ -22388,6 +22996,7 @@
     var hasPlan = !!data.weekly_plan_id;
     var isDraft = hasPlan && data.status !== 'approved';
     var isApproved = hasPlan && data.status === 'approved';
+    var next = isApproved ? nextPeriodFor(data, weekState.days || []) : null;
 
     var weekRows = '';
     if (isDraft) {
@@ -22415,11 +23024,17 @@
       // anything off the shopping list — re-approving only adds what's
       // new, and removing something somebody may already have bought is
       // worse than a slightly long list.
+      // "Check the week" folded into "See the whole week" (Emily,
+      // 2026-10-30): the Plan root shows every meal, by the week or by the
+      // day, so a second look-it-over screen said the same thing twice.
+      // "Plan the week after" came in from the approved dock, which is
+      // only the chat button now — the same stretch and the same tap as
+      // the dock's old "Plan next week" (planNextWeek).
       weekRows =
         mealsMoreRowHtml('wk-more-reopen', WK_ICONS.unlock, 'Reopen the week',
           "Opens it up to change again. Nothing comes off your grocery list.") +
-        mealsMoreRowHtml('wk-more-check', WK_ICONS.checklist, 'Check the week',
-          'Every dinner, day by day, so you can look it over.');
+        mealsMoreRowHtml('wk-more-plan-next', WK_ICONS.calendar, planAfterTitle(next),
+          planAfterLine(next));
     }
 
     rows.innerHTML =
@@ -22447,7 +23062,7 @@
     });
     on('wk-more-discard', function () { closeMealsMoreSheet(); discardDraft(panel, data); });
     on('wk-more-reopen', function () { closeMealsMoreSheet(); reopenWeek(panel, data); });
-    on('wk-more-check', function () { closeMealsMoreSheet(); goMealsStep('review'); });
+    on('wk-more-plan-next', function () { closeMealsMoreSheet(); planNextWeek(); });
     on('wk-more-whole-week', function () { closeMealsMoreSheet(); openWeekSheet(); });
     // Adjust your setup opens the Preferences sheet — the household's
     // settings behind the header gear (openPrefsSheet) — never the
@@ -23692,12 +24307,14 @@
       // what the app has no other record of has just changed.
       defrostAskState.items = null;
       defrostAskState.selected = {};
-      // Straight to the list (2b = A). The All set screen this used to land
-      // on is no longer a stop on the way; Plan reopens on its root, where
-      // the freezer row asks its question quietly.
+      // Approving keeps the screen (Emily, 2026-10-30, "Combined · Plan"):
+      // the same Plan root, its badge now Approved and its dock just the
+      // chat button. The list is one tap away on the toast — and on the
+      // Shop tab, where it was just built. (2b = A, 2026-10-12, opened the
+      // list straight away; the approved design keeps the person here.)
       weekState.step = 'week';
-      goGroceryList();
-      showToast(approvedToast, null, (approval.conflicts_note || takeoverNote) ? 9000 : 6000);
+      showToast(approvedToast, { label: 'See the list', onClick: function () { goGroceryList(); } },
+        (approval.conflicts_note || takeoverNote) ? 9000 : 6000);
       await loadWeekMenu(panel);
       // The notifications ask's moment (iPhone app only; see offerPush):
       // a week is settled, so there's a morning note and a dinner nudge to
@@ -23775,6 +24392,13 @@
 
   function renderWeekMenu(panel, data) {
     weekState.data = data;
+    // A different plan opens on Week, snacks folded (the day bar's choice
+    // belongs to the week it was made on).
+    if (weekState.planDayPlanId !== data.weekly_plan_id) {
+      weekState.planDayPlanId = data.weekly_plan_id;
+      weekState.planDay = null;
+      weekState.planSnacksOpen = false;
+    }
     setDishIndex(data);
     var todayStr = todayLocalStr();
     var days = (data.days || []).map(function (d) { return Object.assign({}, d, classifyDay(d, todayStr)); });
@@ -27696,10 +28320,8 @@
   // is async): renderWeekMenu drains it once the days actually exist, and
   // the direct call below covers the already-built case, whichever wins.
   //
-  // `opts.schedule` (Today's open-slot row): land where the slot's Pick is.
-  // A draft opens on Meals by category, which has no per-day rows and no
-  // Pick, so the focus there found nothing and silently stopped; with it
-  // the draft is switched to its Schedule view first (applyPendingDayFocus).
+  // `opts.schedule` (Today's open-slot row): land where the slot's Pick is
+  // — the Plan root's view of that day, which has the slot's own row.
   function focusChangedWeekDay(date, slot, opts) {
     weekState.pendingDayFocus = date ? { date: date, slot: slot || 'dinner', schedule: !!(opts && opts.schedule) } : null;
     activateTab('week', true);
@@ -27714,28 +28336,17 @@
     weekState.days.forEach(function (d, i) { if (d.date === pending.date) index = i; });
     if (index < 0) return; // the change landed outside the week on screen
     weekState.pendingDayFocus = null;
-    // A draft on its Meals-by-category view: Schedule first, keyed to this
-    // plan so draftView() keeps it rather than resetting to the menu.
-    var data = weekState.data;
-    if (pending.schedule && data && weekPlanState(data) === 'draft' && draftView(data) === 'menu') {
-      weekState.draftView = 'days';
-      weekState.draftViewPlanId = data.weekly_plan_id;
-    }
-    // The Schedule is a carousel of every day: open it on this one
-    // (wireReviewCarousel lands on reviewState.dayIndex).
+    // The Plan root shows that day (its day bar, planWeekHtml) — the
+    // changed meal is legible right there, with no step to go back from.
+    weekState.planDay = index;
     if (pending.schedule) reviewState.dayIndex = index;
-    // The root shows the day in full under its strip (2026-09-14), so a
-    // changed meal is legible right there: select that day and stay — no
-    // step to go back from. (Until then this opened the Day step, because
-    // the root's rows truncated every name to one line.)
     goMealsStep('week', { dayIndex: index, replace: true });
-    // The row on the root's day card (2026-09-18) — the Day step's slot
-    // cards are one tap in and not what is on screen here.
-    // Inside that day's card when the screen is the Schedule carousel, whose
-    // every card has the same rows — the first match would be Monday's.
-    var scope = panel.querySelector('[data-wk-card="' + index + '"]') || panel;
-    var target = scope.querySelector('.wk-row[data-wk-row="' + pending.slot + '"]') ||
-      scope.querySelector('.wk-slot-card[data-wk-slot="' + pending.slot + '"]');
+    // The row on that day: the meal's own row, or an open slot's.
+    var target = panel.querySelector('[data-plan-row="' + pending.slot + '"][data-wk-day-index="' + index + '"]') ||
+      panel.querySelector('[data-plan-snack="' + pending.slot + '"][data-wk-day-index="' + index + '"]') ||
+      panel.querySelector('[data-wk-pick="' + pending.slot + '"][data-wk-day-index="' + index + '"]') ||
+      panel.querySelector('.wk-row[data-wk-row="' + pending.slot + '"]') ||
+      panel.querySelector('.wk-slot-card[data-wk-slot="' + pending.slot + '"]');
     if (!target) return;
     target.classList.add('just-changed');
     // Long enough to notice, short enough that it's gone before it can be

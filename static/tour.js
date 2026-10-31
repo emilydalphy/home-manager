@@ -46,18 +46,17 @@
     {
       tab: 'week',
       title: 'Swap it or tweak it',
-      body: 'Swap gives you a few other dishes to choose from. Tweak changes one part, like the protein or a side. Not in the list? Type something else.',
-      // The buttons of the first row that has Tweak (so Swap is beside
-      // it), else the first Swap's row.
+      body: 'Tap any meal. Swap gives you a few other dishes to choose from. Tweak changes one part, like the protein or a side. Not in the list? Type something else.',
+      // Since the declutter (2026-10-30) a row carries no buttons: the row
+      // itself is the way in, so the first meal row is what is ringed.
       target: function () {
-        return first('[data-wk-tweak]', function (b) { return b.closest('.wk-row-acts') || b; }) ||
-          first('[data-wk-swap-sheet]', function (b) { return b.closest('.wk-row-acts') || b; });
+        return first('[data-plan-row]') || first('[data-wk-tweak]') || first('[data-wk-swap-sheet]');
       }
     },
     {
       tab: 'week',
       title: 'Move it, or pick it',
-      body: 'Move puts a meal on another day. A meal that says “Your call” is yours to decide: tap Pick and choose from a few.',
+      body: 'Move is in the same place, and puts a meal on another day. A meal that says “Your call” is yours to decide: tap it and choose from a few.',
       target: function () { return first('[data-wk-pick]') || first('[data-wk-move]'); }
     },
     {
