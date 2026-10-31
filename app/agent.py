@@ -8796,6 +8796,7 @@ def _finish_week_slots(
     # budget. See tools/cuisine_spread.py — it swallows its own failures.
     _cuisine_spread.enforce_cuisine_spread(
         plan_id, household_memory, intake, repick_budget or _allergen_gate.CallBudget(), asks=count_asks,
+        period_start=week_start_date,
     )
 
     # "Short on time" is held to rather than only asked for (Emily,

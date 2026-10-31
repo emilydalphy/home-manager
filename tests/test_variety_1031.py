@@ -130,11 +130,44 @@ def test_the_twin_pass_never_raises_and_keeps_to_the_budget(stub_model, monkeypa
         return {"meal_name": "White Bean and Tomato Soup", "reason": "", "ingredients": [],
                 "food_groups": ["protein", "vegetable", "carb"]}
 
-    budget = allergen_gate.CallBudget(1)
+    budget = allergen_gate.CallBudget(4)
     out = meal_variety.repick_near_twins(plan_id, week, budget, picker=twin)
     assert out["twins"] == 1 and out["repicked"] == 0
-    assert len(calls) == 1 and budget.left == 0
+    assert len(calls) == sip.MAX_PICK_ATTEMPTS and budget.left == 4 - sip.MAX_PICK_ATTEMPTS
     assert bowl in _names(plan_id, "lunch")
+    # And it leaves the hard passes after it their reserve: with only the
+    # reserve left it spends nothing.
+    calls.clear()
+    reserve = allergen_gate.CallBudget(meal_variety.VARIETY_RESERVE)
+    meal_variety.repick_near_twins(plan_id, week, reserve, picker=twin)
+    assert calls == [] and reserve.left == meal_variety.VARIETY_RESERVE
+
+
+@pytest.mark.parametrize("a,b", [
+    ("Chicken Noodle Soup", "Chicken Tortilla Soup"),
+    ("Teriyaki Chicken Rice Bowl", "Chicken Burrito Bowl"),
+    ("Ground Beef Tacos", "Ground Beef Stroganoff"),
+    ("Tomato and Egg Stir-Fry", "Shrimp and Egg Stir-Fry"),
+    ("Chicken Thighs with Rice", "Chicken Breast with Rice"),
+])
+def test_a_shared_cut_base_or_everyday_shape_is_not_the_same_dish(a, b):
+    """Review, 2026-10-31: these matched on "ground", "rice", "soup",
+    "bowl" or a side egg, and each would have cost a re-pick."""
+    assert not meal_variety.same_dish(a, b)
+
+
+def test_last_weeks_breakfast_is_not_held_against_a_lunch(stub_model, picker):
+    """The near-same reading is for dinner and lunch only: last week's
+    breakfast sandwich does not make this week's lunch sandwich a repeat."""
+    week = _monday(-1)
+    stub_model(_week(week, ["Beef tacos"] * 7, ["Greek salad"] * 7,
+                     breakfasts=["Turkey Sausage Breakfast Sandwich"] * 7, snacks=["Fig bars"] * 7))
+    _approve_in_place(agent.generate_weekly_plan(week)["weekly_plan_id"])
+    week = _monday(0)
+    lunch = "Turkey Club Sandwich"
+    stub_model(_week(week, FRESH_DINNERS, [lunch] * 7))
+    plan_id = agent.generate_weekly_plan(week)["weekly_plan_id"]
+    assert lunch in _names(plan_id, "lunch")
 
 
 # ---------- 2. cuisines ----------
@@ -195,7 +228,9 @@ def test_a_pick_with_no_cuisine_or_a_crowded_one_is_turned_down(stub_model, monk
 
     budget = allergen_gate.CallBudget(4)
     out = cuisine_spread.enforce_cuisine_spread(plan_id, {}, {}, budget, picker=pick)
-    assert out["repicked"] == [] and budget.left == 0
+    # Every pick turned down, and the reserve left for the hard passes.
+    assert out["repicked"] == [] and budget.left == meal_variety.VARIETY_RESERVE
+    assert calls and all(c.get("avoid_cuisines") for c in calls)
     assert "Spaghetti carbonara" not in _names(plan_id, "dinner")
 
 

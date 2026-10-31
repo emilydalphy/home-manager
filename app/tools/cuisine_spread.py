@@ -36,6 +36,7 @@ Never raises.
 """
 from __future__ import annotations
 
+import json
 import logging
 from collections import Counter
 
@@ -102,17 +103,40 @@ def shortfall(dishes: list[dict]) -> tuple[set[str], str | None]:
     return set(), None
 
 
+# A dish another pass put on the week for the household's own request — an
+# ingredient they typed ("I have some corn"), a cuisine chip, a dish they
+# said to keep off — is theirs as much as their words are (review,
+# 2026-10-31): spreading cuisines must not undo it.
+_REQUESTED_KEYS = ("must_use_repick", "cuisine_repick", "kept_off")
+
+
+def _requested(dish: dict) -> bool:
+    for night in dish["nights"]:
+        derived = json.loads(night.get("derived_from_json") or "{}") or {}
+        if any(derived.get(key) for key in _REQUESTED_KEYS):
+            return True
+    return False
+
+
 def enforce_cuisine_spread(plan_id: int, memory: dict | None, intake: dict | None, budget,
-                           picker=None, asks: tuple[str | None, ...] = ()) -> dict:
+                           picker=None, asks: tuple[str | None, ...] = (),
+                           period_start: str | None = None) -> dict:
     """See the module docstring. Returns {"repicked", "left", "skipped"}."""
     out = {"repicked": [], "left": [], "skipped": None}
     if stands_down(memory, intake):
         out["skipped"] = "they named cuisines"
         return out
+    from . import draft_opener as _draft_opener
     try:
+        # A spread pick is no more allowed to bring back the last two weeks
+        # than any other (the swap context carries no history).
+        recent = sorted(_draft_opener.recent_dish_names(
+            period_start, plan_id, slots=_meal_variety.NO_REPEAT_SLOTS) or ()) if period_start else []
         chains = _leftovers.plan_leftover_chains(plan_id)
         tried: set[str] = set()
         for _ in range(MAX_SPREAD_REPICKS):
+            if not _meal_variety.variety_may_spend(budget):
+                break
             dishes = _dishes(plan_id, chains)
             crowded, why = shortfall(dishes)
             if not why:
@@ -127,7 +151,7 @@ def enforce_cuisine_spread(plan_id: int, memory: dict | None, intake: dict | Non
             target = None
             for dish in candidates:
                 tried.add(_meal_variety.repeat_key(dish["name"]))
-                if (dish["protected"] or _meal_variety.theirs_by_hand(dish)
+                if (dish["protected"] or _meal_variety.theirs_by_hand(dish) or _requested(dish)
                         or _meal_variety.asked_for_by_name(dish["name"], asks)):
                     out["left"].append(dish["name"])
                     continue
@@ -143,7 +167,7 @@ def enforce_cuisine_spread(plan_id: int, memory: dict | None, intake: dict | Non
             # Under "spread" any cuisine already on the week is one too
             # many for the new dish; under "dinners" only the crowded one.
             refuse = set(seen) if why == "spread" else set(crowded)
-            others = [d["name"] for d in dishes if d is not dish]
+            others = [d["name"] for d in dishes if d is not dish] + recent
 
             def reject_pick(candidate, refuse=refuse):
                 said = _norm(candidate.get("cuisine"))

@@ -165,8 +165,15 @@ def _library_pick(night: dict, on_week: list[str], memory: dict, recent: list[st
     from . import recipes as _recipes
     from . import swap_in_place as _swap
 
+    from . import breakfast_prep as _breakfast_prep
+    from . import rhythm as _rhythm
+
     if _everyday.style_stands_down(memory):
         return None
+    # A make-ahead household's breakfasts are made on the prep day, so a
+    # dish only good fresh (toast, a fried egg) is not theirs to be given
+    # (breakfast_prep, Emily 2026-10-26).
+    make_ahead = (_rhythm.get_household_rhythm() or {}).get("breakfast_prep") == "make_ahead"
     excludes = _everyday.diet_excludes(memory)
     dislikes = memory.get("dislikes") or []
     for name in library_breakfasts(f"{night['date']}:{night['id']}", avoid=on_week + recent, limit=1000):
@@ -174,6 +181,8 @@ def _library_pick(night: dict, on_week: list[str], memory: dict, recent: list[st
         if key in refused:
             continue
         refused.add(key)
+        if make_ahead and _breakfast_prep.breakfast_keeps(name) is False:
+            continue
         entry = _recipe_library.base_recipe(name)
         if not entry or _diet_refuses(entry, excludes) or _everyday.disliked(_words_of(entry), dislikes):
             continue

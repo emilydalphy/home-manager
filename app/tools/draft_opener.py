@@ -321,20 +321,23 @@ def _dish_names(entries: list[dict]) -> list[str]:
     return list(seen.values())
 
 
-def recent_dish_names(period_start: str, plan_id: int | None) -> set[str] | None:
+def recent_dish_names(period_start: str, plan_id: int | None,
+                      slots: tuple[str, ...] | None = None) -> set[str] | None:
     """
     Dishes eaten in the variety window before this period, from OTHER,
     approved plans (a draft nobody approved was never last week's food).
     None when there is nothing to compare against — a first week — so the
     novelty line stays unsaid rather than claiming "nothing repeated" of a
-    household with no past.
+    household with no past. `slots` narrows it to those meals (the near-
+    same reading for dinner and lunch, meal_variety.same_dish, must not
+    hold last week's breakfast sandwich against this week's lunch one).
     """
     start = date.fromisoformat(period_start)
     since = (start - timedelta(weeks=_meal_variety.VARIETY_WINDOW_WEEKS)).isoformat()
     conn = get_conn()
     rows = conn.execute(
         """
-        SELECT COALESCE(r.name, mpe.freeform_meal) AS meal, mpe.freeform_meal, mpe.slot_state
+        SELECT COALESCE(r.name, mpe.freeform_meal) AS meal, mpe.freeform_meal, mpe.slot_state, mpe.slot
         FROM meal_plan_entries mpe
         JOIN weekly_plans wp ON wp.id = mpe.weekly_plan_id
         LEFT JOIN recipes r ON r.id = mpe.recipe_id
@@ -348,6 +351,7 @@ def recent_dish_names(period_start: str, plan_id: int | None) -> set[str] | None
         r["meal"].strip().lower() for r in rows
         if r["meal"] and (r["slot_state"] or "planned") == "planned"
         and not _LEFTOVER_RE.search(r["freeform_meal"] or "")
+        and (slots is None or r["slot"] in slots)
     }
     return names or None
 

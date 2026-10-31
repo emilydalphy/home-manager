@@ -924,7 +924,7 @@ class OnboardingAnswersRequest(BaseModel):
     member_snacks: dict | None = None
     # Different snacks in the week (Emily, 2026-10-25), asked right under
     # snacks a day: 1-7, sent only once tapped — left out, the household
-    # reads the default (snack_variety.default_snack_dishes, two).
+    # reads the default (snack_variety.default_snack_dishes: five at two a day).
     snack_dishes_per_week: int | None = None
     # Setup's "This week / Next week" (2026-10-14): 'this_week' |
     # 'next_week', the same words FirstPlanRequest.start takes. Sent here
