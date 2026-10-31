@@ -13,6 +13,8 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Test clock: `test_already_home_kitchen_says_less.py` failed every Saturday and Sunday** (2026-10-31, branch `overnight/weekend-proof-already-home-test`).
+  Its tests plan "tomorrow" / "the day after" inside THIS Monday's plan, which on a weekend is next week. File pinned to `today("wednesday")`; passes under `--today=saturday` and `--today=sunday` (10 of 11 failed on Sunday before). No app change.
 - **Test clock: `test_the_route_answers_with_the_view_and_the_receipt` failed 23:25–24:00 UTC** (2026-10-30, branch `merge-overnight-2026-10-30`).
   Its household is on UTC, so a 35-minute cook started then is on the table tomorrow; it asserted today's date. Now asserts started + 35 min. No app change.
 - **Merge seam: one rule for a chat use-by date** (2026-10-30, branch `merge-overnight-2026-10-30`).
