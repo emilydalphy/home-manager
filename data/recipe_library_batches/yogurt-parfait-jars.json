@@ -1,0 +1,100 @@
+{
+ "dish_name": "Yogurt Parfait Jars",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {
+   "item": "Butter",
+   "qty": "1 package",
+   "category": "dairy",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Blueberries",
+   "qty": "1 pint",
+   "category": "produce",
+   "cook_qty": "1 1/3 cups"
+  },
+  {
+   "item": "Sugar",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Plain Greek yogurt",
+   "qty": "1 tub (32 oz)",
+   "category": "dairy",
+   "cook_qty": "3 cups"
+  },
+  {
+   "item": "Granola",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  }
+ ],
+ "instructions": [
+  "Up to 5 days ahead: melt 1 1/2 tsp butter in a small saucepan over medium heat. Add 1 1/3 cups of the blueberries and the 2 tsp sugar and stir to coat them.",
+  "Cook for about 5 minutes, stirring now and then, until the berries start to burst and turn juicy.",
+  "Stir the 1 tsp cornstarch into 4 tsp hot water in a cup until it's smooth. Stir it into the berries.",
+  "Once it bubbles, cover the pan and turn the heat to low. Cook for 2 to 4 minutes, until the sauce is thick.",
+  "Transfer the sauce into a container and put it in the fridge for about 1 hour, until it's cold.",
+  "Divide half the Greek yogurt between 4 jars and spread it flat.",
+  "Spoon the berry sauce over the yogurt, a quarter in each jar.",
+  "Top with the rest of the yogurt. Seal the jars and put them in the fridge.",
+  "Put the granola in a small sealed container on its own.",
+  "The jars keep in the fridge for up to 5 days. In the morning, scatter a quarter of the granola over a jar and eat it cold."
+ ],
+ "advance_prep_notes": "Cook the berry sauce and fill the jars up to 5 days ahead.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9
+ ],
+ "method_notes": "None of the parfaits read had 20 or more ratings, so this follows Emily Bites, the first one read. All three layer Greek yogurt with berries in jars and keep them up to 5 days or more. Emily Bites (the lead) cooks the berries into a quick thickened sauce first and adds granola only in the morning; The Girl on Bloor layers raw fruit and granola in the jar and suggests keeping the granola apart for crunch, and A Reinvented Mom layers granola with vanilla yogurt and strawberries. This one scales the lead's 6 jars to 4, uses blueberries for the mixed berries, and brings in a cup of granola from The Girl on Bloor for the morning.",
+ "sources": [
+  {
+   "name": "Emily Bites",
+   "title": "Make-Ahead Berry Yogurt Parfaits",
+   "url": "https://emilybites.com/make-ahead-berry-yogurt-parfaits/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Girl on Bloor",
+   "title": "Meal Prep Fruit and Yogurt Parfaits",
+   "url": "https://thegirlonbloor.com/meal-prep-yogurt-parfaits/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "A Reinvented Mom",
+   "title": "Make Ahead Yogurt Parfaits with Berries and Granola",
+   "url": "https://www.areinventedmom.com/make-ahead-yogurt-parfaits/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

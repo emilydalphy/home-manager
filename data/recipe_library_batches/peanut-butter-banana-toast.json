@@ -1,0 +1,83 @@
+{
+ "dish_name": "Peanut Butter Banana Toast",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 3,
+ "ingredients": [
+  {
+   "item": "Multigrain bread",
+   "qty": "1 loaf",
+   "category": "other",
+   "cook_qty": "4 slices"
+  },
+  {
+   "item": "Creamy peanut butter",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Bananas",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Granola",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chia seeds",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  }
+ ],
+ "instructions": [
+  "Toast the 4 slices of bread in the toaster until they're golden and crisp.",
+  "Spread the 1/4 cup peanut butter over the warm toast, all the way to the edges.",
+  "Peel the 2 bananas and slice them into thin coins. Lay them over the peanut butter.",
+  "Scatter the 1/4 cup granola over the bananas, then sprinkle on the 1 tsp cinnamon and the 1 tsp chia seeds.",
+  "Drizzle the 2 tbsp honey over the top.",
+  "Serve right away, while the toast is warm."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions spread peanut butter on warm toast and cover it with banana coins. My Ginger Garlic Kitchen (the lead) uses a tablespoon of peanut butter and half a large banana per slice of multigrain bread, then adds granola, cinnamon, chia seeds and a drizzle of honey. Live Simply keeps it to peanut butter, banana and a pinch of salt, with cinnamon, seeds and honey as options. This one doubles the lead for four slices. No version had 20 or more ratings, so the first read version leads.",
+ "sources": [
+  {
+   "name": "My Ginger Garlic Kitchen",
+   "title": "Peanut Butter Banana Toast",
+   "url": "https://www.mygingergarlickitchen.com/peanut-butter-banana-toast/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Live Simply",
+   "title": "Perfect Peanut Butter Banana Toast",
+   "url": "https://livesimply.me/peanut-butter-banana-toast/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

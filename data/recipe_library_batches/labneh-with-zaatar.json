@@ -1,0 +1,88 @@
+{
+ "dish_name": "Labneh with Zaatar",
+ "cuisine": "Lebanese",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Whole milk plain yogurt",
+   "qty": "24 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Extra-virgin olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Za'atar",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Persian cucumbers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Pita bread",
+   "qty": "1 package",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "The day before, or at least 24 hours ahead: stir the 24 oz yogurt and 1 tsp salt together in a bowl.",
+  "Line a sieve with 3 layers of cheesecloth and set it over a deep bowl. Transfer the yogurt into the cloth and fold the edges over the top.",
+  "Put it in the fridge for 24 to 48 hours. It's ready when it's thick enough to hold its shape on a spoon. Pour off the whey in the bowl.",
+  "Spread the labneh in a shallow bowl and make swirls in the top with the back of a spoon.",
+  "Drizzle the 2 tbsp olive oil over it and sprinkle the 1 tbsp za'atar on top.",
+  "Slice the cucumbers into spears and warm the pitas in a dry skillet over medium heat for 30 seconds a side.",
+  "Serve with the warm pita and the cucumber spears.",
+  "Leftover labneh keeps in the fridge for up to 1 week in a sealed container."
+ ],
+ "advance_prep_notes": "Strain the yogurt in the fridge for 24 hours, the day before.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3
+ ],
+ "method_notes": "All three read versions salt plain yogurt, strain it through cloth in the fridge for about a day until it's thick, then spread it in a dish with olive oil and za'atar and serve it with pita. Cup of Yum (the lead) uses 24 oz whole milk yogurt with 1 tsp salt and strains it 24 to 48 hours, No Recipes adds sumac and strains it overnight, and SBS uses Greek yogurt with tomato and cucumber on the side. This follows Cup of Yum's ratio and its one week keeping time, with cucumber spears from SBS.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "Easy Homemade Labneh Recipe",
+   "url": "https://cupofyum.com/recipes/easy-homemade-labneh-recipe",
+   "rating": 5.0,
+   "rating_count": 60,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "No Recipes",
+   "title": "Labneh Dip (Strained Yogurt Cheese)",
+   "url": "https://norecipes.com/labneh-recipe/",
+   "rating": 4.5,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "SBS Food",
+   "title": "Homemade Labneh",
+   "url": "https://www.sbs.com.au/food/recipes/homemade-labneh",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

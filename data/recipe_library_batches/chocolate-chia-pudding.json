@@ -1,0 +1,103 @@
+{
+ "dish_name": "Chocolate Chia Pudding",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Cocoa powder",
+   "qty": "1/4 cup + 2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Maple syrup",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Milk",
+   "qty": "1 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Plain Greek yogurt",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Chia seeds",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Raspberries",
+   "qty": "1 container (6 oz)",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "The night before, or at least 4 hours ahead: sift the cocoa powder into a medium bowl so there are no lumps.",
+  "Add the 1/4 cup maple syrup, 1 tsp vanilla and 1/4 tsp salt and whisk slowly. It looks dry at first, then comes together into a thick, fudgy paste.",
+  "Whisk in a few splashes of the milk until it's smooth, then whisk in the rest of the milk.",
+  "Whisk in the 1/2 cup Greek yogurt until there are no streaks left.",
+  "Whisk in the 1/2 cup chia seeds. Cover the bowl and put it in the fridge.",
+  "After about 30 minutes, whisk it once more so the seeds don't settle in clumps.",
+  "Covered, it keeps in the fridge for up to 4 days. In the morning, stir it, spoon it into bowls and top with the raspberries."
+ ],
+ "advance_prep_notes": "Mix the pudding the night before (at least 4 hours ahead).",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6
+ ],
+ "method_notes": "All three stir chia seeds and cocoa into milk with maple syrup and leave it in the fridge until it sets. Well Plated (the lead) makes a cocoa paste with the syrup first, so it never goes lumpy, and adds Greek yogurt for a creamier, richer pudding. Flavor the Moments and Chocolate Covered Katie leave out the yogurt and use about a quarter cup of chia per cup of milk. This one follows the lead for four, without its optional espresso powder, with raspberries on top.",
+ "sources": [
+  {
+   "name": "Well Plated",
+   "title": "Chocolate Chia Pudding",
+   "url": "https://www.wellplated.com/chia-seed-pudding/",
+   "rating": 4.81,
+   "rating_count": 31,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Chocolate Covered Katie",
+   "title": "Chocolate Chia Pudding",
+   "url": "https://chocolatecoveredkatie.com/chocolate-chia-pudding/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Flavor the Moments",
+   "title": "Chocolate Chia Pudding",
+   "url": "https://flavorthemoments.com/chocolate-chia-pudding/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

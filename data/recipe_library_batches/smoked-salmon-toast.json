@@ -1,0 +1,99 @@
+{
+ "dish_name": "Smoked Salmon Toast",
+ "cuisine": "American",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 3,
+ "ingredients": [
+  {
+   "item": "Sourdough bread",
+   "qty": "1 loaf",
+   "category": "other",
+   "cook_qty": "4 slices"
+  },
+  {
+   "item": "Whipped cream cheese",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Smoked salmon",
+   "qty": "8 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Persian cucumbers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Capers",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Shallot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh dill",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Everything bagel seasoning",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Extra-virgin olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Slice the 2 cucumbers into thin rounds.",
+  "Peel the shallot and slice it as thin as you can.",
+  "Pick a small handful of dill fronds off the stems.",
+  "Toast the 4 slices of sourdough until they're golden and crisp at the edges.",
+  "While the toast is warm, spread the cream cheese over it, all the way to the edges.",
+  "Lay the smoked salmon over the cream cheese in loose folds, dividing it between the slices.",
+  "Top with the cucumber rounds, then scatter on the 2 tbsp capers and the shallot.",
+  "Grate the zest of the lemon over the top. Add the dill and sprinkle on the 1 tsp everything bagel seasoning.",
+  "Drizzle the 1 tbsp olive oil over the toasts and serve right away."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions spread cream cheese on toast and top it with smoked salmon and something sharp. Camille Styles (the lead) serves four from four slices of toasted sourdough with whipped cream cheese, two slices of salmon each, Persian cucumber, capers, shaved shallot, dill, lemon zest, everything bagel seasoning and a drizzle of olive oil. Eatwell101 bakes the bread, rubs it with garlic, mixes lemon juice into the cream cheese and finishes with scallion and black sesame. This one follows the lead and leaves off its mint and edible flowers. No version had 20 or more ratings, so the first read version leads.",
+ "sources": [
+  {
+   "name": "Camille Styles",
+   "title": "Smoked Salmon Toast",
+   "url": "https://camillestyles.com/food/smoked-salmon-toast/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Eatwell101",
+   "title": "Cheesy Smoked Salmon Toasts",
+   "url": "https://eatwell101.com/cream-cheese-toasts-smoked-salmon-recipe",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

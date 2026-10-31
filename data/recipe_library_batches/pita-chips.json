@@ -1,0 +1,60 @@
+{
+ "dish_name": "Pita Chips",
+ "cuisine": "Lebanese",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 12,
+ "ingredients": [
+  {
+   "item": "Pita bread",
+   "qty": "1 package",
+   "category": "other",
+   "cook_qty": "2 large pitas"
+  },
+  {
+   "item": "Extra-virgin olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Za'atar",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 350°F and line a baking sheet with parchment.",
+  "Cut each of 2 pitas into 8 triangles with kitchen scissors, keeping them about the same size.",
+  "Put the triangles in a large bowl, drizzle over the 2 tbsp olive oil and sprinkle on the 3 tbsp za'atar. Toss until every piece is coated.",
+  "Spread them on the baking sheet in a single layer.",
+  "Bake for 10 to 12 minutes, checking from 8 minutes, until they're golden brown and crisp at the edges. They burn fast at the end.",
+  "Let them cool on the sheet for 5 minutes. They crisp as they cool.",
+  "Serve them warm with hummus or labneh. They keep in an airtight container at room temperature for up to 1 week."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions toss pita pieces with olive oil and a generous amount of za'atar and bake them until golden and crisp, checking early because they burn quickly. The Salt and Sweet (the lead) cuts whole pitas into triangles and bakes them at 350°F for 10 to 12 minutes, while May I Have That Recipe splits each triangle into two thin layers and bakes them at 400°F. This follows The Salt and Sweet's amounts for 2 large pitas, which it calls 8 small servings, as a snack for 4, with its one week keeping time.",
+ "sources": [
+  {
+   "name": "The Salt and Sweet",
+   "title": "Baked Pita Chips with Za'atar",
+   "url": "https://thesaltandsweet.com/baked-pita-chips-with-zaatar/",
+   "rating": 5.0,
+   "rating_count": 52,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "May I Have That Recipe",
+   "title": "Homemade Pita Chips Recipe",
+   "url": "https://mayihavethatrecipe.com/homemade-pita-chips-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

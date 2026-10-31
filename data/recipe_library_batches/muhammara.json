@@ -1,0 +1,115 @@
+{
+ "dish_name": "Muhammara",
+ "cuisine": "Turkish",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Red bell peppers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Walnuts",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Plain breadcrumbs",
+   "qty": "1 container",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Pomegranate molasses",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Aleppo pepper",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sumac",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Pita bread",
+   "qty": "1 package",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Turn the broiler on high and set a rack about 6 inches below it.",
+  "Put the whole peppers on a baking sheet and broil them for 20 to 25 minutes, turning them every 6 minutes, until the skin is blackened and blistered all over.",
+  "Transfer them to a bowl, cover it with a plate and leave them for 10 minutes, until they're cool enough to handle.",
+  "Meanwhile, chop the garlic and squeeze the juice from half the lemon.",
+  "Peel the blackened skin off the peppers and pull out the stems and seeds.",
+  "Put the peppers in a food processor with the 2 tsp olive oil, garlic, 1/3 cup walnuts, 2 tbsp breadcrumbs, 4 tsp pomegranate molasses, 2 tsp tomato paste, 3/4 tsp Aleppo pepper, 1/4 tsp cumin, 1/4 tsp sumac, 1/4 tsp salt and the lemon juice.",
+  "Pulse until it's mostly smooth with a little texture left. Taste it, and add a squeeze from the other lemon half if it's flat.",
+  "Warm the pitas in the oven for 2 to 3 minutes, then cut them into wedges.",
+  "Spoon the muhammara into a shallow bowl. Serve with the warm pita.",
+  "Leftovers keep in the fridge for up to 5 days in a sealed container."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions blacken whole red peppers, peel them and blend them with walnuts, breadcrumbs, garlic, cumin, pomegranate molasses, olive oil, lemon and chili flakes until thick and a little chunky. Tasting Table (the lead) broils the peppers and adds tomato paste, sumac and Aleppo pepper, while SBS uses paprika, a full tablespoon of cumin, more oil and molasses, and pulses the walnuts in last so they stay chunky. This follows Tasting Table's ratios scaled from 6 servings to 4, with SBS's 5 day fridge keeping time.",
+ "sources": [
+  {
+   "name": "Tasting Table",
+   "title": "Muhammara (Middle Eastern Roasted Red Pepper Dip)",
+   "url": "https://www.tastingtable.com/1442589/muhammara-middle-eastern-roasted-red-pepper-dip-recipe/",
+   "rating": 5.0,
+   "rating_count": 36,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "SBS Food",
+   "title": "Muhammara (char-grilled capsicum, chilli, walnut and pomegranate dip)",
+   "url": "https://www.sbs.com.au/food/recipes/muhammara-dip",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

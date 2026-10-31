@@ -1,0 +1,83 @@
+{
+ "dish_name": "Trail Mix",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 10,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Raw cashews",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Pepitas",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Slivered almonds",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Raisins",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Dark chocolate chips",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Coconut flakes",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  }
+ ],
+ "instructions": [
+  "Put the 1 cup cashews, 1 cup pepitas and 1/2 cup slivered almonds in a large bowl.",
+  "Add the 1/2 cup raisins, 1/2 cup dark chocolate chips and 1/4 cup coconut flakes.",
+  "Stir with a large spoon until everything is evenly mixed. This makes about 3 3/4 cups, enough for 10 snacks.",
+  "Keep it in a sealed jar or container at room temperature for up to 6 months."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three stir nuts, seeds, dried fruit and something sweet together in one bowl and keep it in an airtight container. This Healthy Table (the lead, since none of the pages has 20 ratings) uses cashews, pepitas, almonds, raisins, dark chocolate chips and coconut flakes, and says it keeps up to 6 months. A Spicy Perspective makes a much bigger mix with pistachios, peanuts, banana chips and pretzels, and Good Cheap Eats skips the nuts for seeds and three kinds of dried fruit. This follows the lead as written.",
+ "sources": [
+  {
+   "name": "This Healthy Table",
+   "title": "Healthy Trail Mix",
+   "url": "https://thishealthytable.com/blog/healthy-trail-mix/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "A Spicy Perspective",
+   "title": "Homemade Healthy Trail Mix",
+   "url": "https://www.aspicyperspective.com/homemade-healthy-trail-mix-recipe/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Good Cheap Eats",
+   "title": "Trail Mix Recipe with Fruit, Seeds, & Chocolate",
+   "url": "https://goodcheapeats.com/trail-mix-with-fruit-seeds-and-chocolate/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

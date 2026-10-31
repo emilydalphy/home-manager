@@ -1,0 +1,93 @@
+{
+ "dish_name": "Peanut Butter Banana Overnight Oats",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Bananas",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Milk",
+   "qty": "2 1/2 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Vanilla yogurt",
+   "qty": "10 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Rolled oats",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chia seeds",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Peanut butter",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  }
+ ],
+ "instructions": [
+  "The night before, or at least 4 hours ahead: mash 2 of the bananas in a large bowl with a fork until they're smooth.",
+  "Stir in the 2 1/2 cups milk and the 10 oz vanilla yogurt until it's creamy.",
+  "Stir in the 2 cups oats, 1 tsp cinnamon, 2 tbsp chia seeds and half the peanut butter until there are no dry pockets of oats left.",
+  "Spoon it into 4 jars with lids. Seal them and put them in the fridge.",
+  "The jars keep in the fridge for up to 5 days. In the morning, stir one, slice the last banana over it and add a spoonful of the rest of the peanut butter on top. Eat it cold, or microwave it in a bowl for about 1 minute and stir."
+ ],
+ "advance_prep_notes": "Mix the oats and put them in jars the night before (at least 4 hours ahead).",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4
+ ],
+ "method_notes": "All three soak rolled oats in milk with peanut butter and banana and top them in the morning. Ambitious Kitchen (the lead) mashes banana into almond milk and vanilla yogurt with chia and cinnamon and tops each jar with more peanut butter and banana slices. Kristine's Kitchen uses Greek yogurt, maple syrup and vanilla with banana only on top, and Taste of Home stirs honey and mashed banana into a single small jar. This one doubles the lead's two jars to four, with any milk in place of almond milk.",
+ "sources": [
+  {
+   "name": "Ambitious Kitchen",
+   "title": "High Protein Peanut Butter Banana Overnight Oats",
+   "url": "https://www.ambitiouskitchen.com/peanut-butter-banana-overnight-oats/",
+   "rating": 5.0,
+   "rating_count": 27,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Kristine's Kitchen",
+   "title": "Peanut Butter Overnight Oats",
+   "url": "https://kristineskitchenblog.com/peanut-butter-and-banana-overnight-oats/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Taste of Home",
+   "title": "Peanut Butter Banana Overnight Oats",
+   "url": "https://www.tasteofhome.com/recipes/peanut-butter-banana-overnight-oats/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

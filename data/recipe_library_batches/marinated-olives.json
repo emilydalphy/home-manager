@@ -1,0 +1,111 @@
+{
+ "dish_name": "Marinated Olives",
+ "cuisine": "Spanish",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Manzanilla olives",
+   "qty": "1 jar (8 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Sherry vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Coriander seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried rosemary",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaf",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Fennel seeds",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "The night before, or at least 12 hours ahead: drain the olives and cut a small slit in each one with a paring knife.",
+  "Crush and peel the garlic. Cut 3 thin slices from the lemon. Lightly crush the 1 tsp coriander seeds with the flat of the knife.",
+  "Pack the olives into a clean jar. Add the garlic, lemon slices, crushed coriander, 1/4 cup olive oil, 1/4 cup sherry vinegar, 1/2 tsp cumin, 1/2 tsp thyme, 1/4 tsp rosemary, the bay leaf, 1/2 tsp fennel seeds and 3/4 tsp red pepper flakes.",
+  "Pour in enough water to cover the olives, close the lid and shake the jar well.",
+  "Put the jar in the fridge overnight. They taste better after a few days.",
+  "Take the olives out 30 minutes before you eat them, so the oil turns clear again. Serve them in a small bowl with a dish for the pits.",
+  "They keep in the fridge for up to 1 month in the sealed jar."
+ ],
+ "advance_prep_notes": "Marinate the olives overnight in the fridge, the night before.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5
+ ],
+ "method_notes": "Both read versions put brined Spanish olives in a jar with lemon slices, bay leaf, chili, fennel and coriander seed and leave them to marinate before eating. What's Cooking America (listed first) slits large green olives, adds garlic, cumin, thyme, rosemary, sherry vinegar and olive oil topped with water, and leaves them overnight before chilling them for several days, while Food.com covers green and black olives and roasted peppers in oil alone and keeps them two weeks at room temperature with no garlic. Neither shows a rating, so this follows What's Cooking America with dried thyme and rosemary, which it allows, and marinates them in the fridge instead of at room temperature. It says they keep for months, so the one month here is on the safe side.",
+ "sources": [
+  {
+   "name": "What's Cooking America",
+   "title": "Spanish-Style Marinated Green Olives",
+   "url": "https://whatscookingamerica.net/appetizers/olivesandalusian.htm",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food.com",
+   "title": "Marinated Olives (Aceitunas Aliñadas)",
+   "url": "https://www.food.com/recipe/marinated-olives-aceitunas-ali-adas-478887",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

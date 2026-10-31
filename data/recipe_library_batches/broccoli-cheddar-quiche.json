@@ -1,0 +1,101 @@
+{
+ "dish_name": "Broccoli Cheddar Quiche",
+ "cuisine": "French",
+ "main_protein": "eggs",
+ "default_servings": 8,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 50,
+ "ingredients": [
+  {
+   "item": "Frozen deep-dish pie crust",
+   "qty": "1",
+   "category": "frozen"
+  },
+  {
+   "item": "Broccoli",
+   "qty": "1 head",
+   "category": "produce",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Eggs",
+   "qty": "5",
+   "category": "dairy"
+  },
+  {
+   "item": "Milk",
+   "qty": "3/4 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Shredded cheddar",
+   "qty": "1 bag (8 oz)",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  }
+ ],
+ "instructions": [
+  "Up to 4 days ahead, heat the oven to 375°F. Set the pie crust on the counter to thaw while the oven heats, about 10 minutes.",
+  "Cut 2 cups of small florets from the broccoli.",
+  "Put the florets in a small pot with about 1 cup of water. Cover and bring it to a boil, then cook for about 4 minutes, until they're bright green and tender but still have some bite.",
+  "Drain the broccoli in a colander, rinse it with cool water and drain it again. Chop it into small pieces.",
+  "In a large bowl, whisk the 5 eggs, 3/4 cup milk, 1/2 tsp salt and 1/4 tsp pepper until there are no streaks of white left.",
+  "Stir in the broccoli and 1 cup of the cheddar. Pour it into the pie crust.",
+  "Set the quiche on a baking sheet and bake for 35 to 50 minutes, until the center is set and a knife near the middle comes out clean. Start checking at 25 minutes, and cover the edge with foil if the crust browns too fast.",
+  "Let it stand for 5 minutes, then cut it into 8 slices. This makes 8 slices.",
+  "Once it's cool, the slices keep in the fridge for up to 4 days, wrapped, or in the freezer for up to 3 months. In the morning, microwave a slice for about 1 minute, or warm it in a 350°F oven for about 10 minutes."
+ ],
+ "advance_prep_notes": "Bake the quiche up to 4 days ahead and keep the slices in the fridge.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8
+ ],
+ "method_notes": "All three bake 5 eggs with milk or cream, broccoli and sharp cheddar in a 9 inch crust until the center is set. Kristine's Kitchen (the lead) keeps it to five ingredients: blanched, chopped broccoli and cheddar stirred into the eggs and poured into an unbaked deep-dish crust at 375°F. Well Plated blind bakes the crust and sautés the broccoli with green onions and adds Parmesan, and Inspired Taste uses cream, onion, garlic and a blind-baked butter crust baked low and slow. This one follows the lead with a store-bought frozen crust, and the 4 day fridge time comes from Inspired Taste.",
+ "sources": [
+  {
+   "name": "Kristine's Kitchen",
+   "title": "Easy Broccoli Quiche (5 Ingredients)",
+   "url": "https://kristineskitchenblog.com/easy-broccoli-cheese-quiche-5-ingredients/",
+   "rating": 4.95,
+   "rating_count": 60,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Well Plated",
+   "title": "Broccoli Quiche With Cheddar",
+   "url": "https://www.wellplated.com/broccoli-quiche/",
+   "rating": 4.59,
+   "rating_count": 12,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Inspired Taste",
+   "title": "Perfect Broccoli Quiche",
+   "url": "https://www.inspiredtaste.net/99734/broccoli-quiche-recipe/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

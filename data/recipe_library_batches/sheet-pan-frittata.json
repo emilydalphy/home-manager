@@ -1,0 +1,132 @@
+{
+ "dish_name": "Sheet Pan Frittata",
+ "cuisine": "American",
+ "main_protein": "eggs",
+ "default_servings": 6,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Shallot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cherry tomatoes",
+   "qty": "1 pint",
+   "category": "produce",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Baby spinach",
+   "qty": "1 bag (5 oz)",
+   "category": "produce",
+   "cook_qty": "3 cups"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "9",
+   "category": "dairy"
+  },
+  {
+   "item": "Italian seasoning",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Milk",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Ricotta cheese",
+   "qty": "1 tub (15 oz)",
+   "category": "dairy",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Shredded Parmesan",
+   "qty": "1 bag",
+   "category": "dairy",
+   "cook_qty": "1/4 cup"
+  }
+ ],
+ "instructions": [
+  "Up to 5 days ahead, put a rimmed 9 by 13 inch sheet pan in the oven and heat it to 425°F.",
+  "Finely chop the shallot.",
+  "Halve 1 cup of the cherry tomatoes.",
+  "Heat 1 tbsp of the olive oil in a medium skillet over medium-high heat. Add the shallot and cook for about 1 minute, until it softens and smells sweet.",
+  "Add 3 cups of the spinach, the tomatoes, 1/4 tsp garlic powder, 1/4 tsp salt and 1/4 tsp pepper. Cook for 2 to 3 minutes, stirring, until the spinach has wilted. Take the pan off the heat.",
+  "Crack 6 of the eggs into a medium bowl. Separate the last 3 eggs and add only the whites.",
+  "Add the 1 1/2 tsp Italian seasoning, 2 tbsp milk and 1/2 cup ricotta and whisk until it's mostly smooth. A few small lumps of ricotta are fine.",
+  "Take the hot pan out of the oven and brush it with the last 1 tbsp olive oil. Pour in the eggs, spread the spinach and tomatoes evenly over them and scatter the Parmesan on top.",
+  "Bake for 10 to 12 minutes, until the middle is set and doesn't wobble when you shake the pan.",
+  "Let it cool for 5 minutes, then cut it into 6 squares. This makes 6 squares.",
+  "Once they're cool, the squares keep in the fridge for up to 5 days in a sealed container. In the morning, microwave one in 15 second bursts until it's hot, about 45 seconds."
+ ],
+ "advance_prep_notes": "Bake the frittata up to 5 days ahead and keep the squares in the fridge.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10
+ ],
+ "method_notes": "All three pour whisked eggs and milk over vegetables and cheese in a rimmed sheet pan and cut it into squares. Recipe Runner (the lead) sautés shallot, spinach and tomatoes first, whisks whole eggs and whites with ricotta and bakes it hot and fast at 425°F in a preheated quarter sheet pan for 10 to 12 minutes. Melissa's Southern Style Kitchen builds a bigger pan with sausage and Asiago at 350°F and says the squares keep 5 days, and Kath Eats stirs raw kale and peppers into 12 eggs. This one follows the lead's 6 squares as written.",
+ "sources": [
+  {
+   "name": "Recipe Runner",
+   "title": "Sheet Pan Spinach Tomato Ricotta Frittata",
+   "url": "https://reciperunner.com/sheet-pan-spinach-tomato-ricotta-frittata/",
+   "rating": 4.4,
+   "rating_count": 218,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Melissa's Southern Style Kitchen",
+   "title": "Sheet Pan Frittata",
+   "url": "https://www.melissassouthernstylekitchen.com/sheet-pan-frittata/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Kath Eats",
+   "title": "Sheet Pan Frittata",
+   "url": "https://www.katheats.com/sheet-pan-frittata",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

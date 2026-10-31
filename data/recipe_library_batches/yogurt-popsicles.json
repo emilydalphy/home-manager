@@ -1,0 +1,62 @@
+{
+ "dish_name": "Yogurt Popsicles",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 6,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Plain Greek yogurt",
+   "qty": "1 tub (32 oz)",
+   "category": "dairy",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Strawberries",
+   "qty": "1 pint",
+   "category": "produce"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  }
+ ],
+ "instructions": [
+  "The night before, or at least 6 hours ahead: hull the strawberries and cut them in half. That should be about 2 cups.",
+  "Put the strawberries, 2 cups Greek yogurt and 1/4 cup honey in a blender and blend until smooth.",
+  "Pour it into 6 popsicle molds, push in the sticks and freeze for 4 to 6 hours, until solid all the way through. This makes 6 popsicles.",
+  "To serve, run warm water over the outside of a mold for a few seconds and pull the popsicle out. Eat them straight from the freezer."
+ ],
+ "advance_prep_notes": "Blend and freeze the popsicles the night before, or at least 6 hours ahead.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3
+ ],
+ "method_notes": "Both blend plain yogurt, fruit and honey until smooth, pour it into molds and freeze it for 4 to 6 hours. Desserts on a Dime (the lead, since neither page has 20 ratings) uses 2 cups Greek yogurt, 2 cups fruit and 1/4 cup honey for 6 popsicles and loosens them under warm water. Baby Foode uses 1 1/2 cups plain yogurt and says to leave out the honey for babies under one. This follows the lead with strawberries as the fruit.",
+ "sources": [
+  {
+   "name": "Desserts on a Dime",
+   "title": "Greek Yogurt Popsicles Recipe",
+   "url": "https://dessertsonadime.com/greek-yogurt-popsicles-recipe/",
+   "rating": 4.84,
+   "rating_count": 6,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Baby Foode",
+   "title": "Crush-Worthy Yogurt & Fruit Popsicles for Kids",
+   "url": "https://babyfoode.com/blog/yogurt-popsicles-for-toddlers-kids/",
+   "rating": 5.0,
+   "rating_count": 8,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

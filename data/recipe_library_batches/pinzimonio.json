@@ -1,0 +1,91 @@
+{
+ "dish_name": "Pinzimonio",
+ "cuisine": "Italian",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Extra-virgin olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Balsamic vinegar",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fennel bulb",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Persian cucumber",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Radishes",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Belgian endive",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Put the 3 tbsp olive oil, 1/2 tsp balsamic vinegar, 1/4 tsp salt and 1/8 tsp pepper in a small jar, close it and shake until it turns cloudy.",
+  "Taste it, and add a pinch more salt if it's flat. Pour it into 4 small bowls, one each.",
+  "Trim the fennel, pull off any stringy outer layer and slice it into thin wedges.",
+  "Peel the carrots and cut them into sticks.",
+  "Cut the cucumber lengthwise into spears.",
+  "Trim 4 of the radishes and cut them in half.",
+  "Separate the endive into whole leaves.",
+  "Rinse the vegetables under cold water and pat them dry with a towel.",
+  "Arrange them on a platter. Serve with a bowl of the oil each."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions set crisp raw vegetables such as fennel, carrots and celery or cucumber out on a platter with small bowls of seasoned extra virgin olive oil for dipping. The Clever Meal (listed first) uses 3 tbsp oil with a touch of balsamic or lemon, salt and pepper, while Manu's Menu mixes equal parts oil and red wine vinegar. Neither shows a rating, so this follows The Clever Meal's dressing and vegetables for 4, with the balsamic option.",
+ "sources": [
+  {
+   "name": "The Clever Meal",
+   "title": "Pinzimonio (Olive Oil Bread Dip)",
+   "url": "https://theclevermeal.com/pinzimonio/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Manu's Menu",
+   "title": "Pinzimonio (Tuscan Crudités)",
+   "url": "https://www.manusmenu.com/pinzimonio",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

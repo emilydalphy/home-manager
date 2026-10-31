@@ -1,0 +1,55 @@
+{
+ "dish_name": "Baked Apple Chips",
+ "cuisine": "American",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 150,
+ "ingredients": [
+  {
+   "item": "Honeycrisp apples",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Set racks in the upper and lower thirds of the oven and heat it to 200°F. Line 2 baking sheets with parchment paper.",
+  "Wash the 3 apples and core them with an apple corer, or leave the cores in if you don't mind a few seeds.",
+  "Slice the apples across into rounds about 1/8 inch thick, with a mandoline if you have one.",
+  "Lay the slices on the baking sheets in a single layer and sprinkle the 3/4 tsp cinnamon over them.",
+  "Bake for 1 hour.",
+  "Swap the pans between the upper and lower racks. Bake for 1 to 1 1/2 hours, until a slice you take out and leave on the counter for 2 to 3 minutes is crisp.",
+  "Turn off the oven and leave the chips inside for 1 hour as it cools, so they crisp up more. If they already look dark, take them out and cool them on the counter instead.",
+  "Serve them at room temperature. They keep in an airtight container at room temperature for up to 1 week."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both slice apples into thin rounds, dust them with cinnamon and dry them slowly in a low oven for about 2 hours, then let them crisp as the oven cools. Well Plated (the lead) uses 3 large sweet apples and 3/4 tsp cinnamon at 200°F, swaps the pans after an hour, tests one chip on the counter and keeps them up to a week. Running on Real Food bakes at 220°F and flips the slices after an hour. This follows the lead, which makes about 3 cups.",
+ "sources": [
+  {
+   "name": "Well Plated",
+   "title": "Apple Chips",
+   "url": "https://www.wellplated.com/apple-chips/",
+   "rating": 4.81,
+   "rating_count": 67,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Running on Real Food",
+   "title": "Baked Cinnamon Apple Chips",
+   "url": "https://runningonrealfood.com/baked-cinnamon-apple-chips/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

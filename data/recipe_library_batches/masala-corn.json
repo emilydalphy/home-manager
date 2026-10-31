@@ -1,0 +1,120 @@
+{
+ "dish_name": "Masala Corn",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {
+   "item": "Frozen sweet corn",
+   "qty": "4 cups",
+   "category": "frozen"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "1 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chaat masala",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black salt (kala namak)",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomato",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Bring a large saucepan of water to a boil over high heat. Stir in the 1/2 tsp turmeric and 3/4 tsp of the salt.",
+  "Meanwhile, finely chop a quarter of the onion and the tomato, mince the green chili and chop 1/4 cup of the cilantro.",
+  "Add the 4 cups corn to the boiling water and cook for about 5 minutes, until the kernels are soft and bright yellow.",
+  "Drain the corn well and transfer it, still hot, into a large bowl.",
+  "Add the 1 tbsp butter, 1/2 tsp cumin, 1/2 tsp chili powder, 1/2 tsp chaat masala, 1/2 tsp black salt and the last 1/4 tsp salt. Stir until the butter melts and every kernel is coated.",
+  "Stir in the onion, tomato, green chili and cilantro.",
+  "Squeeze in the juice of half the lemon and stir. Taste it, and add a squeeze more if it's flat.",
+  "Spoon it into small cups and serve it warm, with spoons."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions boil sweet corn, drain it and toss it hot with butter, chili powder and chaat masala, finishing with something fresh. Hebbar's Kitchen (the lead) boils the corn with turmeric and salt, adds cumin and black salt with the spices and stirs in a chopped salad of onion, tomato, carrot, cucumber, capsicum, ginger, chili and coriander, while Bless My Food by Payal and Caroline's Cooking keep it to corn, butter, spices and lemon juice. This follows Hebbar's at its full 4 cups of corn for 4 servings, using more butter than its half teaspoon (its own tip says more butter is closer to the street version), keeping only the onion, tomato, chili and cilantro, and adding the lemon the other two use.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Sweet Corn Chaat Recipe 2 Ways",
+   "url": "https://hebbarskitchen.com/butter-sweet-corn-recipe-3-ways/",
+   "rating": 5.0,
+   "rating_count": 24,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Bless My Food by Payal",
+   "title": "Masala Sweet Corn Recipe",
+   "url": "https://blessmyfoodbypayal.com/masala-sweet-corn-recipe/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Caroline's Cooking",
+   "title": "Masala corn",
+   "url": "https://carolinescooking.com/masala-corn/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

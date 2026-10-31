@@ -1,0 +1,113 @@
+{
+ "dish_name": "Spinach and Feta Breakfast Wraps",
+ "cuisine": "Greek",
+ "main_protein": "eggs",
+ "default_servings": 8,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "12",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Baby spinach",
+   "qty": "1 bag (5 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Crumbled feta",
+   "qty": "1 container (4 oz)",
+   "category": "dairy",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Roasted red peppers",
+   "qty": "1 jar",
+   "category": "pantry"
+  },
+  {
+   "item": "Sun-dried tomato pesto",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Whole wheat tortillas",
+   "qty": "8",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Up to 3 months ahead: whisk the 12 eggs, 2 tbsp water, 1/2 tsp salt and 1/4 tsp pepper in a large bowl until they're a little frothy.",
+  "Heat the 2 tsp olive oil in a large nonstick skillet over medium heat. Add the spinach and cook for 2 to 3 minutes, stirring, until it's all wilted. Transfer it to a plate.",
+  "Turn the heat to medium low and pour the eggs into the same skillet. Cook for 5 to 7 minutes, stirring gently, until they're set but still soft. Take the pan off the heat.",
+  "Fold the spinach and the 1/2 cup feta into the eggs. Let the filling cool for about 10 minutes.",
+  "Drain the roasted red peppers and slice them into strips.",
+  "Spread a spoonful of the sun-dried tomato pesto over the middle of each tortilla.",
+  "Divide the filling between the tortillas and lay a few pepper strips on each.",
+  "Fold in the sides and roll each one up tightly. This makes 8 wraps.",
+  "Let them cool completely. Wrap each one in foil and put them in a freezer bag.",
+  "They keep in the fridge for up to 3 days or in the freezer for up to 3 months. The night before, move one to the fridge to thaw. In the morning, take off the foil and microwave it for about 1 minute, until it's hot through."
+ ],
+ "advance_prep_notes": "Make and wrap the wraps up to 3 months ahead for the freezer.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9
+ ],
+ "method_notes": "None of the wraps read had 20 or more ratings, so this follows fANNEtastic Food, the first one read and the closest to a freezer batch. All three roll eggs, spinach and feta in a tortilla with something tomato. fANNEtastic scrambles 12 whole eggs, folds in wilted spinach and feta and spreads sun-dried tomato pesto inside with roasted red peppers; The Girl on Bloor copies the coffee shop wrap with an egg white omelet and a sun-dried tomato cream cheese, and An Oregon Cottage uses tomato chutney and crisps the wraps in a pan. The lead's 8 wraps are kept as written.",
+ "sources": [
+  {
+   "name": "fANNEtastic Food",
+   "title": "Meal Prep Breakfast Spinach Feta Wraps (Starbucks Copycat)",
+   "url": "https://www.fannetasticfood.com/spinach-feta-wrap/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Girl on Bloor",
+   "title": "Starbucks Spinach Feta Wrap",
+   "url": "https://thegirlonbloor.com/starbucks-spinach-feta-wrap/",
+   "rating": 5.0,
+   "rating_count": 16,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "An Oregon Cottage",
+   "title": "Freezer Mediterranean Breakfast Wraps",
+   "url": "https://anoregoncottage.com/freezer-mediterranean-breakfast-wraps/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

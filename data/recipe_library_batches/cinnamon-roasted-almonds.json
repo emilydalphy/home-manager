@@ -1,0 +1,83 @@
+{
+ "dish_name": "Cinnamon Roasted Almonds",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 70,
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole raw almonds",
+   "qty": "1 bag (16 oz)",
+   "category": "pantry",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 250°F and line a baking sheet with parchment.",
+  "Separate the egg and put the white in a large bowl. Keep the yolk for another dish.",
+  "Add 1/2 tsp water and the 1/2 tsp vanilla to the white and whisk for about 1 minute, until it's frothy.",
+  "Add the 2 cups almonds and stir until every one is shiny and wet.",
+  "In a small bowl, mix the 2 tbsp brown sugar, 2 tbsp sugar, 1/2 tsp salt and 1/2 tsp cinnamon.",
+  "Sprinkle the cinnamon sugar over the almonds and stir until they're evenly coated.",
+  "Spread them on the baking sheet in a single layer.",
+  "Bake for 60 to 70 minutes, stirring every 20 minutes, until the coating is dry and the almonds smell toasty. Keep an eye on them near the end so the sugar doesn't burn.",
+  "Leave them on the sheet until they're completely cool. The coating crisps as they cool. Break up any clumps.",
+  "Serve a small bowl each. They keep in an airtight container at room temperature for up to 2 weeks."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions whisk an egg white with a splash of water and vanilla until frothy, coat the almonds in it, toss them in cinnamon sugar made with half brown and half white sugar, and bake them low and slow, stirring now and then. Creations by Kara (the lead) uses 4 cups almonds at 250°F for 60 to 90 minutes with a teaspoon of salt, while Cup of Yum uses about 2 cups at 350°F for an hour and no salt. This follows Kara's ratios at half the batch (2 cups almonds), keeping the whole egg white, and Kara's two week keeping time.",
+ "sources": [
+  {
+   "name": "Creations by Kara",
+   "title": "Cinnamon Roasted Almonds",
+   "url": "https://www.creationsbykara.com/cinnamon-roasted-almonds/",
+   "rating": 4.57,
+   "rating_count": 44,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cup of Yum",
+   "title": "Cinnamon Roasted Almonds",
+   "url": "https://cupofyum.com/recipes/cinnamon-roasted-almonds",
+   "rating": 4.8,
+   "rating_count": 8,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

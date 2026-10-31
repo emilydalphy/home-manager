@@ -1,0 +1,96 @@
+{
+ "dish_name": "Soft Pretzels",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 8,
+ "prep_time_minutes": 40,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Instant yeast",
+   "qty": "2 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Bread flour",
+   "qty": "4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Baking soda",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Pretzel salt",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "In the bowl of a stand mixer, whisk the 1 1/2 cups lukewarm water, 2 1/4 tsp instant yeast, 1 tsp salt and 1 tbsp sugar. Leave it for 1 to 2 minutes.",
+  "Add the 4 cups bread flour. Fit the dough hook and mix on low until a dough forms.",
+  "Turn the mixer up to medium and knead for 4 to 5 minutes, until the dough is soft and smooth and pulls away from the sides of the bowl.",
+  "Shape it into a ball, cover the bowl with a clean kitchen towel and let it rest for 15 to 20 minutes.",
+  "Meanwhile, set a rack just above the middle of the oven and heat it to 450°F. Line 2 baking sheets with silicone mats or lightly greased parchment paper.",
+  "Pour 8 cups of water into a large pot, stir in the 4 tbsp baking soda and bring it to a boil over high heat.",
+  "Separate the egg. Beat the yolk with 1 tbsp water in a small bowl, and keep the white for another dish.",
+  "Cut the dough into 8 equal pieces.",
+  "Roll one piece into a rope about 24 inches long. Cross the ends to make a teardrop, twist them together once, then fold them down onto the bottom of the loop and press gently. Shape the rest the same way.",
+  "Lower one pretzel into the boiling water with a slotted spatula for no more than 30 seconds. Lift it out, let it drip and set it back on the baking sheet. Do the rest one at a time.",
+  "Brush the tops with the egg yolk wash and sprinkle on the 2 tbsp pretzel salt.",
+  "Bake for 12 to 14 minutes, until they're shiny and a deep golden brown. This makes 8 pretzels.",
+  "Move them to a wire rack for a few minutes, then serve them warm.",
+  "Keep leftovers in a sealed container at room temperature for up to 3 days. Warm one in the microwave for 10 to 15 seconds."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three knead a soft yeast dough, shape long ropes into pretzels, dip each one for about 30 seconds in boiling water with baking soda and bake them hot until deep golden. Beyond the Butter (the lead) uses instant yeast and bread flour, rests the dough only 15 to 20 minutes, makes 8 large pretzels with an egg yolk wash and bakes at 450°F. Fresh April Flours and Sue Bee Homemaker use active dry yeast, make 12 smaller pretzels and bake at 400 to 425°F. This follows the lead as written.",
+ "sources": [
+  {
+   "name": "Beyond the Butter",
+   "title": "Homemade Soft Pretzels",
+   "url": "https://beyondthebutter.com/homemade-soft-pretzels/",
+   "rating": 5.0,
+   "rating_count": 25,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Fresh April Flours",
+   "title": "Easy Homemade Soft Pretzel Recipe",
+   "url": "https://freshaprilflours.com/homemade-soft-pretzels/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Sue Bee Homemaker",
+   "title": "Homemade Soft Pretzel Recipe",
+   "url": "https://suebeehomemaker.com/homemade-soft-pretzel-recipe/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

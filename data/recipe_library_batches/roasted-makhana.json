@@ -1,0 +1,88 @@
+{
+ "dish_name": "Roasted Makhana",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 2,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {
+   "item": "Ghee",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Makhana (fox nuts)",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3 cups"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chaat masala",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Melt the 1 1/2 tsp ghee in a large, wide pan over low heat.",
+  "Add the 3 cups makhana and stir to coat them in the ghee.",
+  "Roast them over low heat for 7 to 10 minutes, stirring often, until they're crisp. Crush one between your fingers. It should snap and crumble, not bend. Keep the heat low or the outsides brown before they crisp.",
+  "Turn off the heat. Sprinkle over the 3/4 tsp chili powder, 1/4 tsp pepper, 1/2 tsp cumin, 3/4 tsp chaat masala and 1/2 tsp salt.",
+  "Toss until they're evenly coated.",
+  "Serve them warm, or let them cool completely and keep them in an airtight jar at room temperature for up to 2 weeks."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions roast makhana in a little ghee over low heat for 7 to 10 minutes until they crunch, then toss them off the heat with chili powder, chaat masala and salt. Hebbar's Kitchen (the lead) adds pepper and cumin, My Ginger Garlic Kitchen adds amchur, dried mint and a pinch of sugar, and Swasthi's rubs a garlic powder and garam masala paste on before toasting. This follows Hebbar's, scaled from 2 cups for 3 to 3 cups for 4 with the small spice amounts rounded, and My Ginger Garlic Kitchen's snap test. Hebbar's gives no keeping time, so the 2 weeks comes from the other sources.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Masala Makhana Recipe",
+   "url": "https://hebbarskitchen.com/masala-makhana-recipe-phool-makhana/",
+   "rating": 5.0,
+   "rating_count": 256,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Makhana Recipe (Phool Makhana Snack)",
+   "url": "https://www.indianhealthyrecipes.com/phool-makhana/",
+   "rating": 5.0,
+   "rating_count": 18,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "My Ginger Garlic Kitchen",
+   "title": "Roasted Makhana (Spicy Roasted Fox Nuts)",
+   "url": "https://www.mygingergarlickitchen.com/roasted-makhana/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

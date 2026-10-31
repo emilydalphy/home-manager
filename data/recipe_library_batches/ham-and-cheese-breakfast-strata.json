@@ -1,0 +1,125 @@
+{
+ "dish_name": "Ham and Cheese Breakfast Strata",
+ "cuisine": "American",
+ "main_protein": "pork",
+ "default_servings": 6,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 75,
+ "ingredients": [
+  {
+   "item": "Butter",
+   "qty": "1 package",
+   "category": "dairy",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sandwich bread",
+   "qty": "1 loaf",
+   "category": "other",
+   "cook_qty": "8 slices"
+  },
+  {
+   "item": "Sharp cheddar",
+   "qty": "1 block (8 oz)",
+   "category": "dairy",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Baked ham",
+   "qty": "8 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Sliced mushrooms",
+   "qty": "1 can (4 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Milk",
+   "qty": "2 1/4 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dry mustard",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "a pinch",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "The night before, or at least 8 hours ahead: rub the 1 tbsp butter all over the inside of a 9 inch square baking dish.",
+  "Cut the crusts off 5 of the bread slices and keep the crusts. Cut those 5 slices in half on the diagonal.",
+  "Tear the last 3 slices into pieces and scatter them over the bottom of the dish with the crusts.",
+  "Grate the cheddar. That should be about 2 cups.",
+  "Chop the ham into small pieces and drain the mushrooms.",
+  "Chop 1/4 cup of the parsley.",
+  "Layer the cheese, ham, mushrooms and parsley over the bread in the dish.",
+  "Lay the bread triangles on top in two rows.",
+  "In a medium bowl, whisk the 2 1/4 cups milk, 4 eggs, 1 tsp salt, 1/4 tsp dry mustard, 1/8 tsp paprika and a pinch of pepper. Pour it evenly over the bread, pressing the triangles down so each one is soaked.",
+  "Cover the dish with foil and put it in the fridge overnight.",
+  "In the morning, heat the oven to 325°F. Take off the foil and bake for 60 to 75 minutes, until it's golden on top and a knife near the middle comes out clean.",
+  "Let it stand for 5 minutes, then cut it into 6 squares. This makes 6 squares.",
+  "Leftover squares keep in the fridge for up to 3 days in a sealed container. Reheat one in the microwave for about 1 minute, until it's hot through."
+ ],
+ "advance_prep_notes": "Assemble the strata the night before (at least 8 hours ahead) and keep it in the fridge.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10
+ ],
+ "method_notes": "None of the stratas read had 20 or more ratings, so this follows Lana's Cooking, the first one read. Both layer bread, ham and cheese, soak it overnight in eggs and milk with dry mustard and bake it until a knife comes out clean. Lana's Cooking (the lead) uses sandwich bread with the crusts tucked underneath, cheddar, mushrooms and parsley in a 9 inch square dish at 325°F; Don't Sweat the Recipe makes a bigger 9 by 13 pan with Italian bread, Gruyère, cream and sautéed onion. This one follows the lead's 6 squares as written, and the 3 day fridge time is the lead's.",
+ "sources": [
+  {
+   "name": "Lana's Cooking",
+   "title": "Ham and Cheese Strata",
+   "url": "https://www.lanascooking.com/ham-and-cheese-strata/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Don't Sweat the Recipe",
+   "title": "Ham and Cheese Strata",
+   "url": "https://www.dontsweattherecipe.com/ham-and-cheese-strata/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

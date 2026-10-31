@@ -1,0 +1,108 @@
+{
+ "dish_name": "Breakfast Tostadas",
+ "cuisine": "Mexican",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {
+   "item": "Tostada shells",
+   "qty": "1 package",
+   "category": "other",
+   "cook_qty": "4"
+  },
+  {
+   "item": "Refried beans",
+   "qty": "1 can (16 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Chili powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Extra-virgin olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "to taste",
+   "category": "pantry"
+  },
+  {
+   "item": "Salsa",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Cotija cheese",
+   "qty": "1 package",
+   "category": "dairy",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Heat 1 tsp of the olive oil in a small saucepan over medium heat. Add the refried beans, 1 tsp chili powder, 1/2 tsp cumin and 1/2 tsp coriander.",
+  "Stir hard until the spices are mixed through. Cook for 3 to 4 minutes, stirring often, until the beans are hot and bubbling at the edges, then turn the heat to low.",
+  "Meanwhile, thinly slice the jalapeño into a small dish and roughly chop a small handful of cilantro leaves.",
+  "Lay the 4 tostada shells on 4 plates and spread the beans over them, leaving a thin border at the edge.",
+  "Heat the remaining 2 tsp olive oil in a large nonstick skillet over medium-low heat. Crack in the 4 eggs and sprinkle them with a pinch of salt.",
+  "Fry them for 3 to 4 minutes, until the whites are firm and the yolks are still runny.",
+  "Slide an egg onto each tostada. Spoon the 1/2 cup salsa around the eggs, then crumble on the 1/4 cup cotija and scatter on the cilantro.",
+  "Serve right away, with the jalapeño on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions spread warm refried beans over crisp tostada shells and top each one with a fried egg with a runny yolk, then salsa, cotija and cilantro. Grantourismo (the lead) warms a 450 g can of beans with chili powder, cumin and coriander in a little olive oil and fries the eggs gently in olive oil, one tostada each, and adds pickled shallots and cabbage. Cupcakes and Kale Chips bakes the bean tostadas with melted cheese, two per person, and fries the eggs in butter with a splash of water under a lid. This one follows the lead and uses jarred salsa and sliced jalapeño in place of its pickles. No version had 20 or more ratings, so the first read version leads.",
+ "sources": [
+  {
+   "name": "Grantourismo",
+   "title": "Breakfast Tostadas Recipe with Fried Eggs, Refried Beans and Pickles",
+   "url": "https://grantourismotravels.com/breakfast-tostadas-recipe-with-fried-eggs/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cupcakes and Kale Chips",
+   "title": "Breakfast Tostadas",
+   "url": "https://cupcakesandkalechips.com/breakfast-tostada-stacks/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,79 @@
+{
+ "dish_name": "Soft-Boiled Eggs with Toast Soldiers",
+ "cuisine": "American",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 3,
+ "cook_time_minutes": 12,
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Sandwich bread",
+   "qty": "1 loaf",
+   "category": "other",
+   "cook_qty": "4 slices"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "to taste",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "to taste",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the 8 eggs in a single layer in a large saucepan and cover them with cold water by about 1 inch.",
+  "Bring the water to a boil over medium-high heat. That takes about 8 to 10 minutes.",
+  "Meanwhile, toast the 4 slices of bread until they're golden. Spread the 2 tbsp butter over the hot toast and cut each slice into 4 or 5 strips.",
+  "As soon as the water boils, take the pan off the heat and cover it. Leave the eggs in the hot water for 2 minutes for a runny yolk, or up to 4 minutes if you like the white a little firmer.",
+  "Lift the eggs out with a slotted spoon and rinse them under cold water for a few seconds. Stand each one in an egg cup.",
+  "Slice the top off each egg with a sharp knife and sprinkle in a pinch of salt and pepper.",
+  "Serve 2 eggs each with the toast soldiers and a small spoon."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions start the eggs in water, cook them only a few minutes so the yolk stays runny, and serve them in egg cups with buttered toast cut into strips. Christina's Cucina (the lead) covers the eggs with cold water by an inch, brings it to a boil, then takes the pan off the heat and leaves them covered for about 2 minutes, two eggs and a slice of toast per person. Eggs.ca uses the same off the heat method but leaves them 3 to 4 minutes, and Hovis boils them for 4 minutes. This one follows the lead for four, with the eggs.ca time given for a firmer white.",
+ "sources": [
+  {
+   "name": "Christina's Cucina",
+   "title": "Perfect Soft Boiled Eggs with Soldiers",
+   "url": "https://www.christinascucina.com/perfect-soft-boiled-eggs-with-soldiers/",
+   "rating": 4.81,
+   "rating_count": 83,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Eggs.ca",
+   "title": "Perfect Soft Boiled Eggs with Toast Soldiers",
+   "url": "https://eggs.ca/recipes/perfect-soft-boiled-eggs-with-toast-soldiers/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Hovis",
+   "title": "Boiled Eggs & Soldiers",
+   "url": "https://hovis.co.uk/recipes/boiled-egg-and-soldiers",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

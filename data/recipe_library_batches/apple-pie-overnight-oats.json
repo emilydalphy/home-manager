@@ -1,0 +1,104 @@
+{
+ "dish_name": "Apple Pie Overnight Oats",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Apples",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Maple syrup",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Milk",
+   "qty": "3 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Chia seeds",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground nutmeg",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Rolled oats",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Walnuts",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  }
+ ],
+ "instructions": [
+  "The night before, or at least 8 hours ahead: core the 2 apples and chop them into small pieces.",
+  "Put the apples in a small saucepan with 2 tsp of the cinnamon, 2 tbsp of the maple syrup and a pinch of salt. Cover and cook over low heat for about 10 minutes, stirring now and then, until the apples are tender.",
+  "Take the lid off and turn the heat to medium. Cook for 2 to 3 minutes, until the juices cook down to a thick syrup. Take the pan off the heat.",
+  "In a large bowl, whisk the 3 cups milk, 4 tsp chia seeds, 2 tsp vanilla, the last 2 tsp cinnamon, 1/4 tsp nutmeg and the last 1 tbsp maple syrup. Stir in the 2 cups oats.",
+  "Spoon half the oats into 4 jars. Divide the apples between them, then top with the rest of the oats. Seal the jars and put them in the fridge.",
+  "Chop the 1/4 cup walnuts and keep them in a small sealed container.",
+  "The jars keep in the fridge for up to 5 days. In the morning, scatter some of the walnuts over a jar. Eat it cold, or microwave it for 1 to 2 minutes."
+ ],
+ "advance_prep_notes": "Cook the apples and fill the jars the night before (at least 8 hours ahead).",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6
+ ],
+ "method_notes": "All three soak rolled oats in milk with cinnamon and a sweetener and pair them with apple. Skinnytaste (the lead) cooks chopped apple with cinnamon and maple syrup until it's soft and syrupy, then layers it between oats soaked in almond milk with chia, vanilla and nutmeg. Simply Scratch Made sautés the apple in butter with honey and pie spices and adds yogurt to the oats. This one doubles the lead's two jars to four, with any milk, and keeps the walnuts apart until the morning so they stay crisp.",
+ "sources": [
+  {
+   "name": "Skinnytaste",
+   "title": "Apple Pie Overnight Oats",
+   "url": "https://www.skinnytaste.com/apple-pie-overnight-oats/",
+   "rating": 4.83,
+   "rating_count": 35,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Simply Scratch Made",
+   "title": "Apple Pie Overnight Oats",
+   "url": "https://simplyscratchmade.com/recipe/apple-pie-overnight-oats",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

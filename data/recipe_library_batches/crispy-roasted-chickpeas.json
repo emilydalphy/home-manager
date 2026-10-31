@@ -1,0 +1,65 @@
+{
+ "dish_name": "Crispy Roasted Chickpeas",
+ "cuisine": "American",
+ "main_protein": "chickpeas",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Chickpeas",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 425°F with a rack in the middle, and line a large baking sheet with parchment paper.",
+  "Drain the chickpeas in a colander and rinse them under cold water.",
+  "Spread them on a clean kitchen towel and pat them until they're dry to the touch.",
+  "Pick off any skins that come loose.",
+  "Transfer the chickpeas onto the baking sheet. Drizzle on the 1 tbsp olive oil, sprinkle on the 1/2 tsp salt and toss them with your hands. Spread them out in a single layer with room between them.",
+  "Roast for 20 to 30 minutes, shaking the pan halfway, until they're golden brown and one you bite into is crunchy.",
+  "While they're still warm, sprinkle on the 1/2 tsp paprika and toss.",
+  "Serve them warm. They're crispest the day you make them and keep in a loosely covered container at room temperature for up to 2 days."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both dry rinsed canned chickpeas well, toss them with olive oil and salt, roast them until golden and crunchy, and add the spices only once they're out of the oven. Love and Lemons (the lead) roasts 1 1/2 cups at 425°F for 20 to 30 minutes and says they're best within two days; Jessica Gavin roasts at 400°F for 30 to 35 minutes and leaves them in the cooling oven to dry further. This follows the lead with one 15 oz can, about 1 1/2 cups, which gives four snack portions, and uses paprika as the spice.",
+ "sources": [
+  {
+   "name": "Love and Lemons",
+   "title": "Crispy Roasted Chickpeas",
+   "url": "https://www.loveandlemons.com/roasted-chickpeas/",
+   "rating": 4.92,
+   "rating_count": 348,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Jessica Gavin",
+   "title": "Crispy Roasted Chickpeas",
+   "url": "https://www.jessicagavin.com/make-crispy-roasted-chickpeas-in-the-oven/",
+   "rating": 4.84,
+   "rating_count": 61,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,66 @@
+{
+ "dish_name": "Chocolate Banana Bites",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 60,
+ "ingredients": [
+  {
+   "item": "Bananas",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Semisweet chocolate chips",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Coconut oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Flaky sea salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Line a baking sheet with parchment and make room for it in the freezer.",
+  "Peel the bananas and slice them into 1/2 inch rounds. Lay them on the parchment so they aren't touching.",
+  "Freeze them for 30 minutes, until they're firm.",
+  "Put the 1 cup chocolate chips and 1 tbsp coconut oil in a microwave safe bowl. Microwave in 20 second bursts, stirring each time, until the chocolate is smooth.",
+  "Dip a frozen banana slice into the chocolate with a fork, let the extra drip off and put it back on the parchment. Do the rest the same way.",
+  "Sprinkle a pinch of flaky salt over them while the chocolate is still wet.",
+  "Freeze them for 30 minutes, until the chocolate is set hard.",
+  "Eat them straight from the freezer, or let them sit for 2 to 3 minutes if they're too hard. They keep in the freezer for up to 1 month in a sealed container."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions slice bananas, freeze the slices first, dip each one in melted chocolate and freeze them again until the shell sets. Craving Home Cooked melts semisweet chips with a spoonful of coconut oil and finishes them with toppings such as sea salt, while The Hidden Veggies makes its own coating from melted coconut oil, cocoa powder and powdered sugar. Neither has 20 ratings, so this follows the first listed, Craving Home Cooked, with sea salt as the topping and its one month freezer keeping time. It makes about 20 bites.",
+ "sources": [
+  {
+   "name": "Craving Home Cooked",
+   "title": "Frozen Chocolate Banana Bites",
+   "url": "https://cravinghomecooked.com/frozen-chocolate-banana-bites/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Hidden Veggies",
+   "title": "Frozen Chocolate Covered Banana Bites",
+   "url": "https://thehiddenveggies.com/chocolate-banana-bites/",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,96 @@
+{
+ "dish_name": "Spiced Candied Pecans",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 60,
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cayenne pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Pecan halves",
+   "qty": "8 oz",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 250°F and line a large rimmed baking sheet with parchment.",
+  "Separate the egg and put the white in a large bowl. Keep the yolk for another dish.",
+  "Add the 1/2 tsp vanilla to the white and whisk for about 1 minute, until it's frothy.",
+  "In a small bowl, stir together the 3 tbsp brown sugar, 2 tbsp sugar, 1/2 tsp cayenne, 3/4 tsp cinnamon and 1/2 tsp salt.",
+  "Add the pecans to the egg white and toss until they're all coated.",
+  "Sprinkle the sugar and spice over them and stir until every pecan is covered.",
+  "Spread them on the baking sheet in a single layer.",
+  "Bake for 50 to 60 minutes, stirring every 15 minutes, until the coating looks dry and the pecans smell toasty. Watch them closely near the end. Sugar burns quickly.",
+  "Leave them on the sheet until they're completely cool and the coating has hardened. Break apart any clusters.",
+  "Serve a small bowl each. They keep in an airtight container at room temperature for up to 2 weeks."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions froth an egg white, coat the pecans in it, toss them in brown or white sugar with cinnamon, cayenne and salt and bake them until the coating sets crisp as they cool. Hip Hip Gourmet (listed first) adds vanilla and bakes them low at 250°F for 50 to 60 minutes, stirring every 15, The Subversive Table mixes everything in one bowl and bakes at 300°F for 40 minutes, and Girl Gone Gourmet bakes at 325°F for 15 minutes and stirs them as they cool. None has 20 ratings, so this follows Hip Hip Gourmet at half its 1 lb batch with a whole egg white, using its milder cayenne amount, and its 2 week keeping time.",
+ "sources": [
+  {
+   "name": "Hip Hip Gourmet",
+   "title": "Spiced Candied Pecans (Sweet and Spicy!)",
+   "url": "https://hiphipgourmet.com/spiced-candied-pecans/",
+   "rating": 4.54,
+   "rating_count": 13,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Subversive Table",
+   "title": "Spicy Candied Pecans",
+   "url": "https://thesubversivetable.com/spicy-candied-pecans/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Girl Gone Gourmet",
+   "title": "Holiday Spiced Candied Pecans",
+   "url": "https://www.girlgonegourmet.com/sweet-spicy-pecans/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

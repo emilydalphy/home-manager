@@ -1,0 +1,85 @@
+{
+ "dish_name": "Green Smoothie",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 2,
+ "ingredients": [
+  {
+   "item": "Unsweetened coconut milk",
+   "qty": "2 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Bananas",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Navel oranges",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Baby spinach",
+   "qty": "1 bag (5 oz)",
+   "category": "produce",
+   "cook_qty": "4 cups"
+  },
+  {
+   "item": "Frozen pineapple",
+   "qty": "16 oz",
+   "category": "frozen",
+   "cook_qty": "3 cups"
+  },
+  {
+   "item": "Chia seeds",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  }
+ ],
+ "instructions": [
+  "Peel the 2 bananas and break them into chunks.",
+  "Peel the 2 oranges and pull them apart into segments.",
+  "Pour the 2 cups coconut milk into a blender, then add the bananas, the orange segments and 4 cups of the spinach.",
+  "Add the 3 cups frozen pineapple and the 4 tsp chia seeds on top.",
+  "Blend on high for 1 to 2 minutes, until it's smooth and bright green with no flecks of leaf left.",
+  "Pour into 4 tall glasses and serve right away."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions blend spinach with a banana and a sweet fruit in a dairy free milk, and all say the fruit hides the taste of the greens. Natasha's Kitchen (the lead) uses coconut milk, a banana, an orange, 2 cups fresh spinach and 1 1/2 cups frozen pineapple for two, with chia seeds as an option, and loads the blender liquid first. Love and Lemons uses frozen spinach, almond milk and a little almond butter, and Downshiftology uses an apple and a bit of avocado. This one doubles the lead for four glasses.",
+ "sources": [
+  {
+   "name": "Natasha's Kitchen",
+   "title": "Green Smoothie Recipe",
+   "url": "https://natashaskitchen.com/green-smoothie-recipe/",
+   "rating": 5.0,
+   "rating_count": 32,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Love and Lemons",
+   "title": "Green Smoothie",
+   "url": "https://www.loveandlemons.com/green-smoothie/",
+   "rating": 4.94,
+   "rating_count": 32,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Downshiftology",
+   "title": "Best Green Smoothie Recipe (5 Ingredients)",
+   "url": "https://downshiftology.com/recipes/green-smoothie/",
+   "rating": 4.92,
+   "rating_count": 74,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

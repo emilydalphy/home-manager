@@ -1,0 +1,92 @@
+{
+ "dish_name": "Homemade Cheese Crackers",
+ "cuisine": "American",
+ "main_protein": "cheese",
+ "default_servings": 6,
+ "prep_time_minutes": 40,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Sharp cheddar cheese",
+   "qty": "1 block (8 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "4 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground mustard",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Shred the cheddar on the large holes of a box grater.",
+  "Cut the 4 tbsp cold butter into small cubes.",
+  "Put the cheddar, butter, 1 cup flour, 1/2 tsp ground mustard and 3/4 tsp salt in a food processor. Pulse until it looks like coarse crumbs.",
+  "With the processor pulsing, add 2 tbsp cold water a little at a time, until the dough starts to clump together.",
+  "Turn it out onto plastic wrap, press it into a ball and wrap it tightly. Chill it in the fridge for 20 minutes.",
+  "Meanwhile, heat the oven to 350°F and line 2 baking sheets with parchment paper.",
+  "Roll the dough out on a clean counter into a thin rectangle about 1/8 inch thick.",
+  "Cut it into 1 inch strips with a pizza cutter, then cut across the strips to make squares.",
+  "Poke a hole in the middle of each square with a toothpick or the tip of a knife.",
+  "Set the squares on the baking sheets close together, without touching.",
+  "Bake for 13 to 15 minutes, until they're puffed, crisp and golden at the edges. This makes 6 snack servings.",
+  "Let them cool completely on the sheets, then keep them in an airtight container. If they go soft, warm them in the oven for a few minutes to crisp them again."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All four work 8 oz of sharp cheddar into about 1 cup flour, 4 tbsp butter and salt with a little cold water, chill the dough, roll it 1/8 inch thick and cut 1 inch squares. Bee Yond Cereal (the lead, since none of the pages has 20 ratings) does it in a food processor with ground mustard, chills it 20 minutes and bakes at 350°F for 13 to 15 minutes. The Decorated Cookie and 4 Sons R Us use a stand mixer, chill an hour and bake at 375°F, and Little House Living chills an hour or more. This follows the lead as written.",
+ "sources": [
+  {
+   "name": "Bee Yond Cereal",
+   "title": "Homemade Cheese Crackers",
+   "url": "https://www.beeyondcereal.com/homemade-cheese-crackers/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Decorated Cookie",
+   "title": "Homemade Cheez-Its",
+   "url": "https://thedecoratedcookie.com/homemade-cheez-its/",
+   "rating": 4.7,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Little House Living",
+   "title": "Homemade Cheese Its Crackers",
+   "url": "https://littlehouseliving.com/homemade-cheese-its.html",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "4 Sons R Us",
+   "title": "Homemade Cheeze-Its",
+   "url": "https://4sonrus.com/homemade-cheeze-its/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

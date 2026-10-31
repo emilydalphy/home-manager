@@ -1,0 +1,82 @@
+{
+ "dish_name": "Mango Coconut Chia Pudding",
+ "cuisine": "American",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Ataulfo mangoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Lite coconut milk",
+   "qty": "1 can (13.5 oz)",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Unsweetened almond milk",
+   "qty": "1 carton",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Chia seeds",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Sweetened shredded coconut",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Maple syrup",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  }
+ ],
+ "instructions": [
+  "The night before, or at least 6 hours ahead: peel the 2 mangoes and dice the flesh. That should be about 1 1/2 cups.",
+  "In a large container, stir together the 1 cup coconut milk, 1 cup almond milk, the mango, 1/2 cup chia seeds, 2 tbsp shredded coconut and 2 tbsp maple syrup.",
+  "Leave it on the counter for 30 minutes, then stir it again so the seeds don't clump.",
+  "Cover it and put it in the fridge overnight, until the seeds have swelled and it's thick.",
+  "Covered, it keeps in the fridge for up to 4 days. In the morning, stir it and spoon it into 4 bowls."
+ ],
+ "advance_prep_notes": "Mix the pudding the night before (at least 6 hours ahead).",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4
+ ],
+ "method_notes": "Both soak chia seeds in coconut milk with mango and a little sweetener and chill them until thick. Skinnytaste (the lead) stirs diced mango and shredded coconut right into a mix of lite coconut milk and almond milk, sweetened with a few drops of stevia. My Fussy Eater uses full coconut milk with honey and vanilla and layers the mango on top. This one doubles the lead to four, with maple syrup as the sweetener so it stays vegan.",
+ "sources": [
+  {
+   "name": "Skinnytaste",
+   "title": "Mango Coconut Chia Pudding",
+   "url": "https://www.skinnytaste.com/mango-coconut-chia-pudding/",
+   "rating": 4.99,
+   "rating_count": 62,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "My Fussy Eater",
+   "title": "Mango Coconut Chia Pudding",
+   "url": "https://www.myfussyeater.com/mango-coconut-chia-pudding/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
