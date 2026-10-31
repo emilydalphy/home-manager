@@ -194,6 +194,7 @@ _FUNCTIONS = [
     "cookServesShown",
     "cookApplyServesOverride",
     "cookScaledSteps",
+    "cookScaledIngredients",
     "cookStepServings",
     "cookFocusMeal",
     "cookFollowFocusedMeal",

@@ -3,6 +3,7 @@ Cook mode: recipe detail, the prep schedule, and checking things off.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import re
@@ -1452,6 +1453,20 @@ def _scale_card_to_batch(card: dict, batch_servings: int) -> bool:
     return True
 
 
+def _recipe_sig(recipe: dict) -> str:
+    """A short fingerprint of what a recipe says — its name, ingredients,
+    steps and baseline servings — so the screen can tell "the recipe I
+    scaled" from "a different recipe on the same night", including the same
+    recipe row rewritten in place (a Tweak keeps the id and often the name).
+    Not a security hash; it only has to change when the recipe does."""
+    body = json.dumps(
+        [recipe.get("id"), recipe.get("name"), recipe.get("ingredients"),
+         recipe.get("instructions"), recipe.get("default_servings")],
+        sort_keys=True, default=str,
+    )
+    return hashlib.sha1(body.encode("utf-8")).hexdigest()[:12]
+
+
 def _side_ingredients_for(card: dict, servings: int | None) -> list[dict]:
     """
     The card's sides' ingredients, scaled to `servings` where a side says
@@ -2042,6 +2057,15 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
             # "Recipes people trust", slice 1). None for a dish with no
             # saved recipe.
             "recipe_id": recipe.get("id") if recipe else None,
+            # Which VERSION of the recipe this card was drawn from
+            # (_recipe_sig). The Cook screen's "Cooking for" stepper keeps
+            # its scaled list in the browser, keyed by the plan entry, and
+            # put it back over whatever the entry cooked next: Change
+            # recipe to Beef Tacos left the burrito bowl's chicken and rice
+            # on the tacos' card, and a Tweak rewritten in place kept the
+            # old amounts too (defect hunt, 2026-10-31). The screen drops
+            # a stored count whose signature isn't this one.
+            "recipe_sig": _recipe_sig(recipe) if recipe else None,
             # True while the menu pass's dish waits for the recipe pass (see
             # recipes.fill_recipe_details): a real recipe with nothing in it
             # yet, which the plan's copy of this screen says plainly and cook

@@ -24675,7 +24675,8 @@
         // (2026-10-02) — read back too, or a reload would put the server's
         // steps under the cook's amounts, the very mismatch this carries.
         instructions: Array.isArray(o.instructions) ? o.instructions : null,
-        dish: typeof o.dish === 'string' ? o.dish : null
+        dish: typeof o.dish === 'string' ? o.dish : null,
+        recipe_sig: typeof o.recipe_sig === 'string' ? o.recipe_sig : null
       };
     });
     return out;
@@ -26851,9 +26852,24 @@
   function cookApplyServesOverride(meals) {
     cookReadTicks();
     (meals || []).forEach(function (m) {
-      var o = cookState.serves[cookMealKey(m)];
+      var key = cookMealKey(m);
+      var o = cookState.serves[key];
       if (!o) return;
-      m.ingredients = o.ingredients;
+      // A count chosen for a DIFFERENT recipe than the one this night
+      // cooks now is not this recipe's count (defect hunt, 2026-10-31).
+      // The override is keyed by the plan entry, so after Change recipe
+      // the Beef Tacos card read the burrito bowl's chicken and rice at
+      // the burrito bowl's count; after a Tweak rewritten in place (same
+      // name, same id) the old amounts stood over the new recipe. The
+      // dish name catches the first and recipe_sig (cooker._recipe_sig)
+      // the second. An override saved before either was stored has
+      // neither and applies as it always did.
+      if ((typeof o.dish === 'string' && o.dish !== (m.meal || '')) ||
+          (o.recipe_sig && m.recipe_sig && o.recipe_sig !== m.recipe_sig)) {
+        delete cookState.serves[key];
+        return;
+      }
+      m.ingredients = cookScaledIngredients(m, o.ingredients);
       // The steps follow the same tap (2026-10-02). An override stored
       // before steps were part of it has none, and leaves them as sent.
       // Only for the dish they were scaled from: a swap on the same entry
@@ -26871,6 +26887,35 @@
       // shows it, and the plan's own copy stays true.
       if (o.was_batch) m.servings = o.servings;
     });
+  }
+
+  // The card's ingredients after a stepper tap: the scale reply's recipe
+  // rows, then the side's rows the server folded onto the card (from_side —
+  // cooker._side_ingredients_for), kept as they were. /api/recipes/scale
+  // only knows the recipe, so replacing the list with its reply dropped the
+  // salad's romaine while "Alongside — Green salad" stayed in the steps
+  // (defect hunt, 2026-10-31) — the same loss the server fixed for its own
+  // scaling on 2026-09-13. A row's "using X instead" (substitute) and
+  // "boiled Tuesday" (made_ahead) notes ride across by item, since the
+  // scale reply has neither. Never mutates `scaled`: it is the stored record.
+  function cookScaledIngredients(meal, scaled) {
+    var current = (meal && meal.ingredients) || [];
+    var notes = {};
+    var sides = [];
+    current.forEach(function (ing) {
+      if (!ing) return;
+      if (Object.prototype.hasOwnProperty.call(ing, 'from_side')) { sides.push(ing); return; }
+      if (ing.substitute || ing.made_ahead) notes[String(ing.item || '').toLowerCase()] = ing;
+    });
+    return (scaled || []).map(function (ing) {
+      var had = ing && notes[String(ing.item || '').toLowerCase()];
+      if (!had) return ing;
+      var out = {};
+      Object.keys(ing).forEach(function (k) { out[k] = ing[k]; });
+      if (had.substitute && !out.substitute) out.substitute = had.substitute;
+      if (had.made_ahead && !out.made_ahead) out.made_ahead = had.made_ahead;
+      return out;
+    }).concat(sides);
   }
 
   // The card's steps after a stepper tap: the scale reply's recipe steps
@@ -26936,6 +26981,9 @@
         // leaves as written) — so "add 1 cup rice" moves with the chip.
         instructions: cookScaledSteps(meal, data.scaled_instructions),
         dish: meal.meal || '',
+        // Which version of the recipe was scaled (cooker._recipe_sig), so
+        // a rewrite of it drops this count — cookApplyServesOverride.
+        recipe_sig: meal.recipe_sig || null,
         unscaled_items: data.unscaled_items || [],
         // Remembered so the override knows whether this card's "for N"
         // chip is a batch size that should follow it.

@@ -59,7 +59,7 @@ var SAVED_PLAIN = 'Saved';
 var SAVED_NAME_MAX = 44;
 """
 
-_FUNCS = ("cookServesShown", "cookApplyServesOverride", "recipeBatchLineHtml",
+_FUNCS = ("cookServesShown", "cookApplyServesOverride", "cookScaledIngredients", "recipeBatchLineHtml",
           "recipeIngredientsHtml", "recipePlainIngredientsHtml", "savedName", "markedLine")
 
 
