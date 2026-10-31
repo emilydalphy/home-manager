@@ -188,7 +188,11 @@ def _use_inventory_row_by_id(item_id: int, minus_qty: str) -> dict:
     # says "used the rice," but automated depletion has no such explicit
     # confirmation, so guessing "fully used" risks silently wiping out
     # inventory that's mostly still there. Flag it for review instead.
-    if _quantities._parse_quantity(row["quantity"] or "") is None:
+    # A joined amount ("1 kg + 2 cups" — a shop's metric tick on imperial
+    # stock) is two real amounts, not a guess: the recipe's comes off the
+    # part in its unit (inventory._joined_parts).
+    if (_quantities._parse_quantity(row["quantity"] or "") is None
+            and not _inventory._joined_parts(row["quantity"] or "")):
         conn.close()
         return {"item_id": item_id, "item": row["item"], "quantity": row["quantity"], "units_reconciled": False}
     remaining, reconciled = _inventory._try_subtract_quantity(row["quantity"] or "", minus_qty)

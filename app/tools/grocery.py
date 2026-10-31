@@ -4045,7 +4045,8 @@ def mark_grocery_item(item_id: int, status: str = "purchased") -> dict:
                 added = False
             elif row["inventory_added_at"] is None:
                 receipt = _inventory._add_to_inventory(
-                    row["item"], row["quantity"] or "", source="grocery_checkoff", category=row["category"], conn=conn
+                    row["item"], row["quantity"] or "", source="grocery_checkoff", category=row["category"], conn=conn,
+                    bought=True,
                 )
                 fields += ", inventory_added_at = datetime('now'), inventory_receipt_json = ?"
                 params.append(json.dumps({

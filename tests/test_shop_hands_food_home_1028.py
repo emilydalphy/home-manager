@@ -249,13 +249,15 @@ def _shop_chicken_for_wednesday(frozen_today, own_frozen: bool):
 
 
 def test_a_tick_merged_into_the_households_own_freezer_bag_stays_bought(frozen_today):
-    """The yes leaves a merged row where it is, so the freezer row is the
-    household's bag, still frozen whatever happened to the move."""
+    """The household's own bag stays the household's: since 2026-10-31 a
+    tick no longer merges fresh chicken INTO the frozen bag (the fresh pack
+    is its own row, and the yes froze that one), and the bag is still
+    frozen whatever happened to the move."""
     from app.tools import bring_over
 
     entry = _shop_chicken_for_wednesday(frozen_today, own_frozen=True)
-    [row] = _kitchen()
-    assert row["location"] == "freezer"
+    rows = _kitchen()
+    assert sorted((r["location"], r["quantity"]) for r in rows) == [("freezer", "1 lb"), ("freezer", "2 lbs")]
     frozen_today("2026-11-08 09:00:00")  # the move six days unticked
     assert "chicken thighs" in bring_over.bought_items([entry])
 

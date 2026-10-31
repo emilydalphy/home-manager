@@ -13,6 +13,8 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A shop's tick keeps fresh food out of a frozen pack, and a joined amount loses only what was used** (2026-10-31, branch `overnight/hunt-trip-1031`; `tests/test_bought_fresh_not_into_freezer.py`, `tests/test_joined_amount_used_not_wiped.py`).
+  (1) A tick names no shelf, so 2 lbs fresh chicken merged into the only chicken row, a 1 lb freezer pack: "3 lbs · Freezer · good till January", never "use first". `_add_to_inventory(bought=True)` (the tick only) skips freezer rows for fresh produce/dairy/meat; a frozen bag still joins its bag; "Yes, freezing it" now freezes the new pack. (2) "1 cup + 2 L" milk (metric onto imperial stays joined) read as freeform, so "used a cup" deleted the row and cooking took nothing. `_joined_parts` / `_subtract_from_a_part` take it off the part in its unit. Not fixed: `defrost._candidates_from_plan` still books a fridge move when the fridge covers the night.
 - **Test clock: `test_the_route_answers_with_the_view_and_the_receipt` failed 23:25–24:00 UTC** (2026-10-30, branch `merge-overnight-2026-10-30`).
   Its household is on UTC, so a 35-minute cook started then is on the table tomorrow; it asserted today's date. Now asserts started + 35 min. No app change.
 - **Merge seam: one rule for a chat use-by date** (2026-10-30, branch `merge-overnight-2026-10-30`).
