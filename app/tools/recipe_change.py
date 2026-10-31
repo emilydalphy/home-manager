@@ -1015,17 +1015,22 @@ _SNAPSHOT_COLUMNS = (
 )
 
 
-def _fork_name(conn, name: str, date: str) -> str:
+# The fork's mark. Never the day: the name is the dish's name everywhere
+# it is read (Plan, Today, the list), and a weekday in it read as part of
+# the dish — "Greek Yogurt Parfait with Berries and Granola (Wednesday)"
+# on Today (Loop Board, 2026-10-31). db._repair_weekday_fork_names renames
+# the forks made before this.
+FORK_MARK = "your way"
+
+
+def _fork_name(conn, name: str) -> str:
     """A name of its own for this meal's copy of a shared recipe, so a
     lookup by name (the Cook screen, get_recipe) never finds two."""
-    import datetime as _dt
-    try:
-        day = _dt.date.fromisoformat(str(date)[:10]).strftime("%A")
-    except ValueError:
-        day = "this one"
     taken = {str(r["name"] or "").strip().lower() for r in conn.execute(
         "SELECT name FROM recipes WHERE household_id = ?", (household_id(),))}
-    base = f"{name} ({day})"
+    # A copy of a copy is still the dish, your way — not "(your way) (your way)".
+    name = re.sub(r" \(" + FORK_MARK + r"\)( \d+)?$", "", name)
+    base = f"{name} ({FORK_MARK})"
     candidate, n = base, 2
     while candidate.lower() in taken:
         candidate, n = f"{base} {n}", n + 1
@@ -1125,7 +1130,7 @@ def apply_rewrite(spec: dict, detail: dict, request_text: str, this_meal_only: b
             users = {plan_id: _live_ids(conn, ids)} if approved else {}
             users = {k: v for k, v in users.items() if v}
             before = _needed_lines(conn) if approved else {}
-            target_id = _fork_recipe(conn, target_id, _fork_name(conn, spec.get("name") or "", entry["date"]))
+            target_id = _fork_recipe(conn, target_id, _fork_name(conn, spec.get("name") or ""))
             conn.execute(
                 "UPDATE meal_plan_entries SET recipe_id = ? "
                 f"WHERE id IN ({','.join('?' * len(ids))}) AND household_id = ?",

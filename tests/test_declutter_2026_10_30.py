@@ -8,7 +8,8 @@ PLAN — one screen for a draft and an approved week
   1. A day bar on top: Week (the default) then each day; a day shows only
      that day, in the same groups.
   2. Breakfast (each breakfast once, with its days), Lunch & dinner (the day
-     at the left), Snacks (folded to one line in the week, rows in a day).
+     at the left), Snacks (each snack once with its days in the week, rows
+     in a day — Emily, 2026-10-31).
   3. Quiet rows: no Swap / Tweak / Move / Done on any row; a leftover meal's
      row says just "Leftovers".
   4. Tapping a row opens ONE sheet: Swap, Tweak, Move (only where allowed),
@@ -58,7 +59,7 @@ def _run(script: str):
 def _plan_prelude() -> str:
     names = [
         "planDayIndex", "planDayBarHtml", "planRowMeta", "planIsReheat", "planRowHtml",
-        "planSlotRowHtml", "planDayLabel", "planDayGroupHtml", "planCardHtml",
+        "planSlotRowHtml", "planCardHtml",
         "planDishRowsHtml", "planBreakfastHtml", "planMainsDayRows", "planMainsHtml", "planSnackRows",
         "planSnacksHtml", "planDayTagsHtml", "planNotesHtml", "planDockHtml",
         "planWeekHtml", "planRowSheetOptions", "planRowSheetHtml", "quietSheetHeadHtml",
@@ -192,19 +193,38 @@ def test_breakfast_in_the_week_is_each_dish_once_with_its_days():
 
 
 @_needs_node
-def test_the_weeks_snacks_fold_to_one_line_and_open_in_place():
+def test_the_weeks_snacks_list_each_snack_once_with_its_days_no_fold():
+    # Emily, 2026-10-31: "the snacks should show the types in the total
+    # meal time like it does with the other meals, then show the days in
+    # the schedule like the others."
+    out = _plan("console.log(JSON.stringify(planSnacksHtml(DAYS, null)));")
+    assert "data-plan-snacks" not in out, "no fold"
+    assert "wk-pgroup" not in out, "no per-day groups"
+    assert '<span class="wk-menu-head">Snacks</span>' in out
+    for name in ("Apple", "Yogurt", "Pear", "Edamame", "Rice cakes", "Grapes", "Nuts", "Cheese"):
+        assert out.count(">" + name + "<") == 1, name
+    assert out.count("data-plan-snack=") == 6, "Monday has gone by: its two are lines, not swaps"
+    assert "Had Monday · 5 min" in out
+    assert "Wednesday · 5 min" in out
+
+
+@_needs_node
+def test_a_snack_on_several_days_is_one_row_with_its_days_and_its_swap():
     out = _plan(
-        "weekState.planSnacksOpen = false; var shut = planSnacksHtml(DAYS, null);\n"
-        "weekState.planSnacksOpen = true; var open = planSnacksHtml(DAYS, null);\n"
-        "console.log(JSON.stringify({ shut: shut, open: open }));"
+        "DAYS.forEach(function (d, i) { d.isPast = false;\n"
+        "  if (i < 3) d.snacks = [Object.assign({}, d.snacks[0], { title: 'Apple' }), d.snacks[1]]; });\n"
+        "console.log(JSON.stringify({ week: planSnacksHtml(DAYS, null), day: planSnacksHtml(DAYS, 2) }));"
     )
-    assert "2 a day · 8 in all" in out["shut"]
-    assert 'data-plan-snacks="1" aria-expanded="false"' in out["shut"]
-    assert "data-plan-snack=" not in out["shut"]
-    assert 'aria-expanded="true"' in out["open"]
-    assert out["open"].count("data-plan-snack=") == 6, "Monday has gone by: its two are lines, not swaps"
-    assert "Apple" in out["open"] and "Yogurt" in out["open"]
-    assert len(re.findall(r'class="wk-pgroup[ "]', out["open"])) == 4, "per-day rows, styled like the meal rows"
+    week = out["week"]
+    assert week.count(">Apple<") == 1, "each snack once"
+    assert "Mon–Wed · 5 min" in week
+    assert "Thursday · 5 min" in week, "Nuts, Thursday only"
+    # Its row is the snack's swap, on its first day still ahead.
+    assert 'data-plan-snack="snack" data-wk-day-index="0"' in week
+    assert "data-plan-row=" not in week
+    # A day tile still shows that day's snacks as rows, each its swap.
+    assert _row_attrs(out["day"], "data-plan-snack") == ["snack", "snack2"]
+    assert "Apple" in out["day"] and "Grapes" in out["day"] and "Pear" not in out["day"]
 
 
 @_needs_node

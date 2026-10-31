@@ -384,8 +384,28 @@ def for_day(day: str | date, view: dict, attendance_by_slot: dict | None = None,
             # behind it, which is the one thing the row must not promise
             # (moves.py's own rule, several Decision log entries).
             "is_leftovers": bool(lead.get("is_leftovers")),
+            # Which word the row says for it (made_ahead):
+            "made_ahead": made_ahead(lead, slot),
         })
     return rows
+
+
+def made_ahead(meal: dict, slot: str) -> bool:
+    """
+    Is this reheat-or-eat-cold row "Made ahead" rather than "Leftovers"?
+
+    A batch the household cooked ahead on purpose (cook_ahead.py — its
+    headline already says "Made ahead"), and any breakfast or snack eaten
+    from an earlier batch: nobody has leftovers of a parfait or of edamame,
+    those were made ahead (Loop Board, 2026-10-31 — Today called a
+    breakfast and the snacks "Leftovers"). A night named "Leftover chili"
+    and a portion out of the freezer keep "Leftovers".
+    """
+    if not meal.get("is_leftovers") or meal.get("leftovers_named"):
+        return False
+    if (meal.get("leftovers_headline") or "").startswith("Made ahead"):
+        return True
+    return slot in ("breakfast", "snack") and bool((meal.get("leftovers_from") or {}).get("date"))
 
 
 def _snack_eaters(att: dict, counts: dict) -> dict:

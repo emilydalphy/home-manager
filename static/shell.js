@@ -3267,6 +3267,12 @@
     return !!(row && row.is_leftovers);
   }
 
+  // The word under a reheat: "Made ahead" for a batch made on purpose and
+  // for any breakfast or snack (day_meals.made_ahead), else "Leftovers".
+  function todayMealReheatWord(row) {
+    return row && row.made_ahead ? 'Made ahead' : 'Leftovers';
+  }
+
   function todayMealRowHtml(row, i) {
     var dishes = row.per_person
       ? (row.lines || []).map(function (l) { return l.dish; }).filter(function (d, n, all) { return d && all.indexOf(d) === n; })
@@ -3276,7 +3282,7 @@
       '<span class="day-meal-text">' +
         '<span class="day-meal-slot">' + escapeHtml(row.label) + '</span>' +
         '<span class="day-meal-dish">' + escapeHtml(dishes.join(', ')) + '</span>' +
-        (todayMealIsLeftovers(row) ? '<span class="day-meal-note">Leftovers</span>' : '') +
+        (todayMealIsLeftovers(row) ? '<span class="day-meal-note">' + todayMealReheatWord(row) + '</span>' : '') +
       '</span>' +
       '<span class="day-meal-chev" aria-hidden="true">' + DAY_CHEV + '</span>' +
     '</button>';
@@ -3293,7 +3299,7 @@
         (who ? '<span class="quiet-line-sub">' + escapeHtml(who) + '</span>' : '') +
       '</div>';
     }).join('');
-    var note = todayMealIsLeftovers(row) ? 'Leftovers' : (row.note || '');
+    var note = todayMealIsLeftovers(row) ? todayMealReheatWord(row) : (row.note || '');
     var title = row.per_person
       ? (row.lines || []).map(function (l) { return l.dish; }).filter(function (d, n, all) { return d && all.indexOf(d) === n; }).join(', ')
       : (row.dishes || []).join(', ');
@@ -16998,8 +17004,8 @@
     // (draftView; draftViewPlanId is the plan it was last set for).
     draftView: 'menu', draftViewPlanId: null,
     // The Plan root's day bar (planWeekHtml, 2026-10-30): null is Week,
-    // a number is that day. planSnacksOpen: the week's snacks unfolded.
-    planDay: null, planSnacksOpen: false, planDayPlanId: null,
+    // a number is that day.
+    planDay: null, planDayPlanId: null,
     // A pin by PLAN, not by date: "See next week's draft" (planNextWeek).
     // Wins over showWeekStart, and lets go once that plan is approved.
     showPlanId: null
@@ -18905,7 +18911,9 @@
   function planRowMeta(entry) {
     if (!entry || entry.state !== 'planned') return '';
     var src = entry.leftover_from;
-    if (src && src.date) return src.cook_ahead ? 'Made ahead' : 'Leftovers';
+    // A breakfast or snack from an earlier batch was made ahead, never
+    // "Leftovers" (day_meals.made_ahead, the same rule on Today).
+    if (src && src.date) return src.cook_ahead || src.slot === 'breakfast' || src.slot === 'snack' ? 'Made ahead' : 'Leftovers';
     if (entry.source === 'leftovers') return 'Leftovers';
     if (entry.source === 'takeout') return 'Takeout';
     return entry.meta || '';
@@ -18975,18 +18983,6 @@
       meta: 'Tap to ask for one', quiet: true, label: 'Ask for a ' + slotWord(slot) });
   }
 
-  // A day's label at the left of a Lunch & dinner (or Snacks) group.
-  function planDayLabel(day) {
-    return day.isToday ? 'Today' : dayName(day.date, { weekday: 'short' }).slice(0, 3);
-  }
-
-  function planDayGroupHtml(day, rows) {
-    return '<div class="wk-pgroup' + (day.isToday ? ' is-today' : '') + (day.isPast ? ' is-past' : '') + '">' +
-      '<span class="wk-pgroup-day">' + escapeHtml(planDayLabel(day)) + '</span>' +
-      '<div class="wk-pgroup-rows">' + rows + '</div>' +
-    '</div>';
-  }
-
   function planCardHtml(cls, head, body) {
     if (!body) return '';
     return '<div class="shell-card wk-pcard ' + cls + '">' +
@@ -19002,7 +18998,12 @@
   // should give me the schedule"; the same ask as 2026-09-21). A row
   // standing for several days still ahead is the whole dish: its sheet's
   // Swap changes every one of them (data-plan-dates).
-  var PLAN_DISH_HEADS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner' };
+  // Snacks read the same way (Emily, 2026-10-31: "the snacks should show
+  // the types in the total meal time like it does with the other meals,
+  // then show the days in the schedule like the others") — each snack
+  // once, its days and its time; its row is the snack's swap
+  // (data-plan-snack), on its first day still ahead.
+  var PLAN_DISH_HEADS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snack: 'Snack' };
 
   function planDishRowsHtml(days, slot) {
     var group = wkMenuGroups(days).filter(function (g) { return g.slot === slot; })[0];
@@ -19010,7 +19011,7 @@
     // (dinner eaten as tomorrow's lunch) is not a dish to make, so the menu
     // leaves it out; the day view still shows it as "Leftovers".
     var dishes = (group ? group.dishes : []).filter(function (dish) {
-      return slot === 'breakfast' || !dish.isLeftover;
+      return slot === 'breakfast' || slot === 'snack' || !dish.isLeftover;
     });
     var rows = dishes.map(function (dish) {
       var first = dish.days.filter(function (d) { return !d.past; })[0] || dish.days[0];
@@ -19018,20 +19019,30 @@
       var fact = dish.isLeftover ? planRowMeta(first.entry) : wkMenuFact(dish);
       var changed = typeof wasRecentlyChanged === 'function' &&
         dish.days.some(function (d) { return wasRecentlyChanged(d.date, d.key); });
+      var meta = [wkMenuDaysPhrase(dish, days), fact].filter(Boolean).join(' · ');
+      if (slot === 'snack') {
+        // A snack all behind us has nothing to swap: a line to read.
+        if (!ahead.length) return planRowHtml({ name: dish.name, meta: meta, past: true });
+        return planRowHtml({
+          attrs: ' data-plan-snack="' + first.key + '" data-wk-day-index="' + first.index + '"',
+          name: dish.name, changed: changed, meta: meta,
+          label: dish.name + ' — swap it'
+        });
+      }
       return planRowHtml({
         attrs: ' data-plan-row="' + first.key + '" data-wk-day-index="' + first.index + '"' +
           (ahead.length > 1 ? ' data-plan-dates="' + escapeHtml(ahead.map(function (d) { return d.date; }).join(',')) + '"' : '') +
           (dish.isLeftover ? ' data-plan-reheat="1"' : ''),
         name: dish.name, changed: changed, past: !ahead.length,
         done: dish.days.every(function (d) { return !!d.entry.cooked; }),
-        meta: [wkMenuDaysPhrase(dish, days), fact].filter(Boolean).join(' · '),
+        meta: meta,
         label: PLAN_DISH_HEADS[slot] + ', ' + dish.name + ' — change it'
       });
     }).join('');
     // A meal handed back is a decision, so it is never folded into a
     // dish: it gets its own row, named by its day.
     days.forEach(function (day, i) {
-      var e = day[slot];
+      var e = slot === 'snack' ? null : day[slot];
       if (e && e.state === 'open' && !day.before_plan_start) {
         rows += planSlotRowHtml(day, i, slot, dayName(day.date, { weekday: 'long' }));
       }
@@ -19078,9 +19089,9 @@
       planCardHtml('wk-pcard-mains wk-pcard-dinner', 'Dinner', planDishRowsHtml(days, 'dinner') + build);
   }
 
-  // SNACKS. The week: folded to one line ("2 a day · 14 in all"); a tap
-  // opens the per-day rows (weekState.planSnacksOpen, page-view only). A
-  // day: that day's snacks as rows. A snack's row opens its swap.
+  // SNACKS. The week: each snack once with its days and time, like the
+  // other meals (planDishRowsHtml) — no per-day groups, no fold. A day:
+  // that day's snacks as rows. A snack's row opens its swap.
   function planSnackRows(day, i) {
     return (day.snacks || []).map(function (_, n) {
       return planSlotRowHtml(day, i, snackSlotKey(n), '');
@@ -19089,34 +19100,7 @@
 
   function planSnacksHtml(days, sel) {
     if (sel !== null) return planCardHtml('wk-pcard-snacks', 'Snacks', planSnackRows(days[sel], sel));
-    var counts = [];
-    var total = 0;
-    days.forEach(function (day) {
-      if (day.before_plan_start) return;
-      var n = (day.snacks || []).filter(function (e) { return e && e.state === 'planned'; }).length;
-      if (!n) return;
-      counts.push(n);
-      total += n;
-    });
-    if (!total) return '';
-    var even = counts.every(function (n) { return n === counts[0]; });
-    var summary = [even && counts[0] ? counts[0] + ' a day' : '', total + ' in all'].filter(Boolean).join(' · ');
-    var open = !!weekState.planSnacksOpen;
-    var body = open ? days.map(function (day, i) {
-      if (day.before_plan_start) return '';
-      var rows = planSnackRows(day, i);
-      return rows ? planDayGroupHtml(day, rows) : '';
-    }).join('') : '';
-    return '<div class="shell-card wk-pcard wk-pcard-snacks">' +
-      '<button type="button" class="wk-qrow wk-snacks-fold" data-plan-snacks="1" aria-expanded="' + (open ? 'true' : 'false') + '">' +
-        '<span class="wk-qrow-text">' +
-          '<span class="wk-row-eyebrow">Snacks</span>' +
-          '<span class="wk-qrow-name">' + escapeHtml(summary) + '</span>' +
-        '</span>' +
-        '<span class="wk-qrow-chev wk-snacks-chev' + (open ? ' is-open' : '') + '" aria-hidden="true">' + WK_ICONS.chev + '</span>' +
-      '</button>' +
-      body +
-    '</div>';
+    return planCardHtml('wk-pcard-snacks', 'Snacks', planDishRowsHtml(days, 'snack'));
   }
 
   // The day's own words, in day view only: the holiday, who is out, a
@@ -21862,13 +21846,6 @@
       row.addEventListener('click', function () {
         var day = wkDayForTap(row);
         if (day) openSwapSheet(panel, day, row.getAttribute('data-plan-snack'));
-      });
-    });
-    // The week's snacks, folded to one line, open and close in place.
-    steps.querySelectorAll('[data-plan-snacks]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        weekState.planSnacksOpen = !weekState.planSnacksOpen;
-        renderMealsStep(panel);
       });
     });
     // The draft's flags, top of the screen: one of Pomona's own two fixes
@@ -24637,12 +24614,11 @@
 
   function renderWeekMenu(panel, data) {
     weekState.data = data;
-    // A different plan opens on Week, snacks folded (the day bar's choice
-    // belongs to the week it was made on).
+    // A different plan opens on Week (the day bar's choice belongs to the
+    // week it was made on).
     if (weekState.planDayPlanId !== data.weekly_plan_id) {
       weekState.planDayPlanId = data.weekly_plan_id;
       weekState.planDay = null;
-      weekState.planSnacksOpen = false;
     }
     setDishIndex(data);
     var todayStr = todayLocalStr();

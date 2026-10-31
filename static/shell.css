@@ -12383,8 +12383,7 @@ body.first-open-active { overflow: hidden; }
 .wk-pcards { display: flex; flex-direction: column; gap: 12px; padding: 0 16px; }
 .wk-pcard { padding: 12px 16px 4px; }
 .wk-pcard .wk-menu-head + .wk-qrow,
-.wk-pcard .wk-menu-head + .wk-qrow-open .wk-qrow,
-.wk-pcard .wk-menu-head + .wk-pgroup { border-top: 0; }
+.wk-pcard .wk-menu-head + .wk-qrow-open .wk-qrow { border-top: 0; }
 /* One quiet row: the slot's eyebrow, the dish, one short line, a chevron.
    The whole row is the 52px tap target (rule 6); nothing else on it is a
    button. */
@@ -12414,24 +12413,6 @@ button.wk-qrow:hover .wk-qrow-name { color: var(--ink-strong); }
 .wk-qrow .wk-row-eyebrow .wk-changed { margin-left: 8px; }
 .wk-qrow-chev { flex: 0 0 auto; display: flex; color: var(--ink-inactive); }
 .wk-qrow-chev svg { width: 16px; height: 16px; }
-.wk-snacks-chev svg { transition: rotate var(--motion-base) var(--motion-ease); }
-.wk-snacks-chev.is-open svg { rotate: 90deg; }
-/* The week's Lunch & dinner: one group per day, the day at the left. */
-.wk-pgroup { display: flex; gap: 10px; border-top: 1.5px solid var(--hairline); }
-.wk-pgroup-day {
-  flex: 0 0 40px;
-  padding-top: 15px;
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 800;
-  color: var(--ink-strong);
-}
-.wk-pgroup.is-today .wk-pgroup-day { color: var(--apricot-label); }
-.wk-pgroup.is-past .wk-pgroup-day { color: var(--ink-done); }
-.wk-pgroup-rows { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
-.wk-pgroup-rows > .wk-qrow:first-child,
-.wk-pgroup-rows > .wk-qrow-open:first-child .wk-qrow { border-top: 0; }
-.wk-pgroup-rows .wk-qrow { min-height: 48px; padding: 6px 0; }
 .wk-qrow-open .wk-slot-open { padding-bottom: 8px; }
 /* The extras, as quiet single lines: "+ Add a meal", and the flags and
    "Couldn't fit these" without their tint, so nothing on the screen
