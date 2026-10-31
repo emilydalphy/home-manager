@@ -371,6 +371,19 @@ function currentPrepDayKeys() {
   return prepAnswer === 'yes' ? UW_WEEKDAYS.filter(d => prepDayKeys.indexOf(d) !== -1) : [];
 }
 function hasPrepDay() { return currentPrepDayKeys().length > 0; }
+// Breakfast fresh or made ahead (Emily, 2026-10-26, option B): a row under
+// the day tiles once a prep day is picked and breakfast is planned. The
+// keys are app/tools/breakfast_prep.py's BREAKFAST_PREP_OPTIONS. One prep
+// day names it ("Made ahead on Sunday"), as Settings › Prep days does.
+const BREAKFAST_PREP_KEYS = ['fresh', 'make_ahead'];
+let breakfastPrep = '';        // '' (not answered) | 'fresh' | 'make_ahead'
+function breakfastPrepAsked() {
+  return hasPrepDay() && uwMealOn('breakfast') && !!document.getElementById('prep-breakfast');
+}
+function breakfastPrepLabel(key, days) {
+  if (key === 'fresh') return 'Made fresh each morning';
+  return days.length === 1 ? 'Made ahead on ' + uwDayName(days[0]) : 'Made ahead on prep day';
+}
 function uwDayName(key) { return UW_DAY_NAMES[UW_WEEKDAYS.indexOf(key)] || ''; }
 // The line under the answer (Emily's mockup: "Sunday, a longer stretch.
 // I'll put lunch prep and a big batch cook there, and keep weeknights
@@ -396,6 +409,19 @@ function buildPrepStep() {
     const on = prepDayKeys.indexOf(d) !== -1;
     return `<button type="button" class="uw-day${on ? ' is-all' : ''}" data-prep-day="${d}" aria-label="${UW_DAY_NAMES[i]}" aria-pressed="${on ? 'true' : 'false'}"><b>${UW_LETTERS[i]}</b></button>`;
   }).join('');
+  const bRow = document.getElementById('prep-breakfast');
+  if (bRow) {
+    const asked = breakfastPrepAsked();
+    bRow.hidden = !asked;
+    const days = currentPrepDayKeys();
+    document.getElementById('prep-breakfast-chips').innerHTML = BREAKFAST_PREP_KEYS.map(k =>
+      `<button type="button" class="chip${breakfastPrep === k ? ' active' : ''}" data-breakfast-prep="${k}" aria-pressed="${breakfastPrep === k ? 'true' : 'false'}">${breakfastPrepLabel(k, days)}</button>`
+    ).join('');
+    const note = document.getElementById('prep-breakfast-note');
+    note.textContent = breakfastPrep === 'make_ahead' ? 'Things that keep in the fridge, like egg bites and overnight oats.'
+      : breakfastPrep === 'fresh' ? 'Quick breakfasts, made each morning.' : '';
+    note.hidden = !asked || !breakfastPrep;
+  }
   const line = prepReadback(currentPrepDayKeys(), uwMealOn('lunch'));
   const readback = document.getElementById('prep-readback');
   readback.textContent = line;
@@ -411,6 +437,13 @@ document.getElementById('prep-day-tiles').addEventListener('click', e => {
   if (!btn) return;
   const d = btn.dataset.prepDay;
   prepDayKeys = prepDayKeys.indexOf(d) !== -1 ? prepDayKeys.filter(k => k !== d) : prepDayKeys.concat([d]);
+  buildPrepStep();
+});
+const bChips = document.getElementById('prep-breakfast-chips');
+if (bChips) bChips.addEventListener('click', e => {
+  const btn = e.target.closest('[data-breakfast-prep]');
+  if (!btn) return;
+  breakfastPrep = btn.dataset.breakfastPrep;
   buildPrepStep();
 });
 }

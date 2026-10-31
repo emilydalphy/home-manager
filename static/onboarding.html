@@ -1565,6 +1565,14 @@
         <div class="q-opt-body" id="prep-yes-body" hidden>
           <p class="q-opt-label">Which day?</p>
           <div class="uw-days" id="prep-day-tiles"></div>
+          <!-- Breakfast fresh or made ahead (Emily, 2026-10-26, option B):
+               a row inside the prep day, only when breakfast is planned.
+               Saved as the rhythm fact breakfast_prep. -->
+          <div id="prep-breakfast" class="q-opt-body" hidden>
+            <p class="q-opt-label">Breakfast</p>
+            <div class="chip-row" id="prep-breakfast-chips"></div>
+            <p class="uw-sum" id="prep-breakfast-note" hidden></p>
+          </div>
         </div>
       </div>
       <p class="uw-sum" id="prep-readback" hidden></p>
@@ -2745,6 +2753,9 @@ async function saveRhythmAnswers() {
     dinner_window: rhythmDinnerWindow,
     leftovers_stance: leftoversStanceFromVariety(uwMealOn('dinner'), currentVarietyChoice('dinner')),
   };
+  // Only when the row was on screen to answer: no prep day, or no
+  // breakfast, leaves whatever is stored alone.
+  if (breakfastPrepAsked() && breakfastPrep) body.breakfast_prep = breakfastPrep;
   // Only what the note said, for people the Weekday lunches screen has no
   // answer for: "at home" is what the planner assumes for anybody with
   // nothing on file, and an answered person is written from their needs.
@@ -5827,7 +5838,7 @@ function onboardingDraftSnapshot() {
     snacks: memberSnacks,
     shop: { day: shopDay, topUp: shopTopUpDay },
     cook: { role: cookRole, who: cookWho },
-    prep: { answer: prepAnswer, days: prepDayKeys },
+    prep: { answer: prepAnswer, days: prepDayKeys, breakfast: breakfastPrep },
     variety: varietyChoice,
     dinner: { window: rhythmDinnerWindow, weeknightMax: weeknightMaxMinutes, lunchMax: weekdayLunchMaxMinutes },
     clock: { zone: clockZone, asking: clockAsking, said: clockSaid },
@@ -5916,7 +5927,7 @@ function readOnboardingDraft(raw) {
     snacks: byName(d.snacks, v => num(v, 1)),
     shop: { day: str(obj(d.shop).day, ''), topUp: str(obj(d.shop).topUp, '') },
     cook: { role: str(obj(d.cook).role, ''), who: str(obj(d.cook).who, '') },
-    prep: { answer: str(obj(d.prep).answer, ''), days: strs(obj(d.prep).days) },
+    prep: { answer: str(obj(d.prep).answer, ''), days: strs(obj(d.prep).days), breakfast: str(obj(d.prep).breakfast, '') },
     variety: {
       breakfast: str(obj(d.variety).breakfast, VARIETY_DEFAULT),
       lunch: str(obj(d.variety).lunch, VARIETY_DEFAULT),
@@ -5973,6 +5984,7 @@ function applyOnboardingDraft(d) {
   cookWho = (d.cook && d.cook.who) || '';
   prepAnswer = d.prep.answer;
   prepDayKeys = d.prep.days;
+  breakfastPrep = BREAKFAST_PREP_KEYS.indexOf(d.prep.breakfast) !== -1 ? d.prep.breakfast : '';
   varietyChoice = d.variety;
   rhythmDinnerWindow = d.dinner.window;
   // A draft saved before the clock line has no `clock`: the phone's own

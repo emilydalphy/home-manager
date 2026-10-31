@@ -26,7 +26,7 @@ import json
 from functools import lru_cache
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError, available_timezones
 
-from ..db import get_conn
+from ..db import get_conn, write
 from ._shared import EATS_HERE_SQL, find_member_row, household_id
 from . import household as _household
 
@@ -55,6 +55,10 @@ DINNER_WINDOWS = ("5_6ish", "6_8", "later", "all_over")
 PLANNING_ANCHOR_WEEKDAYS = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
 PLANNING_ANCHORS = PLANNING_ANCHOR_WEEKDAYS + ("as_we_go",)
 LEFTOVERS_STANCES = ("love_them", "fine_sometimes", "fresh_each_night")
+
+# Emily, 2026-10-26: breakfast made fresh each morning, or made ahead on the
+# prep day (egg bites, overnight oats, chia pudding). See breakfast_prep.py.
+from .breakfast_prep import BREAKFAST_PREP_OPTIONS
 
 # Emily, 2026-09-04 and again 2026-09-08: "I like to do some prep on Sunday
 # to make the week easier, make some things fresh during the week, and then
@@ -473,6 +477,20 @@ def set_leftovers_stance(value: str, source: str = "onboarding") -> dict:
     return {"leftovers_stance": value}
 
 
+def set_breakfast_prep(value: str, source: str = "onboarding") -> dict:
+    """
+    Set how breakfast gets made: 'fresh' (each morning) or 'make_ahead'
+    (on the prep day, so it has to keep in the fridge). Household-level.
+    Read by the week planner and by cook_ahead.apply_prep_day_batches.
+    """
+    if value not in BREAKFAST_PREP_OPTIONS:
+        raise ValueError(f"value must be one of {BREAKFAST_PREP_OPTIONS}, not {value!r}.")
+    with write() as conn:
+        _upsert(conn, "", "", "breakfast_prep", value, "", source)
+    _household._log_preference_event("rhythm:breakfast_prep", "write")
+    return {"breakfast_prep": value}
+
+
 # The longest one prep day can be: a day. Anything above is a typo.
 MAX_PREP_MINUTES = 24 * 60
 
@@ -653,6 +671,7 @@ def get_household_rhythm() -> dict:
     dinner_window = None
     planning_anchor = None
     leftovers_stance = None
+    breakfast_prep = None
     prep_days: list[dict] = []
     shop_day = None
     top_up_shop_day = None
@@ -674,6 +693,8 @@ def get_household_rhythm() -> dict:
             planning_anchor = row["value"]
         elif row["fact_type"] == "leftovers_stance":
             leftovers_stance = row["value"]
+        elif row["fact_type"] == "breakfast_prep":
+            breakfast_prep = row["value"]
         elif row["fact_type"] == "shop_day":
             shop_day = row["value"]
         elif row["fact_type"] == "top_up_shop_day":
@@ -708,6 +729,7 @@ def get_household_rhythm() -> dict:
         "planning_anchor": planning_anchor,
         "planning_anchor_label": planning_anchor_label(planning_anchor or ""),
         "leftovers_stance": leftovers_stance,
+        "breakfast_prep": breakfast_prep,
         "prep_days": prep_days,
         "prep_days_summary": prep_days_summary(prep_days),
         "shop_day": shop_day,
@@ -862,6 +884,7 @@ def save_rhythm_answers(
     top_up_shop_day=None,
     remind_before_shop=None,
     timezone: str = "",
+    breakfast_prep: str = "",
     source: str = "onboarding",
 ) -> dict:
     """
@@ -921,6 +944,9 @@ def save_rhythm_answers(
     if leftovers_stance and leftovers_stance not in LEFTOVERS_STANCES:
         raise ValueError(f"value must be one of {LEFTOVERS_STANCES}, not {leftovers_stance!r}.")
 
+    if breakfast_prep and breakfast_prep not in BREAKFAST_PREP_OPTIONS:
+        raise ValueError(f"value must be one of {BREAKFAST_PREP_OPTIONS}, not {breakfast_prep!r}.")
+
     # _normalize_prep_days raises on anything invalid and has no side
     # effect of its own — exactly the "validate without writing" this
     # whole function needs, already built for set_prep_days.
@@ -967,6 +993,9 @@ def save_rhythm_answers(
         if leftovers_stance:
             _upsert(conn, "", "", "leftovers_stance", leftovers_stance, "", source)
             logged.append("rhythm:leftovers_stance")
+        if breakfast_prep:
+            _upsert(conn, "", "", "breakfast_prep", breakfast_prep, "", source)
+            logged.append("rhythm:breakfast_prep")
         if normalized_prep_days is not None:
             _upsert(conn, "", "", "prep_days", json.dumps(normalized_prep_days), "", source)
             logged.append("rhythm:prep_days")

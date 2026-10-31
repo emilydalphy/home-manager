@@ -709,6 +709,7 @@ from .rhythm import (  # noqa: F401
     prep_minutes_label,
     rhythm_completeness_signals,
     save_rhythm_answers,
+    set_breakfast_prep,
     set_cooking_role,
     set_dinner_window,
     set_household_timezone,
