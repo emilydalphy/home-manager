@@ -680,12 +680,29 @@ def test_light_normalisation_reads_these_as_the_same_dish(last_week, stub_model,
     assert _at(plan["weekly_plan_id"], tools._week_dates(week)[0], "dinner")["meal"] == "Moussaka"
 
 
-@pytest.mark.parametrize("drafted", ["Bean chili bowls", "White bean chili", "Chili"])
+@pytest.mark.parametrize("drafted", ["Bean chili bowls", "White bean chili"])
+def test_the_same_dish_under_another_name_is_a_repeat(last_week, stub_model, picker, drafted):
+    """
+    CATCH (Emily, 2026-10-31: last week's bean stew came back renamed).
+    Same main protein (beans) plus the same kind of dish (chili) is the
+    same dish for dinner and lunch — meal_variety.same_dish. Until then
+    these two were this file's GUARD for "no fuzzy matching" (2026-09-25).
+    """
+    week = _monday(0)
+    stub_model(_week(week, [drafted] + FRESH_DINNERS[1:]))
+    plan = agent.generate_weekly_plan(week)
+    assert _at(plan["weekly_plan_id"], tools._week_dates(week)[0], "dinner")["meal"] == "Moussaka"
+
+
+@pytest.mark.parametrize("drafted", ["Chili", "Black bean tacos", "Chicken chili"])
 def test_a_dish_that_merely_shares_words_is_a_different_dish(last_week, stub_model, picker, drafted):
     """
-    GUARD, and the reason there is no fuzzy matching: taking a dinner away
-    that nobody repeated costs the household a dish they never asked to
-    lose. Pinned by the mutation that matches on a shared word.
+    GUARD: taking a dinner away that nobody repeated costs the household a
+    dish they never asked to lose. A shared word alone is not the same dish
+    — no protein against a protein ("Chili"), the same protein as another
+    kind of dish ("Black bean tacos" against "Bean chili"), or the same kind
+    of dish with another protein ("Chicken chili"). Pinned by the mutation
+    that matches on any shared word.
     """
     week = _monday(0)
     stub_model(_week(week, [drafted] + FRESH_DINNERS[1:]))

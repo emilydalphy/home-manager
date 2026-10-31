@@ -30,6 +30,12 @@ tahini in hummus), skips a standing dislike, last fortnight's snacks and
 anything already on that day, and leans toward the ones whose ingredients
 the week already buys, so variety doesn't balloon the list.
 
+Since 2026-10-31 a snack that is not one thing or a pair that goes
+together (everyday_snacks.pairing_problem: clementines with edamame) is
+re-picked the same way on every day it holds, and an unset count of
+different snacks is the number that keeps every snack to three days
+(default_snack_dishes).
+
 What stands it down: a small count (the cap is then what the number
 needs: two dishes at two a day is seven days each); words
 for the week or a standing note that say repeats are fine ("same snack
@@ -59,25 +65,32 @@ MAX_SNACK_DAYS = 3
 VARIETY_CONSTRAINT = "snack_variety"
 
 
-# Different snacks a week for a household that never set the count (Emily,
-# 2026-10-25: "2 snacks a day doesn't quietly turn into 4-5 different
-# snack recipes"). It was five at two a day from 2026-10-19 — enough for
-# no snack on more than three days — so a household that said two snacks
-# a day got five snack recipes on the list without ever choosing that.
+# Different snacks a week for a household that never set the count. Emily,
+# 2026-10-25, made it two ("2 snacks a day doesn't quietly turn into 4-5
+# different snack recipes"); Emily, 2026-10-31, on the week that number
+# produced — the same two snacks on almost every day: "It's giving me a lot
+# of repeats", and the card's rule is no snack on more than three days
+# unless the household asked for the same every day. A household that
+# never touched the stepper asked for neither, so the later call wins for
+# them: an unset count is the fewest dishes that keep every snack to
+# MAX_SNACK_DAYS (two a day → five, one a day → three). A count the
+# household SET is still theirs, and the three-day cap still gives way to
+# it (enforce_snack_variety) — that is them asking for the same snacks.
 DEFAULT_SNACK_DISHES = 2
 
 
 def default_snack_dishes(snacks_per_day: int | None) -> int | None:
     """
     How many different snacks a week reads as, for a household that never
-    set it: DEFAULT_SNACK_DISHES, but never fewer than one day's snacks
-    (three a day from two dishes would be a day eating one twice — the
-    edit refuses that too), at most 7. None for a house with no snacks.
+    set it: enough that no snack is on more than MAX_SNACK_DAYS of seven
+    days, never fewer than DEFAULT_SNACK_DISHES or one day's snacks, at
+    most 7. None for a house with no snacks.
     """
     per_day = int(snacks_per_day or 0)
     if per_day <= 0:
         return None
-    return min(7, max(DEFAULT_SNACK_DISHES, per_day))
+    spread = math.ceil(7 * per_day / MAX_SNACK_DAYS)
+    return min(7, max(DEFAULT_SNACK_DISHES, per_day, spread))
 
 
 # "same snack every day is fine", "the same snacks all week", "snacks can
@@ -278,8 +291,12 @@ def enforce_snack_variety(plan_id: int, dates: list[str], memory: dict, period_s
             if not dish["protected"] and _meal_variety.asked_for_by_name(dish["name"], asks):
                 dish["protected"] = True
 
+        # A snack that is not one thing or a pair that goes together
+        # (everyday_snacks.pairing_problem — clementines with edamame) goes
+        # on every day it holds, unless they asked for it.
+        mismatched = [d for d in dishes.values() if not d["protected"] and _everyday.pairing_problem(d["name"])]
         over = [d for d in dishes.values() if not d["protected"] and len(d["days"]) > cap]
-        if not over:
+        if not over and not mismatched:
             return out
 
         day_food = _meal_variety._day_food(plan_id, sorted(in_scope))
@@ -293,7 +310,11 @@ def enforce_snack_variety(plan_id: int, dates: list[str], memory: dict, period_s
         pool_refused: set[str] = set()
 
         surplus: list[dict] = []
-        for dish in sorted(over, key=lambda d: (-len(d["days"]), d["name"])):
+        for dish in mismatched:
+            surplus.extend(dish["entries"])
+            dish["days"] = set()
+            out.setdefault("mismatched", []).append(dish["name"])
+        for dish in sorted((d for d in over if d not in mismatched), key=lambda d: (-len(d["days"]), d["name"])):
             entries = dish["entries"]
             keep = set(_spread(len(entries), cap))
             surplus.extend(e for i, e in enumerate(entries) if i not in keep)
@@ -308,7 +329,7 @@ def enforce_snack_variety(plan_id: int, dates: list[str], memory: dict, period_s
         def _week_pick(date: str) -> dict | None:
             on_day = set(day_food.get(date, {}))
             fits = [d for k, d in dishes.items() if k not in on_day and len(d["days"]) < cap
-                    and not _echoes(d["name"], date)]
+                    and not _echoes(d["name"], date) and d not in mismatched]
             return min(fits, key=lambda d: (len(d["days"]), d["name"])) if fits else None
 
         def _pool_pick(date: str) -> dict | None:

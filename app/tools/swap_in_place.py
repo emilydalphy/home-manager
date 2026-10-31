@@ -481,6 +481,8 @@ never a garnish — and in the name where that reads naturally. A pick without i
 - `must_be_cuisine`, when present, is a cuisine or kind of dish the household picked for this week \
 ("Mexican", "Burgers"). The dish IS that — a burger for Burgers, a Mexican dish for Mexican — with \
 it in the name or in `cuisine`. A pick that isn't is thrown away.
+- `avoid_cuisines`, when present, are cuisines this week already has enough of. Pick a dish of \
+another cuisine and say which in `cuisine` — a pick with no cuisine, or one of these, is thrown away.
 - `week_other_dishes` is the rest of this week. Don't repeat one, and don't repeat the protein or \
 cuisine of the nights either side of this one — the point of a swap is a different night, not the \
 same night renamed.

@@ -120,11 +120,15 @@ def test_five_different_snacks_at_two_a_day_is_none_on_more_than_three_days(
     assert ORANGE in days and EDAMAME in days
 
 
-def test_an_unanswered_count_reads_as_two_never_fewer_than_a_days_snacks():
-    """Emily, 2026-10-25. It read as five at two a day from 2026-10-19."""
-    assert tools.get_household_memory()["snack_dishes_per_week"] == 2
-    assert snack_variety.default_snack_dishes(1) == 2
-    assert snack_variety.default_snack_dishes(3) == 3
+def test_an_unanswered_count_keeps_every_snack_to_three_days():
+    """Emily, 2026-10-31: no snack on more than three days unless they
+    asked for the same ones — so an unset count is the fewest dishes that
+    allows it (two a day: five). It was two from 2026-10-25, which put the
+    same two snacks on every day."""
+    assert tools.get_household_memory()["snack_dishes_per_week"] == 5
+    assert snack_variety.default_snack_dishes(1) == 3
+    assert snack_variety.default_snack_dishes(2) == 5
+    assert snack_variety.default_snack_dishes(3) == 7
     assert snack_variety.default_snack_dishes(0) is None
 
 
@@ -177,30 +181,32 @@ def test_variety_respects_a_hard_allergy(two_adults, stub_model):
 
 
 def test_prefers_a_snack_that_reuses_what_the_week_buys(two_adults, stub_model):
-    """The week already buys edamame and pumpkin seeds: the first pool
+    """The week already buys carrots and pumpkin seeds: the first pool
     picks are the list snacks that reuse them, not ones that add new lines.
-    (The pool is the everyday snack list since 2026-10-21.)"""
+    (The pool is the everyday snack list since 2026-10-21. The list's
+    edamame is plain "Edamame with Sea Salt" since 2026-10-31 — the same
+    name as this week's own — so it is already on the week, not a pick.)"""
     week = _monday()
     stub_model(_tester_home_week(week))
     plan_id = agent.generate_weekly_plan(week)["weekly_plan_id"]
     days = _snack_days(plan_id)
-    assert "Edamame with Sea Salt and Clementines" in days, days
+    assert "Hummus Pinwheels with Carrot and Spinach" in days, days
     assert "Homemade Trail Mix with Seeds, Dried Fruit and Dark Chocolate" in days, days
 
 
 def test_the_list_reads_per_person_per_day(two_adults, stub_model):
-    """Three orange days for two adults is six oranges, not fourteen; a pool
-    snack is written per person too (three clementine days, two adults: six)."""
+    """Three orange days for two adults is six oranges, not fourteen. (A
+    pool snack written per person: the rescale test below.)"""
     week = _monday()
     stub_model(_tester_home_week(week))
     plan_id = agent.generate_weekly_plan(week)["weekly_plan_id"]
     days = _snack_days(plan_id)
     assert len(days[ORANGE]) == 3
-    assert len(days["Edamame with Sea Salt and Clementines"]) == 3, days
     tools.approve_weekly_plan(plan_id)
     lines = {r["item"].lower(): r["quantity"] for r in tools.list_grocery_list()}
     assert str(lines.get("oranges")).split()[0] == "6", lines
-    assert str(lines.get("clementines")).split()[0] == "6", lines
+    # Clementines with edamame was the list's own bad pair (2026-10-31).
+    assert "clementines" not in lines, lines
 
 
 def test_a_household_that_already_set_the_stepper_keeps_its_number():
@@ -212,7 +218,7 @@ def test_a_household_that_already_set_the_stepper_keeps_its_number():
     conn = get_conn()
     conn.execute("UPDATE meal_preferences SET snack_dishes_per_week_set = 0")
     conn.commit()
-    assert tools.get_household_memory()["snack_dishes_per_week"] == 2
+    assert tools.get_household_memory()["snack_dishes_per_week"] == 5
     db._backfill_snack_dishes_set(conn)
     conn.commit()
     conn.close()
@@ -271,9 +277,9 @@ def test_a_saved_recipe_of_the_pool_name_is_checked_on_its_own_list(two_adults, 
         return out
     monkeypatch.setattr(agent._snack_variety, "enforce_snack_variety", spy)
     tools.set_member_dietary_restrictions("Sam", ["peanut allergy"])
-    mine = "Edamame with Sea Salt and Clementines"  # the pool's first pick for this week
+    mine = "Hummus Pinwheels with Carrot and Spinach"  # the pool's first pick for this week
     tools.add_recipe(name=mine, default_servings=2, food_groups=["protein", "vegetable"],
-                     ingredients=[{"item": "edamame", "qty": "2 cups"}, {"item": "peanut butter", "qty": "2 tbsp"}])
+                     ingredients=[{"item": "hummus", "qty": "1 cup"}, {"item": "peanut butter", "qty": "2 tbsp"}])
     week = _monday()
     stub_model(_tester_home_week(week))
     plan_id = agent.generate_weekly_plan(week)["weekly_plan_id"]
@@ -281,15 +287,13 @@ def test_a_saved_recipe_of_the_pool_name_is_checked_on_its_own_list(two_adults, 
     assert mine not in _snack_days(plan_id)
 
 
-def test_a_pool_recipe_from_a_smaller_table_is_written_again_for_this_one(two_adults, stub_model):
-    """Saved for one last time ("1 clementines"); two adults now: "2"."""
+def test_a_pool_recipe_from_a_smaller_table_is_written_again_for_this_one(two_adults):
+    """Saved for one last time ("1 apples"); two adults now: "2"."""
     from app.tools import recipes
-    pool = next(p for p in snack_variety.SNACK_POOL if p["name"] == "Edamame with Sea Salt and Clementines")
+    pool = next(p for p in snack_variety.SNACK_POOL if p["name"] == "Apple Slices with Cheddar and Pretzels")
     tools.add_recipe(name=pool["name"], ingredients=snack_variety.pool_ingredients(pool, 1),
                      default_servings=1, food_groups=pool["groups"])
-    week = _monday()
-    stub_model(_tester_home_week(week))
-    plan_id = agent.generate_weekly_plan(week)["weekly_plan_id"]
-    assert pool["name"] in _snack_days(plan_id)
-    clementines = next(i for i in recipes.saved_ingredients(pool["name"]) if i["item"].lower() == "clementines")
-    assert clementines["qty"] == "2"
+    existing = recipes.existing_recipe_named(pool["name"])
+    snack_variety._rescale_pool_recipe(existing["id"], pool, recipes.saved_ingredients(pool["name"]), 2)
+    apples = next(i for i in recipes.saved_ingredients(pool["name"]) if i["item"].lower() == "apples")
+    assert apples["qty"] == "2"

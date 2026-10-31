@@ -258,8 +258,49 @@ def _disliked(variant: dict, dislikes: list[str]) -> bool:
     return disliked(" ".join([variant["name"]] + [line[0] for line in variant["lines"]]), dislikes)
 
 
+# ---------- a snack is one thing, or a pair that goes together ----------
+#
+# Emily, 2026-10-31, on her draft: "a clementine and edamame don't go well
+# together." That snack was on this very list ("Edamame with Sea Salt and
+# Clementines", now plain "Edamame with Sea Salt"). THE RULE: a snack is one
+# coherent thing, or a pairing a person would put on one plate — fruit with
+# cheese, yogurt, nut butter, granola or crackers; veg with a dip; crackers
+# with cheese. What never goes together is sweet fresh fruit beside a savory
+# protein: beans, chickpeas, edamame, hummus, tuna, salmon, eggs, deli meat.
+# (Citrus as a squeeze — lime, lemon — is a seasoning, not fruit; "cherry
+# tomatoes" are tomatoes.) Kept to that one plain clash on purpose: the
+# cost of a false refusal is a good snack nobody gets.
+_SNACK_FRUIT = {
+    "apple", "pear", "banana", "berry", "berries", "strawberry", "blueberry", "raspberry",
+    "clementine", "mandarin", "orange", "grape", "mango", "pineapple", "peach", "plum", "kiwi",
+    "melon", "watermelon", "cantaloupe", "cherry", "cherries", "nectarine", "apricot", "fig",
+    "pomegranate", "papaya", "tangerine", "satsuma",
+}
+_SNACK_SAVORY_PROTEIN = {
+    "edamame", "chickpea", "chickpeas", "bean", "beans", "hummus", "tuna", "salmon", "sardine",
+    "sardines", "egg", "eggs", "ham", "salami", "jerky", "tofu", "deli", "chicken",
+}
+
+
+def pairing_problem(name: str | None, items=()) -> str | None:
+    """Why this snack is not one thing or a pair that goes together, or
+    None — see the rule above. Reads the name and any ingredient lines."""
+    text = " ".join([name or ""] + [str(i.get("item") if isinstance(i, dict) else (i[0] if isinstance(i, (list, tuple)) else i))
+                                    for i in (items or ())]).lower()
+    text = re.sub(r"cherry\s+tomato\w*|grape\s+tomato\w*", "tomato", text)
+    words = set(re.findall(r"[a-z]+", text))
+    words |= {w[:-1] for w in words if w.endswith("s")} | {w[:-2] for w in words if w.endswith("es")}
+    fruit = words & _SNACK_FRUIT
+    savory = words & _SNACK_SAVORY_PROTEIN
+    if fruit and savory:
+        return f"{sorted(fruit)[0]} with {sorted(savory)[0]} is not a pair"
+    return None
+
+
 def _fits(variant: dict, avoid_hard: list[dict], excludes: set[str], dislikes: list[str]) -> bool:
     if set(variant["animal"]) & excludes or _disliked(variant, dislikes):
+        return False
+    if pairing_problem(variant["name"], variant["lines"]):
         return False
     return not _clashes(variant, avoid_hard)
 
