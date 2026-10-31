@@ -88,3 +88,27 @@ def test_what_is_not_plainly_countable_stays_as_written():
         assert "item_label" not in out, item
     roma = recipes.cooking_ingredients([{"item": "tomato (Roma)", "qty": "2"}], servings=4)[0]
     assert roma["item_label"] == "tomatoes (Roma)"
+
+
+def test_one_or_less_of_a_thing_written_plural_reads_singular(signed_in):
+    """Defect hunt, 2026-10-31: a "Limes · 2" recipe for 4, cooked for two
+    people, read "1 Limes" on Cook under a step saying "juice of 1 lime"."""
+    tools.add_recipe(
+        "Lime Chicken",
+        ingredients=[
+            {"item": "Limes", "qty": "2"},
+            {"item": "Eggs, beaten", "qty": "1"},
+            {"item": "red peppers", "qty": "2"},
+            {"item": "molasses", "qty": "2"},
+        ],
+        instructions=["Squeeze the juice of 2 limes."],
+        default_servings=4,
+    )
+    rows = _rows("Lime Chicken", 2, signed_in)
+    assert (rows["Limes"]["qty"], rows["Limes"]["item_label"]) == ("1", "Lime")
+    assert rows["red peppers"]["item_label"] == "red pepper"
+    assert "item_label" not in rows["molasses"], "never a general singular"
+    # Written as one already: the label says it the same way.
+    assert recipes.cooking_ingredients([{"item": "Eggs, beaten", "qty": "1"}], servings=4)[0]["item_label"] == "Egg, beaten"
+    # Back at the recipe's own count, the plural stands: no label.
+    assert "item_label" not in _rows("Lime Chicken", 4, signed_in)["Limes"]

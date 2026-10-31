@@ -1692,6 +1692,7 @@ _COUNTABLE_PLURALS = {
     "cucumber": "cucumbers", "shallot": "shallots", "tortilla": "tortillas",
     "banana": "bananas", "bun": "buns",
 }
+_COUNTABLE_SINGULARS = {many: one for one, many in _COUNTABLE_PLURALS.items()}
 # "pepper" only as the vegetable — never "2 black pepper".
 _PEPPER_KINDS = {"bell", "red", "green", "yellow", "orange", "sweet", "poblano"}
 
@@ -1706,24 +1707,35 @@ def _with_item_label(ing: dict) -> dict:
 
     Only the last word of the name before any "(" or "," changes, and only
     when it is in _COUNTABLE_PLURALS ("red onion, diced" -> "red onions,
-    diced"; "tomato (Roma)" -> "tomatoes (Roma)"). Everything else — an
-    amount with a unit, one or fewer, garlic, celery, rice — has no label.
+    diced"; "tomato (Roma)" -> "tomatoes (Roma)"). One or less goes the
+    other way on the same list ("1" + "Limes" says "1 Lime"). Everything
+    else — an amount with a unit, garlic, celery, rice — has no label.
     """
     out = dict(ing)
     out.pop("item_label", None)
     item = (out.get("item") or "").strip()
     parsed = _quantities._parse_quantity((out.get("qty") or "").strip())
-    if not (item and parsed and parsed[1] is None and parsed[0] > 1 + 1e-9):
+    if not (item and parsed and parsed[1] is None and parsed[0] > 1e-9):
         return out
+    many = parsed[0] > 1 + 1e-9
     cut = min((i for i in (item.find("("), item.find(",")) if i >= 0), default=len(item))
     head, tail = item[:cut].rstrip(), item[cut:]
     words = head.split()
     if not words:
         return out
     last = words[-1].lower()
-    plural = _COUNTABLE_PLURALS.get(last)
-    if last == "pepper" and len(words) > 1 and words[-2].lower() in _PEPPER_KINDS:
-        plural = "peppers"
+    if many:
+        plural = _COUNTABLE_PLURALS.get(last)
+        if last == "pepper" and len(words) > 1 and words[-2].lower() in _PEPPER_KINDS:
+            plural = "peppers"
+    else:
+        # One or less of a thing written plural: "1 Limes" read on Cook for
+        # a "2 limes" recipe halved for two people, under a step saying
+        # "juice of 1 lime" (defect hunt, 2026-10-31). The same short list,
+        # read backwards — never a general singular ("1 molasses").
+        plural = _COUNTABLE_SINGULARS.get(last)
+        if last == "peppers" and len(words) > 1 and words[-2].lower() in _PEPPER_KINDS:
+            plural = "pepper"
     if not plural:
         return out
     if words[-1][:1].isupper():
