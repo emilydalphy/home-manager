@@ -13,6 +13,8 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Freezer step: a long plan's second same-weekday dinner is its own night** (2026-10-31, branch `overnight/hunt-longplan-1031`; tests `tests/test_defrost_two_week_period.py`).
+  `defrost` keyed a move night by its `_describe()` sentence, which names the WEEKDAY, so in a 14-day plan the first Sunday's too-late (or booked) move settled the second Sunday too and the freezer step never asked about that meat. Now keyed (sentence, meal date) via `_move_keys`/`_has_move`; a row with no entry still matches by sentence alone.
 - **Test clock: `test_the_route_answers_with_the_view_and_the_receipt` failed 23:25–24:00 UTC** (2026-10-30, branch `merge-overnight-2026-10-30`).
   Its household is on UTC, so a 35-minute cook started then is on the table tomorrow; it asserted today's date. Now asserts started + 35 min. No app change.
 - **Merge seam: one rule for a chat use-by date** (2026-10-30, branch `merge-overnight-2026-10-30`).
