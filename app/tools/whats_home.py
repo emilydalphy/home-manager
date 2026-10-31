@@ -266,6 +266,12 @@ def _freezer_day(d: date, today: date) -> str:
         return f"last {_DOW_SHORT[d.weekday()]}"
     if delta < 0:
         return _day_word(d, today, long=False)
+    # Half a year back or more, the year too — _day_word's rule. Freezer
+    # food sits for months, and on Oct 31 a bag frozen the November before
+    # read "frozen 2 Nov", the day after tomorrow, while its own sheet said
+    # "Nov 2, 2025" (defect hunt, 2026-10-31).
+    if delta >= _YEAR_SHOWN_FROM_DAYS:
+        return f"{d.day} {_MONTHS[d.month - 1]} {d.year}"
     return f"{d.day} {_MONTHS[d.month - 1]}"
 
 
