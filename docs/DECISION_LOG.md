@@ -13,6 +13,8 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Rollover hunt: a long period's second prep day, and a year-old freezer date** (2026-10-31, branch `overnight/hunt-rollover-1031`; tests `tests/test_prep_sessions_long_period.py`, `tests/test_kitchen_freezer_year.py`).
+  (1) `prep_sessions_for_plan` mapped a prep weekday to the period's FIRST such date, so a 14-day period's second Sunday had no session and its cuts showed nowhere; every matching date maps now. (2) `whats_home._freezer_day` dropped the year: on Oct 31 a bag frozen 2025-11-02 read "frozen 2 Nov" (its sheet: "Nov 2, 2025"); half a year back or more it names the year, `_day_word`'s rule. Walked clean: next week approved Sat/Sun night then Monday 08:00 (Toronto, Auckland, Los Angeles) — Today, Plan, Kitchen and Shop agree; Dec 28–Jan 3 approved Boxing Day through Jan 3 — identical in Toronto and Auckland.
 - **Test clock: `test_the_route_answers_with_the_view_and_the_receipt` failed 23:25–24:00 UTC** (2026-10-30, branch `merge-overnight-2026-10-30`).
   Its household is on UTC, so a 35-minute cook started then is on the table tomorrow; it asserted today's date. Now asserts started + 35 min. No app change.
 - **Merge seam: one rule for a chat use-by date** (2026-10-30, branch `merge-overnight-2026-10-30`).

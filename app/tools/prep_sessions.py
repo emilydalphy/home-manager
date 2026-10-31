@@ -449,9 +449,13 @@ def prep_sessions_for_plan(weekly_plan_id: int) -> list[dict]:
         # its whole period to another one) has nothing to prep for, whatever
         # is stamped on rows that outlived the release.
         return []
-    by_weekday: dict[str, str] = {}
+    # EVERY date of each weekday, not the first: a period runs to 28 days,
+    # and keeping only the first Sunday of a two-week period dropped the
+    # second Sunday's whole session — its cuts and its cook-ahead were
+    # saved and shown nowhere (defect hunt, 2026-10-31).
+    by_weekday: dict[str, list[str]] = {}
     for d in dates:
-        by_weekday.setdefault(_weekday_key(d), d)
+        by_weekday.setdefault(_weekday_key(d), []).append(d)
 
     # A prepped-lunch batch brings its OWN prep date, which is why the
     # rhythm answer is no longer the only way in: this week's
@@ -476,8 +480,7 @@ def prep_sessions_for_plan(weekly_plan_id: int) -> list[dict]:
     # date here and no session); a batch is its date already.
     prep_day_by_date: dict[str, dict] = {}
     for prep_day in prep_days:
-        prep_date = by_weekday.get(prep_day.get("weekday") or "")
-        if prep_date:
+        for prep_date in by_weekday.get(prep_day.get("weekday") or "") or []:
             prep_day_by_date.setdefault(prep_date, prep_day)
     for batch in batches:
         prep_day_by_date.setdefault(batch["prep_date"], {})
