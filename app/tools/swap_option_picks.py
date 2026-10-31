@@ -429,6 +429,142 @@ def _gated(entry: dict, raw: list, avoid: list[str], group: list[dict] | None = 
     return out
 
 
+# ---------- when the model has nothing: dishes from the recipe library ----------
+#
+# Loop Board "As a household swapping a lunch, I get options — not 'I
+# couldn't think of options just now'" (Emily, 2026-10-31). An empty sheet
+# was the answer to every way the picks could fail — the model call raising,
+# timing out or coming back empty, or every pick it named refused by a gate —
+# and the household was left with a box to type in and nothing to tap. The
+# shared library (recipe_library) already holds hundreds of written dishes,
+# each tagged with the meal it is for in the starter list
+# (data/recipe_library_seed.json); when the model gives the sheet nothing,
+# the sheet offers some of those instead, through exactly the gates a
+# model pick goes through (_gated: allergies, the Won't eat list, the
+# taste veto, each day's time cap, the rest of the week, `avoid`) plus the
+# dishes eaten in the last two weeks. They are offered as trimmed picks —
+# name, minutes, the library's ingredient list for the gate — so a tapped
+# one on a draft is planned the usual way (choose_swap_option's pending
+# recipe) and the recipe pass copies it from the library at approval
+# (agent._copy_from_library), gated once more there.
+
+from pathlib import Path  # here, not in the import block above (see _saved_dish)
+
+SEED_FILE = Path(__file__).resolve().parents[2] / "data" / "recipe_library_seed.json"
+# Which of the starter list's meals may stand in for a slot. A lunch can be
+# a light dinner dish; a dinner is not offered a sandwich, and breakfasts
+# and snacks stay their own.
+LIBRARY_MEALS_FOR_SLOT = {
+    "breakfast": ("breakfast",),
+    "lunch": ("lunch", "dinner"),
+    "dinner": ("dinner",),
+    "snack": ("snack",),
+}
+# How many library dishes are read and gated to find three: enough that a
+# household with a few allergies still gets a full sheet, few enough that
+# the fallback stays a handful of small reads.
+LIBRARY_CANDIDATES_MAX = 15
+_SEED_DISHES: list[dict] | None = None
+
+
+def _seed_dishes() -> list[dict]:
+    """The starter list's dishes with the meal each is for, read once."""
+    global _SEED_DISHES
+    if _SEED_DISHES is None:
+        try:
+            _SEED_DISHES = list(json.loads(SEED_FILE.read_text(encoding="utf-8")).get("dishes") or [])
+        except Exception:
+            logger.exception("Reading the recipe library's starter list failed; no library fallback")
+            _SEED_DISHES = []
+    return _SEED_DISHES
+
+
+def _diet_the_library_cant_judge() -> bool:
+    """A diet said in words the allergen gate can't read (vegetarian on the
+    eating style, kosher, "no meat" in a fact): the library offers nothing,
+    for the same reason agent._copy_from_library writes instead of copying —
+    a library dish is not written around it, and nothing here could tell."""
+    from .. import agent
+    from . import memory as _memory
+    lines = [(_memory.get_household_memory() or {}).get("eating_style") or ""]
+    lines += list(_swap._hard_exclusions() or [])
+    return any(agent._DIET_THE_GATE_CANT_READ.search(line or "") for line in lines)
+
+
+def _dish_key(name: str) -> str:
+    from .recipe_research import dish_key
+    return dish_key(name)
+
+
+def _library_written_keys() -> set[str]:
+    """Every dish the library has written up in full (recipe_library.
+    base_recipe's own test), in one read — so the starter list is narrowed
+    to what can actually be offered before any dish is read whole."""
+    from ..db import get_conn
+    conn = get_conn()
+    try:
+        rows = conn.execute(
+            "SELECT DISTINCT dish_key FROM recipe_library WHERE kind = 'base' "
+            "AND ingredients_json NOT IN ('', '[]') AND instructions_json NOT IN ('', '[]')"
+        ).fetchall()
+    finally:
+        conn.close()
+    return {r["dish_key"] for r in rows}
+
+
+def _request_words(request: str) -> set[str]:
+    return {w for w in re.findall(r"[a-z]+", (request or "").lower()) if len(w) > 3}
+
+
+def library_picks(weekly_plan_id: int, entry: dict, tried: list[str], request: str = "") -> list[dict]:
+    """Library dishes that could stand in for this slot, as trimmed picks,
+    ungated (the caller runs _gated): the slot's own meal first, in an order
+    that is the household's and the slot's own (so two households don't see
+    the same three), anything matching the typed request's words ahead of
+    the rest. Skips what the sheet has already turned down and what was
+    eaten in the last two weeks. [] when the library can't be used here."""
+    from . import draft_opener as _draft_opener
+    from . import recipe_library as _recipe_library
+    import random
+
+    if not _recipe_library.library_enabled() or _diet_the_library_cant_judge():
+        return []
+    meals = LIBRARY_MEALS_FOR_SLOT.get(entry["slot"], (entry["slot"],))
+    skip = {t.strip().lower() for t in tried}
+    week_start = _swap._week_start_of(weekly_plan_id)
+    skip |= (_draft_opener.recent_dish_names(week_start, weekly_plan_id) or set()) if week_start else set()
+    written = _library_written_keys()
+    dishes = [d for d in _seed_dishes()
+              if d.get("meal") in meals and (d.get("dish_name") or "").strip().lower() not in skip
+              and _dish_key(d.get("dish_name") or "") in written]
+    random.Random(f"{household_id()}:{entry['entry_id']}").shuffle(dishes)
+    wanted = _request_words(request)
+
+    def _matches(d: dict) -> bool:
+        text = " ".join([d.get("dish_name") or "", d.get("cuisine") or "", d.get("main_protein") or ""]).lower()
+        return any(w in text for w in wanted)
+
+    dishes.sort(key=lambda d: (meals.index(d["meal"]), not _matches(d)))
+    picks = []
+    for d in dishes:
+        full = _recipe_library.base_recipe(d["dish_name"])
+        if not full:
+            continue
+        minutes = int(full.get("prep_time_minutes") or 0) + int(full.get("cook_time_minutes") or 0)
+        picks.append({
+            "meal_name": d["dish_name"],
+            "reason": "",
+            # The library's whole list, not six main items: it is what the
+            # gate judges, and what the copy at approval will cook.
+            "ingredients": [{"item": r.get("item")} for r in full.get("ingredients") or [] if r.get("item")],
+            "minutes": minutes or None,
+            "from_library": True,
+        })
+        if len(picks) >= LIBRARY_CANDIDATES_MAX:
+            break
+    return picks
+
+
 REQUEST_MAX_CHARS = 300
 
 
@@ -561,6 +697,21 @@ def _swap_options_locked(weekly_plan_id: int, entry: dict, avoid: list[str] | No
     # the whole ask, gate included, and how many picks survived it.
     logger.info("swap_options for entry %s: %d of %d picks kept in %.2fs",
                 entry_id, len(options), len(raw or []), time.perf_counter() - started)
+    if not options:
+        # Nothing to tap — the call failed or every pick was refused: the
+        # library's dishes for this meal, through the same gates (see
+        # library_picks). Only an empty sheet is topped up; one or two
+        # model picks stand as they are.
+        try:
+            from_library = _gated(entry, library_picks(weekly_plan_id, entry, tried, request),
+                                  tried, group, weekly_plan_id, request)
+        except Exception:
+            logger.exception("The recipe library fallback for swap options failed")
+            from_library = None
+        if from_library:
+            logger.info("swap_options for entry %s: %d library dish(es) offered instead (%s)",
+                        entry_id, len(from_library), "call failed" if unavailable else "none kept")
+            options, unavailable = from_library, False
     _OPTIONS_CACHE[key] = {"at": time.time(), "meal": entry["meal"], "options": options,
                            "unavailable": unavailable, "context": context,
                            "group": _group_key(group)}
