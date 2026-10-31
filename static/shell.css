@@ -12389,6 +12389,29 @@ body.first-open-active { overflow: hidden; }
 .wk-plan .wk-strip { margin: 0 16px; gap: 4px; }
 .wk-plan .wk-strip.is-long { margin: 0; padding: 0 16px; }
 .wk-daybar .wk-tile { padding: 8px 0 7px; }
+/* The day bar runs on into the plans either side (Emily, 2026-10-31), so
+   it scrolls; All stays at its left edge and always means the plan on
+   screen. Its pin is the ground colour from the screen's edge to 4px past
+   the tile, so the days slide under it cleanly; the pin takes over the
+   bar's left padding. The join between two plans is one hairline, nothing
+   louder. */
+.wk-plan .wk-daybar.is-long { padding-left: 0; }
+.wk-daybar-pin {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  display: flex;
+  flex: 0 0 auto;
+  padding: 0 4px 0 16px;
+  margin-right: -4px;
+  background: var(--ground);
+}
+.wk-daybar-join {
+  flex: 0 0 1px;
+  align-self: stretch;
+  margin: 6px 3px;
+  background: var(--hairline-deep);
+}
 .wk-pview-title {
   margin: 4px 20px 0;
   font-family: var(--font-display);

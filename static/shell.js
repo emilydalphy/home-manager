@@ -17011,8 +17011,14 @@
     // a number is that day.
     planDay: null, planDayPlanId: null,
     // A pin by PLAN, not by date: "See next week's draft" (planNextWeek).
-    // Wins over showWeekStart, and lets go once that plan is approved.
-    showPlanId: null
+    // Wins over showWeekStart, and lets go once that plan is approved —
+    // unless showPlanKeep: a plan opened from the day bar's next-door
+    // tiles stays on screen (planOpenOtherDay).
+    showPlanId: null, showPlanKeep: false,
+    // The day bar across a redraw (planDayBarReveal): the day to open the
+    // next plan on ({ planId, date }), the tapped tile's place in the bar,
+    // and the household's day the pin was made on (it lets go overnight).
+    planDayDate: null, planBarAnchor: null, showPlanOn: null
   };
 
   async function buildWeekPanel(panel) {
@@ -17243,6 +17249,12 @@
       // "whichever contains today" — set when /plan-week hands back a week
       // it just drafted. It survives reloads of the panel (a swap, an
       // approval) so the household stays on the week they're working on.
+      // A plan kept from the day bar is that day's look ahead or back, not
+      // the tab's new home: the next day, Plan opens on its own plan again.
+      if (weekState.showPlanKeep && weekState.showPlanOn !== todayLocalStr()) {
+        weekState.showPlanId = null;
+        weekState.showPlanKeep = false;
+      }
       var url = '/api/week-menu';
       if (weekState.showPlanId) {
         url += '?weekly_plan_id=' + encodeURIComponent(weekState.showPlanId);
@@ -17265,11 +17277,20 @@
       // entry), so its cooker view is read again the next time a meal is
       // drawn — see ensureCookDataForMeals.
       if (weekState.cookView) weekState.cookView.stale = true;
+      // A plan pinned from the day bar that has since been replaced (a
+      // re-plan, a takeover) is nothing to show: back to the tab's own
+      // plan rather than a retired one.
+      if (weekState.showPlanId && data.status === 'retired') {
+        weekState.showPlanId = null;
+        weekState.showPlanKeep = false;
+        return loadWeekMenu(panel, opts);
+      }
       renderWeekMenu(panel, data);
       // The pinned draft is approved: this load shows its "All set", and
       // the next one goes back to the week that holds today — otherwise
       // Plan stayed on next week for the rest of the session.
-      if (weekState.showPlanId && data.weekly_plan_id === weekState.showPlanId && data.status === 'approved') {
+      if (weekState.showPlanId && data.weekly_plan_id === weekState.showPlanId && data.status === 'approved' &&
+          !weekState.showPlanKeep) {
         weekState.showPlanId = null;
       }
       // Meals and Kitchen are two readings of one week, so anything that
@@ -18006,6 +18027,7 @@
       // reloaded the week already on screen (review, 2026-10-07). It
       // stays on screen through its own swaps and its approval.
       weekState.showPlanId = period.draft_plan_id;
+      weekState.showPlanKeep = false;
       weekState.showWeekStart = null;
       loadWeekMenu(panels.week);
       return;
@@ -18911,23 +18933,118 @@
 
   // The day bar: "Week / All" then one tile per day (the strip's own tile,
   // TODAY on today's). It scrolls sideways past seven, like the strip.
-  function planDayBarHtml(days, sel) {
+  //
+  // `adjacent` (get_week_menu's adjacent_plans, Emily 2026-10-31: "It
+  // should let me scroll through the dates that are already planned"): the
+  // plans either side run on in date order — the previous one's days
+  // before this plan's, the next one's after — each across one thin
+  // divider (wk-daybar-join). Their tiles carry data-plan-other (the plan)
+  // and data-date; a tap loads that plan on that day (planOpenOtherDay),
+  // whose band, badge and dock are its own. A date this plan already
+  // draws (a part-week's lead-in) is never drawn twice. All is pinned to
+  // the bar's left edge (shell.css) and always means the plan on screen.
+  function planDayBarHtml(days, sel, adjacent) {
+    adjacent = adjacent || {};
+    var shown = {};
+    days.forEach(function (d) { shown[d.date] = true; });
+    function tileHtml(day, attrs, on, extra) {
+      var label = dayName(day.date, { weekday: 'long', month: 'long', day: 'numeric' }) +
+        (day.isToday ? ', today' : '') + (extra || '');
+      return '<button type="button" class="wk-tile' + (day.isToday ? ' is-today' : '') + (day.isPast ? ' is-past' : '') +
+          (on ? ' is-selected' : '') + '" data-date="' + escapeHtml(day.date) + '"' + attrs + ' aria-pressed="' + (on ? 'true' : 'false') + '" ' +
+          'aria-label="' + escapeHtml(label) + '">' +
+        '<span class="wk-tile-dow">' + (day.isToday ? 'TODAY' : dayName(day.date, { weekday: 'short' }).slice(0, 3).toUpperCase()) + '</span>' +
+        '<span class="wk-tile-num">' + dayName(day.date, { day: 'numeric' }) + '</span>' +
+      '</button>';
+    }
+    // The server's days are snake_case (is_today); the shown plan's went
+    // through classifyDay. Either way the tile reads isToday / isPast.
+    function otherHtml(plan, before) {
+      if (!plan || !plan.weekly_plan_id || !plan.days) return '';
+      var tiles = plan.days.filter(function (d) { return d && d.date && !shown[d.date]; }).map(function (d) {
+        return tileHtml({ date: d.date, isToday: !!d.is_today, isPast: !!d.is_past },
+          ' data-plan-other="' + escapeHtml(String(plan.weekly_plan_id)) + '"', false,
+          plan.status === 'draft' ? ', draft' : '');
+      }).join('');
+      if (!tiles) return '';
+      var join = '<span class="wk-daybar-join" aria-hidden="true"></span>';
+      return before ? tiles + join : join + tiles;
+    }
+    var prev = otherHtml(adjacent.previous, true);
+    var next = otherHtml(adjacent.next, false);
     var week = '<button type="button" class="wk-tile wk-daybar-week' + (sel === null ? ' is-selected' : '') +
         '" data-plan-day="week" aria-pressed="' + (sel === null ? 'true' : 'false') + '" aria-label="The whole week">' +
       '<span class="wk-tile-dow">WEEK</span><span class="wk-tile-num">All</span>' +
     '</button>';
-    return '<div class="wk-strip wk-daybar' + (days.length > 7 ? ' is-long' : '') + '" role="group" aria-label="Show the week or one day">' +
-      week + days.map(function (day, i) {
-        var on = sel === i;
-        var label = dayName(day.date, { weekday: 'long', month: 'long', day: 'numeric' }) + (day.isToday ? ', today' : '');
-        return '<button type="button" class="wk-tile' + (day.isToday ? ' is-today' : '') + (day.isPast ? ' is-past' : '') +
-            (on ? ' is-selected' : '') + '" data-plan-day="' + i + '" aria-pressed="' + (on ? 'true' : 'false') + '" ' +
-            'aria-label="' + escapeHtml(label) + '">' +
-          '<span class="wk-tile-dow">' + (day.isToday ? 'TODAY' : dayName(day.date, { weekday: 'short' }).slice(0, 3).toUpperCase()) + '</span>' +
-          '<span class="wk-tile-num">' + dayName(day.date, { day: 'numeric' }) + '</span>' +
-        '</button>';
-      }).join('') +
+    var long = days.length > 7 || !!prev || !!next;
+    // Scrolling, All rides in a ground-coloured pin (shell.css) that the
+    // days slide under, so it is never half a tile at the edge.
+    if (long) week = '<span class="wk-daybar-pin">' + week + '</span>';
+    return '<div class="wk-strip wk-daybar' + (long ? ' is-long' : '') + '" role="group" aria-label="Show the week or one day">' +
+      week + prev + days.map(function (day, i) {
+        return tileHtml(day, ' data-plan-day="' + i + '"', sel === i);
+      }).join('') + next +
     '</div>';
+  }
+
+  // Keeps the bar where the thumb left it across a redraw, then brings the
+  // day that matters into view with the one after it: the selected day, or
+  // on All today's tile — so on a plan's last day, tomorrow (the next
+  // plan's first tile) is on screen without a scroll (Emily, 2026-10-31).
+  // A plan that doesn't hold today shows from its first day. Every redraw
+  // of the root replaces the bar, which would otherwise snap back to its
+  // start; weekState.planBarAnchor is the tile tapped and where it sat.
+  function planDayBarReveal(steps) {
+    var bar = steps && steps.querySelector('.wk-daybar.is-long');
+    if (!bar || !bar.getBoundingClientRect) return;
+    var anchor = weekState.planBarAnchor;
+    weekState.planBarAnchor = null;
+    var barBox = bar.getBoundingClientRect();
+    if (anchor) {
+      var was = bar.querySelector('.wk-tile[data-date="' + anchor.date + '"]');
+      if (was) bar.scrollLeft += (was.getBoundingClientRect().left - barBox.left) - anchor.x;
+    }
+    var target = bar.querySelector('.wk-tile.is-selected[data-date]') ||
+      bar.querySelector('.wk-tile.is-today[data-plan-day]') || bar.querySelector('[data-plan-day="0"]');
+    if (!target) return;
+    var after = target.nextElementSibling;
+    while (after && !(after.classList && after.classList.contains('wk-tile'))) after = after.nextElementSibling;
+    var week = bar.querySelector('.wk-daybar-week');
+    var pad = parseFloat(getComputedStyle(bar).paddingRight) || 0;
+    var lo = (week ? week.getBoundingClientRect().right : barBox.left) + 4;
+    var hi = barBox.right - pad;
+    var right = (after || target).getBoundingClientRect().right;
+    if (right > hi) bar.scrollLeft += right - hi;
+    var left = target.getBoundingClientRect().left;
+    if (left < lo) bar.scrollLeft -= lo - left;
+  }
+
+  // Where a tapped tile sat in the bar, so the redraw puts it back there.
+  function planBarAnchorFor(tile) {
+    var bar = tile.closest && tile.closest('.wk-daybar');
+    var date = tile.getAttribute('data-date');
+    if (!bar || !date || !tile.getBoundingClientRect) return null;
+    return { date: date, x: tile.getBoundingClientRect().left - bar.getBoundingClientRect().left };
+  }
+
+  // A tile of the plan next door: that plan, opened on that day. Pinned by
+  // the plan's id like "See next week's draft" (planNextWeek) — and kept
+  // pinned through its own approval and swaps (showPlanKeep), since the
+  // household scrolled there to look at that stretch. A plan holding today
+  // is the tab's own default, so its pin lets go once it is approved, as
+  // the draft pin always has.
+  function planOpenOtherDay(panel, tile) {
+    var planId = Number(tile.getAttribute('data-plan-other'));
+    var date = tile.getAttribute('data-date');
+    if (!planId || !date) return;
+    weekState.planBarAnchor = planBarAnchorFor(tile);
+    weekState.planDayDate = { planId: planId, date: date };
+    weekState.showPlanId = planId;
+    weekState.showPlanOn = todayLocalStr();
+    weekState.showWeekStart = null;
+    var bar = tile.closest && tile.closest('.wk-daybar');
+    weekState.showPlanKeep = !(bar && bar.querySelector('.is-today[data-plan-other="' + planId + '"]'));
+    loadWeekMenu(panel);
   }
 
   // The one short line under a dish: its time — or, for a night eating a
@@ -19176,7 +19293,7 @@
     var cards = planBreakfastHtml(days, sel) + planMainsHtml(days, sel) + planSnacksHtml(days, sel);
     return '<div class="wk-plan">' +
       weekSuggestedNoteHtml(data) + planEndsLineHtml(data) + planNotesHtml(data, days, sel) +
-      planDayBarHtml(days, sel) +
+      planDayBarHtml(days, sel, data.adjacent_plans) +
       '<h2 class="wk-pview-title">' + escapeHtml(day ? dayName(day.date, { weekday: 'long' }) : 'The whole week') + '</h2>' +
       (day ? planDayTagsHtml(day) : '') +
       '<div class="wk-pcards">' +
@@ -21850,6 +21967,9 @@
     } else {
       steps.innerHTML = weekStepHtml(data, weekState.days);
       if (weekPlanState(data) === 'none') renderPlanWeekEntry(steps, data);
+      // typeof: the node harnesses lift renderMealsStep out with a fixed
+      // list of helpers, as wkCouldntFitHtml's callers do.
+      if (typeof planDayBarReveal === 'function') planDayBarReveal(steps);
     }
     wireMealsStep(panel, steps);
   }
@@ -21884,9 +22004,15 @@
         if (idx === weekState.planDay || (idx === null && weekState.planDay == null)) return;
         weekState.planDay = idx;
         if (idx !== null) weekState.selectedIndex = idx;
+        weekState.planBarAnchor = planBarAnchorFor(tile);
         replaceMealsStepHistory();
         renderMealsStep(panel);
       });
+    });
+    // A day of the plan either side (planDayBarHtml's adjacent tiles):
+    // that plan, on that day.
+    steps.querySelectorAll('[data-plan-other]').forEach(function (tile) {
+      tile.addEventListener('click', function () { planOpenOtherDay(panel, tile); });
     });
     // A meal's row: its one sheet (openPlanRowSheet).
     steps.querySelectorAll('[data-plan-row]').forEach(function (row) {
@@ -24675,6 +24801,11 @@
     weekState.data = data;
     // A different plan opens on Week (the day bar's choice belongs to the
     // week it was made on).
+    // A tile of the plan next door opens on its own day
+    // (weekState.planDayDate, planOpenOtherDay) instead.
+    var openOn = weekState.planDayDate && weekState.planDayDate.planId === data.weekly_plan_id
+      ? weekState.planDayDate.date : null;
+    weekState.planDayDate = null;
     if (weekState.planDayPlanId !== data.weekly_plan_id) {
       weekState.planDayPlanId = data.weekly_plan_id;
       weekState.planDay = null;
@@ -24683,6 +24814,11 @@
     var todayStr = todayLocalStr();
     var days = (data.days || []).map(function (d) { return Object.assign({}, d, classifyDay(d, todayStr)); });
     weekState.days = days;
+    if (openOn) {
+      days.forEach(function (d, i) {
+        if (d.date === openOn) { weekState.planDay = i; weekState.selectedIndex = i; }
+      });
+    }
 
     // The review band's status line went with the band (Emily's approved
     // design, 2026-09-08). Everything it said, the screen now says in the
