@@ -13,6 +13,8 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Public routes run with no household-1 fallback in a test** (2026-10-31, branch `overnight/hunt-iso-1031`; `tests/test_public_routes_bind_their_household.py`).
+  Isolation hunt over the routes added since 10-21 found no leak. The new test pins the class anyway: the household ContextVar is swapped for one with no default, then household 2's tokens and no cookie drive share/member-share reads and writes, /join, /api/join and email sign-up/sign-in, so a public route that forgets `use_household` 500s instead of quietly using household 1. It also adds two cases the isolation attack can't reach: mixed-household ids (/api/meal-recipe) and a hand-built Undo token for the other household's rows. Test only, no app change.
 - **Test clock: `test_the_route_answers_with_the_view_and_the_receipt` failed 23:25–24:00 UTC** (2026-10-30, branch `merge-overnight-2026-10-30`).
   Its household is on UTC, so a 35-minute cook started then is on the table tomorrow; it asserted today's date. Now asserts started + 35 min. No app change.
 - **Merge seam: one rule for a chat use-by date** (2026-10-30, branch `merge-overnight-2026-10-30`).
