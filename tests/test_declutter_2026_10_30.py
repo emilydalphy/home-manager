@@ -59,7 +59,7 @@ def _plan_prelude() -> str:
     names = [
         "planDayIndex", "planDayBarHtml", "planRowMeta", "planIsReheat", "planRowHtml",
         "planSlotRowHtml", "planDayLabel", "planDayGroupHtml", "planCardHtml",
-        "planBreakfastHtml", "planMainsDayRows", "planMainsHtml", "planSnackRows",
+        "planDishRowsHtml", "planBreakfastHtml", "planMainsDayRows", "planMainsHtml", "planSnackRows",
         "planSnacksHtml", "planDayTagsHtml", "planNotesHtml", "planDockHtml",
         "planWeekHtml", "planRowSheetOptions", "planRowSheetHtml", "quietSheetHeadHtml",
         "wkCanMove", "weekBandExtras", "weekBandMoreHtml",
@@ -72,6 +72,7 @@ def _plan_prelude() -> str:
         + "function wkUseUpLineHtml() { return ''; }\n"
         + "function plateCanChange(day, slot, entry) { return slot === 'dinner' && !day.isPast; }\n"
         + _extract_var("MOVE_SLOTS", SHELL_JS) + "\n"
+        + _extract_var("PLAN_DISH_HEADS", SHELL_JS) + "\n"
         + _extract_var("PLAN_SHEET_OPTS", SHELL_JS) + "\n"
         + "\n".join(_extract(n, SHELL_JS) for n in names) + "\n"
     )
@@ -526,3 +527,30 @@ def test_a_failed_store_pick_or_amount_save_gives_the_button_back():
         start = SHELL_JS.index(marker)
         body = SHELL_JS[start:SHELL_JS.index("\n      case '", start + 10)]
         assert "if (!ok) { el.disabled = false; return; }" in body, marker
+
+
+@_needs_node
+def test_the_week_view_is_the_menu_by_meal_type_and_a_day_is_the_schedule():
+    """Emily, 2026-10-31: "under the all tab it should just show the types
+    of meals not by dates... then the days view is what should give me the
+    schedule." CATCH: All drew Lunch & dinner as one group per day."""
+    out = _plan(
+        "DAYS.forEach(function (d) { d.isPast = false; });\n"
+        "var data = Object.assign(" + json.dumps(_data("approved", [])) + ", { days: DAYS });\n"
+        "weekState.planDay = null; var week = planWeekHtml(data, DAYS);\n"
+        "weekState.planDay = 2; var day = planWeekHtml(data, DAYS);\n"
+        "console.log(JSON.stringify({ week: week, day: day }));"
+    )
+    week, day = out["week"], out["day"]
+    for head in ('>Breakfast<', '>Lunch<', '>Dinner<'):
+        assert head in week, head
+    assert "Lunch &amp; dinner" not in week
+    assert 'class="wk-pgroup' not in week, "no day-by-day groups on All"
+    # Each dish once: no data-plan-row name repeats on the week.
+    # Shrimp paella is Tuesday's dinner and Wednesday's leftovers lunch:
+    # one dish to make, so it is on the menu once.
+    names = re.findall(r'<span class="wk-qrow-name">([^<]+)</span>', week)
+    assert len(names) == len(set(names)), names
+    assert names.count("Shrimp paella") == 1
+    # The day keeps the schedule: its lunch and dinner rows under one card.
+    assert "Lunch &amp; dinner" in day

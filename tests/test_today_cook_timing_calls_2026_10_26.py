@@ -20,6 +20,7 @@ with your picks"). One test (or two) per pick:
 """
 from __future__ import annotations
 
+from pathlib import Path
 import datetime
 import json
 import shutil
@@ -33,7 +34,7 @@ from app.db import get_conn
 from app.tools import cooker, moves, weekly_plan
 
 from test_plan_cards_2026_09_18 import _run
-from test_plan_next_on_draft import SHELL_JS
+SHELL_JS = (Path(__file__).resolve().parent.parent / "static" / "shell.js").read_text(encoding="utf-8")
 from test_skipped_cook_moves_on import _chain, _plan as _chain_plan
 from test_today_small_truths import _at, _shop, _tonight_planned
 from test_week_seven_tiles import _extract, _extract_async

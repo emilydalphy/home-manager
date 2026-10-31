@@ -64,6 +64,7 @@ def _acts_furniture(status: str = "approved") -> str:
         "var REHEAT_ACTION_LABEL = 'Mark eaten';\n"
         + "var weekState = { data: { status: " + json.dumps(status) + " } };\n"
         + _extract("escapeHtml") + "\n"
+        + "var IN_AFTER_ALL_LABEL = 'We’re in after all';\n"
         + "function isSnackSlot(s){ return s === 'snack'; }\n"
         + "function daySlotEntry(d, s){ return d[s]; }\n"
         + "function swapLineHtml(){ return '<div class=\"wk-swap-line\"></div>'; }\n"
@@ -125,7 +126,12 @@ def test_no_planned_empty_slot_of_a_real_week_is_offered_swap():
     assert len(empties) == 4
     for day, slot in empties:
         out = _acts(day, slot)
-        assert out["html"] == "", (day["date"], slot, out["html"])
+        # An Out night offers its one way back, "We're in after all"
+        # (Emily's pick #31, 2026-10-26); nothing else is offered.
+        if day[slot].get("in_after_all"):
+            assert "data-wk-in-after-all=" in out["html"] and not out["swap"], (day["date"], slot, out["html"])
+        else:
+            assert out["html"] == "", (day["date"], slot, out["html"])
 
 
 def test_the_swap_that_button_called_is_refused_by_the_server():

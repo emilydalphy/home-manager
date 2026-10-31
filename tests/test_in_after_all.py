@@ -180,6 +180,8 @@ def test_an_empty_slot_offers_no_swap_and_an_out_night_offers_were_in():
 
 
 def test_add_a_meal_skips_an_out_night_and_the_tap_posts_the_route():
-    assert "!e.in_after_all" in _fn("wkAddMealFor")
+    # Since 2026-10-28 "+ Add a meal" offers only an open slot, so an Out
+    # night (planned_empty) is never one of its choices.
+    assert "return !e || e.state === 'open';" in _fn("wkAddMealFor")
     run = _fn("runInAfterAll")
     assert "/in-after-all" in run

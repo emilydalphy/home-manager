@@ -18975,14 +18975,25 @@
     '</div>';
   }
 
-  // BREAKFAST. The week: each breakfast once, with its days ("Mon, Tue ·
-  // 13 min" — wkMenuGroups' dish, the menu's own days phrase). A day: that
-  // day's. A row standing for several days still ahead is the whole dish:
-  // its sheet's Swap changes every one of them (data-plan-dates).
-  function planBreakfastHtml(days, sel) {
-    if (sel !== null) return planCardHtml('wk-pcard-breakfast', 'Breakfast', planSlotRowHtml(days[sel], sel, 'breakfast', ''));
-    var group = wkMenuGroups(days).filter(function (g) { return g.slot === 'breakfast'; })[0];
-    var rows = (group ? group.dishes : []).map(function (dish) {
+  // The week view (All) is the menu, by meal type — Breakfast, Lunch,
+  // Dinner — each dish once, with its days ("Mon, Tue · 13 min" —
+  // wkMenuGroups' dish, the menu's own days phrase). The schedule is the
+  // day tiles' job (Emily, 2026-10-31: "under the all tab it should just
+  // show the types of meals not by dates... then the days view is what
+  // should give me the schedule"; the same ask as 2026-09-21). A row
+  // standing for several days still ahead is the whole dish: its sheet's
+  // Swap changes every one of them (data-plan-dates).
+  var PLAN_DISH_HEADS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner' };
+
+  function planDishRowsHtml(days, slot) {
+    var group = wkMenuGroups(days).filter(function (g) { return g.slot === slot; })[0];
+    // A lunch or dinner that is only leftovers of another meal's batch
+    // (dinner eaten as tomorrow's lunch) is not a dish to make, so the menu
+    // leaves it out; the day view still shows it as "Leftovers".
+    var dishes = (group ? group.dishes : []).filter(function (dish) {
+      return slot === 'breakfast' || !dish.isLeftover;
+    });
+    var rows = dishes.map(function (dish) {
       var first = dish.days.filter(function (d) { return !d.past; })[0] || dish.days[0];
       var ahead = dish.days.filter(function (d) { return !d.past; });
       var fact = dish.isLeftover ? planRowMeta(first.entry) : wkMenuFact(dish);
@@ -18993,19 +19004,25 @@
           (ahead.length > 1 ? ' data-plan-dates="' + escapeHtml(ahead.map(function (d) { return d.date; }).join(',')) + '"' : '') +
           (dish.isLeftover ? ' data-plan-reheat="1"' : ''),
         name: dish.name, changed: changed, past: !ahead.length,
+        done: dish.days.every(function (d) { return !!d.entry.cooked; }),
         meta: [wkMenuDaysPhrase(dish, days), fact].filter(Boolean).join(' · '),
-        label: 'Breakfast, ' + dish.name + ' — change it'
+        label: PLAN_DISH_HEADS[slot] + ', ' + dish.name + ' — change it'
       });
     }).join('');
-    // A morning handed back is a decision, so it is never folded into a
+    // A meal handed back is a decision, so it is never folded into a
     // dish: it gets its own row, named by its day.
     days.forEach(function (day, i) {
-      var e = day.breakfast;
+      var e = day[slot];
       if (e && e.state === 'open' && !day.before_plan_start) {
-        rows += planSlotRowHtml(day, i, 'breakfast', dayName(day.date, { weekday: 'long' }));
+        rows += planSlotRowHtml(day, i, slot, dayName(day.date, { weekday: 'long' }));
       }
     });
-    return planCardHtml('wk-pcard-breakfast', 'Breakfast', rows);
+    return rows;
+  }
+
+  function planBreakfastHtml(days, sel) {
+    if (sel !== null) return planCardHtml('wk-pcard-breakfast', 'Breakfast', planSlotRowHtml(days[sel], sel, 'breakfast', ''));
+    return planCardHtml('wk-pcard-breakfast', 'Breakfast', planDishRowsHtml(days, 'breakfast'));
   }
 
   // LUNCH & DINNER. The week: one group per day, the day at the left and
@@ -19027,14 +19044,19 @@
     }).join('');
   }
 
+  // A day: its lunch and dinner rows, the schedule. The week: the menu —
+  // a Lunch card and a Dinner card of dishes (planDishRowsHtml), and a day
+  // Pomona can still fill as one quiet row on the Dinner card.
   function planMainsHtml(days, sel) {
     if (sel !== null) return planCardHtml('wk-pcard-mains', 'Lunch & dinner', planMainsDayRows(days[sel], sel));
-    var body = days.map(function (day, i) {
-      if (day.before_plan_start) return '';
-      var rows = planMainsDayRows(day, i);
-      return rows ? planDayGroupHtml(day, rows) : '';
+    var build = days.map(function (day, i) {
+      if (day.before_plan_start || !wkDayCanBuild(day, {})) return '';
+      return planRowHtml({ attrs: ' data-wk-build-day="' + escapeHtml(day.date) + '" data-wk-day-index="' + i + '"',
+        eyebrow: dayName(day.date, { weekday: 'long' }), name: 'Nothing planned yet', meta: 'Tap to build a plan', quiet: true,
+        label: 'Build a plan for ' + dayName(day.date, { weekday: 'long' }) });
     }).join('');
-    return planCardHtml('wk-pcard-mains', 'Lunch & dinner', body);
+    return planCardHtml('wk-pcard-mains wk-pcard-lunch', 'Lunch', planDishRowsHtml(days, 'lunch')) +
+      planCardHtml('wk-pcard-mains wk-pcard-dinner', 'Dinner', planDishRowsHtml(days, 'dinner') + build);
   }
 
   // SNACKS. The week: folded to one line ("2 a day · 14 in all"); a tap
