@@ -60,6 +60,7 @@ Four failures that shipped before Emily caught them, so check for them by name:
 14. **One exclamation mark or emoji per screen at most, in the app.** Most screens: none. Never in error copy. (Emily's own emails: see "Who's talking".)
 15. **"Passphrase", never "password." The app is Pomona**, in every user-facing line.
 16. **A limit states the rule about the thing, never what I can do.** Refusals and limits say what's true of the food, the day or the plan — not "I can only…" or "I can't…". (Emily, 2026-10-20, rewriting the prep-day refusal: *"Chicken Bowls is on Wednesday, so prep needs to be on or before Wednesday."*) The old line was "…so I can only put its prep on Wednesday or before" — same fact, but it made the rule sound like my shortcoming. Name the thing, then the rule it has to follow.
+17. **The way you answer matches the question.** A question about what you have is answered by tapping what you have; never ask one thing and collect its opposite. (Emily, 2026-10-31: *"it's asking 'what do you have left' then asking to tap what's gone. It should tap what's still left, more intuitive with the question."*) When you write a heading and its helper line, read them together: if the heading asks "Still have these?", the helper says "Tap what's still here", not "Tap anything that's gone". If the screen really collects the opposite, change the heading to ask that ("Any of these gone?"). `DESIGN_SYSTEM.md` S13.
 
 ## Recipe steps
 
@@ -94,7 +95,7 @@ Also cut: any adjective the reader can't check ("delicious", "amazing", "intuiti
 - Match the register of the place it lives: a button is two or three words; a push notification is one breath and states what happened; an empty state says what's true and what one thing they can do; an email gets a subject line and one ask.
 - US spelling ("favorite", "color") — Emily's call, 2026-09-17. Don't ask again.
 
-Before sending, run the checklist once: four words · every word earns its place · clear beats warm · buttons are verbs, toasts name the thing, nothing announced · contractions · one breath · nothing promised · no dashboard labels · calm if it's trouble.
+Before sending, run the checklist once: four words · every word earns its place · clear beats warm · buttons are verbs, toasts name the thing, nothing announced · contractions · one breath · nothing promised · no dashboard labels · calm if it's trouble · the tap answers the question asked.
 
 ## Calibration
 

@@ -236,6 +236,18 @@ run rather than a vibe. They apply to every screen, mockup or built.*
   screen I can push to even just bring me there."* **Test:** for every line on a screen that
   names another day, screen or list, tap it — does it land on that exact thing? And: could
   the person finish what they came to do without leaving this screen?
+- **S13 · The way you answer matches the question.** *(Emily, 2026-10-31, phone test of
+  the planning quick check — "it's confusing cause it's asking 'what do you have left'
+  then asking to tap what's gone. It should tap what's still left, more intuitive with the
+  question. Make a rule to make it so that the response type should be clear to the
+  question being asked.")* A question about what you have is answered by tapping what you
+  have; a question about what's gone is answered by tapping what's gone. Never ask one
+  thing and collect its opposite — the thing the tap marks is the thing the heading names.
+  Chips that start on and switch off are fine only when the heading names what "on" means
+  ("Use these up", all on, tap one off). First fixed 2026-10-31: Plan the week's "Still
+  have these?" now has you tap what's still there (untapped = gone), and the Kitchen
+  freezer's tap-what's-gone card asks "Any of these gone?". **Test:** read the heading,
+  then tap one thing — does the tap say "yes" to the heading's question, or "no"?
 
 ---
 

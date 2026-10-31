@@ -328,8 +328,10 @@ def test_check_card_markup_marks_a_gone_chip():
     out = json.loads(nodeharness.run_node(script).stdout.strip().splitlines()[-1])
     assert out["empty"] == ""
     html = out["html"]
-    assert "Quick check: still have these?" in html
+    # S13 (2026-10-31): a tap here marks what's gone, so the heading asks that.
+    assert "Quick check: any of these gone?" in html
     assert "Tap anything that’s gone." in html
+    assert "still have these?" not in html
     assert "planning check" not in html  # verify item 9: no feature names
     assert '>Hummus</button>' in html
     assert 'class="gro-pill gro-pill-on" data-home="check" data-id="2" aria-pressed="true">Apples · gone<' in html

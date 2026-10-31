@@ -891,16 +891,18 @@ body.toast-up { padding-bottom: 260px; }
        1. Quick check: still have these? — at most five kitchen rows
           Pomona is least sure of (GET /api/inventory/check,
           tools.inventory_check_candidates — the same chips the Kitchen
-          tab's freezer segment will show). A tap = gone (celadon,
-          "· gone"); Next takes the gone ones out of the kitchen and
-          stamps the rest confirmed (POST /api/inventory/check).
+          tab's freezer segment will show). A tap = still have it
+          (celadon) — the answer matches the question (DESIGN_SYSTEM S13,
+          Emily 2026-10-31; it used to be tap = gone). Next stamps the
+          tapped ones confirmed and takes the untapped ones out of the
+          kitchen (POST /api/inventory/check, the same gone/confirmed).
        2. First, what's home — "Use these up": use_up.candidates as chips,
           all on; a tap switches one off for this plan only. Plan the week
           saves the off list on the intake (use_up_off, the whole list)
           and drafts. See preDraft* in the script. -->
   <section id="inv-check" hidden>
     <h1>Quick check: still have these?</h1>
-    <p class="step-sub">Tap anything that&rsquo;s gone.</p>
+    <p class="step-sub">Tap the ones you still have.</p>
     <div class="step-body">
       <div class="chip-row" id="inv-check-chips" role="group" aria-label="Still have these?"></div>
     </div>
@@ -5155,13 +5157,12 @@ body.toast-up { padding-bottom: 260px; }
   var PRE_COPY = {
     eyebrowNext: 'Plan · next week',
     eyebrowThis: 'Plan · this week',
-    gone: ' · gone',
     next: 'Next',
     plan: 'Plan the week',
     saveFailed: 'I couldn’t save that just now — try again in a moment.'
   };
   var preStep = '';
-  var preCheck = { items: [], gone: [] };
+  var preCheck = { items: [], left: [] };
   var preUseUp = { shown: false, items: [], off: [] };
   // The switches as this visit left them, so "‹ Same as last week?" and
   // back in again is not a fresh set of chips (hunt 2026-10-28: a chip
@@ -5199,7 +5200,7 @@ body.toast-up { padding-bottom: 260px; }
 
   function renderCheckChips() {
     $('inv-check-chips').innerHTML = preCheck.items.map(function (c) {
-      return preChipHtml(c.id, c.label || c.item, preCheck.gone.indexOf(c.id) !== -1, PRE_COPY.gone);
+      return preChipHtml(c.id, c.label || c.item, preCheck.left.indexOf(c.id) !== -1, '');
     }).join('');
   }
 
@@ -5217,7 +5218,7 @@ body.toast-up { padding-bottom: 260px; }
   $('inv-check-chips').addEventListener('click', function (e) {
     var chip = e.target.closest('.chip[data-id]');
     if (!chip) return;
-    toggleIn(preCheck.gone, Number(chip.getAttribute('data-id')));
+    toggleIn(preCheck.left, Number(chip.getAttribute('data-id')));
     renderCheckChips();
   });
   $('use-up-chips').addEventListener('click', function (e) {
@@ -5239,20 +5240,20 @@ body.toast-up { padding-bottom: 260px; }
     }
     // A tap made before "‹ Same as last week?" is still a tap.
     var shown = items.slice(0, 5).map(function (c) { return c.id; });
-    var gone = preCheck.gone.filter(function (id) { return shown.indexOf(id) !== -1; });
-    preCheck = { items: items.slice(0, 5), gone: gone };
+    var left = preCheck.left.filter(function (id) { return shown.indexOf(id) !== -1; });
+    preCheck = { items: items.slice(0, 5), left: left };
     if (!preCheck.items.length) return false;
     renderCheckChips();
     showPreSection('check');
     return true;
   }
 
-  // Next on the check: gone out, the rest confirmed. A save that fails
-  // keeps the screen (nothing was removed) and says so.
+  // Next on the check: the tapped ones confirmed, the rest gone. A save
+  // that fails keeps the screen (nothing was removed) and says so.
   async function answerInventoryCheck() {
-    var gone = preCheck.gone.slice();
-    var confirmed = preCheck.items.map(function (c) { return c.id; })
-      .filter(function (id) { return gone.indexOf(id) === -1; });
+    var confirmed = preCheck.left.slice();
+    var gone = preCheck.items.map(function (c) { return c.id; })
+      .filter(function (id) { return confirmed.indexOf(id) === -1; });
     await Api.json('/api/inventory/check', { method: 'POST', body: { gone: gone, confirmed: confirmed }, quiet: true });
   }
 
