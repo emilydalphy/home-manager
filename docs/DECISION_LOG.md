@@ -13,6 +13,8 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A scan photo the Messages API would refuse is refused first, with a sentence** (2026-10-31, branch `overnight/hunt-inputs-1031`; tests `tests/test_scan_photo_limits.py`).
+  `_read_scan_image` now reads the photo's size from its header (JPEG/PNG/GIF/WEBP, no imaging library) and refuses over 8000 px a side, and the byte cap is 7.5 MB (the API's 10 MB is base64), was 8 MiB. A long scrolling screenshot of a list passed both, the API refused it, and the household got a 500 "try again in a minute" no retry fixes. Unreadable headers still go through.
 - **Test clock: `test_the_route_answers_with_the_view_and_the_receipt` failed 23:25–24:00 UTC** (2026-10-30, branch `merge-overnight-2026-10-30`).
   Its household is on UTC, so a 35-minute cook started then is on the table tomorrow; it asserted today's date. Now asserts started + 35 min. No app change.
 - **Merge seam: one rule for a chat use-by date** (2026-10-30, branch `merge-overnight-2026-10-30`).

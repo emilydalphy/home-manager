@@ -7698,7 +7698,67 @@ def include_grocery_list_item(item_id: int):
     return result
 
 
-_MAX_SCAN_IMAGE_BYTES = 8 * 1024 * 1024  # generous for a phone photo; Claude's own image limits are higher still
+# The scans send the photo to Claude as it came off the phone (the kitchen
+# and Shop scans don't shrink it first; only the cookbook import does), so
+# these two numbers are the Messages API's own per-image limits, checked
+# here so a photo it would refuse gets a sentence instead of a 500.
+#
+#  * Bytes. The API takes 10 MB per image BASE64-ENCODED, and base64 is 4/3
+#    of the file — so 7.5 MB as uploaded. This said 8 MiB until 2026-10-31
+#    ("Claude's own image limits are higher still"): a 7.6-8 MB photo passed
+#    here and was refused there.
+#  * Pixels. 8000 on either side. A long scrolling screenshot of a notes
+#    list — exactly what the Shop scan asks for — is 1080 x 12000 and a
+#    couple of MB, so it passed every check here, the API refused it, and
+#    the household got a 500's "try again in a minute" — which no retry
+#    ever fixes — while the morning report filed an AI failure
+#    (hunt-inputs-1031).
+_MAX_SCAN_IMAGE_BYTES = 7_500_000
+_MAX_SCAN_IMAGE_SIDE = 8000
+
+
+def _image_size(data: bytes) -> tuple[int, int] | None:
+    """
+    (width, height) read from a JPEG, PNG, GIF or WEBP header, or None when
+    the bytes don't say — there is no imaging library on the server (see
+    app/recipe_photos.py). None is never a refusal: a photo whose size
+    can't be read here goes on to the model exactly as it did before.
+    """
+    try:
+        if data[:8] == b"\x89PNG\r\n\x1a\n" and data[12:16] == b"IHDR":
+            return int.from_bytes(data[16:20], "big"), int.from_bytes(data[20:24], "big")
+        if data[:4] == b"GIF8":
+            return int.from_bytes(data[6:8], "little"), int.from_bytes(data[8:10], "little")
+        if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+            chunk = data[12:16]
+            if chunk == b"VP8X":
+                return 1 + int.from_bytes(data[24:27], "little"), 1 + int.from_bytes(data[27:30], "little")
+            if chunk == b"VP8L":
+                b = data[21:25]
+                return 1 + (b[0] | (b[1] & 0x3F) << 8), 1 + (b[1] >> 6 | b[2] << 2 | (b[3] & 0x0F) << 10)
+            if chunk == b"VP8 ":
+                return int.from_bytes(data[26:28], "little") & 0x3FFF, int.from_bytes(data[28:30], "little") & 0x3FFF
+            return None
+        if data[:2] == b"\xff\xd8":
+            # Walk the JPEG's segments to its frame header (any SOFn). The
+            # side check is the same both ways, so EXIF rotation can't matter.
+            i = 2
+            while i + 9 < len(data):
+                if data[i] != 0xFF:
+                    return None
+                marker = data[i + 1]
+                if marker == 0xFF:
+                    i += 1
+                    continue
+                if marker in (0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF):
+                    return int.from_bytes(data[i + 7:i + 9], "big"), int.from_bytes(data[i + 5:i + 7], "big")
+                if marker == 0x01 or 0xD0 <= marker <= 0xD9:
+                    i += 2
+                    continue
+                i += 2 + int.from_bytes(data[i + 2:i + 4], "big")
+    except IndexError:
+        return None
+    return None
 
 
 async def _read_scan_image(photo: UploadFile) -> tuple[str, str]:
@@ -7709,6 +7769,12 @@ async def _read_scan_image(photo: UploadFile) -> tuple[str, str]:
         raise HTTPException(status_code=400, detail="That photo came through empty — try again.")
     if len(data) > _MAX_SCAN_IMAGE_BYTES:
         raise HTTPException(status_code=400, detail="That photo's too large — try a smaller/lower-res photo.")
+    size = _image_size(data)
+    if size and max(size) > _MAX_SCAN_IMAGE_SIDE:
+        raise HTTPException(
+            status_code=400,
+            detail="That picture's too big for me to read in one go — crop it, or send it as two shots.",
+        )
     return base64.b64encode(data).decode("ascii"), photo.content_type
 
 
