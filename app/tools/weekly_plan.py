@@ -5997,7 +5997,10 @@ def week_receipt(days: list[dict], weekly_plan_id: int, today: str = "") -> dict
                 dishes.add((entry.get("title") or "").strip().casefold())
     recipes = len(dishes)
 
-    list_count = len(_grocery.list_grocery_list("needed"))
+    # Rows, as Shop draws them: approving next week while this one runs
+    # puts two weeks' beans under one row, and "Open the list" lands there.
+    from . import week_lines as _week_lines
+    list_count = len(_week_lines.as_shop_rows(_grocery.list_grocery_list("needed")))
     thaw_count = _pending_thaw_count(weekly_plan_id)
 
     parts: list[str] = []
