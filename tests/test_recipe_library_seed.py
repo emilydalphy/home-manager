@@ -43,8 +43,10 @@ def test_five_hundred_dishes_split_as_proposed():
     # another 200 recipes"), 45 gap-fillers the same day, and 100 more on
     # 2026-10-25 ("make another 200 recipes": the paused 100 plus 100 new, and a
     # quick Bistec beside the slow one),
+    # and 58 breakfasts and snacks on 2026-10-31 ("better variety and quality
+    # for the breakfasts and the snacks ... add about 60 more"),
     # still only the cuisines a household can pick.
-    assert len(DISHES) == 846
+    assert len(DISHES) == 904
     assert Counter(d["cuisine"] for d in DISHES[:500]) == PROPOSED
     assert set(d["cuisine"] for d in DISHES[500:]) <= set(PROPOSED)
 

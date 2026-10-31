@@ -1,0 +1,114 @@
+{
+ "dish_name": "Blueberry Baked Oatmeal Cups",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 12,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Coconut oil",
+   "qty": "2 tbsp + 1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Rolled oats",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Baking powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Banana",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Milk",
+   "qty": "1 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Blueberries",
+   "qty": "1 pint",
+   "category": "produce",
+   "cook_qty": "1 cup"
+  }
+ ],
+ "instructions": [
+  "Up to a week ahead, heat the oven to 350°F. Rub 1 tsp of the coconut oil into all 12 cups of a muffin pan.",
+  "In a medium bowl, stir together the 2 cups oats, 1 tsp baking powder, 1/2 tsp salt and 1 tsp cinnamon.",
+  "Melt the remaining 2 tbsp coconut oil in a small bowl in the microwave, about 30 seconds.",
+  "In a large bowl, mash the banana with a fork until it's smooth. That should be about 1/2 cup.",
+  "Whisk in the melted coconut oil, 1 cup milk, 2 tbsp honey, 1/2 tsp vanilla and the egg.",
+  "Stir the oat mixture into the bowl until there are no dry oats left. Fold in 1 cup of the blueberries.",
+  "Divide it between the 12 cups. They don't rise much, so you can fill them to the top.",
+  "Bake for 20 to 25 minutes, until they're golden brown and firm on top. This makes 12 oatmeal cups.",
+  "Let them cool in the pan for 10 minutes, then lift them onto a rack to cool completely.",
+  "They keep in the fridge for up to a week in a sealed container, or in the freezer for up to 3 months. In the morning, eat two cold, or microwave them for about 30 seconds."
+ ],
+ "advance_prep_notes": "Bake the cups up to a week ahead and keep them in the fridge.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9
+ ],
+ "method_notes": "Both stir rolled oats into a banana and maple or honey base, fold in a cup of blueberries and bake them in a muffin pan at 350°F. Super Healthy Kids (the lead) adds milk, an egg, coconut oil and baking powder, so the cups are soft like baked oatmeal, and fills the cups to the top. Running on Real Food leaves out the milk and egg and binds two bananas with nut butter and ground flax, and it gives the keeping times: up to a week in the fridge and 3 months in the freezer. This one follows the lead's 12 cups, with a little extra coconut oil for the pan in place of spray.",
+ "sources": [
+  {
+   "name": "Super Healthy Kids",
+   "title": "Baked Blueberry Oatmeal Cups",
+   "url": "https://www.superhealthykids.com/baked-blueberry-oatmeal-cups/",
+   "rating": 4.0,
+   "rating_count": 44,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Running on Real Food",
+   "title": "Baked Blueberry Oatmeal Cups",
+   "url": "https://runningonrealfood.com/blueberry-oatmeal-cups/",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

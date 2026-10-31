@@ -1,0 +1,110 @@
+{
+ "dish_name": "Veggie Sticks with Ranch Dip",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Plain Greek yogurt",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Onion powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried dill",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cayenne pepper",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh chives",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Celery",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Persian cucumbers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "In a medium bowl, stir together the 1 cup Greek yogurt, 3/4 tsp garlic powder, 1/2 tsp onion powder, 1/2 tsp dried dill, 1/8 tsp salt and 1/8 tsp cayenne until it's smooth.",
+  "Finely chop 1 tbsp of the chives and scatter them over the dip.",
+  "Cover the bowl and put it in the fridge while you cut the vegetables.",
+  "Peel the 3 carrots and cut them into sticks about 3 inches long.",
+  "Cut 3 stalks of the celery into sticks the same length.",
+  "Cut the 2 cucumbers into quarters lengthwise, then cut each quarter in half across.",
+  "Cut the bell pepper in half, pull out the seeds and slice it into strips.",
+  "Serve the vegetable sticks with the ranch dip. Leftover dip keeps in the fridge for up to 3 days in a sealed container."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three stir dried dill, garlic powder and onion powder into plain Greek yogurt, about 1 cup for four. Well Plated (the lead) adds a little cayenne and a dash of Worcestershire and tops it with fresh chives; Healthful Blondie and Stephanie Kay use lemon juice for tang, and Healthful Blondie adds Dijon. This follows the lead but leaves out the Worcestershire, which has anchovy, so the dip stays vegetarian, and the lead's 1/4 tsp kosher salt is written as 1/8 tsp table salt.",
+ "sources": [
+  {
+   "name": "Well Plated",
+   "title": "Greek Yogurt Ranch Dip",
+   "url": "https://www.wellplated.com/greek-yogurt-ranch-dip/",
+   "rating": 4.71,
+   "rating_count": 249,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Healthful Blondie",
+   "title": "Healthy Greek Yogurt Ranch Dip",
+   "url": "https://healthfulblondie.com/?p=61600",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Stephanie Kay Nutrition",
+   "title": "Greek Yogurt Ranch Dip",
+   "url": "https://kaynutrition.com/?p=25944",
+   "rating": 4.5,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

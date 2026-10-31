@@ -1,0 +1,82 @@
+{
+ "dish_name": "Ajitsuke Tamago",
+ "cuisine": "Japanese",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Sake",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "The night before, or at least 8 hours ahead: put the 1/4 cup soy sauce, 1/4 cup mirin, 1/4 cup sake and 1 tsp sugar in a small saucepan off the heat and whisk until the sugar dissolves.",
+  "Bring it to a boil over medium heat, then turn it down and simmer for 1 minute. Take it off the heat and let it cool completely.",
+  "Meanwhile, bring 4 cups of water to a full boil in a medium saucepan over high heat. Fill a bowl with ice and cold water.",
+  "Lower the eggs into the boiling water one at a time with a slotted spoon, straight from the fridge. Turn the heat down so the water simmers gently and cook them for 7 minutes.",
+  "Lift the eggs into the ice water and leave them for 15 minutes, until they're cold all the way through.",
+  "Crack the wide end of each egg on the counter and peel the shell off, dipping the egg back in the water if the shell sticks.",
+  "Put the peeled eggs in a zip top bag and pour in the cooled marinade. Press out the air and seal it so the eggs sit under the liquid. Put the bag in a bowl in the fridge for 8 hours or overnight, and no longer than a day, or they get too salty.",
+  "Take the eggs out of the marinade and cut them in half lengthwise. Serve them cold.",
+  "They keep in the fridge for 3 to 4 days in a sealed container. Throw the used marinade away."
+ ],
+ "advance_prep_notes": "Boil the eggs and marinate them overnight, the night before (at least 8 hours).",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7
+ ],
+ "method_notes": "Both read versions simmer soy sauce, mirin, sugar and sake briefly and cool it, boil chilled eggs for a jammy yolk, chill them in iced water, peel them and marinate them in a sealed bag in the fridge overnight. Just One Cookbook (the lead) uses equal parts soy, mirin and sake with a teaspoon of sugar, boils the eggs for 7 minutes and warns against marinating past a day. RecipeTin Japan adds water and bonito flakes to a sweeter marinade, boils them for 6 1/2 minutes and turns them halfway. This follows Just One Cookbook's ratios and its 3 to 4 day keeping time.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Ramen Eggs (Ajitsuke Tamago)",
+   "url": "https://www.justonecookbook.com/ramen-egg/",
+   "rating": 4.74,
+   "rating_count": 557,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Japan",
+   "title": "Ramen Egg (Ajitsuke Tamago)",
+   "url": "https://japan.recipetineats.com/ramen-egg-ajitsuke-tamago/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

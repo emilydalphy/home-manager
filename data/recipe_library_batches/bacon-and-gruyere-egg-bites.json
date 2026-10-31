@@ -1,0 +1,106 @@
+{
+ "dish_name": "Bacon and Gruyere Egg Bites",
+ "cuisine": "American",
+ "main_protein": "eggs",
+ "default_servings": 12,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bacon",
+   "qty": "4 slices",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Gruyère cheese",
+   "qty": "6 oz",
+   "category": "dairy",
+   "cook_qty": "1 1/4 cups"
+  },
+  {
+   "item": "Eggs",
+   "qty": "6",
+   "category": "dairy"
+  },
+  {
+   "item": "Cottage cheese",
+   "qty": "1 tub (16 oz)",
+   "category": "dairy",
+   "cook_qty": "1 1/4 cups"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Hot sauce",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Up to 3 days ahead, boil a full kettle of water. Set one oven rack in the middle and one at the bottom, and heat the oven to 300°F.",
+  "Put a 9 by 13 inch baking dish on the bottom rack and fill it halfway with the boiling water. The steam keeps the egg bites soft and custardy.",
+  "Brush the vegetable oil generously into all 12 cups of a metal muffin pan. Silicone pans cook them unevenly.",
+  "Dice the 4 slices of bacon.",
+  "Cook the bacon in a small nonstick skillet over medium-high heat, stirring often, for 5 to 6 minutes, until it's crisp. Lift it onto a paper towel with a slotted spoon.",
+  "Shred the Gruyère. That should be about 1 1/4 cups.",
+  "Put the 6 eggs, 1 1/4 cups cottage cheese, the Gruyère, 2 tbsp cornstarch, 1/4 tsp salt, 1/8 tsp pepper and 1/2 tsp hot sauce in a blender. Blend for about 30 seconds, until it's completely smooth.",
+  "Pour the mixture into the cups so each one is about three quarters full. Divide the bacon between them and press some of it into the egg.",
+  "Bake on the middle rack for 20 to 25 minutes, until they're set and pulling away from the edges a little. This makes 12 egg bites.",
+  "Let them rest in the pan for 5 minutes. Loosen the edges with a small spoon and lift them out onto a rack to cool completely.",
+  "They keep in the fridge for up to 3 days in a sealed container, or in the freezer for up to 2 months. In the morning, microwave two at half power for 60 to 90 seconds, until they're hot through. Thaw frozen ones in the fridge overnight first."
+ ],
+ "advance_prep_notes": "Bake the egg bites up to 3 days ahead and keep them in the fridge.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10
+ ],
+ "method_notes": "Once Upon a Chef (the lead) copies the coffee shop version: eggs blended smooth with cottage cheese, Gruyère and a little cornstarch, baked at 300°F over a pan of steaming water so they stay custardy. Reluctant Entertainer skips the cottage cheese and the water, whisks 10 eggs with crumbled bacon, Gruyère and Italian seasoning and bakes them hot and fast at 400°F. This one follows the lead's amounts for 12 bites, with oil brushed into the pan in place of spray.",
+ "sources": [
+  {
+   "name": "Once Upon a Chef",
+   "title": "Copycat Egg Bites with Bacon & Gruyère",
+   "url": "https://www.onceuponachef.com/recipes/bacon-gruyere-egg-bites.html",
+   "rating": 4.87,
+   "rating_count": 632,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Reluctant Entertainer",
+   "title": "Bacon and Gruyere Egg Bites",
+   "url": "https://reluctantentertainer.com/bacon-and-gruyere-egg-bites/",
+   "rating": 4.43,
+   "rating_count": 7,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

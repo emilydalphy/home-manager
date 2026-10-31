@@ -1,0 +1,89 @@
+{
+ "dish_name": "Fruit Skewers with Yogurt Dip",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Plain Greek yogurt",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Strawberries",
+   "qty": "1 pint",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh pineapple chunks",
+   "qty": "1 container (16 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Cantaloupe",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Blueberries",
+   "qty": "1 pint",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "In a small bowl, whisk the 1/2 cup Greek yogurt, 2 tbsp honey and 1/2 tsp vanilla until smooth. Cover it and put it in the fridge.",
+  "Hull 8 of the strawberries and cut them in half.",
+  "Cut a quarter off the cantaloupe, take off the rind and seeds, and cut the flesh into 1 inch cubes. That should be about 1 cup.",
+  "Thread each of 8 skewers with a strawberry half, a pineapple chunk, a cantaloupe cube and 3 blueberries. Go around once more so each skewer holds two of each.",
+  "Serve two skewers each with the yogurt dip."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three thread bite size fruit onto skewers and whisk plain yogurt with honey and vanilla for the dip. Craving Home Cooked (the lead, since none of the pages has 20 ratings) uses strawberries, pineapple, cantaloupe, honeydew and blueberries in rainbow order with 1 cup Greek yogurt, 1/4 cup honey and 1 tsp vanilla for eight. Cooking with Curls cuts the melon with cookie cutters, and Jamie Geller (from the NHLBI) blends strawberries into the dip. This halves the lead for four and leaves out the honeydew so there's only one melon to buy.",
+ "sources": [
+  {
+   "name": "Craving Home Cooked",
+   "title": "Rainbow Fruit Skewers with Yogurt Dip",
+   "url": "https://cravinghomecooked.com/rainbow-fruit-skewers-with-yogurt-dip/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cooking with Curls",
+   "title": "Fruit Skewers Recipe",
+   "url": "https://cookingwithcurls.com/?p=101401",
+   "rating": 4.67,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Jamie Geller",
+   "title": "Fruit Skewers With Yogurt Dip",
+   "url": "https://jamiegeller.com/recipes/fruit-skewers-with-yogurt-dip/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

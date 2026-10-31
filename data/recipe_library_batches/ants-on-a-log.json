@@ -1,0 +1,60 @@
+{
+ "dish_name": "Ants on a Log",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Celery",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Creamy peanut butter",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Raisins",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  }
+ ],
+ "instructions": [
+  "Pull 4 stalks off the celery, wash them and pat them dry with a paper towel.",
+  "Trim off the leaves and the ends. If a stalk is very wide, cut it in half lengthwise with a paring knife.",
+  "Cut each stalk into 4 pieces about 4 inches long, so you have 16 logs.",
+  "Spread the 1/2 cup peanut butter into the groove of each log with a butter knife, mounding it a little.",
+  "Press the 1/2 cup raisins into the peanut butter in a line along each log.",
+  "Serve them right away, or cover them and keep them in the fridge for up to 8 hours."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions fill celery with peanut butter and press raisins along the top. IzzyCooking (the lead, since neither page has 20 ratings) uses 4 celery sticks cut into 4 to 5 inch logs with 1/2 cup each of peanut butter and raisins, and says they hold in the fridge for up to 8 hours. Insanely Good uses 5 stalks with 1/2 cup peanut butter and only 1/4 cup raisins. This follows the lead's amounts, which make 16 logs, four per person.",
+ "sources": [
+  {
+   "name": "IzzyCooking",
+   "title": "Ants on a Log Recipe",
+   "url": "https://izzycooking.com/ants-on-a-log/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Insanely Good Recipes",
+   "title": "Ants On A Log + Variations",
+   "url": "https://insanelygoodrecipes.com/ants-on-a-log/",
+   "rating": 4.8,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

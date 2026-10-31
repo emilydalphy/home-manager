@@ -1,0 +1,98 @@
+{
+ "dish_name": "Sheet Pan Nachos",
+ "cuisine": "Mexican",
+ "main_protein": "beans",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {
+   "item": "Tortilla chips",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "about 6 oz"
+  },
+  {
+   "item": "Black beans",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Shredded cheddar cheese",
+   "qty": "1 bag (8 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Sliced black olives",
+   "qty": "1 can (2.25 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Avocado",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Sour cream",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Salsa",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F and line a sheet pan with parchment.",
+  "Drain and rinse the black beans, and drain the olives.",
+  "Spread half the chips over the pan in one layer. Scatter half the beans over them, then half the cheese.",
+  "Add the rest of the chips on top, then the rest of the beans, the olives and the rest of the cheese.",
+  "Bake for 5 to 10 minutes, until the cheese has melted and the chip edges are starting to brown.",
+  "Meanwhile, chop the tomatoes, dice the avocado, slice the jalapeño and cut the lime into wedges.",
+  "Let the nachos cool for 2 minutes, then scatter over the tomatoes, avocado and jalapeño.",
+  "Serve them on the pan with the lime wedges, the 1/2 cup sour cream and the 1/2 cup salsa."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions layer tortilla chips, black beans and cheddar on a lined sheet pan, bake it until the cheese melts and add fresh tomato, avocado and jalapeño after, with sour cream and salsa on the side. Ontario Beans (listed first) builds two layers at 400°F for 5 to 10 minutes with olives, while Yummy Mummy Kitchen first simmers the beans with onion, garlic, canned tomatoes, cumin and smoked paprika and bakes at 350°F. Neither has 20 ratings, so this follows Ontario Beans, which serves 4 to 6, using about half a bag of chips and a 15 oz can of beans to keep it snack sized.",
+ "sources": [
+  {
+   "name": "Ontario Bean Growers",
+   "title": "Loaded Black Bean Sheet Pan Nachos",
+   "url": "https://ontariobeans.on.ca/recipe/loaded-black-bean-sheet-pan-nachos/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Yummy Mummy Kitchen",
+   "title": "Vegetarian Black Bean Sheet Pan Nachos",
+   "url": "https://www.yummymummykitchen.com/2023/05/sheet-pan-nachos.html",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

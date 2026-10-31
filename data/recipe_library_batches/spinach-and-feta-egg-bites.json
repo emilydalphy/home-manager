@@ -1,0 +1,126 @@
+{
+ "dish_name": "Spinach and Feta Egg Bites",
+ "cuisine": "American",
+ "main_protein": "eggs",
+ "default_servings": 12,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Baby spinach",
+   "qty": "1 bag (5 oz)",
+   "category": "produce",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cherry tomatoes",
+   "qty": "1 pint",
+   "category": "produce",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Eggs",
+   "qty": "10",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried basil",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Crumbled feta",
+   "qty": "1 container (4 oz)",
+   "category": "dairy",
+   "cook_qty": "1/2 cup"
+  }
+ ],
+ "instructions": [
+  "Up to 3 days ahead, heat the oven to 350°F with a rack in the middle. Brush the olive oil into all 12 cups of a muffin pan.",
+  "Chop 1 cup of the baby spinach, lightly packed.",
+  "Finely dice the red pepper and the green pepper.",
+  "Quarter 1 cup of the cherry tomatoes.",
+  "Divide the spinach, peppers and tomatoes between the 12 cups. They should be about two thirds full.",
+  "Crack 6 of the eggs into a large jug with a spout. Separate the last 4 eggs and add only the whites to the jug.",
+  "Add the 1/4 tsp salt, 1/4 tsp basil, 1/4 tsp oregano and a pinch of pepper. Whisk until there are no streaks of white left.",
+  "Pour the egg over the vegetables until each cup is about three quarters full. Sprinkle the feta over the tops.",
+  "Bake for 24 to 28 minutes, until they're puffed and the centers don't wobble when you shake the pan. This makes 12 egg bites.",
+  "Let them cool in the pan for 5 minutes. Run a small knife around each one and lift it out onto a rack to cool completely.",
+  "They keep in the fridge for up to 3 days in a sealed container, or in the freezer for up to 3 months, each one wrapped. In the morning, microwave two for about 30 seconds, or 1 to 2 minutes from frozen."
+ ],
+ "advance_prep_notes": "Bake the egg bites up to 3 days ahead and keep them in the fridge.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10
+ ],
+ "method_notes": "All three bake whisked eggs over spinach in a greased muffin pan at 350°F, with feta in or on top. Well Plated (the lead) uses 6 whole eggs plus 4 whites, adds peppers, tomatoes, basil and oregano and bakes them for 24 to 28 minutes. Love and Lemons blends the eggs with cottage cheese and only suggests feta on top, and I Heart Vegetables keeps it to spinach, feta, eggs and a little milk. This one follows the lead's 12 bites as written.",
+ "sources": [
+  {
+   "name": "Well Plated",
+   "title": "Egg Muffins",
+   "url": "https://www.wellplated.com/healthy-breakfast-egg-muffins/",
+   "rating": 4.86,
+   "rating_count": 176,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Love and Lemons",
+   "title": "Egg Bites",
+   "url": "https://www.loveandlemons.com/egg-bites-recipe/",
+   "rating": 4.79,
+   "rating_count": 182,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "I Heart Vegetables",
+   "title": "Spinach and Feta Egg Bites",
+   "url": "https://iheartvegetables.com/spinach-and-feta-egg-bites/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

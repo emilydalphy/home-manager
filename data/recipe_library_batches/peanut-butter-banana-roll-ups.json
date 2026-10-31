@@ -1,0 +1,64 @@
+{
+ "dish_name": "Peanut Butter Banana Roll-Ups",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Whole wheat tortillas (8 inch)",
+   "qty": "2",
+   "category": "other"
+  },
+  {
+   "item": "Peanut butter",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bananas",
+   "qty": "2",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Lay the 2 tortillas flat on a board and spread the 1/4 cup peanut butter over them, almost to the edges.",
+  "Sprinkle the 1/2 tsp cinnamon over the peanut butter.",
+  "Peel the 2 bananas and lay one near the edge of each tortilla.",
+  "Roll each tortilla up tightly around the banana.",
+  "Slice each roll into rounds about 1 inch thick.",
+  "Serve them right away. If you're packing them, wrap each roll tightly in plastic wrap and slice it when you eat."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both spread peanut butter over a tortilla, add banana and roll it up. Vanderbilt Health (the lead, since neither page has a real rating count) uses an 8 inch whole wheat tortilla, 2 tbsp peanut butter, a sprinkle of cinnamon and a whole banana per roll, sliced into rounds. Veggie Fun Kitchen mashes half a banana with lemon juice, adds granola and says to wrap them tightly so the banana doesn't brown. This follows the lead but makes 2 rolls for four, so each snack is half a roll.",
+ "sources": [
+  {
+   "name": "Vanderbilt Health",
+   "title": "Peanut Butter Banana Roll-Ups",
+   "url": "https://my.vanderbilthealth.com/peanut-butter-banana-roll-up-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Veggie Fun Kitchen",
+   "title": "Peanut Butter Banana Roll-Ups",
+   "url": "https://veggiefunkitchen.com/peanut-butter-banana-roll-ups/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

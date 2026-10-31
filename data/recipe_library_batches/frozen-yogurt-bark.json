@@ -1,0 +1,95 @@
+{
+ "dish_name": "Frozen Yogurt Bark",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 24,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Plain Greek yogurt",
+   "qty": "1 tub (32 oz)",
+   "category": "dairy",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Strawberries",
+   "qty": "1 pint",
+   "category": "produce"
+  },
+  {
+   "item": "Blueberries",
+   "qty": "1 pint",
+   "category": "produce"
+  },
+  {
+   "item": "Mini chocolate chips",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  }
+ ],
+ "instructions": [
+  "At least 4 hours ahead, or the night before: line a rimmed baking sheet with parchment paper.",
+  "In a bowl, whisk the 2 cups Greek yogurt, 2 tbsp honey and 1 tsp vanilla until smooth.",
+  "Spread it over the parchment with a spatula in an even layer about 1/4 inch thick, roughly 9 by 13 inches.",
+  "Hull half the strawberries and slice them thin.",
+  "Scatter the sliced strawberries, half the blueberries and the 2 tbsp mini chocolate chips over the yogurt, pressing them in lightly.",
+  "Put the sheet flat in the freezer for at least 4 hours, until the bark is hard all the way through.",
+  "Lift it out on the parchment and break it into pieces with your hands, or cut it with a sharp knife. This makes about 24 pieces.",
+  "Eat it straight from the freezer. It goes soft within about 10 minutes at room temperature, so keep the rest in a sealed freezer bag in the freezer for up to 2 weeks."
+ ],
+ "advance_prep_notes": "Make and freeze the bark at least 4 hours ahead, or the night before.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6
+ ],
+ "method_notes": "All three whisk Greek yogurt with a little honey or maple syrup, spread it thin on parchment, scatter toppings and freeze it until hard. Chocolate Covered Katie (the lead) uses 2 cups yogurt, 2 tbsp sweetener and 1 tsp vanilla with strawberries, blueberries and chocolate chips, freezes it for 4 hours and breaks it into 24 pieces. Tasting Table uses the same yogurt and honey with mixed berries, granola and almonds and keeps it frozen for up to 2 weeks; Bigger Bolder Baking adds more vanilla and swirls in richer toppings. This follows the lead with honey as the sweetener and Tasting Table's keeping time.",
+ "sources": [
+  {
+   "name": "Chocolate Covered Katie",
+   "title": "Frozen Yogurt Bark",
+   "url": "https://chocolatecoveredkatie.com/frozen-yogurt-bark/",
+   "rating": 5.0,
+   "rating_count": 63,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Tasting Table",
+   "title": "Very Berry Frozen Yogurt Bark Recipe",
+   "url": "https://www.tastingtable.com/1360437/very-berry-frozen-yogurt-bark-recipe/",
+   "rating": 5.0,
+   "rating_count": 30,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Bigger Bolder Baking",
+   "title": "Frozen Yogurt Bark Recipe",
+   "url": "https://www.biggerbolderbaking.com/frozen-yogurt-bark-recipe/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,61 @@
+{
+ "dish_name": "Kale Chips",
+ "cuisine": "American",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Curly kale",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Avocado oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 225°F, on convection if your oven has it. Set out 2 large baking sheets.",
+  "Rinse the kale and dry it very well in a salad spinner or with a clean towel.",
+  "Strip the leaves off the thick stems and tear them into bite size pieces.",
+  "Put the kale in a large bowl, drizzle on the 1 tbsp avocado oil and sprinkle on the 1/2 tsp salt. Rub it in with your hands until every piece looks lightly glossy.",
+  "Spread the kale over the 2 baking sheets so the pieces touch as little as possible.",
+  "Bake for 15 minutes. Turn the pans around and toss the kale lightly.",
+  "Bake for 5 to 10 minutes, until the chips are crisp and only starting to turn golden at the edges. Watch them closely at the end. They burn fast.",
+  "Leave them on the pans for 5 minutes. They crisp up more as they cool.",
+  "Serve them the same day. Leftovers keep covered at room temperature for 2 to 3 days."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both dry the kale very well, tear it off the stems, rub it with a little oil and salt and bake it in a single layer until crisp. Minimalist Baker (the lead) bakes one large bunch at 225°F over two sheets for 20 to 25 minutes, turning the pans halfway, and keeps leftovers 2 to 3 days. Spend With Pennies bakes at 325°F for 17 to 23 minutes. This follows the lead with avocado oil and plain salt as the seasoning.",
+ "sources": [
+  {
+   "name": "Minimalist Baker",
+   "title": "How to Make Kale Chips",
+   "url": "https://minimalistbaker.com/how-to-make-kale-chips/",
+   "rating": 4.7,
+   "rating_count": 80,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Spend With Pennies",
+   "title": "Crispy Kale Chips",
+   "url": "https://www.spendwithpennies.com/crispy-kale-chips/",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

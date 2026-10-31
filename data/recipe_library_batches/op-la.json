@@ -1,0 +1,102 @@
+{
+ "dish_name": "Op La",
+ "cuisine": "Vietnamese",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {
+   "item": "Small baguettes",
+   "qty": "4",
+   "category": "other"
+  },
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Pâté",
+   "qty": "1 container",
+   "category": "meat/seafood",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Maggi seasoning",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "to taste",
+   "category": "pantry"
+  },
+  {
+   "item": "Persian cucumbers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 350°F.",
+  "Slice the 2 cucumbers into thin rounds, pick a small handful of cilantro sprigs and thinly slice the jalapeño into a small dish.",
+  "Warm the 4 baguettes on the oven rack for 4 to 5 minutes, until the crust crackles when you press it.",
+  "Meanwhile, melt 1 tbsp of the butter in a large nonstick skillet over medium-high heat until it foams.",
+  "Crack in 4 of the eggs. Use a spoon to push the edges of the whites out so they spread thin.",
+  "Fry them for 2 to 3 minutes, until the whites are set and lacy brown at the edges and the yolks are still runny. Drizzle 2 tsp of the Maggi over them and add a grind of pepper.",
+  "Slide them onto 2 plates. Melt the last 1 tbsp butter in the pan and fry the last 4 eggs the same way, with the last 2 tsp Maggi and a grind of pepper. Slide them onto the other 2 plates.",
+  "Split each baguette along one side and spread the pâté inside.",
+  "Serve the eggs with the warm baguettes, the cucumber, the cilantro and the sliced jalapeño on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read pages pair sunny side up eggs with a crusty Vietnamese baguette, pâté, cucumber and herbs. Fifteen (the lead) fries each egg in butter in a hot pan, spreading the edges of the white with a spoon, and Cooking Therapy fries two eggs per person and seasons them with soy sauce. Cooking Off the Cuff describes op la the way it's often eaten, the eggs in their own dish with the baguette alongside, which is how this one is plated. It uses the lead's butter fried eggs, two each as Cooking Therapy does, seasoned with Maggi, and leaves out the pickles and mayo that make it a sandwich. No version had 20 or more ratings, so the first read version leads.",
+ "sources": [
+  {
+   "name": "Fifteen",
+   "title": "Bánh Mì Trứng Ốp-La (Vietnamese Fried Egg Sandwich)",
+   "url": "https://www.fifteen.net/recipes/banh-mi-trung-op-la",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cooking Therapy",
+   "title": "10-Minute Bánh Mì Ốp La (Fried Egg Banh Mi)",
+   "url": "https://www.cooking-therapy.com/banh-mi-op-la/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Cooking Off the Cuff",
+   "title": "Fried Egg with Baguette (Bánh Mì Ốp La)",
+   "url": "https://cookingoffthecuff.com/recipes/fried-egg-with-baguette",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

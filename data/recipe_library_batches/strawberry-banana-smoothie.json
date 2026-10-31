@@ -1,0 +1,84 @@
+{
+ "dish_name": "Strawberry Banana Smoothie",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 2,
+ "ingredients": [
+  {
+   "item": "Frozen strawberries",
+   "qty": "20 oz",
+   "category": "frozen",
+   "cook_qty": "4 cups"
+  },
+  {
+   "item": "Milk",
+   "qty": "2 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Greek yogurt",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Banana",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Squeeze half the lemon into a small cup. That should be about 2 tsp of juice.",
+  "Peel the banana and break it into chunks.",
+  "Put the 4 cups frozen strawberries, 2 cups milk, 1 cup Greek yogurt, the banana, 2 tbsp honey and the lemon juice in a blender.",
+  "Blend on high for about 1 minute, until it's thick, smooth and pale pink. If the blades stall, add a splash of water and blend again.",
+  "Pour into 4 glasses and serve right away."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions blend frozen strawberries and a banana with milk and plain or Greek yogurt. Love and Lemons (the lead) uses 2 cups frozen strawberries, 1 cup milk, 1/2 cup whole milk Greek yogurt, half a frozen banana, 1 tbsp honey and a teaspoon of lemon juice for 2 to 3 glasses. Spend With Pennies skips the sweetener and lemon, and Once Upon a Chef adds more honey. This one doubles the lead for four glasses and uses a fresh banana, which Spend With Pennies says works, since the frozen berries keep it cold and thick.",
+ "sources": [
+  {
+   "name": "Love and Lemons",
+   "title": "Strawberry Banana Smoothie",
+   "url": "https://www.loveandlemons.com/strawberry-banana-smoothie/",
+   "rating": 5.0,
+   "rating_count": 125,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Spend With Pennies",
+   "title": "Strawberry Banana Smoothie",
+   "url": "https://www.spendwithpennies.com/strawberry-banana-smoothie/",
+   "rating": 5.0,
+   "rating_count": 114,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Once Upon a Chef",
+   "title": "Strawberry Banana Smoothie",
+   "url": "https://www.onceuponachef.com/recipes/strawberry-banana-smoothie.html",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

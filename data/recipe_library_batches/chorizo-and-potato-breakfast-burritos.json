@@ -1,0 +1,129 @@
+{
+ "dish_name": "Chorizo and Potato Breakfast Burritos",
+ "cuisine": "Mexican",
+ "main_protein": "pork",
+ "default_servings": 5,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "10 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mexican chorizo",
+   "qty": "12 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Eggs",
+   "qty": "6",
+   "category": "dairy"
+  },
+  {
+   "item": "Milk",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Butter",
+   "qty": "1 package",
+   "category": "dairy",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Large flour tortillas",
+   "qty": "5",
+   "category": "other"
+  },
+  {
+   "item": "Shredded cheddar",
+   "qty": "1 bag (8 oz)",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  }
+ ],
+ "instructions": [
+  "Up to 3 months ahead: heat the oven to 425°F and line a sheet pan with parchment.",
+  "Peel the potatoes and cut them into 1/4 inch dice.",
+  "Toss the potatoes on the pan with 1 tbsp of the olive oil, 1/2 tsp paprika, 1/2 tsp salt and 1/4 tsp of the pepper. Spread them out in one layer and roast for 25 to 30 minutes, until they're tender and browned at the edges.",
+  "Meanwhile, put the chorizo in a large skillet over medium heat. Cook it for 8 to 10 minutes, breaking it up with a spoon, until it's browned and crumbly. Transfer it to a plate lined with paper towel.",
+  "Whisk the 6 eggs with the 2 tbsp milk and the rest of the pepper.",
+  "Wipe out the skillet and melt the 1 tbsp butter in it over medium low heat. Add the eggs and stir gently for 2 to 3 minutes, until they're softly set. Take the pan off the heat.",
+  "Stir the chorizo and potatoes into the eggs.",
+  "Warm the tortillas in the microwave for 20 seconds, until they bend without cracking.",
+  "Spoon the filling onto the lower third of each tortilla and sprinkle the cheddar over it.",
+  "Tuck in the sides, fold up the bottom and roll each one tightly. This makes 5 burritos.",
+  "Heat the last 1 tbsp olive oil in the skillet over medium heat. Cook the burritos seam side down for 2 to 3 minutes, then flip them and cook the other side for 2 to 3 minutes, until they're lightly browned.",
+  "Let them cool completely. Wrap each one in plastic wrap and put them in a freezer bag.",
+  "They keep in the freezer for up to 3 months, or in the fridge for up to 3 days. The night before, move one to the fridge to thaw. In the morning, unwrap it, wrap it in a damp paper towel and microwave it for 30 to 45 seconds, until it's hot through."
+ ],
+ "advance_prep_notes": "Make and wrap the burritos up to 3 months ahead for the freezer.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  11,
+  12
+ ],
+ "method_notes": "None of the burritos read had 20 or more ratings, so this follows Simply Scratch Made, the first one read and the one written for the freezer. All three fill flour tortillas with browned chorizo, potatoes, scrambled eggs and cheese. Simply Scratch Made (the lead) roasts paprika potatoes at 425°F while the chorizo browns, scrambles the eggs in butter and crisps the rolled burritos in a pan before freezing; Berly's Kitchen pan-fries the potatoes and adds onion and jalapeño, and Mexican Please adds a roasted tomatillo chipotle salsa, best added after reheating. This one follows the lead's 5 burritos, and the 3 day fridge time comes from Berly's Kitchen.",
+ "sources": [
+  {
+   "name": "Simply Scratch Made",
+   "title": "Chorizo Breakfast Burrito",
+   "url": "https://simplyscratchmade.com/recipe/chorizo-breakfast-burrito",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Berly's Kitchen",
+   "title": "Chorizo Breakfast Burritos",
+   "url": "https://www.berlyskitchen.com/chorizo-breakfast-burritos/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Mexican Please",
+   "title": "Chorizo Breakfast Burritos",
+   "url": "https://www.mexicanplease.com/chorizo-breakfast-burritos/",
+   "rating": 4.37,
+   "rating_count": 11,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

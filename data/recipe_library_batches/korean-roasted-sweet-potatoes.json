@@ -1,0 +1,48 @@
+{
+ "dish_name": "Korean Roasted Sweet Potatoes",
+ "cuisine": "Korean",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 55,
+ "ingredients": [
+  {
+   "item": "Korean sweet potatoes",
+   "qty": "4",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F and line a baking sheet with foil or parchment.",
+  "Scrub the sweet potatoes under running water and pat them dry.",
+  "Poke each one 4 or 5 times with a fork and lay them on the sheet.",
+  "Roast them for 45 to 60 minutes, depending on size, turning them once halfway. They're done when a fork slides in with no push, the skin is wrinkled and a little charred, and sticky syrup is bubbling out of the holes.",
+  "Let them cool for 5 minutes so you can hold them. Serve them warm in their skins.",
+  "Leftovers keep in the fridge for up to 5 days in a sealed container. Eat them cold, or warm one in the microwave for 1 minute."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions cook whole, unpeeled Korean sweet potatoes until the inside is soft and the sugars caramelize at the skin. MJ and Hungryman pokes them and roasts them at 400°F for 45 to 60 minutes until syrup oozes from the holes, while Beyond Kimchee cooks them covered on parchment in a braiser on the stovetop over low heat for 40 to 60 minutes, turning every 20 minutes, for a street vendor char. Neither has 20 ratings, so this follows the first listed, MJ and Hungryman's oven method, with Beyond Kimchee's turning and doneness cues and MJ's 5 day keeping time.",
+ "sources": [
+  {
+   "name": "MJ and Hungryman",
+   "title": "Baked Korean Sweet Potatoes (Goguma)",
+   "url": "https://www.mjandhungryman.com/korean-sweet-potatoes",
+   "rating": 5.0,
+   "rating_count": 9,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Beyond Kimchee",
+   "title": "Pan Roasted Korean Sweet Potato (Gun Goguma)",
+   "url": "https://www.beyondkimchee.com/roasted-korean-sweet-potato/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

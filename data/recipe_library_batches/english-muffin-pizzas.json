@@ -1,0 +1,73 @@
+{
+ "dish_name": "English Muffin Pizzas",
+ "cuisine": "American",
+ "main_protein": "cheese",
+ "default_servings": 8,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 8,
+ "ingredients": [
+  {
+   "item": "English muffins",
+   "qty": "4",
+   "category": "other"
+  },
+  {
+   "item": "Marinara sauce",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Shredded mozzarella",
+   "qty": "1 bag (8 oz)",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Parmesan cheese",
+   "qty": "1 container",
+   "category": "dairy",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Set an oven rack in the top position and heat the broiler. Line a baking sheet with foil.",
+  "Split the 4 English muffins with a fork and lay the halves on the sheet, cut side up.",
+  "Broil for about 1 minute, until the tops are golden.",
+  "Flip them and broil for about 1 minute, until the bottoms are crisp. Watch them closely. Broilers vary.",
+  "Turn them cut side up again. Divide the 1 cup marinara between the 8 halves and spread it almost to the edges.",
+  "Divide the 1 cup mozzarella between them, then sprinkle on the 1 tbsp Parmesan and the 1/4 tsp oregano.",
+  "Broil for 2 to 3 minutes, until the cheese is melted, bubbling and browned in spots. This makes 8 mini pizzas.",
+  "Leave them for a minute, then serve them warm."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both toast split English muffins first so they stay crisp, then top them with marinara, mozzarella and oregano and cook them until the cheese bubbles. Once Upon a Chef (the lead, since neither page has 20 ratings) does it all under the broiler with 1 cup each of sauce and mozzarella and a little Parmesan for 8 halves. Jo Cooks bakes them at 375°F for 10 to 12 minutes with twice the mozzarella and some garlic powder. This follows the lead but leaves off its pepperoni, so these are plain cheese pizzas.",
+ "sources": [
+  {
+   "name": "Once Upon a Chef",
+   "title": "English Muffin Pizzas",
+   "url": "https://www.onceuponachef.com/recipes/english-muffin-pizzas.html",
+   "rating": 5.0,
+   "rating_count": 14,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Jo Cooks",
+   "title": "English Muffin Pizza",
+   "url": "https://www.jocooks.com/recipes/english-muffin-pizza/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

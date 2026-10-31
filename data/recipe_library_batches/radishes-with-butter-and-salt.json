@@ -1,0 +1,68 @@
+{
+ "dish_name": "Radishes with Butter and Salt",
+ "cuisine": "French",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Unsalted butter",
+   "qty": "4 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Radishes",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Flaky sea salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Take the 4 tbsp butter out of the fridge 30 minutes ahead so it's soft enough to spread.",
+  "Cut the leaves off the radishes, leaving about an inch of stem as a handle. Rinse them and pat them dry.",
+  "Slice off the root tip of each radish.",
+  "Cut each radish in half lengthwise from the root end, stopping at the stem so the halves stay joined.",
+  "Spread a little butter into each slit with a small knife and press the halves together so some squeezes out the sides.",
+  "Put the 1 tsp flaky salt in a small saucer.",
+  "Serve the radishes on a plate with the saucer of salt for dipping."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions pair crisp raw radishes with good unsalted butter and flaky or fine sea salt. Dorie Greenspan (listed first) splits each radish from the root almost to the stem, fills it with soft butter, presses it shut and dips it in salt, Sunset sets halved radishes out with butter and salt for dipping, and The Kitchen Whisperer slices French breakfast radishes onto buttered toasted baguette. None has 20 ratings, so this follows Dorie Greenspan's split and buttered radishes. Her page gives no amounts, so the 4 tbsp butter for a bunch is Pomona's.",
+ "sources": [
+  {
+   "name": "Dorie Greenspan",
+   "title": "Radishes, Buttered and Salted the French Way",
+   "url": "https://doriegreenspan.com/recipe/radishes-buttered-and-salted-the-french-way/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Kitchen Whisperer",
+   "title": "French Radishes with Butter and Salt on Toast",
+   "url": "https://www.thekitchenwhisperer.net/2020/01/23/french-radishes-with-buttered-toast-and-salt/",
+   "rating": 5.0,
+   "rating_count": 17,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Sunset",
+   "title": "Radishes, Fresh Homemade Butter, and Salt",
+   "url": "https://www.sunset.com/recipe/radishes-fresh-homemade-butter",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

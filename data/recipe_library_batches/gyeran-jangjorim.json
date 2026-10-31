@@ -1,0 +1,37 @@
+{
+ "dish_name": "Gyeran Jangjorim",
+ "cuisine": "Korean",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {"item": "Eggs", "qty": "8", "category": "dairy"},
+  {"item": "Leek", "qty": "1", "category": "produce"},
+  {"item": "Soy sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/4 cup"},
+  {"item": "Korean rice wine", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 1/2 tsp"},
+  {"item": "Cooked short-grain rice", "qty": "4 cups", "category": "pantry"}
+ ],
+ "instructions": [
+  "Up to 4 days ahead, or the night before: put the eggs in a saucepan and cover them with cold water by about an inch. Bring them to a rolling boil over high heat.",
+  "Take the pan off the heat, put the lid on and leave the eggs in the hot water for 10 minutes.",
+  "Transfer the eggs into a bowl of ice water. Once they're cool enough to hold, after about 5 minutes, peel them.",
+  "Cut half the leek into 2 cm pieces and rinse out any grit.",
+  "Pour out the egg water. In the same saucepan, stir together the soy sauce, rice wine, sugar and 1 cup of water. Bring it to a boil over medium-high heat.",
+  "Add the peeled eggs and the leek. Turn the heat to medium and simmer for about 15 minutes, rolling the eggs every few minutes, until they're an even deep brown and the sauce has cooked down by about a third.",
+  "Take the pan off the heat and let everything cool. Transfer the eggs, leek and sauce into a container. They keep in the fridge for up to 5 days in a sealed container.",
+  "In the morning, microwave the rice, covered, for 2 minutes, until it's steaming. Eat the eggs cold, or microwave two for 30 seconds.",
+  "Serve two eggs per bowl, halved, over the rice with a spoonful of the sauce."
+ ],
+ "advance_prep_notes": "Boil and braise the eggs up to 4 days ahead, or the night before.",
+ "advance_prep_step_indices": [1, 2, 3, 4, 5, 6, 7],
+ "method_notes": "All three read versions boil eggs, peel them and simmer them in soy sauce, water and something sweet until they turn brown, turning them so they color evenly. 10000 Recipe (the lead) uses 8 eggs with 3 tbsp soy sauce, 1 tbsp Korean soup soy sauce, 1 tbsp rice wine, 1/2 tbsp sugar, 1 cup water and half a leek, simmered about 15 minutes. White Blank Space sweetens with maple syrup, adds ginger and garlic and boils them 15 to 20 minutes, and Chopsticks and Flour adds rice syrup, garlic and peppers. This one follows the lead with its two soy sauces as 1/4 cup of regular soy sauce, takes the boiling method and the 5 day keeping time from White Blank Space, and serves 2 eggs each over rice for 4 breakfasts (the lead calls it 6 servings as a side dish).",
+ "sources": [
+  {"name": "10000 Recipe", "title": "Braised in egg sauce", "url": "https://www.10000recipe.com/en/6910187/Braised_in_egg_sauce", "rating": 5.0, "rating_count": 4, "read": true, "lead": true},
+  {"name": "White Blank Space", "title": "Korean Style Braised Eggs (Gyeran Jangjorim)", "url": "https://whiteblankspace.com/korean-style-braised-eggs-gyeran-janjorim/", "rating": 5.0, "rating_count": 1, "read": true, "lead": false},
+  {"name": "Chopsticks and Flour", "title": "Gyeran Jangjorim (Korean Braised Eggs)", "url": "https://www.chopsticksandflour.com/gyeran-jangjorim-korean-braised-eggs/", "rating": 5.0, "rating_count": 1, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

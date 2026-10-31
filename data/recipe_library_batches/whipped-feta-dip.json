@@ -1,0 +1,86 @@
+{
+ "dish_name": "Whipped Feta Dip",
+ "cuisine": "Greek",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Feta cheese",
+   "qty": "4 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Cream cheese",
+   "qty": "4 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Persian cucumbers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Pita bread",
+   "qty": "1 package",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Take the cream cheese out of the fridge 20 minutes ahead so it softens.",
+  "Squeeze 1 tbsp juice from the lemon.",
+  "Crumble the feta into a food processor. Add the cream cheese, lemon juice, 1/4 tsp salt and 1/8 tsp pepper.",
+  "Blend for 2 to 3 minutes, scraping down the sides once or twice, until it's smooth and creamy.",
+  "Chop 2 tbsp of the parsley.",
+  "Spoon the dip into a bowl and scatter the parsley over it.",
+  "Slice the cucumbers into spears and cut the pitas into wedges.",
+  "Serve with the pita and the cucumber spears.",
+  "Leftovers keep in the fridge for up to 1 week in a sealed container."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both read versions blend block feta with something creamy and fresh lemon juice in a food processor and serve it with pita, crackers or raw vegetables. Tasting Table (the lead) uses equal weights of feta and cream cheese with lemon, salt and pepper and a parsley topping, while The Speckled Palate uses Greek yogurt and olive oil, warns that over blending makes it runny, and tops it with tomatoes, capers and dill. This follows Tasting Table at half its amount (it serves 10), with The Speckled Palate's one week keeping time.",
+ "sources": [
+  {
+   "name": "Tasting Table",
+   "title": "Whipped Feta Dip",
+   "url": "https://tastingtable.com/793749/whipped-feta-dip-recipe",
+   "rating": 5.0,
+   "rating_count": 40,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Speckled Palate",
+   "title": "Whipped Feta Dip",
+   "url": "https://www.thespeckledpalate.com/whipped-feta-dip/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
