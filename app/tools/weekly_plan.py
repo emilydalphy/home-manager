@@ -2571,6 +2571,81 @@ def next_period_after(plan: dict, today: str = "") -> dict:
     }
 
 
+def adjacent_plans(plan: dict, today: str) -> dict:
+    """
+    The live plans either side of `plan`, with their days — what the Plan
+    root's day bar runs on into (Emily, 2026-10-31, on Saturday the 31st,
+    the last day of her week, with Nov 1–7 drafted: "I want to be able to
+    see the meal plan that starts tomorrow but I can't. It should let me
+    scroll through the dates that are already planned.").
+
+    `next`: of the plans running on past this one's last day, the one that
+    starts first — a draft beats an approved plan starting the same day
+    (it is the pending decision, the same reason the Plan tab leads with a
+    draft, see _pending_draft_over), then the newest. `previous`: of the
+    plans that began before this one, the one that ended last. Each carries
+    only the dates OUTSIDE this plan, so a draft drawn over part of the
+    week never repeats a date the bar already has. A draft whose days have
+    all gone by is left out — it is retired on the next read anyway
+    (retire_expired_drafts) and is nothing to scroll back to.
+
+    One per side, on purpose: tapping a day of the next plan loads that
+    plan, whose own payload names ITS neighbours, so a household can keep
+    scrolling through every planned stretch without this read growing a
+    list of every plan it ever made. Never an invented day: a gap between
+    two plans is a gap in the bar, not empty tiles.
+
+    `today` is get_week_menu's one reading of the household's clock; each
+    day carries is_past/is_today off it (_day_clock_flags), like the shown
+    plan's own days.
+    """
+    plan_id = plan.get("weekly_plan_id")
+    start, count = plan.get("period_start_date"), int(plan.get("day_count") or 0)
+    if not plan_id or not start or count < 1:
+        return {"previous": None, "next": None}
+    end = period_end_date(start, count)
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT * FROM weekly_plans WHERE household_id = ? AND status != 'retired' AND id != ?",
+        (household_id(), plan_id),
+    ).fetchall()
+    conn.close()
+    best_next = best_prev = None
+    for row in rows:
+        other_start, other_count = plan_period(row)
+        if other_count < 1:
+            continue
+        other_end = period_end_date(other_start, other_count)
+        if row["status"] == "draft" and other_end < today:
+            continue
+        if other_start > start and other_end > end:
+            key = (other_start, row["status"] != "draft", -row["id"])
+            if best_next is None or key < best_next[0]:
+                best_next = (key, row, other_start, other_count)
+        elif other_start < start and other_end < end:
+            key = (other_end, row["id"])
+            if best_prev is None or key > best_prev[0]:
+                best_prev = (key, row, other_start, other_count)
+
+    def _side(found, keep):
+        if found is None:
+            return None
+        _, row, other_start, other_count = found
+        dates = [d for d in _week_intake.period_dates(other_start, other_count) if keep(d)]
+        if not dates:
+            return None
+        return {
+            "weekly_plan_id": row["id"],
+            "status": row["status"],
+            "days": [{"date": d, **_day_clock_flags(d, today)} for d in dates],
+        }
+
+    return {
+        "previous": _side(best_prev, lambda d: d < start),
+        "next": _side(best_next, lambda d: d > end),
+    }
+
+
 def _week_headline(plan: dict, days: list[dict], intake: dict | None) -> str:
     """
     The one line above the draft. One line, no recap — the per-slot reasons
@@ -6422,6 +6497,7 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
                 if plan["status"] == "approved" else None
             ),
             "next_period": next_period,
+            "adjacent_plans": adjacent_plans(plan, today_str),
             **approval,
         }
 
@@ -6939,6 +7015,9 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         # The stretch "Plan next week ›" offers, and why it is the length
         # it is — see next_period_after.
         "next_period": next_period,
+        # The plans either side, for the day bar to run on into (Emily,
+        # 2026-10-31) — see adjacent_plans.
+        "adjacent_plans": adjacent_plans(plan, today_str),
         **approval,
     }
 
