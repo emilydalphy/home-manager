@@ -154,6 +154,13 @@ _WHEAT_WORDS = {
     # The second 200 (same night): a crusty French loaf, Hawaiian sweet
     # rolls, Peking duck's mandarin pancakes, corn flakes (barley malt).
     "french loaf", "sweet roll", "hawaiian roll", "mandarin pancake", "corn flake",
+    # Emily, 2026-10-26 (went with the pick): soba and injera are held for a
+    # gluten or celiac avoidance unless the line says 100% buckwheat / 100%
+    # teff (or gluten-free). Most soba sold is buckwheat cut with wheat, and
+    # most injera outside Ethiopia is teff mixed with wheat or barley flour.
+    # A bare "soba" line or a dish named "Zaru Soba" went through before;
+    # yakisoba is wheat noodles by definition.
+    "soba", "yakisoba", "injera",
 }
 _ALLERGEN_ALIASES: dict[str, set[str]] = {
     "nut": {"peanut", "walnut", "almond", "cashew", "pecan", "hazelnut",
@@ -555,15 +562,21 @@ _COMPOUND_EXCEPTIONS: tuple[tuple, ...] = (
         r"\b(?:rice|almond|chickpea|buckwheat|corn|oat|coconut|tapioca|"
         r"gram|sorghum|millet|teff|potato|arrowroot|cassava)\s+flours?\b"
     )),
-    # Not "soba" (library audit, 2026-10-26): most soba sold is buckwheat
-    # cut with wheat, so "soba noodles" is matched; a line that says
-    # buckwheat ("buckwheat soba noodles") or gluten-free is believed.
+    # Not soba or plain buckwheat noodles (Emily, 2026-10-26): most are
+    # buckwheat cut with wheat, so only "100% buckwheat" (folded to "100
+    # percent buckwheat") or juwari soba, the all-buckwheat kind, is
+    # believed — or a line that says gluten-free.
     # Rice vermicelli, bean thread, shirataki and the other starch noodles
     # are gluten-free by what they are made of.
     (frozenset({"noodle", "noodles"}), re.compile(
-        r"\b(?:rice|glass|buckwheat(?:\s+soba)?|bean\s+thread|mung\s+bean|shirataki|konjac|"
+        r"\b(?:rice|glass|100\s+percent\s+buckwheat(?:\s+soba)?|juwari(?:\s+soba)?|"
+        r"bean\s+thread|mung\s+bean|shirataki|konjac|"
         r"kelp|sweet\s+potato|cellophane|tapioca)(?:\s+vermicelli)?\s+noodles?\b"
     )),
+    (frozenset({"soba", "sobas"}), re.compile(
+        r"\b100\s+percent\s+buckwheat\s+soba\b|\bjuwari\s+soba\b"
+    )),
+    (frozenset({"injera", "injeras"}), re.compile(r"\b100\s+percent\s+teff\s+injeras?\b")),
     # Vermicelli is wheat unless it says what else it is (review, 2026-10-23).
     # A dish NAMED "Vermicelli Bowl" with no qualifier is still held on its
     # name even over a rice list — over-safe, as every name is.

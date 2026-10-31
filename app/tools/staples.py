@@ -1570,6 +1570,17 @@ def remove_staple_by_id(staple_id: int) -> dict:
     return remove_staple(name)
 
 
+def _paused_by_skips(conn, staple_id: int) -> bool:
+    """True when the staple's latest pause was the automatic one three
+    skips bring (_skip), not one a person tapped (pause_staple)."""
+    last = conn.execute(
+        "SELECT source FROM staple_events WHERE household_id = ? AND staple_id = ? "
+        "AND kind = 'paused' ORDER BY id DESC LIMIT 1",
+        (household_id(), staple_id),
+    ).fetchone()
+    return last is not None and last["source"] == "auto"
+
+
 def record_staple_purchase(
     item: str, source: str = "grocery", staple_id: int | None = None,
     grocery_item_id: int | None = None, category: str = "other",

@@ -212,6 +212,41 @@ def _skipped_cooks_portion_ids(conn) -> set[int]:
     return out
 
 
+def not_yet_cooked_portion_ids(conn) -> set[int]:
+    """
+    The freezer rows a night off wrote for a batch that hasn't been cooked
+    yet — the `cook_on_fed` night off writes its spare portion when tapped,
+    ahead of the cook on a later night. The freezer list leaves them out
+    until the batch is cooked (Loop Board card 4001f4c0…, Emily 2026-10-26
+    "go with your pick"): before, the Kitchen's freezer showed a portion of
+    a dish nobody had made yet.
+
+    "Cooked" is the cook ticked done, or its night gone by unticked (most
+    nights are never ticked, and the portion is real by then). A cook
+    answered "We skipped it" is left to the rules that already handle it
+    (_skipped_cooks_portion_ids, release_uncooked_extra). Read at list
+    time, nothing written: the row itself is what the night off's Undo and
+    release_uncooked_extra work on.
+    """
+    from . import cooker as _cooker
+    from . import leftovers as _leftovers
+
+    today = _cooker.household_today(conn=conn).isoformat()
+    out: set[int] = set()
+    for r in conn.execute(
+        "SELECT derived_from_json FROM meal_plan_entries WHERE household_id = ? "
+        "AND COALESCE(cooked_status, '') != 'done' "
+        "AND date >= ? "
+        "AND derived_from_json LIKE ?",
+        (household_id(), today, f'%{_leftovers.FREEZER_EXTRA_KEY}%'),
+    ).fetchall():
+        extra = _derived(r["derived_from_json"]).get(_leftovers.FREEZER_EXTRA_KEY)
+        if isinstance(extra, dict):
+            out |= {i for i in extra.get("inventory_item_ids") or []
+                    if isinstance(i, int) and not isinstance(i, bool)}
+    return out
+
+
 def _claimed_item_ids(conn, ignore_dates: set[str] | frozenset = frozenset()) -> set[int]:
     """
     The portions a live plan already stands a night on — which is what makes
@@ -319,6 +354,36 @@ def safe_to_plan(portions: list[dict] | None) -> list[dict]:
             continue
         keep.append(p)
     return keep
+def past_use_by_line(conn=None, today: str | None = None) -> str | None:
+    """
+    The line the draft shows about cooked portions in the freezer that are
+    past their use-by (Emily's pick #28, 2026-10-26): portions_to_plan
+    leaves them off every plate, and nothing said they were there. "Chili
+    in the freezer is past its use-by — best to toss it." None when every
+    portion is still good, which is nearly always.
+    """
+    from . import cooker as _cooker
+
+    own = conn is None
+    if own:
+        conn = get_conn()
+    try:
+        # The caller's own today when it has one (get_week_menu reads the
+        # clock once for the whole payload).
+        today = today or _cooker.household_today(conn=conn).isoformat()
+        dishes = []
+        for p in _frozen_rows(conn):
+            if _past_use_by(p, today) and p["dish"] not in dishes:
+                dishes.append(p["dish"])
+    finally:
+        if own:
+            conn.close()
+    if not dishes:
+        return None
+    if len(dishes) == 1:
+        return f"{dishes[0]} in the freezer is past its use-by — best to toss it."
+    joined = ", ".join(dishes[:-1]) + " and " + dishes[-1]
+    return f"{joined} in the freezer are past their use-by — best to toss them."
 
 
 def _past_use_by(portion: dict, on: str) -> bool:
@@ -756,6 +821,201 @@ def release_uncooked_extra(conn, entry_id: int) -> list[str]:
     return released
 
 
+# ---------- a portion a later week counts on, and the cook was skipped ----------
+#
+# Emily's pick #32 (2026-10-26). A night off loaded a later cook with the
+# portion for the freezer (FREEZER_EXTRA_KEY) and wrote the freezer row when
+# it was tapped. If a LATER week was already planned with a night eating that
+# portion, and the cook is then answered "We skipped it", that night points at
+# food that doesn't exist. _skipped_cooks_portion_ids keeps the portion off
+# every NEW plan; this asks before re-planning the night already on one.
+
+# The attention kind. Today's "Use soon" card answers it with two buttons;
+# Cook's fold shows it as any other queued note.
+MISSING_PORTION_KIND = "portion_not_made"
+MISSING_PORTION_SUMMARY = (
+    "{dish} was skipped, so there’s no frozen portion for {night}’s dinner. "
+    "Plan something else for {night}?"
+)
+MISSING_PORTION_CONSTRAINT = "replanned_missing_portion"
+# Said when the question no longer stands (the night changed, or went by).
+MISSING_PORTION_GONE = "That dinner has changed since, so I’ve left it as it is."
+
+_MISSING_PORTION_NOTE = (
+    "This dinner was going to be a frozen portion of a dish the household skipped cooking, so "
+    "the portion doesn't exist. `replacing` is empty — pick one dinner for the night, and make "
+    "`reason` say why it suits the night, not what it replaces."
+)
+
+
+def _night_word(meal_date: str) -> str:
+    try:
+        return date.fromisoformat(meal_date).strftime("%A")
+    except ValueError:
+        return meal_date
+
+
+def _nights_on_portions(conn, item_ids: set[int]) -> list[dict]:
+    """Planned nights, today on, on a live plan, eating one of `item_ids`."""
+    from . import cooker as _cooker
+
+    if not item_ids:
+        return []
+    today = _cooker.household_today(conn=conn).isoformat()
+    out = []
+    for r in conn.execute(
+        "SELECT mpe.id, mpe.weekly_plan_id, mpe.date, mpe.slot, mpe.derived_from_json FROM meal_plan_entries mpe "
+        "JOIN weekly_plans wp ON wp.id = mpe.weekly_plan_id "
+        "WHERE mpe.household_id = ? AND mpe.slot_state = 'planned' AND mpe.date >= ? "
+        "AND wp.status IN ({}) ORDER BY mpe.date, mpe.id".format(",".join("?" * len(_LIVE_PLAN_STATUSES))),
+        (household_id(), today, *_LIVE_PLAN_STATUSES),
+    ).fetchall():
+        portion = portion_on(r["derived_from_json"])
+        if portion and portion["inventory_item_id"] in item_ids:
+            out.append({"entry_id": r["id"], "weekly_plan_id": r["weekly_plan_id"], "date": r["date"],
+                        "slot": r["slot"], "dish": str(portion.get("dish") or "").strip(),
+                        "inventory_item_id": portion["inventory_item_id"]})
+    return out
+
+
+def _extra_ids(derived_from_json) -> set[int]:
+    from . import leftovers as _leftovers
+
+    extra = _derived(derived_from_json).get(_leftovers.FREEZER_EXTRA_KEY)
+    if not isinstance(extra, dict):
+        return set()
+    return {i for i in extra.get("inventory_item_ids") or [] if isinstance(i, int) and not isinstance(i, bool)}
+
+
+def ask_about_missing_portions(skipped_entry_id: int) -> list[dict]:
+    """
+    After "We skipped it" on a cook that was making a night off's freezer
+    portion: one question on the attention queue per later night already
+    planned to eat that portion. Asks, never re-plans on its own — the
+    household may have frozen something else, or not mind. Never raises:
+    the skip itself has already been saved.
+    """
+    from . import attention as _attention
+
+    asked = []
+    try:
+        conn = get_conn()
+        try:
+            row = conn.execute(
+                "SELECT derived_from_json, skipped_at FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+                (skipped_entry_id, household_id()),
+            ).fetchone()
+            if row is None or row["skipped_at"] is None:
+                return []
+            nights = _nights_on_portions(conn, _extra_ids(row["derived_from_json"]))
+        finally:
+            conn.close()
+        for night in nights:
+            dish = night["dish"] or "That dish"
+            _attention.add_attention_item(
+                MISSING_PORTION_KIND,
+                MISSING_PORTION_SUMMARY.format(dish=dish, night=_night_word(night["date"])),
+                {**night, "skipped_entry_id": skipped_entry_id},
+            )
+            asked.append(night)
+    except Exception:
+        logger.exception("Could not ask about the portion entry %s was making", skipped_entry_id)
+    return asked
+
+
+def _question_stands(conn, detail: dict) -> bool:
+    """The skipped cook is still skipped and not cooked, and the night still
+    eats the portion it was making."""
+    try:
+        skipped_id = int(detail.get("skipped_entry_id"))
+        night_id = int(detail.get("entry_id"))
+        item_id = int(detail.get("inventory_item_id"))
+    except (TypeError, ValueError):
+        return False
+    cook = conn.execute(
+        "SELECT skipped_at, cooked_status FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+        (skipped_id, household_id()),
+    ).fetchone()
+    if cook is None or cook["skipped_at"] is None or (cook["cooked_status"] or "") == "done":
+        return False
+    return any(n["entry_id"] == night_id for n in _nights_on_portions(conn, {item_id}))
+
+
+def settle_missing_portions() -> None:
+    """
+    Resolve a pending question that no longer stands — the cook was ticked
+    cooked after all (so the portion is real), or the night was changed or
+    has gone by. Lazy, from the queue's own reader, like sweep_use_soon.
+    Never raises.
+    """
+    try:
+        conn = get_conn()
+        try:
+            stale = [
+                r["id"] for r in conn.execute(
+                    "SELECT id, detail_json FROM attention_items WHERE household_id = ? AND kind = ? "
+                    "AND status = 'pending'",
+                    (household_id(), MISSING_PORTION_KIND),
+                ).fetchall()
+                if not _question_stands(conn, _derived(r["detail_json"]))
+            ]
+            if stale:
+                conn.executemany(
+                    "UPDATE attention_items SET status = 'resolved', resolved_at = datetime('now') "
+                    "WHERE id = ? AND household_id = ? AND status = 'pending'",
+                    [(aid, household_id()) for aid in stale],
+                )
+                conn.commit()
+        finally:
+            conn.close()
+    except Exception:
+        logger.exception("Could not settle the missing-portion questions")
+
+
+def replan_missing_portion(attention_id: int, picker=None) -> dict:
+    """
+    "Plan something else" on the missing-portion question: the night gets
+    a dinner through the swap's own one-slot picker and gates (so a draft's
+    list is left alone and an approved week's buys for it), and the
+    question is resolved. Refused, with nothing written, when the question
+    no longer stands. Returns {status: 'filled', meal, date} or
+    {status: 'refused', message}.
+    """
+    from . import swap_in_place as _swap
+
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            "SELECT id, status, detail_json FROM attention_items WHERE id = ? AND household_id = ? AND kind = ?",
+            (int(attention_id), household_id(), MISSING_PORTION_KIND),
+        ).fetchone()
+        if row is None:
+            raise ValueError(f"No attention item with id {attention_id}.")
+        detail = _derived(row["detail_json"])
+        stands = row["status"] == "pending" and _question_stands(conn, detail)
+    finally:
+        conn.close()
+    from . import attention as _attention
+    if not stands:
+        if row["status"] == "pending":
+            _attention.resolve_attention_item(int(attention_id), "resolved")
+        return {"status": "refused", "message": MISSING_PORTION_GONE}
+    from . import weekly_plan as _weekly_plan
+    if _weekly_plan.night_has_gone(detail["date"]):
+        _attention.resolve_attention_item(int(attention_id), "resolved")
+        return {"status": "refused", "message": _weekly_plan.NIGHT_GONE}
+    done = _swap._fill_one_slot(
+        int(detail["weekly_plan_id"]), detail["date"],
+        {"slot": detail.get("slot") or SLOT, "old_ids": [int(detail["entry_id"])]},
+        picker or _swap._pick_replacement,
+        note=_MISSING_PORTION_NOTE, constraint=MISSING_PORTION_CONSTRAINT,
+    )
+    if not done:
+        return {"status": "refused", "message": _swap.NO_PICK}
+    _attention.resolve_attention_item(int(attention_id), "resolved")
+    return {"status": "filled", "meal": done["meal"], "date": detail["date"]}
+
+
 # ---------- the nudge ----------
 
 def _weeks_phrase(days: int) -> str:
@@ -855,5 +1115,6 @@ __all__ = [
     "KEY", "CONSTRAINT", "SLOT", "MAX_PORTIONS_PER_WEEK", "PORTION_LEAD_HOURS",
     "USE_SOON_AFTER_DAYS", "portion_on", "portions_to_plan", "safe_to_plan", "choose_nights",
     "prompt_lines", "apply_to_plan", "defrost_candidates", "portion_eaten",
-    "sweep_use_soon",
+    "sweep_use_soon", "past_use_by_line", "MISSING_PORTION_KIND", "ask_about_missing_portions",
+    "settle_missing_portions", "replan_missing_portion",
 ]

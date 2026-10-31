@@ -2173,7 +2173,8 @@ def repeat_for_slot(plan_id: int, slot: str, date: str, cap: int | None = None,
     return min(fits, key=lambda d: (d["nights"], d["first"], d["name"]))
 
 
-def fill_gaps_with_a_repeat(plan_id: int, dates: list[str], caps: dict | None = None) -> dict:
+def fill_gaps_with_a_repeat(plan_id: int, dates: list[str], caps: dict | None = None,
+                            slots: tuple[str, ...] | None = None) -> dict:
     """
     Make "a breakfast or lunch is never open" true rather than measured.
 
@@ -2213,7 +2214,9 @@ def fill_gaps_with_a_repeat(plan_id: int, dates: list[str], caps: dict | None = 
     out = {"filled": [], "left": [], "skipped": None}
     try:
         chains = _leftovers.plan_leftover_chains(plan_id)
-        for slot in NEVER_OPEN_SLOTS:
+        # `slots` narrows it to some of NEVER_OPEN_SLOTS (the first week's
+        # repeat-first pass, usual_week.fill_first_plan_gaps).
+        for slot in (s for s in NEVER_OPEN_SLOTS if slots is None or s in slots):
             gaps = _gaps(plan_id, slot, dates)
             if not gaps:
                 continue

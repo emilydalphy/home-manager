@@ -160,9 +160,9 @@ def session_still_holds(household_id: int, member_id: int | None) -> bool:
 
     A member who still exists but is no longer an adult (re-marked a child)
     is NOT a reason to sign out — the row is there, and the pick reads as
-    nobody: since 2026-10-22 not even in a house with one adult left, for
-    the life of that session (tools.current_member). A fresh sign-in there
-    has no pick and is read as the remaining adult, by design.
+    nobody: since 2026-10-22 not even in a house with one adult left
+    (tools.current_member), and since 2026-10-26 not after a fresh sign-in
+    on their phone either (security.device_member_for_login keeps them).
     """
     conn = get_conn()
     try:

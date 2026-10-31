@@ -57,10 +57,12 @@ def soup_week():
     for d in days[:3]:
         tools.plan_meal(d, "Onion Soup", slot="dinner", weekly_plan_id=plan)
     tools.plan_meal(days[3], "Toast", slot="dinner", weekly_plan_id=plan)
-    tools.approve_weekly_plan(plan, approved_by="Emily")
-    assert _onions() == [("2", plan)]
-    # The household's own two join the plan's line and make it theirs.
+    # The household's own two, typed before the plan's onions joined them:
+    # the line is theirs. (Since 2026-10-26 a person's add onto the PLAN's
+    # line leaves it the plan's — see tests/test_calls_1026_grocery.py — so
+    # the household's own line is set up this way round.)
     tools.add_grocery_item("Yellow onion", quantity="2", category="produce")
+    tools.approve_weekly_plan(plan, approved_by="Emily")
     assert _onions() == [("4", None)]
     return plan, days
 

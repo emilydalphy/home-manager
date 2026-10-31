@@ -80,12 +80,17 @@ def test_approving_the_next_week_asks_about_the_ended_weeks_share():
 def test_a_person_adding_onto_the_plans_line_is_set_aside_the_same_way():
     _seed()
     tools.approve_weekly_plan(_week(0), approved_by="Emily")
-    tools.add_grocery_item("onions", "2")  # joins the plan's line, which becomes theirs
-    assert _onions() == [("6", "needed", True)]
+    # Joins the plan's line, which stays the plan's with her 2 kept beside
+    # it (Emily 2026-10-26) — so a merge's Undo puts it back cleanly.
+    tools.add_grocery_item("onions", "2")
+    assert _onions() == [("6", "needed", False)]
     plan = _week(1)
     with _on(1):
         tools.approve_weekly_plan(plan, approved_by="Emily")
-    assert sorted(_onions()) == [("4", "carried", False), ("6", "needed", True)]
+    # The ended week's line — her 2 with it — is asked about whole, the way
+    # a plan line edited up is; next week's 4 is a line of its own.
+    assert sorted(_onions()) == [("4", "needed", False), ("6", "carried", False)]
+    assert [c["quantity"] for c in tools.list_carried_over_items()] == ["6"]
 
 
 def test_next_week_approved_early_is_asked_about_on_monday_and_keep_adds_it_back():

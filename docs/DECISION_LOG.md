@@ -593,6 +593,141 @@ why*, not duplicating the diff.
   deletes only a row the tap made, while its `rev` is untouched (`already_home_receipts`).
   Staples never write. A plan's ingest skips rows its own chips added, no plan thaws an
   untouched chip row, and every ingest reserves already-home lines' meal shares, past unticked ones too.
+- **Grocery small calls: Emily went with the picks** (2026-10-26, branch
+  `calls-1026/grocery`; tests `tests/test_calls_1026_grocery.py`, plus edits in
+  `test_staples.py`, `test_batch_buys_only_the_difference.py`,
+  `test_own_line_week_ends.py`).
+  - Remembrance Day, Civic Holiday and Easter Monday shut no store saved as
+    "Closed on holidays" (`holidays._SHOPS_OPEN_ON`). Good Friday stays closed:
+    it is a legal retail holiday under Ontario's Retail Business Holidays Act.
+  - Diwali, Eid (all spellings), Hanukkah/Chanukah and Lunar/Chinese New Year
+    shut no store either.
+  - Old grocery lines whose store is a usual store spelled differently
+    ("costco") take the household's spelling — idempotent startup backfill
+    `db._respell_grocery_stores_as_usual`; a store that isn't a usual one is left.
+  - A person's add onto a plan's own line ("1 onion" onto "Onion 2") keeps it
+    the plan's line with the added amount as `kept_amount` (the edit-up rule),
+    so Undo's "2" clears it and a later swap leaves no blank "Onion". At week
+    end that line is set aside whole, like an edited-up line. The freezer step
+    moves a plan line's kept amount onto a line of its own before setting the
+    plan's part aside (`defrost._split_off_kept_amount`), so "it's in the
+    freezer" never takes her amount. Rack items (spices.is_assumed) and a
+    staple's add keep the old rule (the line becomes theirs).
+  - A typed "1/2 dozen" / "1/2 gallon" stays a half (`quantities.typed_half_pack`,
+    `_tidy_one`); a plan's eggs still round up to whole dozens.
+  - Today's night off that MOVES a dish to a different-size table resizes its
+    lines (`attendance.resize_after_redate`) and its Undo resizes them back;
+    both answer `list_changed`.
+  - Un-batching after the cook night is ticked cooked asks first
+    (`unbatch` → `needs_confirmation`, `confirm_rebuy`) before re-buying the
+    freed night's share.
+  - Ticking a staple bought lifts a pause that three "Not this trip"s brought;
+    a pause the household tapped stays (`staples._paused_by_skips`).
+- **Planning-the-week small calls: Emily went with the picks** (2026-10-26,
+  "go with your picks"; branch `calls-1026/planning-a`; tests
+  `tests/test_calls_1026_planning_a.py`, `tests/test_usual_week.py`,
+  `tests/test_calendar_feed.py`).
+  - A night a cook-ahead turns into a reheat loses its pending prep-cut steps
+    (nothing to prep); a ticked step stays; releasing the night puts them back
+    (`cook_ahead.set_cook_ahead`, stash on `derived_from.cook_ahead_prep`).
+  - "Cut it to four dinners" in chat is this week's only: new chat tool
+    `set_week_dish_count` saves `week_answers.dishes` on the week's intake;
+    `edit_preference` is the usual count only when they say so.
+  - The week's newest answers govern everywhere: `usual_week.week_answers_on`
+    / `plan_week_answers` / `live_week_answers` read the week's current intake
+    revision, not the one drafted from; the Meals headline only names an "out"
+    night that has no dinner on the week.
+  - A past night nobody ticked cooked can't be marked nobody home (day sheet,
+    toggle, chat): refused with the Review "−"'s "That night’s already gone."
+  - A child's cold packed lunch wins over the lunch count, and the week says
+    so: "Three lunch dishes this week, not two, because Maya needs a cold
+    packed lunch." (`draft_rules.cold_lunch_count_line`).
+  - A first week whose count is already met fills gaps by repeating its own
+    dishes first; a new dish only when no repeat fits.
+  - A household that set its time zone reads its calendar on its own clock,
+    ahead of the feed's zone; an unanswered (default) zone keeps the old order.
+  - Chat's "back to normal" keeps a member's own earlier "I'm out" for that
+    meal; only the out chat set is undone.
+- **Planning/Approve/Out-night calls — went with the picks** (Emily 2026-10-26; branch `calls-1026/planning-b`).
+  #27/#75: Approve stops only when NO new dish could be reached (`_none_reached`); else it approves and names the unwritten dish (`recipes_not_ready_line`).
+  #28: a freezer portion past its use-by gets one line on the draft (`past_use_by_line` → `freezer_toss_note`).
+  #29/#30: already true (snag rules 8 `DAY_OUT` and 9 `ALLERGY_REQUEST`, 2026-10-25).
+  #31: an Out night offers "We're in after all" (`in_after_all`: tag off, dinner picked); no empty slot offers Swap; "no breakfasts" reads "Not planned".
+  #32: skipping a cook whose freezer portion a later night eats asks first (attention `portion_not_made`, Today: Plan something else / Leave it).
+
+- **Today & Cook timing: Emily's small calls, "go with your picks"**
+  (2026-10-26; branch `calls-1026/today-a`; tests
+  `tests/test_today_cook_timing_calls_2026_10_26.py`).
+  - A missed fridge move the fridge can't thaw in time says "too late to thaw
+    in the fridge" + the freezer step's own note, not "still to do"; the texts
+    skip it. One rule: `moves.fridge_move_too_late`.
+  - The cook day carries a missed move too; Cook's Tonight card reads the same
+    rule (`too_late_note` on the cooker view's prep task), so both say too late.
+  - Ticking a carried move (which then leaves the timeline) toasts "… was
+    ticked off" with Undo.
+  - "Shop for tonight" for a cook whose time has passed, and a cook's "Start
+    by" chip, go once the evening is over — `moves.evening_over`, the same
+    cutoff "Still good?" already used (nudge clock + 90 min; 7:00pm default).
+  - Tonight's dinner (needs-you band, both shapes) and Today's open-slot rows
+    stop asking at 9pm household time (`weekly_plan.TONIGHT_QUESTION_CLOSES`).
+  - A prep step for one of today's cooks is late at the cook's start time,
+    not dinner time; fridge moves and prep for later meals keep the evening.
+  - Tomorrow's card read on the source day says "leftovers from tonight"
+    (`day_meals.provenance_note(meal, today=…)`).
+- **Freezer/thaw and recipe-import small calls** (2026-10-26, Emily: "go with
+  your picks"; branch `calls-1026/freezer-recipes`).
+  - #40: a night off's spare portion of a double batch stays off the freezer
+    list until the batch is cooked (ticked, or its night gone by) —
+    `freezer_portions.not_yet_cooked_portion_ids`, read by `get_inventory`.
+  - #44: a night off's "Use the … soon" note lasts until the next shop (a
+    recorded `shopping_trips` stop after it) — `tonight.expire_use_soon_after_shop`,
+    swept on `get_attention_items`; a frozen portion's note is not touched.
+  - #45: thawed food (fridge move ticked) whose dinner moves past how long it
+    keeps (2 days poultry/ground/fish, 3 red meat, counted from the night it
+    was thawed for) gets one line at the move — `defrost.thawed_wait_sentence`,
+    on the Move sheet's `thaw_notes` and the nights swap / night off `thaw_now`.
+  - #46: swapping the only night with a frozen item to another dish using it
+    carries the freezer answer over — `_replace_slot_entries` reads the
+    outgoing night's pending moves before releasing them.
+  - #47: an imported yield like "1 pie" / "1 loaf" / "2 dozen" is servings
+    unknown (`servings_unknown_makes`), the review sheet says so and asks for
+    Serves before saving; "1 pie, serves 8" now reads 8.
+- **2026-10-26 — Household & people small calls** (Emily: "go with your
+  picks"; branch `calls-1026/household`).
+  - Chat refuses "make me a teen" like Settings: one rule,
+    `tools.own_age_leaving_adult`, same sentence on both doors.
+  - A Teen's phone stays theirs: `security.device_member_for_login` keeps a
+    member who is still here (adult or not), so signing in again reads as
+    nobody, never as the adult left. Made an adult again, it's them again.
+  - That phone gets one note, once (`tools.age_change_note`, whoami
+    `age_note`, a held toast); `members.age_note_shown_for` remembers it.
+  - "I've got Sunday" means the night: `move_owner_overrides.slot` is kept on
+    a cook claim, and a dish swapped on the same night and slot (the only
+    cook there) takes it. Setting or clearing that night takes the carried row.
+  - An adult who leaves takes a "Nobody yet" they set (`set_by`) with them.
+  - Not built: the passphrase prompt after taking someone out. There's no
+    in-app way to change a passphrase (only `create_household.py
+    --reset-passphrase`), so the button would have nowhere to go.
+- **Allergy, diet and library-check calls** (Emily 2026-10-26: went with the
+  picks; branch `calls-1026/allergy-library`; tests
+  `tests/test_calls_1026_allergy_library.py`).
+  - Gluten/celiac holds soba, yakisoba and injera (`_WHEAT_WORDS`); plain
+    "buckwheat noodles" too. Believed only when the line says 100% buckwheat
+    / juwari soba / 100% teff injera, or gluten-free. Oyster sauce was already
+    held (2026-10-26 library audit).
+  - Today's after-approval allergy line leads the row on its own line in the
+    draft's allergy-clash style (`--warn-ink`, 600; `--ink` on the tinted Now
+    row for contrast). Moves carry `allergy_line`; the reason keeps it too.
+  - A serving line ("Serve with roti, naan or rice") is no longer a "step uses
+    X, which isn't on the list" finding — from the serving word to the end of
+    the sentence, the same clauses the list repair already ignores.
+  - Green Papaya Salad is `main_protein` "fish", not "vegetarian" (batch file,
+    seed list, and `db._retag_library_proteins` for rows already filed). It
+    was the only meatless-tagged library dish with meat or fish.
+  - The six recipe style checks (`plan_quality._STYLE_RULES`) skip dishes whose
+    library entry is a researched seed dish; a household's own written recipe
+    is still checked, filed to the library or not.
+
 - **The iPhone app's id is `com.heypomona.app`** (2026-10-25, Emily's pick
   to match her heypomona domain; branch `overnight/bundle-id-heypomona`).
   Replaced the `com.pomona.app` placeholder in `capacitor.config.json`, the

@@ -191,10 +191,10 @@ def _evening_over(now: datetime) -> bool:
     read: it moves when the text goes, not when the night is over.
     """
     from . import digest as _digest  # lazily: digest reaches most of the package
-    clock = _digest.evening_nudge_clock(_digest._household_dinner_window())
-    closes = datetime.combine(now.date(), clock) + timedelta(
-        minutes=_digest.EVENING_NUDGE_LATE_WINDOW_MINUTES)
-    return now.replace(tzinfo=None) > closes
+    from . import moves as _moves
+    # The rule itself lives in moves.evening_over since 2026-10-26, so
+    # Today's shop reminder and "Start by" chip close at this same moment.
+    return _moves.evening_over(now, _digest._household_dinner_window())
 
 
 def tonight_check(now: datetime | None = None) -> dict:
@@ -966,7 +966,9 @@ def tonight_night_off(day: str | None = None, now: datetime | None = None,
       - it MOVES to the next free night of this plan when there is one
         (through the same swap_dinner_nights the sheet's other rows use —
         its groceries, cooked tick, leftover chain and defrost reminders all
-        travel with it, and the list is not touched);
+        travel with it; when the free night's table is a different size
+        the dish's lines are resized for it after the commit, and Undo
+        resizes them back — `list_changed`, Emily 2026-10-26);
       - a dinner cooked double for later nights, with no free night, is
         COOKED ON THE FIRST NIGHT IT WAS FEEDING instead, at the same size,
         and tonight's share goes in the freezer — the dish's groceries
@@ -1179,8 +1181,24 @@ def tonight_night_off(day: str | None = None, now: datetime | None = None,
     # chat tool read; see this card's entry in CLAUDE.md.
     said = _thaw_resync(plan_id, touched_entries)
     if said:
-        out["thaw_now"] = said
+        out["thaw_now"] = said + [w for w in out.get("thaw_now", []) if w not in said]
+    # A dish moved to a night with a different number at the table is
+    # bought for that table (Emily 2026-10-26) — the rule Move and the
+    # nights trade already keep. After the commit: it opens its own write.
+    redated = out.pop("_redated", None)
+    if redated:
+        out["list_changed"] = _list_follows_the_move({m["entry_id"]: m["from"] for m in redated})
     return out
+
+
+def _list_follows_the_move(moved_from: dict) -> bool:
+    """attendance.resize_after_redate (only a table of a different size,
+    one transaction, never raises), imported where it is called —
+    attendance imports weekly_plan at load. True when a line changed, so
+    the screen knows to re-read Shop."""
+    from . import attendance as _attendance
+
+    return bool(_attendance.resize_after_redate(moved_from))
 
 
 def _thaw_resync(weekly_plan_id, entry_ids) -> list[str]:
@@ -1246,8 +1264,18 @@ def _night_off_with_undo(conn, plan, rows, tonight_row, today: str, step: dict, 
             # household opening the sheet and tapping it.
             raise _Refused(moved.get("message") or "")
         _settle_night_off(plan_id, today, [], conn)
+        # Thawed food whose dinner now lands past how long it keeps — the
+        # nights swap's own line (Emily 2026-10-26: warn at the move).
+        if moved.get("thaw_now"):
+            out["thaw_now"] = list(moved["thaw_now"])
         out["moved_to"] = step["free"]
         out["moved_to_weekday"] = _weekly_plan._weekday_of(step["free"])
+        # Which rows the swap re-dated, for the list to follow the moved
+        # dish's table after the commit (_list_follows_the_move) — and for
+        # Undo to follow it back.
+        redated = [{"entry_id": m["entry_id"], "from": m["from"], "to": m["to"]}
+                   for m in moved.get("moved") or []]
+        out["_redated"] = redated
     elif kind == "cook_on_fed":
         target = step["target"]
         new_ref = f"{target['date']}:{target['slot']}"
@@ -1269,6 +1297,9 @@ def _night_off_with_undo(conn, plan, rows, tonight_row, today: str, step: dict, 
         # is no longer a target (it is the cook now).
         _shrink_chain_into_freezer(conn, tonight_row["id"], new_ref, servings, frozen["id"], today)
         _settle_night_off(plan_id, today, [], conn)
+        waits = _weekly_plan.thawed_waits_for_entry(conn, plan_id, tonight_row["id"], target["date"])
+        if waits:
+            out["thaw_now"] = waits
         out["moved_to"] = target["date"]
         out["moved_to_weekday"] = _weekly_plan._weekday_of(target["date"])
     elif kind == "freeze_reheat":
@@ -1300,6 +1331,8 @@ def _night_off_with_undo(conn, plan, rows, tonight_row, today: str, step: dict, 
         "grocery": _plan_undo.lines_changed(conn, snap),
         "inventory": {"id": frozen["id"], "rev": frozen["rev"]} if frozen else None,
     }
+    if out.get("_redated"):
+        record["redated"] = out["_redated"]
     _plan_undo.stamp(conn, holder_id, NIGHT_OFF_UNDO_KEY, record)
     out["can_undo"] = True
     out["frozen"] = {"item": frozen["item"], "quantity": frozen["quantity"]} if frozen else None
@@ -1417,8 +1450,13 @@ def tonight_night_off_undo(day: str | None = None, now: datetime | None = None) 
     dish = record.get("dish") or ""
     if use_soon_note:
         _unqueue_use_soon(use_soon_note)
+    # The moved dish is back on tonight: its shopping follows tonight's
+    # table again (the night off's move resized it for the other night's).
+    list_changed = False
+    if record.get("redated"):
+        list_changed = _list_follows_the_move({m["entry_id"]: m["to"] for m in record["redated"]})
     return {
-        "status": "restored", "date": today, "dish": dish or None,
+        "status": "restored", "date": today, "dish": dish or None, "list_changed": list_changed,
         # The good version is the one above; the fallback says the same
         # thing without a name rather than the old subjectless "Put back."
         # (copy sweep 2026-09-23, finding 3).
@@ -1506,6 +1544,47 @@ def _unqueue_use_soon(note_id: int) -> None:
             conn.close()
     except Exception:
         logger.exception("Could not take back the use-soon note %s", note_id)
+
+
+def expire_use_soon_after_shop() -> int:
+    """
+    A night off's "Use the … soon" note lasts until the next shop (Loop
+    Board card 4021f4c0…, Emily 2026-10-26 "go with your pick"). Before, it
+    stayed until somebody ticked it in Cook, and the morning text and every
+    chat repeated it daily: food bought for a dinner that came off the plan
+    is used up or gone by the next shop, which brings in fresh food.
+
+    "A shop" is a stop the Shop tab recorded (shopping_trips: the last tick
+    on a store's card) that finished after the note was written. Only the
+    night off's notes — those carry no inventory_item_id; a frozen
+    portion's "worth eating soon" (freezer_portions.sweep_use_soon) is
+    about the freezer, which a shop doesn't change. Resolved, not deleted,
+    the way that sweep settles a note that stopped being true. A lazy write
+    on the queue's own reader (attention.get_attention_items), so Cook, the
+    morning text and chat agree. Never raises; returns how many it settled.
+    """
+    try:
+        conn = get_conn()
+        try:
+            last = conn.execute(
+                "SELECT MAX(finished_at) AS at FROM shopping_trips WHERE household_id = ?",
+                (household_id(),),
+            ).fetchone()["at"]
+            if not last:
+                return 0
+            cur = conn.execute(
+                "UPDATE attention_items SET status = 'resolved', resolved_at = datetime('now') "
+                "WHERE household_id = ? AND kind = ? AND status = 'pending' AND created_at < ? "
+                "AND json_extract(COALESCE(NULLIF(detail_json, ''), '{}'), '$.inventory_item_id') IS NULL",
+                (household_id(), USE_SOON_KIND, last),
+            )
+            conn.commit()
+            return cur.rowcount
+        finally:
+            conn.close()
+    except Exception:
+        logger.exception("Could not settle use-soon notes after a shop")
+        return 0
 
 
 __all__ = [

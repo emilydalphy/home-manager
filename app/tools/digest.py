@@ -749,6 +749,11 @@ def _digest_parts(now_local: datetime, included) -> list[tuple[str, str]]:
     # Thursday's skewers." Today is implied: this is today's text.
     if "freezer" in want:
         for m in by_kind.get("fridge", []):
+            # Missed, and too late for the fridge now (moves.
+            # fridge_move_too_late): "Move the beef to the fridge" is no
+            # longer the job, so the text doesn't send it (2026-10-26).
+            if m.get("too_late_note"):
+                continue
             reason = _tidy(m.get("reason") or "")
             parts.append(("freezer", f"{_tidy(m['title'])} — {reason}." if reason else f"{_tidy(m['title'])} today."))
 
@@ -1322,7 +1327,8 @@ def tonight_for_nudge(now_local: datetime) -> dict:
         return {"dinner": dinner, "first": None, "reason": "done"}
     if dinner.get("started_at"):
         return {"dinner": dinner, "first": None, "reason": "started"}
-    first = next((m for m in moves if m["kind"] == "fridge" and not m["done"]), None) \
+    first = next((m for m in moves if m["kind"] == "fridge" and not m["done"]
+                  and not m.get("too_late_note")), None) \
         or next((m for m in moves if m["kind"] == "prep" and not m["done"]), None)
     return {"dinner": dinner, "first": first, "reason": ""}
 

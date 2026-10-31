@@ -163,10 +163,40 @@ def enforce_cold_packed_lunches(plan_id: int, dates: list[str], picker=None) -> 
                            "must_be": "a cold lunch that packs in a lunchbox and is eaten cold — no reheating"},
                           picker, lambda pick: not _is_hot(pick.get("meal_name")))
             if new:
-                out.append({"date": row["date"], "was": row["meal"], "now": new})
+                out.append({"date": row["date"], "was": row["meal"], "now": new, "for": list(names)})
     except Exception:
         logger.exception("Holding plan %s's cold packed lunches failed; the lunches stand", plan_id)
     return out
+
+
+def cold_lunch_count_line(plan_id: int, target: int | None, changed: list[dict]) -> str:
+    """
+    One plain line when a cold packed lunch put the week past the
+    household's lunch number (Emily 2026-10-26, "go with your picks"): the
+    child's need wins over the count, and the week says so once — "Three
+    lunch dishes this week, not two, because Maya needs a cold packed
+    lunch." Nothing when no lunch was re-picked for a cold need, when the
+    number is met, or when there is no number. Never raises.
+    """
+    from . import draft_opener as _draft_opener
+    from . import meal_variety as _meal_variety
+
+    try:
+        if not target or not changed:
+            return ""
+        dishes = len(_meal_variety.distinct_dishes(plan_id, "lunch"))
+        if dishes <= int(target):
+            return ""
+        names = list(dict.fromkeys(n for c in changed for n in (c.get("for") or [])))
+        if not names:
+            return ""
+        who = names[0] if len(names) == 1 else ", ".join(names[:-1]) + " and " + names[-1]
+        need = "needs a cold packed lunch" if len(names) == 1 else "need cold packed lunches"
+        n, want = _draft_opener.number_word(dishes), _draft_opener.number_word(int(target))
+        return f"{n[:1].upper() + n[1:]} lunch dishes this week, not {want}, because {who} {need}."
+    except Exception:
+        logger.exception("The cold-lunch count line failed for plan %s; nothing said", plan_id)
+        return ""
 
 
 def enforce_protein_variety(plan_id: int, picker=None, targets: dict | None = None) -> list[dict]:
@@ -176,8 +206,8 @@ def enforce_protein_variety(plan_id: int, picker=None, targets: dict | None = No
     tripwire), so a re-pick here can put a dish on the week past that
     number — and could: one night of a two-night chicken lunch, re-picked,
     was a third lunch dish against Lunches 2. (enforce_cold_packed_lunches
-    can too; that one is a person's need against the count, left for
-    Emily.) A night is re-picked only when the new dish keeps its meal
+    can too; that one is a person's need against the count, and the need
+    wins — Emily 2026-10-26 — said on the week by cold_lunch_count_line.) A night is re-picked only when the new dish keeps its meal
     within the count (the night is its dish's only night, or the meal is
     still under its number); otherwise it stands, as a pick that came back
     unsuitable does. The count is a number the household chose;

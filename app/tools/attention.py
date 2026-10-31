@@ -269,6 +269,14 @@ def get_attention_items() -> list[dict]:
     from . import freezer_portions as _freezer_portions
 
     _freezer_portions.sweep_use_soon()
+    # A "no frozen portion for Tuesday" question whose cook was ticked
+    # cooked after all, or whose night has changed, no longer stands (#32).
+    _freezer_portions.settle_missing_portions()
+    # And a night off's "use these soon" lasts until the next shop (Emily
+    # 2026-10-26), settled the same lazy way. It swallows its own failures.
+    from . import tonight as _tonight
+
+    _tonight.expire_use_soon_after_shop()
     items = []
     nudge = _coordination.get_feedback_nudge()
     if nudge.get("has_nudge"):

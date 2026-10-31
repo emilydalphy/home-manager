@@ -2634,19 +2634,12 @@ def _refuse_last_adult_leaving(name: str, age_group: str) -> None:
 
 def _refuse_own_age_leaving_adult(name: str, age_group: str) -> None:
     """A signed-in adult can't move THEIR OWN age group off Adult here —
-    another adult still can (Emily, 2026-10-20). Marking yourself Teen in a
-    two-adult home quietly made the phone act as the other adult
-    (current_member reads a re-marked pick as no pick). No pick on this
-    device (shared passphrase, nobody chosen) keeps today's behaviour.
+    another adult still can (Emily, 2026-10-20). The rule and its sentence
+    live in tools.own_age_leaving_adult, shared with chat since 2026-10-26.
     Runs after _refuse_last_adult_leaving, so a lone adult still hears that."""
-    if age_group == "adult" or tools.member_id() is None:
-        return
-    me = tools.current_member()
-    if me and (me.get("name") or "").strip().lower() == (name or "").strip().lower():
-        raise HTTPException(
-            status_code=400,
-            detail="Your own age stays Adult here. Another adult can change it.",
-        )
+    refusal = tools.own_age_leaving_adult(name, age_group)
+    if refusal:
+        raise HTTPException(status_code=400, detail=refusal)
 
 
 @app.post("/api/memory/member/age-group")
@@ -3582,6 +3575,28 @@ def resolve_attention(item_id: int, req: ResolveAttentionRequest):
         logger.exception("Attention-item resolve failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return {"items": items}
+
+
+@app.post("/api/attention/{item_id}/replan-night")
+def replan_missing_portion_night(item_id: int):
+    """
+    "Plan something else" on the "no frozen portion for Tuesday" question
+    (Emily's pick #32, 2026-10-26): that night gets a dinner through the
+    swap's own picker, and the question is resolved. A 200 can say no
+    (`status` 'refused', with the sentence to show). Answers with the queue.
+    """
+    from .tools import freezer_portions as _freezer_portions
+    try:
+        result = _freezer_portions.replan_missing_portion(item_id)
+        items = tools.get_attention_items()
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except AssistantUnavailableError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        logger.exception("Re-planning a missing-portion night failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return {**result, "items": items}
 
 
 @app.get("/api/chores/today")
@@ -4840,6 +4855,25 @@ def week_fill_day(week_start: str, req: FillDayRequest):
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
+@app.post("/api/week/{week_start}/in-after-all")
+def week_in_after_all(week_start: str, req: FillDayRequest):
+    """
+    "We're in after all" on a night the week's answers marked Out (Emily's
+    pick #31, 2026-10-26): the tag comes off and the night gets a dinner
+    (swap_in_place.in_after_all). A 200 can say no (`status` 'refused',
+    with the sentence to show), like fill-day.
+    """
+    _route_date(req.date, "date")
+    plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
+    try:
+        return tools.in_after_all(plan_id, req.date)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.exception("We're in after all failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
 class SwapOptionsRequest(BaseModel):
     """One tap on the Week 1 screen's Swap: which slot, and what this
     sitting has already turned down for it."""
@@ -5876,6 +5910,10 @@ def approve_week(week_start: str, req: WeekApproveRequest):
         # approving now lands on the list instead, so the toast carries it
         # (weekly_plan.batched_line) — "" when nothing was batched.
         "batched_line": _weekly_plan.batched_line(result["weekly_plan_id"]),
+        # A new dish approval couldn't write up (#27/#75, 2026-10-26): the
+        # week still approves, and the toast says which dish isn't ready.
+        "recipes_not_ready": result.get("recipes_not_ready") or [],
+        "recipes_not_ready_line": result.get("recipes_not_ready_line"),
     }
 
 
@@ -8079,7 +8117,7 @@ _CHORE_TOOLS = {
 # changes that day's dinner (out empties it, hosting builds the big meal
 # into it) and the big-meal tools change the dishes on it, so Plan is the
 # screen that goes stale. One line, by test_week_seven_tiles's source check.
-_WEEK_TOOLS = {"plan_meal", "generate_weekly_plan", "set_week_constraints", "swap_meal_in_plan", "swap_component_in_plan", "swap_dinner_nights", "move_meal_to_day", "take_the_night_off", "unbatch", "approve_weekly_plan", "discard_draft_plan", "answer_holiday", "set_big_meal_dish", "remove_big_meal_dish", "set_big_meal_prep_day", "propose_big_meal"}
+_WEEK_TOOLS = {"plan_meal", "generate_weekly_plan", "set_week_dish_count", "set_week_constraints", "swap_meal_in_plan", "swap_component_in_plan", "swap_dinner_nights", "move_meal_to_day", "take_the_night_off", "unbatch", "approve_weekly_plan", "discard_draft_plan", "answer_holiday", "set_big_meal_dish", "remove_big_meal_dish", "set_big_meal_prep_day", "propose_big_meal"}
 # Who's home is the week's too. "Emily's out Tuesday" (set_member_attendance
 # taking the last person out), "we're away Saturday" (set_slot_need,
 # set_away_stretch) empty a planned dinner and take its groceries off the
@@ -9948,6 +9986,9 @@ def whoami(request: Request):
         # See `picked_here` above: what the SESSION carries, not what the
         # household happens to resolve to.
         "picked_on_this_device": picked_here,
+        # A phone whose own member was re-marked a Teen: one short note,
+        # once (tools.age_change_note). '' every other time.
+        "age_note": tools.age_change_note(),
         "chores_enabled": bool(row and row["chores_enabled"]),
         # The other adult's first open (tools/first_open.py): true once, for
         # an adult who didn't set the household up, until they leave the

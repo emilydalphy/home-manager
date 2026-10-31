@@ -255,6 +255,42 @@ def test_three_skips_running_pause_the_staple_visibly():
     assert needed_names() == ["Oat milk"]
 
 
+def _paused_by_three_skips() -> dict:
+    s, line = _due_line()
+    tools.decide_staple_line(line["id"], "skip")
+    for _ in range(2):
+        travel(7)
+        tools.get_grocery_list_by_section(status="needed")
+        (line,) = staple_lines()
+        out = tools.decide_staple_line(line["id"], "skip")
+    assert out["paused"] is True
+    return s
+
+
+def test_buying_it_by_hand_lifts_a_pause_three_skips_brought():
+    # Emily 2026-10-26: a purchase lifts a pause that came from skips.
+    s = _paused_by_three_skips()
+    travel(2)
+    mine = tools.add_grocery_item("Oat milk", category="dairy")["item_id"]
+    out = tools.mark_grocery_item(mine, "purchased")
+    staple = next(x for x in tools.list_staples() if x["id"] == s["id"])
+    assert staple["paused"] is False and staple["skip_streak"] == 0
+    # Unticking the line puts the pause back with the rest of the rhythm.
+    tools.mark_grocery_item(mine, "needed")
+    staple = next(x for x in tools.list_staples() if x["id"] == s["id"])
+    assert staple["paused"] is True
+    assert out is not None
+
+
+def test_buying_it_leaves_a_pause_the_household_set_itself():
+    s, line = _due_line()
+    tools.pause_staple(s["id"], paused=True)
+    mine = tools.add_grocery_item("Oat milk", category="dairy")["item_id"]
+    tools.mark_grocery_item(mine, "purchased")
+    staple = next(x for x in tools.list_staples() if x["id"] == s["id"])
+    assert staple["paused"] is True
+
+
 def test_undo_reverses_exactly_one_answer_and_puts_the_line_back():
     s, line = _due_line(every_days=21)
     tools.decide_staple_line(line["id"], "skip")

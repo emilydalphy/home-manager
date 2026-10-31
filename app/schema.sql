@@ -2395,6 +2395,10 @@ CREATE INDEX IF NOT EXISTS idx_recipe_library_uses ON recipe_library_uses (house
 -- purpose, which is different from no row (the household's default).
 -- A removed adult takes their rows with them, so the move falls back to
 -- the default rather than naming somebody who isn't here.
+-- `slot` (2026-10-26, Emily: "I've got Sunday" means the night, not the
+-- dish): a cook's meal slot when it was claimed, so a dish swapped on that
+-- same night keeps the claim (move_owner.MoveOwners.override). '' on every
+-- other kind and on rows written before it.
 CREATE TABLE IF NOT EXISTS move_owner_overrides (
     household_id INTEGER NOT NULL REFERENCES households(id),
     move_id TEXT NOT NULL,
@@ -2402,6 +2406,7 @@ CREATE TABLE IF NOT EXISTS move_owner_overrides (
     member_id INTEGER REFERENCES members(id) ON DELETE CASCADE,
     set_by INTEGER,
     set_at TEXT NOT NULL DEFAULT (datetime('now')),
+    slot TEXT NOT NULL DEFAULT '',
     PRIMARY KEY (household_id, move_id, on_date)
 );
 

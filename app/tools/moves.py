@@ -217,6 +217,27 @@ def _dinner_clock(rhythm: dict | None = None) -> time:
     return _defrost._DINNER_CLOCK_BY_WINDOW.get(window or "") or DEFAULT_SLOT_HOURS["dinner"]
 
 
+def evening_over(now: datetime, dinner_window: str | None) -> bool:
+    """
+    Whether tonight has moved on: past the evening nudge's late window —
+    digest.EVENING_NUDGE_LATE_WINDOW_MINUTES after its clock for this
+    dinner_window (digest.evening_nudge_clock), 7:00pm with no window set.
+
+    THE app's one answer to "dinner's over" (it was tonight._evening_over's
+    alone until 2026-10-26). "Still good?" stops asking there, and since
+    Emily's picks that day so do Today's "Shop for tonight" for a cook whose
+    time has gone by and a cook's "Start by" chip — at nine at night
+    "Start by 5:55" and "Shop for tonight · still to do" were neither true
+    nor useful. It ends 30–60 minutes after dinner lands for every window,
+    so a household running late still sees them at the table's own time.
+    """
+    from . import digest as _digest  # lazily: digest imports this module
+    clock = _digest.evening_nudge_clock(dinner_window)
+    closes = datetime.combine(now.date(), clock) + timedelta(
+        minutes=_digest.EVENING_NUDGE_LATE_WINDOW_MINUTES)
+    return now.replace(tzinfo=None) > closes
+
+
 def _slot_time(slot: str, dinner_clock: time) -> time:
     if slot == "dinner":
         return dinner_clock
@@ -315,16 +336,26 @@ def _with_allergy_line(reason: str, clashes: list[dict] | None) -> str:
     note. On Today the screen puts a cook's "Start by" chip before the
     whole reason (shell.js dayNodeWhyHtml), so the line reads "Start by
     7:35 · Has peanut, …" — first in the reason, second on the row.
-    Leading the row needs shell.js; noted for Emily (review, 2026-10-24)."""
+    Since 2026-10-26 (Emily went with the pick) Today reads the move's own
+    `allergy_line` instead: it leads the row, in the warning style, and is
+    taken out of the reason there; the reason keeps it for other readers."""
     if not clashes:
         return reason
     line = _allergen_gate.since_approval_line(clashes)
     return f"{line} · {reason}" if reason else line
 
 
-def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[dict]:
+def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time,
+                           now: datetime | None = None, dinner_window: str | None = None) -> list[dict]:
     day_str = day.isoformat()
     moves: list[dict] = []
+    # Past the evening (evening_over), today's "Start by" has nothing left
+    # to ask: at 9pm "Start by 5:55" still stood (Emily, 2026-10-26). The
+    # cook itself stays, to tick. `now` omitted (an old caller) changes nothing.
+    night_over = now is not None and day == now.date() and evening_over(now, dinner_window)
+    # "leftovers from Thursday", read on that Thursday about tomorrow's
+    # reheat, is "leftovers from tonight" (Emily, 2026-10-26).
+    today_str = now.date().isoformat() if now is not None and day > now.date() else None
     # Only this day's dishes are matched: the check reads every allergy
     # and each dish's ingredients, and Today asks about one day at a time.
     new_allergies = _allergen_gate.clashes_since_approval({
@@ -352,7 +383,7 @@ def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[di
             # so a dateless reheat is exactly this one) — so it says where
             # it came from rather than leaving "leftovers from" dangling.
             headline = meal.get("leftovers_headline") or ""
-            provenance = _day_meals.provenance_note(meal)
+            provenance = _day_meals.provenance_note(meal, today=today_str)
             # A made-ahead portion eaten cold is not reheated (Emily,
             # 2026-09-25), so the line drops the word: "made ahead
             # Wednesday · 3:30". cooker._apply_leftover_chains decides it
@@ -367,6 +398,9 @@ def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[di
                 "detail": f"{provenance}{how} · {_clock(at.time())}",
                 "reason": _with_allergy_line(meal.get("reheat_note") or "", allergy),
                 "allergy_note": _allergen_gate.since_approval_line(allergy, sentence=True) if allergy else "",
+                # The line itself, so Today can lead the row with it in the warning
+                # style (shell.js dayNodeWhyHtml) rather than in the quiet grey.
+                "allergy_line": _allergen_gate.since_approval_line(allergy) if allergy else "",
                 "date": day_str,
                 "slot": slot,
                 "window_start": at.isoformat(),
@@ -411,7 +445,7 @@ def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[di
         prepped = meal.get("prepped_ahead") or {}
         if prepped.get("date") and prepped["date"] < day_str:
             # day_meals.provenance_note again — one wording, two surfaces.
-            prepped_line = _day_meals.provenance_note(meal)
+            prepped_line = _day_meals.provenance_note(meal, today=today_str)
             moves.append({
                 "id": f"reheat:{meal['entry_id']}",
                 "kind": "reheat",
@@ -419,6 +453,9 @@ def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[di
                 "detail": f"{prepped_line} · {_clock(at.time())}",
                 "reason": _with_allergy_line("", allergy),
                 "allergy_note": _allergen_gate.since_approval_line(allergy, sentence=True) if allergy else "",
+                # The line itself, so Today can lead the row with it in the warning
+                # style (shell.js dayNodeWhyHtml) rather than in the quiet grey.
+                "allergy_line": _allergen_gate.since_approval_line(allergy) if allergy else "",
                 "date": day_str,
                 "slot": slot,
                 "window_start": at.isoformat(),
@@ -468,7 +505,7 @@ def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[di
             chips.append(_quantities.format_duration(duration))
         if started:
             chips.append(f"Started {_clock(started.time())}")
-        elif duration:
+        elif duration and not night_over:
             chips.append(f"Start by {_clock(start.time())}")
         moves.append({
             "id": f"cook:{meal['entry_id']}",
@@ -484,6 +521,9 @@ def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[di
             # Its own field too, for the morning text (digest.py), which
             # says it on a line of its own rather than inside the reason.
             "allergy_note": _allergen_gate.since_approval_line(allergy, sentence=True) if allergy else "",
+            # The line itself, so Today can lead the row with it in the warning
+            # style (shell.js dayNodeWhyHtml) rather than in the quiet grey.
+            "allergy_line": _allergen_gate.since_approval_line(allergy) if allergy else "",
             "date": day_str,
             "slot": slot,
             "window_start": start.isoformat(),
@@ -527,7 +567,8 @@ def _cook_and_reheat_moves(view: dict, day: date, dinner_clock: time) -> list[di
     return moves
 
 
-def _open_slot_moves(view: dict, day: date, dinner_clock: time) -> list[dict]:
+def _open_slot_moves(view: dict, day: date, dinner_clock: time,
+                     now: datetime | None = None) -> list[dict]:
     """
     One quiet row per slot today that the app handed back as a decision
     (slot_state 'open'), whatever the meal. Emily, 2026-10-12: "a ROW on
@@ -553,6 +594,11 @@ def _open_slot_moves(view: dict, day: date, dinner_clock: time) -> list[dict]:
     duplicate row, which audit_plan_slots exists to catch) is not offered
     as a question over the meal the household can see.
     """
+    # From 9pm the day's open slots stop asking (weekly_plan.
+    # tonight_question_closed, the needs-you band's own cutoff): "Dinner
+    # needs your call" stood until midnight (Emily, 2026-10-26).
+    if now is not None and day == now.date() and _weekly_plan.tonight_question_closed(now):
+        return []
     day_str = day.isoformat()
     filled = {
         (m.get("date"), m.get("slot"))
@@ -599,39 +645,100 @@ def _open_slot_moves(view: dict, day: date, dinner_clock: time) -> list[dict]:
     return moves
 
 
+def _thaw_lead_hours(task: dict, meal_date: str) -> float:
+    """
+    How long this fridge move's food needs in the fridge: the defrost
+    table's own hours for the item it names (defrost.lead_hours_for_item),
+    capped by the gap it was booked with — a cooked portion is a one-day
+    move (freezer_portions.PORTION_LEAD_HOURS) though its dish name reads
+    as an everyday cut to the table.
+    """
+    item = _defrost.thawed_item(task.get("description") or "")
+    by_name = _defrost.lead_hours_for_item(item)[0] if item else _defrost.STANDARD_LEAD_HOURS
+    try:
+        gap = (date.fromisoformat(meal_date) - date.fromisoformat(task["task_date"])).days * 24.0
+    except (KeyError, TypeError, ValueError):
+        return by_name
+    return min(by_name, gap) if gap > 0 else by_name
+
+
+def fridge_move_too_late(task: dict, meal: dict | None, now: datetime, dinner_clock: time) -> str:
+    """
+    The freezer step's own "Too late to thaw safely for …" note when this
+    fridge move was missed and the fridge can no longer thaw the food in
+    time; '' otherwise.
+
+    THE one rule for it (Emily, 2026-10-26, "go with your picks"): Today's
+    carried row (_prep_moves) and Cook's Tonight card (cooker.
+    get_cooker_view stamps it on the prep task as `too_late_note`, which
+    shell.js cookTonightNote reads) both ask this, so the two screens can't
+    say "still to do" and "too late" about one move. Before, a 48-hour
+    thaw whose meal was tomorrow read "still to do" on Today while the
+    freezer step said "Too late to thaw safely", and on the cook day Today
+    went quiet while Cook still said "— still to do".
+
+    Only a move whose own day has gone by (a move on its own day is still
+    on time — that is when defrost booked it), still pending, for a meal
+    today or later that isn't cooked: too late when the hours left before
+    the meal are fewer than the thaw needs (_thaw_lead_hours).
+    """
+    if task.get("task_type") != "defrost" or task.get("status") != "pending":
+        return ""
+    today = now.date().isoformat()
+    if not task.get("task_date") or task["task_date"] >= today:
+        return ""
+    if meal is None or meal.get("cooked_status") == "done":
+        return ""
+    meal_date = meal.get("date") or ""
+    if meal_date < today:
+        return ""
+    slot = meal.get("slot") or "dinner"
+    try:
+        at = _slot_dt(date.fromisoformat(meal_date), slot, dinner_clock)
+    except ValueError:
+        return ""
+    if at - now >= timedelta(hours=_thaw_lead_hours(task, meal_date)):
+        return ""
+    return _defrost.too_late_to_thaw_note(meal_date, slot, now.date())
+
+
+def _meals_by_entry(view: dict) -> dict[int, dict]:
+    meals: dict[int, dict] = {}
+    for meal in view.get("meals") or []:
+        for i in (meal.get("entry_ids") or [meal.get("entry_id")]):
+            if i:
+                meals[i] = meal
+    return meals
+
+
 def _missed_fridge_moves(view: dict, day: date, now: datetime) -> set[int]:
     """
     Fridge moves dated on an EARLIER day and never ticked, whose meal is
-    still ahead: the ids _prep_moves carries onto today as "still to do".
+    still ahead: the ids _prep_moves carries onto today.
 
     A fridge move is dated one or two days before its cook (defrost.
     _move_date), and _prep_moves used to read only rows dated today — so a
     move missed on Monday vanished on Tuesday from Now, the morning text
-    and the evening nudge, while the meat stayed in the freezer. Only Cook's
-    Tonight card, on the cook day itself, still said "— still to do"
-    (overnight hunt, 2026-10-21). The meal has to be in this view, on a
-    LATER day, and not already ticked cooked. Not on the cook day itself:
-    by then it is too late to thaw in the fridge, and Now stays quiet about
-    it (tests/test_own_freezer_portion_thaw.py) — Cook's card still says
-    "still to do" there. Only on the real today (the tomorrow look-ahead
+    and the evening nudge, while the meat stayed in the freezer (overnight
+    hunt, 2026-10-21). The meal has to be in this view, today or later,
+    and not already ticked cooked. The cook day itself counts too since
+    2026-10-26 (Emily's pick): Today used to stay quiet there while Cook's
+    card said "still to do"; now both say it's too late to thaw
+    (fridge_move_too_late). Only on the real today (the tomorrow look-ahead
     must not repeat today's rows), and only pending rows ('skipped' is the
     household's decline).
     """
     if day != now.date():
         return set()
     day_str = day.isoformat()
-    meals: dict[int, dict] = {}
-    for meal in view.get("meals") or []:
-        for i in (meal.get("entry_ids") or [meal.get("entry_id")]):
-            if i:
-                meals[i] = meal
+    meals = _meals_by_entry(view)
     carried: set[int] = set()
     for task in view.get("prep_tasks") or []:
         if (task.get("task_type") != "defrost" or task.get("status") != "pending"
                 or not task.get("task_date") or task["task_date"] >= day_str):
             continue
         meal = meals.get(task.get("meal_plan_entry_id"))
-        if meal is None or (meal.get("date") or "") <= day_str or meal.get("cooked_status") == "done":
+        if meal is None or (meal.get("date") or "") < day_str or meal.get("cooked_status") == "done":
             continue
         carried.add(task["id"])
     return carried
@@ -701,6 +808,7 @@ def _prep_moves(view: dict, day: date, now: datetime, dinner_clock: time) -> lis
     evening = datetime.combine(day, dinner_clock)
     open_from = datetime.combine(day, time(0, 0))
     carried = _missed_fridge_moves(view, day, now)
+    meals = _meals_by_entry(view)
     moves = []
     for task in view.get("prep_tasks") or []:
         if task.get("task_date") != day_str and task.get("id") not in carried:
@@ -721,21 +829,43 @@ def _prep_moves(view: dict, day: date, now: datetime, dinner_clock: time) -> lis
         # and the Today tile used to offer it — so it counts as handled,
         # not as still waiting.
         done = task.get("status") in ("done", "skipped")
+        meal = meals.get(task.get("meal_plan_entry_id"))
+        # A prep step for one of TODAY's cooks is late once that cook should
+        # have started, not at dinner time: "Marinate the chicken · by
+        # tonight" stood until 6:30 while the cook's "Start by" said 5:55
+        # (Emily, 2026-10-26, "go with your picks"). The same arithmetic as
+        # the chip (_cook_and_reheat_moves). Fridge moves, and prep for a
+        # later meal, keep the evening.
+        late_at = evening
+        if (not is_fridge and not is_shop and meal is not None and meal.get("date") == day_str
+                and not meal.get("is_leftovers")):
+            minutes = _cooker.cook_total_minutes(meal) or 0
+            if minutes:
+                late_at = _slot_dt(day, meal.get("slot") or "dinner", dinner_clock) - timedelta(minutes=minutes)
         # A move carried from an earlier day is late from the moment the
         # day starts: its own day has already gone by.
-        overdue = (not done) and (evening < now or task.get("id") in carried)
-        when = "still to do" if overdue else "by tonight"
+        overdue = (not done) and (late_at < now or task.get("id") in carried)
+        # Missed, and the fridge can't thaw it in time any more: say so,
+        # in the freezer step's words, rather than "still to do"
+        # (fridge_move_too_late — the rule Cook's card reads too).
+        too_late = fridge_move_too_late(task, meal, now, dinner_clock) if task.get("id") in carried else ""
+        late_word = TOO_LATE_TO_THAW_WORDS if too_late else "still to do"
+        when = late_word if overdue else "by tonight"
         reason = reason or (task.get("related_meal") and f"for {task['related_meal']}") or ""
         # What it's for, first; "still to do" only once it's running late —
         # "by tonight" is the Evening tag's job on Today.
         kind_word = "fridge move" if is_fridge else ("shop" if is_shop else "prep")
-        meta = " · ".join(b for b in (reason or kind_word, "still to do" if overdue else "") if b)
+        # Too late: the row's second line is the freezer step's note (it
+        # rides as `reason`), so the meta doesn't say "too late" twice.
+        meta = " · ".join(b for b in (reason or kind_word, "still to do" if overdue and not too_late else "") if b)
         moves.append({
             "id": ("fridge:" if is_fridge else "prep:") + str(task["id"]),
             "kind": "fridge" if is_fridge else ("shop" if is_shop else "prep"),
             "title": title or ("Fridge move" if is_fridge else "Prep"),
             "detail": f"{kind_word} · {when}",
-            "reason": reason,
+            # Too late: the featured card's one line is the way out (the
+            # freezer step's note), since the move itself can't be done in time.
+            "reason": too_late or reason,
             "date": day_str,
             "slot": None,
             "window_start": open_from.isoformat(),
@@ -754,9 +884,20 @@ def _prep_moves(view: dict, day: date, now: datetime, dinner_clock: time) -> lis
             "duration_min": 0,
             "time_label": when,
             "meta": meta,
+            # The freezer step's full sentence ("Too late to thaw safely for
+            # tomorrow night — a cold-water thaw takes about an hour per
+            # pound, or cook something else."), '' while there's still time.
+            # The texts leave such a move out: "Move the beef to the fridge"
+            # is no longer the job (digest).
+            "too_late_note": too_late,
             "chips": [],
         })
     return moves
+
+
+# A missed fridge move's late word once the fridge can't thaw it in time
+# (fridge_move_too_late), where it would otherwise say "still to do".
+TOO_LATE_TO_THAW_WORDS = "too late to thaw in the fridge"
 
 
 SHOP_ACTION_LABEL = "Go shopping"  # Today's dock when the shop is next up; opens the list
@@ -1006,7 +1147,8 @@ def _meals_through_tomorrow(view: dict, today: date) -> list[dict]:
     return meals
 
 
-def _shop_move(view: dict, day: date, now: datetime, dinner_clock: time) -> list[dict]:
+def _shop_move(view: dict, day: date, now: datetime, dinner_clock: time,
+               dinner_window: str | None = None) -> list[dict]:
     """
     The list, said the one way that is true of it today.
 
@@ -1068,8 +1210,14 @@ def _shop_move(view: dict, day: date, now: datetime, dinner_clock: time) -> list
     # no cook still AHEAD is waiting: a 7am breakfast nobody ticked must not
     # take the deadline from tonight's dinner. The latest one wins — at nine
     # it is dinner's shop, not breakfast's.
+    #
+    # Not once the evening is over (evening_over, Emily 2026-10-26): from
+    # 6:31 "Shop for tonight · still to do · Go shopping" was the featured
+    # card until midnight. Past that point the cook it is for has had its
+    # night, and the list falls to whatever is still ahead.
     passed = None
     passed_meal = None
+    night_over = evening_over(now, dinner_window)
     for meal in _meals_through_tomorrow(view, now.date()):
         # A cook already STARTED is out for the same reason a cooked one is:
         # it is on the stove, so whatever of its is still on the list is
@@ -1088,7 +1236,7 @@ def _shop_move(view: dict, day: date, now: datetime, dinner_clock: time) -> list
         # every other — the same reading cooker.start_cooking makes of one.
         ids = [i for i in (meal.get("entry_ids") or [meal.get("entry_id")]) if i]
         if at < now:
-            if at.date() == now.date() and any(i in waiting for i in ids):
+            if at.date() == now.date() and not night_over and any(i in waiting for i in ids):
                 if passed is None or at > passed:
                     passed = at
                     passed_meal = meal
@@ -1441,7 +1589,7 @@ def moves_for_day(
     if len(holiday_shops) > 1:
         extra = {id(m) for m in holiday_shops[1:]}
         prep = [m for m in prep if id(m) not in extra]
-    shop = _shop_move(view, target, now, dinner_clock)
+    shop = _shop_move(view, target, now, dinner_clock, dinner_window=rhythm.get("dinner_window"))
     if any(m["kind"] == "shop" for m in prep):
         # A big meal's own shop is on this day (big_meal.spread_prep) —
         # it names the trip and what it's for, so the week's generic "Shop
@@ -1457,8 +1605,9 @@ def moves_for_day(
                 m["detail"] = generic["detail"]
                 m["time_label"] = generic["time_label"]
         shop = []
-    moves = (_cook_and_reheat_moves(view, target, dinner_clock)
-             + _open_slot_moves(view, target, dinner_clock) + prep + shop)
+    moves = (_cook_and_reheat_moves(view, target, dinner_clock, now=now,
+                                    dinner_window=rhythm.get("dinner_window"))
+             + _open_slot_moves(view, target, dinner_clock, now=now) + prep + shop)
     moves.sort(key=lambda m: (m["window_start"], -m["weight"], m["id"]))
     return _stamp_owners(moves, owners)
 

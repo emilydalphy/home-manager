@@ -6,7 +6,7 @@ from __future__ import annotations
 import json
 import logging
 import re
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from ..db import get_conn, write
 from ._shared import acting_member_id_for, acting_name, household_id, require_household_row
 from . import bring_over as _bring_over
@@ -2611,8 +2611,15 @@ def _week_headline(plan: dict, days: list[dict], intake: dict | None) -> str:
     # is the case DECISIONS.md #1 is actually about. A household that set
     # its own counts to zero already knows; being told about it is not news.
     night_tags = (intake or {}).get("night_tags") or {}
+    # Only a night the week really left uncooked is a reason (Emily
+    # 2026-10-26, "use the newest answers everywhere"): a night tagged out
+    # in a re-plan that was never drafted still has its dinner, and "you're
+    # out Wednesday" over a Wednesday dinner is the contradiction this fixes.
+    planned_dinner = {d["date"] for d in days if (d.get("dinner") or {}).get("state") == "planned"}
     because = []
     for day, tags in sorted(night_tags.items()):
+        if day in planned_dinner:
+            continue
         weekday = date.fromisoformat(day).strftime("%A")
         if "out" in tags:
             because.append(f"you’re out {weekday}")
@@ -6305,8 +6312,18 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         # For a draft: what approving it takes off an approved week (see
         # below). None for an approved week and in the ordinary case.
         "replaces": None,
+        # A cooked portion in the freezer past its use-by (Emily's pick #28,
+        # 2026-10-26): the planner never puts one on a plate
+        # (freezer_portions.portions_to_plan), and until now nothing said
+        # it was there. One plain line on the draft. None when there is none.
+        "freezer_toss_note": None,
     }
     if plan["status"] != "approved":
+        try:
+            from . import freezer_portions as _freezer_portions  # lazy: it reads back into this module
+            approval["freezer_toss_note"] = _freezer_portions.past_use_by_line(today=today_str)
+        except Exception:
+            logger.exception("Reading the freezer for past-use-by portions failed")
         approval["approving_adults"] = [
             p["name"] for p in _coordination.get_household_people()
         ]
@@ -6541,8 +6558,13 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             # A meal the household's usual week has off that day
             # (usual_week.OFF_CONSTRAINT, 2026-09-30) — not planned, not out.
             usual_off = derived.get("constraint") == "usual_week_off"
+            # A meal the household asked for none of all week ("No
+            # breakfasts", `{slot}s_per_week:0`) — people are home, so it
+            # is not "Out" either (Emily's pick #31, 2026-10-26).
+            none_asked = str(derived.get("constraint") or "").endswith("s_per_week:0")
             empty = {
-                "title": "Not planned" if skipped or past or usual_off else "Out — nothing to cook", "meta": None,
+                "title": "Not planned" if skipped or past or usual_off or none_asked else "Out — nothing to cook",
+                "meta": None,
                 "source": "empty",
                 "state": "planned_empty", "reason": row["reasoning"], "entry_id": row["id"],
                 # Left out on purpose, not away (2026-09-26): the Which days
@@ -6556,6 +6578,11 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             }
             if past:
                 empty["past"] = True
+            # A night the week's answers marked Out (the `out` tag,
+            # agent._finish_week_slots): the one empty dinner Plan offers
+            # "We're in after all" on (swap_in_place.in_after_all, #31).
+            if derived.get("constraint") == OUT_NIGHT_CONSTRAINT and row["slot"] == "dinner":
+                empty["in_after_all"] = True
             # A meal the household switched off for its whole usual week
             # (Breakfast: None) is not a row at all — the clients leave it
             # out. Only an EMPTY row: a dish that is there is always shown.
@@ -7110,7 +7137,20 @@ def _suggest_quick_dinners(limit: int = 2) -> list[dict]:
     return out
 
 
-def get_needs_you_items() -> list[dict]:
+# When tonight stops being a question (Emily, 2026-10-26, "go with your
+# picks"): at 9:30pm and 11:55pm Now still asked "Tonight's dinner needs
+# your call … 6:30 tonight". From 9pm on the household's clock tonight's
+# dinner isn't asked about (the band moves on to tomorrow's) and Today's
+# own open-slot rows for the day go (moves._open_slot_moves).
+TONIGHT_QUESTION_CLOSES = time(21, 0)
+
+
+def tonight_question_closed(now: datetime) -> bool:
+    """Past TONIGHT_QUESTION_CLOSES on the household's clock (`now` is it)."""
+    return now.time() >= TONIGHT_QUESTION_CLOSES
+
+
+def get_needs_you_items(now: datetime | None = None) -> list[dict]:
     """
     The Today screen's needs-you band (design_handoff_shell/README.md §4,
     §9 Step 5) — 0-3 cards for things that need a decision right now.
@@ -7209,7 +7249,20 @@ def get_needs_you_items() -> list[dict]:
         usual_week_off_dinners = set(_window)
     else:
         usual_week_off_dinners = {d for (d, s) in _usual_week.off_slots_on(_window) if s == "dinner"}
+    # `now` is for tests; the screen reads the household's own clock. Only
+    # when it is the same day as `today` — a test that moves this module's
+    # date alone (see _household_today) is not asking about the hour.
+    if now is None:
+        try:
+            from . import cooker as _cooker
+            now = _cooker.household_now()
+        except Exception:
+            logger.exception("Couldn't read the household's clock; tonight's dinner stays askable")
+            now = None
+    tonight_closed = now is not None and now.date() == today and tonight_question_closed(now)
     for offset in (0, 1):
+        if offset == 0 and tonight_closed:
+            continue
         candidate = (today + timedelta(days=offset)).isoformat()
         when = "Tonight" if offset == 0 else "Tomorrow"
         row = dinner_by_date.get(candidate)
@@ -7930,6 +7983,12 @@ _CHECK_FAILED_NOTE = (
 )
 
 
+# The constraint an Out night's empty dinner carries (agent._finish_week_slots
+# writes it off the week's `out` tag). One name, read by get_week_menu and
+# swap_in_place.in_after_all.
+OUT_NIGHT_CONSTRAINT = "nobody_home"
+
+
 # Said when approval stops because Claude couldn't be reached to write the
 # week's new recipes (2026-10-25). Plain, with its way out, and the fact the
 # household most needs: nothing was approved and the list is untouched.
@@ -7937,6 +7996,72 @@ RECIPES_UNREACHABLE_LINE = (
     "I couldn’t write up this week’s new recipes just now, so I haven’t approved it "
     "yet — your list is as it was. Try again in a minute."
 )
+
+
+def _none_reached(written: dict) -> bool:
+    """
+    True when the approval's recipe pass reached Claude for none of the
+    dishes it tried — every recipe it asked for came back unreachable and
+    none was written. Then approving would build a list missing the week's
+    new dishes, so approval stops (RECIPES_UNREACHABLE_LINE). One dish
+    unreachable beside others that were written is not this (#75).
+    `clashed` is not a sign Claude answered: a dish whose NAME names a
+    must-avoid is refused before any call, and its re-pick needs Claude too.
+    """
+    unreachable = written.get("unreachable") or []
+    if not unreachable:
+        return False
+    if written.get("filled"):
+        return False
+    return len(written.get("failed") or []) <= len(unreachable)
+
+
+def recipes_not_ready_line(names: list[str]) -> str | None:
+    """
+    The one line approval adds when a new dish couldn't be written up
+    (#27/#75, 2026-10-26): which dish, what that means for the list, and
+    where it gets written. None when every dish is ready.
+    """
+    names = [n.strip() for n in names or [] if (n or "").strip()]
+    if not names:
+        return None
+    if len(names) == 1:
+        return (f"{names[0]} isn’t written up yet, so its groceries aren’t on the list. "
+                "You can fill it in from Cook.")
+    joined = ", ".join(names[:-1]) + " and " + names[-1]
+    return (f"{joined} aren’t written up yet, so their groceries aren’t on the list. "
+            "You can fill them in from Cook.")
+
+
+def _new_dishes_written(weekly_plan_id: int) -> int:
+    """
+    How many of this plan's NEW dishes already have their recipe written —
+    by the draft's background pass (agent.start_background_recipe_pass),
+    which in production usually writes most of them before Approve, or by
+    an earlier approval try. A new dish is one the week generator saved
+    (from_draft) that no other approved week has had on it; written means
+    details_pending is clear. Any of them written means Claude WAS reached
+    for this week, so one dish left unreachable must not block it (#75).
+    """
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            """
+            SELECT COUNT(DISTINCT r.id) AS n
+            FROM meal_plan_entries mpe JOIN recipes r ON r.id = mpe.recipe_id
+            WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ?
+              AND r.from_draft = 1 AND r.details_pending = 0
+              AND NOT EXISTS (
+                SELECT 1 FROM meal_plan_entries o JOIN weekly_plans owp ON owp.id = o.weekly_plan_id
+                WHERE o.recipe_id = r.id AND o.household_id = mpe.household_id
+                  AND o.weekly_plan_id != mpe.weekly_plan_id AND owp.approved_at IS NOT NULL
+              )
+            """,
+            (weekly_plan_id, household_id()),
+        ).fetchone()
+    finally:
+        conn.close()
+    return int(row["n"] or 0)
 
 
 def _write_pending_recipes(weekly_plan_id: int) -> dict:
@@ -8086,6 +8211,7 @@ def approve_weekly_plan(
     # below and the grocery ingest inside the transaction both work from
     # ingredients, and a dish the menu pass chose has none until this
     # writes them. Skipped for a re-approval, which adds nothing anyway.
+    not_ready: list[str] = []
     if not was_already_approved:
         written = _write_pending_recipes(weekly_plan_id)
         # One recipe that came back wrong still approves (above). Claude
@@ -8096,11 +8222,27 @@ def approve_weekly_plan(
         # household is told to try again — the recipes that WERE written
         # are kept, so the retry only asks for the rest. Already filed in
         # the morning report by the calls that gave up.
-        if written.get("unreachable"):
+        #
+        # Only when NONE could be reached (Emily, 2026-10-26, #75): one
+        # dish Claude didn't answer for, beside others it did write, no
+        # longer holds the whole week back — the week approves and the
+        # toast names the dish that isn't ready (recipes_not_ready_line).
+        # "None reached" is about the WEEK, not just this pass: a dish the
+        # background pass already wrote was Claude answering for this week.
+        if _none_reached(written) and not _new_dishes_written(weekly_plan_id):
             from .. import agent as _agent
             err = _agent.AssistantUnavailableError(RECIPES_UNREACHABLE_LINE)
             setattr(err, _agent.AI_FILED, True)
             raise err
+        # What is still unwritten after the pass — a dish that failed, or
+        # one another pass was still holding when the wait ran out. Read
+        # off the plan rather than off the pass's own lists, so a dish the
+        # allergen sweep replaced is not named (#27, 2026-10-26).
+        try:
+            not_ready = [r["name"] for r in _recipes.pending_recipes_for_plan(weekly_plan_id) if r.get("name")]
+        except Exception:
+            logger.exception("Reading the unwritten recipes for plan %s failed", weekly_plan_id)
+            not_ready = []
 
     # Run before the approval work, so the warning (and the confirmation
     # gate just below) describe the plan that was actually approved, and a
@@ -8196,6 +8338,11 @@ def approve_weekly_plan(
                 result["cook_ahead"] = _cook_ahead.apply_prep_day_batches(weekly_plan_id)
         except Exception:
             logger.exception("Batching repeated dishes at approval failed for plan %s", weekly_plan_id)
+    # The dishes approval couldn't write up (#27, 2026-10-26): approving
+    # goes ahead, but the household is told which, since nothing went on
+    # the list for them. [] and None when every dish is ready.
+    result["recipes_not_ready"] = not_ready
+    result["recipes_not_ready_line"] = recipes_not_ready_line(not_ready)
     return result
 
 
@@ -8773,6 +8920,14 @@ def _replace_slot_entries(
             (weekly_plan_id, household_id()),
         ).fetchone()
         approved = bool(plan_row) and plan_row["status"] == "approved"
+        # The freezer step's answer on the outgoing nights, read before
+        # their moves are released below. When the outgoing night was the
+        # only one with that item, the release leaves no move anywhere to
+        # say the household answered "in the freezer", and a new dish
+        # using the same item bought it again (Loop Board card
+        # 4031f4c0…, Emily 2026-10-26: carry the answer over to the new
+        # dish). Handed to _carry_freezer_answer at the tail.
+        carried_answer = _freezer_answer_on_entries(conn, weekly_plan_id, old_entry_ids) if approved else set()
         # Asked before anything is torn down, on the transaction's own
         # connection: once the old entry is deleted there is nothing left
         # to ask whether it used to feed other nights' leftovers.
@@ -8893,18 +9048,40 @@ def _replace_slot_entries(
     # household already said is in the freezer joins that answer instead of
     # buying the salmon again (defrost.carry_freezer_answer_to_nights).
     if approved and result.get("entry_id"):
-        _carry_freezer_answer(weekly_plan_id, [result["entry_id"]])
+        _carry_freezer_answer(weekly_plan_id, [result["entry_id"]], also_answered=carried_answer)
     return result
 
 
-def _carry_freezer_answer(weekly_plan_id: int, entry_ids: list) -> None:
+def _freezer_answer_on_entries(conn, weekly_plan_id: int, entry_ids: list) -> set[str]:
+    """The items the freezer step booked a still-pending fridge move for on
+    `entry_ids` (lowercased), read on the caller's connection. Pending only:
+    a move already ticked is a thawed thing the release HOLDS ("Pomona,
+    hold this"), and booking a second move to thaw it again would be
+    wrong."""
+    from . import defrost as _defrost
+
+    ids = [int(i) for i in entry_ids or [] if i]
+    if not ids:
+        return set()
+    marks = ",".join("?" * len(ids))
+    rows = conn.execute(
+        f"SELECT description FROM prep_tasks WHERE household_id = ? AND weekly_plan_id = ? "
+        f"AND task_type = 'defrost' AND inventory_item_id IS NULL AND status = 'pending' "
+        f"AND meal_plan_entry_id IN ({marks}) "
+        f"AND COALESCE(json_extract(detail_json, '$.kind'), '') != ?",
+        (household_id(), weekly_plan_id, *ids, _defrost.OWN_PORTION_KIND),
+    ).fetchall()
+    return {_defrost.thawed_item(r["description"]).lower() for r in rows} - {""}
+
+
+def _carry_freezer_answer(weekly_plan_id: int, entry_ids: list, also_answered: set | None = None) -> None:
     """defrost.carry_freezer_answer_to_nights, imported where it is called
     (the same cycle as _defrost_resync). Never raises: the swap is written,
     and a reminder pass that failed must not say otherwise."""
     from . import defrost as _defrost
 
     try:
-        _defrost.carry_freezer_answer_to_nights(weekly_plan_id, entry_ids)
+        _defrost.carry_freezer_answer_to_nights(weekly_plan_id, entry_ids, also_answered=also_answered)
     except Exception:
         logger.exception(
             "Carrying the freezer answer onto swapped-in nights %s failed; the list may ask "
@@ -10287,7 +10464,7 @@ def _shift_defrost_tasks(conn, weekly_plan_id: int, entry_id: int, old_date: str
     delta = (date.fromisoformat(new_date) - date.fromisoformat(old_date)).days
     old_wd, new_wd = _weekday_of(old_date), _weekday_of(new_date)
     tasks = conn.execute(
-        "SELECT id, task_date, description FROM prep_tasks "
+        "SELECT id, task_date, description, status FROM prep_tasks "
         "WHERE household_id = ? AND weekly_plan_id = ? AND task_type = 'defrost' "
         "AND meal_plan_entry_id = ?",
         (household_id(), weekly_plan_id, entry_id),
@@ -10302,7 +10479,46 @@ def _shift_defrost_tasks(conn, weekly_plan_id: int, entry_id: int, old_date: str
             "UPDATE prep_tasks SET task_date = ?, description = ? WHERE id = ? AND household_id = ?",
             (moved_to, said, t["id"], household_id()),
         )
+        if t["status"] == "done":
+            # A ticked move is food already out of the freezer, and the
+            # shift above moves its day with the dinner. The night it was
+            # thawed FOR is kept, once, so a second move still counts the
+            # fridge time from it (defrost.thawed_wait_sentence).
+            conn.execute(
+                "UPDATE prep_tasks SET detail_json = json_set(COALESCE(NULLIF(detail_json, ''), '{}'), '$.thawed_for', ?) "
+                "WHERE id = ? AND household_id = ? "
+                "AND json_extract(COALESCE(NULLIF(detail_json, ''), '{}'), '$.thawed_for') IS NULL",
+                (old_date, t["id"], household_id()),
+            )
     return len(tasks)
+
+
+def thawed_waits_for_entry(conn, weekly_plan_id: int, entry_id: int, cook_date: str) -> list[str]:
+    """
+    defrost.thawed_wait_sentence for each fridge move already ticked done
+    on `entry_id`, read on the caller's connection AFTER its rows moved:
+    the line said at a move when thawed food's dinner now lands past how
+    long it keeps. The night it was thawed for is the row's thawed_for,
+    which _shift_defrost_tasks keeps on a ticked row. For a
+    door that moves a cook without _redate_plan_rows (the night off's
+    cook-on-the-fed-night).
+    """
+    from . import cooker as _cooker_mod
+    from . import defrost as _defrost_mod  # lazy: defrost imports us
+
+    today = _cooker_mod.household_today().isoformat()
+    out: list[str] = []
+    for t in conn.execute(
+        "SELECT task_date, description, "
+        "json_extract(COALESCE(NULLIF(detail_json, ''), '{}'), '$.thawed_for') AS thawed_for "
+        "FROM prep_tasks WHERE household_id = ? AND weekly_plan_id = ? AND task_type = 'defrost' "
+        "AND meal_plan_entry_id = ? AND status = 'done'",
+        (household_id(), weekly_plan_id, entry_id),
+    ).fetchall():
+        said = _defrost_mod.thawed_wait_sentence(t["description"], t["thawed_for"] or cook_date, cook_date, today)
+        if said and said not in out:
+            out.append(said)
+    return out
 
 
 def _redate_plan_rows(
@@ -10436,6 +10652,7 @@ def _redate_plan_rows(
             )
     prep_moved = 0
     thaw: list[dict] = []
+    thawed_waits: list[str] = []
     for r in moving:
         before = {
             t["id"]: t["task_date"] for t in conn.execute(
@@ -10446,17 +10663,32 @@ def _redate_plan_rows(
         }
         prep_moved += _shift_defrost_tasks(conn, weekly_plan_id, r["id"], r["date"], new_date[r["id"]])
         for t in conn.execute(
-            "SELECT id, task_date, description, status FROM prep_tasks WHERE household_id = ? AND id IN (%s)"
+            "SELECT id, task_date, description, status, "
+            "json_extract(COALESCE(NULLIF(detail_json, ''), '{}'), '$.thawed_for') AS thawed_for "
+            "FROM prep_tasks WHERE household_id = ? AND id IN (%s)"
             % ",".join("?" * len(before)), (household_id(), *before),
         ).fetchall() if before else []:
             thaw.append({"prep_task_id": t["id"], "entry_id": r["id"], "from": before[t["id"]],
                          "to": t["task_date"], "description": t["description"], "status": t["status"]})
+            # Thawed food whose dinner now lands past how long it keeps
+            # (Emily 2026-10-26: warn, a plain line at the move). Both move
+            # doors read this: the Move sheet's thaw_notes, the nights
+            # swap's thaw_now.
+            if t["status"] == "done" and new_date[r["id"]] > r["date"]:
+                from . import cooker as _cooker_mod
+                from . import defrost as _defrost_mod  # lazy: defrost imports us
+                said = _defrost_mod.thawed_wait_sentence(
+                    t["description"], t["thawed_for"] or r["date"], new_date[r["id"]],
+                    _cooker_mod.household_today().isoformat(),
+                )
+                if said and said not in thawed_waits:
+                    thawed_waits.append(said)
         if move_prep_cuts:
             prep_moved += _shift_late_prep_cuts(conn, weekly_plan_id, r["id"], r["date"], new_date[r["id"]])
     # A "double a batch of X" suggestion whose X now comes on or after the
     # meal it covers is recomputed — keyed by entry id, it rode along.
     _recheck_ready_made_after_redate(conn, [r["id"] for r in moving])
-    return {"prep_moved": prep_moved, "thaw": thaw, "after": after}
+    return {"prep_moved": prep_moved, "thaw": thaw, "after": after, "thawed_waits": thawed_waits}
 
 
 def _frozen_portion_cook_id(derived: dict) -> int | None:
@@ -10846,6 +11078,7 @@ def _apply_dinner_nights_swap(
         # (an Undo re-says it back).
         _meal_move._resay_freezer_nights(conn, snap, new_date)
         prep_moved = done["prep_moved"]
+        thawed_waits = done.get("thawed_waits") or []
         for cuts in cut_moves.values():
             for tid, m in cuts.items():
                 conn.execute(
@@ -10884,6 +11117,8 @@ def _apply_dinner_nights_swap(
         "prep_tasks_moved": prep_moved,
         "can_undo": not undo,
     }
+    if thawed_waits:
+        out["thaw_now"] = list(thawed_waits)
     if not own_conn:
         # See the docstring: both of the fields below are reads, and the
         # caller's transaction is still open. The thaw recomputation below
@@ -10909,7 +11144,7 @@ def _apply_dinner_nights_swap(
     # all, under a result saying only `prep_tasks_moved: 1`.
     said = _defrost_resync(weekly_plan_id, [m["entry_id"] for m in moved])
     if said:
-        out["thaw_now"] = said
+        out["thaw_now"] = said + [w for w in out.get("thaw_now", []) if w not in said]
     # Both changed days in get_week_menu's own shape, so the screen
     # splices them in exactly as it does after an in-place swap.
     out["days"] = _menu_days_for(weekly_plan_id, [date_a, date_b])

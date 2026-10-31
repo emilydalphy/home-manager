@@ -415,7 +415,15 @@ def device_member_for_login(
     cookie: str | None, household_id: int
 ) -> tuple[int | None, bool]:
     """
-    `(the adult this device should be signed in as, is the cookie spent)`.
+    `(the member this device should be signed in as, is the cookie spent)`.
+
+    Since 2026-10-26 (Emily went with the pick on "my phone stops acting
+    as them"), a member still in this household who is no longer an adult
+    — re-marked a Teen — still comes back: it is still their phone. The
+    session then names them, and tools.current_member() reads that as
+    nobody, so the phone never signs in as the adult left. Only an adult
+    is ever the session's adult; everything below about "an adult" is the
+    rule for that.
 
     THREE things have to be true for an adult to come back, and the
     signature is only the first of them. The cookie has to be one this
@@ -449,9 +457,16 @@ def device_member_for_login(
     # explicit household id, with nothing bound yet (/login is a public
     # path), which is the same question household_exists already answers
     # from there.
-    if not households.adult_exists(household_id, member_id):
-        return None, True
-    return member_id, False
+    if households.adult_exists(household_id, member_id):
+        return member_id, False
+    # Still a member here, just not an adult any more (re-marked a Teen):
+    # this is still THEIR phone (Emily, 2026-10-26: went with the pick).
+    # The session carries their id, which tools.current_member() reads as
+    # nobody, so a one-adult house no longer signs it in as the adult left.
+    # Not spent: made an adult again, the same phone is them again.
+    if households.session_still_holds(household_id, member_id):
+        return member_id, False
+    return None, True
 
 
 def set_device_cookie(response, request, household_id: int, member_id: int) -> None:

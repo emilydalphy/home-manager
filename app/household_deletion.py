@@ -493,9 +493,15 @@ def _remove_member(household_id: int, member_id: int, by_member_id: int | None =
             # real answer, "Nobody yet" said on purpose (move_owner.py). After
             # Vineeth claimed tonight and left, Emily's Today said nobody was
             # cooking a dinner the rotation gives her (defect hunt 2026-10-24).
+            # A "Nobody yet" the leaver set goes too (Emily, 2026-10-26: went
+            # with the pick): it was their word about a night they no longer
+            # share, and left standing it showed the adult who stays nobody
+            # on a cook the rotation gives them. A "Nobody yet" anyone else
+            # set still stands.
             n = conn.execute(
-                "DELETE FROM move_owner_overrides WHERE household_id = ? AND member_id = ?",
-                (hid, mid),
+                "DELETE FROM move_owner_overrides WHERE household_id = ? "
+                "AND (member_id = ? OR (member_id IS NULL AND set_by = ?))",
+                (hid, mid, mid),
             ).rowcount
             if n:
                 touched["move_owner_overrides.member_id"] = n
