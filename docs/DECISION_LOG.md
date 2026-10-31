@@ -13,6 +13,8 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Kitchen "Add N" sent twice adds once** (2026-10-31, branch `overnight/kitchen-add-once-1031`; tests `tests/test_kitchen_add_once.py`).
+  A retap after "Couldn't save" whose first send HAD landed (reply lost) made 12 eggs 24. `static/kitchen-add.js` now sends a `client_id` per confirm, reused while the same rows are re-sent, cleared on success; `/api/whats-home/add` runs through `grocery_add_once.add_once` under its own table `kitchen_add_sends` (same 30-day sweep and 60 s abandoned-claim rule as grocery). The kitchen route also waits up to 8 s for a same-id twin still adding, so the retap answers 200, not a 409 shown as "Couldn't save". No id = as before.
 - **Test clock: `test_the_route_answers_with_the_view_and_the_receipt` failed 23:25–24:00 UTC** (2026-10-30, branch `merge-overnight-2026-10-30`).
   Its household is on UTC, so a 35-minute cook started then is on the table tomorrow; it asserted today's date. Now asserts started + 35 min. No app change.
 - **Merge seam: one rule for a chat use-by date** (2026-10-30, branch `merge-overnight-2026-10-30`).

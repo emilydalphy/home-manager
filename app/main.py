@@ -6554,6 +6554,10 @@ class WhatsHomeAddRequest(BaseModel):
     # 'fridge' | 'freezer' | 'pantry' (a shelf photo) | 'receipt' | 'say' | 'type'
     kind: str
     items: list[dict]
+    # Named once per confirm by static/kitchen-add.js and re-sent on its
+    # retry, so a retap after a lost reply adds nothing twice. None (an
+    # older client) adds exactly as before.
+    client_id: str | None = Field(default=None, max_length=64)
 
 
 @app.post("/api/whats-home/read-said")
@@ -6571,7 +6575,17 @@ def whats_home_add_view(req: WhatsHomeAddRequest):
     only the rows sent, which are the ones left ticked. `undo` comes back
     for the toast."""
     try:
-        return tools.add_kitchen_items(req.items, req.kind)
+        # A repeat of the same client_id — "Couldn't save" retapped after a
+        # reply that was lost, not a save that failed — gets the first
+        # answer back and adds nothing, so 12 eggs stay 12. A twin still
+        # adding is waited for (the person is on the sheet, unlike grocery's
+        # queue), so the retap answers as a success.
+        return grocery_add_once.add_once(
+            req.client_id, lambda: tools.add_kitchen_items(req.items, req.kind),
+            table="kitchen_add_sends", wait_seconds=8,
+        )
+    except grocery_add_once.AddInFlight:
+        raise HTTPException(status_code=409, detail="That add is already on its way.")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

@@ -670,8 +670,34 @@
     });
   }
 
+  // One request id per confirm, kept on the sheet's state while the same
+  // rows are sent again: "Couldn't save" retapped after a reply that was
+  // lost (the add HAD landed) is answered with the first answer and adds
+  // nothing — 12 eggs stayed 12, not 24 (app/grocery_add_once.py, table
+  // kitchen_add_sends). Different rows (one unticked, a name retyped) are
+  // a different add and get a new id. Cleared on a success, so a later real
+  // "add 12 eggs" is its own add.
+  function newSendId() {
+    var c = typeof crypto !== 'undefined' ? crypto : null;
+    if (c && typeof c.randomUUID === 'function') return c.randomUUID();
+    var hex = '';
+    for (var j = 0; j < 4; j++) hex += Math.floor(Math.random() * 0x100000000).toString(16);
+    return Date.now().toString(16) + '-' + hex;
+  }
+
+  function sendIdFor(state, kind, items) {
+    var what = JSON.stringify([kind, items]);
+    if (!state.send || state.send.what !== what) state.send = { what: what, id: newSendId() };
+    return state.send.id;
+  }
+
   function post(kind, items) {
-    return Api.json('/api/whats-home/add', { body: { kind: kind, items: items }, quiet: true });
+    var body = { kind: kind, items: items, client_id: sendIdFor(st, kind, items) };
+    var mine = st;
+    return Api.json('/api/whats-home/add', { body: body, quiet: true }).then(function (res) {
+      mine.send = null;
+      return res;
+    });
   }
 
   function remember() {
@@ -778,6 +804,7 @@
     addButtonLabel: addButtonLabel,
     savedLine: savedLine,
     setupLine: setupLine,
+    sendIdFor: sendIdFor,
     htmlFor: htmlFor
   };
   global.KitchenAdd = api;
