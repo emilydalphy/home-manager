@@ -110,3 +110,25 @@ def test_one_store_still_open_keeps_the_trip(family, recipes, proposer):
     _approved_week()
     tools.answer_holiday("2026-12-26", "hosting", headcount=4, on_table_at="6pm")
     assert _fresh_shop_days("Boxing Day") == ["2026-12-25"]
+
+
+@PINNED
+def test_ticking_the_one_shop_move_ticks_both_meals_trips(family, recipes, proposer, signed_in, frozen_today):
+    _shut_on_holidays()
+    _approved_week()
+    tools.answer_holiday("2026-12-25", "hosting", headcount=6, on_table_at="5pm")
+    tools.answer_holiday("2026-12-26", "hosting", headcount=4, on_table_at="6pm")
+    (shop,) = [m for m in _moves(signed_in, frozen_today, "2026-12-24") if m["kind"] == "shop"]
+
+    res = signed_in.post(f"/api/today/moves/{shop['id']}/done", json={"done": True})
+    assert res.status_code == 200, res.text
+    # Re-read Today: the trip just ticked must not come back as the other meal's.
+    after = [m for m in _moves(signed_in, frozen_today, "2026-12-24") if m["kind"] == "shop"]
+    assert all(m["done"] for m in after), [(m["title"], m["done"]) for m in after]
+    assert all(t["status"] == "done" for t in _holiday_tasks()
+               if t["related_meal"] == "Shop" and t["task_date"] == "2026-12-24")
+
+    # And un-ticking puts the whole trip back.
+    signed_in.post(f"/api/today/moves/{shop['id']}/done", json={"done": False})
+    assert all(t["status"] == "pending" for t in _holiday_tasks()
+               if t["related_meal"] == "Shop" and t["task_date"] == "2026-12-24")

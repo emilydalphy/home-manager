@@ -70,13 +70,14 @@ from __future__ import annotations
 import logging
 from datetime import date, datetime, time, timedelta
 
-# Every read below goes through another tool module, so this never needs
-# household_id() itself — the scoping comes from get_cooker_view /
+# Nearly every read below goes through another tool module, so this rarely
+# needs household_id() itself (_same_day_holiday_shops is the one) — the scoping comes from get_cooker_view /
 # list_grocery_list / get_household_rhythm, each of which is already
 # request-scoped (see _shared.household_id). The one connection opened here
 # (_view_for_day) only hands it to weekly_plan._live_plan_covering, which
 # scopes its own query.
 from ..db import get_conn
+from ._shared import household_id
 from . import allergen_gate as _allergen_gate
 from . import cooker as _cooker
 from . import day_meals as _day_meals
@@ -1664,6 +1665,23 @@ def _today_holiday(target: date) -> dict | None:
             "label": _holidays.holiday_day_label(h)}
 
 
+def _same_day_holiday_shops(task_id: int) -> list[int]:
+    """The OTHER big-meal shop rows on this one's day, when it is one — the
+    rows moves_for_day folded into the same shop move."""
+    conn = get_conn()
+    try:
+        rows = conn.execute(
+            "SELECT o.id FROM prep_tasks t JOIN prep_tasks o "
+            "ON o.household_id = t.household_id AND o.task_date = t.task_date "
+            "AND o.task_type = t.task_type AND o.related_meal = t.related_meal AND o.id != t.id "
+            "WHERE t.id = ? AND t.household_id = ? AND t.task_type = 'holiday' AND t.related_meal = 'Shop'",
+            (task_id, household_id()),
+        ).fetchall()
+    finally:
+        conn.close()
+    return [r["id"] for r in rows]
+
+
 def set_move_done(move_id: str, done: bool = True) -> dict:
     """
     Tick or untick one move, by dispatching to whichever tool owns the state
@@ -1680,6 +1698,12 @@ def set_move_done(move_id: str, done: bool = True) -> dict:
         return out
     if kind in ("fridge", "prep"):
         _cooker.check_off_prep_step(int(ref), status)
+        # Today draws two big meals' trips on one day as ONE shop move
+        # (moves_for_day). That tick is the whole trip: ticking only the
+        # row behind it put the other meal's "The fresh shop for Boxing
+        # Day" straight back on Today, not done.
+        for other in _same_day_holiday_shops(int(ref)):
+            _cooker.check_off_prep_step(other, status)
         return {"id": move_id, "done": done, "dispatched_to": "check_off_prep_step"}
     if kind == "open":
         # An open slot is answered by picking a meal on Plan, never by a
