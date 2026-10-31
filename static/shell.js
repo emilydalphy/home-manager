@@ -19953,12 +19953,43 @@
       : { entry_id: st.entryId, avoid: ask.avoid || [] };
     if (ask.request) body.request = ask.request;
     withPlanId(body, st.planId);
+    // Asked once more before the sheet gives up (Loop Board, Emily
+    // 2026-10-31: Sunday's lunch said "I couldn't think of options" while
+    // Railway's log shows the server never saw the sheet's ask — the one
+    // swap-options call it had came back with three picks in 4.4 s). A
+    // request lost on the way, or a 5xx, is asked again after a breath; a
+    // 404 is the server's own answer and is said as it is. And a wait is
+    // never endless: past `timeoutMs` the ask is dropped and the sheet says
+    // so, rather than sitting on "Finding three…" for good.
+    var timeoutMs = 30000;
+    var retryMs = 800;
+    function post() {
+      var ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      var timer = ctl ? setTimeout(function () { ctl.abort(); }, timeoutMs) : null;
+      var init = { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) };
+      if (ctl) init.signal = ctl.signal;
+      return Api.fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/swap-options', init)
+        .then(function (res) { if (timer) clearTimeout(timer); return res; },
+          function (err) { if (timer) clearTimeout(timer); throw err; });
+    }
     try {
-      var res = await Api.fetch('/api/week/' + encodeURIComponent(st.weekStart) + '/swap-options', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
+      var res = null;
+      for (var attempt = 0; attempt < 2; attempt++) {
+        if (attempt) {
+          await new Promise(function (resolve) { setTimeout(resolve, retryMs); });
+          if (swapSheetState !== st) return;
+        }
+        try {
+          res = await post();
+        } catch (err) {
+          // A wait that ran out is not asked again: thirty seconds is
+          // already longer than anyone should look at a spinner.
+          if (attempt || (err && err.name === 'AbortError')) throw err;
+          console.warn('Swap picks didn’t arrive; asking once more:', err);
+          continue;
+        }
+        if (res.ok || res.status < 500) break;
+      }
       var out = null;
       if (res.ok) out = await res.json();
       else if (res.status === 404) out = { message: swapRouteMessage(await res.json().catch(function () { return null; })) };
