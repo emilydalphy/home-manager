@@ -216,6 +216,8 @@ var PRE_COPY = { saveFailed: 'x' };
 function renderCheckChips() {} function renderUseUpChips() {}
 function showPreSection(w) { preStep = w; shown.push(w); }
 function showToast() {}
+var asked = [];
+var $ = function () { return { querySelector: function () { return { set textContent(v) { asked.push(v); } }; } }; };
 var Api = { json: async function (path, opts) {
   if (opts && opts.method === 'POST') { posted.push(opts.body); return {}; }
   if (path.indexOf('/api/inventory/check') === 0) return { items: %s };
@@ -225,7 +227,8 @@ var Api = { json: async function (path, opts) {
 (async function () {
   var first = await preDraftStep();
   var second = first ? await preDraftStep() : null;
-  console.log(JSON.stringify({ first: first, second: second, shown: shown, posted: posted, useUpShown: preUseUp.shown }));
+  var third = (second && !posted.length && asked.length) ? await preDraftStep() : null;
+  console.log(JSON.stringify({ first: first, second: second, third: third, asked: asked, shown: shown, posted: posted, useUpShown: preUseUp.shown }));
 })();
 """ % (json.dumps(check_items), json.dumps(use_up), fns)
 
@@ -234,7 +237,7 @@ var Api = { json: async function (path, opts) {
 def test_page_skips_both_steps_when_nothing_to_ask():
     """CATCH — with nothing unsure and nothing going off, Draft my week drafts as today."""
     out = json.loads(nodeharness.run_node(_page_harness([], {"items": [], "off": []})).stdout.strip().splitlines()[-1])
-    assert out == {"first": False, "second": None, "shown": [], "posted": [], "useUpShown": False}
+    assert out == {"first": False, "second": None, "third": None, "asked": [], "shown": [], "posted": [], "useUpShown": False}
 
 
 @_needs_node
@@ -317,6 +320,10 @@ def test_next_with_nothing_tapped_means_none_are_left():
     untapped chip is an answer: gone. Nothing tapped = all gone."""
     items = [{"id": 1, "label": "Hummus"}, {"id": 2, "label": "Cheddar"}]
     out = json.loads(nodeharness.run_node(_page_harness(items, {"items": [], "off": []})).stdout.strip().splitlines()[-1])
+    # The first Next with nothing tapped asks, on the screen, and saves
+    # nothing (Emily 2026-10-31); the second Next is the answer.
+    assert out["asked"] == ["None of these left? Tap Next again to say so, or tap the ones you still have."]
+    assert out["second"] is True
     assert out["posted"] == [{"gone": [1, 2], "confirmed": []}]
 
 

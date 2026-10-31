@@ -5284,6 +5284,16 @@ body.toast-up { padding-bottom: 260px; }
   async function preDraftStep() {
     if (preStep === 'useup') return false;
     if (preStep === 'check') {
+      // Nothing tapped reads as "all of these are gone" — up to five rows
+      // out of the kitchen on one skimmed Next. Ask once, on the screen
+      // itself; a second Next with still nothing tapped is the answer
+      // (Emily, 2026-10-31: "None of these left?" before marking them gone).
+      if (!preCheck.left.length && preCheck.items.length && !preCheck.askedNone) {
+        preCheck.askedNone = true;
+        $('inv-check').querySelector('.step-sub').textContent =
+          'None of these left? Tap Next again to say so, or tap the ones you still have.';
+        return true;
+      }
       try {
         await answerInventoryCheck();
       } catch (err) {
