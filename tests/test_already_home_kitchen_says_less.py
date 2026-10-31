@@ -13,9 +13,18 @@ from __future__ import annotations
 
 import datetime
 
+import pytest
+
 from conftest import household_today
 from app import db, tools
 from app.tools import already_home
+
+# Every test here plans "tomorrow" (and one "the day after") inside the plan
+# for THIS Monday's week. On a Sunday tomorrow is next week's Monday and every
+# test raises "isn't in weekly plan 1's period"; on a Saturday the day-after
+# one does (found failing on main, Saturday 2026-10-31). A Wednesday leaves
+# room on both sides, and a weekday name never ages the way a fixed date does.
+pytestmark = pytest.mark.today("wednesday")
 
 
 def _recipe(name, ingredients):
