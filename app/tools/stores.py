@@ -853,6 +853,29 @@ def window_at(store: str, moment: datetime, all_hours: dict | None = None, cache
     return "closed", None
 
 
+def every_store_closed(day: date, cache: dict | None = None) -> bool:
+    """
+    True only when the household has said, for EVERY one of its usual
+    stores, that it is shut on `day` (a closed weekday, or "Closed on
+    holidays" on a holiday shops close for). A store with no hours, or no
+    stores at all, is unknown — never closed — so a household that never
+    set hours is planned exactly as before.
+    """
+    conn = get_conn()
+    try:
+        names = _usual_stores(conn)
+        all_hours = _read_store_hours(conn)
+    finally:
+        conn.close()
+    if not names or not all_hours:
+        return False
+    for name in names:
+        w = open_window(name, day, all_hours, cache)
+        if not (w and w.get("closed")):
+            return False
+    return True
+
+
 def closed_on_weekday(store: str, weekday: str, all_hours: dict | None = None) -> bool:
     """True only when the household said the store is closed that weekday."""
     hours = hours_for(store, all_hours)
