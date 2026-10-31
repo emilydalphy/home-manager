@@ -13,6 +13,8 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A big meal's hour is that day's dinner time; its shops skip a day every store is shut** (2026-10-31, branch `overnight/hunt-holiday-1031`; tests `tests/test_big_meal_hour_and_shut_shops.py`).
+  (1) Today said "Chili · 6:30" / "Shop for tonight · by 6:00" on a big meal on the table at 4: `moves._slot_dt` now reads `big_meal.on_table_clock` for dinner, so the cook move, shop deadline and Kitchen's planned start agree with the timeline. (2) Boxing Day's fresh trip landed on Christmas Day with every store saved "closed on holidays" ("opens 8:00 Sunday"); `big_meal.shop_dates` walks a trip back off a day `stores.every_store_closed` (unknown hours = open, so no change without hours), and two big meals' trips on one day show as one shop move. Why: the household told us; one screen said 4, another 6:30.
 - **Test clock: `test_the_route_answers_with_the_view_and_the_receipt` failed 23:25–24:00 UTC** (2026-10-30, branch `merge-overnight-2026-10-30`).
   Its household is on UTC, so a 35-minute cook started then is on the table tomorrow; it asserted today's date. Now asserts started + 35 min. No app change.
 - **Merge seam: one rule for a chat use-by date** (2026-10-30, branch `merge-overnight-2026-10-30`).

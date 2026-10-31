@@ -1122,8 +1122,23 @@ def shop_dates(date_str: str, today: date | None = None) -> dict:
     """The two trips' dates. The early trip is dropped once it is already too late for it."""
     today = today or _cooker.household_today()
     d = date.fromisoformat(date_str)
-    early = d - timedelta(days=EARLY_SHOP_DAYS_AHEAD)
-    fresh = d - timedelta(days=FRESH_SHOP_DAYS_AHEAD)
+    # A trip never lands on a day the household said every one of its
+    # stores is shut. Boxing Day's fresh trip is "the day before" —
+    # Christmas Day — and with Farm Boy saved as closed on holidays, Today
+    # on the 25th said "The fresh shop for Boxing Day · Farm Boy's closed
+    # now — opens 8:00 Sunday", the day after the meal. Walk it back to
+    # the last open day instead (never past today; unknown hours count as
+    # open, so a household with none set is planned as before).
+    from . import stores as _stores  # call time: stores reaches holidays, which reaches back here
+    cache: dict = {}
+
+    def _open_on_or_before(day: date) -> date:
+        while day > today and _stores.every_store_closed(day, cache):
+            day -= timedelta(days=1)
+        return day
+
+    early = _open_on_or_before(d - timedelta(days=EARLY_SHOP_DAYS_AHEAD))
+    fresh = _open_on_or_before(d - timedelta(days=FRESH_SHOP_DAYS_AHEAD))
     if fresh < today:
         fresh = min(today, d)
     return {
@@ -1449,6 +1464,26 @@ def default_on_table_at() -> time:
         return _moves._dinner_clock()
     except Exception:
         return time(18, 0)
+
+
+def on_table_clock(date_str: str) -> time | None:
+    """
+    The time the household said the big meal is on the table that day, or
+    None — no hosted menu there, or no time said (the ordinary dinner clock
+    is then the right one anyway). Today's dinner clock for that one day
+    (moves.moves_for_day), so the cook move and the morning text say the
+    hour the host gave rather than the household's usual 6:30.
+    """
+    try:
+        row = _answer_row(date_str)
+        if row is None or row["answer"] != "hosting" or not row["on_table_at"]:
+            return None
+        if menu_entry(date_str) is None:
+            return None
+        return _parse_clock(row["on_table_at"])
+    except Exception:
+        logger.exception("The big meal's on-the-table time for %s could not be read", date_str)
+        return None
 
 
 def normalise_on_table_at(value: str | None) -> str:

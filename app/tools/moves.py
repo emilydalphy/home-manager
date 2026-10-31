@@ -222,6 +222,16 @@ def _slot_time(slot: str, dinner_clock: time) -> time:
 
 
 def _slot_dt(day: date, slot: str, dinner_clock: time) -> datetime:
+    if slot == "dinner":
+        # A hosted big meal names its own hour ("on the table at 4"), and
+        # on that day it IS dinner time. Today said "Chili · 30 min · 6:30"
+        # and "Shop for tonight · by 6:00" — the household's usual clock —
+        # while the big meal's own timeline worked back from 4:00: two
+        # screens, two dinners. Every "when is this dinner" here (the cook
+        # move, the shop deadline, Kitchen's planned start) comes through
+        # this one line. Deferred: big_meal reaches moves for its default clock.
+        from . import big_meal as _big_meal
+        dinner_clock = _big_meal.on_table_clock(day.isoformat()) or dinner_clock
     return datetime.combine(day, _slot_time(slot, dinner_clock))
 
 
@@ -1392,6 +1402,14 @@ def moves_for_day(
     owners = owners if owners is not None else _move_owner.resolve(view, rhythm)
 
     prep = _prep_moves(view, target, now, dinner_clock)
+    # Two big meals can send their trips to the same day — Boxing Day's
+    # fresh shop walks back off a shut Christmas Day onto Christmas Eve,
+    # where Christmas Day's own already is (big_meal.shop_dates). It is one
+    # trip with one list: name it once, the one still to do first.
+    holiday_shops = sorted((m for m in prep if m["kind"] == "shop"), key=lambda m: m["done"])
+    if len(holiday_shops) > 1:
+        extra = {id(m) for m in holiday_shops[1:]}
+        prep = [m for m in prep if id(m) not in extra]
     shop = _shop_move(view, target, now, dinner_clock)
     if any(m["kind"] == "shop" for m in prep):
         # A big meal's own shop is on this day (big_meal.spread_prep) —
