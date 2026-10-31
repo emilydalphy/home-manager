@@ -492,6 +492,9 @@ def _try_subtract_quantity(existing_qty: str, minus_qty: str) -> tuple[str | Non
     existing_parsed = _quantities._parse_quantity(existing_qty)
     minus_parsed = _quantities._parse_quantity(minus_qty)
     if not existing_parsed:
+        parts = _joined_parts(existing_qty)
+        if parts:
+            return _subtract_from_a_part(parts, minus_qty)
         # Existing quantity is freeform/unset (e.g. "a bunch") — can't do
         # precise math, so treat any explicit "used some" as using it all
         # rather than leaving a stale, unreconciled line behind.
@@ -520,6 +523,36 @@ def _try_subtract_quantity(existing_qty: str, minus_qty: str) -> tuple[str | Non
                 return _quantities._format_quantity(round(finer, 1), minus_unit), True
         return _counted_format(remaining, have_unit, forms), True
     return existing_qty, False
+
+
+def _joined_parts(qty: str) -> list[str] | None:
+    """
+    The amounts of a joined row ("1 kg + 2 cups", "1 cup + 2 L"), or None.
+
+    A joined amount is not freeform (defect hunt, 2026-10-31): it is two
+    real amounts the app itself wrote, when a shop's tick landed metric on
+    imperial (_merged_quantity keeps those joined — no family converts
+    between them). Read as "a bunch", the first "used a cup of milk" off
+    "1 cup + 2 L" deleted the whole row — two litres bought that morning
+    gone from the Kitchen — and cooking took nothing off it at all.
+    """
+    parts = [p.strip() for p in (qty or "").split(" + ")]
+    if len(parts) < 2 or not all(_quantities._parse_quantity(p) for p in parts):
+        return None
+    return parts
+
+
+def _subtract_from_a_part(parts: list[str], minus_qty: str) -> tuple[str | None, bool]:
+    """Take minus_qty off the first part it can be counted against, leaving
+    the others as they are; a part used up goes. No part in a unit it
+    converts to: unchanged and unreconciled, like any unit mismatch."""
+    for i, part in enumerate(parts):
+        remaining, reconciled = _try_subtract_quantity(part, minus_qty)
+        if not reconciled:
+            continue
+        left = parts[:i] + ([remaining] if remaining is not None else []) + parts[i + 1:]
+        return (" + ".join(left) if left else None), True
+    return " + ".join(parts), False
 
 
 _RECEIPT_FIELDS = ("quantity", "source", "category", "expiration_date", "updated_at", "rev")
@@ -707,6 +740,7 @@ def _add_to_inventory(
     location: str | None = None,
     conn=None,
     confirm_on_merge: bool = False,
+    bought: bool = False,
 ) -> dict:
     """
     Merge into a matching row or insert a fresh one. Returns
@@ -728,6 +762,9 @@ def _add_to_inventory(
     Pass conn to run inside the caller's transaction (no commit, no close)
     — mark_grocery_item does, so the write, its stamp and its receipt land
     atomically with the status flip, or not at all.
+
+    `bought` (a grocery tick) keeps fresh food out of a frozen pack — see
+    _fresh_off_the_shelf.
     """
     own_conn = conn is None
     if own_conn:
@@ -739,6 +776,27 @@ def _add_to_inventory(
     # hint, match by name anywhere — the most recently written row when the
     # item is kept in more than one place (see _find_row_by_name).
     existing = _find_row_by_name(conn, item, location, "id, quantity, category, expiration_date, location")
+    if (bought and not location and existing is not None
+            and _quantities._display_location(dict(existing)).strip().lower() == "freezer"
+            and _fresh_off_the_shelf(item, category)):
+        # Bought fresh chicken onto a frozen pack (defect hunt, 2026-10-31):
+        # a tick names no shelf, so the name-only match took the only
+        # chicken row there was — the freezer's. 1 lb frozen + 2 lbs bought
+        # read "3 lbs · Freezer · good till January", the fresh 2 lbs were
+        # never "use first", and the next thaw sync booked "Move the
+        # chicken thighs to the fridge" for food already in it. What's
+        # bought fresh goes where fresh food goes: onto a row outside the
+        # freezer, or a new one at its usual place. Into the freezer only
+        # by "Yes, freezing it" (defrost._freeze_ticked_pack), never by name.
+        existing = conn.execute(
+            "SELECT id, quantity, category, expiration_date, location FROM inventory_items "
+            "WHERE household_id = ? AND LOWER(item) = LOWER(?) "
+            "AND LOWER(TRIM(COALESCE(location, ''))) != 'freezer' "
+            "ORDER BY updated_at DESC, id DESC LIMIT 1",
+            (household_id(), item),
+        ).fetchone()
+        if existing is not None and _quantities._display_location(dict(existing)).strip().lower() == "freezer":
+            existing = None  # a legacy row with no location, filed by its frozen category
     if existing:
         merged_qty = _merged_quantity(existing["quantity"] or "", quantity)
         fields = "quantity = ?, source = ?, updated_at = datetime('now')"
@@ -786,6 +844,17 @@ def _add_to_inventory(
         conn.commit()
         conn.close()
     return {"item_id": item_id, "item": item, "fresh": existing is None, "before": before, "after": after}
+
+
+def _fresh_off_the_shelf(item: str, category: str | None) -> bool:
+    """Whether a bought line is fresh food — produce, dairy, meat — that is
+    kept in the fridge, never a frozen bag ("frozen peas", "chicken
+    nuggets", a "frozen" category) whose home really is the freezer."""
+    cat = (category or "").strip().lower() or _new_row_category(item, None)
+    if _quantities._DEFAULT_LOCATION_BY_CATEGORY.get(cat) != "fridge":
+        return False
+    name = (item or "").strip().lower()
+    return not (_NOT_FRESH_WORDS_RE.search(name) or re.search(r"\b(frozen|ice)\b", name))
 
 
 # ---------------------------------------------------------------------------
