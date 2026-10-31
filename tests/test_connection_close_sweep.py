@@ -507,7 +507,7 @@ UNPROTECTED_WRITERS: dict[str, list[str]] = {
         "list_spices_this_week", "tick_spice"
     ],
     "app/tools/staples.py": [
-        "add_staple", "sync_due_staples"
+        "sync_due_staples"
     ],
     "app/tools/stores.py": [
         "close_shopping_trip", "set_item_store"

@@ -753,151 +753,150 @@ def add_staple(
     # than read again: two reads of the same clock in one call can answer
     # two different days across midnight, and each costs a connection.
     today_date = _today()
-    conn = get_conn()
-    # Under the write lock from the first read, like decide_staple_line:
-    # "is there a staple by this name?" and the INSERT below are one step.
-    # Read unlocked, two adds of "Oat milk" landing together (a double tap
-    # on the Staples card's add, or both adults) both read "none" and the
-    # household had two Oat milk staples, each putting its own line on the
-    # list when due (defect hunt, 2026-10-31). The loser now finds the
-    # winner's row and updates it, which is what a second add always did.
-    conn.execute("BEGIN IMMEDIATE")
-    line = None
-    if grocery_item_id is not None:
-        line = conn.execute(
-            "SELECT id, item, status, staple_id, source_weekly_plan_id FROM grocery_items "
-            "WHERE id = ? AND household_id = ?",
-            (int(grocery_item_id), household_id()),
-        ).fetchone()
-        if line is None or line["status"] not in ("needed", "in_cart", "purchased"):
-            conn.close()
-            raise ValueError("That isn't on your list any more.")
-        owner = _row(conn, line["staple_id"]) if line["staple_id"] else None
-        if owner is not None:
-            # Already some staple's line — e.g. a Bread line substituted to
-            # "Sourdough loaf" keeps Bread's staple_id. That staple is the
-            # answer; minting a second one here would be due today with no
-            # line of its own, and the list would grow a fresh line for it
-            # right after this one was bought. Nothing is written.
-            out = _shape(owner, today_date)
-            conn.close()
-            out["created"] = False
-            return out
-        # The line's own name, not whatever the caller typed: it is this
-        # line the staple is made from.
-        name = " ".join((line["item"] or "").strip().split()) or name
-    # Still to buy: the line IS the "it's due" — the same as running low,
-    # except the line already exists (see the spice branch below). A bought
-    # line keeps the by-name reading: it really was just bought.
-    on_list = line is not None and line["status"] in ("needed", "in_cart")
-    due_now = running_low or on_list
-    existing = _find_by_name(conn, name)
-    today = _iso(today_date)
-    if existing:
-        staple_id = existing["id"]
-        fields, params = [], []
-        if every_days:
-            fields += ["cadence_days = ?", "cadence_source = 'told'"]
-            params.append(_clamp(every_days))
-            # The due date was a cadence out from the last purchase on the
-            # OLD rhythm, so it moves with the new one: "we buy coffee every
-            # week" on a 3-week default left it "about every week · due in
-            # 3 weeks". Only from a real last-bought date — a staple never
-            # bought is due already, and stays so.
-            #
-            # A due date LATER than the old rhythm put it is an answer the
-            # household gave — "We have plenty" / "Not this trip" push it
-            # out from today and leave last bought alone — and a new rhythm
-            # does not take that answer back: rebuilding from last bought
-            # alone made coffee "probably running low" right after "we have
-            # plenty". So the later of the two stands.
-            last = _parse(existing["last_bought_at"])
-            if last is not None and not due_now:
-                new_due = last + timedelta(days=_clamp(every_days))
-                current = _parse(existing["next_due_at"])
-                old_rhythm_due = last + timedelta(days=existing["cadence_days"] or 0)
-                if current is not None and current > old_rhythm_due:
-                    new_due = max(new_due, current)
-                fields.append("next_due_at = ?")
-                params.append(_iso(new_due))
-            # When it was told is what _relearn measures against: only
-            # purchases after this can overrule it.
-            _event(conn, staple_id, "told", "chat", today)
-        if quantity:
-            fields.append("quantity = ?")
-            params.append(quantity)
-        if category and category != "other":
-            fields.append("category = ?")
-            params.append(cat)
-        if due_now:
-            fields.append("next_due_at = ?")
-            params.append(today)
-        fields += ["paused = 0", "skip_streak = 0", "updated_at = datetime('now')"]
-        conn.execute(
-            f"UPDATE staples SET {', '.join(fields)} WHERE id = ? AND household_id = ?",
-            (*params, staple_id, household_id()),
-        )
-        created = False
-    else:
-        cadence = _clamp(every_days) if every_days else _default_cadence(cat, name)
-        source = "told" if every_days else "default"
-        # Adding a staple you're not out of means you have some now, so
-        # the first due date is a cadence away. Running low means today.
-        # A line on the list counts as running low — and invents no
-        # purchase, so no last_bought_at either.
-        next_due = today if due_now else _iso(today_date + timedelta(days=cadence))
-        cur = conn.execute(
-            "INSERT INTO staples (household_id, item, category, quantity, cadence_days, cadence_source, "
-            "last_bought_at, next_due_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            (household_id(), name, cat, quantity or "", cadence, source, None if due_now else today, next_due),
-        )
-        staple_id = cur.lastrowid
-        _event(conn, staple_id, "added", "chat")
-        if every_days:
-            _event(conn, staple_id, "told", "chat", today)
-        seeded = _seed_history(conn, staple_id, name)
-        if seeded >= INTERVALS_TO_LEARN + 1:
-            # Enough history to learn from: let the learned cadence and
-            # the real last-bought date set next_due, unless they said
-            # they're low right now.
-            _relearn(conn, staple_id)
+    # write() closes however this leaves (a raise mid-add used to leak the
+    # connection still holding the lock BEGIN IMMEDIATE took below).
+    with write() as conn:
+        # Under the write lock from the first read, like decide_staple_line:
+        # "is there a staple by this name?" and the INSERT below are one step.
+        # Read unlocked, two adds of "Oat milk" landing together (a double tap
+        # on the Staples card's add, or both adults) both read "none" and the
+        # household had two Oat milk staples, each putting its own line on the
+        # list when due (defect hunt, 2026-10-31). The loser now finds the
+        # winner's row and updates it, which is what a second add always did.
+        conn.execute("BEGIN IMMEDIATE")
+        line = None
+        if grocery_item_id is not None:
+            line = conn.execute(
+                "SELECT id, item, status, staple_id, source_weekly_plan_id FROM grocery_items "
+                "WHERE id = ? AND household_id = ?",
+                (int(grocery_item_id), household_id()),
+            ).fetchone()
+            if line is None or line["status"] not in ("needed", "in_cart", "purchased"):
+                raise ValueError("That isn't on your list any more.")
+            owner = _row(conn, line["staple_id"]) if line["staple_id"] else None
+            if owner is not None:
+                # Already some staple's line — e.g. a Bread line substituted to
+                # "Sourdough loaf" keeps Bread's staple_id. That staple is the
+                # answer; minting a second one here would be due today with no
+                # line of its own, and the list would grow a fresh line for it
+                # right after this one was bought. Nothing is written.
+                out = _shape(owner, today_date)
+                out["created"] = False
+                return out
+            # The line's own name, not whatever the caller typed: it is this
+            # line the staple is made from.
+            name = " ".join((line["item"] or "").strip().split()) or name
+        # Still to buy: the line IS the "it's due" — the same as running low,
+        # except the line already exists (see the spice branch below). A bought
+        # line keeps the by-name reading: it really was just bought.
+        on_list = line is not None and line["status"] in ("needed", "in_cart")
+        due_now = running_low or on_list
+        existing = _find_by_name(conn, name)
+        today = _iso(today_date)
+        if existing:
+            staple_id = existing["id"]
+            fields, params = [], []
+            if every_days:
+                fields += ["cadence_days = ?", "cadence_source = 'told'"]
+                params.append(_clamp(every_days))
+                # The due date was a cadence out from the last purchase on the
+                # OLD rhythm, so it moves with the new one: "we buy coffee every
+                # week" on a 3-week default left it "about every week · due in
+                # 3 weeks". Only from a real last-bought date — a staple never
+                # bought is due already, and stays so.
+                #
+                # A due date LATER than the old rhythm put it is an answer the
+                # household gave — "We have plenty" / "Not this trip" push it
+                # out from today and leave last bought alone — and a new rhythm
+                # does not take that answer back: rebuilding from last bought
+                # alone made coffee "probably running low" right after "we have
+                # plenty". So the later of the two stands.
+                last = _parse(existing["last_bought_at"])
+                if last is not None and not due_now:
+                    new_due = last + timedelta(days=_clamp(every_days))
+                    current = _parse(existing["next_due_at"])
+                    old_rhythm_due = last + timedelta(days=existing["cadence_days"] or 0)
+                    if current is not None and current > old_rhythm_due:
+                        new_due = max(new_due, current)
+                    fields.append("next_due_at = ?")
+                    params.append(_iso(new_due))
+                # When it was told is what _relearn measures against: only
+                # purchases after this can overrule it.
+                _event(conn, staple_id, "told", "chat", today)
+            if quantity:
+                fields.append("quantity = ?")
+                params.append(quantity)
+            if category and category != "other":
+                fields.append("category = ?")
+                params.append(cat)
             if due_now:
-                conn.execute(
-                    "UPDATE staples SET next_due_at = ? WHERE id = ? AND household_id = ?",
-                    (today, staple_id, household_id()),
-                )
-        created = True
-    if line is not None and on_list and line["staple_id"] is None and line["source_weekly_plan_id"] is not None:
-        # Made from a week's line: that line stays the plan's (below), and
-        # it is what covers this staple this trip — sync_due_staples reads
-        # this row, because a week's line by name alone no longer does.
-        _event(conn, staple_id, "added", "shop", grocery_item_id=line["id"])
-    if line is not None and line["staple_id"] is None and line["source_weekly_plan_id"] is None:
-        # The tapped line becomes the staple's line, so buying it teaches
-        # this staple and sync_due_staples sees it covered by id. A line
-        # the week's meals put there stays the plan's: carry-over
-        # (grocery.set_aside_carried_over_items) only moves lines with no
-        # staple_id, and the meals need it whatever the staple decides. Its
-        # name on the list still covers the staple in sync, and buying it
-        # still teaches the staple by name (the 'added' row above is what
-        # makes the name cover it).
-        conn.execute(
-            "UPDATE grocery_items SET staple_id = ? WHERE id = ? AND household_id = ? AND staple_id IS NULL",
-            (staple_id, line["id"], household_id()),
-        )
-    if running_low and not on_list:
-        # Out now, after a line of it came off earlier today: back on now.
-        _back_on_the_list(conn, staple_id, today_date)
-    if running_low and not on_list and in_rack(_row(conn, staple_id)):
-        # sync_due_staples never lists a spice on its own (see the module
-        # note), so "we're out of cumin" puts the line on today, here —
-        # unless it was made from a line already there.
-        _put_on_list(conn, _row(conn, staple_id))
-    conn.commit()
-    out = _shape(_row(conn, staple_id))
-    conn.close()
-    out["created"] = created
-    return out
+                fields.append("next_due_at = ?")
+                params.append(today)
+            fields += ["paused = 0", "skip_streak = 0", "updated_at = datetime('now')"]
+            conn.execute(
+                f"UPDATE staples SET {', '.join(fields)} WHERE id = ? AND household_id = ?",
+                (*params, staple_id, household_id()),
+            )
+            created = False
+        else:
+            cadence = _clamp(every_days) if every_days else _default_cadence(cat, name)
+            source = "told" if every_days else "default"
+            # Adding a staple you're not out of means you have some now, so
+            # the first due date is a cadence away. Running low means today.
+            # A line on the list counts as running low — and invents no
+            # purchase, so no last_bought_at either.
+            next_due = today if due_now else _iso(today_date + timedelta(days=cadence))
+            cur = conn.execute(
+                "INSERT INTO staples (household_id, item, category, quantity, cadence_days, cadence_source, "
+                "last_bought_at, next_due_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (household_id(), name, cat, quantity or "", cadence, source, None if due_now else today, next_due),
+            )
+            staple_id = cur.lastrowid
+            _event(conn, staple_id, "added", "chat")
+            if every_days:
+                _event(conn, staple_id, "told", "chat", today)
+            seeded = _seed_history(conn, staple_id, name)
+            if seeded >= INTERVALS_TO_LEARN + 1:
+                # Enough history to learn from: let the learned cadence and
+                # the real last-bought date set next_due, unless they said
+                # they're low right now.
+                _relearn(conn, staple_id)
+                if due_now:
+                    conn.execute(
+                        "UPDATE staples SET next_due_at = ? WHERE id = ? AND household_id = ?",
+                        (today, staple_id, household_id()),
+                    )
+            created = True
+        if line is not None and on_list and line["staple_id"] is None and line["source_weekly_plan_id"] is not None:
+            # Made from a week's line: that line stays the plan's (below), and
+            # it is what covers this staple this trip — sync_due_staples reads
+            # this row, because a week's line by name alone no longer does.
+            _event(conn, staple_id, "added", "shop", grocery_item_id=line["id"])
+        if line is not None and line["staple_id"] is None and line["source_weekly_plan_id"] is None:
+            # The tapped line becomes the staple's line, so buying it teaches
+            # this staple and sync_due_staples sees it covered by id. A line
+            # the week's meals put there stays the plan's: carry-over
+            # (grocery.set_aside_carried_over_items) only moves lines with no
+            # staple_id, and the meals need it whatever the staple decides. Its
+            # name on the list still covers the staple in sync, and buying it
+            # still teaches the staple by name (the 'added' row above is what
+            # makes the name cover it).
+            conn.execute(
+                "UPDATE grocery_items SET staple_id = ? WHERE id = ? AND household_id = ? AND staple_id IS NULL",
+                (staple_id, line["id"], household_id()),
+            )
+        if running_low and not on_list:
+            # Out now, after a line of it came off earlier today: back on now.
+            _back_on_the_list(conn, staple_id, today_date)
+        if running_low and not on_list and in_rack(_row(conn, staple_id)):
+            # sync_due_staples never lists a spice on its own (see the module
+            # note), so "we're out of cumin" puts the line on today, here —
+            # unless it was made from a line already there.
+            _put_on_list(conn, _row(conn, staple_id))
+        conn.commit()
+        out = _shape(_row(conn, staple_id))
+        out["created"] = created
+        return out
 
 
 def list_staples() -> list[dict]:
