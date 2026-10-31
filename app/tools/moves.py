@@ -87,6 +87,7 @@ from . import quantities as _quantities
 from . import rhythm as _rhythm
 from . import stores as _stores
 from . import usual_week as _usual_week
+from . import week_lines as _week_lines
 from . import weekly_plan as _weekly_plan
 
 logger = logging.getLogger(__name__)
@@ -781,7 +782,10 @@ def _shop_stops(needed: list[dict], named: set[int] | None = None) -> list[dict]
             store = ""
         counts[store] = counts.get(store, 0) + 1
         items = by_store.setdefault(store, [])
-        if named is None or row.get("id") in named:
+        # A two-weeks row (week_lines.as_shop_rows) is tonight's when ANY
+        # week's line under it is — this week's beans lead the row, but the
+        # line tonight waits on could be either.
+        if named is None or any(i in named for i in (row.get("shop_row_ids") or [row.get("id")])):
             items.append((row.get("item") or "").strip())
     names = [n for n in by_store if n] + ([""] if "" in by_store else [])
     if named is not None:
@@ -968,6 +972,29 @@ def _standing_list_move(day: date, needed: list[dict]) -> list[dict]:
     }]
 
 
+def _meals_through_tomorrow(view: dict, today: date) -> list[dict]:
+    """
+    The meals the shop rule weighs: the view's own, plus TOMORROW's when
+    tomorrow belongs to another live plan.
+
+    The view is one plan, the one covering today, and the horizon below
+    reaches to the end of tomorrow. Any other evening of the week that
+    meant tomorrow's dinner could say "Shop before tomorrow"; on a week's
+    last evening tomorrow was in a plan the view does not hold, so with
+    next week approved and Monday's tortillas still to buy, Sunday night's
+    Today said nothing about a shop at all (defect hunt 2026-10-31,
+    walking Sun Nov 1 -> Mon Nov 2). Same resolver Today's "tomorrow"
+    card uses (_view_for_day), so the two can't name different Mondays.
+    Costs a read only on a plan's last day.
+    """
+    meals = list(view.get("meals") or [])
+    tomorrow = today + timedelta(days=1)
+    ahead = _view_for_day(view, tomorrow)
+    if ahead is not view:
+        meals += [m for m in (ahead.get("meals") or []) if m.get("date") == tomorrow.isoformat()]
+    return meals
+
+
 def _shop_move(view: dict, day: date, now: datetime, dinner_clock: time) -> list[dict]:
     """
     The list, said the one way that is true of it today.
@@ -992,7 +1019,9 @@ def _shop_move(view: dict, day: date, now: datetime, dinner_clock: time) -> list
     if day != now.date():
         return []
     try:
-        needed = _grocery.list_grocery_list(status="needed")
+        # One per Shop row: two weeks' lines for one thing are one row
+        # there, so they are one item here (week_lines.as_shop_rows).
+        needed = _week_lines.as_shop_rows(_grocery.list_grocery_list(status="needed"))
     except Exception:
         needed = []
     if not needed:
@@ -1030,7 +1059,7 @@ def _shop_move(view: dict, day: date, now: datetime, dinner_clock: time) -> list
     # it is dinner's shop, not breakfast's.
     passed = None
     passed_meal = None
-    for meal in view.get("meals") or []:
+    for meal in _meals_through_tomorrow(view, now.date()):
         # A cook already STARTED is out for the same reason a cooked one is:
         # it is on the stove, so whatever of its is still on the list is
         # either in the kitchen or being done without — not a trip with a
@@ -1265,10 +1294,10 @@ def _shop_block(day: date, rhythm: dict) -> dict:
     which weekday the household shops, whether `day` is one of them, how
     many things are still to buy, and the line itself.
 
-    The count is `list_grocery_list(status="needed")`'s own length — the
-    same read _shop_move makes and the same number the Shop tab's needed
-    view opens on. It is read here rather than taken off a shop MOVE
-    because the line has to be true on a day with no move at all: a
+    The count is `list_grocery_list(status="needed")` one per Shop row
+    (week_lines.as_shop_rows) — the same read _shop_move makes and the
+    same number the Shop tab's needed view opens on. It is read here
+    rather than taken off a shop MOVE because the line has to be true on a day with no move at all: a
     household with nothing to cook against its list gets no shop move
     (_shop_move's own rule) and still shops on Saturday.
 
@@ -1282,7 +1311,8 @@ def _shop_block(day: date, rhythm: dict) -> dict:
     shop_day = (rhythm.get("shop_day") or "").strip().lower()
     top_up = (rhythm.get("top_up_shop_day") or "").strip().lower()
     try:
-        needed = _grocery.list_grocery_list(status="needed")
+        # Counted as Shop draws it — see _shop_move.
+        needed = _week_lines.as_shop_rows(_grocery.list_grocery_list(status="needed"))
     except Exception:
         logger.exception("Today's shop line could not read the grocery list")
         needed = []

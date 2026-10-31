@@ -30,6 +30,7 @@ What groups, and what never does:
 """
 from __future__ import annotations
 
+import logging
 from datetime import date
 
 from ..db import get_conn
@@ -38,6 +39,8 @@ from . import cooker as _cooker
 from . import grocery as _grocery
 from . import quantities as _quantities
 from . import weekly_plan as _weekly_plan
+
+logger = logging.getLogger(__name__)
 
 _STATUSES_NEVER_GROUPED = ("spice", "carried")
 
@@ -182,3 +185,36 @@ def stamp_week_groups(items: list[dict]) -> list[dict]:
         for it in lines:
             it["week_group"] = group
     return items
+
+
+def as_shop_rows(items: list[dict]) -> list[dict]:
+    """
+    The lines the way Shop draws them: a thing two live weeks both need is
+    ONE row (the group's lead line), carrying every id it stands for in
+    `shop_row_ids`. Copies; `items` is left as it was.
+
+    For whatever COUNTS the list somewhere else — Today's "5 items · by
+    6:00", its Shop line, the approval receipt's "one list of N
+    ingredients". Those counted lines, and the weekend next week is
+    approved while this one still runs is when they differ: on Sunday Nov 1 Today said "Shop for tonight · 5 items" over a
+    Shop tab showing four, because this week's beans and next week's are
+    one "Beans · 3 tins this week · 2 tins next week" row (defect hunt
+    2026-10-31). Same grouping as the screen (stamp_week_groups), so the
+    two can't drift apart again.
+    """
+    try:
+        rows = stamp_week_groups([dict(it) for it in items])
+    except Exception:
+        # A count, not the list: unreadable groups count every line, as
+        # before, rather than taking the shop line off Today.
+        logger.exception("Couldn't group the list's two-weeks rows; counting lines")
+        return [dict(it) for it in items]
+    out = []
+    for row in rows:
+        group = row.get("week_group")
+        if group:
+            if row.get("id") != group["lead_id"]:
+                continue
+            row["shop_row_ids"] = list(group["ids"])
+        out.append(row)
+    return out

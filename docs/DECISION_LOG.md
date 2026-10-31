@@ -13,6 +13,7 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The shop line across the turn of the week: rows counted as Shop draws them, and Sunday night knows Monday** (2026-10-31, defect hunt walking Sat Oct 31 → Mon Nov 2; branch `overnight/hunt-sunday-1031`; tests `tests/test_two_weeks_counted_as_shop_rows.py`). (1) With next week approved, Today's "Shop for tonight · 5 items", its Shop line and the approval receipt's "one list of 5 ingredients" counted raw lines while Shop drew four rows (this and next week's beans are one row); they now count `week_lines.as_shop_rows`. (2) The shop rule weighed only the plan covering today, so on Sunday night Monday's dinner in next week's plan never got "Shop before tomorrow"; `moves._meals_through_tomorrow` adds tomorrow's meals via `_view_for_day`. Why: the weekend two weeks are live is when both bite.
 - **Test clock: `test_the_route_answers_with_the_view_and_the_receipt` failed 23:25–24:00 UTC** (2026-10-30, branch `merge-overnight-2026-10-30`).
   Its household is on UTC, so a 35-minute cook started then is on the table tomorrow; it asserted today's date. Now asserts started + 35 min. No app change.
 - **Merge seam: one rule for a chat use-by date** (2026-10-30, branch `merge-overnight-2026-10-30`).
