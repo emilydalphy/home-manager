@@ -2077,9 +2077,10 @@ def _plan_a_fix(clashes: list[dict], days: dict) -> tuple[dict, dict, str] | Non
 
 
 def _swap_entry_dates(entry_id_a: int, entry_id_b: int) -> None:
-    """Exchange two entries' dates. Only ever called on two snacks of one
-    plan (see repair_snack_clashes), where nothing else is keyed to the
-    date yet — the week is still a draft at this point, so no grocery
+    """Exchange two entries' dates. Called on two snacks of one plan (see
+    repair_snack_clashes) and on two meals of one slot by
+    prep_freshness.keep_prepped_first — both while the week is still being
+    drafted, where nothing else is keyed to the date yet: no grocery
     contribution and no prep task has been written against either row."""
     conn = get_conn()
     rows = conn.execute(

@@ -327,10 +327,13 @@ def test_approval_with_prep_days_batches_the_rest_and_chains_nothing_twice(four_
     listed = [t["entry_id"] for s in chains["sources"].values() for t in s["targets"]]
     assert len(listed) == len(set(listed)) == len(chains["leftovers"])
     assert not (set(chains["sources"]) & set(chains["leftovers"]))
-    # The prep-day rule batched the oats, in runs no longer than three days.
+    # The prep-day rule batched the oats, in runs no longer than three days
+    # from when they were made: Monday's batch is made the Sunday before
+    # (2026-10-31, cook_ahead._stamp_breakfast_prep_day), so it reaches
+    # Wednesday, and Thursday cooks again for Friday to Sunday.
     oats = {v["date"]: v["source"]["date"] for v in chains["leftovers"].values() if v["slot"] == "breakfast"}
-    assert oats == {dates[1]: dates[0], dates[2]: dates[0], dates[3]: dates[0],
-                    dates[5]: dates[4], dates[6]: dates[4]}
+    assert oats == {dates[1]: dates[0], dates[2]: dates[0],
+                    dates[4]: dates[3], dates[5]: dates[3], dates[6]: dates[3]}
 
 
 def test_the_prep_day_rule_splits_a_long_run_at_three_days():

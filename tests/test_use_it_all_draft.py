@@ -129,7 +129,8 @@ def test_tags_count_and_couldnt_fit_are_checked_against_the_dishes(household, st
     assert tags[d[4]] == "" and tags[d[6]] == ""
     summary = menu["use_up"]
     assert summary["total"] == 9 and summary["used"] == 7
-    assert summary["line"] == "Uses 7 of the 9 things going off."
+    # The line names what nothing uses (2026-10-31: it's the way to the rows).
+    assert summary["line"] == "Uses 7 of the 9 things going off. Nothing uses the half cabbage or cilantro."
     rows = {r["item"]: r for r in summary["couldnt_fit"]}
     assert set(rows) == {"Half a cabbage", "Cilantro"}
     assert rows["Half a cabbage"]["primary"] == "freeze"
@@ -156,7 +157,7 @@ def test_an_item_claimed_after_it_turns_does_not_count(household, stub_model):
         days.append(_slot(date, "dinner", name, **extra))
     plan_id, _ = _draft(stub_model, week, days)
     summary = tools.get_week_menu(plan_id)["use_up"]
-    assert summary["used"] == 0 and summary["line"] == "Couldn’t fit the one thing going off."
+    assert summary["used"] == 0 and summary["line"] == "The spinach is going off and nothing this week uses it."
     record = json.loads(get_conn().execute("SELECT use_up_json FROM weekly_plans WHERE id = ?", (plan_id,)).fetchone()[0])
     assert record["missed"][str(spinach)] == "too_late"
 

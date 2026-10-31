@@ -6752,7 +6752,34 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
         if isinstance(frozen, dict) and str(frozen.get("cook") or "").startswith("entry_id:"):
             frozen_off.setdefault(frozen["cook"], []).append(r["date"])
 
+    # A breakfast a prep day's batch covers says so (Emily, 2026-10-31:
+    # "Mon–Wed · Made Sunday"). On a draft it is read off the rows — the
+    # same dish on the mornings right after the prep day, while it keeps
+    # (prep_freshness.draft_batch_notes); on an approved week, off the
+    # cook's own stamp (cook_ahead._stamp_breakfast_prep_day).
+    from . import prep_freshness as _prep_freshness  # lazy: it reaches back here
+    from . import rhythm as _rhythm
+    from . import usual_week as _usual_week
+    breakfast_notes: dict[int, str] = {}
+    if plan["status"] != "approved":
+        try:
+            # This week's own prep days when they were changed for it only.
+            with _usual_week.for_plan(plan["weekly_plan_id"]):
+                _bf_rhythm = _rhythm.get_household_rhythm()
+            breakfast_notes = _prep_freshness.draft_batch_notes(
+                rows, _bf_rhythm.get("prep_days"), _bf_rhythm.get("breakfast_prep"),
+                _week_intake.period_dates(plan["period_start_date"], plan["day_count"]),
+            )
+        except Exception:
+            logger.exception("Breakfast batch notes failed for plan %s", plan["weekly_plan_id"])
+
     def schedule_note(row, derived: dict) -> str:
+        if row["slot"] == "breakfast":
+            if row["id"] in breakfast_notes:
+                return breakfast_notes[row["id"]]
+            if derived.get("prep_date") and derived.get("make_double_for"):
+                return f"Made {date.fromisoformat(derived['prep_date']).strftime('%A')}"
+            return ""
         prep_date = derived.get("prep_date")
         # A batch cooked on the prep day's own lunch or dinner
         # (weekday_lunches._prep_day_cook, derived_from.prep_day_cook): that

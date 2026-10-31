@@ -12151,6 +12151,25 @@ body.first-open-active { overflow: hidden; }
   line-height: 1.4;
   color: var(--ink-secondary);
 }
+/* The line as the way to its rows (wkUseUpLineHtml): the same words, a
+   chevron, a 44px target. */
+.wk-use-up-line.is-tap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: calc(100% - 40px);
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+.wk-use-up-text { min-width: 0; }
+.wk-use-up-chev { flex: 0 0 auto; }
+.wk-use-up-chev svg { transition: rotate var(--motion-base) var(--motion-ease); }
+.wk-use-up-chev.is-open svg { rotate: 90deg; }
 .wk-use-up-past {
   margin: 12px 20px 0;
   font-family: var(--font-body);

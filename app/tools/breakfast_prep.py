@@ -22,6 +22,14 @@ and a fresh-only dish (toast, a fried egg) is never batched for anyone.
 The planner prompt (agent.py) carries the same rule, so the week picks
 the right kind of breakfast in the first place.
 
+How long a make-ahead breakfast keeps (Emily, 2026-10-31, on her draft's
+egg bites Sunday and Monday and scrambled eggs the other five mornings:
+"I'll make the egg bites on the Sunday then can eat them Monday -
+Wednesday while they're fresh. Then I can make the other days fresh."):
+KEEPS_DAYS below, read by mornings_after. prep_freshness.py puts the batch
+on the mornings right after the prep day, inside that window, and
+cook_ahead.apply_prep_day_batches batches it no further.
+
 The check reads the dish's NAME. Recipes carry no "keeps" field, and the
 name is what says it: "Egg Bites" keep, "Scrambled Eggs" don't. A make-
 ahead word wins over a fresh one ("Overnight Oats with Toasted Seeds",
@@ -92,3 +100,44 @@ def may_batch_breakfast(name: str, breakfast_prep: str | None) -> bool:
     if breakfast_prep == "fresh":
         return False
     return breakfast_keeps(name) is not False
+
+
+# How many days a make-ahead breakfast keeps in the fridge, counting the
+# day it's made (the Loop Board card's own table, 2026-10-31). First match
+# wins, so the shorter keeps come first: an "Overnight Oats Parfait" is a
+# parfait. A make-ahead name with none of these keeps DEFAULT_KEEPS_DAYS.
+KEEPS_DAYS = (
+    (("parfait",), 2),
+    (("overnight", "overnight oat", "bircher"), 3),
+    (("bite", "egg muffin", "egg cup", "frittata", "quiche", "strata", "casserole",
+      "breakfast bake", "egg bake"), 4),
+    (("baked oat", "baked oatmeal", "oatmeal cup", "oat cup", "oat bar"), 4),
+    (("muffin", "banana bread", "zucchini bread", "loaf", "scone"), 4),
+    (("chia", "pudding"), 4),
+    (("breakfast burrito", "burrito", "breakfast sandwich", "wrap"), 4),
+    (("hard-boiled", "hard boiled", "jammy egg"), 4),
+)
+DEFAULT_KEEPS_DAYS = 4
+
+
+def keeps_days(name: str) -> int:
+    """Days this breakfast keeps in the fridge, counting the day it's made."""
+    for words, days in KEEPS_DAYS:
+        if _has(name, words):
+            return days
+    return DEFAULT_KEEPS_DAYS
+
+
+def mornings_after(name: str) -> int:
+    """
+    How many mornings after the prep day a batch of this breakfast covers:
+    egg bites made Sunday evening are Monday, Tuesday and Wednesday (3);
+    overnight oats Monday and Tuesday (2).
+
+    Never past leftovers.MAX_LEFTOVER_DAYS, the food-safety default every
+    other batch already keeps (cook_ahead._within_three_days): a muffin
+    that would keep a week still isn't a week of one breakfast.
+    """
+    from .leftovers import MAX_LEFTOVER_DAYS
+
+    return max(0, min(keeps_days(name) - 1, MAX_LEFTOVER_DAYS))

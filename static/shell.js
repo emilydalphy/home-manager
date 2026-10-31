@@ -18785,25 +18785,41 @@
     return '';
   }
 
+  // The line names what nothing uses (use_up.count_line) and, while any of
+  // it still waits for an answer, IS the way to it: one tap opens those
+  // rows — Freeze it / Let it go — right under it (Emily's 2026-10-31
+  // screenshot: "Couldn't fit the 5 things going off." with no names and
+  // nothing to tap). Said once: the rows carry no heading of their own.
+  // Open or shut is page-view state (weekState.useUpOpen), kept across the
+  // re-render a tap's answer does.
   function wkUseUpLineHtml(data) {
     var u = data && data.use_up;
     if (!u || !u.line) return '';
-    return '<p class="wk-use-up-line">' + escapeHtml(u.line) + '</p>';
+    var rows = u.couldnt_fit || [];
+    if (!rows.length) return '<p class="wk-use-up-line">' + escapeHtml(u.line) + '</p>';
+    var open = !!weekState.useUpOpen;
+    return '<button type="button" class="wk-use-up-line is-tap" data-wk-useup-open="1" ' +
+        'aria-expanded="' + (open ? 'true' : 'false') + '" aria-controls="wk-unfit">' +
+        '<span class="wk-use-up-text">' + escapeHtml(u.line) + '</span>' +
+        '<span class="wk-qrow-chev wk-use-up-chev' + (open ? ' is-open' : '') + '" aria-hidden="true">' + WK_ICONS.chev + '</span>' +
+      '</button>' +
+      (open ? wkUnfitRowsHtml(rows) : '');
   }
 
   var USE_UP_ACTIONS = { freeze: 'Freeze it', side: 'Add as a side' };
 
+  // Under the line now (wkUseUpLineHtml), so this says only what the line
+  // doesn't: a dish naming kitchen food that will be past its date by then
+  // (use_up._past_date_dishes) — said, never hidden.
   function wkCouldntFitHtml(data) {
     var u = data && data.use_up;
-    var rows = (u && u.couldnt_fit) || [];
-    // A dish naming kitchen food that will be past its date by then
-    // (use_up._past_date_dishes) — said, never hidden.
-    var past = ((u && u.past_date) || []).map(function (line) {
+    return ((u && u.past_date) || []).map(function (line) {
       return '<p class="wk-use-up-past">' + escapeHtml(line) + '</p>';
     }).join('');
-    if (!rows.length) return past;
-    return past + '<div class="shell-card wk-unfit" id="wk-unfit">' +
-      '<h2 class="wk-unfit-head">Couldn’t fit these</h2>' +
+  }
+
+  function wkUnfitRowsHtml(rows) {
+    return '<div class="shell-card wk-unfit" id="wk-unfit">' +
       rows.map(function (r) {
         var primary = r.primary && USE_UP_ACTIONS[r.primary]
           ? '<button type="button" class="wk-unfit-act is-' + r.primary + '" data-wk-useup="' + r.primary + '" ' +
@@ -18828,6 +18844,12 @@
     var data = weekState.data || {};
     var planId = data.weekly_plan_id;
     if (!planId) return;
+    steps.querySelectorAll('[data-wk-useup-open]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        weekState.useUpOpen = !weekState.useUpOpen;
+        renderMealsStep(panel);
+      });
+    });
     steps.querySelectorAll('[data-wk-useup]').forEach(function (btn) {
       btn.addEventListener('click', async function () {
         var action = btn.getAttribute('data-wk-useup');
@@ -19039,7 +19061,9 @@
           (dish.isLeftover ? ' data-plan-reheat="1"' : ''),
         name: dish.name, changed: changed, past: !ahead.length,
         done: dish.days.every(function (d) { return !!d.entry.cooked; }),
-        meta: meta,
+        // A breakfast batch made on the prep day says so: "Mon–Wed · 30 min
+        // · Made Sunday" (schedule_note, prep_freshness.draft_batch_notes).
+        meta: slot === 'breakfast' ? wkRowMetaLine(first.entry, meta) : meta,
         label: PLAN_DISH_HEADS[slot] + ', ' + dish.name + ' — change it'
       });
     }).join('');

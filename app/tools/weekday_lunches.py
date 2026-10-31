@@ -1387,6 +1387,15 @@ def batch_lunch_phrase(dates: list[str]) -> str:
     return f"{_join(names)}’s lunch{'es' if len(names) > 1 else ''}"
 
 
+def batch_meal_phrase(dates: list[str], slot: str) -> str:
+    """batch_lunch_phrase for any meal: "Monday, Tuesday and Wednesday’s
+    breakfasts" for a prep-day breakfast batch."""
+    if slot != "breakfast":
+        return batch_lunch_phrase(dates)
+    names = [_title(_weekday(d)) for d in sorted(dates)]
+    return f"{_join(names)}’s breakfast{'s' if len(names) > 1 else ''}"
+
+
 def batch_note(prep_date: str, cook_date: str, slot: str, prep_day_cook: bool, lunch_dates) -> str:
     """
     The one sentence a prepped batch's cook says about its schedule, from
@@ -1612,19 +1621,25 @@ def prepped_batches(plan_id: int, window: tuple[str, str] | None = None) -> list
             ref = str(frozen.get("cook") or "").strip()
         # Lunches only: a prep day's DINNER can be a batch's cook
         # (_prep_day_cook), and its own day and any dinner reheating it are
-        # not lunches the batch feeds.
-        if not ref.startswith("entry_id:") or row["slot"] != "lunch":
+        # not lunches the batch feeds. And breakfasts: a prep-day breakfast
+        # batch (cook_ahead._stamp_breakfast_prep_day, 2026-10-31) feeds
+        # the mornings after it, and only a breakfast cooks those.
+        if not ref.startswith("entry_id:") or row["slot"] not in ("lunch", "breakfast"):
             continue
         try:
             cook_id = int(ref.split(":", 1)[1])
         except (TypeError, ValueError):
             continue
-        fed.setdefault(cook_id, set()).add(row["date"])
+        fed.setdefault(cook_id, set()).add((row["slot"], row["date"]))
 
     out: list[dict] = []
     for row in entries:
         prep_date = str(row["derived"].get("prep_date") or "").strip()
         if not prep_date or row["slot_state"] != "planned" or not row["meal"]:
+            continue
+        # A breakfast is a prepped batch only while it still is one: un-
+        # batched (batch_undo), it is that morning's own cook again.
+        if row["slot"] == "breakfast" and not row["derived"].get("make_double_for"):
             continue
         try:
             date.fromisoformat(prep_date)
@@ -1648,9 +1663,13 @@ def prepped_batches(plan_id: int, window: tuple[str, str] | None = None) -> list
             # _prep_day_cook) is not one of the lunches the batch is FOR —
             # the line reads "For Monday's lunch", as the cook's reasoning does.
             "prep_day_cook": bool(row["derived"].get("prep_day_cook")),
+            # The days it feeds, in its own meal: lunches, or the mornings
+            # of a breakfast batch (the name predates breakfasts).
             "lunch_dates": sorted(
-                ({row["date"]} if row["slot"] == "lunch" and not row["derived"].get("prep_day_cook") else set())
-                | fed.get(row["id"], set())
+                ({row["date"]} if row["slot"] in ("lunch", "breakfast") and not row["derived"].get("prep_day_cook")
+                 else set())
+                | {d for s, d in fed.get(row["id"], set())
+                   if s == ("breakfast" if row["slot"] == "breakfast" else "lunch")}
             ),
         })
     out.sort(key=lambda b: (b["prep_date"], b["cook_date"], b["cook_entry_id"]))

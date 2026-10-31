@@ -356,7 +356,7 @@ def _prepped_lunch_items(batches: list[dict], prep_date: str) -> list[dict]:
             # the title does not already say (cookSessionItemHtml drops it
             # when they match), and here the line carries the useful half.
             "feeds": batch["meal"],
-            "line": f"For {_weekday_lunches.batch_lunch_phrase(batch['lunch_dates'])}.",
+            "line": f"For {_weekday_lunches.batch_meal_phrase(batch['lunch_dates'], batch['slot'])}.",
             "done": batch["cooked_status"] == "done",
             "covers": sorted(set(batch["lunch_dates"])),
             "minutes": minutes or COOK_AHEAD_FALLBACK_MINUTES,
