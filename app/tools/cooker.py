@@ -786,7 +786,8 @@ def _is_leftovers_night(derived_from_json: str | None) -> bool:
     return isinstance(derived, dict) and bool(str(derived.get("links_to") or "").strip())
 
 
-def _move_recipe_cook_counters(conn, entry_ids: list[int], cooked: bool) -> None:
+def _move_recipe_cook_counters(conn, entry_ids: list[int], cooked: bool,
+                               as_recipe: int | None = None) -> None:
     """
     Bump (cooked=True) or reverse (cooked=False) recipes.times_cooked /
     last_cooked_date for the recipe(s) behind these entries. Loop Board
@@ -829,7 +830,11 @@ def _move_recipe_cook_counters(conn, entry_ids: list[int], cooked: bool) -> None
     for r in rows:
         if _is_leftovers_night(r["derived_from_json"]):
             continue
-        latest_by_recipe[r["recipe_id"]] = max(latest_by_recipe.get(r["recipe_id"], ""), r["date"] or "")
+        # as_recipe: count these nights against the recipe they cooked
+        # BEFORE the entries were repointed (recipe_change.change_meal_recipe
+        # on a night already eaten) — the rows already name the new one.
+        rid = as_recipe if as_recipe is not None else r["recipe_id"]
+        latest_by_recipe[rid] = max(latest_by_recipe.get(rid, ""), r["date"] or "")
     for recipe_id, meal_date in latest_by_recipe.items():
         if cooked:
             conn.execute(

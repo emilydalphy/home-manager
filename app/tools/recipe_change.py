@@ -506,11 +506,32 @@ def change_meal_recipe(entry_id: int, recipe_id: int) -> dict:
         # past or cooked night changes recipe and leaves the list alone.
         live_ids = _live_ids(conn, ids) if approved else []
         before = _needed_lines(conn) if approved else {}
+        # A night already ticked eaten ("we had tacos instead") moves its
+        # cook with it: Chicken Curry kept "made it once" and its last-cooked
+        # date for a dinner that was tacos, and the tacos read never made —
+        # a phantom count an untick could no longer take back, since the
+        # untick reverses the recipe the night names NOW (defect hunt,
+        # 2026-10-31). Off the old recipe after the repoint, so its own
+        # "newest done night" no longer sees this one; onto the new one.
+        from . import cooker as _cooker   # circular at module scope
+        done_by_old: dict[int | None, list[int]] = {}
+        for r in conn.execute(
+            f"SELECT id, recipe_id FROM meal_plan_entries WHERE id IN ({','.join('?' * len(ids))}) "
+            "AND household_id = ? AND cooked_status = 'done'",
+            ids + [hid],
+        ).fetchall():
+            done_by_old.setdefault(r["recipe_id"], []).append(int(r["id"]))
         conn.execute(
             "UPDATE meal_plan_entries SET recipe_id = ?, freeform_meal = NULL "
             f"WHERE id IN ({','.join('?' * len(ids))}) AND household_id = ?",
             [int(recipe_id)] + ids + [hid],
         )
+        for old_recipe_id, done_ids in done_by_old.items():
+            if old_recipe_id is not None:
+                _cooker._move_recipe_cook_counters(conn, done_ids, cooked=False, as_recipe=int(old_recipe_id))
+        done_ids = [i for group in done_by_old.values() for i in group]
+        if done_ids:
+            _cooker._move_recipe_cook_counters(conn, done_ids, cooked=True)
         # Less what is already in the cart or bought for these nights: the
         # chicken ticked for Fried Rice is the Curry's chicken too.
         after = _resync_users(conn, {plan_id: live_ids}) if live_ids else before

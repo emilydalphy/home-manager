@@ -13,6 +13,10 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Recipes/cook hunt: the stepper follows the recipe, "1 Lime", a changed eaten night moves its cook** (2026-10-31, branch `overnight/hunt-recipes-1031`; tests `tests/test_cook_stepper_follows_the_recipe.py`, `test_recipe_page_plurals.py`, `test_recipe_change_moves_the_cook.py`).
+  (1) Cook's "Cooking for" count is stored per plan entry in the browser and was put back over whatever the entry cooked next: after Change recipe the Beef Tacos card listed the burrito bowl's chicken; after an in-place Tweak the old amounts stood. Cards carry `recipe_sig` (`cooker._recipe_sig`); a count for another dish/version is dropped. The tap also dropped the side's ingredients (scale reply knows only the recipe) — `cookScaledIngredients` keeps `from_side` rows and substitute/made-ahead notes.
+  (2) `_with_item_label` reads its countable list backwards at one or less: "1 Limes" -> "1 Lime" (a 2-lime recipe for four, cooked for two).
+  (3) `change_meal_recipe` on a night ticked eaten now moves `times_cooked`/`last_cooked_date` from the old recipe to the new one; the curry kept a phantom cook an untick could never take back.
 - **Test clock: `test_the_route_answers_with_the_view_and_the_receipt` failed 23:25–24:00 UTC** (2026-10-30, branch `merge-overnight-2026-10-30`).
   Its household is on UTC, so a 35-minute cook started then is on the table tomorrow; it asserted today's date. Now asserts started + 35 min. No app change.
 - **Merge seam: one rule for a chat use-by date** (2026-10-30, branch `merge-overnight-2026-10-30`).
