@@ -11476,7 +11476,7 @@
     if (homeState.sheetId) renderHomeItemSheet();
   }
 
-  // C4: the freezer's "Quick check: still have these?" chips — the very
+  // C4: the freezer's "Quick check: any of these gone?" chips — the very
   // chips the week's planning asks (inventory_check.candidates, every
   // shelf: the card's "the same chips also show here", and the mockup's
   // Hummus / Apples / Feta), so an answer in either place answers both. A chip
@@ -11625,13 +11625,17 @@
       homeShelfHtml((data.locations || {})[seg] || [], seg);
   }
 
-  // Pure: "Quick check: still have these?" on the freezer, one chip per
-  // thing; a chip tapped gone reads "Apples · gone" in the on fill.
+  // Pure: "Quick check: any of these gone?" on the freezer, one chip per
+  // thing; a chip tapped gone reads "Apples · gone" in the on fill. Here a
+  // tap is saved at once, so the tap marks what's gone and the heading
+  // asks about what's gone (DESIGN_SYSTEM S13, 2026-10-31 — it used to ask
+  // "still have these?"); Plan the week asks the same chips the other way
+  // round, tap what you still have, because its Next can answer the rest.
   function homeCheckHtml(items, gone) {
     if (!items || !items.length) return '';
     gone = gone || {};
     return '<section class="home-card home-check" aria-labelledby="home-check-title">' +
-      '<h2 class="home-card-title" id="home-check-title">Quick check: still have these?</h2>' +
+      '<h2 class="home-card-title" id="home-check-title">Quick check: any of these gone?</h2>' +
       '<p class="home-check-sub">Tap anything that’s gone.</p>' +
       '<div class="home-check-chips">' +
       items.map(function (it) {

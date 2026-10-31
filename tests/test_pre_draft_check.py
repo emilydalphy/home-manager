@@ -210,7 +210,7 @@ def _page_harness(check_items, use_up):
                     else _extract(n) for n in ("openInventoryCheck", "answerInventoryCheck", "openUseUp", "preDraftStep"))
     return """
 var weekStart = '2099-01-05', dayCount = 7, preStep = '', shown = [], posted = [];
-var preCheck = { items: [], gone: [] }, preUseUp = { shown: false, items: [], off: [] };
+var preCheck = { items: [], left: [] }, preUseUp = { shown: false, items: [], off: [] };
 var useUpOffHere = null;
 var PRE_COPY = { saveFailed: 'x' };
 function renderCheckChips() {} function renderUseUpChips() {}
@@ -239,11 +239,13 @@ def test_page_skips_both_steps_when_nothing_to_ask():
 
 @_needs_node
 def test_page_check_then_use_up_and_next_posts_gone_and_confirmed():
-    """CATCH — check first, Next answers it, then Use these up."""
+    """CATCH — check first, Next answers it, then Use these up. S13
+    (Emily 2026-10-31): the tap is what's still here — Cheddar tapped,
+    so Hummus (untapped) is the one gone."""
     items = [{"id": 1, "label": "Hummus"}, {"id": 2, "label": "Cheddar"}]
     use = {"items": [{"id": 7, "label": "Baby spinach · Thu"}], "off": []}
     script = _page_harness(items, use).replace("var first = await preDraftStep();",
-                                                "var first = await preDraftStep(); preCheck.gone = [1];")
+                                                "var first = await preDraftStep(); preCheck.left = [2];")
     out = json.loads(nodeharness.run_node(script).stdout.strip().splitlines()[-1])
     assert out["first"] is True and out["second"] is True
     assert out["shown"] == ["check", "useup"]
@@ -255,12 +257,14 @@ def test_page_sends_use_up_off_only_when_the_step_showed():
     """CATCH — the drafting save carries the whole off list from B1."""
     assert "if (preUseUp.shown) payload.use_up_off = preUseUp.off.slice();" in PAGE
     assert "if (await preDraftStep()) return;" in PAGE
-    for words in ("Quick check: still have these?", "Tap anything that&rsquo;s gone.",
+    for words in ("Quick check: still have these?", "Tap the ones you still have.",
                   "what&rsquo;s home", "I&rsquo;ll build the week around these.", "Use these up",
                   "Tap any you&rsquo;d rather not use.",
                   "From your last shop and what you&rsquo;ve cooked since. Something wrong? Tap it."):
         assert words in PAGE, words
-    assert "plan: 'Plan the week'" in PAGE and "next: 'Next'" in PAGE and "gone: ' · gone'" in PAGE
+    assert "plan: 'Plan the week'" in PAGE and "next: 'Next'" in PAGE
+    # S13: the question asks what's still here, so no tap is marked "gone".
+    assert "Tap anything that&rsquo;s gone." not in PAGE and "' · gone'" not in PAGE
 
 
 def _back_and_again(check_items, use_up, tap):
@@ -269,7 +273,7 @@ def _back_and_again(check_items, use_up, tap):
     script = _page_harness(check_items, use_up).replace(
         "var second = first ? await preDraftStep() : null;",
         tap + " preStep = ''; var second = await preDraftStep();",
-    ).replace("useUpShown: preUseUp.shown", "useUpShown: preUseUp.shown, off: preUseUp.off, gone: preCheck.gone")
+    ).replace("useUpShown: preUseUp.shown", "useUpShown: preUseUp.shown, off: preUseUp.off, left: preCheck.left")
     return json.loads(nodeharness.run_node(script).stdout.strip().splitlines()[-1])
 
 
@@ -292,12 +296,12 @@ def test_switching_one_back_on_wins_over_the_saved_off_list():
 
 
 @_needs_node
-def test_a_gone_tap_on_the_check_survives_going_back():
+def test_a_tap_on_the_check_survives_going_back():
     """CATCH (hunt 2026-10-28) — Back from the check is not an answer, and not a reset either."""
     items = [{"id": 1, "label": "Hummus"}, {"id": 2, "label": "Cheddar"}]
-    out = _back_and_again(items, {"items": [], "off": []}, "preCheck.gone.push(1);")
+    out = _back_and_again(items, {"items": [], "off": []}, "preCheck.left.push(1);")
     assert out["shown"] == ["check", "check"]
-    assert out["gone"] == [1]
+    assert out["left"] == [1]
     assert out["posted"] == [], "nothing is answered until Next"
 
 
@@ -305,3 +309,29 @@ def test_the_page_remembers_a_tap_this_visit():
     """The page's own lines, which the harness above runs extracted."""
     assert "useUpOffHere = preUseUp.off.slice();" in PAGE
     assert "var off = (useUpOffHere || (res && res.off) || [])" in PAGE
+
+
+@_needs_node
+def test_next_with_nothing_tapped_means_none_are_left():
+    """S13 (Emily 2026-10-31) — the check asks what you still have, so an
+    untapped chip is an answer: gone. Nothing tapped = all gone."""
+    items = [{"id": 1, "label": "Hummus"}, {"id": 2, "label": "Cheddar"}]
+    out = json.loads(nodeharness.run_node(_page_harness(items, {"items": [], "off": []})).stdout.strip().splitlines()[-1])
+    assert out["posted"] == [{"gone": [1, 2], "confirmed": []}]
+
+
+@_needs_node
+def test_a_tapped_chip_is_on_and_says_nothing_about_gone():
+    """S13 — the tapped chip is the one you still have: on fill, plain name."""
+    script = _extract("preChipHtml") + "\n" + _extract("renderCheckChips") + """
+var esc = function (s) { return String(s); };
+var html = '';
+var $ = function () { return { set innerHTML(v) { html = v; } }; };
+var preCheck = { items: [{ id: 1, label: 'Hummus' }, { id: 2, label: 'Cheddar' }], left: [2] };
+renderCheckChips();
+console.log(JSON.stringify({ html: html }));
+"""
+    html = json.loads(nodeharness.run_node(script).stdout.strip().splitlines()[-1])["html"]
+    assert 'class="chip" data-id="1" aria-pressed="false">Hummus<' in html
+    assert 'class="chip is-celadon" data-id="2" aria-pressed="true">Cheddar<' in html
+    assert "gone" not in html
