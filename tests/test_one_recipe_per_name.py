@@ -393,6 +393,27 @@ def test_two_saves_at_the_same_instant_still_leave_one_recipe():
 # and rating "shrimp étouffée" answered "No recipe named". db.name_key is
 # the one rule now, in Python and as the SQL function name_key().
 
+
+def test_a_save_that_loses_the_race_for_the_name_is_a_409_not_a_500(signed_in, monkeypatch):
+    """
+    Defect hunt 2026-10-31: two saves of one name at once (the import
+    sheet's double tap, or both adults) both passed the route's own check;
+    add_recipe's locked check refused the second, and the route turned that
+    refusal into a 500 — "Something went wrong" over a recipe that saved.
+    The race is pinned by letting the route's check miss, which is what the
+    loser's check does.
+    """
+    tools.add_recipe("Chicken Tacos", CHICKEN)
+    monkeypatch.setattr(tools, "existing_recipe_named", lambda *a, **k: None)
+    res = signed_in.post("/api/recipes/add", json={
+        "name": "Chicken Tacos",
+        "ingredients": [{"item": "Chicken thighs", "qty": "1 lb", "category": "meat-seafood"}],
+        "instructions": ["Grill the chicken."],
+    })
+    assert res.status_code == 409
+    assert "Chicken Tacos" in res.json()["detail"]
+    assert len(_recipe_rows()) == 1
+
 ETOUFFEE = [{"item": "Shrimp", "qty": "1 lb", "category": "meat-seafood"}]
 
 

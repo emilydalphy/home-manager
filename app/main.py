@@ -3400,6 +3400,13 @@ def add_recipe_endpoint(req: AddRecipeRequest):
             result["citation"] = tools.recipe_citation(has_photo=True)
     except HTTPException:
         raise
+    except tools.DuplicateRecipeName as e:
+        # The same name saved a moment ago, by this sheet's double tap or the
+        # other adult: both passed the check above, and add_recipe's own
+        # locked check refused the second. That is this door's 409, not a
+        # 500 saying "something went wrong" over a recipe that is saved
+        # (defect hunt, 2026-10-31).
+        raise HTTPException(status_code=409, detail=str(e))
     except Exception as e:
         logger.exception("Recipe save failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")

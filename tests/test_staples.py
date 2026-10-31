@@ -464,6 +464,58 @@ def test_a_second_pre_shop_undo_leaves_the_staples_older_answer_alone():
     assert needed_names() == ["Oat milk"]
 
 
+def test_a_second_undo_leaves_last_trips_not_this_trip_alone():
+    # Defect hunt 2026-10-31, the toast's own Undo (/api/staples/{id}/undo):
+    # tapped twice, or again after "Couldn't put that back" on a lost reply,
+    # the second pass took LAST week's skip too — streak 2 -> 0, so three
+    # skips running would never pause it.
+    s, line = _due_line()
+    tools.decide_staple_line(line["id"], "skip")            # last trip
+    travel(7)
+    tools.get_grocery_list_by_section(status="needed")
+    (line,) = staple_lines()
+    tools.decide_staple_line(line["id"], "skip")            # this trip
+    assert tools.undo_staple_decision(s["id"])["undone"] is True
+    again = tools.undo_staple_decision(s["id"])
+    assert again["undone"] is False
+    assert again["skip_streak"] == 1
+    conn = get_conn()
+    kinds = [r["kind"] for r in conn.execute(
+        "SELECT kind FROM staple_events WHERE staple_id = ? ORDER BY id", (s["id"],))]
+    conn.close()
+    assert kinds.count("skipped") == 1
+    assert needed_names() == ["Oat milk"]
+
+
+def test_two_adds_of_one_staple_at_once_make_one_staple(monkeypatch):
+    # Defect hunt 2026-10-31: the name check and the INSERT were two steps,
+    # so two adds landing together (a double tap, both adults) made two —
+    # 3 of 3 over HTTP. The pause after the check holds the window open the
+    # way a real request's other work does; under the lock it only queues.
+    import threading
+    import time
+    found = st._find_by_name
+
+    def slow_find(conn, item):
+        row = found(conn, item)
+        time.sleep(0.05)
+        return row
+
+    monkeypatch.setattr(st, "_find_by_name", slow_find)
+    gate = threading.Barrier(4)
+
+    def add():
+        gate.wait()
+        tools.add_staple("Dish soap", every_days=30)
+
+    workers = [threading.Thread(target=add) for _ in range(4)]
+    for w in workers:
+        w.start()
+    for w in workers:
+        w.join()
+    assert [r["item"] for r in tools.list_staples()].count("Dish soap") == 1
+
+
 def test_removing_a_bought_staple_line_is_just_a_delete():
     s, line = _due_line(every_days=21)
     tools.mark_grocery_item(line["id"], "purchased")

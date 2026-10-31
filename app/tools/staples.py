@@ -754,6 +754,14 @@ def add_staple(
     # two different days across midnight, and each costs a connection.
     today_date = _today()
     conn = get_conn()
+    # Under the write lock from the first read, like decide_staple_line:
+    # "is there a staple by this name?" and the INSERT below are one step.
+    # Read unlocked, two adds of "Oat milk" landing together (a double tap
+    # on the Staples card's add, or both adults) both read "none" and the
+    # household had two Oat milk staples, each putting its own line on the
+    # list when due (defect hunt, 2026-10-31). The loser now finds the
+    # winner's row and updates it, which is what a second add always did.
+    conn.execute("BEGIN IMMEDIATE")
     line = None
     if grocery_item_id is not None:
         line = conn.execute(
@@ -1327,12 +1335,15 @@ def undo_staple_decision(staple_id: int) -> dict:
             (household_id(), staple_id),
         ).fetchone()
         if (_bought_since_last_answer(conn, staple_id) or _answered_line_was_ticked(conn, staple_id, last)
+                or _line_already_back(conn, staple_id)
                 or not reverse_last_answer(conn, staple_id)):
             # Nothing to undo: say so, change nothing. (A raw call used to
             # force the staple due — the 2026-09-11 verifier's case g.) Nor
             # once it has been BOUGHT since that answer: a purchase overtook
             # it, and making it due today would put a second line on the list
-            # for the thing just bought (the other phone's stale toast).
+            # for the thing just bought (the other phone's stale toast). Nor
+            # once its line is back on the list: that answer is undone
+            # already, and the "last" answer left is LAST TRIP's.
             out = _shape(r)
             out["undone"] = False
             return out
@@ -1382,6 +1393,25 @@ def _bought_since_last_answer(conn, staple_id: int) -> bool:
         (household_id(), staple_id),
     ).fetchone()
     return row is not None and row["kind"] == "bought"
+
+
+def _line_already_back(conn, staple_id: int) -> bool:
+    """
+    True when this staple has a line on the list right now. Every answer
+    Undo reverses took the staple's line OFF — removed, or, for one that
+    trimmed a shared line, unlinked from the staple (_trim_to_the_weeks_part)
+    — and it is not due again until its new date, so a live line of its own
+    means the Undo already happened. Without this a second Undo (a double
+    tap, or "Couldn't put that back — try again" after a reply lost on a bad
+    signal) took the PREVIOUS answer too: last week's "Not this trip"
+    deleted, the skip streak stepped back twice, so three skips in a row
+    never paused it (defect hunt, 2026-10-31). The pre-shop Undo got the
+    same guard on 2026-10-30 (undo_pre_shop_drop).
+    """
+    return conn.execute(
+        "SELECT 1 FROM grocery_items WHERE household_id = ? AND staple_id = ? AND status IN ('needed', 'in_cart')",
+        (household_id(), staple_id),
+    ).fetchone() is not None
 
 
 def _answered_line_was_ticked(conn, staple_id: int, last) -> bool:

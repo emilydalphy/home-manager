@@ -13,6 +13,9 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **The same tap twice: a staple Undo takes back one answer, two staple adds make one staple, a recipe saved twice at once is a 409** (2026-10-31, defect hunt; branch `overnight/hunt-double-tap-1031`; tests in `tests/test_staples.py`, `tests/test_one_recipe_per_name.py`).
+  (1) `undo_staple_decision` is a no-op while the staple's line is back on the list (`_line_already_back`); a second Undo deleted LAST trip's "Not this trip" (streak 2 -> 0). (2) `add_staple` reads the name under `BEGIN IMMEDIATE`; three adds at once made three "Oat milk" staples. (3) `/api/recipes/add` answers `DuplicateRecipeName` from `add_recipe`'s locked check with 409, not 500.
+  Why: each reproduced over HTTP on a throwaway DB, sent twice in a row and in threads. The pre-shop Undo already had (1)'s guard (2026-10-30); the toast's own Undo did not.
 - **Test clock: `test_the_route_answers_with_the_view_and_the_receipt` failed 23:25–24:00 UTC** (2026-10-30, branch `merge-overnight-2026-10-30`).
   Its household is on UTC, so a 35-minute cook started then is on the table tomorrow; it asserted today's date. Now asserts started + 35 min. No app change.
 - **Merge seam: one rule for a chat use-by date** (2026-10-30, branch `merge-overnight-2026-10-30`).
