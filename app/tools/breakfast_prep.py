@@ -61,7 +61,7 @@ FRESH_WORDS = (
     "soft-boiled", "soft boiled", "omelet", "omelette", "benedict",
     "shakshuka", "huevos", "eggs in", "egg in a hole", "crepe", "crêpe",
     "pancake", "waffle", "french toast", "smoothie", "avocado",
-    "bagel", "english muffin",
+    "bagel", "english muffin", "lassi", "tostada", "op la",
 )
 
 
