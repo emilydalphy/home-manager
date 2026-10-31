@@ -2519,3 +2519,19 @@ CREATE TABLE IF NOT EXISTS kitchen_add_receipts (
     undone_at TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_kitchen_add_receipts_household ON kitchen_add_receipts (household_id, created_at);
+
+-- One row per Kitchen "Add N" that carried a client id (2026-10-31, branch
+-- overnight/kitchen-add-once-1031): static/kitchen-add.js names each confirm
+-- once and a retap after "Couldn't save" re-sends that name. Same shape and
+-- rules as grocery_add_receipts (app/grocery_add_once.py): a repeat is
+-- answered with `result_json` and adds nothing, so 12 eggs stay 12; NULL =
+-- still adding; 30-day sweep. Not kitchen_add_receipts above — that is the
+-- Undo's record of what a save changed.
+CREATE TABLE IF NOT EXISTS kitchen_add_sends (
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    client_id TEXT NOT NULL,
+    result_json TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (household_id, client_id)
+);
+CREATE INDEX IF NOT EXISTS idx_kitchen_add_sends_age ON kitchen_add_sends (created_at);

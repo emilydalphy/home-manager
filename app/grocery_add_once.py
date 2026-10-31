@@ -14,8 +14,15 @@ household's id never answers another's add. An add with no id behaves
 exactly as before. Lives outside app/tools because it is about a REQUEST
 arriving twice, not about the list — add_grocery_item's own merge rules are
 untouched.
+
+The Kitchen tab's "Add N" (static/kitchen-add.js -> /api/whats-home/add)
+uses the same mechanism under its own table, kitchen_add_sends (2026-10-31):
+a retap after "Couldn't save" whose first send HAD landed made 12 eggs 24.
+That route also waits a few seconds for a twin still adding, so the second
+answer is the first one's success, not a 409 (see `wait_seconds`).
 """
 import json
+import time
 
 from .db import get_conn
 from .tools._shared import household_id
@@ -34,50 +41,74 @@ RETENTION_DAYS = 30
 ABANDONED_AFTER_SECONDS = 60
 
 
+# The receipt tables this may write — a table name is never taken from a
+# request, but it is spliced into SQL, so it is checked against this.
+TABLES = ("grocery_add_receipts", "kitchen_add_sends")
+
+
 class AddInFlight(Exception):
     """The same id is being added right now by an earlier request."""
 
 
-def add_once(client_id, do_add):
-    """Run `do_add()` once per (household, client_id); a repeat returns its result."""
+def add_once(client_id, do_add, table="grocery_add_receipts", wait_seconds=0):
+    """Run `do_add()` once per (household, client_id); a repeat returns its result.
+
+    `wait_seconds` > 0: a repeat that arrives while the first is still
+    adding waits up to that long for the first's answer and returns it,
+    instead of raising AddInFlight straight away. Grocery passes 0 — its
+    offline queue keeps an add on a 409 and replays it later.
+    """
     if not client_id:
         return do_add()
+    if table not in TABLES:
+        raise ValueError(f"unknown receipts table {table!r}")
     hid = household_id()
+    deadline = time.monotonic() + max(0, wait_seconds)
     conn = get_conn()
     try:
         conn.execute(
-            "DELETE FROM grocery_add_receipts WHERE created_at < datetime('now', ?)",
+            f"DELETE FROM {table} WHERE created_at < datetime('now', ?)",
             (f"-{RETENTION_DAYS} days",),
         )
-        # Claim the id BEFORE adding, so two copies of one add arriving
-        # together (the online send still running when the queue's replay
-        # lands) cannot both get past the check.
-        claimed = conn.execute(
-            "INSERT OR IGNORE INTO grocery_add_receipts (household_id, client_id) VALUES (?, ?)",
-            (hid, client_id),
-        ).rowcount
         conn.commit()
-        if not claimed:
+        while True:
+            # Claim the id BEFORE adding, so two copies of one add arriving
+            # together (the online send still running when the queue's replay
+            # lands) cannot both get past the check.
+            claimed = conn.execute(
+                f"INSERT OR IGNORE INTO {table} (household_id, client_id) VALUES (?, ?)",
+                (hid, client_id),
+            ).rowcount
+            conn.commit()
+            if claimed:
+                break
             row = conn.execute(
-                "SELECT result_json FROM grocery_add_receipts WHERE household_id = ? AND client_id = ?",
+                f"SELECT result_json FROM {table} WHERE household_id = ? AND client_id = ?",
                 (hid, client_id),
             ).fetchone()
             if row is not None and row["result_json"] is not None:
                 return json.loads(row["result_json"])
+            if row is None:
+                # The first add failed and let the id go (_forget) between
+                # our claim and our read — claim it again.
+                continue
             # Answerless: still adding, or abandoned. Take an abandoned one
             # over in one statement, so two resends cannot both take it.
             # The cost, knowingly paid: if the dead request HAD added before
             # it died, this adds again — rarer, and kinder than an add that
             # never lands at all.
             taken = conn.execute(
-                "UPDATE grocery_add_receipts SET created_at = datetime('now') "
+                f"UPDATE {table} SET created_at = datetime('now') "
                 "WHERE household_id = ? AND client_id = ? AND result_json IS NULL "
                 "AND created_at <= datetime('now', ?)",
                 (hid, client_id, f"-{ABANDONED_AFTER_SECONDS} seconds"),
             ).rowcount
             conn.commit()
-            if row is None or not taken:
+            if taken:
+                break
+            if time.monotonic() >= deadline:
                 raise AddInFlight()
+            time.sleep(0.1)
     finally:
         conn.close()
 
@@ -86,12 +117,12 @@ def add_once(client_id, do_add):
     except BaseException:
         # Nothing was added (or the add failed partway and said so) — let
         # the same id try again rather than answer every retry with a 409.
-        _forget(hid, client_id)
+        _forget(hid, client_id, table)
         raise
     conn = get_conn()
     try:
         conn.execute(
-            "UPDATE grocery_add_receipts SET result_json = ? WHERE household_id = ? AND client_id = ?",
+            f"UPDATE {table} SET result_json = ? WHERE household_id = ? AND client_id = ?",
             (json.dumps(result, default=str), hid, client_id),
         )
         conn.commit()
@@ -100,11 +131,11 @@ def add_once(client_id, do_add):
     return result
 
 
-def _forget(hid, client_id):
+def _forget(hid, client_id, table="grocery_add_receipts"):
     conn = get_conn()
     try:
         conn.execute(
-            "DELETE FROM grocery_add_receipts WHERE household_id = ? AND client_id = ?",
+            f"DELETE FROM {table} WHERE household_id = ? AND client_id = ?",
             (hid, client_id),
         )
         conn.commit()

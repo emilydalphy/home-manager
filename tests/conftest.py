@@ -104,6 +104,8 @@ _TABLES = [
     "pre_shop_decisions",
     # Add receipts (2026-10-22) reference households only.
     "grocery_add_receipts",
+    # Kitchen add sends (2026-10-31) — references households only.
+    "kitchen_add_sends",
     # What a Mark-eaten tick took out (2026-10-26) — references households only.
     "eaten_kitchen_receipts",
     # "Already home" put-backs (2026-10-26) reference households only.
