@@ -29,6 +29,8 @@ from .tools import model_shapes as _model_shapes
 from .tools import plan_quality
 from .tools import recipe_research as _recipe_research
 from .tools import recipe_library as _recipe_library
+from .tools import cuisine_spread as _cuisine_spread
+from .tools import breakfast_variety as _breakfast_variety
 from .tools import meal_variety as _meal_variety
 from .tools import snack_variety as _snack_variety
 from .tools import everyday_snacks as _everyday_snacks
@@ -3562,14 +3564,19 @@ of yours: a count of 2 is two ideas repeated, a count equal to the days is a new
 Only a count nobody chose — household_memory.meal_counts_set false, or a breakfast/lunch count \
 equal to every day planned for a meal not listed in household_memory.variety_answered — leaves \
 it to you, and then repeating the same idea 2-3 times across the week is fine. Don't stretch \
-these into restaurant-tier new recipes; match the actual effort level of what they are.
+these into restaurant-tier new recipes; match the actual effort level of what they are. NO \
+BREAKFAST ON MORE THAN 3 MORNINGS and no snack on more than 3 days, unless the household asked \
+for the same ones (their words, or a count too small to share the mornings out — 2 breakfasts \
+over 7 mornings is 4 each); a breakfast past that is moved or re-picked after you answer. \
+Pick breakfasts from `library_breakfasts` (dishes in Pomona's recipe library) by exact name \
+first, and invent one only when none of them fits.
 - SEND A REPEAT ONCE. When one breakfast, lunch or snack idea covers several days, that is ONE \
 entry with every one of those days listed in `dates` (its `date` first) — not the same dish \
-written out again for each morning. Oatmeal on five mornings is one entry with five dates. \
-It is written onto each of those days exactly as if you had sent it five times, with this \
+written out again for each morning. Oatmeal on three mornings is one entry with three dates. \
+It is written onto each of those days exactly as if you had sent it three times, with this \
 entry's own derived_from on each (and cooked once: the later days within three \
 days of the first eat that batch), so nothing is lost by folding it — what is \
-saved is you writing the same decision out four more times, which on a real week is more \
+saved is you writing the same decision out again and again, which on a real week is more \
 than half of everything you write. Two rules on it: the days must genuinely be the SAME dish (a different \
 topping is a different entry), and DINNER IS NOT FOLDED — dinners carry the shape of the \
 week, and each night's own reason ("lighter after Monday's chili") is read under the dish, \
@@ -3653,9 +3660,16 @@ say (see the guideline above) — that is a different question from repeating AC
 this rule. Breakfast persisting from a previous week is still normal — recent_history's \
 breakfast entries are informational only, not something to avoid repeating — EXCEPT when \
 intake.moods includes "Something new": then breakfast joins the rule too, and a breakfast in \
-recent_history is not drafted again unless they asked for it by name. Separately, avoid repeating the same \
+recent_history is not drafted again unless they asked for it by name. A near-identical variant \
+means the same main protein plus the same base or the same kind of dish under another name — \
+last week's white bean stew comes back neither as a "Turkish White Bean and Tomato Stew" nor as a \
+"White Bean, Tomato and Feta Bowl" — and two such dishes on THIS week (dinner or lunch) are a \
+repeat too; either one is swapped out after you answer. Separately, avoid repeating the same \
 main_protein or cuisine too many days in a row for dinner — check recent_history's cuisine/ \
-main_protein fields, not just meal names. Where recent_history gives a `rating` for a past \
+main_protein fields, not just meal names. When household_memory.cuisine_preferences is empty and \
+intake.cuisines is empty, SPREAD the week: its dinners and lunches together cover at least 4 \
+cuisines, and no one cuisine takes more than 2 dinners — set `cuisine` on every dish; a crowded \
+week is re-picked after you answer. Where recent_history gives a `rating` for a past \
 meal, treat it as a soft signal on how forgivable a repeat would be: reaching for something \
 rated 'liked' again is more forgivable than reaching for one rated 'disliked'.
 - `surprise_me`, when present, means the household tapped SURPRISE ME, and surprise means NEW \
@@ -7560,6 +7574,15 @@ def _generate_weekly_plan(
         snack_list = _everyday_snacks.prompt_context(effective_memory, content_start_date)
         if snack_list:
             context["everyday_snacks"] = snack_list
+    # Breakfasts from the recipe library first (Emily, 2026-10-31: "better
+    # variety and quality for the breakfasts"): a dozen of the library's
+    # breakfasts, a different dozen each week, less what the last two weeks
+    # had. Telling, not preventing: breakfast_variety holds the spread.
+    library_breakfasts = _breakfast_variety.library_breakfasts(
+        content_start_date, avoid=sorted(_draft_opener.recent_dish_names(content_start_date, None) or ()),
+    )
+    if library_breakfasts:
+        context["library_breakfasts"] = library_breakfasts
     # Loop Board "Per-person taste learning + solo-night personalization":
     # enrich the subset-attendance slots above with what's actually known
     # about the present people individually, so generation can lean into a
@@ -8610,6 +8633,14 @@ def _finish_week_slots(
         repick_budget or _allergen_gate.CallBudget(),
         asks=count_asks, slots=_meal_variety.no_repeat_slots(intake) + ("snack",),
     )
+    # And inside the week: two dinners or lunches that are the same dish
+    # under two names (Emily, 2026-10-31: a white bean and tomato stew on
+    # Sunday, a white bean, tomato and feta bowl on Monday) are a repeat
+    # too — the later one is re-picked, on the same budget, before the
+    # count pass reads the dishes. See meal_variety.repick_near_twins.
+    _meal_variety.repick_near_twins(
+        plan_id, week_start_date, repick_budget or _allergen_gate.CallBudget(), asks=count_asks,
+    )
 
     # "Four dinners a week" means four dishes, and the model is only ASKED
     # for that (Emily, 2026-09-13: "it's giving me 5 types of dinners when I
@@ -8707,7 +8738,9 @@ def _finish_week_slots(
         # (Tester Home, plan 72: oranges and edamame, seven days each). After
         # the fold, so it spreads the dishes the count kept; on both runs,
         # because it makes no model call. Same gate as snacks a day: a
-        # household that answered how they snack. See tools/snack_variety.py.
+        # household that answered how they snack (the usual-week step sets
+        # it). Since 2026-10-31 it also re-picks a snack that isn't one
+        # thing or a pair that goes together. See tools/snack_variety.py.
         # Every snack from the everyday list unless they asked for it or
         # nothing on the list fits (Loop Board 2026-10-21). After the fold,
         # so each off-list dish is swapped for one list snack on all its
@@ -8722,6 +8755,15 @@ def _finish_week_slots(
                 plan_id, [d for d in period if d not in skipped_days and d not in snackless_days],
                 household_memory, period_start=week_start_date, asks=count_asks,
             )
+        # No breakfast on more than three mornings unless they asked for the
+        # same ones (Emily, 2026-10-31: Veggie Scrambled Eggs Tue–Sat). After
+        # the breakfast count, so it spreads the dishes the count kept: the
+        # week's own breakfasts first, then the recipe library's. Both runs:
+        # no model call. See tools/breakfast_variety.py.
+        _breakfast_variety.enforce_breakfast_spread(
+            plan_id, [d for d in period if d not in skipped_days], household_memory,
+            period_start=week_start_date, asks=count_asks,
+        )
     _hold_counts(first=True)
 
     # An ingredient they typed ("I have some corn") is in at least one
@@ -8743,6 +8785,19 @@ def _finish_week_slots(
             plan_id, (intake or {}).get("cuisines"), report, budget=repick_budget or _allergen_gate.CallBudget(),
             asks=count_asks,
         )
+
+    # A week with no cuisine asked for spreads across cuisines (Emily,
+    # 2026-10-31: "I didn't give it any restrictions with cuisines and I'm
+    # surprised it didn't give me as much variety"): at least four across
+    # dinners and lunches, no cuisine on more than two dinners. AFTER the
+    # count pass and the typed requests, so it judges the dishes the week
+    # keeps; BEFORE cap_enforce, which holds whatever it picks to the
+    # clock. Stands down for a household that named cuisines. Same shared
+    # budget. See tools/cuisine_spread.py — it swallows its own failures.
+    _cuisine_spread.enforce_cuisine_spread(
+        plan_id, household_memory, intake, repick_budget or _allergen_gate.CallBudget(), asks=count_asks,
+        period_start=week_start_date,
+    )
 
     # "Short on time" is held to rather than only asked for (Emily,
     # 2026-09-26: five dinners on three rush nights, 24 to 35 minutes

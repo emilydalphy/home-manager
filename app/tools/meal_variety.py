@@ -1751,7 +1751,10 @@ REPEAT_REASON = ""
 # that merely share words ("Chicken Tacos", "Chicken Taco Bowls") are two
 # dishes, and a rule reading them as one would drop a dinner nobody
 # repeated — the expensive direction, since the household never asked for
-# the dish that replaced it.
+# the dish that replaced it. (Superseded for dinner and lunch on
+# 2026-10-31, when a renamed bean stew came back: see same_dish below.
+# repeat_key itself is unchanged and still the whole test for breakfast
+# and snack.)
 #
 # It is deliberately a SUPERSET of the opener's own comparison, which
 # lowercases and strips and does nothing else. That keeps the two in step
@@ -1768,6 +1771,133 @@ def repeat_key(name: str | None) -> str:
     while words and words[-1] in _REPEAT_FILLER_TAIL:
         words.pop()
     return " ".join(words)
+
+
+# ---------- the same dish under another name (Emily, 2026-10-31) ----------
+#
+# "I had the bean stew last week and it still added it back to the plan."
+# Her draft had Turkish White Bean and Tomato Stew (Kuru Fasulye) on Sunday
+# and a Mediterranean White Bean, Tomato and Feta Bowl on Monday. repeat_key
+# above is exact-name-plus-punctuation (her 2026-09-25 call, "Do NOT build
+# fuzzy matching"), so a re-titled stew slipped through the window and two
+# near-identical dishes sat on consecutive days. This card asks for the
+# wider reading, for DINNER and LUNCH only: two dishes are the same dish
+# when they share their MAIN PROTEIN (beans, chicken, tofu…) and one more
+# thing that makes them what they are — a base or main vegetable (tomato,
+# rice, broccoli) or the dish's form (stew, tacos, curry). Words that say
+# nothing about what is on the plate — a cuisine ("Turkish"), a style
+# ("hearty", "sheet pan"), a seasoning ("garlic", "lemon") — are ignored.
+# With no protein on either side, the form AND a shared ingredient are
+# both needed ("Vegetable Lasagna" = "Roasted Vegetable Lasagna"; "Mushroom
+# Risotto" ≠ "Mushroom Soup").
+#
+# What it deliberately still calls two dishes: a different protein ("Beef
+# Chili", "Turkey Chili") and a shared protein with nothing else in common
+# ("Chicken Tacos", "Chicken Curry"). The cost of a false match is a dish
+# re-picked that nobody repeated, so the vocabulary stays small and plain.
+
+_PROTEINS = {
+    "chicken": "chicken", "beef": "beef", "steak": "beef", "pork": "pork", "lamb": "lamb",
+    "turkey": "turkey", "salmon": "salmon", "cod": "white fish", "tilapia": "white fish",
+    "halibut": "white fish", "haddock": "white fish", "fish": "white fish", "tuna": "tuna",
+    "shrimp": "shrimp", "prawn": "shrimp", "sausage": "sausage", "chorizo": "sausage",
+    "bacon": "pork", "ham": "pork", "tofu": "tofu", "tempeh": "tempeh", "egg": "egg",
+    "chickpea": "chickpea", "garbanzo": "chickpea", "chana": "chickpea", "hummus": "chickpea",
+    "lentil": "lentil", "dal": "lentil", "dhal": "lentil", "daal": "lentil",
+    "bean": "bean", "fasulye": "bean", "cannellini": "bean", "frijole": "bean",
+    "edamame": "edamame", "paneer": "paneer", "halloumi": "halloumi", "mushroom": None,
+}
+# A dish's shape. Shared with a shared protein, it is the same dish.
+_FORMS = {
+    "stew", "curry", "chili", "taco", "burrito", "risotto", "lasagna", "lasagne", "pie",
+    "burger", "pizza", "quesadilla", "enchilada", "kebab", "skewer", "meatball", "fritter",
+    "patty", "pilaf", "biryani", "braise", "tagine", "gumbo", "chowder", "ramen", "pho", "laksa",
+}
+# A shape so common it says nothing on its own — chicken soup and chicken
+# tortilla soup, a teriyaki bowl and a burrito bowl are two dishes — and a
+# cut or a plain base every second dinner has (review, 2026-10-31). Read as
+# words that are not the dish.
+_GENERIC = {
+    "soup", "bowl", "salad", "sandwich", "wrap", "pasta", "noodle", "casserole", "bake",
+    "skillet", "stir", "fry", "hash", "frittata", "omelet", "plate", "platter",
+    "ground", "thigh", "breast", "fillet", "filet", "belly", "wing", "drumstick", "tenderloin",
+    "loin", "rice", "vegetable", "veggie", "veg", "breakfast", "lunch", "dinner",
+}
+# Words that never make two dishes the same: where a dish is from, how it is
+# described or cooked, what it is seasoned with, and connectors.
+_NOT_THE_DISH = {
+    "and", "with", "the", "a", "an", "of", "in", "on", "over", "style", "plus", "or",
+    "easy", "quick", "simple", "classic", "homestyle", "rustic", "hearty", "creamy", "spicy",
+    "crispy", "warm", "cozy", "light", "fresh", "loaded", "one", "pot", "pan", "sheet",
+    "slow", "cooker", "instant", "roasted", "grilled", "baked", "braised", "seared",
+    "sauteed", "sautéed", "stewed", "smoked", "pan-fried", "fried", "stuffed", "white",
+    "black", "red", "green", "kidney", "pinto", "navy", "dried", "kuru", "night", "weeknight",
+    "garlic", "ginger", "lemon", "lime", "herb", "herbed", "honey", "butter", "salt", "pepper",
+    "sesame", "soy", "chile", "spiced", "spice", "sauce", "olive", "oil", "mediterranean",
+    "turkish", "greek", "italian", "mexican", "thai", "indian", "korean", "japanese",
+    "chinese", "vietnamese", "french", "spanish", "moroccan", "middle", "eastern", "american",
+    "southern", "cajun", "tuscan", "caribbean", "jamaican", "lebanese", "persian", "asian",
+    "tex", "mex", "cuban", "peruvian", "brazilian", "ethiopian", "filipino", "german",
+    "british", "irish", "polish", "portuguese", "west", "african", "levantine", "style",
+}
+
+
+def _stem(word: str) -> str:
+    if word.endswith(("us", "ss")):          # hummus, couscous, swiss
+        return word
+    if word.endswith("oes") and len(word) > 4:
+        return word[:-2]
+    if word.endswith("ies") and len(word) > 4:
+        return word[:-3] + "y"
+    if word.endswith(("ches", "shes")) and len(word) > 5:
+        return word[:-2]
+    if word.endswith("s") and len(word) > 3:
+        return word[:-1]
+    return word
+
+
+def dish_core(name: str | None) -> tuple[frozenset, frozenset, frozenset]:
+    """(proteins, forms, other ingredients) a dish name says it is — see
+    the block above. Every set is of plain stemmed words."""
+    words = [_stem(w) for w in re.findall(r"[a-zà-ÿ]+", (name or "").lower())]
+    proteins, forms, rest = set(), set(), set()
+    for w in words:
+        if w in _NOT_THE_DISH or w in _GENERIC or len(w) < 3:
+            continue
+        if w in _PROTEINS:
+            if _PROTEINS[w]:
+                proteins.add(_PROTEINS[w])
+            else:
+                rest.add(w)
+        elif w in _FORMS:
+            forms.add(w)
+        else:
+            rest.add(w)
+    # An egg beside another protein is an ingredient ("Shrimp and Egg
+    # Stir-Fry", egg noodles), not what the dish is.
+    if len(proteins) > 1:
+        proteins.discard("egg")
+    return frozenset(proteins), frozenset(forms), frozenset(rest)
+
+
+def same_dish(a: str | None, b: str | None) -> bool:
+    """Are these two names the same dish for the no-repeat rule (dinner
+    and lunch)? Exactly the same name always is; otherwise see the block
+    above dish_core."""
+    ka, kb = repeat_key(a), repeat_key(b)
+    if not ka or not kb:
+        return False
+    if ka == kb:
+        return True
+    pa, fa, ra = dish_core(a)
+    pb, fb, rb = dish_core(b)
+    if pa or pb:
+        return bool(pa & pb) and bool((fa & fb) or (ra & rb))
+    return bool(fa & fb) and (bool(ra & rb) or not (ra or rb))
+
+
+def same_as_any(name: str | None, others) -> bool:
+    return any(same_dish(name, other) for other in others)
 
 
 # A dish word too common to read as a request on its own: "salad on
@@ -1874,7 +2004,7 @@ def _replaceable(dish: dict, chains: dict) -> list[dict] | None:
 
 
 def _replace_whole_dish(plan_id: int, dish: dict, nights: list[dict], budget, picker,
-                        refuse: set[str], because: str) -> str | None:
+                        refuse: set[str], because: str, refuse_near: list[str] | None = None) -> str | None:
     """
     Put ONE new dish on every night this one holds, in one transaction.
 
@@ -1887,7 +2017,9 @@ def _replace_whole_dish(plan_id: int, dish: dict, nights: list[dict], budget, pi
     new = _repick_entry(
         plan_id, nights[0], budget,
         avoid=[], because=because,
-        reject=lambda name: repeat_key(name) in refuse,
+        # `refuse_near` (dinner and lunch): a pick that is the same dish
+        # under another name is still a repeat (same_dish).
+        reject=lambda name: repeat_key(name) in refuse or same_as_any(name, refuse_near or ()),
         derived_key="repeat_repick", picker=picker,
         reason_line=REPEAT_REASON,
         also=nights[1:] or None,
@@ -1944,11 +2076,17 @@ def repick_recent_repeats(plan_id: int, period_start: str | None, budget, picker
         if not had:
             return out
         refuse = set(had)
+        # Dinner and lunch read the window by the dish, not only the name
+        # (same_dish, 2026-10-31): last week's bean stew under a new title
+        # is still last week's bean stew. Breakfast and snack stay exact.
+        had_names = sorted(_draft_opener.recent_dish_names(period_start, plan_id, slots=NO_REPEAT_SLOTS) or ())
+        refuse_near = list(had_names)
         because = f"you had it in {variety_window_words()}"
         chains = _leftovers.plan_leftover_chains(plan_id)
         for slot in slots:
+            near = slot in NO_REPEAT_SLOTS
             for dish in _group_dishes(_load_slot_entries(plan_id, slot), chains):
-                if repeat_key(dish["name"]) not in had:
+                if repeat_key(dish["name"]) not in had and not (near and same_as_any(dish["name"], had_names)):
                     continue
                 out["repeats"] += 1
                 # Their words beat the rule, exactly as they beat the
@@ -1965,11 +2103,13 @@ def repick_recent_repeats(plan_id: int, period_start: str | None, budget, picker
                 if nights is None:
                     out["left"].append(dish["name"])
                     continue
-                name = _replace_whole_dish(plan_id, dish, nights, budget, picker, refuse, because)
+                name = _replace_whole_dish(plan_id, dish, nights, budget, picker, refuse, because,
+                                           refuse_near=refuse_near if near else None)
                 if name is None:
                     out["left"].append(dish["name"])
                     continue
                 out["repicked"] += 1
+                refuse_near.append(name)
                 # What this pass has just put on the week joins what the
                 # picker must not offer again — two repeats answered with
                 # one dish is a new duplicate — but NOT what counts as a
@@ -1987,6 +2127,108 @@ def repick_recent_repeats(plan_id: int, period_start: str | None, budget, picker
                         len(out["left"]), plan_id, ", ".join(out["left"]))
     except Exception:
         logger.exception("No-repeat enforcement failed for plan %s; the week stands as generated", plan_id)
+    return out
+
+
+# Words for the log and derived_from when a near-twin goes. No note under
+# the dish, for the same reason as REPEAT_REASON.
+TWIN_BECAUSE = "it was the same dish as another this week"
+
+# Calls the soft variety passes (near twins, cuisine spread) leave in the
+# shared budget for the passes that hold hard rules after them — the rush-
+# night cap (cap_enforce) and the allergen sweep, which OPENS a clashing
+# slot when nothing is left (review, 2026-10-31).
+VARIETY_RESERVE = 2
+
+
+def variety_may_spend(budget) -> bool:
+    return getattr(budget, "left", VARIETY_RESERVE + 1) > VARIETY_RESERVE
+
+
+def _week_dishes(plan_id: int, chains: dict) -> list[dict]:
+    """This week's dinner and lunch dishes, each once, in order of first
+    night: a lunch eating a dinner's leftovers is that dinner (the count's
+    own reading, _dinner_fed_lunch_ids)."""
+    fed = _dinner_fed_lunch_ids(plan_id, chains)
+    dishes = []
+    for slot in NO_REPEAT_SLOTS:
+        entries = [e for e in _load_slot_entries(plan_id, slot) if e["id"] not in fed]
+        for dish in _group_dishes(entries, chains):
+            dish["slot"] = slot
+            dishes.append(dish)
+    return sorted(dishes, key=lambda d: (min(n["date"] for n in d["nights"]), d["slot"] != "dinner"))
+
+
+def repick_near_twins(plan_id: int, period_start: str | None, budget, picker=None,
+                      asks: tuple[str | None, ...] = ()) -> dict:
+    """
+    Two dishes on one week that are the same dish under two names
+    (same_dish — Emily, 2026-10-31: a white bean and tomato stew on Sunday,
+    a white bean, tomato and feta bowl on Monday) count as a repeat, across
+    dinner and lunch: the LATER one is re-picked, the whole dish and all
+    its nights, through the same picker and write as repick_recent_repeats,
+    on the same shared budget. When the later one is theirs or cannot move
+    whole, the earlier one is tried instead; when neither can, both stay
+    and are logged. A dish repeated under ONE name is not this pass's
+    business — that is the count pass's batch (enforce_distinct_count).
+
+    Never raises: counts come back for the log and for tests.
+    """
+    from . import draft_opener as _draft_opener
+
+    out = {"twins": 0, "repicked": 0, "left": []}
+    try:
+        recent = sorted(_draft_opener.recent_dish_names(period_start, plan_id, slots=NO_REPEAT_SLOTS) or ()) \
+            if period_start else []
+        chains = _leftovers.plan_leftover_chains(plan_id)
+        done: set[str] = set()
+        while True:
+            if not variety_may_spend(budget):
+                break
+            dishes = _week_dishes(plan_id, chains)
+            pair = next(
+                ((a, b) for i, a in enumerate(dishes) for b in dishes[i + 1:]
+                 if repeat_key(a["name"]) != repeat_key(b["name"])
+                 and repeat_key(b["name"]) not in done and same_dish(a["name"], b["name"])),
+                None,
+            )
+            if pair is None:
+                break
+            earlier, later = pair
+            out["twins"] += 1
+            done.add(repeat_key(later["name"]))
+            replaced = None
+            for dish in (later, earlier):
+                if not variety_may_spend(budget):
+                    break
+                if dish["protected"] or theirs_by_hand(dish) or asked_for_by_name(dish["name"], asks):
+                    continue
+                nights = _replaceable(dish, chains)
+                if nights is None:
+                    continue
+                others = [d["name"] for d in dishes if d is not dish] + recent
+                new = _repick_entry(
+                    plan_id, nights[0], budget,
+                    avoid=[d["name"] for d in dishes if d is not dish], because=TWIN_BECAUSE,
+                    reject=lambda name, others=others: same_as_any(name, others),
+                    derived_key="twin_repick", picker=picker, reason_line=REPEAT_REASON,
+                    also=nights[1:] or None,
+                )
+                if new is not None:
+                    replaced = (dish["name"], new["meal"])
+                    break
+            if replaced is None:
+                out["left"].append(later["name"])
+                continue
+            out["repicked"] += 1
+            done.add(repeat_key(replaced[1]))
+            logger.info("Near twin: plan %s %r -> %r (%s)", plan_id, replaced[0], replaced[1], TWIN_BECAUSE)
+            chains = _leftovers.plan_leftover_chains(plan_id)
+        if out["left"]:
+            logger.info("Near twin: %d left as generated on plan %s: %s",
+                        len(out["left"]), plan_id, ", ".join(out["left"]))
+    except Exception:
+        logger.exception("Near-twin enforcement failed for plan %s; the week stands as generated", plan_id)
     return out
 
 
