@@ -86,6 +86,16 @@ SURPRISE_MOOD = "Surprise me"
 # 2026-09-27: "Something new" changed dinners and left breakfast alone).
 SOMETHING_NEW_MOOD = "Something new"
 
+# "Breakfasts, week to week" (Emily, 2026-10-31, deciding "should breakfasts
+# change every week?" as "ask each household"). Plan a week's two answers:
+# "The same breakfasts each week" is today's rhythm — a breakfast may come
+# back next week; "Something different" puts breakfast in the two-week
+# no-repeat window beside dinner and lunch (meal_variety.no_repeat_slots),
+# exactly as the "Something new" mood does for one week. Unanswered ('')
+# plans as "same". Carried to the next week like the moods are, so it is
+# asked once and remembered (_last_period_intake, and the save below).
+BREAKFASTS_EACH_WEEK = ("same", "different")
+
 
 # What every meal on a day tapped off "Which days?" says for itself once
 # the week is drafted (2026-09-21, board D1). Written as the planned_empty
@@ -581,6 +591,9 @@ def _intake_row_to_dict(row) -> dict:
         "week_answers": json.loads(row["week_answers_json"] or "{}"),
         # "Use these up" (B1): inventory ids switched off for this week.
         "use_up_off": json.loads(_row_get(row, "use_up_off_json") or "[]"),
+        # "Breakfasts, week to week" — '' when never answered (plans as
+        # 'same'). See BREAKFASTS_EACH_WEEK.
+        "breakfasts_each_week": _row_get(row, "breakfasts_each_week") or "",
         "moods": json.loads(row["moods_json"]),
         "cuisines": json.loads(row["cuisines_json"]),
         "freeform": row["freeform"],
@@ -645,6 +658,7 @@ def save_week_intake(
     brought_over: list | None = None,
     week_answers: dict | None = None,
     use_up_off: list | None = None,
+    breakfasts_each_week: str | None = None,
 ) -> dict:
     """
     Record the household's answers for a week, as a NEW REVISION.
@@ -703,6 +717,12 @@ def save_week_intake(
     inventory_items ids the household switched OFF before the draft. Every
     other row tools/use_up.candidates offers is planned in (B2). Whole list
     each time; [] switches everything back on.
+
+    breakfasts_each_week is "Breakfasts, week to week" (2026-10-31): 'same'
+    or 'different' (BREAKFASTS_EACH_WEEK). A week's FIRST revision that
+    isn't given one starts from the period before's answer — remembered,
+    not asked again — so a week drafted without opening that screen still
+    plans breakfast the way the household last said.
     """
     date.fromisoformat(week_start)  # fail loudly on a malformed week
     if brought_over is not None:
@@ -717,6 +737,8 @@ def save_week_intake(
             use_up_off = sorted({int(i) for i in use_up_off if not isinstance(i, bool)})
         except (TypeError, ValueError):
             raise ValueError("use_up_off must be a list of inventory item ids.")
+    if breakfasts_each_week is not None and breakfasts_each_week not in BREAKFASTS_EACH_WEEK:
+        raise ValueError("breakfasts_each_week is 'same' or 'different'.")
     period = period_dates(week_start, day_count)
     week_days = set(period)
     if weekday_lunches is not None:
@@ -831,6 +853,7 @@ def save_week_intake(
                 "skipped_days": [], "moods": [], "cuisines": [], "freeform": "",
                 "weekday_lunches": {}, "brought_over": [], "week_answers": {},
                 "use_up_off": [],
+                "breakfasts_each_week": _remembered_breakfasts_each_week(conn, week_start),
             }
 
             def pick(new, key, _base=base):
@@ -876,8 +899,8 @@ def save_week_intake(
                     skipped_days_json, moods_json, cuisines_json, freeform,
                     household_snapshot_json, preferences_snapshot_json,
                     weekday_lunches_json, brought_over_json, week_answers_json,
-                    use_up_off_json
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    use_up_off_json, breakfasts_each_week
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     household_id(), week_start, revision,
@@ -898,6 +921,7 @@ def save_week_intake(
                     json.dumps(pick(brought_over, "brought_over")),
                     json.dumps(pick(week_answers, "week_answers")),
                     json.dumps(pick(use_up_off, "use_up_off")),
+                    pick(breakfasts_each_week, "breakfasts_each_week"),
                 ),
             )
             conn.commit()
@@ -917,6 +941,27 @@ def save_week_intake(
                 raise
         finally:
             conn.close()
+
+
+def remembered_breakfasts_each_week(week_start: str) -> str:
+    """The standing "Breakfasts, week to week" answer for a week that has
+    no intake of its own — meal_variety.no_repeat_slots' fallback."""
+    conn = get_conn()
+    try:
+        return _remembered_breakfasts_each_week(conn, week_start)
+    finally:
+        conn.close()
+
+
+def _remembered_breakfasts_each_week(conn, week_start: str) -> str:
+    """The "Breakfasts, week to week" answer of the period before this one,
+    '' when there is none — what a week's first revision starts from."""
+    row = conn.execute(
+        "SELECT breakfasts_each_week FROM week_intake WHERE household_id = ? AND week_start < ? "
+        "AND superseded_at IS NULL ORDER BY week_start DESC, revision DESC LIMIT 1",
+        (household_id(), week_start),
+    ).fetchone()
+    return (row["breakfasts_each_week"] or "") if row else ""
 
 
 def save_setup_week_answers(week_start: str, day_count: int = 7, cuisines: list | None = None) -> dict | None:
@@ -1498,6 +1543,8 @@ def _last_period_intake(conn, week_start: str) -> dict | None:
         "day_count": day_count or None,
         "moods": json.loads(row["moods_json"]),
         "cuisines": json.loads(row["cuisines_json"]),
+        # "Breakfasts, week to week": the answer the screen opens on.
+        "breakfasts_each_week": row["breakfasts_each_week"] or "",
         "weekday_lunches": _weekday_lunches.carryover(
             _weekday_lunches.load(row["weekday_lunches_json"]),
             json.loads(row["packed_lunch_days_json"] or "[]"),

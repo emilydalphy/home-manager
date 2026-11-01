@@ -4225,6 +4225,9 @@ class WeekIntakeRequest(BaseModel):
     # switched OFF before the draft — the whole list each time; [] turns
     # everything back on. See tools/use_up.py.
     use_up_off: list | None = None
+    # "Breakfasts, week to week" (2026-10-31): 'same' | 'different'. See
+    # week_intake.BREAKFASTS_EACH_WEEK.
+    breakfasts_each_week: str | None = None
 
 
 class WeekGenerateRequest(BaseModel):
@@ -4459,6 +4462,7 @@ def save_week_intake_route(week_start: str, req: WeekIntakeRequest):
             brought_over=req.brought_over,
             week_answers=req.week_answers,
             use_up_off=req.use_up_off,
+            breakfasts_each_week=req.breakfasts_each_week,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

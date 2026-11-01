@@ -996,6 +996,12 @@ _MIGRATIONS = [
     # stopped being an adult (2026-10-26, tools.age_change_note). '' = never
     # told, or an adult again since.
     ("members", "age_note_shown_for", "TEXT NOT NULL DEFAULT ''"),
+    # "Breakfasts, week to week" on Plan a week (Emily, 2026-10-31: ask each
+    # household whether breakfasts change every week). 'same' | 'different',
+    # '' = never answered, which plans as 'same' (breakfast may repeat across
+    # weeks — the rhythm working). Written only through save_week_intake
+    # (append-only); see week_intake.BREAKFASTS_EACH_WEEK.
+    ("week_intake", "breakfasts_each_week", "TEXT NOT NULL DEFAULT ''"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people

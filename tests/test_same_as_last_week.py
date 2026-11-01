@@ -124,7 +124,10 @@ class TestLastWeek:
         _attach_plan(last, saved["intake_id"], 7)
         prefill = tools.get_week_intake_prefill(this)
         assert prefill["intake"] is None                  # nothing for this week yet
-        assert set(prefill["last_intake"]) == {"week_start", "day_count", "moods", "cuisines", "weekday_lunches"}
+        # breakfasts_each_week travels on purpose: "Breakfasts, week to week"
+        # is asked once and remembered (2026-11-01).
+        assert set(prefill["last_intake"]) == {"week_start", "day_count", "moods", "cuisines", "weekday_lunches",
+                                               "breakfasts_each_week"}
 
     def test_anything_else_is_said_to_be_this_weeks_and_the_page_starts_it_blank(self):
         """Emily, 2026-09-28: the note is for this week only and must read

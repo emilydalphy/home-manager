@@ -1440,7 +1440,7 @@ def recent_refusals(intake: dict | None, period_start: str | None, plan_id: int,
     breakfast back in after repick_recent_repeats took it off (2026-09-27).
     Empty otherwise, or when there is nothing to compare against.
     """
-    if not period_start or slot not in no_repeat_slots(intake):
+    if not period_start or slot not in no_repeat_slots(intake, period_start):
         return []
     from . import draft_opener as _draft_opener
     try:
@@ -1450,16 +1450,26 @@ def recent_refusals(intake: dict | None, period_start: str | None, plan_id: int,
         return []
 
 
-def no_repeat_slots(intake: dict | None) -> tuple[str, ...]:
+def no_repeat_slots(intake: dict | None, week_start: str | None = None) -> tuple[str, ...]:
     """
     The slots repick_recent_repeats holds to the two-week window. Dinner
     and lunch always; breakfast too when the week's moods include
     "Something new" (Emily, 2026-09-27: she picked it, and last week's
-    breakfast came back — "new" read as dinners only). Without that mood a
-    breakfast repeating across weeks is the rhythm working, as ever.
+    breakfast came back — "new" read as dinners only), or when the
+    household answered "Breakfasts, week to week" with "Something
+    different" (Emily, 2026-10-31: ask each household). Otherwise — "The
+    same breakfasts each week", or never asked — a breakfast repeating
+    across weeks is the rhythm working, as ever.
     """
-    from .week_intake import SOMETHING_NEW_MOOD
-    if intake and SOMETHING_NEW_MOOD in (intake.get("moods") or []):
+    from .week_intake import SOMETHING_NEW_MOOD, remembered_breakfasts_each_week
+    if intake and (SOMETHING_NEW_MOOD in (intake.get("moods") or [])
+                   or intake.get("breakfasts_each_week") == "different"):
+        return NO_REPEAT_SLOTS + ("breakfast",)
+    # A week drafted with no answers saved at all (chat's
+    # generate_weekly_plan) still holds the household's standing answer:
+    # "Something different" is about every week, not the one it was said
+    # in (review catch, 2026-11-01). Moods stay per-week, as ever.
+    if not intake and week_start and remembered_breakfasts_each_week(week_start) == "different":
         return NO_REPEAT_SLOTS + ("breakfast",)
     return NO_REPEAT_SLOTS
 

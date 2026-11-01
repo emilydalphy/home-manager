@@ -217,6 +217,8 @@ class TestOneQuestionAScreen:
             "day_count": None,
             # Step 3 unanswered that week (2026-09-25): nothing to carry.
             "weekday_lunches": None,
+            # "Breakfasts, week to week" never asked (2026-11-01).
+            "breakfasts_each_week": "",
         }
         # A first week has nothing to carry.
         assert tools.get_week_intake_prefill("2026-09-14")["last_intake"] is None
