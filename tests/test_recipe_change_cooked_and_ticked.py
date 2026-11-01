@@ -53,10 +53,15 @@ def test_changing_tonights_cooked_dinner_buys_nothing_for_it():
     entry = _week_with_fried_rice(household_today())
     tools.add_recipe("Tacos", TACO, instructions=["Brown the beef."])
     tools.check_off_meal(entry, "done")
-    before = _lines()
+    # Since 2026-11-01 (Emily, option (b)) the tick itself takes the
+    # unbought lines only this night wanted off the list, and changing the
+    # eaten night's dish forgets them: those removed rows go. What must
+    # hold is that nothing is BOUGHT for an eaten dinner.
+    live = lambda: [l for l in _lines() if l[2] != "removed"]
+    before = live()
     out = tools.change_meal_recipe(entry, _id("SELECT id FROM recipes WHERE name = 'Tacos'"))
     assert out["status"] == "changed"
-    assert _lines() == before, "an eaten dinner is not bought for"
+    assert live() == before, "an eaten dinner is not bought for"
 
 
 def test_changing_a_night_ahead_counts_the_chicken_already_in_the_cart():

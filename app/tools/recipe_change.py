@@ -532,6 +532,9 @@ def change_meal_recipe(entry_id: int, recipe_id: int) -> dict:
         done_ids = [i for group in done_by_old.values() for i in group]
         if done_ids:
             _cooker._move_recipe_cook_counters(conn, done_ids, cooked=True)
+            # The old dish's lines its tick took off were never this
+            # night's food: an untick now must not put them back.
+            _grocery.forget_lines_eaten_took(conn, done_ids)
         # Less what is already in the cart or bought for these nights: the
         # chicken ticked for Fried Rice is the Curry's chicken too.
         after = _resync_users(conn, {plan_id: live_ids}) if live_ids else before
