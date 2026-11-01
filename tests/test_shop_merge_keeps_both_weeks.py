@@ -198,8 +198,11 @@ def test_a_merged_staple_line_keeps_its_staple(signed_in):
     """CATCH. The household's oat milk (older id) took the staple's line
     and dropped its staple link, so Remove couldn't say "not this trip" and
     the next read put the staple straight back."""
-    mine = _insert("oat milk", "1 carton", None)
+    # The staple first: made by name with the household's line already on
+    # the list, it would take that line over (2026-10-31) and leave
+    # nothing to merge.
     tools.add_staple("Oat milk", every_days=7, quantity="1 carton")
+    mine = _insert("oat milk", "1 carton", None)
     conn = get_conn()
     staple = {"staple_id": conn.execute("SELECT id FROM staples WHERE item = 'Oat milk'").fetchone()["id"]}
     staple_line = conn.execute(

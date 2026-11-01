@@ -158,10 +158,13 @@ def test_the_yes_path_creates_the_staple_exactly_like_the_staples_card():
     created = tools.add_staple("Dish soap", category="household")
     assert created["created"] is True
     assert _staples_count() == 1
-    # Already on the list this trip (added directly, not because it's
-    # "due"), so the cadence starts fresh rather than firing again
-    # immediately -- see add_staple's own running_low default.
-    assert created["due"] is False
+    # The line chat just added is still to buy, so the staple takes it
+    # over and is due now (Emily, 2026-10-31) -- the same as "Make it a
+    # staple" on that row. No second line: the one there is the staple's.
+    assert created["due"] is True
+    rows = tools.list_grocery_list(status="needed")
+    assert [r["item"] for r in rows] == ["Dish soap"]
+    assert rows[0]["staple_id"] == created["id"]
 
 
 def test_shop_tab_route_is_never_offered_anything():

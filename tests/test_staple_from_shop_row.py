@@ -13,8 +13,9 @@ the staple and its own line were strangers. Now the client passes the row
   it is already on the list, which is what "due" means;
 - refuses a line that isn't this household's.
 
-Making a staple by name (chat, "Before you shop") is unchanged — pinned
-here too.
+Making a staple by name (chat, "Before you shop") with nothing of it on
+the list is unchanged — pinned here too. By name with a line of it still to
+buy takes that line over, as the row does (Emily, 2026-10-31).
 """
 
 from __future__ import annotations
@@ -141,14 +142,24 @@ def test_the_route_passes_the_row_and_refuses_a_stranger(signed_in):
     assert ok.json()["last_bought_at"] is None
 
 
-def test_by_name_is_unchanged():
-    """Chat's add_staple and the typed regular carry no row: a staple you
-    aren't out of is had now, due a cadence away — as before."""
+def test_by_name_takes_over_a_line_still_to_buy():
+    """Chat's add_staple and the typed regular carry no row, but a line of
+    it still to buy is the same "it's due" the row's menu reads (Emily,
+    2026-10-31, changing the 2026-10-09 "as before"): the line is taken
+    over and the staple is due now, with no purchase invented."""
     line_id = tools.add_grocery_item("Dish soap", category="household")["item_id"]
+    s = tools.add_staple("Dish soap", category="household")
+    assert s["last_bought_at"] is None
+    assert s["due"] is True
+    assert _line(line_id)["staple_id"] == s["id"]
+
+
+def test_by_name_with_nothing_on_the_list_is_unchanged():
+    """No line to take over: a staple you aren't out of is had now, due a
+    cadence away — as before."""
     s = tools.add_staple("Dish soap", category="household")
     assert s["last_bought_at"] == TODAY.isoformat()
     assert s["due"] is False
-    assert _line(line_id)["staple_id"] is None
 
 
 def test_the_row_menu_sends_the_row_it_was_tapped_on():
