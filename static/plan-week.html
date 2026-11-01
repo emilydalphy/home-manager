@@ -476,6 +476,7 @@
     text-transform: uppercase; color: var(--ink-muted);
   }
   .lunch-day-what { flex: 1 1 auto; font-size: 15px; font-weight: 600; line-height: 1.35; }
+  .lunch-day-why { display: block; font-size: 13px; font-weight: 500; color: var(--ink-secondary); }
   .lunch-note { font-size: 13px; font-weight: 500; color: var(--ink-secondary); margin: 8px 0 0; }
 
   /* ---------- Same as last week? (Emily, 2026-09-25, option A) ----------
@@ -3151,6 +3152,31 @@ body.toast-up { padding-bottom: 260px; }
     return { kinds: kinds, prepDays: prepDays };
   }
 
+  // A Cold packed lunch (Emily, 2026-10-31): everyone eating it needs it
+  // Cold packed, with no warm container ticked. The draft re-picks such a
+  // lunch cold when it reheats last night's dinner (draft_rules.
+  // enforce_cold_packed_lunches, WARM_NEEDS), so the screen never fills one
+  // in as leftovers — it offered "Last night's dinner" and the draft quietly
+  // swapped it. Made on a prep day where the household preps, else cooked
+  // that morning. `pre` is lunchPrefill's answer; `cold(iso)` says the day.
+  var WARM_LUNCH_NEEDS = ['thermos', 'reheat', 'made_fresh'];
+  function allColdPacked(eating, needs, weekday) {
+    return eating.length > 0 && eating.every(function (n) {
+      var e = needs[n] || {};
+      var on = (e.days && e.days[weekday] !== undefined ? e.days[weekday] : e.needs) || [];
+      return on.indexOf('cold_packed') !== -1 && !on.some(function (k) { return WARM_LUNCH_NEEDS.indexOf(k) !== -1; });
+    });
+  }
+  function lunchColdHold(pre, dates, cold, rhythmPrepDays) {
+    var preps = pre.prepDays.length ? pre.prepDays : (rhythmPrepDays || []);
+    dates.forEach(function (d) {
+      if (pre.kinds[d] !== 'leftovers' || !cold(d)) return;
+      pre.kinds[d] = preps.length ? 'prepped' : 'cooked';
+      if (preps.length && !pre.prepDays.length) pre.prepDays = preps.slice();
+    });
+    return pre;
+  }
+
   // "Prepped Sunday" · "Prepped Sunday, from the freezer" · "Last night’s
   // dinner" (onboarding's word for it — re-plan Option B's copy list,
   // 2026-10-18; it was "Leftovers from Tuesday’s dinner") · "Cooked that day".
@@ -3159,9 +3185,11 @@ body.toast-up { padding-bottom: 260px; }
   // (last week's prep — a lone Wednesday prep and a Monday lunch), the
   // batch is cooked on that lunch, and the rest of it reheats that lunch.
   // weekday_lunches.apply_to_plan's `stale` batch, line for line.
-  function lunchLine(iso, kind, prepDays, kinds) {
+  // `cold`: a Cold packed day (coldPackedDay), whose cooked lunch is
+  // made in the morning and packed, not cooked at lunchtime.
+  function lunchLine(iso, kind, prepDays, kinds, cold) {
     if (kind === 'leftovers') return 'Last night’s dinner';
-    if (kind === 'cooked') return 'Cooked that day';
+    if (kind === 'cooked') return cold ? 'Packed cold, made that morning' : 'Cooked that day';
     var found = prepDayFor(iso, prepDays);
     if (!found) return 'Prepped';
     if (found.back > LUNCH_KEEP_DAYS && kinds) {
@@ -3242,6 +3270,15 @@ body.toast-up { padding-bottom: 260px; }
   function lunchOk(iso) {
     return leftoversOk(iso, plannedDays().map(function (d) { return d.date; }), dinnerOff);
   }
+  // Everyone at this lunch, by the week's grid less step 2's day sheet,
+  // needs it Cold packed (allColdPacked).
+  function coldPackedDay(iso) {
+    var names = memberNames();
+    var cell = uwCleanCell(weekCells().lunch[weekdayIndex(iso)], names);
+    var away = ((attendance.byDate[iso] || {}).lunch || {}).absent_names || [];
+    var eating = (cell === 'all' ? names : cell === 'off' ? [] : cell).filter(function (n) { return away.indexOf(n) === -1; });
+    return allColdPacked(eating, weekNeeds(), isoWeekday(iso));
+  }
 
   // Bring the answer in line with the days on screen now — step 2 may have
   // taken a lunch out, or a dinner away from under a leftovers lunch. The
@@ -3258,11 +3295,13 @@ body.toast-up { padding-bottom: 260px; }
         var usedPrefill = null;
         var missing = dates.filter(function (d) { return !lunch.kinds[d]; });
         if (missing.length) {
-          usedPrefill = lunchPrefill(missing, (data.last_intake || {}).weekday_lunches, lunchOk, data.rhythm_prep_days, data.usual_lunch);
+          usedPrefill = lunchColdHold(lunchPrefill(missing, (data.last_intake || {}).weekday_lunches, lunchOk, data.rhythm_prep_days, data.usual_lunch),
+            missing, coldPackedDay, data.rhythm_prep_days);
           missing.forEach(function (d) { lunch.kinds[d] = usedPrefill.kinds[d]; });
         }
       } else {
-        var pre = lunchPrefill(dates, (data.last_intake || {}).weekday_lunches, lunchOk, data.rhythm_prep_days, data.usual_lunch);
+        var pre = lunchColdHold(lunchPrefill(dates, (data.last_intake || {}).weekday_lunches, lunchOk, data.rhythm_prep_days, data.usual_lunch),
+          dates, coldPackedDay, data.rhythm_prep_days);
         lunch.kinds = pre.kinds;
         lunch.prepDays = pre.prepDays;
       }
@@ -3427,7 +3466,16 @@ body.toast-up { padding-bottom: 260px; }
     paintChipSet($('lunch-days'), function (d) { return answers.packed_lunch_days.indexOf(d) !== -1; });
     $('lunch-week').querySelectorAll('.lunch-day').forEach(function (row) {
       var d = row.dataset.date;
-      row.querySelector('.lunch-day-what').textContent = lunchLine(d, lunch.kinds[d], lunch.prepDays, lunchKindsIn(currentLunchDates()));
+      var cold = coldPackedDay(d);
+      var what = row.querySelector('.lunch-day-what');
+      what.textContent = lunchLine(d, lunch.kinds[d], lunch.prepDays, lunchKindsIn(currentLunchDates()), cold);
+      // Tapped to leftovers anyway: said, not swapped behind their back.
+      if (cold && lunch.kinds[d] === 'leftovers') {
+        var note = document.createElement('span');
+        note.className = 'lunch-day-why';
+        note.textContent = 'I’ll swap this for a cold lunch, since it’s packed.';
+        what.appendChild(note);
+      }
     });
   }
 
@@ -4545,7 +4593,7 @@ body.toast-up { padding-bottom: 260px; }
     var dates = currentLunchDates();
     if (!days.length) {
       var next = Object.assign({}, lunch.kinds);
-      dates.forEach(function (d) { if (next[d] === 'prepped') next[d] = lunchOk(d) ? 'leftovers' : 'cooked'; });
+      dates.forEach(function (d) { if (next[d] === 'prepped') next[d] = lunchOk(d) && !coldPackedDay(d) ? 'leftovers' : 'cooked'; });
       lunch.prepDays = [];
       lunch.reachAdded = [];
       lunch.kinds = next;
@@ -4606,7 +4654,11 @@ body.toast-up { padding-bottom: 260px; }
       if (!e.target.closest('[data-variety]')) return;
       var choice = currentVarietyChoice('lunch');
       var dates = currentLunchDates();
-      var pre = lunchPrefill(dates, null, lunchOk, prepDayKeys.length ? currentPrepDayKeys() : [], { choice: choice, dishes: 3 });
+      // The third way into the prefill — a cold-packed day holds here too,
+      // or re-tapping "A few in rotation" put the leftovers straight back.
+      var rhythm = prepDayKeys.length ? currentPrepDayKeys() : [];
+      var pre = lunchColdHold(lunchPrefill(dates, null, lunchOk, rhythm, { choice: choice, dishes: 3 }),
+        dates, coldPackedDay, rhythm);
       if (pre.prepDays.length) lunch.prepDays = pre.prepDays;
       takeLunchKinds(pre.kinds);
     });

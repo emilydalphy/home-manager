@@ -712,7 +712,8 @@ class TestATappedOffPrepDayStaysOff:
             " var lunch = {kinds: {}, prepDays: [], reachAdded: [], reachedFor: null, ready: false};"
             f" function currentLunchDates() {{ return {json.dumps(WEEK)}; }}"
             f" function lunchOk(d) {{ return leftoversOk(d, {json.dumps(PERIOD)}, null); }}"
-            f" {_extract('reconcileLunches')} {_extract('reachPrepDays')}"
+            " function coldPackedDay() { return false; }"
+            f" {_extract('reconcileLunches')} {_extract('reachPrepDays')} {_extract('lunchColdHold')}"
             f" for (var i = 0; i <= {again}; i++) reconcileLunches();"
             " return [lunch.prepDays, prepReachSentence(prepReachNeeds(lunch.prepDays, lunch.kinds,"
             f"   {json.dumps(WEEK)}, lunch.reachAdded))]; }})()")
