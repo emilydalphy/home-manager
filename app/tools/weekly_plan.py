@@ -2219,6 +2219,11 @@ def step_past_approved(period: dict) -> dict:
         start = date.fromisoformat(max(ends)) + timedelta(days=1)
         days = int(out["day_count"])
         stepped = True
+    # The household's own length rides along untouched: /plan-week's
+    # loadHorizon reads the horizon off this route, and a gap cut to three
+    # days must not become "how long this household plans" for a Re-plan
+    # link that names a week but no &days (review, 2026-11-01).
+    out["usual_day_count"] = int(period["day_count"])
     if start.isoformat() == out["start_date"] and days == out["day_count"]:
         return out
     out.update({

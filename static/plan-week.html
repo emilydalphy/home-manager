@@ -1664,7 +1664,11 @@ body.toast-up { padding-bottom: 260px; }
       var period = await res.json();
       if (period && /^\d{4}-\d{2}-\d{2}$/.test(period.today || '')) householdToday = period.today;
       if (!period || !period.start_date) throw new Error('planning period missing a start date');
-      horizon = (period.day_count && period.day_count > 0) ? Math.min(period.day_count, PERIOD_MAX_DAYS) : 7;
+      // usual_day_count, not day_count: the offer can be cut to the free
+      // days before an approved plan, and that cut is not the household's
+      // horizon (2026-11-01).
+      var usual = period.usual_day_count || period.day_count;
+      horizon = (usual && usual > 0) ? Math.min(usual, PERIOD_MAX_DAYS) : 7;
       return period;
     } catch (err) {
       console.warn('Planning period lookup failed:', err);
@@ -1818,7 +1822,9 @@ body.toast-up { padding-bottom: 260px; }
     if (!weekStart) {
       if (!period) { location.href = '/week'; return; }
       weekStart = period.start_date;
-      dayCount = horizon;
+      // The offer's own length: it may be cut to the free days before an
+      // approved plan, and its start only makes sense with its length.
+      dayCount = Math.min(period.day_count || horizon, PERIOD_MAX_DAYS);
     } else if (!DAYS_IN_ADDRESS) {
       // A door that named its week but no length: the household's own
       // length (Emily, 2026-10-18 — "the day after the last plan ends, for
