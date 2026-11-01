@@ -1833,6 +1833,22 @@ CREATE TABLE IF NOT EXISTS legal_acceptances (
     accepted_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- The same agreement, by ONE adult (Loop Board, Emily 2026-10-31: "an adult
+-- joining by invite ticks Terms + Privacy themselves, recorded per person").
+-- legal_acceptances above is the household's, made at email sign-up; an
+-- adult who joins by invite link never saw that screen, so the join page
+-- asks them and the row is theirs. member_id is NOT NULL on purpose: when
+-- they leave, their agreement goes with their other details
+-- (household_deletion deletes NOT NULL member rows) rather than being
+-- nulled into something that reads like the household's own.
+CREATE TABLE IF NOT EXISTS member_legal_acceptances (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    member_id INTEGER NOT NULL REFERENCES members(id),
+    version TEXT NOT NULL,
+    accepted_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 -- The conversation a signed-in device is in the middle of: the trimmed
 -- message list run_agent_turn is handed next turn, and when it was last
 -- touched. One row per session key, overwritten every turn.

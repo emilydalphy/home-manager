@@ -88,7 +88,7 @@ def test_the_main_person_takes_a_helper_out_and_what_they_added_stays(beta_house
     used_token = phone.post("/api/household/invites", json={"member_id": maria}).json()["path"].split("#", 1)[1]
     assert old_token != used_token
     marias_phone = TestClient(app)
-    assert marias_phone.post("/api/join", json={"token": used_token}).status_code == 200
+    assert marias_phone.post("/api/join", json={"token": used_token, "agreed": True}).status_code == 200
     assert marias_phone.get("/api/whoami").json()["member"]["id"] == maria
     added = marias_phone.post("/api/grocery-list/add", json={"item": "Bananas", "added_by": "Maria"})
     assert added.status_code == 200, added.text
@@ -102,7 +102,7 @@ def test_the_main_person_takes_a_helper_out_and_what_they_added_stays(beta_house
     # Gone from Who's here; her phone is signed out; her link is dead.
     assert "Maria" not in _adults(phone)
     assert marias_phone.get("/api/whoami").status_code == 401
-    assert TestClient(app).post("/api/join", json={"token": fresh_token}).status_code == 410
+    assert TestClient(app).post("/api/join", json={"token": fresh_token, "agreed": True}).status_code == 410
     # The person asking stays signed in, as herself.
     assert phone.get("/api/whoami").json()["member"]["id"] == julia
     # What she added stays with the household.

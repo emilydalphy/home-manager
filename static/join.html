@@ -115,6 +115,18 @@
     color: var(--ink-secondary); text-decoration: none;
   }
   .jn-quiet:hover { color: var(--ink-strong); }
+  /* "I agree to the Terms and Privacy Policy" — ticked by the person
+     joining, before the link is spent (Emily, 2026-10-31: an adult who
+     joins by invite agrees themselves, recorded per person). The whole
+     line is the 44px target (§2 rule 6); the box is the browser's own,
+     in the brand's spruce. */
+  .jn-agree {
+    display: flex; align-items: flex-start; gap: 10px;
+    min-height: 44px; padding: 10px 2px; box-sizing: border-box;
+    font-size: 15px; line-height: 1.4; color: var(--ink); cursor: pointer;
+  }
+  .jn-agree input { width: 20px; height: 20px; margin: 0; flex: none; accent-color: var(--spruce); }
+  .jn-agree a { color: var(--ink-strong); font-weight: 700; }
 </style>
 </head>
 <body>
@@ -127,8 +139,20 @@
     <path d="M12.5 7.1c.9-2.2 3.2-3.1 5.3-2.7.4 2.2-.7 4.3-2.8 4.7-1.4.3-2.5-.6-2.5-2z"/>
     <path d="M12 10.2c-1.1 1.6-1.1 6.3 0 8.2"/>
   </svg>
-  <div class="jn-state" id="jn-working" role="status">
+  <div class="jn-state" id="jn-working" role="status" hidden>
     <h1 class="jn-line">Getting you in&hellip;</h1>
+  </div>
+  <div class="jn-state" id="jn-agree" hidden>
+    <h1 class="jn-line">You&rsquo;ve been invited.</h1>
+    <p class="jn-sub">Before you join, have a look at what Pomona does with your household&rsquo;s details.</p>
+    <form class="jn-form" id="jn-agree-form" novalidate>
+      <label class="jn-agree" for="jn-agree-box">
+        <input type="checkbox" id="jn-agree-box" aria-describedby="jn-agree-msg" />
+        <span>I agree to the <a href="/terms">Terms</a> and <a href="/privacy">Privacy Policy</a>.</span>
+      </label>
+      <p class="jn-msg" id="jn-agree-msg" role="alert" hidden></p>
+      <button type="submit" class="btn-primary" id="jn-agree-go">Join</button>
+    </form>
   </div>
   <div class="jn-state" id="jn-gone" hidden>
     <h1 class="jn-line">This link has run out.</h1>
@@ -184,7 +208,7 @@
   }
 
   function show(id) {
-    ['jn-working', 'jn-gone', 'jn-trouble', 'jn-email', 'jn-code'].forEach(function (key) {
+    ['jn-working', 'jn-agree', 'jn-gone', 'jn-trouble', 'jn-email', 'jn-code'].forEach(function (key) {
       document.getElementById(key).hidden = key !== id;
     });
   }
@@ -213,8 +237,30 @@
     }
   }
 
+  // The tick comes first, and the link isn't spent until it's given:
+  // the server refuses an unticked join before it touches the link.
+  // The Terms and Privacy links open in this tab, so the token (already
+  // out of the address bar) is kept for this tab's session and the Back
+  // from those pages lands here, still able to join.
+  try {
+    if (token) window.sessionStorage.setItem('pomona-join-token', token);
+    else token = window.sessionStorage.getItem('pomona-join-token') || '';
+  } catch (e) { /* private mode: the link works on the first visit as before */ }
+  function forgetToken() {
+    try { window.sessionStorage.removeItem('pomona-join-token'); } catch (e) { /* nothing kept */ }
+  }
+  function askToAgree() {
+    if (!token) { runOut(); return; }
+    show('jn-agree');
+  }
   async function join() {
     if (!token) { runOut(); return; }
+    if (!document.getElementById('jn-agree-box').checked) {
+      say('jn-agree-msg', 'Tick the box to say you agree, then Join.');
+      show('jn-agree');
+      return;
+    }
+    say('jn-agree-msg', '');
     show('jn-working');
     var res;
     try {
@@ -222,15 +268,16 @@
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: token })
+        body: JSON.stringify({ token: token, agreed: true })
       });
     } catch (e) {
       trouble('Check your connection and try again.');
       return;
     }
-    if (res.ok) { askForEmail(); return; }
+    if (res.ok) { forgetToken(); askForEmail(); return; }
     if (res.status === 429) { trouble('That’s a lot of tries at once. Give it a few minutes, then try again.'); return; }
     if (res.status >= 500) { trouble('Something went wrong on my side. Try again in a moment.'); return; }
+    forgetToken();
     runOut();
   }
 
@@ -329,8 +376,10 @@
     if (/^\d{6}$/.test((document.getElementById('jn-code-input').value || '').replace(/\s+/g, ''))) checkCode();
   });
 
+  document.getElementById('jn-agree-form').addEventListener('submit', function (e) { e.preventDefault(); join(); });
+  document.getElementById('jn-agree-box').addEventListener('change', function () { say('jn-agree-msg', ''); });
   document.getElementById('jn-retry').addEventListener('click', join);
-  join();
+  askToAgree();
 })();
 </script>
 </body>

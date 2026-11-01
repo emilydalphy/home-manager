@@ -592,3 +592,34 @@ def accepted_legal_version(household_id: int) -> str | None:
         return row["version"] if row else None
     finally:
         conn.close()
+
+
+def record_member_acceptance(household_id: int, member_id: int) -> None:
+    """This adult agreed to the current terms and privacy policy themselves
+    (the invite link's join screen — see member_legal_acceptances)."""
+    conn = get_conn()
+    try:
+        conn.execute(
+            "INSERT INTO member_legal_acceptances (household_id, member_id, version) VALUES (?, ?, ?)",
+            (int(household_id), int(member_id), legal.LEGAL_VERSION),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    logger.info("Household %s: member %s agreed to the terms (%s)", household_id, member_id, legal.LEGAL_VERSION)
+
+
+def member_accepted_legal_version(household_id: int, member_id: int | None) -> str | None:
+    """The terms version this adult agreed to themselves, if they did."""
+    if member_id is None:
+        return None
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            "SELECT version FROM member_legal_acceptances WHERE household_id = ? AND member_id = ? "
+            "ORDER BY id DESC LIMIT 1",
+            (int(household_id), int(member_id)),
+        ).fetchone()
+        return row["version"] if row else None
+    finally:
+        conn.close()

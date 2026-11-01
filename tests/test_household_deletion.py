@@ -319,7 +319,7 @@ def test_delete_over_http_signs_out_and_goes_to_goodbye(client, beta_household):
     login = client.post("/login", data={"password": BETA, "next": "/"}, follow_redirects=False)
     assert login.status_code != 303
     assert households.authenticate(BETA) is None
-    assert TestClient(app).post("/api/join", json={"token": invite_token}).status_code == 410
+    assert TestClient(app).post("/api/join", json={"token": invite_token, "agreed": True}).status_code == 410
     assert TestClient(app).get(f"/api/share/{share_token}").status_code == 404
 
 

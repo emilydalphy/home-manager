@@ -127,6 +127,8 @@ _TABLES = [
     # Email sign-in (2026-10-06) — all four reference households, and two
     # reference members, so they go before both.
     "member_emails", "signup_emails", "email_codes", "legal_acceptances",
+    # Per-person agreement on joining by invite (2026-11-01) references members.
+    "member_legal_acceptances",
     # recipe_change_requests references members too (2026-10-05). It is not
     # optional: _seed_every_table in test_household_deletion.py puts a row in
     # EVERY household-scoped table, so a table missing from this list leaks

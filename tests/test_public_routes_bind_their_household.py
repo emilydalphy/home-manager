@@ -131,9 +131,9 @@ def test_the_share_links_and_invite_bind_the_tokens_household(no_default_househo
 
     _ok(client.get("/join"))
     ratelimit.reset()
-    assert _ok(client.post("/api/join", json={"token": "nope"})).status_code == 410
+    assert _ok(client.post("/api/join", json={"token": "nope", "agreed": True})).status_code == 410
     ratelimit.reset()
-    assert _ok(client.post("/api/join", json={"token": s["invite"]})).status_code == 200
+    assert _ok(client.post("/api/join", json={"token": s["invite"], "agreed": True})).status_code == 200
     who = client.get("/api/whoami").json()
     assert who["household_id"] == s["b"] and who["member"]["name"] == "Robin"
 
