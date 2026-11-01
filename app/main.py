@@ -3072,6 +3072,23 @@ ROUTE_DATE_MIN_YEAR = 1900
 ROUTE_DATE_MAX_YEAR = 2999
 
 
+# The most extra people a screen can say for one meal (Emily, 2026-10-31).
+# Hosting and the week's questions took any number — 1,000,000 guests saved
+# fine and sized the big meal and the list for it. Past 30 the household is
+# told to say it in chat, where a big gathering is a conversation; the chat
+# tools themselves are not capped.
+GUEST_CEILING = 30
+TOO_MANY_GUESTS = "That’s a lot of people. For more than 30, tell me in chat."
+
+
+def _refuse_too_many_guests(count) -> None:
+    """A 400 with the sentence above when one meal's extra people pass the
+    ceiling. Anything that isn't a whole number is left to the tool's own
+    shape check, which already has the right words for it."""
+    if isinstance(count, int) and not isinstance(count, bool) and count > GUEST_CEILING:
+        raise HTTPException(status_code=400, detail=TOO_MANY_GUESTS)
+
+
 def _route_date(value: str, name: str) -> datetime.date:
     """
     Parse a date a route was handed, or refuse it with a 400 -- the one
@@ -3111,6 +3128,7 @@ def holiday_answer_route(req: HolidayAnswerRequest):
     Record how the household is spending one holiday. Returns the saved
     answer, its one-line acknowledgement, and what changed on the plan.
     """
+    _refuse_too_many_guests(req.headcount)
     try:
         return tools.answer_holiday(
             req.date, req.answer, headcount=req.headcount, bring_dish=req.bring_dish,
@@ -4446,6 +4464,11 @@ def save_week_intake_route(week_start: str, req: WeekIntakeRequest):
             status_code=400,
             detail=f"A planning period has to be between 1 and {tools.MAX_PERIOD_DAYS} days.",
         )
+    # One night's guests, adults and children together, against the ceiling.
+    for extras in (req.guest_counts or {}).values() if isinstance(req.guest_counts, dict) else ():
+        if isinstance(extras, dict):
+            counts = [n for n in extras.values() if isinstance(n, int) and not isinstance(n, bool)]
+            _refuse_too_many_guests(sum(counts))
     try:
         return tools.save_week_intake(
             week_start,
@@ -4821,6 +4844,10 @@ def week_swap_in_place(week_start: str, req: SwapInPlaceRequest):
     something the household can't have and nothing was written. That is a
     real answer, not an error, and it carries the sentence to show.
     """
+    # A real date before the model is asked (Emily, 2026-10-31): with a
+    # plan id in the body the week key was never read, so a junk one
+    # spent a model call before anything noticed.
+    _route_date(week_start, "week_start")
     plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
         if req.whole_dish:
@@ -4931,6 +4958,10 @@ def week_swap_options(week_start: str, req: SwapOptionsRequest):
     and `options_unavailable` true means the model call failed; the sheet
     keeps its "Ask for something else" line either way.
     """
+    # A real date before the model is asked (Emily, 2026-10-31): with a
+    # plan id in the body the week key was never read, so a junk one
+    # spent a model call before anything noticed.
+    _route_date(week_start, "week_start")
     plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
         # `request` only when there is one: the call shape of every
@@ -5087,6 +5118,10 @@ def week_change_part(week_start: str, req: ChangePartRequest):
     the swap's own (/swap-undo). A 200 can still say no (`status`
     'refused' with the sentence to show) — a real answer, not an error.
     """
+    # A real date before the model is asked (Emily, 2026-10-31): with a
+    # plan id in the body the week key was never read, so a junk one
+    # spent a model call before anything noticed.
+    _route_date(week_start, "week_start")
     plan_id = _plan_id_for_request(week_start, req.weekly_plan_id)
     try:
         return tools.change_part(plan_id, req.entry_id, req.role, req.choice)
@@ -5700,6 +5735,7 @@ def set_week_attendance(week_start: str, req: SlotAttendanceRequest):
                 req.date, req.slot, req.member, present=bool(req.present),
             )
         if req.guest_count is not None:
+            _refuse_too_many_guests(req.guest_count)
             result = tools.set_guest_count(req.date, req.slot, req.guest_count)
         if result is None:
             raise HTTPException(status_code=400, detail="Send either a member to toggle or a guest_count.")
@@ -5726,6 +5762,9 @@ def set_week_day_attendance(week_start: str, req: DayAttendanceRequest):
     until the sheet's Done sends this, which is what lets its × discard.
     Returns each named slot as saved, with its summary line.
     """
+    for one in (req.slots or {}).values() if isinstance(req.slots, dict) else ():
+        if isinstance(one, dict):
+            _refuse_too_many_guests(one.get("guest_count"))
     try:
         datetime.date.fromisoformat(week_start)
         return tools.set_day_attendance(req.date, req.slots)
