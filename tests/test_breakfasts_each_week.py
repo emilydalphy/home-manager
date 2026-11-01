@@ -1,6 +1,6 @@
 """
 "Should breakfasts change every week?" — Emily, 2026-10-31: ask each
-household. Plan a week's Breakfast screen carries "Week to week": "The same
+household. Plan a week's Breakfast screen carries "Should breakfasts change each week?": "The same
 breakfasts each week" / "Something different", saved on the week's answers
 (week_intake.breakfasts_each_week, append-only) and remembered into the
 next week. "Something different" puts breakfast in the two-week no-repeat
@@ -87,6 +87,8 @@ def test_an_unknown_answer_is_refused(signed_in):
 
 def test_the_line_is_on_plan_a_week():
     html = PLAN_WEEK.read_text(encoding="utf-8")
+    assert "breakfastWeeks: 'Should breakfasts change each week?'" in html
+    assert "Week to week" not in html
     assert "breakfastSame: 'The same breakfasts each week'" in html
     assert "breakfastDifferent: 'Something different'" in html
     assert "payload.breakfasts_each_week = answers.breakfasts_each_week" in html

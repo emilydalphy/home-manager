@@ -534,7 +534,7 @@
   }
   .uw-dates b { display: block; font-size: 13px; letter-spacing: 0; color: var(--ink); }
   .replan-group-label { margin: 8px 0 0; }
-  /* "Week to week" on Breakfast is gone, not greyed, for a week with no breakfast. */
+  /* "Should breakfasts change each week?" on Breakfast is gone, not greyed, for a week with no breakfast. */
   #replan-breakfast-weeks[hidden], #replan-breakfast-weeks-label[hidden] { display: none; }
   .bring-over[hidden] { display: none; }
   /* ---------- Bring over from last week (Emily, 2026-09-25, option A) ----------
@@ -3183,20 +3183,40 @@ body.toast-up { padding-bottom: 260px; }
     return { kinds: kinds, prepDays: prepDays };
   }
 
-  // A Cold packed lunch (Emily, 2026-10-31): everyone eating it needs it
-  // Cold packed, with no warm container ticked. The draft re-picks such a
-  // lunch cold when it reheats last night's dinner (draft_rules.
-  // enforce_cold_packed_lunches, WARM_NEEDS), so the screen never fills one
-  // in as leftovers — it offered "Last night's dinner" and the draft quietly
-  // swapped it. Made on a prep day where the household preps, else cooked
-  // that morning. `pre` is lunchPrefill's answer; `cold(iso)` says the day.
+  // A Cold packed lunch (Emily, 2026-10-31; anyone, 2026-11-01): someone
+  // eating it needs it Cold packed, with no warm container ticked. The draft
+  // re-picks such a lunch cold when it reheats last night's dinner (draft_
+  // rules.enforce_cold_packed_lunches, WARM_NEEDS — ANYONE at it), and the
+  // lunch is one dish for everyone at it, so the person at home has the cold
+  // lunch too. The screen never fills one in as leftovers — it offered "Last
+  // night's dinner" and the draft quietly swapped it. Made on a prep day
+  // where the household preps, else cooked that morning. `pre` is
+  // lunchPrefill's answer; `cold(iso)` says the day.
   var WARM_LUNCH_NEEDS = ['thermos', 'reheat', 'made_fresh'];
-  function allColdPacked(eating, needs, weekday) {
-    return eating.length > 0 && eating.every(function (n) {
+  function coldPackers(eating, needs, weekday) {
+    return eating.filter(function (n) {
       var e = needs[n] || {};
       var on = (e.days && e.days[weekday] !== undefined ? e.days[weekday] : e.needs) || [];
       return on.indexOf('cold_packed') !== -1 && !on.some(function (k) { return WARM_LUNCH_NEEDS.indexOf(k) !== -1; });
     });
+  }
+  function allColdPacked(eating, needs, weekday) {
+    return eating.length > 0 && coldPackers(eating, needs, weekday).length === eating.length;
+  }
+  // A cold day as coldPackedDay hands it on: null, or who packs it and
+  // whether that's everyone at the lunch.
+  function coldDay(eating, needs, weekday) {
+    var who = coldPackers(eating, needs, weekday);
+    return who.length ? { who: who, all: who.length === eating.length } : null;
+  }
+  // "I'll swap this for a cold lunch, since it's packed." — everyone packs
+  // it. Someone at the lunch who isn't packing cold: one lunch for
+  // everyone, and whose is packed.
+  function coldSwapNote(cold) {
+    if (!cold || cold.all !== false) return 'I’ll swap this for a cold lunch, since it’s packed.';
+    var whose = cold.who.map(function (n) { return n + '’s'; });
+    var said = whose.length === 1 ? whose[0] + ' is' : whose.slice(0, -1).join(', ') + ' and ' + whose[whose.length - 1] + ' are';
+    return 'I’ll swap this for one cold lunch for everyone, since ' + said + ' packed.';
   }
   function lunchColdHold(pre, dates, cold, rhythmPrepDays) {
     var preps = pre.prepDays.length ? pre.prepDays : (rhythmPrepDays || []);
@@ -3217,10 +3237,11 @@ body.toast-up { padding-bottom: 260px; }
   // batch is cooked on that lunch, and the rest of it reheats that lunch.
   // weekday_lunches.apply_to_plan's `stale` batch, line for line.
   // `cold`: a Cold packed day (coldPackedDay), whose cooked lunch is
-  // made in the morning and packed, not cooked at lunchtime.
+  // made in the morning and packed, not cooked at lunchtime — "Cold, made
+  // that morning" when someone at the lunch isn't packing cold.
   function lunchLine(iso, kind, prepDays, kinds, cold) {
     if (kind === 'leftovers') return 'Last night’s dinner';
-    if (kind === 'cooked') return cold ? 'Packed cold, made that morning' : 'Cooked that day';
+    if (kind === 'cooked') return !cold ? 'Cooked that day' : cold.all === false ? 'Cold, made that morning' : 'Packed cold, made that morning';
     var found = prepDayFor(iso, prepDays);
     if (!found) return 'Prepped';
     if (found.back > LUNCH_KEEP_DAYS && kinds) {
@@ -3301,14 +3322,14 @@ body.toast-up { padding-bottom: 260px; }
   function lunchOk(iso) {
     return leftoversOk(iso, plannedDays().map(function (d) { return d.date; }), dinnerOff);
   }
-  // Everyone at this lunch, by the week's grid less step 2's day sheet,
-  // needs it Cold packed (allColdPacked).
+  // Anyone at this lunch, by the week's grid less step 2's day sheet,
+  // needs it Cold packed (coldDay): null, or {who, all}.
   function coldPackedDay(iso) {
     var names = memberNames();
     var cell = uwCleanCell(weekCells().lunch[weekdayIndex(iso)], names);
     var away = ((attendance.byDate[iso] || {}).lunch || {}).absent_names || [];
     var eating = (cell === 'all' ? names : cell === 'off' ? [] : cell).filter(function (n) { return away.indexOf(n) === -1; });
-    return allColdPacked(eating, weekNeeds(), isoWeekday(iso));
+    return coldDay(eating, weekNeeds(), isoWeekday(iso));
   }
 
   // Bring the answer in line with the days on screen now — step 2 may have
@@ -3504,7 +3525,7 @@ body.toast-up { padding-bottom: 260px; }
       if (cold && lunch.kinds[d] === 'leftovers') {
         var note = document.createElement('span');
         note.className = 'lunch-day-why';
-        note.textContent = 'I’ll swap this for a cold lunch, since it’s packed.';
+        note.textContent = coldSwapNote(cold);
         what.appendChild(note);
       }
     });
@@ -3758,7 +3779,7 @@ body.toast-up { padding-bottom: 260px; }
     noMood: 'Nothing picked',
     // "Breakfasts, week to week" (Emily, 2026-10-31): the two answers are
     // her words; the row says which one was given.
-    breakfastWeeks: 'Week to week',
+    breakfastWeeks: 'Should breakfasts change each week?',
     breakfastSame: 'The same breakfasts each week',
     breakfastDifferent: 'Something different',
     breakfastRow: { same: 'The same each week', different: 'Something different each week' },
@@ -4479,7 +4500,7 @@ body.toast-up { padding-bottom: 260px; }
   }
 
   // Breakfast: onboarding's "How many different breakfasts", then this
-  // page's "Week to week" (Emily, 2026-10-31, "should breakfasts change
+  // page's "Should breakfasts change each week?" (Emily, 2026-10-31, "should breakfasts change
   // every week?" — ask each household): "The same breakfasts each week"
   // or "Something different", one chip lit, shaped like the lunch step's
   // chips. "Something different" puts breakfast in the two-week no-repeat

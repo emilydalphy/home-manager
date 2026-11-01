@@ -1235,11 +1235,13 @@ def update_inventory(
     item = (item or "").strip()
     if not item:
         raise ValueError("Name the item to keep track of.")
-    quantity = _written_quantity(quantity)
-    if action in ("add", "set"):
+    # "x2" is two, the way the grocery box reads it (Emily, 2026-11-01).
+    quantity = _grocery.read_times(_written_quantity(quantity))
+    if action in ("add", "set", "use"):
         # A count of "0" is an emptied row (test_going_off_hunt_fixes);
-        # adding none of something is not.
-        _refuse_junk_amount(quantity, allow_zero=(action == "set"))
+        # adding none of something is not. A "use" of a negative, nan, inf
+        # or absurd amount is refused too — "used -2 lb" put 2 lb back.
+        _refuse_junk_amount(quantity, allow_zero=(action != "add"))
     if location is not None and location.strip():
         location = _normalised_location(location)
     else:

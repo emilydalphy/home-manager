@@ -28,6 +28,7 @@ import re
 
 from ..db import write
 from ._shared import household_id
+from . import grocery as _grocery
 from . import inventory as _inventory
 from . import quantities as _quantities
 
@@ -376,7 +377,7 @@ def _clean_rows(items, kind: str) -> list[dict]:
         elif isinstance(qty_raw, bool) or not isinstance(qty_raw, (str, int, float)):
             raise ValueError("That amount doesn't look right.")
         else:
-            qty = str(qty_raw).strip()
+            qty = _grocery.read_times(str(qty_raw).strip())
         if len(qty) > MAX_QTY or qty.startswith("-"):
             raise ValueError("That amount doesn't look right.")
         m = _QTY_NUMBER_RE.match(qty)
