@@ -488,6 +488,48 @@ def set_morning_text(
     )
 
 
+# The morning_text_sends status for "switched on after today's time, so
+# today counts as done". See _starts_tomorrow_if_past_today.
+TURNED_ON_LATE = "skipped-turned-on-late"
+
+
+def _switched_on_at(conn) -> datetime:
+    """Now on the household's clock, naive -- the moment a switch-on is
+    judged at. Its own name so a test that switches the text on and then
+    plays a 7:03 pass can say "and it was switched on before seven"."""
+    local_now = _cooker.household_now(conn=conn)
+    return local_now.replace(tzinfo=None) if local_now.tzinfo is not None else local_now
+
+
+def _starts_tomorrow_if_past_today(conn, member_id: int) -> None:
+    """
+    Switched on AFTER today's morning time: the first text is tomorrow's.
+
+    The pass's LATE_WINDOW_HOURS catch-up is for an app that was down at
+    seven, and it cannot tell that apart from an adult who switched the
+    text on at 2:50pm — so it sent them that morning's text within five
+    minutes, right under a sheet that had just said "Saved. Next one's at
+    7:00." (Emily, 2026-10-31: start tomorrow.) A row for today, the same
+    INSERT OR IGNORE the pass itself writes, is what says today is handled.
+
+    Judged on the household's clock and the time ALREADY stored; a time
+    changed in the same save is written after this, so "on, at 6pm" at
+    2:50pm still counts today as done -- the simple reading, and the one
+    the sheet's "Next one's at ..." can't contradict by more than a day.
+    """
+    hh = _household_row(conn)
+    local_now = _switched_on_at(conn)
+    hour, minute = (int(x) for x in hh["time"].split(":"))
+    if local_now < local_now.replace(hour=hour, minute=minute, second=0, microsecond=0):
+        return
+    conn.execute(
+        "INSERT OR IGNORE INTO morning_text_sends (household_id, member_id, sent_on, status, detail) "
+        "VALUES (?, ?, ?, ?, ?)",
+        (household_id(), member_id, local_now.date().isoformat(), TURNED_ON_LATE,
+         f"switched on after {hh['time']}"),
+    )
+
+
 def set_morning_text_for_member(
     member_id: int,
     phone: str | None = None,
@@ -529,13 +571,18 @@ def set_morning_text_for_member(
                     (member_id, household_id()),
                 )
         if on is not None:
+            was_on = False
             if on:
-                current = conn.execute(
-                    "SELECT phone FROM members WHERE id = ? AND household_id = ?",
+                current_row = conn.execute(
+                    "SELECT phone, morning_text_on FROM members WHERE id = ? AND household_id = ?",
                     (member_id, household_id()),
-                ).fetchone()["phone"]
+                ).fetchone()
+                current = current_row["phone"]
+                was_on = bool(current_row["morning_text_on"])
                 if not current:
                     raise ValueError("I need a mobile number before I can text you — which number should it go to?")
+            if on and not was_on:
+                _starts_tomorrow_if_past_today(conn, member_id)
             conn.execute(
                 "UPDATE members SET morning_text_on = ? WHERE id = ? AND household_id = ?",
                 (1 if on else 0, member_id, household_id()),

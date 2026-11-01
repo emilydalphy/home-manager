@@ -1588,7 +1588,8 @@ CREATE TABLE IF NOT EXISTS notification_dismissals (
 -- container restart never texts twice and a missed window (the app was
 -- down at seven) sends once when it comes back, the same day only.
 -- `status` is one of ok | failed | skipped-empty | skipped-no-keys |
--- skipped-late. `detail` is a short reason for the report — a status code,
+-- skipped-late | skipped-turned-on-late (switched on after that morning's
+-- time, so the first text is tomorrow's). `detail` is a short reason for the report — a status code,
 -- never the auth token and never the text itself. `member_id` keys the
 -- number by the member row (members.phone) so it composes with the
 -- per-adult login when that lands; the loop reads adults only.

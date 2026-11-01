@@ -42,6 +42,10 @@ from app.db import get_conn
 from app.tools import digest
 from conftest import household_today
 
+# Switched on before the morning each test then plays (conftest).
+pytestmark = pytest.mark.usefixtures("switched_on_before_the_morning")
+
+
 REPO = Path(__file__).resolve().parent.parent
 SHELL_JS = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
 SHELL_CSS = (REPO / "static" / "shell.css").read_text(encoding="utf-8")

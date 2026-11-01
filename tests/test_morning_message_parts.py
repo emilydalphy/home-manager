@@ -46,6 +46,10 @@ from app.db import get_conn
 from app.tools import digest
 from conftest import household_pin, household_today
 
+# Switched on before the morning each test then plays (conftest).
+pytestmark = pytest.mark.usefixtures("switched_on_before_the_morning")
+
+
 # The HOUSEHOLD's today, never the process's: the message is built off
 # today_moves for the household's own local day.
 TODAY = household_today()
