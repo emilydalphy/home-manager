@@ -13,6 +13,9 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Kitchen reads "x2" as 2, refuses a junk "used" amount, and the add sheets say why** (2026-11-01, Emily's calls, branch `cloud/kitchen-amounts-1101`; `tests/test_kitchen_reads_x2_and_refuses_used_junk.py`).
+  `grocery.read_times` (the grocery box's own regex, split out of `typed_amount`) is applied in `update_inventory` (add/set/use) and `kitchen_add._clean_rows`; "use" now runs `_refuse_junk_amount` (negative/nan/inf/huge; zero stays a no-op). `kitchen-add.js` review and `inventory.html` add show "That amount doesn't look right." only for that 400; `inventory.html` moved to `Api.json` (its `Api.fetch` never checked `res.ok`, so a refusal cleared the box silently). Zero on set = run out and a scan "0" skipped are unchanged.
+
 - **Add toasts lead with the verb: "Added Lemons", "Added 3 things"** (2026-11-01, overnight, branch `overnight/added-toast-no-plural`; `tests/test_added_toast_no_plural.py`).
   Shop add/scan/Before-you-shop, regulars, a Plan side, a recipe save, What's home and the kitchen add sheet (also "Updated Milk in the fridge."). Names kept as on the list, never lower-cased. Why: Emily 2026-10-31 — "Lemons was added" read wrong and a plural guess fails on "Swiss chard"/"hummus". DESIGN_SYSTEM S10/§7 and the copywriter skill examples updated; other `<thing> was <verbed>` toasts unchanged.
 - **The grocery amount box: "x2" is 2; zero, negative and over-40-character amounts are refused** (2026-11-01, overnight; branch `overnight/amount-box-refuses-junk`; tests `tests/test_amount_box_refuses_junk.py`).
