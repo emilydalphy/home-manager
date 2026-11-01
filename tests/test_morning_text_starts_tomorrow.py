@@ -100,3 +100,16 @@ def test_through_the_preferences_route(signed_in, switched_on_at):
     sender = _Sender()
     assert tools.run_morning_texts_once(now_utc=_local(14, 55), send=sender) == []
     assert sender.calls == []
+
+
+def test_a_new_later_time_saved_with_the_switch_still_sends_today(switched_on_at):
+    """Review, 2026-11-01: the sheet saves the time with the switch. At 7:30
+    with 07:00 stored, "on, at 8:00" in one save was judged on 07:00 and
+    used up today — while the sheet said the next one was at 8:00."""
+    _adults("Emily")
+    _seed_day()
+    switched_on_at(7, 30)
+    tools.set_morning_text(phone="416-555-0100", on=True, time="08:00", name="Emily")
+    assert _rows() == []
+    sender = _Sender()
+    assert [r["status"] for r in tools.run_morning_texts_once(now_utc=_local(8, 3), send=sender)] == ["ok"]

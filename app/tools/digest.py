@@ -512,10 +512,9 @@ def _starts_tomorrow_if_past_today(conn, member_id: int) -> None:
     7:00." (Emily, 2026-10-31: start tomorrow.) A row for today, the same
     INSERT OR IGNORE the pass itself writes, is what says today is handled.
 
-    Judged on the household's clock and the time ALREADY stored; a time
-    changed in the same save is written after this, so "on, at 6pm" at
-    2:50pm still counts today as done -- the simple reading, and the one
-    the sheet's "Next one's at ..." can't contradict by more than a day.
+    Judged on the household's clock and the time as saved in the SAME
+    save (the caller runs this after writing time and zone): "on, at 8:00"
+    at 7:30 still sends at 8:00, as the sheet says (review, 2026-11-01).
     """
     hh = _household_row(conn)
     local_now = _switched_on_at(conn)
@@ -581,8 +580,10 @@ def set_morning_text_for_member(
                 was_on = bool(current_row["morning_text_on"])
                 if not current:
                     raise ValueError("I need a mobile number before I can text you — which number should it go to?")
-            if on and not was_on:
-                _starts_tomorrow_if_past_today(conn, member_id)
+            # Judged after the time and zone in this same save are written
+            # (below): the sheet sends both with the switch, and "on, at 8:00"
+            # at 7:30 must still send at 8:00 (review, 2026-11-01).
+            starts_check = bool(on and not was_on)
             conn.execute(
                 "UPDATE members SET morning_text_on = ? WHERE id = ? AND household_id = ?",
                 (1 if on else 0, member_id, household_id()),
@@ -599,6 +600,8 @@ def set_morning_text_for_member(
             from . import rhythm as _rhythm
             zone = _rhythm.checked_timezone(timezone)
             conn.execute("UPDATE households SET timezone = ?, timezone_set = 1 WHERE id = ?", (zone, household_id()))
+        if on is not None and starts_check:
+            _starts_tomorrow_if_past_today(conn, member_id)
         if parts is not None or add_parts is not None or drop_parts is not None:
             # Composed off what is STORED rather than off the defaults, so a
             # delta on a household that has never answered adds to the three
