@@ -650,7 +650,10 @@ def made_entries() -> dict[int, str]:
                 entry_id = int(str(r["step_key"]).split(":", 1)[1])
             except (TypeError, ValueError, IndexError):
                 continue
-            if r["made_dish"] and r["made_dish"] == entry_dish(entry_id, conn):
+            # A mark ticked before made_dish existed (blank) can't say which
+            # dish it was for, so it holds while the meal is still there.
+            dish = entry_dish(entry_id, conn)
+            if dish and (not r["made_dish"] or r["made_dish"] == dish):
                 out[entry_id] = r["prep_date"]
     finally:
         conn.close()

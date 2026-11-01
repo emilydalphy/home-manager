@@ -235,6 +235,21 @@ def test_a_made_mark_does_not_follow_the_entry_to_a_different_dish():
     assert card["meal"] == "Pork Tacos"
 
 
+def test_a_mark_ticked_before_made_dish_existed_still_counts_as_made():
+    # Rows ticked on the 26ffc8c release carry a blank made_dish after the
+    # migration; they hold while the meal is still there.
+    plan_id = _week()
+    _stew()
+    entry = _plan(plan_id, 2, "Beef Stew")
+    session, step = _dish_step(plan_id, entry)
+    tools.set_prep_list_mark(plan_id, session["date"], step["key"], "done")
+    conn = db.get_conn()
+    conn.execute("UPDATE prep_list_marks SET made_dish = '' WHERE step_key = ?", (step["key"],))
+    conn.commit()
+    conn.close()
+    assert prep_list.made_entries() == {entry: session["date"]}
+
+
 def test_a_sweet_chili_noodle_salad_plates():
     assert cooker.finish_action("Sweet Chili Noodle Salad", None, "lunch") == "plate"
     assert cooker.finish_action("Chili Con Carne", None, "dinner") == "reheat"
