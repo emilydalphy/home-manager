@@ -573,11 +573,11 @@ def test_the_sheet_selects_then_saves_and_the_protein_goes_through_the_swaps_und
     assert "{ label: 'Undo', onClick: function () { if (day) runSwapUndo(panel, day, slot); } }, partToast.ms);" in change
     assert "reason: out.reason || ''" in change
     # The add's confirmation is S10's too: the card's line carries when it
-    # starts, the pop-up names what went on ("Roasted potatoes was added").
+    # starts, the pop-up names what went on ("Added Roasted potatoes").
     m = SHELL_JS.index("  async function runMealAdd(pick) {")
     add = SHELL_JS[m:m + 3000]
     assert "swapState = { date: st.date, slot: st.slot, avoid: [], message: said };" in add
-    assert "toastSaved(savedLine(out.name, 'added'), {" in add
+    assert "toastSaved(addedLine(out.name), {" in add
 
 
 # ---------- after the verifier (round 2) ----------

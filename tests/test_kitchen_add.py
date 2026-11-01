@@ -153,12 +153,12 @@ def test_the_button_text_follows_the_place_and_the_count():
 @_needs_node
 def test_the_toast_names_the_thing_or_the_count():
     """CATCH — the house toast pattern."""
-    assert _ka("k.savedLine(13, 'fridge', [])") == "13 things were added to the fridge."
-    assert _ka("k.savedLine(1, 'pantry', ['rice'])") == "Rice was added to the pantry."
+    assert _ka("k.savedLine(13, 'fridge', [])") == "Added 13 things to the fridge."
+    assert _ka("k.savedLine(1, 'pantry', ['rice'])") == "Added Rice to the pantry."
     # Verify item 8: a photo that confirms tracked rows counts them apart.
-    assert _ka("k.savedLine(9, 'fridge', [], 4)") == "9 things were added to the fridge, and 4 updated."
-    assert _ka("k.savedLine(0, 'fridge', ['Milk', 'Eggs'], 2)") == "2 things in the fridge were updated."
-    assert _ka("k.savedLine(0, 'fridge', ['Milk'], 1)") == "Milk in the fridge was updated."
+    assert _ka("k.savedLine(9, 'fridge', [], 4)") == "Added 9 things to the fridge and updated 4."
+    assert _ka("k.savedLine(0, 'fridge', ['Milk', 'Eggs'], 2)") == "Updated 2 things in the fridge."
+    assert _ka("k.savedLine(0, 'fridge', ['Milk'], 1)") == "Updated Milk in the fridge."
 
 
 ROWS_14 = json.dumps([{"item": f"Thing {i}", "quantity": "1"} for i in range(14)])

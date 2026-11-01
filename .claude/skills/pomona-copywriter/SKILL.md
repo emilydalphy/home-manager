@@ -44,9 +44,9 @@ Four failures that shipped before Emily caught them, so check for them by name:
 2. **A button says the action. A toast says what happened. Nothing announces what I was going to do anyway.** Ranks with rule 1, and for the same reason. (Emily, 2026-09-22: *"Can we make sure that copy throughout is more straight forward like this. I don't like the AI written style."*) This is a sharpening, not a reversal — the warmth stays. What goes is the narrating *I*: lines where I explain what I'm about to remember, soften an action into a phrase, or say back what the screen already shows. Four ways it creeps in, with the real lines she caught:
    - **Announcing memory.** "I'll remember T&T for it next time. Change it any time from the row's ⋯ menu." → cut. The remembering stays; the announcement goes. If a choice is being kept, the person meets it again where it's used — that's the proof, not a sentence about the filing.
    - **A euphemism where a verb belongs.** "Drop it" → "Remove from list". "Put back" → "Undo". "Buy it anyway" → "Still need to buy". A button is the verb for what it does, said the way a person would say it out loud. Not a mood, not a phrase.
-   - **A generic confirmation where the thing has a name.** "Changes saved" → "Carrots was added". If the app knows which item, the toast says which item.
+   - **A generic confirmation where the thing has a name.** "Changes saved" → "Added Carrots". If the app knows which item, the toast says which item.
    - **A helper line restating the controls under it.** The buttons are right there and they already say what they do. Delete the line.
-3. **The house toast pattern: `<thing> was <verbed>`.** "Carrots was added." "T&T was saved." "Two items were moved." One clause, names the thing, past tense, no second sentence. The action beside it is the plain verb — **`Undo`**, never "Put back". If a toast can't name the thing it's confirming, the app doesn't know enough to be popping a toast.
+3. **The house toast pattern: `<thing> was <verbed>`.** "T&T was saved." An add leads with the verb — "Added Carrots", "Added 3 things" — so no was/were is guessed from a food's name ("Lemons was added" read wrong; Emily, 2026-10-31). "Two items were moved." One clause, names the thing, past tense, no second sentence. The action beside it is the plain verb — **`Undo`**, never "Put back". If a toast can't name the thing it's confirming, the app doesn't know enough to be popping a toast.
 4. **Their life, not the app's features.** "The shopping", not "grocery list management". "The what-are-we-eating-tonight", not "meal decisions".
 5. **Kitchen-table phrasing.** "My whole job is to take the mental load off you" — not "Pomona plans meals, manages groceries and tracks inventory."
 6. **Contractions, always.** I'm, you'll, nothing's, isn't. A line without one reads like a manual.
@@ -116,7 +116,7 @@ Her own edits are the reference. When in doubt, pick the plainer one.
 | "Buy it anyway" | "Still need to buy" | A button is the verb for what it does (2026-09-22) |
 | "Drop it" | "Remove from list" | Euphemism where a verb belongs |
 | "Put back" | "Undo" | The plain verb, not a phrase — the house word for reversing a toast |
-| "Changes saved" | "Carrots was added" | The app knew the item; the toast should say it |
+| "Changes saved" | "Added Carrots" | The app knew the item; the toast should say it |
 | "I'll remember T&T for it next time. Change it any time from the row's ⋯ menu." | cut | Announcing what I was going to do anyway — the remembering stays, the sentence goes |
 
 Three more, written to the rules:

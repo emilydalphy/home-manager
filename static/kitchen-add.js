@@ -136,9 +136,11 @@
     return n > 0 ? 'Add ' + n + ' to the ' + place : 'Add to the ' + place;
   }
 
-  // The toast, in the house pattern: the thing, then what happened. A shelf
-  // photo that confirms rows already tracked UPDATES them; those are
-  // counted apart from the ones it added, so the number is what changed.
+  // The toast: what happened, then the thing. A shelf photo that confirms
+  // rows already tracked UPDATES them; those are counted apart from the
+  // ones it added, so the number is what changed. Verb first ("Added
+  // Lemons to the fridge") so no was/were is guessed from a food's name
+  // (Emily, 2026-10-31 — "Lemons was added" read wrong).
   function savedLine(added, place, items, updated) {
     var where = place || 'kitchen';
     added = added || 0;
@@ -147,15 +149,16 @@
       var name = String(items[0]);
       return name.charAt(0).toUpperCase() + name.slice(1);
     }
+    function things(n) { return n + (n === 1 ? ' thing' : ' things'); }
     if (updated && !added) {
-      if (updated === 1 && items && items.length === 1) return named() + ' in the ' + where + ' was updated.';
-      return updated + ' things in the ' + where + ' were updated.';
+      if (updated === 1 && items && items.length === 1) return 'Updated ' + named() + ' in the ' + where + '.';
+      return 'Updated ' + things(updated) + ' in the ' + where + '.';
     }
     if (updated && added) {
-      return added + (added === 1 ? ' thing was' : ' things were') + ' added to the ' + where + ', and ' + updated + ' updated.';
+      return 'Added ' + things(added) + ' to the ' + where + ' and updated ' + updated + '.';
     }
-    if (added === 1 && items && items[0]) return named() + ' was added to the ' + where + '.';
-    return added + ' things were added to the ' + where + '.';
+    if (added === 1 && items && items[0]) return 'Added ' + named() + ' to the ' + where + '.';
+    return 'Added ' + things(added) + ' to the ' + where + '.';
   }
 
   // OptionC screen 2's status line under a finished shelf.

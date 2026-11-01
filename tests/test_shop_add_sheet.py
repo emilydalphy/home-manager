@@ -302,7 +302,7 @@ groAddItem().then(function () {
     assert out["sheet"] is None, "the sheet closed on the tap"
     # The name is the server's own (`r.item`), and Undo is the toast's
     # only action (2026-09-23 — no more "Changes saved · Put back").
-    assert out["toast"] == {"msg": "cilantro was added", "action": "Undo", "hold": 8000}
+    assert out["toast"] == {"msg": "Added cilantro", "action": "Undo", "hold": 8000}
     assert out["last"] == "Costco", "the next sheet's third guess"
     assert out["prefs"] == {"cilantro": "Costco"}, "the screen's copy of the usual stores follows"
     assert out["posts"][-1][0] == "/api/grocery-list/77/remove", "Undo removes the line"
@@ -437,7 +437,7 @@ function loadGrocery() { return Promise.resolve(); }
 def test_scan_confirm_names_what_was_added_and_pluralizes_things_not_items():
     """Multi-add (Loop Board 3e31f4c0-5231-81b5, acceptance criterion 7):
     one added item is named the same way a typed add is; more than one
-    stays plain — "2 things were added" — rather than counting "items"."""
+    stays plain — "Added 2 things" (verb first since 2026-10-31) — rather than counting "items"."""
     script = (
         STUB + _SCAN_DOC + grocery_block() + CLICK + FIXTURE
         + """
@@ -479,10 +479,10 @@ function scan(items, response) {
     res = nodeharness.run_node(script, timeout=30)
     assert res.returncode == 0, f"node failed: {res.stderr}"
     out = json.loads(res.stdout.strip())
-    assert out["one"] == "Carrots was added", "one thing: named the same way a typed add is"
-    assert out["two"] == "2 things were added", "more than one: a plain count, not \"items\""
+    assert out["one"] == "Added Carrots", "one thing: named the same way a typed add is"
+    assert out["two"] == "Added 2 things", "more than one: a plain count, not \"items\""
     assert out["mergedOnly"] == "1 thing combined with what was already on the list"
-    assert out["mixed"] == "Carrots was added, 1 thing combined with what was already on the list"
+    assert out["mixed"] == "Added Carrots, 1 thing combined with what was already on the list"
 
 
 # --- 4b. the camera from inside the sheet --------------------------------------------
@@ -606,7 +606,7 @@ groAddItem().then(function () {
     assert out["offline"]["onCard"] is True, "on the screen at once, under its store"
     assert out["offline"]["queued"] == [["add", "cilantro", "Costco"]]
     assert out["offline"]["posts"] == 0
-    assert out["offline"]["toast"]["msg"] == "cilantro was added" and out["offline"]["toast"]["action"] == "Undo"
+    assert out["offline"]["toast"]["msg"] == "Added cilantro" and out["offline"]["toast"]["action"] == "Undo"
     assert out["offline"]["offlineFlag"] is True
     # Every add carries its own client_id (2026-10-22, app/grocery_add_once.py),
     # so a resend after a lost reply is answered rather than added twice.
