@@ -97,10 +97,11 @@ def test_whos_eating_loses_the_weekday_lunch_line_and_the_snacks_row():
         assert gone not in ONBOARDING, gone
 
 
-def test_cook_ahead_has_no_how_long_and_every_prep_day_is_two_hours():
-    assert "How long?" not in _step_markup("step-prep")
-    assert "const PREP_LENGTH = 'longer';" in ONBOARDING
-    assert "length: PREP_LENGTH" in _fn("usualWeekPayload")
+def test_cook_ahead_asks_how_long_per_prep_day():
+    # UPDATED 2026-11-01: "How long?" came back (1-4 hours per prep day).
+    assert 'id="prep-length"' in _step_markup("step-prep")
+    assert "const PREP_MINUTES = [60, 120, 180, 240];" in ONBOARDING
+    assert "minutes: currentPrepMinutes()" in _fn("usualWeekPayload")
 
 
 def test_dinner_timings_is_dinner_time_and_the_weeknight_limit_only():

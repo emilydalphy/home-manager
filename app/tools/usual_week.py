@@ -95,6 +95,43 @@ PREP_REMOVED_LUNCH_CHOICE = "few_in_rotation"
 
 # The prep answer's two lengths, as minutes on the rhythm fact.
 PREP_LENGTHS = {"hour": 60, "longer": 120}
+# "How long?" on the Cook ahead screen (2026-11-01): one of these per prep
+# day, stored as that day's `minutes` on the rhythm fact. 120 is what every
+# household had before the question came back.
+PREP_MINUTES = (60, 120, 180, 240)
+DEFAULT_PREP_MINUTES = 120
+
+
+def _chip_minutes(minutes) -> int:
+    """A stored length as the nearest chip at or above it (an odd legacy 90
+    reads as 120, 30 as 60); nothing stored reads as the default."""
+    try:
+        m = int(minutes or 0)
+    except (TypeError, ValueError):
+        m = 0
+    if m <= 0:
+        return DEFAULT_PREP_MINUTES
+    return next((c for c in PREP_MINUTES if c >= m), PREP_MINUTES[-1])
+
+
+def _clean_prep_minutes(days: list, raw) -> dict:
+    """{weekday: minutes} for exactly these days, from a {weekday: minutes}
+    answer. A missing day is the default; a length that isn't one of the
+    four chips is refused in words."""
+    if raw is None:
+        raw = {}
+    if not isinstance(raw, dict):
+        raise ValueError("prep minutes must be an object of day → minutes.")
+    out = {}
+    for d in days:
+        v = raw.get(d)
+        if v is None or v == "":
+            out[d] = DEFAULT_PREP_MINUTES
+            continue
+        if isinstance(v, bool) or not isinstance(v, int) or v not in PREP_MINUTES:
+            raise ValueError("Prep length must be up to 1, 2, 3 or 4 hours.")
+        out[d] = v
+    return out
 SNACKS_PER_DAY_MAX = 3
 
 # The derived_from constraint and the reason on a slot the usual week has
@@ -215,8 +252,9 @@ def normalize_week_answers(raw) -> dict:
       grid        {meal: {weekday: "everyone" | "off" | [member ids]}} —
                   "Who's eating" this week, the whole grid (names or ids in,
                   ids out, as save_usual_week reads them).
-      prep        {"days": [weekday, ...]} — "Do you like to cook ahead?"
-                  this week; [] is no prep day this week.
+      prep        {"days": [weekday, ...], "minutes": {weekday: 60|120|180|240}}
+                  — "Do you like to cook ahead?" this week; [] is no prep
+                  day this week. A day without minutes is 120.
       variety     {meal: choice key} — "How many different …?" this week.
       lunch_needs {name: {"needs": [...], "days": {...}}} — "What does each
                   person need for weekday lunches?" this week.
@@ -251,7 +289,8 @@ def normalize_week_answers(raw) -> dict:
         if not isinstance(prep, dict):
             raise ValueError("week_answers.prep must be an object with days.")
         days = _rhythm._normalize_prep_days([{"weekday": d} for d in (prep.get("days") or [])])
-        out["prep"] = {"days": [d["weekday"] for d in days]}
+        keys = [d["weekday"] for d in days]
+        out["prep"] = {"days": keys, "minutes": _clean_prep_minutes(keys, prep.get("minutes"))}
     if raw.get("variety") is not None:
         variety = raw["variety"]
         if not isinstance(variety, dict):
@@ -283,14 +322,17 @@ def _prep_answer() -> dict:
 
     week = _THIS_WEEK.get()
     if week and week.get("prep") is not None:
-        # Every prep day is up to 2 hours (onboarding, 2026-10-06).
-        return {"days": list(week["prep"].get("days") or []), "length": "longer"}
+        keys = list(week["prep"].get("days") or [])
+        per_day = _clean_prep_minutes(keys, week["prep"].get("minutes"))
+        return {"days": keys, "length": "hour" if keys and max(per_day.values()) <= 75 else "longer",
+                "minutes": per_day}
     days = _rhythm.get_household_rhythm().get("prep_days") or []
     minutes = [d.get("minutes") for d in days if d.get("minutes")]
     length = None
     if minutes:
         length = "hour" if max(minutes) <= 75 else "longer"
-    return {"days": [d["weekday"] for d in days], "length": length}
+    return {"days": [d["weekday"] for d in days], "length": length,
+            "minutes": {d["weekday"]: _chip_minutes(d.get("minutes")) for d in days}}
 
 
 def _state(conn) -> dict:
@@ -496,7 +538,13 @@ def _prepare(grid, variety, snacks_per_day, prep, pending_names=None) -> dict:
         if raw_days and length is not None and (not isinstance(length, str) or length not in PREP_LENGTHS):
             raise ValueError(f"prep length must be one of {', '.join(PREP_LENGTHS)}, or null.")
         minutes = PREP_LENGTHS.get(length) if length else None
-        prep_days = _rhythm._normalize_prep_days([{"weekday": d, "minutes": minutes} for d in raw_days])
+        per_day = None
+        if prep.get("minutes") is not None:
+            # One length per prep day (2026-11-01): {weekday: 60|120|180|240}.
+            per_day = _clean_prep_minutes([str(d).strip().lower() for d in raw_days], prep.get("minutes"))
+        prep_days = _rhythm._normalize_prep_days(
+            [{"weekday": d, "minutes": (per_day or {}).get(str(d).strip().lower(), minutes)} for d in raw_days]
+        )
     has_prep_day = bool(prep_days) if prep_days is not None else bool(_prep_answer()["days"])
     lunch_sent = variety is not None and "lunch" in variety
     if choices["lunch"] == "meal_prep_ahead" and not has_prep_day and days_on(new_grid, "lunch"):
@@ -551,7 +599,8 @@ def save_usual_week(
       partial is fine (only the cells sent change).
     variety: {meal: choice key from VARIETY_CHOICES} (or {meal: {"choice": key}}).
     snacks_per_day: 0-3.
-    prep: {"days": [weekday, ...], "length": "hour" | "longer" | null};
+    prep: {"days": [weekday, ...], "length": "hour" | "longer" | null,
+           "minutes": {weekday: 60|120|180|240}  (per day; wins over length)};
       {"days": []} is "we don't prep ahead".
 
     The variety number is resolved against the grid being saved and

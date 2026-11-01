@@ -7391,11 +7391,12 @@ def _generate_weekly_plan(
     effective_memory.pop("repeats_tolerance", None)
     # Cook ahead, answered for THIS week only while re-planning (see
     # _generate_weekly_plan): the prep days the prompt and the time caps
-    # read are this week's. Every prep day is up to 2 hours (onboarding).
+    # read are this week's. Each prep day carries its own length (default 120).
     week_prep = (((intake or {}).get("week_answers") or {}).get("prep"))
     if week_prep is not None:
         effective_memory["rhythm"] = dict(effective_memory.get("rhythm") or {}, prep_days=[
-            {"weekday": d, "minutes": 120} for d in (week_prep.get("days") or [])
+            {"weekday": d, "minutes": (week_prep.get("minutes") or {}).get(d) or 120}
+            for d in (week_prep.get("days") or [])
         ])
     # The days actually being planned: the period minus the days tapped off
     # "Which days?" (2026-09-21, board D1). A dropped day is not planned, so

@@ -92,7 +92,7 @@ def test_chat_count_keeps_the_weeks_other_answers():
     tools.set_week_dish_count("lunch", 2, week_start_date="2026-11-02")
     intake = tools.get_week_intake("2026-11-02")
     assert intake["freeform"] == "tacos Friday"
-    assert intake["week_answers"]["prep"] == {"days": ["sunday"]}
+    assert intake["week_answers"]["prep"] == {"days": ["sunday"], "minutes": {"sunday": 120}}
     assert intake["week_answers"]["dishes"] == {"lunch": 2}
 
 
@@ -127,9 +127,9 @@ def test_the_week_readers_follow_the_newest_answers_not_the_drafted_ones():
     tools.attach_intake_to_plan(plan_id, tools.get_week_intake(week)["intake_id"])
     # Re-plan answered, never drafted: a newer revision the plan wasn't made from.
     tools.save_week_intake(week, week_answers={"prep": {"days": ["saturday"]}})
-    assert _usual_week.plan_week_answers(plan_id) == {"prep": {"days": ["saturday"]}}
-    assert _usual_week.week_answers_on(week) == {"prep": {"days": ["saturday"]}}
-    assert {"prep": {"days": ["saturday"]}} in _usual_week.live_week_answers()
+    assert _usual_week.plan_week_answers(plan_id) == {"prep": {"days": ["saturday"], "minutes": {"saturday": 120}}}
+    assert _usual_week.week_answers_on(week) == {"prep": {"days": ["saturday"], "minutes": {"saturday": 120}}}
+    assert {"prep": {"days": ["saturday"], "minutes": {"saturday": 120}}} in _usual_week.live_week_answers()
 
 
 def test_the_headline_never_says_out_over_a_dinner_the_week_still_has():

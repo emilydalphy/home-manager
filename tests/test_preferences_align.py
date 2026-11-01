@@ -75,7 +75,7 @@ def _usual_week_constants() -> str:
 
 USUAL_WEEK_FNS = [
     "wwkUsualWeekHtml", "uwSetRowHtml", "uwFromServer", "uwCells", "uwDaysOn", "uwNames", "uwWho",
-    "uwCellClass", "uwCellAria", "uwDayRowHtml", "uwVarietyLine", "uwPrepDaysLine", "uwSnacksLabel",
+    "uwCellClass", "uwCellAria", "uwDayRowHtml", "uwVarietyLine", "uwPrepDaysLine", "uwPrepHours", "uwPrepDayNames", "wwkPrepLengthNote", "uwSnacksLabel",
     # Per-person weekday lunches and snacks a day (2026-10-06).
     "wwkLunchNeedsHtml", "wwkLunchPeople", "wwkLunchEntry", "wwkNeedsFor", "wwkNeedsOnDay",
     "wwkLunchIsByDay", "wwkOrderNeeds", "wwkSomeoneMadeFresh", "wwkLunchChipsHtml",

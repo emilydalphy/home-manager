@@ -13169,10 +13169,9 @@
     { key: 'thursday', label: 'Thu' }, { key: 'friday', label: 'Fri' }, { key: 'saturday', label: 'Sat' },
     { key: 'sunday', label: 'Sun' }
   ];
-  // "How long?" left Cook ahead (Onboarding regrouped, Emily 2026-10-05):
-  // every prep day is planned for up to 2 hours, so every prep day this
-  // sheet saves carries 120 minutes — onboarding's PREP_LENGTH 'longer'
-  // (app/tools/usual_week.py PREP_LENGTHS).
+  // "How long?" is asked on onboarding's Cook ahead screen (2026-11-01).
+  // A prep day this sheet turns ON starts at 120 minutes; a day that stays
+  // on keeps the length it has (wwkPrepPayload).
   var WWK_PREP_MINUTES = 120;
   // The grocery shop day (2026-10-04). Same seven days as the prep row,
   // listed separately because these two rows are different questions and
@@ -14426,11 +14425,12 @@
     { key: 'weekends', label: 'Weekends', days: [5, 6] },
     { key: 'none', label: 'None', days: [] }
   ];
-  // The prep answer's two lengths (usual_week.PREP_LENGTHS), said on the row.
-  // Every prep day is up to 2 hours since 2026-10-06 (onboarding's
-  // prepReadback says the same); 'hour' is only a household's own odd
-  // number from before, said as it stands.
-  var UW_PREP_LENGTH_WORDS = { hour: 'about an hour', longer: 'up to 2 hours' };
+  // A prep day's length said the way onboarding's read-back and
+  // rhythm.prep_minutes_label say it: "up to 1 hour", "up to 3 hours".
+  function uwPrepHours(minutes) {
+    var h = Math.max(1, Math.round((minutes || 120) / 60));
+    return 'up to ' + h + (h === 1 ? ' hour' : ' hours');
+  }
   var UW_EXPLAINER = 'The meals I plan each week, who’s eating them, and how much they change.';
   var UW_STARTS_NEXT = 'Starts with your next plan. This week stays as it is.';
 
@@ -14495,12 +14495,20 @@
     var names = days.map(function (d) { return UW_DAY_NAMES[UW_WEEKDAYS.indexOf(d)] || d; });
     return names.length <= 2 ? names.join(' and ') : names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
   }
-  // The Prep day row: "Sunday (up to 2 hours)".
+  // The Prep day row: "Sunday (up to 2 hours)"; two lengths, each day says
+  // its own: "Sunday (up to 2 hours) and Wednesday (up to 1 hour)".
   function uwPrepDaysLine(data) {
     var prep = (data && data.prep) || {};
-    if (!(prep.days || []).length) return 'None';
-    var length = UW_PREP_LENGTH_WORDS[prep.length];
-    return uwPrepDayNames(data) + (length ? ' (' + length + ')' : '');
+    var days = prep.days || [];
+    if (!days.length) return 'None';
+    var per = prep.minutes || {};
+    // A day with no length on record says none (an answer from before the question).
+    var words = days.map(function (d) { return per[d] ? uwPrepHours(per[d]) : ''; });
+    if (words.every(function (w) { return w === words[0]; })) return uwPrepDayNames(data) + (words[0] ? ' (' + words[0] + ')' : '');
+    var parts = days.map(function (d, i) {
+      return (UW_DAY_NAMES[UW_WEEKDAYS.indexOf(d)] || d) + (words[i] ? ' (' + words[i] + ')' : '');
+    });
+    return parts.length <= 2 ? parts.join(' and ') : parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1];
   }
   // Prep days (its own section) edits the same fact through the rhythm
   // route, so the usual week's copy of it is brought up to date from the
@@ -14513,9 +14521,12 @@
     if (!uwState.data || !Array.isArray(days)) return;
     var minutes = days.map(function (d) { return d.minutes || 0; });
     var most = minutes.length ? Math.max.apply(null, minutes) : 0;
+    var per = {};
+    days.forEach(function (d) { per[d.weekday] = d.minutes || 120; });
     uwState.data.prep = {
       days: days.map(function (d) { return d.weekday; }),
-      length: !most ? null : most <= 75 ? 'hour' : 'longer'
+      length: !most ? null : most <= 75 ? 'hour' : 'longer',
+      minutes: per
     };
   }
   function uwHasPrep(data) { return (((data && data.prep) || {}).days || []).length > 0; }
@@ -15238,8 +15249,9 @@
     // already says what this row is.
     var html = '<div class="wwk-chips">' +
       WWK_PREP_DAYS.map(function (o) { return wwkChip(o.label, 'data-wwk="prep-day" data-value="' + o.key + '"', keys.indexOf(o.key) !== -1 ? 'on' : ''); }).join('') + '</div>';
-    // No "How long?" (2026-10-06): one line says what every prep day is.
-    if (keys.length) html += wwkNote('Each prep day is planned for up to 2 hours.');
+    // How long each day runs is asked in onboarding and on Same as last
+    // week?; this note says what is set, in the same words.
+    if (keys.length) html += wwkNote(wwkPrepLengthNote(days));
     // Breakfast fresh or made ahead (Emily, 2026-10-26): only a household
     // that preps has the choice, so it sits under the prep days.
     // app/tools/breakfast_prep.py has the rule it sets.
@@ -15260,8 +15272,18 @@
   // The whole list is the fact, so every tap sends the whole list — in
   // week order, whatever order the taps came in (onboarding's own rule).
   function wwkPrepPayload(keys) {
+    var have = {};
+    ((wwkMem().rhythm || {}).prep_days || []).forEach(function (d) { have[d.weekday] = d.minutes; });
     return WWK_PREP_DAYS.filter(function (o) { return keys.indexOf(o.key) !== -1; })
-      .map(function (o) { return { weekday: o.key, minutes: WWK_PREP_MINUTES }; });
+      .map(function (o) { return { weekday: o.key, minutes: have[o.key] || WWK_PREP_MINUTES }; });
+  }
+  // "Sunday, up to 2 hours." / "Sunday, up to 2 hours and Wednesday, up to 1
+  // hour." (prep_days as the rhythm holds them.)
+  function wwkPrepLengthNote(days) {
+    var parts = days.map(function (d) {
+      return d.weekday.charAt(0).toUpperCase() + d.weekday.slice(1) + ', ' + uwPrepHours(d.minutes);
+    });
+    return (parts.length <= 2 ? parts.join(' and ') : parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1]) + '.';
   }
 
   function wwkTogglePrepDay(key) {
@@ -15332,9 +15354,8 @@
     if (!days.length) return '';
     var names = days.map(function (d) { return d.weekday.charAt(0).toUpperCase() + d.weekday.slice(1); });
     var minutes = (days.filter(function (d) { return d.minutes; })[0] || {}).minutes;
-    // rhythm.prep_minutes_label's words; 120 is "up to 2 hours" since
-    // 2026-10-06, as onboarding and the Prep day row say it.
-    var length = !minutes ? '' : minutes <= 40 ? ' (about half an hour)' : minutes <= 75 ? ' (about an hour)' : ' (up to 2 hours)';
+    // rhythm.prep_minutes_label's words, as onboarding and the Prep day row say them.
+    var length = !minutes ? '' : ' (' + uwPrepHours(minutes) + ')';
     return 'Preps on ' + names.join(' and ') + length + '.';
   }
 

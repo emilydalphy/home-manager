@@ -278,17 +278,19 @@ console.log(JSON.stringify(uwSheetBodyHtml(data, { meal: 'lunch', cells: uwCells
 @_needs_node
 def test_the_prep_day_row_says_the_day_and_how_long():
     data = _usual_week_json(True)
-    data["prep"] = {"days": ["sunday"], "length": "longer"}
+    data["prep"] = {"days": ["sunday"], "length": "longer", "minutes": {"sunday": 120}}
     out = _run(_settings_harness() + """
 var uwState = { data: %s, sheet: null, row: null };
 var a = wwkUsualWeekHtml({ rhythm: {} });
-uwState.data.prep = { days: ['sunday', 'wednesday'], length: 'hour' };
-console.log(JSON.stringify([a, wwkUsualWeekHtml({ rhythm: {} })]));
+uwState.data.prep = { days: ['sunday', 'wednesday'], length: 'hour', minutes: { sunday: 60, wednesday: 60 } };
+var b = wwkUsualWeekHtml({ rhythm: {} });
+uwState.data.prep = { days: ['sunday', 'wednesday'], length: 'longer', minutes: { sunday: 180, wednesday: 60 } };
+console.log(JSON.stringify([a, b, wwkUsualWeekHtml({ rhythm: {} })]));
 """ % json.dumps(data))
-    # Every prep day is up to 2 hours since 2026-10-06 (Cook ahead lost
-    # "How long?"); an old 1-hour answer still reads as it stands.
+    # UPDATED 2026-11-01: "How long?" is back, so the row says each day's own length.
     assert "Sunday (up to 2 hours) ›" in out[0]
-    assert "Sunday and Wednesday (about an hour) ›" in out[1]
+    assert "Sunday and Wednesday (up to 1 hour) ›" in out[1]
+    assert "Sunday (up to 3 hours) and Wednesday (up to 1 hour) ›" in out[2]
 
 
 @_needs_node
@@ -303,7 +305,8 @@ prefsState.memory.rhythm.prep_days = [];
 uwSyncPrep();
 console.log(JSON.stringify([one, uwState.data.prep]));
 """ % json.dumps(_usual_week_json(True)))
-    assert out == [{"days": ["saturday"], "length": "longer"}, {"days": [], "length": None}]
+    assert out == [{"days": ["saturday"], "length": "longer", "minutes": {"saturday": 120}},
+                   {"days": [], "length": None, "minutes": {}}]
     render = _lift("wwkRenderSection")
     assert "if (key === 'rhythm') uwSyncPrep();" in render
     assert "if (key === 'prep-days') wwkRenderSection('rhythm');" in render
