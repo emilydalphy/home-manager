@@ -110,3 +110,23 @@ def test_the_line_comes_back_with_the_weeks_holidays(theo):
     tools.answer_holiday(tg, "out", bring_dish="Satay Noodles")
     h = next(h for h in tools.get_upcoming_holidays(tg, 1) if h["date"] == tg)
     assert h["answer"]["allergy_line"] == "Has peanut, which Theo can’t have"
+
+
+def test_moved_off_the_holiday_it_is_the_weeks_own_dinner_again(theo):
+    """Review, 2026-11-01: a move changes the row's date and keeps its
+    'holiday_dish' mark, so the peanut dish moved to an ordinary night at
+    home still read as brought and approval went straight through. Off the
+    holiday it is a dinner eaten here: the hard check holds it again."""
+    tg = _thanksgiving()
+    plan_id = tools.create_weekly_plan(tg)["weekly_plan_id"]
+    tools.answer_holiday(tg, "out", bring_dish="Satay Noodles")
+    entry = _dinner(plan_id, tg)
+    other = (date.fromisoformat(tg) + timedelta(days=2)).isoformat()
+    from app.tools import meal_move
+    res = meal_move.move_meal(plan_id, entry.get("entry_id") or entry.get("id"), other)
+    assert res["status"] == "moved", res
+    moved = _dinner(plan_id, other)
+    assert moved["meal"] == "Satay Noodles" and not moved.get("brought_dish")
+
+    found = coordination.check_plan_conflicts(plan_id)
+    assert [c for c in found["conflicts"] if c["severity"] == "hard"]
