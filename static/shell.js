@@ -30670,6 +30670,10 @@
     // "You're down as a Teen here now…" — once, on that member's own phone
     // (Emily, 2026-10-26). A sentence, so it's held long enough to read.
     if (shellWho.age_note) showToast(shellWho.age_note, null, 9000);
+    // "Sign-in now goes to sam@example.com" (Emily, 2026-11-01): the adult
+    // who stays after a Remove me handover is shown the address, on every
+    // open, until they say it's theirs or change it. Not awaited.
+    if (shellWho.sign_in_note) openSignInNotice();
     // The onboarding reveal's Approve hands into the shell with
     // ?after=approve (its URL is /grocery?after=approve&drafted=<Monday>,
     // 2026-09-18): whatever tab the path names, the week just approved is
@@ -30790,6 +30794,9 @@
       shellWho.legal_accepted_version = typeof data.legal_accepted_version === 'string' ? data.legal_accepted_version : '';
       // ...and the one this adult ticked themselves on joining by invite.
       shellWho.legal_you_accepted_version = typeof data.legal_you_accepted_version === 'string' ? data.legal_you_accepted_version : '';
+      // "Sign-in now goes to …": the household's sign-in was handed to this
+      // adult by someone leaving (openSignInNotice). null almost always.
+      shellWho.sign_in_note = data.sign_in_note && typeof data.sign_in_note.email === 'string' ? data.sign_in_note : null;
       shellWho.loaded = true;
       // Keep the copy in step with whatever the server says this device is
       // pinned to, however it got pinned — the pick below, an invite link,
@@ -32165,6 +32172,8 @@
       var id = e.target && e.target.closest && e.target.closest('button') && e.target.closest('button').id;
       if (id === 'email-send') sendEmailCode();
       else if (id === 'email-check') checkEmailCode();
+      else if (id === 'email-handed-mine') keepHandedEmail();
+      else if (id === 'email-handed-change') { emailSheet.step = 'enter'; renderEmailSheet(); var f = emailSheetEl.querySelector('#email-new'); if (f) f.focus(); }
       else if (id === 'email-again') { emailSheet.step = 'enter'; renderEmailSheet(); }
     });
     emailSheetEl.addEventListener('keydown', function (e) {
@@ -32180,6 +32189,18 @@
     var body = emailSheetEl.querySelector('#email-sheet-body');
     var st = prefsState.accountEmail || {};
     var noteHtml = '<p class="snw-done" id="email-note"' + (note ? '' : ' hidden') + '>' + escapeHtml(note || '') + '</p>';
+    if (emailSheet.step === 'handed') {
+      // The full address, never masked: the point is to notice one that
+      // isn't yours, and "sa…@gmail.com" hides "sam@gmai1.com".
+      var handed = shellWho.sign_in_note || {};
+      body.innerHTML =
+        '<p class="snw-done sin-lead">' + escapeHtml(signInNoticeTitle(handed.email || '')) + '</p>' +
+        '<p class="snw-done">' + escapeHtml(signInNoticeBody(handed.from_name || '')) + '</p>' +
+        '<button type="button" class="snw-send" id="email-handed-mine">That’s my email</button>' +
+        '<button type="button" class="prefs-leave-link" id="email-handed-change"><span>Change it</span></button>' +
+        noteHtml;
+      return;
+    }
     if (emailSheet.step === 'code') {
       var both = emailSheet.confirmCurrent && st.email;
       body.innerHTML =
@@ -32260,6 +32281,8 @@
       try { data = await r.json(); } catch (e) { /* not JSON */ }
       if (!r.ok) { setEmailNote(emailFailure(r, data)); return; }
       prefsState.accountEmail = { email: data.email, can_change: true };
+      // A new address answers "Sign-in now goes to …" too (the server forgot it).
+      shellWho.sign_in_note = null;
       emailSheet.step = 'enter';
       emailSheet.email = '';
       renderEmailSheet('Saved. You can sign in with ' + data.email + ' now.');
@@ -32275,11 +32298,49 @@
     buildEmailSheet();
     if (parent) openOverSheet(parent, dismissEmailSheet);
     else { forgetSheetLevels(); closePrefsSheet(); }
-    emailSheet = { step: 'enter', email: '', confirmCurrent: false, busy: false };
+    // While a handed-over address is waiting for its answer, the sheet
+    // opens on it, from Preferences too (openSignInNotice).
+    emailSheet = { step: shellWho.sign_in_note ? 'handed' : 'enter', email: '', confirmCurrent: false, busy: false };
     renderEmailSheet();
     paintSheetLevelChrome(emailSheetEl, 'Sign-in email');
     emailScrimEl.hidden = false;
     emailSheetEl.hidden = false;
+  }
+
+  // ---------- "Sign-in now goes to …" (Emily, 2026-11-01) ----------
+  // After a Remove me handover the adult who stays signs in with whatever
+  // address the leaver typed for them. They see it here, in the sign-in
+  // email sheet, until they say it's theirs ("That's my email") or change
+  // it — the change needs no code from the handed address, since that
+  // code went to whoever typed it (main.py, _changing_from). Closing the
+  // sheet answers nothing: it comes back next open.
+  function signInNoticeTitle(email) {
+    return 'Sign-in now goes to ' + email;
+  }
+  function signInNoticeBody(fromName) {
+    var who = fromName ? fromName + ' set this before leaving.' : 'This was set when someone left.';
+    return who + ' If it isn’t your email, change it now.';
+  }
+
+  function openSignInNotice() {
+    if (!shellWho.sign_in_note) return;
+    if (!prefsState.accountEmail) prefsState.accountEmail = { email: shellWho.sign_in_note.email, can_change: true };
+    openEmailSheet();
+  }
+
+  async function keepHandedEmail() {
+    if (emailSheet.busy) return;
+    emailSheet.busy = true;
+    try {
+      var r = await Api.fetch('/api/account/sign-in-notice/dismiss', { method: 'POST' });
+      if (!r.ok) { setEmailNote('That didn’t go through. Try again in a moment.'); return; }
+      shellWho.sign_in_note = null;
+      dismissEmailSheet();
+    } catch (err) {
+      setEmailNote('That didn’t go through. Check your connection and try again.');
+    } finally {
+      emailSheet.busy = false;
+    }
   }
 
   function dismissEmailSheet() {

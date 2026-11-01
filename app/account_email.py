@@ -623,3 +623,63 @@ def member_accepted_legal_version(household_id: int, member_id: int | None) -> s
         return row["version"] if row else None
     finally:
         conn.close()
+
+
+# ---------- "Sign-in now goes to …" (Emily, 2026-11-01) ----------
+
+
+def record_sign_in_notice(household_id: int, member_id: int, email: str, from_name: str) -> None:
+    """The household's sign-in was just handed to this adult at `email` by
+    `from_name` on their way out (Remove me). Replaces any earlier one."""
+    hid, mid = int(household_id), int(member_id)
+    conn = get_conn()
+    try:
+        conn.execute("DELETE FROM sign_in_notices WHERE household_id = ? AND member_id = ?", (hid, mid))
+        conn.execute(
+            "INSERT INTO sign_in_notices (household_id, member_id, email, from_name) VALUES (?, ?, ?, ?)",
+            (hid, mid, normalize(email), (from_name or "").strip()),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def sign_in_notice(household_id: int, member_id: int | None) -> dict | None:
+    """
+    `{"email", "from_name"}` while this adult has a handed-over sign-in they
+    haven't said is theirs — and only while that address is still the one
+    they sign in with. Once they've changed it the notice has nothing left
+    to say, and it is forgotten here.
+    """
+    if member_id is None:
+        return None
+    hid, mid = int(household_id), int(member_id)
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            "SELECT n.email, n.from_name, me.email AS now FROM sign_in_notices n "
+            "LEFT JOIN member_emails me ON me.household_id = n.household_id AND me.member_id = n.member_id "
+            "WHERE n.household_id = ? AND n.member_id = ? ORDER BY n.id DESC LIMIT 1",
+            (hid, mid),
+        ).fetchone()
+        if row is None:
+            return None
+        if row["now"] != row["email"]:
+            conn.execute("DELETE FROM sign_in_notices WHERE household_id = ? AND member_id = ?", (hid, mid))
+            conn.commit()
+            return None
+        return {"email": row["email"], "from_name": row["from_name"]}
+    finally:
+        conn.close()
+
+
+def clear_sign_in_notice(household_id: int, member_id: int) -> None:
+    conn = get_conn()
+    try:
+        conn.execute(
+            "DELETE FROM sign_in_notices WHERE household_id = ? AND member_id = ?",
+            (int(household_id), int(member_id)),
+        )
+        conn.commit()
+    finally:
+        conn.close()

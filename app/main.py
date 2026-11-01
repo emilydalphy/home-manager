@@ -10139,6 +10139,11 @@ def whoami(request: Request):
         "legal_you_accepted_version": account_email.member_accepted_legal_version(
             current, member["id"] if member else None
         ),
+        # "Sign-in now goes to sam@example.com" (Emily, 2026-11-01): this
+        # adult was handed the household's sign-in by someone leaving, and
+        # hasn't said the address is theirs. None every other time, and for
+        # a device that is nobody yet (it asks "Who's this?" first).
+        "sign_in_note": account_email.sign_in_notice(current, member["id"]) if member else None,
     }
 
 
@@ -10563,8 +10568,27 @@ def _changing_from(household: int, member_id: int, new_email: str) -> str | None
     replace it with a different one — else None (adding a first address)."""
     current = account_email.email_for_member(household, member_id)
     if current and current != account_email.normalize(new_email):
+        # An address somebody else handed this adult on their way out
+        # (Remove me), which they haven't yet said is theirs: the code for
+        # it went to whoever typed it, maybe not them, so asking for that
+        # code would leave "Not your email? Change it" with no way through
+        # (Emily, 2026-11-01). It's treated as a first address instead.
+        notice = account_email.sign_in_notice(household, member_id)
+        if notice and notice["email"] == current:
+            return None
         return current
     return None
+
+
+@app.post("/api/account/sign-in-notice/dismiss")
+def dismiss_sign_in_notice():
+    """ "That's my email" — the adult who was handed the household's sign-in
+    says the address is theirs, and the notice stops."""
+    you = tools.current_member()
+    if you is None:
+        raise HTTPException(status_code=400, detail="Tell me who you are first, then try again.")
+    account_email.clear_sign_in_notice(tools.household_id(), you["id"])
+    return {"ok": True}
 
 
 @app.post("/api/account/email/start")
@@ -10637,6 +10661,7 @@ def account_email_verify(req: AccountEmailVerifyRequest, request: Request):
     except account_email.EmailCodeError as e:
         raise HTTPException(status_code=409, detail=str(e))
     logger.info("Household %s: member %s set their sign-in email", household, you["id"])
+    account_email.clear_sign_in_notice(household, you["id"])
     if current:
         # The old address hears about it, whoever did it.
         account_email.send_notice(
@@ -10844,9 +10869,12 @@ def remove_me_from_household(request: Request, req: RemoveMeRequest | None = Non
         ):
             raise HTTPException(status_code=400, detail=account_email.BAD_CODE_LINE)
         try:
-            account_email.set_member_email(household, target["id"], req.email)
+            handed_to = account_email.set_member_email(household, target["id"], req.email)
         except account_email.EmailCodeError as e:
             raise HTTPException(status_code=409, detail=str(e))
+        # "Sign-in now goes to …", shown to the adult who stays until they
+        # say it's theirs or change it (Emily, 2026-11-01).
+        account_email.record_sign_in_notice(household, target["id"], handed_to, you["name"])
         logger.info("Household %s: member %s handed sign-in to member %s", household, you["id"], target["id"])
     try:
         household_deletion.remove_member(household, you["id"])

@@ -1861,6 +1861,22 @@ CREATE TABLE IF NOT EXISTS member_legal_acceptances (
     accepted_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- "Sign-in now goes to sam@example.com" (Emily, 2026-11-01): when an adult
+-- taps Remove me and hands the household's sign-in to the adult who stays
+-- (household_deletion.sign_in_handover), the address they typed is the one
+-- that opens the house from then on. The adult who stays is shown it, once
+-- per sign-in, until they say it's theirs or change it — a guard against a
+-- leaver quietly pointing the house at an inbox they read. from_name is the
+-- leaver's name as it was (they are gone by the time it is read).
+CREATE TABLE IF NOT EXISTS sign_in_notices (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    member_id INTEGER NOT NULL REFERENCES members(id),
+    email TEXT NOT NULL,
+    from_name TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 -- The conversation a signed-in device is in the middle of: the trimmed
 -- message list run_agent_turn is handed next turn, and when it was last
 -- touched. One row per session key, overwritten every turn.

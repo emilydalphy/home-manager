@@ -9204,6 +9204,14 @@ button.cook-badge-tap::after { content: ""; position: absolute; inset: -10px -6p
   color: var(--ink);
   margin: 10px 0 0;
 }
+/* "Sign-in now goes to sam@example.com" (2026-11-01): the address is the
+   thing to read, so it leads in the strong ink, and a long one wraps rather
+   than running off a phone. */
+.snw-done.sin-lead {
+  font-weight: 700;
+  color: var(--ink-strong);
+  overflow-wrap: anywhere;
+}
 /* What travels with the note, said on the form (2026-09-18): the screen's
    own name in a celadon tile — the gentle, already-true tint (§1). */
 .snw-screen-note {
