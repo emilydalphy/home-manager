@@ -359,13 +359,27 @@ document.getElementById('uw-grid').addEventListener('click', e => {
 // ---------- Do you like to cook ahead? (2026-09-30) ----------
 // Replaces "Which days do you want to do your meal prepping?". No, or yes
 // with the day(s). Saved as usual_week.prep: the rhythm fact prep_days.
-// "How long?" left on 2026-10-06 (Onboarding regrouped, Emily
-// 2026-10-05): every prep day is planned for up to 2 hours, so the length
-// is always 'longer' = 120 minutes (app/tools/usual_week.py PREP_LENGTHS),
-// and db._migrate_prep_and_lunch_limits moved the 1-hour households.
-const PREP_LENGTH = 'longer';
+// "How long?" came back on 2026-11-01 (it left on 2026-10-06): once a day
+// is picked, one row of four chips per prep day, saved as that day's
+// minutes (app/tools/usual_week.py PREP_MINUTES). 120 is on until one is
+// tapped, which is what every household had in between.
+const PREP_MINUTES = [60, 120, 180, 240];
+const PREP_MINUTES_DEFAULT = 120;
 let prepAnswer = '';           // '' (not answered — read as no) | 'no' | 'yes'
 let prepDayKeys = [];          // 'monday'... as tapped
+let prepMinutes = {};          // { monday: 120, ... } — only days that were changed
+function prepMinutesFor(day) { return PREP_MINUTES.indexOf(prepMinutes[day]) !== -1 ? prepMinutes[day] : PREP_MINUTES_DEFAULT; }
+// {day: minutes} for exactly the days that are on.
+function currentPrepMinutes() {
+  const out = {};
+  currentPrepDayKeys().forEach(d => { out[d] = prepMinutesFor(d); });
+  return out;
+}
+// "up to 2 hours" / "up to 1 hour" — rhythm.prep_minutes_label's words.
+function prepHoursWords(minutes) {
+  const h = Math.max(1, Math.round(minutes / 60));
+  return 'up to ' + h + (h === 1 ? ' hour' : ' hours');
+}
 // In week order, whatever order the taps came in; none unless "Yes".
 function currentPrepDayKeys() {
   return prepAnswer === 'yes' ? UW_WEEKDAYS.filter(d => prepDayKeys.indexOf(d) !== -1) : [];
@@ -387,12 +401,17 @@ function breakfastPrepLabel(key, days) {
 function uwDayName(key) { return UW_DAY_NAMES[UW_WEEKDAYS.indexOf(key)] || ''; }
 // The line under the answer (Emily's mockup: "Sunday, a longer stretch.
 // I'll put lunch prep and a big batch cook there, and keep weeknights
-// quick."). Lunch prep only when lunch is planned at all. Every prep day
-// is up to 2 hours since 2026-10-06, so the line says that instead of a
-// length somebody picked.
-function prepReadback(days, lunchOn) {
+// quick."). Lunch prep only when lunch is planned at all. The length is
+// the one picked: "Sunday, up to 2 hours." or, with two days, "Sunday, up
+// to 2 hours and Wednesday, up to 1 hour." `minutes` is {day: minutes}.
+function prepReadback(days, lunchOn, minutes) {
   if (!days.length) return '';
-  const when = revealJoinWords(days.map(uwDayName)) + ', up to 2 hours';
+  const lengthOf = d => prepHoursWords((minutes && minutes[d]) || PREP_MINUTES_DEFAULT);
+  const words = days.map(lengthOf);
+  // One length for every day is said once: "Sunday and Wednesday, up to 2 hours".
+  const when = words.every(w => w === words[0])
+    ? revealJoinWords(days.map(uwDayName)) + ', ' + words[0]
+    : revealJoinWords(days.map((d, i) => uwDayName(d) + ', ' + words[i]));
   const what = lunchOn ? 'lunch prep and a big batch cook' : 'a big batch cook';
   return when + '. I’ll put ' + what + ' there, and keep weeknights quick.';
 }
@@ -409,6 +428,21 @@ function buildPrepStep() {
     const on = prepDayKeys.indexOf(d) !== -1;
     return `<button type="button" class="uw-day${on ? ' is-all' : ''}" data-prep-day="${d}" aria-label="${UW_DAY_NAMES[i]}" aria-pressed="${on ? 'true' : 'false'}"><b>${UW_LETTERS[i]}</b></button>`;
   }).join('');
+  // How long? — under Which day? once a day is picked: one row for one
+  // day, "How long on Sunday?" for each of two or more.
+  const lenHost = document.getElementById('prep-length');
+  if (lenHost) {
+    const picked = currentPrepDayKeys();
+    lenHost.hidden = !picked.length;
+    lenHost.innerHTML = picked.map(d => {
+      const label = picked.length === 1 ? 'How long?' : 'How long on ' + uwDayName(d) + '?';
+      return `<div class="prep-length-group"><p class="q-opt-label">${label}</p><div class="q-seg prep-seg" role="group" aria-label="${label}">` +
+        PREP_MINUTES.map(m => {
+          const on = prepMinutesFor(d) === m;
+          return `<button type="button" class="${on ? 'is-on' : ''}" data-prep-minutes="${m}" data-prep-for="${d}" aria-pressed="${on ? 'true' : 'false'}">Up to ${m / 60} hr</button>`;
+        }).join('') + '</div></div>';
+    }).join('');
+  }
   const bRow = document.getElementById('prep-breakfast');
   if (bRow) {
     const asked = breakfastPrepAsked();
@@ -422,7 +456,7 @@ function buildPrepStep() {
       : breakfastPrep === 'fresh' ? 'Quick breakfasts, made each morning.' : '';
     note.hidden = !asked || !breakfastPrep;
   }
-  const line = prepReadback(currentPrepDayKeys(), uwMealOn('lunch'));
+  const line = prepReadback(currentPrepDayKeys(), uwMealOn('lunch'), currentPrepMinutes());
   const readback = document.getElementById('prep-readback');
   readback.textContent = line;
   readback.hidden = !line;
@@ -437,6 +471,13 @@ document.getElementById('prep-day-tiles').addEventListener('click', e => {
   if (!btn) return;
   const d = btn.dataset.prepDay;
   prepDayKeys = prepDayKeys.indexOf(d) !== -1 ? prepDayKeys.filter(k => k !== d) : prepDayKeys.concat([d]);
+  buildPrepStep();
+});
+const lenHost = document.getElementById('prep-length');
+if (lenHost) lenHost.addEventListener('click', e => {
+  const btn = e.target.closest('[data-prep-minutes]');
+  if (!btn) return;
+  prepMinutes[btn.dataset.prepFor] = Number(btn.dataset.prepMinutes);
   buildPrepStep();
 });
 const bChips = document.getElementById('prep-breakfast-chips');

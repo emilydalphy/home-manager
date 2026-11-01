@@ -479,6 +479,11 @@
   }
   :where(:root[data-theme="dark"]) .uw-day.is-some, :where(:root[data-theme="dark"]) .uw-sw.is-some { background: var(--celadon); border-color: var(--celadon); color: var(--on-accent-ink); }
   #prep-day-tiles .uw-day { height: 44px; }
+  /* How long? — four chips in one row, one row per prep day. */
+  #prep-length { gap: 14px; }
+  .prep-length-group { display: flex; flex-direction: column; gap: 8px; }
+  .q-seg.prep-seg { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .q-seg.prep-seg button { padding: 6px 2px; font-size: 13px; }
   .uw-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   /* A picker scrolled to (renderMealsDays) stops above the fixed foot, not under it. */
   .uw-row { scroll-margin-bottom: 150px; }
@@ -1549,8 +1554,8 @@
 <!-- Do you like to cook ahead? (Emily, 2026-09-30 — replaces "Which days
      do you want to do your meal prepping?"). No, or yes with the day(s);
      saved as usual_week.prep (the rhythm fact prep_days). "How long?" left
-     on 2026-10-05 (Onboarding regrouped): every prep day is planned for up
-     to 2 hours (120 minutes). The line under it reads the answer back
+     on 2026-10-05 and came back on 2026-11-01: up to 1-4 hours per prep
+     day (#prep-length, stored as minutes). The line under it reads it back
      (prepReadback). -->
 <div id="step-prep" style="display:none">
   <button class="back-link" type="button" data-step-back="prep" hidden></button>
@@ -1565,6 +1570,9 @@
         <div class="q-opt-body" id="prep-yes-body" hidden>
           <p class="q-opt-label">Which day?</p>
           <div class="uw-days" id="prep-day-tiles"></div>
+          <!-- How long? (2026-11-01): one row of chips per prep day, drawn
+               by buildPrepStep; saved as each day's minutes. -->
+          <div id="prep-length" class="q-opt-body" hidden></div>
           <!-- Breakfast fresh or made ahead (Emily, 2026-10-26, option B):
                a row inside the prep day, only when breakfast is planned.
                Saved as the rhythm fact breakfast_prep. -->
@@ -2922,7 +2930,7 @@ function usualWeekPayload() {
     grid: grid,
     variety: variety,
     snacks_per_day: householdSnacksPerDay(),
-    prep: days.length ? { days: days, length: PREP_LENGTH } : { days: [] },
+    prep: days.length ? { days: days, minutes: currentPrepMinutes() } : { days: [] },
   };
 }
 
@@ -5838,7 +5846,7 @@ function onboardingDraftSnapshot() {
     snacks: memberSnacks,
     shop: { day: shopDay, topUp: shopTopUpDay },
     cook: { role: cookRole, who: cookWho },
-    prep: { answer: prepAnswer, days: prepDayKeys, breakfast: breakfastPrep },
+    prep: { answer: prepAnswer, days: prepDayKeys, minutes: prepMinutes, breakfast: breakfastPrep },
     variety: varietyChoice,
     dinner: { window: rhythmDinnerWindow, weeknightMax: weeknightMaxMinutes, lunchMax: weekdayLunchMaxMinutes },
     clock: { zone: clockZone, asking: clockAsking, said: clockSaid },
@@ -5927,7 +5935,7 @@ function readOnboardingDraft(raw) {
     snacks: byName(d.snacks, v => num(v, 1)),
     shop: { day: str(obj(d.shop).day, ''), topUp: str(obj(d.shop).topUp, '') },
     cook: { role: str(obj(d.cook).role, ''), who: str(obj(d.cook).who, '') },
-    prep: { answer: str(obj(d.prep).answer, ''), days: strs(obj(d.prep).days), breakfast: str(obj(d.prep).breakfast, '') },
+    prep: { answer: str(obj(d.prep).answer, ''), days: strs(obj(d.prep).days), minutes: obj(d.prep).minutes && typeof obj(d.prep).minutes === 'object' ? obj(d.prep).minutes : {}, breakfast: str(obj(d.prep).breakfast, '') },
     variety: {
       breakfast: str(obj(d.variety).breakfast, VARIETY_DEFAULT),
       lunch: str(obj(d.variety).lunch, VARIETY_DEFAULT),
@@ -5984,6 +5992,7 @@ function applyOnboardingDraft(d) {
   cookWho = (d.cook && d.cook.who) || '';
   prepAnswer = d.prep.answer;
   prepDayKeys = d.prep.days;
+  prepMinutes = d.prep.minutes || {};
   breakfastPrep = BREAKFAST_PREP_KEYS.indexOf(d.prep.breakfast) !== -1 ? d.prep.breakfast : '';
   varietyChoice = d.variety;
   rhythmDinnerWindow = d.dinner.window;

@@ -287,8 +287,8 @@ CHECKLIST = {
     # number of days can be on"); the save path is wwkTogglePrepDay's own
     # write, wwkSaveRhythm('prep-days', ...).
     "prep days": ("data-wwk=\"prep-day\"", "wwkSaveRhythm('prep-days'"),
-    # No "How long?" since 2026-10-06: every prep day is saved at 2 hours.
-    "prep minutes": ("minutes: WWK_PREP_MINUTES", "var WWK_PREP_MINUTES = 120;"),
+    # A day turned on is saved at 2 hours; a kept day keeps its length (2026-11-01).
+    "prep minutes": ("WWK_PREP_MINUTES }", "var WWK_PREP_MINUTES = 120;"),
     # Calendar
     "calendar check": ("data-wwk=\"cal-check\"", "/api/calendar/check"),
     "calendar connect": ("data-wwk=\"cal-save\"", "/api/calendar/connect"),

@@ -258,7 +258,8 @@ def test_the_grid_screen_carries_the_legend_and_the_line():
 @_needs_node
 def test_the_prep_read_back_line():
     out = _run("\n".join([
-        _fn("revealJoinWords"), _const("UW_WEEKDAYS"), _const("UW_DAY_NAMES"), _fn("uwDayName"), _fn("prepReadback"),
+        _fn("revealJoinWords"), _const("UW_WEEKDAYS"), _const("UW_DAY_NAMES"), _fn("uwDayName"),
+        _const("PREP_MINUTES"), _const("PREP_MINUTES_DEFAULT"), _fn("prepHoursWords"), _fn("prepReadback"),
     ]) + """
 console.log(JSON.stringify([
   prepReadback(['sunday'], true),
@@ -267,8 +268,8 @@ console.log(JSON.stringify([
   prepReadback([], true),
 ]));
 """)
-    # UPDATED 2026-10-06 (Onboarding regrouped): "How long?" is gone and
-    # every prep day is up to 2 hours, so the line says so.
+    # UPDATED 2026-11-01: "How long?" is back; with nothing picked a day is
+    # up to 2 hours (the default chip), and the line says the length picked.
     assert out[0] == "Sunday, up to 2 hours. I’ll put lunch prep and a big batch cook there, and keep weeknights quick."
     assert out[1] == "Sunday and Wednesday, up to 2 hours. I’ll put lunch prep and a big batch cook there, and keep weeknights quick."
     assert out[2] == "Sunday, up to 2 hours. I’ll put a big batch cook there, and keep weeknights quick."
@@ -287,7 +288,8 @@ def _payload_harness(members) -> str:
         # (householdSnacksPerDay is the most anyone has) and every prep day
         # is two hours (PREP_LENGTH).
         "var memberSnacks = {}; var prepAnswer = ''; var prepDayKeys = [];",
-        _const("PREP_LENGTH"),
+        _const("PREP_MINUTES"), _const("PREP_MINUTES_DEFAULT"), "var prepMinutes = {};",
+        _fn("prepMinutesFor"), _fn("currentPrepMinutes"),
         _const("INFANT_UNDER_YEARS"), _fn("isInfant"),
         _const("SNACK_OPTIONS"), _fn("defaultSnacksFor"), _fn("snacksFor"), _fn("householdSnacksPerDay"),
         "var varietyChoice = { breakfast: 'few_in_rotation', lunch: 'few_in_rotation', dinner: 'few_in_rotation' };",
@@ -324,7 +326,7 @@ console.log(JSON.stringify({ usual: usualWeekPayload(), counts: plannedMealCount
     assert usual["grid"]["lunch"]["monday"] == "everyone"
     assert usual["variety"] == {"lunch": "meal_prep_ahead", "dinner": "cook_big_eat_twice"}
     assert usual["snacks_per_day"] == 1
-    assert usual["prep"] == {"days": ["wednesday", "sunday"], "length": "longer"}
+    assert usual["prep"] == {"days": ["wednesday", "sunday"], "minutes": {"wednesday": 120, "sunday": 120}}
     assert out["counts"] == {"breakfasts_per_week": 0, "lunches_per_week": 7, "dinners_per_week": 5, "snacks_per_day": 1}
     assert out["stance"] == "love_them", "Cook big, eat twice is a household that loves leftovers"
     assert out["lunch"] is None, "nobody said anybody takes lunch with them, so nothing is sent"
@@ -380,7 +382,7 @@ def test_the_onboarding_payload_saves_through_the_real_route(signed_in):
     greg = next(m["id"] for m in saved["members"] if m["name"] == "Greg")
     assert saved["grid"]["dinner"]["thursday"] == [greg]
     assert saved["variety"]["dinner"] == {"choice": "few_in_rotation", "dishes": 4, "days_on": 6}
-    assert saved["prep"] == {"days": ["sunday"], "length": "longer"}
+    assert saved["prep"] == {"days": ["sunday"], "length": "longer", "minutes": {"sunday": 120}}
 
 
 # ---------- helpers ----------

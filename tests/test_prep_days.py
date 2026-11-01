@@ -109,7 +109,7 @@ def test_the_summary_says_it_the_way_a_person_would():
     update it here in the same commit rather than deleting the test."""
     tools.set_prep_days([{"weekday": "sunday", "minutes": 60}, {"weekday": "wednesday"}])
 
-    assert tools.get_household_rhythm()["prep_days_summary"] == "Preps on Sunday (about an hour) and Wednesday."
+    assert tools.get_household_rhythm()["prep_days_summary"] == "Preps on Sunday (up to 1 hour) and Wednesday."
 
 
 def test_an_unanswered_question_says_nothing_at_all():
@@ -222,7 +222,7 @@ def test_what_we_know_reads_prep_days_back(signed_in):
     prefs = signed_in.get("/api/facts?category=rhythm").json()["preferences"]
 
     assert [d["weekday"] for d in prefs["prep_days"]] == ["sunday", "wednesday"]
-    assert prefs["prep_days_summary"] == "Preps on Sunday (about an hour) and Wednesday."
+    assert prefs["prep_days_summary"] == "Preps on Sunday (up to 1 hour) and Wednesday."
 
 
 def test_the_agent_can_set_prep_days():

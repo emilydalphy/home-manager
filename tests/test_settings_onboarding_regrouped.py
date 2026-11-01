@@ -158,17 +158,23 @@ console.log(JSON.stringify(wwkUsualWeekHtml({rhythm: {}})));
     assert "uwPost({ snacks_per_day: most })" in _function("wwkSaveMemberSnacks")
 
 
-def test_cook_ahead_has_no_how_long_and_every_prep_day_is_two_hours():
+def test_cook_ahead_note_says_the_real_length_and_a_kept_day_keeps_its_length():
+    # UPDATED 2026-11-01: "How long?" is back (asked in onboarding and on
+    # Same as last week?), so Settings says what is set, not a fixed 2 hours,
+    # and a day that stays on keeps its length when another day is toggled.
     html = _run(_harness("wwkPrepDaysHtml", "wwkPrepPayload") + """
 var WWK_PREP_DAYS = [{ key: 'sunday', label: 'Sun' }, { key: 'monday', label: 'Mon' }];
+prefsState.memory = { rhythm: { prep_days: [{ weekday: 'sunday', minutes: 180 }] } };
 console.log(JSON.stringify([
   wwkPrepDaysHtml({ rhythm: { prep_days: [{ weekday: 'sunday', minutes: 60 }] } }),
-  wwkPrepPayload(['monday', 'sunday'])
+  wwkPrepPayload(['monday', 'sunday']),
+  wwkPrepDaysHtml({ rhythm: { prep_days: [{ weekday: 'sunday', minutes: 180 }, { weekday: 'monday', minutes: 60 }] } })
 ]));
 """)
     assert "Roughly how long" not in html[0] and "About an hour" not in SHELL_JS
-    assert "up to 2 hours" in html[0]
-    assert html[1] == [{"weekday": "sunday", "minutes": 120}, {"weekday": "monday", "minutes": 120}]
+    assert "Sunday, up to 1 hour." in html[0] and "up to 2 hours" not in html[0]
+    assert html[1] == [{"weekday": "sunday", "minutes": 180}, {"weekday": "monday", "minutes": 120}]
+    assert "Sunday, up to 3 hours and Monday, up to 1 hour." in html[2]
 
 
 # --- review fixes (2026-10-06) ---------------------------------------------------

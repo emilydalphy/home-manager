@@ -150,7 +150,7 @@ class TestThisWeekOnly:
         }})
         assert res.status_code == 200, res.text
         saved = res.json()["week_answers"]
-        assert saved["variety"] == {"dinner": "new_every_day"} and saved["prep"] == {"days": []}
+        assert saved["variety"] == {"dinner": "new_every_day"} and saved["prep"] == {"days": [], "minutes": {}}
         emily = [m["id"] for m in before["members"] if m["name"] == "Emily"]
         assert saved["grid"]["dinner"]["friday"] == emily
         assert tools.get_usual_week() == before                       # Settings untouched
@@ -402,6 +402,7 @@ class TestTheRowsWords:
             "function esc(s) { return String(s); }\n"
             + _const("UW_MEALS") + _extract("uwCleanCell", SCREENS) + "\n"
             + _var("SAME_COPY") + _var("EXTRA_TAGS") + _var("PREP_WEEKDAYS")
+            + _const("PREP_MINUTES_DEFAULT") + _extract("prepHoursWords", SCREENS) + "\n"
             + "\n".join(_extract(n) for n in ("isoLocal", "addDaysIso", "weekdayName", "joinWords", "capitalize",
                                                "titleDay", "weekdayIndex", "daysValue", "whoValue", "cookValue",
                                                "cuisinesValue"))
@@ -430,7 +431,9 @@ var off = { breakfast: all(), lunch: all(), dinner: all() };
 console.log(JSON.stringify({
   days: daysValue('2026-10-19', 7), one: daysValue('2026-10-23', 1),
   plain: plain, changed: changed, single: one, offDays: whoValue(off),
-  cook: cookValue(['sunday']), twoCook: cookValue(['wednesday', 'sunday']), noCook: cookValue([]),
+  cook: cookValue(['sunday'], { sunday: 120 }), twoCook: cookValue(['wednesday', 'sunday'], { wednesday: 120, sunday: 120 }),
+  mixed: cookValue(['wednesday', 'sunday'], { wednesday: 60, sunday: 180 }), three: cookValue(['sunday'], { sunday: 180 }),
+  noCook: cookValue([]),
   cuisines: cuisinesValue(['Thai', 'Italian', 'Mexican'], ['Something warm']),
   many: cuisinesValue(['Thai', 'Italian', 'Mexican', 'Greek'], []), none: cuisinesValue([], [])
 }));""")
@@ -443,6 +446,8 @@ console.log(JSON.stringify({
             "offDays": "Breakfast: Sat and Sun",
             "cook": "Sunday, up to 2 hours",
             "twoCook": "Sunday and Wednesday, up to 2 hours",
+            "mixed": "Sunday, up to 3 hours and Wednesday, up to 1 hour",
+            "three": "Sunday, up to 3 hours",
             "noCook": "No, I cook as I go",
             "cuisines": "Thai, Italian, Mexican · Something warm",
             "many": "Thai, Italian, Mexican +1",

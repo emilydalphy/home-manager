@@ -600,14 +600,19 @@ def prep_minutes_label(minutes: int | None) -> str:
     """
     if not minutes:
         return ""
+    # The four lengths "How long?" offers (2026-11-01), in the words
+    # onboarding's read-back, Settings and the Same-as-last-week row use.
+    if minutes in (60, 120, 180, 240):
+        hours = minutes // 60
+        return f"up to {hours} hour" + ("" if hours == 1 else "s")
+    # A legacy odd number (a chat-set 45 or 90): said as it always was,
+    # past an hour rounded up to whole hours.
     if minutes <= 40:
         return "about half an hour"
     if minutes <= 75:
         return "about an hour"
-    # Every prep day is planned for up to 2 hours since 2026-10-06
-    # (Onboarding, regrouped: Cook ahead lost "How long?") — the words
-    # onboarding's read-back and Settings use.
-    return "up to 2 hours"
+    hours = -(-int(minutes) // 60)
+    return f"up to {hours} hours"
 
 
 def _join_weekdays(labels: list[str]) -> str:
@@ -719,7 +724,8 @@ def get_household_rhythm() -> dict:
     from .usual_week import _THIS_WEEK
     week_prep = (_THIS_WEEK.get() or {}).get("prep")
     if week_prep is not None:
-        prep_days = [{"weekday": d, "minutes": 120} for d in (week_prep.get("days") or [])]
+        week_minutes = week_prep.get("minutes") or {}
+        prep_days = [{"weekday": d, "minutes": week_minutes.get(d) or 120} for d in (week_prep.get("days") or [])]
 
     return {
         "lunch_location": lunch_location,

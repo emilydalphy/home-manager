@@ -325,7 +325,7 @@ def test_meal_prep_ahead_needs_a_prep_day_and_preps_on_it(stub_model, picker):
         tools.save_usual_week(variety={"lunch": "meal_prep_ahead"}, prep={"days": []})
     tools.save_usual_week(variety={"lunch": "meal_prep_ahead"}, prep={"days": ["sunday"], "length": "longer"})
     week = tools.get_usual_week()
-    assert week["prep"] == {"days": ["sunday"], "length": "longer"}
+    assert week["prep"] == {"days": ["sunday"], "length": "longer", "minutes": {"sunday": 120}}
     assert tools.get_household_rhythm()["prep_days"] == [{"weekday": "sunday", "minutes": 120, "note": None}]
     assert week["variety"]["lunch"]["dishes"] == 2
     monday = _monday()
@@ -338,10 +338,10 @@ def test_meal_prep_ahead_needs_a_prep_day_and_preps_on_it(stub_model, picker):
 
 def test_the_prep_answer_reads_back_as_an_hour():
     tools.save_usual_week(prep={"days": ["sunday", "wednesday"], "length": "hour"})
-    assert tools.get_usual_week()["prep"] == {"days": ["sunday", "wednesday"], "length": "hour"}
-    assert tools.prep_days_summary() == "Preps on Sunday and Wednesday (about an hour)."  # one length, said once (2026-10-06)
+    assert tools.get_usual_week()["prep"] == {"days": ["sunday", "wednesday"], "length": "hour", "minutes": {"sunday": 60, "wednesday": 60}}
+    assert tools.prep_days_summary() == "Preps on Sunday and Wednesday (up to 1 hour)."  # one length, said once (2026-10-06)
     tools.save_usual_week(prep={"days": []})
-    assert tools.get_usual_week()["prep"] == {"days": [], "length": None}
+    assert tools.get_usual_week()["prep"] == {"days": [], "length": None, "minutes": {}}
 
 
 # ---------- the first week is never left open ----------
@@ -388,7 +388,7 @@ def test_the_api_reads_and_saves_the_usual_week(signed_in):
     assert body["grid"]["breakfast"]["saturday"] == "off"
     assert body["variety"]["dinner"] == {"choice": "few_in_rotation", "dishes": 4, "days_on": 7}
     assert body["snacks_per_day"] == 1
-    assert body["prep"] == {"days": ["sunday"], "length": "hour"}
+    assert body["prep"] == {"days": ["sunday"], "length": "hour", "minutes": {"sunday": 60}}
     assert signed_in.post("/api/usual-week", json={"snacks_per_day": 4}).status_code == 400
     assert signed_in.post("/api/usual-week", json={"variety": {"dinner": "whatever"}}).status_code == 400
     assert signed_in.post("/api/usual-week", json={"grid": {"dinner": {"monday": []}}}).status_code == 400

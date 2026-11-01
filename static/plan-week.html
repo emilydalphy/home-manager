@@ -3752,7 +3752,6 @@ body.toast-up { padding-bottom: 260px; }
     leanToward: 'This week, lean toward',
     everyMeal: { 1: 'Every meal', 2: 'Both of you, every meal', many: 'Everyone, every meal' },
     noPrep: 'No, I cook as I go',
-    prepLength: ', up to 2 hours',
     notPlanned: 'Not planned',
     noLunches: 'No weekday lunches',
     nothingAdded: 'Nothing yet. Starts fresh each week.',
@@ -3824,6 +3823,17 @@ body.toast-up { padding-bottom: 260px; }
   }
   function usualPrepDays() { return ((usual().prep || {}).days || []).slice(); }
   function weekPrepDays() { return weekAnswers.prep ? weekAnswers.prep.days.slice() : usualPrepDays(); }
+  // How long each prep day runs: {day: minutes} for exactly these days, 120
+  // where nothing was said (PREP_MINUTES_DEFAULT, setup-screens.js).
+  function prepMinutesOf(days, raw) {
+    var out = {};
+    days.forEach(function (d) { out[d] = (raw || {})[d] || PREP_MINUTES_DEFAULT; });
+    return out;
+  }
+  function usualPrepMinutes() { return prepMinutesOf(usualPrepDays(), (usual().prep || {}).minutes); }
+  function weekPrepMinutes() {
+    return weekAnswers.prep ? prepMinutesOf(weekAnswers.prep.days, weekAnswers.prep.minutes) : usualPrepMinutes();
+  }
   function usualChoice(meal) { return (((usual().variety || {})[meal]) || {}).choice || null; }
   function weekChoice(meal) { return ((weekAnswers.variety || {})[meal]) || usualChoice(meal); }
   // Each person's lunch needs, {name: {needs, days}}, as the server keeps
@@ -3868,6 +3878,7 @@ body.toast-up { padding-bottom: 260px; }
     usualGrid = weekCells();
     uwOpen = null;
     prepDayKeys = weekPrepDays();
+    prepMinutes = weekPrepMinutes();
     prepAnswer = prepDayKeys.length ? 'yes' : 'no';
     varietyChoice = {
       breakfast: weekChoice('breakfast') || VARIETY_DEFAULT,
@@ -3936,9 +3947,17 @@ body.toast-up { padding-bottom: 260px; }
     return names.length <= 1 ? SAME_COPY.everyMeal[1] : names.length === 2 ? SAME_COPY.everyMeal[2] : SAME_COPY.everyMeal.many;
   }
 
-  function cookValue(days) {
+  // "Sunday, up to 3 hours"; two days of one length, "Sunday and Wednesday,
+  // up to 2 hours"; two lengths, "Sunday, up to 2 hours and Wednesday, up to
+  // 1 hour" (onboarding's read-back, less the full stop).
+  function cookValue(days, minutes) {
     var ordered = PREP_WEEKDAYS.filter(function (d) { return days.indexOf(d) !== -1; });
-    return ordered.length ? joinWords(ordered.map(titleDay)) + SAME_COPY.prepLength : SAME_COPY.noPrep;
+    if (!ordered.length) return SAME_COPY.noPrep;
+    var lengths = ordered.map(function (d) { return prepHoursWords((minutes || {})[d] || PREP_MINUTES_DEFAULT); });
+    if (lengths.every(function (l) { return l === lengths[0]; })) {
+      return joinWords(ordered.map(titleDay)) + ', ' + lengths[0];
+    }
+    return joinWords(ordered.map(function (d, i) { return titleDay(d) + ', ' + lengths[i]; }));
   }
 
   // "Both packed · Meal prep ahead · Thursday prep for Friday". Where
@@ -3997,7 +4016,7 @@ body.toast-up { padding-bottom: 260px; }
     return {
       days: daysValue(weekStart, dayCount),
       who: whoValue(cells),
-      cook: cookValue(prep),
+      cook: cookValue(prep, weekPrepMinutes()),
       breakfast: mealOnThisWeek(cells, 'breakfast')
         ? [varietyTitle('breakfast', weekChoice('breakfast')), SAME_COPY.breakfastRow[answers.breakfasts_each_week]].filter(Boolean).join(' · ')
         : SAME_COPY.notPlanned,
@@ -4564,7 +4583,8 @@ body.toast-up { padding-bottom: 260px; }
       if (lunch.ready) reconcileLunches();
     } else if (name === 'prep') {
       var days = currentPrepDayKeys();
-      keepWeek('prep', { days: days }, { days: usualPrepDays() });
+      keepWeek('prep', { days: days, minutes: currentPrepMinutes() },
+        { days: usualPrepDays(), minutes: usualPrepMinutes() });
       takeCookAhead(days);
     } else if (name === 'variety-breakfast') {
       keepVariety('breakfast');
