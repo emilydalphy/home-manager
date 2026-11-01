@@ -13,6 +13,7 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Breakfast's "Week to week" label is now the question it answers: "Should breakfasts change each week?"** (2026-11-01, branch `cloud/breakfast-label-1101`; `tests/test_breakfasts_each_week.py`). Siblings on the screen ("How many different breakfasts in a week?") are questions; the label never went through the copywriter. The 3-mornings rule is untouched.
 - **Add toasts lead with the verb: "Added Lemons", "Added 3 things"** (2026-11-01, overnight, branch `overnight/added-toast-no-plural`; `tests/test_added_toast_no_plural.py`).
   Shop add/scan/Before-you-shop, regulars, a Plan side, a recipe save, What's home and the kitchen add sheet (also "Updated Milk in the fridge."). Names kept as on the list, never lower-cased. Why: Emily 2026-10-31 — "Lemons was added" read wrong and a plural guess fails on "Swiss chard"/"hummus". DESIGN_SYSTEM S10/§7 and the copywriter skill examples updated; other `<thing> was <verbed>` toasts unchanged.
 - **The grocery amount box: "x2" is 2; zero, negative and over-40-character amounts are refused** (2026-11-01, overnight; branch `overnight/amount-box-refuses-junk`; tests `tests/test_amount_box_refuses_junk.py`).
