@@ -455,8 +455,29 @@ def prep_sessions_for_plan(weekly_plan_id: int) -> list[dict]:
     the prep day plus a fixed window, so "covers Mon–Wed" is a claim about
     this plan rather than a guess about a week.
     """
+    # Marinade thaws are reconciled with what this read found (2026-11-01
+    # review): booked, moved or removed — this module's own rows only.
+    ctx = {"wants": [], "windows": [], "plans": {weekly_plan_id}}
+    sessions = _sessions_for_plan(weekly_plan_id, ctx)
+    if ctx["plans"]:
+        # Every live plan, because a Sunday prep reaches into next week's.
+        # Only rows whose meal sits in a reach this read covered (or whose
+        # meal is gone) can be removed, so another plan's are safe.
+        plans = set(ctx["plans"]) | {p["id"] for p in _prep_list._live_plans()}
+        _prep_list.reconcile_marinade_thaws(ctx["wants"], plans, ctx["windows"])
+    return sessions
+
+
+def _sessions_for_plan(weekly_plan_id: int, ctx: dict) -> list[dict]:
     plan = _plan_row(weekly_plan_id)
-    if plan is None or plan["skip_prep_this_week"]:
+    if plan is None:
+        ctx["plans"] = set()
+        return []
+    if plan["skip_prep_this_week"]:
+        # No prep this week: no marinade is frozen for it either.
+        period = _period_dates(plan)
+        if period:
+            ctx["windows"].append((period[0], period[-1]))
         return []
 
     dates = _period_dates(plan)
@@ -489,6 +510,7 @@ def prep_sessions_for_plan(weekly_plan_id: int) -> list[dict]:
     with _usual_week.for_plan(weekly_plan_id):
         prep_days = _rhythm.get_household_rhythm()["prep_days"]
     if not prep_days and not batches:
+        ctx["windows"].append((dates[0], dates[-1]))
         return []
 
     # One session per prep DATE. The household's standing prep days map
@@ -512,7 +534,7 @@ def prep_sessions_for_plan(weekly_plan_id: int) -> list[dict]:
         prep_day = prep_day_by_date[prep_date]
         session = _build_session(
             weekly_plan_id, plan, prep_date, prep_day, batches, entries, tasks,
-            prepped_cook_ids, prep_weekdays, all_prep_dates,
+            prepped_cook_ids, prep_weekdays, all_prep_dates, ctx,
         )
         if session is not None:
             sessions.append(session)
@@ -592,8 +614,34 @@ def _task_step(item: dict, task: dict) -> dict:
     )
 
 
+_MARINATE_WHAT = re.compile(r"\bmarinate\s+(?:the\s+)?(.+?)(?:\s+(?:for|in|with|overnight)\b|[,.;—(]|$)", re.I)
+
+
+def _pinned_marinade(step: dict, task: dict, prep_date: str, entries: dict, weekly_plan_id: int, ctx: dict) -> list[dict]:
+    """The freezer half of a pinned marinate task: which meal it is for (its
+    entry, else the first meal of that name after the prep day), then
+    prep_list.marinade_items' own rule. Adds the freezer step and wants the
+    thaw; the task itself keeps its row and its tick."""
+    entry = entries.get(task.get("meal_plan_entry_id")) if task.get("meal_plan_entry_id") else None
+    if entry is None and task.get("related_meal"):
+        name = task["related_meal"].strip().lower()
+        later = sorted((e for e in entries.values()
+                        if (e.get("meal") or "").strip().lower() == name and (e.get("date") or "") > prep_date),
+                       key=lambda e: e["date"])
+        entry = later[0] if later else None
+    if entry is None or not entry.get("date"):
+        return []
+    days_out = (date.fromisoformat(entry["date"]) - date.fromisoformat(prep_date)).days
+    m = _MARINATE_WHAT.search(task.get("description") or "")
+    meat = (m.group(1).strip().lower() if m else "") or "meat"
+    e = dict(entry, weekly_plan_id=weekly_plan_id)
+    return _prep_list.marinade_items(e, meat, "", f"task{task['id']}", days_out, False, ctx["wants"], existing=step)
+
+
 def _build_session(weekly_plan_id, plan, prep_date, prep_day, batches, entries, tasks,
-                   prepped_cook_ids, prep_weekdays, all_prep_dates) -> dict | None:
+                   prepped_cook_ids, prep_weekdays, all_prep_dates, ctx=None) -> dict | None:
+    if ctx is None:
+        ctx = {"wants": [], "windows": [], "plans": {weekly_plan_id}}
     budget = prep_day.get("minutes") or _prep_list.DEFAULT_BUDGET_MINUTES
     items: list[dict] = []
     fresh_batches = _prep_list.fresh_cook_entry_ids(
@@ -637,6 +685,19 @@ def _build_session(weekly_plan_id, plan, prep_date, prep_day, batches, entries, 
         entry = entries.get(raw["entry_id"]) or {}
         text, has_cook = _recipe_text(entry.get("meal") or raw["feeds"])
         hands, passive = _recipe_minutes(entry.get("meal") or raw["feeds"])
+        # Better fresh wins over a pinned chain too (review, 2026-11-01): a
+        # salmon bake cooked today for three nights is not prep — it is
+        # made on each night it is eaten.
+        dish = entry.get("meal") or raw["feeds"]
+        reason = _prep_list.dish_fresh_reason(dish, _prep_list._recipe_by_name(dish))
+        if reason:
+            items.append(_prep_list._base_item(
+                _without_minutes(raw),
+                key=f"cook:{raw['entry_id']}", kind="better_fresh", section="made_fresh",
+                state="better_fresh", on_list=False, can_remove=False, off_line=reason,
+                first_date=prep_date, first_slot=entry.get("slot") or "",
+            ))
+            continue
         items.append(_prep_list._base_item(
             _without_minutes(raw),
             key=f"cook:{raw['entry_id']}", section=_prep_list.heat_section(text, has_cook),
@@ -648,7 +709,13 @@ def _build_session(weekly_plan_id, plan, prep_date, prep_day, batches, entries, 
     # 3. The prep_tasks rows dated on this day.
     by_id = {t["id"]: t for t in tasks}
     for raw in _task_items(tasks, prep_date, entries):
-        items.append(_task_step(raw, by_id[raw["prep_task_id"]]))
+        step = _task_step(raw, by_id[raw["prep_task_id"]])
+        items.append(step)
+        # A pinned "Marinate the flank steak" follows the same rule as a
+        # derived marinade: past two days it is frozen in the bag and its
+        # thaw is booked for the night before (review, 2026-11-01).
+        if step["kind"] == "fridge_move" and step["section"] == "sauces" and step["always"]:
+            items.extend(_pinned_marinade(step, by_id[raw["prep_task_id"]], prep_date, entries, weekly_plan_id, ctx))
 
     # 4. The steps the week's meals offer.
     last = _prep_list.next_prep_after(prep_date, prep_weekdays, all_prep_dates)
@@ -688,7 +755,9 @@ def _build_session(weekly_plan_id, plan, prep_date, prep_day, batches, entries, 
         prep_date, last, weekly_plan_id, plan,
         exclude_entry_ids=exclude, covered_by_rows=covered_cuts, marinated_by_rows=marinated,
         frozen_meat=frozen, batch_grain_entries=grain_batched, fresh_batch_entries=fresh_batches,
+        thaw_wants=ctx["wants"],
     ))
+    ctx["windows"].append((prep_date, last))
     if not items:
         return None  # a prep day with nothing on it is not a session yet
 
