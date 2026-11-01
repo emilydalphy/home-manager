@@ -2557,3 +2557,24 @@ CREATE TABLE IF NOT EXISTS kitchen_add_sends (
     PRIMARY KEY (household_id, client_id)
 );
 CREATE INDEX IF NOT EXISTS idx_kitchen_add_sends_age ON kitchen_add_sends (created_at);
+
+-- The prep list's own choices (2026-11-01, branch prep-list-redesign,
+-- app/tools/prep_list.py): per plan + prep date + step, whether the
+-- household took a step off (state 'off' — it moves to Made on the night)
+-- or added one back ('on' — it stays on even past the prep time), and the
+-- done tick of a step that has no row anywhere else (a chop, a grain, a
+-- sauce, a marinade). A step that IS a row elsewhere (a prep task, a cook)
+-- ticks there. step_key is prep_list's stable key ("chop:12,14:onion",
+-- "task:7", "cook:31"). weekly_plan_id is the plan the Cook tab was
+-- showing; no REFERENCES, so a plan's delete never trips on it.
+CREATE TABLE IF NOT EXISTS prep_list_marks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    weekly_plan_id INTEGER NOT NULL,
+    prep_date TEXT NOT NULL,
+    step_key TEXT NOT NULL,
+    state TEXT NOT NULL DEFAULT '',
+    done INTEGER NOT NULL DEFAULT 0,
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE (household_id, weekly_plan_id, prep_date, step_key)
+);

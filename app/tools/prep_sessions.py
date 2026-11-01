@@ -1,6 +1,15 @@
 """
 Prep sessions — the work a prep day actually holds.
 
+UPDATED 2026-11-01 (branch prep-list-redesign): a session is no longer
+ONLY a gathering. What is gathered below (the four kinds of work already on
+the plan) is now the "pinned" part of a prep LIST, and prep_list.py adds the
+steps the week's meals offer (chop, grains, sauces, marinades), fits them to
+the household's prep time by hands-on minutes, and puts the rest under
+"Made on the night". See prep_list.py's docstring. Everything said below
+about not re-dating defrost rows and not creating chains still holds; the
+one new write is the thaw a frozen marinade needs.
+
 Emily, 2026-09-04 and again 2026-09-08: "I like to do some prep on Sunday
 to make the week easier, make some things fresh during the week, and then
 do another prep Wednesday/Thursday depending on the week."
@@ -45,11 +54,13 @@ rather than of the household; see set_skip_prep_this_week below.
 from __future__ import annotations
 
 import json
+import re
 from datetime import date, timedelta
 
 from ..db import get_conn
 from ._shared import household_id
 from . import leftovers as _leftovers
+from . import prep_list as _prep_list
 from . import recipes as _recipes
 from . import rhythm as _rhythm
 from . import weekly_plan as _weekly_plan
@@ -62,6 +73,11 @@ from . import weekday_lunches as _weekday_lunches
 # _session_minutes). A cook-ahead batch falls back to
 # COOK_AHEAD_FALLBACK_MINUTES only when its dish has no saved recipe (a
 # freeform meal) or a recipe with no times on it.
+#
+# REWRITTEN 2026-11-01 (branch prep-list-redesign): these are now each
+# row's HANDS-ON minutes, and a session's time is the sum of the hands-on
+# minutes on its list, measured against the household's prep length
+# (prep_list.py) — the stored answer is the budget, not the estimate.
 PREP_CUT_MINUTES = 10
 FRIDGE_MOVE_MINUTES = 2
 COOK_AHEAD_FALLBACK_MINUTES = 30
@@ -488,35 +504,237 @@ def prep_sessions_for_plan(weekly_plan_id: int) -> list[dict]:
 
     entries = _plan_entries(weekly_plan_id)
     tasks = _prep_task_rows(weekly_plan_id)
+    prep_weekdays = {(p.get("weekday") or "").lower() for p in prep_days if p.get("weekday")}
+    all_prep_dates = set(prep_day_by_date)
 
     sessions = []
     for prep_date in sorted(prep_day_by_date):
         prep_day = prep_day_by_date[prep_date]
-        items = (
-            _prepped_lunch_items(batches, prep_date)
-            + _cook_ahead_items(weekly_plan_id, prep_date, entries, prepped_cook_ids)
-            + _task_items(tasks, prep_date, entries)
+        session = _build_session(
+            weekly_plan_id, plan, prep_date, prep_day, batches, entries, tasks,
+            prepped_cook_ids, prep_weekdays, all_prep_dates,
         )
-        if not items:
-            continue  # a prep day with nothing on it is not a session yet
-        covers = sorted({d for item in items for d in item["covers"]})
-        minutes_planned = prep_day.get("minutes")
-        sessions.append({
-            "date": prep_date,
-            "weekday": date.fromisoformat(prep_date).strftime("%A"),
-            "minutes_planned": minutes_planned,
-            "note": prep_day.get("note"),
-            "items": items,
-            "covers": covers,
-            "items_done": sum(1 for i in items if i["done"]),
-            "items_total": len(items),
-            # The household's own answer beats arithmetic about it: if they
-            # said "about an hour", the session is about an hour, however
-            # the items happen to add up.
-            "total_minutes_estimate": minutes_planned or sum(i["minutes"] for i in items),
-        })
+        if session is not None:
+            sessions.append(session)
     sessions.sort(key=lambda s: s["date"])
     return sessions
+
+
+# ---------- one prep day, as a list of steps (prep_list.py) ----------
+
+def _without_minutes(item: dict) -> dict:
+    """A gathered row minus its old `minutes` — prep_list._base_item sets
+    minutes from the hands-on number."""
+    return {k: v for k, v in item.items() if k != "minutes"}
+
+
+def _recipe_text(meal: str) -> tuple[str, bool]:
+    """A dish's instructions as one string, and whether it has a cook time
+    — what prep_list.heat_section reads to pick oven / stove / slow cooker."""
+    recipe = _prep_list._recipe_by_name(meal or "")
+    if not recipe:
+        return "", True
+    return " ".join(str(s) for s in recipe.get("instructions") or []), bool(recipe.get("cook_time_minutes"))
+
+
+def _recipe_minutes(meal: str) -> tuple[int, int]:
+    """(hands-on, passive) for a whole dish cooked on the prep day: the
+    recipe's prep time is the hands-on part and its cook time the passive
+    part. A dish with neither (a freeform meal) is split down the middle of
+    COOK_AHEAD_FALLBACK_MINUTES."""
+    recipe = _prep_list._recipe_by_name(meal or "")
+    prep = (recipe or {}).get("prep_time_minutes") or 0
+    cook = (recipe or {}).get("cook_time_minutes") or 0
+    if not prep and not cook:
+        half = COOK_AHEAD_FALLBACK_MINUTES // 2
+        return half, COOK_AHEAD_FALLBACK_MINUTES - half
+    return (prep or 10), cook
+
+
+_GENERAL_SECTIONS = (
+    (re.compile(r"\bsoak", re.I), "soak"),
+    (re.compile(r"\bmarinat", re.I), "sauces"),
+    (re.compile(r"\bpack\b|\bportion", re.I), "pack"),
+    (re.compile(r"\bfreez", re.I), "freezer"),
+    (re.compile(r"\b(sauce|dressing|glaze|vinaigrette|drink|lemonade|tea)\b", re.I), "sauces"),
+    (re.compile(r"\b(bake|roast|oven)\b", re.I), "oven"),
+    (re.compile(r"\b(boil|simmer|cook)\b", re.I), "stove"),
+    (re.compile(r"\b(chill|overnight oats|jar)\b", re.I), "chill"),
+)
+
+
+def _task_step(item: dict, task: dict) -> dict:
+    """A prep_tasks row as a step: its section, its minutes, and whether it
+    may come off the list (a thaw or a marinade never may)."""
+    kind = item["kind"]
+    desc = task["description"] or ""
+    always = False
+    hands, passive = PREP_CUT_MINUTES, 0
+    if kind == "fridge_move" and task["task_type"] == "defrost":
+        section, hands, always = "thaw", FRIDGE_MOVE_MINUTES, True
+    elif kind == "prep_cut":
+        section = "chop"
+    elif kind == "batch_component":
+        section = "oven" if re.search(r"\b(roast|bake)", desc, re.I) else "stove"
+        hands, passive = 5, COOK_AHEAD_FALLBACK_MINUTES - 5
+    elif kind == "big_meal":
+        section, hands = "special", COOK_AHEAD_FALLBACK_MINUTES
+    else:
+        section = next((s for rx, s in _GENERAL_SECTIONS if rx.search(desc)), "chop")
+        always = section == "sauces" and bool(re.search(r"\bmarinat", desc, re.I))
+    covers = item["covers"]
+    first = covers[0] if covers else task["task_date"]
+    return _prep_list._base_item(
+        _without_minutes(item),
+        key=f"task:{task['id']}", section=section, hands_on=hands, passive=passive,
+        pinned=True, always=always, can_remove=not always,
+        feeds_line="", first_date=first, first_slot="",
+    )
+
+
+def _build_session(weekly_plan_id, plan, prep_date, prep_day, batches, entries, tasks,
+                   prepped_cook_ids, prep_weekdays, all_prep_dates) -> dict | None:
+    budget = prep_day.get("minutes") or _prep_list.DEFAULT_BUDGET_MINUTES
+    items: list[dict] = []
+    fresh_batches = _prep_list.fresh_cook_entry_ids(
+        weekly_plan_id, [b for b in batches if b["prep_date"] == prep_date])
+
+    # 1. Prepped batches made on this day — the cook itself, then packing.
+    for raw in _prepped_lunch_items(batches, prep_date):
+        batch = next(b for b in batches if b["cook_entry_id"] == raw["entry_id"] and b["prep_date"] == prep_date)
+        text, has_cook = _recipe_text(raw["title"])
+        hands, passive = _recipe_minutes(raw["title"])
+        first = (batch["lunch_dates"] or [batch["cook_date"]])[0]
+        reason = _prep_list.dish_fresh_reason(raw["title"], _prep_list._recipe_by_name(raw["title"]))
+        if reason:
+            items.append(_prep_list._base_item(
+                _without_minutes(raw),
+                key=f"cook:{raw['entry_id']}", kind="better_fresh", section="made_fresh",
+                title=f"{raw['title']} for {_prep_list.feeds_line([{'date': first, 'slot': batch['slot']}])}",
+                state="better_fresh", on_list=False, can_remove=False, off_line=reason,
+                first_date=first, first_slot=batch["slot"],
+            ))
+            continue
+        items.append(_prep_list._base_item(
+            _without_minutes(raw),
+            key=f"cook:{raw['entry_id']}", section=_prep_list.heat_section(text, has_cook),
+            hands_on=hands, passive=passive, pinned=True,
+            feeds_line=_prep_list.feeds_line([{"date": d, "slot": batch["slot"]} for d in batch["lunch_dates"]]),
+            first_date=first, first_slot=batch["slot"],
+        ))
+        if batch["slot"] == "lunch" and batch["lunch_dates"]:
+            n = len(batch["lunch_dates"])
+            items.append(_prep_list._base_item(
+                key=f"pack:{raw['entry_id']}", kind="step", section="pack",
+                title=f"{raw['title']}, {n} container{'' if n == 1 else 's'}", feeds=raw["title"],
+                feeds_line=_prep_list.feeds_line([{"date": d, "slot": "lunch"} for d in batch["lunch_dates"]]),
+                covers=sorted(set(batch["lunch_dates"])), hands_on=5, saved=5, pinned=True,
+                first_date=first, first_slot="lunch", follows=f"cook:{raw['entry_id']}",
+            ))
+
+    # 2. Cook-ahead chains cooked on this day.
+    for raw in _cook_ahead_items(weekly_plan_id, prep_date, entries, prepped_cook_ids):
+        entry = entries.get(raw["entry_id"]) or {}
+        text, has_cook = _recipe_text(entry.get("meal") or raw["feeds"])
+        hands, passive = _recipe_minutes(entry.get("meal") or raw["feeds"])
+        items.append(_prep_list._base_item(
+            _without_minutes(raw),
+            key=f"cook:{raw['entry_id']}", section=_prep_list.heat_section(text, has_cook),
+            hands_on=hands, passive=passive, pinned=True,
+            feeds_line=_prep_list.feeds_line([{"date": d, "slot": entry.get("slot") or "dinner"} for d in raw["covers"]]),
+            first_date=prep_date, first_slot=entry.get("slot") or "",
+        ))
+
+    # 3. The prep_tasks rows dated on this day.
+    by_id = {t["id"]: t for t in tasks}
+    for raw in _task_items(tasks, prep_date, entries):
+        items.append(_task_step(raw, by_id[raw["prep_task_id"]]))
+
+    # 4. The steps the week's meals offer.
+    last = _prep_list.next_prep_after(prep_date, prep_weekdays, all_prep_dates)
+    covered_cuts: dict[int, set[str]] = {}
+    marinated: set[int] = set()
+    marinated_meals: set[str] = set()
+    frozen: dict[int, set[str]] = {}
+    grain_batched: set[int] = set()
+    from . import defrost as _defrost
+    for t in tasks:
+        desc = (t["description"] or "")
+        if t["task_type"] == PREP_CUT_TASK_TYPE and t["meal_plan_entry_id"]:
+            name = re.sub(r"^\s*(cut up|cut|chop|wash|slice|dice)\s+", "", desc, flags=re.I).strip().lower()
+            covered_cuts.setdefault(t["meal_plan_entry_id"], set()).add(" ".join(name.split()))
+        if re.search(r"\bmarinat", desc, re.I) and (t.get("detail") or {}).get("kind") != _prep_list.MARINADE_THAW_KIND:
+            if t["meal_plan_entry_id"]:
+                marinated.add(t["meal_plan_entry_id"])
+            if t["related_meal"]:
+                marinated_meals.add(t["related_meal"].strip().lower())
+        if (t["task_type"] == "defrost" and t["meal_plan_entry_id"] and t["task_date"] >= prep_date
+                and t["status"] == "pending"
+                and (t.get("detail") or {}).get("kind") != _prep_list.MARINADE_THAW_KIND):
+            item = _defrost.thawed_item(desc).lower()
+            frozen.setdefault(t["meal_plan_entry_id"], set()).update(w for w in item.split() if len(w) > 3)
+        if t["task_type"] == BATCH_COMPONENT_TASK_TYPE:
+            key = str((t.get("detail") or {}).get("key") or "")
+            if any(g in key for g, _m in _prep_list._GRAINS):
+                grain_batched.update(int(i) for i in (t.get("detail") or {}).get("covered_entry_ids") or [])
+                if t["meal_plan_entry_id"]:
+                    grain_batched.add(t["meal_plan_entry_id"])
+    for e in entries.values():
+        if (e.get("meal") or "").strip().lower() in marinated_meals:
+            marinated.add(e["id"])
+    exclude = {b["cook_entry_id"] for b in batches} | {
+        i["entry_id"] for i in items if i.get("entry_id") and i["key"].startswith("cook:")}
+    items.extend(_prep_list.derive_steps(
+        prep_date, last, weekly_plan_id, plan,
+        exclude_entry_ids=exclude, covered_by_rows=covered_cuts, marinated_by_rows=marinated,
+        frozen_meat=frozen, batch_grain_entries=grain_batched, fresh_batch_entries=fresh_batches,
+    ))
+    if not items:
+        return None  # a prep day with nothing on it is not a session yet
+
+    marks = _prep_list._marks(weekly_plan_id, prep_date)
+    hands_on = _prep_list.fit(items, budget, marks)
+    # A pack step goes with its batch: a batch taken off takes its packing.
+    off_keys = {i["key"] for i in items if not i["on_list"]}
+    for i in items:
+        follows = i.get("follows")
+        if follows and follows in off_keys and i["on_list"]:
+            i.update(on_list=False, state="taken_off", off_line=_prep_list._fresh_line(i))
+            hands_on -= i["hands_on"]
+    on_list = [i for i in items if i["on_list"]]
+    if not on_list and not any(i["state"] in ("didnt_fit", "taken_off") for i in items):
+        return None  # only better-fresh notes: nothing to prep
+    for i in items:
+        line = i.get("line") or ""
+        if not line:
+            i["line"] = " · ".join(p for p in (i.get("feeds_line"), i.get("keeps")) if p)
+    covers = sorted({d for item in on_list for d in item["covers"]})
+    return {
+        "date": prep_date,
+        "weekday": date.fromisoformat(prep_date).strftime("%A"),
+        "weekly_plan_id": weekly_plan_id,
+        "minutes_planned": prep_day.get("minutes"),
+        "budget_minutes": budget,
+        "hands_on_minutes": hands_on,
+        "over_budget_minutes": max(hands_on - budget, 0),
+        "header": _prep_list.header_line(budget, hands_on),
+        "note": prep_day.get("note"),
+        # Every step, on the list or under Made on the night (`on_list`).
+        # Made-on-the-night rows stay here so a reader looking for "is this
+        # prep task shown somewhere" (shell.js kitchenLoosePrepTasks) still
+        # finds it.
+        "items": items,
+        "sections": _prep_list.section_rows(items),
+        "made_fresh": [i["key"] for i in _prep_list.made_fresh_rows(items)],
+        "made_fresh_line": _prep_list.made_on_the_night_line(budget),
+        "covers": covers,
+        "items_done": sum(1 for i in on_list if i["done"]),
+        "items_total": len(on_list),
+        # Hands-on minutes of what is on the list — the honest number, not
+        # the stored length (Emily, 2026-11-01: "about 2 hours" used to be
+        # the household's 120 whatever the list held).
+        "total_minutes_estimate": hands_on,
+    }
 
 
 def has_prep_days() -> bool:

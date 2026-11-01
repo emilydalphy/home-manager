@@ -214,7 +214,7 @@ class TestTheBatchIsOnItsPrepDay:
         item = next(i for i in session["items"] if i["title"] == "Curry")
         assert item["line"] == "For Thursday and Friday’s lunches."
         # And Sunday's own batch is still Sunday's.
-        assert [i["title"] for i in _session(plan_id, dates[0])["items"] if i["line"]] == ["Chili"]
+        assert [i["title"] for i in _session(plan_id, dates[0])["items"] if i["kind"] == "cook_ahead"] == ["Chili"]
 
     def test_a_batch_shows_exactly_once_even_when_its_prep_day_is_its_cook_day(
             self, two_adults, stub_model):
@@ -232,8 +232,8 @@ class TestTheBatchIsOnItsPrepDay:
             lunches=["S0", "S1", "S2", "Chili", "Soup", "S5", "S6"],
         )
         session = _session(plan_id, dates[3])
-        assert [i["title"] for i in session["items"]] == ["Chili"], session["items"]
-        assert session["items"][0]["line"] == "For Thursday and Friday’s lunches."
+        assert [i["title"] for i in session["items"] if i["kind"] == "cook_ahead"] == ["Chili"], session["items"]
+        assert next(i for i in session["items"] if i["kind"] == "cook_ahead")["line"] == "For Thursday and Friday’s lunches."
 
     def test_the_one_lunch_batch_is_a_session_item_too(self, two_adults, stub_model):
         """RED ON MAIN on the missing session rather than on its own claim.
@@ -412,7 +412,7 @@ class TestNothingChangesForAWeekThatNeverAnswered:
         )
         session = _session(plan_id, dates[0])
         assert session is not None
-        assert [i["title"] for i in session["items"]] == ["Chili"]
+        assert [i["title"] for i in session["items"] if i["kind"] == "cook_ahead"] == ["Chili"]
 
     def test_skip_prep_this_week_still_silences_every_session(self, two_adults, stub_model):
         """GUARD. Red on main on its PRECONDITION (there is no session to
@@ -730,7 +730,9 @@ class TestTheScreen:
             "var meals = " + json.dumps([_meal()]) + ";\n"
             "console.log(JSON.stringify(cookSessionItemHtml(" + json.dumps(item) + ", meals)));\n"
         )
-        assert '<p class="cook-week-sub">For Monday and Tuesday’s lunches.</p>' in html
+        # UPDATED 2026-11-01 (prep-list-redesign): the prep list's step row
+        # carries its quieter line as .prep-step-line (mockup C2).
+        assert '<p class="prep-step-line">For Monday and Tuesday’s lunches.</p>' in html
         # The dish is not said twice: the badge is dropped when it matches.
         assert "cook-badge" not in html
         # And the box opens the recipe, as every cook_ahead item's does.

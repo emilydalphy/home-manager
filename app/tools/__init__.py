@@ -601,6 +601,9 @@ from .prep_sessions import (  # noqa: F401
     prep_sessions_for_plan,
     set_skip_prep_this_week,
 )
+from .prep_list import (  # noqa: F401
+    set_prep_list_mark,
+)
 from .preferences import (  # noqa: F401
     DEFAULT_SNACKS_PER_DAY,
     add_food_dislikes,

@@ -350,7 +350,10 @@ def test_a_sunday_prep_gathers_all_three_kinds_of_work():
     assert session["weekday"] == "Sunday"
     assert session["items_total"] == 3
     assert session["items_done"] == 0
-    assert sorted(i["kind"] for i in session["items"]) == ["cook_ahead", "fridge_move", "prep_cut"]
+    # UPDATED 2026-11-01 (prep-list-redesign): `items` also carries what is
+    # NOT on the list (Made on the night — here the bowls' cherry tomatoes,
+    # better fresh), so the three kinds of work are the ones on the list.
+    assert sorted(i["kind"] for i in session["items"] if i["on_list"]) == ["cook_ahead", "fridge_move", "prep_cut"]
     batch = next(i for i in session["items"] if i["kind"] == "cook_ahead")
     assert batch["title"] == "Egg White Bites for 3 mornings"
     assert batch["entry_id"] == ids[SUN]
@@ -366,22 +369,34 @@ def test_covers_is_computed_from_what_the_items_actually_feed():
     assert session["covers"] == [SUN, MON, TUE, WED]
 
 
-def test_the_households_own_answer_beats_the_arithmetic():
+def test_the_households_own_answer_is_the_budget_not_the_estimate():
+    """UPDATED 2026-11-01 (prep-list-redesign), deliberately: this used to
+    pin "the household's own answer beats the arithmetic" — a session said
+    "about an hour" because they said an hour, whatever it held. Emily
+    called that out ("about 2 hours" was a stored 120). The answer is now
+    the TIME the list is fitted into, and the estimate is the real sum of
+    hands-on minutes on the list."""
     plan_id, _ids = _emilys_sunday()
 
-    assert tools.prep_sessions_for_plan(plan_id)[0]["total_minutes_estimate"] == 60
+    session = tools.prep_sessions_for_plan(plan_id)[0]
+    assert session["budget_minutes"] == 60
+    assert session["total_minutes_estimate"] == session["hands_on_minutes"] == 22
+    assert session["header"] == "Up to 1 hr · about 22 min hands-on"
 
 
 def test_without_a_stated_length_the_items_are_added_up():
-    """35 minutes of recipe (10 prep + 25 cook) + 10 for the cut + 2 for
-    the fridge move."""
+    """UPDATED 2026-11-01 (prep-list-redesign): HANDS-ON minutes only — the
+    egg bites' 10 minutes of prep (their 25 in the oven don't count), 10
+    for the cut and 2 for the fridge move. With no stated length the list
+    is fitted into two hours."""
     plan_id, _ids = _emilys_sunday()
     tools.set_prep_days([{"weekday": "sunday"}])
 
     session = tools.prep_sessions_for_plan(plan_id)[0]
 
     assert session["minutes_planned"] is None
-    assert session["total_minutes_estimate"] == 47
+    assert session["budget_minutes"] == 120
+    assert session["total_minutes_estimate"] == 22
 
 
 def test_the_done_count_moves_when_an_item_is_checked():
