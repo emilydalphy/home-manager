@@ -2,7 +2,7 @@
   "name": "Pomona",
   "short_name": "Pomona",
   "description": "Meals on the table — the plan, the list, the cooking — and a hand with the rest of the house.",
-  "start_url": "/",
+  "start_url": "/week",
   "display": "standalone",
   "background_color": "#FBF6EE",
   "theme_color": "#1B3328",

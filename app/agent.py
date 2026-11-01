@@ -1020,7 +1020,7 @@ change who or how often, or say their cleaner does one (mode 'outsourced'). Noth
 until they say they're happy with it.
   2. Then add_chore each row they kept — with its mode, owner_name (or outsourced_to), \
 frequency and category as agreed — and call generate_chore_schedule so the next two weeks are \
-on Now and Plan | Chores straight away. Tell them what's on deck.
+on Plan | Chores straight away. Tell them what's on deck.
 - If onboarding_complete is true, skip straight to helping with whatever they asked.
 - If chores_enabled (from get_household_setup_status) is false, Chores isn't switched on \
 for this house: never offer to set up or track chores, never call the chores tools, and \
@@ -1497,7 +1497,7 @@ coming on the 28th", "ask the dentist about the retainer" — call hold_thing wi
 (one call per thing) rather than replying as if you'd acted or saying "noted" on its own. \
 Then reply with exactly the tool's one line: "Holding that. I'll bring it up when it's \
 useful." One line, no paragraph, no separate confirm — the line IS the review, and the thing \
-shows up on Now and under What we know. Two exceptions: (1) if you CAN act on part of it, act \
+shows up under What we know. Two exceptions: (1) if you CAN act on part of it, act \
 on that part with the usual tools and hold only the rest; (2) small talk, thanks, "never \
 mind" and things with nothing in them to hold get a plain human answer, not a hold. When \
 something held bears on what's being planned or asked ("that's the Monday Nana's here"), \
@@ -2799,7 +2799,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "answer_holiday",
-        "description": "Record how the household is spending a holiday Pomona knows about (the country's holidays by rule, plus holiday-looking days on their own calendar): 'hosting', 'out' (going to someone's), 'just_us', or 'unsure'. \"We're going to my mom's for Thanksgiving\" = out; \"we're hosting, eight of us\" = hosting with headcount = extras beyond the household (so 8 at a table of 3 is headcount 5 — ask if you can't tell which they mean); \"just us this year\" = just_us; \"not sure yet\" = unsure, and Pomona asks again on Now three days out. 'out' takes that dinner off the week (nothing planned, nothing bought); name the dish in bring_dish when they're taking one (\"I'm bringing the sweet potato casserole\") and it's planned into that day as the thing they cook, groceries included, the way any planned meal is — a saved recipe by that name is used when there is one. A brought dish is never refused over an allergy (it's for someone else's table): when the result has allergy_line (\"Has peanut, which Theo can't have\"), say it as a heads-up and leave the dish as it is unless they ask. Answering again replaces the answer and undoes the old one. Never assume the answer; ask. Use get_upcoming_holidays first if you don't know the date.",
+        "description": "Record how the household is spending a holiday Pomona knows about (the country's holidays by rule, plus holiday-looking days on their own calendar): 'hosting', 'out' (going to someone's), 'just_us', or 'unsure'. \"We're going to my mom's for Thanksgiving\" = out; \"we're hosting, eight of us\" = hosting with headcount = extras beyond the household (so 8 at a table of 3 is headcount 5 — ask if you can't tell which they mean); \"just us this year\" = just_us; \"not sure yet\" = unsure, which leaves it open to answer later. 'out' takes that dinner off the week (nothing planned, nothing bought); name the dish in bring_dish when they're taking one (\"I'm bringing the sweet potato casserole\") and it's planned into that day as the thing they cook, groceries included, the way any planned meal is — a saved recipe by that name is used when there is one. A brought dish is never refused over an allergy (it's for someone else's table): when the result has allergy_line (\"Has peanut, which Theo can't have\"), say it as a heads-up and leave the dish as it is unless they ask. Answering again replaces the answer and undoes the old one. Never assume the answer; ask. Use get_upcoming_holidays first if you don't know the date.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -2854,7 +2854,7 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "set_big_meal_prep_day",
-        "description": "When a dish on the big meal gets made: 'make the stuffing the day before', 'do the pie two days out', 'the potatoes on the day'. `when` is day_of, day_before, two_days_before or an ISO date up to two days before. The prep on Now and the Cook screen moves with it.",
+        "description": "When a dish on the big meal gets made: 'make the stuffing the day before', 'do the pie two days out', 'the potatoes on the day'. `when` is day_of, day_before, two_days_before or an ISO date up to two days before. The prep on the Cook screen moves with it.",
         "input_schema": {
             "type": "object",
             "properties": {"date_str": {"type": "string"}, "dish": {"type": "string"}, "when": {"type": "string"}},

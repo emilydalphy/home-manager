@@ -84,14 +84,15 @@ def _needed(item: str) -> list:
 # C1: the tab exists and its route serves the shell
 # ---------------------------------------------------------------------------
 
-def test_the_bar_reads_today_plan_shop_kitchen_cook():
+def test_the_bar_reads_plan_shop_kitchen_cook():
     """CATCH — four tabs on main; the Kitchen tab sits between Shop and Cook,
     keyed `home` so it never collides with Cook's `kitchen`."""
     tabs = SHELL_JS[SHELL_JS.index("  var TABS = ["): SHELL_JS.index("  ];", SHELL_JS.index("  var TABS = ["))]
     labels = re.findall(r"label: '([^']+)'", tabs)
     keys = re.findall(r"key: '([^']+)'", tabs)
-    assert labels == ["Today", "Plan", "Shop", "Kitchen", "Cook"]
-    assert keys == ["today", "week", "grocery", "home", "kitchen"]
+    # Today retired 2026-11-01 (Emily): Plan opens first, the thaw is Cook's.
+    assert labels == ["Plan", "Shop", "Kitchen", "Cook"]
+    assert keys == ["week", "grocery", "home", "kitchen"]
     assert "{ key: 'home', path: '/home', label: 'Kitchen', icon: ICONS.fridge, home: true }" in tabs
     assert "grid-template-columns: repeat(5, minmax(0, 1fr));" in SHELL_CSS
 

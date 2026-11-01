@@ -40,8 +40,9 @@ def test_section_six_names_the_tabs_the_household_reads():
     """Not a hard-coded list — the labels come out of TABS, so renaming a
     tab in the code and not here fails rather than rots."""
     labels = _tab_labels_from_code()
-    # Five since 2026-10-26: the Kitchen tab (key `home`, Loop Board C1).
-    assert labels == ["Today", "Plan", "Shop", "Kitchen", "Cook"], labels
+    # Five from 2026-10-26 (the Kitchen tab, key `home`, Loop Board C1);
+    # four since 2026-11-01, when Emily retired Today (its thaw is Cook's).
+    assert labels == ["Plan", "Shop", "Kitchen", "Cook"], labels
     opening = _section_six().split("\n")[2]
     for label in labels:
         assert label in opening, f"§6's opening bullet never names {label}"

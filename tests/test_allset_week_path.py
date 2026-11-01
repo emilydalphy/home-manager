@@ -229,7 +229,9 @@ def _activate_tab_harness(step: str, leave_for: str) -> str:
 
 
 @_needs_node
-@pytest.mark.parametrize("door", ["grocery", "today", "kitchen"])
+# "today" is no longer a door: the tab was retired 2026-11-01 and a caller
+# naming it lands on Plan itself (activateTab), so nothing is left.
+@pytest.mark.parametrize("door", ["grocery", "kitchen"])
 @pytest.mark.parametrize("finish", ["allset", "freezer"])
 def test_leaving_plan_from_a_finish_screen_by_any_door_folds_it_to_the_week(door, finish):
     """"Open the list" is activateTab('grocery'); the tab bar is the other
