@@ -25352,6 +25352,7 @@
     pendingFocusTarget: false,
     pendingFocusStart: false,   // ...and whether that link meant "and start cooking" (the Meal step's own dock — see kitchenEnterCook)
     pendingScrollTop: false,    // this render is a screen change, not a re-paint — reset scroll instead of preserving it
+    pendingScrollTo: null,      // a place to land on instead (back from a recipe to the prep list)
     ticks: null,                // the ticked ingredients and steps for the plan named by ticksFor — see cookReadTicks
     serves: {},                 // mealKey -> { servings, ingredients, unscaled_items, ... } — the cook's own serving count. Stored beside the ticks and read back with them (see cookReadTicks), so a load, a tab switch and a reload all leave it standing
     servesSeq: 0,               // sequence token, so a superseded /scale reply loses instead of racing
@@ -25837,8 +25838,12 @@
     // Entering/leaving a screen resets to the top (Grocery's shopping-mode
     // precedent does the same); every other render — a step checked, a box
     // ticked — keeps the reader's place.
-    if (scrollEl) scrollEl.scrollTop = cookState.pendingScrollTop ? 0 : keepScroll;
+    if (scrollEl) {
+      scrollEl.scrollTop = cookState.pendingScrollTo !== null ? cookState.pendingScrollTo
+        : (cookState.pendingScrollTop ? 0 : keepScroll);
+    }
     cookState.pendingScrollTop = false;
+    cookState.pendingScrollTo = null;
     // ...and the one thing that overrides both, after the restore rather
     // than before it: someone was promised prep and sent here to see it
     // (the rating toast's "Show me tomorrow", with no cook to focus).
@@ -26328,6 +26333,15 @@
     stopCookVoice();
     var origin = cookState.focusOrigin;
     cookState.focusOrigin = null;
+    // A recipe opened from the prep list goes back to that list, scrolled
+    // to where it was, and the list's own crumb says Cook again.
+    if (origin && origin.sessionDate && cookSessionOn(cookState.data, origin.sessionDate)) {
+      cookState.screen = 'session';
+      cookState.sessionDate = origin.sessionDate;
+      cookState.pendingScrollTo = origin.scrollTop || 0;
+      renderCook();
+      return;
+    }
     // Kitchen goes back to its own root FIRST, whether or not we then
     // leave the tab: a tab left sitting on a cook screen would reopen
     // there the next time it is tapped, which is not where the person
@@ -26355,6 +26369,18 @@
         dayIndex: origin.mealsDay, slot: origin.mealsSlot, back: origin.mealsBack, replace: true
       });
     }
+  }
+
+  // Where a recipe opened from the prep list goes back to: the list, by
+  // its date, named the way its title is ("‹ Sunday prep").
+  function cookSessionOrigin(dateStr) {
+    var session = cookSessionOn(cookState.data, dateStr);
+    if (!session) return null;
+    return {
+      label: (session.weekday || dayName(dateStr, { weekday: 'long' })) + ' prep',
+      sessionDate: dateStr,
+      scrollTop: scrollEl ? scrollEl.scrollTop : 0
+    };
   }
 
   // A prep session, by its date — see cookState.sessionDate for why the
@@ -27445,7 +27471,12 @@
       var idx = parseInt(el.getAttribute('data-idx'), 10);
       // Opened from inside Kitchen, so Kitchen is genuinely where back
       // goes — drop whatever origin an earlier deep link left behind.
-      cookState.focusOrigin = null;
+      // Except from the prep list: Emily, 2026-11-01, "if I want to go back
+      // it'll bring me to the cook screen vs the prep schedule". Back from a
+      // recipe opened there lands on the same list, at the same place.
+      cookState.focusOrigin = cookState.screen === 'session'
+        ? cookSessionOrigin(cookState.sessionDate)
+        : null;
       cookEnterFocus(idx);
       return;
     }

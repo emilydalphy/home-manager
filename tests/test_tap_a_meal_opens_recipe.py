@@ -137,7 +137,10 @@ def test_entering_from_inside_kitchen_clears_the_origin():
     stale origin would send its back link to a tab nobody was on."""
     click = _extract("onCookClick")
     focus_branch = click.split("if (what === 'focus')", 1)[1].split("return;", 1)[0]
-    assert "cookState.focusOrigin = null;" in focus_branch
+    # From the root the origin is cleared; from the prep list it is the
+    # list itself (test_back_from_recipe_to_prep_list.py).
+    assert ": null;" in focus_branch
+    assert "cookSessionOrigin(cookState.sessionDate)" in focus_branch
     assert "cookState.focusOrigin = null;" in _extract("cookEnterSession")
 
 
