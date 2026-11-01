@@ -30780,6 +30780,8 @@
       if (!res.ok) throw new Error('whoami failed');
       var data = await res.json();
       shellWho.household_id = typeof data.household_id === 'number' ? data.household_id : null;
+      // Preferences → Household name reads it back (householdNameRowHtml).
+      shellWho.household_name = typeof data.household_name === 'string' ? data.household_name : '';
       shellWho.member = data.member || null;
       shellWho.adults = data.adults || [];
       // The household's Chores switch (see choresEnabled, top of file).
@@ -32145,6 +32147,7 @@
       // The email this adult signs in with (2026-10-06) — see
       // accountEmailRowHtml. Empty until an adult is known on this device.
       accountEmailRowHtml() +
+      householdNameRowHtml() +
       PREFS_ROWS.map(function (row) {
         var line = mem ? row.line(mem) : 'Reading it back…';
         return '<button type="button" class="prefs-row" data-prefs="section" data-section="' + row.section + '">' +
@@ -32216,6 +32219,121 @@
       '</div>' +
       prefsAboutHtml());
   }
+
+  // ---------- Household name (Emily, 2026-11-01) ----------
+  // "A household gets the main person's name by default ("Emily's house"),
+  // and can be renamed in Preferences." A row like Sign-in email's, opening
+  // a small sheet of the same shape: one field and Save. Once saved, the
+  // server never renames it for them (households.name_chosen).
+  var hnameSheetEl = null;
+  var hnameScrimEl = null;
+  var hnameBusy = false;
+
+  function householdNameRowHtml() {
+    if (!shellWho.loaded || !shellWho.household_name) return '';
+    return '<button type="button" class="prefs-row" data-hname="open">' +
+      '<span class="prefs-row-text">' +
+        '<span class="prefs-row-title">Household name</span>' +
+        '<span class="prefs-row-sub">' + escapeHtml(shellWho.household_name) + '</span>' +
+      '</span>' +
+      ICONS.arrow +
+    '</button>';
+  }
+
+  function buildHnameSheet() {
+    if (hnameSheetEl) return;
+    hnameScrimEl = document.createElement('div');
+    hnameScrimEl.id = 'hname-scrim';
+    hnameScrimEl.hidden = true;
+    hnameSheetEl = document.createElement('div');
+    hnameSheetEl.id = 'hname-sheet';
+    hnameSheetEl.hidden = true;
+    hnameSheetEl.setAttribute('role', 'dialog');
+    hnameSheetEl.setAttribute('aria-modal', 'true');
+    hnameSheetEl.setAttribute('aria-labelledby', 'hname-sheet-title');
+    hnameSheetEl.innerHTML =
+      '<div class="ask-sheet-handle" id="hname-sheet-handle"></div>' +
+      '<div class="kit-sheet-titlerow">' +
+        '<span class="kit-sheet-title" id="hname-sheet-title">Household name</span>' +
+        '<span class="kit-sheet-hairline"></span>' +
+        '<button type="button" class="kit-sheet-close" id="hname-sheet-close" aria-label="Close">&times;</button>' +
+      '</div>' +
+      '<div class="morning-body">' +
+        '<label class="snw-label" for="hname-input">Name</label>' +
+        '<input type="text" id="hname-input" class="snw-input" maxlength="60" autocomplete="off" placeholder="Emily’s house">' +
+        '<button type="button" class="snw-send" id="hname-save">Save</button>' +
+        '<p class="snw-done" id="hname-note" role="alert" hidden></p>' +
+      '</div>';
+    document.body.appendChild(hnameScrimEl);
+    document.body.appendChild(hnameSheetEl);
+    hnameScrimEl.addEventListener('click', dismissHnameSheet);
+    hnameSheetEl.querySelector('#hname-sheet-handle').addEventListener('click', dismissHnameSheet);
+    hnameSheetEl.querySelector('#hname-sheet-close').addEventListener('click', dismissHnameSheet);
+    hnameSheetEl.querySelector('#hname-save').addEventListener('click', saveHouseholdName);
+    hnameSheetEl.querySelector('#hname-input').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); saveHouseholdName(); }
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && hnameSheetEl && !hnameSheetEl.hidden) dismissHnameSheet();
+    });
+  }
+
+  function openHnameSheet(parent) {
+    buildHnameSheet();
+    if (parent) openOverSheet(parent, dismissHnameSheet);
+    else { forgetSheetLevels(); closePrefsSheet(); }
+    var input = hnameSheetEl.querySelector('#hname-input');
+    input.value = shellWho.household_name || '';
+    var note = hnameSheetEl.querySelector('#hname-note');
+    note.hidden = true;
+    note.textContent = '';
+    paintSheetLevelChrome(hnameSheetEl, 'Household name');
+    hnameScrimEl.hidden = false;
+    hnameSheetEl.hidden = false;
+    input.focus();
+  }
+
+  function dismissHnameSheet() {
+    if (!hnameSheetEl) return;
+    hnameScrimEl.hidden = true;
+    hnameSheetEl.hidden = true;
+    popSheetLevelFor(dismissHnameSheet);
+  }
+
+  async function saveHouseholdName() {
+    if (hnameBusy || !hnameSheetEl) return;
+    var input = hnameSheetEl.querySelector('#hname-input');
+    var note = hnameSheetEl.querySelector('#hname-note');
+    hnameBusy = true;
+    try {
+      var r = await Api.fetch('/api/household/name', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: input.value || '' })
+      });
+      var data = {};
+      try { data = await r.json(); } catch (e) { /* not JSON */ }
+      if (!r.ok) {
+        note.textContent = (r.status === 400 && typeof data.detail === 'string') ? data.detail : 'That didn’t save. Try it again.';
+        note.hidden = false;
+        return;
+      }
+      shellWho.household_name = data.household_name || input.value;
+      dismissHnameSheet();
+      if (prefsState.open) renderPrefsRows();
+      toastSaved(savedLine('Household name', 'saved'));
+    } catch (err) {
+      note.textContent = 'That didn’t save. Check your connection and try again.';
+      note.hidden = false;
+    } finally {
+      hnameBusy = false;
+    }
+  }
+
+  document.addEventListener('click', function (e) {
+    var target = e.target && e.target.closest && e.target.closest('[data-hname="open"]');
+    if (target) openHnameSheet(sheetLevelHost(target));
+  });
 
   // ---------- Sign-in email (App Store, 2026-10-06) ----------
   //

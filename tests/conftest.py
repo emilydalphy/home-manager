@@ -151,6 +151,8 @@ _TABLES = [
     # The last HOME_MANAGER_PASSWORD seen (households.note_env_passphrase,
     # 2026-11-01): one test's passphrase must not read as a change in the next.
     "env_passphrase_seen",
+    # "Sign-in now goes to …" (2026-11-01): names a member and household.
+    "sign_in_notices",
 ]
 
 

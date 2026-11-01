@@ -1012,6 +1012,11 @@ _MIGRATIONS = [
     # 'join' on the invite link's screen (every row before this column),
     # 'reask' on the agree screen a new LEGAL_VERSION puts up.
     ("member_legal_acceptances", "how", "TEXT NOT NULL DEFAULT 'join'"),
+    # Did somebody choose this household's name (Preferences -> Household
+    # name, 2026-11-01)? 1 = yes, and nothing names it after the main person
+    # again. 0 on every existing row: their names are left as they are
+    # unless still the "Your household" placeholder (_name_households_after_main_person).
+    ("households", "name_chosen", "INTEGER NOT NULL DEFAULT 0"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people
@@ -1573,6 +1578,7 @@ def _run_migrations(conn):
     _migrate_chore_modes(conn)
     _backfill_chore_done_on(conn)
     _backfill_primary_member(conn)
+    _name_households_after_main_person(conn)
     _retag_library_proteins(conn)
     _run_once_data_migrations(conn)
 
@@ -1865,6 +1871,28 @@ def _backfill_primary_member(conn):
             conn.execute(
                 "UPDATE households SET primary_member_id = ? WHERE id = ?", (mid, hid)
             )
+
+
+def _name_households_after_main_person(conn):
+    """
+    "Your household" -> "Emily's house" for every household that finished
+    setup before households were named after their main person (Emily,
+    2026-11-01). Idempotent and run every startup, after the main person
+    backfill: only a household still carrying the placeholder, never renamed
+    (name_chosen = 0), with a main person who has a name. A household made
+    by create_household.py has a name of its own and is never touched.
+    """
+    from .tools._shared import UNNAMED_HOUSEHOLD, use_household
+    from .tools.household import name_household_after_main_person
+
+    rows = conn.execute(
+        "SELECT id FROM households WHERE name = ? AND COALESCE(name_chosen, 0) = 0 "
+        "AND primary_member_id IS NOT NULL",
+        (UNNAMED_HOUSEHOLD,),
+    ).fetchall()
+    for r in rows:
+        with use_household(r["id"]):
+            name_household_after_main_person(conn)
 
 
 def _is_leftovers_night_json(derived_from_json) -> bool:

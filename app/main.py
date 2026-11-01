@@ -1679,6 +1679,9 @@ def onboarding_household(req: HouseholdOnboardingRequest, request: Request):
         email_owner = tools.primary_member_id()
         if not account_email.claim_signup_email(tools.household_id(), email_owner):
             email_owner = None
+        # "Your household" -> "Emily's house", now that the main person has
+        # a name (Emily, 2026-11-01). Only the unchosen placeholder.
+        tools.name_household_after_main_person()
         for p in req.pets:
             if not p.name.strip():
                 continue
@@ -10760,6 +10763,25 @@ def _signed_out(payload: dict, request: Request | None = None) -> JSONResponse:
     if request is not None:
         _forget_this_phone(request, response)
     return response
+
+
+class HouseholdNameRequest(BaseModel):
+    name: str = Field("", max_length=200)
+
+
+@app.post("/api/household/name")
+def rename_my_household(req: HouseholdNameRequest):
+    """
+    Preferences -> Household name (Emily, 2026-11-01). Any signed-in device
+    of the household, like the rest of Preferences. Once renamed, the name
+    is never changed for them again (households.name_chosen).
+    """
+    try:
+        saved = tools.rename_household(req.name)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    logger.info("Household %s renamed itself", tools.household_id())
+    return saved
 
 
 @app.get("/api/household/leave")

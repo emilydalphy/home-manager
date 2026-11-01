@@ -360,7 +360,9 @@ async function load() {
     const plan = await res.json();
 
     if (plan.household_name) {
-      title.textContent = plan.household_name + "'s meals this week";
+      // "Meals this week at Emily’s house" (2026-11-01): households are
+      // named "Emily’s house" now, and "Emily’s house's meals" read badly.
+      title.textContent = 'Meals this week at ' + plan.household_name;
     }
 
     if (!plan.weekly_plan_id || !plan.meals || !plan.meals.length) {
