@@ -209,6 +209,60 @@ def test_one_wording_on_today_and_the_reheat_screen():
     assert "var nameOpens = isCook && idx !== null;" in item
 
 
+def _recipe_id(name):
+    conn = db.get_conn()
+    row = conn.execute("SELECT id FROM recipes WHERE name = ?", (name,)).fetchone()
+    conn.close()
+    return row["id"]
+
+
+def test_a_made_mark_does_not_follow_the_entry_to_a_different_dish():
+    """Re-verification repro: Beef Stew ticked made, the night then changed
+    to Pork Tacos — the tacos are a cook, not 'made at Sunday's prep'."""
+    from app.tools import recipe_change
+    plan_id = _with_stir_fry()
+    _stew()
+    _recipe("Pork Tacos", [{"item": "Pork shoulder", "qty": "1 lb", "category": "meat/seafood"}],
+            ["Sear the pork in a pan.", "Fill the tortillas."], prep=15, cook=20)
+    entry = _plan(plan_id, 2, "Beef Stew")
+    session, step = _dish_step(plan_id, entry)
+    tools.set_prep_list_mark(plan_id, session["date"], step["key"], "done")
+    assert prep_list.made_entries() == {entry: session["date"]}
+    recipe_change.change_meal_recipe(entry, _recipe_id("Pork Tacos"))
+    assert prep_list.made_entries() == {}
+    card = _card(plan_id, entry)
+    assert not card.get("is_leftovers") and not card.get("made_at_prep")
+    assert card["meal"] == "Pork Tacos"
+
+
+def test_a_sweet_chili_noodle_salad_plates():
+    assert cooker.finish_action("Sweet Chili Noodle Salad", None, "lunch") == "plate"
+    assert cooker.finish_action("Chili Con Carne", None, "dinner") == "reheat"
+
+
+def test_record_made_writes_only_when_the_mark_changes():
+    plan_id = _week_from_yesterday()
+    _stir_fry_recipe_and_plan(plan_id)
+    _stew()
+    tools.plan_meal(_d(1), "Beef Stew", slot="dinner", weekly_plan_id=plan_id)
+
+    def stamps():
+        conn = db.get_conn()
+        rows = conn.execute("SELECT id, updated_at, made_dish FROM prep_list_marks WHERE step_key LIKE 'dish:%'").fetchall()
+        conn.close()
+        return [tuple(r) for r in rows]
+
+    cooker.get_cooker_view(plan_id)
+    first = stamps()
+    assert len(first) == 1 and first[0][2].startswith("recipe:")
+    conn = db.get_conn()
+    conn.execute("UPDATE prep_list_marks SET updated_at = '2000-01-01 00:00:00'")
+    conn.commit()
+    conn.close()
+    cooker.get_cooker_view(plan_id)
+    assert [s[1] for s in stamps()] == ["2000-01-01 00:00:00"], "a read wrote the mark again"
+
+
 def test_a_reheat_badge_says_plate_for_a_plated_dish():
     import pathlib
     src = (pathlib.Path(__file__).resolve().parents[1] / "static" / "shell.js").read_text()

@@ -2575,6 +2575,10 @@ CREATE TABLE IF NOT EXISTS prep_list_marks (
     step_key TEXT NOT NULL,
     state TEXT NOT NULL DEFAULT '',
     done INTEGER NOT NULL DEFAULT 0,
+    -- For a "made" mark on a whole dish or batch ("dish:N" / "cook:N"):
+    -- the dish it was made for — "recipe:<id>" or "name:<freeform>". The
+    -- mark counts only while the entry still holds that dish (2026-11-01).
+    made_dish TEXT NOT NULL DEFAULT '',
     updated_at TEXT NOT NULL DEFAULT (datetime('now')),
     UNIQUE (household_id, weekly_plan_id, prep_date, step_key)
 );

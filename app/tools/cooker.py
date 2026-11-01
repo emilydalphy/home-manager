@@ -1869,7 +1869,11 @@ _PLATE_NAME_RE = re.compile(
 # Words that make a dish hot whatever else its name says — "Warm Lentil
 # Salad", "Pulled Pork Sandwich", "Chili" (review, 2026-11-01). They beat the
 # cold words.
-_HOT_NAME_RE = re.compile(r"\b(warm|hot|grilled|pulled|chili|chilli)\b", re.IGNORECASE)
+_HOT_NAME_RE = re.compile(r"\b(warm|hot|grilled|pulled)\b", re.IGNORECASE)
+# "Chili" is a hot dish only when it isn't a salad: "Sweet Chili Noodle
+# Salad" is cold (re-verification, 2026-11-01).
+_CHILI_RE = re.compile(r"\bchill?i\b", re.IGNORECASE)
+_SALAD_RE = re.compile(r"\b(salad|(?:cole)?slaw)\b", re.IGNORECASE)
 # The recipe saying how it is served: "serve warm", "serve it hot".
 _SERVE_HOT_RE = re.compile(r"\bserve(?:d)?\s+(?:it\s+|them\s+)?(?:warm|hot)\b", re.IGNORECASE)
 
@@ -1884,6 +1888,8 @@ def finish_action(meal: str, recipe: dict | None, slot: str | None) -> str:
     if _leftovers.reheat_note(recipe):
         return "reheat"
     if _HOT_NAME_RE.search(meal or ""):
+        return "reheat"
+    if _CHILI_RE.search(meal or "") and not _SALAD_RE.search(meal or ""):
         return "reheat"
     steps = " ".join(str(s) for s in ((recipe or {}).get("instructions") or []))
     if _SERVE_HOT_RE.search(steps):

@@ -597,12 +597,28 @@ def _write_mark(weekly_plan_id: int, prep_date: str, key: str, *, state: str | N
         ).fetchone()
         new_state = state if state is not None else (row["state"] if row else "")
         new_done = (1 if done else 0) if done is not None else (row["done"] if row else 0)
+        # A done mark on a whole dish / batch remembers which dish it was
+        # made for — set when it is ticked, kept by a take-off / add-back.
+        row_dish = ""
+        if row is not None:
+            row_dish = conn.execute(
+                f"SELECT made_dish FROM {MARKS_TABLE} WHERE household_id = ? AND weekly_plan_id = ? "
+                "AND prep_date = ? AND step_key = ?",
+                (household_id(), weekly_plan_id, prep_date, key),
+            ).fetchone()["made_dish"] or ""
+        if done is True:
+            made_dish = _made_dish_for(key) or ""
+        elif done is None:
+            made_dish = row_dish
+        else:
+            made_dish = ""
         conn.execute(
-            f"INSERT INTO {MARKS_TABLE} (household_id, weekly_plan_id, prep_date, step_key, state, done, updated_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, datetime('now')) "
+            f"INSERT INTO {MARKS_TABLE} (household_id, weekly_plan_id, prep_date, step_key, state, done, "
+            "made_dish, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now')) "
             "ON CONFLICT (household_id, weekly_plan_id, prep_date, step_key) "
-            "DO UPDATE SET state = excluded.state, done = excluded.done, updated_at = excluded.updated_at",
-            (household_id(), weekly_plan_id, prep_date, key, new_state, new_done),
+            "DO UPDATE SET state = excluded.state, done = excluded.done, made_dish = excluded.made_dish, "
+            "updated_at = excluded.updated_at",
+            (household_id(), weekly_plan_id, prep_date, key, new_state, new_done, made_dish),
         )
         conn.commit()
     finally:
@@ -616,30 +632,80 @@ def made_entries() -> dict[int, str]:
     recorded when its prep day went by — as {entry_id: prep_date}. Keyed on
     the entry with no reach window, so "made" follows the meal wherever it
     moves (review, 2026-11-01). The latest prep date wins.
+
+    A mark counts only while its entry still holds the dish it was made for
+    (`made_dish`, entry_dish): a Beef Stew made on Sunday does not make the
+    Pork Tacos the night was later changed to.
     """
     conn = get_conn()
     try:
         rows = conn.execute(
-            f"SELECT prep_date, step_key FROM {MARKS_TABLE} WHERE household_id = ? AND done = 1 "
+            f"SELECT prep_date, step_key, made_dish FROM {MARKS_TABLE} WHERE household_id = ? AND done = 1 "
             "AND (step_key LIKE 'dish:%' OR step_key LIKE 'cook:%') ORDER BY prep_date",
             (household_id(),),
         ).fetchall()
+        out: dict[int, str] = {}
+        for r in rows:
+            try:
+                entry_id = int(str(r["step_key"]).split(":", 1)[1])
+            except (TypeError, ValueError, IndexError):
+                continue
+            if r["made_dish"] and r["made_dish"] == entry_dish(entry_id, conn):
+                out[entry_id] = r["prep_date"]
     finally:
         conn.close()
-    out: dict[int, str] = {}
-    for r in rows:
-        try:
-            out[int(str(r["step_key"]).split(":", 1)[1])] = r["prep_date"]
-        except (TypeError, ValueError, IndexError):
-            continue
     return out
+
+
+def entry_dish(entry_id: int, conn=None) -> str:
+    """What a meal entry holds: "recipe:<id>", or "name:<freeform>" for a
+    meal with no saved recipe; '' when the entry is gone."""
+    own = conn is None
+    conn = conn or get_conn()
+    try:
+        row = conn.execute(
+            "SELECT recipe_id, freeform_meal FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+            (entry_id, household_id()),
+        ).fetchone()
+    finally:
+        if own:
+            conn.close()
+    if row is None:
+        return ""
+    if row["recipe_id"]:
+        return f"recipe:{row['recipe_id']}"
+    return "name:" + " ".join((row["freeform_meal"] or "").lower().split())
+
+
+def _made_dish_for(key: str) -> str | None:
+    """The dish a done mark on a whole-dish / batch key is made for."""
+    if not key.startswith(("dish:", "cook:")):
+        return None
+    try:
+        return entry_dish(int(key.split(":", 1)[1]))
+    except (TypeError, ValueError):
+        return None
 
 
 def record_made(weekly_plan_id: int | None, prep_date: str, key: str) -> None:
     """Store that a prep day made this step (the prep day went by with it
-    on the list) — the same mark a tick writes."""
-    if weekly_plan_id and key:
-        _write_mark(weekly_plan_id, prep_date, key, done=True)
+    on the list) — the same mark a tick writes. Writes only when the mark
+    would change, never on every read."""
+    if not (weekly_plan_id and key):
+        return
+    dish = _made_dish_for(key) or ""
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            f"SELECT done, made_dish FROM {MARKS_TABLE} WHERE household_id = ? AND weekly_plan_id = ? "
+            "AND prep_date = ? AND step_key = ?",
+            (household_id(), weekly_plan_id, prep_date, key),
+        ).fetchone()
+    finally:
+        conn.close()
+    if row is not None and row["done"] and row["made_dish"] == dish:
+        return
+    _write_mark(weekly_plan_id, prep_date, key, done=True)
 
 
 def set_prep_list_mark(weekly_plan_id: int, prep_date: str, key: str, action: str) -> dict:
