@@ -879,6 +879,9 @@ _NOTE_WORDS = frozenset({
     "even", "very", "extremely", "really", "serious", "seriously", "life",
     "threatening", "diagnosed", "confirmed", "medical", "trace", "traces",
     "contact", "cross", "contamination", "small", "amounts",
+    # "Sam: no shellfish ever" (2026-11-01) read as the phrase "shellfish
+    # ever", which no dish contains — the allergy held nothing back.
+    "ever",
 })
 
 

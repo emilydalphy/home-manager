@@ -1545,6 +1545,14 @@ def _run_migrations(conn):
     _respell_grocery_stores_as_usual(conn)
     _migrate_repeats_tolerance_to_leftovers_stance(conn)
     _migrate_planning_anchor_values(conn)
+    # Still runs (review, 2026-11-01): the one-tap question
+    # (tools/typed_allergy.py) is asked only when a note is added or edited
+    # on the screen, so a note already on file, one filed by chat, or a
+    # question nobody tapped would otherwise never become an allergy — less
+    # safe than before. The question makes a typed allergy count at once;
+    # this keeps the safety net until Emily decides whether a note should
+    # ever be enforced without the tap (and the known wrinkle that a chip
+    # taken off a person comes back while its note is still there).
     _backfill_allergy_notes_from_facts(conn)
     _backfill_snacks_per_week_set(conn)
     _backfill_meal_counts_set(conn)

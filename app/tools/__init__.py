@@ -518,6 +518,12 @@ from .memory import (  # noqa: F401
     get_household_memory_for_display,
     update_fact,
 )
+# An allergy typed as a What we know note: asked about, saved only on the tap.
+from .typed_allergy import (  # noqa: F401
+    allergy_offer,
+    allergy_offer_for_fact,
+    save_offered_allergy,
+)
 # Today's one timeline of "what's next for us?" (see moves.py). Not agent
 # tools: this is a reading of state the assistant's own tools already own,
 # built for one screen, and the model has better ways to answer the same

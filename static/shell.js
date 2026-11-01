@@ -16073,11 +16073,13 @@
     var section = { people: 'people', rhythm: 'rhythm', taste: 'taste' }[category];
     var temp = { id: 'new-' + Date.now(), category: category, text: text };
     var known = false;
+    var offer = null;
     var saved = await wwkCommit(section, function () {
       wwkState.facts = (wwkState.facts || []).concat([temp]);
     }, function () {
       return wwkPost('/api/facts/add', { category: category, text: text });
     }, function (result) {
+      offer = result && result.allergy_offer ? { id: result.id, offer: result.allergy_offer } : null;
       if (result && result.already_known) {
         // Said before (2026-10-25): the server answers with the row it
         // already has. The typed line goes — keeping it under that id drew
@@ -16103,7 +16105,32 @@
         (wwkState.facts || []).forEach(function (f) { if (f.id === temp.id) f.id = result.id; });
       }
     });
+    if (saved && offer) { wwkAskAllergy(offer.id, offer.offer); return; }
     if (saved && known) showToast('I already have that one.');
+  }
+
+  // "Sam is allergic to sesame" typed as a note is a note until the person
+  // says otherwise (Emily, 2026-10-31: ask, then enforce). The server reads
+  // it and offers the question; one tap saves it as Sam's allergy through
+  // POST /api/facts/{id}/allergy, and the allergy check holds it back from
+  // then on. Nothing is enforced without the tap. Held long enough to read
+  // and answer, like the other toasts that are a sentence.
+  function wwkAskAllergy(factId, offer) {
+    if (!offer || !offer.question || !factId) return;
+    showToast(offer.question, {
+      label: 'Save',
+      onClick: function () {
+        wwkPost('/api/facts/' + factId + '/allergy', { foods: offer.foods || [] }).then(function (r) {
+          if (r && r.memory) prefsState.memory = r.memory;
+          if (prefsState.open) renderPrefsRows();
+          wwkRenderSection('people');
+          var who = (offer.members || []).map(function (m) { return m.name; }).filter(Boolean).join(' and ');
+          showToast(who ? 'Saved as ' + who + '’s allergy.' : 'Saved.');
+        }).catch(function () {
+          showToast('That didn’t save — try again from Who’s here.');
+        });
+      }
+    }, 9000);
   }
 
   function wwkUpdateFact(id, text) {
@@ -16113,7 +16140,10 @@
     if (!text) { wwkRenderSection(section); return; }  // blank is an abandoned edit, not a delete
     if (String(id).indexOf('new-') === 0) return;      // still being created; its reply will carry the id
     wwkCommit(section, function () { fact.text = text; },
-      function () { return wwkPost('/api/facts/' + id + '/update', { text: text }); }, null, true);
+      function () { return wwkPost('/api/facts/' + id + '/update', { text: text }); },
+      function (result) {
+        if (result && result.allergy_offer) setTimeout(function () { wwkAskAllergy(id, result.allergy_offer); }, 0);
+      }, true);
   }
 
   function wwkDeleteFact(id) {
