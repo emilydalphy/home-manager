@@ -6454,6 +6454,11 @@ def get_inventory_duplicates():
 def update_inventory_view(req: InventoryUpdateRequest):
     """Add/update an inventory item directly from the Inventory view (not via chat)."""
     try:
+        # A typed amount is held to the grocery box's 40 characters too
+        # (Emily, 2026-10-31); chat's amounts are not. Junk is refused in
+        # tools.update_inventory itself, for chat as well (400 below).
+        if len(" ".join((req.quantity or "").split())) > tools.KITCHEN_AMOUNT_MAX_CHARS:
+            raise ValueError(tools.KITCHEN_AMOUNT_REFUSED)
         tools.update_inventory(req.item, req.action, quantity=req.quantity, expiration_date=req.expiration_date, category=req.category, location=req.location)
         result = tools.get_inventory_by_section()
     except ValueError as e:
