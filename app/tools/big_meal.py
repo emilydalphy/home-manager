@@ -1891,7 +1891,8 @@ def set_big_meal_dish(
             # same marker allergen_gate's two gates already raise; it IS a
             # ValueError and this tool has no route, so nothing else moves.
             raise _weekly_plan.SlotRefused(
-                f"{name} clashes with {clashes[0]['restriction']} — pick something else for the table."
+                f"{name} clashes with {clashes[0]['restriction']} — pick something else for the table.",
+                reason="allergy",
             )
         eaters = eaters_for(date_str, int(row["headcount"] or 0))
         main = _clean_main({
@@ -1934,7 +1935,8 @@ def set_big_meal_dish(
     if clashes:
         # See the main's own clash above: a marker, not a bare ValueError.
         raise _weekly_plan.SlotRefused(
-            f"{name} clashes with {clashes[0]['restriction']} — pick something else for the table."
+            f"{name} clashes with {clashes[0]['restriction']} — pick something else for the table.",
+            reason="allergy",
         )
     current = [dict(s, role=s.get("role") or "side") for s in _plates.get_sides(entry["id"])]
     target = (replaces or "").strip().lower()

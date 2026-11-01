@@ -12901,6 +12901,12 @@ def run_agent_turn(
                 logger.info(
                     "Tool %s refused: %s", block.name, type(refusal).__name__
                 )
+                # Counted, never as breakage: the morning report's own
+                # "Refused" line (Emily, 2026-10-31), by the gate's short
+                # reason code and never its sentence -- so an allergy check
+                # that starts over-firing shows up before a household
+                # learns to click past it. usage.record_refusal.
+                tools.record_refusal(refusal, block.name)
                 # Byte-identical to what the catch-all produced, so the
                 # model reads exactly the sentence it read before —
                 # nothing about what the household sees changes here.

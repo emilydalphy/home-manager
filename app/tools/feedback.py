@@ -76,11 +76,12 @@ def _errors_just_before(conn, hid: int) -> list[dict]:
 
     Voice drift is left out: it is a note about a chat reply's wording,
     not something that broke, and the morning report keeps it out of
-    BROKEN for the same reason.
+    BROKEN for the same reason. So is a refusal (kind 'refused',
+    usage.record_refusal): a gate answering the household, not a fault.
     """
     rows = conn.execute(
         f"SELECT {_ERROR_COLUMNS} FROM error_events "
-        "WHERE household_id = ? AND kind != 'voice' "
+        "WHERE household_id = ? AND kind NOT IN ('voice', 'refused') "
         "AND COALESCE(NULLIF(last_seen_at, ''), created_at) >= datetime('now', ?) "
         "ORDER BY COALESCE(NULLIF(last_seen_at, ''), created_at) DESC, id DESC LIMIT ?",
         (hid, f"-{LINK_WINDOW_MINUTES} minutes", MAX_LINKED_ERRORS),

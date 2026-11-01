@@ -69,11 +69,13 @@ def refuse_if_planned_empty(rows, slot: str) -> None:
     if f"{slot}s_per_week:0" in constraints or slot in _usual_week.switched_off_meals():
         raise _weekly_plan.SlotRefused(
             f"You’ve asked me not to plan {slot}{'es' if slot == 'lunch' else 's'}, so nothing is planned or bought for this one. "
-            "You can turn them back on in Preferences, under Your rhythm."
+            "You can turn them back on in Preferences, under Your rhythm.",
+            reason="nobody_eating",
         )
     raise _weekly_plan.SlotRefused(
         f"That {slot} is deliberately empty — nothing is planned or bought for it. "
-        "Change the night’s answer if you’re in after all."
+        "Change the night’s answer if you’re in after all.",
+        reason="nobody_eating",
     )
 
 

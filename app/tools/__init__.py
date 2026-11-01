@@ -824,6 +824,8 @@ from .usage import (  # noqa: F401
     record_chat_turn,
     record_error,
     record_plan_quality,
+    record_refusal,
+    refusal_reason,
     touch_household_active,
 )
 from .time_caps import minutes_cap, caps_for_slot, weekday_lunch_cap  # noqa: F401

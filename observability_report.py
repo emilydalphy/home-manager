@@ -1293,6 +1293,34 @@ def _say_unprintable(h: dict, e: Exception) -> None:
     print(note, file=sys.stderr)
 
 
+# What each refusal reason code (SlotRefused.reason, usage.refusal_reason)
+# reads as on the report's "Refused" line: (one, many). A code not in here
+# -- a gate added after this list -- prints as itself rather than vanish.
+_REFUSAL_WORDS = {
+    "allergy": ("allergy clash", "allergy clashes"),
+    "night_gone": ("night already gone", "nights already gone"),
+    "already_on_day": ("dish already on that day", "dishes already on that day"),
+    "already_decided": ("dinner already decided", "dinners already decided"),
+    "already_cooked": ("meal already cooked", "meals already cooked"),
+    "not_cooked_yet": ("meal not due to be cooked yet", "meals not due to be cooked yet"),
+    "nobody_eating": ("meal nobody is eating", "meals nobody is eating"),
+    "approved_week": ("week already approved", "weeks already approved"),
+    "over_cap": ("dish over the time cap", "dishes over the time cap"),
+    "no_such_adult": ("adult not found", "adults not found"),
+    "last_adult": ("last adult kept", "last adult kept"),
+    "other": ("other", "other"),
+}
+
+
+def _refusal_phrases(by_reason: dict) -> str:
+    """ "3 allergy clashes, 1 night already gone" -- most first."""
+    parts = []
+    for code, n in sorted(by_reason.items(), key=lambda kv: (-kv[1], kv[0])):
+        one, many = _REFUSAL_WORDS.get(code, (code, code))
+        parts.append(f"{n} {one if n == 1 else many}")
+    return ", ".join(parts)
+
+
 def _print_household(h: dict, days: int) -> None:
     print(f"\n=== {h['household']} (household {h['household_id']}) ===")
 
@@ -1341,6 +1369,16 @@ def _print_household(h: dict, days: int) -> None:
     if drift.get("total"):
         flags = ", ".join(f"{f} x{n}" for f, n in drift["by_flags"].items())
         print(f"  Off-voice — {drift['total']} chat repl{'y' if drift['total'] == 1 else 'ies'} in the last {days}d: {flags}")
+
+    # A gate telling the household no (tools.record_refusal): an allergy
+    # clash, a night already gone, an approved week. Its own line, never
+    # under BROKEN and never the exit code (Emily, 2026-10-31) -- the gate
+    # doing its job is not an outage, but a count that climbs is how an
+    # allergy matcher that has started over-firing gets noticed. .get
+    # because a deployment older than this work answers without the key.
+    refused = errors.get("refused") or {}
+    if refused.get("total"):
+        print(f"  Refused — {_refusal_phrases(refused.get('by_reason') or {})}")
 
     if not isinstance(usage, dict):
         # The counts above are what the exit code needs; without a usage

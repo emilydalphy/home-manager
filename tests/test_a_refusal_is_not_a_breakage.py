@@ -90,7 +90,10 @@ def _error_rows():
         return [
             dict(r)
             for r in conn.execute(
-                "SELECT kind, where_, detail, occurrences FROM error_events ORDER BY id"
+                # A refusal is COUNTED since 2026-10-31 (kind 'refused',
+                # the report's own "Refused" line), just never as breakage.
+                "SELECT kind, where_, detail, occurrences FROM error_events "
+                "WHERE kind != 'refused' ORDER BY id"
             )
         ]
     finally:

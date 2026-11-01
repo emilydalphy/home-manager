@@ -156,6 +156,16 @@ def hard_clashes(name: str, ingredients: list[dict] | None = None, sides: list[d
     return [h for h in hits if h.get("severity") == "hard"]
 
 
+def refusal_reason_for(clashes) -> str:
+    """The reason code a gate's refusal is filed under: 'allergy' for a real
+    clash, 'check_failed' when the checker itself threw and the gate held
+    the dish back rather than guess (hard_clashes' placeholder). The second
+    is a BREAKAGE, not an answer — usage.record_refusal files it as one, so
+    the morning report never says "12 allergy clashes" over a crashed
+    matcher (review, 2026-11-01)."""
+    return "check_failed" if any((c or {}).get("source") == "check_failed" for c in (clashes or [])) else "allergy"
+
+
 # The labels a dish name must not carry (2026-09-30): every prompt that
 # names a dish says so. At the recipe pass only "Vegan" / "Plant-Based"
 # come off a draft's name before it is written up and checked: they are
@@ -561,7 +571,7 @@ def refuse_if_clashing(name: str, ingredients: list[dict] | None = None, overrid
     clashes = hard_clashes(name, ingredients=checked)
     if clashes:
         _remember_refusal("plan", name, checked)
-        raise _weekly_plan.SlotRefused(refusal_sentence(name, clashes))
+        raise _weekly_plan.SlotRefused(refusal_sentence(name, clashes), reason=refusal_reason_for(clashes))
 
 
 # The refusals chat's gated doors have handed out, so an override can be
@@ -690,7 +700,8 @@ def refuse_recipe_if_clashing(name: str, ingredients: list | None = None,
     because = f"{word}" if word == food else f"{word} ({food})"
     raise _weekly_plan.SlotRefused(
         f"Not saved: {name} has {because}, which {cannot}. "
-        f"Write it again without {word}, or pick a different dish."
+        f"Write it again without {word}, or pick a different dish.",
+        reason=refusal_reason_for(clashes),
     )
 
 

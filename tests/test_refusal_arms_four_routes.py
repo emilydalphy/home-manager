@@ -48,7 +48,10 @@ IDS = [r[0] for r in ROUTES]
 def _error_rows():
     conn = get_conn()
     try:
-        return [dict(r) for r in conn.execute("SELECT kind, where_, detail FROM error_events")]
+        return [dict(r) for r in conn.execute("SELECT kind, where_, detail FROM error_events "
+                                                   # A refusal is COUNTED since 2026-10-31 (kind 'refused',
+                                                   # the report's own line), just never as breakage.
+                                                   "WHERE kind != 'refused'")]
     finally:
         conn.close()
 
