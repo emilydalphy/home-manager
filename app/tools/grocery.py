@@ -792,7 +792,8 @@ def _repeat_or_concatenate(existing_qty: str, new_qty: str, sum_counts: bool) ->
     return f"{existing_qty} + {new_qty}", False
 
 
-def _merge_target(same_name: list, quantity: str, consolidate, standing: bool, source_plan: int | None = None):
+def _merge_target(same_name: list, quantity: str, consolidate, standing: bool, source_plan: int | None = None,
+                  plans_on_line: dict | None = None):
     """
     Which of the lines already on the list with this name a new amount
     joins — (row, merged quantity, units reconciled) — or None for a line
@@ -842,6 +843,15 @@ def _merge_target(same_name: list, quantity: str, consolidate, standing: bool, s
     week approved on the Sunday summed its lasagna noodles onto this week's
     unanswered "2 boxes", stamped next week's id on the lot, and Monday's
     sweep of the ended week no longer saw it: "3 boxes" for one lasagna).
+
+    The same holds for a sauce or pantry staple on a HOUSEHOLD's line that
+    carries another plan's share (`plans_on_line`: line id -> the plans
+    its ledger rows belong to). A person's add onto last week's waiting
+    "Red lentils 3 cups" makes the line theirs, share and all, and next
+    week approved on the Sunday summed its 3 cups on: "6 cups" when this
+    week needs 3 (Emily, 2026-10-31: each week's amount is its own; last
+    week's leftover is asked about separately, which the ended-week sweep
+    does — _set_aside_ended_shares). Spices stay one jar per name.
     """
     from . import spices as _spices  # lazy: spices imports this module
 
@@ -851,6 +861,12 @@ def _merge_target(same_name: list, quantity: str, consolidate, standing: bool, s
         if (
             source_plan is not None and other_plan is not None and other_plan != source_plan
             and not _spices.is_spice(row["item"])
+        ):
+            continue
+        if (
+            source_plan is not None and other_plan is None
+            and (plans_on_line or {}).get(row["id"], set()) - {source_plan}
+            and _spices.is_assumed(row["item"]) and not _spices.is_spice(row["item"])
         ):
             continue
         households_line = row["source_weekly_plan_id"] is None and row["status"] == "needed"
@@ -1933,9 +1949,23 @@ def add_grocery_item(
     wanted = _merge_key(item)
     same_name = [r for r in candidates if _merge_key(r["item"]) == wanted]
     consolidate = _greater_of_quantity if quantity_mode == "max" else _try_consolidate_quantity
+    # Which plans' shares sit on each household line of this name — what
+    # keeps a week's sauce or pantry staple off a line holding another
+    # week's (_merge_target). Only read for a plan's add.
+    plans_on_line: dict = {}
+    households = [r["id"] for r in same_name if r["source_weekly_plan_id"] is None]
+    if source_weekly_plan_id is not None and households:
+        marks = ",".join("?" * len(households))
+        for link in conn.execute(
+            f"SELECT l.grocery_item_id, e.weekly_plan_id FROM meal_plan_grocery_links l "
+            f"JOIN meal_plan_entries e ON e.id = l.meal_plan_entry_id AND e.household_id = l.household_id "
+            f"WHERE l.household_id = ? AND l.grocery_item_id IN ({marks})",
+            (household_id(), *households),
+        ):
+            plans_on_line.setdefault(link["grocery_item_id"], set()).add(link["weekly_plan_id"])
     target = _merge_target(
         same_name, quantity, consolidate, standing=source_weekly_plan_id is None,
-        source_plan=source_weekly_plan_id,
+        source_plan=source_weekly_plan_id, plans_on_line=plans_on_line,
     )
     # Matched on the same key the list itself merges on. Otherwise a
     # preference saved for "bell peppers" never applies to the line that
