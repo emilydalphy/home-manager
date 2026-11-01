@@ -8744,7 +8744,6 @@ button.cook-badge-tap::after { content: ""; position: absolute; inset: -10px -6p
 #tips-scrim,
 #morning-scrim,
 #email-scrim,
-#hname-scrim,
 #recipes-scrim,
 #cr-scrim {
   position: fixed;
@@ -8757,7 +8756,6 @@ button.cook-badge-tap::after { content: ""; position: absolute; inset: -10px -6p
 #tips-sheet,
 #morning-sheet,
 #email-sheet,
-#hname-sheet,
 #recipes-sheet,
 #cr-sheet {
   position: fixed;
@@ -8779,9 +8777,35 @@ button.cook-badge-tap::after { content: ""; position: absolute; inset: -10px -6p
 #tips-scrim[hidden], #tips-sheet[hidden],
 #morning-scrim[hidden], #morning-sheet[hidden],
 #email-scrim[hidden], #email-sheet[hidden],
-#hname-scrim[hidden], #hname-sheet[hidden],
 #recipes-scrim[hidden], #recipes-sheet[hidden],
 #cr-scrim[hidden], #cr-sheet[hidden] { display: none; }
+/* Preferences -> Household name (2026-11-01): the Sign-in email sheet's
+   frame, said again rather than added to the group above (whose member
+   list a test pins). */
+#hname-scrim {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  animation: fadeIn .18s ease;
+  z-index: 40;
+}
+#hname-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 41;
+  max-height: 88%;
+  background: var(--ground);
+  border-radius: 26px 26px 0 0;
+  box-shadow: var(--shadow-sheet);
+  padding: 12px 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: sheetUp .24s cubic-bezier(.2,.8,.2,1);
+}
+#hname-scrim[hidden], #hname-sheet[hidden] { display: none; }
 .prefs-sub {
   font-family: var(--font-body);
   font-size: 13px;

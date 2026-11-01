@@ -394,7 +394,7 @@ UNPROTECTED_WRITERS: dict[str, list[str]] = {
         "init_db"
     ],
     "app/households.py": [
-        "create_household", "set_passphrase"
+        "create_household"
     ],
     "app/tools/attendance.py": [
         "clear_slot_attendance"

@@ -32260,7 +32260,7 @@
       '</div>' +
       '<div class="morning-body">' +
         '<label class="snw-label" for="hname-input">Name</label>' +
-        '<input type="text" id="hname-input" class="snw-input" maxlength="60" autocomplete="off" placeholder="Emily’s house">' +
+        '<input type="text" id="hname-input" class="snw-input" maxlength="60" autocomplete="off" placeholder="The Smiths">' +
         '<button type="button" class="snw-send" id="hname-save">Save</button>' +
         '<p class="snw-done" id="hname-note" role="alert" hidden></p>' +
       '</div>';
