@@ -915,6 +915,26 @@ def _trim_to_budget(tagged: list[tuple[str, str]], budget: int) -> tuple[list[st
     return lines, said, dropped
 
 
+# What the morning text and the evening nudge say, and all they say, while
+# this week is only a draft (Emily, 2026-10-31). A draft was never
+# approved, so nothing for it is on the list; "Tonight: Sheet-Pan Salmon —
+# 30 min. Tap to start." over a dish nobody agreed to or shopped for is the
+# text inventing the week. One line, no recipe names, and the link opens
+# Plan, where the Approve button is.
+DRAFT_WEEK_LINE = "This week’s plan is still a draft — approve it?"
+
+
+def _week_is_draft(now_local: datetime) -> bool:
+    """Today's week is a draft -- the same 'draft' Today's badge reads
+    (moves._week_state), so the text and the screen agree. A read that fails
+    is "not a draft": the text says what it would have said before."""
+    try:
+        return _moves.today_moves(day=now_local.date(), now=now_local).get("week_state") == "draft"
+    except Exception:
+        logger.exception("Texts: today's week state could not be read; treating it as approved")
+        return False
+
+
 def _compose_morning(now_local: datetime | None, link: bool, parts) -> dict:
     """
     One composer, two readers: build_morning_text takes `text` out of this
@@ -943,6 +963,15 @@ def _compose_morning(now_local: datetime | None, link: bool, parts) -> dict:
     tagged = _digest_parts(now_local, _included_parts(chosen))
     if not tagged:
         return {"text": None, "lines": [], "parts": [], "chosen": chosen, "dropped": [], "would_send": False}
+
+    if _week_is_draft(now_local):
+        # A draft week's dinners are not the household's yet -- nothing was
+        # bought for them -- so the text names none of them and asks for
+        # the one thing that makes them real (_week_is_draft).
+        url = _app_link("week") if link else ""
+        text = f"{DRAFT_WEEK_LINE} {url}" if url else DRAFT_WEEK_LINE
+        return {"text": text, "lines": [DRAFT_WEEK_LINE], "parts": [], "chosen": chosen,
+                "dropped": [], "would_send": True}
 
     # `link=False` is the push notification's body (app/push.py): the tap
     # on the notification is the way in, so the address would be noise.
@@ -1353,6 +1382,12 @@ def build_evening_nudge(now_local: datetime | None = None, link: bool = True) ->
     dinner = tonight["dinner"]
     if dinner is None or tonight["reason"]:
         return None
+    if _week_is_draft(now_local):
+        # The same one line as the morning (DRAFT_WEEK_LINE) in place of
+        # the dish -- only on a night that would have been nudged anyway,
+        # so a draft never adds a text the household wasn't getting.
+        url = _app_link("week") if link else ""
+        return f"{DRAFT_WEEK_LINE} {url}" if url else DRAFT_WEEK_LINE
     dish = _tidy(dinner["title"])
     first = tonight["first"]
     minutes = int(dinner.get("duration_min") or 0)
