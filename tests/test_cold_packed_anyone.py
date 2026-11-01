@@ -13,7 +13,7 @@ exactly that:
 
   - a mixed day opens on no leftovers, like an everyone-cold day;
   - its cooked lunch reads "Cold, made that morning" (not "Packed cold",
-    since someone eats it at home);
+    since someone at the lunch isn't packing cold — at home, or a thermos);
   - tapped to leftovers anyway: "I'll swap this for one cold lunch for
     everyone, since Maya's is packed."
 """
@@ -25,6 +25,8 @@ import shutil
 import pytest
 
 import nodeharness
+from pathlib import Path
+
 from test_weekday_lunches import PAGE, _extract, _var
 
 pytestmark = pytest.mark.skipif(shutil.which("node") is None, reason="node runs the page's own functions")
@@ -89,3 +91,29 @@ def test_the_mixed_day_lines():
     assert _node(f"coldSwapNote({everyone})") == "I’ll swap this for a cold lunch, since it’s packed."
     # The row's note is the one coldSwapNote says.
     assert "note.textContent = coldSwapNote(cold);" in PAGE
+
+
+SETUP_JS = (Path(__file__).resolve().parent.parent / "static" / "setup-screens.js").read_text(encoding="utf-8")
+
+
+def _cold_packed_day(iso, away=()):
+    # The page's own coldPackedDay over the week's grid (lunch: everyone),
+    # step 2's day sheet and the week's needs, stubbed.
+    stubs = (
+        "function memberNames() { return ['Maya', 'Sam']; }\n"
+        "function weekCells() { return { lunch: ['all', 'all', 'all', 'all', 'all', 'off', 'off'] }; }\n"
+        "function weekNeeds() { return " + json.dumps(NEEDS) + "; }\n"
+        "var attendance = { byDate: " + json.dumps({iso: {"lunch": {"absent_names": list(away)}}}) + " };\n"
+        + _extract("weekdayIndex") + "\n" + _extract("uwCleanCell", SETUP_JS) + "\n"
+        + _extract("coldPackedDay") + "\n"
+    )
+    return _node("(function () {\n" + stubs + f"return coldPackedDay('{iso}');\n}})()")
+
+
+def test_the_page_reads_a_mixed_day_as_cold():
+    # Maya packs cold, Sam is at home: a cold day, not everyone's.
+    assert _cold_packed_day(WEEK[3]) == {"who": ["Maya"], "all": False}
+    # Maya away that day: nobody at it packs cold.
+    assert _cold_packed_day(WEEK[3], away=["Maya"]) is None
+    # Sam away: everyone at it packs cold.
+    assert _cold_packed_day(WEEK[3], away=["Sam"]) == {"who": ["Maya"], "all": True}

@@ -3210,7 +3210,8 @@ body.toast-up { padding-bottom: 260px; }
     return who.length ? { who: who, all: who.length === eating.length } : null;
   }
   // "I'll swap this for a cold lunch, since it's packed." — everyone packs
-  // it. Someone at home too: one lunch for everyone, and whose is packed.
+  // it. Someone at the lunch who isn't packing cold: one lunch for
+  // everyone, and whose is packed.
   function coldSwapNote(cold) {
     if (!cold || cold.all !== false) return 'I’ll swap this for a cold lunch, since it’s packed.';
     var whose = cold.who.map(function (n) { return n + '’s'; });
@@ -3237,7 +3238,7 @@ body.toast-up { padding-bottom: 260px; }
   // weekday_lunches.apply_to_plan's `stale` batch, line for line.
   // `cold`: a Cold packed day (coldPackedDay), whose cooked lunch is
   // made in the morning and packed, not cooked at lunchtime — "Cold, made
-  // that morning" when someone at it is at home, not packing.
+  // that morning" when someone at the lunch isn't packing cold.
   function lunchLine(iso, kind, prepDays, kinds, cold) {
     if (kind === 'leftovers') return 'Last night’s dinner';
     if (kind === 'cooked') return !cold ? 'Cooked that day' : cold.all === false ? 'Cold, made that morning' : 'Packed cold, made that morning';
