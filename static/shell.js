@@ -25715,16 +25715,56 @@
     return null;
   }
 
-  // The session's own screen: the same shape the focused cook screen takes
-  // (one hero, a back link, then the list) because it is the same kind of
-  // thing — one job on screen while your hands are busy. No apricot
-  // primary of its own: the work here IS the ticking, so a second call to
-  // action would be competing with the list it sits above (Rule 5).
+  // The session's own screen — the prep list (Emily, 2026-11-01, mockup C2
+  // on the "Sunday prep" canvas, LOCKED). The spruce band as before
+  // ("‹ Cook", the day, "Sunday prep", and the header line the server
+  // writes: "Up to 2 hr · about 1 hr 25 hands-on"), then one card per
+  // section in the server's order (prep_list.SECTIONS), each folded to its
+  // name and "2 things · 25 min hands-on". Only one is open at a time,
+  // starting with the first not yet done. At the foot, Made on the night
+  // (sand): what didn't fit, what was taken off, and what is better fresh,
+  // each with its line, and "Add it" on everything that may come back. No
+  // apricot primary: the work here IS the ticking (Rule 5).
+  var PREP_LIST_ICONS = {
+    chevron:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>',
+    close:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10"/><path d="M17 7L7 17"/></svg>'
+  };
+  // Which section is open, per prep day: a key, '' for all folded, or
+  // absent for "the first one not done yet". A screen preference, not a
+  // fact — it lives here, not on the server.
+  var prepListOpen = {};
+
+  function prepListOpenKey(session) {
+    var sections = session.sections || [];
+    if (Object.prototype.hasOwnProperty.call(prepListOpen, session.date)) {
+      var key = prepListOpen[session.date];
+      if (!key || sections.some(function (s) { return s.key === key; })) return key;
+    }
+    for (var i = 0; i < sections.length; i++) {
+      if (!sections[i].done) return sections[i].key;
+    }
+    return '';
+  }
+
+  function prepListItem(session, key) {
+    var items = session.items || [];
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].key === key) return items[i];
+    }
+    return null;
+  }
+
   function cookSessionHtml(data, session, meals) {
     if (!session) return '';
-    var chips = [cookMinutesLabel(session.total_minutes_estimate), cookCoversLabel(session.covers)].filter(Boolean);
     var allDone = session.items_total > 0 && session.items_done === session.items_total;
-    var note = allDone ? 'That’s the prep done.' : (session.note || '');
+    var note = allDone ? 'That’s the prep done.' : (session.header || '');
+    var openKey = prepListOpenKey(session);
+    var sections = (session.sections || []).map(function (sec) {
+      return cookPrepSectionHtml(session, sec, sec.key === openKey, meals);
+    }).join('');
+    var fresh = (session.made_fresh || []).map(function (k) { return prepListItem(session, k); }).filter(Boolean);
     return '<div class="cook-focus">' +
       '<div class="cook-hero">' +
         '<button type="button" class="crumb on-spruce" data-cook="exit-session">&lsaquo; Cook</button>' +
@@ -25739,34 +25779,45 @@
           '</h2>' +
           (note ? '<p class="cook-hero-note">' + escapeHtml(note) + '</p>' : '') +
         '</div>' +
-        (chips.length
-          ? '<div class="cook-hero-chips">' + chips.map(function (c) {
-              return '<span class="cook-meta-chip">' + escapeHtml(c) + '</span>';
-            }).join('') + '</div>'
-          : '') +
       '</div>' +
-      '<div class="cook-body">' +
-        '<section class="cook-section">' +
-          '<div class="cook-sectionhead">' +
-            '<span class="cook-eyebrow cook-eyebrow-warm">On the list</span>' +
-            '<span class="cook-rule"></span>' +
-          '</div>' +
-          '<div class="cook-week">' +
-            session.items.map(function (item) {
-              return cookSessionItemHtml(item, meals);
-            }).join('') +
-          '</div>' +
-        '</section>' +
+      '<div class="cook-body prep-list">' +
+        sections +
+        (fresh.length ? cookPrepFreshHtml(session, fresh) : '') +
       '</div>' +
     '</div>';
   }
 
-  function cookSessionItemHtml(item, meals) {
+  // One section: a card whose head is the fold. The steps are inside the
+  // same card when it is open.
+  function cookPrepSectionHtml(session, sec, open, meals) {
+    var steps = (sec.step_keys || []).map(function (k) { return prepListItem(session, k); }).filter(Boolean);
+    var bodyId = 'prep-sec-' + session.date + '-' + sec.key;
+    return '<section class="prep-sec' + (open ? ' is-open' : '') + (sec.done ? ' is-done' : '') + '">' +
+      '<button type="button" class="prep-sec-head" data-cook="prep-section" ' +
+        'data-date="' + escapeHtml(session.date) + '" data-section="' + escapeHtml(sec.key) + '" ' +
+        'aria-expanded="' + (open ? 'true' : 'false') + '" aria-controls="' + escapeHtml(bodyId) + '">' +
+        '<span class="prep-sec-text">' +
+          '<span class="prep-sec-title">' + escapeHtml(sec.title) + '</span>' +
+          '<span class="prep-sec-line">' + escapeHtml(sec.done ? 'Done' : sec.line) + '</span>' +
+        '</span>' +
+        '<span class="prep-sec-chev">' + PREP_LIST_ICONS.chevron + '</span>' +
+      '</button>' +
+      (open
+        ? '<div class="prep-sec-body" id="' + escapeHtml(bodyId) + '">' +
+            steps.map(function (item) { return cookSessionItemHtml(item, meals, session); }).join('') +
+          '</div>'
+        : '') +
+    '</section>';
+  }
+
+  function cookSessionItemHtml(item, meals, session) {
     var isDone = !!item.done;
     // A batch cook is checked off by cooking it, so its box opens the
     // recipe rather than being a second place cooked_status can be set —
     // two boxes for one fact is how they drift apart. A fridge move or a
-    // prep-cut is a real prep_tasks row and ticks in place.
+    // prep-cut is a real prep_tasks row and ticks in place. A step the
+    // prep list derived (a chop, a grain, a sauce, a marinade) has no row
+    // anywhere else, so its tick is the prep list's own (prep_list_marks).
     var isCook = item.kind === 'cook_ahead';
     var idx = isCook ? cookResolveFocusIndex(meals || [], { entryId: item.entry_id }) : null;
     var canOpen = isCook && idx !== null;
@@ -25798,24 +25849,115 @@
             'data-next="' + (isDone ? 'pending' : 'done') + '" ' +
             'data-name="' + escapeHtml(item.title || '') + '" ' +
             'aria-label="' + escapeHtml(label) + '">' + COOK_ICONS.check + '</button>'
-        : '<span class="cook-box' + (isDone ? ' checked' : '') + '">' + COOK_ICONS.check + '</span>');
+        : (session && item.key
+          ? '<button type="button" class="cook-box' + (isDone ? ' checked' : '') + '" ' +
+              'data-cook="prep-tick" data-key="' + escapeHtml(item.key) + '" ' +
+              'data-plan="' + session.weekly_plan_id + '" data-date="' + escapeHtml(session.date) + '" ' +
+              'data-next="' + (isDone ? 'undone' : 'done') + '" ' +
+              'data-name="' + escapeHtml(item.title || '') + '" ' +
+              'aria-label="' + escapeHtml(label) + '">' + COOK_ICONS.check + '</button>'
+          : '<span class="cook-box' + (isDone ? ' checked' : '') + '">' + COOK_ICONS.check + '</span>'));
     var name = canOpen
-      ? '<button type="button" class="cook-week-name" data-cook="focus" data-idx="' + idx + '">' +
+      ? '<button type="button" class="prep-step-name" data-cook="focus" data-idx="' + idx + '">' +
           escapeHtml(item.title) + '</button>'
-      : '<span class="cook-week-name">' + escapeHtml(item.title) + '</span>';
-    return '<div class="cook-week-item' + (isDone ? ' is-done' : '') + '">' +
-      '<div class="cook-week-row">' +
-        box +
+      : '<span class="prep-step-name">' + escapeHtml(item.title) + '</span>';
+    // × on every step but a thaw or a marinade (and a marinade's freezer
+    // move): those always happen on the prep day (item.can_remove).
+    var off = (session && item.can_remove)
+      ? '<button type="button" class="prep-step-off" data-cook="prep-off" data-key="' + escapeHtml(item.key) + '" ' +
+          'data-plan="' + session.weekly_plan_id + '" data-date="' + escapeHtml(session.date) + '" ' +
+          'data-name="' + escapeHtml(item.title || '') + '" ' +
+          'aria-label="' + escapeHtml('Take off the list: ' + (item.title || '')) + '">' + PREP_LIST_ICONS.close + '</button>'
+      : '';
+    // The quieter line: what it feeds and how long it keeps — or, for a
+    // prepped-lunch batch, the server's own "For Monday and Tuesday’s
+    // lunches." (prep_sessions._prepped_lunch_items).
+    return '<div class="prep-step' + (isDone ? ' is-done' : '') + '">' +
+      box +
+      '<div class="prep-step-text">' +
         name +
-        (item.feeds && item.feeds !== item.title
-          ? '<span class="cook-badge">' + escapeHtml(item.feeds) + '</span>'
-          : '') +
+        (item.line ? '<p class="prep-step-line">' + escapeHtml(item.line) + '</p>' : '') +
       '</div>' +
-      // "For Monday and Tuesday's lunches." — what a prepped-lunch batch is
-      // for, said by the server (prep_sessions._prepped_lunch_items) in the
-      // same words the cook entry's own reasoning carries.
-      (item.line ? '<p class="cook-week-sub">' + escapeHtml(item.line) + '</p>' : '') +
+      off +
     '</div>';
+  }
+
+  // Made on the night — Emily: "keep this card exactly as mocked". The
+  // title, the one line under it (the server's made_fresh_line, which
+  // follows the budget: "your 2 hours", "your 1 hour"), and each item with
+  // its line and "Add it". A better-fresh item has no Add it: it is never
+  // prepped.
+  function cookPrepFreshHtml(session, items) {
+    return '<section class="prep-fresh">' +
+      '<h3 class="prep-fresh-title">Made on the night</h3>' +
+      '<p class="prep-fresh-line">' + escapeHtml(session.made_fresh_line || '') + '</p>' +
+      '<div class="prep-fresh-list">' +
+        items.map(function (item) {
+          var canAdd = item.state !== 'better_fresh';
+          return '<div class="prep-fresh-item">' +
+            '<div class="prep-step-text">' +
+              '<span class="prep-step-name">' + escapeHtml(item.title) + '</span>' +
+              (item.off_line ? '<p class="prep-step-line">' + escapeHtml(item.off_line) + '</p>' : '') +
+            '</div>' +
+            (canAdd
+              ? '<button type="button" class="prep-fresh-add" data-cook="prep-add" data-key="' + escapeHtml(item.key) + '" ' +
+                  'data-plan="' + session.weekly_plan_id + '" data-date="' + escapeHtml(session.date) + '" ' +
+                  'data-name="' + escapeHtml(item.title || '') + '">Add it</button>'
+              : '') +
+          '</div>';
+        }).join('') +
+      '</div>' +
+    '</section>';
+  }
+
+  function cookTogglePrepSection(el) {
+    var date = el.getAttribute('data-date');
+    var key = el.getAttribute('data-section');
+    var session = cookSessionOn(cookState.data, date);
+    if (!session) return;
+    prepListOpen[date] = prepListOpenKey(session) === key ? '' : key;
+    renderCook();
+  }
+
+  // Take off / add back / tick one prep-list step. The route answers with
+  // the refreshed Cook view, like every /api/cooker/* write, and the toast
+  // names the step (DESIGN_SYSTEM S10); taking off and adding back carry
+  // an Undo, which is the opposite write.
+  async function cookPrepListMark(el, action) {
+    el.disabled = true;
+    var body = {
+      weekly_plan_id: parseInt(el.getAttribute('data-plan'), 10),
+      prep_date: el.getAttribute('data-date'),
+      key: el.getAttribute('data-key'),
+      action: action
+    };
+    var name = savedName(el.getAttribute('data-name'));
+    try {
+      renderCookFrom(await cookPost('/api/cooker/prep-list', body));
+      refreshPlanSurfacesAfterCook();
+      if (action === 'off' || action === 'add') {
+        var undo = action === 'off' ? 'add' : 'off';
+        // Verb first, like "Added Carrots" (S10, 2026-10-31): a step's name
+        // ("2 onions, 8 oz mushrooms") defeats any was/were guess.
+        toastSaved(action === 'off'
+          ? (name ? 'Took ' + name + ' off the list' : 'Taken off the list')
+          : (name ? 'Added ' + name : 'Added to the list'), {
+          label: 'Undo',
+          onClick: async function () {
+            try {
+              renderCookFrom(await cookPost('/api/cooker/prep-list', Object.assign({}, body, { action: undo })));
+            } catch (err) { showToast('That didn’t save — try again.'); }
+          }
+        });
+      } else {
+        toastSaved(action === 'done'
+          ? savedLine(name, 'ticked off')
+          : (name ? name + ' isn’t done yet' : SAVED_PLAIN));
+      }
+    } catch (err) {
+      el.disabled = false;
+      showToast(err && err.detail ? err.detail : 'That didn’t save — try again.');
+    }
   }
 
   // ---------- "Prep-cut on Sunday?" ----------
@@ -27167,6 +27309,12 @@
     if (what === 'exit-focus') return cookExitFocus();
     if (what === 'session') return cookEnterSession(el.getAttribute('data-date'));
     if (what === 'exit-session') return cookExitFocus();
+    // The prep list (cookSessionHtml): fold a section, take a step off,
+    // add one back from Made on the night, tick a step of its own.
+    if (what === 'prep-section') return cookTogglePrepSection(el);
+    if (what === 'prep-off') return cookPrepListMark(el, 'off');
+    if (what === 'prep-add') return cookPrepListMark(el, 'add');
+    if (what === 'prep-tick') return cookPrepListMark(el, el.getAttribute('data-next') === 'undone' ? 'undone' : 'done');
     if (what === 'prep-cut-pick') {
       var cutPicks = cookPrepCutPicks({ entry_id: el.getAttribute('data-entry-id') });
       var cutItem = el.getAttribute('data-item');

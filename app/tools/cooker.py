@@ -1821,6 +1821,14 @@ def _apply_prepped_lunches(weekly_plan_id: int, meals: list[dict]) -> None:
     batches = _weekday_lunches.prepped_batches(weekly_plan_id)
     if not batches:
         return
+    # A batch the prep list does NOT make on its prep day — a dish better
+    # fresh (shrimp, anything crispy) or one the household took off that
+    # day's list — is an ordinary cook on its own day, so its cards say so
+    # (prep_list.fresh_cook_entry_ids, 2026-11-01). Before, a prepped lunch
+    # could put shrimp on Sunday for Tuesday.
+    from . import prep_list as _prep_list
+    made_fresh = _prep_list.fresh_cook_entry_ids(weekly_plan_id, batches)
+    batches = [b for b in batches if b["cook_entry_id"] not in made_fresh]
     by_entry = {m["entry_id"]: m for m in meals}
     for batch in batches:
         # A batch cooked on the prep day's own meal (2026-09-27,

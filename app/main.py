@@ -1149,6 +1149,16 @@ class CheckOffPrepRequest(BaseModel):
     status: str = "done"  # pending | done | skipped
 
 
+class PrepListMarkRequest(BaseModel):
+    """One change to a prep day's list (tools/prep_list.py): take a step
+    off, add one back from Made on the night, or tick a step that has no
+    row of its own."""
+    weekly_plan_id: int
+    prep_date: str
+    key: str
+    action: str  # off | add | done | undone
+
+
 class MoveDoneRequest(BaseModel):
     done: bool = True
     # Which day's timeline to hand back. Ticking a move that isn't on TODAY's
@@ -3538,6 +3548,29 @@ def cooker_check_prep(req: CheckOffPrepRequest):
     except Exception as e:
         logger.exception("Cooker check-prep failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    return view
+
+
+@app.post("/api/cooker/prep-list")
+def cooker_prep_list_mark(req: PrepListMarkRequest):
+    """
+    Take a step off a prep day's list, add one back, or tick one — and
+    answer with the refreshed Cook view, as every /api/cooker/* write does.
+    A refusal (a thaw can't come off, a better-fresh item can't go on) is a
+    422 carrying the sentence to show; a step or day that isn't there is a
+    404.
+    """
+    try:
+        result = tools.set_prep_list_mark(req.weekly_plan_id, req.prep_date, req.key, req.action)
+        view = tools.get_cooker_view()
+    except LookupError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except Exception as e:
+        logger.exception("Cooker prep-list change failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    view["prep_list_change"] = result
     return view
 
 
