@@ -5704,6 +5704,13 @@ def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
         if _d["slot_state"] == "planned_empty" and \
                 (json.loads(_m["derived_from_json"] or "{}").get("constraint") == "already_past"):
             _d["past"] = True
+    # The dish they're taking to someone else's holiday dinner (Emily,
+    # 2026-10-31: "warn, don't block"). Marked so the allergy readers can
+    # tell it from the week's own dishes: it is checked and SAID, never
+    # held back or swapped — it's going to another table.
+    for _d, _m in zip(meal_dicts, meals):
+        if (json.loads(_m["derived_from_json"] or "{}") or {}).get("holiday_dish"):
+            _d["brought_dish"] = True
     # One cook, packed several ways (Onboarding regrouped, 2026-10-05): a
     # planned weekday lunch carries how each person at it takes theirs —
     # "Arjun: nut-free, warm in a thermos". Worked out from their own
@@ -6421,6 +6428,7 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             approval["conflicts_note"] = found["note"]
             approval["settle"] = found.get("settle")
             approval["soft_note"] = found.get("soft_note")
+            approval["brought_dish_warnings"] = found.get("brought_dish_warnings") or []
         except Exception:
             # The Meals screen must still render if the check itself breaks.
             logger.exception("Conflict check failed for plan %s", plan["weekly_plan_id"])

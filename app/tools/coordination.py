@@ -1964,6 +1964,7 @@ def check_plan_conflicts(weekly_plan_id: int | None = None) -> dict:
 
     recipes_by_name = {r["name"].lower(): r for r in _recipes.list_recipes()}
     conflicts = list(taste_conflicts)
+    brought: list[dict] = []
     for meal in plan["meals"]:
         name = (meal.get("meal") or "").strip()
         # A slot with nothing in it, or one deliberately left empty/open,
@@ -1971,6 +1972,23 @@ def check_plan_conflicts(weekly_plan_id: int | None = None) -> dict:
         if not name or meal.get("slot_state") in ("planned_empty", "open"):
             continue
         recipe = recipes_by_name.get(name.lower())
+        # The dish they're taking to someone else's holiday dinner (Emily,
+        # 2026-10-31: "warn, don't block"). Its clash is said on its own
+        # line and never joins `conflicts` — those are what the settle card
+        # and approval's "Approve anyway" are made of, and the week's own
+        # dishes keep that hard check.
+        if meal.get("brought_dish"):
+            hits = [h for h in check_meal_conflicts(
+                name, ingredients=(recipe or {}).get("ingredients"),
+                sides=meal.get("sides"), avoidances=avoidances,
+            ) if h.get("severity") == "hard"]
+            if hits:
+                from . import allergen_gate as _allergen_gate
+                brought.append({
+                    "entry_id": meal.get("entry_id"), "date": meal.get("date"), "meal": name,
+                    "line": _allergen_gate.brought_dish_line(hits),
+                })
+            continue
         for hit in check_meal_conflicts(
             name,
             ingredients=(recipe or {}).get("ingredients"),
@@ -2007,6 +2025,9 @@ def check_plan_conflicts(weekly_plan_id: int | None = None) -> dict:
         # is a single line under it.
         "settle": _settle(conflicts),
         "soft_note": _soft_note(conflicts),
+        # [{entry_id, date, meal, line}] — "Has peanut, which Theo can’t
+        # have" under a dish they're bringing to a holiday dinner.
+        "brought_dish_warnings": brought,
     }
 
 
