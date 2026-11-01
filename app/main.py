@@ -7524,7 +7524,12 @@ def add_grocery_list_item(req: GroceryAddRequest):
     store is remembered as the item's usual; '' is "Anywhere".
     """
     def do_add():
-        result = tools.add_grocery_item(req.item, quantity=req.quantity, category=req.category, added_by=req.added_by)
+        # The add sheet's amount, tidied or refused (tools.typed_amount):
+        # "x2" is 2; zero, negative or past 40 characters is a 400 with the
+        # sentence to show. Read inside the add so the offline queue's
+        # repeat of a refused add is refused the same way.
+        quantity = tools.typed_amount(req.quantity)
+        result = tools.add_grocery_item(req.item, quantity=quantity, category=req.category, added_by=req.added_by)
         if req.store is not None:
             placed = tools.set_grocery_item_store(result["item_id"], req.store, remember=req.remember)
             result["store"] = placed.get("store", "")
@@ -7591,7 +7596,13 @@ def close_shopping_trip_view(req: ShoppingTripCloseRequest):
 def update_grocery_list_item(item_id: int, req: GroceryUpdateRequest):
     """Correct an already-listed item's quantity/category directly from the Grocery List view."""
     try:
-        result = tools.update_grocery_item(item_id, quantity=req.quantity, category=req.category)
+        # The row's amount box, held to the add sheet's rule (Emily,
+        # 2026-10-31): before, it took 300 characters, "-1" and "0".
+        quantity = tools.typed_amount(req.quantity) if req.quantity is not None else None
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    try:
+        result = tools.update_grocery_item(item_id, quantity=quantity, category=req.category)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
