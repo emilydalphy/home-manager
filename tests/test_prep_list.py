@@ -10,6 +10,7 @@ back surviving a reload, the section order, and the screen's own words.
 """
 import datetime
 import pathlib
+import re
 
 import pytest
 
@@ -171,7 +172,8 @@ def test_steps_fill_up_to_the_budget_and_the_rest_is_made_on_the_night():
     assert late, "something should not have fit in half an hour"
     for item in late:
         assert item["off_line"].startswith(prep_list.duration_words(item["hands_on"] + item["passive"]) + ". Make it ")
-        assert item["off_line"].endswith(", or add 1 hr")
+        # The real shortfall, rounded up to 5 minutes (review, 2026-11-01).
+        assert re.search(r", or add \d+ min$", item["off_line"]), item["off_line"]
     assert session["made_fresh"][0] == late[0]["key"] or late[0]["key"] in session["made_fresh"]
 
     tools.set_prep_days([{"weekday": household_today().strftime("%A").lower(), "minutes": 240}])
