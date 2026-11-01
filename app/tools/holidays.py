@@ -301,8 +301,10 @@ _SHOPS_OPEN_ON = frozenset(_normalise_title(n) for n in (
     "diwali", "eid", "eid al-fitr", "eid ul-fitr", "eid al-adha", "eid ul-adha",
     "hanukkah", "chanukah", "lunar new year", "chinese new year",
     # The US federal days the grocers stay open for. Memorial Day, the
-    # Fourth, Labor Day, Thanksgiving and Christmas still count as days a
-    # "closed on holidays" store may be shut, like Labour Day in Canada.
+    # Fourth and Labor Day are in the country table below (a Canadian
+    # household's "Labor Day" calendar entry is still Labour Day, a day
+    # off). Thanksgiving, Christmas, New Year's and Easter still count as
+    # days a "closed on holidays" store may be shut.
     "martin luther king jr. day", "mlk day", "presidents' day", "presidents day",
     "juneteenth", "columbus day", "indigenous peoples' day", "veterans day",
 ))
@@ -316,16 +318,33 @@ _SHOPS_OPEN_IN_PROVINCES = {
     _normalise_title("civic holiday"): frozenset({"ON", "QC", "MB"}),
 }
 
+# Days the shops open for in some COUNTRIES only (Emily, 2026-11-01):
+# in the US, Memorial Day, July 4 and Labor Day are shopping days. The same
+# names mean a day off elsewhere — Canada's Labour Day shuts shops and a
+# Canadian calendar can carry "Labor Day" or "Independence Day" — so these
+# are never in the global open set above.
+_SHOPS_OPEN_IN_COUNTRIES = {
+    _normalise_title("memorial day"): frozenset({"US"}),
+    _normalise_title("independence day"): frozenset({"US"}),
+    _normalise_title("labor day"): frozenset({"US"}),
+}
 
-def shops_close_for(name: str, province: str | None = None) -> bool:
+
+def shops_close_for(name: str, province: str | None = None, country: str | None = None) -> bool:
     """
     Whether a holiday by this name can shut a store that closes on
-    holidays. `province` is the household's (read when not given), for
-    the days that depend on it.
+    holidays. `province` and `country` are the household's (read when not
+    given), for the days that depend on them.
     """
     key = _normalise_title(name)
     if key in _SHOPS_OPEN_ON:
         return False
+    open_countries = _SHOPS_OPEN_IN_COUNTRIES.get(key)
+    if open_countries is not None:
+        if country is None:
+            country = _region()[0]
+        if (country or "").upper() in open_countries:
+            return False
     open_in = _SHOPS_OPEN_IN_PROVINCES.get(key)
     if open_in is not None:
         if province is None:

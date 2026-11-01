@@ -13,6 +13,8 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **Memorial Day, July 4 and Labor Day are shopping days for US households** (2026-11-01, branch `cloud/us-holidays-open-1101`; `tests/test_us_holidays_shops_open.py`).
+  Emily 2026-11-01: a "closed on holidays" store stays open on them in the US; Thanksgiving, Christmas, New Year's, Easter still may shut. Why country-keyed (`_SHOPS_OPEN_IN_COUNTRIES`, `shops_close_for(..., country=)`), not the global open set: Canada's Labour Day (and a Canadian calendar's "Labor Day"/"Independence Day") must stay a day off.
 - **Add toasts lead with the verb: "Added Lemons", "Added 3 things"** (2026-11-01, overnight, branch `overnight/added-toast-no-plural`; `tests/test_added_toast_no_plural.py`).
   Shop add/scan/Before-you-shop, regulars, a Plan side, a recipe save, What's home and the kitchen add sheet (also "Updated Milk in the fridge."). Names kept as on the list, never lower-cased. Why: Emily 2026-10-31 — "Lemons was added" read wrong and a plural guess fails on "Swiss chard"/"hummus". DESIGN_SYSTEM S10/§7 and the copywriter skill examples updated; other `<thing> was <verbed>` toasts unchanged.
 - **The grocery amount box: "x2" is 2; zero, negative and over-40-character amounts are refused** (2026-11-01, overnight; branch `overnight/amount-box-refuses-junk`; tests `tests/test_amount_box_refuses_junk.py`).
