@@ -1557,7 +1557,23 @@ def _plan_for_period(week_start: str, day_count: int):
     ).fetchone()
     conn.close()
     return {**chosen, "intake_id": row["intake_id"] if row else None,
-            "approved_overlap": bool(approved)}
+            "approved_overlap": bool(approved),
+            # Exactly which of the period's days an approved plan holds —
+            # the Re-plan notice names these, not the whole period.
+            "approved_dates": sorted({d for o in approved for d in o["overlap_dates"]})}
+
+
+def _dates_label(dates: list[str]) -> str:
+    """ISO dates as the design writes a week, one range per unbroken run:
+    "Oct 29–Nov 1", or "Oct 29–30 and Nov 2"."""
+    runs: list[list[str]] = []
+    for d in sorted(dates):
+        if runs and date.fromisoformat(d) - date.fromisoformat(runs[-1][-1]) == timedelta(days=1):
+            runs[-1].append(d)
+        else:
+            runs.append([d])
+    parts = [_weekly_plan._format_period_range(r[0], len(r)) for r in runs]
+    return parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + " and " + parts[-1]
 
 
 def _intake_for_period(conn, week_start: str, day_count: int, plan) -> dict | None:
@@ -1692,6 +1708,11 @@ def get_week_intake_prefill(week_start: str, day_count: int = 7) -> dict:
         # warning that re-planning makes a new draft beside it fires on
         # this, whichever plan the period opens on.
         "approved_overlap": bool(plan and plan["approved_overlap"]),
+        # The approved days in the period's own words (Emily, 2026-10-31,
+        # "name the right days"): a Thursday Re-plan of Oct 29–Nov 4 over a
+        # plan that ends Nov 1 says "Oct 29–Nov 1 is already approved", not
+        # the whole period. '' when nothing approved is in it.
+        "approved_label": _dates_label(plan["approved_dates"]) if plan and plan.get("approved_dates") else "",
         # Loop Board "Onboarding: household rhythm..." — a suggestion only,
         # not an answer; see _rhythm_packed_lunch_suggestions.
         "rhythm_packed_lunch_suggestions": _rhythm_packed_lunch_suggestions(week_start, day_count),

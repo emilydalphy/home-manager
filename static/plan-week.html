@@ -1737,7 +1737,10 @@ body.toast-up { padding-bottom: 260px; }
       // "Already drafted" notice; Emily's words, 2026-10-18).
       var approved = (data.plan_status === 'approved' || data.approved_overlap);
       sameNotice = approved
-        ? { label: SAME_COPY.approved, text: data.week_label + ' is already approved and on your shopping list. ' +
+        // The days an approved plan really holds (approved_label), not the
+        // whole period — a Thursday re-plan reaches into next week, whose
+        // days nothing has approved (Emily, 2026-10-31).
+        ? { label: SAME_COPY.approved, text: (data.approved_label || data.week_label) + ' is already approved and on your shopping list. ' +
             'Drafting again makes a new draft beside it — nothing changes until you approve that one. ' +
             'Anything already bought stays either way.' }
         : { label: SAME_COPY.drafted, text: data.week_label + ' already has a draft. Drafting again replaces it. ' +
