@@ -617,7 +617,8 @@ def _task_step(item: dict, task: dict) -> dict:
 _MARINATE_WHAT = re.compile(r"\bmarinate\s+(?:the\s+)?(.+?)(?:\s+(?:for|in|with|overnight)\b|[,.;—(]|$)", re.I)
 
 
-def _pinned_marinade(step: dict, task: dict, prep_date: str, entries: dict, weekly_plan_id: int, ctx: dict) -> list[dict]:
+def _pinned_marinade(step: dict, task: dict, prep_date: str, entries: dict, weekly_plan_id: int, ctx: dict,
+                     frozen: dict | None = None) -> list[dict]:
     """The freezer half of a pinned marinate task: which meal it is for (its
     entry, else the first meal of that name after the prep day), then
     prep_list.marinade_items' own rule. Adds the freezer step and wants the
@@ -635,7 +636,11 @@ def _pinned_marinade(step: dict, task: dict, prep_date: str, entries: dict, week
     m = _MARINATE_WHAT.search(task.get("description") or "")
     meat = (m.group(1).strip().lower() if m else "") or "meat"
     e = dict(entry, weekly_plan_id=weekly_plan_id)
-    return _prep_list.marinade_items(e, meat, "", f"task{task['id']}", days_out, False, ctx["wants"], existing=step)
+    # Still frozen (defrost.py has a thaw for this meal's meat): worded as
+    # frozen, and its thaw is defrost.py's — no second one booked.
+    still_frozen = any(w in meat for w in (frozen or {}).get(entry["id"], set()))
+    return _prep_list.marinade_items(e, meat, "", f"task{task['id']}", days_out, still_frozen, ctx["wants"],
+                                     existing=step)
 
 
 def _build_session(weekly_plan_id, plan, prep_date, prep_day, batches, entries, tasks,
@@ -706,6 +711,17 @@ def _build_session(weekly_plan_id, plan, prep_date, prep_day, batches, entries, 
             first_date=prep_date, first_slot=entry.get("slot") or "",
         ))
 
+    # Meat still in the freezer on the prep day: a pending defrost.py thaw
+    # for that meal dated on or after it (never this module's own rows).
+    from . import defrost as _defrost
+    frozen: dict[int, set[str]] = {}
+    for t in tasks:
+        if (t["task_type"] == "defrost" and t["meal_plan_entry_id"] and t["task_date"] >= prep_date
+                and t["status"] == "pending"
+                and (t.get("detail") or {}).get("kind") != _prep_list.MARINADE_THAW_KIND):
+            thawed = _defrost.thawed_item(t["description"] or "").lower()
+            frozen.setdefault(t["meal_plan_entry_id"], set()).update(w for w in thawed.split() if len(w) > 3)
+
     # 3. The prep_tasks rows dated on this day.
     by_id = {t["id"]: t for t in tasks}
     for raw in _task_items(tasks, prep_date, entries):
@@ -715,16 +731,15 @@ def _build_session(weekly_plan_id, plan, prep_date, prep_day, batches, entries, 
         # derived marinade: past two days it is frozen in the bag and its
         # thaw is booked for the night before (review, 2026-11-01).
         if step["kind"] == "fridge_move" and step["section"] == "sauces" and step["always"]:
-            items.extend(_pinned_marinade(step, by_id[raw["prep_task_id"]], prep_date, entries, weekly_plan_id, ctx))
+            items.extend(_pinned_marinade(step, by_id[raw["prep_task_id"]], prep_date, entries,
+                                          weekly_plan_id, ctx, frozen))
 
     # 4. The steps the week's meals offer.
     last = _prep_list.next_prep_after(prep_date, prep_weekdays, all_prep_dates)
     covered_cuts: dict[int, set[str]] = {}
     marinated: set[int] = set()
     marinated_meals: set[str] = set()
-    frozen: dict[int, set[str]] = {}
     grain_batched: set[int] = set()
-    from . import defrost as _defrost
     for t in tasks:
         desc = (t["description"] or "")
         if t["task_type"] == PREP_CUT_TASK_TYPE and t["meal_plan_entry_id"]:
@@ -735,11 +750,6 @@ def _build_session(weekly_plan_id, plan, prep_date, prep_day, batches, entries, 
                 marinated.add(t["meal_plan_entry_id"])
             if t["related_meal"]:
                 marinated_meals.add(t["related_meal"].strip().lower())
-        if (t["task_type"] == "defrost" and t["meal_plan_entry_id"] and t["task_date"] >= prep_date
-                and t["status"] == "pending"
-                and (t.get("detail") or {}).get("kind") != _prep_list.MARINADE_THAW_KIND):
-            item = _defrost.thawed_item(desc).lower()
-            frozen.setdefault(t["meal_plan_entry_id"], set()).update(w for w in item.split() if len(w) > 3)
         if t["task_type"] == BATCH_COMPONENT_TASK_TYPE:
             key = str((t.get("detail") or {}).get("key") or "")
             if any(g in key for g, _m in _prep_list._GRAINS):

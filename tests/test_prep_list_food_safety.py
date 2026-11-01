@@ -258,3 +258,90 @@ def test_the_didnt_fit_line_says_the_real_shortfall_and_odd_budgets_read_as_hour
     assert prep_list.hours_phrase(90) == "1 hr 30"
     assert prep_list.header_line(90, 30).startswith("Up to 1 hr 30 ·")
     assert "your 1 hr 30," in prep_list.made_on_the_night_line(90)
+
+
+# re-verification of 3f41dd4 ------------------------------------------------
+
+def _move(entry, day):
+    conn = db.get_conn()
+    conn.execute("UPDATE meal_plan_entries SET date = ? WHERE id = ?", (_d(day), entry))
+    conn.commit()
+    conn.close()
+
+
+def _with_stir_fry():
+    plan_id = _week()
+    _stir_fry()
+    _plan(plan_id, 1, "Veg Stir Fry")
+    return plan_id
+
+
+def test_a_marinade_already_frozen_keeps_its_thaw_when_the_meal_moves_closer():
+    """Bag frozen for day 5; the marinade is ticked done; the meal moves to
+    day 2. The bag is still in the freezer, so the thaw follows the meal to
+    the night before — it is never just dropped."""
+    plan_id = _with_stir_fry()
+    _skewers()
+    entry = _plan(plan_id, 5, "Chicken Skewers")
+    session = _session(plan_id)
+    mar = next(i for i in session["items"] if i["kind"] == "marinate")
+    tools.set_prep_list_mark(plan_id, session["date"], mar["key"], "done")
+    _move(entry, 2)
+    _session(plan_id)
+    assert [(t["meal_plan_entry_id"], t["task_date"]) for t in _thaws(plan_id)] == [(entry, _d(1))]
+
+
+def test_a_marinade_whose_prep_day_has_passed_keeps_its_thaw():
+    plan_id = _with_stir_fry()
+    _skewers()
+    entry = _plan(plan_id, 5, "Chicken Skewers")
+    _session(plan_id)
+    conn = db.get_conn()
+    conn.execute("UPDATE prep_tasks SET detail_json = json_set(detail_json, '$.prep_date', ?) "
+                 "WHERE json_extract(detail_json, '$.kind') = ?", (_d(-1), prep_list.MARINADE_THAW_KIND))
+    conn.commit()
+    conn.close()
+    _move(entry, 2)
+    _session(plan_id)
+    assert [(t["meal_plan_entry_id"], t["task_date"]) for t in _thaws(plan_id)] == [(entry, _d(1))]
+
+
+def test_a_cooked_dish_with_avocado_in_it_is_never_made_ahead_whole():
+    plan_id = _with_stir_fry()
+    _recipe("Chicken Avocado Wrap", [
+        {"item": "Chicken breast", "qty": "1 lb", "category": "meat/seafood"},
+        {"item": "Avocado", "qty": "1", "category": "produce"},
+        {"item": "Tortillas", "qty": "4", "category": "pantry"},
+    ], ["Cook the chicken in a pan.", "Slice the avocado and fill the wraps."], prep=10, cook=10)
+    _plan(plan_id, 2, "Chicken Avocado Wrap")
+    session = _session(plan_id)
+    assert not [i for i in session["items"] if i["kind"] == "whole_dish"]
+    assert any(i["state"] == "better_fresh" and "avocado" in i["title"].lower() for i in session["items"])
+
+
+def test_shrimp_filed_under_pantry_is_still_seafood():
+    plan_id = _with_stir_fry()
+    _recipe("Shrimp Noodles", [
+        {"item": "Shrimp", "qty": "1 lb", "category": "pantry"},
+        {"item": "Noodles", "qty": "8 oz", "category": "pantry"},
+    ], ["Boil the noodles.", "Toss with the shrimp in the pan."])
+    _plan(plan_id, 2, "Shrimp Noodles")
+    assert prep_list.dish_fresh_reason("Noodles", {"ingredients": [{"item": "Shrimp", "category": "pantry"}]})
+    session = _session(plan_id)
+    assert not [i for i in session["items"] if i["kind"] == "whole_dish"]
+    assert any(i["state"] == "better_fresh" and "shrimp" in i["title"].lower() for i in session["items"])
+
+
+def test_a_pinned_marinate_task_for_frozen_meat_is_worded_frozen_with_no_second_thaw():
+    plan_id = _with_stir_fry()
+    _recipe("Steak Tacos", [{"item": "Flank steak", "qty": "1 lb", "category": "meat/seafood"}],
+            ["Slice and sear the steak."])
+    entry = _plan(plan_id, 5, "Steak Tacos")
+    _defrost_row(plan_id, entry, 3, item="flank steak", meal="Steak Tacos")
+    tools.save_prep_tasks(plan_id, [
+        {"task_date": _d(0), "description": "Marinate the flank steak", "related_meal": "Steak Tacos"},
+    ])
+    session = _session(plan_id)
+    task = next(i for i in session["items"] if i["title"] == "Marinate the flank steak")
+    assert "Put the frozen flank steak in the marinade bag" in task["line"]
+    assert _thaws(plan_id) == []
