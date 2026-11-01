@@ -76,7 +76,8 @@ def test_once_ticked_a_hot_dish_is_a_reheat_not_a_second_cook():
     card = _card(plan_id, entry)
     weekday = datetime.date.fromisoformat(session["date"]).strftime("%A")
     assert card["is_leftovers"] and card["finish_action"] == "reheat"
-    assert card["leftovers_headline"] == f"Made ahead — {weekday}’s Beef Stew"
+    # One wording everywhere (review, 2026-11-01): "made at Sunday’s prep".
+    assert card["leftovers_headline"] == f"Beef Stew — made at {weekday}’s prep"
     assert card["made_at_prep"] == {"date": session["date"], "weekday": weekday}
     assert card["ingredients"] == [] and card["instructions"] == [] and not card["has_full_recipe"]
     assert not card.get("served_cold")
@@ -149,6 +150,63 @@ def test_the_prep_list_box_for_a_batch_made_ahead_ticks_the_list_not_the_cook():
     body = src[src.index("function cookSessionItemHtml("):]
     body = body[:body.index("\n  function ", 1)]
     assert "item.ticks_on_list" in body and "data-cook=\"prep-tick\"" in body
+
+
+def test_a_made_dish_is_never_refitted_out_by_a_later_plan_change():
+    """Review repro: a 30-minute prep, Beef Stew ticked made, then three
+    more dinners. The stew must stay on the list and its night a reheat."""
+    plan_id = _week(minutes=30)
+    _stew()
+    entry = _plan(plan_id, 2, "Beef Stew")
+    session, step = _dish_step(plan_id, entry)
+    tools.set_prep_list_mark(plan_id, session["date"], step["key"], "done")
+    from test_prep_list import _stir_fry
+    _stir_fry()
+    for day in (1, 3, 4):
+        _plan(plan_id, day, "Veg Stir Fry")
+    _session2, step2 = _dish_step(plan_id, entry)
+    assert step2["on_list"] and step2["done"] and step2["state"] == "on_list"
+    card = _card(plan_id, entry)
+    assert card["is_leftovers"] and card["finish_action"] == "reheat"
+
+
+def test_made_follows_the_meal_out_of_the_prep_lists_reach():
+    plan_id = _with_stir_fry()
+    _stew()
+    entry = _plan(plan_id, 2, "Beef Stew")
+    session, step = _dish_step(plan_id, entry)
+    tools.set_prep_list_mark(plan_id, session["date"], step["key"], "done")
+    _move(entry, 5)  # past the whole dish's three-day reach
+    assert not [i for i in _session(plan_id)["items"] if i["key"] == step["key"]]
+    card = _card(plan_id, entry)
+    assert card["is_leftovers"] and card["made_at_prep"]["date"] == session["date"]
+
+
+def test_hot_words_and_serve_warm_beat_cold_names_and_coleslaw_is_cold():
+    fa = cooker.finish_action
+    assert fa("Warm Lentil Salad", None, "dinner") == "reheat"
+    assert fa("Pulled Pork Sandwiches", None, "dinner") == "reheat"
+    assert fa("Grilled Chicken Wraps", None, "lunch") == "reheat"
+    assert fa("Hot Dip", None, "snack") == "reheat"
+    assert fa("Turkey Chili", None, "dinner") == "reheat"
+    assert fa("Coleslaw", None, "dinner") == "plate"
+    assert fa("Asian Slaw", None, "dinner") == "plate"
+    assert fa("Farro Salad", {"instructions": ["Toss.", "Serve warm."]}, "dinner") == "reheat"
+    assert fa("Farro Salad", {"instructions": ["Toss.", "Chill."]}, "dinner") == "plate"
+
+
+def test_one_wording_on_today_and_the_reheat_screen():
+    from app.tools import day_meals
+    assert day_meals.provenance_note({"is_leftovers": True, "made_at_prep": {"weekday": "Sunday"}}) == \
+        "made at Sunday’s prep"
+    import pathlib
+    src = (pathlib.Path(__file__).resolve().parents[1] / "static" / "shell.js").read_text()
+    body = src[src.index("function cookReheatFocusHtml("):]
+    body = body[:body.index("\n  function ", 1)]
+    assert "'Made at ' + meal.made_at_prep.weekday + '’s prep.'" in body
+    item = src[src.index("function cookSessionItemHtml("):]
+    item = item[:item.index("\n  function ", 1)]
+    assert "var nameOpens = isCook && idx !== null;" in item
 
 
 def test_a_reheat_badge_says_plate_for_a_plated_dish():

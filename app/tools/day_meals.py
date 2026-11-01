@@ -138,6 +138,11 @@ def provenance_note(meal: dict, today: str | None = None) -> str:
     week to point at, so it says where it came from rather than leaving
     "leftovers from" dangling.
     """
+    # Made whole at a prep day (cooker._apply_made_at_prep): the one
+    # wording everywhere, "made at Sunday’s prep" (2026-11-01).
+    made = meal.get("made_at_prep") or {}
+    if made.get("weekday"):
+        return f"made at {made['weekday']}’s prep"
     if meal.get("is_leftovers"):
         # Leftovers by name only ("Leftover chili" from the chat): no
         # source night on the plan, and it is not from the freezer either.

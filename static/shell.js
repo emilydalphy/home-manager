@@ -26080,7 +26080,9 @@
     // prep list itself (prep_list_marks) — never the cook entry, whose
     // cooked_status is "eaten" on its own night (2026-11-01).
     var ticksMade = !!(isCook && item.ticks_on_list && session && item.key);
-    var nameOpens = canOpen;  // the dish name still opens the recipe
+    // The dish name still opens its card after the made-tick, whatever the
+    // box does.
+    var nameOpens = isCook && idx !== null;
     if (ticksMade) {
       canOpen = false;
       ticksEntry = false;
@@ -26589,7 +26591,11 @@
   function cookReheatFocusHtml(meal) {
     var src = meal.leftovers_from || {};
     var dayLabel = meal.date ? cookDateLabel(meal.date) : 'Leftovers';
-    var srcLine = src.date ? 'Cooked on ' + cookDateLabel(src.date) + '.' : '';
+    // Made whole at a prep day: the one wording, "Made at Sunday’s prep."
+    // (cooker._apply_made_at_prep) — never "Cooked on" for a plated dish.
+    var srcLine = meal.made_at_prep
+      ? 'Made at ' + meal.made_at_prep.weekday + '’s prep.'
+      : (src.date ? 'Cooked on ' + cookDateLabel(src.date) + '.' : '');
     return '<div class="cook-focus">' +
       '<div class="cook-hero cook-hero-quiet">' +
         '<button type="button" class="crumb on-spruce" data-cook="exit-focus">&lsaquo; ' +

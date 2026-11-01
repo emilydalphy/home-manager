@@ -609,6 +609,39 @@ def _write_mark(weekly_plan_id: int, prep_date: str, key: str, *, state: str | N
         conn.close()
 
 
+def made_entries() -> dict[int, str]:
+    """
+    Every meal entry a prep day has MADE whole — a whole-dish step
+    ("dish:<entry>") or a prepped batch ("cook:<entry>") ticked done, or
+    recorded when its prep day went by — as {entry_id: prep_date}. Keyed on
+    the entry with no reach window, so "made" follows the meal wherever it
+    moves (review, 2026-11-01). The latest prep date wins.
+    """
+    conn = get_conn()
+    try:
+        rows = conn.execute(
+            f"SELECT prep_date, step_key FROM {MARKS_TABLE} WHERE household_id = ? AND done = 1 "
+            "AND (step_key LIKE 'dish:%' OR step_key LIKE 'cook:%') ORDER BY prep_date",
+            (household_id(),),
+        ).fetchall()
+    finally:
+        conn.close()
+    out: dict[int, str] = {}
+    for r in rows:
+        try:
+            out[int(str(r["step_key"]).split(":", 1)[1])] = r["prep_date"]
+        except (TypeError, ValueError, IndexError):
+            continue
+    return out
+
+
+def record_made(weekly_plan_id: int | None, prep_date: str, key: str) -> None:
+    """Store that a prep day made this step (the prep day went by with it
+    on the list) — the same mark a tick writes."""
+    if weekly_plan_id and key:
+        _write_mark(weekly_plan_id, prep_date, key, done=True)
+
+
 def set_prep_list_mark(weekly_plan_id: int, prep_date: str, key: str, action: str) -> dict:
     """
     One change to one prep day's list: 'off' takes a step off (it moves to
@@ -1268,10 +1301,13 @@ def fit(items: list[dict], budget: int, marks: dict[str, dict]) -> int:
             # another step off to make room.
             item["added_back"] = True
             continue
-        if item["pinned"]:
+        # A step already done stays on the list: it happened, and a plan
+        # change after it must never re-fit it out (review, 2026-11-01 — a
+        # made stew was bumped to didnt_fit and its night became a cook).
+        if item["pinned"] or item["done"]:
             used += item["hands_on"]
     candidates = [i for i in items if i["state"] == "on_list" and not i["always"] and not i["pinned"]
-                  and not i["added_back"]]
+                  and not i["added_back"] and not i["done"]]
     candidates.sort(key=lambda i: (
         0 if i["shared"] else 1,
         1 if i.get("fallback") else 0,
