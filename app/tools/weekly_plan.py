@@ -5704,6 +5704,28 @@ def get_weekly_plan(weekly_plan_id: int | None = None) -> dict:
         if _d["slot_state"] == "planned_empty" and \
                 (json.loads(_m["derived_from_json"] or "{}").get("constraint") == "already_past"):
             _d["past"] = True
+    # The dish they're taking to someone else's holiday dinner (Emily,
+    # 2026-10-31: "warn, don't block"). Marked so the allergy readers can
+    # tell it from the week's own dishes: it is checked and SAID, never
+    # held back or swapped — it's going to another table.
+    # Only while it is still ON that holiday's dinner (review, 2026-11-01):
+    # a move changes a row's date and keeps its derived_from, so a brought
+    # peanut dish moved to an ordinary Wednesday at home was still
+    # "brought" and slipped past the hard gate. The holiday answer for the
+    # row's own date has to still say a dish is being taken.
+    from . import holidays as _holidays
+    _bring_on: dict = {}
+    for _d, _m in zip(meal_dicts, meals):
+        if (json.loads(_m["derived_from_json"] or "{}") or {}).get("holiday_dish") and _d.get("slot") == "dinner":
+            _day = _d.get("date") or ""
+            if _day not in _bring_on:
+                try:
+                    _ans = _holidays.get_holiday_answer(_day)
+                except ValueError:
+                    _ans = None
+                _bring_on[_day] = bool(_ans and (_ans.get("bring_dish") or "").strip())
+            if _bring_on[_day]:
+                _d["brought_dish"] = True
     # One cook, packed several ways (Onboarding regrouped, 2026-10-05): a
     # planned weekday lunch carries how each person at it takes theirs —
     # "Arjun: nut-free, warm in a thermos". Worked out from their own
@@ -6421,6 +6443,7 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
             approval["conflicts_note"] = found["note"]
             approval["settle"] = found.get("settle")
             approval["soft_note"] = found.get("soft_note")
+            approval["brought_dish_warnings"] = found.get("brought_dish_warnings") or []
         except Exception:
             # The Meals screen must still render if the check itself breaks.
             logger.exception("Conflict check failed for plan %s", plan["weekly_plan_id"])

@@ -506,6 +506,29 @@ def since_approval_line(clashes: list[dict], sentence: bool = False) -> str:
     return f"Has {food}, which {cannot} — swap it on Plan"
 
 
+def brought_dish_line(clashes: list[dict]) -> str:
+    """The line under a dish they're taking to someone else's holiday
+    dinner: "Has peanut, which Theo can’t have". Said, never refused, and
+    no "swap it" — it's for another table, and it stays if they keep it
+    (Emily, 2026-10-31)."""
+    food = _food_word(clashes)
+    who = _person(clashes)
+    cannot = f"{who} can’t have" if who else "this house can’t have"
+    return f"Has {food}, which {cannot}"
+
+
+def brought_dish_allergy_line(name: str) -> str | None:
+    """brought_dish_line for one dish by name — its saved recipe's list when
+    there is one, else the name — or None when nothing clashes. A matcher
+    that could not run says nothing here: this is a warning, not a gate."""
+    name = (name or "").strip()
+    if not name:
+        return None
+    hits = hard_clashes(name, ingredients=_recipes.saved_ingredients(name) or None)
+    hits = [h for h in hits if h.get("source") != "check_failed"]
+    return brought_dish_line(hits) if hits else None
+
+
 def refuse_if_clashing(name: str, ingredients: list[dict] | None = None, override: bool = False) -> None:
     """
     The gate in front of chat's own writes (meal_plans.plan_meal_for_chat,
@@ -1234,6 +1257,11 @@ def sweep_plan(
     for meal in plan.get("meals") or []:
         name = (meal.get("meal") or "").strip()
         if not name or meal.get("slot_state") in ("planned_empty", "open") or meal.get("component_category"):
+            continue
+        # A dish they're bringing to someone else's holiday dinner is warned
+        # about, never swapped (Emily, 2026-10-31): re-picking it silently
+        # would put a different dish on another family's table.
+        if meal.get("brought_dish"):
             continue
         entry_id = meal.get("entry_id")
         recipe = recipes_by_name.get(name.lower()) or {}

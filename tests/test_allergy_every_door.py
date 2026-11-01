@@ -14,7 +14,7 @@ are the ones that did not, each walked through its real route or tool:
   - "Build a plan" on a left-out day (/fill-day);
   - a different protein on a planned dish (/change-part);
   - a recipe imported from a link, then picked for an open night;
-  - a holiday's "bring a dish" on a draft week (the approval confirm).
+  - a holiday's "bring a dish" (warned, not blocked — Emily 2026-10-31).
 
 Sam is allergic to peanuts throughout.
 """
@@ -173,11 +173,11 @@ def test_an_imported_recipe_with_the_allergen_is_refused_on_an_open_night(signed
 
 # ---------- a holiday's "bring a dish" on a draft ----------
 
-def test_bringing_a_dish_with_the_allergen_on_a_draft_asks_at_approval():
-    """GUARD on the draft half of this door. The answer plans the dish as
-    typed; Approve then stops on the clash for the household's own yes.
-    (On an APPROVED week it lands with no word — reported as Needs Emily,
-    not pinned.)"""
+def test_bringing_a_dish_with_the_allergen_warns_and_approval_goes_through():
+    """Emily, 2026-10-31: "warn, don't block". A dish they're taking to
+    someone else's holiday dinner is planned as typed and SAYS its clash —
+    "Has peanut, which Sam can’t have" — and Approve no longer stops on it.
+    tests/test_brought_dish_warns.py has the rest of this door."""
     tools.add_member("Emily")
     _peanut_allergy()
     tools.add_recipe("Satay Noodles", ingredients=SATAY)
@@ -185,8 +185,8 @@ def test_bringing_a_dish_with_the_allergen_on_a_draft_asks_at_approval():
     tg = _thanksgiving()
     plan_id = tools.create_weekly_plan(tg)["weekly_plan_id"]
     tools.plan_meal(tg, "Chili", slot="dinner", weekly_plan_id=plan_id)
-    tools.answer_holiday(tg, "out", bring_dish="Satay Noodles")
+    answer = tools.answer_holiday(tg, "out", bring_dish="Satay Noodles")
+    assert answer["allergy_line"] == "Has peanut, which Sam can’t have"
     assert ("dinner", "planned", "Satay Noodles") in _rows(plan_id, tg)
     out = tools.approve_weekly_plan(plan_id, approved_by="Emily")
-    assert out["status"] == "needs_confirmation"
-    assert tools.get_weekly_plan(plan_id)["status"] != "approved"
+    assert out["status"] == "approved"

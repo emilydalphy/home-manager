@@ -458,6 +458,10 @@ def holidays_for_dates(dates: list[str]) -> list[dict]:
     for d in sorted(by_date):
         h = dict(by_date[d])
         h["answer"] = answers.get(d)
+        # The brought dish's allergy line rides with the answer, so the
+        # holiday block says it again after a reload (Emily, 2026-10-31).
+        if h["answer"] and h["answer"].get("answer") == "out" and (h["answer"].get("bring_dish") or "").strip():
+            h["answer"] = {**h["answer"], "allergy_line": _brought_dish_allergy_line(h["answer"])}
         h["question"] = question_for(h["name"])
         out.append(h)
     return out
@@ -620,7 +624,24 @@ def answer_holiday(
         "holiday": {"date": holiday["date"], "name": holiday["name"], "source": holiday["source"]},
         "ack": ANSWER_ACKS[answer],
         **effects,
+        # "Has peanut, which Theo can’t have" — or None. A dish they're
+        # bringing to someone else's dinner is checked and SAID, never
+        # refused (Emily, 2026-10-31: "warn, don't block"); it stays.
+        "allergy_line": _brought_dish_allergy_line(saved),
     }
+
+
+def _brought_dish_allergy_line(saved: dict) -> str | None:
+    if saved.get("answer") != "out" or not (saved.get("bring_dish") or "").strip():
+        return None
+    from . import allergen_gate as _allergen_gate
+    try:
+        return _allergen_gate.brought_dish_allergy_line(saved["bring_dish"])
+    except Exception:
+        # The answer saved; a warning that could not be worked out must not
+        # turn that into a failure on screen.
+        logger.exception("Checking the brought dish %r failed", saved.get("bring_dish"))
+        return None
 
 
 # ---------- the consequences ----------

@@ -424,6 +424,12 @@
   .holiday-q { font-family: var(--font-display); font-weight: 700; font-size: 0.98rem; color: var(--ink-strong); margin: 0 0 9px; }
   .holiday .ack { margin-top: 8px; }
   .holiday .holiday-said:empty { display: none; }
+  /* A dish they're bringing that has something someone can't have — "Has
+     peanut, which Theo can't have" (Emily, 2026-10-31: warn, don't block).
+     The app's one allergy-line style (.day-node-allergy): --warn-ink at
+     600, not --urgent — the dish stays, the line only says so. */
+  .holiday-allergy { margin-top: 8px; color: var(--warn-ink); font-size: 0.85rem; font-weight: 600; line-height: 1.45; }
+  .holiday-allergy:empty { display: none; }
   .holiday-dish, .holiday-host { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
   .holiday-host { flex-wrap: wrap; }
   .holiday-host input[type="time"] { flex: 0 0 auto; width: 128px; }
@@ -2482,6 +2488,7 @@ body.toast-up { padding-bottom: 260px; }
         '<input type="text" maxlength="80" placeholder="Bringing something? Name it" aria-label="The dish you’re bringing">' +
         '<button type="button">Add it</button>' +
       '</div>' +
+      '<div class="holiday-allergy" role="status"></div>' +
       // Hosting (slice 2, the big meal): when it's on the table, and what
       // the guests can't eat, in their words. The count is the day's own
       // guest steppers, one tap away through the Hosting tag.
@@ -2549,6 +2556,9 @@ body.toast-up { padding-bottom: 260px; }
     else ack.textContent = found ? 'I’ll ' + found.ack : '';
     var dish = block.querySelector('.holiday-dish');
     dish.hidden = current !== 'out';
+    // Said, never refused: the dish stays on the day (allergy_line, holidays.py).
+    block.querySelector('.holiday-allergy').textContent =
+      current === 'out' && h.answer.bring_dish ? (h.answer.allergy_line || '') : '';
     var input = dish.querySelector('input');
     if (current === 'out' && document.activeElement !== input) input.value = h.answer.bring_dish || '';
     var host = block.querySelector('.holiday-host');
@@ -2608,7 +2618,7 @@ body.toast-up { padding-bottom: 260px; }
       var saved = await res.json();
       h.answer = { answer: saved.answer, headcount: saved.headcount, bring_dish: saved.bring_dish,
                    on_table_at: saved.on_table_at || '', guest_notes: saved.guest_notes || '',
-                   said: saved.big_meal_said || '' };
+                   said: saved.big_meal_said || '', allergy_line: saved.allergy_line || '' };
       if (saved.answer === 'hosting' && saved.headcount) {
         // The server's count is the intake's own: keep the guests row in step.
         var c = answers.guest_counts[date] || { adults: 0, children: 0 };
