@@ -29,6 +29,9 @@ def test_a_night_out_is_read_as_not_a_cook(dish):
 @pytest.mark.parametrize("dish", [
     "Restaurant-style salsa", "Grandma's lasagna", "Potluck at the Smiths'",
     "Bring salad to Sam's", "Steak at its best", "Dinner at 6", "Chicken Skewers",
+    # Review, 2026-11-01: named after a restaurant, or not somebody's table.
+    "Takeaway-style chicken curry", "Restaurant-quality steak", "Better-than-restaurant pad thai",
+    "Restaurant fried rice", "Steak at it's best", "Dinner out on the patio", "Supper out on the deck",
 ])
 def test_a_dish_that_only_sounds_like_one_is_still_a_cook(dish):
     """GUARD: a restaurant-style dish, Grandma's recipe, and a dish carried

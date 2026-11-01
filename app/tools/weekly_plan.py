@@ -724,18 +724,24 @@ def written_in_not_a_cook(freeform_meal: str | None) -> str | None:
 
 
 _COOKED_LIKE_TAKEOUT_RE = re.compile(
-    r"(?:take[\s-]?out|delivery|restaurant)[\s-]+style|\bfakeaway|\bhome[\s-]?made\b|\bcopycat\b"
+    r"(?:take[\s-]?out|take[\s-]?away|delivery|restaurant)[\s-]+(?:style|quality|worthy)"
+    r"|\bbetter[\s-]+than[\s-]+(?:a[\s-]+)?restaurant|\brestaurant[\s-]+(?:fried|pad|chicken|steak|curry|noodles?|rice|burger|pizza)\b"
+    r"|\bfakeaway|\bhome[\s-]?made\b|\bcopycat\b"
 )
 
+# A dish named after a restaurant ("Restaurant-quality steak", "Takeaway-
+# style curry", "Better-than-restaurant pad thai") is cooked at home, and
+# "Dinner out on the patio" or "Steak at it's best" is not somebody's table
+# (review, 2026-11-01).
 # "Eating out", "eat out", "out for dinner", "dinner out", "night out",
 # "going out", "out to eat", "restaurant", "takeaway", and somebody else's
 # table: "Dinner at Grandma's", "at the Smiths'", "at Sam's place". The
 # possessive is what makes "at ..." a place -- "Grandma's lasagna" has no
 # "at" and stays a dish.
 _NIGHT_OUT_RE = re.compile(
-    r"\beat(?:ing)? out\b|\bout for (?:dinner|supper|lunch|a bite)\b|\b(?:dinner|supper) out\b"
+    r"\beat(?:ing)? out\b|\bout for (?:dinner|supper|lunch|a bite)\b|\b(?:dinner|supper) out\b(?! on\b| in\b| back\b| by\b)"
     r"|\bnight out\b|\bgoing out\b|\bout to eat\b|\brestaurants?\b|\btake[\s-]?away\b"
-    r"|\bat (?:the )?[a-z][\w-]*(?: (?:and|&) [a-z][\w-]*)?(?:['’]s|s['’])(?=\W|$)"
+    r"|\bat (?!(?:it|that|what|who|there|here)['’]s)(?:the )?[a-z][\w-]*(?: (?:and|&) [a-z][\w-]*)?(?:['’]s|s['’])(?=\W|$)"
 )
 
 # Bringing a dish to someone else's table is still a cook here -- "Potluck
