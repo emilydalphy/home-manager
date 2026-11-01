@@ -139,7 +139,9 @@ def get_active_notifications() -> list[dict]:
             "key": key, "type": kind,
             "title": item["title"],
             "body": body,
-            "tab": "today", "action_label": action_label,
+            # Plan, where the open slot's own card (and its Pick) lives —
+            # the Today tab that used to carry this band is gone (2026-11-01).
+            "tab": "week", "action_label": action_label,
         })
         break
 

@@ -151,7 +151,8 @@ def test_a_dinner_waiting_on_the_household_rings_the_bell(shape):
     assert _band_types() == [shape], _band_types()
     bell = _dinner_bell()
     assert [n["type"] for n in bell] == [shape], bell
-    assert bell[0]["tab"] == "today"
+    # Plan, where the open slot's card lives — Today retired 2026-11-01.
+    assert bell[0]["tab"] == "week"
     assert bell[0]["title"] and bell[0]["body"]
 
 

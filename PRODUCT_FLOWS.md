@@ -25,6 +25,10 @@ place in the daily routine.
 ## The hub
 
 ### 0. The morning check-in (and "let me check on things")
+- **2026-11-01 — the Today tab is retired (Emily): the app opens on Plan, and Today's thaw
+  is the card at the top of Cook.** Everything below describes the tab as it was walked;
+  the check-in itself has no home of its own until the dashboard she mentioned ("later
+  we'll want to make a dashboard"). Not re-walked since.
 - **Who and when:** either adult, 7am, coffee in hand, before the day starts — and again
   whenever something comes up during the day and they want to know where things stand.
 - **Job / load phase:** one glance and they know today: what's for dinner, what needs

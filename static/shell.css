@@ -6328,6 +6328,140 @@ button.cook-ready-row { cursor: pointer; }
 .cook-ready-chev svg { width: 16px; height: 16px; }
 .cook-ready-row .cook-box { flex: 0 0 auto; }
 
+/* ---------- Cook's thaw card (cookThawCardHtml, Emily 2026-11-01, A4) ----------
+   The first thing on Cook's root whenever a fridge move is due: the job
+   the retired Today tab existed for. A surface card ringed in spruce, a
+   spruce strip ("1 THING TO DO" · "BY 10 PM") in apricot-light, the move
+   beside a 64px spruce tile, and a full-width box to tick. Not a hero
+   (rule 4 — Tonight stays the root's one) and not apricot (rule 5 — the
+   dock's Start cooking stays the one): spruce, surface and a hairline.
+   Dark: --surface under the lighter dark --spruce; the strip's
+   --apricot-light on --spruce is the band's own pairing (6.41:1, the
+   band's comment above), and --ink-strong swings to ink. */
+.cook-thaw {
+  background: var(--surface);
+  border: 2px solid var(--spruce);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+.cook-thaw-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 16px;
+  background: var(--spruce);
+  color: var(--apricot-light);
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  line-height: 1.3;
+}
+.cook-thaw-item + .cook-thaw-item { border-top: 1.5px solid var(--hairline); }
+.cook-thaw-body {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+}
+/* 18px: the mockup's own tile radius (A4) — between --radius-card and
+   --radius-tile, and no token names it. */
+.cook-thaw-tile {
+  flex: 0 0 64px;
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  background: var(--spruce);
+  color: var(--apricot-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cook-thaw-tile svg { width: 38px; height: 38px; display: block; }
+.cook-thaw-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.cook-thaw-title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+  color: var(--ink);
+}
+.cook-thaw-for {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--ink-secondary);
+}
+.cook-thaw-foot { padding: 0 16px 16px; }
+.cook-thaw-done {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 0 14px;
+  box-sizing: border-box;
+  border: 1.5px solid var(--hairline-deep);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--ink-strong);
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+/* The real checkbox covers the whole label (so the 52px row is the
+   target, rule 6) and is drawn by the box beside it. */
+.cook-thaw-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.cook-thaw-box {
+  flex: 0 0 26px;
+  width: 26px;
+  height: 26px;
+  box-sizing: border-box;
+  border: 2px solid var(--hairline-deep);
+  border-radius: 8px;
+  background: var(--surface);
+  color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cook-thaw-box svg { width: 16px; height: 16px; display: block; }
+.cook-thaw-input:checked + .cook-thaw-box {
+  background: var(--celadon);
+  border-color: var(--celadon);
+  color: var(--on-accent-ink); /* RULE ONE: dark ink on a light accent fill */
+}
+.cook-thaw-input:focus-visible + .cook-thaw-box { outline: 2px solid var(--ink-strong); outline-offset: 2px; }
+/* Leaving: motion 4's collapse (groSortAllLeave), on the row or — for the
+   last one — the whole card. 0ms under prefers-reduced-motion. */
+.cook-thaw.is-leaving, .cook-thaw-item.is-leaving {
+  overflow: hidden;
+  pointer-events: none;
+  box-sizing: border-box;
+  transition: height var(--motion-fast) var(--motion-ease-in),
+              opacity var(--motion-fast) var(--motion-ease-in);
+}
+.cook-thaw.is-leaving.is-gone, .cook-thaw-item.is-leaving.is-gone {
+  height: 0 !important;
+  opacity: 0;
+  border-width: 0;
+}
+
 /* "More ···" — the foot's one quiet link to the three rare entry points
    (the Cook More sheet). Its own 44px row (rule 6). */
 .cook-more-foot { display: flex; padding: 2px 0 0; }

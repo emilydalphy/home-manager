@@ -211,9 +211,17 @@
   }
 
   var TABS = [
-    // "Now" from nav v2 part 1 (2026-09-09) until 2026-09-17, when Emily
-    // renamed it back to Today (Loop Board "Today: rename Now → Today").
-    { key: 'today', path: '/', label: 'Today', icon: ICONS.sunrise, real: true },
+    // The Today tab is gone (Emily, 2026-11-01: "The only benefit of the
+    // today screen at the moment, is having it tell the user to thaw
+    // things. Besides that everything is a repeat of information that can
+    // be found in the other tabs"). Its one unique job, the thaw, is the
+    // card at the top of Cook's root (cookThawCardHtml); the app opens on
+    // Plan, and '/' — the old Today path, still the home-screen app's and
+    // the morning text's address — is Plan's too (currentTabKey,
+    // TODAY_TAB_ALIAS). buildTodayPanel and the render code under it are
+    // left in this file, unreachable from the tab bar, because dozens of
+    // tests exercise those pure functions and a later dashboard may reuse
+    // them; nothing builds the panel any more.
     { key: 'week', path: '/week', label: 'Plan', icon: ICONS.week, week: true },
     // Stage 2 slice 2: Grocery is a real shell screen now, not an embedded
     // page. static/grocery.html still exists and still works standalone, but
@@ -272,13 +280,22 @@
     stores: { title: 'What we know', native: true, section: 'stores' }
   };
 
+  // The tab the app opens on, and where '/' (the old Today path) and any
+  // unknown path land: Plan (Emily, 2026-11-01).
+  var DEFAULT_TAB = 'week';
+  // A caller still naming the retired Today tab — a chores action card
+  // (app/main.py tags chore writes `today`, the refresh contract for
+  // Plan | Chores), a cached notification, an old history entry — lands
+  // on Plan rather than nowhere.
+  var TODAY_TAB_ALIAS = 'week';
+
   function currentTabKey() {
     var path = window.location.pathname.replace(/\/+$/, '') || '/';
     for (var i = 0; i < TABS.length; i++) {
       var tp = TABS[i].path === '/' ? '/' : TABS[i].path.replace(/\/+$/, '');
       if (path === tp) return TABS[i].key;
     }
-    return 'today';
+    return DEFAULT_TAB;
   }
 
   function escapeHtml(s) {
@@ -880,7 +897,6 @@
         '<p>' + tab.placeholder.body + '</p>';
       panel.appendChild(box);
     }
-    // tab.real (Today) is built lazily by buildTodayPanel() below.
 
     scrollEl.appendChild(panel);
     panels[tab.key] = panel;
@@ -904,6 +920,9 @@
   });
 
   function activateTab(key, pushHistory, opts) {
+    // The retired Today tab's callers land on Plan (TODAY_TAB_ALIAS; the
+    // literal here so harnesses that slice this function alone still run).
+    if (key === 'today' || key === 'now') key = 'week';
     var tab = TABS.filter(function (t) { return t.key === key; })[0];
     if (!tab) return;
 
@@ -962,11 +981,7 @@
     coachOnTabShown(key);
 
     var panel = panels[key];
-    // Lazy-build Today's real content the first time it's shown.
-    if (tab.real && !panel.dataset.built) {
-      panel.dataset.built = '1';
-      buildTodayPanel(panel);
-    }
+    // (Today's lazy build lived here until the tab was retired, 2026-11-01.)
     // Lazy-build the Week menu the first time it's shown (Step 4).
     if (tab.week && !panel.dataset.built) {
       panel.dataset.built = '1';
@@ -11400,6 +11415,8 @@
     // other's clicks.
     panel.addEventListener('click', onKitchenClick);
     panel.addEventListener('click', onCookClick);
+    // The thaw card's "Done, they're in the fridge" box (onCookThawChange).
+    panel.addEventListener('change', onCookThawChange);
     loadKitchen();
   }
 
@@ -12607,15 +12624,20 @@
   // kitchenLoosePrepTasks) — the next loose task. One of each kind at
   // most, the two soonest shown. Tonight's own thaw is not here: it is
   // the card's line.
-  function cookGetReadyMoves(data, meals, todayIso, tonightIdx) {
+  // `onCard` (optional): the prep_tasks ids the thaw card at the top of
+  // the root already carries (cookThawCardTaskIds) — a thaw is shown once,
+  // there, never again as a quiet row under Tonight (2026-11-01).
+  function cookGetReadyMoves(data, meals, todayIso, tonightIdx, onCard) {
     var tonight = meals[tonightIdx] || null;
     var tonightIds = tonight ? (tonight.entry_ids || [tonight.entry_id]) : [];
     var tonightName = tonight ? (tonight.meal || '').trim().toLowerCase() : '';
     var pending = function (t) { return t.status !== 'done' && t.status !== 'skipped'; };
     var moves = [];
+    onCard = onCard || {};
 
     var thaws = ((data && data.prep_tasks) || []).filter(function (t) {
       if (t.task_type !== 'defrost' || !pending(t)) return false;
+      if (onCard[t.id]) return false;
       if (t.meal_plan_entry_id != null && tonightIds.indexOf(t.meal_plan_entry_id) !== -1) return false;
       if (t.meal_plan_entry_id == null && tonightName && (t.related_meal || '').trim().toLowerCase() === tonightName) return false;
       return true;
@@ -12733,6 +12755,192 @@
     }).join('') + '</div>';
   }
 
+  // ---------- Cook's thaw card (Emily, 2026-11-01, mockup A4) ----------
+  // The one job the Today tab did that nothing else did: telling the
+  // household to move something from the freezer to the fridge. Emily:
+  // the old tile "doesn't stand out enough as a step to be done", so it is
+  // a card of its own at the TOP of Cook's root, above the shelf, whenever
+  // a fridge move is due on the kitchen's day: a spruce strip ("1 THING TO
+  // DO" · "BY 10 PM"), the move in the display face with what it's for,
+  // and a full-width "Done, they're in the fridge" box. Two or more due:
+  // one card, one body and box each.
+  //
+  // The moves engine is the source (kitchenState.moves, the same
+  // /api/today/moves read Cook already makes for its start-by times), so
+  // "due" means exactly what it meant on Today: the day's fridge moves
+  // plus any missed one carried forward (moves._missed_fridge_moves). A
+  // move it is now too late to thaw in the fridge is left off — "Move the
+  // beef to the fridge" is no longer the job (the texts drop it too, see
+  // too_late_note); it stays a quiet get-ready row and Tonight's line.
+  // Ticking posts the same /api/today/moves/<id>/done Today's tick did,
+  // which writes check_off_prep_step(id, 'done').
+  var COOK_THAW_ICON =
+    '<svg viewBox="0 0 32 32" width="38" height="38" fill="none" stroke="currentColor" stroke-width="2.2" ' +
+      'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' +
+      '<path d="M11 3v16M4 7l14 8M18 7 4 15M8 4.5l3 2 3-2M8 17.5l3-2 3 2"/>' +
+      '<path d="M18 22h10M24 18l4 4-4 4"/>' +
+    '</svg>';
+
+  function cookThawsDue(moves) {
+    return (moves || []).filter(function (m) {
+      return m && m.kind === 'fridge' && !m.done && m.tickable !== false && !m.too_late_note;
+    });
+  }
+
+  // { taskId: true } for every thaw the card carries (cookGetReadyMoves).
+  function cookThawCardTaskIds(due) {
+    var ids = {};
+    (due || []).forEach(function (m) { if (m.task_id != null) ids[m.task_id] = true; });
+    return ids;
+  }
+
+  // "For Tuesday’s dinner" — the meal the move feeds, by entry id, else
+  // by the dish's name; "For tonight’s dinner" when it is today's. Falls
+  // back to the move's own reason ("for Thursday's skewers"), capitalised.
+  function cookThawForLine(move, meals, todayIso) {
+    var meal = null;
+    (meals || []).some(function (m) {
+      if (m.is_leftovers) return false;
+      if (move.entry_id != null && (m.entry_ids || [m.entry_id]).indexOf(move.entry_id) !== -1) { meal = m; return true; }
+      return false;
+    });
+    if (!meal && move.related_meal) {
+      var name = String(move.related_meal).trim().toLowerCase();
+      (meals || []).some(function (m) {
+        if (!m.is_leftovers && (m.meal || '').trim().toLowerCase() === name && (!todayIso || m.date >= todayIso)) { meal = m; return true; }
+        return false;
+      });
+    }
+    if (meal && meal.date) {
+      var slot = meal.slot === 'breakfast' ? 'breakfast' : meal.slot === 'lunch' ? 'lunch' :
+        (typeof isSnackSlot === 'function' && isSnackSlot(meal.slot)) ? 'snack' : 'dinner';
+      var day = meal.date === todayIso ? (slot === 'dinner' ? 'tonight' : 'today') : dayName(meal.date, { weekday: 'long' });
+      return 'For ' + day + '’s ' + slot;
+    }
+    var r = String(move.reason || '').replace(/\.$/, '').trim();
+    return r ? r.charAt(0).toUpperCase() + r.slice(1) : '';
+  }
+
+  // "Done, they’re in the fridge" — "it’s" for one thing ("the beef").
+  function cookThawDoneLabel(title) {
+    var m = /^Move the (.+?) to the fridge$/i.exec(String(title || '').trim());
+    var last = m ? m[1].trim().split(/\s+/).pop() : '';
+    var plural = !m || (/s$/i.test(last) && !/ss$/i.test(last));
+    return 'Done, ' + (plural ? 'they’re' : 'it’s') + ' in the fridge';
+  }
+
+  // "By 10 pm" off the moves' own window (moves._prep_moves: a fridge
+  // move's day ends at 22:00), the earliest when there are several; the
+  // CSS sets it in caps. "Tonight" when there is no time, or it has gone.
+  function cookThawDeadlineLabel(due, nowHour) {
+    var best = null;
+    (due || []).forEach(function (m) {
+      var hit = /T(\d{2}):(\d{2})/.exec(String(m.window_end || ''));
+      if (!hit) return;
+      var mins = parseInt(hit[1], 10) * 60 + parseInt(hit[2], 10);
+      if (best === null || mins < best) best = mins;
+    });
+    if (best === null || !best) return 'Tonight';
+    if (typeof nowHour === 'number' && nowHour * 60 >= best) return 'Tonight';
+    var h = Math.floor(best / 60), mm = best % 60;
+    return 'By ' + (h % 12 || 12) + (mm ? ':' + (mm < 10 ? '0' : '') + mm : '') + (h >= 12 ? ' pm' : ' am');
+  }
+
+  function cookThawCardHtml(due, meals, todayIso, nowHour) {
+    if (!due || !due.length) return '';
+    var n = due.length;
+    return '<section class="cook-thaw" id="kit-thaw" aria-labelledby="kit-thaw-count">' +
+      '<div class="cook-thaw-head">' +
+        '<span id="kit-thaw-count">' + n + (n === 1 ? ' thing' : ' things') + ' to do</span>' +
+        '<span class="cook-thaw-by">' + escapeHtml(cookThawDeadlineLabel(due, nowHour)) + '</span>' +
+      '</div>' +
+      due.map(function (m) {
+        var forLine = cookThawForLine(m, meals, todayIso);
+        return '<div class="cook-thaw-item" data-thaw-move="' + escapeHtml(m.id) + '">' +
+          '<div class="cook-thaw-body">' +
+            '<span class="cook-thaw-tile">' + COOK_THAW_ICON + '</span>' +
+            '<span class="cook-thaw-text">' +
+              '<span class="cook-thaw-title">' + escapeHtml(m.title) + '</span>' +
+              (forLine ? '<span class="cook-thaw-for">' + escapeHtml(forLine) + '</span>' : '') +
+            '</span>' +
+          '</div>' +
+          '<div class="cook-thaw-foot">' +
+            '<label class="cook-thaw-done">' +
+              '<input type="checkbox" class="cook-thaw-input" data-move-id="' + escapeHtml(m.id) + '" ' +
+                'data-task-id="' + escapeHtml(m.task_id) + '" data-name="' + escapeHtml(m.title) + '">' +
+              '<span class="cook-thaw-box" aria-hidden="true">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4L19 7"/></svg>' +
+              '</span>' +
+              '<span class="cook-thaw-label">' + escapeHtml(cookThawDoneLabel(m.title)) + '</span>' +
+            '</label>' +
+          '</div>' +
+        '</div>';
+      }).join('') +
+    '</section>';
+  }
+
+  // The tick. Optimistic (§6, "the common case never waits"): the box
+  // fills, the row — or the whole card, for the last one — collapses out
+  // the way a sorted row leaves Sort them all (motion 4, the same tokens
+  // and the same reduced-motion fallback), and the root redraws from the
+  // server's own re-derived moves. A failed save puts it back and says so.
+  async function onCookThawChange(e) {
+    var input = e.target;
+    if (!input || !input.classList || !input.classList.contains('cook-thaw-input')) return;
+    if (!input.checked) return;
+    input.disabled = true;
+    var moveId = input.getAttribute('data-move-id');
+    var taskId = parseInt(input.getAttribute('data-task-id'), 10);
+    var card = input.closest('.cook-thaw');
+    var item = input.closest('.cook-thaw-item');
+    var last = card && card.querySelectorAll('.cook-thaw-item').length <= 1;
+    var task = ((cookState.data && cookState.data.prep_tasks) || []).filter(function (t) { return t.id === taskId; })[0];
+    var wasStatus = task ? task.status : null;
+    if (task) task.status = 'done';
+    var left = cookThawLeave(last ? card : item);
+    try {
+      // quiet: this card says its own failure, below.
+      var fresh = await Api.json('/api/today/moves/' + encodeURIComponent(moveId) + '/done', {
+        body: { done: true }, quiet: true
+      });
+      kitchenState.moves = (fresh && fresh.moves) || kitchenState.moves;
+      if (fresh && fresh.date) kitchenState.day = fresh.date;
+      await left;
+      renderCook();
+      showToast(savedLine(savedName(input.getAttribute('data-name')), 'ticked off'));
+      // The thaw is read by Tonight's line, the meal screen and Plan; the
+      // fridge move can also move what Kitchen shows.
+      refreshPlanSurfacesAfterCook();
+      refreshHomePanel();
+    } catch (err) {
+      if (task) task.status = wasStatus;
+      await left;
+      renderCook();
+      showToast('That didn’t save — try again.');
+    }
+  }
+
+  // Collapse one node out (height pinned, then .is-gone takes it to 0 over
+  // --motion-fast on the leaving curve). Resolves when it has gone; at
+  // once under prefers-reduced-motion.
+  function cookThawLeave(el) {
+    return new Promise(function (resolve) {
+      if (!el) return resolve();
+      var reduce = typeof window.matchMedia === 'function' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      el.classList.add('is-leaving');
+      el.setAttribute('aria-hidden', 'true');
+      if (reduce || !el.offsetHeight) return resolve();
+      el.style.height = el.offsetHeight + 'px';
+      void el.offsetHeight;
+      el.classList.add('is-gone');
+      var done = false;
+      var finish = function () { if (done) return; done = true; resolve(); };
+      el.addEventListener('transitionend', finish);
+      setTimeout(finish, 260);
+    });
+  }
+
   // The dock. "Start cooking" ("Keep cooking" once it is under way — see
   // kitchenTodayRows' `underway`) opens tonight's cook on its recipe
   // (cookEnterFocus — every way in lands there); a reheat night's one
@@ -12840,11 +13048,16 @@
     }
 
     var tonight = cookTonightRow(rows);
+    // The thaw card leads (A4, 2026-11-01): a fridge move due on the
+    // kitchen's day is the one step to do before anything else here.
+    var thawsDue = cookThawsDue(kitchenState.moves);
+    var thawHour = todayIso === todayLocalStr() ? householdHourNow() : 24;
     body.innerHTML =
+      cookThawCardHtml(thawsDue, meals, todayIso, thawHour) +
       cookShelfHtml(meals, data, todayIso) +
       cookAttentionHtml() +
       kitchenCookingTodayHtml(rows, meals, todayIso, data) +
-      cookGetReadyRowsHtml(cookGetReadyMoves(data, meals, todayIso, tonight ? tonight.idx : null)) +
+      cookGetReadyRowsHtml(cookGetReadyMoves(data, meals, todayIso, tonight ? tonight.idx : null, cookThawCardTaskIds(thawsDue))) +
       cookMoreLinkHtml();
     setDock(cookRootDockHtml(tonight));
     cookShelfScrollToTonight(body);
@@ -30664,7 +30877,7 @@
     // server refuses any AI call without a yes either way.
     if (shellWho.loaded && shellWho.ai_consent === '') await openAiConsentScreen();
     // The other adult's first open: the welcome goes over the shell while
-    // the tabs build under it, so "Show me today" lands on a Today that's
+    // the tabs build under it, so "Show me the week" lands on a Plan that's
     // already there. Not awaited — nothing below waits on it.
     if (shellWho.first_open) openFirstOpen();
     // "You're down as a Teen here now…" — once, on that member's own phone
@@ -30677,6 +30890,13 @@
     // for that plan — or on the list when there is nothing to ask. Plan's
     // panel reads the same params (buildWeekPanel) and goes from there.
     var afterApprove = window.location.search.indexOf('after=approve') !== -1;
+    // '/' was Today's address (the home-screen app and the morning text
+    // still open it); it is Plan's now (2026-11-01). The address bar is
+    // moved to /week in place, query kept, so Plan's own history entries
+    // (pushMealsStepHistory, all at /week) sit on the path they say.
+    if ((window.location.pathname.replace(/\/+$/, '') || '/') === '/') {
+      window.history.replaceState(window.history.state, '', '/week' + window.location.search + window.location.hash);
+    }
     activateTab(afterApprove ? 'week' : currentTabKey(), false);
     // ?prefs=open: the old /meal-setup page's address (and /onboarding on a
     // household already set up) lands here with the Preferences sheet up —
@@ -31366,7 +31586,7 @@
       '</div>' +
       '<div class="fo-foot">' +
         firstOpenHomeHtml() +
-        '<button type="button" class="fo-next" id="fo-next">Show me today' + ICONS.arrow + '</button>' +
+        '<button type="button" class="fo-next" id="fo-next">Show me the week' + ICONS.arrow + '</button>' +
       '</div>' +
     '</div>';
   }
@@ -31450,7 +31670,7 @@
     firstOpenEl.remove();
     firstOpenEl = null;
     document.body.classList.remove('first-open-active');
-    activateTab('today', true);
+    activateTab(DEFAULT_TAB, true);
   }
 
   // ---------- Preferences: what Pomona knows about your household ----------
