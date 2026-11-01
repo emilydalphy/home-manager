@@ -4131,7 +4131,9 @@ def mark_grocery_item(item_id: int, status: str = "purchased") -> dict:
         fields = "status = ?"
         params: list = [status]
         if status == "purchased":
-            if row["inventory_added_at"] is None and _is_household_supply(conn, item_id, row["item"]):
+            from . import pantry as _pantry  # lazy: the grocery <-> pantry cycle
+            if row["inventory_added_at"] is None and (
+                    _is_household_supply(conn, item_id, row["item"]) or _pantry.is_tap_water(row["item"])):
                 # Dish soap is bought, not put in the kitchen. The stamp is
                 # still written — it is also WHEN the line was ticked, which
                 # Shop's checklist and the staples' rhythm read — beside a

@@ -147,7 +147,12 @@ def is_staple(name: str, staples: list[list[str]]) -> bool:
     words, or every word of the staple with the same last word (the thing
     itself) — "Whole milk" is the "Milk" staple, "Coffee beans" the
     "Coffee bean" one. Verify finding 7 (2026-10-27): exact names let
-    "Whole milk" through beside a "Milk" staple."""
+    "Whole milk" through beside a "Milk" staple. Tap water counts as one
+    for every household (pantry.is_tap_water): it is never going off and
+    never asked about."""
+    from . import pantry as _pantry
+    if _pantry.is_tap_water(name):
+        return True
     words = _staple_words(name)
     if not words:
         return False
