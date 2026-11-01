@@ -674,6 +674,36 @@ def sign_in_notice(household_id: int, member_id: int | None) -> dict | None:
         conn.close()
 
 
+# How long "Not your email? Change it" skips the handed address's code
+# (security review, 2026-11-01). Without a limit, any device signed in to
+# the household could pick this adult and move their sign-in for good,
+# with only a notice to show for it. After this the usual second code is
+# asked for; the notice itself keeps showing until it's answered.
+HANDOVER_CHANGE_DAYS = 7
+
+
+def handed_address_waiting(household_id: int, member_id: int | None) -> str | None:
+    """
+    The address somebody leaving handed this adult (Remove me), while it is
+    still the one they sign in with, they haven't said it's theirs, and the
+    hand-over is under HANDOVER_CHANGE_DAYS old — else None. Only then may
+    it be replaced without a code sent to it (main._changing_from).
+    """
+    notice = sign_in_notice(household_id, member_id)
+    if notice is None:
+        return None
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            "SELECT 1 FROM sign_in_notices WHERE household_id = ? AND member_id = ? AND email = ? "
+            "AND created_at > datetime('now', ?) ORDER BY id DESC LIMIT 1",
+            (int(household_id), int(member_id), notice["email"], f"-{int(HANDOVER_CHANGE_DAYS)} days"),
+        ).fetchone()
+    finally:
+        conn.close()
+    return notice["email"] if row else None
+
+
 def clear_sign_in_notice(household_id: int, member_id: int) -> None:
     conn = get_conn()
     try:

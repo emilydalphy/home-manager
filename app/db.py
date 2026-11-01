@@ -1017,6 +1017,12 @@ _MIGRATIONS = [
     # again. 0 on every existing row: their names are left as they are
     # unless still the "Your household" placeholder (_name_households_after_main_person).
     ("households", "name_chosen", "INTEGER NOT NULL DEFAULT 0"),
+    # Unix seconds: a session cookie that names NO adult and was issued at
+    # or before this is signed out (security review, 2026-11-01). Set when
+    # Remove me hands sign-in over, so a leaver's second device that never
+    # picked an adult can't stay in as the one adult left. NULL = never.
+    # See households.sign_out_unpicked_sessions.
+    ("households", "unpicked_sessions_before", "INTEGER"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people

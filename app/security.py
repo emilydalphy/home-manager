@@ -687,9 +687,12 @@ async def auth_middleware(request, call_next):
     # And the household's sign-in epoch (2026-11-01): a cookie minted
     # before the passphrase last changed is signed out here, in the same
     # query — to the ordinary sign-in screen, like any other stale cookie.
+    # So is a cookie naming nobody that was issued before a Remove me
+    # hand-over (households.sign_out_unpicked_sessions). Both are refused
+    # HERE, before the renewal below or /api/whoami/pick can re-mint them.
     stale_cookie = False
     if session and not await run_in_threadpool(
-        households.session_still_holds, session[1], session[3], session[4]
+        households.session_still_holds, session[1], session[3], session[4], session[2]
     ):
         logger.warning(
             "Session cookie named household %s member %s epoch %s, which no longer holds — signing out.",

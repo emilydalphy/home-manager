@@ -10593,11 +10593,20 @@ def _changing_from(household: int, member_id: int, new_email: str) -> str | None
         # it went to whoever typed it, maybe not them, so asking for that
         # code would leave "Not your email? Change it" with no way through
         # (Emily, 2026-11-01). It's treated as a first address instead.
-        notice = account_email.sign_in_notice(household, member_id)
-        if notice and notice["email"] == current:
+        # Only for HANDOVER_CHANGE_DAYS after the hand-over, and the handed
+        # address is told when it happens (account_email_verify).
+        if account_email.handed_address_waiting(household, member_id) == current:
             return None
         return current
     return None
+
+
+HANDED_ADDRESS_REPLACED_NOTICE = (
+    "Your household's sign-in email was changed in Pomona, so this address "
+    "doesn't sign in any more.\n"
+    "If that was you, there's nothing else to do. If it wasn't, open Pomona "
+    "on a phone that's still signed in and check Preferences → Sign-in email.\n"
+)
 
 
 @app.post("/api/account/sign-in-notice/dismiss")
@@ -10660,6 +10669,13 @@ def account_email_verify(req: AccountEmailVerifyRequest, request: Request):
     if not account_email.valid(req.email):
         raise HTTPException(status_code=400, detail=account_email.BAD_CODE_LINE)
     current = _changing_from(household, you["id"], req.email)
+    # Set only when this replaces a handed-over address without its code
+    # (_changing_from): that address is still told, below.
+    handed = None
+    if current is None:
+        before = account_email.email_for_member(household, you["id"])
+        if before and before != account_email.normalize(req.email):
+            handed = before
     # Both codes are checked (and both cost a try) whatever the first one
     # says, so a wrong answer for one can't be told from a wrong answer for
     # the other.
@@ -10691,6 +10707,12 @@ def account_email_verify(req: AccountEmailVerifyRequest, request: Request):
             "whoever set up your household.\n",
             mode=_email_delivery_mode(request),
         )
+    elif handed:
+        # A hand-over address replaced without its code (security review,
+        # 2026-11-01): any device signed in to the household can pick this
+        # adult, so the inbox it came from hears about it too — but not
+        # where sign-in went, since that inbox may be the leaver's.
+        account_email.send_notice(handed, HANDED_ADDRESS_REPLACED_NOTICE, mode=_email_delivery_mode(request))
     return {"email": email}
 
 
@@ -10898,7 +10920,9 @@ def remove_me_from_household(request: Request, req: RemoveMeRequest | None = Non
     problem = household_deletion.removal_check(household, you["id"] if you else None)
     if problem:
         raise HTTPException(status_code=400, detail=problem)
+    handed_over = False
     if household_deletion.sign_in_handover(household, you["id"]) is not None:
+        handed_over = True
         if req.handover_member_id is None:
             raise HTTPException(status_code=400, detail=HANDOVER_NEEDED_LINE)
         target = _handover_target(household, you, req.handover_member_id)
@@ -10927,6 +10951,10 @@ def remove_me_from_household(request: Request, req: RemoveMeRequest | None = Non
             status_code=500,
             detail="That didn't go through, and nothing was changed. Try again in a moment.",
         )
+    if handed_over:
+        # A second device of the leaver's that never picked an adult would
+        # read as the adult who stays (security review, 2026-11-01).
+        households.sign_out_unpicked_sessions(household)
     return _signed_out({"removed": True, "goodbye": "/goodbye?left=1"}, request)
 
 

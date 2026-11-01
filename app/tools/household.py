@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import functools
 import json
+import unicodedata
 from ..db import _ADULT_COLORS, get_conn, write
 from ._shared import (
     EATS_HERE_SQL, AmbiguousMemberName, current_member, find_member_row, household_id, household_initials,
@@ -661,11 +662,42 @@ HOUSEHOLD_NAME_BLANK = "Type a name for your household."
 HOUSEHOLD_NAME_TOO_LONG = f"That's a long name. Keep it under {HOUSEHOLD_NAME_MAX} characters."
 
 
+# Invisible characters a name has no use for (security review, 2026-11-01):
+# zero-width spaces and the bidi controls that can make a name read
+# backwards. The zero-width JOINER and non-joiner stay — emoji like 👨‍👩‍👧
+# are built with them.
+_INVISIBLE_IN_NAMES = dict.fromkeys(
+    [0x200B, 0x200E, 0x200F, 0x2060, 0xFEFF, 0x061C, *range(0x202A, 0x202F), *range(0x2066, 0x206A)]
+)
+
+
+def _clean_name(text: str) -> str:
+    """Spaces collapsed and the characters above taken out — and "" when
+    what's left has nothing anyone could see (only format characters)."""
+    clean = " ".join((text or "").translate(_INVISIBLE_IN_NAMES).split())
+    if not any(unicodedata.category(ch) != "Cf" for ch in clean.replace(" ", "")):
+        return ""
+    return clean
+
+
+_HOUSE_SUFFIX = "’s house"
+
+
 def house_name_for(person: str) -> str:
     """ "Emily's house". Always 's, names ending in s too ("James's house"),
-    the way it's said out loud. "" for a blank name."""
-    clean = " ".join((person or "").split())
-    return f"{clean}’s house" if clean else ""
+    the way it's said out loud. "" for a blank name. A name too long for
+    HOUSEHOLD_NAME_MAX is cut at the last whole word that fits (or hard, for
+    one very long word), so the house is still named after its person."""
+    clean = _clean_name(person)
+    if not clean:
+        return ""
+    room = HOUSEHOLD_NAME_MAX - len(_HOUSE_SUFFIX)
+    if len(clean) > room:
+        cut = clean[:room]
+        if clean[room] != " " and " " in cut:
+            cut = cut.rsplit(" ", 1)[0]
+        clean = cut.rstrip()
+    return f"{clean}{_HOUSE_SUFFIX}"
 
 
 def name_household_after_main_person(conn=None) -> str | None:
@@ -708,7 +740,7 @@ def rename_household(name) -> dict:
     screen shows as it stands."""
     if not isinstance(name, str):
         raise ValueError(HOUSEHOLD_NAME_BLANK)
-    clean = " ".join(name.split())
+    clean = _clean_name(name)
     if not clean:
         raise ValueError(HOUSEHOLD_NAME_BLANK)
     if len(clean) > HOUSEHOLD_NAME_MAX:

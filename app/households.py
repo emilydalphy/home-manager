@@ -35,6 +35,7 @@ import hmac
 import logging
 import secrets
 import sqlite3
+import time
 
 from .db import get_conn
 from .tools._shared import DEFAULT_HOUSEHOLD_ID
@@ -178,7 +179,34 @@ def _bump_session_epoch(conn, household_id: int) -> None:
     )
 
 
-def session_still_holds(household_id: int, member_id: int | None, epoch: int | None = None) -> bool:
+def sign_out_unpicked_sessions(household_id: int) -> None:
+    """
+    Sign out every device of this household that hasn't said which adult it
+    is — and only those (security review, 2026-11-01).
+
+    Called when Remove me hands the household's sign-in over. Remove me
+    signs out the device it was tapped on and any cookie naming the leaver;
+    a second device of theirs that never picked anybody survived both, and
+    with one adult left tools.current_member() reads it as that adult — so
+    the leaver could answer "Sign-in now goes to …" before the adult who
+    stays ever saw it. Devices that name a remaining adult stay signed in.
+    `session_still_holds` refuses an unpicked cookie issued at or before
+    this moment; an unpicked device signs in again like any other.
+    """
+    conn = get_conn()
+    try:
+        conn.execute(
+            "UPDATE households SET unpicked_sessions_before = ? WHERE id = ?",
+            (int(time.time()), int(household_id)),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def session_still_holds(
+    household_id: int, member_id: int | None, epoch: int | None = None, issued_at: int | None = None
+) -> bool:
     """
     Does what a signed session cookie says still stand: its household is
     there, and — when the cookie names somebody — so is that person?
@@ -204,10 +232,18 @@ def session_still_holds(household_id: int, member_id: int | None, epoch: int | N
     passphrase has changed since and this device is signed out. None (the
     device-cookie check at /login, which is about a person, not a sitting)
     skips that half.
+
+    `issued_at`, when given with no member, is when the cookie was signed:
+    it must be after the household's `unpicked_sessions_before`
+    (`sign_out_unpicked_sessions`), or this nobody-yet device was signed out
+    by a hand-over.
     """
     epoch_sql, epoch_args = "", ()
     if epoch is not None:
         epoch_sql, epoch_args = " AND COALESCE(h.session_epoch, 0) = ?", (int(epoch),)
+    if member_id is None and issued_at is not None:
+        epoch_sql += " AND (h.unpicked_sessions_before IS NULL OR ? > h.unpicked_sessions_before)"
+        epoch_args = (*epoch_args, int(issued_at))
     conn = get_conn()
     try:
         if member_id is None:
@@ -475,6 +511,7 @@ __all__ = [
     "note_env_passphrase",
     "session_epoch",
     "session_still_holds",
+    "sign_out_unpicked_sessions",
     "list_households",
     "passphrase_in_use",
     "resolve_passphrase",

@@ -124,6 +124,29 @@ def test_renaming_in_preferences(client):
     assert _name(other) == "Ravi’s house"
 
 
+def test_a_name_nobody_can_see_is_refused_and_emoji_are_kept(client):
+    hid = _placeholder_household("Priya")
+    phone = TestClient(app)
+    phone.cookies.set(security.COOKIE_NAME, security.issue_session(hid, None))
+    for invisible in ("\u200b", "\u200d", " \ufeff ", "\u202e\u2066"):
+        res = phone.post("/api/household/name", json={"name": invisible})
+        assert res.status_code == 400 and res.json()["detail"] == "Type a name for your household.", invisible
+    # Bidi controls are taken out of a real name, not kept in it.
+    res = phone.post("/api/household/name", json={"name": "\u202eThe Patels"})
+    assert res.json() == {"household_name": "The Patels"}
+    family = "\U0001F468\u200d\U0001F469\u200d\U0001F467 Home"
+    assert phone.post("/api/household/name", json={"name": family}).json() == {"household_name": family}
+
+
+def test_the_automatic_name_fits_the_same_60_characters():
+    long = "Alexandra Catherine Montgomery-Fitzwilliam Smythe Jones"
+    name = tools.house_name_for(long)
+    assert len(name) <= tools.HOUSEHOLD_NAME_MAX
+    assert name == "Alexandra Catherine Montgomery-Fitzwilliam Smythe’s house"
+    assert len(tools.house_name_for("X" * 80)) == tools.HOUSEHOLD_NAME_MAX
+    assert tools.house_name_for("\u200b") == ""
+
+
 def test_the_screens_say_it_well():
     js = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
     assert "'<span class=\"prefs-row-title\">Household name</span>'" in js
