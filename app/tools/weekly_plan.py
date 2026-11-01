@@ -6614,6 +6614,11 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
     # source it names also names it back.
     from . import leftovers as _leftovers
     chains = _leftovers.plan_leftover_chains(plan["weekly_plan_id"])
+    # The source dishes' recipes, read once, for each reheat night's
+    # serve_step (Loop Board "Cook days", option B, 2026-10-31).
+    serve_recipes = _leftovers.recipes_for_serving(
+        (lf.get("source") or {}).get("meal") for lf in chains["leftovers"].values()
+    ) if chains.get("leftovers") else {}
 
     def _effective_food_groups(row) -> list[str]:
         """
@@ -6816,6 +6821,18 @@ def get_week_menu(weekly_plan_id: int | None = None) -> dict:
                     # can open the recipe it comes from ("See Thursday's
                     # recipe", 2026-09-27) — a lunch can reheat a dinner.
                     "slot": src.get("slot"),
+                    # What to do with it on the day it's eaten — "Heat until
+                    # hot", "Eat it cold", or the recipe's own reheat line
+                    # (leftovers.serve_step) — so the day can say it right
+                    # there instead of pointing at the cook (Emily,
+                    # 2026-10-31, option B). Made ahead is the Plan row's
+                    # own rule (planRowMeta): a cook-ahead batch, or any
+                    # breakfast or snack from an earlier batch.
+                    "serve_step": _leftovers.serve_step(
+                        serve_recipes.get((src["meal"] or "").strip().lower()),
+                        row["slot"],
+                        bool(leftover.get("cook_ahead")) or src.get("slot") in ("breakfast", "snack"),
+                    ),
                 },
             }
         text = (row["freeform_meal"] or "").lower()

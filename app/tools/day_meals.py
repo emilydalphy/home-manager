@@ -386,6 +386,9 @@ def for_day(day: str | date, view: dict, attendance_by_slot: dict | None = None,
             "is_leftovers": bool(lead.get("is_leftovers")),
             # Which word the row says for it (made_ahead):
             "made_ahead": made_ahead(lead, slot),
+            # What to do with it today — reheat, or eat cold (cooker's
+            # serve_step; Emily, 2026-10-31, option B). '' for a cook.
+            "serve_step": (lead.get("serve_step") or "") if lead.get("is_leftovers") else "",
         })
     return rows
 

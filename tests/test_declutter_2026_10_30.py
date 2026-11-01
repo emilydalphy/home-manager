@@ -59,6 +59,7 @@ def _run(script: str):
 def _plan_prelude() -> str:
     names = [
         "planDayIndex", "planDayBarHtml", "planRowMeta", "planIsReheat", "planRowHtml",
+        "planReheatSource", "planDayRowMeta", "planServeWhen", "planServeLine",
         "planSlotRowHtml", "planCardHtml",
         "planDishRowsHtml", "planBreakfastHtml", "planMainsDayRows", "planMainsHtml", "planSnackRows",
         "planSnacksHtml", "planDayTagsHtml", "planNotesHtml", "planDockHtml",
