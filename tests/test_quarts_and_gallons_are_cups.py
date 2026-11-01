@@ -147,12 +147,99 @@ def test_typed_quart_and_a_plans_quart_are_one_line_and_the_drop_leaves_the_type
     assert _rows("Buttermilk") == [("1 quart", True)]
 
 
-def test_a_plans_quarts_join_a_typed_gallon_and_leave_it_whole():
+def test_a_plans_quarts_beside_a_typed_gallon_keep_their_own_line():
+    """A plan's share only joins a household's line in the line's own word,
+    so their typed gallon is never re-said in quarts (review, 2026-11-01)."""
     plan, days = _week({"Custard": [{"item": "Milk", "qty": "3 quarts", "category": "dairy"}]},
                        own={"Milk": "1 gallon"})
-    assert _rows("Milk") == [("7 quarts", True)]  # main: two lines, "1 gallon" and "3 quarts"
+    assert _rows("Milk") == [("1 gallon", True), ("3 quarts", False)]
     _drop(plan, days[0])
     assert _rows("Milk") == [("1 gallon", True)]
+
+
+@pytest.mark.parametrize("order", [(0, 1), (1, 0)])
+def test_thirds_of_a_quart_on_a_typed_quart_line_come_back_to_what_was_typed(order):
+    """Review BLOCKER (2026-11-01): a third of a quart rounded to "1 1/3
+    cups" left the household's line in cups ("13 1/3 cups", then "12
+    cups"). Shares are whole cups now, so the line stays in quarts. The
+    third comes from scaling: a one-quart recipe for three, cooked for one."""
+    plan, days = _week(
+        {
+            "Shake": [{"item": "Juice", "qty": "1 1/3 quarts", "category": "dairy"}],
+            "Pancakes": [{"item": "Juice", "qty": "1/3 quart", "category": "dairy"}],
+        },
+        own={"Juice": "3 quarts"},
+    )
+    assert _rows("Juice") == [("4 3/4 quarts", True)]  # 12 + 7 cups (6 2/3, up)
+    _drop(plan, days[order[0]])
+    assert _rows("Juice") == [("3 1/2 quarts", True) if order[0] == 0 else ("4 1/2 quarts", True)]
+    _drop(plan, days[order[1]])
+    assert _rows("Juice") == [("3 quarts", True)]
+    assert _shown("Juice") == ["3 quarts"]
+
+
+def test_a_one_quart_recipe_for_three_cooked_for_one_is_whole_cups():
+    """The third of a quart comes from scaling, not from the recipe."""
+    conn = get_conn()
+    conn.execute("DELETE FROM members WHERE household_id = ? AND name != 'Emily'", (tools.household_id(),))
+    conn.commit()
+    has_emily = conn.execute("SELECT 1 FROM members WHERE household_id = ?", (tools.household_id(),)).fetchone()
+    conn.close()
+    if not has_emily:
+        tools.add_member("Emily")
+    tools.add_recipe("Smoothie", ingredients=[{"item": "Kefir", "qty": "1 quart", "category": "dairy"}],
+                     default_servings=3)
+    tools.add_recipe("Toast", ingredients=[{"item": "Bread", "qty": "1 loaf", "category": "pantry"}],
+                     default_servings=1)
+    tools.add_grocery_item("Kefir", quantity="3 quarts", category="dairy")
+    today = household_today()
+    start = today - timedelta(days=today.weekday()) + timedelta(days=7)
+    plan = tools.create_weekly_plan(start.isoformat())["weekly_plan_id"]
+    day = (start + timedelta(days=1)).isoformat()
+    tools.plan_meal(day, "Smoothie", slot="dinner", weekly_plan_id=plan)
+    tools.approve_weekly_plan(plan, "Emily")
+    # A third of a quart is 1 1/3 cups, bought as 2 — cups, so it keeps a
+    # plan line of its own beside the household's quarts (the line's word).
+    assert _rows("Kefir") == [("3 quarts", True), ("2 cups", False)]
+    _drop(plan, day)
+    assert _rows("Kefir") == [("3 quarts", True)]
+    assert quantities._normalize_grocery_quantity("0.333333 quart") == "2 cups"
+
+
+def test_the_reviewers_gallon_of_juice_ends_as_a_gallon():
+    plan, days = _week(
+        {
+            "Shake": [{"item": "Juice", "qty": "1 1/3 quarts", "category": "dairy"}],
+            "Pancakes": [{"item": "Juice", "qty": "1/3 quart", "category": "dairy"}],
+        },
+        own={"Juice": "1 gallon"},
+    )
+    _drop(plan, days[0])
+    _drop(plan, days[1])
+    assert _rows("Juice") == [("1 gallon", True)]  # review: "16 cups"
+
+
+def test_typed_two_quarts_and_a_plans_two_quarts_come_back_as_two_quarts():
+    plan, days = _week({"Soup": [{"item": "Broth", "qty": "2 quarts", "category": "pantry"}]},
+                       own={"Broth": "2 quarts"})
+    assert [q for q, _own in _rows("Broth")] == ["1 gallon"]
+    _drop(plan, days[0])
+    assert [q for q, _own in _rows("Broth")] == ["2 quarts"]  # not "1/2 gallon"
+
+
+def test_typed_half_gallon_stays_a_half_through_a_plans_gallons_and_quarts():
+    """Review SHOULD-FIX 5: "1/2 gallon" came back "2 quarts"."""
+    plan, days = _week(
+        {
+            "Shake": [{"item": "Milk", "qty": "1 gallon", "category": "dairy"}],
+            "Custard": [{"item": "Milk", "qty": "1 quart", "category": "dairy"}],
+            "Latte": [{"item": "Milk", "qty": "2 cups", "category": "dairy"}],
+        },
+        own={"Milk": "1/2 gallon"},
+    )
+    for day in days:
+        _drop(plan, day)
+    assert _rows("Milk") == [("1/2 gallon", True)]
 
 
 def test_typed_half_gallon_and_a_plans_half_gallon_make_a_gallon_and_the_drop_leaves_the_half():
@@ -191,6 +278,27 @@ def test_a_quart_used_off_cups_comes_off_too():
     tools.update_inventory("Broth", "add", quantity="6 cups")
     tools.update_inventory("Broth", "use", quantity="1 quart")
     assert _kitchen("Broth") == ["2 cups"]
+
+
+@pytest.mark.parametrize("start,used,left", [
+    ("1 gallon", "1 tbsp", "3 3/4 quarts"),   # review: "255 tbsp"
+    ("2 quarts", "2 tbsp", "1 3/4 quarts"),   # review: "126 tbsp"
+    ("1 quart", "1 tsp", "3 3/4 cups"),       # review: "191 tsp"
+    ("1/2 gallon", "1/3 cup", "1 3/4 quarts"),  # review: "7.7 cups"
+    ("1 gallon", "1/2 cup", "3 3/4 quarts"),  # review: "15.5 cups"
+    ("1 quart", "1/3 cup", "3 2/3 cups"),
+])
+def test_a_little_off_a_quart_or_gallon_reads_like_the_list_and_never_up(start, used, left):
+    tools.update_inventory("Milk", "add", quantity=start)
+    tools.update_inventory("Milk", "use", quantity=used)
+    assert _kitchen("Milk") == [left]
+
+
+def test_plain_cups_rows_are_left_as_they_were():
+    """GUARD: no quart or gallon in play, the Kitchen's old wording."""
+    tools.update_inventory("Flour", "add", quantity="2 cups")
+    tools.update_inventory("Flour", "use", quantity="1 tbsp")
+    assert _kitchen("Flour") == ["31 tbsp"]
 
 
 # ---------- the one-time conversion of rows main wrote ----------
@@ -276,3 +384,78 @@ def test_scale_recipe_keeps_quarts_of_stock_in_quarts():
     tools.add_recipe("Soup", ingredients=[{"item": "chicken stock", "qty": "1 1/2 quarts"}], default_servings=4)
     scaled = tools.scale_recipe("Soup", 4)
     assert [i["qty"] for i in scaled["scaled_ingredients"]] == ["1.5 quarts"]
+
+
+def _status(item: str, status: str) -> None:
+    conn = get_conn()
+    conn.execute("UPDATE grocery_items SET status = ? WHERE household_id = ? AND LOWER(item) = ? "
+                 "AND source_weekly_plan_id IS NULL", (status, tools.household_id(), item.lower()))
+    conn.commit()
+    conn.close()
+
+
+def test_upgrade_restates_lines_in_the_cart_or_taken_off_in_every_household(monkeypatch, caplog):
+    """Review SHOULD-FIX 2 and 3: a household's line ticked into the cart or
+    taken off the list still holds the plan's old whole gallon (untick or
+    Undo brings it back as it was), in a second household as in the first;
+    and one row the conversion can't read is logged and skipped, never a
+    startup that fails every restart."""
+    from app import households
+
+    other = households.create_household("Second", "second-household-passphrase")
+    other_id = other["id"] if isinstance(other, dict) else int(other)
+    with tools.use_household(other_id):
+        plan, days = _week(
+            {
+                "Pudding": [{"item": "Milk", "qty": "1/2 gallon", "category": "dairy"}],
+                "Custard": [{"item": "Cream", "qty": "1/2 gallon", "category": "dairy"}],
+            },
+            own={"Milk": "1/2 gallon", "Cream": "1/2 gallon"},
+        )
+        # As main stored them, then ticked into the cart / taken off.
+        _set("grocery_items", "Milk", "2 gallons", own=True)
+        _set("grocery_items", "Cream", "2 gallons", own=True)
+        _status("Milk", "in_cart")
+        conn = get_conn()
+        cream_id = conn.execute("SELECT id FROM grocery_items WHERE household_id = ? AND item = 'Cream' "
+                                "AND source_weekly_plan_id IS NULL", (other_id,)).fetchone()["id"]
+        conn.close()
+        tools.remove_grocery_item(cream_id)
+        tools.add_grocery_item("Oat milk", quantity="1 gallon", category="dairy")
+        _set("grocery_items", "Oat milk", "1 gallon + 2 cups")
+        tools.add_grocery_item("Poison", quantity="1 gallon", category="dairy")
+        _set("grocery_items", "Poison", "1 gallon + 3 cups")
+
+    real_fold = app_db._folded_volume
+
+    def fold(qty, _q):
+        if qty == "1 gallon + 3 cups":
+            raise ValueError("a row this cannot read")
+        return real_fold(qty, _q)
+
+    monkeypatch.setattr(app_db, "_folded_volume", fold)
+    with caplog.at_level("ERROR", logger="home_manager"):
+        _upgrade()
+    assert "left grocery_items row" in caplog.text
+
+    with tools.use_household(other_id):
+        conn = get_conn()
+        got = {r["item"]: (r["quantity"], r["status"]) for r in conn.execute(
+            "SELECT item, quantity, status FROM grocery_items WHERE household_id = ? AND source_weekly_plan_id IS NULL",
+            (other_id,))}
+        conn.close()
+        assert got["Milk"] == ("1 1/2 gallons", "in_cart")
+        assert got["Cream"] == ("1 1/2 gallons", "removed")
+        assert got["Oat milk"] == ("4 1/2 quarts", "needed")  # converted past the poisoned row
+        assert got["Poison"] == ("1 gallon + 3 cups", "needed")  # left exactly as it was
+        conn = get_conn()
+        ids = {r["item"]: r["id"] for r in conn.execute(
+            "SELECT id, item FROM grocery_items WHERE household_id = ? AND item IN ('Milk', 'Cream') "
+            "AND source_weekly_plan_id IS NULL", (other_id,))}
+        conn.close()
+        tools.mark_grocery_item(ids["Milk"], "needed")
+        tools.undo_remove_grocery_item(ids["Cream"])
+        _drop(plan, days[0])
+        _drop(plan, days[1])
+        assert _rows("Milk") == [("1 gallon", True)]  # review: "1 1/2 gallons"; main "1 gallon"
+        assert _rows("Cream") == [("1 gallon", True)]

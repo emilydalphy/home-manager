@@ -717,9 +717,9 @@ _VOLUME_TO_TSP = {"tsp": 1.0, "tbsp": 3.0, "cup": 48.0, "quart": 192.0, "gallon"
 # the amount was typed, written or bought in one of them. A recipe's cups
 # stay cups however many there are: "16 cups" of flour is not "1 gallon"
 # of flour, so plain cups never roll up past cups (_roll_up_unit).
-#   - under a quart (4 cups): cups, on a measuring cup's steps, as today;
-#   - from a quart: rounded UP to a whole cup — a quarter quart — and read
-#     in quarts ("1 1/4 quarts", "3 1/2 quarts");
+#   - rounded UP to a whole cup (a teaspoon's grace) — a quarter quart;
+#   - under a quart (4 cups): read in cups ("2 cups");
+#   - from a quart: read in quarts ("1 1/4 quarts", "3 1/2 quarts");
 #   - a whole or half gallon from 16 cups reads in gallons ("1 gallon",
 #     "1 1/2 gallons"); a line already in gallons reads "1/2 gallon" for
 #     8 cups too, the jug it is sold in (_HALF_SOLD_UNITS).
@@ -1022,16 +1022,20 @@ def _shopping_round(amount: float, unit: str | None) -> tuple[float, str | None]
     if not _measurable_unit(unit):
         return _round_in_unit(amount, unit), unit
     if unit in _CUPS_PER_BIG:
-        # Quarts or gallons in play (see _CUPS_PER_BIG): under a quart it
-        # is cups, rounded the way cups are; from a quart, whole cups UP,
-        # read in quarts or gallons.
-        cups = amount * _CUPS_PER_BIG[unit]
-        if cups < 4 - _CUP_STEP_GRACE - 1e-9:
-            small, small_unit = _shopping_round(amount * _VOLUME_TO_TSP[unit], "tsp")
-            if small_unit != "cup" or small < 4 - 1e-9:
-                return small, small_unit
-            cups = small
-        return _big_volume_unit(int(math.ceil(cups - _CUP_STEP_GRACE - 1e-9)), unit)
+        # Quarts or gallons in play (see _CUPS_PER_BIG): whole cups, UP (a
+        # teaspoon's grace), read in cups under a quart and in quarts or
+        # gallons from one. Whole cups, not a measuring cup's thirds: a
+        # household's own line restated off this (grocery.
+        # _restate_standing_want) stays a whole number of cups, so it is
+        # always written exactly in quarts — a third of a quart rounded to
+        # "1 1/3 cups" left a gallon line reading "17 1/3 cups", then "16
+        # cups" once every night was dropped (review, 2026-11-01).
+        if amount <= 0:
+            return 0.0, unit
+        cups = max(1, int(math.ceil(amount * _CUPS_PER_BIG[unit] - _CUP_STEP_GRACE - 1e-9)))
+        if cups < 4:
+            return float(cups), "cup"
+        return _big_volume_unit(cups, unit)
     rolled_amount, rolled_unit = _roll_up_unit(amount, unit)
     rounded = _round_in_unit(rolled_amount, rolled_unit)
     # Rounding can carry an amount up across the line it was rolled by —

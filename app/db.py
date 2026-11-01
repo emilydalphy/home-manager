@@ -1669,36 +1669,61 @@ def _convert_quarts_and_gallons(conn):
         ledger.setdefault(r["grocery_item_id"], []).append(r["quantity"] or "")
     rows = conn.execute(
         "SELECT id, household_id, quantity, status, source_weekly_plan_id FROM grocery_items "
-        "WHERE status IN ('needed', 'spice')"
+        "WHERE status IN ('needed', 'spice', 'in_cart', 'removed')"
     ).fetchall()
     for row in rows:
-        qty = row["quantity"] or ""
-        links = ledger.get(row["id"], [])
-        big_links = [l for l in links if _BIG_VOLUME_WORDS.search(l)]
-        if not big_links and not _BIG_VOLUME_WORDS.search(qty):
-            continue
-        with _shared.use_household(row["household_id"]):
-            if row["source_weekly_plan_id"] is not None:
-                if big_links:
-                    _grocery._recompute_plan_line_from_ledger(row["id"], conn=conn)
-                    continue
-                new_qty = _folded_volume(qty, _q)
-            elif links:
-                new_qty = _restated_old_big_share(qty, links, _q) if row["status"] == "needed" else None
-            else:
-                new_qty = _folded_volume(qty, _q)
-        if new_qty and new_qty != qty:
-            conn.execute("UPDATE grocery_items SET quantity = ? WHERE id = ? AND household_id = ?",
-                         (new_qty, row["id"], row["household_id"]))
+        _convert_one_row(conn, "grocery_items", row, lambda row=row: _converted_grocery_quantity(
+            conn, row, ledger.get(row["id"], []), _shared, _grocery, _q))
     if "inventory_items" in tables:
         for row in conn.execute("SELECT id, household_id, quantity FROM inventory_items").fetchall():
-            qty = row["quantity"] or ""
-            if not _BIG_VOLUME_WORDS.search(qty):
-                continue
-            new_qty = _folded_volume(qty, _q)
-            if new_qty and new_qty != qty:
-                conn.execute("UPDATE inventory_items SET quantity = ? WHERE id = ? AND household_id = ?",
-                             (new_qty, row["id"], row["household_id"]))
+            if _BIG_VOLUME_WORDS.search(row["quantity"] or ""):
+                _convert_one_row(conn, "inventory_items", row, lambda row=row: _folded_volume(row["quantity"] or "", _q))
+
+
+def _convert_one_row(conn, table: str, row, convert) -> None:
+    """
+    One row of _convert_quarts_and_gallons, on its own: a row this cannot
+    read is logged and left exactly as it was, and the rest still convert.
+    This runs at startup, so an exception here would stop the app starting
+    at all — every restart the same — over one odd amount on a list.
+    """
+    conn.execute("SAVEPOINT quarts_row")
+    try:
+        new_qty = convert()
+        if new_qty and new_qty != (row["quantity"] or ""):
+            conn.execute(f"UPDATE {table} SET quantity = ? WHERE id = ? AND household_id = ?",
+                         (new_qty, row["id"], row["household_id"]))
+        conn.execute("RELEASE SAVEPOINT quarts_row")
+    except Exception:
+        conn.execute("ROLLBACK TO SAVEPOINT quarts_row")
+        conn.execute("RELEASE SAVEPOINT quarts_row")
+        logger.exception("Quarts-and-gallons conversion left %s row %s as it was", table, row["id"])
+
+
+def _converted_grocery_quantity(conn, row, links: list[str], _shared, _grocery, _q) -> str | None:
+    """
+    What one grocery line reads once quarts and gallons are cups (None:
+    leave it). A plan's line still on the list is re-read off its ledger
+    (that writes the row itself). A household's own line with a plan's share
+    on it is restated — waiting, in the cart or taken off the list alike,
+    since a tick back or an Undo puts it back to waiting with the same
+    amount, and the next drop restates it then. A bought line is left: it
+    is what was bought, and nothing takes a plan's share back off it.
+    """
+    qty = row["quantity"] or ""
+    big_links = [l for l in links if _BIG_VOLUME_WORDS.search(l)]
+    if not big_links and not _BIG_VOLUME_WORDS.search(qty):
+        return None
+    with _shared.use_household(row["household_id"]):
+        if row["source_weekly_plan_id"] is not None:
+            if big_links:
+                if row["status"] in ("needed", "spice"):
+                    _grocery._recompute_plan_line_from_ledger(row["id"], conn=conn)
+                return None
+            return _folded_volume(qty, _q)
+        if links:
+            return _restated_old_big_share(qty, links, _q)
+        return _folded_volume(qty, _q)
 
 
 def _folded_volume(qty: str, _q) -> str | None:

@@ -742,14 +742,33 @@ def _clean_in(amount: float, unit: str | None) -> bool:
 
 
 def _big_volume_text(amount: float, unit: str | None, other_unit: str | None) -> str | None:
-    """`amount` (in `unit`) the way a quart-or-gallon line reads, when one
-    of the two units is a quart or gallon and the other a volume — or None,
-    and the row is written as it always was."""
+    """
+    `amount` (in `unit`) on a Kitchen row that is in quarts or gallons, or
+    has them coming on or off it — read the way the list reads them
+    (quantities._CUPS_PER_BIG): from a quart, whole cups in quarts or
+    gallons ("3 1/2 quarts", "1 gallon"); under one, cups on a measuring
+    cup's steps ("2 cups", "3 3/4 cups"). None for anything else, which is
+    written as it always was.
+
+    DOWN to the cup or the step, never up — what this module has always
+    held ("a tbsp off a cup must come off"): a tablespoon off a gallon is
+    "3 3/4 quarts", not "255 tbsp" (review, 2026-11-01) and not still "1
+    gallon". Under a quarter cup is left to the spoons below.
+    """
     if unit not in _quantities._VOLUME_TO_TSP or other_unit not in _quantities._VOLUME_TO_TSP:
         return None
-    return _quantities.big_volume_reading(
-        amount * _quantities._VOLUME_TO_TSP[unit], _quantities._big_volume_hint((unit, other_unit)),
-    )
+    hint = _quantities._big_volume_hint((unit, other_unit))
+    if hint is None:
+        return None
+    cups = amount * _quantities._VOLUME_TO_TSP[unit] / _quantities._VOLUME_TO_TSP["cup"]
+    if cups >= 4 - 1e-9:
+        whole = math.floor(cups + 1e-6)
+        return _quantities.big_volume_reading(whole * _quantities._VOLUME_TO_TSP["cup"], hint)
+    whole = math.floor(cups + 1e-6)
+    step = max(f for f in _quantities._VOLUME_STEPS if whole + f <= cups + 1e-6)
+    if whole + step < 0.25 - 1e-9:
+        return None
+    return _quantities._cups_text(whole + step)
 
 
 def _merged_quantity(existing_qty: str, adding_qty: str) -> str:
