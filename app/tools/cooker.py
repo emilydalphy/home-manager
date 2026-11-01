@@ -626,9 +626,14 @@ def check_off_meal(entry_id: int, status: str = "done", *, _keep_start: bool = F
     if status == "done" and not was_done:
         _move_recipe_cook_counters(conn, linked_ids, cooked=True)
         _move_credits.record(conn, credit)
+        # Eaten: the unbought lines only this night wanted come off the
+        # list (Emily, 2026-10-31, option (b)) — in this same write.
+        result["grocery_dropped"] = _grocery.drop_lines_only_eaten_nights_needed(conn, linked_ids)
     elif status == "pending" and was_done:
         _move_recipe_cook_counters(conn, linked_ids, cooked=False)
         _move_credits.clear_meals(conn, linked_ids)
+        # Not eaten after all: what the tick took off goes back on.
+        result["grocery_put_back"] = _grocery.put_back_lines_eaten_took(conn, linked_ids)
     conn.commit()
     conn.close()
     if status == "done":

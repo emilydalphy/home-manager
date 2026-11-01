@@ -4335,6 +4335,91 @@ def remove_grocery_item(item_id: int) -> dict:
 # pre_shop.get_already_have_decisions leaves it out.
 REMOVED_BY_LIST = "list"
 
+# removed_by for a plan's line taken off because the only night that
+# wanted it was ticked eaten (drop_lines_only_eaten_nights_needed).
+REMOVED_BY_EATEN = "eaten"
+
+
+def _lines_only_these_meals_hold(conn, entry_ids: list[int], status: str, removed_by: str = "",
+                                 other_eaten_count: bool = False) -> list:
+    """The plan lines (source_weekly_plan_id set) in `status` linked to one
+    of `entry_ids` and to no other meal — or, with other_eaten_count, to no
+    other meal still to be eaten. A leftovers batch links its line to the
+    cook night AND the reheat night, so "no other meal at all" kept a
+    batch's beans on the list after both nights were eaten (review,
+    2026-11-01): a night already ticked done wants nothing more."""
+    if not entry_ids:
+        return []
+    marks = ",".join("?" * len(entry_ids))
+    still_to_eat = (
+        "AND NOT EXISTS (SELECT 1 FROM meal_plan_entries e WHERE e.id = l.meal_plan_entry_id "
+        "                AND e.cooked_status = 'done') "
+        if other_eaten_count else ""
+    )
+    return conn.execute(
+        f"SELECT g.id, g.item FROM grocery_items g WHERE g.household_id = ? AND g.status = ? "
+        f"AND g.removed_by = ? AND g.excluded_from_list = 0 AND g.source_weekly_plan_id IS NOT NULL "
+        f"AND TRIM(COALESCE(g.kept_amount, '')) = '' "
+        f"AND EXISTS (SELECT 1 FROM meal_plan_grocery_links l WHERE l.household_id = g.household_id "
+        f"            AND l.grocery_item_id = g.id AND l.meal_plan_entry_id IN ({marks})) "
+        f"AND NOT EXISTS (SELECT 1 FROM meal_plan_grocery_links l WHERE l.household_id = g.household_id "
+        f"            AND l.grocery_item_id = g.id AND l.meal_plan_entry_id NOT IN ({marks}) {still_to_eat}) "
+        f"ORDER BY g.id",
+        (household_id(), status, removed_by, *entry_ids, *entry_ids),
+    ).fetchall()
+
+
+def drop_lines_only_eaten_nights_needed(conn, entry_ids: list[int]) -> list[str]:
+    """
+    A night ticked eaten takes off the list the unbought lines that night
+    alone was buying for (Emily, 2026-10-31, option (b) of the Loop Board
+    card "the cook count moves to the dish we actually ate"). Before, the
+    curry's onion and chicken sat on the list as still to buy after the
+    curry was eaten — or after "we had tacos instead".
+
+    Only a 'needed' line of the plan's own (a household's standing want, a
+    staple, a kept carried-over amount are theirs, not the night's), and
+    only one NO other meal is linked to: a line another night still wants
+    stays exactly as it is. Soft-removed (REMOVED_BY_EATEN) with its links
+    kept, so an untick puts the very row back (put_back_lines_eaten_took).
+    Runs on the caller's transaction; commits nothing. Returns the names.
+    """
+    rows = _lines_only_these_meals_hold(conn, entry_ids, "needed", other_eaten_count=True)
+    if rows:
+        conn.execute(
+            f"UPDATE grocery_items SET status = 'removed', removed_by = ?, removed_at = datetime('now') "
+            f"WHERE household_id = ? AND id IN ({','.join('?' * len(rows))})",
+            (REMOVED_BY_EATEN, household_id(), *[r["id"] for r in rows]),
+        )
+    return [r["item"] for r in rows]
+
+
+def put_back_lines_eaten_took(conn, entry_ids: list[int]) -> list[str]:
+    """The untick's half: what drop_lines_only_eaten_nights_needed took off
+    for these nights goes back on the list as it was. Caller's transaction."""
+    # Unticking any one of the nights a dropped line was bought for makes
+    # it wanted again, eaten neighbours or not.
+    rows = _lines_only_these_meals_hold(conn, entry_ids, "removed", REMOVED_BY_EATEN, other_eaten_count=True)
+    if rows:
+        conn.execute(
+            f"UPDATE grocery_items SET status = 'needed', removed_by = '', removed_at = NULL "
+            f"WHERE household_id = ? AND id IN ({','.join('?' * len(rows))})",
+            (household_id(), *[r["id"] for r in rows]),
+        )
+    return [r["item"] for r in rows]
+
+
+def forget_lines_eaten_took(conn, entry_ids: list[int]) -> None:
+    """A night ticked eaten whose dish then changed ("we had tacos
+    instead"): the old dish's dropped lines were never this night's food,
+    so an untick must not put them back. Caller's transaction."""
+    rows = _lines_only_these_meals_hold(conn, entry_ids, "removed", REMOVED_BY_EATEN)
+    if rows:
+        conn.execute(
+            f"DELETE FROM grocery_items WHERE household_id = ? AND id IN ({','.join('?' * len(rows))})",
+            (household_id(), *[r["id"] for r in rows]),
+        )
+
 
 def undo_remove_grocery_item(item_id: int) -> dict:
     """
