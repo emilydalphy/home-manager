@@ -4816,6 +4816,7 @@ def week_swap_in_place(week_start: str, req: SwapInPlaceRequest):
             return tools.swap_meal_in_place(plan_id, req.entry_id, avoid=req.avoid, whole_dish=True)
         return tools.swap_meal_in_place(plan_id, req.entry_id, avoid=req.avoid)
     except tools.SlotRefused as e:
+        tools.record_refusal(e, "week_swap_in_place")  # the report's "Refused" line, never breakage
         # The backstop in apply_pick / apply_pick_to_days (a night gone by,
         # the over-cap "I left it as it was") is an answer, not a breakage:
         # the same 200 the other refusal arms give. ABOVE ValueError, which
@@ -4948,6 +4949,7 @@ def week_swap_choose(week_start: str, req: SwapChooseRequest):
             return tools.choose_swap_option(plan_id, req.entry_id, req.option, whole_dish=True, meal=req.meal)
         return tools.choose_swap_option(plan_id, req.entry_id, req.option, meal=req.meal)
     except tools.SlotRefused as e:
+        tools.record_refusal(e, "week_swap_choose")  # the report's "Refused" line, never breakage
         # The backstop in apply_pick / apply_pick_to_days (a night gone by,
         # the over-cap "I left it as it was") is an answer, not a breakage:
         # the same 200 the other refusal arms give. ABOVE ValueError, which
@@ -5006,6 +5008,7 @@ def chat_proposal_apply(proposal_id: str):
     try:
         out = tools.apply_proposal(proposal_id)
     except tools.SlotRefused as e:
+        tools.record_refusal(e, "chat_proposal_apply")  # the report's "Refused" line, never breakage
         # apply_proposal catches apply_pick's refusal per row today; this is
         # the route's backstop so a refusal that ever escapes it is the
         # card's answer, not a 500 with a traceback. `refused` stays a list
@@ -5080,6 +5083,7 @@ def week_change_part(week_start: str, req: ChangePartRequest):
     try:
         return tools.change_part(plan_id, req.entry_id, req.role, req.choice)
     except tools.SlotRefused as e:
+        tools.record_refusal(e, "week_change_part")  # the report's "Refused" line, never breakage
         # The backstop in apply_pick / apply_pick_to_days (a night gone by,
         # the over-cap "I left it as it was") is an answer, not a breakage:
         # the same 200 the other refusal arms give. ABOVE ValueError, which
@@ -5452,6 +5456,7 @@ def week_add_dish_day(week_start: str, req: AddDishDayRequest):
             target_entry_id=req.target_entry_id, target_date=req.target_date,
         )
     except tools.SlotRefused as e:
+        tools.record_refusal(e, "week_add_dish_day")  # the report's "Refused" line, never breakage
         return {"status": "refused", "message": str(e)}
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -5528,6 +5533,7 @@ def week_add_component(week_start: str, req: AddComponentRequest):
             context=_addition_context() if req.text else None, weekly_plan_id=plan_id,
         )
     except tools.SlotRefused as e:
+        tools.record_refusal(e, "week_add_component")  # the report's "Refused" line, never breakage
         # A night gone by, or a side someone at the table can't have:
         # nothing was written, and the sentence says why. A 409 rather than
         # the swap's 200 'refused', because the sheet's handler reads any
@@ -5588,6 +5594,7 @@ def resolve_week_slot(week_start: str, req: WeekSlotRequest):
     try:
         return tools.resolve_open_slot(plan_id, req.date, req.slot, req.choice)
     except tools.SlotRefused as e:
+        tools.record_refusal(e, "resolve_week_slot")  # the report's "Refused" line, never breakage
         return _card_refusal(e)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -5816,6 +5823,7 @@ def discard_week_draft(week_start: str, req: WeekDiscardRequest):
     try:
         return tools.discard_draft_plan(plan_id)
     except tools.SlotRefused as e:
+        tools.record_refusal(e, "discard_week_draft")  # the report's "Refused" line, never breakage
         return {"status": "refused", "message": str(e)}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -6311,6 +6319,7 @@ def resolve_needs_you_dinner(req: ResolveDinnerRequest):
             req.date, req.meal, add_ingredients_to_grocery_list=req.add_ingredients
         )
     except tools.SlotRefused as e:
+        tools.record_refusal(e, "resolve_needs_you_dinner")  # the report's "Refused" line, never breakage
         return _card_refusal(e)
     except ValueError as e:
         # Not a day (validate_meal_date): the request's fault, not ours.

@@ -1023,6 +1023,45 @@ def record_error(
             conn.close()
 
 
+# The reason code for a refusal marker that carries none of its own. The
+# other three markers are each ONE gate, so the class is the reason;
+# SlotRefused is a dozen gates and says which in its own `reason`.
+_REFUSAL_REASON_BY_CLASS = {
+    "MoveOwnerRefused": "no_such_adult",
+    "MemberRefused": "last_adult",
+}
+
+
+def refusal_reason(refusal: BaseException) -> str:
+    """The short code record_refusal files a refusal under."""
+    reason = getattr(refusal, "reason", None)
+    if isinstance(reason, str) and reason.strip():
+        return reason.strip()[:40]
+    return _REFUSAL_REASON_BY_CLASS.get(type(refusal).__name__, "other")
+
+
+def record_refusal(refusal: BaseException, where: str = "") -> None:
+    """
+    Note that a gate said no to the household, in a sentence written for it
+    -- an ANSWER, not a breakage (agent.REFUSALS_OWED_TO_A_PERSON). Never
+    raises.
+
+    Filed as kind 'refused' with the gate's short reason code as the detail
+    and NEVER the sentence, which names a dish and somebody's restriction.
+    get_recent_errors sets the kind aside the way it does voice drift: out
+    of `total` and the exit code, counted under `refused` instead, so the
+    morning report can say "Refused -- 3 allergy clashes, 1 night already
+    gone" (Emily, 2026-10-31). Quiet was the alternative, and quiet is how
+    an allergy matcher that has started over-firing goes unnoticed until a
+    household has learned to click past it.
+
+    record_error's day-long dedupe is what keeps a household that meets a
+    gate routinely from flooding the table and pruning real errors out of
+    it: one row per (door, reason) per day, with a count.
+    """
+    record_error("refused", where=where, detail=refusal_reason(refusal))
+
+
 def record_plan_quality(plan_id, violations) -> None:
     """Persist what a generated week got wrong about the food.
 
@@ -1189,6 +1228,11 @@ def get_recent_errors(days: int = 1, limit: int = 50) -> dict:
     dropped request. Five is a judgement, not a measurement: it is more
     than a lift or a tunnel and fewer than an evening.
 
+    Kind 'refused' -- a gate telling the household no, in a sentence written
+    for it (record_refusal) -- is set aside under `refused`, by reason code,
+    the same way and for the same reason as voice drift: an allergy check
+    doing its job is not breakage, but how often it fires is worth a line.
+
     The counts are SUM(occurrences), not COUNT(*) -- eleven of one failure
     is eleven failures however many rows record_error folded them into, and
     a count that shrank when deduping landed would have read as the app
@@ -1215,7 +1259,18 @@ def get_recent_errors(days: int = 1, limit: int = 50) -> dict:
             for r in conn.execute(
                 "SELECT kind, SUM(occurrences) AS n FROM error_events "
                 f"WHERE household_id = ? AND {seen} >= datetime('now', '{since}') "
-                "AND kind != 'voice' GROUP BY kind ORDER BY n DESC",
+                "AND kind NOT IN ('voice', 'refused') GROUP BY kind ORDER BY n DESC",
+                (hid,),
+            ).fetchall()
+        }
+        # A gate saying no to a person -- record_refusal. Set aside like
+        # voice drift: counted, by reason, and never breakage.
+        refused = {
+            r["detail"]: r["n"]
+            for r in conn.execute(
+                "SELECT detail, SUM(occurrences) AS n FROM error_events "
+                f"WHERE household_id = ? AND {seen} >= datetime('now', '{since}') "
+                "AND kind = 'refused' GROUP BY detail ORDER BY n DESC, detail",
                 (hid,),
             ).fetchall()
         }
@@ -1235,7 +1290,7 @@ def get_recent_errors(days: int = 1, limit: int = 50) -> dict:
                 "reason, request_shape, trail, device, display_mode, lang, app_version, "
                 "occurrences, last_seen_at, created_at FROM error_events "
                 f"WHERE household_id = ? AND {seen} >= datetime('now', '{since}') "
-                "AND kind != 'voice' "
+                "AND kind NOT IN ('voice', 'refused') "
                 # Newest first means most recently SEEN, not most recently
                 # filed: a row deduping a failure that is still happening is
                 # the freshest news in the table, whatever its id. NULLIF for
@@ -1250,7 +1305,7 @@ def get_recent_errors(days: int = 1, limit: int = 50) -> dict:
             for r in conn.execute(
                 "SELECT request_shape, SUM(occurrences) AS n FROM error_events "
                 f"WHERE household_id = ? AND {seen} >= datetime('now', '{since}') "
-                "AND kind != 'voice' AND reason = 'network' "
+                "AND kind NOT IN ('voice', 'refused') AND reason = 'network' "
                 "GROUP BY request_shape ORDER BY n DESC",
                 (hid,),
             ).fetchall()
@@ -1261,7 +1316,7 @@ def get_recent_errors(days: int = 1, limit: int = 50) -> dict:
             for r in conn.execute(
                 "SELECT kind, SUM(occurrences) AS n FROM error_events "
                 f"WHERE household_id = ? AND {seen} >= datetime('now', '{since}') "
-                "AND kind != 'voice' AND reason = 'network' GROUP BY kind",
+                "AND kind NOT IN ('voice', 'refused') AND reason = 'network' GROUP BY kind",
                 (hid,),
             ).fetchall()
         }
@@ -1293,6 +1348,7 @@ def get_recent_errors(days: int = 1, limit: int = 50) -> dict:
             "by_kind": by_kind,
             "recent": recent,
             "voice_drift": {"total": sum(voice_flags.values()), "by_flags": voice_flags},
+            "refused": {"total": sum(refused.values()), "by_reason": refused},
             "network": {
                 "total": network_total,
                 "by_request": network,

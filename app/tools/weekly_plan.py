@@ -227,7 +227,22 @@ class SlotRefused(ValueError):
     app that did exactly the right thing as broken. Subclasses ValueError
     so every existing `except ValueError` still catches it; the route
     simply asks first.
+
+    `reason` is a short code saying WHICH gate said no ("allergy",
+    "night_gone", "approved_week", ...), for the morning report's own
+    "Refused" line (usage.record_refusal; Emily, 2026-10-31). The sentence
+    is household content and stays out of the report; the code is what
+    lets an allergy check that has started over-firing show up as
+    "12 allergy clashes" rather than vanish. Optional so a raise site
+    nobody tagged still works: NIGHT_GONE is recognised by its sentence,
+    anything else reads "other".
     """
+
+    def __init__(self, *args, reason: str | None = None):
+        super().__init__(*args)
+        if reason is None:
+            reason = "night_gone" if args and args[0] == NIGHT_GONE else "other"
+        self.reason = reason
 
 
 # The one sentence every "you can't change that night" refusal says, so a
@@ -1820,7 +1835,7 @@ def add_dish_day(
         # down. (The narrowing that introduced SlotRefused swallowed both
         # of these into the generic line for a day; by its own rule —
         # sentences written for a person — they belong here.)
-        raise SlotRefused("That dish is already on that day.")
+        raise SlotRefused("That dish is already on that day.", reason="already_on_day")
     if target_id is not None and target_slot_state not in ("planned", "open", "planned_empty"):
         raise ValueError("That slot isn't one this can take over.")
 
@@ -1860,13 +1875,13 @@ def add_dish_day(
     # The DAY still can be: an empty night that has gone by is refused
     # above, on the date alone.
     if target_slot_state == "planned_empty":
-        raise SlotRefused("Nobody’s eating that one — it isn’t a day to plan into.")
+        raise SlotRefused("Nobody’s eating that one — it isn’t a day to plan into.", reason="nobody_eating")
     if (target_cooked or "") == "done":
         # Somebody cooked it and ate it. The tick is a record, the inventory
         # was depleted against it, and the ingredients are on a list that
         # has already been shopped — taking the row away destroys all three
         # and buys nothing back.
-        raise SlotRefused("That one’s already been cooked — it isn’t a day to plan into.")
+        raise SlotRefused("That one’s already been cooked — it isn’t a day to plan into.", reason="already_cooked")
 
     groups_from = source
     if chained:
@@ -1895,7 +1910,7 @@ def add_dish_day(
     if target_slot_state == "planned":
         replaced = target_chained["source"]["meal"] if target_chained else target_meal
     if replaced and replaced.strip().lower() == dish.strip().lower():
-        raise SlotRefused("That day already has it.")
+        raise SlotRefused("That day already has it.", reason="already_on_day")
 
     # Every night that was eating off the dish being displaced. Read BEFORE
     # the swap, because afterwards there is nothing left to ask. Those
@@ -2857,7 +2872,7 @@ def discard_draft_plan(weekly_plan_id: int) -> dict:
         raise ValueError(f"No weekly plan with id {weekly_plan_id}.")
     if plan["status"] == "approved":
         conn.close()
-        raise SlotRefused("That week's approved — reopen it or re-plan it instead.")
+        raise SlotRefused("That week's approved — reopen it or re-plan it instead.", reason="approved_week")
     # A REOPENED week is a draft by status only (overnight/discard-reopened-
     # week): reopen_weekly_plan clears every approval stamp but deliberately
     # leaves the groceries its approval added. Retiring it would leave those
@@ -2885,7 +2900,8 @@ def discard_draft_plan(weekly_plan_id: int) -> dict:
         conn.close()
         raise SlotRefused(
             "That week's groceries are already on your shopping list — "
-            "approve it again or re-plan it instead."
+            "approve it again or re-plan it instead.",
+            reason="approved_week",
         )
 
     start, days = plan_period(plan)
@@ -7541,7 +7557,8 @@ def resolve_needs_you_dinner(
             there = (planned[0]["meal"] or "").strip()
             if there.casefold() != meal.strip().casefold():
                 raise SlotRefused(
-                    f"That dinner’s already decided — {there}. Swap it on Plan if you’d like something else."
+                    f"That dinner’s already decided — {there}. Swap it on Plan if you’d like something else.",
+                    reason="already_decided",
                 )
             result = {"groceries_added": [], "already_have_skipped": []}
         elif not open_row:
@@ -9930,7 +9947,8 @@ def _refuse_a_second_copy(args: tuple, kwargs: dict, new_meal) -> None:
             raise SlotRefused(
                 f"{name} is already on {day} ({r['date']}). To have it on {meal_date} instead, "
                 f"move it (move_meal_to_day) — that carries its leftovers and keeps one shop. "
-                f"Pass repeat only if they asked to have it on both days."
+                f"Pass repeat only if they asked to have it on both days.",
+                reason="already_on_day",
             )
 
 

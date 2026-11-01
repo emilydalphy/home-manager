@@ -538,7 +538,7 @@ def refuse_if_clashing(name: str, ingredients: list[dict] | None = None, overrid
     clashes = hard_clashes(name, ingredients=checked)
     if clashes:
         _remember_refusal("plan", name, checked)
-        raise _weekly_plan.SlotRefused(refusal_sentence(name, clashes))
+        raise _weekly_plan.SlotRefused(refusal_sentence(name, clashes), reason="allergy")
 
 
 # The refusals chat's gated doors have handed out, so an override can be
@@ -667,7 +667,8 @@ def refuse_recipe_if_clashing(name: str, ingredients: list | None = None,
     because = f"{word}" if word == food else f"{word} ({food})"
     raise _weekly_plan.SlotRefused(
         f"Not saved: {name} has {because}, which {cannot}. "
-        f"Write it again without {word}, or pick a different dish."
+        f"Write it again without {word}, or pick a different dish.",
+        reason="allergy",
     )
 
 

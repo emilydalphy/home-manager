@@ -78,7 +78,7 @@ def _age(name):
 
 def _error_rows():
     conn = get_conn()
-    rows = conn.execute("SELECT kind, where_ FROM error_events").fetchall()
+    rows = conn.execute("SELECT kind, where_ FROM error_events WHERE kind != 'refused'").fetchall()
     conn.close()
     return [tuple(r) for r in rows]
 

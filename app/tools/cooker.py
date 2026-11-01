@@ -727,7 +727,8 @@ def check_off_meal_for_chat(entry_id: int, status: str = "done") -> dict:
         if row is not None and row["date"] and row["date"] > household_today().isoformat():
             raise _weekly_plan.SlotRefused(
                 "A meal is only marked cooked once it has been cooked, on or after its own day. "
-                "To change which night it's on, move it (move_meal_to_day)."
+                "To change which night it's on, move it (move_meal_to_day).",
+                reason="not_cooked_yet",
             )
     return check_off_meal(entry_id, status)
 def undo_eaten_meal(entry_id: int) -> dict:

@@ -2175,7 +2175,7 @@ def apply_pick_to_days(weekly_plan_id: int, entries: list[dict], pick: dict,
     # at the end (over_cap_said).
     too_long = None if own_pick else cap_gate(weekly_plan_id, pick, entries)
     if too_long:
-        raise _weekly_plan.SlotRefused(f"I left it as it was — {pick.get('meal_name') or 'that'} {too_long}.")
+        raise _weekly_plan.SlotRefused(f"I left it as it was — {pick.get('meal_name') or 'that'} {too_long}.", reason="over_cap")
     first = entries[0]
     if correct_title:
         pick["meal_name"] = honest_meal_name(pick)

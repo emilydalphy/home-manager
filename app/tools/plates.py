@@ -1456,7 +1456,8 @@ def add_component(
         who = ", ".join(sorted({c.get("restriction") or "" for c in clash if c.get("restriction")}))
         raise _weekly_plan.SlotRefused(
             f"I left it off — {side['name']} clashes with {who}." if who
-            else f"I left it off — I couldn’t check {side['name']} against what this house can’t have."
+            else f"I left it off — I couldn’t check {side['name']} against what this house can’t have.",
+            reason="allergy",
         )
 
     if _name_key(side["name"]) in {_name_key(s.get("name") or "") for s in sides}:

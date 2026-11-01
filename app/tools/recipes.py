@@ -615,7 +615,8 @@ def update_recipe_details(
                 cannot = f"{who} can’t have" if who else "this house can’t have"
                 raise _allergen_gate._weekly_plan.SlotRefused(
                     f"Not saved: the new steps for {recipe_name} use {foods}, which {cannot}. "
-                    "Write the steps again without it."
+                    "Write the steps again without it.",
+                    reason="allergy",
                 )
             fields.append("ingredients_json = ?")
             params.append(json.dumps(completed))
