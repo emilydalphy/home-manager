@@ -1408,3 +1408,24 @@ def _texts_read_the_week_as_approved(request, monkeypatch):
     from app.tools import digest as _digest
 
     monkeypatch.setattr(_digest, "_week_is_draft", lambda now_local: False)
+
+
+@pytest.fixture
+def switched_on_before_the_morning(monkeypatch):
+    """
+    The morning text is switched on at 06:00 on the household's today.
+
+    Since 2026-10-31 switching it on AFTER the household's morning time
+    counts today as done (digest._starts_tomorrow_if_past_today: the first
+    text is tomorrow's). A test that switches it on at the real clock and
+    then plays a 7:03 pass for TODAY is describing someone who switched it
+    on before seven -- this says so, instead of the test going red for the
+    part of every day after seven.
+    """
+    import datetime as _dt
+    from app.tools import digest as _digest
+
+    monkeypatch.setattr(
+        _digest, "_switched_on_at",
+        lambda conn: _dt.datetime.combine(household_today(), _dt.time(6, 0)),
+    )

@@ -41,6 +41,10 @@ from app.tools import digest
 from conftest import household_today
 from test_morning_text import _Sender, _adults, _local, _member_id, _rows, _seed_day
 
+# Switched on before the morning each test then plays (conftest).
+pytestmark = pytest.mark.usefixtures("switched_on_before_the_morning")
+
+
 REPO = Path(__file__).resolve().parent.parent
 TODAY = household_today()
 ISO_TODAY = TODAY.isoformat()
