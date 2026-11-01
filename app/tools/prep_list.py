@@ -385,7 +385,7 @@ def dish_fresh_reason(meal: str, recipe: dict | None) -> str | None:
         # a "Shrimp" line with no category is still shrimp. Condiments are
         # excluded inside seafood_family.
         for ing in recipe.get("ingredients") or []:
-            if isinstance(ing, dict) and _category(ing) not in ("pantry", "spice", "spices", "condiments"):
+            if isinstance(ing, dict):
                 family = seafood_family(_name_only(ing.get("item") or ""))
                 if family:
                     break
@@ -447,12 +447,14 @@ def recipe_steps(meal: dict, recipe: dict | None, ingredients: list[dict]) -> di
         if not key or key in seen_keys:
             continue
         seen_keys.add(key)
+        # Seafood by NAME, whatever the category says ("Shrimp" filed under
+        # pantry is still shrimp); condiments are excluded in seafood_family.
+        family = seafood_family(name)
+        if family:
+            out["fresh"].append((family, name))
+            continue
         if _is_meatish(ing):
-            family = seafood_family(name)
-            if family:
-                out["fresh"].append((family, name))
-            else:
-                meats.append(ing)
+            meats.append(ing)
             continue
         grain = _grain_of(ing)
         if grain and not grain_in_dish and _category(ing) in ("", "pantry", "other", "grains"):
@@ -683,7 +685,8 @@ def marinade_items(e: dict, meat: str, qty: str, mkey: str, days_out: int, froze
         thaw = thaw_date_for(e["date"])
         keeps = f"Freeze it in the bag. It thaws in the fridge {_day_long(thaw)} night."
         thaw_wants.append({"weekly_plan_id": e["weekly_plan_id"], "entry_id": e["id"], "meat": meat,
-                           "meal": e["meal"], "meal_date": e["date"]})
+                           "meal": e["meal"], "meal_date": e["date"],
+                           "prep_date": (date.fromisoformat(e["date"]) - timedelta(days=days_out)).isoformat()})
     else:
         keeps = f"Keeps in the fridge until {_day_long(e['date'])}"
     if existing is not None:
@@ -706,6 +709,24 @@ def marinade_items(e: dict, meat: str, qty: str, mkey: str, days_out: int, froze
             first_date=e["date"], first_slot=e["slot"],
         ))
     return out
+
+
+def _marinade_settled(conn, entry_id: int, prep_date: str, today) -> bool:
+    """Whether a frozen marinade for this meal has really been made: its
+    prep day is past, or its step was ticked (a derived marinade's mark, or
+    a pinned marinate task for the meal marked done)."""
+    if prep_date and prep_date < today():
+        return True
+    if conn.execute(
+        f"SELECT 1 FROM {MARKS_TABLE} WHERE household_id = ? AND done = 1 AND step_key LIKE ?",
+        (household_id(), f"marinate:{entry_id}:%"),
+    ).fetchone():
+        return True
+    return conn.execute(
+        "SELECT 1 FROM prep_tasks WHERE household_id = ? AND meal_plan_entry_id = ? AND status = 'done' "
+        "AND task_type != 'defrost' AND lower(description) LIKE '%marinat%'",
+        (household_id(), entry_id),
+    ).fetchone() is not None
 
 
 def reconcile_marinade_thaws(wants: list[dict], plan_ids, windows: list[tuple[str, str]]) -> None:
@@ -744,7 +765,8 @@ def reconcile_marinade_thaws(wants: list[dict], plan_ids, windows: list[tuple[st
         conn = get_conn()
         try:
             rows = conn.execute(
-                "SELECT t.id, t.status, t.task_date, t.description, t.meal_plan_entry_id, "
+                "SELECT t.id, t.status, t.task_date, t.description, t.related_meal, t.meal_plan_entry_id, "
+                "COALESCE(json_extract(t.detail_json, '$.prep_date'), '') AS prep_date, "
                 "m.date AS meal_date, m.slot_state FROM prep_tasks t "
                 "LEFT JOIN meal_plan_entries m ON m.id = t.meal_plan_entry_id AND m.household_id = t.household_id "
                 "WHERE t.household_id = ? AND t.task_type = 'defrost' "
@@ -761,8 +783,26 @@ def reconcile_marinade_thaws(wants: list[dict], plan_ids, windows: list[tuple[st
                 if r["status"] != "pending":
                     continue
                 gone = r["meal_date"] is None or r["slot_state"] != "planned" or entry_id in have
-                in_reach = r["meal_date"] is not None and any(a <= r["meal_date"] <= b for a, b in windows)
-                if gone or in_reach:
+                if gone:
+                    conn.execute("DELETE FROM prep_tasks WHERE id = ? AND household_id = ?", (r["id"], household_id()))
+                    continue
+                # Once the bag is really in the freezer — its prep day has
+                # gone by, or its marinade was ticked done — that is a fact,
+                # whatever the plan does next: the thaw stays and follows the
+                # meal to the night before its new day (review, 2026-11-01:
+                # a meal moved closer after the prep day lost its thaw).
+                if _marinade_settled(conn, entry_id, r["prep_date"], today):
+                    thaw = thaw_date_for(r["meal_date"])
+                    m = re.match(r"^Move the marinated (.+?) to the fridge", r["description"] or "")
+                    description = thaw_description(m.group(1) if m else "meat", r["related_meal"] or "dinner",
+                                                   r["meal_date"])
+                    if r["task_date"] != thaw or r["description"] != description:
+                        conn.execute(
+                            "UPDATE prep_tasks SET task_date = ?, description = ? WHERE id = ? AND household_id = ?",
+                            (thaw, description, r["id"], household_id()),
+                        )
+                    continue
+                if any(a <= r["meal_date"] <= b for a, b in windows):
                     conn.execute("DELETE FROM prep_tasks WHERE id = ? AND household_id = ?", (r["id"], household_id()))
             for entry_id, w in wanted.items():
                 thaw = thaw_date_for(w["meal_date"])
@@ -782,7 +822,7 @@ def reconcile_marinade_thaws(wants: list[dict], plan_ids, windows: list[tuple[st
                     "status, task_type, inventory_item_id, meal_plan_entry_id, quantity, detail_json) "
                     "VALUES (?, ?, ?, ?, ?, 'pending', 'defrost', NULL, ?, '', ?)",
                     (household_id(), w["weekly_plan_id"], thaw, description, w["meal"], entry_id,
-                     json.dumps({"kind": MARINADE_THAW_KIND})),
+                     json.dumps({"kind": MARINADE_THAW_KIND, "prep_date": w.get("prep_date") or ""})),
                 )
             conn.commit()
         finally:
@@ -1070,14 +1110,21 @@ def derive_steps(prep_date: str, last_date: str, weekly_plan_id: int, plan_row, 
         # Only a recipe with steps written down (one with none is unknown,
         # not undecomposable), and a breakfast only when it is the make-
         # ahead kind (breakfast_prep: "Fresh eggs and toast cannot be made
-        # on a prep day", Emily 2026-10-26). Never a dish with seafood in
-        # it, and never a no-cook dish of cut cucumber, tomato or avocado (a
-        # salad is better fresh as a whole, not only its parts).
+        # on a prep day", Emily 2026-10-26). Never a dish that eats anything
+        # better fresh — seafood, avocado, cucumber, tomato, crispy — whatever
+        # its cook time (review, 2026-11-01: a chicken avocado wrap with 10
+        # minutes on the stove is still a wrap with avocado in it). Its
+        # other steps are still offered above.
+        # Tomato is the exception: a cooked stew or sauce with tomato is the
+        # classic make-ahead dish, so tomato blocks only a raw (no cook
+        # time) dish (coordinator, 2026-11-01).
         fresh_families = {f for f, _d in found["fresh"]}
-        no_cook = not (recipe or {}).get("cook_time_minutes")
-        if (recipe and not offered and not found["dish_fresh"] and days_out <= KEEPS_WHOLE_DISH
-                and not (fresh_families & {"shrimp", "fish", "seafood"})
-                and not (fresh_families and no_cook)
+        if not (recipe or {}).get("cook_time_minutes"):
+            blocking = fresh_families
+        else:
+            blocking = fresh_families - {"tomato"}
+        if (recipe and not offered and not found["dish_fresh"] and not blocking
+                and days_out <= KEEPS_WHOLE_DISH
                 and recipe.get("instructions")
                 and (recipe.get("prep_time_minutes") or recipe.get("cook_time_minutes"))
                 and (e["slot"] != "breakfast" or _breakfast_keeps(e["meal"], breakfast_prep))):
