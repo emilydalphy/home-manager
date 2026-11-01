@@ -75,9 +75,11 @@ def test_quebec_and_newfoundland_keep_their_own_days():
 
 
 def test_a_country_with_no_table_gets_no_holidays_rather_than_canadas():
-    assert tools.rule_holidays(2026, "US") == []
+    # The US has its own table since 2026-10-31 (test_holiday_four_picks);
+    # a country with none still gets none.
+    assert tools.rule_holidays(2026, "GB") == []
     with pytest.raises(ValueError):
-        tools.set_holiday_region(country="US")
+        tools.set_holiday_region(country="GB")
 
 
 def test_the_region_is_a_household_setting_with_ontario_as_the_default():

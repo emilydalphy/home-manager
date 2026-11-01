@@ -2884,12 +2884,12 @@ TOOL_DEFINITIONS = [
     },
     {
         "name": "set_holiday_region",
-        "description": "Where the household is, for its holidays: country (Canada only so far) and province/territory (\"we're in BC\", \"Manitoba\"). Only what's given changes; the default is Ontario. Family Day and its provincial siblings depend on it.",
+        "description": "Where the household is, for its holidays: country (Canada or the US) and province/territory or state (\"we're in BC\", \"Manitoba\", \"we're in Ohio\"). Only what's given changes, except that a new country without a province clears the old province; the default is Ontario. Family Day and its provincial siblings, and which holidays shut the shops, depend on it.",
         "input_schema": {
             "type": "object",
             "properties": {
-                "country": {"type": "string", "description": "Two-letter code, e.g. CA."},
-                "province": {"type": "string", "description": "Two-letter code or name, e.g. ON, BC, 'Nova Scotia'."},
+                "country": {"type": "string", "description": "Two-letter code, e.g. CA or US."},
+                "province": {"type": "string", "description": "Two-letter code or name of a province or (in the US) a state, e.g. ON, BC, 'Nova Scotia', OH."},
             },
             "required": [],
         },
