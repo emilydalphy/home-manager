@@ -2870,17 +2870,18 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 }
 
 /* ---------- Mobile tab bar ---------- */
-/* Bare line icons on the ground, no chips: the nav is a hairline and five
-   labels (four until 2026-10-26, when Emily approved the Kitchen tab
-   between Shop and Cook — Loop Board C1). Five 67px cells at 375px; the
-   longest label, "Kitchen", is about 42px at 11px/800. */
+/* Bare line icons on the ground, no chips: the nav is a hairline and four
+   labels (five from 2026-10-26, when Emily approved the Kitchen tab
+   between Shop and Cook, until 2026-11-01, when Today was retired and
+   Plan opens first). Four 84px cells at 375px; the longest label,
+   "Kitchen", is about 42px at 11px/800. */
 #tab-bar {
   flex-shrink: 0;
   background: var(--ground);
   border-top: 1.5px solid var(--hairline);
   padding: 8px 12px calc(20px + env(safe-area-inset-bottom));
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 4px;
 }
 .tab-btn {
