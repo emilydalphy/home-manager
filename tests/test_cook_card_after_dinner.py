@@ -28,10 +28,11 @@ def _pick(meals_js: str, hour: int):
     today) at `hour` on the household's clock; the picked meal's slot."""
     fns = "\n".join(_extract(n, SHELL_JS) for n in (
         "todayLocalStr", "householdHourNow", "cookSlotRank",
-        "cookCurrentSlotIndex", "cookTonightIndex",
+        "cookCurrentSlotIndex", "addDaysLocal", "kitchenDayIso", "cookTonightIndex",
     ))
     return _run(
         "var COOK_SLOT_ORDER = ['breakfast', 'lunch', 'dinner', 'snack'];\n"
+        "var kitchenState = { day: null };\n"
         "var shellWho = { timezone: '' };\n" + fns + "\n"
         "var T = todayLocalStr();\n"
         "var meals = " + meals_js + ";\n"
@@ -90,3 +91,30 @@ def test_a_snack_only_evening_pins_nothing():
     assert _pick("[{date: T, slot: 'snack', cooked_status: 'pending'}]", 21) is None
     # GUARD: in the afternoon the snack is still a fine card.
     assert _pick("[{date: T, slot: 'snack', cooked_status: 'pending'}]", 14) == "snack:pending"
+
+
+@_needs_node
+def test_after_midnight_with_yesterdays_cook_held_the_card_is_yesterdays_dinner():
+    """Emily, 2026-10-31: a started cook stays tonight's until ticked done or
+    4am. The server says which day (/api/today/moves' date, kept in
+    kitchenState.day); Cook picks from that day's meals, as that evening —
+    not today's breakfast at 00:30. A stale day from further back is ignored."""
+    fns = "\n".join(_extract(n, SHELL_JS) for n in (
+        "todayLocalStr", "householdHourNow", "cookSlotRank",
+        "cookCurrentSlotIndex", "addDaysLocal", "kitchenDayIso", "cookTonightIndex",
+    ))
+    def pick(day_expr):
+        return _run(
+            "var COOK_SLOT_ORDER = ['breakfast', 'lunch', 'dinner', 'snack'];\n"
+            "var shellWho = { timezone: '' };\n" + fns + "\n"
+            "var T = todayLocalStr(); var Y = addDaysLocal(T, -1);\n"
+            f"var kitchenState = {{ day: {day_expr} }};\n"
+            "var meals = [{date: Y, slot: 'breakfast', cooked_status: 'pending', recipe_name: 'Y-b'},"
+            " {date: Y, slot: 'dinner', cooked_status: 'pending', recipe_name: 'Chili'},"
+            " {date: T, slot: 'breakfast', cooked_status: 'pending', recipe_name: 'T-b'}];\n"
+            "var i = cookTonightIndex(meals, 0);\n"
+            "console.log(JSON.stringify(i === null ? null : meals[i].recipe_name));"
+        )
+    assert pick("Y") == "Chili"
+    assert pick("T") == "T-b"
+    assert pick("addDaysLocal(T, -5)") == "T-b"

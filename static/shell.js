@@ -11341,6 +11341,11 @@
     // and Kitchen cannot disagree about when to start. No new route: the
     // payload Today already asks for answers this too.
     moves: [],
+    // The day /api/today/moves is about (cooker.kitchen_day): the
+    // household's today, except after midnight while yesterday's cook is
+    // still started and unticked, until 4am (Emily, 2026-10-31). Cook reads
+    // it through kitchenDayIso() so it never disagrees with Today.
+    day: null,
     loading: false,
     // Set by a caller that wants the root's prep to be the thing you land
     // on rather than the top of the tab — the rating toast's "Show me
@@ -11415,7 +11420,9 @@
       if (!trio[0].ok) throw new Error('cooker-view failed');
       cookState.data = await trio[0].json();
       cookState.attention = trio[1].ok ? ((await trio[1].json()).items || []) : [];
-      kitchenState.moves = trio[2].ok ? ((await trio[2].json()).moves || []) : [];
+      var movesBody = trio[2].ok ? await trio[2].json() : {};
+      kitchenState.moves = movesBody.moves || [];
+      kitchenState.day = movesBody.date || null;
       cookState.loadError = false;
       // Which meal is "tonight" is decided HERE, on a real load, and then
       // pinned — not recomputed on every render. cookTonightIndex prefers
@@ -12779,7 +12786,7 @@
     if (!body) return;
     var dock = panel.querySelector('#kit-dock');
     var content = panel.querySelector('.kitchen-content');
-    var todayIso = todayLocalStr();
+    var todayIso = kitchenDayIso();
     setRootBand(panel, 'kit-band', { eyebrow: cookBandEyebrow(todayIso) });
 
     function setDock(html) {
@@ -25424,9 +25431,22 @@
     return 2;                  // dinner
   }
 
+  // The kitchen's day: the server's (kitchenState.day) when it is today or
+  // yesterday — yesterday only while a started cook is still on the stove
+  // before 4am — and the household's today otherwise. Anything else is a
+  // stale payload from another day and is ignored.
+  function kitchenDayIso() {
+    var today = todayLocalStr();
+    var day = kitchenState.day;
+    if (day && (day === today || day === addDaysLocal(today, -1))) return day;
+    return today;
+  }
+
   function cookTonightIndex(meals, nowHour) {
-    var iso = todayLocalStr();
-    var hour = typeof nowHour === 'number' ? nowHour : householdHourNow();
+    var iso = kitchenDayIso();
+    // Held on yesterday after midnight: it is still that evening's dinner.
+    var hour = iso !== todayLocalStr() ? 23 :
+      (typeof nowHour === 'number' ? nowHour : householdHourNow());
     var from = cookCurrentSlotIndex(hour);
     var todays = (meals || [])
       .map(function (m, i) { return { m: m, i: i }; })
@@ -27352,7 +27372,9 @@
     try {
       var res = await Api.fetch('/api/today/moves');
       if (!res.ok) return;
-      kitchenState.moves = (await res.json()).moves || [];
+      var body = await res.json();
+      kitchenState.moves = body.moves || [];
+      kitchenState.day = body.date || null;
     } catch (err) {
       return;
     }
