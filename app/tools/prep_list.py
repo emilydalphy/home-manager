@@ -724,10 +724,18 @@ def reconcile_marinade_thaws(wants: list[dict], plan_ids, windows: list[tuple[st
     Idempotent; never raises (a failure leaves the rows as they were).
     """
     from . import cooker as _cooker
-    try:
-        today = _cooker.household_today().isoformat()
-    except Exception:
-        today = date.today().isoformat()
+    today_cache: list[str] = []
+
+    def today() -> str:
+        # Read the household clock only when a thaw is about to be booked:
+        # the Cook view counts its clock reads (test_cooker_household_clock).
+        if not today_cache:
+            try:
+                today_cache.append(_cooker.household_today().isoformat())
+            except Exception:
+                today_cache.append(date.today().isoformat())
+        return today_cache[0]
+
     plan_ids = sorted({p for p in plan_ids if p} | {w["weekly_plan_id"] for w in wants})
     if not plan_ids:
         return
@@ -767,7 +775,7 @@ def reconcile_marinade_thaws(wants: list[dict], plan_ids, windows: list[tuple[st
                             (thaw, description, row["id"], household_id()),
                         )
                     continue
-                if thaw < today:
+                if thaw < today():
                     continue
                 conn.execute(
                     "INSERT INTO prep_tasks (household_id, weekly_plan_id, task_date, description, related_meal, "
