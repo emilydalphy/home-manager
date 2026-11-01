@@ -6201,13 +6201,28 @@
   }
 
   // ---------- Requests ----------
+  // The server's refusals that are already a sentence for the person
+  // (grocery.AMOUNT_REFUSED). Keep in step with app/tools/grocery.py.
+  var GRO_SAY_AS_IS = ["That amount doesn't look right."];
   async function groPost(url, body) {
     var res = await Api.fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body || {})
     });
-    if (!res.ok) throw new Error('request failed');
+    if (!res.ok) {
+      // A refusal with a sentence for the person (a 400's detail — "That
+      // amount doesn't look right.") is shown as it is, not swapped for
+      // "try again", which would be the wrong advice (2026-11-01).
+      var err = new Error('request failed');
+      if (res.status === 400) {
+        var body = await res.json().catch(function () { return {}; });
+        // Only sentences written for the person; other 400s carry a
+        // developer's message and keep the caller's own toast.
+        if (body && GRO_SAY_AS_IS.indexOf(body.detail) !== -1) err.userMessage = body.detail;
+      }
+      throw err;
+    }
     return res.json().catch(function () { return {}; });
   }
   async function groPostEmpty(url) {
@@ -6230,7 +6245,7 @@
       // "Try again" is the wrong advice with no signal: only ticks queue,
       // everything else waits for a bar (see groTick).
       var noSignal = groIsNetworkError(err) || navigator.onLine === false;
-      showToast(noSignal ? GRO_NO_SIGNAL_TOAST : (failureMessage || "That didn't save — try again."));
+      showToast(noSignal ? GRO_NO_SIGNAL_TOAST : (err && err.userMessage) || failureMessage || "That didn't save — try again.");
       await loadGrocery();
       return false;
     }
@@ -9465,7 +9480,7 @@
         return true;
       }
       console.warn('Grocery add failed:', err);
-      showToast("Couldn't add that — try again.");
+      showToast((err && err.userMessage) || "Couldn't add that — try again.");
       groAddSheetOpen({ typed: line.typed, store: line.store, picked: line.picked });
       return false;
     });
@@ -9549,7 +9564,7 @@
             // update_grocery_item leaves a field alone only for null, so
             // a copy of the list whose rows carry no category would
             // blank it outright. Its own card.
-            return groPost('/api/grocery-list/' + id + '/update', { quantity: wasBefore.quantity })
+            return groPost('/api/grocery-list/' + id + '/update', { quantity: wasBefore.quantity, restore: true })
               .then(function () {
                 return groPost('/api/grocery-list/' + id + '/store', { store: wasBefore.store, remember: false });
               });
@@ -10298,8 +10313,11 @@
                 if (offKind === 'spice') return groPost('/api/grocery-list/' + offRow.item_id + '/spice', { ticked: true });
                 if (stapleId) return groPostEmpty('/api/staples/' + stapleId + '/undo');
                 if (r && r.restorable) return groPostEmpty('/api/grocery-list/' + offRow.item_id + '/remove-undo');
+                // restore: the line's own amount, not a typed one — the
+                // typed-amount rule must not refuse it (2026-11-01).
                 return groPost('/api/grocery-list/add', {
-                  item: offRow.name, quantity: offRow.quantity || '', category: offRow.category || 'other'
+                  item: offRow.name, quantity: offRow.quantity || '', category: offRow.category || 'other',
+                  restore: true
                 });
               }, "Couldn't put that back — try again.");
             }

@@ -71,3 +71,34 @@ def test_a_category_only_edit_is_not_held_to_the_amount_rule(signed_in):
     item_id = tools.add_grocery_item("Lemons", quantity="3")["item_id"]
     res = signed_in.post(f"/api/grocery-list/{item_id}/update", json={"category": "produce"})
     assert res.status_code == 200, res.text
+
+
+def test_undo_puts_a_long_line_back_as_it_was(signed_in):
+    """Review, 2026-11-01: a hand line built up past 40 characters (or a
+    chat add's long amount) was refused on Undo — Remove deleted it, the
+    put-back got a 400, and the line was gone. Undo sends restore: it is
+    the list's own amount, not a typed one."""
+    item_id = tools.add_grocery_item("Odds and ends", quantity="2 cups")["item_id"]
+    tools.update_grocery_item(item_id, quantity="2 cups + 1 lb + 1 bunch + 3 cans + 1 jar + 1 bag + 1 box")
+    kept = _qty(item_id)
+    assert len(kept) > 40, kept
+    # Undo's put-back of a removed line goes through the add route.
+    res = signed_in.post("/api/grocery-list/add",
+                         json={"item": "Odds and ends again", "quantity": kept, "restore": True})
+    assert res.status_code == 200, res.text
+    # And the merge's put-back through the row route.
+    tools.update_grocery_item(item_id, quantity="1")
+    res = signed_in.post(f"/api/grocery-list/{item_id}/update", json={"quantity": kept, "restore": True})
+    assert res.status_code == 200, res.text
+    assert _qty(item_id) == kept
+    # Typed, the same amount is still refused.
+    assert signed_in.post(f"/api/grocery-list/{item_id}/update", json={"quantity": kept}).status_code == 400
+
+
+def test_the_shell_sends_restore_on_undo_and_shows_the_refusal_sentence():
+    from pathlib import Path
+    js = (Path(__file__).resolve().parents[1] / "static" / "shell.js").read_text()
+    assert "{ quantity: wasBefore.quantity, restore: true }" in js
+    assert "restore: true\n                });" in js
+    assert "GRO_SAY_AS_IS = [\"That amount doesn't look right.\"]" in js
+    assert REFUSED == "That amount doesn't look right."

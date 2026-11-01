@@ -1354,6 +1354,11 @@ class GroceryAddRequest(BaseModel):
     # the reply was lost — so a repeat is answered, not added twice. None =
     # every other caller, which behaves as before. See app/grocery_add_once.py.
     client_id: str | None = Field(default=None, max_length=64)
+    # Undo putting a line back exactly as it was (review, 2026-11-01): the
+    # amount is the list's own, not something just typed, so the typed-
+    # amount rule does not apply — a hand line built up past 40 characters,
+    # or a chat add's long amount, was refused on Undo and lost for good.
+    restore: bool = False
 
 
 class GroceryScanItem(BaseModel):
@@ -1369,6 +1374,8 @@ class ConfirmGroceryScanRequest(BaseModel):
 class GroceryUpdateRequest(BaseModel):
     quantity: str | None = None
     category: str | None = None
+    # Undo's put-back of the line's own earlier amount — see GroceryAddRequest.restore.
+    restore: bool = False
 
 
 class GroceryStatusRequest(BaseModel):
@@ -7528,7 +7535,7 @@ def add_grocery_list_item(req: GroceryAddRequest):
         # "x2" is 2; zero, negative or past 40 characters is a 400 with the
         # sentence to show. Read inside the add so the offline queue's
         # repeat of a refused add is refused the same way.
-        quantity = tools.typed_amount(req.quantity)
+        quantity = req.quantity if req.restore else tools.typed_amount(req.quantity)
         result = tools.add_grocery_item(req.item, quantity=quantity, category=req.category, added_by=req.added_by)
         if req.store is not None:
             placed = tools.set_grocery_item_store(result["item_id"], req.store, remember=req.remember)
@@ -7598,7 +7605,7 @@ def update_grocery_list_item(item_id: int, req: GroceryUpdateRequest):
     try:
         # The row's amount box, held to the add sheet's rule (Emily,
         # 2026-10-31): before, it took 300 characters, "-1" and "0".
-        quantity = tools.typed_amount(req.quantity) if req.quantity is not None else None
+        quantity = req.quantity if (req.quantity is None or req.restore) else tools.typed_amount(req.quantity)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     try:
