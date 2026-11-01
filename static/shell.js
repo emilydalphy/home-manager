@@ -12086,7 +12086,10 @@
         // Made ahead and eaten cold (served_cold, cooker.py) is "Prepped":
         // it's ready to go, nothing to warm (Emily, 2026-09-25).
         badge: done ? (isReheat || isTakeout ? 'eaten' : 'cooked')
-          : isTakeout ? 'Takeout' : (isReheat ? (meal.served_cold ? 'Prepped' : 'Reheat') : (prepped ? 'Prepped' : 'Cook'))
+          // A dish made whole at the prep list says what finishes it —
+          // "Plate" for a cold one (cooker._apply_made_at_prep, Emily
+          // 2026-11-01).
+          : isTakeout ? 'Takeout' : (isReheat ? (meal.finish_action === 'plate' ? 'Plate' : (meal.served_cold ? 'Prepped' : 'Reheat')) : (prepped ? 'Prepped' : 'Cook'))
       });
     });
     return rows;
@@ -12455,6 +12458,12 @@
     // Made ahead on the prep day: the day the food was really made, not
     // the day the cook entry happens to sit on (cookPreppedAhead).
     var prepped = cookPreppedAhead(meal);
+    // Made whole at a prep day (cooker._apply_made_at_prep): reheat or
+    // plate, and the day it was made.
+    if (meal.made_at_prep) {
+      return (meal.finish_action === 'plate' ? 'Plate' : 'Reheat') +
+        ' — made at ' + meal.made_at_prep.weekday + '’s prep.';
+    }
     if (meal.is_leftovers) {
       var src = meal.leftovers_from || {};
       var madeOn = prepped ? prepped.date : src.date;

@@ -638,7 +638,10 @@ def _pinned_marinade(step: dict, task: dict, prep_date: str, entries: dict, week
     e = dict(entry, weekly_plan_id=weekly_plan_id)
     # Still frozen (defrost.py has a thaw for this meal's meat): worded as
     # frozen, and its thaw is defrost.py's — no second one booked.
-    still_frozen = any(w in meat for w in (frozen or {}).get(entry["id"], set()))
+    # By the meal entry, not by words: a defrost row for "beef" on the meal
+    # a "Marinate the flank steak" task is for is the same meat still frozen
+    # (follow-up, 2026-11-01 — matching words booked a second thaw).
+    still_frozen = entry["id"] in (frozen or {})
     return _prep_list.marinade_items(e, meat, "", f"task{task['id']}", days_out, still_frozen, ctx["wants"],
                                      existing=step)
 

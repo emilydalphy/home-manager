@@ -717,6 +717,11 @@ def _marinade_settled(conn, entry_id: int, prep_date: str, today) -> bool:
     a pinned marinate task for the meal marked done)."""
     if prep_date and prep_date < today():
         return True
+    return _marinade_ticked(conn, entry_id)
+
+
+def _marinade_ticked(conn, entry_id: int) -> bool:
+    """The marinade for this meal was ticked done on a prep list."""
     if conn.execute(
         f"SELECT 1 FROM {MARKS_TABLE} WHERE household_id = ? AND done = 1 AND step_key LIKE ?",
         (household_id(), f"marinate:{entry_id}:%"),
@@ -783,7 +788,12 @@ def reconcile_marinade_thaws(wants: list[dict], plan_ids, windows: list[tuple[st
                 if r["status"] != "pending":
                     continue
                 gone = r["meal_date"] is None or r["slot_state"] != "planned" or entry_id in have
-                if gone:
+                # The meal moved to (or before) its prep day and the
+                # marinade was never ticked: it never happened, so neither
+                # does its thaw (Loop Board follow-up, 2026-11-01).
+                moved_before = bool(r["prep_date"]) and r["meal_date"] is not None \
+                    and r["meal_date"] <= r["prep_date"] and not _marinade_ticked(conn, entry_id)
+                if gone or moved_before:
                     conn.execute("DELETE FROM prep_tasks WHERE id = ? AND household_id = ?", (r["id"], household_id()))
                     continue
                 # Once the bag is really in the freezer — its prep day has
@@ -792,7 +802,10 @@ def reconcile_marinade_thaws(wants: list[dict], plan_ids, windows: list[tuple[st
                 # meal to the night before its new day (review, 2026-11-01:
                 # a meal moved closer after the prep day lost its thaw).
                 if _marinade_settled(conn, entry_id, r["prep_date"], today):
-                    thaw = thaw_date_for(r["meal_date"])
+                    # Never a pending thaw dated in the past: a night-before
+                    # already gone by makes it due now, so Cook's thaw card
+                    # shows it.
+                    thaw = max(thaw_date_for(r["meal_date"]), today())
                     m = re.match(r"^Move the marinated (.+?) to the fridge", r["description"] or "")
                     description = thaw_description(m.group(1) if m else "meat", r["related_meal"] or "dinner",
                                                    r["meal_date"])
@@ -809,6 +822,8 @@ def reconcile_marinade_thaws(wants: list[dict], plan_ids, windows: list[tuple[st
                 description = thaw_description(w["meat"], w["meal"], w["meal_date"])
                 row = have.get(entry_id)
                 if row is not None:
+                    if row["status"] == "pending" and row["task_date"] != thaw and thaw < today():
+                        thaw = today()  # never a pending thaw dated in the past
                     if row["status"] == "pending" and (row["task_date"] != thaw or row["description"] != description):
                         conn.execute(
                             "UPDATE prep_tasks SET task_date = ?, description = ? WHERE id = ? AND household_id = ?",
