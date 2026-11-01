@@ -640,7 +640,7 @@ def set_prep_list_mark(weekly_plan_id: int, prep_date: str, key: str, action: st
             raise ValueError("That one is better made on the day.")
         _write_mark(weekly_plan_id, prep_date, key, state="on")
     else:
-        if item.get("prep_task_id") is not None or item.get("kind") == "cook_ahead":
+        if item.get("prep_task_id") is not None or (item.get("kind") == "cook_ahead" and not item.get("ticks_on_list")):
             raise ValueError("That step ticks off where it lives.")
         _write_mark(weekly_plan_id, prep_date, key, done=(action == "done"))
     return {"weekly_plan_id": weekly_plan_id, "prep_date": prep_date, "key": key, "action": action,
@@ -1253,7 +1253,8 @@ def fit(items: list[dict], budget: int, marks: dict[str, dict]) -> int:
         mark = marks.get(item["key"]) or {}
         if item["state"] == "better_fresh":
             continue
-        if mark.get("done") and item.get("prep_task_id") is None and item.get("kind") != "cook_ahead":
+        if mark.get("done") and item.get("prep_task_id") is None and (
+                item.get("kind") != "cook_ahead" or item.get("ticks_on_list")):
             item["done"] = True
         if item["always"]:
             used += item["hands_on"]

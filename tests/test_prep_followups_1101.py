@@ -117,6 +117,40 @@ def test_a_prepped_lunch_made_at_a_past_prep_day_is_a_reheat_on_its_day():
     assert not card.get("prepped_ahead")
 
 
+def test_ticking_a_prepped_batch_on_prep_day_means_made_not_eaten():
+    """The prep-day tick is MADE, stored on the prep list — the night's own
+    reheat stays to do until it is marked eaten that night."""
+    plan_id = _with_stir_fry()
+    _stew()
+    entry = _plan(plan_id, 2, "Beef Stew", slot="lunch")
+    conn = db.get_conn()
+    conn.execute("UPDATE meal_plan_entries SET derived_from_json = ? WHERE id = ?",
+                 ('{"prep_date": "%s", "prep_day": "x"}' % _d(0), entry))
+    conn.commit()
+    conn.close()
+    session = _session(plan_id)
+    item = next(i for i in session["items"] if i["key"] == f"cook:{entry}")
+    assert item["ticks_on_list"] and not item["done"]
+    assert not _card(plan_id, entry).get("is_leftovers")
+
+    tools.set_prep_list_mark(plan_id, session["date"], item["key"], "done")
+    assert next(i for i in _session(plan_id)["items"] if i["key"] == item["key"])["done"] is True
+    card = _card(plan_id, entry)
+    assert card["is_leftovers"] and card["finish_action"] == "reheat"
+    assert card["cooked_status"] == "pending", "made is not eaten"
+
+    tools.check_off_meal(entry, "done")
+    assert _card(plan_id, entry)["cooked_status"] == "done"
+
+
+def test_the_prep_list_box_for_a_batch_made_ahead_ticks_the_list_not_the_cook():
+    import pathlib
+    src = (pathlib.Path(__file__).resolve().parents[1] / "static" / "shell.js").read_text()
+    body = src[src.index("function cookSessionItemHtml("):]
+    body = body[:body.index("\n  function ", 1)]
+    assert "item.ticks_on_list" in body and "data-cook=\"prep-tick\"" in body
+
+
 def test_a_reheat_badge_says_plate_for_a_plated_dish():
     import pathlib
     src = (pathlib.Path(__file__).resolve().parents[1] / "static" / "shell.js").read_text()

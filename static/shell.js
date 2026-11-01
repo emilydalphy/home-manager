@@ -26076,6 +26076,16 @@
     // and one cooked_status, so the tick is the same write kitchenTodayRowHtml
     // makes and not a second fact.
     var ticksEntry = isCook && !canOpen && item.entry_id != null;
+    // A batch made on the prep day for a LATER meal ticks as MADE on the
+    // prep list itself (prep_list_marks) — never the cook entry, whose
+    // cooked_status is "eaten" on its own night (2026-11-01).
+    var ticksMade = !!(isCook && item.ticks_on_list && session && item.key);
+    var nameOpens = canOpen;  // the dish name still opens the recipe
+    if (ticksMade) {
+      canOpen = false;
+      ticksEntry = false;
+      label = isDone ? 'Mark not done' : 'Mark done';
+    }
     var box = canOpen
       ? '<button type="button" class="cook-box' + (isDone ? ' checked' : '') + '" ' +
           'data-cook="focus" data-idx="' + idx + '" ' +
@@ -26100,7 +26110,7 @@
               'data-name="' + escapeHtml(item.title || '') + '" ' +
               'aria-label="' + escapeHtml(label) + '">' + COOK_ICONS.check + '</button>'
           : '<span class="cook-box' + (isDone ? ' checked' : '') + '">' + COOK_ICONS.check + '</span>'));
-    var name = canOpen
+    var name = nameOpens
       ? '<button type="button" class="prep-step-name" data-cook="focus" data-idx="' + idx + '">' +
           escapeHtml(item.title) + '</button>'
       : '<span class="prep-step-name">' + escapeHtml(item.title) + '</span>';

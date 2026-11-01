@@ -1925,7 +1925,7 @@ def _apply_made_at_prep(meals: list[dict], sessions: list[dict], recipes_by_name
                     continue
                 weekday = date.fromisoformat(prep_date).strftime("%A")
                 made = (prep_date < today() or (is_dish and item.get("done"))
-                        or (is_batch and card.get("cooked_status") == "done"))
+                        or (is_batch and item.get("done")))
                 if not made:
                     if not card.get("prepped_ahead"):
                         card["prepped_ahead"] = {"date": prep_date, "weekday": weekday, "lunches": []}

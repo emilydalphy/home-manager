@@ -677,6 +677,10 @@ def _build_session(weekly_plan_id, plan, prep_date, prep_day, batches, entries, 
             hands_on=hands, passive=passive, pinned=True,
             feeds_line=_prep_list.feeds_line([{"date": d, "slot": batch["slot"]} for d in batch["lunch_dates"]]),
             first_date=first, first_slot=batch["slot"],
+            # Made on an EARLIER day than it is eaten: the prep-day tick
+            # means MADE (a prep-list mark), never the cook entry's
+            # cooked_status, which is "eaten" on its own day (2026-11-01).
+            ticks_on_list=batch["cook_date"] > prep_date,
         ))
         if batch["slot"] == "lunch" and batch["lunch_dates"]:
             n = len(batch["lunch_dates"])
