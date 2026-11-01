@@ -208,6 +208,6 @@ def test_a_households_own_cups_come_back_exactly_when_the_meals_go(own, shares, 
 
 def test_an_inventory_step_reads_a_fraction():
     from app.tools import inventory
-    assert inventory._step_quantity_text("2/3 cup", 1) == "1 2/3 cup"
-    assert inventory._step_quantity_text("1 1/3 cups", -1) == "1/3 cups"
+    assert inventory._step_quantity_text("2/3 cup", 1) == "1 2/3 cups"
+    assert inventory._step_quantity_text("1 1/3 cups", -1) == "1/3 cup"
     assert inventory._step_quantity_text("3 gal", -1) == "2 gal"
