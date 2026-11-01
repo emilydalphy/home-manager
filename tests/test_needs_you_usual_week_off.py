@@ -47,6 +47,13 @@ def _dinner_cards() -> list[dict]:
 def test_tonight_off_in_the_usual_week_is_not_asked_and_tomorrow_is():
     _a_recipe()
     tools.save_usual_week(grid={"dinner": {_weekday(0): "off"}})
+    # With no plan at all, the plan-the-week card stands in for tomorrow's
+    # dinner whenever its period holds tomorrow (Emily, 2026-10-31 — one
+    # card per gap; tests/test_no_plan_only_week_card.py). Put away, so
+    # this stays about the usual week on any weekday.
+    nudge = tools.get_week_planning_nudge()
+    if nudge.get("dismiss_key"):
+        tools.dismiss_notification(nudge["dismiss_key"])
 
     cards = _dinner_cards()
 
