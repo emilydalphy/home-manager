@@ -16365,10 +16365,15 @@
     var ings = (draft.ingredients || []).map(rliIngredientRowHtml).join('');
     var fromPhoto = draft.read_by === 'photo';
     // A yield of "1 pie" or "2 dozen" says what the recipe makes, not who
-    // it feeds: Serves starts empty and the line under it says so, so the
-    // household sets it rather than the planner scaling a "serves 1" by
-    // four (Emily 2026-10-26).
+    // it feeds (Emily 2026-10-26). Option A (Emily 2026-10-31): the sheet
+    // asks the plain question in Serves' place, empty, and a skip is the
+    // planner's 4 — the same number any recipe with no servings gets —
+    // rather than a wall in front of Save.
     var makes = draft.servings_unknown_makes || '';
+    var servesHtml = makes
+      ? ''
+      : '<label class="rli-label rli-num"><span>Serves</span>' +
+          '<input id="rli-servings" class="rli-input" type="number" min="1" inputmode="numeric" value="' + escapeHtml(draft.default_servings || 4) + '"></label>';
     body.innerHTML =
       // Where it came from and how it was read. A model-read draft says so,
       // because it is a reading of the page rather than a copy of it.
@@ -16388,17 +16393,18 @@
       (fromPhoto ? rliCitationRowHtml(draft.citation || {}) : '') +
       '<label class="rli-label" for="rli-name">Name</label>' +
       '<input id="rli-name" class="rli-input" type="text" value="' + escapeHtml(draft.name || '') + '">' +
-      '<div class="rli-numbers">' +
-        '<label class="rli-label rli-num"><span>Serves</span>' +
-          '<input id="rli-servings" class="rli-input" type="number" min="1" inputmode="numeric" value="' + (makes ? '' : escapeHtml(draft.default_servings || 4)) + '"></label>' +
+      (makes
+        ? '<label class="rli-label" for="rli-servings">How many people does this feed?</label>' +
+          '<input id="rli-servings" class="rli-input" type="number" min="1" inputmode="numeric" value="" aria-describedby="rli-servings-note">' +
+          '<p class="rli-problem" id="rli-servings-note">It makes \u201c' + escapeHtml(makes) + '\u201d. Leave it blank and I\u2019ll plan for 4.</p>'
+        : '') +
+      '<div class="rli-numbers' + (makes ? ' rli-numbers-two' : '') + '">' +
+        servesHtml +
         '<label class="rli-label rli-num"><span>Prep mins</span>' +
           '<input id="rli-prep" class="rli-input" type="number" min="0" inputmode="numeric" value="' + escapeHtml(draft.prep_time_minutes || '') + '"></label>' +
         '<label class="rli-label rli-num"><span>Cook mins</span>' +
           '<input id="rli-cook" class="rli-input" type="number" min="0" inputmode="numeric" value="' + escapeHtml(draft.cook_time_minutes || '') + '"></label>' +
       '</div>' +
-      (makes
-        ? '<p class="rli-problem" id="rli-servings-note">The recipe says it makes “' + escapeHtml(makes) + '”, not how many it serves. Set Serves before saving.</p>'
-        : '') +
       '<div class="rli-label">Ingredients</div>' +
       '<div class="rli-ings" id="rli-ings">' + ings + '</div>' +
       '<button type="button" class="rli-link" data-rli="add-ing">Add an ingredient</button>' +
@@ -16431,6 +16437,7 @@
       name: (body.querySelector('#rli-name').value || '').trim(),
       ingredients: ingredients,
       instructions: steps,
+      // Blank (a skipped "How many people does this feed?") is the planner's 4.
       default_servings: num('#rli-servings') || 4,
       prep_time_minutes: num('#rli-prep'),
       cook_time_minutes: num('#rli-cook'),
@@ -16460,13 +16467,6 @@
       problem.textContent = 'Give it a name first.';
       problem.hidden = false;
       body.querySelector('#rli-name').focus();
-      return;
-    }
-    var servingsEl = body.querySelector('#rli-servings');
-    if (rliDraft && rliDraft.servings_unknown_makes && !(parseInt(servingsEl.value, 10) > 0)) {
-      problem.textContent = 'Set how many it serves, then save.';
-      problem.hidden = false;
-      servingsEl.focus();
       return;
     }
     save.disabled = true;

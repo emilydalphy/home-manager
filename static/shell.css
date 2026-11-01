@@ -7099,6 +7099,8 @@ textarea.wwk-text { resize: vertical; }
 .rli-input::placeholder { color: var(--ink-placeholder); }
 .rli-steps { resize: vertical; min-height: 120px; }
 .rli-numbers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+/* Serves moved up into "How many people does this feed?" — two left. */
+.rli-numbers-two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .rli-num { flex-direction: column; align-items: stretch; gap: 4px; margin-top: 6px; }
 .rli-ings { display: flex; flex-direction: column; gap: 6px; }
 .rli-ing { display: grid; grid-template-columns: 112px minmax(0, 1fr) 44px; gap: 6px; align-items: center; }

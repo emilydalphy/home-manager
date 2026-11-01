@@ -556,7 +556,15 @@ def parse_servings(value) -> int | None:
 _WHOLE_THING_YIELD_RE = re.compile(
     r"\b(?:pies?|loa(?:f|ves)|dozen|cakes?|tarts?|quiches?|batch(?:es)?|"
     r"pans?|trays?|rounds?|rings?|jars?|pints?|quarts?|gallons?|"
-    r"litres?|liters?|cups?|bundts?|galettes?|cobblers?)\b",
+    r"litres?|liters?|cups?|bundts?|galettes?|cobblers?|"
+    # A batch counted in pieces is still what the recipe makes, not who it
+    # feeds: "24 cookies" saved as serves 24 and the planner cut every
+    # amount to a sixth for a family of four (Emily 2026-10-31, option A:
+    # the review step asks "How many people does this feed?" instead).
+    r"cookies?|muffins?|cupcakes?|biscuits?|scones?|rolls?|buns?|bars?|"
+    r"brownies?|blondies?|squares?|slices?|pieces?|wedges?|balls?|bites?|"
+    r"truffles?|pancakes?|waffles?|crepes?|tortillas?|dumplings?|patties|"
+    r"ounces?|oz|pounds?|lbs?)\b",
     re.IGNORECASE,
 )
 _PEOPLE_YIELD_RE = re.compile(r"\b(?:serv(?:es?|ings?)|people|persons?|portions?|guests?)\b", re.IGNORECASE)
@@ -569,11 +577,21 @@ def yield_names_a_whole_thing(value) -> str:
     count."""
     items = value if isinstance(value, list) else [value]
     texts = [v.strip() for v in items if isinstance(v, str) and v.strip()]
-    if not texts or any(isinstance(v, (int, float)) and v > 1 for v in items):
+    if not texts:
         return ""
     if any(_PEOPLE_YIELD_RE.search(t) for t in texts):
         return ""
-    if any(re.fullmatch(r"\d+", t) and int(t) > 1 for t in texts):
+    # A bare number is a serving count ("8" beside "1 pie") unless it is
+    # only the batch's own number said again: WP Recipe Maker writes a
+    # cookie yield as ["24", "24 cookies"], and that is 24 cookies, not 24
+    # people (review catch, 2026-11-01).
+    echoed = {m.group(1) for t in texts if _WHOLE_THING_YIELD_RE.search(t)
+              for m in [re.match(r"(?:(?:yields?|makes)\s*:?\s*)?(\d+)\b", t, re.IGNORECASE)] if m}
+    bare = [str(int(v)) for v in items if isinstance(v, (int, float)) and not isinstance(v, bool) and v > 1 and v == int(v)]
+    bare += [t for t in texts if re.fullmatch(r"\d+", t) and int(t) > 1]
+    if any(isinstance(v, float) and v > 1 and v != int(v) for v in items):
+        return ""
+    if any(n not in echoed for n in bare):
         return ""
     for t in texts:
         if _WHOLE_THING_YIELD_RE.search(t):
