@@ -99,7 +99,52 @@ def _step_quantity_text(quantity: str, delta: float) -> str:
     amount_str = (_quantities._kitchen_number(amount) if parsed else None) or f"{amount:g}"
     if comma:
         amount_str = amount_str.replace(".", ",")
+    suffix = _unit_word_for(suffix, amount)
     return f"{amount_str} {suffix}".strip() if suffix else amount_str
+
+
+# Spelled-out measures and counted things with a plural of their own; the
+# container words come from quantities._CONTAINER_UNIT_PLURALS. A short
+# form (tbsp, oz, g, kg, ml, l, qt, gal) is written the same either way.
+_STEP_UNIT_PLURALS = {
+    "cup": "cups", "lb": "lbs", "pound": "pounds", "ounce": "ounces",
+    "gram": "grams", "kilogram": "kilograms", "liter": "liters", "litre": "litres",
+    "milliliter": "milliliters", "millilitre": "millilitres",
+    "tablespoon": "tablespoons", "teaspoon": "teaspoons",
+    "quart": "quarts", "gallon": "gallons", "egg": "eggs",
+    **_quantities._CONTAINER_UNIT_PLURALS,
+}
+_STEP_UNIT_SINGULARS = {plural: singular for singular, plural in _STEP_UNIT_PLURALS.items()}
+
+
+def _unit_word_for(suffix: str, amount: float) -> str:
+    """
+    The stepper's suffix with its unit word agreeing with the new amount:
+    "1 can" + 1 is "2 cans", "2 bunches" - 1 is "1 bunch", "1 lb bag" + 1 is
+    "2 lb bags" (the bag is what's counted). One or less is singular, as
+    quantities._format_quantity writes it; nothing at all (0) is plural.
+    A word this doesn't know — a food's own name, "some" — is left alone.
+
+    Why (defect hunt, 2026-11-01): the Kitchen item sheet's +/- kept the
+    word as typed, so a tin of beans stepped to "2 can", a bag of spinach
+    to "2 bag" and two bunches of bananas down to "1 bunches".
+    """
+    words = suffix.split(" ")
+    i = 0
+    if (len(words) > 1 and _quantities._UNIT_ALIASES.get(words[0].lower())
+            and words[1].lower() in _STEP_UNIT_PLURALS.keys() | _STEP_UNIT_SINGULARS.keys()
+            and words[1].lower() not in _quantities._UNIT_ALIASES):
+        i = 1  # "lb bag": the number counts bags
+    word = words[i]
+    low = word.lower()
+    singular = low if low in _STEP_UNIT_PLURALS else _STEP_UNIT_SINGULARS.get(low)
+    if not singular:
+        return suffix
+    new = singular if 0 < amount <= 1 else _STEP_UNIT_PLURALS[singular]
+    if word[:1].isupper():
+        new = new[:1].upper() + new[1:]
+    words[i] = new
+    return " ".join(words)
 
 
 def step_inventory_quantity(item_id: int, delta: float) -> dict:

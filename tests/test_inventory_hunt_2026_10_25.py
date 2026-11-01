@@ -41,13 +41,13 @@ def _ids(client) -> dict:
 @pytest.mark.parametrize("raw,delta,expected", [
     ("", 1, "1"),
     ("some", 1, "1 some"),
-    ("½ cup", 1, "1 1/2 cup"),
-    ("1½ cups", -1, "1/2 cups"),
+    ("½ cup", 1, "1 1/2 cups"),   # the word agrees since 2026-11-01
+    ("1½ cups", -1, "1/2 cup"),
     ("1 ½ cups", 1, "2 1/2 cups"),
     ("1,5 kg", -1, "0,5 kg"),
     ("1,000 g", 1, "1001 g"),
     ("3 gal", -1, "2 gal"),
-    ("2/3 cup", 1, "1 2/3 cup"),
+    ("2/3 cup", 1, "1 2/3 cups"),
 ])
 def test_the_stepper_reads_every_way_an_amount_is_written(raw, delta, expected):
     assert inventory._step_quantity_text(raw, delta) == expected
