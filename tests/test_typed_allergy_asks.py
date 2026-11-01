@@ -113,3 +113,19 @@ def test_an_allergy_already_on_sams_chips_is_not_asked_again(signed_in, sam):
 def test_no_shellfish_ever_as_a_must_avoid_note_holds_shrimp_back(sam):
     tools.add_fact("people", "Sam: no shellfish ever", hard=True)
     assert allergen_gate.hard_clashes("Shrimp Tacos", [{"item": "shrimp", "qty": "1 lb"}])
+
+
+def test_what_we_know_asks_the_question_and_posts_the_yes():
+    """The screen half (2026-11-01): the note's save answers with
+    allergy_offer, and What we know shows its question with one Save tap
+    that posts the offered foods to /api/facts/{id}/allergy — on an add
+    and on an edit. Nothing is posted without the tap."""
+    from pathlib import Path
+    js = (Path(__file__).resolve().parents[1] / "static" / "shell.js").read_text(encoding="utf-8")
+    ask = js.split("function wwkAskAllergy(", 1)[1].split("\n  }\n", 1)[0]
+    assert "showToast(offer.question" in ask and "label: 'Save'" in ask
+    assert "wwkPost('/api/facts/' + factId + '/allergy', { foods: offer.foods || [] })" in ask
+    add = js.split("async function wwkAddFact(", 1)[1].split("\n  }\n", 1)[0]
+    assert "result.allergy_offer" in add and "wwkAskAllergy(offer.id, offer.offer)" in add
+    upd = js.split("function wwkUpdateFact(", 1)[1].split("\n  }\n", 1)[0]
+    assert "wwkAskAllergy(id, result.allergy_offer)" in upd
