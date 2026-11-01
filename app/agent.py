@@ -5248,7 +5248,7 @@ def _rewrite_meal_recipe(entry_id: int, text: str, this_meal_only: bool = False)
             # (cook_qty, the "as written" marks): a model that sends a
             # line back must not carry the household's mark with it.
             "ingredients": [
-                {k: v for k, v in i.items() if k not in ("cook_qty", "verbatim", "qty_as_written")}
+                {k: v for k, v in i.items() if k not in ("cook_qty", "verbatim", "qty_as_written", "library_amount")}
                 if isinstance(i, dict) else i
                 for i in spec_base["ingredients"] or []
             ],
@@ -5760,6 +5760,11 @@ def _copy_from_library(recipe: dict, name: str, plain: str, avoidances: list[dic
             household_changes=[],
             research_id=research_id,
             library_id=entry["id"],
+            # The researched set (origin "seed") keeps its own amounts on the
+            # cook card (Emily, 2026-10-31); an entry the app wrote for a
+            # household ("written", or a "research" base it filled) keeps
+            # the per-serving check, as every AI-written recipe does.
+            library_amounts=entry.get("origin") == "seed",
         )
         _recipe_library.record_use(plain, "recipe")
         return {"name": plain, "ok": True, "clash": [], "was": name}, False
@@ -11222,7 +11227,7 @@ def update_recipe_details_from_chat(recipe_name: str, instructions: list[str] | 
     logger.info("update_recipe_details from chat: recipe writer (%s)",
                 "rewrite" if recipe.get("instructions") else "write")
     lines = [
-        {k: v for k, v in i.items() if k not in ("cook_qty", "verbatim", "qty_as_written")}
+        {k: v for k, v in i.items() if k not in ("cook_qty", "verbatim", "qty_as_written", "library_amount")}
         if isinstance(i, dict) else i
         for i in recipe.get("ingredients") or []
     ]

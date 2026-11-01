@@ -1594,6 +1594,7 @@ _DATA_VERSION_FIRST_OPEN = 2
 _DATA_VERSION_ONBOARDING_REGROUPED = 3
 _DATA_VERSION_LITTLE_ONE_IS_CHILD = 4
 _DATA_VERSION_VERBATIM_AMOUNTS = 5
+_DATA_VERSION_LIBRARY_AMOUNTS = 6
 
 
 def _run_once_data_migrations(conn):
@@ -1603,6 +1604,7 @@ def _run_once_data_migrations(conn):
         (_DATA_VERSION_ONBOARDING_REGROUPED, _migrate_prep_and_lunch_limits),
         (_DATA_VERSION_LITTLE_ONE_IS_CHILD, _migrate_little_one_to_child),
         (_DATA_VERSION_VERBATIM_AMOUNTS, _mark_link_recipe_amounts_verbatim),
+        (_DATA_VERSION_LIBRARY_AMOUNTS, _mark_library_recipe_amounts),
     ]
     current = conn.execute("PRAGMA user_version").fetchone()[0]
     for version, step in steps:
@@ -1692,6 +1694,57 @@ def _mark_link_recipe_amounts_verbatim(conn):
         ]
         conn.execute("UPDATE recipes SET ingredients_json = ? WHERE id = ? AND household_id = ?",
                      (json.dumps(marked), row["id"], row["household_id"]))
+
+
+def _mark_library_recipe_amounts(conn):
+    """
+    A household's copy of a library dish from the researched set (origin
+    "seed") gets its lines marked `library_amount`, as the copy now does
+    (Emily, 2026-10-31), and the library's own cook_qty back in place of
+    the per-serving check's guess — the copy saved "2 tbsp" over Tonkatsu's
+    "4 cups" of frying oil. Only a line still exactly the library's (same
+    item, same qty): a line the app added from the steps, one the
+    household changed, and every line of a recipe Change recipe has since
+    rewritten and nobody undid are left as they are. Runs ONCE.
+    """
+    tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+    if "recipes" not in tables or "recipe_library" not in tables:
+        return
+    rewritten = (" AND NOT EXISTS (SELECT 1 FROM recipe_change_requests c WHERE c.recipe_id = r.id "
+                 "AND c.household_id = r.household_id AND c.outcome = 'rewritten' "
+                 "AND c.previous_json IS NOT NULL)") if "recipe_change_requests" in tables else ""
+    rows = conn.execute(
+        "SELECT r.id, r.household_id, r.ingredients_json, l.ingredients_json AS library_json "
+        "FROM recipes r JOIN recipe_library l ON l.id = r.library_id WHERE l.origin = 'seed'" + rewritten
+    ).fetchall()
+
+    def key(ing):
+        return ((ing.get("item") or "").strip().lower(), (ing.get("qty") or "").strip().lower())
+
+    for row in rows:
+        try:
+            lines = json.loads(row["ingredients_json"] or "[]")
+            library = json.loads(row["library_json"] or "[]")
+        except (TypeError, ValueError):
+            continue
+        if not isinstance(lines, list) or not isinstance(library, list):
+            continue
+        own = {key(ing): ing for ing in library if isinstance(ing, dict)}
+        marked, changed = [], False
+        for ing in lines:
+            source = own.get(key(ing)) if isinstance(ing, dict) and not ing.get("added_from_steps") else None
+            if source is None:
+                marked.append(ing)
+                continue
+            line = {k: v for k, v in ing.items() if k != "cook_qty"}
+            if (source.get("cook_qty") or "").strip():
+                line["cook_qty"] = source["cook_qty"]
+            line["library_amount"] = True
+            marked.append(line)
+            changed = True
+        if changed:
+            conn.execute("UPDATE recipes SET ingredients_json = ? WHERE id = ? AND household_id = ?",
+                         (json.dumps(marked), row["id"], row["household_id"]))
 
 
 def _migrate_little_one_to_child(conn):
