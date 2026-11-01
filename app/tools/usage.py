@@ -1059,7 +1059,15 @@ def record_refusal(refusal: BaseException, where: str = "") -> None:
     gate routinely from flooding the table and pruning real errors out of
     it: one row per (door, reason) per day, with a count.
     """
-    record_error("refused", where=where, detail=refusal_reason(refusal))
+    reason = refusal_reason(refusal)
+    if reason == "check_failed":
+        # The allergy checker threw and the gate held the dish back: the
+        # household got a fair answer, but the checker is broken, and that
+        # must read as BROKEN in the morning report (review, 2026-11-01).
+        record_error("tool", where=where, detail="allergy check failed; the dish was held back",
+                     error_type="AllergyCheckFailed")
+        return
+    record_error("refused", where=where, detail=reason)
 
 
 def record_plan_quality(plan_id, violations) -> None:

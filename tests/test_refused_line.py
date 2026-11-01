@@ -143,3 +143,18 @@ def test_no_refusals_no_line_and_an_old_deployment_without_the_key():
 def test_an_unknown_code_prints_as_itself():
     assert report._refusal_phrases({"brand_new_gate": 2, "allergy": 1}) == \
         "2 brand_new_gate, 1 allergy clash"
+
+
+def test_a_crashed_allergy_checker_is_breakage_not_an_allergy_clash():
+    """Review, 2026-11-01: when check_meal_conflicts throws, the gate holds
+    the dish back with a placeholder clash (source 'check_failed') — and
+    that was filed as an "allergy clash", so a broken matcher would read
+    "Refused — 12 allergy clashes" with exit code 0. It is a breakage."""
+    from app.tools import allergen_gate, usage
+    clashes = [{"meal": "Satay", "source": "check_failed", "severity": "hard"}]
+    assert allergen_gate.refusal_reason_for(clashes) == "check_failed"
+    assert allergen_gate.refusal_reason_for([{"source": "allergy"}]) == "allergy"
+
+    usage.record_refusal(_weekly_plan.SlotRefused("held back", reason="check_failed"), where="plan_meal")
+    assert _refused_rows() == []
+    assert usage.get_recent_errors(days=1)["total"] >= 1

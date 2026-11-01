@@ -1451,13 +1451,14 @@ def add_component(
     # allergy was saved, and a typed "cheese sauce" for a dairy-free adult,
     # both went on and were bought. Refused with nothing written.
     from . import swap_in_place as _swap
+    from .allergen_gate import refusal_reason_for as _allergen_gate_reason
     clash = _swap._hard_clash({"meal_name": side["name"], "ingredients": side.get("ingredients") or []})
     if clash:
         who = ", ".join(sorted({c.get("restriction") or "" for c in clash if c.get("restriction")}))
         raise _weekly_plan.SlotRefused(
             f"I left it off — {side['name']} clashes with {who}." if who
             else f"I left it off — I couldn’t check {side['name']} against what this house can’t have.",
-            reason="allergy",
+            reason=_allergen_gate_reason(clash),
         )
 
     if _name_key(side["name"]) in {_name_key(s.get("name") or "") for s in sides}:
