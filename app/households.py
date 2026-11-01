@@ -34,6 +34,8 @@ import hashlib
 import hmac
 import logging
 import secrets
+import sqlite3
+import time
 
 from .db import get_conn
 from .tools._shared import DEFAULT_HOUSEHOLD_ID
@@ -143,7 +145,68 @@ def household_exists(household_id: int) -> bool:
     return row is not None
 
 
-def session_still_holds(household_id: int, member_id: int | None) -> bool:
+def session_epoch(household_id: int) -> int:
+    """
+    The household's sign-in epoch: 0 until its passphrase first changes,
+    then one more on every change (`set_passphrase`, `note_env_passphrase`).
+    A session cookie carries the epoch it was minted under, and
+    `session_still_holds` refuses one that is behind — that is the whole of
+    "changing the passphrase signs everyone else out" (Emily, 2026-11-01).
+
+    0 for a household that is not there, and for a database that has not
+    been migrated yet (a script, a test fixture that never ran init_db): no
+    epoch has ever moved there, so 0 is the true answer, not a guess.
+    """
+    hid = int(household_id)
+    if not (0 <= hid <= 2**63 - 1):
+        return 0  # no household can have an id SQLite cannot bind
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            "SELECT session_epoch FROM households WHERE id = ?", (hid,)
+        ).fetchone()
+    except sqlite3.OperationalError:
+        return 0
+    finally:
+        conn.close()
+    return int(row["session_epoch"] or 0) if row else 0
+
+
+def _bump_session_epoch(conn, household_id: int) -> None:
+    conn.execute(
+        "UPDATE households SET session_epoch = COALESCE(session_epoch, 0) + 1 WHERE id = ?",
+        (int(household_id),),
+    )
+
+
+def sign_out_unpicked_sessions(household_id: int) -> None:
+    """
+    Sign out every device of this household that hasn't said which adult it
+    is — and only those (security review, 2026-11-01).
+
+    Called when Remove me hands the household's sign-in over. Remove me
+    signs out the device it was tapped on and any cookie naming the leaver;
+    a second device of theirs that never picked anybody survived both, and
+    with one adult left tools.current_member() reads it as that adult — so
+    the leaver could answer "Sign-in now goes to …" before the adult who
+    stays ever saw it. Devices that name a remaining adult stay signed in.
+    `session_still_holds` refuses an unpicked cookie issued at or before
+    this moment; an unpicked device signs in again like any other.
+    """
+    conn = get_conn()
+    try:
+        conn.execute(
+            "UPDATE households SET unpicked_sessions_before = ? WHERE id = ?",
+            (int(time.time()), int(household_id)),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def session_still_holds(
+    household_id: int, member_id: int | None, epoch: int | None = None, issued_at: int | None = None
+) -> bool:
     """
     Does what a signed session cookie says still stand: its household is
     there, and — when the cookie names somebody — so is that person?
@@ -163,16 +226,36 @@ def session_still_holds(household_id: int, member_id: int | None) -> bool:
     nobody: since 2026-10-22 not even in a house with one adult left
     (tools.current_member), and since 2026-10-26 not after a fresh sign-in
     on their phone either (security.device_member_for_login keeps them).
+
+    `epoch`, when given, is the sign-in epoch the cookie was minted under:
+    it must be the household's current one (`session_epoch`), or the
+    passphrase has changed since and this device is signed out. None (the
+    device-cookie check at /login, which is about a person, not a sitting)
+    skips that half.
+
+    `issued_at`, when given with no member, is when the cookie was signed:
+    it must be after the household's `unpicked_sessions_before`
+    (`sign_out_unpicked_sessions`), or this nobody-yet device was signed out
+    by a hand-over.
     """
+    epoch_sql, epoch_args = "", ()
+    if epoch is not None:
+        epoch_sql, epoch_args = " AND COALESCE(h.session_epoch, 0) = ?", (int(epoch),)
+    if member_id is None and issued_at is not None:
+        epoch_sql += " AND (h.unpicked_sessions_before IS NULL OR ? > h.unpicked_sessions_before)"
+        epoch_args = (*epoch_args, int(issued_at))
     conn = get_conn()
     try:
         if member_id is None:
-            row = conn.execute("SELECT 1 FROM households WHERE id = ?", (int(household_id),)).fetchone()
+            row = conn.execute(
+                f"SELECT 1 FROM households h WHERE h.id = ?{epoch_sql}",
+                (int(household_id), *epoch_args),
+            ).fetchone()
         else:
             row = conn.execute(
                 "SELECT 1 FROM households h JOIN members m ON m.household_id = h.id "
-                "WHERE h.id = ? AND m.id = ?",
-                (int(household_id), int(member_id)),
+                f"WHERE h.id = ? AND m.id = ?{epoch_sql}",
+                (int(household_id), int(member_id), *epoch_args),
             ).fetchone()
         return row is not None
     finally:
@@ -225,8 +308,25 @@ def list_households() -> list[dict]:
     ]
 
 
-def set_passphrase(household_id: int, passphrase: str) -> None:
-    """Set or replace a household's passphrase."""
+def set_passphrase(household_id: int, passphrase: str) -> int:
+    """
+    Set or replace a household's passphrase. Returns the household's sign-in
+    epoch afterwards.
+
+    REPLACING one signs every device of the household out (Emily,
+    2026-11-01: "changing the passphrase signs everyone else out of their
+    other devices"): the epoch moves on, and every cookie minted under the
+    old one is refused at its next request. A route that changes it from a
+    signed-in device keeps THAT device in with
+    `security.reissue_on_current_epoch`. Setting a first passphrase (a new
+    household, or an email household given one) changes no existing key,
+    so it signs nobody out.
+
+    Today the only callers are `create_household` and
+    `create_household.py --reset-passphrase` — there is no screen for it —
+    so a reset from the command line signs every device out, there being no
+    device that made the change.
+    """
     _validate_passphrase(passphrase)
     existing = resolve_passphrase(passphrase)
     if existing is not None and existing != int(household_id):
@@ -234,14 +334,91 @@ def set_passphrase(household_id: int, passphrase: str) -> None:
             _collision_message(existing)
         )
     conn = get_conn()
-    conn.execute(
-        "INSERT INTO household_credentials (household_id, password_hash) VALUES (?, ?) "
-        "ON CONFLICT(household_id) DO UPDATE SET password_hash = excluded.password_hash, "
-        "updated_at = datetime('now')",
-        (int(household_id), hash_passphrase(passphrase)),
-    )
-    conn.commit()
-    conn.close()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        replacing = conn.execute(
+            "SELECT 1 FROM household_credentials WHERE household_id = ?", (int(household_id),)
+        ).fetchone() is not None
+        conn.execute(
+            "INSERT INTO household_credentials (household_id, password_hash) VALUES (?, ?) "
+            "ON CONFLICT(household_id) DO UPDATE SET password_hash = excluded.password_hash, "
+            "updated_at = datetime('now')",
+            (int(household_id), hash_passphrase(passphrase)),
+        )
+        if replacing:
+            _bump_session_epoch(conn, household_id)
+        conn.commit()
+    except BaseException:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+    if replacing:
+        logger.info("Household %s: passphrase changed; its other devices are signed out", household_id)
+    return session_epoch(household_id)
+
+
+def _env_fingerprint(secret: bytes, passphrase: str) -> str:
+    return "hmac_sha256$" + hmac.new(
+        secret, f"env-passphrase.{passphrase}".encode("utf-8"), hashlib.sha256
+    ).hexdigest()
+
+
+def note_env_passphrase() -> bool:
+    """
+    Household 1's passphrase is `HOME_MANAGER_PASSWORD`, changed in Railway
+    rather than through `set_passphrase` — so the change is noticed here, at
+    startup. A fingerprint of the last value seen is kept in
+    `env_passphrase_seen` — an HMAC keyed with SESSION_SECRET, never the
+    passphrase: a copy of the database alone can't be used to guess it, and
+    it is cheap, which matters because this runs on every start (every test
+    client starts the app). A different value moves household 1's sign-in
+    epoch on, which signs every device out. True when it did. (Rotating
+    SESSION_SECRET reads as a change too — it signs everyone out anyway.)
+
+    The first startup that has this table records the value and signs
+    nobody out — a deploy is not a passphrase change. Unset (local
+    development) does nothing at all. Never raises: a bookkeeping check
+    must not stop the app starting.
+    """
+    from . import security  # the module that owns the env var
+
+    try:
+        current = security._password()
+        if not current:
+            return False
+        conn = get_conn()
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            row = conn.execute(
+                "SELECT password_hash FROM env_passphrase_seen WHERE household_id = ?",
+                (DEFAULT_HOUSEHOLD_ID,),
+            ).fetchone()
+            seen = _env_fingerprint(security._secret(), current)
+            if row is not None and hmac.compare_digest(row["password_hash"], seen):
+                conn.rollback()
+                return False
+            conn.execute(
+                "INSERT INTO env_passphrase_seen (household_id, password_hash) VALUES (?, ?) "
+                "ON CONFLICT(household_id) DO UPDATE SET password_hash = excluded.password_hash, "
+                "updated_at = datetime('now')",
+                (DEFAULT_HOUSEHOLD_ID, seen),
+            )
+            changed = row is not None
+            if changed:
+                _bump_session_epoch(conn, DEFAULT_HOUSEHOLD_ID)
+            conn.commit()
+        except BaseException:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+        if changed:
+            logger.info("HOME_MANAGER_PASSWORD changed; household 1's devices are signed out")
+        return changed
+    except Exception:
+        logger.exception("Checking HOME_MANAGER_PASSWORD for a change failed")
+        return False
 
 
 def create_household(name: str, passphrase: str) -> int:
@@ -331,7 +508,10 @@ __all__ = [
     "forget_member_pointers",
     "hash_passphrase",
     "household_exists",
+    "note_env_passphrase",
+    "session_epoch",
     "session_still_holds",
+    "sign_out_unpicked_sessions",
     "list_households",
     "passphrase_in_use",
     "resolve_passphrase",

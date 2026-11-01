@@ -350,6 +350,16 @@ def test_household_b_cannot_read_or_change_anything_of_household_as(a_household_
         ratelimit.reset()
         res = client.request(req["method"], req["url"], params=req["params"],
                              json=req["json"], follow_redirects=False)
+        if route.path == "/api/household/name":
+            # B renaming ITS OWN household (2026-11-01) to a word it typed in
+            # a name round would come back on every later screen that says
+            # B's name — an echo of B's own typing, not A's data. B's name
+            # goes back, so the id rounds after stay a test of A's names.
+            # (A's rows are checked after this as after any request.)
+            conn = get_conn()
+            conn.execute("UPDATE households SET name = 'Beta Attackers' WHERE id = ?", (b,))
+            conn.commit()
+            conn.close()
         return req, res
 
     def drive(method, route, attack):

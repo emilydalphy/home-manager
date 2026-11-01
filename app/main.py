@@ -1458,6 +1458,10 @@ class ResetRequest(BaseModel):
 @app.on_event("startup")
 def startup():
     init_db()
+    # HOME_MANAGER_PASSWORD changed in Railway since the last start? Then
+    # household 1's devices are signed out (households.note_env_passphrase;
+    # never raises).
+    households.note_env_passphrase()
     _prune_chat_sessions_now()
     # Weeks approved before the allergies-at-approval record existed get
     # today's allergies as theirs, so a clash already approved past isn't
@@ -1685,6 +1689,9 @@ def onboarding_household(req: HouseholdOnboardingRequest, request: Request):
         email_owner = tools.primary_member_id()
         if not account_email.claim_signup_email(tools.household_id(), email_owner):
             email_owner = None
+        # "Your household" -> "Emily's house", now that the main person has
+        # a name (Emily, 2026-11-01). Only the unchosen placeholder.
+        tools.name_household_after_main_person()
         for p in req.pets:
             if not p.name.strip():
                 continue
@@ -10168,6 +10175,24 @@ def whoami(request: Request):
         "legal_you_accepted_version": account_email.member_accepted_legal_version(
             current, member["id"] if member else None
         ),
+        # "Sign-in now goes to sam@example.com" (Emily, 2026-11-01): this
+        # adult was handed the household's sign-in by someone leaving, and
+        # hasn't said the address is theirs. None every other time, and for
+        # a device that is nobody yet (it asks "Who's this?" first).
+        "sign_in_note": account_email.sign_in_notice(current, member["id"]) if member else None,
+        **_legal_for(current, member),
+    }
+
+
+def _legal_for(household: int, member: dict | None) -> dict:
+    """Has the terms version moved past what this adult agreed to? Then the
+    shell asks them to agree again before anything else (legal.needs_agreement).
+    False for a device that is nobody yet — it is asked "Who's this?" first,
+    and the pick's answer carries this too."""
+    agreed = account_email.member_legal_agreement(household, member["id"] if member else None)
+    return {
+        "legal_needs_agree": member is not None and legal.needs_agreement(agreed["version"]),
+        "legal_you_agreed_how": agreed["how"] or "",
     }
 
 
@@ -10231,10 +10256,14 @@ def whoami_pick(req: WhoamiPickRequest, request: Request):
     with tools.use_member(req.member_id):
         member = tools.current_member()
         first_open = tools.first_open_state(member)
+        sign_in_note = account_email.sign_in_notice(tools.household_id(), req.member_id)
+        legal_state = _legal_for(tools.household_id(), member)
     response = JSONResponse({
         "member": member,
         "first_open": first_open["show"],
         "set_up_by": first_open["set_up_by"],
+        "sign_in_note": sign_in_note,
+        **legal_state,
     })
     response.set_cookie(
         security.COOKIE_NAME,
@@ -10592,8 +10621,36 @@ def _changing_from(household: int, member_id: int, new_email: str) -> str | None
     replace it with a different one — else None (adding a first address)."""
     current = account_email.email_for_member(household, member_id)
     if current and current != account_email.normalize(new_email):
+        # An address somebody else handed this adult on their way out
+        # (Remove me), which they haven't yet said is theirs: the code for
+        # it went to whoever typed it, maybe not them, so asking for that
+        # code would leave "Not your email? Change it" with no way through
+        # (Emily, 2026-11-01). It's treated as a first address instead.
+        # Only for HANDOVER_CHANGE_DAYS after the hand-over, and the handed
+        # address is told when it happens (account_email_verify).
+        if account_email.handed_address_waiting(household, member_id) == current:
+            return None
         return current
     return None
+
+
+HANDED_ADDRESS_REPLACED_NOTICE = (
+    "Your household's sign-in email was changed in Pomona, so this address "
+    "doesn't sign in any more.\n"
+    "If that was you, there's nothing else to do. If it wasn't, open Pomona "
+    "on a phone that's still signed in and check Preferences → Sign-in email.\n"
+)
+
+
+@app.post("/api/account/sign-in-notice/dismiss")
+def dismiss_sign_in_notice():
+    """ "That's my email" — the adult who was handed the household's sign-in
+    says the address is theirs, and the notice stops."""
+    you = tools.current_member()
+    if you is None:
+        raise HTTPException(status_code=400, detail="Tell me who you are first, then try again.")
+    account_email.clear_sign_in_notice(tools.household_id(), you["id"])
+    return {"ok": True}
 
 
 @app.post("/api/account/email/start")
@@ -10645,6 +10702,13 @@ def account_email_verify(req: AccountEmailVerifyRequest, request: Request):
     if not account_email.valid(req.email):
         raise HTTPException(status_code=400, detail=account_email.BAD_CODE_LINE)
     current = _changing_from(household, you["id"], req.email)
+    # Set only when this replaces a handed-over address without its code
+    # (_changing_from): that address is still told, below.
+    handed = None
+    if current is None:
+        before = account_email.email_for_member(household, you["id"])
+        if before and before != account_email.normalize(req.email):
+            handed = before
     # Both codes are checked (and both cost a try) whatever the first one
     # says, so a wrong answer for one can't be told from a wrong answer for
     # the other.
@@ -10666,6 +10730,7 @@ def account_email_verify(req: AccountEmailVerifyRequest, request: Request):
     except account_email.EmailCodeError as e:
         raise HTTPException(status_code=409, detail=str(e))
     logger.info("Household %s: member %s set their sign-in email", household, you["id"])
+    account_email.clear_sign_in_notice(household, you["id"])
     if current:
         # The old address hears about it, whoever did it.
         account_email.send_notice(
@@ -10675,6 +10740,12 @@ def account_email_verify(req: AccountEmailVerifyRequest, request: Request):
             "whoever set up your household.\n",
             mode=_email_delivery_mode(request),
         )
+    elif handed:
+        # A hand-over address replaced without its code (security review,
+        # 2026-11-01): any device signed in to the household can pick this
+        # adult, so the inbox it came from hears about it too — but not
+        # where sign-in went, since that inbox may be the leaver's.
+        account_email.send_notice(handed, HANDED_ADDRESS_REPLACED_NOTICE, mode=_email_delivery_mode(request))
     return {"email": email}
 
 
@@ -10747,6 +10818,25 @@ def _signed_out(payload: dict, request: Request | None = None) -> JSONResponse:
     if request is not None:
         _forget_this_phone(request, response)
     return response
+
+
+class HouseholdNameRequest(BaseModel):
+    name: str = Field("", max_length=200)
+
+
+@app.post("/api/household/name")
+def rename_my_household(req: HouseholdNameRequest):
+    """
+    Preferences -> Household name (Emily, 2026-11-01). Any signed-in device
+    of the household, like the rest of Preferences. Once renamed, the name
+    is never changed for them again (households.name_chosen).
+    """
+    try:
+        saved = tools.rename_household(req.name)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    logger.info("Household %s renamed itself", tools.household_id())
+    return saved
 
 
 @app.get("/api/household/leave")
@@ -10863,7 +10953,9 @@ def remove_me_from_household(request: Request, req: RemoveMeRequest | None = Non
     problem = household_deletion.removal_check(household, you["id"] if you else None)
     if problem:
         raise HTTPException(status_code=400, detail=problem)
+    handed_over = False
     if household_deletion.sign_in_handover(household, you["id"]) is not None:
+        handed_over = True
         if req.handover_member_id is None:
             raise HTTPException(status_code=400, detail=HANDOVER_NEEDED_LINE)
         target = _handover_target(household, you, req.handover_member_id)
@@ -10873,9 +10965,12 @@ def remove_me_from_household(request: Request, req: RemoveMeRequest | None = Non
         ):
             raise HTTPException(status_code=400, detail=account_email.BAD_CODE_LINE)
         try:
-            account_email.set_member_email(household, target["id"], req.email)
+            handed_to = account_email.set_member_email(household, target["id"], req.email)
         except account_email.EmailCodeError as e:
             raise HTTPException(status_code=409, detail=str(e))
+        # "Sign-in now goes to …", shown to the adult who stays until they
+        # say it's theirs or change it (Emily, 2026-11-01).
+        account_email.record_sign_in_notice(household, target["id"], handed_to, you["name"])
         logger.info("Household %s: member %s handed sign-in to member %s", household, you["id"], target["id"])
     try:
         household_deletion.remove_member(household, you["id"])
@@ -10889,6 +10984,10 @@ def remove_me_from_household(request: Request, req: RemoveMeRequest | None = Non
             status_code=500,
             detail="That didn't go through, and nothing was changed. Try again in a moment.",
         )
+    if handed_over:
+        # A second device of the leaver's that never picked an adult would
+        # read as the adult who stays (security review, 2026-11-01).
+        households.sign_out_unpicked_sessions(household)
     return _signed_out({"removed": True, "goodbye": "/goodbye?left=1"}, request)
 
 
@@ -10968,6 +11067,29 @@ def goodbye_page():
 
 def _legal_page(page: str) -> HTMLResponse:
     return HTMLResponse(legal.render(page))
+
+
+class LegalAgreeRequest(BaseModel):
+    # The version the screen showed. Agreeing records what was READ, so a
+    # screen left open across a new version is told so rather than filed
+    # as agreeing to words it never showed.
+    version: str = Field("", max_length=32)
+
+
+@app.post("/api/legal/agree")
+def legal_agree(req: LegalAgreeRequest):
+    """
+    The agree screen a new terms version puts up (Emily, 2026-11-01:
+    "when the terms change, everyone is asked to agree again"). Recorded
+    for the adult this device is, never the household.
+    """
+    you = tools.current_member()
+    if you is None:
+        raise HTTPException(status_code=400, detail="Tell me who you are first, then try again.")
+    if req.version != legal.LEGAL_VERSION:
+        raise HTTPException(status_code=409, detail="The terms changed again just now. Have another look, then agree.")
+    account_email.record_member_acceptance(tools.household_id(), you["id"], how="reask")
+    return {"legal_you_accepted_version": legal.LEGAL_VERSION, "legal_needs_agree": False}
 
 
 @app.get("/privacy")

@@ -230,10 +230,12 @@ def issue_session(
     *,
     session_id: str | None = None,
     issued_at: int | None = None,
+    epoch: int | None = None,
 ) -> str:
     """
     Mint a signed cookie value:
-    <session-id>.<household-id>.<issued-at>.<member-id>.<hmac>.
+    <session-id>.<household-id>.<issued-at>.<member-id>.<hmac>, or with the
+    household's sign-in epoch before the hmac once it is past 0.
 
     The session id is what /api/chat keys its conversation history on, so it
     has to be unguessable and server-generated — the bug this replaces was
@@ -256,11 +258,27 @@ def issue_session(
     `session_id` and `issued_at` exist for re-minting: picking an adult
     keeps the chat history (keyed on the session id) and the original
     sign-in time (so a pick does not quietly extend a 30-day session).
+
+    `epoch` (2026-11-01, Emily: "changing the passphrase signs everyone
+    else out") is the household's `session_epoch` the cookie was minted
+    under; `auth_middleware` refuses a cookie whose epoch is not the
+    household's current one. Left out, a NEW sign-in reads the household's
+    current epoch — so whichever door mints a fresh cookie (the passphrase,
+    an email code, an invite link, a passphrase change itself) is always on
+    the latest one. Re-mints of an existing cookie (`with_member`, the daily
+    renewal) pass the cookie's own epoch, so a renewal can never carry a
+    signed-out device forward. While the epoch is 0 (every household until
+    its passphrase first changes) the cookie keeps the five-part shape, so
+    this branch could be rolled back without signing anybody out.
     """
     sid = session_id or secrets.token_urlsafe(18)
     issued = str(int(issued_at if issued_at is not None else time.time()))
     member = int(member_id) if member_id else 0
+    if epoch is None:
+        epoch = households.session_epoch(int(household_id))
     payload = f"{sid}.{int(household_id)}.{issued}.{member}"
+    if int(epoch) > 0:
+        payload = f"{payload}.{int(epoch)}"
     sig = hmac.new(_secret(), payload.encode("utf-8"), hashlib.sha256).digest()
     return f"{payload}.{_b64(sig)}"
 
@@ -269,18 +287,32 @@ def _decode_session(cookie: str | None) -> tuple[str, int, int, int | None] | No
     """
     `(session_id, household_id, issued_at, member_id)` for a validly signed,
     unexpired cookie, else None. member_id is None when no adult is picked.
+    The epoch the cookie was minted under is `_decode_session_epoch`'s.
+    """
+    decoded = _decode_session_epoch(cookie)
+    return decoded[:4] if decoded else None
 
-    Three cookie shapes are accepted, all signature-checked:
+
+def _decode_session_epoch(cookie: str | None) -> tuple[str, int, int, int | None, int] | None:
+    """
+    `_decode_session`'s four values plus the cookie's sign-in epoch.
+
+    Four cookie shapes are accepted, all signature-checked:
       3 parts  <sid>.<issued>.<hmac>                 household 1, no member
       4 parts  <sid>.<household>.<issued>.<hmac>     no member
       5 parts  <sid>.<household>.<issued>.<member>.<hmac>
+      6 parts  <sid>.<household>.<issued>.<member>.<epoch>.<hmac>
     The older shapes are honoured so nobody already signed in is logged out
-    by a deploy — a format fallback, never an authentication one.
+    by a deploy — a format fallback, never an authentication one. They all
+    read as epoch 0, which is every household's epoch until its passphrase
+    first changes; after that, they are exactly the cookies that change
+    signed out.
     """
     if not cookie:
         return None
     parts = cookie.split(".")
     raw_member = "0"
+    raw_epoch = "0"
     if len(parts) == 3:
         sid, issued, sig = parts
         raw_household = str(DEFAULT_HOUSEHOLD_ID)
@@ -291,12 +323,19 @@ def _decode_session(cookie: str | None) -> tuple[str, int, int, int | None] | No
     elif len(parts) == 5:
         sid, raw_household, issued, raw_member, sig = parts
         payload = f"{sid}.{raw_household}.{issued}.{raw_member}"
+    elif len(parts) == 6:
+        sid, raw_household, issued, raw_member, raw_epoch, sig = parts
+        payload = f"{sid}.{raw_household}.{issued}.{raw_member}.{raw_epoch}"
     else:
         return None
     try:
         household_id = int(raw_household)
         member_id = int(raw_member)
+        epoch = int(raw_epoch)
     except ValueError:
+        return None
+    # An epoch SQLite cannot bind is no epoch any household has.
+    if not (0 <= epoch <= _SQLITE_MAX_INT):
         return None
     # Python parses any size of integer; SQLite binds only 64-bit ones, and
     # handing it a bigger number raises OverflowError from inside the
@@ -316,7 +355,7 @@ def _decode_session(cookie: str | None) -> tuple[str, int, int, int | None] | No
             return None
     except (ValueError, TypeError):
         return None
-    return sid, household_id, issued_int, (member_id if member_id > 0 else None)
+    return sid, household_id, issued_int, (member_id if member_id > 0 else None), epoch
 
 
 def read_session_parts(cookie: str | None) -> tuple[str, int] | None:
@@ -336,11 +375,26 @@ def with_member(cookie: str | None, member_id: int | None) -> str | None:
     Re-mint a valid cookie with an adult picked (or cleared), keeping its
     session id and sign-in time. None if the cookie is not valid.
     """
-    decoded = _decode_session(cookie)
+    decoded = _decode_session_epoch(cookie)
     if not decoded:
         return None
-    sid, household_id, issued, _ = decoded
-    return issue_session(household_id, member_id, session_id=sid, issued_at=issued)
+    sid, household_id, issued, _, epoch = decoded
+    return issue_session(household_id, member_id, session_id=sid, issued_at=issued, epoch=epoch)
+
+
+def reissue_on_current_epoch(cookie: str | None) -> str | None:
+    """
+    The same sitting (session id, adult, sign-in time), moved onto the
+    household's CURRENT sign-in epoch. For the one device that just
+    changed the passphrase: every other cookie of the household stops
+    working (`households.set_passphrase` moved the epoch on), this one is
+    re-minted so it does not. None if the cookie is not a valid one.
+    """
+    decoded = _decode_session_epoch(cookie)
+    if not decoded:
+        return None
+    sid, household_id, issued, member, _ = decoded
+    return issue_session(household_id, member, session_id=sid, issued_at=issued)
 
 
 # ---------- "This phone is mine" (the device token) ----------
@@ -606,7 +660,7 @@ async def auth_middleware(request, call_next):
             status_code=503,
         )
 
-    session = _decode_session(request.cookies.get(COOKIE_NAME))
+    session = _decode_session_epoch(request.cookies.get(COOKIE_NAME))
 
     # A validly signed cookie can still name a household that isn't there
     # any more (deleted, or — today — never real to begin with, since
@@ -629,12 +683,22 @@ async def auth_middleware(request, call_next):
     # signed in on is signed out here too, rather than staying in the
     # household they left as whichever adult it resolves to
     # (households.session_still_holds says why). One query either way.
+    #
+    # And the household's sign-in epoch (2026-11-01): a cookie minted
+    # before the passphrase last changed is signed out here, in the same
+    # query — to the ordinary sign-in screen, like any other stale cookie.
+    # So is a cookie naming nobody that was issued before a Remove me
+    # hand-over (households.sign_out_unpicked_sessions). Both are refused
+    # HERE, before the renewal below or /api/whoami/pick can re-mint them.
     stale_cookie = False
-    if session and not await run_in_threadpool(households.session_still_holds, session[1], session[3]):
+    if session and not await run_in_threadpool(
+        households.session_still_holds, session[1], session[3], session[4], session[2]
+    ):
         logger.warning(
-            "Session cookie named household %s member %s, which no longer exists — signing out.",
+            "Session cookie named household %s member %s epoch %s, which no longer holds — signing out.",
             session[1],
             session[3],
+            session[4],
         )
         session = None
         stale_cookie = True
@@ -708,14 +772,14 @@ def _renew_if_due(request, response, session) -> None:
     before, which is the behaviour this whole app had until now.
     """
     try:
-        _, household_id, issued, member = session
+        _, household_id, issued, member, epoch = session
         if time.time() - issued < COOKIE_RENEW_AFTER:
             return
         if _sets_session_cookie(response):
             return
         response.set_cookie(
             COOKIE_NAME,
-            issue_session(household_id, member, session_id=session[0]),
+            issue_session(household_id, member, session_id=session[0], epoch=epoch),
             max_age=COOKIE_MAX_AGE,
             httponly=True,
             samesite="lax",

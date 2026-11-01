@@ -21,9 +21,18 @@ flip in Railway on the day, without a deploy.
 
 LEGAL_VERSION is what sign-up records as accepted (the email sign-up card).
 Bump it whenever the substance of the privacy policy or the terms changes,
-so a household's recorded acceptance says which words they saw. Whether a
-bump should ask existing households to accept again is Emily's call at the
-time — nothing here does that on its own.
+so a household's recorded acceptance says which words they saw.
+
+A bump asks everyone to agree again (Emily, 2026-11-01: "when the terms
+change to a new version, everyone is asked to agree again"). Agreement is
+recorded per adult (member_legal_acceptances), and the shell puts an agree
+screen up before anything else for an adult whose latest agreement is older
+than LEGAL_VERSION — `needs_agreement`. Including the adults who never
+agreed to anything (signed in by passphrase, or before the join screen
+asked): they are taken to have agreed to REASK_FROM, the version that was
+live when re-asking was built, so shipping this asked nobody; the first
+bump past it asks them. Versions are ISO dates, so "newer" is a plain
+string comparison.
 """
 from __future__ import annotations
 
@@ -36,6 +45,18 @@ from . import backup
 LEGAL_VERSION = "2026-10-09"
 # Said the way a person would read it, for the line under each title.
 LEGAL_DATE_LABEL = "October 9, 2026"
+
+# The version live on 2026-11-01, when re-asking was built. Nobody has to
+# agree again to THIS one (or anything older): adults with no agreement on
+# record are taken to have agreed to it. Never change it — it is a fact
+# about the past; bump LEGAL_VERSION instead.
+REASK_FROM = "2026-10-09"
+
+
+def needs_agreement(agreed_version: str | None) -> bool:
+    """Should an adult whose latest agreement is `agreed_version` (None for
+    never) be asked to agree to LEGAL_VERSION before using the app?"""
+    return LEGAL_VERSION > max(agreed_version or "", REASK_FROM)
 
 PAGES = ("privacy", "terms", "support")
 

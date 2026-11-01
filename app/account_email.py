@@ -594,14 +594,15 @@ def accepted_legal_version(household_id: int) -> str | None:
         conn.close()
 
 
-def record_member_acceptance(household_id: int, member_id: int) -> None:
+def record_member_acceptance(household_id: int, member_id: int, how: str = "join") -> None:
     """This adult agreed to the current terms and privacy policy themselves
-    (the invite link's join screen — see member_legal_acceptances)."""
+    (the invite link's join screen, or — `how="reask"` — the agree screen a
+    new version puts up; see member_legal_acceptances)."""
     conn = get_conn()
     try:
         conn.execute(
-            "INSERT INTO member_legal_acceptances (household_id, member_id, version) VALUES (?, ?, ?)",
-            (int(household_id), int(member_id), legal.LEGAL_VERSION),
+            "INSERT INTO member_legal_acceptances (household_id, member_id, version, how) VALUES (?, ?, ?, ?)",
+            (int(household_id), int(member_id), legal.LEGAL_VERSION, how),
         )
         conn.commit()
     finally:
@@ -623,3 +624,134 @@ def member_accepted_legal_version(household_id: int, member_id: int | None) -> s
         return row["version"] if row else None
     finally:
         conn.close()
+
+
+# ---------- "Sign-in now goes to …" (Emily, 2026-11-01) ----------
+
+
+def record_sign_in_notice(household_id: int, member_id: int, email: str, from_name: str) -> None:
+    """The household's sign-in was just handed to this adult at `email` by
+    `from_name` on their way out (Remove me). Replaces any earlier one."""
+    hid, mid = int(household_id), int(member_id)
+    conn = get_conn()
+    try:
+        conn.execute("DELETE FROM sign_in_notices WHERE household_id = ? AND member_id = ?", (hid, mid))
+        conn.execute(
+            "INSERT INTO sign_in_notices (household_id, member_id, email, from_name) VALUES (?, ?, ?, ?)",
+            (hid, mid, normalize(email), (from_name or "").strip()),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def sign_in_notice(household_id: int, member_id: int | None) -> dict | None:
+    """
+    `{"email", "from_name"}` while this adult has a handed-over sign-in they
+    haven't said is theirs — and only while that address is still the one
+    they sign in with. Once they've changed it the notice has nothing left
+    to say, and it is forgotten here.
+    """
+    if member_id is None:
+        return None
+    hid, mid = int(household_id), int(member_id)
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            "SELECT n.email, n.from_name, me.email AS now FROM sign_in_notices n "
+            "LEFT JOIN member_emails me ON me.household_id = n.household_id AND me.member_id = n.member_id "
+            "WHERE n.household_id = ? AND n.member_id = ? ORDER BY n.id DESC LIMIT 1",
+            (hid, mid),
+        ).fetchone()
+        if row is None:
+            return None
+        if row["now"] != row["email"]:
+            conn.execute("DELETE FROM sign_in_notices WHERE household_id = ? AND member_id = ?", (hid, mid))
+            conn.commit()
+            return None
+        return {"email": row["email"], "from_name": row["from_name"]}
+    finally:
+        conn.close()
+
+
+# How long "Not your email? Change it" skips the handed address's code
+# (security review, 2026-11-01). Without a limit, any device signed in to
+# the household could pick this adult and move their sign-in for good,
+# with only a notice to show for it. After this the usual second code is
+# asked for; the notice itself keeps showing until it's answered.
+HANDOVER_CHANGE_DAYS = 7
+
+
+def handed_address_waiting(household_id: int, member_id: int | None) -> str | None:
+    """
+    The address somebody leaving handed this adult (Remove me), while it is
+    still the one they sign in with, they haven't said it's theirs, and the
+    hand-over is under HANDOVER_CHANGE_DAYS old — else None. Only then may
+    it be replaced without a code sent to it (main._changing_from).
+    """
+    notice = sign_in_notice(household_id, member_id)
+    if notice is None:
+        return None
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            "SELECT 1 FROM sign_in_notices WHERE household_id = ? AND member_id = ? AND email = ? "
+            "AND created_at > datetime('now', ?) ORDER BY id DESC LIMIT 1",
+            (int(household_id), int(member_id), notice["email"], f"-{int(HANDOVER_CHANGE_DAYS)} days"),
+        ).fetchone()
+    finally:
+        conn.close()
+    return notice["email"] if row else None
+
+
+def clear_sign_in_notice(household_id: int, member_id: int) -> None:
+    conn = get_conn()
+    try:
+        conn.execute(
+            "DELETE FROM sign_in_notices WHERE household_id = ? AND member_id = ?",
+            (int(household_id), int(member_id)),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def member_legal_agreement(household_id: int, member_id: int | None) -> dict:
+    """
+    `{"version", "how"}` for the newest terms this adult has agreed to, or
+    both None. Their own rows (joining by invite, or the re-ask screen) —
+    and, for the adult who set the household up, the household's email
+    sign-up row too, since that was them ticking the box before they had a
+    member row to file it under (`households.set_up_by_member_id`, or the
+    main person where that was never recorded). `how` is 'join', 'reask'
+    or 'signup'.
+    """
+    if member_id is None:
+        return {"version": None, "how": None}
+    hid, mid = int(household_id), int(member_id)
+    conn = get_conn()
+    try:
+        found = [
+            (r["version"], r["how"] or "join")
+            for r in conn.execute(
+                "SELECT version, how FROM member_legal_acceptances WHERE household_id = ? AND member_id = ?",
+                (hid, mid),
+            ).fetchall()
+        ]
+        setter = conn.execute(
+            "SELECT COALESCE(set_up_by_member_id, primary_member_id) AS mid FROM households WHERE id = ?",
+            (hid,),
+        ).fetchone()
+        if setter is not None and setter["mid"] == mid:
+            found += [
+                (r["version"], "signup")
+                for r in conn.execute(
+                    "SELECT version FROM legal_acceptances WHERE household_id = ?", (hid,)
+                ).fetchall()
+            ]
+    finally:
+        conn.close()
+    if not found:
+        return {"version": None, "how": None}
+    version, how = max(found, key=lambda vh: vh[0])
+    return {"version": version, "how": how}

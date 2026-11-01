@@ -31044,6 +31044,11 @@
     // (the "Sharing with Claude" section below). '' means never asked; an
     // older server that doesn't send the field reads as answered, and the
     // server refuses any AI call without a yes either way.
+    // New terms (Emily, 2026-11-01: "when the terms change, everyone is
+    // asked to agree again"): before anything else, this adult agrees to
+    // the version they haven't seen. Decided server-side (legal.needs_agreement);
+    // false on an older server, and for a device that is nobody yet.
+    if (shellWho.loaded && shellWho.legal_needs_agree) await openTermsScreen();
     if (shellWho.loaded && shellWho.ai_consent === '') await openAiConsentScreen();
     // The other adult's first open: the welcome goes over the shell while
     // the tabs build under it, so "Show me the week" lands on a Plan that's
@@ -31052,6 +31057,10 @@
     // "You're down as a Teen here now…" — once, on that member's own phone
     // (Emily, 2026-10-26). A sentence, so it's held long enough to read.
     if (shellWho.age_note) showToast(shellWho.age_note, null, 9000);
+    // "Sign-in now goes to sam@example.com" (Emily, 2026-11-01): the adult
+    // who stays after a Remove me handover is shown the address, on every
+    // open, until they say it's theirs or change it. Not awaited.
+    if (shellWho.sign_in_note) openSignInNotice();
     // The onboarding reveal's Approve hands into the shell with
     // ?after=approve (its URL is /grocery?after=approve&drafted=<Monday>,
     // 2026-09-18): whatever tab the path names, the week just approved is
@@ -31144,12 +31153,24 @@
     } catch (err) { /* see above: the cookie is still doing the real work */ }
   }
 
+  // The two answers that are about the PERSON, not the household — so the
+  // pick carries them too, and a device that was nobody at boot hears them
+  // as soon as it says who it is: "Sign-in now goes to …" (openSignInNotice)
+  // and the terms to agree to again (openTermsScreen).
+  function pickCarriesWhoseThings(data) {
+    shellWho.sign_in_note = data.sign_in_note && typeof data.sign_in_note.email === 'string' ? data.sign_in_note : null;
+    shellWho.legal_needs_agree = data.legal_needs_agree === true;
+    shellWho.legal_you_agreed_how = typeof data.legal_you_agreed_how === 'string' ? data.legal_you_agreed_how : '';
+  }
+
   async function loadWhoami() {
     try {
       var res = await Api.fetch('/api/whoami');
       if (!res.ok) throw new Error('whoami failed');
       var data = await res.json();
       shellWho.household_id = typeof data.household_id === 'number' ? data.household_id : null;
+      // Preferences → Household name reads it back (householdNameRowHtml).
+      shellWho.household_name = typeof data.household_name === 'string' ? data.household_name : '';
       shellWho.member = data.member || null;
       shellWho.adults = data.adults || [];
       // The household's Chores switch (see choresEnabled, top of file).
@@ -31179,6 +31200,9 @@
       shellWho.legal_accepted_version = typeof data.legal_accepted_version === 'string' ? data.legal_accepted_version : '';
       // ...and the one this adult ticked themselves on joining by invite.
       shellWho.legal_you_accepted_version = typeof data.legal_you_accepted_version === 'string' ? data.legal_you_accepted_version : '';
+      // "Sign-in now goes to …": the household's sign-in was handed to this
+      // adult by someone leaving (openSignInNotice). null almost always.
+      pickCarriesWhoseThings(data);
       shellWho.loaded = true;
       // Keep the copy in step with whatever the server says this device is
       // pinned to, however it got pinned — the pick below, an invite link,
@@ -31234,6 +31258,7 @@
       shellWho.member = data.member || null;
       shellWho.first_open = !!data.first_open;
       shellWho.set_up_by = data.set_up_by || shellWho.set_up_by || '';
+      pickCarriesWhoseThings(data);
       // The same two lines the screen's own pick ends on, and for the same
       // reason: /api/push/devices refuses a token while nobody is picked
       // (main._push_member_or_400), and loadPushModule fires while this
@@ -31336,6 +31361,7 @@
       shellWho.member = data.member || null;
       shellWho.first_open = !!data.first_open;
       shellWho.set_up_by = data.set_up_by || shellWho.set_up_by || '';
+      pickCarriesWhoseThings(data);
       // Remember it here as well as in the cookie the response just set,
       // and on every pick — so "Not you? Switch" moves BOTH copies and
       // the device never ends up re-applying the person who handed the
@@ -31437,6 +31463,103 @@
 
   var aiConsentEl = null;
   var aiConsentResolve = null;
+
+  // ---------- New terms: agree again (Emily, 2026-11-01) ----------
+  // The consent screen's frame (.aic-screen) with the invite page's tick
+  // line. No "Not now": using Pomona is agreeing, so the screen stays until
+  // they do. The links open the public pages in this tab; those carry their
+  // own Back, and the screen is put up again on the way back in.
+  var TERMS_COPY = {
+    title: 'Pomona’s terms have changed',
+    lead: 'Have a read, then agree to keep using Pomona.',
+    agree: 'Agree',
+    tickFirst: 'Tick the box to say you agree, then Agree.',
+    changedAgain: 'The terms changed again just now. Have another look, then agree.',
+    failed: 'That didn’t save. Try it again.'
+  };
+  var termsEl = null;
+  var termsResolve = null;
+
+  function buildTermsScreen() {
+    if (termsEl) return;
+    termsEl = document.createElement('div');
+    termsEl.id = 'terms-screen';
+    termsEl.className = 'aic-screen';
+    termsEl.hidden = true;
+    termsEl.setAttribute('role', 'dialog');
+    termsEl.setAttribute('aria-modal', 'true');
+    termsEl.setAttribute('aria-labelledby', 'terms-title');
+    termsEl.innerHTML =
+      '<div class="aic-inner">' +
+        '<h1 class="aic-title" id="terms-title">' + escapeHtml(TERMS_COPY.title) + '</h1>' +
+        '<p class="aic-lead">' + escapeHtml(TERMS_COPY.lead) + '</p>' +
+        '<p class="terms-version" id="terms-version"></p>' +
+        '<label class="terms-agree" for="terms-box">' +
+          '<input type="checkbox" id="terms-box">' +
+          '<span>I agree to the <a href="/terms">Terms</a> and <a href="/privacy">Privacy Policy</a>.</span>' +
+        '</label>' +
+        '<p class="aic-error" id="terms-error" role="alert" hidden></p>' +
+        '<div class="aic-foot">' +
+          '<button type="button" class="btn-primary aic-allow" data-terms="agree">' + escapeHtml(TERMS_COPY.agree) + '</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(termsEl);
+    termsEl.addEventListener('click', function (e) {
+      var btn = e.target && e.target.closest && e.target.closest('[data-terms="agree"]');
+      if (btn) saveTermsAgreement();
+    });
+  }
+
+  function termsSay(text) {
+    var el = termsEl && termsEl.querySelector('#terms-error');
+    if (!el) return;
+    el.textContent = text || '';
+    el.hidden = !text;
+  }
+
+  // Resolves once they've agreed.
+  function openTermsScreen() {
+    buildTermsScreen();
+    closeAskSheet();
+    closeWeekSheet();
+    termsEl.querySelector('#terms-version').textContent = shellWho.legal_version ? 'Version ' + shellWho.legal_version : '';
+    termsEl.querySelector('#terms-box').checked = false;
+    termsSay('');
+    termsEl.hidden = false;
+    termsEl.scrollTop = 0;
+    var box = termsEl.querySelector('#terms-box');
+    if (box) box.focus();
+    return new Promise(function (resolve) { termsResolve = resolve; });
+  }
+
+  async function saveTermsAgreement() {
+    if (!termsEl.querySelector('#terms-box').checked) { termsSay(TERMS_COPY.tickFirst); return; }
+    var btn = termsEl.querySelector('[data-terms="agree"]');
+    btn.disabled = true;
+    termsSay('');
+    try {
+      var res = await Api.fetch('/api/legal/agree', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ version: shellWho.legal_version || '' })
+      });
+      if (res.status === 409) { termsSay(TERMS_COPY.changedAgain); return; }
+      if (!res.ok) throw new Error('agree failed');
+      var data = await res.json();
+      shellWho.legal_needs_agree = false;
+      shellWho.legal_you_accepted_version = data.legal_you_accepted_version || shellWho.legal_version;
+      shellWho.legal_you_agreed_how = 'reask';
+      termsEl.hidden = true;
+      var resolve = termsResolve;
+      termsResolve = null;
+      if (resolve) resolve(true);
+    } catch (err) {
+      console.warn('Saving the terms agreement failed:', err);
+      termsSay(TERMS_COPY.failed);
+    } finally {
+      btn.disabled = false;
+    }
+  }
 
   function buildAiConsentScreen() {
     if (aiConsentEl) return;
@@ -32413,6 +32536,7 @@
       // The email this adult signs in with (2026-10-06) — see
       // accountEmailRowHtml. Empty until an adult is known on this device.
       accountEmailRowHtml() +
+      householdNameRowHtml() +
       PREFS_ROWS.map(function (row) {
         var line = mem ? row.line(mem) : 'Reading it back…';
         return '<button type="button" class="prefs-row" data-prefs="section" data-section="' + row.section + '">' +
@@ -32485,6 +32609,121 @@
       prefsAboutHtml());
   }
 
+  // ---------- Household name (Emily, 2026-11-01) ----------
+  // "A household gets the main person's name by default ("Emily's house"),
+  // and can be renamed in Preferences." A row like Sign-in email's, opening
+  // a small sheet of the same shape: one field and Save. Once saved, the
+  // server never renames it for them (households.name_chosen).
+  var hnameSheetEl = null;
+  var hnameScrimEl = null;
+  var hnameBusy = false;
+
+  function householdNameRowHtml() {
+    if (!shellWho.loaded || !shellWho.household_name) return '';
+    return '<button type="button" class="prefs-row" data-hname="open">' +
+      '<span class="prefs-row-text">' +
+        '<span class="prefs-row-title">Household name</span>' +
+        '<span class="prefs-row-sub">' + escapeHtml(shellWho.household_name) + '</span>' +
+      '</span>' +
+      ICONS.arrow +
+    '</button>';
+  }
+
+  function buildHnameSheet() {
+    if (hnameSheetEl) return;
+    hnameScrimEl = document.createElement('div');
+    hnameScrimEl.id = 'hname-scrim';
+    hnameScrimEl.hidden = true;
+    hnameSheetEl = document.createElement('div');
+    hnameSheetEl.id = 'hname-sheet';
+    hnameSheetEl.hidden = true;
+    hnameSheetEl.setAttribute('role', 'dialog');
+    hnameSheetEl.setAttribute('aria-modal', 'true');
+    hnameSheetEl.setAttribute('aria-labelledby', 'hname-sheet-title');
+    hnameSheetEl.innerHTML =
+      '<div class="ask-sheet-handle" id="hname-sheet-handle"></div>' +
+      '<div class="kit-sheet-titlerow">' +
+        '<span class="kit-sheet-title" id="hname-sheet-title">Household name</span>' +
+        '<span class="kit-sheet-hairline"></span>' +
+        '<button type="button" class="kit-sheet-close" id="hname-sheet-close" aria-label="Close">&times;</button>' +
+      '</div>' +
+      '<div class="morning-body">' +
+        '<label class="snw-label" for="hname-input">Name</label>' +
+        '<input type="text" id="hname-input" class="snw-input" maxlength="60" autocomplete="off" placeholder="The Smiths">' +
+        '<button type="button" class="snw-send" id="hname-save">Save</button>' +
+        '<p class="snw-done" id="hname-note" role="alert" hidden></p>' +
+      '</div>';
+    document.body.appendChild(hnameScrimEl);
+    document.body.appendChild(hnameSheetEl);
+    hnameScrimEl.addEventListener('click', dismissHnameSheet);
+    hnameSheetEl.querySelector('#hname-sheet-handle').addEventListener('click', dismissHnameSheet);
+    hnameSheetEl.querySelector('#hname-sheet-close').addEventListener('click', dismissHnameSheet);
+    hnameSheetEl.querySelector('#hname-save').addEventListener('click', saveHouseholdName);
+    hnameSheetEl.querySelector('#hname-input').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); saveHouseholdName(); }
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && hnameSheetEl && !hnameSheetEl.hidden) dismissHnameSheet();
+    });
+  }
+
+  function openHnameSheet(parent) {
+    buildHnameSheet();
+    if (parent) openOverSheet(parent, dismissHnameSheet);
+    else { forgetSheetLevels(); closePrefsSheet(); }
+    var input = hnameSheetEl.querySelector('#hname-input');
+    input.value = shellWho.household_name || '';
+    var note = hnameSheetEl.querySelector('#hname-note');
+    note.hidden = true;
+    note.textContent = '';
+    paintSheetLevelChrome(hnameSheetEl, 'Household name');
+    hnameScrimEl.hidden = false;
+    hnameSheetEl.hidden = false;
+    input.focus();
+  }
+
+  function dismissHnameSheet() {
+    if (!hnameSheetEl) return;
+    hnameScrimEl.hidden = true;
+    hnameSheetEl.hidden = true;
+    popSheetLevelFor(dismissHnameSheet);
+  }
+
+  async function saveHouseholdName() {
+    if (hnameBusy || !hnameSheetEl) return;
+    var input = hnameSheetEl.querySelector('#hname-input');
+    var note = hnameSheetEl.querySelector('#hname-note');
+    hnameBusy = true;
+    try {
+      var r = await Api.fetch('/api/household/name', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: input.value || '' })
+      });
+      var data = {};
+      try { data = await r.json(); } catch (e) { /* not JSON */ }
+      if (!r.ok) {
+        note.textContent = (r.status === 400 && typeof data.detail === 'string') ? data.detail : 'That didn’t save. Try it again.';
+        note.hidden = false;
+        return;
+      }
+      shellWho.household_name = data.household_name || input.value;
+      dismissHnameSheet();
+      if (prefsState.open) renderPrefsRows();
+      toastSaved(savedLine('Household name', 'saved'));
+    } catch (err) {
+      note.textContent = 'That didn’t save. Check your connection and try again.';
+      note.hidden = false;
+    } finally {
+      hnameBusy = false;
+    }
+  }
+
+  document.addEventListener('click', function (e) {
+    var target = e.target && e.target.closest && e.target.closest('[data-hname="open"]');
+    if (target) openHnameSheet(sheetLevelHost(target));
+  });
+
   // ---------- Sign-in email (App Store, 2026-10-06) ----------
   //
   // Loop Board "App Store: anyone can sign up — email + 6-digit code".
@@ -32554,6 +32793,8 @@
       var id = e.target && e.target.closest && e.target.closest('button') && e.target.closest('button').id;
       if (id === 'email-send') sendEmailCode();
       else if (id === 'email-check') checkEmailCode();
+      else if (id === 'email-handed-mine') keepHandedEmail();
+      else if (id === 'email-handed-change') { emailSheet.step = 'enter'; renderEmailSheet(); var f = emailSheetEl.querySelector('#email-new'); if (f) f.focus(); }
       else if (id === 'email-again') { emailSheet.step = 'enter'; renderEmailSheet(); }
     });
     emailSheetEl.addEventListener('keydown', function (e) {
@@ -32569,6 +32810,18 @@
     var body = emailSheetEl.querySelector('#email-sheet-body');
     var st = prefsState.accountEmail || {};
     var noteHtml = '<p class="snw-done" id="email-note"' + (note ? '' : ' hidden') + '>' + escapeHtml(note || '') + '</p>';
+    if (emailSheet.step === 'handed') {
+      // The full address, never masked: the point is to notice one that
+      // isn't yours, and "sa…@gmail.com" hides "sam@gmai1.com".
+      var handed = shellWho.sign_in_note || {};
+      body.innerHTML =
+        '<p class="snw-done sin-lead">' + escapeHtml(signInNoticeTitle(handed.email || '')) + '</p>' +
+        '<p class="snw-done">' + escapeHtml(signInNoticeBody(handed.from_name || '')) + '</p>' +
+        '<button type="button" class="snw-send" id="email-handed-mine">That’s my email</button>' +
+        '<button type="button" class="prefs-leave-link" id="email-handed-change"><span>Change it</span></button>' +
+        noteHtml;
+      return;
+    }
     if (emailSheet.step === 'code') {
       var both = emailSheet.confirmCurrent && st.email;
       body.innerHTML =
@@ -32649,6 +32902,8 @@
       try { data = await r.json(); } catch (e) { /* not JSON */ }
       if (!r.ok) { setEmailNote(emailFailure(r, data)); return; }
       prefsState.accountEmail = { email: data.email, can_change: true };
+      // A new address answers "Sign-in now goes to …" too (the server forgot it).
+      shellWho.sign_in_note = null;
       emailSheet.step = 'enter';
       emailSheet.email = '';
       renderEmailSheet('Saved. You can sign in with ' + data.email + ' now.');
@@ -32664,11 +32919,49 @@
     buildEmailSheet();
     if (parent) openOverSheet(parent, dismissEmailSheet);
     else { forgetSheetLevels(); closePrefsSheet(); }
-    emailSheet = { step: 'enter', email: '', confirmCurrent: false, busy: false };
+    // While a handed-over address is waiting for its answer, the sheet
+    // opens on it, from Preferences too (openSignInNotice).
+    emailSheet = { step: shellWho.sign_in_note ? 'handed' : 'enter', email: '', confirmCurrent: false, busy: false };
     renderEmailSheet();
     paintSheetLevelChrome(emailSheetEl, 'Sign-in email');
     emailScrimEl.hidden = false;
     emailSheetEl.hidden = false;
+  }
+
+  // ---------- "Sign-in now goes to …" (Emily, 2026-11-01) ----------
+  // After a Remove me handover the adult who stays signs in with whatever
+  // address the leaver typed for them. They see it here, in the sign-in
+  // email sheet, until they say it's theirs ("That's my email") or change
+  // it — the change needs no code from the handed address, since that
+  // code went to whoever typed it (main.py, _changing_from). Closing the
+  // sheet answers nothing: it comes back next open.
+  function signInNoticeTitle(email) {
+    return 'Sign-in now goes to ' + email;
+  }
+  function signInNoticeBody(fromName) {
+    var who = fromName ? fromName + ' set this before leaving.' : 'This was set when someone left.';
+    return who + ' If it isn’t your email, change it now.';
+  }
+
+  function openSignInNotice() {
+    if (!shellWho.sign_in_note) return;
+    if (!prefsState.accountEmail) prefsState.accountEmail = { email: shellWho.sign_in_note.email, can_change: true };
+    openEmailSheet();
+  }
+
+  async function keepHandedEmail() {
+    if (emailSheet.busy) return;
+    emailSheet.busy = true;
+    try {
+      var r = await Api.fetch('/api/account/sign-in-notice/dismiss', { method: 'POST' });
+      if (!r.ok) { setEmailNote('That didn’t go through. Try again in a moment.'); return; }
+      shellWho.sign_in_note = null;
+      dismissEmailSheet();
+    } catch (err) {
+      setEmailNote('That didn’t go through. Check your connection and try again.');
+    } finally {
+      emailSheet.busy = false;
+    }
   }
 
   function dismissEmailSheet() {
@@ -32696,6 +32989,8 @@
   // (2026-10-31), and that is the one their own phone reads back.
   function aboutAgreedHtml(current) {
     var mine = shellWho && shellWho.legal_you_accepted_version;
+    // Agreed again on the new-terms screen (openTermsScreen): not "when you joined".
+    if (mine && mine === current && shellWho.legal_you_agreed_how === 'reask') return ' · you agreed';
     if (mine) return mine === current ? ' · you agreed when you joined' : ' · you agreed to ' + escapeHtml(mine);
     var agreed = shellWho && shellWho.legal_accepted_version;
     if (!agreed) return '';

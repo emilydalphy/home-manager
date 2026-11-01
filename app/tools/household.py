@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import functools
 import json
+import unicodedata
 from ..db import _ADULT_COLORS, get_conn, write
 from ._shared import (
     EATS_HERE_SQL, AmbiguousMemberName, current_member, find_member_row, household_id, household_initials,
@@ -643,6 +644,116 @@ def set_member_age(name: str, age_years=None, include_in_meals: bool | None = No
     from . import attendance as _attendance
     _attendance.reconcile_membership()
     return {"name": name, "age_years": age_years, "include_in_meals": include}
+
+
+# ---------- The household's name (Emily, 2026-11-01) ----------
+#
+# "A household gets the main person's name by default ("Emily's house"),
+# and can be renamed in Preferences." Email sign-up still creates every
+# household as UNNAMED_HOUSEHOLD (there is nobody to name it after yet);
+# onboarding names it once the main person is known, and db.py's startup
+# backfill does the same for households that finished setup before this.
+# Neither ever touches a name somebody chose: `households.name_chosen` is
+# set by a rename, and both only act while the name is still the
+# placeholder and nobody chose it.
+
+HOUSEHOLD_NAME_MAX = 60
+HOUSEHOLD_NAME_BLANK = "Type a name for your household."
+HOUSEHOLD_NAME_TOO_LONG = f"That's a long name. Keep it under {HOUSEHOLD_NAME_MAX} characters."
+
+
+# Invisible characters a name has no use for (security review, 2026-11-01):
+# zero-width spaces and the bidi controls that can make a name read
+# backwards. The zero-width JOINER and non-joiner stay — emoji like 👨‍👩‍👧
+# are built with them.
+_INVISIBLE_IN_NAMES = dict.fromkeys(
+    [0x200B, 0x200E, 0x200F, 0x2060, 0xFEFF, 0x061C, *range(0x202A, 0x202F), *range(0x2066, 0x206A)]
+)
+
+
+def _clean_name(text: str) -> str:
+    """Spaces collapsed and the characters above taken out — and "" when
+    what's left has nothing anyone could see (only format characters)."""
+    clean = " ".join((text or "").translate(_INVISIBLE_IN_NAMES).split())
+    if not any(unicodedata.category(ch) != "Cf" for ch in clean.replace(" ", "")):
+        return ""
+    return clean
+
+
+_HOUSE_SUFFIX = "’s house"
+
+
+def house_name_for(person: str) -> str:
+    """ "Emily's house". Always 's, names ending in s too ("James's house"),
+    the way it's said out loud. "" for a blank name. A name too long for
+    HOUSEHOLD_NAME_MAX is cut at the last whole word that fits (or hard, for
+    one very long word), so the house is still named after its person."""
+    clean = _clean_name(person)
+    if not clean:
+        return ""
+    room = HOUSEHOLD_NAME_MAX - len(_HOUSE_SUFFIX)
+    if len(clean) > room:
+        cut = clean[:room]
+        if clean[room] != " " and " " in cut:
+            cut = cut.rsplit(" ", 1)[0]
+        clean = cut.rstrip()
+    return f"{clean}{_HOUSE_SUFFIX}"
+
+
+def name_household_after_main_person(conn=None) -> str | None:
+    """
+    Give this household its main person's name ("Emily's house") while it
+    still has the placeholder nobody chose. Returns the new name, or None
+    when nothing changed (already named, renamed by someone, or no main
+    person with a name yet).
+    """
+    from ._shared import UNNAMED_HOUSEHOLD
+
+    own = conn is None
+    conn = get_conn() if own else conn
+    try:
+        row = conn.execute(
+            "SELECT h.name, COALESCE(h.name_chosen, 0) AS chosen, m.name AS person "
+            "FROM households h LEFT JOIN members m ON m.id = h.primary_member_id AND m.household_id = h.id "
+            "WHERE h.id = ?",
+            (household_id(),),
+        ).fetchone()
+        if row is None or row["chosen"] or (row["name"] or "").strip() != UNNAMED_HOUSEHOLD:
+            return None
+        name = house_name_for(row["person"] or "")
+        if not name:
+            return None
+        changed = conn.execute(
+            "UPDATE households SET name = ? WHERE id = ? AND name = ? AND COALESCE(name_chosen, 0) = 0",
+            (name, household_id(), UNNAMED_HOUSEHOLD),
+        ).rowcount
+        if own:
+            conn.commit()
+        return name if changed else None
+    finally:
+        if own:
+            conn.close()
+
+
+def rename_household(name) -> dict:
+    """Preferences -> Household name. Raises ValueError with a sentence the
+    screen shows as it stands."""
+    if not isinstance(name, str):
+        raise ValueError(HOUSEHOLD_NAME_BLANK)
+    clean = _clean_name(name)
+    if not clean:
+        raise ValueError(HOUSEHOLD_NAME_BLANK)
+    if len(clean) > HOUSEHOLD_NAME_MAX:
+        raise ValueError(HOUSEHOLD_NAME_TOO_LONG)
+    conn = get_conn()
+    try:
+        conn.execute(
+            "UPDATE households SET name = ?, name_chosen = 1 WHERE id = ?", (clean, household_id())
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return {"household_name": clean}
 
 
 def set_household_goals(goals: str) -> dict:

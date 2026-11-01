@@ -1749,6 +1749,17 @@ CREATE TABLE IF NOT EXISTS household_credentials (
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- The last HOME_MANAGER_PASSWORD seen at startup, as an HMAC keyed with
+-- SESSION_SECRET (never the passphrase). households.note_env_passphrase
+-- compares the env var against it: a different value is a passphrase change
+-- for household 1, which moves households.session_epoch on and so signs
+-- every device out (Emily, 2026-11-01).
+CREATE TABLE IF NOT EXISTS env_passphrase_seen (
+    household_id INTEGER PRIMARY KEY REFERENCES households(id),
+    password_hash TEXT NOT NULL,
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 -- One-time invite links: "Invite Vineeth" in Preferences or at the end of
 -- setup (Loop Board, Emily 2026-09-25). Opening the link signs that adult
 -- in to this household without the passphrase. Only the SHA-256 of the
@@ -1848,6 +1859,22 @@ CREATE TABLE IF NOT EXISTS member_legal_acceptances (
     member_id INTEGER NOT NULL REFERENCES members(id),
     version TEXT NOT NULL,
     accepted_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- "Sign-in now goes to sam@example.com" (Emily, 2026-11-01): when an adult
+-- taps Remove me and hands the household's sign-in to the adult who stays
+-- (household_deletion.sign_in_handover), the address they typed is the one
+-- that opens the house from then on. The adult who stays is shown it, once
+-- per sign-in, until they say it's theirs or change it — a guard against a
+-- leaver quietly pointing the house at an inbox they read. from_name is the
+-- leaver's name as it was (they are gone by the time it is read).
+CREATE TABLE IF NOT EXISTS sign_in_notices (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    household_id INTEGER NOT NULL REFERENCES households(id),
+    member_id INTEGER NOT NULL REFERENCES members(id),
+    email TEXT NOT NULL,
+    from_name TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 -- The conversation a signed-in device is in the middle of: the trimmed

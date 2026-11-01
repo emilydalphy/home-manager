@@ -147,7 +147,10 @@ def main() -> None:
             (h["name"] for h in households.list_households() if h["id"] == household_id),
             str(household_id),
         )
-        print(f"\nReplaced the passphrase for household {household_id}. The old one no longer works.")
+        print(
+            f"\nReplaced the passphrase for household {household_id}. The old one no longer works,"
+            " and every device signed in to it is signed out (if it had a passphrase before)."
+        )
         _print_credential(name, household_id, passphrase)
         return
 
