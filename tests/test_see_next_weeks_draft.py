@@ -165,3 +165,44 @@ def test_the_pin_is_dropped_after_the_load_that_shows_it_approved():
 """)
     assert out["a"] == 9 and out["b"] is None
     assert out["urls"] == ["/api/week-menu?weekly_plan_id=9", "/api/week-menu?weekly_plan_id=9", "/api/week-menu"]
+
+
+# --- A draft over PART of an approved next week (Emily, 2026-10-31) -------
+
+def _approved_next_and_part_draft(offset_days=2):
+    this_week, nxt = _this_week_and_next(approve_next=True)
+    nxt_start = datetime.date.fromisoformat(tools.get_weekly_plan(nxt)["period_start_date"])
+    part = tools.create_weekly_plan((nxt_start + datetime.timedelta(days=offset_days)).isoformat(),
+                                    day_count=7 - offset_days)["weekly_plan_id"]
+    return this_week, nxt, part
+
+
+def test_a_part_week_draft_over_approved_next_week_is_named_too(signed_in):
+    """CATCH. Next week approved, re-planned from its third day: the draft
+    is saved, and Plan's next_period names it so "See next week's draft"
+    (and More's "its draft is waiting") reach it."""
+    this_week, nxt, part = _approved_next_and_part_draft()
+    assert tools.get_weekly_plan(nxt)["status"] == "approved", "the approved week is untouched by a draft"
+    menu = signed_in.get(f"/api/week-menu?weekly_plan_id={this_week}").json()
+    assert menu["next_period"]["draft_plan_id"] == part
+    assert menu["next_period"]["draft_week_start"] == tools.get_weekly_plan(part)["week_start_date"]
+    assert menu["next_period"]["day_count"] == 7, "a full week's stretch, so the label is next week's"
+
+
+def test_a_draft_later_in_a_free_next_week_is_not_called_next_weeks_draft():
+    """GUARD. With next week's first day free, the stretch is still to plan:
+    a draft that starts mid-week leaves the link as "Plan next week"."""
+    today = _weekly_plan._household_today()
+    this_week = tools.create_weekly_plan((today - datetime.timedelta(days=1)).isoformat(), day_count=7)["weekly_plan_id"]
+    tools.approve_weekly_plan(this_week, approved_by="Emily")
+    tools.create_weekly_plan((today + datetime.timedelta(days=9)).isoformat(), day_count=4)
+    nxt = _weekly_plan.next_period_after(tools.get_weekly_plan(this_week))
+    assert nxt["draft_plan_id"] is None and nxt["is_planned"] is False
+
+
+@_needs_node
+def test_the_part_week_drafts_link_reads_see_next_weeks_draft():
+    out = _run(_extract("planNextLabel", SHELL_JS) + "\n"
+               + "function planEntryLabel(){return 'X';} function addDaysLocal(){return '';} function todayLocalStr(){return '';}\n"
+               + "console.log(JSON.stringify(planNextLabel(" + json.dumps(dict(_DRAFT_NEXT, draft_week_start="2026-09-30")) + ")));")
+    assert out == "See next week’s draft"

@@ -2594,6 +2594,20 @@ def next_period_after(plan: dict, today: str = "") -> dict:
         (p for p in held if p["overlap_dates"][0] == start.isoformat() and p["status"] == "draft"),
         None,
     )
+    # A draft over PART of an approved next week — re-planning it from the
+    # Tuesday — is the same unfinished work, and gets the same way back
+    # (Emily, 2026-10-31, Loop Board: "See next week's draft" and the
+    # dock's See draft). Only when the first day is held by an APPROVED
+    # plan: with that day free, the stretch is still something to plan,
+    # and its link stays "Plan next week".
+    if draft is None and any(
+        p["overlap_dates"][0] == start.isoformat() and p["status"] == "approved" for p in held
+    ):
+        draft = min(
+            (p for p in held if p["status"] == "draft"),
+            key=lambda p: (p["overlap_dates"][0], -p["weekly_plan_id"]),
+            default=None,
+        )
     return {
         "start_date": start.isoformat(),
         "day_count": day_count,
