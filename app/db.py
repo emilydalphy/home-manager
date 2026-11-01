@@ -1008,6 +1008,10 @@ _MIGRATIONS = [
     # column existed reads as 0 too, so adding it signs nobody out. See
     # households.session_epoch and security.issue_session.
     ("households", "session_epoch", "INTEGER NOT NULL DEFAULT 0"),
+    # How an adult's own agreement to the terms was given (2026-11-01):
+    # 'join' on the invite link's screen (every row before this column),
+    # 'reask' on the agree screen a new LEGAL_VERSION puts up.
+    ("member_legal_acceptances", "how", "TEXT NOT NULL DEFAULT 'join'"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people

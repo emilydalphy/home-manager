@@ -30662,6 +30662,11 @@
     // (the "Sharing with Claude" section below). '' means never asked; an
     // older server that doesn't send the field reads as answered, and the
     // server refuses any AI call without a yes either way.
+    // New terms (Emily, 2026-11-01: "when the terms change, everyone is
+    // asked to agree again"): before anything else, this adult agrees to
+    // the version they haven't seen. Decided server-side (legal.needs_agreement);
+    // false on an older server, and for a device that is nobody yet.
+    if (shellWho.loaded && shellWho.legal_needs_agree) await openTermsScreen();
     if (shellWho.loaded && shellWho.ai_consent === '') await openAiConsentScreen();
     // The other adult's first open: the welcome goes over the shell while
     // the tabs build under it, so "Show me today" lands on a Today that's
@@ -30759,6 +30764,16 @@
     } catch (err) { /* see above: the cookie is still doing the real work */ }
   }
 
+  // The two answers that are about the PERSON, not the household — so the
+  // pick carries them too, and a device that was nobody at boot hears them
+  // as soon as it says who it is: "Sign-in now goes to …" (openSignInNotice)
+  // and the terms to agree to again (openTermsScreen).
+  function pickCarriesWhoseThings(data) {
+    shellWho.sign_in_note = data.sign_in_note && typeof data.sign_in_note.email === 'string' ? data.sign_in_note : null;
+    shellWho.legal_needs_agree = data.legal_needs_agree === true;
+    shellWho.legal_you_agreed_how = typeof data.legal_you_agreed_how === 'string' ? data.legal_you_agreed_how : '';
+  }
+
   async function loadWhoami() {
     try {
       var res = await Api.fetch('/api/whoami');
@@ -30796,7 +30811,7 @@
       shellWho.legal_you_accepted_version = typeof data.legal_you_accepted_version === 'string' ? data.legal_you_accepted_version : '';
       // "Sign-in now goes to …": the household's sign-in was handed to this
       // adult by someone leaving (openSignInNotice). null almost always.
-      shellWho.sign_in_note = data.sign_in_note && typeof data.sign_in_note.email === 'string' ? data.sign_in_note : null;
+      pickCarriesWhoseThings(data);
       shellWho.loaded = true;
       // Keep the copy in step with whatever the server says this device is
       // pinned to, however it got pinned — the pick below, an invite link,
@@ -30852,6 +30867,7 @@
       shellWho.member = data.member || null;
       shellWho.first_open = !!data.first_open;
       shellWho.set_up_by = data.set_up_by || shellWho.set_up_by || '';
+      pickCarriesWhoseThings(data);
       // The same two lines the screen's own pick ends on, and for the same
       // reason: /api/push/devices refuses a token while nobody is picked
       // (main._push_member_or_400), and loadPushModule fires while this
@@ -30954,6 +30970,7 @@
       shellWho.member = data.member || null;
       shellWho.first_open = !!data.first_open;
       shellWho.set_up_by = data.set_up_by || shellWho.set_up_by || '';
+      pickCarriesWhoseThings(data);
       // Remember it here as well as in the cookie the response just set,
       // and on every pick — so "Not you? Switch" moves BOTH copies and
       // the device never ends up re-applying the person who handed the
@@ -31055,6 +31072,103 @@
 
   var aiConsentEl = null;
   var aiConsentResolve = null;
+
+  // ---------- New terms: agree again (Emily, 2026-11-01) ----------
+  // The consent screen's frame (.aic-screen) with the invite page's tick
+  // line. No "Not now": using Pomona is agreeing, so the screen stays until
+  // they do. The links open the public pages in this tab; those carry their
+  // own Back, and the screen is put up again on the way back in.
+  var TERMS_COPY = {
+    title: 'Pomona’s terms have changed',
+    lead: 'Have a read, then agree to keep using Pomona.',
+    agree: 'Agree',
+    tickFirst: 'Tick the box to say you agree, then Agree.',
+    changedAgain: 'The terms changed again just now. Have another look, then agree.',
+    failed: 'That didn’t save. Try it again.'
+  };
+  var termsEl = null;
+  var termsResolve = null;
+
+  function buildTermsScreen() {
+    if (termsEl) return;
+    termsEl = document.createElement('div');
+    termsEl.id = 'terms-screen';
+    termsEl.className = 'aic-screen';
+    termsEl.hidden = true;
+    termsEl.setAttribute('role', 'dialog');
+    termsEl.setAttribute('aria-modal', 'true');
+    termsEl.setAttribute('aria-labelledby', 'terms-title');
+    termsEl.innerHTML =
+      '<div class="aic-inner">' +
+        '<h1 class="aic-title" id="terms-title">' + escapeHtml(TERMS_COPY.title) + '</h1>' +
+        '<p class="aic-lead">' + escapeHtml(TERMS_COPY.lead) + '</p>' +
+        '<p class="terms-version" id="terms-version"></p>' +
+        '<label class="terms-agree" for="terms-box">' +
+          '<input type="checkbox" id="terms-box">' +
+          '<span>I agree to the <a href="/terms">Terms</a> and <a href="/privacy">Privacy Policy</a>.</span>' +
+        '</label>' +
+        '<p class="aic-error" id="terms-error" role="alert" hidden></p>' +
+        '<div class="aic-foot">' +
+          '<button type="button" class="btn-primary aic-allow" data-terms="agree">' + escapeHtml(TERMS_COPY.agree) + '</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(termsEl);
+    termsEl.addEventListener('click', function (e) {
+      var btn = e.target && e.target.closest && e.target.closest('[data-terms="agree"]');
+      if (btn) saveTermsAgreement();
+    });
+  }
+
+  function termsSay(text) {
+    var el = termsEl && termsEl.querySelector('#terms-error');
+    if (!el) return;
+    el.textContent = text || '';
+    el.hidden = !text;
+  }
+
+  // Resolves once they've agreed.
+  function openTermsScreen() {
+    buildTermsScreen();
+    closeAskSheet();
+    closeWeekSheet();
+    termsEl.querySelector('#terms-version').textContent = shellWho.legal_version ? 'Version ' + shellWho.legal_version : '';
+    termsEl.querySelector('#terms-box').checked = false;
+    termsSay('');
+    termsEl.hidden = false;
+    termsEl.scrollTop = 0;
+    var box = termsEl.querySelector('#terms-box');
+    if (box) box.focus();
+    return new Promise(function (resolve) { termsResolve = resolve; });
+  }
+
+  async function saveTermsAgreement() {
+    if (!termsEl.querySelector('#terms-box').checked) { termsSay(TERMS_COPY.tickFirst); return; }
+    var btn = termsEl.querySelector('[data-terms="agree"]');
+    btn.disabled = true;
+    termsSay('');
+    try {
+      var res = await Api.fetch('/api/legal/agree', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ version: shellWho.legal_version || '' })
+      });
+      if (res.status === 409) { termsSay(TERMS_COPY.changedAgain); return; }
+      if (!res.ok) throw new Error('agree failed');
+      var data = await res.json();
+      shellWho.legal_needs_agree = false;
+      shellWho.legal_you_accepted_version = data.legal_you_accepted_version || shellWho.legal_version;
+      shellWho.legal_you_agreed_how = 'reask';
+      termsEl.hidden = true;
+      var resolve = termsResolve;
+      termsResolve = null;
+      if (resolve) resolve(true);
+    } catch (err) {
+      console.warn('Saving the terms agreement failed:', err);
+      termsSay(TERMS_COPY.failed);
+    } finally {
+      btn.disabled = false;
+    }
+  }
 
   function buildAiConsentScreen() {
     if (aiConsentEl) return;
@@ -32368,6 +32482,8 @@
   // (2026-10-31), and that is the one their own phone reads back.
   function aboutAgreedHtml(current) {
     var mine = shellWho && shellWho.legal_you_accepted_version;
+    // Agreed again on the new-terms screen (openTermsScreen): not "when you joined".
+    if (mine && mine === current && shellWho.legal_you_agreed_how === 'reask') return ' · you agreed';
     if (mine) return mine === current ? ' · you agreed when you joined' : ' · you agreed to ' + escapeHtml(mine);
     var agreed = shellWho && shellWho.legal_accepted_version;
     if (!agreed) return '';

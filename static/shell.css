@@ -11877,6 +11877,30 @@ button.home-row { width: 100%; }
   margin: 12px 0 0;
 }
 .aic-error[hidden] { display: none; }
+/* New terms (2026-11-01): the version under the lead, then the invite
+   page's tick line (join.html .jn-agree), in the consent screen's frame. */
+.terms-version {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--ink-secondary);
+  margin: 8px 0 0;
+}
+.terms-agree {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 12px;
+  min-height: 44px;
+  padding: 10px 2px;
+  box-sizing: border-box;
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--ink);
+  cursor: pointer;
+}
+.terms-agree input { width: 20px; height: 20px; margin: 1px 0 0; flex: none; accent-color: var(--spruce); }
+.terms-agree a { color: var(--ink-strong); font-weight: 700; }
 .aic-foot { display: flex; flex-direction: column; gap: 4px; margin-top: 20px; }
 .aic-foot .aic-allow { width: 100%; min-height: 52px; box-shadow: var(--shadow-action); }
 .aic-foot [hidden] { display: none; }

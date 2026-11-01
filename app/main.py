@@ -10144,6 +10144,19 @@ def whoami(request: Request):
         # hasn't said the address is theirs. None every other time, and for
         # a device that is nobody yet (it asks "Who's this?" first).
         "sign_in_note": account_email.sign_in_notice(current, member["id"]) if member else None,
+        **_legal_for(current, member),
+    }
+
+
+def _legal_for(household: int, member: dict | None) -> dict:
+    """Has the terms version moved past what this adult agreed to? Then the
+    shell asks them to agree again before anything else (legal.needs_agreement).
+    False for a device that is nobody yet — it is asked "Who's this?" first,
+    and the pick's answer carries this too."""
+    agreed = account_email.member_legal_agreement(household, member["id"] if member else None)
+    return {
+        "legal_needs_agree": member is not None and legal.needs_agreement(agreed["version"]),
+        "legal_you_agreed_how": agreed["how"] or "",
     }
 
 
@@ -10207,10 +10220,14 @@ def whoami_pick(req: WhoamiPickRequest, request: Request):
     with tools.use_member(req.member_id):
         member = tools.current_member()
         first_open = tools.first_open_state(member)
+        sign_in_note = account_email.sign_in_notice(tools.household_id(), req.member_id)
+        legal_state = _legal_for(tools.household_id(), member)
     response = JSONResponse({
         "member": member,
         "first_open": first_open["show"],
         "set_up_by": first_open["set_up_by"],
+        "sign_in_note": sign_in_note,
+        **legal_state,
     })
     response.set_cookie(
         security.COOKIE_NAME,
@@ -10967,6 +10984,29 @@ def goodbye_page():
 
 def _legal_page(page: str) -> HTMLResponse:
     return HTMLResponse(legal.render(page))
+
+
+class LegalAgreeRequest(BaseModel):
+    # The version the screen showed. Agreeing records what was READ, so a
+    # screen left open across a new version is told so rather than filed
+    # as agreeing to words it never showed.
+    version: str = Field("", max_length=32)
+
+
+@app.post("/api/legal/agree")
+def legal_agree(req: LegalAgreeRequest):
+    """
+    The agree screen a new terms version puts up (Emily, 2026-11-01:
+    "when the terms change, everyone is asked to agree again"). Recorded
+    for the adult this device is, never the household.
+    """
+    you = tools.current_member()
+    if you is None:
+        raise HTTPException(status_code=400, detail="Tell me who you are first, then try again.")
+    if req.version != legal.LEGAL_VERSION:
+        raise HTTPException(status_code=409, detail="The terms changed again just now. Have another look, then agree.")
+    account_email.record_member_acceptance(tools.household_id(), you["id"], how="reask")
+    return {"legal_you_accepted_version": legal.LEGAL_VERSION, "legal_needs_agree": False}
 
 
 @app.get("/privacy")

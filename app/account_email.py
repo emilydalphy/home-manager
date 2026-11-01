@@ -594,14 +594,15 @@ def accepted_legal_version(household_id: int) -> str | None:
         conn.close()
 
 
-def record_member_acceptance(household_id: int, member_id: int) -> None:
+def record_member_acceptance(household_id: int, member_id: int, how: str = "join") -> None:
     """This adult agreed to the current terms and privacy policy themselves
-    (the invite link's join screen — see member_legal_acceptances)."""
+    (the invite link's join screen, or — `how="reask"` — the agree screen a
+    new version puts up; see member_legal_acceptances)."""
     conn = get_conn()
     try:
         conn.execute(
-            "INSERT INTO member_legal_acceptances (household_id, member_id, version) VALUES (?, ?, ?)",
-            (int(household_id), int(member_id), legal.LEGAL_VERSION),
+            "INSERT INTO member_legal_acceptances (household_id, member_id, version, how) VALUES (?, ?, ?, ?)",
+            (int(household_id), int(member_id), legal.LEGAL_VERSION, how),
         )
         conn.commit()
     finally:
@@ -683,3 +684,44 @@ def clear_sign_in_notice(household_id: int, member_id: int) -> None:
         conn.commit()
     finally:
         conn.close()
+
+
+def member_legal_agreement(household_id: int, member_id: int | None) -> dict:
+    """
+    `{"version", "how"}` for the newest terms this adult has agreed to, or
+    both None. Their own rows (joining by invite, or the re-ask screen) —
+    and, for the adult who set the household up, the household's email
+    sign-up row too, since that was them ticking the box before they had a
+    member row to file it under (`households.set_up_by_member_id`, or the
+    main person where that was never recorded). `how` is 'join', 'reask'
+    or 'signup'.
+    """
+    if member_id is None:
+        return {"version": None, "how": None}
+    hid, mid = int(household_id), int(member_id)
+    conn = get_conn()
+    try:
+        found = [
+            (r["version"], r["how"] or "join")
+            for r in conn.execute(
+                "SELECT version, how FROM member_legal_acceptances WHERE household_id = ? AND member_id = ?",
+                (hid, mid),
+            ).fetchall()
+        ]
+        setter = conn.execute(
+            "SELECT COALESCE(set_up_by_member_id, primary_member_id) AS mid FROM households WHERE id = ?",
+            (hid,),
+        ).fetchone()
+        if setter is not None and setter["mid"] == mid:
+            found += [
+                (r["version"], "signup")
+                for r in conn.execute(
+                    "SELECT version FROM legal_acceptances WHERE household_id = ?", (hid,)
+                ).fetchall()
+            ]
+    finally:
+        conn.close()
+    if not found:
+        return {"version": None, "how": None}
+    version, how = max(found, key=lambda vh: vh[0])
+    return {"version": version, "how": how}
