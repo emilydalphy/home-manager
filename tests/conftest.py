@@ -148,6 +148,9 @@ _TABLES = [
     "holiday_answers", "held_things",
     # The sauces a household has said it has (2026-10-18, pantry.py).
     "assumed_known",
+    # The last HOME_MANAGER_PASSWORD seen (households.note_env_passphrase,
+    # 2026-11-01): one test's passphrase must not read as a change in the next.
+    "env_passphrase_seen",
 ]
 
 
@@ -287,6 +290,9 @@ def clean_state():
         # The first-open tour's ending (2026-10-18) is on the row too, for a
         # session with nobody picked: one test's skip mustn't end the next's.
         conn.execute("UPDATE households SET tour_ended_how = '', tour_ended_at = '', first_approved_at = '' WHERE id = 1")
+        # The sign-in epoch (2026-11-01) is on the row too: a test that
+        # changes household 1's passphrase must not sign the next one out.
+        conn.execute("UPDATE households SET session_epoch = 0 WHERE id = 1")
         # Household 1 has said yes to sharing with Claude, in every test —
         # see _database above for why, and for the tests that undo it.
         conn.execute(

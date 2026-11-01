@@ -1448,6 +1448,10 @@ class ResetRequest(BaseModel):
 @app.on_event("startup")
 def startup():
     init_db()
+    # HOME_MANAGER_PASSWORD changed in Railway since the last start? Then
+    # household 1's devices are signed out (households.note_env_passphrase;
+    # never raises).
+    households.note_env_passphrase()
     _prune_chat_sessions_now()
     # Weeks approved before the allergies-at-approval record existed get
     # today's allergies as theirs, so a clash already approved past isn't

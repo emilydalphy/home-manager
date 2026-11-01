@@ -1749,6 +1749,17 @@ CREATE TABLE IF NOT EXISTS household_credentials (
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- The last HOME_MANAGER_PASSWORD seen at startup, as an HMAC keyed with
+-- SESSION_SECRET (never the passphrase). households.note_env_passphrase
+-- compares the env var against it: a different value is a passphrase change
+-- for household 1, which moves households.session_epoch on and so signs
+-- every device out (Emily, 2026-11-01).
+CREATE TABLE IF NOT EXISTS env_passphrase_seen (
+    household_id INTEGER PRIMARY KEY REFERENCES households(id),
+    password_hash TEXT NOT NULL,
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 -- One-time invite links: "Invite Vineeth" in Preferences or at the end of
 -- setup (Loop Board, Emily 2026-09-25). Opening the link signs that adult
 -- in to this household without the passphrase. Only the SHA-256 of the

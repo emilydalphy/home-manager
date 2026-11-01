@@ -1002,6 +1002,12 @@ _MIGRATIONS = [
     # weeks — the rhythm working). Written only through save_week_intake
     # (append-only); see week_intake.BREAKFASTS_EACH_WEEK.
     ("week_intake", "breakfasts_each_week", "TEXT NOT NULL DEFAULT ''"),
+    # The household's sign-in epoch (Emily, 2026-11-01: "changing the
+    # passphrase signs everyone else out"). 0 for every household until its
+    # passphrase first changes; every session cookie minted before this
+    # column existed reads as 0 too, so adding it signs nobody out. See
+    # households.session_epoch and security.issue_session.
+    ("households", "session_epoch", "INTEGER NOT NULL DEFAULT 0"),
 ]
 
 # First two adults (by id, i.e. creation order) get the household's two people
