@@ -7256,6 +7256,21 @@ def tonight_question_closed(now: datetime) -> bool:
     return now.time() >= TONIGHT_QUESTION_CLOSES
 
 
+def _week_card_holds(day: str) -> bool:
+    """Whether Today's plan-the-week card (get_week_planning_nudge) is on
+    screen and its period includes `day`. False if it can't be read: then
+    the dinner card is the safer one to keep."""
+    try:
+        nudge = get_week_planning_nudge()
+    except Exception:
+        logger.exception("Couldn't read the week card; tomorrow's dinner card stays")
+        return False
+    if not nudge.get("show") or not nudge.get("week_start"):
+        return False
+    start = date.fromisoformat(nudge["week_start"])
+    return start <= date.fromisoformat(day) < start + timedelta(days=int(nudge.get("day_count") or 7))
+
+
 def get_needs_you_items(now: datetime | None = None) -> list[dict]:
     """
     The Today screen's needs-you band (design_handoff_shell/README.md §4,
@@ -7414,6 +7429,16 @@ def get_needs_you_items(now: datetime | None = None) -> list[dict]:
         # it set the week up. Their answer is the same answer here.
         if candidate in usual_week_off_dinners:
             continue
+
+        # Tomorrow on no plan at all, while Today is already asking "Shall
+        # I put the week together?" over a period that holds it: that card
+        # is the answer — planning the week plans tomorrow's dinner too —
+        # so this one stays away rather than asking about the same gap
+        # twice (Emily, 2026-10-31, after midnight on an approved week's
+        # last night). Tonight keeps its card: the week card never offers
+        # a gap of just today, and tonight is the one that can't wait.
+        if offset == 1 and _week_card_holds(candidate):
+            break
 
         options = _suggest_quick_dinners()
         if not options:
