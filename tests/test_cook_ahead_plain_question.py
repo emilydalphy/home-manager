@@ -35,7 +35,6 @@ def _hover_is_pointer_only(selector: str) -> None:
 
 def test_chip_hover_is_only_for_pointers_so_a_tap_leaves_no_ghost():
     _hover_is_pointer_only(".defrost-chip")
-    _hover_is_pointer_only(".cook-offer-chip")
 
 
 # ---------- the words themselves (DESIGN_SYSTEM §8) ----------

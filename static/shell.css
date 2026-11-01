@@ -7610,72 +7610,6 @@ button.recipe-cite:hover .recipe-cite-open { color: var(--apricot-label-hover); 
 .cook-hero-check { color: var(--ivory-ink-muted); }
 .cook-hero-check.checked { background: var(--celadon); color: var(--on-accent-ink); }
 
-/* ---------- "Prep-cut on Sunday?" ----------
-   The prep-cut offer at the foot of the recipe screen (cookPrepCutHtml):
-   the question, sand chips for this meal's produce, a ticked one celadon
-   (the accent that reassures, the same "already true"
-   .defrost-chip.is-selected uses), and a quiet outline to commit — never
-   apricot, which the dock's one action owns (Rule 5). Until 2026-09-18 this
-   shared its rules with the cook-ahead picker inside the spruce hero
-   (.cook-ahead-*); both the hero and that picker are gone. */
-.cook-offer {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 14px;
-  border-radius: var(--radius-card);
-  background: var(--sand);
-}
-.cook-offer-ask {
-  margin: 0;
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.35;
-  color: var(--ink);
-}
-.cook-offer-chips { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.cook-offer-chip {
-  min-width: 52px;
-  min-height: 44px;
-  padding: 0 12px;
-  border: 1.5px solid var(--hairline-strong);
-  border-radius: var(--radius-chip);
-  background: var(--surface);
-  color: var(--ink-strong);
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-}
-@media (hover: hover) {
-  .cook-offer-chip:hover { border-color: var(--ink-strong); }
-}
-.cook-offer-chip.is-on { background: var(--celadon); border-color: var(--celadon); color: var(--on-accent-ink); }
-.cook-offer-foot { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.cook-offer-count {
-  flex: 1 1 auto;
-  font-family: var(--font-body);
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--ink-secondary);
-}
-.cook-offer-go {
-  min-height: 44px;
-  padding: 0 16px;
-  border: 1.5px solid var(--hairline-strong);
-  border-radius: var(--radius-control);
-  background: none;
-  color: var(--ink-strong);
-  font-family: var(--font-display);
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  cursor: pointer;
-}
-.cook-offer-go:hover { background: var(--surface); }
-.cook-offer-go:disabled { opacity: .6; cursor: default; }
-
 /* ---------- Focused single-meal cook mode ----------
    A state of this same screen (never a route), exactly like Grocery's
    shopping mode — see .gro-hero-back, the precedent this back link copies.
@@ -7885,7 +7819,7 @@ button.recipe-cite:hover .recipe-cite-open { color: var(--apricot-label-hover); 
 .recipe-empty { padding: 6px 0 8px; }
 .recipe-card .cook-fill { margin: 0 0 8px; }
 .recipe-norecipe { margin: 0; }
-/* The prep rows and the prep-cut offer sit under the recipe, quietly. */
+/* The prep rows sit under the recipe, quietly. */
 .recipe-body .cook-section { padding-top: 4px; }
 
 /* ---------- The recipe page (2026-10-06) ----------

@@ -116,7 +116,6 @@ var COOK_ICONS = { check: '<svg data-icon="check"></svg>', mic: '<svg data-icon=
 var COOK_VOICE_ENABLED = false;
 function cookBackLabel(){ return 'Kitchen'; }
 function cookDateLabel(d){ return 'Tuesday, Sep 9'; }
-function cookPrepCutHtml(){ return ''; }
 function cookReheatFocusHtml(m){ return '<div class="cook-reheat"></div>'; }
 var RECIPE_ICONS = { minus: '<svg data-icon="minus"></svg>', plus: '<svg data-icon="plus"></svg>', chevLeft: '<svg data-icon="chev"></svg>' };
 function renderCook(){ renderCount += 1; }
