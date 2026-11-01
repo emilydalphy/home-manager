@@ -85,7 +85,9 @@ DEFAULT_SEND_TIME = "07:00"
 # Two SMS segments of GSM-7 is 306 characters; a little under that so a
 # stray accented character (which forces the costlier UCS-2 encoding at 67
 # per segment) still lands in a small number of parts. Assumption, stated
-# on the card: a text is a line, not a page.
+# on the card: a text is a line, not a page. Only true once send_sms has
+# swapped the app's long dashes and curly quotes for plain ones
+# (sms_plain_marks) -- one "—" made every text UCS-2.
 MAX_TEXT_CHARS = 300
 
 # How late the loop will still send a missed morning. The app was down at
@@ -1033,6 +1035,34 @@ def twilio_configured() -> bool:
     return all((os.environ.get(k) or "").strip() for k in TWILIO_ENV)
 
 
+# The app's typography that is not in the GSM-7 alphabet, and what a text
+# says instead. One of these anywhere in a text switches the WHOLE message
+# to UCS-2 -- 67 characters a segment instead of 153 -- so a 300-character
+# morning text with "Tonight: Chicken Skewers — 35 min." in it was billed
+# as 5 messages instead of 2, and the evening nudge as 2 instead of 1.
+# Emily, 2026-10-31 (option A): texts swap them for plain marks at the
+# moment of sending; the app's screens, and push, keep the nicer ones.
+# A long dash keeps the space either side of it however it was written,
+# so "Skewers—35" and "Skewers — 35" both read "Skewers - 35".
+_LONG_DASH = re.compile(r"\s*\u2014\s*")
+_SMS_PLAIN = str.maketrans({
+    "\u2013": "-",    # – en dash, as in "5–6"
+    "\u2018": "'",    # ‘
+    "\u2019": "'",    # ’ -- "Vineeth’s out"
+    "\u201c": '"',    # “
+    "\u201d": '"',    # ”
+    "\u2026": "...",  # …
+})
+
+
+def sms_plain_marks(body: str) -> str:
+    """`body` with the long dash, en dash, curly quotes and ellipsis swapped
+    for their plain GSM-7 equivalents, so the text bills at 153 characters a
+    segment rather than 67. Anything else (an accented name) is left alone:
+    a person's name is not ours to respell."""
+    return _LONG_DASH.sub(" - ", str(body or "")).translate(_SMS_PLAIN)
+
+
 def send_sms(to: str, body: str) -> dict:
     """
     One text through Twilio's REST API. Returns {status, detail} and never
@@ -1047,6 +1077,10 @@ def send_sms(to: str, body: str) -> dict:
         return {"status": "skipped-no-keys", "detail": "TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN or TWILIO_FROM_NUMBER unset"}
 
     url = f"https://api.twilio.com/2010-04-01/Accounts/{urllib.parse.quote(sid)}/Messages.json"
+    # Plain marks HERE, at the one place a text leaves the app, so every
+    # text (morning, evening nudge, anything added later) is billed as plain
+    # characters and nothing upstream has to remember to (sms_plain_marks).
+    body = sms_plain_marks(body)
     data = urllib.parse.urlencode({"To": to, "From": sender, "Body": body}).encode("utf-8")
     req = urllib.request.Request(url, data=data, method="POST")
     req.add_header("Authorization", "Basic " + base64.b64encode(f"{sid}:{token}".encode("utf-8")).decode("ascii"))

@@ -221,6 +221,7 @@ from .digest import (  # noqa: F401
     send_digest,
     send_evening_nudge,
     send_sms,
+    sms_plain_marks,
     set_evening_nudge_for_member,
     set_morning_text,
     set_morning_text_for_member,
