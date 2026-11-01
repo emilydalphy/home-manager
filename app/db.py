@@ -1688,15 +1688,17 @@ def _convert_quarts_and_gallons(conn):
             else:
                 new_qty = _folded_volume(qty, _q)
         if new_qty and new_qty != qty:
-            conn.execute("UPDATE grocery_items SET quantity = ? WHERE id = ?", (new_qty, row["id"]))
+            conn.execute("UPDATE grocery_items SET quantity = ? WHERE id = ? AND household_id = ?",
+                         (new_qty, row["id"], row["household_id"]))
     if "inventory_items" in tables:
-        for row in conn.execute("SELECT id, quantity FROM inventory_items").fetchall():
+        for row in conn.execute("SELECT id, household_id, quantity FROM inventory_items").fetchall():
             qty = row["quantity"] or ""
             if not _BIG_VOLUME_WORDS.search(qty):
                 continue
             new_qty = _folded_volume(qty, _q)
             if new_qty and new_qty != qty:
-                conn.execute("UPDATE inventory_items SET quantity = ? WHERE id = ?", (new_qty, row["id"]))
+                conn.execute("UPDATE inventory_items SET quantity = ? WHERE id = ? AND household_id = ?",
+                             (new_qty, row["id"], row["household_id"]))
 
 
 def _folded_volume(qty: str, _q) -> str | None:
