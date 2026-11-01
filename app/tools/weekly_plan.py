@@ -2179,6 +2179,59 @@ def suggest_planning_period(from_date: str = "", plan_ahead: bool = True) -> dic
     }
 
 
+def step_past_approved(period: dict) -> dict:
+    """
+    The suggestion with the days an APPROVED plan already holds taken out —
+    for the Plan screen's "this week" (/api/week/planning-period, what
+    /plan-week opens on when no week is chosen). Emily, 2026-10-31 (Loop
+    Board, option a): the same rule Today's nudge follows, offer only the
+    free days, because offering held days is an offer to undo them.
+
+    - Nothing approved in the window: unchanged.
+    - Free days ahead of the first held one, more than one of them: the
+      offer is cut to that gap (Today's rule — a plan that starts
+      Wednesday leaves Sun–Tue to plan).
+    - Otherwise (the window opens on a held day, or only today is free —
+      tonight's dinner card's question, not a week's): it steps past the
+      approved plan to the first free day after it and runs the
+      household's horizon from there. "Ready by Saturday" on Sun Oct 25
+      with Oct 26–Nov 1 approved is offered Nov 2–8, not Oct 25–31.
+
+    Drafts are not stepped over: a draft is the unplanned week this offer
+    is about, and taking it over is what generating does on purpose.
+    Separate from suggest_planning_period on purpose: the nudge, onboarding
+    and the remembered first period read that and apply their own rules.
+    """
+    out = dict(period)
+    start = date.fromisoformat(out["start_date"])
+    days = int(out["day_count"])
+    stepped = False
+    for _ in range(12):  # a household with a dozen back-to-back plans is enough
+        held = [p for p in find_overlapping_plans(start.isoformat(), days) if p["status"] == "approved"]
+        if not held:
+            break
+        first = min(d for p in held for d in p["overlap_dates"])
+        gap = (date.fromisoformat(first) - start).days
+        if gap > 1:
+            days = gap
+            break
+        ends = [period_end_date(p["period_start_date"], p["day_count"]) for p in held if first in p["overlap_dates"]]
+        start = date.fromisoformat(max(ends)) + timedelta(days=1)
+        days = int(out["day_count"])
+        stepped = True
+    if start.isoformat() == out["start_date"] and days == out["day_count"]:
+        return out
+    out.update({
+        "start_date": start.isoformat(),
+        "day_count": days,
+        "label": _format_period_range(start.isoformat(), days),
+        "is_monday_anchored": start.weekday() == 0,
+    })
+    if stepped:
+        out["is_current_period"] = False
+    return out
+
+
 def _attention_moves_on(today: date, start_date: str, day_count: int) -> bool:
     """
     Whether `today` is far enough into the period that the app should be

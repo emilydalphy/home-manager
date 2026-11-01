@@ -4386,7 +4386,10 @@ def week_planning_period():
     would otherwise be swallowed as a {week_start} that isn't a date.
     """
     try:
-        period = dict(tools.suggest_planning_period())
+        # Never days an approved plan already holds (Emily, 2026-10-31):
+        # stepped past to the first free day, or cut to the free days
+        # before it — Today's rule (weekly_plan.step_past_approved).
+        period = tools.step_past_approved(tools.suggest_planning_period())
         # The household's today, for /plan-week's "Today" tile and its
         # never-start-before-today clamp — the phone's date is a day off
         # either side of the household's zone (defect hunt 2026-10-07).
