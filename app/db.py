@@ -1539,15 +1539,15 @@ def _run_migrations(conn):
     _respell_grocery_stores_as_usual(conn)
     _migrate_repeats_tolerance_to_leftovers_stance(conn)
     _migrate_planning_anchor_values(conn)
-    # _backfill_allergy_notes_from_facts no longer runs at startup
-    # (2026-11-01, Emily: "ask, then enforce"). It turned EVERY note naming a
-    # person into that person's allergy on every boot — so "Sam is allergic
-    # to sesame" typed as a note became an enforced allergy at the next
-    # deploy without anyone tapping yes, and an allergy chip taken off Sam
-    # came back after the next restart. It had run on every boot since
-    # 2026-09-05, so the notes it was written for are long since on their
-    # member records. A typed allergy is now asked about once
-    # (tools/typed_allergy.py) and saved only on the yes.
+    # Still runs (review, 2026-11-01): the one-tap question
+    # (tools/typed_allergy.py) is asked only when a note is added or edited
+    # on the screen, so a note already on file, one filed by chat, or a
+    # question nobody tapped would otherwise never become an allergy — less
+    # safe than before. The question makes a typed allergy count at once;
+    # this keeps the safety net until Emily decides whether a note should
+    # ever be enforced without the tap (and the known wrinkle that a chip
+    # taken off a person comes back while its note is still there).
+    _backfill_allergy_notes_from_facts(conn)
     _backfill_snacks_per_week_set(conn)
     _backfill_meal_counts_set(conn)
     _backfill_snack_dishes(conn)

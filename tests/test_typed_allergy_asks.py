@@ -59,14 +59,17 @@ def test_the_yes_writes_sams_allergy_and_the_gate_holds_sesame_back(signed_in, s
     assert tools.allergy_offer_for_fact(out["id"]) is None
 
 
-def test_a_restart_never_saves_the_allergy_without_the_tap(sam):
-    """The startup backfill turned every such note into an allergy on every
-    boot — the yes the card asks for, skipped."""
+def test_a_restart_still_saves_a_typed_allergy_nobody_tapped_yes_to(sam):
+    """The safety net stays (review, 2026-11-01): the question is asked only
+    when a note is added or edited on the screen, so a note already on
+    file, one filed by chat, or a question nobody tapped must still become
+    the allergy at the next start — exactly as on main. Whether a note
+    should EVER be enforced without the tap is Emily's call (on the card)."""
     tools.add_fact("people", "Sam is allergic to sesame")
 
     db.init_db()
 
-    assert _sam()["dietary_restrictions"] == []
+    assert "allergy: sesame" in _sam()["dietary_restrictions"]
 
 
 def test_a_client_cannot_save_a_food_the_note_never_offered(signed_in, sam):
