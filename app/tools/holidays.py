@@ -11,8 +11,8 @@ parts:
 1. KNOWING. The household's country and province (households.country /
    .province) pick a rule table; every date is computed from the rule —
    "second Monday of October", the Easter formula — so 2027 needs no code
-   change. Canada is the only table so far; a US one is a second entry in
-   `_RULES_BY_COUNTRY` with the same row shape. A holiday-looking all-day
+   change. Canada and the US have tables (the US since 2026-10-31); another
+   country is a further entry in `_RULES_BY_COUNTRY` with the same row shape. A holiday-looking all-day
    event on the household's own calendar feed counts the same way (one
    path, two sources), so a household that keeps its own list is covered
    by that list.
@@ -166,15 +166,46 @@ _CANADA = [
     ("Thanksgiving", lambda y: _nth_weekday(y, 10, 0, 2), None, True),
     ("Halloween", lambda y: date(y, 10, 31), None, False),
     ("Remembrance Day", lambda y: date(y, 11, 11), None, False),
+    # Asked about (Emily, 2026-10-31): the night a lot of households host,
+    # or go to someone's — never asked unless it was on their calendar.
+    ("Christmas Eve", lambda y: date(y, 12, 24), None, True),
     ("Christmas Day", lambda y: date(y, 12, 25), None, True),
     ("Boxing Day", lambda y: date(y, 12, 26), None, True),
 ]
 
-# A US table is a second key here with the same row shape (Thanksgiving is
-# the fourth Thursday of November, Independence Day July 4, and so on). It
-# is deliberately not shipped: the beta households are Canadian, and a
-# half-checked table is worse than a missing one.
-_RULES_BY_COUNTRY = {"CA": _CANADA}
+
+def _last_weekday(year: int, month: int, weekday: int) -> date:
+    """The last `weekday` of a month — Memorial Day is the last Monday of May."""
+    nxt = date(year + (month == 12), month % 12 + 1, 1)
+    d = nxt - timedelta(days=1)
+    return d - timedelta(days=(d.weekday() - weekday) % 7)
+
+
+# The United States (Emily, 2026-10-31: "add a US list now"). The federal
+# days plus the occasions people cook around, same row shape as Canada's.
+# Every row is nationwide — a state's own days (Patriots' Day, Cesar
+# Chavez Day) are not here yet. Thanksgiving is the fourth Thursday of
+# November (2026-11-26).
+_US = [
+    ("New Year’s Day", lambda y: date(y, 1, 1), None, True),
+    ("Martin Luther King Jr. Day", lambda y: _nth_weekday(y, 1, 0, 3), None, False),
+    ("Presidents’ Day", lambda y: _nth_weekday(y, 2, 0, 3), None, False),
+    ("Easter Sunday", _easter, None, True),
+    ("Mother’s Day", lambda y: _nth_weekday(y, 5, 6, 2), None, True),
+    ("Memorial Day", lambda y: _last_weekday(y, 5, 0), None, False),
+    ("Father’s Day", lambda y: _nth_weekday(y, 6, 6, 3), None, True),
+    ("Juneteenth", lambda y: date(y, 6, 19), None, False),
+    ("Independence Day", lambda y: date(y, 7, 4), None, True),
+    ("Labor Day", lambda y: _nth_weekday(y, 9, 0, 1), None, False),
+    ("Columbus Day", lambda y: _nth_weekday(y, 10, 0, 2), None, False),
+    ("Halloween", lambda y: date(y, 10, 31), None, False),
+    ("Veterans Day", lambda y: date(y, 11, 11), None, False),
+    ("Thanksgiving", lambda y: _nth_weekday(y, 11, 3, 4), None, True),
+    ("Christmas Eve", lambda y: date(y, 12, 24), None, True),
+    ("Christmas Day", lambda y: date(y, 12, 25), None, True),
+]
+
+_RULES_BY_COUNTRY = {"CA": _CANADA, "US": _US}
 
 SUPPORTED_COUNTRIES = tuple(_RULES_BY_COUNTRY)
 
@@ -227,6 +258,8 @@ CALENDAR_HOLIDAY_NAMES = (
     "lunar new year", "chinese new year", "nowruz", "vaisakhi", "kwanzaa",
     "st. patrick's day", "st patrick's day", "st patricks day", "saint patrick's day",
     "valentine's day", "valentines day", "independence day",
+    "martin luther king jr. day", "mlk day", "presidents' day", "presidents day", "memorial day",
+    "juneteenth", "columbus day", "indigenous peoples' day", "veterans day",
 )
 
 _PARENTHETICAL_RE = re.compile(r"\s*\([^)]*\)")
@@ -259,19 +292,46 @@ _SHOPS_OPEN_ON = frozenset(_normalise_title(n) for n in (
     "valentine's day", "valentines day",
     "st. patrick's day", "st patrick's day", "st patricks day", "saint patrick's day",
     "christmas eve", "new year's eve", "new years eve",
-    # Emily 2026-10-26: most Ontario grocers open on these, so a store
-    # saved as "Closed on holidays" stays open on them. Good Friday is NOT
+    # Emily 2026-10-26: most grocers open on Easter Monday, so a store
+    # saved as "Closed on holidays" stays open on it. Good Friday is NOT
     # here: it is a legal retail holiday under Ontario's Retail Business
     # Holidays Act, so a store that closes on holidays closes on it.
-    "remembrance day", "civic holiday", "easter monday",
+    # Remembrance Day and Civic Holiday moved to the province table below.
+    "easter monday",
     "diwali", "eid", "eid al-fitr", "eid ul-fitr", "eid al-adha", "eid ul-adha",
     "hanukkah", "chanukah", "lunar new year", "chinese new year",
+    # The US federal days the grocers stay open for. Memorial Day, the
+    # Fourth, Labor Day, Thanksgiving and Christmas still count as days a
+    # "closed on holidays" store may be shut, like Labour Day in Canada.
+    "martin luther king jr. day", "mlk day", "presidents' day", "presidents day",
+    "juneteenth", "columbus day", "indigenous peoples' day", "veterans day",
 ))
 
+# Days the shops open for in SOME provinces only (Emily, 2026-10-31):
+# Remembrance Day and Civic Holiday are shopping days in Ontario, Quebec
+# and Manitoba, and a real day off — shops shut — elsewhere. A household
+# with no province set is not assumed to be in one of these.
+_SHOPS_OPEN_IN_PROVINCES = {
+    _normalise_title("remembrance day"): frozenset({"ON", "QC", "MB"}),
+    _normalise_title("civic holiday"): frozenset({"ON", "QC", "MB"}),
+}
 
-def shops_close_for(name: str) -> bool:
-    """Whether a holiday by this name can shut a store that closes on holidays."""
-    return _normalise_title(name) not in _SHOPS_OPEN_ON
+
+def shops_close_for(name: str, province: str | None = None) -> bool:
+    """
+    Whether a holiday by this name can shut a store that closes on
+    holidays. `province` is the household's (read when not given), for
+    the days that depend on it.
+    """
+    key = _normalise_title(name)
+    if key in _SHOPS_OPEN_ON:
+        return False
+    open_in = _SHOPS_OPEN_IN_PROVINCES.get(key)
+    if open_in is not None:
+        if province is None:
+            province = _region()[1]
+        return (province or "").upper() not in open_in
+    return True
 
 
 def _calendar_holidays(dates: list[str]) -> list[dict]:
@@ -335,23 +395,31 @@ def _region(conn=None) -> tuple[str, str]:
 def set_holiday_region(country: str | None = None, province: str | None = None) -> dict:
     """
     Where the household is, for its holidays — "we're in BC", "we're in
-    Manitoba". Two-letter codes; a province name is accepted and mapped.
-    Only what's given changes. The country must be one there is a holiday
-    table for (Canada so far), so nobody is silently given no holidays.
+    Manitoba", "we're in the US". Two-letter codes; a province or state
+    name is accepted and mapped. Only what's given changes — except that
+    changing the country without naming a province clears the old one (an
+    Ontario household moving its holidays to the US is not in Ontario).
+    The country must be one there is a holiday table for (Canada and the
+    US), so nobody is silently given no holidays.
     """
     updates = {}
+    current_country, _ = _region()
     if country is not None:
         code = (country or "").strip().upper()
-        code = {"CANADA": "CA"}.get(code, code)
+        code = _COUNTRY_NAMES.get(code.lower().replace(".", ""), code)
         if code not in SUPPORTED_COUNTRIES:
             raise ValueError(
                 f"I only know the holidays for {', '.join(SUPPORTED_COUNTRIES)} so far, not {country!r}."
             )
         updates["country"] = code
+        if code != current_country and province is None:
+            updates["province"] = ""
     if province is not None:
-        code = _PROVINCE_CODES.get((province or "").strip().lower(), (province or "").strip().upper())
-        if code and code not in _PROVINCE_CODES.values():
-            raise ValueError(f"{province!r} isn't a province or territory I know.")
+        regions = _STATE_CODES if updates.get("country", current_country) == "US" else _PROVINCE_CODES
+        code = regions.get((province or "").strip().lower(), (province or "").strip().upper())
+        if code and code not in regions.values():
+            kind = "state" if regions is _STATE_CODES else "province or territory"
+            raise ValueError(f"{province!r} isn't a {kind} I know.")
         updates["province"] = code
     if updates:
         conn = get_conn()
@@ -362,6 +430,27 @@ def set_holiday_region(country: str | None = None, province: str | None = None) 
     country_now, province_now = _region()
     return {"country": country_now, "province": province_now}
 
+
+_COUNTRY_NAMES = {
+    "canada": "CA", "ca": "CA",
+    "us": "US", "usa": "US", "united states": "US", "united states of america": "US", "america": "US",
+}
+
+# The US's states and DC, for set_holiday_region. Nothing in the US table
+# depends on the state yet; it is kept so a later state row can.
+_STATE_CODES = {
+    "alabama": "AL", "alaska": "AK", "arizona": "AZ", "arkansas": "AR", "california": "CA",
+    "colorado": "CO", "connecticut": "CT", "delaware": "DE", "district of columbia": "DC",
+    "washington dc": "DC", "florida": "FL", "georgia": "GA", "hawaii": "HI", "idaho": "ID",
+    "illinois": "IL", "indiana": "IN", "iowa": "IA", "kansas": "KS", "kentucky": "KY",
+    "louisiana": "LA", "maine": "ME", "maryland": "MD", "massachusetts": "MA", "michigan": "MI",
+    "minnesota": "MN", "mississippi": "MS", "missouri": "MO", "montana": "MT", "nebraska": "NE",
+    "nevada": "NV", "new hampshire": "NH", "new jersey": "NJ", "new mexico": "NM", "new york": "NY",
+    "north carolina": "NC", "north dakota": "ND", "ohio": "OH", "oklahoma": "OK", "oregon": "OR",
+    "pennsylvania": "PA", "rhode island": "RI", "south carolina": "SC", "south dakota": "SD",
+    "tennessee": "TN", "texas": "TX", "utah": "UT", "vermont": "VT", "virginia": "VA",
+    "washington": "WA", "west virginia": "WV", "wisconsin": "WI", "wyoming": "WY",
+}
 
 _PROVINCE_CODES = {
     "alberta": "AB", "british columbia": "BC", "manitoba": "MB", "new brunswick": "NB",
@@ -615,6 +704,10 @@ def answer_holiday(
     saved = get_holiday_answer(date_str)
     with _bm().suppress_refresh():
         effects = _apply_effects(saved, build=build_menu)
+    if answer == "hosting" and not same_hosting:
+        # Another big meal's make-ahead work already on this day moves
+        # earlier, off it (big_meal.spread_prep's hosted-day rule).
+        _bm().respread_prep_off(date_str)
     return {
         **saved,
         "holiday": {"date": holiday["date"], "name": holiday["name"], "source": holiday["source"]},

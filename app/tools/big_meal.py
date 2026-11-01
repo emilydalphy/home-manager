@@ -1101,6 +1101,17 @@ def _prep_anchor(date_str: str) -> str | None:
     return None
 
 
+def _hosted_days(exclude: str = "") -> set[str]:
+    """The dates the household has said it is hosting, but `exclude`."""
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT date FROM holiday_answers WHERE household_id = ? AND answer = 'hosting' AND date != ?",
+        (household_id(), exclude),
+    ).fetchall()
+    conn.close()
+    return {r["date"] for r in rows}
+
+
 def _delete_prep(entry_id: int | None, date_str: str) -> int:
     conn = get_conn()
     if entry_id:
@@ -1181,6 +1192,17 @@ def spread_prep(date_str: str, today: date | None = None) -> list[dict]:
             return
         tasks.append({"task_date": task_date, "description": description, "related_meal": related})
 
+    # Another big meal the household is hosting is no day to make this
+    # one's stuffing and pie (Emily, 2026-10-31): Boxing Day's make-ahead
+    # landed on Christmas Day, with eight at the table. Walked back to the
+    # nearest day before that is not hosted — never past today.
+    hosted = _hosted_days(exclude=date_str)
+
+    def _off_hosted(day: date) -> date:
+        while day.isoformat() in hosted and day > today:
+            day -= timedelta(days=1)
+        return day
+
     # The dishes made ahead.
     for dish in dishes_of(entry, menu):
         ahead = int(dish.get("ahead_days") or 0)
@@ -1189,6 +1211,7 @@ def spread_prep(date_str: str, today: date | None = None) -> list[dict]:
         task_date = (d - timedelta(days=ahead)).isoformat()
         if anchor and date.fromisoformat(anchor) <= d - timedelta(days=1):
             task_date = anchor
+        task_date = _off_hosted(date.fromisoformat(task_date)).isoformat()
         step = dish.get("ahead_step") or f"Make the {dish['name'].lower() if dish['role'] != 'main' else dish['name']}"
         _add(task_date, f"{step.rstrip('.')} — for the big meal on {weekday}.", dish["name"])
 
@@ -1211,6 +1234,34 @@ def spread_prep(date_str: str, today: date | None = None) -> list[dict]:
     conn.commit()
     conn.close()
     return tasks
+
+
+def respread_prep_off(date_str: str) -> list[str]:
+    """
+    `date_str` has just become a hosted day: any OTHER hosted meal whose
+    make-ahead work sits on it is spread again, so spread_prep walks that
+    work off it (Christmas answered "hosting" after Boxing Day's stuffing
+    was already put on the 25th). Shops are left where they are. Never
+    raises — the answer it follows has already been saved.
+    """
+    out = []
+    try:
+        conn = get_conn()
+        rows = conn.execute(
+            "SELECT DISTINCT a.date FROM holiday_answers a JOIN prep_tasks p "
+            "ON p.household_id = a.household_id AND p.task_type = ? AND p.task_date = ? "
+            "AND p.related_meal != ? AND p.status = 'pending' "
+            "AND p.meal_plan_entry_id = CAST(json_extract(a.menu_json, '$.entry_id') AS INTEGER) "
+            "WHERE a.household_id = ? AND a.answer = 'hosting' AND a.date != ?",
+            (TASK_TYPE, date_str, SHOP_MARK, household_id(), date_str),
+        ).fetchall()
+        conn.close()
+        for r in rows:
+            spread_prep(r["date"])
+            out.append(r["date"])
+    except Exception:
+        logger.exception("Other big meals' prep could not be moved off %s", date_str)
+    return out
 
 
 # related_meal on a holiday shop row. moves.py renders such a row as a
