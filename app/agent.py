@@ -10330,7 +10330,7 @@ _READ_RECIPE_TOOL = {
             "found": {"type": "boolean", "description": "false if this page does not actually contain a recipe (a category listing, an article with no method, a login wall)."},
             "name": {"type": "string", "description": "The recipe's title, as the page gives it."},
             "default_servings": {"type": "integer", "description": "How many the recipe serves, if stated."},
-            "makes": {"type": "string", "description": "Only when the page says what the recipe makes instead of how many it serves ('1 pie', '1 loaf', '2 dozen'): those words, and leave default_servings out."},
+            "makes": {"type": "string", "description": "Only when the page says what the recipe makes instead of how many it serves ('1 pie', '1 loaf', '2 dozen', '24 cookies'): those words, and leave default_servings out."},
             "prep_time_minutes": {"type": "integer"},
             "cook_time_minutes": {"type": "integer"},
             "ingredients": {
@@ -10420,7 +10420,7 @@ _READ_RECIPE_PHOTO_TOOL = {
                     "properties": {
                         "name": {"type": "string", "description": "The recipe's title, as printed."},
                         "default_servings": {"type": "integer", "description": "How many it serves, if stated. For a range like 'serves 4–6' give the lower number."},
-                        "makes": {"type": "string", "description": "Only when the page says what the recipe makes instead of how many it serves ('1 pie', '1 loaf', '2 dozen'): those words, and leave default_servings out."},
+                        "makes": {"type": "string", "description": "Only when the page says what the recipe makes instead of how many it serves ('1 pie', '1 loaf', '2 dozen', '24 cookies'): those words, and leave default_servings out."},
                         "prep_time_minutes": {"type": "integer"},
                         "cook_time_minutes": {"type": "integer"},
                         "ingredients": {
