@@ -5671,6 +5671,7 @@ class WeekGroceryBuffer:
         self, entry_id: int, item: str, category: str, amount: float, unit: str | None, note: str,
         measure: tuple[float, bool] | None = None,
     ) -> None:
+        big = unit if unit in _quantities._CUPS_PER_BIG else None
         if unit in _quantities._VOLUME_TO_TSP:
             # One volume line per item, however its recipes wrote it: "2/3
             # cup" and "2 tbsp" are rounded ONCE on their sum, the way
@@ -5683,8 +5684,12 @@ class WeekGroceryBuffer:
         if line is None:
             line = self._lines[key] = {
                 "item": item, "category": category, "unit": unit, "note": note, "shares": {},
-                "measures": {},
+                "measures": {}, "big": None,
             }
+        if big:
+            # A recipe's quart or gallon: the line is read in them
+            # (quantities._CUPS_PER_BIG), and so are its ledger rows.
+            line["big"] = _quantities._big_volume_hint((line["big"], big))
         else:
             # "Onions" and "Yellow onion" share a key (grocery._SAME_PURCHASE);
             # the line carries the variety, which tells the shopper more.
@@ -5707,7 +5712,15 @@ class WeekGroceryBuffer:
                 continue
             entry_ids = list(line["shares"])
             shares = [line["shares"][e] for e in entry_ids]
-            rounded, unit = _week_bought_amount(sum(shares), line["unit"])
+            share_unit = line["unit"]
+            if line.get("big"):
+                # Said in the quart or gallon a recipe used, so the line
+                # reads "3 1/2 quarts" (not "14 cups") and the ledger rows
+                # stay in it — _ledger_buckets reads them back the same way.
+                per = _quantities._VOLUME_TO_TSP[line["big"]] / _quantities._VOLUME_TO_TSP[share_unit]
+                shares = [share / per for share in shares]
+                share_unit = line["big"]
+            rounded, unit = _week_bought_amount(sum(shares), share_unit)
             qty = _quantities._with_note(_quantities._format_quantity(rounded, unit), line["note"])
             add_result = _grocery.add_grocery_item(
                 line["item"], quantity=qty, category=line["category"], added_by="ai",
@@ -5734,7 +5747,7 @@ class WeekGroceryBuffer:
             for entry_id, share in zip(entry_ids, shares):
                 _record_grocery_link(
                     entry_id, line["item"], add_result["item_id"],
-                    _ledger_share(share, line["unit"], unit), conn=self.conn,
+                    _ledger_share(share, share_unit, share_unit if line.get("big") else unit), conn=self.conn,
                     measure=line["measures"].get(entry_id),
                 )
             if prior_ledger is not None:

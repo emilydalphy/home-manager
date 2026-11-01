@@ -563,6 +563,11 @@ def _try_subtract_quantity(existing_qty: str, minus_qty: str) -> tuple[str | Non
         remaining = existing_parsed[0] - used
         if remaining <= 0:
             return None, True
+        big = _big_volume_text(remaining, have_unit, minus_unit)
+        if big is not None:
+            # "2 quarts" less 4 cups is "1 quart"; a gallon less 2 cups is
+            # "3 1/2 quarts" (quantities._CUPS_PER_BIG).
+            return big, True
         if minus_unit != have_unit and not _clean_in(remaining, have_unit):
             # Across units the difference can be an odd fraction ("0.9375
             # cup", "0.99375 lb"): say it in the finer unit instead (15 tbsp,
@@ -736,6 +741,17 @@ def _clean_in(amount: float, unit: str | None) -> bool:
     return _quarter_clean(amount)
 
 
+def _big_volume_text(amount: float, unit: str | None, other_unit: str | None) -> str | None:
+    """`amount` (in `unit`) the way a quart-or-gallon line reads, when one
+    of the two units is a quart or gallon and the other a volume — or None,
+    and the row is written as it always was."""
+    if unit not in _quantities._VOLUME_TO_TSP or other_unit not in _quantities._VOLUME_TO_TSP:
+        return None
+    return _quantities.big_volume_reading(
+        amount * _quantities._VOLUME_TO_TSP[unit], _quantities._big_volume_hint((unit, other_unit)),
+    )
+
+
 def _merged_quantity(existing_qty: str, adding_qty: str) -> str:
     """
     What a row holds after `adding_qty` lands on it. The grocery list's own
@@ -766,6 +782,9 @@ def _merged_quantity(existing_qty: str, adding_qty: str) -> str:
     total = have[0] + converted
     if forms:
         return _counted_format(total, have_unit, forms)
+    big = _big_volume_text(total, have_unit, more_unit)
+    if big is not None:
+        return big
     in_other = _quantities._convert_to_unit(total, have_unit, more_unit)
     if in_other is None:
         return _quantities._format_quantity(round(total, 2), have_unit)

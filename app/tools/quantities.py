@@ -703,7 +703,66 @@ def _format_quantity(amount: float, unit: str | None, sig: int = 6) -> str:
 # scaling (scale_recipe) calls _format_quantity directly and is left in
 # whatever unit the recipe was written in, since a cook following a recipe
 # wants "12 tbsp", not a shopper's "3/4 cup".
-_VOLUME_TO_TSP = {"tsp": 1.0, "tbsp": 3.0, "cup": 48.0}
+_VOLUME_TO_TSP = {"tsp": 1.0, "tbsp": 3.0, "cup": 48.0, "quart": 192.0, "gallon": 768.0}
+
+
+# QUARTS AND GALLONS (Emily, 2026-11-01: "fix it properly"). They are cups
+# — a quart is 4, a gallon 16 — and add up with cups everywhere: "1 gallon"
+# of milk and then "2 cups" is "4 1/2 quarts", not "1 gallon + 2 cups"; 4
+# cups used off "2 quarts" of stock leaves "1 quart". They were aliases
+# with no family (2026-10-24), so they counted like onions and a plan's
+# half gallon was bought as a whole one.
+#
+# How a big volume READS, and only when quarts or gallons are IN PLAY —
+# the amount was typed, written or bought in one of them. A recipe's cups
+# stay cups however many there are: "16 cups" of flour is not "1 gallon"
+# of flour, so plain cups never roll up past cups (_roll_up_unit).
+#   - under a quart (4 cups): cups, on a measuring cup's steps, as today;
+#   - from a quart: rounded UP to a whole cup — a quarter quart — and read
+#     in quarts ("1 1/4 quarts", "3 1/2 quarts");
+#   - a whole or half gallon from 16 cups reads in gallons ("1 gallon",
+#     "1 1/2 gallons"); a line already in gallons reads "1/2 gallon" for
+#     8 cups too, the jug it is sold in (_HALF_SOLD_UNITS).
+_CUPS_PER_BIG = {"quart": 4.0, "gallon": 16.0}
+
+
+def _big_volume_hint(units) -> str | None:
+    """The largest of quart / gallon among `units`, or None."""
+    seen = set(units)
+    return "gallon" if "gallon" in seen else ("quart" if "quart" in seen else None)
+
+
+def _big_volume_unit(cups: int, hint: str | None) -> tuple[float, str]:
+    """A whole number of cups, from a quart up, in quarts or gallons."""
+    if cups % 8 == 0 and (cups >= 16 or hint == "gallon"):
+        return cups / 16.0, "gallon"
+    return cups / 4.0, "quart"
+
+
+def _big_volume_text(amount: float, unit: str) -> str:
+    """ "3 1/2 quarts", "1 gallon", "1/2 gallon" — ASCII fractions, as the
+    list writes cups (_cups_text), so _parse_quantity reads it back."""
+    number = _kitchen_number(amount)
+    if number is None:
+        return _format_quantity(amount, unit)
+    return f"{number} {unit if amount <= 1 + 1e-9 else _UNIT_PLURALS[unit]}"
+
+
+def big_volume_reading(tsp: float, hint: str | None) -> str | None:
+    """
+    A volume (in tsp) written the way a big-volume line reads, when quarts
+    or gallons are in play (`hint`) and the amount is exact there: a whole
+    number of cups from a quart up, or a measuring-cup step under one.
+    None otherwise — the caller writes it the way it always has.
+    """
+    if hint not in _CUPS_PER_BIG:
+        return None
+    cups = round(tsp / _VOLUME_TO_TSP["cup"], 9)
+    if cups >= 4 - 1e-9 and abs(cups - round(cups)) < 1e-9:
+        return _big_volume_text(*_big_volume_unit(int(round(cups)), hint))
+    if 0.25 - 1e-9 <= cups < 4 and _kitchen_number(cups) is not None:
+        return _cups_text(cups)
+    return None
 
 
 _WEIGHT_TO_OZ = {"oz": 1.0, "lb": 16.0}
@@ -811,6 +870,8 @@ def _roll_up_unit(amount: float, unit: str) -> tuple[float, str]:
             continue
         base_amount = amount * group[unit]
         for candidate_unit, factor in sorted(group.items(), key=lambda kv: -kv[1]):
+            if candidate_unit in _CUPS_PER_BIG:
+                continue  # a quart or gallon is read by _shopping_round, never rolled into
             if base_amount >= factor * _ROLL_UP_FROM.get(candidate_unit, 1.0) - 1e-9:
                 return base_amount / factor, candidate_unit
         smallest_unit = min(group, key=group.get)
@@ -875,6 +936,10 @@ def _round_in_unit(amount: float, unit: str | None) -> float:
     """
     if not _measurable_unit(unit):
         return float(math.ceil(amount - 1e-9))
+    if unit in _CUPS_PER_BIG:
+        # Up to a whole cup, the way a cup rounds up to its step.
+        per = _CUPS_PER_BIG[unit]
+        return max(1.0, float(math.ceil(amount * per - _CUP_STEP_GRACE - 1e-9))) / per
     if unit == "cup":
         # Cups land on the steps a measuring cup has — thirds as well as
         # quarters — so ⅔ cup of sour cream is ⅔ cup, not "0.75". UP to the
@@ -956,6 +1021,17 @@ def _shopping_round(amount: float, unit: str | None) -> tuple[float, str | None]
         return float(math.ceil(in_packs - 1e-9)), pack_unit
     if not _measurable_unit(unit):
         return _round_in_unit(amount, unit), unit
+    if unit in _CUPS_PER_BIG:
+        # Quarts or gallons in play (see _CUPS_PER_BIG): under a quart it
+        # is cups, rounded the way cups are; from a quart, whole cups UP,
+        # read in quarts or gallons.
+        cups = amount * _CUPS_PER_BIG[unit]
+        if cups < 4 - _CUP_STEP_GRACE - 1e-9:
+            small, small_unit = _shopping_round(amount * _VOLUME_TO_TSP[unit], "tsp")
+            if small_unit != "cup" or small < 4 - 1e-9:
+                return small, small_unit
+            cups = small
+        return _big_volume_unit(int(math.ceil(cups - _CUP_STEP_GRACE - 1e-9)), unit)
     rolled_amount, rolled_unit = _roll_up_unit(amount, unit)
     rounded = _round_in_unit(rolled_amount, rolled_unit)
     # Rounding can carry an amount up across the line it was rolled by —
@@ -979,6 +1055,8 @@ def _humanize_grocery_quantity(amount: float, unit: str | None) -> str:
         rounded = 1.0
     if rounded_unit == "cup":
         return _cups_text(rounded)
+    if rounded_unit in _CUPS_PER_BIG:
+        return _big_volume_text(rounded, rounded_unit)
     return _format_quantity(rounded, rounded_unit)
 
 
@@ -1051,6 +1129,11 @@ def _exact_volume_text(amount: float, unit: str) -> str:
     "9 1/3 tbsp" — which _parse_quantity reads back exactly.
     """
     tsp = round(amount * _VOLUME_TO_TSP[unit] / _FINE_TSP) * _FINE_TSP
+    big = big_volume_reading(tsp, unit)
+    if big is not None:
+        # A line in quarts or gallons stays in them where it is exact there
+        # ("2 quarts", "1/2 gallon"); anything finer reads as below.
+        return big
     cups = tsp / _VOLUME_TO_TSP["cup"]
     if cups >= 0.25 - 1e-9 and _kitchen_number(cups) is not None:
         return _cups_text(cups)
@@ -1088,6 +1171,7 @@ def _ledger_buckets(qty_strings: list[str]) -> dict | None:
     pretend otherwise.
     """
     totals: dict[tuple, list] = {}
+    big_units: list[str] = []
     for raw in qty_strings:
         text = (raw or "").strip()
         if not text:
@@ -1105,6 +1189,8 @@ def _ledger_buckets(qty_strings: list[str]) -> dict | None:
             key = ("measure", id(group))
             bucket = totals.setdefault(key, [0.0, base_unit])
             bucket[0] += amount * group[unit]
+            if unit in _CUPS_PER_BIG:
+                big_units.append(unit)
         else:
             key = ("discrete", unit)
             bucket = totals.setdefault(key, [0.0, unit])
@@ -1116,7 +1202,12 @@ def _ledger_buckets(qty_strings: list[str]) -> dict | None:
     # ledger untouched (2026-10-22, a headcount resized and resized back).
     # Nine figures is far below anything a list shows and far above the
     # twelve-figure writing noise.
-    for bucket in totals.values():
+    hint = _big_volume_hint(big_units)
+    for key, bucket in totals.items():
+        if hint and key == ("measure", id(_VOLUME_TO_TSP)):
+            # Quarts or gallons in play: the volume is said in the biggest
+            # of them, which is what tells _shopping_round to read it so.
+            bucket[0], bucket[1] = bucket[0] / _VOLUME_TO_TSP[hint], hint
         bucket[0] = _snap_sig(bucket[0], 9)
     return totals
 
@@ -1174,6 +1265,8 @@ def _sum_ledger_quantities(qty_strings: list[str]) -> str | None:
     if parts:
         return " + ".join(parts)
     (kind, _), (_, unit) = next(iter(totals.items()))
+    if unit in _CUPS_PER_BIG:
+        unit = "tsp"  # the floor is the smallest amount, as it was
     return _humanize_grocery_quantity(0.25 if kind == "measure" else 1.0, unit)
 
 
@@ -1218,7 +1311,12 @@ def _ledger_totals(
     key, (total_before, unit) = next(iter(before.items()))
     if set(after) - {key}:
         return None
-    return total_before, (after[key][0] if key in after else 0.0), unit
+    if key not in after:
+        return total_before, 0.0, unit
+    # The survivors may say it in a smaller unit of the family than the
+    # whole did (no gallon row left): one unit for both.
+    total_after = _convert_to_unit(after[key][0], after[key][1], unit)
+    return total_before, (after[key][0] if total_after is None else total_after), unit
 
 
 # "24 pack", "12pk", "6 pack (355 ml)": the size of ONE multipack, as a
@@ -1434,6 +1532,13 @@ def tidy_display_quantity(item: str, qty: str) -> str:
             else:
                 return raw
         return _tidy_one(total_count, count_unit)
+    # Quarts or gallons beside cups ("1 gallon + 2 cups", written before
+    # they converted): one amount.
+    if all(u in _VOLUME_TO_TSP for _a, u in parsed):
+        hint = _big_volume_hint(u for _a, u in parsed)
+        if hint:
+            tsp = sum(a * _VOLUME_TO_TSP[u] for a, u in parsed)
+            return _tidy_one(tsp / _VOLUME_TO_TSP[hint], hint)
     # No weight on record: still one unit if they are all the same family.
     units = {u for _a, u in parsed}
     if len(units) == 1:

@@ -1,6 +1,7 @@
 """SQLite connection helper."""
 import contextlib
 import json
+import math
 import logging
 import re
 import sqlite3
@@ -1603,6 +1604,7 @@ _DATA_VERSION_ONBOARDING_REGROUPED = 3
 _DATA_VERSION_LITTLE_ONE_IS_CHILD = 4
 _DATA_VERSION_VERBATIM_AMOUNTS = 5
 _DATA_VERSION_LIBRARY_AMOUNTS = 6
+_DATA_VERSION_QUARTS_ARE_CUPS = 7
 
 
 def _run_once_data_migrations(conn):
@@ -1613,6 +1615,7 @@ def _run_once_data_migrations(conn):
         (_DATA_VERSION_LITTLE_ONE_IS_CHILD, _migrate_little_one_to_child),
         (_DATA_VERSION_VERBATIM_AMOUNTS, _mark_link_recipe_amounts_verbatim),
         (_DATA_VERSION_LIBRARY_AMOUNTS, _mark_library_recipe_amounts),
+        (_DATA_VERSION_QUARTS_ARE_CUPS, _convert_quarts_and_gallons),
     ]
     current = conn.execute("PRAGMA user_version").fetchone()[0]
     for version, step in steps:
@@ -1623,6 +1626,122 @@ def _run_once_data_migrations(conn):
         # placeholders. `version` is one of the module constants above.
         conn.execute(f"PRAGMA user_version = {int(version)}")
         current = version
+
+
+_BIG_VOLUME_WORDS = re.compile(r"\b(quarts?|qts?|gallons?|gal)\b", re.IGNORECASE)
+
+
+def _convert_quarts_and_gallons(conn):
+    """
+    Quarts and gallons became cups (2026-11-01, Emily: "fix it properly";
+    quantities._CUPS_PER_BIG). Before, they were counted like onions: a
+    plan's half gallon was bought as "1 gallon", a household's own "1/2
+    gallon" with a plan's half gallon on it read "2 gallons", and "1 gallon"
+    then "2 cups" read "1 gallon + 2 cups". Run ONCE, so nothing on a list
+    or in the Kitchen reads the old way, and so the next dropped night takes
+    back what the plan put on rather than what the new rounding would have:
+
+    - A plan's line with quarts or gallons in its ledger is re-read off the
+      ledger (grocery._recompute_plan_line_from_ledger, the household's
+      edit kept): "1 gallon" for a half gallon becomes "1/2 gallon".
+    - A household's own line with a plan's quarts or gallons on it holds
+      their amount plus the plan's share as the OLD rounding wrote it (whole
+      quarts or gallons, up). That share is taken off the old way and put
+      back on the new way, so a drop afterwards leaves their own amount:
+      "2 gallons" (theirs + a half gallon bought as one) is "1 1/2 gallons",
+      and dropping that night leaves "1 gallon", as it would have before.
+    - A line or Kitchen row joined as "1 gallon + 2 cups" becomes one
+      amount, "4 1/2 quarts".
+
+    The ledger rows themselves need nothing: "0.5 gallon" is still half a
+    gallon, it just adds up with cups now.
+    """
+    tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+    if not {"grocery_items", "meal_plan_grocery_links"} <= tables:
+        return
+    # Local imports: every app.tools module imports this one (see above).
+    from .tools import _shared
+    from .tools import grocery as _grocery
+    from .tools import quantities as _q
+
+    ledger: dict[int, list[str]] = {}
+    for r in conn.execute("SELECT grocery_item_id, quantity FROM meal_plan_grocery_links"):
+        ledger.setdefault(r["grocery_item_id"], []).append(r["quantity"] or "")
+    rows = conn.execute(
+        "SELECT id, household_id, quantity, status, source_weekly_plan_id FROM grocery_items "
+        "WHERE status IN ('needed', 'spice')"
+    ).fetchall()
+    for row in rows:
+        qty = row["quantity"] or ""
+        links = ledger.get(row["id"], [])
+        big_links = [l for l in links if _BIG_VOLUME_WORDS.search(l)]
+        if not big_links and not _BIG_VOLUME_WORDS.search(qty):
+            continue
+        with _shared.use_household(row["household_id"]):
+            if row["source_weekly_plan_id"] is not None:
+                if big_links:
+                    _grocery._recompute_plan_line_from_ledger(row["id"], conn=conn)
+                    continue
+                new_qty = _folded_volume(qty, _q)
+            elif links:
+                new_qty = _restated_old_big_share(qty, links, _q) if row["status"] == "needed" else None
+            else:
+                new_qty = _folded_volume(qty, _q)
+        if new_qty and new_qty != qty:
+            conn.execute("UPDATE grocery_items SET quantity = ? WHERE id = ?", (new_qty, row["id"]))
+    if "inventory_items" in tables:
+        for row in conn.execute("SELECT id, quantity FROM inventory_items").fetchall():
+            qty = row["quantity"] or ""
+            if not _BIG_VOLUME_WORDS.search(qty):
+                continue
+            new_qty = _folded_volume(qty, _q)
+            if new_qty and new_qty != qty:
+                conn.execute("UPDATE inventory_items SET quantity = ? WHERE id = ?", (new_qty, row["id"]))
+
+
+def _folded_volume(qty: str, _q) -> str | None:
+    """ "1 gallon + 2 cups" as one amount ("4 1/2 quarts"), note kept; None
+    for anything that isn't quarts or gallons joined to other volumes."""
+    core, note = _q._split_quantity_note(qty)
+    parts = [p.strip() for p in core.split(" + ")]
+    if len(parts) < 2:
+        return None
+    parsed = [_q._parse_quantity(p) for p in parts]
+    if any(p is None or p[1] not in _q._VOLUME_TO_TSP for p in parsed):
+        return None
+    hint = _q._big_volume_hint(p[1] for p in parsed)
+    if not hint:
+        return None
+    tsp = sum(a * _q._VOLUME_TO_TSP[u] for a, u in parsed)
+    text = _q.big_volume_reading(tsp, hint) or _q._humanize_grocery_quantity(tsp / _q._VOLUME_TO_TSP[hint], hint)
+    return _q._with_note(text, note)
+
+
+def _restated_old_big_share(qty: str, links: list[str], _q) -> str | None:
+    """
+    A household's own line with a plan's quarts or gallons on it, the plan's
+    part swapped from the old rounding (whole ones, up) to the new. Only
+    the shape the old code could restate — every ledger row in the line's
+    own unit word — is touched; anything else is left as it reads.
+    """
+    core, note = _q._split_quantity_note(qty)
+    line = _q._parse_quantity(core)
+    if not line or line[1] not in _q._CUPS_PER_BIG:
+        return None
+    unit = line[1]
+    total = 0.0
+    for raw in links:
+        parsed = _q._parse_quantity(raw)
+        if not parsed or parsed[1] != unit:
+            return None
+        total += parsed[0]
+    old_plan = float(math.ceil(total - 1e-9))
+    own = max(0.0, line[0] - old_plan)
+    new_amount, new_unit = _q._shopping_round(total, unit)
+    new_plan = _q._convert_to_unit(new_amount, new_unit, unit)
+    if new_plan is None:
+        return None
+    return _q._with_note(_q._exact_volume_text(own + new_plan, unit), note)
 
 
 def _migrate_prep_and_lunch_limits(conn):

@@ -710,14 +710,23 @@ def _sum_measures(existing_qty: str, new_qty: str, exact: bool, same_unit: bool 
     b = _quantities._parse_quantity(_quantities._strip_prep_descriptor((new_qty or "").strip()))
     if not a or not b or not a[1] or not b[1]:
         return None
-    if same_unit and a[1] != b[1]:
+    if same_unit and a[1] != b[1] and not (
+        a[1] in _quantities._CUPS_PER_BIG and b[1] in _quantities._CUPS_PER_BIG
+    ):
+        # A plan's quart onto a household's gallon is one family read in
+        # one way (quantities._CUPS_PER_BIG); a cup share beside them keeps
+        # its own plan line, as a "2 tbsp" share beside "1 cup" does.
         return None
     if a[1] in _quantities._VOLUME_TO_TSP and b[1] in _quantities._VOLUME_TO_TSP:
         tsp = a[0] * _quantities._VOLUME_TO_TSP[a[1]] + b[0] * _quantities._VOLUME_TO_TSP[b[1]]
+        # Quarts or gallons in play: the sum is said in them ("1 gallon" and
+        # "2 cups" is "4 1/2 quarts"); cups and spoons alone, as before.
+        unit = _quantities._big_volume_hint((a[1], b[1])) or "tsp"
+        amount = tsp / _quantities._VOLUME_TO_TSP[unit]
         if exact:
-            text = _quantities._exact_volume_text(tsp, "tsp")
+            text = _quantities._exact_volume_text(amount, unit)
         else:
-            text = _quantities._humanize_grocery_quantity(tsp, "tsp")
+            text = _quantities._humanize_grocery_quantity(amount, unit)
         return _quantities._with_note(text, note)
     if exact or a[1] == b[1]:
         # A plan's share outside volumes, or one unit word: the ordinary
