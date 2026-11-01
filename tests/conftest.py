@@ -390,6 +390,11 @@ def pytest_configure(config):
     )
     config.addinivalue_line(
         "markers",
+        "draft_week_texts: let the morning text and evening nudge see a draft week as a draft "
+        "(see _texts_read_the_week_as_approved).",
+    )
+    config.addinivalue_line(
+        "markers",
         "real_time_of_day: draft on the household's real time of day rather than just "
         "after midnight (see _drafting_at_the_start_of_the_day).",
     )
@@ -1378,3 +1383,26 @@ def snacks_as_the_model_sent_them(monkeypatch):
     monkeypatch.setattr(everyday_snacks, "enforce_snacks_from_list",
                         lambda *a, **k: {"replaced": [], "left": [], "skipped": "test"})
     monkeypatch.setattr(everyday_snacks, "fill_held_snacks", lambda plan_id, held, *a, **k: held)
+
+
+@pytest.fixture(autouse=True)
+def _texts_read_the_week_as_approved(request, monkeypatch):
+    """
+    The morning text and the evening nudge read this week as approved,
+    unless a test is marked @pytest.mark.draft_week_texts.
+
+    Since 2026-10-31 a DRAFT week's texts say one line -- "This week's plan
+    is still a draft -- approve it?" -- and name no dish (digest.
+    DRAFT_WEEK_LINE). weekly_plans.status defaults to 'draft', so every
+    test that seeds a plan with create_weekly_plan and then reads the text
+    is, to the letter, a draft week -- while what those ~25 files are about
+    is what the text says about a week the household agreed to. This says
+    that once, here, instead of an approve step in every seed helper; the
+    draft behaviour itself is tested under the marker
+    (tests/test_draft_week_texts.py).
+    """
+    if request.node.get_closest_marker("draft_week_texts"):
+        return
+    from app.tools import digest as _digest
+
+    monkeypatch.setattr(_digest, "_week_is_draft", lambda now_local: False)
