@@ -1738,7 +1738,7 @@ body.toast-up { padding-bottom: 260px; }
     if (data.in_flight && data.intake) {
       $('joined').hidden = false;
       $('joined').textContent = joinedLine(data.intake.created_by, data.viewer || who,
-        relativeTime(data.intake.created_at));
+        relativeTime(data.intake.created_at), data.intake.answered_by);
       sameNotice = { label: '', text: $('joined').textContent };
       takeAnswers(data.intake);
     } else if (data.plan_exists) {
@@ -1901,14 +1901,36 @@ body.toast-up { padding-bottom: 260px; }
   // she was told "Emily started this… where they got to" about her own
   // answers — and the other adult's name to anyone else. `viewer` is the
   // prefill's (the session's adult). Pure, so it runs on its own.
-  function joinedLine(by, viewer, when) {
+  //
+  // `answeredBy` (the intake's answered_by: everyone who has saved in this
+  // round, first first): once both adults have, the line names both
+  // rather than whoever saved last — "You and Vic have started this"
+  // (Emily, 2026-10-31; Vic adding one answer to Emily's used to read
+  // "Vic started this… Their answers are still here"). No time: it is
+  // two people's, not one moment.
+  function joinedLine(by, viewer, when, answeredBy) {
     by = String(by || '').trim();
     viewer = String(viewer || '').trim();
+    var both = (answeredBy || []).map(function (n) { return String(n || '').trim(); }).filter(Boolean);
+    if (both.length > 1) {
+      var me = viewer && both.filter(function (n) { return n.toLowerCase() === viewer.toLowerCase(); }).length;
+      if (me) {
+        var others = both.filter(function (n) { return n.toLowerCase() !== viewer.toLowerCase(); });
+        return 'You and ' + andList(others) + ' have started this. Your answers are still here.';
+      }
+      return andList(both) + ' have started this. Their answers are still here.';
+    }
     if (!by) return 'The answers saved earlier are still here.';
     if (viewer && by.toLowerCase() === viewer.toLowerCase()) {
       return 'You started this ' + when + '. Your answers are still here.';
     }
     return by + ' started this ' + when + '. Their answers are still here.';
+  }
+
+  // "Vic", "Vic and Sam", "Ana, Vic and Sam".
+  function andList(names) {
+    if (names.length < 2) return names.join('');
+    return names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
   }
 
   // ---------- the days, as tiles ----------

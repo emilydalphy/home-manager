@@ -7,7 +7,7 @@ from __future__ import annotations
 import json
 import re
 import sqlite3  # for IntegrityError -- see save_week_intake's retry loop
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from ..db import get_conn
 from ._shared import IN_MEALS_SQL, acting_name, household_id
 from . import rhythm as _rhythm
@@ -1662,7 +1662,53 @@ def _intake_for_period(conn, week_start: str, day_count: int, plan) -> dict | No
     intake["weekday_lunches"] = _weekday_lunches.normalize(
         intake.get("weekday_lunches"), period_dates(week_start, day_count), intake["skipped_days"], strict=False,
     )
+    intake["answered_by"] = _answered_by(conn, row)
     return intake
+
+
+# A clear supersedes the current revision with nothing on top of it; the
+# next save then lands later. A save supersedes and inserts in one go, so
+# the two stamps match to the second — this much slack covers a slow write.
+_SAME_SAVE_SECONDS = 5
+
+
+def _answered_by(conn, row) -> list[str]:
+    """
+    Who has saved answers in this round of the week's questions, first to
+    answer first — for the in-flight line (Emily, 2026-10-31: once both
+    adults have saved, "You and Vic have started this", not whoever saved
+    last; with one adult it stays as it was).
+
+    A round is the run of revisions back from `row` that stops at a
+    revision a plan was drafted from (what came after it is a new round of
+    answers) or at a clear (a revision superseded well before the next one
+    was saved — see _SAME_SAVE_SECONDS). Nameless saves are left out.
+    """
+    revs = conn.execute(
+        "SELECT wi.revision, wi.created_by, wi.created_at, wi.superseded_at, "
+        "EXISTS (SELECT 1 FROM weekly_plans wp WHERE wp.intake_id = wi.id) AS drafted "
+        "FROM week_intake wi WHERE wi.household_id = ? AND wi.week_start = ? AND wi.revision <= ? "
+        "ORDER BY wi.revision DESC",
+        (household_id(), row["week_start"], row["revision"]),
+    ).fetchall()
+    names: list[str] = []
+    later = None
+    for r in revs:
+        if later is not None:
+            if r["drafted"]:
+                break
+            try:
+                gap = (datetime.fromisoformat(later["created_at"]) -
+                       datetime.fromisoformat(r["superseded_at"])).total_seconds() if r["superseded_at"] else 0
+            except (TypeError, ValueError):
+                gap = 0
+            if gap > _SAME_SAVE_SECONDS:
+                break
+        name = (r["created_by"] or "").strip()
+        if name and name.lower() not in (n.lower() for n in names):
+            names.append(name)
+        later = r
+    return list(reversed(names))
 
 
 def get_week_intake_prefill(week_start: str, day_count: int = 7) -> dict:
