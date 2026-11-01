@@ -10551,6 +10551,15 @@ def _leave_state() -> dict:
         ),
         "you": you["name"] if you else None,
         "other_adults": [a["name"] for a in adults if not you or a["id"] != you["id"]],
+        # Who could take over signing in, when this adult's email is the
+        # household's only way in (household_deletion.sign_in_handover) —
+        # Remove me asks for one of them and their email first. None when
+        # nothing needs handing over.
+        "sign_in_handover": (
+            household_deletion.sign_in_handover(household, you["id"])
+            if you is not None and not protected
+            else None
+        ),
     }
 
 
@@ -10615,12 +10624,68 @@ def delete_my_household(req: DeleteHouseholdRequest, request: Request):
     return _signed_out({"deleted": True, "goodbye": "/goodbye"}, request)
 
 
+class HandoverStartRequest(BaseModel):
+    member_id: int = Field(..., ge=1, le=2**63 - 1)
+    email: str = Field("", max_length=account_email.MAX_EMAIL_LENGTH + 10)
+
+
+HANDOVER_NEEDED_LINE = "Before you go, add the email of whoever should sign in from now on."
+
+
+def _handover_target(household: int, you: dict | None, member_id: int) -> dict:
+    """The adult this leaver is handing sign-in to — one of
+    sign_in_handover's own list, or a 400 saying why not."""
+    if you is None:
+        raise HTTPException(status_code=400, detail="Tell me who you are first, then try again.")
+    candidates = household_deletion.sign_in_handover(household, you["id"]) or []
+    target = next((c for c in candidates if c["id"] == member_id), None)
+    if target is None:
+        raise HTTPException(status_code=400, detail="Pick someone who lives here and doesn't sign in with an email yet.")
+    return target
+
+
+@app.post("/api/household/remove-me/handover/start")
+def remove_me_handover_start(req: HandoverStartRequest, request: Request):
+    """
+    "Before you go, who should sign in from now on?" — send a code to the
+    email the leaver typed for the adult who stays (Emily, 2026-10-31).
+
+    A code, like every other address Pomona keeps: the whole point is that
+    the adult who stays can sign in afterwards, and an address with a
+    typo in it would leave the house exactly as locked as no address at
+    all. The code is issued for the STAYING adult (household + member), so
+    it can only ever be spent on their sign-in, through remove-me below.
+    The answer is the shared one (_send_code_or_say_so): an address
+    already used elsewhere gets no code and the same reply.
+    """
+    household = tools.household_id()
+    if household_deletion.is_protected(household):
+        raise HTTPException(status_code=403, detail="This household can't be changed that way from inside Pomona.")
+    target = _handover_target(household, tools.current_member(), req.member_id)
+    return _send_code_or_say_so(
+        request, req.email, account_email.CHANGE, household_id=household, member_id=target["id"]
+    )
+
+
+class RemoveMeRequest(BaseModel):
+    # Only when GET /api/household/leave's sign_in_handover says so: who
+    # signs in from now on, their email, and the code sent to it.
+    handover_member_id: int | None = Field(None, ge=1, le=2**63 - 1)
+    email: str = Field("", max_length=account_email.MAX_EMAIL_LENGTH + 10)
+    code: str = Field("", max_length=20)
+
+
 @app.post("/api/household/remove-me")
-def remove_me_from_household(request: Request):
+def remove_me_from_household(request: Request, req: RemoveMeRequest | None = None):
     """
     Take the signed-in adult out of this household (it keeps its other
     adults and everything else), then sign this device out.
+
+    When this adult's email is the household's only way in, they hand it
+    on first (sign_in_handover): the staying adult's email is set from a
+    spent code BEFORE the removal, and nothing is removed without it.
     """
+    req = req or RemoveMeRequest()
     household = tools.household_id()
     you = tools.current_member()
     if household_deletion.is_protected(household):
@@ -10628,6 +10693,20 @@ def remove_me_from_household(request: Request):
     problem = household_deletion.removal_check(household, you["id"] if you else None)
     if problem:
         raise HTTPException(status_code=400, detail=problem)
+    if household_deletion.sign_in_handover(household, you["id"]) is not None:
+        if req.handover_member_id is None:
+            raise HTTPException(status_code=400, detail=HANDOVER_NEEDED_LINE)
+        target = _handover_target(household, you, req.handover_member_id)
+        _enforce_rate_limit(request, "email_code_check", record=False)
+        if not account_email.valid(req.email) or not account_email.check_code(
+            req.email, req.code, account_email.CHANGE, household_id=household, member_id=target["id"]
+        ):
+            raise HTTPException(status_code=400, detail=account_email.BAD_CODE_LINE)
+        try:
+            account_email.set_member_email(household, target["id"], req.email)
+        except account_email.EmailCodeError as e:
+            raise HTTPException(status_code=409, detail=str(e))
+        logger.info("Household %s: member %s handed sign-in to member %s", household, you["id"], target["id"])
     try:
         household_deletion.remove_member(household, you["id"])
     except household_deletion.ProtectedHousehold as e:

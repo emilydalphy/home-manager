@@ -438,6 +438,57 @@ def _left_with_nobody(conn, hid: int, mid: int) -> str | None:
     )
 
 
+def sign_in_handover(household_id: int, member_id: int | None) -> list[dict] | None:
+    """
+    The adults who could take over signing in when this one leaves — or
+    None when nobody needs to (Loop Board, Emily 2026-10-31: "ask for
+    another adult's email before removing the sign-in adult").
+
+    A household made by email sign-up has no passphrase: the email IS the
+    key. If the adult whose email it is taps "Remove me" and nobody else
+    who lives here has an email of their own, the household is left with
+    nobody able to sign back in once their phones' sign-ins run out (invite
+    links are one-time, so they are no key either). So Remove me asks
+    first: "Before you go, who should sign in from now on?"
+
+    Needed only when ALL of these hold: the leaver signs in with an email
+    here, the household has no passphrase, and no other adult who lives
+    here has an email. A helper's email doesn't count — she's not who the
+    household is left with (_left_with_nobody) — and she isn't offered as
+    the one to take over. A helper leaving never needs this. The list is
+    the other adults who live here, oldest first; empty never happens in
+    practice, because _left_with_nobody refuses first.
+    """
+    if member_id is None:
+        return None
+    hid, mid = int(household_id), int(member_id)
+    conn = get_conn()
+    try:
+        leaver = conn.execute(
+            f"SELECT {EATS_HERE_SQL} AS eats_here FROM members WHERE id = ? AND household_id = ? AND {_ADULT_SQL}",
+            (mid, hid),
+        ).fetchone()
+        if leaver is None or not leaver["eats_here"]:
+            return None
+        if not conn.execute(
+            "SELECT 1 FROM member_emails WHERE household_id = ? AND member_id = ?", (hid, mid)
+        ).fetchone():
+            return None
+        if conn.execute("SELECT 1 FROM household_credentials WHERE household_id = ?", (hid,)).fetchone():
+            return None
+        others = conn.execute(
+            f"SELECT id, name, EXISTS (SELECT 1 FROM member_emails me WHERE me.household_id = members.household_id "
+            f"AND me.member_id = members.id) AS has_email FROM members "
+            f"WHERE household_id = ? AND id != ? AND {_ADULT_SQL} AND {EATS_HERE_SQL} ORDER BY id",
+            (hid, mid),
+        ).fetchall()
+    finally:
+        conn.close()
+    if any(r["has_email"] for r in others):
+        return None
+    return [{"id": int(r["id"]), "name": r["name"]} for r in others]
+
+
 def remove_member(household_id: int, member_id: int, by_member_id: int | None = None) -> dict:
     """
     Take one adult out of a household (see _remove_member) — and an
@@ -567,6 +618,7 @@ __all__ = [
     "is_protected",
     "remove_member",
     "removal_check",
+    "sign_in_handover",
     "is_helper",
     "HELPER_CANT_DELETE",
 ]

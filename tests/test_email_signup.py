@@ -232,9 +232,15 @@ def test_a_removed_adult_s_email_no_longer_opens_the_household(outbox):
     household = client.get("/api/whoami").json()["household_id"]
     # A second adult, so Jo can leave.
     conn = get_conn()
-    conn.execute("INSERT INTO members (household_id, name, age_group) VALUES (?, 'Sam', 'adult')", (household,))
+    sam = conn.execute(
+        "INSERT INTO members (household_id, name, age_group) VALUES (?, 'Sam', 'adult')", (household,)
+    ).lastrowid
     conn.commit()
     conn.close()
+    # ...who signs in with an email of their own: without one, Jo's leaving
+    # would lock the household, and Remove me asks Jo to hand sign-in over
+    # first (tests/test_remove_me_hands_over_sign_in.py).
+    account_email.set_member_email(household, sam, "sam@example.com")
     assert client.get("/api/whoami").json()["picked_on_this_device"] is True
     r = client.post("/api/household/remove-me")
     assert r.status_code == 200
