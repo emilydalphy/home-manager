@@ -693,7 +693,9 @@ def _follow_swap_with_recommendations(conn, held: list[dict], new_for_old: dict[
 def written_in_not_a_cook(freeform_meal: str | None) -> str | None:
     """
     'leftovers' or 'takeout' when a written-in meal (no recipe) says it is
-    one — "Leftovers", "Takeout pizza", "order in" — else None. The Plan
+    one — "Leftovers", "Takeout pizza", "order in" — else None. A night out
+    ("Eating out", "Dinner at Grandma's", "restaurant") is 'takeout' too:
+    eaten, not cooked here. The Plan
     screen's own wording check (get_week_menu's build_slot), lifted out so
     slot_needs._batch_candidate asks the same question rather than keeping
     a second list: neither is a cook anybody could make double.
@@ -706,12 +708,39 @@ def written_in_not_a_cook(freeform_meal: str | None) -> str | None:
     # delivery night", "copycat General Tso's takeout", "fakeaway".
     if re.search(r"\btake[\s-]?out\b|\bdelivery\b|\border in\b", text) and not _COOKED_LIKE_TAKEOUT_RE.search(text):
         return "takeout"
+    # A night OUT is the same answer as takeout: a meal nobody here cooks,
+    # so no cook card, no "Tap to start", nothing to shop for (Emily,
+    # 2026-10-31). "Eating out" and "Dinner at Grandma's" typed in by hand
+    # used to read as a dish, and the 5:30 text said "Tonight: Eating out.
+    # Tap to start." Filed under 'takeout' rather than a word of its own
+    # because 'takeout' is the one "eaten, not cooked" source every reader
+    # already honours -- Today, Plan, cook mode's start, the texts, the
+    # cook rotation, slot_needs and use_up -- and a new word would be a
+    # cook to every one of them until each learned it.
+    if _NIGHT_OUT_RE.search(text) and not _COOKED_LIKE_TAKEOUT_RE.search(text) \
+            and not _BRINGING_A_DISH_RE.search(text):
+        return "takeout"
     return None
 
 
 _COOKED_LIKE_TAKEOUT_RE = re.compile(
-    r"(?:take[\s-]?out|delivery)[\s-]+style|\bfakeaway|\bhome[\s-]?made\b|\bcopycat\b"
+    r"(?:take[\s-]?out|delivery|restaurant)[\s-]+style|\bfakeaway|\bhome[\s-]?made\b|\bcopycat\b"
 )
+
+# "Eating out", "eat out", "out for dinner", "dinner out", "night out",
+# "going out", "out to eat", "restaurant", "takeaway", and somebody else's
+# table: "Dinner at Grandma's", "at the Smiths'", "at Sam's place". The
+# possessive is what makes "at ..." a place -- "Grandma's lasagna" has no
+# "at" and stays a dish.
+_NIGHT_OUT_RE = re.compile(
+    r"\beat(?:ing)? out\b|\bout for (?:dinner|supper|lunch|a bite)\b|\b(?:dinner|supper) out\b"
+    r"|\bnight out\b|\bgoing out\b|\bout to eat\b|\brestaurants?\b|\btake[\s-]?away\b"
+    r"|\bat (?:the )?[a-z][\w-]*(?: (?:and|&) [a-z][\w-]*)?(?:['’]s|s['’])(?=\W|$)"
+)
+
+# Bringing a dish to someone else's table is still a cook here -- "Potluck
+# at the Smiths'", "Bring salad to Sam's" -- so those keep their card.
+_BRINGING_A_DISH_RE = re.compile(r"\bpot[\s-]?luck\b|\bbring(?:ing)?\b")
 
 
 def _cooks_that_night(derived_from_json) -> bool:
