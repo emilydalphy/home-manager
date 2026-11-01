@@ -6776,6 +6776,11 @@ class FactAddRequest(BaseModel):
     author: str = ""
 
 
+class FactAllergyRequest(BaseModel):
+    # The foods the question showed — see typed_allergy.save_offered_allergy.
+    foods: list[str] | None = None
+
+
 class FactUpdateRequest(BaseModel):
     text: str | None = None
     hard: bool | None = None
@@ -6898,6 +6903,40 @@ def add_fact_view(req: FactAddRequest):
     except Exception as e:
         logger.exception("Fact add failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    # "Sam is allergic to sesame" is saved as the note it was typed as, and
+    # answered with a question — "Save sesame as Sam's allergy?" (Emily,
+    # 2026-10-31). The offer only READS; nothing is enforced until the tap
+    # (POST /api/facts/{id}/allergy). A note already on file answers with
+    # its row, and is asked about again if its allergy still isn't saved.
+    if result.get("id"):
+        result["allergy_offer"] = _typed_allergy_offer(result["id"])
+    return result
+
+
+def _typed_allergy_offer(fact_id: int):
+    """The offer, or None — never a failed save because the question failed."""
+    try:
+        return tools.allergy_offer_for_fact(fact_id)
+    except Exception:
+        logger.exception("Reading a note for an allergy failed")
+        return None
+
+
+@app.post("/api/facts/{fact_id}/allergy")
+def save_fact_allergy_view(fact_id: int, req: FactAllergyRequest):
+    """The yes to "Save sesame as Sam's allergy?": writes the restriction
+    Who's here keeps, so the allergy check holds it back from then on.
+    Answers the whole memory payload, like Who's here's own writes."""
+    try:
+        result = tools.save_offered_allergy(fact_id, req.foods)
+        result["memory"] = tools.get_household_memory_for_display()
+    except ValueError as e:
+        if str(e).startswith("No fact"):
+            raise HTTPException(status_code=404, detail="That note isn't here any more.")
+        raise HTTPException(status_code=409, detail=str(e))
+    except Exception as e:
+        logger.exception("Saving a typed allergy failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
     return result
 
 
@@ -6913,6 +6952,9 @@ def update_fact_view(fact_id: int, req: FactUpdateRequest):
     except Exception as e:
         logger.exception("Fact update failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
+    # A note edited into an allergy is asked about as one typed that way.
+    if isinstance(result, dict):
+        result["allergy_offer"] = _typed_allergy_offer(fact_id)
     return result
 
 
