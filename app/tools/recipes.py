@@ -683,6 +683,7 @@ def fill_recipe_details(
     household_changes: list[str] | None = None,
     research_id: int | None = None,
     library_id: int | None = None,
+    library_amounts: bool = False,
 ) -> dict:
     """
     The recipe pass's save: write a pending recipe out in full — the
@@ -699,6 +700,12 @@ def fill_recipe_details(
     that is pending. A recipe already written up is left alone and
     returned as is — two approvals racing, or Cook's fill-in landing after
     the approval's, must not overwrite a good recipe with a second draft.
+
+    library_amounts=True is a copy of the shared library's researched set
+    (agent._copy_from_library, origin "seed"): every line given is marked
+    `library_amount` and the per-serving check leaves its amounts alone,
+    as it does a household's imported recipe (Emily, 2026-10-31). Never
+    set it for lines a model wrote.
     """
     # The model's count (or the library's): a 0 or a negative is dropped
     # for 4, as add_recipe does, never saved (2026-10-20).
@@ -708,9 +715,17 @@ def fill_recipe_details(
     prep_time_minutes = recipe_minutes(prep_time_minutes)
     cook_time_minutes = recipe_minutes(cook_time_minutes)
     # The steps' ingredients on the list, as add_recipe does (2026-10-12).
-    # The model wrote these lines, so none is the household's own.
-    ingredients = complete_ingredient_list(without_household_marks(ingredients or []), instructions or [], default_servings)
-    settled = settle_cooking_quantities(ingredients, default_servings, measure_spices=True)
+    # The model wrote these lines, so none is the household's own. A copy
+    # of the library's researched set is marked BEFORE the list is
+    # completed from the steps, as add_recipe does: a line the app adds
+    # there is the app's own guess and keeps the check.
+    ingredients = without_household_marks(ingredients or [])
+    if library_amounts:
+        ingredients = [{**ing, "library_amount": True} if isinstance(ing, dict) else ing for ing in ingredients]
+    ingredients = complete_ingredient_list(ingredients, instructions or [], default_servings)
+    # measure_spices only where the model wrote the recipe: the library's
+    # researched copy says what it says, as an imported one does.
+    settled = settle_cooking_quantities(ingredients, default_servings, measure_spices=not library_amounts)
     conn = get_conn()
     try:
         conn.execute("BEGIN IMMEDIATE")
@@ -2732,8 +2747,10 @@ def plausible_cooking_quantity(item: str, qty: str, servings: int | None = None,
 
 
 # What only the review sheet's save may write onto a line (add_recipe's
-# amounts_as_written). A cook_qty is the app's, and stays.
-_HOUSEHOLD_MARKS = ("verbatim", "qty_as_written")
+# amounts_as_written), and `library_amount`, which only a copy of the
+# library's own researched set writes (fill_recipe_details'
+# library_amounts). A cook_qty is the app's, and stays.
+_HOUSEHOLD_MARKS = ("verbatim", "qty_as_written", "library_amount")
 
 
 def without_household_marks(ingredients: list) -> list:
@@ -2762,6 +2779,30 @@ def _households_own_amount(ing: dict) -> bool:
     return bool(ing.get("verbatim")) and bool(item) and bool(qty) and not _quantity_problem(item, qty)
 
 
+def _librarys_own_amount(ing: dict) -> bool:
+    """
+    True for a line copied from the shared library's researched set
+    (origin "seed": researched from real cooks' pages and spot-checked)
+    that measures something — its qty, or the cook_qty the library itself
+    wrote beside a package ("1 bottle" fish sauce, cook 2 tsp). Emily,
+    2026-10-31: library recipes keep their own amounts on the cook card,
+    exempt like a household's imported ones; the per-serving check stays
+    on what the model writes. On the library's dishes it was rewriting
+    real amounts: deep-frying oil "4 cups" showed "2 tbsp" on ~30 dishes,
+    cookies' "1 cup butter" showed "2 tbsp", while the step said the real
+    amount. Unlike `verbatim`, the line's cook_qty counts — the library
+    wrote it, not the check.
+    """
+    if not ing.get("library_amount"):
+        return False
+    item = (ing.get("item") or "").strip()
+    qty = (ing.get("qty") or "").strip()
+    cook = (ing.get("cook_qty") or "").strip()
+    return bool(item) and (
+        bool(qty and not _quantity_problem(item, qty)) or bool(cook and not _quantity_problem(item, cook))
+    )
+
+
 def _implausible_lines(ingredients: list[dict], servings: int | None, as_written: bool = False) -> list[dict]:
     """
     The lines of a recipe whose cooking amount is out of range for
@@ -2787,7 +2828,7 @@ def _implausible_lines(ingredients: list[dict], servings: int | None, as_written
     """
     out = []
     for index, ing in enumerate(ingredients or []):
-        if not isinstance(ing, dict) or _households_own_amount(ing):
+        if not isinstance(ing, dict) or _households_own_amount(ing) or _librarys_own_amount(ing):
             continue
         item = (ing.get("item") or "").strip()
         qty = (ing.get("qty") or "").strip()
@@ -3631,6 +3672,15 @@ def cooking_ingredients(
             row = {k: v for k, v in ing.items() if k not in ("cook_qty", "qty_as_written")}
             written = (ing.get("qty_as_written") or "").strip()
             out.append({**row, "qty": written, "shopping_qty": qty} if written else row)
+            continue
+        if _librarys_own_amount(ing):
+            # The library's own amount, its cook_qty first where it measures
+            # (the package is what the list buys) — never held to the
+            # per-serving table (Emily, 2026-10-31).
+            if stored and not _quantity_problem(item, stored):
+                out.append({**ing, "qty": stored, "shopping_qty": qty})
+            else:
+                out.append(dict(ing))
             continue
         if stored and _old_spread_clamp(item, qty, stored, servings):
             # The pre-save pass's guess from when a peanut butter was held
