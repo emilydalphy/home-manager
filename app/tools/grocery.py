@@ -711,13 +711,22 @@ def _sum_measures(existing_qty: str, new_qty: str, exact: bool, same_unit: bool 
     if not a or not b or not a[1] or not b[1]:
         return None
     if same_unit and a[1] != b[1]:
+        # Quarts and gallons too: a plan's quarts on a household's typed
+        # "1/2 gallon" would leave it reading "2 quarts" once the nights
+        # went (review, 2026-11-01) — the line's own word is all that
+        # remembers how they typed it. Their own line, then, as a "2 tbsp"
+        # share beside "1 cup" has always had.
         return None
     if a[1] in _quantities._VOLUME_TO_TSP and b[1] in _quantities._VOLUME_TO_TSP:
         tsp = a[0] * _quantities._VOLUME_TO_TSP[a[1]] + b[0] * _quantities._VOLUME_TO_TSP[b[1]]
+        # Quarts or gallons in play: the sum is said in them ("1 gallon" and
+        # "2 cups" is "4 1/2 quarts"); cups and spoons alone, as before.
+        unit = _quantities._big_volume_hint((a[1], b[1])) or "tsp"
+        amount = tsp / _quantities._VOLUME_TO_TSP[unit]
         if exact:
-            text = _quantities._exact_volume_text(tsp, "tsp")
+            text = _quantities._exact_volume_text(amount, unit)
         else:
-            text = _quantities._humanize_grocery_quantity(tsp, "tsp")
+            text = _quantities._humanize_grocery_quantity(amount, unit)
         return _quantities._with_note(text, note)
     if exact or a[1] == b[1]:
         # A plan's share outside volumes, or one unit word: the ordinary
@@ -1312,6 +1321,18 @@ def _restate_standing_want(
         # Written exactly, never re-rounded to a cup step: the next removal
         # re-derives the household's own amount from this text, and cup
         # steps are not closed under addition (see _exact_volume_text).
+        # In the quart or gallon the line or the plan's rows are in, when
+        # either is: a line that once read in cups must not lose them —
+        # its own gallon came back "16 cups" (review, 2026-11-01).
+        # The plan's rows' unit first: they keep the recipe's word, while
+        # the line's word is only what its last total read in — a typed
+        # "2 quarts" with the plan's 2 quarts reads "1 gallon", and must
+        # come back "2 quarts", not "1/2 gallon".
+        big = unit if unit in _quantities._CUPS_PER_BIG else (
+            line_unit if line_unit in _quantities._CUPS_PER_BIG else None)
+        if big and big != line_unit:
+            total = _quantities._convert_to_unit(total, line_unit, big)
+            line_unit = big
         written = _quantities._exact_volume_text(total, line_unit)
     else:
         written = _quantities._humanize_grocery_quantity(total, line_unit)

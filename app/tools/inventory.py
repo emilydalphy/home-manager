@@ -563,6 +563,11 @@ def _try_subtract_quantity(existing_qty: str, minus_qty: str) -> tuple[str | Non
         remaining = existing_parsed[0] - used
         if remaining <= 0:
             return None, True
+        big = _big_volume_text(remaining, have_unit, minus_unit)
+        if big is not None:
+            # "2 quarts" less 4 cups is "1 quart"; a gallon less 2 cups is
+            # "3 1/2 quarts" (quantities._CUPS_PER_BIG).
+            return big, True
         if minus_unit != have_unit and not _clean_in(remaining, have_unit):
             # Across units the difference can be an odd fraction ("0.9375
             # cup", "0.99375 lb"): say it in the finer unit instead (15 tbsp,
@@ -736,6 +741,36 @@ def _clean_in(amount: float, unit: str | None) -> bool:
     return _quarter_clean(amount)
 
 
+def _big_volume_text(amount: float, unit: str | None, other_unit: str | None) -> str | None:
+    """
+    `amount` (in `unit`) on a Kitchen row that is in quarts or gallons, or
+    has them coming on or off it — read the way the list reads them
+    (quantities._CUPS_PER_BIG): from a quart, whole cups in quarts or
+    gallons ("3 1/2 quarts", "1 gallon"); under one, cups on a measuring
+    cup's steps ("2 cups", "3 3/4 cups"). None for anything else, which is
+    written as it always was.
+
+    DOWN to the cup or the step, never up — what this module has always
+    held ("a tbsp off a cup must come off"): a tablespoon off a gallon is
+    "3 3/4 quarts", not "255 tbsp" (review, 2026-11-01) and not still "1
+    gallon". Under a quarter cup is left to the spoons below.
+    """
+    if unit not in _quantities._VOLUME_TO_TSP or other_unit not in _quantities._VOLUME_TO_TSP:
+        return None
+    hint = _quantities._big_volume_hint((unit, other_unit))
+    if hint is None:
+        return None
+    cups = amount * _quantities._VOLUME_TO_TSP[unit] / _quantities._VOLUME_TO_TSP["cup"]
+    if cups >= 4 - 1e-9:
+        whole = math.floor(cups + 1e-6)
+        return _quantities.big_volume_reading(whole * _quantities._VOLUME_TO_TSP["cup"], hint)
+    whole = math.floor(cups + 1e-6)
+    step = max(f for f in _quantities._VOLUME_STEPS if whole + f <= cups + 1e-6)
+    if whole + step < 0.25 - 1e-9:
+        return None
+    return _quantities._cups_text(whole + step)
+
+
 def _merged_quantity(existing_qty: str, adding_qty: str) -> str:
     """
     What a row holds after `adding_qty` lands on it. The grocery list's own
@@ -766,6 +801,9 @@ def _merged_quantity(existing_qty: str, adding_qty: str) -> str:
     total = have[0] + converted
     if forms:
         return _counted_format(total, have_unit, forms)
+    big = _big_volume_text(total, have_unit, more_unit)
+    if big is not None:
+        return big
     in_other = _quantities._convert_to_unit(total, have_unit, more_unit)
     if in_other is None:
         return _quantities._format_quantity(round(total, 2), have_unit)

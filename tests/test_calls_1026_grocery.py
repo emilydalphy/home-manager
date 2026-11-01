@@ -177,7 +177,10 @@ def test_one_and_a_half_and_the_rest_are_unchanged():
     assert _q.typed_half_pack("1/2 cup") is None
     assert _q.typed_half_pack("a dozen") is None
     assert _q.tidy_display_quantity("milk", "1/2 gallon") == "1/2 gallon"
-    assert _q.tidy_display_quantity("milk", "1.3 gallon") == "2 gallons"
+    # Not a half: since quarts and gallons are cups (2026-11-01,
+    # test_quarts_and_gallons_are_cups.py) it rounds up to a whole cup, not
+    # a whole gallon — 20.8 cups is 21, "5 1/4 quarts" (was "2 gallons").
+    assert _q.tidy_display_quantity("milk", "1.3 gallon") == "5 1/4 quarts"
 
 
 # ---------- 11: Today's night off follows the new night's table ----------
