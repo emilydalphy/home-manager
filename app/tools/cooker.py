@@ -1858,6 +1858,147 @@ def _apply_prepped_lunches(weekly_plan_id: int, meals: list[dict]) -> None:
             )
 
 
+# A dish eaten cold or at room temperature: its night says "Plate", not
+# "Reheat" (Emily, 2026-11-01). Read off the dish's own name, alongside
+# leftovers.served_cold's reading of its method.
+_PLATE_NAME_RE = re.compile(
+    r"\b(salad|(?:cole)?slaw|wraps?|sandwich(?:es)?|overnight|parfait|chilled|cold|gazpacho|ceviche|"
+    r"poke|summer rolls?|hummus|dip|chia|energy (?:balls?|bites?)|noodle salad)\b",
+    re.IGNORECASE,
+)
+# Words that make a dish hot whatever else its name says — "Warm Lentil
+# Salad", "Pulled Pork Sandwich", "Chili" (review, 2026-11-01). They beat the
+# cold words.
+_HOT_NAME_RE = re.compile(r"\b(warm|hot|grilled|pulled)\b", re.IGNORECASE)
+# "Chili" is a hot dish only when it isn't a salad: "Sweet Chili Noodle
+# Salad" is cold (re-verification, 2026-11-01).
+_CHILI_RE = re.compile(r"\bchill?i\b", re.IGNORECASE)
+_SALAD_RE = re.compile(r"\b(salad|(?:cole)?slaw)\b", re.IGNORECASE)
+# The recipe saying how it is served: "serve warm", "serve it hot".
+_SERVE_HOT_RE = re.compile(r"\bserve(?:d)?\s+(?:it\s+|them\s+)?(?:warm|hot)\b", re.IGNORECASE)
+
+
+def finish_action(meal: str, recipe: dict | None, slot: str | None) -> str:
+    """'plate' for a made-ahead dish eaten cold or at room temperature
+    (salads, coleslaw, chilled noodle bowls, overnight oats, wraps), else
+    'reheat' (stews, curries, roasts, bakes, soups, grains). In order: the
+    recipe's own reheat advice, a hot word in the name (warm, hot, grilled,
+    pulled, chili), the recipe saying "serve warm/hot" — each means reheat —
+    then a cold word in the name or leftovers.served_cold means plate."""
+    if _leftovers.reheat_note(recipe):
+        return "reheat"
+    if _HOT_NAME_RE.search(meal or ""):
+        return "reheat"
+    if _CHILI_RE.search(meal or "") and not _SALAD_RE.search(meal or ""):
+        return "reheat"
+    steps = " ".join(str(s) for s in ((recipe or {}).get("instructions") or []))
+    if _SERVE_HOT_RE.search(steps):
+        return "reheat"
+    if _PLATE_NAME_RE.search(meal or "") or _leftovers.served_cold(recipe, slot):
+        return "plate"
+    return "reheat"
+
+
+PLATE_SERVE_STEP = "Plate it straight from the fridge."
+
+
+def made_at_prep_words(weekday: str) -> str:
+    """The one wording, everywhere: "made at Sunday’s prep"."""
+    return f"made at {weekday}’s prep"
+
+
+def _apply_made_at_prep(meals: list[dict], sessions: list[dict], recipes_by_name: dict) -> None:
+    """
+    A dish made WHOLE on a prep day for a later meal — the prep list's
+    whole-dish step, or a prepped-lunch batch — is not a second cook on its
+    own night (Emily, 2026-11-01: "No one it's cooked don't show it again,
+    just put reheat or plate, whatever it should be based on the dish
+    type").
+
+    "Made" is read from the stored prep-list mark itself
+    (prep_list.made_entries — keyed on the meal entry, no reach window), so
+    it follows the meal wherever it moves and no later re-fit of the list
+    can undo it. A step still on its list whose prep day has gone by counts
+    as made too, and that is stored the same way the moment it is seen.
+
+    Before it is made, the night's card carries `prepped_ahead` {date,
+    weekday} — the field a prepped lunch has always carried. Once made, the
+    card becomes the made-ahead night every other one already is
+    (_apply_leftover_chains' pattern): `is_leftovers`, `made_at_prep`,
+    `serve_step`, no recipe to cook, and `finish_action` 'reheat' or
+    'plate' (plate also sets `served_cold`). Eaten stays the card's own
+    cooked_status. Never raises.
+    """
+    from . import prep_list as _prep_list
+    by_entry = {m.get("entry_id"): m for m in meals}
+    today_cache: list[str] = []
+
+    def today() -> str:
+        # Read only when a card qualifies: the view counts its clock reads.
+        if not today_cache:
+            today_cache.append(household_today().isoformat())
+        return today_cache[0]
+
+    try:
+        made = _prep_list.made_entries()          # {entry_id: prep_date}
+        pending: dict[int, str] = {}
+        for session in sessions or []:
+            prep_date = session.get("date") or ""
+            for item in session.get("items") or []:
+                if not item.get("on_list") or item.get("entry_id") is None:
+                    continue
+                is_dish = item.get("kind") == "whole_dish"
+                is_batch = item.get("kind") == "cook_ahead" and str(item.get("key") or "").startswith("cook:")
+                if not (is_dish or is_batch):
+                    continue
+                card = by_entry.get(item["entry_id"])
+                if card is None or not ((card.get("date") or "") > prep_date):
+                    continue
+                if item["entry_id"] in made:
+                    continue
+                if prep_date < today():
+                    # The prep day went by with it on the list: made. Stored,
+                    # so it stays made if the meal moves out of reach.
+                    _prep_list.record_made(session.get("weekly_plan_id"), prep_date, item["key"])
+                    made[item["entry_id"]] = prep_date
+                else:
+                    pending[item["entry_id"]] = prep_date
+        for entry_id, prep_date in pending.items():
+            card = by_entry.get(entry_id)
+            if card is not None and not card.get("prepped_ahead"):
+                card["prepped_ahead"] = {"date": prep_date,
+                                         "weekday": date.fromisoformat(prep_date).strftime("%A"),
+                                         "lunches": []}
+        for entry_id, prep_date in made.items():
+            card = by_entry.get(entry_id)
+            if card is None or card.get("is_leftovers") or not ((card.get("date") or "") > prep_date):
+                continue
+            weekday = date.fromisoformat(prep_date).strftime("%A")
+            recipe = recipes_by_name.get((card.get("meal") or "").strip().lower())
+            action = finish_action(card.get("meal") or "", recipe, card.get("slot"))
+            card["is_leftovers"] = True
+            card["made_at_prep"] = {"date": prep_date, "weekday": weekday}
+            card["leftovers_from"] = {"entry_id": card["entry_id"], "date": prep_date, "slot": "day",
+                                      "meal": card.get("meal")}
+            card["leftovers_headline"] = f"{card.get('meal') or 'Dinner'} — {made_at_prep_words(weekday)}"
+            card["finish_action"] = action
+            card["served_cold"] = action == "plate"
+            card["reheat_note"] = _leftovers.reheat_note(recipe)
+            card["serve_step"] = (PLATE_SERVE_STEP if action == "plate"
+                                  else _leftovers.serve_step(recipe, card.get("slot"), True))
+            card.pop("prepped_ahead", None)
+            # A reheat is not a cook: emptied, as _apply_leftover_chains
+            # does, so no screen renders a second cook of the dish.
+            card["ingredients"] = []
+            card["instructions"] = []
+            card["advance_prep_notes"] = ""
+            card["advance_prep_step_indices"] = []
+            card["has_full_recipe"] = False
+            card["default_servings"] = None
+    except Exception:
+        logger.exception("Made-at-prep cards not applied; they read as ordinary cooks")
+
+
 def _slot_rank(slot: str | None) -> int:
     """Eating order, the Python twin of weekly_plan.slot_order_sql. An
     unknown slot sorts LAST rather than disappearing, exactly as that one
@@ -2421,6 +2562,11 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
                     ing["substitute"] = sw["alternative"]
                     ing["substitute_at_home"] = bool(sw["at_home"])
 
+    # The prep days, read once: the Cook screen carries them (below) and the
+    # made-at-prep pass reads them first.
+    prep_sessions = _prep_sessions.prep_sessions_for_plan(plan_id) if plan_id is not None else []
+    _apply_made_at_prep(meals, prep_sessions, recipes_by_name)
+
     # A written-in takeout meal (no saved recipe): Cook names it and offers
     # no "Start cooking" (shell.js kitchenTodayRows reads this, never its own
     # word check). Same predicate as Today's moves; after the chain passes so
@@ -2459,7 +2605,7 @@ def get_cooker_view(weekly_plan_id: int | None = None) -> dict:
         # the whole refreshed view, so ticking an item in a session
         # re-renders its "N of M done" without a round trip of its own.
         # Additive — nothing already on this payload changed shape.
-        "prep_sessions": _prep_sessions.prep_sessions_for_plan(plan_id) if plan_id is not None else [],
+        "prep_sessions": prep_sessions,
         # "No sessions" means two different things — never asked, or asked
         # and answered with a day that happens to be quiet. Only the first
         # gets the Cook screen's offer to say which days you prep.

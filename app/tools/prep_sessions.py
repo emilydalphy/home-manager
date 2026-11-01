@@ -638,7 +638,10 @@ def _pinned_marinade(step: dict, task: dict, prep_date: str, entries: dict, week
     e = dict(entry, weekly_plan_id=weekly_plan_id)
     # Still frozen (defrost.py has a thaw for this meal's meat): worded as
     # frozen, and its thaw is defrost.py's — no second one booked.
-    still_frozen = any(w in meat for w in (frozen or {}).get(entry["id"], set()))
+    # By the meal entry, not by words: a defrost row for "beef" on the meal
+    # a "Marinate the flank steak" task is for is the same meat still frozen
+    # (follow-up, 2026-11-01 — matching words booked a second thaw).
+    still_frozen = entry["id"] in (frozen or {})
     return _prep_list.marinade_items(e, meat, "", f"task{task['id']}", days_out, still_frozen, ctx["wants"],
                                      existing=step)
 
@@ -674,6 +677,10 @@ def _build_session(weekly_plan_id, plan, prep_date, prep_day, batches, entries, 
             hands_on=hands, passive=passive, pinned=True,
             feeds_line=_prep_list.feeds_line([{"date": d, "slot": batch["slot"]} for d in batch["lunch_dates"]]),
             first_date=first, first_slot=batch["slot"],
+            # Made on an EARLIER day than it is eaten: the prep-day tick
+            # means MADE (a prep-list mark), never the cook entry's
+            # cooked_status, which is "eaten" on its own day (2026-11-01).
+            ticks_on_list=batch["cook_date"] > prep_date,
         ))
         if batch["slot"] == "lunch" and batch["lunch_dates"]:
             n = len(batch["lunch_dates"])

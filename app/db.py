@@ -474,6 +474,10 @@ _MIGRATIONS = [
     # confirmation list to this week instead of every removal ever made.
     # See schema.sql's comment on grocery_items.removed_at.
     ("grocery_items", "removed_at", "TEXT"),
+    # The dish a prep list's "made" mark was made for (2026-11-01): the
+    # entry's recipe id, or its freeform name — a mark counts only while
+    # the entry still holds that dish. See prep_list.made_entries.
+    ("prep_list_marks", "made_dish", "TEXT NOT NULL DEFAULT ''"),
     # Set only for a fresh-insert already-have inventory write (see
     # schema.sql's comment on grocery_items.already_have_inventory_id) so
     # undo can safely delete that exact row without risking real stock.

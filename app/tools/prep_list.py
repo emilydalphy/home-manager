@@ -597,16 +597,118 @@ def _write_mark(weekly_plan_id: int, prep_date: str, key: str, *, state: str | N
         ).fetchone()
         new_state = state if state is not None else (row["state"] if row else "")
         new_done = (1 if done else 0) if done is not None else (row["done"] if row else 0)
+        # A done mark on a whole dish / batch remembers which dish it was
+        # made for — set when it is ticked, kept by a take-off / add-back.
+        row_dish = ""
+        if row is not None:
+            row_dish = conn.execute(
+                f"SELECT made_dish FROM {MARKS_TABLE} WHERE household_id = ? AND weekly_plan_id = ? "
+                "AND prep_date = ? AND step_key = ?",
+                (household_id(), weekly_plan_id, prep_date, key),
+            ).fetchone()["made_dish"] or ""
+        if done is True:
+            made_dish = _made_dish_for(key) or ""
+        elif done is None:
+            made_dish = row_dish
+        else:
+            made_dish = ""
         conn.execute(
-            f"INSERT INTO {MARKS_TABLE} (household_id, weekly_plan_id, prep_date, step_key, state, done, updated_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, datetime('now')) "
+            f"INSERT INTO {MARKS_TABLE} (household_id, weekly_plan_id, prep_date, step_key, state, done, "
+            "made_dish, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now')) "
             "ON CONFLICT (household_id, weekly_plan_id, prep_date, step_key) "
-            "DO UPDATE SET state = excluded.state, done = excluded.done, updated_at = excluded.updated_at",
-            (household_id(), weekly_plan_id, prep_date, key, new_state, new_done),
+            "DO UPDATE SET state = excluded.state, done = excluded.done, made_dish = excluded.made_dish, "
+            "updated_at = excluded.updated_at",
+            (household_id(), weekly_plan_id, prep_date, key, new_state, new_done, made_dish),
         )
         conn.commit()
     finally:
         conn.close()
+
+
+def made_entries() -> dict[int, str]:
+    """
+    Every meal entry a prep day has MADE whole — a whole-dish step
+    ("dish:<entry>") or a prepped batch ("cook:<entry>") ticked done, or
+    recorded when its prep day went by — as {entry_id: prep_date}. Keyed on
+    the entry with no reach window, so "made" follows the meal wherever it
+    moves (review, 2026-11-01). The latest prep date wins.
+
+    A mark counts only while its entry still holds the dish it was made for
+    (`made_dish`, entry_dish): a Beef Stew made on Sunday does not make the
+    Pork Tacos the night was later changed to.
+    """
+    conn = get_conn()
+    try:
+        rows = conn.execute(
+            f"SELECT prep_date, step_key, made_dish FROM {MARKS_TABLE} WHERE household_id = ? AND done = 1 "
+            "AND (step_key LIKE 'dish:%' OR step_key LIKE 'cook:%') ORDER BY prep_date",
+            (household_id(),),
+        ).fetchall()
+        out: dict[int, str] = {}
+        for r in rows:
+            try:
+                entry_id = int(str(r["step_key"]).split(":", 1)[1])
+            except (TypeError, ValueError, IndexError):
+                continue
+            # A mark ticked before made_dish existed (blank) can't say which
+            # dish it was for, so it holds while the meal is still there.
+            dish = entry_dish(entry_id, conn)
+            if dish and (not r["made_dish"] or r["made_dish"] == dish):
+                out[entry_id] = r["prep_date"]
+    finally:
+        conn.close()
+    return out
+
+
+def entry_dish(entry_id: int, conn=None) -> str:
+    """What a meal entry holds: "recipe:<id>", or "name:<freeform>" for a
+    meal with no saved recipe; '' when the entry is gone."""
+    own = conn is None
+    conn = conn or get_conn()
+    try:
+        row = conn.execute(
+            "SELECT recipe_id, freeform_meal FROM meal_plan_entries WHERE id = ? AND household_id = ?",
+            (entry_id, household_id()),
+        ).fetchone()
+    finally:
+        if own:
+            conn.close()
+    if row is None:
+        return ""
+    if row["recipe_id"]:
+        return f"recipe:{row['recipe_id']}"
+    return "name:" + " ".join((row["freeform_meal"] or "").lower().split())
+
+
+def _made_dish_for(key: str) -> str | None:
+    """The dish a done mark on a whole-dish / batch key is made for."""
+    if not key.startswith(("dish:", "cook:")):
+        return None
+    try:
+        return entry_dish(int(key.split(":", 1)[1]))
+    except (TypeError, ValueError):
+        return None
+
+
+def record_made(weekly_plan_id: int | None, prep_date: str, key: str) -> None:
+    """Store that a prep day made this step (the prep day went by with it
+    on the list) — the same mark a tick writes. Writes only when the mark
+    would change, never on every read."""
+    if not (weekly_plan_id and key):
+        return
+    dish = _made_dish_for(key) or ""
+    conn = get_conn()
+    try:
+        row = conn.execute(
+            f"SELECT done, made_dish FROM {MARKS_TABLE} WHERE household_id = ? AND weekly_plan_id = ? "
+            "AND prep_date = ? AND step_key = ?",
+            (household_id(), weekly_plan_id, prep_date, key),
+        ).fetchone()
+    finally:
+        conn.close()
+    if row is not None and row["done"] and row["made_dish"] == dish:
+        return
+    _write_mark(weekly_plan_id, prep_date, key, done=True)
 
 
 def set_prep_list_mark(weekly_plan_id: int, prep_date: str, key: str, action: str) -> dict:
@@ -640,7 +742,7 @@ def set_prep_list_mark(weekly_plan_id: int, prep_date: str, key: str, action: st
             raise ValueError("That one is better made on the day.")
         _write_mark(weekly_plan_id, prep_date, key, state="on")
     else:
-        if item.get("prep_task_id") is not None or item.get("kind") == "cook_ahead":
+        if item.get("prep_task_id") is not None or (item.get("kind") == "cook_ahead" and not item.get("ticks_on_list")):
             raise ValueError("That step ticks off where it lives.")
         _write_mark(weekly_plan_id, prep_date, key, done=(action == "done"))
     return {"weekly_plan_id": weekly_plan_id, "prep_date": prep_date, "key": key, "action": action,
@@ -717,6 +819,11 @@ def _marinade_settled(conn, entry_id: int, prep_date: str, today) -> bool:
     a pinned marinate task for the meal marked done)."""
     if prep_date and prep_date < today():
         return True
+    return _marinade_ticked(conn, entry_id)
+
+
+def _marinade_ticked(conn, entry_id: int) -> bool:
+    """The marinade for this meal was ticked done on a prep list."""
     if conn.execute(
         f"SELECT 1 FROM {MARKS_TABLE} WHERE household_id = ? AND done = 1 AND step_key LIKE ?",
         (household_id(), f"marinate:{entry_id}:%"),
@@ -783,7 +890,12 @@ def reconcile_marinade_thaws(wants: list[dict], plan_ids, windows: list[tuple[st
                 if r["status"] != "pending":
                     continue
                 gone = r["meal_date"] is None or r["slot_state"] != "planned" or entry_id in have
-                if gone:
+                # The meal moved to (or before) its prep day and the
+                # marinade was never ticked: it never happened, so neither
+                # does its thaw (Loop Board follow-up, 2026-11-01).
+                moved_before = bool(r["prep_date"]) and r["meal_date"] is not None \
+                    and r["meal_date"] <= r["prep_date"] and not _marinade_ticked(conn, entry_id)
+                if gone or moved_before:
                     conn.execute("DELETE FROM prep_tasks WHERE id = ? AND household_id = ?", (r["id"], household_id()))
                     continue
                 # Once the bag is really in the freezer — its prep day has
@@ -792,7 +904,10 @@ def reconcile_marinade_thaws(wants: list[dict], plan_ids, windows: list[tuple[st
                 # meal to the night before its new day (review, 2026-11-01:
                 # a meal moved closer after the prep day lost its thaw).
                 if _marinade_settled(conn, entry_id, r["prep_date"], today):
-                    thaw = thaw_date_for(r["meal_date"])
+                    # Never a pending thaw dated in the past: a night-before
+                    # already gone by makes it due now, so Cook's thaw card
+                    # shows it.
+                    thaw = max(thaw_date_for(r["meal_date"]), today())
                     m = re.match(r"^Move the marinated (.+?) to the fridge", r["description"] or "")
                     description = thaw_description(m.group(1) if m else "meat", r["related_meal"] or "dinner",
                                                    r["meal_date"])
@@ -809,6 +924,8 @@ def reconcile_marinade_thaws(wants: list[dict], plan_ids, windows: list[tuple[st
                 description = thaw_description(w["meat"], w["meal"], w["meal_date"])
                 row = have.get(entry_id)
                 if row is not None:
+                    if row["status"] == "pending" and row["task_date"] != thaw and thaw < today():
+                        thaw = today()  # never a pending thaw dated in the past
                     if row["status"] == "pending" and (row["task_date"] != thaw or row["description"] != description):
                         conn.execute(
                             "UPDATE prep_tasks SET task_date = ?, description = ? WHERE id = ? AND household_id = ?",
@@ -1238,7 +1355,8 @@ def fit(items: list[dict], budget: int, marks: dict[str, dict]) -> int:
         mark = marks.get(item["key"]) or {}
         if item["state"] == "better_fresh":
             continue
-        if mark.get("done") and item.get("prep_task_id") is None and item.get("kind") != "cook_ahead":
+        if mark.get("done") and item.get("prep_task_id") is None and (
+                item.get("kind") != "cook_ahead" or item.get("ticks_on_list")):
             item["done"] = True
         if item["always"]:
             used += item["hands_on"]
@@ -1252,10 +1370,13 @@ def fit(items: list[dict], budget: int, marks: dict[str, dict]) -> int:
             # another step off to make room.
             item["added_back"] = True
             continue
-        if item["pinned"]:
+        # A step already done stays on the list: it happened, and a plan
+        # change after it must never re-fit it out (review, 2026-11-01 — a
+        # made stew was bumped to didnt_fit and its night became a cook).
+        if item["pinned"] or item["done"]:
             used += item["hands_on"]
     candidates = [i for i in items if i["state"] == "on_list" and not i["always"] and not i["pinned"]
-                  and not i["added_back"]]
+                  and not i["added_back"] and not i["done"]]
     candidates.sort(key=lambda i: (
         0 if i["shared"] else 1,
         1 if i.get("fallback") else 0,
