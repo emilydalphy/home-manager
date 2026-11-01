@@ -4836,7 +4836,8 @@ def preview_approved_takeover(period_start: str, day_count: int) -> dict | None:
     placeholders = ",".join("?" * len(plan_ids))
     date_placeholders = ",".join("?" * len(lost_dates))
     rows = conn.execute(
-        f"SELECT mpe.id, mpe.date, mpe.slot, COALESCE(r.name, mpe.freeform_meal) AS meal "
+        f"SELECT mpe.id, mpe.date, mpe.slot, mpe.cooked_status, mpe.cook_started_at, "
+        f"COALESCE(r.name, mpe.freeform_meal) AS meal "
         f"FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id "
         f"WHERE mpe.household_id = ? AND mpe.weekly_plan_id IN ({placeholders}) "
         f"AND mpe.component_category IS NULL AND mpe.slot_state = 'planned' "
@@ -4844,6 +4845,13 @@ def preview_approved_takeover(period_start: str, day_count: int) -> dict | None:
         f"ORDER BY mpe.date, {slot_order_sql('mpe.slot')}",
         (household_id(), *plan_ids, *lost_dates),
     ).fetchall()
+    # What is already cooked or cooking on a day the new period covers is
+    # carried into it, not replaced (_carry_begun_meals) — so it is neither
+    # a loss to name nor shopping to count. An orphaned day's still goes.
+    new_days = set(_week_intake.period_dates(period_start, day_count))
+    kept_rows = [r for r in rows if r["date"] in new_days and cook_begun(r)]
+    kept_ids = {r["id"] for r in kept_rows}
+    rows = [r for r in rows if r["id"] not in kept_ids]
     # How many shopping-list lines the takeover would touch (removed, or
     # trimmed because a surviving meal still needs some): READ off the same
     # ledger _release_plan_days reverses, with the same rule — a line
@@ -4911,12 +4919,19 @@ def preview_approved_takeover(period_start: str, day_count: int) -> dict | None:
         "meal_count": meal_count,
         "grocery_line_count": grocery_line_count,
         "grocery_bought_line_count": bought_line_count,
-        "note": _takeover_question(days, orphaned, grocery_line_count, bought_line_count),
+        "meals_kept": [
+            {"date": r["date"], "slot": r["slot"], "meal_name": r["meal"]} for r in kept_rows if r["meal"]
+        ],
+        "note": _takeover_question(
+            days, orphaned, grocery_line_count, bought_line_count,
+            kept=[r["meal"] for r in kept_rows if r["meal"]],
+        ),
     }
 
 
 def _takeover_question(
     days: list[dict], orphaned: list[str], grocery_line_count: int, bought_line_count: int,
+    kept: list[str] | None = None,
 ) -> str:
     """
     The confirmation as a person would say it (DESIGN_SYSTEM §8, including
@@ -4956,7 +4971,9 @@ def _takeover_question(
         # never held these days' meals: the household loses nothing but
         # the plan's claim on the dates, and the sentence must not invent
         # a loss — or a purchase.
-        sentence = f"Nothing's planned for {span}, so nothing would be lost."
+        # When everything on those days is already made and carried over,
+        # the "kept" sentence below is the whole of it.
+        sentence = "" if kept else f"Nothing's planned for {span}, so nothing would be lost."
     else:
         # "meals" when there is no dinner to name — a component_based
         # plan's items carry no date, so its days have nothing called a
@@ -4979,6 +4996,14 @@ def _takeover_question(
             else:
                 cost = "Nothing on the shopping list changes."
             sentence = f"{head}{named}. {cost}"
+    if kept:
+        # Carried into the new plan, not replaced (_carry_begun_meals).
+        names = list(dict.fromkeys(kept))
+        listed = names[0] if len(names) == 1 else f"{', '.join(names[:-1])} and {names[-1]}"
+        sentence = (
+            f"{sentence} {listed} {'is' if len(names) == 1 else 'are'} already made, "
+            f"so {'it stays' if len(names) == 1 else 'they stay'}."
+        ).strip()
     if orphaned:
         lost = _weekday_span([date.fromisoformat(d).strftime("%A") for d in orphaned])
         sentence += (
@@ -5014,7 +5039,14 @@ def _apply_takeover(conn, result: dict, decisions: list[dict], new_plan_id: int,
         new_day_count = decision["kept_day_count"]
         retired = decision["retired"]
 
-        removal = _release_plan_days(other_id, surrendered, include_components=component_based, conn=conn)
+        # A meal already cooked or on the stove on a day the new period
+        # covers is carried INTO the new plan, not deleted (Emily,
+        # 2026-10-31, option A) — see _carry_begun_meals.
+        new_days = set(_week_intake.period_dates(period_start, day_count))
+        removal = _release_plan_days(
+            other_id, surrendered, include_components=component_based, conn=conn,
+            carry_to=new_plan_id, carry_dates=[d for d in surrendered if d in new_days],
+        )
         result["meals_removed"] += removal["meals_removed"]
         result["grocery_removed"].extend(removal["grocery_removed"])
         result["grocery_trimmed"].extend(removal["grocery_trimmed"])
@@ -5056,7 +5088,8 @@ def _apply_takeover(conn, result: dict, decisions: list[dict], new_plan_id: int,
     return result
 
 
-def _release_plan_days(plan_id: int, dates: list[str], include_components: bool = False, conn=None) -> dict:
+def _release_plan_days(plan_id: int, dates: list[str], include_components: bool = False, conn=None,
+                       carry_to: int | None = None, carry_dates: list[str] | None = None) -> dict:
     """
     Take a plan's meals for specific dates off it, reversing what each one
     put on the grocery list first.
@@ -5088,6 +5121,13 @@ def _release_plan_days(plan_id: int, dates: list[str], include_components: bool 
     commits at the end, which is the behaviour the single call site had
     before, minus the two extra connections it used to open and the three
     commits it used to make along the way.
+
+    `carry_to` / `carry_dates` (Emily, 2026-10-31, option A): a meal on one
+    of `carry_dates` that is already cooked or cooking is not released —
+    it moves into plan `carry_to`, taking that plan's own row for the slot's
+    place (_carry_begun_meals). Re-planning from a Friday whose breakfast,
+    lunch and dinner were ticked done used to delete all three, ticks and
+    all; that food was eaten, and the record of it is the household's.
     """
     if not dates:
         return {
@@ -5107,6 +5147,12 @@ def _release_plan_days(plan_id: int, dates: list[str], include_components: bool 
             + (" OR component_category IS NOT NULL)" if include_components else ")"),
             (plan_id, household_id(), *dates),
         ).fetchall()
+        carried = (
+            _begun_meals_on(conn, plan_id, carry_dates)
+            if carry_to is not None and carry_dates and not include_components else []
+        )
+        carried_ids = {r["id"] for r in carried}
+        entry_rows = [r for r in entry_rows if r["id"] not in carried_ids]
         entry_ids = [r["id"] for r in entry_rows]
         # What a person would call "a meal" among the rows just taken —
         # same test preview_approved_takeover uses for its own `days`/
@@ -5146,7 +5192,9 @@ def _release_plan_days(plan_id: int, dates: list[str], include_components: bool 
         kept_cooks: list[tuple[int, int]] = []
         for entry_id in entry_ids:
             source_id = _unlink_leftover_target(plan_id, entry_id, conn=conn)
-            if source_id is not None and source_id not in gone:
+            # A carried cook is already cooked or cooking: its batch is
+            # made, so there is no line left to re-size.
+            if source_id is not None and source_id not in gone and source_id not in carried_ids:
                 kept_cooks.append((source_id, entry_id))
 
         removed_items, trimmed_items = [], []
@@ -5166,6 +5214,8 @@ def _release_plan_days(plan_id: int, dates: list[str], include_components: bool 
                 f"DELETE FROM meal_plan_entries WHERE household_id = ? AND id IN ({entry_placeholders})",
                 (household_id(), *entry_ids),
             )
+        if carried:
+            _carry_begun_meals(conn, carry_to, carried)
         # Only an approved plan has a line to re-size: a draft bought nothing.
         rescaled_batches: list[tuple[int, int]] = []
         if kept_cooks or moved_cooks:
@@ -5184,6 +5234,7 @@ def _release_plan_days(plan_id: int, dates: list[str], include_components: bool 
             conn.close()
     return {
         "meals_removed": len(entry_ids),
+        "meals_carried": len(carried),
         "grocery_removed": removed_items,
         "grocery_trimmed": trimmed_items,
         "grocery_kept_bought": kept_bought,
@@ -5192,6 +5243,61 @@ def _release_plan_days(plan_id: int, dates: list[str], include_components: bool 
         # back after the commit (restate_takeover_freezer_answers).
         "rescaled_batches": rescaled_batches,
     }
+
+
+def _begun_meals_on(conn, plan_id: int, dates: list[str]) -> list:
+    """The plan's dated meals on `dates` already cooked or cooking
+    (cook_begun) — what a takeover carries instead of deleting."""
+    if not dates:
+        return []
+    marks = ",".join("?" * len(dates))
+    return conn.execute(
+        f"SELECT id, date, slot FROM meal_plan_entries "
+        f"WHERE weekly_plan_id = ? AND household_id = ? AND component_category IS NULL "
+        f"AND date IN ({marks}) AND (cooked_status = 'done' OR cook_started_at IS NOT NULL)",
+        (plan_id, household_id(), *dates),
+    ).fetchall()
+
+
+def _carry_begun_meals(conn, new_plan_id: int, carried: list) -> None:
+    """
+    Move meals already cooked or cooking into the plan taking their days
+    over (Emily, 2026-10-31, Loop Board "re-planning from today wipes what
+    we already cooked today", option A). The row moves whole — its tick,
+    its start, its ledger links (so what it bought stays bought for it),
+    its prep rows — and the new plan's own row for that slot makes way.
+
+    Making way is the door every other "this slot is taken" answer uses:
+    a new-plan cook that was feeding later nights moves onto the first of
+    them (move_cook_onto_fed_night, option A of 2026-09-22, exactly as
+    _move_cooks_onto_kept_nights does it), anything else is cleared
+    (clear_plan_slot). On approval the new plan is still a draft here and
+    has bought nothing, so neither touches the list. Runs on the
+    takeover's transaction; commits nothing.
+    """
+    from . import leftovers as _leftovers
+
+    for row in carried:
+        sources = _leftovers.plan_leftover_chains(new_plan_id, conn=conn)["sources"]
+        occupants = conn.execute(
+            "SELECT id FROM meal_plan_entries WHERE weekly_plan_id = ? AND household_id = ? "
+            "AND date = ? AND slot = ? AND component_category IS NULL",
+            (new_plan_id, household_id(), row["date"], row["slot"]),
+        ).fetchall()
+        for occupant in occupants:
+            fed = fed_nights_in_eating_order(sources.get(occupant["id"]), row["date"])
+            if fed:
+                _unlink_leftover_target(new_plan_id, fed[0]["entry_id"], conn=conn)
+                move_cook_onto_fed_night(conn, new_plan_id, occupant["id"], row["date"], row["slot"], fed[0])
+        clear_plan_slot(new_plan_id, row["date"], row["slot"], conn=conn)
+        conn.execute(
+            "UPDATE meal_plan_entries SET weekly_plan_id = ? WHERE id = ? AND household_id = ?",
+            (new_plan_id, row["id"], household_id()),
+        )
+        conn.execute(
+            "UPDATE prep_tasks SET weekly_plan_id = ? WHERE meal_plan_entry_id = ? AND household_id = ?",
+            (new_plan_id, row["id"], household_id()),
+        )
 
 
 def _move_cooks_onto_kept_nights(conn, plan_id: int, dates: list[str]) -> list[tuple[int, int]]:
@@ -7791,6 +7897,9 @@ def _plan_grocery_candidate_entries(conn, weekly_plan_id: int, today: str | None
     out too (_reheats_of_gone_cooks): approval hands that night back as a
     question rather than buying its side, so the preview must not count it.
     `today` is a caller's own one reading of that clock (get_week_menu's).
+    A meal already cooked or cooking is not bought for either — the food
+    was in the house; that is how a re-plan carries tonight's started
+    dinner into the new week (_carry_begun_meals) without buying it again.
     """
     today = today or _household_today(conn=conn).isoformat()
     rows = conn.execute(
@@ -7800,6 +7909,7 @@ def _plan_grocery_candidate_entries(conn, weekly_plan_id: int, today: str | None
         JOIN recipes r ON r.id = mpe.recipe_id
         WHERE mpe.weekly_plan_id = ? AND mpe.household_id = ?
           AND (mpe.component_category IS NOT NULL OR mpe.date >= ?)
+          AND COALESCE(mpe.cooked_status, '') != 'done' AND mpe.cook_started_at IS NULL
           AND NOT EXISTS (
               SELECT 1 FROM meal_plan_grocery_links mpgl
               WHERE mpgl.meal_plan_entry_id = mpe.id AND mpgl.household_id = mpe.household_id
@@ -8877,7 +8987,10 @@ def _settle_weekly_plan_approval(
             # writes one rounded line — see recipes.WeekGroceryBuffer. It
             # takes `conn` too, so every line it flushes lands on this same
             # transaction.
-            buffer = _recipes.WeekGroceryBuffer(weekly_plan_id, conn=conn)
+            # count_in_cart: a line already in the cart is bought (Emily,
+            # 2026-10-31) — a re-plan mid-shop must not put the cart's
+            # salmon on the list a second time (_KitchenStock.add_cart_lines).
+            buffer = _recipes.WeekGroceryBuffer(weekly_plan_id, conn=conn, count_in_cart=True)
             added_items = []
             already_have = []
             for group in by_recipe.values():

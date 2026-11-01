@@ -5281,6 +5281,11 @@ class _KitchenStock:
         self._on_hand: dict[str, list[tuple[float, str | None]]] = {}
         self._unreadable: set[str] = set()
         self._claimed: dict[str, list[tuple[float, str | None]]] = {}
+        # The cart, kept apart from the kitchen (add_cart_lines): empty
+        # unless an approval asks for it.
+        self._in_cart: dict[str, list[tuple[float, str | None]]] = {}
+        self._cart_unreadable: set[str] = set()
+        self._cart_claimed: dict[str, list[tuple[float, str | None]]] = {}
         # Food past its use-by is not stock (2026-10-25): last week's beef,
         # bought for a dinner that was skipped and dated to keep three days,
         # took next week's beef off the list eight days later. Read on the
@@ -5427,6 +5432,68 @@ class _KitchenStock:
                 continue
             self._claimed.setdefault(key, []).append(parsed)
 
+    def add_cart_lines(self, conn) -> None:
+        """
+        What is IN THE CART right now and not spoken for by a meal still to
+        come — counted as bought (Emily, 2026-10-31, Loop Board "re-planning
+        mid-shop puts the cart's food on the list again").
+
+        Re-planning over an approved week mid-shop: the salmon in the cart
+        for the old Saturday stays in the cart (a takeover never empties a
+        cart), and the new week's Saturday salmon went on the list as a
+        fresh "Salmon 1 lb" to buy. A line ticked BOUGHT was already
+        handled — it is on the kitchen's shelf and the old Saturday's claim
+        on it went with the old Saturday — but an in-cart line has not
+        reached the shelf, so nothing counted it.
+
+        Kept as its own pool, not added to the kitchen's: covered_by_cart
+        is asked first and a yes leaves the ingredient off silently, never
+        through the "Already home" pass (that food is not home yet, and
+        that section is for food that is). What a line's meals still to
+        come want of it is claimed first, the way reserve_bought_for_meals_
+        ahead claims a bought line — only the part no meal is cooking from
+        any more is offered. Any meal still on a live plan and not skipped
+        keeps its claim, past or cooked included: the cart's food is
+        arriving now, so which meal eats it is a guess, and the guess
+        that buys more is the safe one (an extra line beats a missing
+        dinner). Approval-only (WeekGroceryBuffer.count_in_cart):
+        a swap's single-meal re-buy is a different question nobody asked.
+        """
+        for row in conn.execute(
+            "SELECT item, quantity FROM grocery_items WHERE household_id = ? "
+            "AND status = 'in_cart' AND excluded_from_list = 0",
+            (household_id(),),
+        ).fetchall():
+            key = (row["item"] or "").strip().lower()
+            parsed = _quantities._parse_quantity(row["quantity"] or "")
+            if parsed is None:
+                self._cart_unreadable.add(key)
+            else:
+                self._in_cart.setdefault(key, []).append(parsed)
+        for row in conn.execute(
+            "SELECT g.item AS item, l.quantity AS quantity "
+            "FROM meal_plan_grocery_links l "
+            "JOIN grocery_items g ON g.id = l.grocery_item_id AND g.household_id = l.household_id "
+            "JOIN meal_plan_entries e ON e.id = l.meal_plan_entry_id AND e.household_id = l.household_id "
+            "LEFT JOIN weekly_plans w ON w.id = e.weekly_plan_id AND w.household_id = e.household_id "
+            "WHERE l.household_id = ? AND g.status = 'in_cart' AND g.excluded_from_list = 0 "
+            "AND e.skipped_at IS NULL AND COALESCE(w.status, '') != 'retired'",
+            (household_id(),),
+        ).fetchall():
+            key = (row["item"] or "").strip().lower()
+            if key not in self._in_cart:
+                continue
+            parsed = _quantities._parse_quantity(row["quantity"] or "")
+            if parsed is None:
+                self._cart_unreadable.add(key)
+                continue
+            self._cart_claimed.setdefault(key, []).append(parsed)
+
+    def covered_by_cart(self, item: str, need: tuple[float, str | None] | None) -> bool:
+        """covers(), asked of the cart (add_cart_lines) instead of the
+        kitchen — same rounding, same all-or-nothing, same claim."""
+        return self._covers_from(self._in_cart, self._cart_claimed, self._cart_unreadable, item, need)
+
     def covers(self, item: str, need: tuple[float, str | None] | None) -> bool:
         """
         True when `need` — (amount, unit), this recipe-week's whole scaled
@@ -5453,15 +5520,18 @@ class _KitchenStock:
         recipe-weeks spend a whole head each and the third be sent to the
         shop. See the claim below.
         """
+        return self._covers_from(self._on_hand, self._claimed, self._unreadable, item, need)
+
+    def _covers_from(self, pool, claimed, unreadable, item, need) -> bool:
         if not need or need[0] is None or need[0] <= 0:
             return False  # nothing to compare against; buy it
         key = (item or "").strip().lower()
-        on_hand = self._on_hand.get(key)
-        if not on_hand or key in self._unreadable:
+        on_hand = pool.get(key)
+        if not on_hand or key in unreadable:
             return False
         wanted, unit = _week_bought_amount(need[0], need[1])
         have = self._total_in(on_hand, unit)
-        spent = self._total_in(self._claimed.get(key, []), unit)
+        spent = self._total_in(claimed.get(key, []), unit)
         if have is None or spent is None:
             return False  # can't be reconciled into one unit; buy it
         if have - spent + 1e-9 < wanted:
@@ -5478,7 +5548,7 @@ class _KitchenStock:
         # uses the rounded figure, so every individual skip is exactly as
         # well-founded as it was.
         raw = _quantities._convert_to_unit(need[0], need[1], unit)
-        self._claimed.setdefault(key, []).append((wanted if raw is None else raw, unit))
+        claimed.setdefault(key, []).append((wanted if raw is None else raw, unit))
         return True
 
     def on_hand_total(self, item: str, unit: str | None) -> tuple[int, float] | None:
@@ -5544,8 +5614,11 @@ class WeekGroceryBuffer:
     decision the grouped path already makes.
     """
 
-    def __init__(self, weekly_plan_id: int | None, conn=None):
+    def __init__(self, weekly_plan_id: int | None, conn=None, count_in_cart: bool = False):
         self.weekly_plan_id = weekly_plan_id
+        # Approval only (Emily, 2026-10-31): food already in the cart counts
+        # as bought — see _KitchenStock.add_cart_lines.
+        self.count_in_cart = count_in_cart
         # The connection every flushed line is written on, when the caller
         # is holding one open transaction (swap_meal_in_plan). None means
         # each add_grocery_item / _record_grocery_link commits on its own,
@@ -5587,6 +5660,8 @@ class WeekGroceryBuffer:
                 # What is already bought for a dinner still to come is not
                 # this pass's to spend — see reserve_bought_for_meals_ahead.
                 self._stock.reserve_bought_for_meals_ahead(conn)
+                if self.count_in_cart:
+                    self._stock.add_cart_lines(conn)
             finally:
                 if self.conn is None:
                     conn.close()
@@ -6168,6 +6243,12 @@ def _add_recipe_ingredients_for_entries(
             # frying oil (three bottles).
             week_tsp = sum(spice_tsp[0] * scale_for_entry.get(e, 1.0) for e in contributing_ids)
             need = _quantities._parse_quantity(_spices.store_unit(ing["item"], week_tsp))
+        if stock.covered_by_cart(ing["item"], need):
+            # In the cart already, and no meal still to come is cooking from
+            # it (approval only — WeekGroceryBuffer.count_in_cart). Off
+            # silently: it is bought, not "Already home".
+            already_have.append(ing["item"])
+            continue
         if stock.covers(ing["item"], need) and _already_home.ingest_keeps_skip(
             ing["item"], weekly_plan_id, conn=conn,
         ):
