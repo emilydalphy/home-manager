@@ -530,7 +530,7 @@ def test_an_invite_link_pins_the_invited_adult_on_their_device(client, two_adult
 
     with tools.use_household(1):
         token = invites.mint_invite(1, two_adults["Vineeth"], invited_by=two_adults["Emily"])
-    res = client.post("/api/join", json={"token": token})
+    res = client.post("/api/join", json={"token": token, "agreed": True})
     assert res.status_code == 200
     assert security.read_device_token(client.cookies[security.DEVICE_COOKIE]) == (
         1,

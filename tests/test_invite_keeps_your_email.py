@@ -65,7 +65,7 @@ def test_an_invited_adult_who_adds_their_email_on_the_link_comes_back_to_the_sam
     # Alex opens the link: signed in as Alex, and the page's next question
     # — has Alex an email yet? — says no, and that Alex may add one.
     alex = TestClient(app)
-    assert alex.post("/api/join", json={"token": path.split("#", 1)[1]}).status_code == 200
+    assert alex.post("/api/join", json={"token": path.split("#", 1)[1], "agreed": True}).status_code == 200
     assert alex.get("/api/account/email").json() == {"email": None, "can_change": True}
     assert alex.post("/api/account/email/start", json={"email": "alex@example.com"}).status_code == 200
     res = alex.post("/api/account/email/verify", json={"email": "alex@example.com", "code": _code(outbox)})
@@ -85,7 +85,7 @@ def test_an_invited_adult_who_adds_their_email_on_the_link_comes_back_to_the_sam
 def test_the_link_page_asks_for_the_email_after_the_link_lets_them_in():
     html = (REPO / "static" / "join.html").read_text(encoding="utf-8")
     # A successful join asks, rather than going straight to "/".
-    assert "if (res.ok) { askForEmail(); return; }" in html
+    assert "if (res.ok) { forgetToken(); askForEmail(); return; }" in html
     script = html[html.index("async function askForEmail"):html.index("async function sendCode")]
     # Someone who already has an address (or can't add one) is not asked.
     assert "state.email || !state.can_change" in script and "into()" in script

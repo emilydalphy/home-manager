@@ -10010,6 +10010,11 @@ def whoami(request: Request):
         # ...and the version this household agreed to at email sign-up
         # (None for a household that predates it).
         "legal_accepted_version": account_email.accepted_legal_version(current),
+        # ...and the one THIS adult ticked themselves when they joined by
+        # invite link (None for anyone who didn't join that way).
+        "legal_you_accepted_version": account_email.member_accepted_legal_version(
+            current, member["id"] if member else None
+        ),
     }
 
 
@@ -10233,6 +10238,13 @@ def join_page():
 
 class JoinRequest(BaseModel):
     token: str = Field("", max_length=256)
+    # The join screen's "I agree to the Terms and Privacy Policy" tick
+    # (Emily, 2026-10-31). Checked before the link is spent, so an untick
+    # costs nothing and the link still works once they tick.
+    agreed: bool = False
+
+
+JOIN_AGREE_LINE = "To join, tick that you agree to the Terms and Privacy Policy."
 
 
 @app.post("/api/join")
@@ -10249,11 +10261,16 @@ def join_household(req: JoinRequest, request: Request):
     replaced — the link, not the old cookie, says who this is.
     """
     _enforce_rate_limit(request, "join")
+    if not req.agreed:
+        raise HTTPException(status_code=400, detail=JOIN_AGREE_LINE)
     spent = invites.redeem_invite(req.token)
     if spent is None:
         logger.warning("Invite link refused from %s", ratelimit.caller_id(request))
         raise HTTPException(status_code=410, detail="This link has run out.")
     household_id, member_id = spent
+    # Recorded per person: the household's own agreement (made at email
+    # sign-up, if it signed up that way) was somebody else's tick.
+    account_email.record_member_acceptance(household_id, member_id)
     response = JSONResponse({"joined": True})
     response.set_cookie(
         security.COOKIE_NAME,

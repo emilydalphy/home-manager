@@ -165,7 +165,7 @@ def test_the_link_signs_them_in_as_that_adult_with_no_questions(home):
         assert page.status_code == 200
         assert "/api/join" in page.text
         assert phone.get("/api/whoami").status_code == 401
-        res = phone.post("/api/join", json={"token": token})
+        res = phone.post("/api/join", json={"token": token, "agreed": True})
         assert res.status_code == 200
         assert security.COOKIE_NAME in phone.cookies
         me = phone.get("/api/whoami").json()
@@ -179,9 +179,9 @@ def test_the_link_signs_them_in_as_that_adult_with_no_questions(home):
 def test_the_link_works_once(home):
     token = _token(_invite(home["client"], member_id=home["Vineeth"])["path"])
     with _fresh_client() as first:
-        assert first.post("/api/join", json={"token": token}).status_code == 200
+        assert first.post("/api/join", json={"token": token, "agreed": True}).status_code == 200
     with _fresh_client() as second:
-        res = second.post("/api/join", json={"token": token})
+        res = second.post("/api/join", json={"token": token, "agreed": True})
         assert res.status_code == 410
         assert security.COOKIE_NAME not in second.cookies
         assert second.get("/api/whoami").status_code == 401
@@ -194,18 +194,18 @@ def test_the_link_runs_out_after_seven_days(home):
         late = _token(_invite(home["client"], name="Sam")["path"])
     with freeze_time(start + datetime.timedelta(days=6, hours=23)):
         with _fresh_client() as phone:
-            assert phone.post("/api/join", json={"token": token}).status_code == 200
+            assert phone.post("/api/join", json={"token": token, "agreed": True}).status_code == 200
     with freeze_time(start + datetime.timedelta(days=7, seconds=1)):
         with _fresh_client() as phone:
-            assert phone.post("/api/join", json={"token": late}).status_code == 410
+            assert phone.post("/api/join", json={"token": late, "agreed": True}).status_code == 410
 
 
 def test_an_unknown_or_malformed_token_is_the_same_answer(client):
     for token in ["", "nope", "x" * 256]:
         with _fresh_client() as phone:
-            assert phone.post("/api/join", json={"token": token}).status_code == 410
+            assert phone.post("/api/join", json={"token": token, "agreed": True}).status_code == 410
     with _fresh_client() as phone:
-        assert phone.post("/api/join", json={"token": "x" * 257}).status_code == 422
+        assert phone.post("/api/join", json={"token": "x" * 257, "agreed": True}).status_code == 422
 
 
 def test_a_new_link_leaves_the_sent_one_working_until_either_is_used(home):
@@ -219,10 +219,10 @@ def test_a_new_link_leaves_the_sent_one_working_until_either_is_used(home):
     spare = _token(_invite(home["client"], member_id=home["Vineeth"])["path"])
     assert len({old, new, spare}) == 3
     with _fresh_client() as phone:
-        assert phone.post("/api/join", json={"token": old}).status_code == 200
+        assert phone.post("/api/join", json={"token": old, "agreed": True}).status_code == 200
     for token in (new, spare):
         with _fresh_client() as phone:
-            assert phone.post("/api/join", json={"token": token}).status_code == 410
+            assert phone.post("/api/join", json={"token": token, "agreed": True}).status_code == 410
 
 
 def test_inviting_by_name_in_a_one_adult_house_remembers_who_sent_it(client):
@@ -249,7 +249,7 @@ def test_someone_no_longer_an_adult_is_not_signed_in(home):
     with tools.use_household(1):
         tools.set_member_age_group("Vineeth", "teen")
     with _fresh_client() as phone:
-        assert phone.post("/api/join", json={"token": token}).status_code == 410
+        assert phone.post("/api/join", json={"token": token, "agreed": True}).status_code == 410
         assert phone.get("/api/whoami").status_code == 401
 
 
@@ -264,7 +264,7 @@ def test_a_household_a_link_opened_while_signed_in_to_b_lands_in_a_only(home):
     with _fresh_client() as phone:
         _sign_in(phone, BETA_PASSPHRASE)
         assert phone.get("/api/whoami").json()["household_id"] == beta
-        assert phone.post("/api/join", json={"token": token}).status_code == 200
+        assert phone.post("/api/join", json={"token": token, "agreed": True}).status_code == 200
         me = phone.get("/api/whoami").json()
         assert me["household_id"] == 1 and me["member"]["name"] == "Vineeth"
     with tools.use_household(beta):
@@ -294,7 +294,7 @@ def test_passphrase_sign_in_still_works_alongside(home):
 
 def test_redeeming_is_rate_limited_like_login(client):
     with _fresh_client() as phone:
-        codes = [phone.post("/api/join", json={"token": f"guess-{i}"}).status_code for i in range(10)]
+        codes = [phone.post("/api/join", json={"token": f"guess-{i}", "agreed": True}).status_code for i in range(10)]
     assert codes[:8] == [410] * 8
     assert codes[8] == 429
 
@@ -303,8 +303,8 @@ def test_the_token_is_never_logged(home, caplog):
     caplog.set_level(logging.DEBUG)
     token = _token(_invite(home["client"], member_id=home["Vineeth"])["path"])
     with _fresh_client() as phone:
-        phone.post("/api/join", json={"token": token})
-        phone.post("/api/join", json={"token": token})
+        phone.post("/api/join", json={"token": token, "agreed": True})
+        phone.post("/api/join", json={"token": token, "agreed": True})
     text = "\n".join(r.getMessage() for r in caplog.records)
     assert "Invite minted" in text and "Invite redeemed" in text
     assert token not in text
@@ -327,7 +327,7 @@ def test_preferences_shows_them_as_joined_after(home):
     token = _token(_invite(client, member_id=home["Vineeth"])["path"])
     with freeze_time("2026-09-27 15:00:00"):
         with _fresh_client() as phone:
-            assert phone.post("/api/join", json={"token": token}).status_code == 200
+            assert phone.post("/api/join", json={"token": token, "agreed": True}).status_code == 200
     after = {a["name"]: a for a in client.get("/api/household/invites").json()["adults"]}
     assert after["Vineeth"]["joined"] is True
     assert after["Vineeth"]["joined_label"] == "Sep 27"

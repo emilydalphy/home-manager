@@ -30596,6 +30596,8 @@
       shellWho.legal_version = typeof data.legal_version === 'string' ? data.legal_version : '';
       // ...and the one this household agreed to at email sign-up, if it did.
       shellWho.legal_accepted_version = typeof data.legal_accepted_version === 'string' ? data.legal_accepted_version : '';
+      // ...and the one this adult ticked themselves on joining by invite.
+      shellWho.legal_you_accepted_version = typeof data.legal_you_accepted_version === 'string' ? data.legal_you_accepted_version : '';
       shellWho.loaded = true;
       // Keep the copy in step with whatever the server says this device is
       // pinned to, however it got pinned — the pick below, an invite link,
@@ -32109,7 +32111,11 @@
   // The version recorded when this household signed up by email (the
   // sign-up card: "the version shown is the one recorded at sign-up").
   // Said only when there is one; a different one says which.
+  // An adult who joined by invite link ticked the agreement themselves
+  // (2026-10-31), and that is the one their own phone reads back.
   function aboutAgreedHtml(current) {
+    var mine = shellWho && shellWho.legal_you_accepted_version;
+    if (mine) return mine === current ? ' · you agreed when you joined' : ' · you agreed to ' + escapeHtml(mine);
     var agreed = shellWho && shellWho.legal_accepted_version;
     if (!agreed) return '';
     return agreed === current ? ' · agreed at sign-up' : ' · you agreed to ' + escapeHtml(agreed);
