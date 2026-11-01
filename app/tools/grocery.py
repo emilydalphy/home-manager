@@ -1797,6 +1797,13 @@ _TIMES_RE = re.compile(r"(?:[x×]\s*(\d+(?:\.\d+)?)|(\d+(?:\.\d+)?)\s*[x×])", r
 _NEGATIVE_RE = re.compile(r"^[-−–]\s*\d")
 
 
+def read_times(text: str) -> str:
+    """"x2", "X2", "x 2", "×2", "2x", "2 ×" is how people write two: the
+    bare number. Anything else comes back as it was. Kitchen reads it too."""
+    times = _TIMES_RE.fullmatch(text)
+    return (times.group(1) or times.group(2)) if times else text
+
+
 def typed_amount(quantity) -> str:
     """
     A person's typed amount, tidied or refused (ValueError, AMOUNT_REFUSED):
@@ -1808,9 +1815,7 @@ def typed_amount(quantity) -> str:
         return ""
     if len(text) > AMOUNT_MAX_CHARS:
         raise ValueError(AMOUNT_REFUSED)
-    times = _TIMES_RE.fullmatch(text)
-    if times:
-        text = times.group(1) or times.group(2)
+    text = read_times(text)
     if _NEGATIVE_RE.match(text):
         raise ValueError(AMOUNT_REFUSED)
     parsed = _quantities._parse_quantity(text)

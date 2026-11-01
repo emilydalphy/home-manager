@@ -715,6 +715,13 @@
     }
   }
 
+  // The server's own sentence only for the amount it refused (a 400 naming
+  // the amount); a dropped line, a 409 or a 500 keeps the generic one.
+  var AMOUNT_REFUSED = "That amount doesn't look right.";
+  function saveFailedLine(err) {
+    return err && err.status === 400 && err.detail === AMOUNT_REFUSED ? AMOUNT_REFUSED : COPY.saveFailed;
+  }
+
   // The review's one button: only the ticked rows are sent.
   function saveReview() {
     if (st.busy) return;
@@ -739,10 +746,10 @@
       }
       saved(res);
       close();
-    }, function () {
+    }, function (err) {
       if (st !== mine) return;
       st.busy = false;
-      st.error = COPY.saveFailed;
+      st.error = saveFailedLine(err);
       render();
     });
   }

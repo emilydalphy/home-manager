@@ -648,13 +648,17 @@ document.getElementById('inv-add-btn').addEventListener('click', async () => {
   const item = itemInput.value.trim();
   if (!item) return;
   try {
-    await Api.fetch('/api/inventory/update', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ item, action: 'add', quantity: qtyInput.value.trim(), location: locSelect.value }),
+    await Api.json('/api/inventory/update', {
+      body: { item, action: 'add', quantity: qtyInput.value.trim(), location: locSelect.value }, quiet: true,
     });
     itemInput.value = ''; qtyInput.value = '';
     loadInventory();
-  } catch (err) { alert("Couldn't add that — try again."); }
+  } catch (err) {
+    // The server's own sentence only for the amount it refused; a dropped
+    // line or a 500 keeps the generic one.
+    alert(err && err.status === 400 && err.detail === "That amount doesn't look right."
+      ? err.detail : "Couldn't add that — try again.");
+  }
 });
 
 // ---------- Photo capture (receipt / fridge / pantry scan) ----------
