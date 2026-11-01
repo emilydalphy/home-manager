@@ -32460,7 +32460,7 @@
   // protected household (1) and a device that hasn't said who it is.
   // Everything it draws comes from GET /api/household/leave; on success the
   // server has already cleared the cookie, and the page goes to /goodbye.
-  var leaveState = { data: null, mode: 'delete', busy: false };
+  var leaveState = { data: null, mode: 'delete', busy: false, handover: null };
 
   function leaveNames(names) {
     if (!names || !names.length) return '';
@@ -32488,6 +32488,10 @@
         '<div class="reset-actions">' + cancel +
           '<button type="button" class="btn-gold" data-leave="pick">Pick my name</button>' +
         '</div>';
+    } else if (leaveState.mode === 'remove' && d.can_remove_self && d.sign_in_handover && d.sign_in_handover.length) {
+      html = leaveHandoverHtml(d) +
+        (d.can_delete === false ? '' :
+        '<button type="button" class="dialog-cancel-link" data-leave="mode-delete">Delete the whole household instead</button>');
     } else if (leaveState.mode === 'remove' && d.can_remove_self) {
       html = '<h2 class="reset-title" id="leave-title">Remove yourself from ' + escapeHtml(d.household_name) + '?</h2>' +
         '<p class="reset-note">' + escapeHtml(leaveNames(d.other_adults)) +
@@ -32519,9 +32523,101 @@
     el.innerHTML = html;
   }
 
+  // "Before you go, who should sign in from now on?" (Emily, 2026-10-31).
+  // The leaver's email is the household's only way in (no passphrase, and
+  // nobody else who lives here has an email), so Remove me first takes the
+  // email of the adult who stays and a code sent to it — a typo'd address
+  // would lock the house as surely as none. Two steps in the same dialog:
+  // the email, then the code; only the second one's button removes anyone.
+  function leaveHandoverHtml(d) {
+    var h = leaveState.handover || (leaveState.handover = { pick: null, email: '', sent: false });
+    var people = d.sign_in_handover;
+    if (people.length === 1) h.pick = people[0].id;
+    var picked = people.filter(function (p) { return p.id === h.pick; })[0] || null;
+    var cancel = '<button type="button" class="btn-outline-plum" data-leave="cancel">Cancel</button>';
+    var head = '<h2 class="reset-title" id="leave-title">Before you go, who should sign in from now on?</h2>';
+    if (h.sent && picked) {
+      return head +
+        '<p class="reset-note">We sent a code to ' + escapeHtml(h.email) + '. Ask ' + escapeHtml(picked.name) +
+          ' for it. It works for 10 minutes. Once it’s in, ' + escapeHtml(picked.name) +
+          ' signs in with that email, and you’re removed.</p>' +
+        '<label class="leave-field">' +
+          '<span class="leave-field-label">Code</span>' +
+          '<input type="text" class="snw-input" id="leave-code-input" inputmode="numeric" autocomplete="one-time-code" maxlength="6" aria-describedby="leave-error">' +
+        '</label>' +
+        '<p class="leave-error" id="leave-error" role="alert"></p>' +
+        '<div class="reset-actions">' + cancel +
+          '<button type="button" class="btn-gold" data-leave="remove">Remove me</button>' +
+        '</div>' +
+        '<button type="button" class="dialog-cancel-link" data-leave="handover-back">Use a different email</button>';
+    }
+    var who = people.length === 1
+      ? ''
+      : '<div class="approve-who-options">' + people.map(function (p) {
+          return '<button type="button" class="btn-outline-plum approve-who-option" data-leave="handover-pick" data-member="' + p.id + '"' +
+            (p.id === h.pick ? ' aria-current="true"' : '') + '>' + escapeHtml(p.name) + '</button>';
+        }).join('') + '</div>';
+    return head +
+      '<p class="reset-note">You sign in to ' + escapeHtml(d.household_name) + ' with your email, and nobody else does. ' +
+        (people.length === 1
+          ? 'Add ' + escapeHtml(people[0].name) + '’s email so they can still get in after you go.'
+          : 'Pick who stays in charge of signing in, and add their email.') + '</p>' +
+      who +
+      (picked
+        ? '<label class="leave-field">' +
+            '<span class="leave-field-label">' + escapeHtml(picked.name) + '’s email</span>' +
+            '<input type="email" class="snw-input leave-email-input" id="leave-email-input" autocomplete="off" autocapitalize="off" spellcheck="false" value="' + escapeHtml(h.email) + '" aria-describedby="leave-error">' +
+          '</label>'
+        : '') +
+      '<p class="leave-error" id="leave-error" role="alert"></p>' +
+      '<div class="reset-actions">' + cancel +
+        '<button type="button" class="btn-gold" data-leave="handover-send"' + (picked ? '' : ' disabled') + '>Send a code</button>' +
+      '</div>';
+  }
+
+  async function sendHandoverCode() {
+    var h = leaveState.handover;
+    if (leaveState.busy || !h || !h.pick) return;
+    var input = document.getElementById('leave-email-input');
+    h.email = input ? input.value.trim() : '';
+    var errEl = document.getElementById('leave-error');
+    if (errEl) errEl.textContent = '';
+    if (!h.email) { if (errEl) errEl.textContent = 'Add their email first.'; return; }
+    leaveState.busy = true;
+    var btn = document.querySelector('#leave-dialog [data-leave="handover-send"]');
+    if (btn) btn.disabled = true;
+    var res = null;
+    try {
+      res = await Api.fetch('/api/household/remove-me/handover/start', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ member_id: h.pick, email: h.email })
+      });
+    } catch (err) { res = null; }
+    leaveState.busy = false;
+    if (res && res.ok) {
+      h.sent = true;
+      renderLeaveDialog();
+      var code = document.getElementById('leave-code-input');
+      if (code) code.focus();
+      return;
+    }
+    var line = 'That didn’t go through. Try again in a moment.';
+    if (res) {
+      try {
+        var detail = (await res.json()).detail;
+        if (typeof detail === 'string' && detail) line = detail;
+      } catch (err) { /* keep the general line */ }
+    }
+    if (errEl) errEl.textContent = line;
+    if (btn) btn.disabled = false;
+  }
+
   async function openLeaveDialog() {
     leaveState.mode = 'delete';
     leaveState.busy = false;
+    leaveState.handover = null;
     try {
       var res = await Api.fetch('/api/household/leave');
       leaveState.data = res.ok ? await res.json() : null;
@@ -32566,6 +32662,14 @@
     var body = kind === 'delete'
       ? { confirm: document.getElementById('leave-confirm-input').value }
       : {};
+    if (kind === 'remove' && leaveState.handover && leaveState.handover.sent) {
+      var codeEl = document.getElementById('leave-code-input');
+      body = {
+        handover_member_id: leaveState.handover.pick,
+        email: leaveState.handover.email,
+        code: codeEl ? codeEl.value.trim() : ''
+      };
+    }
     var res = null;
     try {
       res = await Api.fetch(url, {
@@ -32613,6 +32717,23 @@
       renderLeaveDialog();
       var input = document.getElementById('leave-confirm-input');
       if (input) input.focus();
+      return;
+    }
+    if (what === 'handover-pick') {
+      var keep = document.getElementById('leave-email-input');
+      leaveState.handover.email = keep ? keep.value.trim() : leaveState.handover.email;
+      leaveState.handover.pick = Number(btn.getAttribute('data-member'));
+      renderLeaveDialog();
+      var emailEl = document.getElementById('leave-email-input');
+      if (emailEl) emailEl.focus();
+      return;
+    }
+    if (what === 'handover-send') { sendHandoverCode(); return; }
+    if (what === 'handover-back') {
+      leaveState.handover.sent = false;
+      renderLeaveDialog();
+      var back = document.getElementById('leave-email-input');
+      if (back) back.focus();
       return;
     }
     if (what === 'delete' || what === 'remove') submitLeave(what);

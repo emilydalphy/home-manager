@@ -9037,7 +9037,11 @@ button.cook-badge-tap::after { content: ""; position: absolute; inset: -10px -6p
 .prefs-about-version { font-family: var(--font-body); font-size: 12px; font-weight: 600; color: var(--ink-secondary); }
 .leave-field { display: flex; flex-direction: column; gap: 6px; margin-top: 16px; }
 .leave-field-label { font-family: var(--font-body); font-weight: 700; font-size: 14px; color: var(--ink); }
-.leave-field .snw-input { text-transform: uppercase; letter-spacing: .06em; }
+/* The typed DELETE only — the handover's email and code fields (2026-10-31)
+   share .leave-field, and an address shown in capitals isn't the one typed. */
+.leave-field #leave-confirm-input { text-transform: uppercase; letter-spacing: .06em; }
+.leave-field #leave-code-input { letter-spacing: .06em; }
+.leave-field + .approve-who-options, .approve-who-options + .leave-field { margin-top: 12px; }
 .leave-error { font-family: var(--font-body); font-size: 13px; color: var(--urgent-label); margin: 12px 2px 0; }
 .leave-error:empty { display: none; }
 
