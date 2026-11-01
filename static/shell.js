@@ -3507,7 +3507,15 @@
     // shop line would read "You shop on Saturday" over a screen already
     // saying there is nothing on today.
     if (!moves.length) return html;
-    if (shops.length && (!shop || shop.is_shop_day)) {
+    // Tonight's dinner waiting on something unbought can't wait for the
+    // shop day: a shop move timed for today shows the Shop card whatever
+    // day the household shops (Emily, 2026-10-31 — the morning text was
+    // already saying "Shop for tonight" while this said "You shop on
+    // Saturday").
+    var urgent = shops.some(function (m) {
+      return m.timed !== false && !m.done && String(m.window_end || '').slice(0, 10) === m.date;
+    });
+    if (shops.length && (!shop || shop.is_shop_day || urgent)) {
       html += todayShopTodayHtml(shops);
     } else {
       html += todayShopLineHtml(shop);

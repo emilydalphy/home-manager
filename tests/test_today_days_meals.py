@@ -589,6 +589,16 @@ def _full_day():
     ]
 
 
+def _line_day():
+    """The full day with a shop move that is NOT tonight's — untimed, so
+    nothing tonight is waiting on it. Since 2026-10-31 a shop move timed for
+    today ("Shop for tonight") shows the Shop card whatever the shop day
+    (Emily, Loop Board); the tests about the shop-day LINE use this."""
+    day = _full_day()
+    day[0] = dict(day[0], timed=False, title="Shop ahead")
+    return day
+
+
 _MEAL_ROWS = [
     {"slot": "breakfast", "label": "Breakfast", "date": "2026-10-05", "dishes": ["Idli"],
      "entry_id": 1, "entry_ids": [1], "note": "", "per_person": False, "is_leftovers": False,
@@ -625,9 +635,24 @@ _SHOP_UNSET = {"shop_day": None, "top_up_shop_day": None, "is_shop_day": False,
 def test_the_four_sections_are_in_the_cards_order():
     """CATCH (mutation 1) — the section order the card names. It was Shop
     first, Cook second, prep rows inside Cook, and no meals card."""
-    html = _render(_full_day(), None, _SHOP_OFF, _MEAL_ROWS)
+    html = _render(_line_day(), None, _SHOP_OFF, _MEAL_ROWS)
     # Since the declutter (2026-10-30) Cook and Prep are one To do card.
     assert _groups(html) == ["meals", "group-todo", "shopline"]
+
+
+@_needs_node
+def test_tonights_shop_shows_the_shop_card_whatever_the_shop_day():
+    """Emily, 2026-10-31: tonight's salmon unbought on a Monday, shop day
+    Saturday — Today says "Shop for tonight", as the morning text already
+    did, not "You shop on Saturday". Same with no shop day set at all."""
+    for shop in (_SHOP_OFF, _SHOP_UNSET):
+        html = _render(_full_day(), None, shop, _MEAL_ROWS)
+        assert _groups(html) == ["meals", "group-todo", "shoptoday"]
+        assert "day-shopline" not in html and "You shop on" not in html
+    # Done (shopped) is not urgent: back to the line.
+    day = _full_day()
+    day[0] = dict(day[0], done=True)
+    assert _groups(_render(day, None, _SHOP_OFF, _MEAL_ROWS))[-1] == "shopline"
 
 
 @_needs_node
@@ -661,7 +686,7 @@ def test_cook_and_prep_are_one_to_do_card():
 
 @_needs_node
 def test_a_day_with_no_prep_is_still_one_to_do_card():
-    day = [m for m in _full_day() if m["kind"] not in ("fridge", "prep")]
+    day = [m for m in _line_day() if m["kind"] not in ("fridge", "prep")]
     html = _render(day, None, _SHOP_OFF, _MEAL_ROWS)
     assert _groups(html) == ["meals", "group-todo", "shopline"]
 
@@ -769,7 +794,7 @@ def test_an_empty_day_says_nothing_planned_today_and_hides_the_rest():
 def test_a_household_with_no_shopping_day_is_offered_the_setting():
     """CATCH — "If no shopping day is known, 'No shopping day set. Pick one'
     opens the Stores/rhythm setting.\""""
-    html = _render(_full_day(), None, _SHOP_UNSET, _MEAL_ROWS)
+    html = _render(_line_day(), None, _SHOP_UNSET, _MEAL_ROWS)
     assert "No shopping day set." in html and "Pick one" in html
     assert 'data-shop-setting="1"' in html
     wiring = _fn("renderTodayMoves")
@@ -805,7 +830,7 @@ def test_on_shopping_day_with_nothing_to_buy_there_is_no_shop_section_at_all():
 def test_the_shop_line_is_a_line_and_not_a_task():
     """CATCH (mutation 5) — the card's own words, "a celadon line, not a
     task": no tick, no row state, nothing to mark done."""
-    html = _render(_full_day(), None, _SHOP_OFF, _MEAL_ROWS)
+    html = _render(_line_day(), None, _SHOP_OFF, _MEAL_ROWS)
     line = html.split('class="shell-card day-shopline"', 1)[1]
     assert "You shop on Saturday. 14 things on the list so far." in line
     assert "day-tick" not in line and "data-move-tick" not in line
