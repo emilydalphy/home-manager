@@ -844,6 +844,60 @@ def reheat_note(recipe: dict | None) -> str:
     return ""
 
 
+# ---------- what to do with it on the day it's eaten ----------
+#
+# Emily, 2026-10-31 (Loop Board "Cook days", option B — "bring it here"):
+# a day that eats something made earlier says what to do with it right on
+# that day, so nobody has to go and find the day the recipe lives on
+# (DESIGN_SYSTEM S12). Recipes carry no serving field; the recipe's own
+# reheating sentence wins when its notes have one (that is where "how long"
+# comes from), and anything else gets the card's plain default — never a
+# made-up time.
+SERVE_HOT_DEFAULT = "Heat until hot all the way through."
+SERVE_COLD_DEFAULT = "Eat it cold, straight from the fridge."
+
+
+def serve_step(recipe: dict | None, slot: str | None, made_ahead: bool) -> str:
+    """The one line a reheat night says about what to do with it today:
+    the recipe's own reheat sentence, else "eat it cold" for a made-ahead
+    portion served_cold reads as cold, else "heat until hot". A leftovers
+    night is never called cold — served_cold's rule is for made-ahead food
+    only, as on the Cook tab (cooker._apply_leftover_chains)."""
+    note = reheat_note(recipe)
+    if note:
+        return note
+    if made_ahead and served_cold(recipe, slot):
+        return SERVE_COLD_DEFAULT
+    return SERVE_HOT_DEFAULT
+
+
+def recipes_for_serving(names) -> dict:
+    """{lower name: {notes, instructions, cook_time_minutes}} for the given
+    dish names — just what serve_step reads, in one query, so a screen
+    that only needs the serving line does not pay for list_recipes."""
+    wanted = sorted({(n or "").strip().lower() for n in names if (n or "").strip()})
+    if not wanted:
+        return {}
+    marks = ",".join("?" for _ in wanted)
+    with get_conn() as conn:
+        rows = conn.execute(
+            f"SELECT name, notes, instructions_json, cook_time_minutes FROM recipes "
+            f"WHERE household_id = ? AND lower(name) IN ({marks})",
+            (household_id(), *wanted),
+        ).fetchall()
+    out = {}
+    for r in rows:
+        try:
+            steps = json.loads(r["instructions_json"] or "[]")
+        except (TypeError, ValueError):
+            steps = []
+        out[r["name"].strip().lower()] = {
+            "notes": r["notes"] or "", "instructions": steps,
+            "cook_time_minutes": r["cook_time_minutes"],
+        }
+    return out
+
+
 # ---------- no dish on more than two meals in a row ----------
 #
 # Emily, 2026-09-27, decision B: counting lunches and dinners in the order

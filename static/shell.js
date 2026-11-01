@@ -3273,6 +3273,21 @@
     return row && row.made_ahead ? 'Made ahead' : 'Leftovers';
   }
 
+  // What to do with a meal made earlier, said on the day it's eaten
+  // (Emily, 2026-10-31, option B): the server's serve_step (day_meals —
+  // the recipe's own reheat line, else "Heat until hot" / "Eat it cold"),
+  // led by when. Today is always today, so "This morning" / "Tonight".
+  var TODAY_SERVE_WHEN = { breakfast: 'This morning', lunch: 'At lunch', dinner: 'Tonight' };
+
+  function todayMealServeLine(row) {
+    var step = todayMealIsLeftovers(row) && String(row.serve_step || '').trim();
+    if (!step) return '';
+    var when = TODAY_SERVE_WHEN[row.slot] || '';
+    if (!when) return step;
+    if (/^[A-Z][a-z]/.test(step)) step = step.charAt(0).toLowerCase() + step.slice(1);
+    return when + ': ' + step;
+  }
+
   function todayMealRowHtml(row, i) {
     var dishes = row.per_person
       ? (row.lines || []).map(function (l) { return l.dish; }).filter(function (d, n, all) { return d && all.indexOf(d) === n; })
@@ -3283,6 +3298,7 @@
         '<span class="day-meal-slot">' + escapeHtml(row.label) + '</span>' +
         '<span class="day-meal-dish">' + escapeHtml(dishes.join(', ')) + '</span>' +
         (todayMealIsLeftovers(row) ? '<span class="day-meal-note">' + todayMealReheatWord(row) + '</span>' : '') +
+        (todayMealServeLine(row) ? '<span class="day-meal-note">' + escapeHtml(todayMealServeLine(row)) + '</span>' : '') +
       '</span>' +
       '<span class="day-meal-chev" aria-hidden="true">' + DAY_CHEV + '</span>' +
     '</button>';
@@ -3305,6 +3321,12 @@
       : (row.dishes || []).join(', ');
     return quietSheetHeadHtml(row.label, title) +
       (note ? '<p class="wk-swap-sub">' + escapeHtml(note) + '</p>' : '') +
+      (todayMealIsLeftovers(row) && String(row.serve_step || '').trim()
+        ? '<div class="quiet-section"><span class="quiet-section-head">' +
+            escapeHtml(TODAY_SERVE_WHEN[row.slot] || 'To serve') + '</span>' +
+            '<div class="quiet-lines"><div class="quiet-line"><span>' + escapeHtml(String(row.serve_step).trim()) +
+            '</span></div></div></div>'
+        : '') +
       (lines ? '<div class="quiet-section"><span class="quiet-section-head">Who’s eating</span>' +
         '<div class="quiet-lines">' + lines + '</div></div>' : '') +
       (todayMealTarget(row) ? '<button type="button" class="quiet-link" data-meal-recipe="1">See the recipe</button>' : '');
@@ -19066,6 +19088,50 @@
     return !!(entry && ((entry.leftover_from && entry.leftover_from.date) || entry.source === 'leftovers'));
   }
 
+  // COOK DAYS, OPTION B (Emily, 2026-10-31 — "bring it here"): on a day,
+  // a meal made earlier says when it was made and what to do with it
+  // today, right on its row, so nobody goes hunting for the day the recipe
+  // lives on (DESIGN_SYSTEM S12). "Made Sunday" for a batch made ahead on
+  // purpose (and any breakfast or snack from an earlier batch — the same
+  // rule as planRowMeta); a leftovers night still says just "Leftovers"
+  // (S11's standing copy rule). The step is the server's
+  // (leftover_from.serve_step: the recipe's own reheat line, else "Heat
+  // until hot" / "Eat it cold" — never a made-up time).
+  function planReheatSource(entry) {
+    var src = entry && entry.state === 'planned' && entry.leftover_from;
+    return src && src.date ? src : null;
+  }
+
+  function planDayRowMeta(day, entry) {
+    var src = planReheatSource(entry);
+    if (!src) return planRowMeta(entry);
+    if (!(src.cook_ahead || src.slot === 'breakfast' || src.slot === 'snack')) return 'Leftovers';
+    return src.date === day.date ? 'Made today' : 'Made ' + dayName(src.date, { weekday: 'long' });
+  }
+
+  // When the step is for: "This morning" / "Tonight" on today, the plain
+  // meal time on any other day. A snack has no time of its own.
+  function planServeWhen(day, slot) {
+    if (slot === 'breakfast') return day.isToday ? 'This morning' : 'In the morning';
+    if (slot === 'lunch') return 'At lunch';
+    if (slot === 'dinner') return day.isToday ? 'Tonight' : 'At dinner';
+    return '';
+  }
+
+  // "This morning: heat until hot all the way through." — '' when there is
+  // nothing made earlier on the row.
+  function planServeLine(day, slot, entry) {
+    var src = planReheatSource(entry);
+    var step = src && String(src.serve_step || '').trim();
+    if (!step) return '';
+    var when = planServeWhen(day, slot);
+    if (!when) return step;
+    // "Heat until…" reads on after the colon in lower case; a step that
+    // opens on a name or a unit ("350°F…", "IKEA…") keeps its capital.
+    if (/^[A-Z][a-z]/.test(step)) step = step.charAt(0).toLowerCase() + step.slice(1);
+    return when + ': ' + step;
+  }
+
   // One quiet row. `o.attrs` makes it a button (with the chevron); without
   // it the row is a line to read. `o.label` is what a screen reader hears.
   function planRowHtml(o) {
@@ -19082,6 +19148,7 @@
       '<span class="wk-qrow-text">' + eyebrow +
         '<span class="wk-qrow-name">' + escapeHtml(o.name) + '</span>' +
         (o.meta ? '<span class="wk-row-meta">' + escapeHtml(o.meta) + '</span>' : '') +
+        (o.step ? '<span class="wk-row-meta wk-qrow-step">' + escapeHtml(o.step) + '</span>' : '') +
       '</span>' +
       (tappable ? '<span class="wk-qrow-chev" aria-hidden="true">' + WK_ICONS.chev + '</span>' : '') +
     '</' + close + '>';
@@ -19099,11 +19166,13 @@
     var snack = isSnackSlot(slot);
     if (entry && entry.state === 'planned') {
       var name = mealDisplayName(entry);
+      var meta = planDayRowMeta(day, entry);
+      var step = planServeLine(day, slot, entry);
       // A snack's row is its swap, and a day gone by has nothing to swap.
-      if (snack && day.isPast) return planRowHtml({ name: name, meta: planRowMeta(entry), past: true });
+      if (snack && day.isPast) return planRowHtml({ name: name, meta: meta, step: step, past: true });
       return planRowHtml({
         attrs: (snack ? ' data-plan-snack="' : ' data-plan-row="') + slot + '"' + at,
-        eyebrow: eyebrow, name: name, meta: planRowMeta(entry), changed: changed,
+        eyebrow: eyebrow, name: name, meta: meta, step: step, changed: changed,
         past: day.isPast, done: !!entry.cooked,
         label: (eyebrow ? eyebrow + ', ' : '') + name + (snack ? ' — swap it' : ' — change it')
       });
@@ -19358,9 +19427,26 @@
           '<span class="quiet-opt-sub">' + escapeHtml(o.sub) + '</span></span>' +
       '</button>';
     }).join('');
+    // A meal made earlier (option B, planServeLine): what to do with it
+    // today heads the sheet, and the way to the recipe is the cook's own —
+    // "See Sunday’s recipe" lands on that exact cook (S12), and back comes
+    // home to this day.
+    var src = planReheatSource(entry);
+    var whole = !!(opts.dates && opts.dates.length > 1);
+    var serve = !whole && src && String(src.serve_step || '').trim();
+    var serveHtml = serve
+      ? '<div class="quiet-section"><span class="quiet-section-head">' +
+          escapeHtml(planServeWhen(day, slot) || 'To serve') + '</span>' +
+          '<div class="quiet-lines"><div class="quiet-line"><span>' + escapeHtml(serve) + '</span></div></div></div>'
+      : '';
+    var recipeLink = !whole && src && src.slot
+      ? '<button type="button" class="quiet-link" data-plan-opt="source">' +
+          escapeHtml('See ' + (src.date === day.date ? 'the' : dayName(src.date, { weekday: 'long' }) + '’s') + ' recipe') + '</button>'
+      : '<button type="button" class="quiet-link" data-plan-opt="recipe">See the recipe</button>';
     return quietSheetHeadHtml(slotEyebrowLabel(day, slot) + ' · ' + when, mealDisplayName(entry)) +
+      serveHtml +
       (rows ? '<div class="quiet-opts">' + rows + '</div>' : '') +
-      '<button type="button" class="quiet-link" data-plan-opt="recipe">See the recipe</button>';
+      recipeLink;
   }
 
   function openPlanRowSheet(panel, day, slot, opts) {
@@ -19379,6 +19465,12 @@
             openTweakSheet(panel, day, slot);
           } else if (key === 'move') {
             openMoveSheet(panel, day, slot);
+          } else if (key === 'source') {
+            // The cook it was made at (openSourceMeal: another week's plan
+            // loads first). Its crumb goes up to the root, which still has
+            // this day open (weekState.planDay is left as it is).
+            var from = planReheatSource(entry);
+            if (from) openSourceMeal(panel, from.date, from.slot, 'week');
           } else if (key === 'recipe') {
             goMealsStep('meal', { slot: slot, back: 'week', dayIndex: index >= 0 ? index : undefined,
               wholeDish: !!(opts.dates && opts.dates.length > 1 && !opts.reheat) });

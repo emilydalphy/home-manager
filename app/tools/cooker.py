@@ -1634,6 +1634,9 @@ def _apply_leftover_chains(weekly_plan_id: int, meals: list[dict], recipes_by_na
         # when there is no source date, which is the honest answer here.
         card["leftovers_headline"] = _leftovers.frozen_portion_night_name(frozen)
         card["reheat_note"] = _leftovers.reheat_note(recipes_by_name.get(frozen.lower()))
+        # What to do with it today (Emily, 2026-10-31, option B) — Today's
+        # meals row reads it through day_meals.
+        card["serve_step"] = _leftovers.serve_step(recipes_by_name.get(frozen.lower()), card.get("slot"), False)
         card["servings"] = _leftovers.eaters_at(card["date"], card.get("slot")) or None
         # A reheat is not a cook — the same emptying the chain pass does
         # below, for the same reason: no screen may render this night as a
@@ -1662,6 +1665,7 @@ def _apply_leftover_chains(weekly_plan_id: int, meals: list[dict], recipes_by_na
         card["is_leftovers"] = True
         card["leftovers_named"] = True
         card["leftovers_headline"] = card.get("meal") or "Leftovers"
+        card["serve_step"] = _leftovers.SERVE_HOT_DEFAULT
         card["servings"] = _leftovers.eaters_at(card["date"], card.get("slot")) or None
         card["ingredients"] = []
         card["instructions"] = []
@@ -1718,6 +1722,13 @@ def _apply_leftover_chains(weekly_plan_id: int, meals: list[dict], recipes_by_na
         # leftovers.served_cold for the rule.
         card["served_cold"] = bool(leftover.get("cook_ahead")) and _leftovers.served_cold(
             src_recipe, card.get("slot")
+        )
+        # The day's own line for it (Emily, 2026-10-31, option B): made
+        # ahead is the Plan row's rule — a cook-ahead batch, or a breakfast
+        # or snack from an earlier batch (day_meals.made_ahead).
+        card["serve_step"] = _leftovers.serve_step(
+            src_recipe, card.get("slot"),
+            bool(leftover.get("cook_ahead")) or src.get("slot") in ("breakfast", "snack"),
         )
         card["servings"] = _leftovers.eaters_at(leftover["date"], leftover["slot"]) or None
         # A reheat is not a cook. Emptied rather than left in place so no
