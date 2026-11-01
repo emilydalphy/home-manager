@@ -3659,7 +3659,8 @@ previous weeks"). Breakfast and snack repeating WITHIN the current week is whate
 say (see the guideline above) — that is a different question from repeating ACROSS weeks, which is \
 this rule. Breakfast persisting from a previous week is still normal — recent_history's \
 breakfast entries are informational only, not something to avoid repeating — EXCEPT when \
-intake.moods includes "Something new": then breakfast joins the rule too, and a breakfast in \
+intake.moods includes "Something new" or intake.breakfasts_each_week is "different": then \
+breakfast joins the rule too, and a breakfast in \
 recent_history is not drafted again unless they asked for it by name. A near-identical variant \
 means the same main protein plus the same base or the same kind of dish under another name — \
 last week's white bean stew comes back neither as a "Turkish White Bean and Tomato Stew" nor as a \
@@ -6526,6 +6527,10 @@ def _intake_generation_context(intake: dict, dates: list[str] | None = None) -> 
         # not answered.
         "weekday_lunches": intake.get("weekday_lunches") or {},
         "moods": intake.get("moods") or [],
+        # "Breakfasts, week to week" (2026-10-31): "different" puts breakfast
+        # under the no-repeat rule (the prompt's bullet; repick_recent_repeats
+        # via meal_variety.no_repeat_slots makes it true). "" / "same" = as ever.
+        "breakfasts_each_week": intake.get("breakfasts_each_week") or "",
         # What each tapped mood means (week_intake.MOOD_GUIDANCE) — the pill
         # is what a person taps, this is what the planner follows.
         "mood_guidance": [
@@ -8642,7 +8647,7 @@ def _finish_week_slots(
     _meal_variety.repick_recent_repeats(
         plan_id, week_start_date,
         repick_budget or _allergen_gate.CallBudget(),
-        asks=count_asks, slots=_meal_variety.no_repeat_slots(intake) + ("snack",),
+        asks=count_asks, slots=_meal_variety.no_repeat_slots(intake, week_start_date) + ("snack",),
     )
     # And inside the week: two dinners or lunches that are the same dish
     # under two names (Emily, 2026-10-31: a white bean and tomato stew on

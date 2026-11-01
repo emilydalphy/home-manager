@@ -527,6 +527,8 @@
   }
   .uw-dates b { display: block; font-size: 13px; letter-spacing: 0; color: var(--ink); }
   .replan-group-label { margin: 8px 0 0; }
+  /* "Week to week" on Breakfast is gone, not greyed, for a week with no breakfast. */
+  #replan-breakfast-weeks[hidden], #replan-breakfast-weeks-label[hidden] { display: none; }
   .bring-over[hidden] { display: none; }
   /* ---------- Bring over from last week (Emily, 2026-09-25, option A) ----------
      Above the rows: the page's group eyebrow, one plain line, then a card
@@ -1355,7 +1357,8 @@ body.toast-up { padding-bottom: 260px; }
     weekday_lunches: {},           // step 3 as saved: {days: [{date, kind, ...}], prep_days}
     moods: [],
     cuisines: [],
-    brought_over: []               // "Bring over from last week": the ticked rows' keys (bringKey)
+    brought_over: [],              // "Bring over from last week": the ticked rows' keys (bringKey)
+    breakfasts_each_week: ''       // "Breakfasts, week to week": 'same' | 'different' | '' (never asked)
   };
 
   // The dinner tags this screen has a word for (week_intake.NIGHT_TAGS).
@@ -1703,7 +1706,7 @@ body.toast-up { padding-bottom: 260px; }
     data = body;
     loadedFor = key;
     awayRanges = [];
-    answers = { night_tags: {}, guest_counts: {}, packed_lunch_days: [], weekday_lunches: {}, moods: [], cuisines: [], brought_over: [] };
+    answers = { night_tags: {}, guest_counts: {}, packed_lunch_days: [], weekday_lunches: {}, moods: [], cuisines: [], brought_over: [], breakfasts_each_week: '' };
     weekAnswers = {};
     sameNotice = null;
     lunch = { kinds: {}, prepDays: [], reachAdded: [], reachedFor: null, ready: false };
@@ -1776,6 +1779,11 @@ body.toast-up { padding-bottom: 260px; }
       });
       prefilled.moods = true;
     }
+    // "Breakfasts, week to week" is asked once and remembered: last
+    // week's answer, where this week has none of its own.
+    if (!answers.breakfasts_each_week && data.last_intake) {
+      answers.breakfasts_each_week = data.last_intake.breakfasts_each_week || '';
+    }
 
     await loadAttendance();
     // What the screen opened with, so leaving without changing anything
@@ -1808,6 +1816,7 @@ body.toast-up { padding-bottom: 260px; }
     answers.moods = intake.moods || [];
     answers.cuisines = intake.cuisines || [];
     answers.brought_over = bringTicksFrom(intake.brought_over);
+    answers.breakfasts_each_week = intake.breakfasts_each_week || '';
     // What was changed for this week only (re-plan Option B).
     weekAnswers = clone(intake.week_answers || {});
     $('freeform').value = intake.freeform || '';
@@ -3659,6 +3668,12 @@ body.toast-up { padding-bottom: 260px; }
     noLunches: 'No weekday lunches',
     nothingAdded: 'Nothing yet. Starts fresh each week.',
     noMood: 'Nothing picked',
+    // "Breakfasts, week to week" (Emily, 2026-10-31): the two answers are
+    // her words; the row says which one was given.
+    breakfastWeeks: 'Week to week',
+    breakfastSame: 'The same breakfasts each week',
+    breakfastDifferent: 'Something different',
+    breakfastRow: { same: 'The same each week', different: 'Something different each week' },
     cantOpen: 'I couldn’t open that just now — try again in a moment.'
   };
   // "This week only" on the who's-eating picker (the mockup's B2): the
@@ -3894,7 +3909,9 @@ body.toast-up { padding-bottom: 260px; }
       days: daysValue(weekStart, dayCount),
       who: whoValue(cells),
       cook: cookValue(prep),
-      breakfast: mealOnThisWeek(cells, 'breakfast') ? varietyTitle('breakfast', weekChoice('breakfast')) : SAME_COPY.notPlanned,
+      breakfast: mealOnThisWeek(cells, 'breakfast')
+        ? [varietyTitle('breakfast', weekChoice('breakfast')), SAME_COPY.breakfastRow[answers.breakfasts_each_week]].filter(Boolean).join(' · ')
+        : SAME_COPY.notPlanned,
       lunches: lunchesValue(cells, weekNeeds()),
       dinner: mealOnThisWeek(cells, 'dinner') ? varietyTitle('dinner', weekChoice('dinner')) : SAME_COPY.notPlanned,
       cuisines: cuisinesValue(answers.cuisines, answers.moods),
@@ -4117,6 +4134,7 @@ body.toast-up { padding-bottom: 260px; }
       cuisines: answers.cuisines.slice(),
       freeform: $('freeform').value,
       brought_over: answers.brought_over.slice(),
+      breakfasts_each_week: answers.breakfasts_each_week,
       // By weekday, so it means the same over any dates.
       weekAnswers: clone(weekAnswers),
       lunches: lunch.ready ? {
@@ -4137,6 +4155,7 @@ body.toast-up { padding-bottom: 260px; }
     answers.cuisines.length = 0;
     kept.cuisines.forEach(function (c) { answers.cuisines.push(c); });
     $('freeform').value = kept.freeform;
+    answers.breakfasts_each_week = kept.breakfasts_each_week || answers.breakfasts_each_week;
     weekAnswers = kept.weekAnswers || {};
     // Last week is the same last week whatever the new days are, so a
     // tick stays ticked while its row is still on offer.
@@ -4164,6 +4183,7 @@ body.toast-up { padding-bottom: 260px; }
       brought_over: bringPayload(),
       week_answers: weekAnswers
     };
+    if (answers.breakfasts_each_week) payload.breakfasts_each_week = answers.breakfasts_each_week;
     if (currentLunchDates().length) {
       reconcileLunches();
       payload.weekday_lunches = lunchPayload();
@@ -4295,7 +4315,7 @@ body.toast-up { padding-bottom: 260px; }
     $('leave').innerHTML = esc(name === 'variety-lunch' ? SAME_COPY.crumbLunch : SAME_COPY.crumb);
     if (name === 'meals-days') openWhoScreen(el);
     else if (name === 'prep') buildPrepStep();
-    else if (name === 'variety-breakfast') buildVarietyStep('breakfast');
+    else if (name === 'variety-breakfast') openBreakfastScreen(el);
     else if (name === 'variety-dinner') buildVarietyStep('dinner');
     else if (name === 'lunch-needs') buildLunchNeedsStep();
     else if (name === 'variety-lunch') openLunchVarietyScreen(el);
@@ -4348,6 +4368,39 @@ body.toast-up { padding-bottom: 260px; }
       controls.appendChild($('lunch-week').parentNode);
     }
     renderLunchStep();
+  }
+
+  // Breakfast: onboarding's "How many different breakfasts", then this
+  // page's "Week to week" (Emily, 2026-10-31, "should breakfasts change
+  // every week?" — ask each household): "The same breakfasts each week"
+  // or "Something different", one chip lit, shaped like the lunch step's
+  // chips. "Something different" puts breakfast in the two-week no-repeat
+  // window (meal_variety.no_repeat_slots); a household never asked opens
+  // on "The same" — what it has always had. Only while this week has a
+  // breakfast at all: a week with none has nothing to repeat.
+  function openBreakfastScreen(el) {
+    buildVarietyStep('breakfast');
+    var chips = $('replan-breakfast-weeks');
+    if (!chips) {
+      var label = document.createElement('p');
+      label.className = 'q-opt-label replan-group-label';
+      label.id = 'replan-breakfast-weeks-label';
+      label.textContent = SAME_COPY.breakfastWeeks;
+      chips = document.createElement('div');
+      chips.className = 'chip-row';
+      chips.id = 'replan-breakfast-weeks';
+      chips.setAttribute('role', 'group');
+      chips.setAttribute('aria-labelledby', label.id);
+      var controls = el.querySelector('.q-controls');
+      controls.appendChild(label);
+      controls.appendChild(chips);
+    }
+    var on = mealOnThisWeek(weekCells(), 'breakfast');
+    chips.hidden = !on;
+    $('replan-breakfast-weeks-label').hidden = !on;
+    chipWithCustom(chips, [SAME_COPY.breakfastSame, SAME_COPY.breakfastDifferent], false);
+    var lit = answers.breakfasts_each_week === 'different' ? SAME_COPY.breakfastDifferent : SAME_COPY.breakfastSame;
+    chips.querySelectorAll('.chip').forEach(function (c) { c.classList.toggle('active', c.dataset.value === lit); });
   }
 
   // Cuisines and mood: onboarding's chips — the household's own list, with
@@ -4426,6 +4479,12 @@ body.toast-up { padding-bottom: 260px; }
       takeCookAhead(days);
     } else if (name === 'variety-breakfast') {
       keepVariety('breakfast');
+      // Only an answer once the screen offered it; "The same" as it opened
+      // on a never-asked household is still an answer, and is today's way.
+      if (!$('replan-breakfast-weeks').hidden) {
+        answers.breakfasts_each_week = getActiveChip($('replan-breakfast-weeks')) === SAME_COPY.breakfastDifferent
+          ? 'different' : 'same';
+      }
     } else if (name === 'variety-dinner') {
       keepVariety('dinner');
     } else if (name === 'lunch-needs') {
@@ -5102,6 +5161,7 @@ body.toast-up { padding-bottom: 260px; }
       brought_over: bringPayload(),
       week_answers: weekAnswers
     };
+    if (answers.breakfasts_each_week) payload.breakfasts_each_week = answers.breakfasts_each_week;
     // Step 3's answer only once the screen has laid it out; before that
     // the saved one stands.
     if (lunch.ready) payload.weekday_lunches = lunchPayload();
