@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json as _json
 import logging
+import math
 import re
 from datetime import date, timedelta
 from ..db import get_conn, write
@@ -1102,6 +1103,41 @@ def _written_quantity(quantity) -> str:
     return quantity.strip()
 
 
+# An amount nobody has on a shelf (overnight hunt, 2026-11-01): Kitchen's
+# add stored "-2 lb", "inf" and "nan" as written. The same rule and sentence
+# as the grocery amount box (Emily, 2026-10-31): below zero is refused (zero
+# too on an add; a "set" to 0 is an emptied row and stays),
+# and so are infinity and not-a-number, typed or sent as a float. Words
+# ("some", "a bunch") and blank still read as today.
+KITCHEN_AMOUNT_REFUSED = "That amount doesn't look right."
+KITCHEN_AMOUNT_MAX_CHARS = 40
+_KITCHEN_NEGATIVE_RE = re.compile(r"^[-\u2212\u2013]\s*\d")
+_KITCHEN_NOT_A_NUMBER_RE = re.compile(r"^[-+\u2212]?\s*(?:inf(?:inity)?|nan)\b", re.IGNORECASE)
+
+
+class InvalidInventoryAmount(ValueError):
+    """An add/set amount that is no amount at all — its own type so a batch
+    answers it per entry and a route answers it as a 400."""
+
+
+KITCHEN_AMOUNT_CEILING = 1_000_000
+
+
+def _refuse_junk_amount(quantity: str, allow_zero: bool = False) -> None:
+    text = (quantity or "").strip()
+    if not text:
+        return
+    if _KITCHEN_NEGATIVE_RE.match(text) or _KITCHEN_NOT_A_NUMBER_RE.match(text):
+        raise InvalidInventoryAmount(KITCHEN_AMOUNT_REFUSED)
+    parsed = _quantities._parse_quantity(text)
+    # A ceiling no kitchen reaches (a million of anything): "99999999999999999999"
+    # or chat's 1e30 is a stuck key or a bad read, not a stock count
+    # (review catch, 2026-11-01).
+    if parsed and (not math.isfinite(parsed[0]) or parsed[0] < 0 or parsed[0] > KITCHEN_AMOUNT_CEILING
+                   or (parsed[0] == 0 and not allow_zero)):
+        raise InvalidInventoryAmount(KITCHEN_AMOUNT_REFUSED)
+
+
 def update_inventory(
     item: str,
     action: str,
@@ -1155,6 +1191,10 @@ def update_inventory(
     if not item:
         raise ValueError("Name the item to keep track of.")
     quantity = _written_quantity(quantity)
+    if action in ("add", "set"):
+        # A count of "0" is an emptied row (test_going_off_hunt_fixes);
+        # adding none of something is not.
+        _refuse_junk_amount(quantity, allow_zero=(action == "set"))
     if location is not None and location.strip():
         location = _normalised_location(location)
     else:
