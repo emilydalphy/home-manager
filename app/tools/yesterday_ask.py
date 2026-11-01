@@ -125,7 +125,9 @@ def yesterday_check(today: datetime.date | None = None) -> dict:
     (and the card draws nothing). `today` is for tests; the app passes
     nothing and gets the household's own today.
     """
-    today = today or _cooker.household_today()
+    # The kitchen's day (cooker.kitchen_day): a cook still under way after
+    # midnight is tonight's, not yesterday's to ask about, until 4am.
+    today = today or _cooker.kitchen_day()
     day = (today - datetime.timedelta(days=1)).isoformat()
     conn = get_conn()
     try:
@@ -148,7 +150,7 @@ def answer_yesterday(entry_id: int, answer: str, today: datetime.date | None = N
     """
     if answer not in ANSWERS:
         raise ValueError(f"The answer is 'had' or 'skipped', not {answer!r}.")
-    today = today or _cooker.household_today()
+    today = today or _cooker.kitchen_day()
     current = yesterday_check(today)
     row = next((m for m in current["meals"] if m["entry_id"] == entry_id), None)
     if row is None:

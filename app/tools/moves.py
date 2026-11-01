@@ -1712,7 +1712,9 @@ def today_moves(day: str | date | None = None, now: datetime | None = None) -> d
     function's default is the fix and app/main.py needed no change.
     """
     now = now or _household_now()
-    target = _as_date(day) if day is not None else now.date()
+    # A cook still on the stove after midnight keeps Today on its day until
+    # it is ticked done or 4am (cooker.kitchen_day, Emily 2026-10-31).
+    target = _as_date(day) if day is not None else _cooker.kitchen_day(now)
     view = _cooker.get_cooker_view()
     # Who owns what is a property of the PLAN, not of the day being asked
     # about, so today's moves and tomorrow's share one answer — the same

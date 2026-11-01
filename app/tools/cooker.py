@@ -1036,6 +1036,48 @@ def household_now(now_utc: datetime | None = None, conn=None) -> datetime:
     return now_utc.astimezone(zone).replace(tzinfo=None, microsecond=0)
 
 
+# Until when a cook that has started stays tonight's (Emily, 2026-10-31).
+STILL_COOKING_UNTIL_HOUR = 4
+
+
+def kitchen_day(now: datetime | None = None, conn=None) -> date:
+    """
+    The day the kitchen is on: the household's today — except between
+    midnight and 4am (STILL_COOKING_UNTIL_HOUR, household time) while a
+    meal of YESTERDAY's has its cook started and is not ticked done. Then
+    it is still yesterday (Emily, 2026-10-31, Loop Board "a dinner still
+    cooking at midnight vanishes"): chili started at 11:47pm and on the
+    stove at 12:01 is tonight's, not "leftovers from Friday" on Today and
+    "Chili. Did you have it?" on the morning card. Ticked done, or 4am,
+    whichever comes first, and the day turns over as usual.
+
+    `now` is the household-local naive datetime (household_now's shape),
+    read when not given. One rule, so Today (moves.today_moves) and the
+    morning card (yesterday_ask) never disagree about which day it is.
+    """
+    now = now or household_now(conn=conn)
+    today = now.date()
+    if now.hour >= STILL_COOKING_UNTIL_HOUR:
+        return today
+    yesterday = today - timedelta(days=1)
+    own = conn is None
+    if own:
+        conn = get_conn()
+    try:
+        cooking = conn.execute(
+            "SELECT 1 FROM meal_plan_entries mpe "
+            "LEFT JOIN weekly_plans w ON w.id = mpe.weekly_plan_id AND w.household_id = mpe.household_id "
+            "WHERE mpe.household_id = ? AND mpe.date = ? AND mpe.cook_started_at IS NOT NULL "
+            "AND mpe.cooked_status != 'done' AND mpe.slot_state = 'planned' "
+            "AND COALESCE(w.status, '') != 'retired' LIMIT 1",
+            (household_id(), yesterday.isoformat()),
+        ).fetchone()
+    finally:
+        if own:
+            conn.close()
+    return yesterday if cooking else today
+
+
 def household_today(now_utc: datetime | None = None, conn=None) -> date:
     """
     Today where the household lives, not where the container runs — the

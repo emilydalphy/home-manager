@@ -152,8 +152,11 @@ def test_an_empty_slot_is_not_asked_about():
 
 def test_no_argument_reads_the_households_clock_not_the_servers(monkeypatch):
     from app.tools import cooker
-    pinned = datetime.date(2031, 3, 4)
-    monkeypatch.setattr(cooker, "household_today", lambda *a, **kw: pinned)
+    # The household's clock through kitchen_day (2026-11-01: a cook still
+    # on the stove after midnight keeps its day until 4am), so it is
+    # household_now that is pinned.
+    pinned = datetime.datetime(2031, 3, 4, 12, 0)
+    monkeypatch.setattr(cooker, "household_now", lambda *a, **kw: pinned)
     assert tools.yesterday_check()["date"] == "2031-03-03"
 
 
