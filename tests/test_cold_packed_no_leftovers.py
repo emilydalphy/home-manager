@@ -27,7 +27,7 @@ from test_weekday_lunches import PAGE, _extract, _var
 pytestmark = pytest.mark.skipif(shutil.which("node") is None, reason="node runs the page's own functions")
 
 _FUNCS = ("isoLocal", "addDaysIso", "isoWeekday", "titleDay", "isWeekdayIso", "prevIso", "prepDayFor",
-          "leftoversOk", "lunchPrefill", "lunchLine", "allColdPacked", "lunchColdHold")
+          "leftoversOk", "lunchPrefill", "lunchLine", "coldPackers", "allColdPacked", "lunchColdHold")
 
 # Mon 5 – Fri 9 Oct 2026, the period Monday to Sunday.
 WEEK = ["2026-10-05", "2026-10-06", "2026-10-07", "2026-10-08", "2026-10-09"]
@@ -77,7 +77,8 @@ def test_who_counts_as_cold_packed():
     # A warm container ticked: any of them works, so leftovers can go.
     warm = {"needs": ["cold_packed", "thermos"]}
     assert _node(f"allColdPacked(['Maya'], {json.dumps({'Maya': warm})}, 'monday')") is False
-    # Everyone eating, not just someone: an adult at home eats leftovers.
+    # Everyone eating: an adult at home too is not everyone (since 2026-11-01
+    # the screen holds anyone's day — tests/test_cold_packed_anyone.py).
     assert _node(f"allColdPacked(['Maya', 'Sam'], {json.dumps({'Maya': cold})}, 'monday')") is False
     # A day-by-day answer wins on its day, even an empty one.
     byday = {"needs": ["cold_packed"], "days": {"friday": []}}
