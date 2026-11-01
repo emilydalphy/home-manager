@@ -252,7 +252,7 @@ def _restores(got, item_id, quantity, store):
     implied by the other two."""
     assert got["label"] == "Undo"
     assert got["calls"] == [
-        'POST /api/grocery-list/%d/update {"quantity":"%s"}' % (item_id, quantity),
+        'POST /api/grocery-list/%d/update {"quantity":"%s","restore":true}' % (item_id, quantity),
         'POST /api/grocery-list/%d/store {"store":"%s","remember":false}' % (item_id, store),
     ], got["calls"]
     assert not any("/remove" in c for c in got["calls"])

@@ -343,7 +343,7 @@ groAddItem().then(function () {
 });
 """)
     assert out == [
-        ["/api/grocery-list/3/update", {"quantity": "1 box"}],
+        ["/api/grocery-list/3/update", {"quantity": "1 box", "restore": True}],
         ["/api/grocery-list/3/store", {"store": "Costco", "remember": False}],
     ]
 

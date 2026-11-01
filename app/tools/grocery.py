@@ -1769,6 +1769,40 @@ def quantity_text(quantity):
     return str(quantity)
 
 
+# The amount box on a grocery row, and the add sheet's (Emily, 2026-10-31,
+# mixed): "x2" is how people write two, so it quietly reads as 2; a zero, a
+# negative or an amount past the add sheet's 40 characters is refused with
+# this sentence, as Settings refuses a typo. Before it, editing a row took a
+# 300-character amount, "-1" and "0" saved, and "x2" added twice read
+# "x2 ×2".
+AMOUNT_REFUSED = "That amount doesn't look right."
+AMOUNT_MAX_CHARS = 40
+_TIMES_RE = re.compile(r"(?:[x×]\s*(\d+(?:\.\d+)?)|(\d+(?:\.\d+)?)\s*[x×])", re.IGNORECASE)
+_NEGATIVE_RE = re.compile(r"^[-−–]\s*\d")
+
+
+def typed_amount(quantity) -> str:
+    """
+    A person's typed amount, tidied or refused (ValueError, AMOUNT_REFUSED):
+    the add sheet's and the row's box — never a recipe's or a model's,
+    which have their own readers. Blank stays blank (no amount said).
+    """
+    text = " ".join(str(quantity_text(quantity) or "").split())
+    if not text:
+        return ""
+    if len(text) > AMOUNT_MAX_CHARS:
+        raise ValueError(AMOUNT_REFUSED)
+    times = _TIMES_RE.fullmatch(text)
+    if times:
+        text = times.group(1) or times.group(2)
+    if _NEGATIVE_RE.match(text):
+        raise ValueError(AMOUNT_REFUSED)
+    parsed = _quantities._parse_quantity(text)
+    if parsed and parsed[0] <= 0:
+        raise ValueError(AMOUNT_REFUSED)
+    return text
+
+
 def add_grocery_item(
     item: str,
     quantity: str = "",
