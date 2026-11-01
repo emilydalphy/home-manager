@@ -247,7 +247,10 @@ class TestTheChipsCountByTheHouseholdsHorizon:
         assert "if (!weekStart) {" in load and "weekStart = period.start_date;" in load
         horizon = _extract("loadHorizon")
         assert "fetch('/api/week/planning-period')" in horizon
-        assert "horizon = (period.day_count && period.day_count > 0) ? Math.min(period.day_count, PERIOD_MAX_DAYS) : 7;" in horizon
+        # usual_day_count since 2026-11-01: the offer's day_count can be cut
+        # to the free days before an approved plan, which is not the horizon.
+        assert "var usual = period.usual_day_count || period.day_count;" in horizon
+        assert "horizon = (usual && usual > 0) ? Math.min(usual, PERIOD_MAX_DAYS) : 7;" in horizon
         assert "function resolveWeekStart(" not in PAGE
 
     # The Today / Tomorrow chips these tests drove went on 2026-09-22
