@@ -879,12 +879,15 @@ def recipes_for_serving(names) -> dict:
     if not wanted:
         return {}
     marks = ",".join("?" for _ in wanted)
-    with get_conn() as conn:
+    conn = get_conn()
+    try:
         rows = conn.execute(
             f"SELECT name, notes, instructions_json, cook_time_minutes FROM recipes "
             f"WHERE household_id = ? AND lower(name) IN ({marks})",
             (household_id(), *wanted),
         ).fetchall()
+    finally:
+        conn.close()
     out = {}
     for r in rows:
         try:
