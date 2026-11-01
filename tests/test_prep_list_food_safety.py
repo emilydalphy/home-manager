@@ -319,6 +319,24 @@ def test_a_cooked_dish_with_avocado_in_it_is_never_made_ahead_whole():
     assert any(i["state"] == "better_fresh" and "avocado" in i["title"].lower() for i in session["items"])
 
 
+def test_a_cooked_tomato_stew_is_made_ahead_but_an_avocado_wrap_is_not():
+    """Tomato blocks only a raw dish; a stew is the classic make-ahead."""
+    plan_id = _with_stir_fry()
+    _recipe("Beef Tomato Stew", [
+        {"item": "Beef chuck", "qty": "2 lb", "category": "meat/seafood"},
+        {"item": "Tomatoes", "qty": "4", "category": "produce"},
+    ], ["Brown the beef in a pot.", "Simmer the beef and tomatoes for an hour."], prep=15, cook=60)
+    _recipe("Chicken Avocado Wrap", [
+        {"item": "Chicken breast", "qty": "1 lb", "category": "meat/seafood"},
+        {"item": "Avocado", "qty": "1", "category": "produce"},
+        {"item": "Tortillas", "qty": "4", "category": "pantry"},
+    ], ["Cook the chicken in a pan.", "Slice the avocado and fill the wraps."], prep=10, cook=10)
+    _plan(plan_id, 2, "Beef Tomato Stew")
+    _plan(plan_id, 3, "Chicken Avocado Wrap")
+    dishes = [i["title"] for i in _session(plan_id)["items"] if i["kind"] == "whole_dish"]
+    assert dishes == ["Beef Tomato Stew"]
+
+
 def test_shrimp_filed_under_pantry_is_still_seafood():
     plan_id = _with_stir_fry()
     _recipe("Shrimp Noodles", [

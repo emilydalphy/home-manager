@@ -1115,7 +1115,15 @@ def derive_steps(prep_date: str, last_date: str, weekly_plan_id: int, plan_row, 
         # its cook time (review, 2026-11-01: a chicken avocado wrap with 10
         # minutes on the stove is still a wrap with avocado in it). Its
         # other steps are still offered above.
-        if (recipe and not offered and not found["dish_fresh"] and not found["fresh"]
+        # Tomato is the exception: a cooked stew or sauce with tomato is the
+        # classic make-ahead dish, so tomato blocks only a raw (no cook
+        # time) dish (coordinator, 2026-11-01).
+        fresh_families = {f for f, _d in found["fresh"]}
+        if not (recipe or {}).get("cook_time_minutes"):
+            blocking = fresh_families
+        else:
+            blocking = fresh_families - {"tomato"}
+        if (recipe and not offered and not found["dish_fresh"] and not blocking
                 and days_out <= KEEPS_WHOLE_DISH
                 and recipe.get("instructions")
                 and (recipe.get("prep_time_minutes") or recipe.get("cook_time_minutes"))
