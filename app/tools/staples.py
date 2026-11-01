@@ -104,7 +104,8 @@ MAX_CADENCE_DAYS = 120
 
 # "Not this trip" comes back in a week — the next trip for most households
 # — rather than waiting a whole cadence, because the person said "not
-# now", not "we have enough".
+# now", not "we have enough". A staple bought more often than weekly comes
+# back after its own rhythm instead (_skip).
 SKIP_DAYS = 7
 
 # Three skips in a row pause the staple (see pause_staple). Visible in the
@@ -503,6 +504,21 @@ def _due_words(next_due: str, today: date | None = None) -> str:
     return f"due in {round(delta / 7)} weeks"
 
 
+def _unattached_line_named(conn, item: str):
+    """The household's own still-to-buy list line for this name with no
+    staple on it (add_staple's take-over), or None. The newest wins."""
+    wanted = _grocery._merge_key(item)
+    if not wanted:
+        return None
+    rows = conn.execute(
+        "SELECT id, item, status, staple_id, source_weekly_plan_id FROM grocery_items "
+        "WHERE household_id = ? AND status IN ('needed', 'in_cart') AND staple_id IS NULL "
+        "AND source_weekly_plan_id IS NULL ORDER BY id DESC",
+        (household_id(),),
+    ).fetchall()
+    return next((r for r in rows if _grocery._merge_key(r["item"]) == wanted), None)
+
+
 def _row(conn, staple_id: int):
     return conn.execute(
         "SELECT * FROM staples WHERE id = ? AND household_id = ?", (staple_id, household_id())
@@ -786,6 +802,17 @@ def add_staple(
             # The line's own name, not whatever the caller typed: it is this
             # line the staple is made from.
             name = " ".join((line["item"] or "").strip().split()) or name
+        elif not running_low:
+            # Made a staple again by name while its old line is still to buy
+            # (remove_staple leaves the line, unattached, on purpose): that
+            # line is taken over and the staple is due now, as "Make it a
+            # staple" on the row does (Emily, 2026-10-31). Recording "last
+            # bought today, due in a week" beside an unbought line was the
+            # opposite of true. Only a household's own line with no staple —
+            # a week's line stays the plan's, and another staple's is its own
+            # — and only for a staple being made, not one already kept.
+            if _find_by_name(conn, name) is None:
+                line = _unattached_line_named(conn, name)
         # Still to buy: the line IS the "it's due" — the same as running low,
         # except the line already exists (see the spice branch below). A bought
         # line keeps the by-name reading: it really was just bought.
@@ -1050,7 +1077,11 @@ def _skip(conn, staple_id: int, source: str, drop_lines: bool = True) -> dict:
     r = _row(conn, staple_id)
     streak = (r["skip_streak"] or 0) + 1
     paused = 1 if streak >= SKIPS_BEFORE_PAUSE else 0
-    next_due = _iso(_today() + timedelta(days=SKIP_DAYS))
+    # The shorter of a week and the staple's own rhythm (Emily, 2026-10-31):
+    # "Not this trip" means sooner than "We have plenty", never later — milk
+    # every 4 days was asked about again in 7 after a skip but in 4 after
+    # "We have plenty".
+    next_due = _iso(_today() + timedelta(days=min(SKIP_DAYS, r["cadence_days"] or SKIP_DAYS)))
     conn.execute(
         "UPDATE staples SET next_due_at = ?, skip_streak = ?, paused = ?, "
         "updated_at = datetime('now') WHERE id = ? AND household_id = ?",
@@ -1267,7 +1298,7 @@ def decide_staple_line(item_id: int, decision: str) -> dict:
     """
     The two one-tap answers on a "probably running low" line on the Grocery
     screen: 'plenty' (we have enough — next due a whole cadence from today)
-    or 'skip' (not this trip — ask again in a week; three in a row pauses
+    or 'skip' (not this trip — ask again in a week, or sooner for a staple bought more often; three in a row pauses
     the staple). Either takes the line off the list. Keeping it needs no
     tap: it's on the list.
     """
