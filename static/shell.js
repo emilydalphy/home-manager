@@ -2708,7 +2708,7 @@
   // nothing and gets SAVED_PLAIN, which beats saying nothing twice.
   //
   // No full stop on the house line: it matches the add toast that shipped
-  // ahead of it ("Carrots was added", groAddedMessage). A toast that is a
+  // ahead of it ("Added Carrots", groAddedMessage). A toast that is a
   // real sentence rather than the pattern keeps its own punctuation.
   var SAVED_PLAIN = 'Saved';
   // A held thing is a whole sentence in the household's own words
@@ -2737,6 +2737,21 @@
     var name = savedName(thing);
     if (!name) return SAVED_PLAIN;
     return 'Marked ' + name + ' as ' + how;
+  }
+  // "Added Lemons" — the add toast leads with the verb (Emily,
+  // 2026-10-31: "Lemons was added" read wrong, and guessing a plural from
+  // a grocery name gets "Swiss chard" and "hummus" wrong), so the name
+  // needs no was/were to agree with — markedLine's shape. `where` rides
+  // after the name ("Added Milk to your regulars"). The name is kept as
+  // it is on the list, never lower-cased: "Added Kerrygold butter".
+  function addedLine(thing, where) {
+    var name = savedName(thing);
+    if (!name) return where ? 'Added ' + where : 'Added';
+    return 'Added ' + name + (where ? ' ' + where : '');
+  }
+  // "Added 3 things" — the count, the same way round.
+  function addedCount(n, where) {
+    return 'Added ' + n + (n === 1 ? ' thing' : ' things') + (where ? ' ' + where : '');
   }
   // "2 things were moved" — more than one thing stays plain and
   // grammatical rather than listing names the toast has no room for.
@@ -7135,10 +7150,16 @@
       '<div class="dock-links"><button type="button" class="dock-link" data-gro="bs-next">Keep them all on the list</button></div>';
   }
 
-  // "Coffee was added" / "Coffee and Milk were added" / "3 things were
-  // added" — the house toast (§2b S10), naming the things while there is
-  // room to.
+  // "Coffee was moved…" / "Coffee and Milk were moved…" / "3 things were
+  // moved…" — the house toast (§2b S10), naming the things while there is
+  // room to. An add leads with the verb instead — "Added Coffee", "Added
+  // Coffee and Milk", "Added 3 things" (addedLine, 2026-10-31).
   function bsNamesSaid(names, verbed) {
+    if (verbed === 'added') {
+      if (names.length === 1) return addedLine(names[0]);
+      if (names.length === 2) return 'Added ' + savedName(names[0]) + ' and ' + savedName(names[1]);
+      return addedCount(names.length);
+    }
     if (names.length === 1) return savedLine(names[0], verbed);
     if (names.length === 2) return savedName(names[0]) + ' and ' + savedName(names[1]) + ' were ' + verbed;
     return savedCount(names.length, verbed);
@@ -9393,7 +9414,7 @@
   // and then the server puts the line under the item's usual store if
   // it remembers one, else the loose pile). The sheet closes on the tap,
   // the list comes back with the row in its store's card, and the toast
-  // names the thing that just happened — "Carrots was added" — with
+  // names the thing that just happened — "Added Carrots" — with
   // Undo (groAddedToast; Emily, 2026-09-23: the sheet used to announce
   // the remembering itself with a celadon note under the chips — "I'll
   // remember Costco for it" — which is gone, since the row landing in
@@ -9505,11 +9526,12 @@
   // wording for the line (`r.item`), never re-derived from what was
   // typed: for a merge that's the line's existing name, not the typed
   // one, which is the name that is actually now on the list (Emily,
-  // 2026-09-23 — "X was added", nothing else; Undo takes its place).
+  // 2026-09-23 — the add, nothing else; Undo takes its place). "Added
+  // Lemons", verb first, so no plural is guessed (Emily, 2026-10-31).
   function groAddedMessage(name) {
-    return (name || 'It') + ' was added';
+    return name ? 'Added ' + name : 'Added to the list';
   }
-  // "X was added · Undo": a new line is removed; a line the add merged
+  // "Added X · Undo": a new line is removed; a line the add merged
   // into gets its old amount and store back — the same restore "Put
   // back" always did here, just under the add path's own wording now.
   //
@@ -9728,13 +9750,13 @@
       var result = await res.json().catch(function () { return {}; });
       groScanCloseSheet();
       // Same wording as a single typed add when there's only one to name
-      // ("Carrots was added"); more than one stays plain and grammatical
-      // rather than counting "items" — "2 things were added".
+      // ("Added Carrots"); more than one is counted, the same way round —
+      // "Added 2 things" (2026-10-31: no was/were to guess).
       var addedNames = result.added || [];
       var mergedCount = (result.merged_with_existing || []).length;
       var parts = [];
       if (addedNames.length === 1) parts.push(groAddedMessage(addedNames[0]));
-      else if (addedNames.length > 1) parts.push(addedNames.length + ' things were added');
+      else if (addedNames.length > 1) parts.push('Added ' + addedNames.length + ' things');
       if (mergedCount) parts.push(groPlural(mergedCount, 'thing', 'things') + ' combined with what was already on the list');
       showToast(parts.length ? parts.join(', ') : 'Added to the list');
       await loadGrocery();
@@ -10170,7 +10192,7 @@
           if (!already) regs.choices.push({ name: shown, staple_id: r && r.id, ticked: true, reason: '' });
           groceryState.bsAddOpen = false;
           renderGrocery();
-          toastSaved(savedLine(shown, 'added to your regulars'));
+          toastSaved(addedLine(shown, 'to your regulars'));
         }).catch(function () {
           el.disabled = false;
           showToast("Couldn't add that — try again.");
@@ -11877,7 +11899,7 @@
         // "Almost gone" on food a planned meal needs went on the list —
         // the one chip that changes something off this screen says so.
         if (res.added_to_list) {
-          homeToastWithUndo(homeItemName(row.item) + ' was added to the list.', '/api/whats-home/undo', res.undo);
+          homeToastWithUndo(addedLine(homeItemName(row.item), 'to the list') + '.', '/api/whats-home/undo', res.undo);
           refreshGroceryPanel();
         }
       } else {
@@ -13262,7 +13284,7 @@
     wwkRegularsDo(function () {
       wwkState.regulars = (wwkState.regulars || []).concat([{ id: 'new', item: text, section: 'other', paused: false, cadence_words: '' }]);
     }, function () { return wwkPost('/api/staples/add', { item: text }); },
-      savedLine(text, 'added to your regulars'));
+      addedLine(text, 'to your regulars'));
   }
 
   function wwkSection(key) {
@@ -23231,7 +23253,7 @@
       swapState = { date: st.date, slot: st.slot, avoid: [], message: said };
       renderMealsStep(panel);
       var replaced = (st.side && st.side.toLowerCase() !== String(out.name || '').toLowerCase()) ? st.side : '';
-      toastSaved(savedLine(out.name, 'added'), {
+      toastSaved(addedLine(out.name), {
         label: 'Undo',
         onClick: function () { return runMealAddUndo(panel, st, out.name, replaced); }
       }, out.note ? 9000 : SWAP_UNDO_MS);
@@ -33303,7 +33325,7 @@
   // Back from the link or cookbook sheet, saved or not.
   function recipesAfterImport(saved) {
     if (saved && saved.recipe_id) {
-      toastSaved(savedLine(saved.name, 'added'));
+      toastSaved(addedLine(saved.name));
       openRecipesSheet({ id: saved.recipe_id });
     } else {
       openRecipesSheet();
