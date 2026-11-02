@@ -311,6 +311,30 @@ def _never(name: str) -> bool:
     return _ends_with_any(_head(name), _keys("not"))
 
 
+# Tap water (Emily, 2026-11-01): "water should never be asked if there
+# are leftovers of it or something to be tracked, since everyone has
+# access to it." Plain water and ice, however a recipe says them — "cold
+# water", "2 cups boiling water", "water, divided", "ice cubes" — and
+# never a thing bought as a drink or an ingredient of its own (coconut,
+# rose, tonic, sparkling water; water chestnuts; watercress).
+_WATER_WORDS = {"water", "ice"}
+_WATER_ONLY_WITH = {
+    "cold", "cool", "warm", "hot", "boiling", "lukewarm", "tepid", "iced", "chilled",
+    "filtered", "tap", "plain", "fresh", "salted", "pasta", "cooking", "reserved", "starchy", "room", "temperature", "very", "cube", "crushed",
+    "of", "a", "about", "cup", "tablespoon", "tbsp", "teaspoon", "tsp", "ml", "l",
+    "liter", "litre", "splash", "dash", "little", "more", "extra", "as", "needed",
+}
+
+
+def is_tap_water(name: str) -> bool:
+    """Plain water or ice: never on the list from a plan, never a kitchen
+    row, never "going off" or "still have it?"."""
+    words = _head(name)
+    if not words or not set(words) & _WATER_WORDS:
+        return False
+    return all(w in _WATER_WORDS or w in _WATER_ONLY_WITH or w.isdigit() for w in words)
+
+
 def is_sauce(name: str) -> bool:
     """A sauce, condiment, vinegar or paste the cupboard is assumed to have."""
     words = _head(name)

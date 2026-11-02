@@ -6131,6 +6131,10 @@ def _add_recipe_ingredients_for_entries(
         if not (ing.get("item") or "").strip():
             logger.debug("Skipping a blank ingredient name for entries %s: %r", entry_ids, ing)
             continue
+        # Tap water is never bought (pantry.is_tap_water, Emily 2026-11-01).
+        from . import pantry as _pantry  # lazy: pantry is imported mid-cycle
+        if _pantry.is_tap_water(ing["item"]):
+            continue
         # The meals this ingredient is bought for: every contributing one
         # but a brought-over meal whose own line was bought last week.
         contributing_ids = [
