@@ -742,12 +742,9 @@ def test_the_prep_cut_route_says_why_it_refused(signed_in):
     assert _prep_cut_rows(plan_id) == []
 
 
-def test_the_cook_screen_toasts_the_refusal_in_its_own_words():
-    """The Cook screen's prep-cut save shows the server's sentence, not a
-    generic "try again" that would just fail the same way."""
+def test_cook_post_keeps_the_status_so_a_refusal_can_speak_for_itself():
+    """cookPost hands its callers the response status, so a 400's own
+    sentence can be shown instead of a generic "try again"."""
     src = open("static/shell.js", encoding="utf-8").read()
-    start = src.index("async function cookAddPrepCuts(el)")
-    body = src[start:src.index("\n  }\n", start)]
-    assert "showToast(err && err.status === 400 && err.detail ? err.detail : 'That didn’t save — try again.')" in body
     post = src[src.index("async function cookPost(url, body)"):]
     assert "err.status = res.status;" in post[:post.index("\n  }\n")]

@@ -412,7 +412,7 @@ def test_sections_come_in_the_set_order_and_only_when_they_hold_something():
 
 def test_the_screen_folds_sections_and_carries_the_made_on_the_night_card():
     body = SHELL_JS[SHELL_JS.index("function cookSessionHtml(data, session, meals)"):]
-    body = body[:body.index('// ---------- "Prep-cut on Sunday?" ----------')]
+    body = body[:body.index("// The overview's \"Prep schedule\" two-up rail")]
     assert 'data-cook="prep-section"' in body and "aria-expanded" in body
     assert "'Take off the list: '" in body
     assert 'data-cook="prep-add"' in body and ">Add it</button>" in body

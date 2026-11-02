@@ -236,7 +236,9 @@ def test_cook_mode_keeps_its_apricot_and_its_end_state():
     _assert_in("function cookDockCookedHtml(", SHELL_JS, "the finish", "shell.js")
     _assert_in("function cookFocusHtml(", SHELL_JS, "the focused cook screen", "shell.js")
     assert "cookAheadHtml(meal)" not in SHELL_JS, "the cook-ahead picker is back on the cook screen"
-    _assert_in("cookPrepCutHtml(data, meal)", SHELL_JS, "the prep-cut offer", "shell.js")
+    # The prep-cut offer came out 2026-11-01 (the prep schedule plans the cuts).
+    assert "cookPrepCutHtml" not in SHELL_JS, "the prep-cut offer is back on the recipe screen"
+    assert "Tick what you’d rather cut then" not in SHELL_JS
 
 
 def test_no_call_site_still_asks_for_the_meals_cook_state():

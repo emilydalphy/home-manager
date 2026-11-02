@@ -25345,17 +25345,6 @@
     pendingScrollTop: false,    // this render is a screen change, not a re-paint — reset scroll instead of preserving it
     ticks: null,                // the ticked ingredients and steps for the plan named by ticksFor — see cookReadTicks
     serves: {},                 // mealKey -> { servings, ingredients, unscaled_items, ... } — the cook's own serving count. Stored beside the ticks and read back with them (see cookReadTicks), so a load, a tab switch and a reload all leave it standing
-    // entry_id -> { item: true } — which prep cuts the cook ticked for a meal.
-    // Declared HERE rather than made on first use, because both readers
-    // (cookPrepCutPicks and cookAddPrepCuts) index it directly and neither
-    // can create it. It was missing until 2026-09-25: cookState.prepCutPicks
-    // was undefined, so the first read threw a TypeError out of
-    // cookPrepCutHtml, up through cookRecipeHtml into renderCook, and took
-    // the whole Cook screen down — seven times in one day on a real
-    // household, from three entry points. Page-view state on purpose, like
-    // voiceStepCursor: cookAddPrepCuts clears the entry once its Save
-    // lands, so there is nothing worth carrying across a load.
-    prepCutPicks: {},
     servesSeq: 0,               // sequence token, so a superseded /scale reply loses instead of racing
     ticksFor: null,             // which weekly_plan_id `ticks` was read for
     voiceSession: null,
@@ -26197,81 +26186,6 @@
     }
   }
 
-  // ---------- "Prep-cut on Sunday?" ----------
-  // The one thing a prep day holds that nothing else produced: the raw
-  // components — the salad ingredients for the bowls. Deliberately
-  // household-driven and deterministic (no model guessing what "raw" is):
-  // it offers this meal's produce ingredients, and the household ticks
-  // what they actually want to cut. Lives at the foot of the recipe screen
-  // (cookRecipeHtml, under the recipe itself since 2026-09-18) because
-  // that is where the ingredients are read off, and because the overview
-  // stays quiet.
-  function cookPrepCutOptions(data, meal) {
-    if (!meal || meal.is_leftovers) return [];
-    var sessions = (data && data.prep_sessions) || [];
-    // Only a prep day that comes before this meal can prep for it.
-    var before = sessions.filter(function (s) { return !meal.date || s.date <= meal.date; });
-    if (!before.length) return [];
-    var entryIds = meal.entry_ids || [meal.entry_id];
-    var already = {};
-    ((data && data.prep_tasks) || []).forEach(function (t) {
-      if (t.task_type === 'prep_cut' && entryIds.indexOf(t.meal_plan_entry_id) !== -1) {
-        already[(t.description || '').trim().toLowerCase()] = true;
-      }
-    });
-    // Produce only, read off the ingredient's own category (the same
-    // field plan_quality's fresh-ingredient rule reads). A recipe whose
-    // ingredients carry no category offers nothing rather than having the
-    // screen guess which of them are raw — an honest empty, not a
-    // degraded one.
-    return (meal.ingredients || [])
-      .filter(function (i) { return (i.category || '').trim().toLowerCase() === 'produce' && (i.item || '').trim(); })
-      .map(function (i) { return { item: (i.item || '').trim(), description: cookPrepCutDescription(i.item) }; })
-      .filter(function (o) { return !already[o.description.toLowerCase()]; });
-  }
-
-  // The words the task is stored and read back in — "Cut up romaine", the
-  // way a person would say it, not "prep_cut: romaine".
-  function cookPrepCutDescription(item) {
-    return 'Cut up ' + String(item || '').trim();
-  }
-
-  function cookPrepCutPicks(meal) {
-    var picks = cookState.prepCutPicks[meal.entry_id];
-    if (!picks) picks = cookState.prepCutPicks[meal.entry_id] = {};
-    return picks;
-  }
-
-  function cookPrepCutHtml(data, meal) {
-    var options = cookPrepCutOptions(data, meal);
-    if (!options.length) return '';
-    var sessions = (data.prep_sessions || []).filter(function (s) { return !meal.date || s.date <= meal.date; });
-    // The nearest prep day before the meal — the one a household would
-    // actually mean by "prep it ahead".
-    var session = sessions[sessions.length - 1];
-    var picks = cookPrepCutPicks(meal);
-    var ticked = options.filter(function (o) { return !!picks[o.item]; });
-    return '<div class="cook-offer">' +
-      '<p class="cook-offer-ask">Prep-cut on ' + escapeHtml(session.weekday) + '? Tick what you’d rather cut then.</p>' +
-      '<div class="cook-offer-chips">' +
-        options.map(function (o) {
-          var on = !!picks[o.item];
-          return '<button type="button" class="cook-offer-chip' + (on ? ' is-on' : '') + '" ' +
-            'data-cook="prep-cut-pick" data-entry-id="' + meal.entry_id + '" ' +
-            'data-item="' + escapeHtml(o.item) + '" aria-pressed="' + on + '">' +
-            escapeHtml(o.item) + '</button>';
-        }).join('') +
-      '</div>' +
-      (ticked.length
-        ? '<div class="cook-offer-foot">' +
-            '<span class="cook-offer-count">' + ticked.length + ' to cut on ' + escapeHtml(session.weekday) + '</span>' +
-            '<button type="button" class="cook-offer-go" data-cook="prep-cut-go" ' +
-              'data-entry-id="' + meal.entry_id + '" data-date="' + escapeHtml(session.date) + '">Add to that day</button>' +
-          '</div>'
-        : '') +
-    '</div>';
-  }
-
   // The overview's "Prep schedule" two-up rail (cookPrepHtml) came out
   // with the overview on 2026-09-08. Nothing it showed is lost: a fridge
   // move or a prep task due today is a line on Today's timeline
@@ -26434,39 +26348,6 @@
     cookState.sessionDate = dateStr;
     cookState.pendingScrollTop = true;
     renderCook();
-  }
-
-  // Hand this meal's ticked raw components to the prep day. One call per
-  // component (the route takes one description and the meals it feeds);
-  // the last response is the refreshed view every /api/cooker/* write
-  // returns, so the session's count updates without a reload.
-  async function cookAddPrepCuts(el) {
-    var entryId = parseInt(el.getAttribute('data-entry-id'), 10);
-    var prepDate = el.getAttribute('data-date');
-    var picks = cookState.prepCutPicks[entryId] || {};
-    var items = Object.keys(picks).filter(function (k) { return picks[k]; });
-    if (!items.length) return;
-    el.disabled = true;
-    try {
-      var view = null;
-      for (var i = 0; i < items.length; i++) {
-        view = await cookPost('/api/prep-cut', {
-          prep_date: prepDate,
-          description: cookPrepCutDescription(items[i]),
-          entry_ids: [entryId],
-          weekly_plan_id: cookState.data ? cookState.data.weekly_plan_id : null
-        });
-      }
-      cookState.prepCutPicks[entryId] = {};
-      if (view) renderCookFrom(view);
-      showToast('Added to your ' + dayName(prepDate, { weekday: 'long' }) + ' prep.');
-    } catch (err) {
-      el.disabled = false;
-      // A refusal (400) carries its own sentence (add_prep_cut: prep can't
-      // land after the meal it feeds) — say that, not "try again". A 500's
-      // detail is an exception string, never shown.
-      showToast(err && err.status === 400 && err.detail ? err.detail : 'That didn’t save — try again.');
-    }
   }
 
   // Prep for just this meal: a defrost task carries the entry it feeds
@@ -27092,8 +26973,7 @@
       // with "Fill in this recipe" (recipeStepsHtml's live empty state)
       // rather than hiding that behind the Steps tab.
       (meal.has_full_recipe && !(meal.instructions || []).length ? recipeStepsHtml(meal, true) : '') +
-      cookFocusPrepHtml(cookFocusPrepTasks(data, meal)) +
-      cookPrepCutHtml(data, meal);
+      cookFocusPrepHtml(cookFocusPrepTasks(data, meal));
   }
 
   // A plain list, grouped as the recipe groups it (an ingredient's `group`
@@ -27268,8 +27148,9 @@
   // section above): the crumb with the ⋯ menu beside it, the dish, "who
   // it's for · serves N", the four tabs and the open tab's body, then the
   // dock. The prep rows (cookFocusPrepHtml — the thaw the root's get-ready
-  // row opens this screen to tick) and the prep-cut offer (cookPrepCutHtml)
-  // ride on the Overview, where they always sat under the recipe.
+  // row opens this screen to tick) ride on the Overview, under the recipe.
+  // The prep-cut offer that sat beside them came out on 2026-11-01: the
+  // prep schedule plans those cuts itself now.
   function cookRecipeHtml(data, meal, idx) {
     var tab = cookState.recipeTab || 'overview';
     var extra = recipeExtraFor(meal);
@@ -27552,14 +27433,6 @@
     if (what === 'prep-off') return cookPrepListMark(el, 'off');
     if (what === 'prep-add') return cookPrepListMark(el, 'add');
     if (what === 'prep-tick') return cookPrepListMark(el, el.getAttribute('data-next') === 'undone' ? 'undone' : 'done');
-    if (what === 'prep-cut-pick') {
-      var cutPicks = cookPrepCutPicks({ entry_id: el.getAttribute('data-entry-id') });
-      var cutItem = el.getAttribute('data-item');
-      if (cutPicks[cutItem]) delete cutPicks[cutItem]; else cutPicks[cutItem] = true;
-      renderCook();
-      return;
-    }
-    if (what === 'prep-cut-go') return cookAddPrepCuts(el);
     if (what === 'goto-plan') return activateTab('week', true);
     if (what === 'start-tonight') {
       // The root's dock: tonight's cook, opened on its recipe like every
