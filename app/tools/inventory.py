@@ -251,7 +251,7 @@ def _freezer_door_date(row: dict, to_location: str) -> str | None:
     return None
 
 
-def set_inventory_location(item_id: int, location: str) -> dict:
+def set_inventory_location(item_id: int, location: str, resync: bool = True) -> dict:
     """
     Move one inventory item to a different storage location (fridge/freezer/pantry) — re-groups it immediately.
 
@@ -294,6 +294,26 @@ def set_inventory_location(item_id: int, location: str) -> dict:
                      (item_id, household_id()))
     conn.commit()
     conn.close()
+    if resync and (location == "freezer") != (was == "freezer"):
+        # Across the freezer door, the live plans re-read their fridge
+        # moves (hunt 2026-11-02). Freeze it on the chicken Thursday's
+        # dinner needs booked no "Move the Chicken Thighs to the fridge"
+        # — it sat frozen until some unrelated plan change re-ran the
+        # sync — and Move to fridge left that move pending on Today for
+        # food already out. The gone doors have done this since
+        # 2026-10-28 (resync_live_plan_thaws); a move is the same news.
+        # Opens its own connections, so after the close above. `resync`
+        # False is Shop's "Yes, freezing it" / Put back
+        # (defrost._freeze_ticked_pack): that door books and removes its
+        # own move by hand, and a sync there also booked moves for nights
+        # the line fed that have already gone.
+        # First the moves this hand move settles: out, a pending move for
+        # this pack is the household's own doing and is marked done (a move
+        # already ticked stays ticked, review 2026-11-02); back in, only
+        # the ones marked here go back to pending (defrost.settle_moves_for_pack).
+        from . import defrost as _defrost
+        _defrost.settle_moves_for_pack(item_id, out_of_freezer=(was == "freezer"))
+        _defrost.resync_live_plan_thaws()
     result = {"item_id": item_id, "location": location}
     if new_date:
         result["expiration_date"] = new_date
@@ -304,7 +324,7 @@ class CannotFreeze(ValueError):
     """freeze_item on a row that is already in the freezer."""
 
 
-def freeze_item(item_id: int) -> dict:
+def freeze_item(item_id: int, resync: bool = True) -> dict:
     """
     Move one fridge/pantry row to the Freezer, dated today ("frozen today").
 
@@ -329,7 +349,7 @@ def freeze_item(item_id: int) -> dict:
     before = dict(row)
     if _quantities._display_location(before).strip().lower() == "freezer":
         raise CannotFreeze(f"{before['item']} is already in the freezer.")
-    moved = set_inventory_location(item_id, "freezer")
+    moved = set_inventory_location(item_id, "freezer", resync=resync)
     undo_record = {
         "location": before["location"] or "",
         "expiration_date": before["expiration_date"],
@@ -359,7 +379,7 @@ def freeze_item(item_id: int) -> dict:
     }
 
 
-def unfreeze_item(undo: dict) -> dict:
+def unfreeze_item(undo: dict, resync: bool = True) -> dict:
     """
     Undo a freeze_item: put the row back on its shelf with the date it had.
     Only while it is still in the freezer — a row that has moved since, or
@@ -394,6 +414,11 @@ def unfreeze_item(undo: dict) -> dict:
             "updated_at = datetime('now') WHERE id = ? AND household_id = ?",
             (back_to, kept.get("expiration_date"), kept.get("frozen_on"), item_id, household_id()),
         )
+    # Out of the freezer again: the move Freeze it booked goes (see
+    # set_inventory_location, and `resync` there).
+    if resync:
+        from . import defrost as _defrost
+        _defrost.resync_live_plan_thaws()
     return {"item_id": item_id, "item": row["item"], "undone": True, "location": back_to}
 
 

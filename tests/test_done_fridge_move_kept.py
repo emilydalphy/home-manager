@@ -116,16 +116,24 @@ def test_the_kept_done_row_is_not_a_to_do_anywhere(week_with_skewers):
     assert [m["done"] for m in built if m["kind"] == "fridge"] == [True]
 
 
-def test_a_done_move_whose_item_still_exists_is_still_swept(week_with_skewers):
-    """Narrow on purpose: only EATEN food (freezer row gone) keeps the
-    record. A done move that lost its candidate some other way — here the
-    item re-filed out of the freezer — goes as before, the same rule the
+def test_a_done_move_whose_dish_changed_is_still_swept(week_with_skewers):
+    """Narrow on purpose: a done move that lost its candidate because the
+    night's dish changed in place goes as before, the same rule the
     own-portion sweep keeps, so no thaw note is left on a night it no
-    longer describes."""
-    plan_id, _entry_id, task = week_with_skewers
+    longer describes.
+
+    Until 2026-11-02 this test re-filed the item OUT of the freezer instead.
+    That is now the household recording the move it ticked (Move to fridge
+    on Kitchen after the tick), and the tick stays — review of
+    overnight/hunt-inventory-freezer-1102b; see
+    test_freezer_door_resettles_moves.py."""
+    plan_id, entry_id, task = week_with_skewers
     tools.check_off_prep_step(task["id"], "done")
+    tools.add_recipe("Bean Chili", ingredients=[{"item": "Black beans", "qty": "1 can"}],
+                     prep_time_minutes=10, cook_time_minutes=30)
     conn = get_conn()
-    conn.execute("UPDATE inventory_items SET location = 'fridge' WHERE id = ?", (task["inventory_item_id"],))
+    chili = conn.execute("SELECT id FROM recipes WHERE name = 'Bean Chili'").fetchone()["id"]
+    conn.execute("UPDATE meal_plan_entries SET recipe_id = ? WHERE id = ?", (chili, entry_id))
     conn.commit()
     conn.close()
 
