@@ -12906,6 +12906,7 @@
   // A prep day this sheet turns ON starts at 120 minutes; a day that stays
   // on keeps the length it has (wwkPrepPayload).
   var WWK_PREP_MINUTES = 120;
+  var WWK_PREP_LENGTHS = [60, 120, 180, 240];
   // The grocery shop day (2026-10-04). Same seven days as the prep row,
   // listed separately because these two rows are different questions and
   // a relabelling of one must not quietly move the other.
@@ -14982,9 +14983,20 @@
     // already says what this row is.
     var html = '<div class="wwk-chips">' +
       WWK_PREP_DAYS.map(function (o) { return wwkChip(o.label, 'data-wwk="prep-day" data-value="' + o.key + '"', keys.indexOf(o.key) !== -1 ? 'on' : ''); }).join('') + '</div>';
-    // How long each day runs is asked in onboarding and on Same as last
-    // week?; this note says what is set, in the same words.
-    if (keys.length) html += wwkNote(wwkPrepLengthNote(days));
+    // How long? (Emily, 2026-11-01): the usual length of each prep day, the
+    // same four chips onboarding's Cook ahead screen has; one row per day
+    // with two or more. The note under says what is set.
+    if (keys.length) {
+      days.forEach(function (d) {
+        var name = d.weekday.charAt(0).toUpperCase() + d.weekday.slice(1);
+        var on = WWK_PREP_LENGTHS.filter(function (m) { return m >= (d.minutes || 120); })[0] || 240;
+        html += wwkLead(days.length === 1 ? 'How long?' : 'How long on ' + name + '?') + '<div class="wwk-chips">' +
+          WWK_PREP_LENGTHS.map(function (m) {
+            return wwkChip('Up to ' + (m / 60) + ' hr', 'data-wwk="prep-minutes" data-day="' + d.weekday + '" data-value="' + m + '"', on === m ? 'on' : '');
+          }).join('') + '</div>';
+      });
+      html += wwkNote(wwkPrepLengthNote(days));
+    }
     // Breakfast fresh or made ahead (Emily, 2026-10-26): only a household
     // that preps has the choice, so it sits under the prep days.
     // app/tools/breakfast_prep.py has the rule it sets.
@@ -15017,6 +15029,19 @@
       return d.weekday.charAt(0).toUpperCase() + d.weekday.slice(1) + ', ' + uwPrepHours(d.minutes);
     });
     return (parts.length <= 2 ? parts.join(' and ') : parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1]) + '.';
+  }
+
+  // A prep day's usual length: the standing answer, the whole list sent
+  // again with that day's minutes changed.
+  function wwkSetPrepMinutes(day, minutes) {
+    var days = ((wwkMem().rhythm || {}).prep_days) || [];
+    if (!days.length || WWK_PREP_LENGTHS.indexOf(minutes) === -1) return;
+    var next = days.map(function (d) { return { weekday: d.weekday, minutes: d.weekday === day ? minutes : (d.minutes || WWK_PREP_MINUTES) }; });
+    return wwkSaveRhythm('prep-days', { prep_days: next }, function () {
+      var r = wwkMem().rhythm || (wwkMem().rhythm = {});
+      r.prep_days = next;
+      r.prep_days_summary = wwkPrepSummary(next);
+    });
   }
 
   function wwkTogglePrepDay(key) {
@@ -15086,10 +15111,12 @@
   function wwkPrepSummary(days) {
     if (!days.length) return '';
     var names = days.map(function (d) { return d.weekday.charAt(0).toUpperCase() + d.weekday.slice(1); });
-    var minutes = (days.filter(function (d) { return d.minutes; })[0] || {}).minutes;
     // rhythm.prep_minutes_label's words, as onboarding and the Prep day row say them.
-    var length = !minutes ? '' : ' (' + uwPrepHours(minutes) + ')';
-    return 'Preps on ' + names.join(' and ') + length + '.';
+    var words = days.map(function (d) { return d.minutes ? uwPrepHours(d.minutes) : ''; });
+    if (days.length > 1 && words[0] && words.every(function (w) { return w === words[0]; })) {
+      return 'Preps on ' + names.join(' and ') + ' (' + words[0] + ').';
+    }
+    return 'Preps on ' + names.map(function (n, i) { return n + (words[i] ? ' (' + words[i] + ')' : ''); }).join(' and ') + '.';
   }
 
   // ---------- How you eat ----------
@@ -15947,6 +15974,7 @@
         case 'cooking-who': return wwkSetCookingWho(value);
         case 'clock': return wwkSetClock(value);
         case 'prep-day': return wwkTogglePrepDay(value);
+        case 'prep-minutes': return wwkSetPrepMinutes(t.getAttribute('data-day') || '', parseInt(value, 10));
         case 'shop-day': return wwkSetShopDay(value);
         case 'shop-topup': return wwkSetTopUpDay(value);
         case 'shop-reminder': return wwkToggleShopReminder();
