@@ -135,6 +135,10 @@ _NAME_PREP_AFTER_COMMA = {
     "packed", "lightly packed", "well shaken", "plus more", "to taste",
     "for serving", "for garnish", "optional", "room temperature",
     "at room temperature",
+    # "lemon, juiced" / "limes, zested" (the link importer's reading of
+    # "Juice of 1 lemon", 2026-11-02): the lemon is what is bought, so it is
+    # one line with another dinner's lemons.
+    "juiced", "zested",
 }
 
 
