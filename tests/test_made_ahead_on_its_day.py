@@ -127,11 +127,13 @@ def test_a_day_says_made_sunday_and_what_to_do_this_morning():
         "console.log(JSON.stringify(planWeekHtml({ status: 'approved', days: DAYS }, DAYS)));"
     )
     breakfast = out.split('data-plan-row="breakfast"', 1)[1].split("</button>", 1)[0]
-    assert '<span class="wk-row-meta">Made Tuesday</span>' in breakfast
+    # The status word carries its icon since I1 (2026-11-01): a check.
+    assert '<span class="wk-row-meta has-icon"><span class="status-icon" aria-hidden="true">' in breakfast
+    assert '</span>Made Tuesday</span>' in breakfast
     assert '<span class="wk-row-meta wk-qrow-step">In the morning: heat until hot all the way through.</span>' in breakfast
     # A leftovers night still says just "Leftovers" (S11), with its step.
     lunch = out.split('data-plan-row="lunch"', 1)[1].split("</button>", 1)[0]
-    assert '<span class="wk-row-meta">Leftovers</span>' in lunch
+    assert '</span>Leftovers</span>' in lunch and 'wk-row-meta has-icon' in lunch
     assert "At lunch: heat until hot" in lunch
     assert "Tuesday" not in lunch
     # The cook's own day says nothing about serving.
@@ -163,11 +165,15 @@ def test_the_sheet_heads_with_the_step_and_its_recipe_goes_to_that_cook():
     made = out["made"]
     assert '<span class="quiet-section-head">In the morning</span>' in made
     assert "Heat until hot all the way through." in made
-    assert 'data-plan-opt="source">See Tuesday’s recipe</button>' in made
+    # The recipe is the sheet's apricot pill since M2 (2026-11-01): the
+    # book, the words, the arrow.
+    assert 'data-plan-opt="source"' in made
+    assert '<span class="plan-recipe-label">See Tuesday’s recipe</span>' in made
     assert 'data-plan-opt="recipe"' not in made
     assert made.index("In the morning") < made.index("See Tuesday")
     # An ordinary cook keeps "See the recipe" and no serving section.
-    assert 'data-plan-opt="recipe">See the recipe' in out["cook"]
+    assert 'data-plan-opt="recipe"' in out["cook"]
+    assert '<span class="plan-recipe-label">See the recipe</span>' in out["cook"]
     assert "quiet-section" not in out["cook"]
 
 

@@ -5610,7 +5610,13 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 .gro-aisle {
   padding: 12px 0 2px;
   border-top: 1.5px solid var(--hairline);
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
+/* The aisle icon (I2, 2026-11-01): 16px --apricot-label before the name. */
+.gro-aisle-icon { display: flex; flex: 0 0 auto; color: var(--apricot-label); }
+.gro-aisle-icon svg { width: 16px; height: 16px; display: block; }
 .gro-card-rows > .gro-aisle:first-child, .gro-trip + .gro-aisle { border-top: 0; }
 .gro-aisle + .gro-line { border-top: 0; }
 
@@ -6122,10 +6128,12 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 .cook-today-row {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   width: 100%;
   min-height: 64px;
-  padding: 14px 0;
+  /* 10px, not 14: the 44px slot tile (I1) plus this is the same 64px row
+     on every meal, so the list stays even (Option A). */
+  padding: 10px 0;
   border: 0;
   border-bottom: 1px solid var(--hairline);
   background: none;
@@ -6162,6 +6170,7 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   color: var(--ink);
 }
 .cook-today-row.is-done .cook-today-dish { font-weight: 400; color: var(--ink-done); }
+.cook-today-row.is-done .slot-tile { opacity: .62; }
 .cook-today-right {
   flex: 0 0 auto;
   font-family: var(--font-body);
@@ -8214,6 +8223,11 @@ button.recipe-cite:hover .recipe-cite-open { color: var(--apricot-label-hover); 
   color: var(--ink);
 }
 .prep-sec-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.prep-sec.is-done .prep-sec-tile { opacity: .62; }
+/* Made on the night is itself a sand card, so its tile steps one deeper
+   (--sand-deep) to read as a tile; the stroke stays --apricot-label. */
+.prep-fresh-head { display: flex; align-items: center; gap: 12px; margin-bottom: 2px; }
+.prep-fresh .icon-tile.is-sand { background: var(--sand-deep); }
 .prep-sec-title {
   font-family: var(--font-display);
   font-size: 17px;
@@ -12444,6 +12458,84 @@ body.first-open-active { overflow: hidden; }
   cursor: pointer;
 }
 .quiet-link:hover { color: var(--apricot-label-hover); }
+/* The meal sheet (Emily, 2026-11-01, mockup M2, locked). Under the title,
+   one row of equal outline pills — Swap, Tweak, Move — each 48px, a
+   --hairline-strong edge and no fill, an 18px --celadon-label icon before
+   a 14/700 word. Under them the recipe: a full-width 58px apricot pill,
+   --on-accent-ink (rule 1), display face 18/700, the book at its left and
+   the arrow at its right. The dock's apricot is behind the scrim while the
+   sheet is up, so this is still one apricot in view (rule 5). */
+.plan-acts { display: flex; gap: 8px; }
+.plan-act {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 10px;
+  border: 1.5px solid var(--hairline-strong);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+}
+.plan-act:hover { background: var(--surface-raised); }
+.plan-act-icon { display: flex; flex: 0 0 auto; color: var(--celadon-label); }
+.plan-act-icon svg { width: 18px; height: 18px; display: block; }
+.plan-act-label { white-space: nowrap; }
+.plan-recipe {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 58px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--apricot);
+  color: var(--on-accent-ink);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-align: left;
+  cursor: pointer;
+}
+.plan-recipe-label { flex: 1 1 auto; min-width: 0; }
+.plan-recipe-icon, .plan-recipe-arrow { display: flex; flex: 0 0 auto; }
+.plan-recipe-icon svg, .plan-recipe-arrow svg { width: 20px; height: 20px; display: block; }
+
+/* Icons in soft tiles (Emily, 2026-11-01, I1 + I2). A 44px tile at
+   --radius-control with a 22px line icon. Celadon is the default (the
+   meal slots, the cool prep sections); .is-sand is sand with an
+   --apricot-label stroke (the heat-and-hands sections). Ivory surfaces
+   only — never on spruce. Both pairs have dark values in theme.css;
+   stroke on tile measured 4.46–7.70:1 in light and dark (2026-11-01). */
+.icon-tile {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border-radius: var(--radius-control);
+  background: var(--celadon-tint);
+  color: var(--celadon-label);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.icon-tile.is-sand { background: var(--sand); color: var(--apricot-label); }
+.icon-tile svg { width: 22px; height: 22px; display: block; }
+/* A status word with its 15px icon before it: Made ahead, Leftovers, 35 min. */
+.wk-row-meta.has-icon { display: inline-flex; align-items: center; gap: 5px; }
+.status-icon { display: inline-flex; flex: 0 0 auto; color: var(--celadon-label); }
+.status-icon svg { width: 15px; height: 15px; display: block; }
+.wk-qrow .slot-tile { margin-right: 2px; }
+.wk-qrow.is-past .slot-tile, .wk-qrow.is-quiet .slot-tile { opacity: .62; }
 .quiet-section { display: flex; flex-direction: column; gap: 8px; }
 .quiet-section-head {
   font-family: var(--font-body);

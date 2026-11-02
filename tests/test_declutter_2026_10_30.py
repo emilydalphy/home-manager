@@ -76,6 +76,12 @@ def _plan_prelude() -> str:
         + _extract_var("MOVE_SLOTS", SHELL_JS) + "\n"
         + _extract_var("PLAN_DISH_HEADS", SHELL_JS) + "\n"
         + _extract_var("PLAN_SHEET_OPTS", SHELL_JS) + "\n"
+        # The icons in soft tiles (2026-11-01): the slot tile on a day row,
+        # the status icon, and the meal sheet's book and arrow.
+        + _extract_var("ICONS", SHELL_JS) + "\n"
+        + _extract_var("SLOT_ICONS", SHELL_JS) + "\n"
+        + "\n".join(_extract(n, SHELL_JS) for n in (
+            "iconTileHtml", "slotIconTileHtml", "statusIconName", "statusIconHtml")) + "\n"
         + "\n".join(_extract(n, SHELL_JS) for n in names) + "\n"
     )
 
@@ -175,8 +181,9 @@ def test_a_leftover_meal_row_says_just_leftovers():
         "console.log(JSON.stringify(planWeekHtml(data, DAYS)));"
     )
     lunch = out.split('data-plan-row="lunch"', 1)[1].split("</button>", 1)[0]
-    assert '<span class="wk-row-meta">Leftovers</span>' in lunch
-    assert "from" not in lunch.lower() and "Tuesday" not in lunch
+    # The word carries its loop icon since I1 (2026-11-01).
+    assert '</span>Leftovers</span>' in lunch and 'wk-row-meta has-icon' in lunch
+    assert "from" not in re.sub(r"<[^>]+>", "", lunch).lower() and "Tuesday" not in lunch
 
 
 @_needs_node

@@ -91,30 +91,30 @@
 
   var ICONS = {
     // Nav bar set, exact match to the InnToday.dc.html mockup (design-system
-    // canvas, brand-canvas/InnToday.dc.html) per the "nav bar icons don't
+    // canvas, brand-canvas/InnToday.dc.html) per the "nav bar icons do not
     // match the design mockup" ticket — same drawing style and 24x24 grid
-    // as the mock, so don't restyle these independently of it. (The stroke
-    // is the set-wide 2.2 since 2026-09-13; the mock's 2/2.1 are history.)
+    // as the mock, so do not restyle these independently of it. (The stroke
+    // is the set-wide 2.2 since 2026-09-13; the 2/2.1 of the mock are history.)
     sunrise:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15a8 8 0 0 1 16 0"/><path d="M2.5 19h19"/><path d="M12 3.5v2"/><path d="M5 7l1.5 1.5"/><path d="M19 7l-1.5 1.5"/></svg>',
-    // Plan's glyph: the week as a row (Emily, 2026-09-13, Identity Round
+    // The Plan glyph: the week as a row (Emily, 2026-09-13, Identity Round
     // Q3 = B) — five dots between two rules, the seven day-tiles in
     // miniature. It replaced the bullseye (two concentric circles, meant
     // as a plate seen from above; nobody read it that way). The dots are
     // filled, not stroked, so they carry fill="currentColor" stroke="none"
-    // of their own — the sweep's "one stroke width" is about strokes.
+    // of their own — the "one stroke width" sweep is about strokes.
     week:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="4" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="8" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="16" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="20" cy="12" r="1.4" fill="currentColor" stroke="none"/><path d="M3 6.5h18"/><path d="M3 17.5h18"/></svg>',
     pot:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 9.5h13V16a4.5 4.5 0 0 1-4.5 4.5h-4A4.5 4.5 0 0 1 5.5 16z"/><path d="M3.5 9.5h17"/><path d="M12 3.5v3"/></svg>',
-    // The Kitchen tab's glyph (2026-10-26, Loop Board C1): the fridge —
+    // The Kitchen tab glyph (2026-10-26, Loop Board C1): the fridge —
     // the same drawing as KITCHEN_ICONS.fridge, which was the old
-    // Inventory row's, on the nav set's 24-grid and 2.2 stroke.
+    // Inventory row, on the 24-grid and 2.2 stroke of the nav set.
     fridge:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="2.8" width="13" height="18.4" rx="2.6"/><path d="M5.5 10h13"/><path d="M9 6.4v1.8"/><path d="M9 12.6v2.2"/></svg>',
-    // Pomona (InnToday/InnMeals): the hero's flame tile, the prep tile's
-    // clock, the grocery tile's bag, and the arrow that ends a primary
-    // action. Line icons, round caps — the brand guide's one icon style;
+    // Pomona (InnToday/InnMeals): the flame tile of the hero, the clock of
+    // the prep tile, the bag of the grocery tile, and the arrow that ends a
+    // primary action. Line icons, round caps — the one icon style of the brand guide;
     // they inherit currentColor so the same markup works on spruce and on
     // ivory.
     flame:
@@ -125,11 +125,122 @@
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 8.5h15l-1.3 10.7a2 2 0 0 1-2 1.8H7.8a2 2 0 0 1-2-1.8z"/><path d="M9.2 8.5V6.6a2.8 2.8 0 0 1 5.6 0v1.9"/></svg>',
     arrow:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13"/><path d="M12.5 6l6 6-6 6"/></svg>',
-    // The desktop week grid's "Why this?" toggle (InnMeals redesign) — same
+    // The "Why this?" toggle of the desktop week grid (InnMeals redesign) — same
     // small info-circle the mock draws next to it.
     info:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.5v.01"/></svg>'
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.5v.01"/></svg>',
+    // ---- 2026-11-01: icons in soft tiles (Emily, I1 + I2) ----
+    // The meal slots (I1): sunrise (above) for breakfast, then these.
+    // Each leads a meal row on Plan and Cook in a 44px celadon tile.
+    bowl:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12h17a8.5 8 0 0 1-17 0z"/><path d="M9 20.5h6"/><path d="M9.5 8.5c-.9-1.1.9-2.1 0-3.4"/><path d="M14.5 8.5c-.9-1.1.9-2.1 0-3.4"/></svg>',
+    apple:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 7.6c-1.6-1-3.4-1.2-4.9-.4-2.5 1.3-3.1 4.5-1.9 7.7 1.1 3 3.2 5.6 5.2 5.6.7 0 1-.4 1.6-.4s.9.4 1.6.4c2 0 4.1-2.6 5.2-5.6 1.2-3.2.6-6.4-1.9-7.7-1.5-.8-3.3-.6-4.9.4z"/><path d="M12 7.6c0-1.8.6-3.2 2-4.1"/></svg>',
+    // The status words on a row (I1): made ahead, leftovers, minutes (clock above).
+    check:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg>',
+    loop:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 2.5l3 3-3 3"/><path d="M4 11.5v-1a5 5 0 0 1 5-5h11"/><path d="M7 21.5l-3-3 3-3"/><path d="M20 12.5v1a5 5 0 0 1-5 5H4"/></svg>',
+    // The meal sheet (M2): See the recipe, with the arrow above.
+    book:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 19.5A2.5 2.5 0 0 1 7 17h12.5"/><path d="M7 2.5h12.5v19H7a2.5 2.5 0 0 1-2.5-2.5V5A2.5 2.5 0 0 1 7 2.5z"/></svg>',
+    // The prep list sections (I2), flame (above) for the stove.
+    snowflake:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M12 3l-2 2M12 3l2 2M12 21l-2-2M12 21l2-2"/></svg>',
+    drop:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.2s-6 6.5-6 10.9a6 6 0 0 0 12 0c0-4.4-6-10.9-6-10.9z"/></svg>',
+    oven:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><path d="M3.5 8.5h17"/><rect x="7" y="11.5" width="10" height="6" rx="1.2"/><path d="M7.5 6h.01M11 6h.01"/></svg>',
+    slowCooker:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 10.5h14V17a3.5 3.5 0 0 1-3.5 3.5h-7A3.5 3.5 0 0 1 5 17z"/><path d="M5 10.5a7 4 0 0 1 14 0"/><path d="M11 5h2"/><path d="M2.5 13h2.5M19 13h2.5"/></svg>',
+    knife:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 9.5h13v5H9c-3.4 0-5.7-2-6.5-5z"/><rect x="15.5" y="9.5" width="6" height="3.5" rx="1.5"/></svg>',
+    bottle:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2.5h4"/><path d="M10.5 2.5v4L8 10v9.5a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V10l-2.5-3.5v-4"/><path d="M8 13.5h8"/></svg>',
+    whisk:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21.5v-6"/><path d="M12 15.5c-3.4 0-5-3.5-5-7 0-3.1 2.2-6 5-6s5 2.9 5 6c0 3.5-1.6 7-5 7z"/><path d="M12 15.5c-1.3 0-2-3.5-2-7 0-3.4.9-6 2-6s2 2.6 2 6c0 3.5-.7 7-2 7z"/></svg>',
+    freezerBox:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><path d="M12 7.5v9M8.1 9.8l7.8 4.4M8.1 14.2l7.8-4.4"/></svg>',
+    star:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.2l2.7 5.5 6 .9-4.35 4.25 1 6L12 17l-5.35 2.85 1-6L3.3 9.6l6-.9z"/></svg>',
+    container:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="9" width="17" height="11" rx="2.5"/><path d="M3.5 13.5h17"/><path d="M9 9V6.5A1.5 1.5 0 0 1 10.5 5h3A1.5 1.5 0 0 1 15 6.5V9"/></svg>',
+    moon:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>',
+    // The Shop aisles (I2), bottle (above) for dairy, snowflake for frozen, bag for other.
+    leaf:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 19.5C4.5 10 10 4.5 19.5 4.5c0 9.5-5.5 15-15 15z"/><path d="M4.5 19.5L13 11"/></svg>',
+    fish:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 7.5L6 12l-3.5 4.5"/><path d="M6 12c2.5-3.5 5.5-5.5 9-5.5s5.5 3 6.5 5.5c-1 2.5-3 5.5-6.5 5.5S8.5 15.5 6 12z"/><path d="M16.5 10.8h.01"/></svg>',
+    bread:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20.5v-9.2A3.5 3.5 0 0 1 7 4.5h10a3.5 3.5 0 0 1 2 6.8v9.2z"/><path d="M9.5 9.5l1.5 1.5M13 9.5l1.5 1.5"/></svg>',
+    jar:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="3" width="10" height="3.5" rx="1"/><path d="M7.5 6.5h9a2 2 0 0 1 2 2V19a2 2 0 0 1-2 2h-9a2 2 0 0 1-2-2V8.5a2 2 0 0 1 2-2z"/><path d="M5.5 12h13"/></svg>',
+    can:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5.5" rx="6.5" ry="2.5"/><path d="M5.5 5.5v13c0 1.4 2.9 2.5 6.5 2.5s6.5-1.1 6.5-2.5v-13"/><path d="M5.5 10c0 1.4 2.9 2.5 6.5 2.5s6.5-1.1 6.5-2.5"/></svg>'
   };
+
+  // ---------- Icons in soft tiles (Emily, 2026-11-01, I1 + I2) ----------
+  // A line icon in a 44px tile (--radius-control, 22px glyph). Two tones:
+  // celadon (--celadon-tint / --celadon-label), the gentle one, and sand
+  // (--sand / --apricot-label) for the heat-and-hands sections. Ivory
+  // surfaces only: never on spruce (the celadon tile is an ivory thing,
+  // DESIGN_SYSTEM §1), so the prep day card and the night-before card keep
+  // none. Decorative: the row already says the slot or the section.
+  var SLOT_ICONS = { breakfast: 'sunrise', lunch: 'bowl', dinner: 'pot', snack: 'apple' };
+  var PREP_SECTION_ICONS = {
+    thaw: ['snowflake', 'celadon'], soak: ['drop', 'celadon'], oven: ['oven', 'sand'],
+    stove: ['flame', 'sand'], slow_cooker: ['slowCooker', 'sand'], chop: ['knife', 'celadon'],
+    sauces: ['bottle', 'celadon'], chill: ['whisk', 'celadon'], freezer: ['freezerBox', 'celadon'],
+    special: ['star', 'sand'], pack: ['container', 'sand'], fresh: ['moon', 'sand']
+  };
+  // The aisles of a Shop card (GRO_SECTION_ORDER), plus bakery should a
+  // store ever file one.
+  var AISLE_ICONS = {
+    produce: 'leaf', dairy: 'bottle', 'meat/seafood': 'fish', bakery: 'bread',
+    pantry: 'jar', canned: 'can', frozen: 'snowflake', other: 'bag'
+  };
+
+  function iconTileHtml(name, tone, extraClass) {
+    var svg = ICONS[name];
+    if (!svg) return '';
+    return '<span class="icon-tile' + (tone === 'sand' ? ' is-sand' : '') + (extraClass ? ' ' + extraClass : '') +
+      '" aria-hidden="true">' + svg + '</span>';
+  }
+
+  // A meal slot as its tile: snack2, snack3… are snacks.
+  function slotIconTileHtml(slot) {
+    var key = /^snack/.test(String(slot || '')) ? 'snack' : slot;
+    return iconTileHtml(SLOT_ICONS[key] || 'pot', 'celadon', 'slot-tile');
+  }
+
+  // A Shop aisle eyebrow's 16px --apricot-label icon (no tile).
+  function aisleIconHtml(aisle) {
+    var name = AISLE_ICONS[aisle];
+    return name && ICONS[name] ? '<span class="gro-aisle-icon" aria-hidden="true">' + ICONS[name] + '</span>' : '';
+  }
+
+  function prepSectionTileHtml(key) {
+    var pick = PREP_SECTION_ICONS[key];
+    return pick ? iconTileHtml(pick[0], pick[1], 'prep-sec-tile') : '';
+  }
+
+  // The 15px icon before a row status word: a check for food already made
+  // ("Made ahead", "Made Sunday", "Ready"), the loop for a reheat
+  // ("Leftovers", "Reheat"), a clock for minutes ("35 min", "1 hr").
+  // Anything else ("Takeout") has none.
+  function statusIconName(text) {
+    var t = String(text || '').trim();
+    if (/^(Made|Ready)\b/.test(t)) return 'check';
+    if (/^(Leftovers|Reheat)\b/.test(t)) return 'loop';
+    if (/\d\s*(min|hr|hour)/i.test(t)) return 'clock';
+    return '';
+  }
+
+  function statusIconHtml(text) {
+    var name = statusIconName(text);
+    return name ? '<span class="status-icon" aria-hidden="true">' + ICONS[name] + '</span>' : '';
+  }
 
   // A leftovers night is a reheat, not a cook (Emily, 2026-09-04) — so its
   // one action is not "Start cooking" and not "Mark cooked". The wording
@@ -7738,6 +7849,7 @@
       var aisle = groAisleOf(it);
       if (aisle !== last) {
         html += '<div class="gro-aisle" data-aisle="' + escapeHtml(aisle) + '">' +
+          (typeof aisleIconHtml === 'function' ? aisleIconHtml(aisle) : '') +
           '<span class="gro-eyebrow">' + escapeHtml(GRO_AISLE_LABELS[aisle] || aisle) + '</span></div>';
         last = aisle;
       }
@@ -12242,6 +12354,7 @@
     return '<button type="button" class="cook-today-row' + (row.done ? ' is-done' : '') + (isNext ? ' is-next' : '') + '" ' +
         'data-cook="focus" data-idx="' + row.idx + '">' +
       mark +
+      (typeof slotIconTileHtml === 'function' ? slotIconTileHtml(row.slot) : '') +
       '<span class="cook-today-text">' +
         '<span class="cook-today-slot">' + escapeHtml(label) + '</span>' +
         '<span class="cook-today-dish">' + escapeHtml(row.title) + '</span>' +
@@ -18984,9 +19097,10 @@
     return '<' + open + ' class="wk-qrow' + (o.quiet ? ' is-quiet' : '') + (o.past ? ' is-past' : '') +
         (o.done ? ' is-done' : '') + '"' + (o.attrs || '') +
         (tappable && o.label ? ' aria-label="' + escapeHtml(o.label) + '"' : '') + '>' +
+      (o.tile || '') +
       '<span class="wk-qrow-text">' + eyebrow +
         '<span class="wk-qrow-name">' + escapeHtml(o.name) + '</span>' +
-        (o.meta ? '<span class="wk-row-meta">' + escapeHtml(o.meta) + '</span>' : '') +
+        (o.meta ? '<span class="wk-row-meta' + (o.metaIcon ? ' has-icon' : '') + '">' + (o.metaIcon || '') + escapeHtml(o.meta) + '</span>' : '') +
         (o.step ? '<span class="wk-row-meta wk-qrow-step">' + escapeHtml(o.step) + '</span>' : '') +
       '</span>' +
       (tappable ? '<span class="wk-qrow-chev" aria-hidden="true">' + WK_ICONS.chev + '</span>' : '') +
@@ -18997,9 +19111,13 @@
   // planned meal opens its sheet; an open one is a decision, and its row
   // reveals the app's own options under it (the wk-open box, as Pick did);
   // a meal nobody is home for is a quiet line; a meal the household asked
-  // none of is not drawn at all.
-  function planSlotRowHtml(day, i, slot, eyebrow) {
+  // none of is not drawn at all. On a day (not the week menu, `noTile`)
+  // every row leads with its slot tile, and a planned row's status word
+  // carries its small icon (Emily, 2026-11-01, I1).
+  function planSlotRowHtml(day, i, slot, eyebrow, noTile) {
     var entry = daySlotEntry(day, slot);
+    // (typeof: harnesses that slice one region of this file have no ICONS.)
+    var tile = noTile || typeof slotIconTileHtml !== 'function' ? '' : slotIconTileHtml(slot);
     var changed = typeof wasRecentlyChanged === 'function' && wasRecentlyChanged(day.date, slot);
     var at = ' data-wk-day-index="' + i + '"';
     var snack = isSnackSlot(slot);
@@ -19009,29 +19127,30 @@
       var step = planServeLine(day, slot, entry);
       // A snack's row opens its sheet; on a day gone by there is nothing
       // to change, so it is a line to read.
-      if (snack && day.isPast) return planRowHtml({ name: name, meta: meta, step: step, past: true });
+      var metaIcon = noTile || typeof statusIconHtml !== 'function' ? '' : statusIconHtml(meta);
+      if (snack && day.isPast) return planRowHtml({ tile: tile, name: name, meta: meta, metaIcon: metaIcon, step: step, past: true });
       return planRowHtml({
         attrs: (snack ? ' data-plan-snack="' : ' data-plan-row="') + slot + '"' + at,
-        eyebrow: eyebrow, name: name, meta: meta, step: step, changed: changed,
+        tile: tile, eyebrow: eyebrow, name: name, meta: meta, metaIcon: metaIcon, step: step, changed: changed,
         past: day.isPast, done: !!entry.cooked,
         label: (eyebrow ? eyebrow + ', ' : '') + name + ' — change it'
       });
     }
     if (entry && entry.state === 'open') {
       return '<div class="wk-qrow-open" data-wk-card="' + i + '">' +
-        planRowHtml({ attrs: ' data-wk-pick="' + slot + '"' + at, eyebrow: eyebrow, name: 'Your call',
+        planRowHtml({ attrs: ' data-wk-pick="' + slot + '"' + at, tile: tile, eyebrow: eyebrow, name: 'Your call',
           meta: 'Tap to pick', quiet: true, label: 'Pick ' + slotWord(slot) }) +
         '<div class="wk-slot-open" id="wk-open-' + slot + '" hidden>' + openSlotCardHtml(day.date, slot, entry) + '</div>' +
       '</div>';
     }
     if (entry && entry.state === 'planned_empty') {
       if (entry.meal_off) return '';
-      return planRowHtml({ eyebrow: eyebrow, name: awayLineFor(entry) || entry.title || 'Nothing planned', quiet: true });
+      return planRowHtml({ tile: tile, eyebrow: eyebrow, name: awayLineFor(entry) || entry.title || 'Nothing planned', quiet: true });
     }
     if (day.isPast || day.before_plan_start) {
-      return planRowHtml({ eyebrow: eyebrow, name: pastEmptyWord(day), quiet: true });
+      return planRowHtml({ tile: tile, eyebrow: eyebrow, name: pastEmptyWord(day), quiet: true });
     }
-    return planRowHtml({ attrs: ' data-wk-ask="' + slotWord(slot) + '"' + at, eyebrow: eyebrow, name: 'Nothing yet',
+    return planRowHtml({ attrs: ' data-wk-ask="' + slotWord(slot) + '"' + at, tile: tile, eyebrow: eyebrow, name: 'Nothing yet',
       meta: 'Tap to ask for one', quiet: true, label: 'Ask for a ' + slotWord(slot) });
   }
 
@@ -19098,7 +19217,7 @@
     days.forEach(function (day, i) {
       var e = slot === 'snack' ? null : day[slot];
       if (e && e.state === 'open' && !day.before_plan_start) {
-        rows += planSlotRowHtml(day, i, slot, dayName(day.date, { weekday: 'long' }));
+        rows += planSlotRowHtml(day, i, slot, dayName(day.date, { weekday: 'long' }), true);
       }
     });
     return rows;
@@ -19243,10 +19362,13 @@
     return out;
   }
 
+  // The sheet (Emily, 2026-11-01, mockup M2, locked): under the title one
+  // row of three equal outline pills, then the recipe as a full-width
+  // apricot pill. The longer lines under each word came off.
   var PLAN_SHEET_OPTS = {
-    swap: { icon: 'swap', title: 'Swap', sub: 'Pick something else' },
-    tweak: { icon: 'tweak', title: 'Tweak', sub: 'Change a part, or tell me what to change' },
-    move: { icon: 'move', title: 'Move', sub: 'Put it on another day' }
+    swap: { icon: 'swap', title: 'Swap' },
+    tweak: { icon: 'tweak', title: 'Tweak' },
+    move: { icon: 'move', title: 'Move' }
   };
 
   function planRowSheetHtml(day, slot, opts) {
@@ -19261,10 +19383,9 @@
       : dayName(day.date, { weekday: 'long' });
     var rows = planRowSheetOptions(day, slot, opts).map(function (key) {
       var o = PLAN_SHEET_OPTS[key];
-      return '<button type="button" class="quiet-opt" data-plan-opt="' + key + '">' +
-        '<span class="quiet-opt-icon">' + WK_ICONS[o.icon] + '</span>' +
-        '<span class="quiet-opt-text"><span class="quiet-opt-title">' + escapeHtml(o.title) + '</span>' +
-          '<span class="quiet-opt-sub">' + escapeHtml(o.sub) + '</span></span>' +
+      return '<button type="button" class="plan-act" data-plan-opt="' + key + '">' +
+        '<span class="plan-act-icon" aria-hidden="true">' + WK_ICONS[o.icon] + '</span>' +
+        '<span class="plan-act-label">' + escapeHtml(o.title) + '</span>' +
       '</button>';
     }).join('');
     // A meal made earlier (option B, planServeLine): what to do with it
@@ -19279,13 +19400,18 @@
           escapeHtml(planServeWhen(day, slot) || 'To serve') + '</span>' +
           '<div class="quiet-lines"><div class="quiet-line"><span>' + escapeHtml(serve) + '</span></div></div></div>'
       : '';
-    var recipeLink = !whole && src && src.slot
-      ? '<button type="button" class="quiet-link" data-plan-opt="source">' +
-          escapeHtml('See ' + (src.date === day.date ? 'the' : dayName(src.date, { weekday: 'long' }) + '’s') + ' recipe') + '</button>'
-      : '<button type="button" class="quiet-link" data-plan-opt="recipe">See the recipe</button>';
+    var fromSource = !whole && src && src.slot;
+    var recipeWords = fromSource
+      ? 'See ' + (src.date === day.date ? 'the' : dayName(src.date, { weekday: 'long' }) + '’s') + ' recipe'
+      : 'See the recipe';
+    var recipeLink = '<button type="button" class="plan-recipe" data-plan-opt="' + (fromSource ? 'source' : 'recipe') + '">' +
+        '<span class="plan-recipe-icon" aria-hidden="true">' + (typeof ICONS !== 'undefined' ? ICONS.book : '') + '</span>' +
+        '<span class="plan-recipe-label">' + escapeHtml(recipeWords) + '</span>' +
+        '<span class="plan-recipe-arrow" aria-hidden="true">' + (typeof ICONS !== 'undefined' ? ICONS.arrow : '') + '</span>' +
+      '</button>';
     return quietSheetHeadHtml(slotEyebrowLabel(day, slot) + ' · ' + when, mealDisplayName(entry)) +
       serveHtml +
-      (rows ? '<div class="quiet-opts">' + rows + '</div>' : '') +
+      (rows ? '<div class="plan-acts">' + rows + '</div>' : '') +
       recipeLink;
   }
 
@@ -25548,6 +25674,7 @@
       '<button type="button" class="prep-sec-head" data-cook="prep-section" ' +
         'data-date="' + escapeHtml(session.date) + '" data-section="' + escapeHtml(sec.key) + '" ' +
         'aria-expanded="' + (open ? 'true' : 'false') + '" aria-controls="' + escapeHtml(bodyId) + '">' +
+        (typeof prepSectionTileHtml === 'function' ? prepSectionTileHtml(sec.key) : '') +
         '<span class="prep-sec-text">' +
           '<span class="prep-sec-title">' + escapeHtml(sec.title) + '</span>' +
           '<span class="prep-sec-line">' + escapeHtml(sec.done ? 'Done' : sec.line) + '</span>' +
@@ -25653,7 +25780,8 @@
   // prepped.
   function cookPrepFreshHtml(session, items) {
     return '<section class="prep-fresh">' +
-      '<h3 class="prep-fresh-title">Made on the night</h3>' +
+      '<div class="prep-fresh-head">' + (typeof prepSectionTileHtml === 'function' ? prepSectionTileHtml('fresh') : '') +
+        '<h3 class="prep-fresh-title">Made on the night</h3></div>' +
       '<p class="prep-fresh-line">' + escapeHtml(session.made_fresh_line || '') + '</p>' +
       '<div class="prep-fresh-list">' +
         items.map(function (item) {
