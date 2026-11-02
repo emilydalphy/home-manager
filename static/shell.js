@@ -12086,7 +12086,10 @@
         // Made ahead and eaten cold (served_cold, cooker.py) is "Prepped":
         // it's ready to go, nothing to warm (Emily, 2026-09-25).
         badge: done ? (isReheat || isTakeout ? 'eaten' : 'cooked')
-          : isTakeout ? 'Takeout' : (isReheat ? (meal.served_cold ? 'Prepped' : 'Reheat') : (prepped ? 'Prepped' : 'Cook'))
+          // A dish made whole at the prep list says what finishes it —
+          // "Plate" for a cold one (cooker._apply_made_at_prep, Emily
+          // 2026-11-01).
+          : isTakeout ? 'Takeout' : (isReheat ? (meal.finish_action === 'plate' ? 'Plate' : (meal.served_cold ? 'Prepped' : 'Reheat')) : (prepped ? 'Prepped' : 'Cook'))
       });
     });
     return rows;
@@ -12455,6 +12458,12 @@
     // Made ahead on the prep day: the day the food was really made, not
     // the day the cook entry happens to sit on (cookPreppedAhead).
     var prepped = cookPreppedAhead(meal);
+    // Made whole at a prep day (cooker._apply_made_at_prep): reheat or
+    // plate, and the day it was made.
+    if (meal.made_at_prep) {
+      return (meal.finish_action === 'plate' ? 'Plate' : 'Reheat') +
+        ' — made at ' + meal.made_at_prep.weekday + '’s prep.';
+    }
     if (meal.is_leftovers) {
       var src = meal.leftovers_from || {};
       var madeOn = prepped ? prepped.date : src.date;
@@ -26059,6 +26068,18 @@
     // and one cooked_status, so the tick is the same write kitchenTodayRowHtml
     // makes and not a second fact.
     var ticksEntry = isCook && !canOpen && item.entry_id != null;
+    // A batch made on the prep day for a LATER meal ticks as MADE on the
+    // prep list itself (prep_list_marks) — never the cook entry, whose
+    // cooked_status is "eaten" on its own night (2026-11-01).
+    var ticksMade = !!(isCook && item.ticks_on_list && session && item.key);
+    // The dish name still opens its card after the made-tick, whatever the
+    // box does.
+    var nameOpens = isCook && idx !== null;
+    if (ticksMade) {
+      canOpen = false;
+      ticksEntry = false;
+      label = isDone ? 'Mark not done' : 'Mark done';
+    }
     var box = canOpen
       ? '<button type="button" class="cook-box' + (isDone ? ' checked' : '') + '" ' +
           'data-cook="focus" data-idx="' + idx + '" ' +
@@ -26083,7 +26104,7 @@
               'data-name="' + escapeHtml(item.title || '') + '" ' +
               'aria-label="' + escapeHtml(label) + '">' + COOK_ICONS.check + '</button>'
           : '<span class="cook-box' + (isDone ? ' checked' : '') + '">' + COOK_ICONS.check + '</span>'));
-    var name = canOpen
+    var name = nameOpens
       ? '<button type="button" class="prep-step-name" data-cook="focus" data-idx="' + idx + '">' +
           escapeHtml(item.title) + '</button>'
       : '<span class="prep-step-name">' + escapeHtml(item.title) + '</span>';
@@ -26454,7 +26475,11 @@
   function cookReheatFocusHtml(meal) {
     var src = meal.leftovers_from || {};
     var dayLabel = meal.date ? cookDateLabel(meal.date) : 'Leftovers';
-    var srcLine = src.date ? 'Cooked on ' + cookDateLabel(src.date) + '.' : '';
+    // Made whole at a prep day: the one wording, "Made at Sunday’s prep."
+    // (cooker._apply_made_at_prep) — never "Cooked on" for a plated dish.
+    var srcLine = meal.made_at_prep
+      ? 'Made at ' + meal.made_at_prep.weekday + '’s prep.'
+      : (src.date ? 'Cooked on ' + cookDateLabel(src.date) + '.' : '');
     return '<div class="cook-focus">' +
       '<div class="cook-hero cook-hero-quiet">' +
         '<button type="button" class="crumb on-spruce" data-cook="exit-focus">&lsaquo; ' +
