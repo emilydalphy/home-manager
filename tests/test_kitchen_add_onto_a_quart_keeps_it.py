@@ -41,3 +41,21 @@ def test_whole_cups_and_spoons_onto_a_quart_read_as_before():
     assert _kitchen("Milk") == ["1 1/2 quarts"]
     tools.update_inventory("Milk", "add", quantity="1 tbsp")
     assert _kitchen("Milk") == ["1 1/2 quarts"]
+
+
+def test_a_cup_used_off_a_quart_and_a_half_cup_reads_on_a_cup_step():
+    """Review of the fix: the cups row it writes then lost a cup as "3.5 cups"."""
+    tools.update_inventory("Milk", "add", quantity="1 quart")
+    tools.update_inventory("Milk", "add", quantity="1/2 cup")
+    tools.update_inventory("Milk", "use", quantity="1 cup")
+    assert _kitchen("Milk") == ["3 1/2 cups"]
+
+
+def test_a_cup_used_off_a_gallon_and_a_third_reads_on_a_cup_step():
+    tools.update_inventory("Milk", "add", quantity="1 gallon")
+    tools.update_inventory("Milk", "add", quantity="1/3 cup")
+    assert _kitchen("Milk") == ["16 1/3 cups"]
+    tools.update_inventory("Milk", "use", quantity="1 cup")
+    assert _kitchen("Milk") == ["15 1/3 cups"]  # review: "15.3333 cups"
+    tools.update_inventory("Milk", "use", quantity="1 tbsp")
+    assert _kitchen("Milk") == ["15 1/4 cups"]  # down to the step, never "245 tbsp"

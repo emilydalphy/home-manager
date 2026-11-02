@@ -568,6 +568,9 @@ def _try_subtract_quantity(existing_qty: str, minus_qty: str) -> tuple[str | Non
             # "2 quarts" less 4 cups is "1 quart"; a gallon less 2 cups is
             # "3 1/2 quarts" (quantities._CUPS_PER_BIG).
             return big, True
+        cups = _cup_row_text(remaining, have_unit, minus_unit)
+        if cups is not None:
+            return cups, True
         if minus_unit != have_unit and not _clean_in(remaining, have_unit):
             # Across units the difference can be an odd fraction ("0.9375
             # cup", "0.99375 lb"): say it in the finer unit instead (15 tbsp,
@@ -780,6 +783,33 @@ def _big_volume_text(
     if whole + step < 0.25 - 1e-9:
         return None
     return _quantities._cups_text(whole + step)
+
+
+def _cup_row_text(amount: float, unit: str | None, other_unit: str | None) -> str | None:
+    """
+    What is left on a row in cups, with cups or spoons used off it, said on
+    a measuring cup's steps: "3 1/2 cups", "15 1/3 cups" — never "3.5
+    cups" or "15.3333 cups". From a quart's worth up, DOWN to the step
+    (_big_volume_text's rule: "4 3/4 cups" less a tbsp is "4 2/3 cups", not
+    "75 tbsp"); under it, only an amount exactly on a step, so "2 cups"
+    less a tbsp stays "31 tbsp" as it always has. None for anything else.
+
+    Why (review of the 2026-11-02 add fix): an add onto a quart row that
+    lands off its whole cups is written in cups ("4 1/2 cups"), and the
+    next "used a cup" wrote "3.5 cups". The row's word is all that is left
+    of the quart, so a whole number of cups stays cups here: "16 cups" of
+    flour is not a gallon of flour (quantities._CUPS_PER_BIG).
+    """
+    small = ("cup", "tbsp", "tsp")
+    if unit != "cup" or other_unit not in small:
+        return None
+    if amount >= 4 - 1e-9:
+        whole = math.floor(amount + 1e-6)
+        step = max(f for f in _quantities._VOLUME_STEPS if whole + f <= amount + 1e-6)
+        return _quantities._cups_text(whole + step)
+    if amount >= 0.25 - 1e-9 and _quantities._kitchen_number(amount) is not None:
+        return _quantities._cups_text(amount)
+    return None
 
 
 def _merged_quantity(existing_qty: str, adding_qty: str) -> str:
