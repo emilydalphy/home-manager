@@ -1870,6 +1870,7 @@ def add_grocery_item(
     quantity_mode: str = "sum",
     conn=None,
     report_previous: bool = False,
+    join_week_lines: bool = True,
 ) -> dict:
     """
     Add an item to the grocery list. If an item with the same name is
@@ -1936,7 +1937,7 @@ def add_grocery_item(
             return add_grocery_item(
                 item, quantity=quantity, category=category, added_by=added_by,
                 source_weekly_plan_id=source_weekly_plan_id, quantity_mode=quantity_mode,
-                conn=own, report_previous=report_previous,
+                conn=own, report_previous=report_previous, join_week_lines=join_week_lines,
             )
     item = (item or "").strip()
     if not item:
@@ -1990,6 +1991,12 @@ def add_grocery_item(
     ).fetchall()
     wanted = _merge_key(item)
     same_name = [r for r in candidates if _merge_key(r["item"]) == wanted]
+    if not join_week_lines:
+        # A regular ticked on "Before you shop" stands beside a week's line
+        # (before_shop.add_regulars): joined, its Undo and step 1's "Take it
+        # off the list?" had only the whole row to take, the meals' eggs
+        # with it, and a regular with no amount vanished into "1/2 cup".
+        same_name = [r for r in same_name if r["source_weekly_plan_id"] is None]
     consolidate = _greater_of_quantity if quantity_mode == "max" else _try_consolidate_quantity
     # Which plans' shares sit on each household line of this name — what
     # keeps a week's sauce or pantry staple off a line holding another
