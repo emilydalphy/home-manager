@@ -2801,7 +2801,7 @@ def _freeze_ticked_pack(item_id: int, prep_task_id: int, whole_pack: bool) -> bo
         and _quantities._display_location(dict(place)).strip().lower() != "freezer"
     )
     if movable:
-        _inventory.freeze_item(inventory_id)
+        _inventory.freeze_item(inventory_id, resync=False)  # this door books its own move
     with write() as conn:
         receipt = _ticked_receipt(conn, item_id)
         if receipt is None:
@@ -2832,7 +2832,7 @@ def _unfreeze_ticked_pack(item_id: int) -> bool:
         conn.close()
     moved = False
     if record.get("froze") and current is not None and current == record.get("after"):
-        moved = bool(_inventory.unfreeze_item({"item_id": inventory_id}).get("undone"))
+        moved = bool(_inventory.unfreeze_item({"item_id": inventory_id}, resync=False).get("undone"))
     with write() as conn:
         receipt = _ticked_receipt(conn, item_id)
         if receipt is None:
