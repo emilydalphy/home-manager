@@ -12346,8 +12346,19 @@
   var COOK_ROW_CHEV =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
 
-  function cookTodayRowHtml(row, isNext) {
-    var label = cookSlotLabel(row.slot) + (isNext ? ' · next' : '');
+  // Whose turn, said only where the household takes turns: there the
+  // household has no standing cook (cook_name is null by design) and only
+  // the night's move knows whose it is. One cook = no name, it would be
+  // the same word on every row. Emily's call 2026-11-01 ("go with your
+  // picks"): "Dinner · Vineeth".
+  function cookRowCookName(row, data) {
+    if (data && data.cook_name) return '';
+    return (row.move && row.move.owner_name) ? String(row.move.owner_name) : '';
+  }
+
+  function cookTodayRowHtml(row, isNext, data) {
+    var who = row.done ? '' : cookRowCookName(row, data);
+    var label = cookSlotLabel(row.slot) + (who ? ' · ' + who : '') + (isNext ? ' · next' : '');
     var mark = row.done
       ? '<span class="cook-today-mark is-done" role="img" aria-label="Done">' + COOK_ROW_CHECK + '</span>'
       : '<span class="cook-today-mark">' + (isNext ? '<span class="cook-today-dot" aria-hidden="true"></span>' : '') + '</span>';
@@ -12365,9 +12376,9 @@
     '</button>';
   }
 
-  function cookTodayListHtml(ordered, next) {
+  function cookTodayListHtml(ordered, next, data) {
     return '<div class="cook-today" aria-label="Today’s meals">' +
-      ordered.map(function (r) { return cookTodayRowHtml(r, r === next); }).join('') +
+      ordered.map(function (r) { return cookTodayRowHtml(r, r === next, data); }).join('') +
     '</div>';
   }
 
@@ -12609,7 +12620,7 @@
       html:
         (prepLeads ? cookPrepDayCardHtml(session) : '') +
         (bedLeads ? cookBedCardHtml(bed, todayIso) : '') +
-        (rows.length ? cookTodayListHtml(ordered, next) : cookNightOffHtml(meals, todayIso)) +
+        (rows.length ? cookTodayListHtml(ordered, next, data) : cookNightOffHtml(meals, todayIso)) +
         (session && !prepLeads && session.items_total > 0 ? cookPrepDoneLineHtml(session) : '') +
         (bed.length && !bedLeads ? (bedOpen ? cookBedCardHtml(bed, todayIso) : cookBedLineHtml(bed, todayIso)) : '') +
         cookNextPrepLineHtml(data, todayIso),
