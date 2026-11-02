@@ -741,7 +741,9 @@ def _clean_in(amount: float, unit: str | None) -> bool:
     return _quarter_clean(amount)
 
 
-def _big_volume_text(amount: float, unit: str | None, other_unit: str | None) -> str | None:
+def _big_volume_text(
+    amount: float, unit: str | None, other_unit: str | None, adding: bool = False,
+) -> str | None:
     """
     `amount` (in `unit`) on a Kitchen row that is in quarts or gallons, or
     has them coming on or off it — read the way the list reads them
@@ -754,6 +756,14 @@ def _big_volume_text(amount: float, unit: str | None, other_unit: str | None) ->
     held ("a tbsp off a cup must come off"): a tablespoon off a gallon is
     "3 3/4 quarts", not "255 tbsp" (review, 2026-11-01) and not still "1
     gallon". Under a quarter cup is left to the spoons below.
+
+    `adding` (_merged_quantity): a total from a quart up with a measuring
+    step or more past its whole cups is said in cups on that step ("4 1/2
+    cups"), not floored to its quarts. Floored, what was put on vanished:
+    "1/2 cup" of cream onto "1 quart" read "1 quart", three 3/4 cups onto
+    it still "1 quart", and using a quart then deleted a row holding 2 1/4
+    cups (defect hunt, 2026-11-02). DOWN is for what comes off; an add
+    keeps what it added. Spoons past the cups still floor away, as above.
     """
     if unit not in _quantities._VOLUME_TO_TSP or other_unit not in _quantities._VOLUME_TO_TSP:
         return None
@@ -761,11 +771,12 @@ def _big_volume_text(amount: float, unit: str | None, other_unit: str | None) ->
     if hint is None:
         return None
     cups = amount * _quantities._VOLUME_TO_TSP[unit] / _quantities._VOLUME_TO_TSP["cup"]
-    if cups >= 4 - 1e-9:
-        whole = math.floor(cups + 1e-6)
-        return _quantities.big_volume_reading(whole * _quantities._VOLUME_TO_TSP["cup"], hint)
     whole = math.floor(cups + 1e-6)
     step = max(f for f in _quantities._VOLUME_STEPS if whole + f <= cups + 1e-6)
+    if cups >= 4 - 1e-9:
+        if adding and step >= 0.25 - 1e-9:
+            return _quantities._cups_text(whole + step)
+        return _quantities.big_volume_reading(whole * _quantities._VOLUME_TO_TSP["cup"], hint)
     if whole + step < 0.25 - 1e-9:
         return None
     return _quantities._cups_text(whole + step)
@@ -801,7 +812,7 @@ def _merged_quantity(existing_qty: str, adding_qty: str) -> str:
     total = have[0] + converted
     if forms:
         return _counted_format(total, have_unit, forms)
-    big = _big_volume_text(total, have_unit, more_unit)
+    big = _big_volume_text(total, have_unit, more_unit, adding=True)
     if big is not None:
         return big
     in_other = _quantities._convert_to_unit(total, have_unit, more_unit)
