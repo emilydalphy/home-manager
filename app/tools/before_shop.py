@@ -544,7 +544,9 @@ def add_regulars(names: list[str]) -> dict:
             staple = _staples._find_by_name(conn, name)
             if staple is None or staple["id"] in live_staple_ids or staple["id"] in made_from_live:
                 continue
-            put = _staples._put_on_list(conn, staple)
+            # Beside a week's line, never onto it: what step 1 and its Undo
+            # take off again must be the regular's own row (review, 2026-11-02).
+            put = _staples._put_on_list(conn, staple, join_week_lines=False)
             # The person ticked it, so it is theirs ("you added it today"),
             # not Pomona's "probably running low" suggestion — that wording
             # is for a line the app put there on its own. "user" when no
@@ -584,29 +586,19 @@ def undo_add_regulars(item_ids: list[int]) -> dict:
     ids = [int(i) for i in (item_ids or []) if str(i).isdigit() or isinstance(i, int)]
     if not ids:
         return {"removed": 0}
-    from . import staples as _staples
-
     marks = ",".join("?" * len(ids))
     conn = get_conn()
     try:
         lines = conn.execute(
-            f"SELECT id, quantity, added_by, source_weekly_plan_id, staple_id FROM grocery_items "
-            f"WHERE household_id = ? AND status = 'needed' AND staple_id IS NOT NULL AND id IN ({marks})",
+            f"SELECT id, staple_id FROM grocery_items WHERE household_id = ? AND status = 'needed' "
+            f"AND staple_id IS NOT NULL AND id IN ({marks})",
             (household_id(), *ids),
         ).fetchall()
-        removed = 0
-        for line in lines:
-            # A regular whose amount JOINED a week's line (add_regulars puts
-            # it on beside one now — "Eggs · 12" onto two frittatas' 6):
-            # deleting that row took the week's eggs with it. It goes back
-            # to the meals' part, exactly as "We have plenty" cuts a
-            # staple's shared line (staples._trim_to_the_weeks_part).
-            if _staples._trim_to_the_weeks_part(conn, line) is None:
-                conn.execute(
-                    "DELETE FROM grocery_items WHERE household_id = ? AND id = ?",
-                    (household_id(), line["id"]),
-                )
-            removed += 1
+        cur = conn.execute(
+            f"DELETE FROM grocery_items WHERE household_id = ? AND status = 'needed' AND staple_id IS NOT NULL "
+            f"AND id IN ({marks})",
+            (household_id(), *ids),
+        )
         for line in lines:
             made_here = conn.execute(
                 "SELECT 1 FROM staple_events WHERE household_id = ? AND staple_id = ? "
@@ -627,6 +619,6 @@ def undo_add_regulars(item_ids: list[int]) -> dict:
                 ):
                     conn.execute(sql, (household_id(), line["staple_id"]))
         conn.commit()
-        return {"removed": removed}
+        return {"removed": cur.rowcount}
     finally:
         conn.close()

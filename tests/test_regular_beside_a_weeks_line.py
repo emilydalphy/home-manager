@@ -116,12 +116,13 @@ def test_the_week_line_a_staple_was_made_from_still_answers_it(signed_in):
     assert len(_milk_lines()) == 1
 
 
-def test_undo_of_a_regular_that_joined_the_weeks_line_keeps_the_weeks_part(signed_in):
-    """When the amounts add up, the regular joins the week's line (as a due
-    staple's does) — so the toast's Undo must cut it back to what the meals
-    need, not delete the row: that took two frittatas' eggs off the list."""
-    from conftest import household_today
+
+def _eggs_with_two_frittatas_approved() -> tuple[dict, int, dict]:
+    """An Eggs regular bought today, and an approved week of two frittatas
+    whose eggs are on the list. Returns (staple, plan id, the week's line)."""
     from datetime import timedelta
+
+    from conftest import household_today
 
     for name in ("Alex", "Sam", "Rae"):
         tools.add_member(name)
@@ -137,24 +138,65 @@ def test_undo_of_a_regular_that_joined_the_weeks_line_keeps_the_weeks_part(signe
     tools.approve_weekly_plan(plan_id, "Alex")
     conn = get_conn()
     [week] = conn.execute(
-        "SELECT id, quantity FROM grocery_items WHERE lower(item) = 'eggs' AND status = 'needed'"
+        "SELECT id, quantity, source_weekly_plan_id FROM grocery_items WHERE lower(item) = 'eggs' AND status = 'needed'"
     ).fetchall()
     conn.close()
+    assert week["source_weekly_plan_id"] == plan_id
+    return s, plan_id, dict(week)
 
-    added = signed_in.post("/api/grocery-list/before-shop/regulars", json={"items": ["Eggs"]}).json()["added"]
-    assert [a["item_id"] for a in added] == [week["id"]]  # joined, one line
-    conn = get_conn()
-    joined = conn.execute("SELECT quantity, staple_id FROM grocery_items WHERE id = ?", (week["id"],)).fetchone()
-    conn.close()
-    assert joined["staple_id"] == s["id"] and joined["quantity"] != week["quantity"]
 
-    signed_in.post("/api/grocery-list/before-shop/regulars-undo", json={"item_ids": [week["id"]]})
+def _week_line(item_id: int) -> tuple:
     conn = get_conn()
-    after = conn.execute(
-        "SELECT quantity, status, staple_id, source_weekly_plan_id FROM grocery_items WHERE id = ?", (week["id"],)
+    row = conn.execute(
+        "SELECT status, quantity, staple_id, source_weekly_plan_id FROM grocery_items WHERE id = ?", (item_id,)
     ).fetchone()
     conn.close()
-    # Was: the row deleted — no eggs on the list for two frittatas.
-    assert after is not None
-    assert (after["status"], after["quantity"], after["staple_id"], after["source_weekly_plan_id"]) == (
-        "needed", week["quantity"], None, plan_id)
+    return tuple(row)
+
+
+def test_step_1s_take_off_takes_only_the_regular_never_the_meals_eggs(signed_in):
+    """Review (2026-11-02). Amounts that add ("1 dozen" + the frittatas'
+    eggs) used to JOIN into one row, and step 1's "Take it off the list?"
+    (POST /remove on that row) took all of it — two frittatas, no eggs. The
+    regular now stands beside the week's line, so taking it off is "not
+    this trip" for the regular and nothing else."""
+    s, plan_id, week = _eggs_with_two_frittatas_approved()
+    added = signed_in.post("/api/grocery-list/before-shop/regulars", json={"items": ["Eggs"]}).json()["added"]
+    [regular] = [a["item_id"] for a in added]
+    assert regular != week["id"]
+    assert _week_line(week["id"]) == ("needed", week["quantity"], None, plan_id)
+    assert _week_line(regular)[:3] == ("needed", "1 dozen", s["id"])
+
+    steps = signed_in.get("/api/grocery-list/before-shop").json()["regulars"]
+    assert [r["item_id"] for r in steps["on_list"]] == [regular]
+    off = signed_in.post(f"/api/grocery-list/{regular}/remove").json()
+    assert off["staple_id"] == s["id"]
+    # The frittatas' eggs are still to buy, exactly as approved.
+    assert _week_line(week["id"]) == ("needed", week["quantity"], None, plan_id)
+    assert _week_line(regular)[0] == "removed"
+    # And the toast's Undo (the staple's) puts the regular back beside it.
+    signed_in.post(f"/api/staples/{s['id']}/undo")
+    assert _week_line(regular)[0] == "needed"
+    assert _week_line(week["id"]) == ("needed", week["quantity"], None, plan_id)
+
+
+def test_undo_of_the_regulars_add_leaves_the_weeks_line(signed_in):
+    s, plan_id, week = _eggs_with_two_frittatas_approved()
+    added = signed_in.post("/api/grocery-list/before-shop/regulars", json={"items": ["Eggs"]}).json()["added"]
+    signed_in.post("/api/grocery-list/before-shop/regulars-undo", json={"item_ids": [a["item_id"] for a in added]})
+    assert _week_line(week["id"]) == ("needed", week["quantity"], None, plan_id)
+    conn = get_conn()
+    n = conn.execute("SELECT COUNT(*) FROM grocery_items WHERE lower(item) = 'eggs' AND status = 'needed'").fetchone()[0]
+    conn.close()
+    assert n == 1
+
+
+def test_a_starter_regular_with_no_amount_gets_a_line_of_its_own(signed_in):
+    """Review, minor: a starter regular has no amount, and joined onto the
+    recipe's "Milk · 1/2 cup" it added nothing anyone could see."""
+    plan_id = _plan()
+    tools.add_grocery_item("Milk", quantity="1/2 cup", category="dairy", source_weekly_plan_id=plan_id)
+    added = signed_in.post("/api/grocery-list/before-shop/regulars", json={"items": ["Milk"]}).json()["added"]
+    assert [a["item"] for a in added] == ["Milk"]
+    staple_id = next(x["id"] for x in tools.list_staples() if x["item"] == "Milk")
+    assert _milk_lines() == [("1/2 cup", None, plan_id), ("", staple_id, None)]
