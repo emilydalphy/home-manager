@@ -34,7 +34,7 @@ from app.tools import moves as _moves
 from app.tools import move_owner as _move_owner
 
 from test_move_owner import (  # the slice-1 seeding, reused rather than copied
-    DAYS, ISO_TODAY, _adults, _at, _cook_card, _cook_meal, _entry, _move,
+    DAYS, ISO_TODAY, _adults, _at, _entry, _move,
     _needs_node, _node, _plan, _prep_row, _recipe,
 )
 
@@ -274,16 +274,8 @@ def test_on_shop_day_the_shop_is_one_line_that_opens_shop():
     assert "data-move-who" not in html
 
 
-@_needs_node
-def test_cook_does_not_paint_the_standing_cook_over_nobody_yet():
-    """CATCH. Under one_person Cook's card fell back to data.cook_name
-    whenever the move named nobody — which, once "Nobody yet" can be said,
-    would undo it on the very next screen."""
-    meals = [_cook_meal(12, "Chicken Skewers")]
-    move = _move("cook", "cook:12", "Chicken Skewers", entry_id=12, meta="35 min",
-                 chips=["35 min", "Start by 5:55"], time_label="6:30 tonight")
-    html = _cook_card(meals, [move], {"cook_name": "Emily"})
-    assert "EMILY" not in html
+# Cook's card painting the standing cook over "Nobody yet" can't happen any
+# more: Cook's root names no cook at all since Option A (2026-11-01).
 
 
 # ---------- review fixes: a refusal is an answer, and it reads like one ----------
