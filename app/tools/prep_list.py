@@ -1067,20 +1067,23 @@ def _recipe_by_name(name: str) -> dict | None:
 def _cooking_list(recipe: dict, meal_date: str, slot: str, batch: int = 0) -> list[dict]:
     from . import leftovers as _leftovers
     from . import recipes as _recipes
-    # A cook that also feeds a later night (a leftovers chain, a cook-ahead
-    # double) or the freezer is cooked as the whole batch: the Cook card
-    # scales it with scale_recipe (cooker._scale_card_to_batch), so the
-    # prep list asks the same question the same way. Read off the recipe's
-    # own baseline, a Tuesday double of skewers said "Marinate the chicken
-    # thighs, 1 lb" on Sunday over a Tuesday card of 2 lbs — half the batch
-    # sat in the marinade (defect hunt, 2026-11-02). Same guard as the
-    # card: no baseline servings, nothing scaled.
-    if batch > 0 and recipe.get("default_servings") and recipe.get("name"):
+    # Scaled exactly as the Cook card is, so the two never disagree. A cook
+    # that also feeds a later night (a leftovers chain, a cook-ahead double)
+    # or the freezer is the whole batch (cooker._scale_card_to_batch); a
+    # plain night is the people eating it (get_cooker_view's plain-night
+    # pass) — both through scale_recipe. Read off the recipe's own
+    # baseline, a Tuesday double of skewers said "Marinate the chicken
+    # thighs, 1 lb" on Sunday over a card of 2 lbs, and a Sunday for four
+    # (two guests) off a recipe for two did the same (defect hunt,
+    # 2026-11-02). Same guard as the card: no baseline servings or nobody
+    # counted, nothing scaled.
+    eaters = _leftovers.eaters_at(meal_date, slot) or None
+    target = batch if batch > 0 else (eaters or 0)
+    if target > 0 and recipe.get("default_servings") and recipe.get("name"):
         try:
-            return _recipes.scale_recipe(recipe["name"], batch)["scaled_ingredients"]
+            return _recipes.scale_recipe(recipe["name"], target)["scaled_ingredients"]
         except Exception:
             pass
-    eaters = _leftovers.eaters_at(meal_date, slot) or None
     try:
         return _recipes.cooking_ingredients(recipe["ingredients"], servings=eaters)
     except Exception:

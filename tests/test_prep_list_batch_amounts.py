@@ -93,3 +93,20 @@ def test_a_doubled_dinner_chops_for_the_batch():
     assert chop["title"] == "4 carrots, 4 yellow onions"
     # Wednesday is a reheat: nothing of its own to chop, never a second count.
     assert str(wed) not in chop["key"]
+
+
+def test_a_guest_night_marinates_for_the_table_the_card_cooks_for():
+    # Two adults and two guests on Tuesday, off a recipe written for two:
+    # the card is scaled to the four eating (get_cooker_view's plain-night
+    # pass), and the marinade is the same 2 lbs, not the recipe's 1 lb.
+    from app.tools import attendance
+    plan_id = _week()
+    _skewers()
+    tue = _plan(plan_id, 2, "Chicken Skewers")
+    attendance.set_slot_attendance(_d(2), "dinner", guest_count=2)
+
+    card = _card(plan_id, tue)
+    chicken = next(i for i in card["ingredients"] if "chicken" in i["item"].lower())
+    assert chicken["qty"] == "2 lbs"
+    [marinade] = [i for i in _items(plan_id) if i["kind"] == "marinate"]
+    assert marinade["title"] == "Marinate the chicken thighs, 2 lbs"
