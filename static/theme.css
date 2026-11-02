@@ -212,8 +212,9 @@
      floating above it: square where they meet, round where they leave. */
   --radius-hero:    30px;  /* hero panel, bottom corners only */
   --radius-card:    20px;  /* cards and tiles */
-  --radius-ask:     18px;  /* ask bar */
-  --radius-action:  17px;  /* primary action; active day tile, top only */
+  --radius-ask:    999px;  /* Ask Pomona + bell: circles */
+  --radius-action: 999px;  /* primary action: pill */
+  --radius-day:     17px;  /* active day tile, top only */
   --radius-tile:    15px;  /* day tiles, 44px icon button */
   --radius-control: 14px;  /* in-card buttons, inputs */
   --radius-send:    13px;  /* send tile */

@@ -3434,7 +3434,7 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   min-height: 68px;
   opacity: 1;
   background: var(--spruce);
-  border-radius: var(--radius-action) var(--radius-action) 0 0;
+  border-radius: var(--radius-day) var(--radius-day) 0 0;
   color: var(--apricot-light);
 }
 .day-rail-cell.selected .day-rail-num {
