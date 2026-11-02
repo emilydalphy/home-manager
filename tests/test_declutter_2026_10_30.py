@@ -575,3 +575,24 @@ def test_the_week_view_is_the_menu_by_meal_type_and_a_day_is_the_schedule():
     assert names.count("Shrimp paella") == 1
     # The day keeps the schedule: its lunch and dinner rows under one card.
     assert "Lunch &amp; dinner" in day
+
+
+@_needs_node
+def test_a_snacks_sheet_is_the_meals_sheet_swap_and_the_recipe_no_move():
+    # Bug, Emily 2026-11-01: tapping a snack dropped straight into the swap
+    # ("Instead of Orange Ginger Shots?") instead of the sheet every other
+    # meal opens.
+    out = _plan(
+        "console.log(JSON.stringify({ opts: planRowSheetOptions(DAYS[2], 'snack'),\n"
+        "  html: planRowSheetHtml(DAYS[2], 'snack'), row: planSnackRows(DAYS[2], 2) }));"
+    )
+    assert out["opts"] == ["swap"], "no Move for a snack; Tweak only where the plate can change"
+    assert 'data-plan-opt="swap"' in out["html"] and 'data-plan-opt="recipe"' in out["html"]
+    assert "Rice cakes" in out["html"]
+    assert "— swap it" not in out["row"] and "Rice cakes — change it" in out["row"]
+
+
+def test_tapping_a_snack_row_opens_the_rows_sheet_not_the_swap():
+    handler = SHELL_JS.split("steps.querySelectorAll('[data-plan-snack]')", 1)[1].split("});\n    });", 1)[0]
+    assert "openPlanRowSheet(panel, day, row.getAttribute('data-plan-snack'))" in handler
+    assert "openSwapSheet" not in handler

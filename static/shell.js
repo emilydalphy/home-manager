@@ -19487,13 +19487,14 @@
       var name = mealDisplayName(entry);
       var meta = planDayRowMeta(day, entry);
       var step = planServeLine(day, slot, entry);
-      // A snack's row is its swap, and a day gone by has nothing to swap.
+      // A snack's row opens its sheet; on a day gone by there is nothing
+      // to change, so it is a line to read.
       if (snack && day.isPast) return planRowHtml({ name: name, meta: meta, step: step, past: true });
       return planRowHtml({
         attrs: (snack ? ' data-plan-snack="' : ' data-plan-row="') + slot + '"' + at,
         eyebrow: eyebrow, name: name, meta: meta, step: step, changed: changed,
         past: day.isPast, done: !!entry.cooked,
-        label: (eyebrow ? eyebrow + ', ' : '') + name + (snack ? ' — swap it' : ' — change it')
+        label: (eyebrow ? eyebrow + ', ' : '') + name + ' — change it'
       });
     }
     if (entry && entry.state === 'open') {
@@ -19532,7 +19533,7 @@
   // Snacks read the same way (Emily, 2026-10-31: "the snacks should show
   // the types in the total meal time like it does with the other meals,
   // then show the days in the schedule like the others") — each snack
-  // once, its days and its time; its row is the snack's swap
+  // once, its days and its time; its row opens the snack's sheet
   // (data-plan-snack), on its first day still ahead.
   var PLAN_DISH_HEADS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snack: 'Snack' };
 
@@ -19552,12 +19553,12 @@
         dish.days.some(function (d) { return wasRecentlyChanged(d.date, d.key); });
       var meta = [wkMenuDaysPhrase(dish, days), fact].filter(Boolean).join(' · ');
       if (slot === 'snack') {
-        // A snack all behind us has nothing to swap: a line to read.
+        // A snack all behind us has nothing to change: a line to read.
         if (!ahead.length) return planRowHtml({ name: dish.name, meta: meta, past: true });
         return planRowHtml({
           attrs: ' data-plan-snack="' + first.key + '" data-wk-day-index="' + first.index + '"',
           name: dish.name, changed: changed, meta: meta,
-          label: dish.name + ' — swap it'
+          label: dish.name + ' — change it'
         });
       }
       return planRowHtml({
@@ -22437,11 +22438,13 @@
         });
       });
     });
-    // A snack's row opens the snack swap, as the snack's Swap always did.
+    // A snack's row opens the same sheet as any meal's (bug, Emily
+    // 2026-11-01: it used to drop straight into the swap). The sheet's own
+    // rules leave Move off a snack and Tweak to one that is a real cook.
     steps.querySelectorAll('[data-plan-snack]').forEach(function (row) {
       row.addEventListener('click', function () {
         var day = wkDayForTap(row);
-        if (day) openSwapSheet(panel, day, row.getAttribute('data-plan-snack'));
+        if (day) openPlanRowSheet(panel, day, row.getAttribute('data-plan-snack'));
       });
     });
     // The draft's flags, top of the screen: one of Pomona's own two fixes
