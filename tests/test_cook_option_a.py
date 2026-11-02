@@ -346,3 +346,14 @@ def test_the_new_root_is_drawn_in_tokens_only():
     for need in ("background: var(--surface)", "background: var(--spruce)", "background: var(--apricot)",
                  "color: var(--apricot-label)", "min-height: 44px"):
         assert need in block, need
+
+
+@_needs_node
+def test_a_dish_plated_at_the_prep_list_says_plate():
+    meals = [_meal(8, TUE, "Chicken Salad", "lunch", is_leftovers=True, served_cold=True,
+                   made_at_prep={"date": "2026-09-13", "weekday": "Sunday"}, finish_action="plate",
+                   leftovers_headline="Chicken Salad — made at Sunday’s prep")]
+    out = _root(meals)
+    assert _dishes(out["html"]) == ["Chicken Salad"]
+    assert '<span class="cook-today-right">Plate</span>' in out["html"]
+    assert ">Mark eaten<" in out["dock"]

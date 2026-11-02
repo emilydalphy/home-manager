@@ -193,7 +193,10 @@ def test_the_two_findings_that_are_emilys_call_were_not_touched():
     """Findings 14 and 30 are flagged, not recommended — the sweep says the
     reasoning behind both is sound and the decision is hers."""
     assert "var done = count ? 'That&rsquo;s where we shop' : 'One list is fine';" in SHELL_JS
-    assert "'Started ' + offset + ' — the clock’s moved with you.'" in SHELL_JS
+    # Finding 30 ("Started 17 minutes late — the clock's moved with you.")
+    # went with Cook's Tonight card: Option A (Emily, 2026-11-01) took every
+    # clock off Cook's root, so the line has nowhere to stand.
+    assert "the clock’s moved with you" not in SHELL_JS
 
 
 def test_chores_was_left_exactly_as_it_was():

@@ -12102,6 +12102,9 @@
   function cookRowRight(row, meal) {
     if (row.done) return '';
     if (row.isTakeout) return 'Takeout';
+    // A dish made whole at a prep day and eaten cold says what finishes it
+    // (cooker._apply_made_at_prep, Emily 2026-11-01): "Plate".
+    if (meal.made_at_prep && meal.finish_action === 'plate') return 'Plate';
     if (row.ready) return 'Ready';
     if (row.isReheat) return 'Reheat';
     var mins = typeof mealClockTotal === 'function'

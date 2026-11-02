@@ -281,8 +281,9 @@ def test_record_made_writes_only_when_the_mark_changes():
 def test_a_reheat_badge_says_plate_for_a_plated_dish():
     import pathlib
     src = (pathlib.Path(__file__).resolve().parents[1] / "static" / "shell.js").read_text()
-    assert "meal.finish_action === 'plate' ? 'Plate'" in src
-    assert "' — made at ' + meal.made_at_prep.weekday + '’s prep.'" in src
+    # Cook's row (Option A, 2026-11-01) keeps "Plate"; the Tonight card's
+    # "— made at Sunday's prep." line went with the card.
+    assert "if (meal.made_at_prep && meal.finish_action === 'plate') return 'Plate';" in src
 
 
 def _stir_fry_recipe_and_plan(plan_id):

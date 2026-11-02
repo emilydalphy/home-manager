@@ -119,8 +119,11 @@ def test_served_cold_rule():
 # ---------- the Cook row (source-level; no JS harness in this repo) ----------
 
 def test_cook_row_badge_says_prepped_for_a_cold_made_ahead_row():
+    # Option A (Emily, 2026-11-01): food made ahead and eaten cold says
+    # "Ready" on Cook's row ("Prepped" until then); a reheat says "Reheat".
     src = SHELL_JS.read_text()
-    assert "(meal.served_cold ? 'Prepped' : 'Reheat')" in src
+    assert "ready: !done && !isTakeout && (!!prepped || !!meal.served_cold)" in src
+    assert "if (row.ready) return 'Ready';" in src and "if (row.isReheat) return 'Reheat';" in src
 
 
 def test_a_snack_whose_notes_say_warm_up_still_reheats():
