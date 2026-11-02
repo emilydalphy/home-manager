@@ -516,7 +516,17 @@ def remove_member(household_id: int, member_id: int, by_member_id: int | None = 
             conn.close()
         touched = _remove_member(household_id, member_id, by_member_id)
         if row is not None:
-            _household.house_name_follows_main_person_out(row["name"] or "")
+            # Best effort: the removal above has already committed, so a
+            # failed rename (a locked database) must not reach the routes'
+            # "nothing was changed" 500 — the person IS gone. The name
+            # stays stale until someone edits it, which is the lesser lie.
+            try:
+                _household.house_name_follows_main_person_out(row["name"] or "")
+            except Exception:
+                logger.exception(
+                    "Removed member %s from household %s but could not rename the house",
+                    member_id, household_id,
+                )
         return touched
 
 
