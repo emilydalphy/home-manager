@@ -69,7 +69,9 @@ def test_a_linked_recipes_pinch_is_its_amount_on_the_draft_the_cook_card_and_the
     # Words that only START like an amount are names, not amounts.
     ("Dashi stock", "Dashi stock", ""),
     ("Pinch salt", "Pinch salt", ""),
-    ("Juice of 1 lemon", "Juice of 1 lemon", ""),
+    # "Juice of 1 lemon" is not a worded amount either; it has its own
+    # reading now (test_recipe_import_juice_of.py), the fruit with a note.
+    ("Juice of 1 lemon", "lemon, juiced", "1"),
 ])
 def test_only_a_worded_amount_followed_by_of_is_lifted_off_the_name(line, item, qty):
     assert ri.split_ingredient_line(line) == {"item": item, "qty": qty}
