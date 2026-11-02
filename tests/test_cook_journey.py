@@ -710,8 +710,10 @@ def test_cook_root_has_one_apricot_and_it_is_the_docks():
 
     Updated 2026-09-26 (prepped lunches on the prep day): the dock gained a
     third branch, not a second primary — see the assertion's own note."""
-    for name in ("renderKitchen", "cookMoreRowsHtml", "kitchenCookingTodayHtml", "cookTonightCardHtml",
-                 "cookShelfTileHtml", "cookGetReadyRowsHtml"):
+    # Option A (2026-11-01): the even list, the two spruce moments and the
+    # quiet lines replaced the Tonight card, the shelf and the get-ready rows.
+    for name in ("renderKitchen", "cookRootParts", "cookMoreRowsHtml", "cookTodayRowHtml", "cookTodayListHtml",
+                 "cookPrepDayCardHtml", "cookBedCardHtml", "cookBedLineHtml", "cookNightOffHtml"):
         body = _extract(name)
         assert "cook-hero-action" not in body, f"{name} put a primary on the root"
         assert "dock-primary" not in body, f"{name} put a second primary on the root"
@@ -721,8 +723,10 @@ def test_cook_root_has_one_apricot_and_it_is_the_docks():
     # on an earlier day has nothing to start, and its tick is the dock's
     # (the card's own row is not drawn under it, so an empty dock would
     # leave the meal with nowhere to tick it).
-    assert root_dock.count("dock-primary") == 3, (
-        "one per branch: Start cooking, Mark eaten, or Mark it cooked"
+    # Five since Option A (2026-11-01): a prep day's Start prep and the
+    # night-before list's All done joined them.
+    assert root_dock.count("dock-primary") == 5, (
+        "one per branch: Start prep, All done, Mark it cooked, Mark eaten, or the meal's own start"
     )
     assert "cookRecipeDockHtml(meal)" in _extract("cookRecipeHtml")
     assert "cookCookerDockHtml(meal)" in _extract("cookCookerHtml")

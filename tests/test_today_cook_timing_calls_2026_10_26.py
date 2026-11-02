@@ -86,23 +86,10 @@ def test_a_move_on_its_own_day_is_never_too_late():
     assert t["too_late_note"] == ""
 
 
-@_needs_node
-def test_cooks_tonight_card_says_the_too_late_note_instead_of_still_to_do():
-    out = _run(_extract("cookTonightNote", SHELL_JS) + "\n"
-               + _extract("cookThawTitle", SHELL_JS) + "\n" + """
-function cookPreppedAhead() { return null; }
-var note = 'Too late to thaw safely for tonight — a cold-water thaw takes about an hour per pound, or cook something else.';
-function cookFocusPrepTasks() { return TASKS; }
-var TASKS = [{ task_type: 'defrost', status: 'pending', too_late_note: note,
-               description: 'Move the ground beef to the fridge — for Monday\\'s Weeknight Chili.' }];
-var a = cookTonightNote({}, {});
-TASKS = [{ task_type: 'defrost', status: 'pending', too_late_note: '',
-           description: 'Move the ground beef to the fridge — for Monday\\'s Weeknight Chili.' }];
-var b = cookTonightNote({}, {});
-console.log(JSON.stringify([a, b]));
-""")
-    assert out[0].startswith("Too late to thaw safely for tonight")
-    assert out[1] == "Move the ground beef to the fridge — still to do."
+# Cook's Tonight card said the too-late note in place of "still to do". The
+# card went with Option A (2026-11-01); the note is said in the night-before
+# list now (tests/test_cook_option_a.py,
+# test_a_thaw_too_late_for_the_fridge_says_so_in_the_list).
 
 
 # ---------- 35. A carried move's tick toasts, with Undo ----------

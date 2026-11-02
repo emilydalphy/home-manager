@@ -54,36 +54,10 @@ _ESC = (
 # Card 1 - the Cook chip on a Cook row: one line, and a tap opens the recipe
 # --------------------------------------------------------------------------
 
-def _row_html(row):
-    return _node(
-        _ESC
-        + "const COOK_ICONS = { check: '<svg></svg>' };\n"
-        + "const REHEAT_ACTION_LABEL = 'Mark eaten'; const REHEAT_UNDO_LABEL = 'Mark not eaten';\n"
-        + _function("kitchenTodayRowHtml")
-        + "\nconsole.log(JSON.stringify(kitchenTodayRowHtml(" + json.dumps(row) + ")));"
-    )
-
-
-def _row(**kw):
-    base = {"idx": 3, "entryId": 11, "isReheat": False, "done": False, "title": "Chicken Tikka Masala",
-            "line": "start by 5:35 · 55 min", "badge": "Cook", "prepped": None, "move": None}
-    base.update(kw)
-    return base
-
-
-@_needs_node
-def test_the_cook_chip_is_a_button_that_opens_the_recipe():
-    html = _row_html(_row())
-    m = re.search(r'<button[^>]*class="cook-badge[^"]*"[^>]*>Cook</button>', html)
-    assert m, html
-    assert 'data-cook="focus"' in m.group(0) and 'data-idx="3"' in m.group(0)
-
-
-@_needs_node
-def test_a_reheat_chip_stays_a_plain_label():
-    html = _row_html(_row(isReheat=True, badge="Reheat"))
-    assert '<span class="cook-badge cook-badge-tag cook-badge-warm"' not in html  # reheat is celadon
-    assert re.search(r'<span class="cook-badge cook-badge-tag">Reheat</span>', html), html
+# The Cook row's chip ("Cook" / "Reheat") went with the row itself on
+# 2026-11-01 (Option A): every row of Cook's root is one button that opens
+# its meal, so there is no chip to make tappable. The CSS rule below is
+# still on the sheet.
 
 
 def test_the_one_word_chip_never_wraps_or_shrinks():

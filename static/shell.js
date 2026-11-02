@@ -214,8 +214,9 @@
     // The Today tab is gone (Emily, 2026-11-01: "The only benefit of the
     // today screen at the moment, is having it tell the user to thaw
     // things. Besides that everything is a repeat of information that can
-    // be found in the other tabs"). Its one unique job, the thaw, is the
-    // card at the top of Cook's root (cookThawCardHtml); the app opens on
+    // be found in the other tabs"). Its one unique job, the thaw, lives on
+    // Cook's root — since Option A (2026-11-01) in the night-before list
+    // (cookBedCardHtml); the app opens on
     // Plan, and '/' — the old Today path, still the home-screen app's and
     // the morning text's address — is Plan's too (currentTabKey,
     // TODAY_TAB_ALIAS). buildTodayPanel and the render code under it are
@@ -11415,8 +11416,8 @@
     // other's clicks.
     panel.addEventListener('click', onKitchenClick);
     panel.addEventListener('click', onCookClick);
-    // The thaw card's "Done, they're in the fridge" box (onCookThawChange).
-    panel.addEventListener('change', onCookThawChange);
+    // The night-before checklist's boxes (onCookBedChange).
+    panel.addEventListener('change', onCookBedChange);
     loadKitchen();
   }
 
@@ -12025,12 +12026,15 @@
     return (p && p.date && meal.date && p.date < meal.date) ? p : null;
   }
 
-  // One row per meal that happens TODAY, cooks and reheats alike, in slot
-  // order as the plan gives them. `move` is the matching entry from
-  // /api/today/moves, which is where the start-by arithmetic lives — the
-  // row falls back to the plan's own facts when there is no move for it
-  // (a day that is not today's, a plan the moves engine has not caught up
-  // with) rather than inventing a clock.
+  // One row per meal that happens TODAY, cooks and reheats alike. `move` is
+  // the matching entry from /api/today/moves, read for one fact: whether it
+  // is done — the plan row and the move say the same thing about "cooked"
+  // (the move's `done` is read off cooked_status, app/tools/moves.py) but
+  // either can be the fresher of the two after a tick.
+  //
+  // No clock. Cook's root says how long a meal takes, never when to start
+  // it or when it is on the table (Emily, 2026-11-01, Option A: "we don't
+  // know when people eat"), so nothing here reads a start-by chip.
   function kitchenTodayRows(meals, moves, todayIso) {
     var byEntry = {};
     (moves || []).forEach(function (m) {
@@ -12041,92 +12045,80 @@
       if (meal.date !== todayIso) return;
       var move = byEntry[meal.entry_id] || null;
       var isReheat = !!meal.is_leftovers;
-      // A written-in takeout meal: named, never a cook — no "Start
-      // cooking", no clock (the server marks it: cooker.get_cooker_view's
-      // is_takeout, the predicate Today's moves use).
+      // A written-in takeout meal: named, never a cook (the server marks
+      // it: cooker.get_cooker_view's is_takeout).
       var isTakeout = !isReheat && !!meal.is_takeout;
       var prepped = cookPreppedAhead(meal);
-      // The plan row and the move say the same thing about "cooked" — the
-      // move's `done` is read off cooked_status (app/tools/moves.py) — but
-      // either one can be the fresher of the two after a tick, so a row is
-      // done if either says so rather than whichever happened to reload.
       var done = meal.cooked_status === 'done' || !!(move && move.done);
-      rows.push({
+      var row = {
         idx: idx,
         entryId: meal.entry_id,
+        slot: meal.slot || 'dinner',
         isReheat: isReheat,
         isTakeout: isTakeout,
         done: done,
-        // The move itself rides along: the Tonight card reads its "Start
-        // by" chip and its time label, which is the same arithmetic the
-        // line below is built from.
         move: move,
-        // Made on an earlier day: nothing to cook here, and nothing to
-        // start by. The dish keeps its name — it is still what is being
-        // eaten, and it is still the row that gets ticked.
+        // Made on an earlier day: nothing to cook here. The dish keeps its
+        // name — it is still what is being eaten, and still gets ticked.
         prepped: prepped,
+        // Eaten as it comes out of the fridge (served_cold, cooker.py):
+        // made ahead, or plated at a prep day. Nothing to make or warm.
+        ready: !done && !isTakeout && (!!prepped || !!meal.served_cold),
         // Under way: the real start is on record, or a step is ticked — the
-        // same reading the recipe screen's dock and the Meal step's make
-        // for "Keep cooking" (cookRecipeDockHtml, mealDockHtml), so the
-        // root's dock cannot say "Start cooking" under a card that already
-        // reads STARTED 5:50 (defect hunt, 2026-10-14). typeof: the tests
-        // run this builder alone under node.
+        // same reading the recipe screen's dock makes for "Keep cooking".
+        // typeof: the tests run this builder alone under node.
         underway: !done && (!!meal.cook_started_at ||
           (typeof mealCookUnderway === 'function' && mealCookUnderway(meal))),
-        title: isReheat ? (meal.leftovers_headline || 'Leftovers') : (meal.meal || 'Dinner'),
-        // Whose it is leads the line, exactly as it does on Today —
-        // moveOwnerClause is the one wording (MOVE_OWNER_WORDS), so the two
-        // screens cannot name the same cook two different ways. The typeof
-        // guard is this file's own idiom for a Cook builder that the tests
-        // run alone under node (see cookTonightTimes' cookRealClock read).
-        line: isTakeout ? '' : cookOwnerPrefix(move) + kitchenTodayLine(meal, move, isReheat, done, prepped),
-        // "Cook" / "Reheat" while it is still ahead of you, and the past
-        // tense of whichever it was once it is done — a reheat night was
-        // never cooked, it was eaten (REHEAT_ACTION_LABEL says so too).
-        // Made ahead and eaten cold (served_cold, cooker.py) is "Prepped":
-        // it's ready to go, nothing to warm (Emily, 2026-09-25).
-        badge: done ? (isReheat || isTakeout ? 'eaten' : 'cooked')
-          // A dish made whole at the prep list says what finishes it —
-          // "Plate" for a cold one (cooker._apply_made_at_prep, Emily
-          // 2026-11-01).
-          : isTakeout ? 'Takeout' : (isReheat ? (meal.finish_action === 'plate' ? 'Plate' : (meal.served_cold ? 'Prepped' : 'Reheat')) : (prepped ? 'Prepped' : 'Cook'))
-      });
+        title: cookRowTitle(meal)
+      };
+      row.right = cookRowRight(row, meal);
+      rows.push(row);
     });
     return rows;
   }
 
-  // "Emily’s cooking · " when the move says whose it is, "" otherwise —
-  // the clause and the separator together, so a row with nobody on it is
-  // byte-for-byte the line it was before any of this existed.
-  function cookOwnerPrefix(move) {
-    var whose = (typeof moveOwnerClause === 'function') ? moveOwnerClause(move) : '';
-    return whose ? whose + ' · ' : '';
+  // The dish as the row names it. A leftovers night says "Leftovers" and
+  // nothing else — never "from Thursday's dinner" (Emily, 2026-10-30). A
+  // portion made ahead on purpose is the dish itself ("Veg sticks and
+  // hummus"), since it is what that meal was always going to be; so is a
+  // dish made whole at a prep day.
+  function cookRowTitle(meal) {
+    if (!meal) return '';
+    if (meal.made_at_prep) return meal.meal || cookSlotLabel(meal.slot);
+    if (meal.is_leftovers) {
+      var head = String(meal.leftovers_headline || '');
+      if (/^Made ahead/i.test(head)) {
+        return (meal.leftovers_from && meal.leftovers_from.meal) || meal.meal || 'Leftovers';
+      }
+      return 'Leftovers';
+    }
+    return meal.meal || cookSlotLabel(meal.slot);
   }
 
-  // "start by 5:35 · 55 min" for a cook; "leftovers from Sunday · reheat ·
-  // 6:30" for a reheat — both read off the move rather than restated here,
-  // so the words match the ones Today uses for the same meal.
-  function kitchenTodayLine(meal, move, isReheat, done, prepped) {
-    if (isReheat) return move ? move.detail : (meal.served_cold ? '' : 'reheat');
-    // "Prepped Sunday" and nothing else: a start-by time for a cook that
-    // happened on another day is a time nobody is meant to act on.
-    if (prepped) return 'Prepped ' + prepped.weekday;
-    var bits = [];
-    ((move && move.chips) || []).forEach(function (chip) {
-      // A cook that is already done has no start-by left to make: the
-      // moves payload keeps the chip (it is arithmetic about the slot, not
-      // about the tick), so the row drops it rather than telling someone
-      // who has just cooked when they should have started.
-      if (/^Start by /.test(chip)) { if (!done) bits.unshift('start by ' + chip.slice('Start by '.length)); }
-      else if (/^Started /.test(chip)) { if (!done) bits.push(chip); }
-      else bits.push(chip);
-    });
-    if (!bits.length) {
-      var mins = (meal.prep_time_minutes || 0) + (meal.cook_time_minutes || 0);
-      if (move && move.time_label) bits.push(move.time_label);
-      if (mins) bits.push(mins + ' min');
-    }
-    return bits.join(' · ');
+  // The row's right-hand word: how long it takes ("45 min"), "Ready" for
+  // food already made and eaten cold, "Reheat" for leftovers, "Takeout".
+  // A done row has nothing there — its check says it all. Never a time of
+  // day.
+  function cookRowRight(row, meal) {
+    if (row.done) return '';
+    if (row.isTakeout) return 'Takeout';
+    if (row.ready) return 'Ready';
+    if (row.isReheat) return 'Reheat';
+    var mins = typeof mealClockTotal === 'function'
+      ? mealClockTotal(meal)
+      : ((meal.prep_time_minutes || 0) + (meal.cook_time_minutes || 0)) || null;
+    return mins ? mins + ' min' : '';
+  }
+
+  function cookIsSnack(slot) {
+    return /^snack\d*$/.test(String(slot || ''));
+  }
+
+  // "Breakfast", "Lunch", "Snack", "Dinner" — the small label on top.
+  function cookSlotLabel(slot) {
+    if (cookIsSnack(slot)) return 'Snack';
+    var s = String(slot || 'dinner');
+    return s.charAt(0).toUpperCase() + s.slice(1);
   }
 
   // "1 cook tonight" — the band's one line; the day itself is the band's
@@ -12190,797 +12182,326 @@
     return 'Next: ' + when + ' — ' + next.meal + '.';
   }
 
-  // The row's state chip ("Cook", "Reheat", "cooked") reads as a button on a
-  // cook night, so it IS one: it opens the same recipe screen the dish name
-  // does (Loop Board 2026-10-06 — it was a plain span and a tap did nothing).
-  // .cook-badge-tag keeps it on one line ("Coo / k" at 375px). Built inside
-  // kitchenTodayRowHtml so the harness tests that slice that one function
-  // keep running the real thing.
-  function kitchenTodayRowHtml(row) {
-    var quiet = row.isReheat || row.isTakeout;
-    var checkLabel = quiet
-      ? (row.done ? REHEAT_UNDO_LABEL : REHEAT_ACTION_LABEL)
-      : (row.done ? 'Mark not cooked' : 'Mark cooked');
-    // A reheat is a line, never a way into a recipe — there is no cook
-    // here, so there is nothing for a cook screen to hold (Emily,
-    // 2026-09-04). Its box still ticks: the dish gets eaten either way.
-    var name = quiet
-      ? '<span class="cook-week-name">' + escapeHtml(row.title) + '</span>'
-      : '<button type="button" class="cook-week-name" data-cook="focus" data-idx="' + row.idx + '">' +
-          escapeHtml(row.title) + '</button>';
-    var badgeCls = 'cook-badge cook-badge-tag' + (row.done || quiet ? '' : ' cook-badge-warm');
-    return '<div class="cook-week-item' + (row.done ? ' is-done' : '') + '">' +
-      '<div class="cook-week-row">' +
-        '<button type="button" class="cook-box' + (row.done ? ' checked' : '') + '" ' +
-          'data-cook="check-meal" data-entry-id="' + row.entryId + '" data-next="' + (row.done ? 'pending' : 'done') + '" ' +
-          'data-name="' + escapeHtml(row.title) + '" ' +
-          'aria-label="' + escapeHtml(checkLabel) + '">' + COOK_ICONS.check + '</button>' +
-        name +
-        (quiet
-          ? '<span class="' + badgeCls + '">' + escapeHtml(row.badge) + '</span>'
-          : '<button type="button" class="' + badgeCls + ' cook-badge-tap" data-cook="focus" data-idx="' +
-              row.idx + '">' + escapeHtml(row.badge) + '</button>') +
-      '</div>' +
-      (row.line ? '<p class="cook-week-sub">' + escapeHtml(row.line) + '</p>' : '') +
-    '</div>';
-  }
-
-  // Prep that nothing else on this tab shows.
+  // ---------- Cook's root: today, in the order it is eaten ----------
+  // Emily picked Option A, "every meal the same size", on 2026-11-01 (the
+  // Cook declutter canvas). The root is one calm ivory list of today's
+  // meals — Breakfast, Lunch, Snack, Dinner, Snack — each row the same
+  // size: the slot small on top, the dish, the minutes on the right. A done
+  // meal is a check and muted text; the first meal not yet done carries a
+  // small apricot dot and "· next". A tap on any row opens that meal (its
+  // recipe, or the leftovers card), where it is cooked and ticked.
   //
-  // Three places a prep_tasks row can surface: its prep day's session
-  // (cookSessionHtml, which only picks up rows dated ON a prep day),
-  // the focused cook screen of the meal it feeds (cookFocusPrepTasks,
-  // which needs either a meal_plan_entry_id or a related_meal that matches
-  // a dish by name), and Today's timeline, which only ever shows today.
-  // A general task with neither link, dated on an ordinary day — "Soak the
-  // beans", two days out — fell through all three and rendered NOWHERE.
-  // A task the app wrote and then hid is worse than one it never wrote, so
-  // the root collects the leftovers: every pending row no session and no
-  // cook screen already carries. Since 2026-09-13 the soonest of them is
-  // one of the root's get-ready rows (cookGetReadyMoves), with its tick.
-  //
-  // Done rows are left out on purpose: this is the "nothing is invisible"
-  // net, not a second progress list, and a finished task is not lost.
-  function kitchenLoosePrepTasks(data) {
-    var tasks = (data && data.prep_tasks) || [];
-    if (!tasks.length) return [];
-    var shown = {};
-    ((data && data.prep_sessions) || []).forEach(function (session) {
-      (session.items || []).forEach(function (item) {
-        if (item.prep_task_id != null) shown[item.prep_task_id] = true;
-      });
+  // Dark spruce is kept for two moments only (Emily: the dark dinner card
+  // "gives it too much attention… what if I have lunch on my mind still"):
+  //   - a prep day before the prep is done: the prep session leads, big,
+  //     above the list (it was "way too hidden"), and the dock says Start
+  //     prep. Once it is done it is one quiet line.
+  //   - the night before: once the day's last meal is done, tomorrow's
+  //     fridge moves and prep become one "Get ready for <day>" checklist.
+  //     Before that they are one quiet line under the list. A thaw shows
+  //     there and nowhere else on the root — never twice.
+  // No clock times anywhere: minutes, never "start by" or "on the table".
+  // What came off: the week shelf, the Tonight card, the thaw card at the
+  // top, the get-ready rows and each row's box/Cook button/start-by line.
+
+  // Eating order: breakfast, lunch, the first snack (an afternoon one),
+  // dinner, then any later snacks. Ties keep the plan's own order.
+  function cookEatingOrder(rows) {
+    var by = { breakfast: [], lunch: [], dinner: [], other: [] };
+    var snacks = [];
+    (rows || []).forEach(function (r) {
+      if (cookIsSnack(r.slot)) snacks.push(r);
+      else (by[r.slot] || by.other).push(r);
     });
-    ((data && data.meals) || []).forEach(function (meal) {
-      cookFocusPrepTasks(data, meal).forEach(function (t) { shown[t.id] = true; });
-    });
-    return tasks.filter(function (t) {
-      return t.status !== 'done' && !shown[t.id];
-    });
+    return by.breakfast.concat(by.lunch, snacks.slice(0, 1), by.dinner, snacks.slice(1), by.other);
   }
 
-  // ---------- Cook's root: the shelf, tonight, and what's next ----------
-  // Emily picked "Cook · D · The shelf" from the Beyond-lists canvas on
-  // 2026-09-13. The root is three things under the band, in this order:
-  //   1. The shelf — a sideways strip, one tile per night of the planning
-  //      period, tonight tinted celadon, a one-word dish on each (see
-  //      dishShortWord). A tile opens that night's meal screen (S8).
-  //   2. Tonight — ONE spruce card (rule 4: the root's one hero moment):
-  //      the dish, when to start and when it is on the table, and the
-  //      thaw/prep fact for it.
-  //   3. Under it, at most two quiet rows: the next get-ready move (a
-  //      thaw for a later night, the next prep session).
-  // The dock carries "Start cooking" (nav rule 2 — until this design
-  // Cook's root had no dock by rule; DESIGN_SYSTEM §6 says why it does
-  // now). Recipes / Add from a link / Inventory are behind one "More"
-  // link at the foot (cookMoreSheet). The lists this replaced — "Cooking
-  // today" rows, "Prep sessions", "Prep to do", "The rest of the week" —
-  // are gone; nothing they showed is lost (see cookGetReadyMoves for the
-  // prep, the shelf for the week).
-
-  // One word for a dish, for a 74px tile: the recipe's own short name when
-  // it has one, else the word that names the KIND of dish ("Stir-fry",
-  // "Tikka", "Tacos" — COOK_DISH_WORDS), else the last real word of the
-  // name ("Herb-Roasted Chicken" → "Chicken"; "Roast" would be too
-  // clever), else the first word. What comes after "with" is the side,
-  // not the dish ("Baked Lemon Herb Salmon with Roasted Asparagus" is
-  // "Salmon", never "Asparagus"). Joining words never win ("Beef and
-  // Broccoli" is never "and"). Capitalised once, the rest lowercased, so
-  // "Stir-Fry" reads "Stir-fry" on the tile.
-  var COOK_DISH_WORDS = [
-    'stir-fry', 'stirfry', 'tikka', 'curry', 'tacos', 'taco', 'burritos', 'burrito', 'fajitas',
-    'enchiladas', 'quesadillas', 'nachos', 'pizza', 'pasta', 'spaghetti', 'lasagna', 'lasagne',
-    'risotto', 'gnocchi', 'ramen', 'pho', 'noodles', 'soup', 'stew', 'chili', 'chilli', 'salad',
-    'wraps', 'wrap', 'burgers', 'burger', 'sliders', 'skewers', 'kebabs', 'casserole', 'bake',
-    'pie', 'quiche', 'frittata', 'omelette', 'pancakes', 'waffles', 'sandwiches', 'sandwich',
-    'paella', 'biryani', 'dal', 'dhal', 'katsu', 'teriyaki', 'bolognese', 'carbonara',
-    'meatballs', 'meatloaf', 'dumplings', 'gyoza', 'sushi', 'poke', 'shakshuka', 'goulash',
-    'jambalaya', 'gumbo', 'tagine', 'schnitzel', 'stroganoff', 'chowder', 'bibimbap', 'bulgogi',
-    'satay', 'souvlaki', 'gyros', 'falafel', 'hummus', 'tortellini', 'ravioli', 'mac'
-  ];
-  var COOK_JOIN_WORDS = ['and', 'with', 'of', 'the', 'a', 'in', 'on', 'for', 'or', '&', 'n', "'n'"];
-  // How it was cooked is never what it is. The fallback below used to take
-  // the last capitalised word, and a name typed in sentence case has only
-  // one — so "Grilled salmon with rice" read "Grilled" on the tile (defect
-  // hunt, 2026-10-14). These words are passed over; the dish words above
-  // still win first, so a stir-fry is still "Stir-fry".
-  var COOK_METHOD_WORDS = [
-    'grilled', 'grill', 'roast', 'roasted', 'baked', 'fried', 'fry', 'stir', 'pan', 'sheet',
-    'slow', 'cooker', 'cooked', 'seared', 'braised', 'smoked', 'poached', 'steamed', 'sauteed',
-    'crispy', 'creamy', 'sticky', 'spicy', 'easy', 'quick', 'simple', 'homemade', 'pulled',
-    'air', 'instant', 'one-pot', 'one-pan', 'sheet-pan', 'pan-fried', 'pan-seared', 'oven'
-  ];
-
-  function dishShortWord(name, shortName) {
-    if (shortName && String(shortName).trim()) return dishTitleCase(String(shortName).trim());
-    // "Stir Fry" typed as two words is the same dish as "Stir-Fry" — read
-    // whole, or the tile says "Fry".
-    var main = String(name || '').split(/\s+with\s+/i)[0].replace(/\bstir\s+fry\b/ig, 'Stir-fry');
-    var words = main.trim().split(/\s+/).filter(function (w) {
-      return w && COOK_JOIN_WORDS.indexOf(w.toLowerCase().replace(/[^\w'&-]/g, '')) === -1;
-    });
-    if (!words.length) return '';
-    var clean = words.map(function (w) { return w.replace(/[^\w'-]/g, ''); });
-    for (var i = 0; i < clean.length; i++) {
-      var w = clean[i].toLowerCase();
-      // A whole word, or the last piece of a hyphenated one ("Sheet-Pan
-      // Fajitas" is Fajitas; "Beef Stir-Fry" is Stir-fry, whole).
-      if (COOK_DISH_WORDS.indexOf(w) !== -1) return dishTitleCase(clean[i]);
-      var tail = w.split('-').pop();
-      if (tail !== w && COOK_DISH_WORDS.indexOf(tail) !== -1) return dishTitleCase(tail);
-    }
-    // The last word that starts with a capital, else the first word —
-    // either way, never a cooking word while there is another to say.
-    var isMethod = function (word) { return COOK_METHOD_WORDS.indexOf(word.toLowerCase()) !== -1; };
-    for (var j = clean.length - 1; j >= 0; j--) {
-      if (/^[A-Z]/.test(clean[j]) && !isMethod(clean[j])) return dishTitleCase(clean[j]);
-    }
-    for (var k = 0; k < clean.length; k++) {
-      if (!isMethod(clean[k])) return dishTitleCase(clean[k]);
-    }
-    return dishTitleCase(clean[0]);
-  }
-
-  function dishTitleCase(word) {
-    var w = String(word || '');
-    return w ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : '';
-  }
-
-  // The nights the shelf shows: the plan's own period when there is one
-  // (period_start_date + day_count, from get_cooker_view), else a week
-  // from today. Each night carries its dinner — the meal that IS the
-  // night — or nothing.
-  function cookShelfNights(meals, data, todayIso) {
-    var start = data && data.period_start_date;
-    var count = (data && data.day_count) || 0;
-    if (!start || count < 1) { start = todayIso; count = 7; }
-    var byDate = {};
-    (meals || []).forEach(function (m, i) {
-      if (!m.date || m.component_category) return;
-      var slot = byDate[m.date] || (byDate[m.date] = { dinner: null, other: null });
-      if (m.slot === 'dinner') { if (!slot.dinner) slot.dinner = { meal: m, idx: i }; }
-      else if (!slot.other) slot.other = { meal: m, idx: i };
-    });
-    var nights = [];
-    for (var d = 0; d < count; d++) {
-      var iso = addDaysLocal(start, d);
-      var slot = byDate[iso];
-      var pick = slot ? (slot.dinner || slot.other) : null;
-      nights.push({
-        iso: iso,
-        isTonight: iso === todayIso,
-        // A night outside today's month carries the month on its tile —
-        // "13" under WED is this month's Wednesday until it says "Oct 13".
-        otherMonth: iso.slice(0, 7) !== todayIso.slice(0, 7),
-        meal: pick ? pick.meal : null,
-        idx: pick ? pick.idx : null
-      });
-    }
-    return nights;
-  }
-
-  function cookShelfHtml(meals, data, todayIso) {
-    var nights = cookShelfNights(meals, data, todayIso);
-    return '<div class="cook-shelf" id="kit-shelf">' +
-      nights.map(cookShelfTileHtml).join('') +
-    '</div>';
-  }
-
-  // A night with a meal is a way into that night's screen — the recipe for
-  // a cook, the leftovers card for a reheat (cookReheatFocusHtml, the same
-  // screen Now's hero opens). A night with nothing planned is a tile with
-  // a dash, and not a button: there is nothing behind it to open.
-  function cookShelfTileHtml(night) {
-    var m = night.meal;
-    var word = m
-      ? (m.is_leftovers ? 'Leftovers' : dishShortWord(m.meal, m.short_name))
-      : '—';
-    var cls = 'shelf-tile' + (night.isTonight ? ' is-tonight' : '') + (m ? '' : ' is-empty') +
-      (m && m.cooked_status === 'done' ? ' is-done' : '');
-    var label = dayName(night.iso, { weekday: 'long', month: 'long', day: 'numeric' }) +
-      (night.isTonight ? ', tonight' : '') + (m ? ': ' + (m.is_leftovers ? (m.leftovers_headline || 'Leftovers') : m.meal) : ': nothing planned');
-    var num = String(parseInt(night.iso.slice(8, 10), 10));
-    if (night.otherMonth) num = dayName(night.iso, { month: 'short' }) + ' ' + num;
-    var inner =
-      '<span class="shelf-day">' + escapeHtml(dayNameShort(night.iso).toUpperCase()) + '</span>' +
-      '<span class="shelf-num">' + escapeHtml(num) + '</span>' +
-      '<span class="shelf-dish">' + escapeHtml(word) + '</span>';
-    if (!m) return '<div class="' + cls + '" aria-label="' + escapeHtml(label) + '">' + inner + '</div>';
-    return '<button type="button" class="' + cls + '" data-cook="focus" data-idx="' + night.idx + '" aria-label="' + escapeHtml(label) + '">' +
-      inner + '</button>';
-  }
-
-  // The strip opens with tonight in view (and the nights either side of
-  // it) rather than at the period's first day, which on a Thursday is
-  // three tiles of history. Measured after the render; the scroller's own
-  // scrollLeft, never scrollIntoView, which would also scroll the page.
-  function cookShelfScrollToTonight(body) {
-    var shelf = body && body.querySelector('#kit-shelf');
-    var tile = shelf && shelf.querySelector('.shelf-tile.is-tonight');
-    if (!shelf || !tile) return;
-    var left = tile.offsetLeft - shelf.offsetLeft - (shelf.clientWidth - tile.offsetWidth) / 2;
-    shelf.scrollLeft = Math.max(0, left);
-  }
-
-  // Which of today's rows is the card. cookState.tonightIdx is the meal
-  // the tab already calls tonight (pinned on load — cookTonightIndex
-  // prefers the current slot's uncooked meal); the card follows it when
-  // it is one of today's rows, else the first row still to do, else the
-  // last one.
-  function cookTonightRow(rows) {
-    if (!rows.length) return null;
-    for (var i = 0; i < rows.length; i++) {
-      if (rows[i].idx === cookState.tonightIdx) return rows[i];
-    }
-    // A real cook still to do beats a lunch that was prepped on an earlier
-    // day: the card is what to DO now, and there is nothing to do about
-    // food that is already made.
-    var todo = rows.filter(function (r) { return !r.done; });
-    var toCook = todo.filter(function (r) { return !r.prepped && !r.isTakeout; });
-    if (toCook.length) return toCook[0];
-    return todo.length ? todo[0] : rows[rows.length - 1];
-  }
-
-  // "MONDAY · TONIGHT · EMILY" — the day, the meal of the day said the way
-  // the band says it (a lunch at eleven is not tonight), and the cook by
-  // name only when the household said one person cooks (cook_name).
-  function cookTonightEyebrow(meal, todayIso, cookName) {
-    var when = meal.slot === 'dinner' ? 'Tonight' : (meal.slot === 'breakfast' ? 'This morning' : 'Today');
-    var bits = [dayName(todayIso, { weekday: 'long' }), when];
-    if (cookName) bits.push(cookName);
-    return bits.join(' · ').toUpperCase();
-  }
-
-  // The card's one line: the thaw or prep fact for THIS meal, from the
-  // prep tasks that belong to it (cookFocusPrepTasks — the same rows the
-  // meal's own screen ticks), then the recipe's own advance-prep note,
-  // else the plain truth that there is nothing to do ahead.
-  function cookTonightNote(data, meal) {
-    // Made ahead on the prep day: the day the food was really made, not
-    // the day the cook entry happens to sit on (cookPreppedAhead).
-    var prepped = cookPreppedAhead(meal);
-    // Made whole at a prep day (cooker._apply_made_at_prep): reheat or
-    // plate, and the day it was made.
-    if (meal.made_at_prep) {
-      return (meal.finish_action === 'plate' ? 'Plate' : 'Reheat') +
-        ' — made at ' + meal.made_at_prep.weekday + '’s prep.';
-    }
-    if (meal.is_leftovers) {
-      var src = meal.leftovers_from || {};
-      var madeOn = prepped ? prepped.date : src.date;
-      return madeOn ? 'Reheat — cooked on ' + dayName(madeOn, { weekday: 'long' }) + '.' : 'Reheat.';
-    }
-    if (prepped) {
-      return 'Prepped ' + prepped.weekday + ' — ready to go.';
-    }
-    var tasks = cookFocusPrepTasks(data, meal);
-    var pending = function (t) { return t.status !== 'done' && t.status !== 'skipped'; };
-    var thaws = tasks.filter(function (t) { return t.task_type === 'defrost'; });
-    var thawToDo = thaws.filter(pending)[0];
-    // Missed, and too late for the fridge: the server's one rule
-    // (moves.fridge_move_too_late, stamped as too_late_note), the same
-    // words Today's row says — never "still to do" beside Today's "too late".
-    if (thawToDo && thawToDo.too_late_note) return thawToDo.too_late_note;
-    if (thawToDo) return cookThawTitle(thawToDo) + ' — still to do.';
-    var prepToDo = tasks.filter(function (t) { return t.task_type !== 'defrost' && pending(t); });
-    if (prepToDo.length === 1) return 'Still to do: ' + prepToDo[0].description.replace(/\.$/, '') + '.';
-    if (prepToDo.length > 1) return prepToDo.length + ' prep steps still to do.';
-    if (thaws.length) return cookThawDoneLine(thaws[0]);
-    if (tasks.length) return 'Prep’s done — the rest is tonight.';
-    if (meal.advance_prep_notes) return meal.advance_prep_notes;
-    return 'Nothing to thaw or prep ahead.';
-  }
-
-  // defrost._describe writes "Move the chicken thighs to the fridge — for
-  // Thursday's skewers." — the head is the move, the tail is what it is
-  // for. Same split moves.py makes for Now's card.
-  function cookThawTitle(task) {
-    var d = String(task.description || '');
-    return (d.split(' — ')[0] || d).replace(/\.$/, '').trim() || 'Fridge move';
-  }
-  function cookThawFor(task) {
-    var d = String(task.description || '');
-    var i = d.indexOf(' — ');
-    return i === -1 ? '' : d.slice(i + 3).replace(/\.$/, '').trim();
-  }
-  function cookThawDoneLine(task) {
-    var m = /^Move the (.+) to the fridge$/i.exec(cookThawTitle(task));
-    return m ? 'The ' + m[1] + ' are in the fridge already.' : 'Out of the freezer already.';
-  }
-
-  // Start / on the table, off the move the server worked out for this
-  // meal (app/tools/moves.py: dinner_window minus the recipe's minutes —
-  // the same numbers Now shows, so the two screens cannot disagree). No
-  // move, or a recipe with no timing: the one honest tile left is how
-  // long it takes; nothing at all when even that is unknown.
-  function cookTonightTimes(row, meal) {
-    // Prepped on an earlier day: there is no start time to keep, and "Takes
-    // 40 min" about a cook already done is the same lie one step quieter.
-    if (row.prepped) return [];
-    // The real start first (cook_started_at on the card, which the start
-    // POST itself refreshes — the moves list may still be the morning's):
-    // STARTED, and the on-the-table time that follows from it (typeof
-    // guard: the tests run this card alone under node).
-    var live = !row.done && typeof cookRealClock === 'function' ? cookRealClock(meal) : null;
-    if (live) {
-      var liveTiles = [{ label: 'Started', value: clockLabel(live.start) }];
-      if (live.table !== null) liveTiles.push({ label: 'On the table', value: clockLabel(live.table) });
-      return liveTiles;
-    }
-    var move = row.move;
-    var start = '', table = '';
-    ((move && move.chips) || []).forEach(function (chip) {
-      if (/^Start by /.test(chip)) start = chip.slice('Start by '.length);
-    });
-    if (move && move.time_label) table = String(move.time_label).split(' ')[0];
-    var tiles = [];
-    if (start && !row.done) tiles.push({ label: 'Start', value: start });
-    if (table) tiles.push({ label: 'On the table', value: table });
-    if (!tiles.length) {
-      var mins = (meal.prep_time_minutes || 0) + (meal.cook_time_minutes || 0);
-      if (mins) tiles.push({ label: 'Takes', value: mins + ' min' });
-    }
-    return tiles;
-  }
-
-  // "Started 17 minutes late — the clock's moved with you." — the card's
-  // one line once the cook has really begun and the plan was off by two
-  // minutes or more (cookStartOffsetLabel); '' otherwise, so the thaw or
-  // prep line takes its usual place. The plan's start comes off the move
-  // (planned_start, or its "Start by" chip when the list predates that
-  // field); no move, no comparison, no sentence.
-  function cookStartedLine(row, meal) {
-    if (row.done || typeof cookStartedMinutes !== 'function') return '';
-    var started = cookStartedMinutes(meal);
-    if (started === null) return '';
-    var move = row.move;
-    var planned = move ? isoClockMinutes(move.planned_start) : null;
-    if (planned === null && move) {
-      (move.chips || []).forEach(function (chip) {
-        if (/^Start by /.test(chip)) {
-          var times = {}, slot = meal.slot || 'dinner';
-          times[slot] = chip.slice('Start by '.length);
-          times.snack = times[slot];
-          planned = slotTableMinutes(times, slot);
-        }
-      });
-    }
-    var offset = cookStartOffsetLabel(started, planned);
-    return offset ? 'Started ' + offset + ' — the clock’s moved with you.' : '';
-  }
-
-  function cookTonightCardHtml(row, meals, todayIso, data) {
-    var meal = meals[row.idx] || {};
-    // The move's own owner first, then the household's standing answer.
-    // They are the same name when one person cooks (both come from the
-    // cooking_role fact — app/tools/move_owner.py is the one reader); they
-    // differ when the household takes turns, where cook_name is null by
-    // design and only the night knows whose it is. A card with no move
-    // behind it still names the standing cook, as it always did.
-    // A move that carries the key has the last word, even when it says
-    // nobody: "Nobody yet" said on Today (slice 2) must not be painted over
-    // by the household's standing cook here.
-    var cookName = (row.move && ('owner_name' in row.move))
-      ? row.move.owner_name
-      : (data && data.cook_name);
-    var tiles = row.done || row.isTakeout ? [] : cookTonightTimes(row, meal);
-    var note = row.done
-      ? (row.isReheat || row.isTakeout ? 'Eaten.' : 'Cooked.')
-      : row.isTakeout ? 'Nothing to cook for this one.'
-      : ((typeof cookStartedLine === 'function' && cookStartedLine(row, meal)) || cookTonightNote(data, meal));
-    return '<section class="cook-tonight' + (row.done ? ' is-done' : '') + (row.isReheat ? ' is-reheat' : '') + '" aria-label="Tonight">' +
-      '<span class="cook-tonight-eyebrow">' + escapeHtml(cookTonightEyebrow(meal, todayIso, cookName)) + '</span>' +
-      '<h2 class="cook-tonight-dish">' + escapeHtml(row.title) + '</h2>' +
-      // The batch, said on the card too (the card's title: "on the recipe
-      // and on Cook"). The SERVER's sentence, the same one the recipe
-      // screen's line and cook mode's steps read — never a second copy
-      // built here. Above the times and the note, because it is what the
-      // amounts are about; nothing on a plain dinner or a reheat. A done
-      // card drops it: "Double batch: 3 tonight, 3 for lunch tomorrow"
-      // over "Cooked." is a reminder about work already finished.
-      (!row.done && meal.batch_line
-        ? '<p class="cook-tonight-batch">' + escapeHtml(meal.batch_line) + '</p>'
-        : '') +
-      (tiles.length
-        ? '<div class="cook-tonight-times">' + tiles.map(function (t) {
-            return '<div class="cook-tonight-tile">' +
-              '<span class="cook-tonight-tile-label">' + escapeHtml(t.label) + '</span>' +
-              '<span class="cook-tonight-tile-value">' + escapeHtml(t.value) + '</span>' +
-            '</div>';
-          }).join('') + '</div>'
-        : '') +
-      '<p class="cook-tonight-note">' + escapeHtml(note) + '</p>' +
-    '</section>';
-  }
-
-  // Tonight, as the root shows it. Empty means empty (§2b S4): the empty
-  // moment (emptyMomentHtml), and the next cook by name as its second
-  // line when there is one. Otherwise the spruce card for the meal the
-  // tab calls tonight, and — on a day with more than one meal to make (a
-  // 21-slot plan's breakfast and lunch) — the rest of today's rows under
-  // it in their old shape, tick and all, so nothing today is hidden.
-  function kitchenCookingTodayHtml(rows, meals, todayIso, data) {
-    if (!rows.length) return emptyMomentHtml('pot', 'Nothing to cook tonight.', kitchenNextCookLine(meals, todayIso));
-    var card = cookTonightRow(rows);
-    var others = rows.filter(function (r) { return r !== card; });
-    return cookTonightCardHtml(card, meals, todayIso, data || {}) +
-      (others.length
-        ? '<div class="cook-week cook-also-today">' + others.map(kitchenTodayRowHtml).join('') + '</div>'
-        : '');
-  }
-
-  // The get-ready moves: the next thaw for a later night, the next prep
-  // session, and — so no prep task the app wrote is ever invisible (see
-  // kitchenLoosePrepTasks) — the next loose task. One of each kind at
-  // most, the two soonest shown. Tonight's own thaw is not here: it is
-  // the card's line.
-  // `onCard` (optional): the prep_tasks ids the thaw card at the top of
-  // the root already carries (cookThawCardTaskIds) — a thaw is shown once,
-  // there, never again as a quiet row under Tonight (2026-11-01).
-  function cookGetReadyMoves(data, meals, todayIso, tonightIdx, onCard) {
-    var tonight = meals[tonightIdx] || null;
-    var tonightIds = tonight ? (tonight.entry_ids || [tonight.entry_id]) : [];
-    var tonightName = tonight ? (tonight.meal || '').trim().toLowerCase() : '';
-    var pending = function (t) { return t.status !== 'done' && t.status !== 'skipped'; };
-    var moves = [];
-    onCard = onCard || {};
-
-    var thaws = ((data && data.prep_tasks) || []).filter(function (t) {
-      if (t.task_type !== 'defrost' || !pending(t)) return false;
-      if (onCard[t.id]) return false;
-      if (t.meal_plan_entry_id != null && tonightIds.indexOf(t.meal_plan_entry_id) !== -1) return false;
-      if (t.meal_plan_entry_id == null && tonightName && (t.related_meal || '').trim().toLowerCase() === tonightName) return false;
-      return true;
-    }).sort(cookByTaskDate);
-    if (thaws.length) {
-      var t = thaws[0];
-      var forWhat = cookThawFor(t);
-      moves.push({
-        kind: 'thaw', date: t.task_date || '',
-        title: cookThawTitle(t),
-        line: [cookWhenLabel(t.task_date, todayIso), forWhat].filter(Boolean).join(' · '),
-        idx: cookMealIndexForTask(meals, t),
-        task: t
-      });
-    }
-
-    var sessions = ((data && data.prep_sessions) || []).filter(function (s) {
-      return s.date >= todayIso && !(s.items_total > 0 && s.items_done === s.items_total);
-    }).sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
-    if (sessions.length) {
-      var s = sessions[0];
-      moves.push({
-        kind: 'session', date: s.date,
-        title: s.weekday + ' prep',
-        line: [cookWhenLabel(s.date, todayIso), cookMinutesLabel(s.total_minutes_estimate), cookCoversLabel(s.covers),
-          s.items_total ? s.items_done + ' of ' + s.items_total + ' done' : '']
-          .filter(Boolean).join(' · '),
-        session: s
-      });
-    }
-
-    var loose = kitchenLoosePrepTasks(data).filter(function (t) { return t.task_type !== 'defrost'; }).sort(cookByTaskDate);
-    if (loose.length) {
-      var l = loose[0];
-      moves.push({
-        kind: 'task', date: l.task_date || '',
-        title: l.description,
-        line: l.task_date ? cookWhenLabel(l.task_date, todayIso) : 'Sometime this week',
-        task: l
-      });
-    }
-    moves.sort(function (a, b) {
-      if (!a.date && b.date) return 1;
-      if (a.date && !b.date) return -1;
-      return a.date < b.date ? -1 : a.date > b.date ? 1 : 0;
-    });
-    return moves.slice(0, 2);
-  }
-
-  function cookByTaskDate(a, b) {
-    var da = a.task_date || '', db = b.task_date || '';
-    return da < db ? -1 : da > db ? 1 : 0;
-  }
-
-  // "Still to do" for a date already past, "By tonight", "Tomorrow", else
-  // the weekday — the words Now uses for the same moves.
-  function cookWhenLabel(iso, todayIso) {
-    if (!iso) return '';
-    if (iso < todayIso) return 'Still to do';
-    if (iso === todayIso) return 'By tonight';
-    if (iso === addDaysLocal(todayIso, 1)) return 'Tomorrow';
-    return dayName(iso, { weekday: 'long' });
-  }
-
-  // The meal a prep task feeds, by entry id first, else by the dish's name
-  // (the same two links cookFocusPrepTasks reads). null when neither
-  // resolves — the row then has nowhere to open.
-  function cookMealIndexForTask(meals, task) {
-    for (var i = 0; i < meals.length; i++) {
-      var m = meals[i];
-      if (m.is_leftovers) continue;
-      if (task.meal_plan_entry_id != null) {
-        if ((m.entry_ids || [m.entry_id]).indexOf(task.meal_plan_entry_id) !== -1) return i;
-      } else if (task.related_meal && (m.meal || '').trim().toLowerCase() === task.related_meal.trim().toLowerCase()) {
-        return i;
-      }
+  // "Next" is the first meal in eating order not yet done. No clock: a
+  // breakfast nobody ticked is still next at four in the afternoon, and the
+  // row itself is how it gets ticked or skipped past.
+  function cookNextRow(ordered) {
+    for (var i = 0; i < (ordered || []).length; i++) {
+      if (!ordered[i].done) return ordered[i];
     }
     return null;
   }
 
-  var COOK_READY_ICONS = {
-    thaw:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M4.2 7.5l15.6 9"/><path d="M4.2 16.5l15.6-9"/><path d="M9.5 4.5L12 7l2.5-2.5"/><path d="M9.5 19.5L12 17l2.5 2.5"/></svg>',
-    prep:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="3"/><path d="M8 10h8"/><path d="M8 14h5"/></svg>'
-  };
+  var COOK_ROW_CHECK =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg>';
+  var COOK_ROW_CHEV =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
 
-  // One quiet row each: no card border, a 32px icon tile (celadon for a
-  // thaw, sand for prep), the title in the display face, one line, and a
-  // chevron when the row opens somewhere. A loose task has nowhere to go
-  // and carries its tick instead — ticking is the only way to finish it.
-  function cookGetReadyRowsHtml(moves) {
-    if (!moves.length) return '';
-    return '<div class="cook-ready" id="kit-get-ready">' + moves.map(function (mv) {
-      var isThaw = mv.kind === 'thaw';
-      var text = '<span class="cook-ready-text">' +
-        '<span class="cook-ready-title">' + escapeHtml(mv.title) + '</span>' +
-        (mv.line ? '<span class="cook-ready-line">' + escapeHtml(mv.line) + '</span>' : '') +
-      '</span>';
-      var icon = '<span class="cook-ready-icon">' + (isThaw ? COOK_READY_ICONS.thaw : COOK_READY_ICONS.prep) + '</span>';
-      var cls = 'cook-ready-row' + (isThaw ? ' is-thaw' : '');
-      if (mv.kind === 'session') {
-        return '<button type="button" class="' + cls + '" data-cook="session" data-date="' + escapeHtml(mv.session.date) + '">' +
-          icon + text + '<span class="cook-ready-chev">' + GRO_ICONS.chevRight + '</span></button>';
-      }
-      if (mv.kind === 'thaw' && mv.idx !== null && mv.idx !== undefined) {
-        return '<button type="button" class="' + cls + '" data-cook="focus" data-idx="' + mv.idx + '">' +
-          icon + text + '<span class="cook-ready-chev">' + GRO_ICONS.chevRight + '</span></button>';
-      }
-      return '<div class="' + cls + '">' + icon + text +
-        '<button type="button" class="cook-box" data-cook="check-prep" data-prep-id="' + mv.task.id + '" data-next="done" ' +
-          'data-name="' + escapeHtml(mv.task.description || '') + '" aria-label="Mark done">' +
-          COOK_ICONS.check + '</button>' +
-      '</div>';
-    }).join('') + '</div>';
+  function cookTodayRowHtml(row, isNext) {
+    var label = cookSlotLabel(row.slot) + (isNext ? ' · next' : '');
+    var mark = row.done
+      ? '<span class="cook-today-mark is-done" role="img" aria-label="Done">' + COOK_ROW_CHECK + '</span>'
+      : '<span class="cook-today-mark">' + (isNext ? '<span class="cook-today-dot" aria-hidden="true"></span>' : '') + '</span>';
+    return '<button type="button" class="cook-today-row' + (row.done ? ' is-done' : '') + (isNext ? ' is-next' : '') + '" ' +
+        'data-cook="focus" data-idx="' + row.idx + '">' +
+      mark +
+      '<span class="cook-today-text">' +
+        '<span class="cook-today-slot">' + escapeHtml(label) + '</span>' +
+        '<span class="cook-today-dish">' + escapeHtml(row.title) + '</span>' +
+      '</span>' +
+      (row.right
+        ? '<span class="cook-today-right' + (row.right === 'Ready' ? ' is-ready' : '') + '">' + escapeHtml(row.right) + '</span>'
+        : '') +
+    '</button>';
   }
 
-  // ---------- Cook's thaw card (Emily, 2026-11-01, mockup A4) ----------
-  // The one job the Today tab did that nothing else did: telling the
-  // household to move something from the freezer to the fridge. Emily:
-  // the old tile "doesn't stand out enough as a step to be done", so it is
-  // a card of its own at the TOP of Cook's root, above the shelf, whenever
-  // a fridge move is due on the kitchen's day: a spruce strip ("1 THING TO
-  // DO" · "BY 10 PM"), the move in the display face with what it's for,
-  // and a full-width "Done, they're in the fridge" box. Two or more due:
-  // one card, one body and box each.
-  //
-  // The moves engine is the source (kitchenState.moves, the same
-  // /api/today/moves read Cook already makes for its start-by times), so
-  // "due" means exactly what it meant on Today: the day's fridge moves
-  // plus any missed one carried forward (moves._missed_fridge_moves). A
-  // move it is now too late to thaw in the fridge is left off — "Move the
-  // beef to the fridge" is no longer the job (the texts drop it too, see
-  // too_late_note); it stays a quiet get-ready row and Tonight's line.
-  // Ticking posts the same /api/today/moves/<id>/done Today's tick did,
-  // which writes check_off_prep_step(id, 'done').
-  var COOK_THAW_ICON =
-    '<svg viewBox="0 0 32 32" width="38" height="38" fill="none" stroke="currentColor" stroke-width="2.2" ' +
-      'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' +
-      '<path d="M11 3v16M4 7l14 8M18 7 4 15M8 4.5l3 2 3-2M8 17.5l3-2 3 2"/>' +
-      '<path d="M18 22h10M24 18l4 4-4 4"/>' +
-    '</svg>';
+  function cookTodayListHtml(ordered, next) {
+    return '<div class="cook-today" aria-label="Today’s meals">' +
+      ordered.map(function (r) { return cookTodayRowHtml(r, r === next); }).join('') +
+    '</div>';
+  }
 
-  function cookThawsDue(moves) {
+  // Nothing at all to eat from this plan today (A-Thu): "Night off", and
+  // the next real cook by name, so a quiet day still says what is coming.
+  function cookNightOffHtml(meals, todayIso) {
+    var next = kitchenNextCookLine(meals, todayIso).replace(/\.$/, '');
+    return '<section class="cook-off" aria-label="Today">' +
+        '<h2 class="cook-off-title">Night off</h2>' +
+        '<p class="cook-off-line">Nothing to cook today.</p>' +
+      '</section>' +
+      (next ? '<p class="cook-quiet-line">' + escapeHtml(next) + '</p>' : '');
+  }
+
+  // ---- The night before ----
+  // Today's fridge moves and prep steps that get tomorrow ready, off the
+  // moves engine (kitchenState.moves — the same /api/today/moves read, so a
+  // move missed yesterday is carried here too). Left out: a step for one of
+  // TODAY's own meals (that meal's screen carries it, cookFocusPrepTasks),
+  // and anything on today's prep list (the prep session holds it — the
+  // thaw in "Move to thaw" is not repeated under the list).
+  function cookBedTasks(moves, meals, todayIso, data) {
+    var todayIds = {}, todayNames = {}, onPrepList = {};
+    (meals || []).forEach(function (m) {
+      if (m.date !== todayIso || m.is_leftovers) return;
+      (m.entry_ids || [m.entry_id]).forEach(function (id) { if (id != null) todayIds[id] = true; });
+      if (m.meal) todayNames[String(m.meal).trim().toLowerCase()] = true;
+    });
+    ((data && data.prep_sessions) || []).forEach(function (s) {
+      if (s.date !== todayIso) return;
+      (s.items || []).forEach(function (it) { if (it.prep_task_id != null) onPrepList[it.prep_task_id] = true; });
+    });
     return (moves || []).filter(function (m) {
-      return m && m.kind === 'fridge' && !m.done && m.tickable !== false && !m.too_late_note;
+      if (!m || (m.kind !== 'fridge' && m.kind !== 'prep') || m.tickable === false) return false;
+      if (m.task_id != null && onPrepList[m.task_id]) return false;
+      if (m.kind === 'prep') {
+        if (m.entry_id != null && todayIds[m.entry_id]) return false;
+        if (m.entry_id == null && m.related_meal && todayNames[String(m.related_meal).trim().toLowerCase()]) return false;
+      }
+      return true;
     });
   }
 
-  // { taskId: true } for every thaw the card carries (cookGetReadyMoves).
-  function cookThawCardTaskIds(due) {
-    var ids = {};
-    (due || []).forEach(function (m) { if (m.task_id != null) ids[m.task_id] = true; });
-    return ids;
+  function cookTomorrowName(todayIso) {
+    return dayName(addDaysLocal(todayIso, 1), { weekday: 'long' });
   }
 
-  // "For Tuesday’s dinner" — the meal the move feeds, by entry id, else
-  // by the dish's name; "For tonight’s dinner" when it is today's. Falls
-  // back to the move's own reason ("for Thursday's skewers"), capitalised.
-  function cookThawForLine(move, meals, todayIso) {
-    var meal = null;
-    (meals || []).some(function (m) {
-      if (m.is_leftovers) return false;
-      if (move.entry_id != null && (m.entry_ids || [m.entry_id]).indexOf(move.entry_id) !== -1) { meal = m; return true; }
-      return false;
-    });
-    if (!meal && move.related_meal) {
-      var name = String(move.related_meal).trim().toLowerCase();
-      (meals || []).some(function (m) {
-        if (!m.is_leftovers && (m.meal || '').trim().toLowerCase() === name && (!todayIso || m.date >= todayIso)) { meal = m; return true; }
-        return false;
-      });
-    }
-    if (meal && meal.date) {
-      var slot = meal.slot === 'breakfast' ? 'breakfast' : meal.slot === 'lunch' ? 'lunch' :
-        (typeof isSnackSlot === 'function' && isSnackSlot(meal.slot)) ? 'snack' : 'dinner';
-      var day = meal.date === todayIso ? (slot === 'dinner' ? 'tonight' : 'today') : dayName(meal.date, { weekday: 'long' });
-      return 'For ' + day + '’s ' + slot;
-    }
-    var r = String(move.reason || '').replace(/\.$/, '').trim();
-    return r ? r.charAt(0).toUpperCase() + r.slice(1) : '';
+  // The quiet line under the list: "Before bed: 2 things for Wednesday",
+  // or "All set for Wednesday" once every box is ticked. Opens the list.
+  function cookBedLineHtml(tasks, todayIso) {
+    var left = tasks.filter(function (t) { return !t.done; }).length;
+    var day = cookTomorrowName(todayIso);
+    var words = left
+      ? 'Before bed: ' + left + (left === 1 ? ' thing' : ' things') + ' for ' + day
+      : 'All set for ' + day;
+    return '<button type="button" class="cook-quiet-line is-link' + (left ? '' : ' is-set') + '" id="kit-get-ready" data-cook="bed-open">' +
+      '<span>' + escapeHtml(words) + '</span>' + COOK_ROW_CHEV +
+    '</button>';
   }
 
-  // "Done, they’re in the fridge" — "it’s" for one thing ("the beef").
-  function cookThawDoneLabel(title) {
-    var m = /^Move the (.+?) to the fridge$/i.exec(String(title || '').trim());
-    var last = m ? m[1].trim().split(/\s+/).pop() : '';
-    var plural = !m || (/s$/i.test(last) && !/ss$/i.test(last));
-    return 'Done, ' + (plural ? 'they’re' : 'it’s') + ' in the fridge';
-  }
-
-  // "By 10 pm" off the moves' own window (moves._prep_moves: a fridge
-  // move's day ends at 22:00), the earliest when there are several; the
-  // CSS sets it in caps. "Tonight" when there is no time, or it has gone.
-  function cookThawDeadlineLabel(due, nowHour) {
-    var best = null;
-    (due || []).forEach(function (m) {
-      var hit = /T(\d{2}):(\d{2})/.exec(String(m.window_end || ''));
-      if (!hit) return;
-      var mins = parseInt(hit[1], 10) * 60 + parseInt(hit[2], 10);
-      if (best === null || mins < best) best = mins;
-    });
-    if (best === null || !best) return 'Tonight';
-    if (typeof nowHour === 'number' && nowHour * 60 >= best) return 'Tonight';
-    var h = Math.floor(best / 60), mm = best % 60;
-    return 'By ' + (h % 12 || 12) + (mm ? ':' + (mm < 10 ? '0' : '') + mm : '') + (h >= 12 ? ' pm' : ' am');
-  }
-
-  function cookThawCardHtml(due, meals, todayIso, nowHour) {
-    if (!due || !due.length) return '';
-    var n = due.length;
-    return '<section class="cook-thaw" id="kit-thaw" aria-labelledby="kit-thaw-count">' +
-      '<div class="cook-thaw-head">' +
-        '<span id="kit-thaw-count">' + n + (n === 1 ? ' thing' : ' things') + ' to do</span>' +
-        '<span class="cook-thaw-by">' + escapeHtml(cookThawDeadlineLabel(due, nowHour)) + '</span>' +
-      '</div>' +
-      due.map(function (m) {
-        var forLine = cookThawForLine(m, meals, todayIso);
-        return '<div class="cook-thaw-item" data-thaw-move="' + escapeHtml(m.id) + '">' +
-          '<div class="cook-thaw-body">' +
-            '<span class="cook-thaw-tile">' + COOK_THAW_ICON + '</span>' +
-            '<span class="cook-thaw-text">' +
-              '<span class="cook-thaw-title">' + escapeHtml(m.title) + '</span>' +
-              (forLine ? '<span class="cook-thaw-for">' + escapeHtml(forLine) + '</span>' : '') +
+  // The checklist (A-NightList): one dark spruce card, a box per job.
+  // No minutes in the eyebrow: a prep row carries no estimate, and a made-up
+  // "about 20 min" is the kind of number nobody trusts twice.
+  function cookBedCardHtml(tasks, todayIso) {
+    return '<section class="cook-bed" id="kit-get-ready" aria-labelledby="kit-bed-title">' +
+      '<span class="cook-bed-eyebrow">Before bed</span>' +
+      '<h2 class="cook-bed-title" id="kit-bed-title">Get ready for ' + escapeHtml(cookTomorrowName(todayIso)) + '</h2>' +
+      '<div class="cook-bed-list">' +
+        tasks.map(function (t) {
+          return '<label class="cook-bed-item' + (t.done ? ' is-done' : '') + '">' +
+            '<input type="checkbox" class="cook-bed-input" data-move-id="' + escapeHtml(t.id) + '"' + (t.done ? ' checked' : '') + '>' +
+            '<span class="cook-bed-box" aria-hidden="true">' + COOK_ROW_CHECK + '</span>' +
+            '<span class="cook-bed-text">' +
+              '<span class="cook-bed-task">' + escapeHtml(t.title) + '</span>' +
+              // Missed, and too late for the fridge now: the freezer step's
+              // own words (moves.fridge_move_too_late), not "still to do".
+              (t.too_late_note ? '<span class="cook-bed-note">' + escapeHtml(t.too_late_note) + '</span>' : '') +
             '</span>' +
-          '</div>' +
-          '<div class="cook-thaw-foot">' +
-            '<label class="cook-thaw-done">' +
-              '<input type="checkbox" class="cook-thaw-input" data-move-id="' + escapeHtml(m.id) + '" ' +
-                'data-task-id="' + escapeHtml(m.task_id) + '" data-name="' + escapeHtml(m.title) + '">' +
-              '<span class="cook-thaw-box" aria-hidden="true">' +
-                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4L19 7"/></svg>' +
-              '</span>' +
-              '<span class="cook-thaw-label">' + escapeHtml(cookThawDoneLabel(m.title)) + '</span>' +
-            '</label>' +
-          '</div>' +
-        '</div>';
-      }).join('') +
+          '</label>';
+        }).join('') +
+      '</div>' +
     '</section>';
   }
 
-  // The tick. Optimistic (§6, "the common case never waits"): the box
-  // fills, the row — or the whole card, for the last one — collapses out
-  // the way a sorted row leaves Sort them all (motion 4, the same tokens
-  // and the same reduced-motion fallback), and the root redraws from the
-  // server's own re-derived moves. A failed save puts it back and says so.
-  async function onCookThawChange(e) {
-    var input = e.target;
-    if (!input || !input.classList || !input.classList.contains('cook-thaw-input')) return;
-    if (!input.checked) return;
-    input.disabled = true;
-    var moveId = input.getAttribute('data-move-id');
-    var taskId = parseInt(input.getAttribute('data-task-id'), 10);
-    var card = input.closest('.cook-thaw');
-    var item = input.closest('.cook-thaw-item');
-    var last = card && card.querySelectorAll('.cook-thaw-item').length <= 1;
-    var task = ((cookState.data && cookState.data.prep_tasks) || []).filter(function (t) { return t.id === taskId; })[0];
-    var wasStatus = task ? task.status : null;
-    if (task) task.status = 'done';
-    var left = cookThawLeave(last ? card : item);
+  // A tick on the checklist, or "All done" for every box left. The box
+  // fills at once; the same /api/today/moves/<id>/done write the Today tab
+  // made (check_off_prep_step behind it), then the root redraws from the
+  // server's re-derived moves. A failed save re-reads and says so.
+  async function cookBedTick(ids, on) {
+    if (!ids || !ids.length) return;
+    (kitchenState.moves || []).forEach(function (m) {
+      if (ids.indexOf(m.id) !== -1) m.done = on;
+    });
+    renderCook();
     try {
-      // quiet: this card says its own failure, below.
-      var fresh = await Api.json('/api/today/moves/' + encodeURIComponent(moveId) + '/done', {
-        body: { done: true }, quiet: true
-      });
-      kitchenState.moves = (fresh && fresh.moves) || kitchenState.moves;
+      var fresh = null;
+      for (var i = 0; i < ids.length; i++) {
+        fresh = await Api.json('/api/today/moves/' + encodeURIComponent(ids[i]) + '/done', {
+          body: { done: on }, quiet: true
+        });
+      }
+      if (fresh && fresh.moves) kitchenState.moves = fresh.moves;
       if (fresh && fresh.date) kitchenState.day = fresh.date;
-      await left;
       renderCook();
-      showToast(savedLine(savedName(input.getAttribute('data-name')), 'ticked off'));
-      // The thaw is read by Tonight's line, the meal screen and Plan; the
-      // fridge move can also move what Kitchen shows.
+      // A fridge move is read by the meal's screen and Plan, and can move
+      // what Kitchen shows.
       refreshPlanSurfacesAfterCook();
       refreshHomePanel();
     } catch (err) {
-      if (task) task.status = wasStatus;
-      await left;
-      renderCook();
       showToast('That didn’t save — try again.');
+      loadKitchen();
     }
   }
 
-  // Collapse one node out (height pinned, then .is-gone takes it to 0 over
-  // --motion-fast on the leaving curve). Resolves when it has gone; at
-  // once under prefers-reduced-motion.
-  function cookThawLeave(el) {
-    return new Promise(function (resolve) {
-      if (!el) return resolve();
-      var reduce = typeof window.matchMedia === 'function' &&
-        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      el.classList.add('is-leaving');
-      el.setAttribute('aria-hidden', 'true');
-      if (reduce || !el.offsetHeight) return resolve();
-      el.style.height = el.offsetHeight + 'px';
-      void el.offsetHeight;
-      el.classList.add('is-gone');
-      var done = false;
-      var finish = function () { if (done) return; done = true; resolve(); };
-      el.addEventListener('transitionend', finish);
-      setTimeout(finish, 260);
-    });
+  function onCookBedChange(e) {
+    var input = e.target;
+    if (!input || !input.classList || !input.classList.contains('cook-bed-input')) return;
+    cookBedTick([input.getAttribute('data-move-id')], !!input.checked);
   }
 
-  // The dock. "Start cooking" ("Keep cooking" once it is under way — see
-  // kitchenTodayRows' `underway`) opens tonight's cook on its recipe
-  // (cookEnterFocus — every way in lands there); a reheat night's one
-  // action is "Mark eaten" (the same write the reheat screen makes). A
-  // finished night, or a day with nothing to cook, has no dock at all —
-  // and a cooked dish is un-cooked from its own screen (tile → "Mark not
-  // cooked"), never from here.
-  function cookRootDockHtml(row) {
-    if (!row || row.done) return '';
-    // Prepped on an earlier day: "Start cooking" would be the app telling
-    // them to cook something it has already told them to cook on the prep
-    // day. What is left to do is the tick — and it has to be HERE, because
-    // the card's own row is not drawn under it (kitchenCookingTodayHtml),
-    // so an empty dock would leave a meal with nowhere to tick it. The
-    // recipe is still one tap away: the shelf tile for today opens it, and
-    // so does the dish's name in a row. Same write as every other tick
-    // (check_off_meal), and the aria-label is what tells cookCheckMeal this
-    // is a cook being logged rather than one being put back.
+  // ---- Prep days ----
+  // "For Sunday to Wednesday" — the days this session's work feeds.
+  function cookPrepForLabel(dates) {
+    var days = (dates || []).slice().sort();
+    if (!days.length) return '';
+    var first = dayName(days[0], { weekday: 'long' });
+    if (days.length === 1) return 'For ' + first;
+    return 'For ' + first + ' to ' + dayName(days[days.length - 1], { weekday: 'long' });
+  }
+
+  // A prep day before the prep is done (Main.dc): the session is the big
+  // spruce card at the top — the one time a big card leads during the day.
+  // The whole card opens the prep list; so does the dock's Start prep.
+  function cookPrepDayCardHtml(session) {
+    var total = session.items_total || 0, done = session.items_done || 0;
+    var pct = total ? Math.round(done / total * 100) : 0;
+    var lead = String(session.header || '').split(' · ')[0];
+    var forLine = cookPrepForLabel(session.covers);
+    return '<button type="button" class="cook-prepday" data-cook="session" data-date="' + escapeHtml(session.date) + '">' +
+      '<span class="cook-prepday-head">' +
+        (lead ? '<span class="cook-prepday-eyebrow">' + escapeHtml(lead) + '</span>' : '') +
+        '<span class="cook-prepday-title">' + escapeHtml(session.weekday + ' prep') + '</span>' +
+        (forLine ? '<span class="cook-prepday-for">' + escapeHtml(forLine) + '</span>' : '') +
+      '</span>' +
+      '<span class="cook-prepday-progress">' +
+        '<span class="cook-prepday-bar" aria-hidden="true"><span class="cook-prepday-fill" style="width:' + pct + '%"></span></span>' +
+        '<span class="cook-prepday-count">' + done + ' of ' + total + ' done</span>' +
+      '</span>' +
+      ((session.sections || []).length
+        ? '<span class="cook-prepday-secs">' + session.sections.map(function (sec) {
+            return '<span class="cook-prepday-sec' + (sec.done ? ' is-done' : '') + '">' +
+              '<span class="cook-prepday-sec-title">' + escapeHtml(sec.title) + '</span>' +
+              '<span class="cook-prepday-sec-line">' + escapeHtml(sec.done ? 'Done' : (sec.line || '')) + '</span>' +
+            '</span>';
+          }).join('') + '</span>'
+        : '') +
+    '</button>';
+  }
+
+  // Prep done: one line, still the way back to the list.
+  function cookPrepDoneLineHtml(session) {
+    return '<button type="button" class="cook-quiet-line is-link is-set" data-cook="session" data-date="' + escapeHtml(session.date) + '">' +
+      '<span>' + escapeHtml(session.weekday + ' prep is done · ' + session.items_done + ' of ' + session.items_total) + '</span>' +
+      COOK_ROW_CHEV +
+    '</button>';
+  }
+
+  // The next prep day still ahead, as one quiet line — the way to look
+  // at Wednesday's list on a Tuesday.
+  function cookNextPrepLineHtml(data, todayIso) {
+    var next = ((data && data.prep_sessions) || []).filter(function (s) {
+      return s.date > todayIso && s.items_total > 0 && s.items_done < s.items_total;
+    }).sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; })[0];
+    if (!next) return '';
+    return '<button type="button" class="cook-quiet-line is-link" data-cook="session" data-date="' + escapeHtml(next.date) + '">' +
+      '<span>' + escapeHtml(next.weekday + ' prep · ' + next.items_total + (next.items_total === 1 ? ' thing' : ' things')) + '</span>' +
+      COOK_ROW_CHEV +
+    '</button>';
+  }
+
+  // The dock names the next thing to do. A prep day before the prep is
+  // done: "Start prep". Otherwise the next meal's action — "Make lunch",
+  // "Start cooking" for dinner, "Keep cooking" once under way — which opens
+  // its recipe (cookEnterFocus; every way in lands there). Food that is
+  // already made is ticked from here: "Mark eaten", or "Mark it cooked" for
+  // a dish cooked on an earlier prep day. Once the day's meals are done and
+  // the night-before list is open: "All done". Nothing left: no dock.
+  function cookRootDockHtml(row, opts) {
+    opts = opts || {};
+    var s = opts.session;
+    if (s) {
+      return '<button type="button" class="dock-primary" data-cook="session" data-date="' + escapeHtml(s.date) + '">' +
+        (s.items_done ? 'Keep prepping' : 'Start prep') + '</button>';
+    }
+    if (!row || row.done) {
+      return opts.bedLeft
+        ? '<button type="button" class="dock-primary" data-cook="bed-all">All done</button>'
+        : '';
+    }
+    // Cooked on an earlier prep day: what is left is the tick, and it has
+    // to be here — the row opens the recipe, not a box. The aria-label is
+    // what tells cookCheckMeal this is a cook being logged.
     if (row.prepped) {
       return '<button type="button" class="dock-primary" data-cook="check-meal" data-entry-id="' + row.entryId + '" ' +
         'data-next="done" data-name="' + escapeHtml(row.title || '') + '" aria-label="Mark cooked">' +
         'Mark it cooked</button>';
     }
-    // Takeout ticks the way a reheat does: nothing to start, still eaten.
-    if (row.isReheat || row.isTakeout) {
+    // Takeout, a reheat and food eaten cold tick the way a reheat does.
+    if (row.isReheat || row.isTakeout || row.ready) {
       return '<button type="button" class="dock-primary" data-cook="check-meal" data-entry-id="' + row.entryId + '" data-next="done" ' +
         'data-name="' + escapeHtml(row.title || '') + '">' +
         escapeHtml(REHEAT_ACTION_LABEL) + '</button>';
     }
+    var label = row.underway ? 'Keep cooking'
+      : (row.slot === 'dinner' ? 'Start cooking' : 'Make ' + cookSlotLabel(row.slot).toLowerCase());
     return '<button type="button" class="dock-primary" data-cook="start-tonight" data-idx="' + row.idx + '">' +
-      (row.underway ? 'Keep cooking' : 'Start cooking') + '</button>';
+      escapeHtml(label) + '</button>';
+  }
+
+  // The root under the band, as markup: { html, dock }. Pure — the data,
+  // the day's moves, the kitchen's day and the day the night-before list
+  // was opened by hand — so the tests run it whole under node.
+  function cookRootParts(data, moves, todayIso, bedOpenOn) {
+    var meals = (data && data.meals) || [];
+    var rows = kitchenTodayRows(meals, moves, todayIso);
+    var ordered = cookEatingOrder(rows);
+    var next = cookNextRow(ordered);
+    var allEaten = rows.length > 0 && !next;
+    // A prep day before the prep is done: the session leads.
+    var session = cookSessionOn(data, todayIso);
+    var prepLeads = !!(session && session.items_total > 0 && session.items_done < session.items_total);
+    // The night before: a line under the list, the spruce checklist once
+    // the day's meals are done (or the line was tapped).
+    var bed = cookBedTasks(moves, meals, todayIso, data);
+    var bedLeft = bed.filter(function (t) { return !t.done; }).length;
+    var bedOpen = bed.length > 0 && (bedOpenOn === todayIso || (allEaten && bedLeft > 0));
+    var bedLeads = bedOpen && allEaten && !prepLeads;
+    return {
+      html:
+        (prepLeads ? cookPrepDayCardHtml(session) : '') +
+        (bedLeads ? cookBedCardHtml(bed, todayIso) : '') +
+        (rows.length ? cookTodayListHtml(ordered, next) : cookNightOffHtml(meals, todayIso)) +
+        (session && !prepLeads && session.items_total > 0 ? cookPrepDoneLineHtml(session) : '') +
+        (bed.length && !bedLeads ? (bedOpen ? cookBedCardHtml(bed, todayIso) : cookBedLineHtml(bed, todayIso)) : '') +
+        cookNextPrepLineHtml(data, todayIso),
+      dock: cookRootDockHtml(next, {
+        session: prepLeads ? session : null,
+        bedLeft: bedOpen ? bedLeft : 0
+      })
+    };
   }
 
   // The quiet way to the tab's three rare entry points — Recipes, Add
@@ -13027,24 +12548,18 @@
     var meals = data.meals || [];
     var rows = kitchenTodayRows(meals, kitchenState.moves, todayIso);
     setRootBand(panel, 'kit-band', { sub: kitchenSubtitle(rows, meals, todayIso) });
-    // The empty moment fills the panel and centres itself (shell.css);
-    // the body has to be told it is carrying one.
-    body.classList.toggle('is-empty', !rows.length);
 
     if (!data.weekly_plan_id && !meals.length) {
-      // No plan covers today: the same empty moment either way, with the
-      // way to a plan as its second line, and no shelf — there are no
-      // nights to shelve. Two honest wordings for two different truths
-      // (get_cooker_view, 2026-09-13):
+      // No plan covers today: the empty moment (it fills the panel and
+      // centres itself, so the body is told it carries one), with the way
+      // to a plan as its second line. Two honest wordings for two different
+      // truths (get_cooker_view, 2026-09-13):
       //
       // - A household that has never planned at all gets "No plan yet".
       // - A household whose last approved week has simply run out gets
-      //   told THAT, with the week itself named (last_planned_label) —
-      //   showing that week's dinners under a heading that says "this
-      //   week" (the bug this replaces) would have been worse than
-      //   saying nothing, but going quiet with no explanation isn't much
-      //   better than that.
+      //   told THAT, with the week itself named (last_planned_label).
       // The in-prose link keeps its own 44px row either way.
+      body.classList.add('is-empty');
       var lastPlanned = data.last_planned_label;
       body.innerHTML =
         emptyMomentHtml('pot', lastPlanned ? 'Nothing planned this week yet.' : 'Nothing to cook tonight.',
@@ -13055,21 +12570,14 @@
       setDock('');
       return;
     }
+    body.classList.remove('is-empty');
 
-    var tonight = cookTonightRow(rows);
-    // The thaw card leads (A4, 2026-11-01): a fridge move due on the
-    // kitchen's day is the one step to do before anything else here.
-    var thawsDue = cookThawsDue(kitchenState.moves);
-    var thawHour = todayIso === todayLocalStr() ? householdHourNow() : 24;
-    body.innerHTML =
-      cookThawCardHtml(thawsDue, meals, todayIso, thawHour) +
-      cookShelfHtml(meals, data, todayIso) +
-      cookAttentionHtml() +
-      kitchenCookingTodayHtml(rows, meals, todayIso, data) +
-      cookGetReadyRowsHtml(cookGetReadyMoves(data, meals, todayIso, tonight ? tonight.idx : null, cookThawCardTaskIds(thawsDue))) +
-      cookMoreLinkHtml();
-    setDock(cookRootDockHtml(tonight));
-    cookShelfScrollToTonight(body);
+    // "Show me tomorrow" with no cook to open (cookShowTomorrow) lands on
+    // the night-before list, open.
+    if (kitchenState.scrollToPrep) cookState.bedOpenOn = todayIso;
+    var parts = cookRootParts(data, kitchenState.moves, todayIso, cookState.bedOpenOn);
+    body.innerHTML = parts.html + cookAttentionHtml() + cookMoreLinkHtml();
+    setDock(parts.dock);
   }
 
   function onKitchenClick(e) {
@@ -25353,6 +24861,7 @@
     pendingFocusStart: false,   // ...and whether that link meant "and start cooking" (the Meal step's own dock — see kitchenEnterCook)
     pendingScrollTop: false,    // this render is a screen change, not a re-paint — reset scroll instead of preserving it
     pendingScrollTo: null,      // a place to land on instead (back from a recipe to the prep list)
+    bedOpenOn: null,            // the day the night-before list was opened by hand (the quiet line, or "Show me tomorrow")
     ticks: null,                // the ticked ingredients and steps for the plan named by ticksFor — see cookReadTicks
     serves: {},                 // mealKey -> { servings, ingredients, unscaled_items, ... } — the cook's own serving count. Stored beside the ticks and read back with them (see cookReadTicks), so a load, a tab switch and a reload all leave it standing
     servesSeq: 0,               // sequence token, so a superseded /scale reply loses instead of racing
@@ -25847,8 +25356,8 @@
     // ...and the one thing that overrides both, after the restore rather
     // than before it: someone was promised prep and sent here to see it
     // (the rating toast's "Show me tomorrow", with no cook to focus).
-    // The get-ready rows under the Tonight card (cookGetReadyRowsHtml)
-    // are where tomorrow's prep shows on the root.
+    // The night-before list (cookBedCardHtml, opened by renderKitchen)
+    // is where tomorrow's prep shows on the root.
     if (onRoot && kitchenState.scrollToPrep) {
       kitchenState.scrollToPrep = false;
       var prepEl = rootView.querySelector('#kit-get-ready');
@@ -26070,8 +25579,8 @@
     // belongs to the one being prepped for (weekday_lunches.prepped_batches
     // reads across live plans for exactly this). Its recipe is not on this
     // plan's cards, so there is nothing to open — but it is still one entry
-    // and one cooked_status, so the tick is the same write kitchenTodayRowHtml
-    // makes and not a second fact.
+    // and one cooked_status, so the tick is the same write check_off_meal
+    // makes from everywhere else and not a second fact.
     var ticksEntry = isCook && !canOpen && item.entry_id != null;
     // A batch made on the prep day for a LATER meal ticks as MADE on the
     // prep list itself (prep_list_marks) — never the cook entry, whose
@@ -26221,9 +25730,9 @@
   // which inherited this rail's done-count note and its hands-free mic).
 
   // The rest of the week used to be a list here (cookRestOfWeekHtml, one
-  // line per day, three days then "Show Fri–Sun"). The shelf on the root
-  // is the week now (cookShelfHtml, 2026-09-13) — every night of the
-  // period, a tap into each.
+  // line per day, three days then "Show Fri–Sun"). The shelf that replaced
+  // it (2026-09-13) went too with Option A (2026-11-01): Cook's root is
+  // today, and the week is Plan's.
 
   // One ingredient, said the way both ticklists say it: the amount that
   // actually goes in the pan (get_cooker_view already swapped the
@@ -27481,6 +26990,19 @@
       return;
     }
     if (what === 'exit-focus') return cookExitFocus();
+    // The night-before list: the quiet line opens it; the dock's "All done"
+    // ticks every box still empty.
+    if (what === 'bed-open') {
+      cookState.bedOpenOn = kitchenDayIso();
+      renderCook();
+      return;
+    }
+    if (what === 'bed-all') {
+      var bedIds = cookBedTasks(kitchenState.moves, (cookState.data && cookState.data.meals) || [], kitchenDayIso(), cookState.data)
+        .filter(function (t) { return !t.done; }).map(function (t) { return t.id; });
+      cookBedTick(bedIds, true);
+      return;
+    }
     if (what === 'session') return cookEnterSession(el.getAttribute('data-date'));
     if (what === 'exit-session') return cookExitFocus();
     // The prep list (cookSessionHtml): fold a section, take a step off,
@@ -27640,8 +27162,8 @@
   // you check the meal off") — there's nothing left to do on this screen
   // once it's done. Marking it back to not-cooked is an undo, not a
   // completion, so that one stays put in focus rather than bouncing out.
-  // Always a real cook, never a reheat (a reheat night is a line on the
-  // Kitchen root, not a way into this screen — see kitchenTodayRowHtml),
+  // Always a real cook, never a reheat (a reheat night opens the
+  // leftovers card, cookReheatFocusHtml, which has its own Mark eaten),
   // so no aria-label check is needed here the way cookCheckMeal needs one.
   async function cookFocusCheckMeal(el) {
     el.disabled = true;
@@ -28024,7 +27546,7 @@
   // Tomorrow's first real cook, as a cookFocus target — the screen that
   // actually shows tomorrow. Slot order, so it is breakfast before dinner
   // and not whatever the plan happened to list first. A reheat night is
-  // skipped: it has no cook screen at all (see kitchenTodayRowHtml), so
+  // skipped: it has no recipe (cookReheatFocusHtml is a card), so
   // focusing it would land on a card rather than on tomorrow.
   function cookTomorrowFocusTarget() {
     var tomorrow = tomorrowLocalStr();

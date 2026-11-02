@@ -395,10 +395,10 @@ def _render(fn: str, arg, extra_args: str = "") -> str:
     cookReheatHeroHtml / cookServesChip) went with the Cook overview when
     cooking moved to the Kitchen tab. The rules it enforced did not go with
     it — they moved to the Kitchen root's "Cooking today" lines. UPDATED
-    AGAIN 2026-09-13 (the shelf design): those lines are the root's one
-    spruce Tonight card plus its dock now (kitchenCookingTodayHtml +
-    cookRootDockHtml), and the rest of the week is the shelf
-    (cookShelfHtml). Same rules, rendered by the new functions. The one
+    AGAIN 2026-09-13 (the shelf design): those lines became the root's one
+    spruce Tonight card plus its dock, and the rest of the week the shelf.
+    AND AGAIN 2026-11-01 (Option A): the card and the shelf went; today is
+    one even list (cookRootParts). Same rules, rendered by the new functions. The one
     thing genuinely no longer covered here is the hero's "for 6" batch
     chip: it lives on the focused cook screen (cookFocusHtml), which is
     not a pure function and cannot be lifted out this way. See
@@ -427,31 +427,15 @@ def _render(fn: str, arg, extra_args: str = "") -> str:
         # than a stub: cookOwnerPrefix guards its call with `typeof`, so a
         # forgotten prelude would render no name and no error at all. Every
         # row in this file carries no owner, so every line is what it was.
-        + src[src.index("  var MOVE_OWNER_WORDS = {"):src.index("  // The two groups' own icons")]
-        + _extract("cookOwnerPrefix", src) + "\n"
-        + _extract("kitchenTodayLine", src) + "\n"
-        + _extract("kitchenTodayRows", src) + "\n"
-        + _extract("kitchenTodayRowHtml", src) + "\n"
-        # The Tonight card and its dock (the shelf design, 2026-09-13).
-        + src[src.index("  var COOK_DISH_WORDS = ["):src.index("  // The nights the shelf shows")]
-        + _extract("cookShelfNights", src) + "\n"
-        + _extract("cookShelfHtml", src) + "\n"
-        + _extract("cookShelfTileHtml", src) + "\n"
-        + _extract("cookTonightRow", src) + "\n"
-        + _extract("cookTonightEyebrow", src) + "\n"
-        + _extract("cookTonightNote", src) + "\n"
-        + _extract("cookThawTitle", src) + "\n"
-        + _extract("cookThawDoneLine", src) + "\n"
-        + _extract("cookFocusPrepTasks", src) + "\n"
-        + _extract("cookTonightTimes", src) + "\n"
-        + _extract("cookTonightCardHtml", src) + "\n"
-        + _extract("kitchenCookingTodayHtml", src) + "\n"
-        + _extract("cookRootDockHtml", src) + "\n"
-        # The Kitchen root builds its rows and renders them in one breath
-        # (renderKitchen); this is that trio, so a test can hand in the
-        # meals and the moves the way the screen gets them.
-        + "function _card(meals, moves, iso){ var rows = kitchenTodayRows(meals, moves, iso); "
-          "return kitchenCookingTodayHtml(rows, meals, iso, {}) + cookRootDockHtml(cookTonightRow(rows)); }\n"
+        + _extract("cookSessionOn", src) + "\n"
+        + _extract("kitchenNextCookLine", src) + "\n"
+        + _extract("daysBetweenLocal", src) + "\n"
+        # Cook's root as Option A draws it (2026-11-01): the rows and the
+        # root block, run whole through cookRootParts.
+        + src[src.index("  function kitchenTodayRows("):src.index("  function cookBandEyebrow(")]
+        + src[src.index("  // ---------- Cook's root: today, in the order it is eaten"):src.index("  function renderKitchen()")]
+        + "function _card(meals, moves, iso){ var parts = cookRootParts({ meals: meals, prep_sessions: [] }, moves, iso, null); "
+          "return parts.html + parts.dock; }\n"
         + f"console.log(JSON.stringify({fn}({json.dumps(arg)}{extra_args})));\n"
     )
     res = nodeharness.run_node(harness, timeout=30)
@@ -484,14 +468,16 @@ _COOK_MEAL = {
 
 @_needs_node
 def test_a_reheat_today_offers_one_action_and_no_cook_flow():
-    """Emily's rule, on the line that replaced the hero: the dish is cooked
+    """Emily's rule, on the row that replaced the card: the dish is cooked
     on ONE night, and the night that eats it is not a second cook — no
-    recipe to open, no "Cook" badge, one action and it says "eaten"."""
+    recipe, one action and it says "eaten". The row says just "Leftovers"
+    (Emily, 2026-10-30), never the night it came from."""
     html = _card([_REHEAT_MEAL], THU)
-    assert "Leftovers — Tuesday’s Bulgogi Wraps" in html
+    assert '<span class="cook-today-dish">Leftovers</span>' in html
+    assert "Tuesday" not in html
+    assert '<span class="cook-today-right">Reheat</span>' in html
     assert "Mark eaten" in html and 'data-cook="check-meal"' in html, "the dock's one action"
     assert "Start cooking" not in html, "nothing to cook — there is no recipe here"
-    assert "Reheat — cooked on Tue." in html
 
 
 @_needs_node
@@ -504,31 +490,26 @@ def test_a_cook_today_is_a_line_that_opens_the_recipe():
 
 
 @_needs_node
-def test_the_batch_note_is_carried_on_the_line():
-    """The hero's "for 6" chip and its covers-note went to the focused cook
-    screen (cookFocusHtml), which is where the ingredients are actually read
-    off. What the Kitchen line has to get right instead is the *clock* — the
-    start-by the moves engine works out — so that is what is pinned here."""
+def test_the_line_says_how_long_and_never_when():
+    """The covers-note lives on the recipe screen. The Kitchen row used to
+    carry the moves engine's start-by and table time; Option A (Emily,
+    2026-11-01) took every clock off Cook's root — the row says minutes."""
     move = {
         "kind": "cook", "entry_id": 3,
         "chips": ["55 min", "Start by 5:35"],
         "time_label": "6:30 tonight", "detail": "dinner · 55 min · 6:30",
     }
-    html = _card([_COOK_MEAL], TUE, [move])
-    assert ">Start<" in html and ">5:35<" in html
-    assert ">On the table<" in html and ">6:30<" in html
+    html = _card([dict(_COOK_MEAL, prep_time_minutes=20, cook_time_minutes=35)], TUE, [move])
+    assert '<span class="cook-today-right">55 min</span>' in html
+    assert "5:35" not in html and "6:30" not in html and "Start<" not in html
 
 
 @_needs_node
-def test_a_reheat_row_in_the_week_list_is_not_a_way_into_a_recipe():
-    """Since 2026-09-13 the rest of the week is the shelf, one tile per
-    night. A reheat night's tile says "Leftovers" and opens the reheat's
-    own card (cookReheatFocusHtml — the screen Now's hero already opens),
-    never a recipe; the cook's tile opens its recipe."""
-    html = _render("cookShelfHtml", [_REHEAT_MEAL, _COOK_MEAL],
-                   ', {"period_start_date": "%s", "day_count": 3}, "1999-01-01"' % TUE)
-    assert html.count('class="shelf-tile') == 3
-    assert ">Leftovers<" in html and 'data-cook="focus" data-idx="0"' in html
-    assert 'data-cook="focus" data-idx="1"' in html, "the cook still opens its recipe"
-    assert ">Bulgogi<" in html
-    assert "shelf-tile is-empty" in html and ">—<" in html, "Wednesday has nothing planned"
+def test_a_reheat_row_opens_the_reheat_card_not_a_recipe():
+    """A reheat row is a way into that night's own card (cookReheatFocusHtml,
+    "Mark eaten"), the same tap every row makes; the cook's row opens its
+    recipe."""
+    reheat_today = dict(_REHEAT_MEAL, date=TUE, slot="lunch")
+    html = _card([reheat_today, _COOK_MEAL], TUE)
+    assert 'data-cook="focus" data-idx="0"' in html and 'data-cook="focus" data-idx="1"' in html
+    assert ">Leftovers<" in html and ">Bulgogi Wraps<" in html

@@ -282,26 +282,5 @@ def test_cooks_next_line_names_the_date_past_six_days_out():
     assert _next_line(today, []) == ""
 
 
-@_needs_node
-def test_the_shelf_carries_the_month_on_a_night_outside_this_one():
-    """CATCH. The strip's tiles say "13" under WED; outside this month that
-    is "Oct 13". Tonight's tile is always this month and never changes."""
-    script = (
-        _date_helpers()
-        + "function escapeHtml(s){ return String(s == null ? '' : s); }\n"
-        "function dishShortWord(n){ return n; }\n"
-        + _function("cookShelfNights") + "\n"
-        + _function("cookShelfTileHtml") + "\n"
-        "var meals = " + json.dumps([_meal("2026-09-15", "Chili"), _meal("2027-10-13")]) + ";\n"
-        "function nums(html){ return html.match(/shelf-num\">([^<]*)</g).map(function (m) { return m.replace(/.*\">/, '').replace('<', ''); }); }\n"
-        "console.log(JSON.stringify({"
-        "  thisWeek: nums(cookShelfNights(meals, { period_start_date: '2026-09-14', day_count: 7 }, '2026-09-15').map(cookShelfTileHtml).join('')),"
-        "  ahead: nums(cookShelfNights(meals, { period_start_date: '2027-10-11', day_count: 7 }, '2026-09-15').map(cookShelfTileHtml).join('')),"
-        "  monthEdge: nums(cookShelfNights([], { period_start_date: '2026-09-28', day_count: 7 }, '2026-09-29').map(cookShelfTileHtml).join(''))"
-        "}));"
-    )
-    out = _node(script)
-    assert out["thisWeek"] == ["14", "15", "16", "17", "18", "19", "20"]
-    assert out["ahead"] == ["Oct 11", "Oct 12", "Oct 13", "Oct 14", "Oct 15", "Oct 16", "Oct 17"]
-    # A week that crosses into next month: the month appears exactly where it changes.
-    assert out["monthEdge"] == ["28", "29", "30", "Oct 1", "Oct 2", "Oct 3", "Oct 4"]
+# The shelf carried the month on a night outside this one ("Oct 13"); the
+# shelf went with Option A (Emily, 2026-11-01) — Cook's root is today.

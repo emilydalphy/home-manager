@@ -556,7 +556,6 @@ _PRELUDE = (
     + _function("cookMinutesLabel") + "\n"
     + _function("cookCoversLabel") + "\n"
     + _function("cookFocusPrepTasks") + "\n"
-    + _function("kitchenLoosePrepTasks") + "\n"
     + _function("cookPreppedAhead") + "\n"
     # MOVE_OWNER_WORDS / moveOwnerClause / cookOwnerPrefix —
     # kitchenTodayRows leads a row's line with whose move it is
@@ -565,15 +564,14 @@ _PRELUDE = (
     # forgotten prelude would render no name and no error at all. Every
     # row in this file carries no owner, so every line is what it was.
     + _between("  var MOVE_OWNER_WORDS = {", "  // The two groups' own icons")
-    + _function("cookOwnerPrefix") + "\n"
-    + _function("kitchenTodayLine") + "\n"
-    + _function("kitchenTodayRows") + "\n"
-    + _function("kitchenTodayRowHtml") + "\n"
+    + _between("  function kitchenTodayRows(", "  function cookBandEyebrow(")
     + _function("kitchenSubtitle") + "\n"
     + _function("cookSessionItemHtml") + "\n"
     + _function("cookResolveFocusIndex") + "\n"
     + _function("cookMealKey") + "\n"
-    + _between("  var COOK_DISH_WORDS = [", "  function renderKitchen()")
+    + _function("cookSessionOn") + "\n"
+    + _function("kitchenNextCookLine") + "\n"
+    + _between("  // ---------- Cook's root: today, in the order it is eaten", "  function renderKitchen()")
 )
 
 MON, TUE = "2026-09-28", "2026-09-29"
@@ -600,32 +598,37 @@ def _node(script: str):
 
 
 def _root(meals, moves=(), data=None, iso=MON, tonight_idx=0):
+    """Cook's root as Option A draws it (2026-11-01): the rows, the band's
+    line, the list (`card`, kept under its old key) and the dock.
+    `tonight_idx` is ignored — "next" is the first meal not done."""
     return _node(
-        "cookState.tonightIdx = " + json.dumps(tonight_idx) + ";\n"
         "var meals = " + json.dumps(meals) + ", moves = " + json.dumps(list(moves)) + ";\n"
         "var data = " + json.dumps(data or {"prep_sessions": [], "prep_tasks": [], "meals": meals}) + ";\n"
         "var rows = kitchenTodayRows(meals, moves, " + json.dumps(iso) + ");\n"
+        "var parts = cookRootParts(data, moves, " + json.dumps(iso) + ", null);\n"
         "console.log(JSON.stringify({\n"
-        "  rows: rows.map(function (r) { return { idx: r.idx, badge: r.badge, line: r.line,"
+        "  rows: rows.map(function (r) { return { idx: r.idx, right: r.right,"
         "      title: r.title, prepped: r.prepped || null }; }),\n"
         "  subtitle: kitchenSubtitle(rows, meals, " + json.dumps(iso) + "),\n"
-        "  card: kitchenCookingTodayHtml(rows, meals, " + json.dumps(iso) + ", data),\n"
-        "  dock: cookRootDockHtml(cookTonightRow(rows))\n"
+        "  card: parts.html,\n"
+        "  dock: parts.dock\n"
         "}));\n"
     )
 
 
 @_needs_node
 class TestTheScreen:
-    def test_the_row_reads_prepped_sunday_and_wears_the_prepped_badge(self):
-        """CATCH. main reads no such field: the row is "Cook" with
+    # UPDATED 2026-11-01 (Option A): the Tonight card and the rows' badge and
+    # start-by line went. A prepped lunch is a row that says "Ready" — made,
+    # nothing to start — and its tick is the dock's when it is next.
+    def test_the_row_reads_ready_and_keeps_the_dish_name(self):
+        """CATCH. main read no such field: the row was "Cook" with
         "start by 11:20" on it."""
         out = _root([_meal(prepped_ahead=_PREPPED)], [_COOK_MOVE])
         [row] = out["rows"]
-        assert row["badge"] == "Prepped"
-        assert row["line"] == "Prepped Sunday"
+        assert row["right"] == "Ready"
         assert row["title"] == "Chili", "the dish keeps its name — it is still what is eaten"
-        assert "start by" not in out["card"].lower()
+        assert "start by" not in out["card"].lower() and "11:20" not in out["card"]
 
     def test_it_is_not_counted_as_a_cook_left_to_do(self):
         """CATCH — "not shown as a cook", in the band's own words. main says
@@ -637,42 +640,20 @@ class TestTheScreen:
         out = _root(pair, [_COOK_MOVE])
         assert out["subtitle"] == "1 cook tonight"
 
-    def test_with_nothing_pinned_the_card_is_the_real_cook_not_the_prepped_lunch(self):
-        """CATCH on cookTonightRow's new preference. With no tonightIdx to
-        follow the card is what to DO now, and there is nothing to do about
-        food that is already made."""
+    def test_the_prepped_lunch_is_next_before_dinner_and_the_dock_ticks_it(self):
+        """Eating order, no clock: the lunch comes before dinner, so it is
+        next, and the dock offers its tick; the dinner is a row with its
+        minutes."""
         pair = [_meal(prepped_ahead=_PREPPED), _meal(entry_id=2, slot="dinner", meal="Tacos")]
-        out = _root(pair, [_COOK_MOVE], tonight_idx=None)
-        assert "Tacos" in out["card"].split('cook-tonight-dish">')[1][:40]
-        # The prepped lunch is still there, as a row with its own tick.
-        assert "Prepped Sunday" in out["card"] and 'data-cook="check-meal"' in out["card"]
-
-    def test_a_pinned_prepped_lunch_is_still_an_honest_card(self):
-        """CATCH — measured red on main on its own assertion. Also a behaviour
-        worth writing down rather than changing: cookTonightIndex is untouched,
-        so at eleven in the morning the tab still pins the lunch as tonight.
-        The card then reads what is true — prepped, ready, here is the tick —
-        rather than a start time."""
-        pair = [_meal(prepped_ahead=_PREPPED), _meal(entry_id=2, slot="dinner", meal="Tacos")]
-        out = _root(pair, [_COOK_MOVE], tonight_idx=0)
-        assert "Chili" in out["card"].split('cook-tonight-dish">')[1][:40]
-        assert "Prepped Sunday \u2014 ready to go." in out["card"]
+        out = _root(pair, [_COOK_MOVE])
+        assert '<span class="cook-today-slot">Lunch · next</span>' in out["card"]
         assert ">Mark it cooked<" in out["dock"]
-
-    def test_the_card_says_prepped_sunday_and_offers_no_start_time(self):
-        """CATCH. main's card carries Start 11:20 / On the table 11:50 and the
-        note "Nothing to thaw or prep ahead."."""
-        out = _root([_meal(prepped_ahead=_PREPPED)], [_COOK_MOVE])
-        assert "Prepped Sunday — ready to go." in out["card"]
-        assert "cook-tonight-tile-value" not in out["card"], "a start time for a cook already done"
-        assert "11:20" not in out["card"]
+        assert out["rows"][1]["right"] == "40 min"
 
     def test_the_dock_is_the_tick_not_start_cooking(self):
-        """CATCH. The card's own row is not drawn under it
-        (kitchenCookingTodayHtml), so the dock is the ONLY tick a prepped
-        card has — an empty dock would leave the meal with nowhere to tick
-        it, and "Start cooking" would be the app asking for a cook it has
-        already asked for on the prep day."""
+        """CATCH. The root's rows carry no box, so the dock is the ONLY tick
+        on the root a prepped meal has, and "Start cooking" would be the app
+        asking for a cook it has already asked for on the prep day."""
         out = _root([_meal(prepped_ahead=_PREPPED)], [_COOK_MOVE])
         assert 'data-cook="start-tonight"' not in out["dock"]
         assert 'data-cook="check-meal"' in out["dock"] and 'data-entry-id="1"' in out["dock"]
@@ -682,11 +663,12 @@ class TestTheScreen:
         assert 'aria-label="Mark cooked"' in out["dock"]
         assert ">Mark it cooked<" in out["dock"]
 
-    def test_a_done_prepped_lunch_reads_cooked_and_has_no_dock(self):
+    def test_a_done_prepped_lunch_reads_done_and_has_no_dock(self):
         """GUARD on the existing done rule — pinned by the mutation that makes
         the prepped branch run before the done one."""
         out = _root([_meal(prepped_ahead=_PREPPED, cooked_status="done")], [_COOK_MOVE])
-        assert out["rows"][0]["badge"] == "cooked"
+        assert out["rows"][0]["right"] == ""
+        assert "cook-today-row is-done" in out["card"]
         assert out["dock"] == ""
 
     def test_a_prep_day_on_the_meals_own_day_is_not_read_as_prepped_ahead(self):
@@ -695,31 +677,28 @@ class TestTheScreen:
         mutation that drops the date comparison."""
         same = {"date": MON, "weekday": "Monday", "lunches": [MON]}
         out = _root([_meal(prepped_ahead=same)], [_COOK_MOVE])
-        assert out["rows"][0]["badge"] == "Cook"
-        assert out["rows"][0]["line"] == "start by 11:20"
+        assert out["rows"][0]["right"] == "40 min"
         assert 'data-cook="start-tonight"' in out["dock"]
 
     def test_a_meal_with_no_prepped_ahead_is_exactly_what_it_was(self):
-        """GUARD — the byte-identical criterion, at the row level. Pinned by
-        the mutation that makes cookPreppedAhead answer for every meal."""
+        """GUARD — at the row level. Pinned by the mutation that makes
+        cookPreppedAhead answer for every meal."""
         out = _root([_meal()], [_COOK_MOVE])
-        assert out["rows"][0]["badge"] == "Cook"
-        assert out["rows"][0]["line"] == "start by 11:20"
+        assert out["rows"][0]["right"] == "40 min"
         assert out["subtitle"] == "1 cook today"
-        assert 'data-cook="start-tonight"' in out["dock"]
+        assert 'data-cook="start-tonight"' in out["dock"] and ">Make lunch<" in out["dock"]
 
-    def test_a_reheat_of_a_prepped_batch_says_the_prep_day_was_the_cook_day(self):
-        """CATCH. The later lunches' own card: main's note reads "Reheat —
-        cooked on Monday", which names the day nothing is cooked on now."""
-        out = _node(
-            "var meals = " + json.dumps([_meal(
-                entry_id=3, date=TUE, is_leftovers=True, prepped_ahead=_PREPPED,
-                leftovers_headline="Made ahead — Sunday’s Chili",
-                leftovers_from={"entry_id": 1, "date": MON, "slot": "lunch", "meal": "Chili"},
-            )]) + ";\n"
-            "console.log(JSON.stringify(cookTonightNote({prep_tasks: [], prep_sessions: []}, meals[0])));\n"
-        )
-        assert out == "Reheat — cooked on Sunday."
+    def test_a_reheat_of_a_prepped_batch_names_the_dish_not_a_cook_day(self):
+        """The later lunches' row: a made-ahead portion is the dish itself,
+        and names no day at all — the Tonight card's "Reheat — cooked on
+        Sunday." went with the card."""
+        out = _root([_meal(
+            entry_id=3, date=TUE, is_leftovers=True, prepped_ahead=_PREPPED,
+            leftovers_headline="Made ahead — Sunday’s Chili",
+            leftovers_from={"entry_id": 1, "date": MON, "slot": "lunch", "meal": "Chili"},
+        )], [], iso=TUE)
+        assert out["rows"][0]["title"] == "Chili"
+        assert "Sunday" not in out["card"] and "Monday" not in out["card"]
 
     def test_the_session_item_carries_the_line_under_the_row(self):
         """CATCH. main's cookSessionItemHtml renders no `line` at all."""
@@ -742,7 +721,7 @@ class TestTheScreen:
         """CATCH on the cross-plan case. The cook entry is not one of THIS
         plan's cards, so there is no recipe index to open — but it is still one
         entry and one cooked_status, so the box is the same check_off_meal
-        write kitchenTodayRowHtml makes, not a dead control."""
+        write every other tick makes, not a dead control."""
         item = {"kind": "cook_ahead", "prep_task_id": None, "entry_id": 99, "title": "Chili",
                 "feeds": "Chili", "line": "For Monday’s lunch.", "done": False,
                 "covers": [MON], "minutes": 40}
@@ -873,14 +852,15 @@ class TestWhatIsLeft:
             assert c["action"]["label"] == "Cook this"
             assert c["id"].startswith("cook:")
 
-    def test_a_past_prep_days_session_is_not_a_get_ready_row_which_is_why_the_tick_stays(
+    def test_a_past_prep_days_session_is_not_a_line_on_the_root_which_is_why_the_tick_stays(
             self, two_adults, stub_model):
-        """CHARACTERISATION of an existing rule (cookGetReadyMoves filters
-        sessions to `s.date >= todayIso`), and the reason the prepped lunch
-        keeps its tick on its own day: once the prep day has gone by there is
-        no row on the root that opens its session, so the lunch day's tick is
-        the only way left to log it."""
-        assert "s.date >= todayIso" in _function("cookGetReadyMoves")
+        """CHARACTERISATION of an existing rule (the root shows today's
+        session, cookSessionOn, and the next one ahead, cookNextPrepLineHtml's
+        `s.date > todayIso`), and the reason the prepped lunch keeps its tick
+        on its own day: once the prep day has gone by there is no line on the
+        root that opens its session, so the lunch day's tick is the only way
+        left to log it."""
+        assert "s.date > todayIso" in _function("cookNextPrepLineHtml")
 
 
 # ==========================================================================

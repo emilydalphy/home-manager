@@ -202,7 +202,8 @@ def test_the_band_says_one_thing_once():
     # Cook: no line on a day with nothing to cook; the day is the eyebrow.
     sub = _function("kitchenSubtitle")
     assert "return rows.length ? 'nothing left to cook today' : '';" in sub
-    assert "Nothing to cook tonight." in _function("kitchenCookingTodayHtml")
+    # Since Option A (2026-11-01, mockup A-Thu) the empty day is "Night off".
+    assert "Nothing to cook today." in _function("cookNightOffHtml")
     # The chips: no "nothing planned" chip over a moment that says so.
     assert "var WEEK_STATE_LABELS = { set: 'Week set', draft: 'Draft' };" in SHELL_JS
     assert "var WEEK_BADGES = { set: 'Approved', draft: 'Draft' };" in SHELL_JS
@@ -283,13 +284,17 @@ def test_now_shop_and_cook_each_have_their_moment_and_its_next_step():
     gro_dock = SHELL_JS[SHELL_JS.index("function groDockHtml("):SHELL_JS.index('// ---------- "Maybe already home" ----------')]
     assert '<button type="button" class="dock-primary" data-gro="goto-plan">Go to Plan</button>' in gro_dock
     assert "case 'goto-plan':\n        activateTab('week', true);" in SHELL_JS
-    # Cook: the sentence and the next cook, and no dock on an empty night
-    # (since the shelf design, 2026-09-13, the root's dock carries "Start
-    # cooking" only when tonight has a cook — cookRootDockHtml is empty
-    # for no row at all).
-    assert "emptyMomentHtml('pot', 'Nothing to cook tonight.', kitchenNextCookLine(meals, todayIso))" in _function("kitchenCookingTodayHtml")
-    assert "if (!row || row.done) return '';" in _function("cookRootDockHtml")
-    assert "dock-primary" not in _function("kitchenCookingTodayHtml")
+    # Cook: "Night off" and the next cook, and no dock on an empty day
+    # (Option A, 2026-11-01, mockup A-Thu — it replaced the empty moment on a
+    # day with a plan but nothing on it; a household with no plan still gets
+    # the moment, below). cookRootDockHtml has nothing for no meal unless the
+    # night-before list is open.
+    off = _function("cookNightOffHtml")
+    assert ">Night off</h2>" in off and "kitchenNextCookLine(meals, todayIso)" in off
+    assert "dock-primary" not in off
+    dock = _function("cookRootDockHtml")
+    assert "if (!row || row.done) {" in dock and ": '';" in dock
+    assert "emptyMomentHtml('pot', lastPlanned ? 'Nothing planned this week yet.' : 'Nothing to cook tonight.'," in _function("renderKitchen")
 
 
 def test_the_moment_sits_in_the_middle_of_the_content_area():
@@ -299,7 +304,10 @@ def test_the_moment_sits_in_the_middle_of_the_content_area():
     assert "flex: 1 0 auto;" in moment and "justify-content: center;" in moment
     assert ".gro-body.is-empty, .kit-body.is-empty { flex: 1 0 auto; }" in SHELL_CSS
     assert "body.classList.toggle('is-empty', !!body.querySelector('.empty-moment'));" in _function("renderGrocery")
-    assert "body.classList.toggle('is-empty', !rows.length);" in _function("renderKitchen")
+    # Cook carries the moment only with no plan at all (Option A's "Night off"
+    # is a card in the list's place, not a moment).
+    kit = _function("renderKitchen")
+    assert "body.classList.add('is-empty');" in kit and "body.classList.remove('is-empty');" in kit
     for container in (".grocery-content {", ".kitchen-content {"):
         assert "flex: 1 0 auto;" in SHELL_CSS.split(container, 1)[1][:600], f"{container} should fill the panel"
 

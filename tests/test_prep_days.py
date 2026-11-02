@@ -589,20 +589,20 @@ def test_the_cook_view_renders_the_sessions_card_from_the_payload():
     screen shows (see tests/test_kitchen_and_preferences.py). The ordering
     this pins is unchanged; the new section is inside it.
     """
-    # UPDATED 2026-09-13 (the shelf design): the sessions card is gone from
-    # the root; the NEXT session is one of the get-ready rows under the
-    # Tonight card (cookGetReadyMoves reads prep_sessions), and the row
-    # still opens the session's own screen. The ordering pinned here is
-    # tonight, then what gets you ready for what's next.
+    # UPDATED 2026-09-13 (the shelf design): the next session became a
+    # get-ready row under the Tonight card. UPDATED 2026-11-01 (Option A,
+    # Emily: the prep was "way too hidden"): on a prep day before the prep is
+    # done, the session is the big card at the TOP of Cook's root; done, it
+    # is one line; a later prep day is one quiet line under the list. Each
+    # still opens the session's own screen.
     assert "function cookPrepSessionsHtml(data)" not in SHELL_JS
-    moves = SHELL_JS[SHELL_JS.index("function cookGetReadyMoves("):SHELL_JS.index("function cookByTaskDate(")]
-    assert "data.prep_sessions) || []" in moves
-    rows = SHELL_JS[SHELL_JS.index("function cookGetReadyRowsHtml("):SHELL_JS.index("function cookRootDockHtml(")]
-    assert 'data-cook="session" data-date="' in rows
-    assert (
-        "kitchenCookingTodayHtml(rows, meals, todayIso, data) +\n"
-        "      cookGetReadyRowsHtml(cookGetReadyMoves(data, meals, todayIso," in SHELL_JS
-    )
+    parts = SHELL_JS[SHELL_JS.index("function cookRootParts("):SHELL_JS.index("  // The quiet way to the tab")]
+    assert "cookSessionOn(data, todayIso)" in parts
+    assert parts.index("cookPrepDayCardHtml(session)") < parts.index("cookTodayListHtml(ordered, next)")
+    for fn in ("cookPrepDayCardHtml", "cookPrepDoneLineHtml", "cookNextPrepLineHtml"):
+        body = SHELL_JS[SHELL_JS.index("function %s(" % fn):]
+        body = body[:body.index("\n  }\n")]
+        assert 'data-cook="session" data-date="' in body, fn
 
 
 def test_no_prep_days_offer_on_the_cook_root():

@@ -400,69 +400,23 @@ def test_a_started_card_marked_cooked_offers_the_start_again_on_the_meal_step():
     assert 'data-wk-start="1">Start cooking<' in html
 
 
-# ---------- Cook's Tonight card ----------
+# ---------- Cook's root ----------
+# The Tonight card read "STARTED 5:50 · ON THE TABLE 6:25" and the "Started
+# 17 minutes late" line off the real start. Option A (Emily, 2026-11-01)
+# took every clock time off Cook's root — "we don't know when people eat" —
+# so the root only says the cook is under way, in its dock.
 
 
-def _tonight(meals, moves, data, today, tonight_idx):
-    return _shelf_node(
-        _var("NUMBER_WORDS") + "\n" + _var("TENS_WORDS") + "\n"
-        + "".join(_extract(n) + "\n" for n in (
-            "numberWord", "minutesInWords", "clockLabel", "isSnackSlot", "slotTableMinutes",
-            "mealTotalMinutes", "mealClockSides", "mealClockTotal"))
-        + _live_helpers()
-        + "cookState.tonightIdx = " + json.dumps(tonight_idx) + ";\n"
-        + "var meals = " + json.dumps(meals) + ";\n"
-        + "var rows = kitchenTodayRows(meals, " + json.dumps(moves) + ", " + json.dumps(today) + ");\n"
-        + "console.log(JSON.stringify(kitchenCookingTodayHtml(rows, meals, " + json.dumps(today) + ", " + json.dumps(data) + ")));"
+@_needs_node
+def test_a_started_cook_shows_no_clock_on_the_root_only_keep_cooking():
+    started = _meal(1, SHELF_MON, "Chicken Tikka Masala", cook_started_at=f"{SHELF_MON}T17:50:00")
+    out = _shelf_node(
+        "var parts = cookRootParts(" + json.dumps({"meals": [started], "prep_sessions": [], "prep_tasks": []})
+        + ", " + json.dumps([_MOVE]) + ", " + json.dumps(SHELF_MON) + ", null);\n"
+        "console.log(JSON.stringify(parts));\n"
     )
-
-
-def _tiles(html: str) -> list[tuple[str, str]]:
-    return re.findall(r'cook-tonight-tile-label">([^<]*)</span><span class="cook-tonight-tile-value">([^<]*)<', html)
-
-
-@_needs_node
-def test_the_tonight_card_reads_started_and_the_new_table_time_and_says_so_once():
-    started = _meal(1, SHELF_MON, "Chicken Tikka Masala", cook_started_at=SHELF_MON + "T18:12:00")
-    html = _tonight([started], [_MOVE], {"cook_name": "Emily"}, SHELF_MON, 0)
-    assert _tiles(html) == [("Started", "6:12"), ("On the table", "6:42")]
-    # Twelve minutes after the plan's 6:00 (off the move's own "Start by").
-    assert ">Started 12 minutes late — the clock’s moved with you.<" in html
-    assert "Nothing to thaw" not in html
-    # The fresher moves payload carries planned_start; the line is the same.
-    fresh = dict(_MOVE, chips=["30 min", "Started 6:12"], time_label="6:42 tonight",
-                 planned_start=SHELF_MON + "T18:00:00", started_at=SHELF_MON + "T18:12:00")
-    html = _tonight([started], [fresh], {"cook_name": "Emily"}, SHELF_MON, 0)
-    assert _tiles(html) == [("Started", "6:12"), ("On the table", "6:42")]
-    assert ">Started 12 minutes late — the clock’s moved with you.<" in html
-
-
-@_needs_node
-def test_the_tonight_card_says_nothing_about_a_start_inside_two_minutes():
-    on_time = _meal(1, SHELF_MON, "Chicken Tikka Masala", cook_started_at=SHELF_MON + "T18:01:00")
-    html = _tonight([on_time], [_MOVE], {}, SHELF_MON, 0)
-    assert _tiles(html) == [("Started", "6:01"), ("On the table", "6:31")]
-    assert "moved with you" not in html
-    assert ">Nothing to thaw or prep ahead.<" in html
-
-
-@_needs_node
-def test_the_tonight_card_says_early_too_and_stays_quiet_once_cooked():
-    early = _meal(1, SHELF_MON, "Chicken Tikka Masala", cook_started_at=SHELF_MON + "T17:40:00")
-    html = _tonight([early], [_MOVE], {}, SHELF_MON, 0)
-    assert _tiles(html) == [("Started", "5:40"), ("On the table", "6:10")]
-    assert ">Started 20 minutes early — the clock’s moved with you.<" in html
-    done = _meal(1, SHELF_MON, "Chili", cook_started_at=SHELF_MON + "T17:40:00", cooked_status="done")
-    html = _tonight([done], [_MOVE], {}, SHELF_MON, 0)
-    assert ">Cooked.<" in html
-    assert "cook-tonight-times" not in html and "moved with you" not in html
-
-
-@_needs_node
-def test_the_tonight_card_without_a_start_is_exactly_what_it_was():
-    html = _tonight([_meal(1, SHELF_MON, "Chicken Tikka Masala")], [_MOVE], {"cook_name": "Emily"}, SHELF_MON, 0)
-    assert _tiles(html) == [("Start", "6:00"), ("On the table", "6:30")]
-    assert ">Nothing to thaw or prep ahead.<" in html
+    assert "Started" not in out["html"] and "5:50" not in out["html"] and "6:" not in out["html"]
+    assert ">Keep cooking</button>" in out["dock"]
 
 
 # ---------- the recipe and the cooker ----------
@@ -648,8 +602,9 @@ def test_a_failed_post_is_one_calm_line_and_nothing_else():
 
 
 def test_every_string_a_person_reads_goes_through_escape_html():
-    card = _extract("cookTonightCardHtml")
-    assert "escapeHtml(note)" in card and "escapeHtml(t.value)" in card
+    # Cook's root (Option A, 2026-11-01): the row's slot, dish and minutes.
+    row = _extract("cookTodayRowHtml")
+    assert "escapeHtml(label)" in row and "escapeHtml(row.title)" in row and "escapeHtml(row.right)" in row
     assert "escapeHtml(meal.meal || 'Dinner')" in _extract("recipeTitleHtml")
 
 
@@ -712,4 +667,6 @@ def test_the_shell_handles_a_refused_start_and_the_kitchen_row_drops_the_chip_on
     body = src[i:i + 1400]
     assert "if (out && out.status === 'refused') {" in body
     assert "weekState.cookView = null;" in body
-    assert "else if (/^Started /.test(chip)) { if (!done) bits.push(chip); }" in src
+    # The root row's "Started" chip went with every clock on Cook's root
+    # (Option A, 2026-11-01): nothing there reads a chip any more.
+    assert "/^Started /" not in src[src.index("  function kitchenTodayRows("):src.index("  function cookBandEyebrow(")]

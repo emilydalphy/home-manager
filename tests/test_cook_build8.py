@@ -1,8 +1,8 @@
 """Cook root, Build 8 of the screen-by-screen redesign (Emily, 2026-09-04 and
 2026-09-11): empty means empty, the entry points as quiet rows. UPDATED
-2026-09-13 for the shelf design: the week is the shelf (not one line per
-day), and the entry-point rows live in the More sheet — see
-tests/test_cook_shelf.py for the shelf, the Tonight card and the dock."""
+2026-09-13 for the shelf design (the entry-point rows live in the More
+sheet), and 2026-11-01 for Option A, which took the shelf off too — see
+tests/test_cook_option_a.py for the root as it is now."""
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
@@ -15,18 +15,18 @@ def _fn(name):
     return SHELL_JS[start:SHELL_JS.index("\n  }\n", start)]
 
 
-def test_the_rest_of_the_week_is_the_shelf_one_tile_per_night():
-    assert "function cookRestOfWeekHtml(" not in SHELL_JS, "the day list came out with the shelf"
-    tile = _fn("cookShelfTileHtml")
-    assert 'data-cook="focus"' in tile  # each night with a meal is still a way into it
-    assert "'Leftovers'" in tile and "'—'" in tile  # a reheat night, and an empty one
+def test_the_week_is_not_on_cooks_root():
+    # The day list came out with the shelf (2026-09-13); the shelf came out
+    # with Option A (2026-11-01). Cook's root is today; the week is Plan's.
+    assert "function cookRestOfWeekHtml(" not in SHELL_JS
+    assert "function cookShelfTileHtml(" not in SHELL_JS
 
 
 def test_empty_means_empty_and_names_the_next_cook():
-    # Since the root band (2026-09-11) the empty day is the shared empty
-    # moment, with the next cook as its second line.
-    today = _fn("kitchenCookingTodayHtml")
-    assert "emptyMomentHtml('pot', 'Nothing to cook tonight.', kitchenNextCookLine(meals, todayIso))" in today
+    # Option A (2026-11-01, mockup A-Thu): a day with nothing on it is
+    # "Night off", with the next cook as its line.
+    off = _fn("cookNightOffHtml")
+    assert ">Night off</h2>" in off and "kitchenNextCookLine(meals, todayIso)" in off
     nxt = _fn("kitchenNextCookLine")
     assert "'Next: '" in nxt
 
@@ -36,7 +36,7 @@ def test_the_two_italic_headings_left_the_root_and_prep_days_is_not_on_it():
     assert "cookDefrostLinkHtml()" not in root and "cookAheadAskLinkHtml()" not in root
     # The "Prep days" row left the root with the root band (2026-09-11):
     # it is a setting, and Preferences already has that row.
-    assert "function cookPrepSessionsHtml(" not in SHELL_JS  # the next session is a get-ready row now
+    assert "function cookPrepSessionsHtml(" not in SHELL_JS  # the next session is a quiet line now
     assert '<span class="kit-row-title">Prep days</span>' not in SHELL_JS
     assert 'data-cook="prep-days"' not in SHELL_JS
     assert "Prep ahead? " not in SHELL_JS

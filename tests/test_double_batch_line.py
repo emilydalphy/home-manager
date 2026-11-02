@@ -567,14 +567,9 @@ def test_both_recipe_surfaces_render_the_line_under_the_stepper():
         assert call in SHELL_JS, call
 
 
-def test_cooks_tonight_card_says_it_too():
-    i = SHELL_JS.index("function cookTonightCardHtml(")
-    j = SHELL_JS.index("function kitchenCookingTodayHtml(", i)
-    block = SHELL_JS[i:j]
-    assert "cook-tonight-batch" in block
-    assert "meal.batch_line" in block
-    # ...and not over a card that already reads "Cooked."
-    assert "!row.done && meal.batch_line" in block
+# Cook's Tonight card said the batch line too (.cook-tonight-batch). The card
+# went with Option A (Emily, 2026-11-01): the root is one even list of
+# slot, dish and minutes, so the line lives on the recipe and in cook mode.
 
 
 def test_cook_modes_first_and_last_steps_carry_their_sentences():
@@ -598,26 +593,23 @@ def test_the_servings_stepper_is_untouched():
 
 
 def test_the_three_inks_are_each_chosen_for_their_own_background():
-    """--celadon-label is a dark ink for celadon tiles; on the spruce
-    Tonight card it is nearly invisible, so that one takes --celadon.
-    Three surfaces, three measured pairs, tokens only (rule 9)."""
+    """Each surface its own measured pair, tokens only (rule 9). The spruce
+    Tonight card's --celadon pair went with the card (Option A, 2026-11-01)."""
     for sel, token in ((".recipe-batch", "--celadon-label"),
-                       (".cook-tonight-batch", "--celadon"),
                        (".cook-step-batch", "--celadon-label")):
         i = SHELL_CSS.index(sel + " {")
         block = SHELL_CSS[i:SHELL_CSS.index("}", i)]
         assert f"color: var({token})" in block, (sel, block)
         assert "#" not in block, (sel, "a literal hex")
     # and every one of them records what it measured
-    for ratio in ("5.44:1 light / 8.22:1 dark", "7.23:1 light / 5.94:1 dark",
-                  "5.76:1 light / 7.14:1 dark"):
+    for ratio in ("5.44:1 light / 8.22:1 dark", "5.76:1 light / 7.14:1 dark"):
         assert ratio in SHELL_CSS, ratio
 
 
 def test_the_line_is_never_a_tile_or_a_chip():
     """Rule 5: the recipe screen's one accent is "Start cooking" in the
     dock. A LINE, as the card specifies."""
-    for sel in (".recipe-batch", ".cook-tonight-batch", ".cook-step-batch"):
+    for sel in (".recipe-batch", ".cook-step-batch"):
         i = SHELL_CSS.index(sel + " {")
         block = SHELL_CSS[i:SHELL_CSS.index("}", i)]
         for banned in ("background", "border", "apricot"):

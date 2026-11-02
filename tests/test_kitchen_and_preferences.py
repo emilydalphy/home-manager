@@ -69,6 +69,11 @@ def _function(name: str, source: str = SHELL_JS) -> str:
     return source[start : j + 1]
 
 
+def _between(start_marker: str, end_marker: str) -> str:
+    a = SHELL_JS.index(start_marker)
+    return SHELL_JS[a : SHELL_JS.index(end_marker, a)]
+
+
 # --- 1. the Kitchen root --------------------------------------------------
 
 
@@ -76,19 +81,23 @@ def _function(name: str, source: str = SHELL_JS) -> str:
 # plus the Cook-side prefix that reads it. See the note at its call site.
 _OWNER_JS = (
     SHELL_JS[SHELL_JS.index("  var MOVE_OWNER_WORDS = {"):SHELL_JS.index("  // The two groups' own icons")]
-    + _function("cookOwnerPrefix") + "\n"
 )
 
 def test_the_kitchen_root_is_the_cooks_tab():
-    """The shelf, tonight, the get-ready rows and the More link, in this
-    order, under the band (the shelf design, 2026-09-13). The three
-    eyebrowed lists this used to pin are gone."""
+    """Option A (Emily, 2026-11-01): under the band, a prep day's card while
+    the prep is not done, the night-before checklist once the day's meals
+    are, today's even list (or "Night off"), the quiet lines, then the More
+    link. The three eyebrowed lists this used to pin are long gone, and so
+    are the shelf, the Tonight card and the get-ready rows that replaced
+    them (2026-09-13)."""
     root = _function("renderKitchen")
-    for call in ("cookShelfHtml(meals, data, todayIso)", "kitchenCookingTodayHtml(rows, meals, todayIso, data)",
-                 "cookGetReadyRowsHtml(cookGetReadyMoves(data, meals, todayIso,", "cookMoreLinkHtml()"):
-        assert call in root, f"the Kitchen root no longer renders {call}"
-    tail = root[root.index("cookShelfHtml("):]
-    assert tail.index("kitchenCookingTodayHtml(") < tail.index("cookGetReadyRowsHtml(") < tail.index("cookMoreLinkHtml()")
+    assert "cookRootParts(data, kitchenState.moves, todayIso, cookState.bedOpenOn)" in root
+    assert "body.innerHTML = parts.html + cookAttentionHtml() + cookMoreLinkHtml();" in root
+    parts = _function("cookRootParts")
+    order = ["cookPrepDayCardHtml(session)", "cookBedCardHtml(bed, todayIso)", "cookTodayListHtml(ordered, next)",
+             "cookPrepDoneLineHtml(session)", "cookBedLineHtml(bed, todayIso)", "cookNextPrepLineHtml(data, todayIso)"]
+    at = [parts.index(call) for call in order]
+    assert at == sorted(at), "the root's parts are out of order"
     for gone in ("Cooking today", "Prep sessions</span>", "The rest of the week</span>", "Prep to do</span>"):
         assert gone not in SHELL_JS, f"the old root's {gone!r} eyebrow is back"
 
@@ -112,23 +121,24 @@ def test_the_kitchen_root_says_the_day_and_the_count():
     assert "dayName(todayIso, { weekday: 'long' })" in _function("cookBandEyebrow")
 
 
-def test_a_cooking_today_line_carries_the_start_by_and_the_badge():
-    line = _function("kitchenTodayLine")
-    assert "'start by '" in line, "the start-by chip is no longer read off the move"
-    rows = _function("kitchenTodayRows")
-    assert "'cooked'" in rows and "'Reheat'" in rows and "'Cook'" in rows, (
-        "the Cook / cooked / Reheat badge is gone"
-    )
+def test_a_row_says_how_long_never_when():
+    """Option A: the row's right-hand word is minutes, "Ready", "Reheat" or
+    "Takeout" — never a start-by or a table time (Emily, 2026-11-01: "we
+    don't know when people eat")."""
+    rows = _between("  function kitchenTodayRows(", "  function cookBandEyebrow(")
+    assert "start by" not in rows.lower() and "time_label" not in rows
+    right = _function("cookRowRight")
+    for word in ("'Ready'", "'Reheat'", "'Takeout'", "mins + ' min'"):
+        assert word in right, word
 
 
-def test_the_rest_of_the_week_is_the_shelf():
+def test_the_rest_of_the_week_is_not_on_cooks_root():
     """The three-days-then-"Show Fri–Sun" list (cookRestOfWeekHtml, Build
-    8) went with the shelf design: every night of the period is a tile."""
+    8) went with the shelf design, and the shelf went with Option A
+    (2026-11-01): Cook's root is today; the week is Plan's."""
     for gone in ("function cookRestOfWeekHtml(", "KITCHEN_REST_VISIBLE", 'data-cook="rest-more"',
-                 "function cookRestDayRowHtml(", "restExpanded"):
+                 "function cookRestDayRowHtml(", "restExpanded", "function cookShelfHtml("):
         assert gone not in SHELL_JS, f"{gone} is back"
-    shelf = _function("cookShelfHtml")
-    assert "cookShelfNights(meals, data, todayIso)" in shelf and "cookShelfTileHtml" in shelf
 
 
 def test_the_two_quiet_tiles_are_inventory_and_recipes():
@@ -619,136 +629,18 @@ def test_onboarding_counts_as_answering_the_snacks_question(signed_in):
 
 
 # --- 5b. no prep task is invisible ----------------------------------------
-
-_PREP_JS = (
-    _JS_PRELUDE
-    + "function dayNameShort(d){ return 'Wed'; }\n"
-    + "function dayName(d, o){ return 'Wednesday'; }\n"
-    + "const GRO_ICONS = { chevRight: '<svg data-icon=\"chev\"></svg>' };\n"
-    + _function("addDaysLocal") + "\n"
-    + _function("cookMinutesLabel") + "\n"
-    + _function("cookCoversLabel") + "\n"
-    + _function("cookFocusPrepTasks") + "\n"
-    + _function("kitchenLoosePrepTasks") + "\n"
-    # The get-ready rows (the shelf design, 2026-09-13) are where a loose
-    # task surfaces on the root now — the soonest one, with its tick.
-    + SHELL_JS[SHELL_JS.index("  var COOK_READY_ICONS = {"):SHELL_JS.index("  function cookGetReadyRowsHtml(")]
-    + _function("cookGetReadyMoves") + "\n"
-    + _function("cookByTaskDate") + "\n"
-    + _function("cookWhenLabel") + "\n"
-    + _function("cookMealIndexForTask") + "\n"
-    + _function("cookThawTitle") + "\n"
-    + _function("cookThawFor") + "\n"
-    + _function("cookGetReadyRowsHtml") + "\n"
-)
+# The "nothing is invisible" net (kitchenLoosePrepTasks feeding the
+# get-ready rows) went with those rows on 2026-11-01 (Option A). A prep row
+# reaches the screen on its own day now: today's fridge moves and prep come
+# off the moves engine into the night-before list (cookBedTasks), less the
+# ones today's prep list or today's own meal screens carry — pinned in
+# tests/test_cook_option_a.py.
 
 
-def _prep_todo(data: dict) -> dict:
-    """What the Kitchen root's get-ready rows are given, and what they
-    render — plus, for the "nowhere twice" half, which task ids the cook
-    screens already carry."""
-    script = (
-        _PREP_JS
-        + f"const data = {json.dumps(data)};\n"
-        + "const loose = kitchenLoosePrepTasks(data);\n"
-        + "const onCookScreens = [];\n"
-        + "(data.meals || []).forEach(function (m) {\n"
-        + "  cookFocusPrepTasks(data, m).forEach(function (t) { onCookScreens.push(t.id); });\n"
-        + "});\n"
-        + "console.log(JSON.stringify({\n"
-        + "  loose: loose.map(function (t) { return t.id; }),\n"
-        + "  html: cookGetReadyRowsHtml(cookGetReadyMoves(data, data.meals || [], '2026-09-09', null)),\n"
-        + "  onCookScreens: onCookScreens\n"
-        + "}));\n"
-    )
-    return _node(script)
-
-
-_ORPHAN_DATA = {
-    "weekly_plan_id": 1,
-    "meals": [
-        {"entry_id": 3, "date": "2026-09-09", "slot": "dinner", "meal": "Bulgogi Wraps",
-         "cooked_status": "pending", "is_leftovers": False},
-    ],
-    "prep_tasks": [
-        # The orphan: no meal_plan_entry_id, a related_meal that matches no
-        # dish on the plan, and a date that is not a prep day. It rendered
-        # nowhere at all before 2026-09-08.
-        {"id": 11, "task_date": "2026-09-10", "description": "Soak the beans",
-         "related_meal": "", "status": "pending", "task_type": "general",
-         "meal_plan_entry_id": None},
-        # Belongs to a cook screen (it names the meal) — must NOT be here.
-        {"id": 12, "task_date": "2026-09-09", "description": "Marinate the beef",
-         "related_meal": "Bulgogi Wraps", "status": "pending", "task_type": "general",
-         "meal_plan_entry_id": None},
-        # Belongs to Sunday's session — must NOT be here.
-        {"id": 13, "task_date": "2026-09-13", "description": "Chop the onions",
-         "related_meal": "", "status": "pending", "task_type": "prep_cut",
-         "meal_plan_entry_id": None},
-        # Already done: not lost, so not collected.
-        {"id": 14, "task_date": "2026-09-10", "description": "Toast the sesame seeds",
-         "related_meal": "", "status": "done", "task_type": "general",
-         "meal_plan_entry_id": None},
-    ],
-    "prep_sessions": [
-        {"date": "2026-09-13", "weekday": "Sunday", "items_done": 0, "items_total": 1,
-         "total_minutes_estimate": 10, "covers": [], "note": "", "minutes_planned": 10,
-         "items": [{"kind": "prep_cut", "prep_task_id": 13, "entry_id": None,
-                    "title": "Chop the onions", "done": False}]},
-    ],
-}
-
-
-@_needs_node
-def test_an_orphan_prep_task_is_collected_by_prep_to_do():
-    """"Soak the beans", two days out, with no entry link and no name match:
-    no session shows it, no cook screen shows it, and Today only ever shows
-    today. A task the app wrote and then hid is worse than one it never
-    wrote."""
-    out = _prep_todo(_ORPHAN_DATA)
-    assert out["loose"] == [11], "only the orphan belongs in the get-ready rows"
-    assert "Soak the beans" in out["html"]
-    assert 'data-cook="check-prep" data-prep-id="11"' in out["html"], "it has to be tickable"
-    assert "Wednesday" in out["html"], "and dated"
-
-
-@_needs_node
-def test_prep_to_do_never_shows_a_task_twice():
-    """It is the net under the other two lists, not a third copy of them."""
-    out = _prep_todo(_ORPHAN_DATA)
-    assert 12 in out["onCookScreens"], "the marinate task is on its cook screen"
-    session_ids = [
-        item["prep_task_id"]
-        for session in _ORPHAN_DATA["prep_sessions"]
-        for item in session["items"]
-    ]
-    assert 13 in session_ids, "the prep-cut is in Sunday's session"
-    for already_shown in out["onCookScreens"] + session_ids:
-        assert already_shown not in out["loose"], (
-            f"prep task {already_shown} renders in two places on the Kitchen tab"
-        )
-    assert 14 not in out["loose"], "a finished task is not a lost one"
-    assert "Toast the sesame seeds" not in out["html"]
-
-
-@_needs_node
-def test_prep_to_do_is_nothing_at_all_when_nothing_is_orphaned():
-    data = dict(_ORPHAN_DATA, prep_tasks=[
-        t for t in _ORPHAN_DATA["prep_tasks"] if t["id"] != 11
-    ])
-    out = _prep_todo(data)
-    assert out["loose"] == []
-    assert "Soak the beans" not in out["html"]
-    # Sunday's session is still the next get-ready move.
-    assert "Sunday prep" in out["html"] and 'data-cook="session" data-date="2026-09-13"' in out["html"]
-
-
-def test_the_kitchen_root_renders_the_net_in_its_get_ready_rows():
-    root = _function("renderKitchen")
-    assert "cookGetReadyRowsHtml(cookGetReadyMoves(data, meals, todayIso," in root
-    moves = _function("cookGetReadyMoves")
-    assert "kitchenLoosePrepTasks(data)" in moves, "the net feeds the get-ready rows"
-    assert "moves.slice(0, 2)" in moves, "at most two rows"
+def test_the_night_list_reads_every_prep_move_of_the_day():
+    bed = _function("cookBedTasks")
+    assert "m.kind !== 'fridge' && m.kind !== 'prep'" in bed
+    assert "onPrepList[m.task_id]" in bed, "a step on today's prep list is shown there, once"
 
 
 # --- 5c. "Show me tomorrow" lands on tomorrow -----------------------------
@@ -847,8 +739,7 @@ _SUBTITLE_JS = (
     # forgotten prelude would render no name and no error at all. Every
     # row in this file carries no owner, so every line is what it was.
     + _OWNER_JS
-    + _function("kitchenTodayLine") + "\n"
-    + _function("kitchenTodayRows") + "\n"
+    + _between("  function kitchenTodayRows(", "  function cookBandEyebrow(")
     + _function("kitchenSubtitle") + "\n"
 )
 
@@ -859,7 +750,7 @@ def _subtitle(meals: list, moves: list, iso: str = "2026-09-07"):
         + f"const meals = {json.dumps(meals)}, moves = {json.dumps(moves)};\n"
         + f"const rows = kitchenTodayRows(meals, moves, {json.dumps(iso)});\n"
         + "console.log(JSON.stringify({ subtitle: kitchenSubtitle(rows, meals, "
-        + json.dumps(iso) + "), lines: rows.map(function (r) { return r.line; }) }));\n"
+        + json.dumps(iso) + "), lines: rows.map(function (r) { return r.right; }) }));\n"
     )
     return _node(script)
 
@@ -895,18 +786,18 @@ def test_the_subtitle_believes_the_moves_done_state_too():
 
 
 @_needs_node
-def test_a_cooked_row_loses_its_start_by_line():
-    """The moves payload keeps the chip — it is arithmetic about the slot,
-    not about the tick — so the row drops it rather than telling someone
-    who has just cooked when they should have started."""
+def test_a_row_never_reads_the_start_by_chip():
+    """The moves payload keeps its "Start by" chip (Plan reads it); Cook's
+    root does not (Option A, 2026-11-01). A cooked row has nothing on the
+    right — its check says it — and one still to cook says its minutes."""
     meals = _three_dinners(1)
     moves = [{"kind": "cook", "entry_id": 1, "done": True,
               "chips": ["30 min", "Start by 5:35"], "detail": "dinner"},
              {"kind": "cook", "entry_id": 2, "done": False,
               "chips": ["30 min", "Start by 5:35"], "detail": "dinner"}]
     lines = _subtitle(meals, moves)["lines"]
-    assert lines[0] == "30 min", "a cooked row has no start-by left to make"
-    assert lines[1] == "start by 5:35 · 30 min"
+    assert lines[0] == ""
+    assert lines[1] == "30 min"
 
 
 def test_a_check_off_refreshes_the_moves_the_kitchen_root_reads():
@@ -940,10 +831,11 @@ def test_the_cook_mode_apricot_and_the_end_button_say_the_same_thing():
     cooked = _function("cookDockCookedHtml")
     assert "'Done — on the table'" in cooked, "the apricot says 'Done — on the table'"
     assert "'Mark cooked'" not in cooked and "'Mark it cooked'" not in cooked
-    # The Kitchen root's own checkboxes keep "Mark cooked" as their
-    # aria-label — cookCheckMeal reads that exact string to tell a real
-    # cook from a reheat before it offers the "Rate it" toast.
-    assert "'Mark cooked'" in _function("kitchenTodayRowHtml")
+    # The root dock's tick for a dish cooked on an earlier prep day keeps
+    # "Mark cooked" as its aria-label — cookCheckMeal reads that exact string
+    # to tell a real cook from a reheat before it offers the "Rate it" toast.
+    # (The root's per-row boxes that carried it went with Option A.)
+    assert 'aria-label="Mark cooked"' in _function("cookRootDockHtml")
     assert "el.getAttribute('aria-label') === 'Mark cooked'" in _function("cookCheckMeal")
 
 
