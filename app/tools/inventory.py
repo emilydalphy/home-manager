@@ -307,7 +307,12 @@ def set_inventory_location(item_id: int, location: str, resync: bool = True) -> 
         # (defrost._freeze_ticked_pack): that door books and removes its
         # own move by hand, and a sync there also booked moves for nights
         # the line fed that have already gone.
+        # First the moves this hand move settles: out, a pending move for
+        # this pack is the household's own doing and is marked done (a move
+        # already ticked stays ticked, review 2026-11-02); back in, only
+        # the ones marked here go back to pending (defrost.settle_moves_for_pack).
         from . import defrost as _defrost
+        _defrost.settle_moves_for_pack(item_id, out_of_freezer=(was == "freezer"))
         _defrost.resync_live_plan_thaws()
     result = {"item_id": item_id, "location": location}
     if new_date:

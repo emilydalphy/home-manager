@@ -304,7 +304,8 @@ def _night_scale(ing: dict, meal: dict, default_servings) -> float:
     return scale(meal["date"], meal.get("slot") or "dinner", default_servings)
 
 
-def _candidates_from_plan(plan: dict, freezer_items: list[dict], dinner_window: str | None) -> list[dict]:
+def _candidates_from_plan(plan: dict, freezer_items: list[dict], dinner_window: str | None,
+                          moved_out: dict[int, list[dict]] | None = None) -> list[dict]:
     """
     Walk a plan's meals, cross-referencing each recipe's ingredient list
     against tracked freezer inventory. Only a *confident* name match (see
@@ -347,7 +348,8 @@ def _candidates_from_plan(plan: dict, freezer_items: list[dict], dinner_window: 
     # ("Leftovers from the freezer — Monday's Soup"): no inventory row at
     # all, so it is booked by the entry (see own_portion_candidates).
     candidates += _freezer_portions.own_portion_candidates(plan, dinner_window)
-    if not freezer_items:
+    moved_out = moved_out or {}
+    if not freezer_items and not moved_out:
         return candidates
     recipes_by_name = {r["name"]: r for r in _recipes.list_recipes()}
     chains = _leftovers.plan_leftover_chains(plan["weekly_plan_id"]) if plan.get("weekly_plan_id") else {"sources": {}, "leftovers": {}}
@@ -368,9 +370,14 @@ def _candidates_from_plan(plan: dict, freezer_items: list[dict], dinner_window: 
             ing_name = (ing.get("item") or "").strip()
             if not ing_name:
                 continue
-            match, confident = _cooker._find_inventory_match(ing_name, freezer_items)
+            # This night's own pack first when its move is done and it is out
+            # of the freezer (_moved_out_packs): the dinner is covered by it,
+            # so the done move is kept and no second frozen pack is booked.
+            own_packs = moved_out.get(entry_id) or []
+            match, confident = _cooker._find_inventory_match(ing_name, own_packs + freezer_items)
             if not match or not confident:
                 continue
+            settled = any(p["id"] == match["id"] for p in own_packs)
             lead_hours, tier = lead_hours_for_item(match["item"])
             move_date = _move_date(m["date"], lead_hours, dinner_window)
             candidates.append({
@@ -385,8 +392,96 @@ def _candidates_from_plan(plan: dict, freezer_items: list[dict], dinner_window: 
                 ),
                 "lead_hours": lead_hours,
                 "lead_tier": tier,
+                # Already out of the freezer: keeps its done row, never books one.
+                "settled": settled,
             })
     return candidates
+
+
+def _moved_out_packs(conn, weekly_plan_id: int, inventory: list[dict]) -> dict[int, list[dict]]:
+    """
+    Per meal entry, the packs its own fridge move was ticked DONE for that
+    are now out of the freezer (hunt 2026-11-02, review). Ticking a move
+    never moves the row, so the household ticks "Move the Chicken Thighs to
+    the fridge" and then taps Move to fridge on Kitchen — and the resync
+    that tap runs swept the tick (no freezer row left to match) and, with
+    a second frozen pack, booked a fresh move onto that one for a dinner
+    already thawing.
+    """
+    rows = conn.execute(
+        "SELECT meal_plan_entry_id, inventory_item_id FROM prep_tasks "
+        "WHERE weekly_plan_id = ? AND household_id = ? AND task_type = 'defrost' AND status = 'done' "
+        "AND meal_plan_entry_id IS NOT NULL AND inventory_item_id IS NOT NULL",
+        (weekly_plan_id, household_id()),
+    ).fetchall()
+    by_id = {i["id"]: i for i in inventory if i.get("location") != "freezer"}
+    out: dict[int, list[dict]] = {}
+    for r in rows:
+        pack = by_id.get(r["inventory_item_id"])
+        if pack is not None:
+            out.setdefault(r["meal_plan_entry_id"], []).append(pack)
+    return out
+
+
+# detail_json key on a move this module marked done because its food left
+# the freezer by hand; the move back in puts exactly those back to pending.
+DONE_BY_MOVE_KEY = "done_by_move"
+
+
+def settle_moves_for_pack(item_id: int, out_of_freezer: bool) -> None:
+    """
+    A pack just crossed the freezer door by hand (inventory.
+    set_inventory_location, the Kitchen move's Undo). OUT: the live plans'
+    pending fridge moves for it are what the household just did, so they
+    are marked done (tagged DONE_BY_MOVE_KEY) — the sync's own rows by
+    their inventory id, and the hand-booked ones (Shop's "Yes, freezing
+    it", the approval freezer step: inventory_item_id NULL, so no sync ever
+    reconciles them) by name, once no same-name row is left in the freezer
+    to be the one still owed. IN (an Undo, or the picker back to Freezer):
+    only the moves this marked go back to pending; a move the household
+    ticked stays ticked. Opens its own connection; call with none open.
+    """
+    with write() as conn:
+        pack = conn.execute(
+            "SELECT item FROM inventory_items WHERE id = ? AND household_id = ?", (item_id, household_id()),
+        ).fetchone()
+        live = ("weekly_plan_id IN (SELECT id FROM weekly_plans WHERE household_id = ? "
+                "AND status IN ('draft', 'approved'))")
+        if not out_of_freezer:
+            conn.execute(
+                "UPDATE prep_tasks SET status = 'pending', detail_json = json_remove(detail_json, ?) "
+                f"WHERE household_id = ? AND task_type = 'defrost' AND status = 'done' AND {live} "
+                "AND json_extract(detail_json, ?) = ?",
+                (f"$.{DONE_BY_MOVE_KEY}", household_id(), household_id(), f"$.{DONE_BY_MOVE_KEY}", item_id),
+            )
+            return
+        if pack is None:
+            return
+        ids = [r["id"] for r in conn.execute(
+            f"SELECT id FROM prep_tasks WHERE household_id = ? AND task_type = 'defrost' AND status = 'pending' "
+            f"AND {live} AND inventory_item_id = ?",
+            (household_id(), household_id(), item_id),
+        ).fetchall()]
+        name = (pack["item"] or "").strip().lower()
+        still_frozen = [r for r in conn.execute(
+            "SELECT item, location, category FROM inventory_items WHERE household_id = ? AND id != ?",
+            (household_id(), item_id),
+        ).fetchall() if _quantities._display_location(dict(r)).strip().lower() == "freezer"
+            and _matches_selected_item((r["item"] or "").strip().lower(), {name})]
+        if not still_frozen:
+            ids += [r["id"] for r in conn.execute(
+                f"SELECT id, description FROM prep_tasks WHERE household_id = ? AND task_type = 'defrost' "
+                f"AND status = 'pending' AND {live} AND inventory_item_id IS NULL "
+                "AND meal_plan_entry_id IS NOT NULL AND json_extract(detail_json, '$.kind') IS NULL",
+                (household_id(), household_id()),
+            ).fetchall() if _matches_selected_item(thawed_item(r["description"]).lower(), {name})]
+        for task_id in ids:
+            conn.execute(
+                "UPDATE prep_tasks SET status = 'done', "
+                "detail_json = json_set(COALESCE(NULLIF(detail_json, ''), '{}'), ?, ?) "
+                "WHERE id = ? AND household_id = ?",
+                (f"$.{DONE_BY_MOVE_KEY}", item_id, task_id, household_id()),
+            )
 
 
 def defrost_candidates_for_plan(weekly_plan_id: int, conn=None) -> list[dict]:
@@ -411,10 +506,19 @@ def defrost_candidates_for_plan(weekly_plan_id: int, conn=None) -> list[dict]:
             own = _inventory.rows_held_by_freezer_answers(own_conn)
         finally:
             own_conn.close()
-    freezer_items = [i for i in _inventory.get_inventory()
+    inventory = _inventory.get_inventory()
+    freezer_items = [i for i in inventory
                      if i.get("location") == "freezer" and i.get("id") not in own]
+    if conn is not None:
+        moved_out = _moved_out_packs(conn, weekly_plan_id, inventory)
+    else:
+        own_conn = get_conn()
+        try:
+            moved_out = _moved_out_packs(own_conn, weekly_plan_id, inventory)
+        finally:
+            own_conn.close()
     dinner_window = _rhythm.get_household_rhythm().get("dinner_window")
-    return _candidates_from_plan(plan, freezer_items, dinner_window)
+    return _candidates_from_plan(plan, freezer_items, dinner_window, moved_out)
 
 
 def sync_defrost_tasks(weekly_plan_id: int) -> dict:
@@ -522,6 +626,8 @@ def sync_defrost_tasks(weekly_plan_id: int) -> dict:
         for c in candidates:
             key = (c["inventory_item_id"], c["meal_plan_entry_id"], c["task_date"])
             existing_id = existing_by_key.get(key)
+            if not existing_id and c.get("settled"):
+                continue  # out of the freezer already: nothing to move
             if not existing_id and _matches_selected_item(
                 thawed_item(c["description"]), by_hand.get(c["meal_plan_entry_id"], set())
             ):

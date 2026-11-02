@@ -28,6 +28,10 @@ def _pending_moves(plan_id):
             if t["task_type"] == "defrost" and t["status"] == "pending"]
 
 
+def _statuses(plan_id):
+    return [t["status"] for t in tools.get_prep_schedule(plan_id) if t["task_type"] == "defrost"]
+
+
 def _row_id(item):
     conn = db.get_conn()
     row = conn.execute("SELECT id FROM inventory_items WHERE LOWER(item) = LOWER(?)", (item,)).fetchone()
@@ -71,9 +75,10 @@ def test_move_to_fridge_settles_the_move_and_its_undo_books_it_again(signed_in):
     res = signed_in.post(f"/api/whats-home/{_row_id('Chicken Thighs')}/move", json={"location": "fridge"})
     assert res.status_code == 200, res.text
     assert _pending_moves(plan_id) == [], "no move for chicken already in the fridge"
+    assert _statuses(plan_id) == ["done"], "the household just did it"
 
     assert signed_in.post("/api/whats-home/undo", json={"undo": res.json()["undo"]}).json()["undone"] is True
-    assert len(_pending_moves(plan_id)) == 1, "back in the freezer, and so is its move"
+    assert _statuses(plan_id) == ["pending"], "back in the freezer, and so is its move"
 
 
 def test_the_shelf_picker_is_the_same_door(signed_in):
@@ -100,3 +105,69 @@ def test_fridge_to_pantry_leaves_a_ticked_move_alone(signed_in):
     assert signed_in.post(f"/api/inventory/{item_id}/location", json={"location": "pantry"}).status_code == 200
     statuses = [t["status"] for t in tools.get_prep_schedule(plan_id) if t["task_type"] == "defrost"]
     assert statuses == ["done"]
+
+
+# ---------- review of the first cut (2026-11-02) ----------
+#
+# Ticking a move never moves the row, so the household ticks "Move the
+# Chicken Thighs to the fridge" on Today and then taps Move to fridge on
+# Kitchen. The first cut's resync swept that tick, and with a second frozen
+# pack booked a fresh move onto it for a dinner already thawing.
+
+def _tick_the_move(plan_id):
+    [task] = [t for t in tools.get_prep_schedule(plan_id) if t["task_type"] == "defrost"]
+    tools.check_off_prep_step(task["id"], "done")
+    return task
+
+
+def test_moving_a_ticked_pack_keeps_the_tick_and_books_no_second_pack(signed_in):
+    plan_id = _chicken_thursday("freezer")
+    conn = db.get_conn()
+    conn.execute(
+        "INSERT INTO inventory_items (household_id, item, quantity, source, expiration_date, category, location) "
+        "SELECT household_id, item, quantity, source, expiration_date, category, location FROM inventory_items")
+    conn.commit()
+    conn.close()
+    tools.sync_defrost_tasks(plan_id)
+    task = _tick_the_move(plan_id)
+
+    res = signed_in.post(f"/api/whats-home/{task['inventory_item_id']}/move", json={"location": "fridge"})
+    assert res.status_code == 200, res.text
+    rows = [(t["id"], t["status"]) for t in tools.get_prep_schedule(plan_id) if t["task_type"] == "defrost"]
+    assert rows == [(task["id"], "done")], "the tick stays, and the other pack is not booked"
+
+
+def test_a_ticked_move_stays_ticked_through_move_and_undo(signed_in):
+    plan_id = _chicken_thursday("freezer")
+    task = _tick_the_move(plan_id)
+
+    res = signed_in.post(f"/api/whats-home/{task['inventory_item_id']}/move", json={"location": "fridge"})
+    assert [t["id"] for t in tools.get_prep_schedule(plan_id)] == [task["id"]]
+    assert _statuses(plan_id) == ["done"]
+    assert signed_in.post("/api/whats-home/undo", json={"undo": res.json()["undo"]}).json()["undone"] is True
+    assert _statuses(plan_id) == ["done"], "Undo puts the pack back, not the household's tick"
+
+
+def test_move_to_fridge_settles_a_move_shop_booked(signed_in):
+    """Shop's "Yes, freezing it" books its move by hand (no inventory id),
+    which no sync reconciles: taking that pack out settles it."""
+    today = household_today()
+    tools.add_recipe("Chicken Skewers", ingredients=[{"item": "Chicken Thighs", "qty": "1 lb",
+                                                      "category": "meat/seafood"}],
+                     prep_time_minutes=10, cook_time_minutes=15)
+    plan_id = tools.create_weekly_plan((today - datetime.timedelta(days=today.weekday())).isoformat())["weekly_plan_id"]
+    tools.plan_meal((today + datetime.timedelta(days=4)).isoformat(), "Chicken Skewers", slot="dinner",
+                    weekly_plan_id=plan_id, add_ingredients_to_grocery_list=True)
+    conn = db.get_conn()
+    line = conn.execute("SELECT id FROM grocery_items WHERE LOWER(item) = 'chicken thighs'").fetchone()
+    conn.close()
+    signed_in.post(f"/api/grocery-list/{line['id']}/status", json={"status": "purchased"})
+    booked = signed_in.post(f"/api/grocery-list/{line['id']}/freezing", json={"answer": "freezer"})
+    assert booked.status_code == 200, booked.text
+    assert len(_pending_moves(plan_id)) == 1
+
+    res = signed_in.post(f"/api/whats-home/{_row_id('Chicken Thighs')}/move", json={"location": "fridge"})
+    assert res.status_code == 200, res.text
+    assert _pending_moves(plan_id) == [] and _statuses(plan_id) == ["done"]
+    assert signed_in.post("/api/whats-home/undo", json={"undo": res.json()["undo"]}).json()["undone"] is True
+    assert _statuses(plan_id) == ["pending"]
