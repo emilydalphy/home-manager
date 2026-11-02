@@ -770,6 +770,12 @@ def _juice_or_zest_line(text: str) -> dict | None:
     what = found.group("what").lower()
     note = "zested and juiced" if "juice" in what and "zest" in what else ("juiced" if "juice" in what else "zested")
     rest = _HALF_A_RE.sub("1/2 ", found.group("rest").strip())
+    # Two fruits or a second amount ("1 lime and 1 lemon", "1 lemon + 1 tbsp",
+    # "1 lemon plus more to taste") is more than one line can say: left as
+    # written for the review sheet. A note after a comma (", plus wedges to
+    # serve") is only a note, and is read.
+    if re.search(r"\band\s+(?:\d|an?\b|half\b)|\+|(?<!,)\s+plus\b", rest, re.I):
+        return None
     rest = re.sub(r"^an?\s+", "1 ", rest, flags=re.I)
     inner = split_ingredient_line(rest)
     if not inner["qty"] or not inner["item"] or inner["item"] == rest:
@@ -788,6 +794,55 @@ def _juice_or_zest_line(text: str) -> dict | None:
     else:
         item = f"{head}, {note}" + (f", {tail}" if tail else "")
     return {"item": item, "qty": inner["qty"]}
+
+
+def _one_fruit_for_zest_and_juice(ingredients: list[dict]) -> list[dict]:
+    """
+    "Zest of 1 lemon" and "Juice of 1 lemon" as two lines of one recipe are
+    ONE lemon, zested and juiced — summed on the list they bought two
+    (review, 2026-11-02). The pair becomes one line at the first one's
+    place, with the larger count; any note either carried rides along.
+    Only lines _juice_or_zest_line wrote are paired, by the fruit's name
+    as the grocery list matches it ("lemon" and "lemons" are one fruit).
+    """
+    from .tools import grocery as _grocery
+    from .tools import quantities as _quantities
+
+    def parts(ing):
+        item = ing.get("item") or ""
+        found = re.match(r"^(?P<head>[^,(]+), (?P<note>zested|juiced)(?P<tail>.*)$", item)
+        if not found:
+            return None
+        return _grocery._merge_key(found.group("head")), found.group("head"), found.group("note"), found.group("tail")
+
+    def count(ing):
+        parsed = _quantities._parse_quantity(ing.get("qty") or "")
+        return parsed[0] if parsed else 0.0
+
+    out: list[dict] = []
+    by_fruit: dict[str, int] = {}
+    for ing in ingredients:
+        p = parts(ing)
+        if p is None:
+            out.append(ing)
+            continue
+        key, head, note, tail = p
+        at = by_fruit.get(key)
+        if at is None:
+            by_fruit[key] = len(out)
+            out.append(ing)
+            continue
+        first = out[at]
+        fp = parts(first)
+        if fp is None or fp[2] == note:
+            # Already a pair, or the same note twice (two separate juicings
+            # a page lists apart): left as the page wrote them.
+            out.append(ing)
+            continue
+        tails = "".join(t for t in dict.fromkeys((fp[3], tail)) if t)
+        qty = first.get("qty") if count(first) >= count(ing) else ing.get("qty")
+        out[at] = {**first, "item": f"{fp[1]}, zested and juiced{tails}", "qty": qty}
+    return out
 
 
 def _proper_mixed(m: re.Match) -> str:
@@ -1259,6 +1314,7 @@ def draft_from_json_ld(node: dict, source_url: str) -> dict:
             if parsed["item"]:
                 parsed["category"] = guess_category(parsed["item"], parsed["qty"])
                 ingredients.append(parsed)
+    ingredients = _one_fruit_for_zest_and_juice(ingredients)
 
     servings, makes = _servings_and_makes(node.get("recipeYield"))
     prep = parse_duration_minutes(node.get("prepTime"))
@@ -1316,6 +1372,7 @@ def draft_from_model(detail: dict | None, source_url: str, fallback_name: str = 
                 continue
             parsed["category"] = category if category in _quantities._GROCERY_SECTION_ORDER else guess_category(parsed["item"], parsed["qty"])
             ingredients.append(parsed)
+    ingredients = _one_fruit_for_zest_and_juice(ingredients)
     draft = {
         "name": _clean_text(detail.get("name") or "") or _clean_text(fallback_name),
         "default_servings": parse_servings(detail.get("default_servings")) or 4,

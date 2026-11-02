@@ -264,6 +264,13 @@ _ONLY_SAYS_FRESH = {
 }
 
 
+# A note on how much, after a comma or in brackets: "(about 3 tbsp)",
+# "about 2 tbsp", "(approx 1 tbsp)", "plus wedges to serve". Matching names
+# only — the line keeps the words.
+_SIZE_NOTE_SEGMENT = re.compile(r"^(?:about|approx\.?|approximately|around|roughly|~|plus)\b")
+_SIZE_NOTE_BRACKET = re.compile(r"\s*\((?:about|approx\.?|approximately|around|roughly|~)[^)]*\)")
+
+
 def _is_prep_segment(segment: str) -> bool:
     """
     Is this post-comma segment only PREPARATION?
@@ -278,6 +285,10 @@ def _is_prep_segment(segment: str) -> bool:
     not need.
     """
     if segment in _NAME_PREP_AFTER_COMMA:
+        return True
+    # "lemon, about 2 tbsp", "limes, plus wedges to serve" (2026-11-02): how
+    # much, or extra for the table — never a different thing to buy.
+    if _SIZE_NOTE_SEGMENT.match(segment):
         return True
     words = segment.split(" ")
     return len(words) > 1 and words[-1] in _NAME_PREP_AFTER_COMMA
@@ -342,6 +353,7 @@ def _plain_name_key(name: str) -> str:
     cleaned = " ".join(_fold_accents(name or "").strip().lower().split())
     if not cleaned:
         return ""
+    cleaned = _SIZE_NOTE_BRACKET.sub("", cleaned).strip()
     cleaned = _drop_name_filler(_uninvert_name(cleaned))
     if not cleaned:
         return ""

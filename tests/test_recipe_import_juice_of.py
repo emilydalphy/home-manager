@@ -76,8 +76,62 @@ def test_a_linked_recipes_juice_of_a_lemon_buys_the_lemon(signed_in):
     ("Juice of lemon", "Juice of lemon", ""),
     # A measured juice is already read the ordinary way.
     ("2 tbsp lemon juice", "lemon juice", "2 tbsp"),
+    # Two fruits, or a second amount, is more than one line can say.
+    ("Juice of 1 lime and 1 lemon", "Juice of 1 lime and 1 lemon", ""),
+    ("Juice of 1 lemon + 1 tbsp", "Juice of 1 lemon + 1 tbsp", ""),
+    ("juice of 1 lemon plus more to taste", "juice of 1 lemon plus more", "to taste"),
     # A measure after "juice of" is not a count of fruit to buy.
     ("Juice of 1 cup oranges", "Juice of 1 cup oranges", ""),
 ])
 def test_juice_and_zest_lines_name_the_fruit(line, item, qty):
     assert ri.split_ingredient_line(line) == {"item": item, "qty": qty}
+
+
+BRACKETED = (
+    '<html><head><script type="application/ld+json">'
+    + json.dumps({
+        "@context": "https://schema.org",
+        "@type": "Recipe",
+        "name": "Lemony Orzo",
+        "recipeYield": "2",
+        "recipeIngredient": [
+            "1 cup orzo",
+            "Zest of 1 lemon",
+            "Juice of 1 lemon (about 3 tbsp)",
+            "Zest of 2 medium oranges (approx 1 tbsp)",
+            "Juice of 2 limes, plus wedges to serve",
+        ],
+        "recipeInstructions": ["Cook the orzo and toss with the zest and juice."],
+    })
+    + "</script></head><body></body></html>"
+)
+
+
+def test_a_note_after_the_fruit_still_buys_it_with_the_rest_and_zest_plus_juice_is_one_lemon(signed_in):
+    """Review, 2026-11-02: a bracket or a comma note kept "lemon, juiced
+    (about 3 tbsp)" off the lemons line, and a page's separate zest and
+    juice lines of one lemon bought two."""
+    draft = ri.extract_recipe_draft(BRACKETED, "https://recipes.example.com/orzo")
+    lemon = [i for i in draft["ingredients"] if "lemon" in i["item"]]
+    assert lemon == [{"item": "lemon, zested and juiced (about 3 tbsp)", "qty": "1", "category": "produce"}]
+    assert signed_in.post("/api/recipes/add", json=draft).status_code == 200
+    tools.add_recipe("Citrus Salad", [
+        {"item": "lemons", "qty": "2", "category": "produce"},
+        {"item": "oranges", "qty": "1", "category": "produce"},
+        {"item": "limes", "qty": "1", "category": "produce"},
+    ], instructions=["Segment the fruit."], default_servings=2)
+
+    tools.plan_meal(household_date(1), "Lemony Orzo", add_ingredients_to_grocery_list=True)
+    tools.plan_meal(household_date(2), "Citrus Salad", add_ingredients_to_grocery_list=True)
+    rows = tools.list_grocery_list()
+    def lines(word):
+        return [g["quantity"] for g in rows if word in g["item"].lower()]
+    assert lines("lemon") == ["3"], rows
+    # One line; "medium" riding on the amount is the list's own way with
+    # a sized count ("3, medium"), not this fix's.
+    assert [q.split(",")[0] for q in lines("orange")] == ["3"], rows
+    assert lines("lime") == ["3"], rows
+
+    # Cook reads oranges in the plural like lemons and limes.
+    from app.tools import recipes as _recipes
+    assert _recipes._with_item_label({"item": "orange, juiced", "qty": "2"})["item_label"] == "oranges, juiced"
