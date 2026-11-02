@@ -94,7 +94,7 @@ def test_the_kitchen_root_is_the_cooks_tab():
     assert "cookRootParts(data, kitchenState.moves, todayIso, cookState.bedOpenOn)" in root
     assert "body.innerHTML = parts.html + cookAttentionHtml() + cookMoreLinkHtml();" in root
     parts = _function("cookRootParts")
-    order = ["cookPrepDayCardHtml(session)", "cookBedCardHtml(bed, todayIso)", "cookTodayListHtml(ordered, next)",
+    order = ["cookPrepDayCardHtml(session)", "cookBedCardHtml(bed, todayIso)", "cookTodayListHtml(ordered, next, data)",
              "cookPrepDoneLineHtml(session)", "cookBedLineHtml(bed, todayIso)", "cookNextPrepLineHtml(data, todayIso)"]
     at = [parts.index(call) for call in order]
     assert at == sorted(at), "the root's parts are out of order"

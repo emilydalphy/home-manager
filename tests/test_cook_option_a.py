@@ -357,3 +357,43 @@ def test_a_dish_plated_at_the_prep_list_says_plate():
     assert _dishes(out["html"]) == ["Chicken Salad"]
     assert '<span class="cook-today-right">Plate</span>' in out["html"]
     assert ">Mark eaten<" in out["dock"]
+
+
+# --------------------------------------------------------------------------
+# Whose turn (Emily 2026-11-01, "go with your picks": "Dinner · Vineeth")
+# --------------------------------------------------------------------------
+
+def _root_with(meals, moves, cook_name):
+    data = {"meals": meals, "prep_sessions": [], "prep_tasks": [], "weekly_plan_id": 1,
+            "cook_name": cook_name}
+    script = (
+        "var parts = cookRootParts(" + json.dumps(data) + ", " + json.dumps(moves) + ", "
+        + json.dumps(TUE) + ", null);\nconsole.log(JSON.stringify(parts));\n"
+    )
+    res = nodeharness.run_node(_PRELUDE + script, timeout=30)
+    assert res.returncode == 0, f"node failed: {res.stderr}"
+    return json.loads(res.stdout.strip())
+
+
+def _cook_move(entry_id, owner_name, done=False):
+    return {"kind": "cook", "entry_id": entry_id, "owner_name": owner_name, "done": done}
+
+
+@_needs_node
+def test_a_household_that_takes_turns_sees_whose_night_it_is():
+    meals = [_meal(2, TUE, "Chicken Caesar Wraps", "lunch", cooked_status="done"),
+             _meal(4, TUE, "Sheet-Pan Chicken Thighs", "dinner")]
+    html = _root_with(meals, [_cook_move(4, "Vineeth")], None)["html"]
+    assert "Dinner · Vineeth · next" in _slots(html)
+
+
+@_needs_node
+def test_one_cook_households_and_done_meals_name_nobody():
+    meals = [_meal(2, TUE, "Chicken Caesar Wraps", "lunch", cooked_status="done"),
+             _meal(4, TUE, "Sheet-Pan Chicken Thighs", "dinner")]
+    one_cook = _root_with(meals, [_cook_move(4, "Emily")], "Emily")["html"]
+    assert "Dinner · next" in _slots(one_cook)
+    done = _root_with(meals, [_cook_move(2, "Vineeth", done=True)], None)["html"]
+    assert "Lunch" in _slots(done)
+    nobody = _root_with(meals, [_cook_move(4, None)], None)["html"]
+    assert "Dinner · next" in _slots(nobody)

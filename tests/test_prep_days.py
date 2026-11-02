@@ -598,7 +598,7 @@ def test_the_cook_view_renders_the_sessions_card_from_the_payload():
     assert "function cookPrepSessionsHtml(data)" not in SHELL_JS
     parts = SHELL_JS[SHELL_JS.index("function cookRootParts("):SHELL_JS.index("  // The quiet way to the tab")]
     assert "cookSessionOn(data, todayIso)" in parts
-    assert parts.index("cookPrepDayCardHtml(session)") < parts.index("cookTodayListHtml(ordered, next)")
+    assert parts.index("cookPrepDayCardHtml(session)") < parts.index("cookTodayListHtml(ordered, next, data)")
     for fn in ("cookPrepDayCardHtml", "cookPrepDoneLineHtml", "cookNextPrepLineHtml"):
         body = SHELL_JS[SHELL_JS.index("function %s(" % fn):]
         body = body[:body.index("\n  }\n")]
