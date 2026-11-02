@@ -1453,6 +1453,7 @@ def build_evening_nudge(now_local: datetime | None = None, link: bool = True) ->
         Tonight: lemon chicken & orzo — 35 min. Tap to start. <link>
         Marinate the chicken first — then lemon chicken & orzo. <link>
         Move the beef to the fridge for Monday's chili. Tonight: lemon chicken & orzo — 35 min. <link>
+        Tonight: Peanut Noodles — 25 min. It has peanut, which Theo can’t have — swap it on Plan. <Plan link>
 
     The dish is named as stored; the minutes are the plan's own total
     (cooker.cook_total_minutes, via the move) and are left out when the
@@ -1483,19 +1484,29 @@ def build_evening_nudge(now_local: datetime | None = None, link: bool = True) ->
         f"Tonight: {dish} — {_quantities.format_duration(minutes)}."
         if minutes else f"Tonight: {dish}."
     )
+    # An allergy saved since the week was approved, which tonight's dish has
+    # (moves' allergy_note, the morning text's own clause), is said here too,
+    # straight after the dish. This is the text sent at the moment the cook
+    # begins, and it said "Tonight: Peanut Noodles — 25 min. Tap to start."
+    # while Today and that morning's text both said Theo can't have it
+    # (defect hunt, 2026-11-02). With it there is no "Tap to start" -- the
+    # line's own way out is "swap it on Plan" -- and the link opens Plan.
+    allergy = _allergy_clause(dinner)
     later = _for_a_later_meal(first, dinner)
     if later:
         # A thaw for ANOTHER night names that night's meal, then tonight's
         # dish (Emily, 2026-10-12: "Move the beef to the fridge for
         # Monday's chili. Tonight: Roast Chicken — 1 hr 50 min."). "First —
         # then Roast Chicken" read as if the beef went in the roast.
-        text = f"{_tidy(first['title'])} {later}. {tonight_line}"
+        text = f"{_tidy(first['title'])} {later}. {tonight_line}{allergy}"
     elif first is not None:
-        text = f"{_tidy(first['title'])} first — then {dish}."
+        text = f"{_tidy(first['title'])} first — then {dish}.{allergy}"
+    elif allergy:
+        text = f"{tonight_line}{allergy}"
     else:
         text = f"{tonight_line} Tap to start."
     # No address in a push notification (link=False): tapping it opens Cook.
-    url = _app_link("kitchen") if link else ""
+    url = _app_link("week" if allergy else "kitchen") if link else ""
     return f"{text} {url}" if url else text
 
 
