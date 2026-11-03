@@ -289,6 +289,90 @@ def test_every_new_recipe_path_goes_through_the_write_back_rule():
     assert not skipped, f"these new-recipe paths no longer file into the library: {skipped}"
 
 
+# Who may turn filing ON when saving a swap/re-pick (review, 2026-11-03):
+# only callers whose brief is Pomona's own. (file, function) -> why.
+_SAVE_DOORS = {"_save_recipe_if_new", "apply_pick", "apply_pick_to_days"}
+_MAY_FILE = {
+    ("app/tools/swap_in_place.py", "swap_meal_in_place"): "Swap · I'll pick: the swap's own context",
+    ("app/tools/swap_in_place.py", "_fill_one_slot"): "a filled day: the swap's own context",
+    ("app/tools/swap_in_place.py", "apply_pick"): "passes its caller's flag through",
+    ("app/tools/swap_in_place.py", "apply_pick_to_days"): "passes its caller's flag through",
+    ("app/tools/swap_option_picks.py", "choose_swap_option"): "only when the sheet was asked with no words",
+    ("app/tools/allergen_gate.py", "repick_slot"): "allergen re-pick: swap context + Pomona's reason",
+    ("app/tools/allergen_gate.py", "_save_pick"): "allergen re-pick of a group: swap context",
+    ("app/tools/meal_variety.py", "_pick_a_snack"): "a snack short: Pomona's reason",
+    ("app/tools/meal_variety.py", "_repick_entry"): "only when context_extra is Pomona's own",
+}
+# Modules reached from the household's own words: must never turn it on.
+_NEVER_FILE_MODULES = {"app/tools/proposals.py", "app/tools/plate_parts.py", "app/tools/typed_requests.py"}
+
+
+def test_only_pomonas_own_picks_turn_filing_on():
+    turned_on: set[tuple[str, str]] = set()
+    saves_in_private_modules = 0
+    for path in sorted((REPO / "app").rglob("*.py")):
+        rel = path.relative_to(REPO).as_posix()
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+
+        def visit(node, fn=None):
+            for child in ast.iter_child_nodes(node):
+                if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    visit(child, child)
+                    continue
+                if isinstance(child, ast.Call):
+                    f = child.func
+                    name = f.attr if isinstance(f, ast.Attribute) else getattr(f, "id", "")
+                    if name in _SAVE_DOORS and fn is not None:
+                        nonlocal_count[0] += rel in _NEVER_FILE_MODULES
+                        flag = next((k.value for k in child.keywords if k.arg in ("file", "file_new")), None)
+                        if flag is not None and not (isinstance(flag, ast.Constant) and flag.value is False):
+                            turned_on.add((rel, fn.name))
+                visit(child, fn)
+
+        nonlocal_count = [0]
+        visit(tree)
+        saves_in_private_modules += nonlocal_count[0]
+    assert saves_in_private_modules >= 3, "the chat card / plate-part saves this test guards have moved"
+    wrong = {k for k in turned_on if k[0] in _NEVER_FILE_MODULES}
+    assert not wrong, f"a path from the household's own words files into the shared library: {sorted(wrong)}"
+    unknown = turned_on - set(_MAY_FILE)
+    assert not unknown, f"new callers turn library filing on; justify them in _MAY_FILE: {sorted(unknown)}"
+    import inspect
+    sig = inspect.signature(sip._save_recipe_if_new)
+    assert sig.parameters["file"].default is False, "filing must be off unless a caller turns it on"
+    for door in ("apply_pick", "apply_pick_to_days"):
+        assert inspect.signature(getattr(sip, door)).parameters["file_new"].default is False
+
+
+def test_a_chat_change_card_dish_never_reaches_the_library(week):
+    """Review repro: a chat proposal whose steps carry the household's own
+    words was filed as a library base."""
+    from app.tools import proposals as prop
+    prop._PROPOSALS.clear()
+    name = "Smoky Lentil Stew"
+    cand = _pick(name, protein="lentils")
+    cand["instructions"] = ["Simmer the lentils.", "Add our special smoked paprika the way we like it."]
+    card = tools.propose_plan_changes(week, [{"date": DAY1, "slot": "dinner", "action": "change",
+                                              "candidates": [cand]}])
+    applied = tools.apply_proposal(card["proposal_id"])
+    assert applied["status"] == "applied", applied
+    assert _library_rows(name) == [], "a chat-dictated dish was shared with every household"
+    # And the recipe pass won't file it later either.
+    rid = tools.existing_recipe_named(name)["id"]
+    assert lib.file_new_recipe(rid, spec={}) is None
+
+
+def test_a_swap_asked_for_in_the_households_words_is_not_filed(week):
+    entry_id = _entry_id(week, DAY1)
+    _approve(week)
+    tools.swap_options(week, entry_id, asker=_asker(_pick("Paprika Lentil Stew", protein="lentils")),
+                       request="something with our smoked paprika")
+    full = dict(_pick("Paprika Lentil Stew", protein="lentils"), instructions=["Simmer.", "Our paprika."])
+    out = tools.choose_swap_option(week, entry_id, 0, meal="Paprika Lentil Stew", writer=lambda c, p: full)
+    assert out["status"] == "swapped"
+    assert _library_rows("Paprika Lentil Stew") == []
+
+
 def test_a_model_written_swap_goes_back_into_the_library(week):
     entry_id = _entry_id(week, DAY1)
     pick = _pick("Lemon Herb Cod", protein="cod")
@@ -393,6 +477,60 @@ def test_the_allergen_gate_holds_a_library_dish_back_everywhere(week, research_c
     assert written, "a library dish with peanut butter in its steps was copied for a peanut allergy"
 
 
+@pytest.mark.parametrize("how", ["eating_style", "member", "fact"])
+def test_a_vegetarian_household_is_never_copied_a_library_dish(week, monkeypatch, how):
+    """Review repro (2026-11-03): eating style "vegetarian", a library Pad
+    Thai with prawns and oyster sauce under a vegetable name — the recipe
+    pass copied it with no writer call. Words the code's lists miss
+    (prawns, oyster sauce) must not matter: a diet the gate can't read is
+    never copied, by any path."""
+    if how == "eating_style":
+        tools.edit_preference("eating_style", "vegetarian")
+    elif how == "member":
+        tools.set_member_dietary_restrictions("Emily", ["vegetarian"])
+    else:
+        tools.add_fact("diet", "We're vegetarian", hard=True)
+    _file("Vegetable Pad Thai", protein="vegetarian", cuisine="Thai",
+          items=("Rice noodles", "Prawns", "Oyster sauce"))
+    written = []
+    monkeypatch.setattr(agent, "generate_recipe_details_llm", lambda spec: written.append(spec) or dict(DETAILS))
+    tools.add_recipe(name="Vegetable Pad Thai", ingredients=[], details_pending=True)
+    recipe = {**tools.get_recipe("Vegetable Pad Thai"), "slot": "dinner"}
+    agent._write_one_pending_recipe(recipe, "dinner", agent._shared_recipe_details_context(),
+                                    agent._allergen_gate.hard_avoidances())
+    assert written, f"a {how} vegetarian household was copied a library dish with prawns"
+    # The other library doors: the swap's copy, the sheet, "I'll pick", the draft list.
+    lf = _lf()
+    _file("Vegetable Fried Rice", protein="vegetarian", cuisine="Thai", items=("Rice", "Fish sauce"))
+    assert lf.copy_for_swap("Vegetable Fried Rice") is False
+    assert tools.existing_recipe_named("Vegetable Fried Rice") is None, "a refused copy left a row behind"
+    assert lf.swap_picks(week, {"slot": "dinner", "entry_id": _entry_id(week, DAY1), "meal": "Pork Chops"}, []) == []
+    assert lf.for_prompt(tools.get_household_memory() or {}, seed="w") == {}
+    assert lf.diet_blocks_the_library() is True
+
+
+def test_the_list_judges_the_version_that_would_be_served(household, monkeypatch):
+    """Review: dislikes, diet and minutes were read off the LISTED version
+    (the base) while servable_recipe serves another (a variant written
+    around an allergy, when the base clashes). The list now judges the
+    version a copy would serve: a peanut-allergic household is offered the
+    peanut-free variant of a dish — unless THAT version carries a dislike."""
+    tools.set_member_dietary_restrictions("Emily", ["peanuts"])
+    tools.edit_preference("dislikes", ["mushrooms"])
+    for name, extra in (("Noodle Bowl", "Carrots"), ("Rice Bowl", "Mushrooms")):
+        _file(name, items=("Rice noodles", "Peanut butter"))   # the base clashes
+        lib.file_entry(name, ingredients=[{"item": "Rice noodles", "qty": "1 lb"},
+                                          {"item": "Sunflower seed butter", "qty": "1 jar"},
+                                          {"item": extra, "qty": "8 oz"}],
+                       instructions=[f"Cook the noodles with the {extra.lower()}."], default_servings=4,
+                       prep_time_minutes=10, cook_time_minutes=20, main_protein="vegetarian",
+                       origin="written", variant=True, meal="dinner", adapted_for=["allergies"])
+    lists = _lf().for_prompt(tools.get_household_memory() or {}, seed="w")
+    names = [line.split(" | ")[0] for line in lists.get("dinner", [])]
+    assert "Noodle Bowl" in names, "the peanut-free version this household would be served wasn't offered"
+    assert "Rice Bowl" not in names, "the served version carries a dislike"
+
+
 # ---------- research caching ----------
 
 def test_research_requests_carry_prompt_caching(monkeypatch):
@@ -402,9 +540,13 @@ def test_research_requests_carry_prompt_caching(monkeypatch):
     monkeypatch.setattr(agent, "_client", lambda: client)
     agent.research_dish("Chana Masala", "North Indian", "chickpeas in an onion-tomato masala")
     assert len(client.calls) == 2
+    find, read = client.calls
+    # The read step's several server steps (fetch, fetch, submit) re-bill the
+    # pages before them: cached. The find step has one step after its
+    # results, so caching would only write: not cached (review, 2026-11-03).
+    assert read.get("cache_control") == {"type": "ephemeral"}, "the read step isn't cached"
+    assert "cache_control" not in find
+    # No explicit breakpoint on the tools: their max_uses / allowed_domains
+    # change per round and per dish, so that prefix would only ever write.
     for call in client.calls:
-        assert call.get("cache_control") == {"type": "ephemeral"}, "no automatic cache breakpoint"
-        assert call["tools"][-1].get("cache_control") == {"type": "ephemeral"}, "the stable prefix isn't cached"
-        assert sum(1 for t in call["tools"] if "cache_control" in t) == 1
-    # The module's own tool constants never carry the marker.
-    assert "cache_control" not in agent._PICK_PAGES_TOOL and "cache_control" not in agent._RESEARCH_TOOL
+        assert not any("cache_control" in t for t in call["tools"])

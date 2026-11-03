@@ -4761,12 +4761,21 @@ def _research_tools(remaining: dict, trusted: list | None, *, search: bool, fetc
     return out
 
 
-def _research_tools_cached(tools_now: list, client_tool: dict) -> list:
-    """The tools one research request sends, the last one (the step's own
-    client tool, always the same for a step) carrying the cache breakpoint
-    that ends the stable prefix. A copy: the module's tool constants are
-    shared by every request and never carry a marker themselves."""
-    return list(tools_now) + [{**client_tool, "cache_control": {"type": "ephemeral"}}]
+# Prompt caching on research (2026-11-03; live: 16 calls, ~18K uncached
+# input each, cache_read 0). WHERE it pays, and where it can't:
+#   * NOT across dishes or rounds: the tools render first and carry each
+#     request's max_uses and, for reading, that dish's own allowed_domains,
+#     so no prefix is shared — and tools + prompt are under the model's
+#     1,024-token minimum anyway. An explicit breakpoint there would only
+#     ever write (review, same day), so there is none.
+#   * WITHIN one request: every server-side step is billed the whole
+#     context again, and with caching on the API writes a cache entry after
+#     each tool result, so later steps read what came before at a tenth of
+#     the price. The READ step has 3-4 steps over two pages (~3K each):
+#     roughly 21K billed uncached -> ~11K-equivalent cached. The FIND step
+#     has one step after the search results, which would be written at
+#     1.25x and never read — so it stays uncached.
+_CACHED_RESEARCH_STEPS = {"read"}
 
 
 def _research_step(client, name: str, step: str, prompt: str, client_tool: dict, *,
@@ -4813,18 +4822,12 @@ def _research_step(client, name: str, step: str, prompt: str, client_tool: dict,
             max_tokens=8000,
             # Server tools run on Anthropic's side; the forced tool_choice
             # the writer uses would stop the searching, so this asks.
-            tools=_research_tools_cached(tools_now, client_tool),
+            tools=tools_now + [client_tool],
             messages=messages,
             output_config=_effort_config("recipes"),
-            # Prompt caching (2026-11-03, live: 16 calls, ~18K uncached input
-            # each, cache_read 0). Every server-side step of one request is
-            # billed the whole context again; with caching on, the API writes
-            # a cache entry after each search/fetch result, so each later
-            # step reads the prefix at a tenth of the price. The automatic
-            # breakpoint follows the growing turn; the explicit one on the
-            # client tool (_research_tools_cached) is the stable prefix a
-            # continuation and the next dish's same step can read.
-            cache_control={"type": "ephemeral"},
+            # The automatic breakpoint, read step only: see
+            # _CACHED_RESEARCH_STEPS for where caching pays and where it can't.
+            **({"cache_control": {"type": "ephemeral"}} if step in _CACHED_RESEARCH_STEPS else {}),
             **timing,
         )
         content = list(response.content or [])
@@ -5801,9 +5804,12 @@ def _library_entry_for(plain: str, avoidances: list[dict], shared: dict | None =
     copy passes, with nothing written (so a swap can ask before it saves).
     Raises only what the reads raise; _copy_from_library catches it."""
     style = (shared or {}).get("eating_style") or ""
-    if style and _everyday_snacks.style_stands_down({"eating_style": style}):
-        return None, False
-    if any(_DIET_THE_GATE_CANT_READ.search(line) for line in tools.swap_hard_exclusions()):
+    # The one diet check every library path asks (library_first.
+    # diet_blocks_the_library): a diet the gate can't read — on the eating
+    # style, a member or a hard fact — or a style the code can't read is
+    # written for, never copied (review, 2026-11-03: a vegetarian style was
+    # copied a Pad Thai with prawns and oyster sauce).
+    if _library_first.diet_blocks_the_library(style):
         return None, False
     # Judged on the list the copy will SAVE, steps' ingredients included
     # (fill_recipe_details completes it the same way) — an egg only the

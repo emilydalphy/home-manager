@@ -436,6 +436,7 @@ _MIGRATIONS = [
     # Library first (2026-11-03): which meal a library dish is for (blank =
     # the starter list's own `meal`), and what a variant was written around
     # (kinds only, never a household's words) — recipe_library.file_new_recipe.
+    ("recipes", "library_private", "INTEGER NOT NULL DEFAULT 0"),
     ("recipe_library", "meal", "TEXT NOT NULL DEFAULT ''"),
     ("recipe_library", "adapted_for_json", "TEXT NOT NULL DEFAULT '[]'"),
     # 1 for a dish the week-draft generator wrote (agent._ensure_recipe_saved);

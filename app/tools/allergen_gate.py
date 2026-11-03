@@ -801,7 +801,7 @@ def repick_slot(
 
     serves = _swap._table_for(meal_date, slot)["serves"]
     pick["meal_name"] = _swap.honest_meal_name(pick)
-    _swap._save_recipe_if_new(pick, serves)
+    _swap._save_recipe_if_new(pick, serves, slot=slot, file=True)  # Pomona's own re-pick: files (write-back rule)
     _meal_plans.plan_meal(
         meal_date=meal_date,
         meal=pick["meal_name"],
@@ -1005,7 +1005,7 @@ def _save_pick(pick: dict, serves: int) -> None:
     pass writes it with the rest of the week.
     """
     if [s for s in (pick.get("instructions") or []) if (s or "").strip()]:
-        _swap._save_recipe_if_new(pick, serves)
+        _swap._save_recipe_if_new(pick, serves, file=True)  # Pomona's own re-pick: files (write-back rule)
         return
     name = pick["meal_name"]
     if _recipes.existing_recipe_named(name):

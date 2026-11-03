@@ -415,8 +415,11 @@ names, correct the claim in the same change.
   "library first"). A new path that saves a model-written recipe must call
   it (or `library_first.file_written`); `tests/test_library_first.py` fails
   otherwise. Household-private recipes (typed, imported, chat-dictated,
-  Tell Pomona rewrites, `must_use`) are never filed. Suggestions pick from
-  the library first (`app/tools/library_first.py`).
+  chat change cards, plate-part edits, typed requests, Tell Pomona rewrites,
+  `must_use`) are never filed: `_save_recipe_if_new`/`apply_pick` file only
+  when a caller turns `file`/`file_new` on. Suggestions pick from the
+  library first (`app/tools/library_first.py`); every library door asks
+  `library_first.diet_blocks_the_library` first.
 
 - **`home_manager` logger's INFO output was silently dropped** until
   `main.py` added `logging.basicConfig(level=logging.INFO, ...)`. Nothing

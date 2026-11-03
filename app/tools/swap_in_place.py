@@ -567,14 +567,25 @@ def _clean_ingredients(raw) -> list[dict]:
     return out
 
 
-def _save_recipe_if_new(pick: dict, serves: int, slot: str = "") -> None:
+def _save_recipe_if_new(pick: dict, serves: int, slot: str = "", file: bool = False) -> None:
     """
     Make the dish cookable and shoppable, the same way a chat swap does
     (the system prompt's one-off-meal rule: build it into a real recipe
     first, then plan it by name). Without this the swap lands as a freeform
     entry — nothing in the Cooker view, and nothing for the grocery list to
     add on approval.
+
+    `file` (2026-11-03, the write-back rule): True only from a caller where
+    POMONA chose and wrote the dish with nothing the household typed in its
+    brief — "Swap · I'll pick", a filled day, the swap sheet asked with no
+    words, the automatic allergen/variety re-picks whose context is the
+    swap's own. Off by default, so a chat change card (proposals), a
+    plate-part edit, a typed request's re-pick or anything new never shares
+    a household's dish; a row saved with it off is marked private
+    (recipe_library.mark_private), so the recipe pass doesn't file it later
+    either. tests/test_library_first.py holds the callers to this.
     """
+    from . import recipe_library as _recipe_library
     name = pick["meal_name"]
     if pick.get("details_pending"):
         # A swap picked on a DRAFT (swap_options.choose_swap_option): the
@@ -595,6 +606,8 @@ def _save_recipe_if_new(pick: dict, serves: int, slot: str = "") -> None:
                 details_pending=True,
                 dish_note=pick.get("dish_note") or "",
             )
+            if not file:
+                _recipe_library.mark_private(name)
         return
     ingredients = _clean_ingredients(pick.get("ingredients"))
     if not ingredients:
@@ -613,9 +626,12 @@ def _save_recipe_if_new(pick: dict, serves: int, slot: str = "") -> None:
         prep_time_minutes=pick.get("prep_time_minutes"),
         cook_time_minutes=pick.get("cook_time_minutes"),
     )
-    # THE WRITE-BACK RULE (2026-11-03): a dish the model just wrote goes into
-    # the shared library (recipe_library.file_new_recipe), shaped by what
-    # this household is (the writer was told it in the swap's context).
+    if not file:
+        _recipe_library.mark_private(name)
+        return
+    # THE WRITE-BACK RULE (2026-11-03): a dish Pomona chose and wrote goes
+    # into the shared library (recipe_library.file_new_recipe), shaped by
+    # what this household is (the writer was told it in the swap's context).
     from . import library_first as _library_first
     _library_first.file_written(saved, slot=slot)
 
@@ -888,7 +904,7 @@ def swap_meal_in_place(
         return {"status": "refused", "message": REFUSAL, "avoid": tried}
 
     tried.append(pick["meal_name"])
-    out = apply_pick(weekly_plan_id, entry, pick, group=group)
+    out = apply_pick(weekly_plan_id, entry, pick, group=group, file_new=True)
     out["status"] = "swapped"
     # Both spellings: `tried` caught the name the model wrote, and
     # apply_pick may have shortened it. The screen sends this straight back
@@ -1121,7 +1137,7 @@ def _fill_one_slot(weekly_plan_id: int, meal_date: str, item: dict, pick_one,
         return None
     serves = _table_for(meal_date, item["slot"])["serves"]
     pick["meal_name"] = honest_meal_name(pick)
-    _save_recipe_if_new(pick, serves, slot=item["slot"])
+    _save_recipe_if_new(pick, serves, slot=item["slot"], file=True)
     reason = (pick.get("reason") or "").strip()
     _weekly_plan._replace_slot_entries(
         weekly_plan_id, item["old_ids"], meal_date, item["slot"], pick["meal_name"],
@@ -1302,7 +1318,7 @@ def honest_meal_name(pick: dict) -> str:
 
 def apply_pick(weekly_plan_id: int, entry: dict, pick: dict, carry_sides: bool = False,
                correct_title: bool = True, group: list[dict] | None = None,
-               own_pick: bool = False) -> dict:
+               own_pick: bool = False, file_new: bool = False) -> dict:
     """
     Put an already-chosen dish on `entry`'s slot: save it as a recipe if it
     is new, swap it in through swap_meal_in_plan, and write the undo note.
@@ -1378,12 +1394,12 @@ def apply_pick(weekly_plan_id: int, entry: dict, pick: dict, carry_sides: bool =
         return apply_pick_to_days(weekly_plan_id, group, pick, carry_sides=carry_sides,
                                   correct_title=correct_title, instead=instead,
                                   serves=batch_serves(weekly_plan_id, keeping, entry),
-                                  own_pick=own_pick)
+                                  own_pick=own_pick, file_new=file_new)
 
     serves = _table_for(entry["date"], entry["slot"])["serves"]
     if correct_title:
         pick["meal_name"] = honest_meal_name(pick)
-    _save_recipe_if_new(pick, serves, slot=entry["slot"])
+    _save_recipe_if_new(pick, serves, slot=entry["slot"], file=file_new)
     # Read before the swap below deletes the row they hang off: carried
     # onto the new entry, or recorded for Undo (_with_outgoing_sides).
     outgoing_sides = _plates.get_sides(entry["entry_id"])
@@ -2184,7 +2200,7 @@ def instead_of_the_leftovers(weekly_plan_id: int, entry: dict, group: list[dict]
 def apply_pick_to_days(weekly_plan_id: int, entries: list[dict], pick: dict,
                        carry_sides: bool = False, correct_title: bool = True,
                        serves: int | None = None, instead: dict[int, dict] | None = None,
-                       own_pick: bool = False) -> dict:
+                       own_pick: bool = False, file_new: bool = False) -> dict:
     """
     apply_pick for a dish planned on several days: the same chosen dish on
     every one of `entries` (dish_days' answer), in ONE transaction
@@ -2235,7 +2251,8 @@ def apply_pick_to_days(weekly_plan_id: int, entries: list[dict], pick: dict,
     first = entries[0]
     if correct_title:
         pick["meal_name"] = honest_meal_name(pick)
-    _save_recipe_if_new(pick, serves or _table_for(first["date"], first["slot"])["serves"], slot=first["slot"])
+    _save_recipe_if_new(pick, serves or _table_for(first["date"], first["slot"])["serves"], slot=first["slot"],
+                        file=file_new)
     # Read before the write: the rows they hang off are about to go.
     outgoing_sides = {e["entry_id"]: _plates.get_sides(e["entry_id"]) for e in entries}
     sides_by_entry = outgoing_sides if carry_sides else {}

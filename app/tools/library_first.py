@@ -84,18 +84,52 @@ def _seed_meals() -> dict[str, str]:
             for d in _picks._seed_dishes() if d.get("dish_name")}
 
 
+def diet_blocks_the_library(eating_style: str | None = None) -> bool:
+    """
+    THE ONE DIET CHECK every library path asks before it offers or copies a
+    library dish (review, 2026-11-03: a vegetarian eating style was copied
+    a Pad Thai with prawns and oyster sauce — the copy path had lost the
+    eating-style check the draft list still had). True when:
+      * the eating style, or any member restriction or hard fact
+        (swap_in_place._hard_exclusions), names a diet the allergen gate
+        can't read (agent._DIET_THE_GATE_CANT_READ: vegetarian, vegan,
+        pescatarian, halal, kosher, "no meat"…) — no word list here can
+        prove a library dish has no prawn, gelatin, lard or dashi in it;
+      * the eating style is one the code can't read at all (keto,
+        low-FODMAP: everyday_snacks.style_stands_down).
+    `eating_style` defaults to the household's own; a caller holding the
+    writer's spec passes that one (the stricter of the two is read: both).
+    Fails CLOSED: a read that raises blocks the library.
+    Used by: stands_down (the draft list, the swap sheet, "Swap · I'll
+    pick"), agent._library_entry_for (every copy — the recipe pass and a
+    tapped swap), swap_option_picks._diet_the_library_cant_judge (the swap
+    sheet's fallback) and breakfast_variety's library breakfasts.
+    """
+    from .. import agent
+    from . import everyday_snacks as _everyday
+    from . import memory as _memory
+    from . import swap_in_place as _swap
+    try:
+        styles = [str((_memory.get_household_memory() or {}).get("eating_style") or "")]
+        if eating_style:
+            styles.append(str(eating_style))
+        lines = styles + [str(x or "") for x in (_swap._hard_exclusions() or [])]
+        if any(agent._DIET_THE_GATE_CANT_READ.search(line) for line in lines):
+            return True
+        return any(style and _everyday.style_stands_down({"eating_style": style}) for style in styles)
+    except Exception:
+        logger.exception("Library first: could not read the household's diet; the library stands down")
+        return True
+
+
 def stands_down(memory: dict | None = None) -> bool:
     """True when the library can't be used for this household (see the
     module docstring) — it is then planned and swapped as before."""
-    from . import everyday_snacks as _everyday
-    from . import memory as _memory
     from . import recipe_library as _recipe_library
-    from . import swap_option_picks as _picks
     try:
         if not _recipe_library.library_enabled():
             return True
-        memory = memory if memory is not None else (_memory.get_household_memory() or {})
-        return bool(_picks._diet_the_library_cant_judge() or _everyday.style_stands_down(memory))
+        return diet_blocks_the_library((memory or {}).get("eating_style"))
     except Exception:
         logger.exception("Library first: could not read the household's diet; planning without it")
         return True
@@ -188,38 +222,49 @@ def candidates(slot: str, memory: dict, *, avoid=(), seed: str = "", limit: int 
         dislikes = memory.get("dislikes") or []
         children = _has_children()
         excludes = _everyday.diet_excludes(memory)
+        avoidances = _allergen_gate.hard_avoidances() if avoidances is None else avoidances
+
+        def _unwanted(name: str, items: list[str], minutes) -> bool:
+            if max_minutes and minutes and minutes > max_minutes:
+                return True
+            return (diet_refuses({"name": name, "items": items}, memory, excludes)
+                    or _everyday.disliked(" ".join([name] + items), dislikes))
+
         pool = []
         seed_meals = _seed_meals()
         for d in _recipe_library.written_dishes():
             d = dict(d, meal=d.get("meal") or seed_meals.get(d["dish_key"], ""))
             if d["meal"] not in meals or _meal_variety.repeat_key(d["name"]) in refused:
                 continue
-            if d["kind"] == "variant" and not _variant_ok(d, children, avoidances):
-                continue
-            if max_minutes and d.get("minutes") and d["minutes"] > max_minutes:
-                continue
-            if diet_refuses(d, memory, excludes) or _everyday.disliked(" ".join([d["name"]] + d["items"]), dislikes):
+            # A cheap first pass on the listed version; the version actually
+            # served is checked again below.
+            if _unwanted(d["name"], d["items"], d.get("minutes")):
                 continue
             pool.append(d)
         random.Random(f"{household_id()}:{seed}:{slot}").shuffle(pool)
         # The slot's own meal first (a lunch list is lunches, topped up with
         # dinners only when there are too few).
         pool.sort(key=lambda d: meals.index(d["meal"]))
-        avoidances = _allergen_gate.hard_avoidances() if avoidances is None else avoidances
         safe, checked = [], 0
         for d in pool:
             if len(safe) >= limit * 2 or checked >= _MAX_GATE_CHECKS:
                 break
-            if avoidances:
-                checked += 1
-                entry = _recipe_library.base_recipe(d["name"]) if d["kind"] == "base" else None
-                if entry is None:
-                    entry, _ = _recipe_library.servable_recipe(
-                        d["name"], children=children, has_avoidances=True,
-                        clashes=lambda e: entry_clashes(e, avoidances))
-                if entry is None or entry_clashes(entry, avoidances):
-                    continue
-            safe.append(d)
+            checked += 1
+            # Every rule on the version a copy would SERVE (review,
+            # 2026-11-03): the base, else a variant that fits this
+            # household (recipe_library.servable_recipe) — its allergens,
+            # diet words, dislikes and minutes, not the listed version's.
+            entry, _ = _recipe_library.servable_recipe(
+                d["name"], children=children, has_avoidances=bool(avoidances),
+                clashes=lambda e: bool(avoidances) and entry_clashes(e, avoidances))
+            if entry is None:
+                continue
+            items = [str(i.get("item") or "") for i in entry.get("ingredients") or [] if isinstance(i, dict)]
+            minutes = (int(entry.get("prep_time_minutes") or 0) + int(entry.get("cook_time_minutes") or 0)) or None
+            if _unwanted(entry["dish_name"], items, minutes):
+                continue
+            safe.append(dict(d, minutes=minutes, cuisine=entry.get("cuisine") or d["cuisine"],
+                             main_protein=entry.get("main_protein") or d["main_protein"]))
         picked = _spread(safe, memory, limit)
         return [{"name": d["name"], "cuisine": d["cuisine"], "main_protein": d["main_protein"],
                  "minutes": d["minutes"], "meal": d["meal"]} for d in picked]
@@ -283,10 +328,6 @@ def _has_children() -> bool:
     except Exception:
         return False
 
-
-def _variant_ok(dish: dict, children: bool, avoidances) -> bool:
-    allowed = {"use_up"} | ({"children"} if children else set()) | ({"allergies"} if avoidances else set())
-    return set(dish.get("adapted_for") or []) <= allowed
 
 
 # ---------- the write-back rule, for saves outside the recipe pass ----------

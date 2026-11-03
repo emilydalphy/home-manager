@@ -484,11 +484,10 @@ def _diet_the_library_cant_judge() -> bool:
     eating style, kosher, "no meat" in a fact): the library offers nothing,
     for the same reason agent._copy_from_library writes instead of copying —
     a library dish is not written around it, and nothing here could tell."""
-    from .. import agent
-    from . import memory as _memory
-    lines = [(_memory.get_household_memory() or {}).get("eating_style") or ""]
-    lines += list(_swap._hard_exclusions() or [])
-    return any(agent._DIET_THE_GATE_CANT_READ.search(line or "") for line in lines)
+    # One check for every library path (library_first.diet_blocks_the_library,
+    # 2026-11-03), so the sheet, the draft and the copy can never disagree.
+    from . import library_first as _library_first
+    return _library_first.diet_blocks_the_library()
 
 
 def _dish_key(name: str) -> str:
@@ -880,6 +879,10 @@ def choose_swap_option(weekly_plan_id: int, entry_id: int, index: int, writer=No
             library_copied = False
     else:
         library_copied = False
+    # The write-back rule files a written-out pick only when Pomona chose the
+    # dish itself: picks asked for with words the household typed into the
+    # box ("something with our smoked paprika") are theirs, never shared.
+    file_new = not (cached.get("context") or {}).get("household_request")
     on_draft = not _plan_is_approved(weekly_plan_id)
     if on_draft and needs_write_out(pick):
         # A DRAFT saves the pick straight away as a pending recipe — the
@@ -936,13 +939,13 @@ def choose_swap_option(weekly_plan_id: int, entry_id: int, index: int, writer=No
         out = _swap.apply_pick_to_days(weekly_plan_id, group, pick, correct_title=correct_title,
                                        instead=instead,
                                        serves=_swap.batch_serves(weekly_plan_id, keeping, entry),
-                                       own_pick=True)
+                                       own_pick=True, file_new=file_new)
     else:
         # `group` rather than letting apply_pick widen for itself: it has
         # already been read here (and the picks asked and gated against
         # it), so a second read would answer the same question twice.
         out = _swap.apply_pick(weekly_plan_id, entry, pick, correct_title=correct_title, group=group,
-                               own_pick=True)
+                               own_pick=True, file_new=file_new)
     out["status"] = "swapped"
     for member in group:
         forget_options(member["entry_id"])

@@ -414,16 +414,19 @@ def file_new_recipe(recipe_id: int, *, spec: dict | None, research: dict | None 
         row = conn.execute(
             "SELECT name, ingredients_json, instructions_json, default_servings, prep_time_minutes, "
             "cook_time_minutes, cuisine, main_protein, advance_prep_notes, "
-            "advance_prep_step_indices_json, household_changes_json, source_url, source_book "
-            "FROM recipes WHERE id = ? AND household_id = ?",
+            "advance_prep_step_indices_json, household_changes_json, source_url, source_book, "
+            "library_private FROM recipes WHERE id = ? AND household_id = ?",
             (int(recipe_id), household_id()),
         ).fetchone()
     finally:
         conn.close()
     if not row or (row["source_url"] or "").strip() or (row["source_book"] or "").strip():
         return None
+    if row["library_private"]:
+        # Saved from the household's own words (mark_private): theirs.
+        return None
     try:
-        changed = bool(json.loads(row["household_changes_json"] or "[]"))
+        changed =bool(json.loads(row["household_changes_json"] or "[]"))
     except (TypeError, ValueError):
         return None
     adapted = sorted({ADAPTATIONS[k] for k in ADAPTATIONS if spec.get(k)})
@@ -451,6 +454,19 @@ def file_new_recipe(recipe_id: int, *, spec: dict | None, research: dict | None 
     if entry_id and not variant:
         _link(recipe_id, entry_id)
     return entry_id
+
+
+def mark_private(name: str) -> None:
+    """Mark this household's recipe of that name as theirs alone: it came
+    from their own words, so file_new_recipe never files it — now, or when
+    the recipe pass writes a pending row up later."""
+    if not (name or "").strip():
+        return
+    with write() as conn:
+        conn.execute(
+            "UPDATE recipes SET library_private = 1 WHERE household_id = ? AND name_key(name) = name_key(?)",
+            (household_id(), name.strip()),
+        )
 
 
 def file_from_recipe(recipe_id: int, *, research: dict | None = None, origin: str = "written",

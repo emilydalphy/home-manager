@@ -409,6 +409,11 @@ CREATE TABLE IF NOT EXISTS recipes (
     -- household's servings, tweaks, ratings and exclusions stay on THIS row
     -- and never flow back. NULL for anything typed in or imported.
     library_id INTEGER,
+    -- 1 when the dish came from the household's own words (a chat change,
+    -- a plate-part edit, a typed request, a swap asked for in their words):
+    -- recipe_library.file_new_recipe never files it, also when the recipe
+    -- pass writes it up later (2026-11-03).
+    library_private INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
