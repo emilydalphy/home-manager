@@ -1,0 +1,126 @@
+{
+ "dish_name": "Turkey Stuffed Zucchini Boats",
+ "cuisine": "American",
+ "main_protein": "turkey",
+ "ingredients": [
+  {
+   "item": "Zucchini",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Ground turkey",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Italian seasoning",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Balsamic vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Marinara sauce",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Shredded mozzarella",
+   "qty": "1 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Fresh basil",
+   "qty": "1 small bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F and line a sheet pan with foil.",
+  "Cut the zucchini in half the long way. Use a spoon to scoop out the middle, leaving a shell about 1/4 inch thick. Chop the scooped flesh and set it aside.",
+  "Set the shells cut side up on the sheet pan and sprinkle them with 1/4 tsp of the salt.",
+  "Finely chop the onion and mince the garlic. Chop 2 tbsp of the basil and set it aside.",
+  "Heat 1 tbsp of the olive oil in a large skillet over medium-high heat. Add the turkey and 1/2 tsp of the salt. Break it up and leave it alone for 2 minutes so it browns, then keep stirring and breaking it up for 5 minutes, until no pink is left. Transfer it to a bowl.",
+  "Add the remaining 1 tbsp olive oil to the skillet. Add the onion and the chopped zucchini flesh and cook for 4 minutes, stirring now and then, until soft.",
+  "Add the garlic, the Italian seasoning and the black pepper. Stir for 30 seconds, until it smells fragrant.",
+  "Add 1 tbsp balsamic vinegar and scrape up the browned bits from the bottom of the pan. Add the marinara and the turkey with any juices in the bowl. Turn the heat to low and simmer for 5 minutes, until thick.",
+  "Spoon the filling into the zucchini shells, piling it up in the middle.",
+  "Bake for 20 minutes, until the shells are tender when you poke them with a knife.",
+  "Scatter the mozzarella over the boats and bake for 5 minutes, until the cheese is melted and spotty brown.",
+  "Sprinkle the basil over the top. Taste a bit of the filling. If it's flat, add a pinch more salt.",
+  "Serve with the red pepper flakes at the table for anyone who wants heat."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 40,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three versions brown ground turkey with onion, stir in marinara, pile it into scooped zucchini and bake at 400°F with mozzarella on top. Cup of Yum (the lead) is the barest: turkey, onion and marinara, baked covered with a little Parmesan. Reciperunner adds Italian herbs, garlic and a splash of balsamic, and tops with mozzarella for the last few minutes; One Balanced Life also adds the cheese at the end. This version follows the lead's order but borrows Reciperunner's herbs, balsamic and the mozzarella topping to match the dish description, uses the scooped zucchini in the filling, and keeps the red pepper flakes on the side. The lead's rating and count are from its page's visible review line.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "Turkey Zucchini Boats",
+   "url": "https://cupofyum.com/recipes/turkey-zucchini-boats",
+   "rating": 4.7,
+   "rating_count": 93,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Reciperunner",
+   "title": "Italian Stuffed Zucchini Boats",
+   "url": "https://reciperunner.com/italian-stuffed-zucchini-boats/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "One Balanced Life",
+   "title": "Turkey Marinara Stuffed Zucchini",
+   "url": "https://onebalancedlife.com/turkey-marinara-stuffed-zucchini-2",
+   "rating": 4.7,
+   "rating_count": 13,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

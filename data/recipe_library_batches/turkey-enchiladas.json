@@ -1,0 +1,144 @@
+{
+ "dish_name": "Turkey Enchiladas",
+ "cuisine": "Mexican",
+ "main_protein": "turkey",
+ "ingredients": [
+  {
+   "item": "Ground turkey",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chili powder",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "2 1/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Flour tortillas",
+   "qty": "8",
+   "category": "pantry"
+  },
+  {
+   "item": "Shredded Monterey Jack",
+   "qty": "2 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 small bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Hot sauce",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 375°F. Rub a little olive oil over the bottom and sides of a 9x13 inch baking dish.",
+  "Finely chop the onion and mince the garlic. Chop 2 tbsp of the cilantro and cut the lime into wedges.",
+  "Make the sauce. Off the heat, whisk the flour, chili powder, 1 tsp of the cumin, the oregano and 1/2 tsp of the salt in a small bowl.",
+  "Heat 2 tbsp of the olive oil in a large skillet over medium heat. Add the spice mixture and whisk for 1 minute, until it smells toasty.",
+  "Whisk in the tomato paste and 1 of the garlic cloves. Cook for 1 minute, until the paste darkens.",
+  "Slowly whisk in the chicken broth. Turn the heat to medium-high and bring it to a boil. Cook for 3 minutes, until it coats the back of a spoon. Transfer the sauce to a bowl and wipe out the skillet. That should be about 2 1/2 cups.",
+  "Heat the remaining 1 tbsp olive oil in the same skillet over medium heat. Add the onion and 1/4 tsp of the salt and cook for 5 minutes, until soft.",
+  "Add the turkey, the remaining 1/2 tsp cumin and 1 tsp of the salt. Break the meat into small pieces and cook for 6 minutes, until it's browned and no pink is left. Let the liquid in the pan cook off.",
+  "Add the remaining 2 garlic cloves and stir for 30 seconds. Take the skillet off the heat.",
+  "Stir 1/2 cup of the sauce and 1/2 cup of the Monterey Jack into the turkey.",
+  "Spread 1/2 cup of the sauce over the bottom of the baking dish.",
+  "Wrap the tortillas in a damp paper towel and microwave them for 30 seconds, so they don't crack when you roll them.",
+  "Spoon about 1/3 cup of the filling down the middle of each tortilla and roll it up. Set each one seam side down in the dish.",
+  "Pour the rest of the sauce over the enchiladas and scatter the remaining 1 1/2 cups Monterey Jack on top.",
+  "Bake uncovered for 20 to 25 minutes, until the sauce is bubbling at the edges and the Monterey Jack is melted. Let them sit for 5 minutes.",
+  "Taste the sauce at the edge of the dish. If it's flat, add a pinch more salt, or a squeeze of the lime.",
+  "Sprinkle the cilantro over the top. Serve with the lime wedges and the hot sauce at the table."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 50,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Real Food Whole Life (the lead) cooks the turkey with cumin and garlic, rolls it in flour tortillas with mild red sauce and Mexican cheese, and bakes it in a 9x13 dish. Mae's Menu makes the red sauce from scratch by blooming chili powder, cumin and flour in oil, then tomato paste and broth, and stirs some sauce into the turkey; Pinch and Swirl is similar with a store-bought sauce and Monterey Jack. This version uses the lead's filling and method but swaps its canned black beans out so it stays plain ground turkey enchiladas, and borrows Mae's Menu's homemade red sauce so the sauce is mild and the list is checkable. Heat is left to the hot sauce at the table. Ratings are from the lead's visible 'ratings' line (23 ratings); Mae's Menu shows 5 but no count.",
+ "sources": [
+  {
+   "name": "Real Food Whole Life",
+   "title": "Ground Turkey Enchiladas",
+   "url": "https://realfoodwholelife.com/recipes/ground-turkey-enchiladas/",
+   "rating": 4.96,
+   "rating_count": 23,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Mae's Menu",
+   "title": "Ground Turkey Enchiladas",
+   "url": "https://maesmenu.com/recipes/ground-turkey-enchiladas/",
+   "rating": 5.0,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Pinch and Swirl",
+   "title": "Ground Turkey Enchiladas",
+   "url": "https://pinchandswirl.com/ground-turkey-enchiladas/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
