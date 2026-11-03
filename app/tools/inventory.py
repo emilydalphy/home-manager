@@ -651,7 +651,7 @@ def _receipt_snapshot(conn, inventory_id: int) -> dict | None:
     return {k: row[k] for k in _RECEIPT_FIELDS} if row else None
 
 
-def _find_row_by_name(conn, item: str, location: str | None, columns: str):
+def _find_row_by_name(conn, item: str, location: str | None, columns: str, outside_freezer: bool = False):
     """
     The one inventory row a name-only write (add / set / use) lands on.
     With a location, the row at that location. Without one, an item kept
@@ -667,17 +667,37 @@ def _find_row_by_name(conn, item: str, location: str | None, columns: str):
     category default at insert time — so there is nothing better to
     prefer; the callers that know the place pass it and skip all this.
     """
+    where, params = "household_id = ?", [household_id()]
     if location:
-        return conn.execute(
-            f"SELECT {columns} FROM inventory_items WHERE household_id = ? AND LOWER(item) = LOWER(?) AND location = ? "
-            "ORDER BY updated_at DESC, id DESC LIMIT 1",
-            (household_id(), item, location),
-        ).fetchone()
-    return conn.execute(
-        f"SELECT {columns} FROM inventory_items WHERE household_id = ? AND LOWER(item) = LOWER(?) "
+        where += " AND location = ?"
+        params.append(location)
+    if outside_freezer:
+        where += " AND LOWER(TRIM(COALESCE(location, ''))) != 'freezer'"
+    exact = conn.execute(
+        f"SELECT {columns} FROM inventory_items WHERE {where} AND LOWER(item) = LOWER(?) "
         "ORDER BY updated_at DESC, id DESC LIMIT 1",
-        (household_id(), item),
+        params + [item],
     ).fetchone()
+    if exact is not None:
+        return exact
+    # Then the same food under another spelling — the grocery merge key
+    # the Kitchen's own add sheet already uses (kitchen_add._match_key: a
+    # trailing plural, case, a size). A Shop line "Chicken thigh" ticked
+    # over the fridge's "Chicken thighs" was a second row beside it, and
+    # Kitchen listed both (defect hunt, 2026-11-03); chat's "used an onion"
+    # found no "Onions" at all. Exact first, so a name that is there as
+    # typed still wins over a near one.
+    from . import kitchen_add as _kitchen_add  # lazy: kitchen_add imports this module
+    key = _kitchen_add._match_key(item)
+    for row in conn.execute(
+        f"SELECT id, item FROM inventory_items WHERE {where} ORDER BY updated_at DESC, id DESC", params,
+    ).fetchall():
+        if _kitchen_add._match_key(row["item"] or "") == key:
+            return conn.execute(
+                f"SELECT {columns} FROM inventory_items WHERE id = ? AND household_id = ?",
+                (row["id"], household_id()),
+            ).fetchone()
+    return None
 
 
 # Names whose fresh-sounding word is not the food on the shelf: canned
@@ -941,13 +961,8 @@ def _add_to_inventory(
         # bought fresh goes where fresh food goes: onto a row outside the
         # freezer, or a new one at its usual place. Into the freezer only
         # by "Yes, freezing it" (defrost._freeze_ticked_pack), never by name.
-        existing = conn.execute(
-            "SELECT id, quantity, category, expiration_date, location FROM inventory_items "
-            "WHERE household_id = ? AND LOWER(item) = LOWER(?) "
-            "AND LOWER(TRIM(COALESCE(location, ''))) != 'freezer' "
-            "ORDER BY updated_at DESC, id DESC LIMIT 1",
-            (household_id(), item),
-        ).fetchone()
+        existing = _find_row_by_name(conn, item, None, "id, quantity, category, expiration_date, location",
+                                     outside_freezer=True)
         if existing is not None and _quantities._display_location(dict(existing)).strip().lower() == "freezer":
             existing = None  # a legacy row with no location, filed by its frozen category
     if existing:
