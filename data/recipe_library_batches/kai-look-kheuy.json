@@ -1,0 +1,109 @@
+{
+ "dish_name": "Kai Look Kheuy",
+ "cuisine": "Thai",
+ "main_protein": "eggs",
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Shallots",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Dried red chilies",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "6"
+  },
+  {
+   "item": "Tamarind paste",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the rice in a pot with 2 1/4 cups water. Bring it to a boil, then turn the heat to low, cover and cook for 15 minutes. Leave it covered, off the heat, until you're ready to serve.",
+  "Bring a large pot of water to a boil. Lower the eggs in with a spoon and cook for 8 minutes.",
+  "Meanwhile, in a small saucepan, stir together the tamarind paste, 3 tbsp water, the brown sugar and the fish sauce. Cook over medium low heat for 3 to 4 minutes, stirring, until the sugar has dissolved and the sauce lightly coats a spoon. Turn off the heat.",
+  "Slice the shallots thinly. Transfer the eggs to a bowl of ice water and leave them for 3 minutes, then peel them. Pat them very dry with paper towels.",
+  "Heat the oil in a 10-inch skillet over medium-high heat until a slice of shallot sizzles right away. Add the shallots and stir for 2 to 3 minutes, until golden. Transfer them to a paper towel. They crisp up as they cool.",
+  "Drop the dried chilies into the oil for 10 seconds, until they darken. Transfer them to a small bowl for the table.",
+  "Stand back, because the oil will spatter. Lower 4 of the eggs into the oil and fry for 3 to 4 minutes, turning them every 30 seconds, until blistered and golden all over. Transfer them to a paper towel and fry the other 4.",
+  "Taste the sauce. If it's flat, add a pinch of salt.",
+  "Cut the eggs in half. Spoon the rice into four bowls and set the eggs on top. Spoon the sauce over, then top with the crispy shallots and cilantro leaves. Serve with the fried chilies on the side."
+ ],
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 22,
+ "method_notes": "Honest time is about 32 minutes, a little over the 30 for a quick dinner, because the eggs need 8 minutes to boil and a short cool before they can be peeled and fried. No version read had 20 or more ratings, so the lead is the best-read real version. All the versions boil the eggs, fry them until blistered, and dress them with tamarind, palm sugar and fish sauce, with crispy shallots on top. Brown sugar replaces palm sugar, the base is mild, and the fried chilies go on the side.",
+ "sources": [
+  {
+   "name": "Grantourismo Travels",
+   "title": "Thai Son-in-Law Eggs (Kai Look Keuy)",
+   "url": "https://grantourismotravels.com/thai-son-in-law-eggs-recipe/",
+   "rating": 5,
+   "rating_count": 3,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Hungry in Thailand",
+   "title": "Thai Son-in-Law Eggs (Kai Look Keuy)",
+   "url": "https://hungryinthailand.com/thai-son-in-law-eggs/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Real Thai Recipes",
+   "title": "Son In Law Eggs",
+   "url": "https://realthairecipes.com/recipes/son-in-law-eggs",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

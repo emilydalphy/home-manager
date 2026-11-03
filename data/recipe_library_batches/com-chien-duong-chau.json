@@ -1,0 +1,129 @@
+{
+ "dish_name": "Com Chien Duong Chau",
+ "cuisine": "Vietnamese",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Cooked rice",
+   "qty": "4 cups",
+   "category": "other"
+  },
+  {
+   "item": "Chinese sausage",
+   "qty": "3 links",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Shrimp",
+   "qty": "12 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Eggs",
+   "qty": "3",
+   "category": "dairy"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "1 cup",
+   "category": "frozen"
+  },
+  {
+   "item": "Carrot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the cold rice in a large bowl and break up any clumps with your hands.",
+  "Cut the Chinese sausage into 1/4-inch dice. Dice the carrot and onion small. Mince the garlic. Slice the scallions, keeping the white parts and green parts apart.",
+  "Pat the shrimp dry and cut each one in half. Beat the eggs with 1/4 tsp salt.",
+  "Heat 1 tbsp of the oil in a wok or large skillet over medium-high heat. Add the eggs and stir for 1 minute, until just set. Transfer them to a bowl and break them into small pieces.",
+  "Add the sausage to the same pan and cook over medium heat for 2 minutes, until the edges brown and the fat runs out. Transfer the sausage to a plate with a slotted spoon, leaving the fat in the pan.",
+  "Turn the heat to high. Add 1 tbsp oil and the shrimp with 1/4 tsp salt. Cook for 1 minute on each side, until pink. Transfer them to the plate with the sausage.",
+  "Add the last 1 tbsp oil, the carrot and the onion. Cook for 3 minutes, until the onion is soft. Add the garlic and scallion whites and stir for 30 seconds.",
+  "Add the rice and press it flat. Leave it for 1 minute, then toss. Keep tossing for 3 to 4 minutes, until it's hot and the grains are separate.",
+  "Add the fish sauce, soy sauce and pepper and toss to mix. Return the sausage, shrimp and eggs to the pan, add the peas, and toss for 2 minutes, until the peas are hot and the shrimp are opaque.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Take the pan off the heat and stir in the scallion greens. Serve hot."
+ ],
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "method_notes": "No version read had 20 or more ratings, so the lead is the best-read Vietnamese version with both sausage and shrimp. All three agree on cold day-old rice, cooking the sausage first so its fat flavors the pan, and cooking the egg and shrimp separately so neither overcooks. This version follows the lead's method with the carrot, onion and fish sauce of the Yang Chow style versions, and uses cold leftover rice; fresh rice goes gluey.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "Chinese Sweet Sausage and Shrimp Fried Rice",
+   "url": "https://cupofyum.com/recipes/chinese-sweet-sausage-and-shrimp-fried-rice",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Today's Delight",
+   "title": "Com Chien (Yang Chow style Vietnamese fried rice)",
+   "url": "https://www.todaysdelight.com/?p=1050",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Takes Two Eggs",
+   "title": "Com Chien (Vietnamese Fried Rice)",
+   "url": "https://takestwoeggs.com/?p=931",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

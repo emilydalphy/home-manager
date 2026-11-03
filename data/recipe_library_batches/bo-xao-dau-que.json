@@ -1,0 +1,107 @@
+{
+ "dish_name": "Bo Xao Dau Que",
+ "cuisine": "Vietnamese",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Flank steak",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Green beans",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Carrot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the rice in a pot with 2 1/4 cups water. Bring it to a boil, then turn the heat to low, cover and cook for 15 minutes. Leave it covered, off the heat, until you're ready to serve.",
+  "Slice the steak against the grain, 1/8 inch thick. Put it in a bowl.",
+  "Mince 3 of the garlic cloves and add them to the beef with 1/4 tsp salt, 1/4 tsp pepper, the cornstarch, 2 tsp water and 1 tbsp of the oil. Mix well and leave it while you prep the rest.",
+  "Bring a large pot of water to a boil with 1 tsp salt. Meanwhile, trim the green beans and cut them in half on a slant. Cut the carrot into thin sticks about the size of the beans. Mince the last 2 garlic cloves.",
+  "Blanch the beans and carrot in the boiling water for 2 minutes, until the beans are bright green and still crisp. Drain, rinse briefly under cold water, then shake them very dry.",
+  "In a small bowl, stir together the oyster sauce, fish sauce and 2 tbsp water.",
+  "Heat a large skillet or wok over medium-high heat. Add 1 tbsp of the oil, then the 2 minced garlic cloves. Stir for 15 seconds, until fragrant.",
+  "Add the beans and carrot and 1/4 tsp salt. Stir-fry for 3 minutes, until the beans blister in spots. Transfer to a plate.",
+  "Turn the heat to high and add the last 1 tbsp oil. Add the beef in a single layer, in two batches if it doesn't fit. Leave it alone for 1 minute, then stir for 1 minute, until it is browned and no longer red outside.",
+  "Return the beans and carrot to the pan. Pour in the sauce and toss for 1 minute, until everything is coated and the beef is cooked through.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Spoon the rice into four plates and serve the beef and beans over it with the rest of the black pepper ground over the top."
+ ],
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 14,
+ "method_notes": "Neither version read had star ratings, so the lead is the best-read real version of the dish. Both marinate thin beef with garlic, blanch the beans first so they stay bright, then stir-fry beans and beef separately and bring them together in an oyster sauce glaze. This version keeps the carrot and the blanch from the lead, uses fish sauce for savory depth, and leaves out the Thai chilies and cooking sauce slurry of the second to keep the base mild.",
+ "sources": [
+  {
+   "name": "Delightful Plate",
+   "title": "Stir-fried Green Beans with Beef",
+   "url": "https://delightfulplate.com/?p=83576",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Vietnamese Food Recipes",
+   "title": "Beef and Green Bean Stir Fry (Dau Ve Xao Thit Bo)",
+   "url": "https://www.vietnamesefoodrecipes.com/?p=3482",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}
