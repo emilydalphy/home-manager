@@ -51,3 +51,15 @@ def test_already_have_onto_a_plural_row_is_not_deleted_by_its_undo():
     assert _rows() == [("Onions", "5", "pantry")]
     tools.undo_pre_shop_drop(line["item_id"])
     assert [r[0] for r in _rows()] == ["Onions"]
+
+
+def test_a_different_variety_is_never_used_up_or_removed_by_a_near_name():
+    # The grocery list's same-purchase list ("plain yogurt" is the buy for
+    # "Greek yogurt") must not reach a shelf: "remove plain yogurt" deleted
+    # the Greek yogurt in review (2026-11-03).
+    tools.update_inventory("Greek yogurt", "add", quantity="1 tub", location="fridge")
+    tools.update_inventory("Kosher salt", "add", quantity="1 box", location="pantry")
+    tools.update_inventory("plain yogurt", "remove")
+    tools.update_inventory("sea salt", "remove")
+    names = [r[0] for r in _rows()]
+    assert "Greek yogurt" in names and "Kosher salt" in names

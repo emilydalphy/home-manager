@@ -680,21 +680,24 @@ def _find_row_by_name(conn, item: str, location: str | None, columns: str, outsi
     ).fetchone()
     if exact is not None:
         return exact
-    # Then the same food under the other number — the grocery list's own
-    # merge key (case, spacing, a trailing plural, the plain-name list),
-    # which the Kitchen's add sheet already matched on. A Shop line
+    # Then the same food under the other number — the grocery list's
+    # PLAIN-name key (case, spacing, accents, a trailing plural). A Shop line
     # "Chicken thigh" ticked over the fridge's "Chicken thighs" was a
     # second row beside it, and Kitchen listed both (defect hunt,
     # 2026-11-03); chat's "used an onion" found no "Onions" at all. Exact
     # first, so a name that is there as typed still wins over a near one.
     # NOT kitchen_add._match_key: it also drops every token with a digit
     # (right for a receipt's "Milk 2%"), which here put "V8 juice" on
-    # "Juice" and "Ingredient 2" on "Ingredient 1".
-    key = _grocery._merge_key(item)
+    # "Juice" and "Ingredient 2" on "Ingredient 1". And NOT
+    # grocery._merge_key: its same-purchase list ("Plain yogurt" is the
+    # buy for "Greek yogurt", "Sea salt" for "Kosher salt") is right for a
+    # shopping line but wrong for a container on a shelf — "remove plain
+    # yogurt" deleted the Greek yogurt (review, 2026-11-03).
+    key = _grocery._plain_name_key(item)
     for row in conn.execute(
         f"SELECT id, item FROM inventory_items WHERE {where} ORDER BY updated_at DESC, id DESC", params,
     ).fetchall():
-        if _grocery._merge_key(row["item"] or "") == key:
+        if key and _grocery._plain_name_key(row["item"] or "") == key:
             return conn.execute(
                 f"SELECT {columns} FROM inventory_items WHERE id = ? AND household_id = ?",
                 (row["id"], household_id()),
