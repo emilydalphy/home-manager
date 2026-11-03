@@ -4551,21 +4551,33 @@ def _plan_takeover(
 
     new_days = set(_week_intake.period_dates(period_start, day_count))
     claimed = set(new_days)
+    # The days an APPROVED plan can lose: the new period's, and those a newer
+    # approved plan kept. Never a draft's (overnight hunt, 2026-11-03). A
+    # draft waiting beside an approved week is the "make the draft wait until
+    # approval" state, and the walk is newest-first, so a re-plan of this week
+    # sitting as a draft claimed this week's days first: approving NEXT week
+    # retired this week's approved plan and took its shopping list off, for a
+    # draft nobody had said yes to.
+    approved_claimed = set(new_days)
     decisions = []
     for row in rows:
         if row["id"] == new_plan_id:
             continue
         if drafts_only and row["status"] == "approved":
             continue
+        is_approved = row["status"] == "approved"
         other_start, other_days = plan_period(row)
         days = _week_intake.period_dates(other_start, other_days)
         if not days:
             continue
-        available = [d for d in days if d not in claimed]
+        taken = approved_claimed if is_approved else claimed
+        available = [d for d in days if d not in taken]
         if len(available) == len(days):
             # Untouched: it clashes with nothing, so it is not part of this
             # takeover at all and must not be rewritten or reported.
             claimed.update(days)
+            if is_approved:
+                approved_claimed.update(days)
             continue
 
         # A component_based plan's entries carry no real date (they all sit
@@ -4576,6 +4588,8 @@ def _plan_takeover(
         keep = [] if component_based else _longest_run(available)
         surrendered = [d for d in days if d not in keep]
         claimed.update(keep)
+        if is_approved:
+            approved_claimed.update(keep)
         decisions.append({
             "weekly_plan_id": row["id"],
             "status": row["status"],
@@ -4640,7 +4654,10 @@ def retire_overlapping_plans(
     over every live plan at once: walk them newest-first, and each may keep
     only days nothing newer has already claimed. Newest-first is not
     arbitrary — it is the same tiebreak _current_weekly_plan_row has always
-    used to decide which of two overlapping plans wins.
+    used to decide which of two overlapping plans wins. One exception: an
+    APPROVED plan only gives days up to the period being approved or to a
+    newer approved plan, never to a waiting draft (_plan_takeover's
+    approved_claimed, 2026-11-03).
 
     What a loser keeps is then the longest contiguous run of days still
     available to it, because a period is a start plus a length and cannot
