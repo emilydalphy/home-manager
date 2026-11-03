@@ -1,0 +1,133 @@
+{
+ "dish_name": "Banh Mi Chao",
+ "cuisine": "Vietnamese",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Pork sausage links",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Pork liver pate",
+   "qty": "6 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Shallot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato sauce",
+   "qty": "1 can (8 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Baguettes",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Persian cucumbers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Sriracha",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the sausages into 3 inch pieces. Slice the onion into thin half moons. Mince the shallot and the garlic.",
+  "Heat 1 tbsp of the oil in a large skillet over medium heat. Add the sausages and cook for 8 to 10 minutes, turning now and then, until browned and cooked through. Transfer them to a plate.",
+  "Add the onion to the same skillet and cook for 2 minutes, until the edges start to brown. Transfer it to the plate with the sausages.",
+  "Add the last 1 tbsp oil, the shallot and the garlic to the skillet. Cook for 30 seconds, until it smells fragrant.",
+  "Add the tomato sauce, 1 tbsp fish sauce, 2 tsp sugar and 1/2 tsp of the pepper, plus 1/4 cup water. Bring it to a simmer and cook for 3 minutes, until it thickens a little.",
+  "Return the sausages and onion to the skillet. Spoon the pate in 4 dollops over the top.",
+  "Make 4 small gaps in the sauce and crack an egg into each one. Sprinkle the eggs with the last 1/2 tsp pepper. Cover the skillet and cook over medium-low heat for 3 to 5 minutes, until the whites are set and the yolks are still soft.",
+  "Meanwhile, warm the baguettes in the oven at 350°F for 5 minutes, then cut them into pieces. Slice the cucumbers and pick the cilantro leaves from about half the bunch.",
+  "Scatter the cilantro over the skillet. Put it on the table on a heatproof mat so everyone can eat from the pan.",
+  "Taste it. If it's flat, add a pinch of salt. Serve with the baguette and the cucumber, with the sriracha on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree that banh mi chao is eggs, pate and sausage cooked and served in one hot pan with a crusty baguette, with herbs and cucumber on the side. Helen's Recipes (the lead) builds a quick garlic, shallot and tomato sauce seasoned with fish sauce and sugar and pours it over the pan. VnExpress and Cup of Yum make the beefier bo ne style with a black pepper or soy sauce. This version leaves out the beef, ham and fried potatoes of the longer versions and keeps the heat of the chili at the table. None of the pages show a rating with 20 or more votes for this egg, pate and sausage version, so it is a fallback.",
+ "sources": [
+  {
+   "name": "Helen's Recipes",
+   "title": "Combo Breakfast Skillet (Banh Mi Chao)",
+   "url": "https://helenrecipes.com/recipe-combo-breakfast-skillet-banh-mi-chao",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "VnExpress International",
+   "title": "How to make Saigon-style bread with combo pan",
+   "url": "https://e.vnexpress.net/news/food-recipes/how-to-make-saigon-style-bread-with-combo-pan-4681898.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Cup of Yum",
+   "title": "Bo Ne / Banh Mi Chao (Vietnamese Steak & Eggs)",
+   "url": "https://cupofyum.com/recipes/bo-ne-banh-mi-chao-vietnamese-steak-eggs",
+   "rating": 5.0,
+   "rating_count": 15,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

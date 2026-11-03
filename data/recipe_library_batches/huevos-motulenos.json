@@ -1,0 +1,117 @@
+{
+ "dish_name": "Huevos Motulenos",
+ "cuisine": "Mexican",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Roma tomatoes",
+   "qty": "6",
+   "category": "produce"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Canned black beans",
+   "qty": "2 cans (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "1 cup",
+   "category": "frozen"
+  },
+  {
+   "item": "Corn tostadas",
+   "qty": "8",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Queso fresco",
+   "qty": "4 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Hot sauce",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 350°F. Put the tostadas on a baking sheet. You'll warm them just before serving.",
+  "Roughly chop the tomatoes and put them in a blender with the garlic and 1/2 cup water. Blend until smooth. Finely chop the onion.",
+  "Heat 1 tbsp of the oil in a medium pot over medium heat. Add half the onion and cook for 3 minutes, until soft.",
+  "Pour in the blended tomatoes and add 3/4 tsp salt. Simmer for 10 minutes, until it thickens and darkens.",
+  "Meanwhile, drain and rinse the beans. Heat 1 tbsp oil in a saucepan over medium heat. Add the rest of the onion and cook for 3 minutes, until soft.",
+  "Add the cumin and cook for 20 seconds. Add the beans, 1/2 tsp salt and 1/2 cup water. Mash them with a fork or a potato masher and cook for 5 minutes, until thick. That should be about 2 cups.",
+  "Stir the peas into the sauce and cook for 2 minutes. Put the tostadas in the oven for 5 minutes.",
+  "Heat 1 tbsp oil in a large non-stick skillet over medium heat. Crack in 4 eggs and cook for 2 to 3 minutes, until the whites are set and the yolks are still soft. Transfer them to a plate and repeat with the last 1 tbsp oil and 4 eggs.",
+  "Put 2 tostadas on each plate. Spread the beans on the tostadas and top each with a fried egg.",
+  "Spoon the sauce and peas over the eggs and crumble the queso fresco on top. Put the hot sauce on the table for anyone who wants heat.",
+  "Taste the sauce. If it's flat, add a pinch more salt."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree on crisp tortillas spread with black beans, topped with fried eggs, a cooked tomato sauce, peas and a crumble of cheese. The Wanderlust Kitchen (the lead) blends onion, tomato and garlic for the sauce, simmers it until thick, mashes the beans and finishes with cumin. Maricruz Avalos blends habanero into the sauce and adds ham, plantain and epazote, and WW's version uses tostadas and a short ingredient list. This version leaves out the habanero so the base is mild, with hot sauce at the table, and leaves out the ham and plantain. The lead has only 6 ratings, so this is a fallback.",
+ "sources": [
+  {
+   "name": "The Wanderlust Kitchen",
+   "title": "Huevos Motulenos",
+   "url": "https://thewanderlustkitchen.com/huevos-motulenos/",
+   "rating": 4.3,
+   "rating_count": 6,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Maricruz Avalos",
+   "title": "Authentic Huevos Motulenos Recipe",
+   "url": "https://www.maricruzavalos.com/huevos-motulenos-the-authentic-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Drizzle Me Skinny",
+   "title": "Huevos Motulenos",
+   "url": "https://drizzlemeskinny.com/huevos-motulenos",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,96 @@
+{
+ "dish_name": "Jumeokbap",
+ "cuisine": "Korean",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Short-grain rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Canned tuna",
+   "qty": "2 cans",
+   "category": "pantry"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Green onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Roasted seaweed snacks",
+   "qty": "4 packs",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a bowl of cold water, swirling it, until the water runs mostly clear. Drain it.",
+  "Put the rice in a medium pot with 1 3/4 cups water. Bring it to a boil over high heat, then cover, turn the heat to low and cook for 15 minutes. Leave the lid on.",
+  "Take the pot off the heat and leave it covered for 10 minutes. If you already have about 4 cups of cooked rice, skip steps 1 to 3 and warm the rice until it's steaming.",
+  "Meanwhile, drain the tuna well and transfer it to a large bowl. Flake it with a fork until there are no big chunks.",
+  "Thinly slice the green onions. Add them to the tuna with the 1/4 cup mayonnaise, 2 tsp sesame oil, 1 tbsp of the sesame seeds and 1 tsp salt. Mix well.",
+  "Add the warm rice to the bowl and stir until everything is evenly mixed. Let it cool for 5 minutes so you can handle it. That should be about 4 cups.",
+  "Crush the seaweed snacks into small flakes inside their packs, then pour them onto a plate. Add the last 1 tsp sesame seeds to the plate.",
+  "Wet your hands. Scoop about 2 tablespoons of the rice, roll it into a ball the size of a golf ball and press it firmly so it holds together. Roll it in the seaweed flakes. Repeat to make about 12 balls.",
+  "Serve with a little extra mayonnaise for dipping if you like. They keep for a few hours at room temperature, but the rice goes hard in the fridge, so eat them the same morning."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree on a short-grain rice base mixed with canned tuna, Japanese-style mayonnaise, sesame and seaweed, shaped into small balls with wet hands. Cup of Yum (the lead) mixes everything together and rolls the balls in seaweed flakes, and Take Two Eggs puts a spoonful of tuna filling inside a plain rice ball. This version follows the lead's mix-through method because it is quicker in the morning. No version has 20 or more ratings, so the lead is the best-read version of this dish (fallback). Ratings are the visible ones on the pages. Rice and tuna amounts are scaled up from the lead's 1 cup of rice to feed 4. The rice is cooked in step 2, so leftover rice makes this faster.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "Easy 10-min. Korean Rice Balls (Jumeokbap)",
+   "url": "https://cupofyum.com/recipes/easy-10-min-korean-rice-balls-jumeokbap",
+   "rating": 5.0,
+   "rating_count": 10,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Take Two Eggs",
+   "title": "Korean Rice Balls (Jumeokbap)",
+   "url": "https://takestwoeggs.com/korean-rice-balls/",
+   "rating": 4.5,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "The Subversive Table",
+   "title": "Easy Tuna Mayo Korean Rice Balls (Jumeok Bap)",
+   "url": "https://thesubversivetable.com/easy-korean-rice-balls-jumeok-bap-with-tuna/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
