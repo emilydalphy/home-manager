@@ -37,10 +37,14 @@ from . import recipe_library as _recipe_library
 
 
 _TURN_FIELDS = ("rounds", "input_tokens", "cache_read_tokens",
-                "cache_write_tokens", "output_tokens", "seconds")
+                "cache_write_tokens", "output_tokens", "seconds", "cache_write_1h_tokens")
 
+# cache_write_tokens is ALL cache writes; cache_write_1h_tokens is the part
+# of it written with the 1-hour TTL (priced at cache_write_1h). A caller or
+# row without the split is all 5-minute writes, which is what every write
+# was before 2026-11-03.
 _CALL_TOKEN_FIELDS = ("input_tokens", "cache_read_tokens",
-                      "cache_write_tokens", "output_tokens")
+                      "cache_write_tokens", "output_tokens", "cache_write_1h_tokens")
 # Server-tool requests, counted per call (research-first writing,
 # 2026-10-06). Web search bills $10 per 1,000 searches on top of tokens;
 # web fetch has no per-request fee (its pages are billed as input tokens).
@@ -49,13 +53,14 @@ WEB_SEARCH_DOLLARS_PER_REQUEST = 10.00 / 1000
 
 
 # US dollars per million tokens, per model, from Anthropic's list prices.
-# Cache reads bill at 0.1x the input rate and cache writes at 1.25x, which
-# is why those are spelled out rather than derived -- if the multipliers
+# Cache reads bill at 0.1x the input rate, 5-minute cache writes at 1.25x
+# and 1-hour cache writes at 2x (cache_write_1h -- chat's prefix since
+# 2026-11-03), which is why those are spelled out rather than derived -- if the multipliers
 # ever change, the change belongs in one visible table and not in
 # arithmetic buried in a function.
 _RATES_PER_MTOK = {
     "claude-sonnet-5": {
-        "input": 2.00, "cache_read": 0.20, "cache_write": 2.50, "output": 10.00,
+        "input": 2.00, "cache_read": 0.20, "cache_write": 2.50, "cache_write_1h": 4.00, "output": 10.00,
     },
     # The chat model (agent.CHAT_MODEL since 2026-10-25; before that the
     # chat-fallback model, agent.CHAT_FALLBACK_MODEL) -- keyed to the
@@ -68,7 +73,7 @@ _RATES_PER_MTOK = {
     # the moment a fallback call needs pricing, rather than silently
     # mis-billing it.
     "claude-haiku-4-5-20251001": {
-        "input": 1.00, "cache_read": 0.10, "cache_write": 1.25, "output": 5.00,
+        "input": 1.00, "cache_read": 0.10, "cache_write": 1.25, "cache_write_1h": 2.00, "output": 5.00,
     },
 }
 
@@ -110,15 +115,23 @@ def price_tokens(tokens: dict, model: str = _PRICED_MODEL) -> dict:
             f"No published token rate for {model!r}. Add it to "
             f"_RATES_PER_MTOK before pricing it."
         ) from None
-    costs = {
-        field: round(int(tokens.get(field, 0)) * rate / 1_000_000, 6)
-        for field, rate in rates.items()
+    # tokens["cache_write"] is every cache write; tokens["cache_write_1h"]
+    # the part of it at the 1-hour TTL. The rest is 5-minute writes -- all
+    # of it when the split is missing (rows from before it was recorded).
+    written = int(tokens.get("cache_write", 0) or 0)
+    written_1h = min(max(int(tokens.get("cache_write_1h", 0) or 0), 0), written)
+    raw = {
+        "input": int(tokens.get("input", 0) or 0) * rates["input"],
+        "cache_read": int(tokens.get("cache_read", 0) or 0) * rates["cache_read"],
+        # A rate row without its own 1h price: 2x input, the published rule.
+        "cache_write": ((written - written_1h) * rates["cache_write"]
+                        + written_1h * rates.get("cache_write_1h", 2 * rates["input"])),
+        "output": int(tokens.get("output", 0) or 0) * rates["output"],
     }
+    costs = {field: round(v / 1_000_000, 6) for field, v in raw.items()}
     # Summed from the unrounded parts, so the total doesn't drift from its
     # own components at the sixth decimal place.
-    costs["total"] = round(
-        sum(int(tokens.get(f, 0)) * r / 1_000_000 for f, r in rates.items()), 6
-    )
+    costs["total"] = round(sum(raw.values()) / 1_000_000, 6)
     costs["model"] = model
     return costs
 
@@ -220,8 +233,9 @@ def record_chat_turn(usage: dict | None = None) -> int | None:
             # Rows written before that column existed carry 0, and the
             # difference is the whole point -- see schema.sql.
             "INSERT INTO chat_turns (household_id, rounds, input_tokens, cache_read_tokens, "
-            "cache_write_tokens, output_tokens, seconds, tools_called_json, tools_recorded, model) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)",
+            "cache_write_tokens, output_tokens, seconds, cache_write_1h_tokens, "
+            "tools_called_json, tools_recorded, model) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)",
             (household_id(), *(values.get(f, 0) for f in _TURN_FIELDS),
              _tool_names_json(values.get("tools_called")),
              # The model the turn ran on, so its cost is priced at that
@@ -287,9 +301,9 @@ def record_api_call(call_site: str, model: str, usage: dict | None = None,
         conn = get_conn()
         conn.execute(
             "INSERT INTO api_calls (household_id, call_site, model, input_tokens, "
-            "cache_read_tokens, cache_write_tokens, output_tokens, seconds, "
+            "cache_read_tokens, cache_write_tokens, output_tokens, cache_write_1h_tokens, seconds, "
             "web_search_requests, web_fetch_requests) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (household_id(), str(call_site), str(model),
              *(int(values.get(f, 0) or 0) for f in _CALL_TOKEN_FIELDS), float(seconds),
              *(int(values.get(f, 0) or 0) for f in _CALL_TOOL_FIELDS)),
@@ -367,6 +381,7 @@ def _cost_breakdown(conn, hid: int, since_sql: str) -> dict:
         "COALESCE(SUM(input_tokens), 0) AS input_tokens, "
         "COALESCE(SUM(cache_read_tokens), 0) AS cache_read_tokens, "
         "COALESCE(SUM(cache_write_tokens), 0) AS cache_write_tokens, "
+        "COALESCE(SUM(cache_write_1h_tokens), 0) AS cache_write_1h_tokens, "
         "COALESCE(SUM(output_tokens), 0) AS output_tokens, "
         "COALESCE(SUM(seconds), 0) AS seconds, "
         "COALESCE(SUM(web_search_requests), 0) AS web_search_requests "
@@ -387,7 +402,8 @@ def _cost_breakdown(conn, hid: int, since_sql: str) -> dict:
             "input": r["input_tokens"], "cache_read": r["cache_read_tokens"],
             "cache_write": r["cache_write_tokens"], "output": r["output_tokens"],
         }
-        cost = price_tokens_soft(tokens, r["model"] or _PRICED_MODEL)
+        cost = price_tokens_soft({**tokens, "cache_write_1h": r["cache_write_1h_tokens"]},
+                                 r["model"] or _PRICED_MODEL)
         # Web searches are a fee per request, not tokens: folded into this
         # row's total so the month-to-date line is the real bill.
         searches = int(r["web_search_requests"] or 0)
@@ -446,7 +462,7 @@ def _plan_generation_stats(conn, hid: int, since_sql: str) -> dict:
     """
     rows = conn.execute(
         "SELECT model, seconds, input_tokens, cache_read_tokens, cache_write_tokens, "
-        "output_tokens FROM api_calls WHERE household_id = ? "
+        "cache_write_1h_tokens, output_tokens FROM api_calls WHERE household_id = ? "
         "AND call_site = 'generate_weekly_plan_llm' "
         f"AND created_at >= {since_sql}",
         (hid,),
@@ -460,6 +476,7 @@ def _plan_generation_stats(conn, hid: int, since_sql: str) -> dict:
         tokens = {
             "input": r["input_tokens"], "cache_read": r["cache_read_tokens"],
             "cache_write": r["cache_write_tokens"], "output": r["output_tokens"],
+            "cache_write_1h": r["cache_write_1h_tokens"],
         }
         cost = price_tokens_soft(tokens, r["model"] or _PRICED_MODEL)
         for k in total_cost:
@@ -673,7 +690,8 @@ def _chat_cost_by_model(conn, hid: int, since: str) -> dict:
     rows = conn.execute(
         "SELECT COALESCE(model, ?) AS model, "
         "COALESCE(SUM(input_tokens), 0) AS input, COALESCE(SUM(cache_read_tokens), 0) AS cache_read, "
-        "COALESCE(SUM(cache_write_tokens), 0) AS cache_write, COALESCE(SUM(output_tokens), 0) AS output "
+        "COALESCE(SUM(cache_write_tokens), 0) AS cache_write, COALESCE(SUM(output_tokens), 0) AS output, "
+        "COALESCE(SUM(cache_write_1h_tokens), 0) AS cache_write_1h "
         f"FROM chat_turns WHERE household_id = ? AND created_at >= datetime('now', '{since}') "
         "GROUP BY COALESCE(model, ?)",
         (_CHAT_LEGACY_MODEL, hid, _CHAT_LEGACY_MODEL),

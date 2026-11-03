@@ -478,6 +478,20 @@ def _server_tool_count(usage, field: str) -> int:
         return 0
 
 
+def _cache_write_1h(usage) -> int:
+    """The 1-hour-TTL part of a response's cache writes
+    (usage.cache_creation.ephemeral_1h_input_tokens), which bill at 2x
+    input against 1.25x for 5-minute writes. 0 when the response doesn't
+    break its writes down (an older or stubbed client) -- read as 5m."""
+    split = getattr(usage, "cache_creation", None)
+    value = split.get("ephemeral_1h_input_tokens") if isinstance(split, dict) \
+        else getattr(split, "ephemeral_1h_input_tokens", 0)
+    try:
+        return max(int(value or 0), 0)
+    except (TypeError, ValueError):
+        return 0
+
+
 def _record_api_call(label: str, model: str, response, seconds: float) -> None:
     """
     Turn one successful API response into the row tools.record_api_call
@@ -499,6 +513,7 @@ def _record_api_call(label: str, model: str, response, seconds: float) -> None:
                 "input_tokens": getattr(usage, "input_tokens", 0) or 0,
                 "cache_read_tokens": getattr(usage, "cache_read_input_tokens", 0) or 0,
                 "cache_write_tokens": getattr(usage, "cache_creation_input_tokens", 0) or 0,
+                "cache_write_1h_tokens": _cache_write_1h(usage),
                 "output_tokens": getattr(usage, "output_tokens", 0) or 0,
                 # Server-tool requests (web search is billed per request) —
                 # research-first writing, 2026-10-06.
@@ -1515,7 +1530,8 @@ instructions is still yours, loaded on demand: when you want one you can't see, 
 tool_search_tool_regex with its exact name (pattern "^swap_dinner_nights$"; several at once \
 "^(add_staple|list_staples)$"), or with a keyword such as "staple|pantry" when you don't know \
 the name, then call the tool it finds. A tool not being loaded yet is never a reason to tell \
-the household you can't do something.
+the household you can't do something. The chores tools exist only in a house with Chores \
+switched on; while chores_enabled is false, never search for or call them (the rule above).
 """
 
 TOOL_DEFINITIONS = [
@@ -11077,6 +11093,56 @@ def _chat_wire_tools(catalogue: list[dict]) -> list[dict]:
     return wire
 
 
+def _is_user_boundary(message) -> bool:
+    """A real typed user turn (see trim_conversation's note)."""
+    return message.get("role") == "user" and isinstance(message.get("content"), str)
+
+
+def _orphan_deferred_uses(history: list, deferred: set) -> set:
+    """Names of deferred tools that an assistant tool_use in `history`
+    calls although no tool_search result in `history` loaded them. The API
+    is only documented to accept a deferred tool once a search result in
+    the conversation has named it; history from before 2026-11-03 (every
+    tool loaded) and history whose searching turn trim_conversation cut
+    break that."""
+    loaded: set = set()
+    used: set = set()
+    for message in history:
+        content = message.get("content") if isinstance(message, dict) else None
+        if message.get("role") != "assistant" or not isinstance(content, list):
+            continue
+        for block in content:
+            kind = _block_get(block, "type")
+            if kind == "tool_use":
+                used.add(_block_get(block, "name"))
+            elif kind == "tool_search_tool_result":
+                result = _block_get(block, "content")
+                for ref in (_block_get(result, "tool_references") or []) if result is not None else []:
+                    name = _block_get(ref, "tool_name")
+                    if name:
+                        loaded.add(name)
+    return {n for n in used if n in deferred and n not in loaded}
+
+
+def history_safe_for_deferred_tools(history: list, wire_tools: list[dict]) -> list:
+    """
+    `history` cut at the earliest real-user boundary from which no kept
+    tool_use calls a deferred tool its own kept search didn't load — the
+    whole history when nothing does (the usual case), [] (a fresh sitting)
+    when no boundary does. Cutting only ever happens at a typed user turn,
+    so a tool_use is never parted from its tool_result.
+    """
+    deferred = {d["name"] for d in wire_tools if d.get("defer_loading")}
+    if not _orphan_deferred_uses(history, deferred):
+        return history
+    for start, message in enumerate(history):
+        if start and _is_user_boundary(message) and not _orphan_deferred_uses(history[start:], deferred):
+            logger.info("Chat history cut at message %d: an earlier turn called a tool no kept search loaded", start)
+            return history[start:]
+    logger.info("Chat history dropped: every kept turn calls a tool no kept search loaded")
+    return []
+
+
 def _chat_prefix_system_block() -> dict:
     """The first system block of every chat request and of its warm-up —
     the one carrying the prefix's (1-hour) cache breakpoint."""
@@ -12624,6 +12690,15 @@ _CHAT_CACHE_WARM_AT: dict[int, float] = {}
 _CHAT_CACHE_WARM_LOCK = threading.Lock()
 
 
+def _answered_by_fallback(response) -> bool:
+    """True when the overload fallback (CHAT_FALLBACK_MODEL), not
+    CHAT_MODEL, answered this round. A response that doesn't name its model
+    (a stub) counts as CHAT_MODEL, as usage pricing reads it below."""
+    answered = getattr(response, "model", None)
+    return (isinstance(answered, str) and bool(answered)
+            and answered.startswith(CHAT_FALLBACK_MODEL) and not answered.startswith(CHAT_MODEL))
+
+
 def _stamp_chat_cache_warm() -> None:
     with _CHAT_CACHE_WARM_LOCK:
         _CHAT_CACHE_WARM_AT[tools.household_id()] = time.monotonic()
@@ -12786,7 +12861,7 @@ def run_agent_turn(
     # than accumulated across turns so a caller always reads the turn it
     # just ran, never a stale one from an earlier request.
     usage = {"rounds": 0, "input_tokens": 0, "cache_read_tokens": 0,
-             "cache_write_tokens": 0, "output_tokens": 0, "seconds": 0.0,
+             "cache_write_tokens": 0, "cache_write_1h_tokens": 0, "output_tokens": 0, "seconds": 0.0,
              # Tool NAMES, in call order, duplicates kept -- what this turn
              # was actually FOR. See schema.sql on chat_turns. It is a list
              # among counters, which record_chat_turn handles separately;
@@ -12864,9 +12939,13 @@ def run_agent_turn(
             raise
         round_seconds = time.perf_counter() - round_started
         api_seconds += round_seconds
-        # A real round reads (or writes) the same prefix the warm-up does,
-        # which restarts its five-minute clock — so no warm-up is due for a while.
-        _stamp_chat_cache_warm()
+        # A real round on CHAT_MODEL reads (or writes) the same prefix the
+        # warm-up does, which restarts its clock — so no warm-up is due for a
+        # while. A round the overload fallback answered touched the
+        # FALLBACK's cache, not the one the warm-up writes (caches are per
+        # model), so it must not hold the next warm-up off.
+        if not _answered_by_fallback(response):
+            _stamp_chat_cache_warm()
 
         # The model is on the line so a before/after of CHAT_MODEL (and a
         # round the overload fallback answered) can be told apart in the logs.
@@ -12881,6 +12960,7 @@ def run_agent_turn(
         usage["input_tokens"] += response.usage.input_tokens
         usage["cache_read_tokens"] += response.usage.cache_read_input_tokens
         usage["cache_write_tokens"] += response.usage.cache_creation_input_tokens
+        usage["cache_write_1h_tokens"] += _cache_write_1h(response.usage)
         usage["output_tokens"] += response.usage.output_tokens
         # Recorded as the id this app ASKED for (the rate table's key), with
         # the response's own model only telling chat from its fallback.

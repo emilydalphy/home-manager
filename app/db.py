@@ -439,6 +439,10 @@ _MIGRATIONS = [
     ("recipes", "from_draft", "INTEGER NOT NULL DEFAULT 0"),
     ("api_calls", "web_search_requests", "INTEGER NOT NULL DEFAULT 0"),
     ("api_calls", "web_fetch_requests", "INTEGER NOT NULL DEFAULT 0"),
+    # 1-hour-TTL share of cache_write_tokens (cheaper chat, 2026-11-03):
+    # 2x input against 1.25x for 5-minute writes. Old rows read 0 = all 5m.
+    ("api_calls", "cache_write_1h_tokens", "INTEGER NOT NULL DEFAULT 0"),
+    ("chat_turns", "cache_write_1h_tokens", "INTEGER NOT NULL DEFAULT 0"),
     ("meal_preferences", "table_style", "TEXT NOT NULL DEFAULT ''"),
     ("meal_preferences", "typical_week", "TEXT NOT NULL DEFAULT ''"),
     ("meal_preferences", "next_week_notes", "TEXT NOT NULL DEFAULT ''"),

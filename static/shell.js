@@ -30162,11 +30162,15 @@
   // Opening the chat asks the server to warm nothing (2026-11-03): an open
   // nobody typed into paid a whole briefing write for nothing — 8 of one
   // week's chat calls were warm-ups at ~41K tokens each. Starting to type
-  // (askInput's input listener) asks the server to warm the prompt cache
-  // so the first message's reply starts sooner. Fire and forget:
-  // no answer is needed, a failure changes nothing, and the server skips
-  // it while the last one is still fresh (this only spares the round trip).
-  var ASK_WARM_MIN_GAP_MS = 120000;
+  // (askInput's input listener) or dictation asks the server to warm the
+  // prompt cache so the first message's reply starts sooner. Fire and
+  // forget: no answer is needed and a failure changes nothing. Once per
+  // sitting: the prepared briefing lasts an hour and every message sent
+  // keeps it warm (sendAskMessage stamps askLastWarmAt), so the gap matches
+  // the server's 50-minute freshness (agent._CHAT_WARM_FRESH_SECONDS) —
+  // never a POST per keystroke. A chip that sends straight away isn't
+  // warmed: the send itself prepares the briefing at the same moment.
+  var ASK_WARM_MIN_GAP_MS = 50 * 60 * 1000;
   var askLastWarmAt = 0;
   function warmAskCache() {
     var now = Date.now();
@@ -30180,6 +30184,9 @@
 
   async function sendAskMessage(message) {
     if (!message || askSending) return;
+    // This message's own first round prepares (or reads) the briefing, so
+    // no warm-up is due for the rest of the sitting.
+    askLastWarmAt = Date.now();
     ensureAskSheetBuilt();
     addAskMessage('user', message);
     if (!askConversationStarted) {
@@ -30587,6 +30594,9 @@
         }
         dictationBaseValue = input.value.trim();
         recognizing = true;
+        // Speaking a message is starting one: prepare the briefing now
+        // (dictation sets .value directly, so the input listener never fires).
+        if (input === askInput) warmAskCache();
         micBtn.classList.add('active');
         input.placeholder = 'Listening... tap the mic again to stop';
         try {

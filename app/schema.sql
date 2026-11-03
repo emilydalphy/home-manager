@@ -1941,6 +1941,10 @@ CREATE TABLE IF NOT EXISTS chat_turns (
     cache_write_tokens INTEGER NOT NULL DEFAULT 0,
     output_tokens INTEGER NOT NULL DEFAULT 0,
     seconds REAL NOT NULL DEFAULT 0,
+    -- The part of cache_write_tokens written with the 1-hour TTL (billed
+    -- 2x input, against 1.25x for 5-minute writes). 0 on rows from before
+    -- 2026-11-03, which were all 5-minute writes.
+    cache_write_1h_tokens INTEGER NOT NULL DEFAULT 0,
     -- WHICH TOOLS this turn called, in the order it called them, as a JSON
     -- list of names: ["swap_meal_in_plan", "add_grocery_item"]. Names only.
     -- Nothing the person wrote goes in here, which is the same rule the
@@ -2133,6 +2137,9 @@ CREATE TABLE IF NOT EXISTS api_calls (
     -- are counted so the per-dish budget is visible.
     web_search_requests INTEGER NOT NULL DEFAULT 0,
     web_fetch_requests INTEGER NOT NULL DEFAULT 0,
+    -- The part of cache_write_tokens written with the 1-hour TTL (2x
+    -- input; 5-minute writes are 1.25x). 0 on rows before 2026-11-03.
+    cache_write_1h_tokens INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_api_calls_household_created

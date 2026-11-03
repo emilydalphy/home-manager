@@ -510,7 +510,13 @@ def _chat_session_state(request) -> tuple[str, list, bool]:
     session_id = _chat_session_id(request)
     stored, touched = _load_chat_session(session_id)
     is_new_sitting = time.time() - touched > _NEW_SITTING_GAP
-    history = [] if is_new_sitting else stored
+    # Kept history must not replay a call to a deferred tool that no kept
+    # tool search loaded (cheaper chat, 2026-11-03): a sitting stored
+    # before the deploy, or one whose searching turn trim_conversation cut.
+    # Such a history is cut at the first clean turn (or dropped) — the API
+    # is only documented to accept a deferred tool once a search named it.
+    history = [] if is_new_sitting else agent.history_safe_for_deferred_tools(
+        stored, agent.tools_for_request())
     return session_id, history, is_new_sitting
 
 

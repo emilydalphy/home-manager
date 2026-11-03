@@ -338,3 +338,264 @@ def test_a_searched_turn_goes_through_the_stream_route_is_stored_and_resent(sign
     blocks = [b for m in third if isinstance(m["content"], list) for b in m["content"]]
     kinds = [b["type"] if isinstance(b, dict) else b.type for b in blocks]
     assert "server_tool_use" in kinds and "tool_search_tool_result" in kinds
+
+
+# ==========================================================================
+# Review fixes (2026-11-03)
+# ==========================================================================
+
+# --- 1. 1-hour cache writes are priced at 2x, 5-minute at 1.25x ----------
+
+def test_price_tokens_splits_one_hour_writes_from_five_minute_ones():
+    from app.tools import usage as usage_module
+    haiku = agent.CHAT_MODEL
+    mixed = usage_module.price_tokens({"cache_write": 1_000_000, "cache_write_1h": 400_000}, haiku)
+    assert mixed["cache_write"] == pytest.approx(0.6 * 1.25 + 0.4 * 2.00)
+    assert mixed["total"] == pytest.approx(1.55)
+    # No split (every row before 2026-11-03): all five-minute writes, as before.
+    old = usage_module.price_tokens({"cache_write": 1_000_000}, haiku)
+    assert old["cache_write"] == pytest.approx(1.25)
+    sonnet = usage_module.price_tokens({"cache_write": 1_000_000, "cache_write_1h": 1_000_000}, "claude-sonnet-5")
+    assert sonnet["cache_write"] == pytest.approx(4.00)
+    assert set(mixed) == {"input", "cache_read", "cache_write", "output", "total", "model"}
+
+
+def _usage_with_split(write_5m, write_1h, model=None):
+    return types.SimpleNamespace(
+        input_tokens=0, cache_read_input_tokens=0, output_tokens=0,
+        cache_creation_input_tokens=write_5m + write_1h,
+        cache_creation=types.SimpleNamespace(ephemeral_5m_input_tokens=write_5m,
+                                             ephemeral_1h_input_tokens=write_1h),
+    )
+
+
+def test_an_api_call_records_its_one_hour_writes_and_the_month_prices_them():
+    from app.db import get_conn
+    response = types.SimpleNamespace(usage=_usage_with_split(100_000, 900_000))
+    agent._record_api_call("run_agent_turn", agent.CHAT_MODEL, response, 1.0)
+    conn = get_conn()
+    try:
+        row = conn.execute("SELECT cache_write_tokens, cache_write_1h_tokens FROM api_calls "
+                           "ORDER BY id DESC LIMIT 1").fetchone()
+    finally:
+        conn.close()
+    assert (row["cache_write_tokens"], row["cache_write_1h_tokens"]) == (1_000_000, 900_000)
+    month = tools.get_month_to_date_cost()
+    assert month["by_call_site"]["run_agent_turn"]["cost"]["cache_write"] == pytest.approx(0.1 * 1.25 + 0.9 * 2.0)
+
+
+def test_a_chat_turn_records_its_one_hour_writes_and_chat_cost_prices_them(monkeypatch):
+    from app.db import get_conn
+    from app.tools import usage as usage_module
+    response = types.SimpleNamespace(
+        content=[types.SimpleNamespace(type="text", text="Hi.")], stop_reason="end_turn",
+        usage=_usage_with_split(0, 20_000), model=agent.CHAT_MODEL,
+    )
+    _stub_client(monkeypatch, [response])
+    agent.run_agent_turn([], "hello")
+    turn = agent.LAST_TURN_USAGE.get()
+    assert turn["cache_write_1h_tokens"] == 20_000 and turn["cache_write_tokens"] == 20_000
+    tools.record_chat_turn(turn)
+    conn = get_conn()
+    try:
+        cost = usage_module._chat_cost_by_model(conn, tools.household_id(), "-7 days")
+    finally:
+        conn.close()
+    assert cost["cache_write"] == pytest.approx(20_000 * 2.00 / 1_000_000)
+
+
+def test_an_old_database_gains_the_column_and_its_rows_price_as_five_minute(tmp_path, monkeypatch):
+    import sqlite3
+    from app import db
+    path = tmp_path / "old.db"
+    conn = sqlite3.connect(path)
+    conn.execute("CREATE TABLE api_calls (id INTEGER PRIMARY KEY, household_id INTEGER, call_site TEXT, "
+                 "model TEXT NOT NULL DEFAULT '', input_tokens INTEGER NOT NULL DEFAULT 0, "
+                 "cache_read_tokens INTEGER NOT NULL DEFAULT 0, cache_write_tokens INTEGER NOT NULL DEFAULT 0, "
+                 "output_tokens INTEGER NOT NULL DEFAULT 0, seconds REAL NOT NULL DEFAULT 0)")
+    conn.execute("INSERT INTO api_calls (household_id, call_site, model, cache_write_tokens) "
+                 "VALUES (1, 'run_agent_turn', ?, 1000)", (agent.CHAT_MODEL,))
+    conn.commit()
+    names = {r[1] for r in conn.execute("PRAGMA table_info(api_calls)")}
+    assert "cache_write_1h_tokens" not in names
+    conn.close()
+    assert ("api_calls", "cache_write_1h_tokens", "INTEGER NOT NULL DEFAULT 0") in db._MIGRATIONS
+    assert ("chat_turns", "cache_write_1h_tokens", "INTEGER NOT NULL DEFAULT 0") in db._MIGRATIONS
+    conn = sqlite3.connect(path)
+    for table, column, decl in db._MIGRATIONS:
+        if column == "cache_write_1h_tokens" and table == "api_calls":
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {decl}")
+    assert conn.execute("SELECT cache_write_1h_tokens FROM api_calls").fetchone()[0] == 0
+    conn.close()
+
+
+# --- 2. stored history never replays an unloaded deferred tool -----------
+
+def _turn(user, name, block_id, search=False):
+    """One stored turn: the person's words, an assistant call to `name`
+    (after a search that loaded it when `search`), its result, a reply."""
+    content = []
+    if search:
+        content += [
+            {"type": "server_tool_use", "id": f"srv_{block_id}", "name": "tool_search_tool_regex",
+             "input": {"pattern": f"^{name}$"}},
+            {"type": "tool_search_tool_result", "tool_use_id": f"srv_{block_id}",
+             "content": {"type": "tool_search_tool_search_result",
+                         "tool_references": [{"type": "tool_reference", "tool_name": name}]}},
+        ]
+    content.append({"type": "tool_use", "id": block_id, "name": name, "input": {}})
+    return [
+        {"role": "user", "content": user},
+        {"role": "assistant", "content": content},
+        {"role": "user", "content": [{"type": "tool_result", "tool_use_id": block_id, "content": "{}"}]},
+        {"role": "assistant", "content": [{"type": "text", "text": "Done."}]},
+    ]
+
+
+def test_history_with_only_loaded_or_searched_tools_is_kept_whole():
+    wire = agent.tools_for_request()
+    history = _turn("what's on?", "get_weekly_plan", "t1") + _turn("staples?", "list_staples", "t2", search=True)
+    assert agent.history_safe_for_deferred_tools(history, wire) is history
+
+
+def test_a_pre_deploy_history_is_cut_at_the_first_clean_turn():
+    """Stored before the deploy: list_staples was called with every tool
+    loaded, so no search in the history names it. That turn goes; the clean
+    turn after it stays."""
+    wire = agent.tools_for_request()
+    old = _turn("staples?", "list_staples", "t1")
+    clean = _turn("what's on?", "get_weekly_plan", "t2")
+    assert agent.history_safe_for_deferred_tools(old + clean, wire) == clean
+    assert agent.history_safe_for_deferred_tools(clean + old, wire) == []
+
+
+def test_a_trim_that_cuts_the_searching_turn_drops_the_later_use_too():
+    """Turn 1 searched for list_staples; turn 2 reused it without searching
+    again (allowed — the API expands the earlier result). Trimming turn 1
+    away orphans turn 2, so both go."""
+    wire = agent.tools_for_request()
+    first = _turn("staples?", "list_staples", "t1", search=True)
+    reuse = _turn("and again?", "list_staples", "t2")
+    last = _turn("what's on?", "get_weekly_plan", "t3")
+    whole = first + reuse + last
+    assert agent.history_safe_for_deferred_tools(whole, wire) is whole
+    trimmed = agent.trim_conversation(whole, max_turns=2)
+    assert trimmed == reuse + last
+    assert agent.history_safe_for_deferred_tools(trimmed, wire) == last
+
+
+def test_the_route_does_not_send_a_stored_unloaded_deferred_call(signed_in, monkeypatch):
+    """Over /api/chat/stream: turn one calls a deferred tool with no search
+    (what a pre-deploy history looks like); turn two's request leaves that
+    turn out instead of replaying it."""
+    monkeypatch.setitem(agent.TOOL_FUNCTIONS, "list_staples", lambda **kw: {"staples": []})
+    direct = _sdk_message([{"type": "tool_use", "id": "toolu_1", "name": "list_staples", "input": {}}], "tool_use")
+    fake = _stub_client(monkeypatch, [
+        direct,
+        _sdk_message([{"type": "text", "text": "None yet."}], "end_turn"),
+        _sdk_message([{"type": "text", "text": "Of course."}], "end_turn"),
+    ])
+    for message in ("staples?", "thanks"):
+        with signed_in.stream("POST", "/api/chat/stream", json={"message": message}) as response:
+            assert response.status_code == 200
+            list(response.iter_lines())
+    sent = fake.requests[2]["messages"]
+    # The request list is the turn's own and grows after the call; what was sent starts here.
+    assert sent[0] == {"role": "user", "content": "thanks"}
+    assert not any(isinstance(m["content"], list) and any(getattr(b, "name", None) == "list_staples" or (isinstance(b, dict) and b.get("name") == "list_staples") for b in m["content"]) for m in sent)
+
+
+# --- 3. the client warms once a sitting ----------------------------------
+
+@_needs_node
+def test_the_client_warms_once_a_sitting_not_on_every_pause():
+    listener_at = SHELL_JS.index("  askInput.addEventListener('input', function () {")
+    listener = SHELL_JS[listener_at:SHELL_JS.index("  });", listener_at) + len("  });")]
+    script = """
+var calls = [];
+var now = 1e12;
+Date.now = function () { return now; };
+var Api = { fetch: function (path) { calls.push(path); return Promise.resolve({}); } };
+var navigator = { onLine: true };
+var handlers = {};
+var askInput = { value: '', addEventListener: function (ev, fn) { handlers[ev] = fn; } };
+var askDraftIsPreset = false;
+function autoGrowAskInput() {}
+""" + SHELL_JS[SHELL_JS.index("  var ASK_WARM_MIN_GAP_MS"):SHELL_JS.index("  var askLastWarmAt = 0;")] + """
+var askLastWarmAt = 0;
+""" + _function_source("warmAskCache") + "\n" + listener + """
+var log = [];
+askInput.value = 'w'; handlers.input(); log.push(calls.length);
+now += 3 * 60 * 1000; askInput.value = 'we'; handlers.input(); log.push(calls.length);   // a pause: no second warm
+now += 30 * 60 * 1000; askInput.value = 'wed'; handlers.input(); log.push(calls.length);  // still inside the hour
+now += 25 * 60 * 1000; askInput.value = 'wedn'; handlers.input(); log.push(calls.length); // 58 min: due again
+console.log(JSON.stringify(log));
+"""
+    res = nodeharness.run_node(script, timeout=30)
+    assert res.returncode == 0, res.stderr
+    assert json.loads(res.stdout.strip()) == [1, 1, 1, 2]
+
+
+def test_sending_a_message_counts_as_the_warm_up():
+    a = SHELL_JS.index("  async function sendAskMessage(")
+    body = SHELL_JS[a:SHELL_JS.index("ensureAskSheetBuilt()", a)]
+    assert "askLastWarmAt = Date.now();" in body.split("ensureAskSheetBuilt()")[0]
+
+
+@_needs_node
+def test_starting_dictation_warms_the_chat():
+    script = """
+var warmed = 0;
+function warmAskCache() { warmed += 1; }
+function autoGrowAskInput() {}
+function showToast() {}
+function SpeechRecognitionCtor() { this.start = function () {}; this.stop = function () {}; }
+var askInput = { value: '', placeholder: 'Ask', focus: function () {} };
+var clicks = [];
+var micBtn = { dataset: {}, classList: { add: function () {}, remove: function () {} },
+               addEventListener: function (ev, fn) { clicks.push(fn); } };
+""" + _function_source("setupDictation") + """
+setupDictation(askInput, micBtn);
+clicks[0]();
+var other = { value: '', placeholder: '', focus: function () {} };
+var otherBtn = { dataset: {}, classList: { add: function () {}, remove: function () {} },
+                 addEventListener: function (ev, fn) { clicks.push(fn); } };
+setupDictation(other, otherBtn);
+clicks[1]();
+console.log(JSON.stringify(warmed));
+"""
+    res = nodeharness.run_node(script, timeout=30)
+    assert res.returncode == 0, res.stderr
+    assert json.loads(res.stdout.strip()) == 1
+
+
+# --- 4. a fallback round doesn't hold the chat model's warm-up off -------
+
+def test_a_round_the_fallback_answered_leaves_the_warm_up_due(monkeypatch):
+    agent._CHAT_CACHE_WARM_AT.clear()
+    try:
+        answered = types.SimpleNamespace(
+            content=[types.SimpleNamespace(type="text", text="Hi.")], stop_reason="end_turn",
+            usage=_Usage(), model=agent.CHAT_FALLBACK_MODEL,
+        )
+        _stub_client(monkeypatch, [answered])
+        agent.run_agent_turn([], "hello")
+        assert agent.claim_chat_warmup() is True
+        agent._CHAT_CACHE_WARM_AT.clear()
+        own = types.SimpleNamespace(
+            content=[types.SimpleNamespace(type="text", text="Hi.")], stop_reason="end_turn",
+            usage=_Usage(), model=agent.CHAT_MODEL,
+        )
+        _stub_client(monkeypatch, [own])
+        agent.run_agent_turn([], "hello")
+        assert agent.claim_chat_warmup() is False
+    finally:
+        agent._CHAT_CACHE_WARM_AT.clear()
+
+
+# --- 5. the prompt doesn't send a chores-off house looking for chores ----
+
+def test_finding_a_tool_keeps_chores_out_while_they_are_off():
+    note = agent.SYSTEM_PROMPT[agent.SYSTEM_PROMPT.index("FINDING A TOOL"):]
+    assert "chores tools exist only in a house with Chores switched on" in note
+    assert "never search for or call them" in note
