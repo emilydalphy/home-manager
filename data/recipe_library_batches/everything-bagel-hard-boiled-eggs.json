@@ -1,0 +1,57 @@
+{
+ "dish_name": "Everything Bagel Hard-Boiled Eggs",
+ "cuisine": "American",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "6",
+   "category": "dairy"
+  },
+  {
+   "item": "Everything bagel seasoning",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "On Sunday, or up to 5 days ahead: Put the 6 eggs in a single layer in a medium pot and cover them with cold water by about 1 inch.",
+  "Set the pot over medium-high heat and bring it to a rolling boil. Put the lid on, take the pot off the heat, and set a timer for 10 minutes.",
+  "Meanwhile, fill a large bowl with ice and cold water.",
+  "When the timer goes, transfer the eggs to the ice water with a slotted spoon. Leave them for 5 minutes.",
+  "Dry the eggs and keep them in their shells in a covered container in the fridge. They keep for up to 5 days.",
+  "When you want one, peel it and halve it. Put the halves cut side up on a plate.",
+  "Drizzle with a little of the olive oil and sprinkle on some of the everything bagel seasoning. Repeat with as many eggs as you're eating.",
+  "Serve cold, straight from the fridge."
+ ],
+ "advance_prep_notes": "boil the eggs on Sunday, up to 5 days ahead",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5
+ ],
+ "method_notes": "Lindywell (the lead, 5.0 from 1 vote, visible rating, so it is a fallback) halves the eggs and tops them with everything bagel seasoning and a drizzle of olive oil. Its eggs boil for 6 to 7 minutes; this uses the common covered, off the heat method with a 10 minute sit (the one deviled egg recipes from Tasting Table and others use, not a source here) so the yolks are fully set and keep well for the week. The eggs are seasoned the day they're eaten.",
+ "sources": [
+  {
+   "name": "Lindywell",
+   "title": "Everything Bagel Boiled Eggs",
+   "url": "https://lindywell.com/recipe/everything-bagel-boiled-eggs/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,74 @@
+{
+ "dish_name": "Caprese Skewers",
+ "cuisine": "Italian",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Cherry tomatoes",
+   "qty": "1 pint",
+   "category": "produce"
+  },
+  {
+   "item": "Pearl mozzarella balls",
+   "qty": "1 container (8 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Fresh basil",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Balsamic glaze",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sea salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cocktail skewers",
+   "qty": "1 pack",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Drain the mozzarella balls and pat them dry. Pick off 12 basil leaves.",
+  "Thread a cherry tomato onto a skewer, then a mozzarella ball.",
+  "Fold a basil leaf in half and thread it on. Add a second mozzarella ball and finish with another cherry tomato.",
+  "Repeat to make 12 skewers, and lay them in a single layer on a platter.",
+  "Drizzle the 2 tbsp balsamic glaze over the skewers and sprinkle with the 1/4 tsp salt.",
+  "Serve right away. To make them ahead, keep the skewers in the fridge for up to 4 hours and add the glaze and salt just before serving."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Sweet Phi (the lead, 5.0 from 3 votes, visible rating, so no version has 20 ratings) threads tomato, mozzarella ball, folded basil, mozzarella ball and tomato onto a skewer, then drizzles balsamic reduction and salt. The Kitchen Magpie (no ratings) uses one tomato, one bocconcini and one basil leaf per toothpick and cooks its own reduction. This uses store-bought glaze to keep the effort small and makes 12 skewers for four.",
+ "sources": [
+  {
+   "name": "Sweet Phi",
+   "title": "Caprese Skewers",
+   "url": "https://sweetphi.com/caprese-skewers-recipe/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Kitchen Magpie",
+   "title": "Caprese Skewers with Balsamic Drizzle",
+   "url": "https://www.thekitchenmagpie.com/caprese-skewers-with-balsamic-drizzle/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

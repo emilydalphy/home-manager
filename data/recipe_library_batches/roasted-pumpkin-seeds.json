@@ -1,0 +1,84 @@
+{
+ "dish_name": "Roasted Pumpkin Seeds",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Raw pumpkin seeds",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Onion powder",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 350°F and line a baking sheet with parchment paper.",
+  "Rinse the 1 cup pumpkin seeds in a colander, rubbing off any pulp. Pat them dry.",
+  "Bring 1 1/4 cups water and 1/4 tsp of the salt to a boil in a small pot. Add the seeds and simmer for 5 minutes.",
+  "Drain the seeds. Spread them on a clean towel or paper towels and dry them well.",
+  "Transfer the seeds to a bowl and toss with the olive oil, the remaining 1/4 tsp salt, the garlic powder, the paprika and the onion powder.",
+  "Spread the seeds in a single layer on the baking sheet.",
+  "Roast for 15 to 20 minutes, stirring once or twice, until they're golden and crunchy. Take them out before they turn dark brown.",
+  "Let them cool completely on the pan. They'll crisp up as they cool. Store them in an airtight container for up to 2 weeks."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version has a rating with 20 or more votes, so the lead is Baked Bree, which has no ratings yet but gives full amounts and a clear method. Baked Bree and Whole Foods both boil the seeds first (5 and 10 minutes) and the NC State Extension version skips the boil; all roast with oil and a simple seasoning. This follows Baked Bree's 350°F oven and 5 minute simmer, scaled down from 1 2/3 cups of seeds to 1 cup, and keeps the seasoning mild.",
+ "sources": [
+  {
+   "name": "Baked Bree",
+   "title": "Roasted Pumpkin Seeds",
+   "url": "https://bakedbree.com/roasted-pumpkin-seeds-recipe",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Whole Foods Market",
+   "title": "Roasted Pumpkin Seeds",
+   "url": "https://www.wholefoodsmarket.com/recipes/roasted-pumpkin-seeds",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "NC State Extension, Buncombe County",
+   "title": "Roasted Pumpkin Seeds",
+   "url": "https://buncombe.ces.ncsu.edu/2024/09/roasted-pumpkin-seeds-recipe",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
