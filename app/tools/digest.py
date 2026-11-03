@@ -531,6 +531,55 @@ def _starts_tomorrow_if_past_today(conn, member_id: int) -> None:
     )
 
 
+# The morning_text_sends status for "a save moved today's morning time to
+# before now, so today counts as done". See hold_today_if_the_save_made_it_due.
+MOVED_PAST_NOW = "skipped-time-moved-past"
+
+
+def morning_clock_state(conn) -> tuple[str, bool]:
+    """(the household's local date, whether today's morning text is already
+    due) on the clock as `conn` sees it -- read before a save that may move
+    the hour or the zone, and handed to hold_today_if_the_save_made_it_due."""
+    hh = _household_row(conn)
+    local_now = _switched_on_at(conn)
+    hour, minute = (int(x) for x in hh["time"].split(":"))
+    due_at = local_now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+    return local_now.date().isoformat(), local_now >= due_at
+
+
+def hold_today_if_the_save_made_it_due(conn, before: tuple[str, bool]) -> None:
+    """
+    A save moved the morning time (or the household's zone) so that today's
+    text, not yet due before it, is due now: the next text is tomorrow's,
+    for everyone who gets it.
+
+    The switch-on rule (_starts_tomorrow_if_past_today, Emily 2026-10-31)
+    through the other door: with the text on for 10:00, moving it to 8:00
+    at 9:00 had the pass's eight-hour catch-up send today's text within
+    five minutes, to every adult who gets it, under a sheet that had just
+    said "Saved. Next one's at 8:00." (defect hunt, 2026-11-03). The
+    catch-up stays for what it is for -- a morning that was ALREADY due
+    (the app was down at seven): a save on a day whose text was already
+    due changes nothing here. A zone change onto another date counts as
+    not due before, since nothing was owed on that date yet.
+    """
+    sent_on, due_now = morning_clock_state(conn)
+    if not due_now:
+        return
+    before_date, due_before = before
+    if due_before and before_date == sent_on:
+        return
+    hh = _household_row(conn)
+    for r in _adult_rows(conn):
+        if not (_texts_on(r) or _push_ready(r["id"])):
+            continue
+        conn.execute(
+            "INSERT OR IGNORE INTO morning_text_sends (household_id, member_id, sent_on, status, detail) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (household_id(), r["id"], sent_on, MOVED_PAST_NOW, f"moved to {hh['time']} after it"),
+        )
+
+
 def set_morning_text_for_member(
     member_id: int,
     phone: str | None = None,
@@ -560,6 +609,9 @@ def set_morning_text_for_member(
     with write() as conn:
         if not any(r["id"] == member_id for r in _adult_rows(conn)):
             raise ValueError("I don't have that person down as an adult here.")
+        # Today's morning as it stood before this save -- see
+        # hold_today_if_the_save_made_it_due, after the writes below.
+        clock_before = morning_clock_state(conn)
         new_phone = normalise_phone(phone) if phone is not None else None
         if new_phone is not None:
             conn.execute(
@@ -604,6 +656,8 @@ def set_morning_text_for_member(
             conn.execute("UPDATE households SET timezone = ?, timezone_set = 1 WHERE id = ?", (zone, household_id()))
         if on is not None and starts_check:
             _starts_tomorrow_if_past_today(conn, member_id)
+        if time is not None or timezone is not None:
+            hold_today_if_the_save_made_it_due(conn, clock_before)
         if parts is not None or add_parts is not None or drop_parts is not None:
             # Composed off what is STORED rather than off the defaults, so a
             # delta on a household that has never answered adds to the three
