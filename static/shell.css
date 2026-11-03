@@ -12801,3 +12801,52 @@ button.day-meal { flex-direction: row; align-items: center; gap: 10px; cursor: p
 .day-shoptoday-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 /* The row's sheet: its one action, full width. */
 .quiet-act { width: 100%; }
+
+/* ---------- One recipe screen (Emily, 2026-11-02, option B) ----------
+   "Already done" leads the recipe's Overview: this meal's ticked prep on
+   one gentle celadon card, each row keeping its tick so it can come off. */
+.recipe-done {
+  background: var(--celadon-tint);
+  border: 1px solid var(--celadon-edge);
+  border-radius: 22px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.recipe-done-eyebrow {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--celadon-label);
+}
+.recipe-done-row { display: flex; align-items: center; gap: 12px; }
+.recipe-done-text { font-size: 15px; font-weight: 500; line-height: 1.4; color: var(--ink-on-celadon); }
+/* What's on the plate: the plan entry's parts, read-only. */
+.recipe-plate { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.recipe-plate-parts { display: flex; flex-wrap: wrap; gap: 6px; }
+.recipe-plate-part {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  background: var(--surface);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.recipe-plate-role { font-weight: 500; color: var(--ink-secondary); }
+/* A cook under way, on the Steps tab: done steps quiet, the next one marked. */
+.recipe-step.is-done .recipe-step-text { color: var(--ink-done); }
+.recipe-step.is-done .recipe-step-num { background: var(--celadon); color: var(--on-accent-ink); }
+.recipe-step.is-done .recipe-step-num svg { width: 15px; height: 15px; }
+.recipe-step.is-here .recipe-step-num { background: var(--apricot); color: var(--on-accent-ink); }
+.recipe-step-here {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--apricot-label);
+}

@@ -68,7 +68,9 @@ def test_a_dish_name_opens_the_meal_step_with_a_crumb_back_to_the_week():
     wiring = SHELL_JS[SHELL_JS.index("[data-wk-meal]"):]
     # `wholeDish` (2026-10-19): a menu row standing for several days opens
     # its Meal step as the whole dish (tests/test_swap_row_replaces_every_cook.py).
-    assert "goMealsStep('meal', { slot: btn.getAttribute('data-wk-meal'), back: back," in wiring[:1200]
+    # Through planOpenMeal since 2026-11-02 (one recipe screen), which opens
+    # the Meal step for anything Cook can't open itself.
+    assert "planOpenMeal({ slot: btn.getAttribute('data-wk-meal'), back: back," in wiring[:1200]
     assert "openRecipeFor" not in wiring[:1200]
     # ...and from Check the week the crumb says so.
     assert "'Check the week'" in _fn("mealStepHtml")

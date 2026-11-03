@@ -19449,7 +19449,7 @@
             var from = planReheatSource(entry);
             if (from) openSourceMeal(panel, from.date, from.slot, 'week');
           } else if (key === 'recipe') {
-            goMealsStep('meal', { slot: slot, back: 'week', dayIndex: index >= 0 ? index : undefined,
+            planOpenMeal({ slot: slot, back: 'week', dayIndex: index >= 0 ? index : undefined,
               wholeDish: !!(opts.dates && opts.dates.length > 1 && !opts.reheat) });
           }
         });
@@ -21431,7 +21431,55 @@
       if (index === -1) return;
       back = 'week';
     }
-    goMealsStep('meal', { dayIndex: index, slot: slot, back: back });
+    planOpenMeal({ dayIndex: index, slot: slot, back: back });
+  }
+
+  // One recipe screen (Emily, 2026-11-02, option B): a meal on the week
+  // Cook holds opens Cook's own recipe page — Overview · Ingredients ·
+  // Steps · Sources — rather than Plan's Meal step, so a dish reads the
+  // same wherever it was tapped. Its crumb says what the Meal step's would
+  // have said and comes back to the Plan screen it was opened from.
+  //
+  // Only when the plan on screen's own cooker view has landed, says it IS
+  // the plan Cook holds, and carries this meal: cook mode can open nothing
+  // else, and an unresolved target lands on Cook's root — the "other page
+  // with the full cook list" of 2026-09-13. Everything else (next week's
+  // draft, a reheat night, a read that failed) keeps the Meal step. The
+  // root doesn't read the plan's view until a day or meal is open, so a tap
+  // there reads it first — one small request, the same one the Meal step
+  // would have made.
+  async function planOpenMeal(opts) {
+    opts = opts || {};
+    var days = weekState.days || [];
+    var index = (opts.dayIndex !== undefined && opts.dayIndex !== null) ? opts.dayIndex : weekState.selectedIndex;
+    var day = days[index];
+    var slot = opts.slot || weekState.mealSlot;
+    var entry = day ? daySlotEntry(day, slot) : null;
+    var target = entry && entry.state === 'planned' ? recipeTargetForEntry(entry, day.date, slot) : null;
+    var view = planCookView();
+    if (target && !view && !planCookViewFailed() && panels['week']) {
+      await ensureCookDataForMeals(panels['week']);
+      view = planCookView();
+    }
+    if (target && view && view.is_current_plan === true && target.entryId != null &&
+        cookMealForEntry(target.entryId)) {
+      var back = (opts.back === 'week' || opts.back === 'review') ? opts.back : 'day';
+      // Plan's root with a day open (weekState.planDay) is that day, so the
+      // crumb names it — "‹ Monday" — and only the All view is "This week".
+      var onDay = back === 'day' || (back === 'week' && weekState.planDay != null);
+      openRecipeFor(target, {
+        label: back === 'review' ? 'Check the week' : onDay ? dayName(day.date, { weekday: 'long' }) : 'This week',
+        tab: 'week',
+        // Back lands on the Plan screen the tap came from, not on a Meal
+        // step nobody opened.
+        mealsStep: weekState.step === 'meal' ? weekState.mealBack : weekState.step,
+        mealsDay: index,
+        mealsSlot: slot,
+        mealsBack: weekState.mealBack
+      });
+      return;
+    }
+    goMealsStep('meal', opts);
   }
 
   function mealStepHtml(day, slot) {
@@ -22135,7 +22183,7 @@
         var back = weekState.step === 'review' || (weekState.step === 'week' && draft) ? 'review'
           : (weekState.step === 'week' ? 'week' : 'day');
         wkDayForTap(btn);
-        goMealsStep('meal', { slot: btn.getAttribute('data-wk-meal'), back: back,
+        planOpenMeal({ slot: btn.getAttribute('data-wk-meal'), back: back,
           wholeDish: btn.hasAttribute('data-wk-meal-dish') });
       });
     });
@@ -25962,8 +26010,10 @@
     // half-cooked dish resumes it.
     cookState.focusStage = 'recipe';
     cookState.stepIdx = 0;
-    // The recipe page opens on its Overview, folded (2026-10-06).
-    cookState.recipeTab = 'overview';
+    // The recipe page opens on its Overview, folded (2026-10-06) — except
+    // on the tab the visit is for (Emily, 2026-11-02): a cook under way
+    // opens on its Steps, and a recipe opened from Shop on what to buy.
+    cookState.recipeTab = cookOpeningTab(cookState.data.meals[idx], cookState.focusOrigin);
     cookState.recipeChangesOpen = false;
     cookState.recipeMenuOpen = false;
     cookState.recipeRateOpen = false;
@@ -25975,6 +26025,22 @@
     // own "Start cooking", real start and all.
     if (start) return cookStartCooking();
     renderCook();
+  }
+
+  // Started and not finished: by its ticks, or by the real start being on
+  // record. The recipe's dock says "Keep cooking" on the same test.
+  function cookUnderway(meal) {
+    var steps = (meal && meal.instructions) || [];
+    if (!meal || !steps.length || meal.cooked_status === 'done') return false;
+    return !!meal.cook_started_at ||
+      steps.some(function (st, i) { return cookTicked('steps', cookMealKey(meal) + ':' + i); });
+  }
+
+  function cookOpeningTab(meal, origin) {
+    if (!meal || !meal.has_full_recipe) return 'overview';
+    if (cookUnderway(meal)) return 'steps';
+    if (origin && origin.tab === 'grocery' && (meal.ingredients || []).length) return 'ingredients';
+    return 'overview';
   }
 
   function cookExitFocus() {
@@ -26091,12 +26157,18 @@
     // beside a session that showed the step ticked (2026-10-10).
     var done = tasks.filter(function (t) { return t.status === 'done' || t.status === 'skipped'; }).length;
     var allDone = done === tasks.length;
+    var total = tasks.length;
+    // On the recipe's Overview the done rows lead, under "Already done"
+    // (recipeAlreadyDoneHtml, 2026-11-02), so this section holds only
+    // what is still to do — and goes once nothing is.
+    if (allDone) return '';
+    tasks = tasks.filter(function (t) { return t.status !== 'done' && t.status !== 'skipped'; });
     return '<section class="cook-section">' +
       '<div class="cook-sectionhead">' +
         '<span class="cook-eyebrow cook-eyebrow-warm">For this meal</span>' +
         '<span class="cook-rule"></span>' +
         '<span class="cook-sectionnote">' +
-          (allDone ? 'Prep’s done — the rest is tonight.' : (done + ' of ' + tasks.length + ' done')) +
+          (done + ' of ' + total + ' done') +
         '</span>' +
         (COOK_VOICE_ENABLED
           ? '<button type="button" class="cook-mic" data-cook="voice" data-ctx="prep" ' +
@@ -26482,12 +26554,26 @@
           ? '<button type="button" class="cook-fill" data-cook="fill" data-recipe="' + escapeHtml(meal.meal || '') + '">Fill in this recipe</button>'
           : '');
     } else {
+      // A cook under way shows where it got to (Emily, 2026-11-02): the
+      // steps the cooker ticked read as done, the first one left says
+      // "You're here". Cook mode's copy only — the plan's copy just reads.
+      var underway = live && cookUnderway(meal);
+      var key = underway ? cookMealKey(meal) : '';
+      var here = -1;
+      if (underway) {
+        for (var h = 0; h < steps.length; h++) {
+          if (!cookTicked('steps', key + ':' + h)) { here = h; break; }
+        }
+      }
       body = '<ol class="recipe-steps">' +
         steps.map(function (step, i) {
           var ahead = prepIdx.indexOf(i + 1) !== -1;
-          return '<li class="recipe-step' + (ahead ? ' is-ahead' : '') + '">' +
-            '<span class="recipe-step-num" aria-hidden="true">' + (i + 1) + '</span>' +
+          var done = underway && cookTicked('steps', key + ':' + i);
+          return '<li class="recipe-step' + (ahead ? ' is-ahead' : '') + (done ? ' is-done' : '') +
+              (i === here ? ' is-here' : '') + '">' +
+            '<span class="recipe-step-num" aria-hidden="true">' + (done ? COOK_ICONS.check : (i + 1)) + '</span>' +
             '<span class="recipe-step-text">' +
+              (i === here ? '<span class="recipe-step-here">You’re here</span>' : '') +
               (ahead ? '<span class="recipe-step-tag">Do ahead</span> ' : '') +
               escapeHtml(step) + '</span>' +
           '</li>';
@@ -26663,11 +26749,16 @@
   }
 
   function recipeOverviewHtml(data, meal, idx, extra) {
-    return recipeCreditHtml(extra) +
+    var prep = cookFocusPrepTasks(data, meal);
+    // What's already done leads (Emily, 2026-11-02): the marinade made on
+    // Sunday is the first thing the cook needs to know tonight.
+    return recipeAlreadyDoneHtml(prep) +
+      recipeCreditHtml(extra) +
       recipeChangesHtml(extra) +
       recipeServesHtml(meal, idx) +
       recipeBatchLineHtml(meal) +
       recipeTimeHtml(meal) +
+      recipePlateHtml(meal) +
       // The night-before line, and anything an earlier cook already made.
       cookRecipeLinesHtml(meal) +
       (meal.has_full_recipe ? recipeJumpsHtml(meal) : '') +
@@ -26675,7 +26766,57 @@
       // with "Fill in this recipe" (recipeStepsHtml's live empty state)
       // rather than hiding that behind the Steps tab.
       (meal.has_full_recipe && !(meal.instructions || []).length ? recipeStepsHtml(meal, true) : '') +
-      cookFocusPrepHtml(cookFocusPrepTasks(data, meal));
+      cookFocusPrepHtml(prep);
+  }
+
+  // "Already done": this meal's prep that is ticked off (or skipped), one
+  // celadon card at the top of the Overview. Each row keeps its tick, so a
+  // tick made by mistake comes off here too. Nothing when nothing is done.
+  function recipeAlreadyDoneHtml(tasks) {
+    var done = (tasks || []).filter(function (t) { return t.status === 'done' || t.status === 'skipped'; });
+    if (!done.length) return '';
+    return '<section class="recipe-done" aria-label="Already done">' +
+      '<span class="recipe-done-eyebrow">Already done</span>' +
+      done.map(function (t) {
+        return '<div class="recipe-done-row">' +
+          '<button type="button" class="cook-box checked" data-cook="check-prep" data-prep-id="' + t.id + '" ' +
+            'data-next="pending" data-name="' + escapeHtml(t.description || '') + '" aria-label="Mark not done">' +
+            COOK_ICONS.check + '</button>' +
+          '<span class="recipe-done-text">' + escapeHtml(t.description || '') + '</span>' +
+        '</div>';
+      }).join('') +
+    '</section>';
+  }
+
+  // What's on the plate, read-only: the plan entry's own parts (the same
+  // words as Plan's day card), found on the week Plan has loaded. Changing
+  // a part stays Plan's (its day card and the meal sheet's Tweak); here it
+  // is a fact about tonight. Nothing when the week isn't loaded or the
+  // dish has no parts.
+  function recipePlateHtml(meal) {
+    if (typeof weekState === 'undefined' || !weekState) return '';
+    var ids = meal.entry_ids || [meal.entry_id];
+    var parts = null;
+    (weekState.days || []).some(function (day) {
+      return daySlotKeys(day).some(function (slot) {
+        var entry = daySlotEntry(day, slot);
+        if (entry && entry.entry_id != null && ids.indexOf(entry.entry_id) !== -1 &&
+            Array.isArray(entry.plate_parts) && entry.plate_parts.length) {
+          parts = entry.plate_parts;
+          return true;
+        }
+        return false;
+      });
+    });
+    parts = (parts || []).filter(function (p) { return !p.missing && !p.empty; });
+    if (!parts.length) return '';
+    return '<div class="recipe-plate" aria-label="The plate">' +
+      '<span class="recipe-fact-label">The plate</span>' +
+      '<span class="recipe-plate-parts">' + parts.map(function (p) {
+        return '<span class="recipe-plate-part">' + escapeHtml(p.name || PLATE_NO_NAME) +
+          ' <span class="recipe-plate-role">' + escapeHtml(String(p.word || '').toLowerCase()) + '</span></span>';
+      }).join('') + '</span>' +
+    '</div>';
   }
 
   // A plain list, grouped as the recipe groups it (an ingredient's `group`
@@ -26882,8 +27023,7 @@
   function cookRecipeDockHtml(meal) {
     var steps = meal.instructions || [];
     if (!steps.length) return cookDockHtml(cookDockCookedHtml(meal));
-    var underway = meal.cooked_status !== 'done' &&
-      (!!meal.cook_started_at || steps.some(function (st, i) { return cookTicked('steps', cookMealKey(meal) + ':' + i); }));
+    var underway = cookUnderway(meal);
     // "Tweak" sits beside it, small (Emily, 2026-10-25): Tweak is a small
     // change to this recipe, Change recipe a different one.
     var change = recipeIsChangeable(meal)
