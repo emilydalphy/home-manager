@@ -1,0 +1,101 @@
+{
+ "dish_name": "Salade de Lentilles",
+ "cuisine": "French",
+ "main_protein": "lentils",
+ "ingredients": [
+  {
+   "item": "French green lentils",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Shallot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Red wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "1 leaf",
+   "category": "pantry"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the lentils in a sieve. Peel 1 carrot and dice it small.",
+  "Put the lentils, carrot, bay leaf, 1/2 tsp of the salt and 3 cups of water in a saucepan. Bring it to a boil over high heat, then turn it to medium-low and simmer, partly covered, for 20 minutes. Start checking at 18 minutes. They're done when they're tender but still hold their shape.",
+  "Meanwhile, mince the shallot and the garlic. In a large bowl, whisk them with the mustard, vinegar, the remaining 1/2 tsp salt and the pepper. Slowly whisk in the olive oil.",
+  "Drain the lentils and take out the bay leaf. Add the warm lentils to the dressing and toss. Do this while they're warm so they take up the dressing.",
+  "Leave the salad for 15 minutes, until it's at room temperature. Chop 1/4 cup of parsley and stir it in.",
+  "Taste it. If it's flat, add a pinch more salt, or a splash of the vinegar.",
+  "It keeps in the fridge for up to 4 days. Stir before you pack a portion and serve it cold or at room temperature."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "method_notes": "No version showed 20 or more ratings, so this is a fallback; the lead is Full of Plants (4.75 from 4 votes, visible rating), with America's Test Kitchen at 4 stars from 3 ratings. All agree on French green lentils tossed warm in a sharp vinaigrette with fresh parsley. The lead uses balsamic and nutritional yeast; I used a Dijon and red wine vinegar dressing, as the dish names, and added a small diced carrot cooked with the lentils and a bay leaf, as ATK does. Storage of 4 days comes from the lead.",
+ "sources": [
+  {
+   "name": "Full of Plants",
+   "title": "French Green Lentil Salad",
+   "url": "https://fullofplants.com/french-green-lentil-salad/",
+   "rating": 4.75,
+   "rating_count": 4,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "America's Test Kitchen",
+   "title": "French Lentil Salad with Caraway and Radish",
+   "url": "https://www.americastestkitchen.com/recipes/1005-french-lentil-salad-with-caraway-and-radish",
+   "rating": 4,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "fallback_used": true,
+ "origin": "seed"
+}

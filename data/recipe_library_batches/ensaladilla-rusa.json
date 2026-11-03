@@ -1,0 +1,101 @@
+{
+ "dish_name": "Ensaladilla Rusa",
+ "cuisine": "Spanish",
+ "main_protein": "fish",
+ "ingredients": [
+  {
+   "item": "Waxy potatoes",
+   "qty": "1.5 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "1 bag",
+   "category": "frozen"
+  },
+  {
+   "item": "Tuna in olive oil",
+   "qty": "1 can (5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the potatoes into 1 inch chunks. Peel 8 oz of the carrots and cut them into 1/2 inch pieces. Put both in a large pot, cover with cold water and add 1/2 tsp of the salt.",
+  "Bring the pot to a boil over high heat, then turn it to medium and cook for 10 minutes, until a knife slides into the potato with no push.",
+  "Add 1 cup of the peas and cook for 1 minute.",
+  "Drain everything in a colander, then spread it on a baking sheet. Leave it for 15 minutes, until it's cool to the touch.",
+  "Meanwhile, finely dice a quarter of the red onion and drain the tuna.",
+  "In a large bowl, stir together the mayonnaise, olive oil, vinegar, black pepper and the remaining 1/2 tsp salt.",
+  "Add the cooled vegetables, the tuna and the onion. Fold gently, so the potatoes stay in pieces.",
+  "Taste it. If it's flat, add a pinch more salt, or a splash of the vinegar.",
+  "Cover and chill for at least 1 hour. It keeps in the fridge for up to 3 days. Stir it before you pack a portion, and don't freeze it.",
+  "Serve chilled or at room temperature."
+ ],
+ "advance_prep_notes": "chill at least 1 hour before eating, or make it up to 3 days ahead",
+ "advance_prep_step_indices": [
+  9
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "method_notes": "No version showed 20 or more ratings, so this is a fallback; the lead is the best-rated one read (4.34 from 3 votes, visible rating). Saveur and one other page blocked or gave no rating, so only two versions were read. Both agree on boiled potato and carrot, peas, oil-packed tuna and mayonnaise; the Spanish Chef adds egg, olives and cornichons and makes its own mayonnaise. I left out egg and olives and used jarred mayonnaise to keep the effort lunch-sized.",
+ "sources": [
+  {
+   "name": "Caroline's Cooking",
+   "title": "Ensaladilla Rusa (Spanish Potato Salad)",
+   "url": "https://www.carolinescooking.com/ensaladilla-rusa-spanish-potato-salad/",
+   "rating": 4.34,
+   "rating_count": 3,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Spanish Chef",
+   "title": "Ensaladilla Rusa",
+   "url": "https://thespanishchef.com/recipes/ensaladilla-rusa",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,97 @@
+{
+ "dish_name": "Yayla Corbasi",
+ "cuisine": "Turkish",
+ "main_protein": "dairy",
+ "ingredients": [
+  {
+   "item": "Short-grain rice",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1 1/3 cups"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Dried mint",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a bowl of water a few times, then drain it.",
+  "Put the rice and 1 1/2 cups of water in a large pot over medium-high heat. Bring it to a boil, then turn the heat to medium-low and cook for 12 minutes, until the rice is soft and the water is mostly gone.",
+  "Add 4 1/2 cups of water and bring it back to a boil.",
+  "Meanwhile, off the heat, whisk the yogurt, egg, flour and 1/2 tsp of the salt in a large bowl until smooth.",
+  "Ladle a scoop of the hot liquid from the pot into the yogurt and whisk right away. Repeat with 3 more scoops. The yogurt is warm now, so it won't split in the pot.",
+  "Turn the heat under the pot to medium-low and pour in the yogurt mixture, stirring as you go. Simmer for 15 minutes with the lid off, stirring now and then. Don't let it boil hard and don't put the lid on, or the soup will split.",
+  "Melt the butter in a small pan over medium-low heat. Add the mint and paprika and stir for 20 seconds, until it smells fragrant. Take it off the heat right away.",
+  "Taste the soup. If it's flat, add the last 1/2 tsp of salt, or a pinch more.",
+  "Ladle the soup into bowls and drizzle the mint butter over each one.",
+  "To pack it, let it cool, then keep it in a container in the fridge for up to 4 days. Reheat it gently over low heat with a splash of water, stirring, and don't let it boil."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 40,
+ "method_notes": "No version had 20 or more ratings, so this is a fallback; the lead is the best-rated version read (5 stars from 10 ratings), with two more at 5 stars from 5 and 7 ratings (visible ratings, no JSON-LD shown). All three agree on rice cooked soft, a yogurt, egg and flour mixture tempered with hot liquid, a gentle uncovered simmer and a dried mint butter drizzle. They differ on water amounts and whether paprika or chili goes in the butter; I used paprika for a mild base and kept the lead's water split and 15 minute simmer.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "Yayla Corbasi (Turkish Yogurt Soup)",
+   "url": "https://cupofyum.com/recipes/yayla-corbasi-turkish-yogurt-soup",
+   "rating": 5,
+   "rating_count": 10,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cooking Gorgeous",
+   "title": "Yayla Corbasi (Turkish Yogurt Soup)",
+   "url": "https://cookingorgeous.com/blog/yayla-corbasi-turkish-yoghurt-corbasi/",
+   "rating": 5,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Hungry Paprikas",
+   "title": "Creamy Yayla Corbasi (Turkish Yogurt Soup)",
+   "url": "https://www.hungrypaprikas.com/creamy-yayla-corbasi-turkish-yogurt-soup",
+   "rating": 5,
+   "rating_count": 7,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "fallback_used": true,
+ "origin": "seed"
+}
