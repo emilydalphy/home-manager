@@ -251,7 +251,7 @@ def _freezer_door_date(row: dict, to_location: str) -> str | None:
     return None
 
 
-def set_inventory_location(item_id: int, location: str) -> dict:
+def set_inventory_location(item_id: int, location: str, resync: bool = True) -> dict:
     """
     Move one inventory item to a different storage location (fridge/freezer/pantry) — re-groups it immediately.
 
@@ -294,6 +294,26 @@ def set_inventory_location(item_id: int, location: str) -> dict:
                      (item_id, household_id()))
     conn.commit()
     conn.close()
+    if resync and (location == "freezer") != (was == "freezer"):
+        # Across the freezer door, the live plans re-read their fridge
+        # moves (hunt 2026-11-02). Freeze it on the chicken Thursday's
+        # dinner needs booked no "Move the Chicken Thighs to the fridge"
+        # — it sat frozen until some unrelated plan change re-ran the
+        # sync — and Move to fridge left that move pending on Today for
+        # food already out. The gone doors have done this since
+        # 2026-10-28 (resync_live_plan_thaws); a move is the same news.
+        # Opens its own connections, so after the close above. `resync`
+        # False is Shop's "Yes, freezing it" / Put back
+        # (defrost._freeze_ticked_pack): that door books and removes its
+        # own move by hand, and a sync there also booked moves for nights
+        # the line fed that have already gone.
+        # First the moves this hand move settles: out, a pending move for
+        # this pack is the household's own doing and is marked done (a move
+        # already ticked stays ticked, review 2026-11-02); back in, only
+        # the ones marked here go back to pending (defrost.settle_moves_for_pack).
+        from . import defrost as _defrost
+        _defrost.settle_moves_for_pack(item_id, out_of_freezer=(was == "freezer"))
+        _defrost.resync_live_plan_thaws()
     result = {"item_id": item_id, "location": location}
     if new_date:
         result["expiration_date"] = new_date
@@ -304,7 +324,7 @@ class CannotFreeze(ValueError):
     """freeze_item on a row that is already in the freezer."""
 
 
-def freeze_item(item_id: int) -> dict:
+def freeze_item(item_id: int, resync: bool = True) -> dict:
     """
     Move one fridge/pantry row to the Freezer, dated today ("frozen today").
 
@@ -329,7 +349,7 @@ def freeze_item(item_id: int) -> dict:
     before = dict(row)
     if _quantities._display_location(before).strip().lower() == "freezer":
         raise CannotFreeze(f"{before['item']} is already in the freezer.")
-    moved = set_inventory_location(item_id, "freezer")
+    moved = set_inventory_location(item_id, "freezer", resync=resync)
     undo_record = {
         "location": before["location"] or "",
         "expiration_date": before["expiration_date"],
@@ -359,7 +379,7 @@ def freeze_item(item_id: int) -> dict:
     }
 
 
-def unfreeze_item(undo: dict) -> dict:
+def unfreeze_item(undo: dict, resync: bool = True) -> dict:
     """
     Undo a freeze_item: put the row back on its shelf with the date it had.
     Only while it is still in the freezer — a row that has moved since, or
@@ -394,6 +414,11 @@ def unfreeze_item(undo: dict) -> dict:
             "updated_at = datetime('now') WHERE id = ? AND household_id = ?",
             (back_to, kept.get("expiration_date"), kept.get("frozen_on"), item_id, household_id()),
         )
+    # Out of the freezer again: the move Freeze it booked goes (see
+    # set_inventory_location, and `resync` there).
+    if resync:
+        from . import defrost as _defrost
+        _defrost.resync_live_plan_thaws()
     return {"item_id": item_id, "item": row["item"], "undone": True, "location": back_to}
 
 
@@ -568,6 +593,9 @@ def _try_subtract_quantity(existing_qty: str, minus_qty: str) -> tuple[str | Non
             # "2 quarts" less 4 cups is "1 quart"; a gallon less 2 cups is
             # "3 1/2 quarts" (quantities._CUPS_PER_BIG).
             return big, True
+        cups = _cup_row_text(remaining, have_unit, minus_unit)
+        if cups is not None:
+            return cups, True
         if minus_unit != have_unit and not _clean_in(remaining, have_unit):
             # Across units the difference can be an odd fraction ("0.9375
             # cup", "0.99375 lb"): say it in the finer unit instead (15 tbsp,
@@ -741,7 +769,9 @@ def _clean_in(amount: float, unit: str | None) -> bool:
     return _quarter_clean(amount)
 
 
-def _big_volume_text(amount: float, unit: str | None, other_unit: str | None) -> str | None:
+def _big_volume_text(
+    amount: float, unit: str | None, other_unit: str | None, adding: bool = False,
+) -> str | None:
     """
     `amount` (in `unit`) on a Kitchen row that is in quarts or gallons, or
     has them coming on or off it — read the way the list reads them
@@ -754,6 +784,14 @@ def _big_volume_text(amount: float, unit: str | None, other_unit: str | None) ->
     held ("a tbsp off a cup must come off"): a tablespoon off a gallon is
     "3 3/4 quarts", not "255 tbsp" (review, 2026-11-01) and not still "1
     gallon". Under a quarter cup is left to the spoons below.
+
+    `adding` (_merged_quantity): a total from a quart up with a measuring
+    step or more past its whole cups is said in cups on that step ("4 1/2
+    cups"), not floored to its quarts. Floored, what was put on vanished:
+    "1/2 cup" of cream onto "1 quart" read "1 quart", three 3/4 cups onto
+    it still "1 quart", and using a quart then deleted a row holding 2 1/4
+    cups (defect hunt, 2026-11-02). DOWN is for what comes off; an add
+    keeps what it added. Spoons past the cups still floor away, as above.
     """
     if unit not in _quantities._VOLUME_TO_TSP or other_unit not in _quantities._VOLUME_TO_TSP:
         return None
@@ -761,14 +799,42 @@ def _big_volume_text(amount: float, unit: str | None, other_unit: str | None) ->
     if hint is None:
         return None
     cups = amount * _quantities._VOLUME_TO_TSP[unit] / _quantities._VOLUME_TO_TSP["cup"]
-    if cups >= 4 - 1e-9:
-        whole = math.floor(cups + 1e-6)
-        return _quantities.big_volume_reading(whole * _quantities._VOLUME_TO_TSP["cup"], hint)
     whole = math.floor(cups + 1e-6)
     step = max(f for f in _quantities._VOLUME_STEPS if whole + f <= cups + 1e-6)
+    if cups >= 4 - 1e-9:
+        if adding and step >= 0.25 - 1e-9:
+            return _quantities._cups_text(whole + step)
+        return _quantities.big_volume_reading(whole * _quantities._VOLUME_TO_TSP["cup"], hint)
     if whole + step < 0.25 - 1e-9:
         return None
     return _quantities._cups_text(whole + step)
+
+
+def _cup_row_text(amount: float, unit: str | None, other_unit: str | None) -> str | None:
+    """
+    What is left on a row in cups, with cups or spoons used off it, said on
+    a measuring cup's steps: "3 1/2 cups", "15 1/3 cups" — never "3.5
+    cups" or "15.3333 cups". From a quart's worth up, DOWN to the step
+    (_big_volume_text's rule: "4 3/4 cups" less a tbsp is "4 2/3 cups", not
+    "75 tbsp"); under it, only an amount exactly on a step, so "2 cups"
+    less a tbsp stays "31 tbsp" as it always has. None for anything else.
+
+    Why (review of the 2026-11-02 add fix): an add onto a quart row that
+    lands off its whole cups is written in cups ("4 1/2 cups"), and the
+    next "used a cup" wrote "3.5 cups". The row's word is all that is left
+    of the quart, so a whole number of cups stays cups here: "16 cups" of
+    flour is not a gallon of flour (quantities._CUPS_PER_BIG).
+    """
+    small = ("cup", "tbsp", "tsp")
+    if unit != "cup" or other_unit not in small:
+        return None
+    if amount >= 4 - 1e-9:
+        whole = math.floor(amount + 1e-6)
+        step = max(f for f in _quantities._VOLUME_STEPS if whole + f <= amount + 1e-6)
+        return _quantities._cups_text(whole + step)
+    if amount >= 0.25 - 1e-9 and _quantities._kitchen_number(amount) is not None:
+        return _quantities._cups_text(amount)
+    return None
 
 
 def _merged_quantity(existing_qty: str, adding_qty: str) -> str:
@@ -801,7 +867,7 @@ def _merged_quantity(existing_qty: str, adding_qty: str) -> str:
     total = have[0] + converted
     if forms:
         return _counted_format(total, have_unit, forms)
-    big = _big_volume_text(total, have_unit, more_unit)
+    big = _big_volume_text(total, have_unit, more_unit, adding=True)
     if big is not None:
         return big
     in_other = _quantities._convert_to_unit(total, have_unit, more_unit)

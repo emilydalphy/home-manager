@@ -261,7 +261,7 @@ def test_servings(value, servings):
     ("2-3 cloves garlic", "garlic", "3 cloves"),
     ("½ tsp salt", "salt", "1/2 tsp"),
     ("2 large eggs", "eggs", "2 large"),
-    ("Juice of 1 lemon", "Juice of 1 lemon", ""),
+    ("Juice of 1 lemon", "lemon, juiced", "1"),  # the fruit is bought (2026-11-02)
     ("salt and pepper to taste", "salt and pepper", "to taste"),
     ("1 cup", "1 cup", ""),
     ("", "", ""),

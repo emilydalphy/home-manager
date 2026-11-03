@@ -1918,11 +1918,14 @@ def _line_category(s) -> str:
     return _recipes.store_section({"item": s["item"], "qty": s["quantity"] or ""})
 
 
-def _put_on_list(conn, s) -> dict:
+def _put_on_list(conn, s, join_week_lines: bool = True) -> dict:
     """One ordinary grocery line for a staple, by the same add path a typed
-    item uses, linked back with staple_id. Commits nothing itself."""
+    item uses, linked back with staple_id. Commits nothing itself.
+    join_week_lines=False keeps it off a week's line by the same name
+    (add_grocery_item) — a regular a person ticked."""
     res = _grocery.add_grocery_item(
-        s["item"], quantity=s["quantity"] or "", category=_line_category(s), added_by=ADDED_BY_STAPLE, conn=conn
+        s["item"], quantity=s["quantity"] or "", category=_line_category(s), added_by=ADDED_BY_STAPLE, conn=conn,
+        join_week_lines=join_week_lines,
     )
     conn.execute(
         "UPDATE grocery_items SET staple_id = ? WHERE id = ? AND household_id = ?",

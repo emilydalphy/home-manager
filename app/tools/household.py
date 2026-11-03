@@ -735,6 +735,47 @@ def name_household_after_main_person(conn=None) -> str | None:
             conn.close()
 
 
+def house_name_follows_main_person_out(leaver: str) -> str | None:
+    """
+    `leaver` has just left the household (Remove me, or taken out from
+    Who's here): a "<leaver>’s house" it was given automatically becomes
+    the main person's now ("Sam’s house"), or the
+    placeholder when there is nobody to name it after. Returns the new
+    name, or None when nothing changed.
+
+    Defect hunt 2026-11-02: the automatic name was only ever written over
+    the placeholder, so after Rowan left, Sam's Preferences, the leave
+    dialog and the public share link ("Meals this week at Rowan’s house")
+    went on naming somebody who is no longer in the house. Only the exact
+    automatic name, and only while nobody chose one (`name_chosen`): a
+    name typed in Preferences stays, even one that happens to match.
+    """
+    from ._shared import UNNAMED_HOUSEHOLD
+    from .primary_member import primary_member_id
+
+    was = house_name_for(leaver)
+    if not was:
+        return None
+    conn = get_conn()
+    try:
+        now_main = primary_member_id(conn)
+        person = None
+        if now_main is not None:
+            row = conn.execute(
+                "SELECT name FROM members WHERE id = ? AND household_id = ?", (now_main, household_id())
+            ).fetchone()
+            person = row["name"] if row else None
+        name = house_name_for(person or "") or UNNAMED_HOUSEHOLD
+        changed = conn.execute(
+            "UPDATE households SET name = ? WHERE id = ? AND name = ? AND COALESCE(name_chosen, 0) = 0",
+            (name, household_id(), was),
+        ).rowcount
+        conn.commit()
+        return name if changed else None
+    finally:
+        conn.close()
+
+
 def rename_household(name) -> dict:
     """Preferences -> Household name. Raises ValueError with a sentence the
     screen shows as it stands."""

@@ -1064,25 +1064,53 @@ def _recipe_by_name(name: str) -> dict | None:
     return _recipes_by_id([row["id"]]).get(row["id"]) if row else None
 
 
-def _cooking_list(recipe: dict, meal_date: str, slot: str) -> list[dict]:
+def _cooking_list(recipe: dict, meal_date: str, slot: str, batch: int = 0) -> list[dict]:
     from . import leftovers as _leftovers
     from . import recipes as _recipes
+    # Scaled exactly as the Cook card is, so the two never disagree. A cook
+    # that also feeds a later night (a leftovers chain, a cook-ahead double)
+    # or the freezer is the whole batch (cooker._scale_card_to_batch); a
+    # plain night is the people eating it (get_cooker_view's plain-night
+    # pass) — both through scale_recipe. Read off the recipe's own
+    # baseline, a Tuesday double of skewers said "Marinate the chicken
+    # thighs, 1 lb" on Sunday over a card of 2 lbs, and a Sunday for four
+    # (two guests) off a recipe for two did the same (defect hunt,
+    # 2026-11-02). Same guard as the card: no baseline servings or nobody
+    # counted, nothing scaled.
     eaters = _leftovers.eaters_at(meal_date, slot) or None
+    target = batch if batch > 0 else (eaters or 0)
+    if target > 0 and recipe.get("default_servings") and recipe.get("name"):
+        try:
+            return _recipes.scale_recipe(recipe["name"], target)["scaled_ingredients"]
+        except Exception:
+            pass
     try:
         return _recipes.cooking_ingredients(recipe["ingredients"], servings=eaters)
     except Exception:
         return [i for i in recipe["ingredients"] if isinstance(i, dict)]
 
 
-def _reheat_ids(plan_ids) -> set[int]:
+def _chain_reads(plan_ids) -> tuple[set[int], dict[int, int]]:
+    """(the reheat nights, {cook entry: batch servings}) over these plans —
+    the batch from leftovers.batch_for_entry, the one place the Cook card,
+    the fridge moves and the grocery ingest already read it."""
     from . import leftovers as _leftovers
-    out: set[int] = set()
+    reheats: set[int] = set()
+    batches: dict[int, int] = {}
     for pid in plan_ids:
         try:
-            out |= set(_leftovers.plan_leftover_chains(pid)["leftovers"])
+            chains = _leftovers.plan_leftover_chains(pid)
         except Exception:
             continue
-    return out
+        reheats |= set(chains["leftovers"])
+        for entry_id in set(chains.get("sources") or {}) | set(chains.get("freezer") or {}):
+            try:
+                batch = _leftovers.batch_for_entry(entry_id, chains)
+            except Exception:
+                batch = None
+            if batch and batch.get("servings", 0) > 0:
+                batches[entry_id] = batch["servings"]
+    return reheats, batches
 
 
 def next_prep_after(prep_date: str, prep_weekdays: set[str], other_dates) -> str:
@@ -1162,7 +1190,7 @@ def derive_steps(prep_date: str, last_date: str, weekly_plan_id: int, plan_row, 
         return []
     owner = _owner_by_date(weekly_plan_id, plan_row, first, last_date)
     entries = _entries_in(owner)
-    reheats = _reheat_ids(set(owner.values()))
+    reheats, batches = _chain_reads(set(owner.values()))
     entries = [e for e in entries if e["id"] not in reheats
                and (e["id"] not in exclude_entry_ids or e["id"] in fresh_batch_entries)]
     recipes = _recipes_by_id(e["recipe_id"] for e in entries)
@@ -1183,7 +1211,7 @@ def derive_steps(prep_date: str, last_date: str, weekly_plan_id: int, plan_row, 
         if recipe is None and e["meal"]:
             recipe = None  # a meal with no saved recipe: nothing known about it
         days_out = (date.fromisoformat(e["date"]) - date.fromisoformat(prep_date)).days
-        ings = _cooking_list(recipe, e["date"], e["slot"]) if recipe else []
+        ings = _cooking_list(recipe, e["date"], e["slot"], batches.get(e["id"], 0)) if recipe else []
         found = recipe_steps(e, recipe, ings)
         offered = False
         for family, display in found["fresh"]:

@@ -135,6 +135,10 @@ _NAME_PREP_AFTER_COMMA = {
     "packed", "lightly packed", "well shaken", "plus more", "to taste",
     "for serving", "for garnish", "optional", "room temperature",
     "at room temperature",
+    # "lemon, juiced" / "limes, zested" (the link importer's reading of
+    # "Juice of 1 lemon", 2026-11-02): the lemon is what is bought, so it is
+    # one line with another dinner's lemons.
+    "juiced", "zested",
 }
 
 
@@ -260,6 +264,13 @@ _ONLY_SAYS_FRESH = {
 }
 
 
+# A note on how much, after a comma or in brackets: "(about 3 tbsp)",
+# "about 2 tbsp", "(approx 1 tbsp)", "plus wedges to serve". Matching names
+# only — the line keeps the words.
+_SIZE_NOTE_SEGMENT = re.compile(r"^(?:about|approx\.?|approximately|around|roughly|~|plus)\b")
+_SIZE_NOTE_BRACKET = re.compile(r"\s*\((?:about|approx\.?|approximately|around|roughly|~)[^)]*\)")
+
+
 def _is_prep_segment(segment: str) -> bool:
     """
     Is this post-comma segment only PREPARATION?
@@ -274,6 +285,10 @@ def _is_prep_segment(segment: str) -> bool:
     not need.
     """
     if segment in _NAME_PREP_AFTER_COMMA:
+        return True
+    # "lemon, about 2 tbsp", "limes, plus wedges to serve" (2026-11-02): how
+    # much, or extra for the table — never a different thing to buy.
+    if _SIZE_NOTE_SEGMENT.match(segment):
         return True
     words = segment.split(" ")
     return len(words) > 1 and words[-1] in _NAME_PREP_AFTER_COMMA
@@ -338,6 +353,7 @@ def _plain_name_key(name: str) -> str:
     cleaned = " ".join(_fold_accents(name or "").strip().lower().split())
     if not cleaned:
         return ""
+    cleaned = _SIZE_NOTE_BRACKET.sub("", cleaned).strip()
     cleaned = _drop_name_filler(_uninvert_name(cleaned))
     if not cleaned:
         return ""
@@ -1854,6 +1870,7 @@ def add_grocery_item(
     quantity_mode: str = "sum",
     conn=None,
     report_previous: bool = False,
+    join_week_lines: bool = True,
 ) -> dict:
     """
     Add an item to the grocery list. If an item with the same name is
@@ -1920,7 +1937,7 @@ def add_grocery_item(
             return add_grocery_item(
                 item, quantity=quantity, category=category, added_by=added_by,
                 source_weekly_plan_id=source_weekly_plan_id, quantity_mode=quantity_mode,
-                conn=own, report_previous=report_previous,
+                conn=own, report_previous=report_previous, join_week_lines=join_week_lines,
             )
     item = (item or "").strip()
     if not item:
@@ -1974,6 +1991,12 @@ def add_grocery_item(
     ).fetchall()
     wanted = _merge_key(item)
     same_name = [r for r in candidates if _merge_key(r["item"]) == wanted]
+    if not join_week_lines:
+        # A regular ticked on "Before you shop" stands beside a week's line
+        # (before_shop.add_regulars): joined, its Undo and step 1's "Take it
+        # off the list?" had only the whole row to take, the meals' eggs
+        # with it, and a regular with no amount vanished into "1/2 cup".
+        same_name = [r for r in same_name if r["source_weekly_plan_id"] is None]
     consolidate = _greater_of_quantity if quantity_mode == "max" else _try_consolidate_quantity
     # Which plans' shares sit on each household line of this name — what
     # keeps a week's sauce or pantry staple off a line holding another

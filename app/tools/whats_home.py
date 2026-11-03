@@ -964,9 +964,15 @@ def restore_item(undo: dict) -> dict:
         with write() as conn:
             _already_home.set_aside_again(conn, again)
             _already_home.recheck_set_aside(conn=conn)
-    if (undo or {}).get("kind") == "removed" and result.get("undone"):
+    if (undo or {}).get("kind") in ("removed", "moved") and result.get("undone"):
         # Back in the kitchen: the fridge move its "gone" swept comes back.
+        # And a "moved" Undo can put a row back in the freezer (Move to
+        # fridge, then Undo), which owes its move again (hunt 2026-11-02) —
+        # the move that Move to fridge marked done goes back to pending; a
+        # move the household ticked itself stays done.
         from . import defrost as _defrost
+        if undo.get("kind") == "moved" and (undo.get("location") or "").strip().lower() == "freezer":
+            _defrost.settle_moves_for_pack(int(undo["item_id"]), out_of_freezer=False)
         _defrost.resync_live_plan_thaws()
     return result
 

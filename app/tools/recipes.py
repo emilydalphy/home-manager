@@ -1706,7 +1706,7 @@ _COUNTABLE_PLURALS = {
     "onion": "onions", "egg": "eggs", "carrot": "carrots", "lemon": "lemons",
     "lime": "limes", "apple": "apples", "potato": "potatoes", "tomato": "tomatoes",
     "cucumber": "cucumbers", "shallot": "shallots", "tortilla": "tortillas",
-    "banana": "bananas", "bun": "buns",
+    "banana": "bananas", "bun": "buns", "orange": "oranges",
 }
 _COUNTABLE_SINGULARS = {many: one for one, many in _COUNTABLE_PLURALS.items()}
 # "pepper" only as the vegetable — never "2 black pepper".

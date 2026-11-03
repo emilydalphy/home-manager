@@ -356,6 +356,16 @@ def before_shop_steps() -> dict:
             "WHERE household_id = ? AND kind = 'bought' GROUP BY staple_id",
             (household_id(),),
         ).fetchall()
+        # The week's line a staple was made from ("Make it a staple" on a
+        # plan row) is that staple's line this trip, week or not.
+        made_from = {
+            r["grocery_item_id"]: r["staple_id"]
+            for r in conn.execute(
+                "SELECT staple_id, grocery_item_id FROM staple_events "
+                "WHERE household_id = ? AND kind = 'added' AND grocery_item_id IS NOT NULL",
+                (household_id(),),
+            ).fetchall()
+        }
     finally:
         conn.close()
 
@@ -364,9 +374,16 @@ def before_shop_steps() -> dict:
         return _who_words(row["added_by"], _day_words(day, today), me)
 
     live_by_id = {r["id"]: r for r in live}
+    # What already answers a regular by NAME: a line of the household's
+    # own. A week's line is what its recipes use — the chili's "Milk ·
+    # 1/2 cup" is not the household's weekly 2 L — so it no longer hides
+    # the regular as "Already on the list" with no way to add it (defect
+    # hunt, 2026-11-02). Same rule as staples._what_covers, which is what
+    # puts a due staple's line on beside it.
     live_by_key: dict[str, object] = {}
     for r in live:
-        live_by_key.setdefault(_grocery._merge_key(r["item"]), r)
+        if r["source_weekly_plan_id"] is None:
+            live_by_key.setdefault(_grocery._merge_key(r["item"]), r)
     elsewhere_by_key: dict[str, object] = {}
     for r in elsewhere:
         elsewhere_by_key.setdefault(_grocery._merge_key(r["item"]), r)
@@ -396,7 +413,8 @@ def before_shop_steps() -> dict:
         key = _grocery._merge_key(name)
         row = live_by_key.get(key)
         if row is None and staple is not None:
-            row = next((r for r in live if r["staple_id"] == staple["id"]), None)
+            row = next((r for r in live if r["staple_id"] == staple["id"]
+                        or made_from.get(r["id"]) == staple["id"]), None)
         if row is not None:
             reg_on_list.append({
                 "item_id": row["id"], "name": row["item"], "who": who(row),
@@ -512,21 +530,23 @@ def add_regulars(names: list[str]) -> dict:
     added = []
     conn = get_conn()
     try:
-        live_keys = {
-            _grocery._merge_key(r["item"])
-            for r in conn.execute(
-                "SELECT item FROM grocery_items WHERE household_id = ? AND status IN ('needed', 'in_cart')",
-                (household_id(),),
-            ).fetchall()
-        }
+        # What covers it is what covers a due staple (staples._what_covers):
+        # the household's own line, one set aside as "getting it
+        # elsewhere", the staple's own line, or the plan row it was made
+        # from — never just a week's line by the same name, or ticking
+        # Milk beside a recipe's half cup added nothing (defect hunt,
+        # 2026-11-02).
+        live_keys, live_staple_ids, made_from_live = _staples._what_covers(conn)
         for name in wanted:
             key = _grocery._merge_key(name)
             if key in live_keys:
                 continue
             staple = _staples._find_by_name(conn, name)
-            if staple is None:
+            if staple is None or staple["id"] in live_staple_ids or staple["id"] in made_from_live:
                 continue
-            put = _staples._put_on_list(conn, staple)
+            # Beside a week's line, never onto it: what step 1 and its Undo
+            # take off again must be the regular's own row (review, 2026-11-02).
+            put = _staples._put_on_list(conn, staple, join_week_lines=False)
             # The person ticked it, so it is theirs ("you added it today"),
             # not Pomona's "probably running low" suggestion — that wording
             # is for a line the app put there on its own. "user" when no

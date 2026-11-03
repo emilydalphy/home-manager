@@ -496,10 +496,38 @@ def remove_member(household_id: int, member_id: int, by_member_id: int | None = 
     out (attendance.list_follows_membership; defect hunt 2026-10-26).
     """
     from .tools import attendance as _attendance
+    from .tools import household as _household
     from .tools._shared import use_household
 
     with use_household(int(household_id)), _attendance.list_follows_membership():
-        return _remove_member(household_id, member_id, by_member_id)
+        # Their name, read before they go: a house still automatically
+        # named after them ("Rowan’s house") is renamed after whoever is
+        # main person now (tools.house_name_follows_main_person_out). By
+        # name, not by "were they the main person": the main person can
+        # have been moved to Sam in Who's here first, and the house would
+        # still be called after Rowan.
+        conn = get_conn()
+        try:
+            row = conn.execute(
+                "SELECT name FROM members WHERE id = ? AND household_id = ?",
+                (int(member_id), int(household_id)),
+            ).fetchone()
+        finally:
+            conn.close()
+        touched = _remove_member(household_id, member_id, by_member_id)
+        if row is not None:
+            # Best effort: the removal above has already committed, so a
+            # failed rename (a locked database) must not reach the routes'
+            # "nothing was changed" 500 — the person IS gone. The name
+            # stays stale until someone edits it, which is the lesser lie.
+            try:
+                _household.house_name_follows_main_person_out(row["name"] or "")
+            except Exception:
+                logger.exception(
+                    "Removed member %s from household %s but could not rename the house",
+                    member_id, household_id,
+                )
+        return touched
 
 
 def _remove_member(household_id: int, member_id: int, by_member_id: int | None = None) -> dict:
