@@ -97,6 +97,15 @@ Or, for a deployment without the token route, the older pair:
     HOME_MANAGER_URL=https://home-manager-production-4949.up.railway.app
     HOME_MANAGER_PASSPHRASES=<household 1's passphrase>[,<household 2's>,...]
 
+Reading the "Something not working?" notes (--feedback) over the web
+takes its own token, FEEDBACK_TOKEN, matching the one set on the service.
+It is never given to the overnight routine: REPORT_TOKEN carries no typed
+text, and FEEDBACK_TOKEN carries nothing else.
+
+    HOME_MANAGER_URL=https://home-manager-production-4949.up.railway.app
+    FEEDBACK_TOKEN=<the value set on Railway>
+    python observability_report.py --feedback
+
 HOME_MANAGER_PASSWORD is accepted as a fallback for the second, so a
 deployment that already sets it needs nothing new. One passphrase per
 household, because a household's data is reachable only by signing into
@@ -584,12 +593,53 @@ def collect_recipe_changes(days: int) -> list[dict]:
     return _collect_recipe_changes_from_db(days)
 
 
+def _feedback_token() -> str:
+    return os.environ.get("FEEDBACK_TOKEN", "").strip()
+
+
+def _collect_feedback_over_token(days: int) -> list[dict]:
+    """One request, every household's reports — /api/feedback-report.
+
+    Its own token on purpose: REPORT_TOKEN is the overnight routine's, and
+    this route is nothing but typed text (see the route's docstring). A 404
+    means the token was refused or the deployment predates the route.
+    """
+    base, token = _base_url(), _feedback_token()
+    req = urllib.request.Request(
+        f"{base}/api/feedback-report?days={int(days)}",
+        headers={"x-feedback-token": token},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+    except ValueError as e:
+        raise NoData(f"{base} answered /api/feedback-report with something that is not JSON ({e}).")
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            raise NoData(
+                f"{base} answered 404 to /api/feedback-report. Either FEEDBACK_TOKEN here "
+                "does not match the one set on the service, or the deployment there "
+                "predates the route. Nothing was read."
+            )
+        raise NoData(f"{base} answered {e.code} to /api/feedback-report. Nothing was read.")
+    except (urllib.error.URLError, OSError, http.client.HTTPException) as e:
+        raise NoData(f"could not reach {base}: {type(e).__name__}: {e}")
+
+    households = data.get("households") if isinstance(data, dict) else None
+    if not isinstance(households, list):
+        raise NoData(f"{base} answered /api/feedback-report without a households list.")
+    return households
+
+
 def collect_feedback(days: int) -> list[dict]:
     """
     The reports, from the same source and in the same precedence as
-    collect() — the live app when it is configured, a local database file
-    otherwise. Never called unless --feedback was passed.
+    collect() — the live app when it is configured (FEEDBACK_TOKEN first,
+    then passphrases), a local database file otherwise. Never called unless
+    --feedback was passed.
     """
+    if _base_url() and _feedback_token():
+        return _collect_feedback_over_token(days)
     if _base_url():
         return _collect_feedback_over_http(days)
     return _collect_feedback_from_db(days)

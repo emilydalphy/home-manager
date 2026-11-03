@@ -153,6 +153,9 @@ _PUBLIC_EXACT = frozenset({
     # deliberately CROSS-household: there is no session to bind it to, which
     # is exactly why it authenticates itself instead.
     "/api/health-report",
+    # The same, for the "Something not working?" notes: its own token
+    # (FEEDBACK_TOKEN), 404s without it (see main.feedback_report).
+    "/api/feedback-report",
     # The invite link's landing page and the one call it makes. The token
     # is the credential (app/invites.py); it rides in the link's fragment
     # and the POST body, never the path, so nothing logs it.

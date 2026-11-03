@@ -35,6 +35,9 @@ LIMITS = {
     # is generous for it and mean to anyone guessing at its token — which
     # is the only other reason to call it.
     "health_report": [(10, 300), (60, 3600)],
+    # The cross-household "Something not working?" reader. One person at a
+    # terminal now and then; the same ceiling as the health report.
+    "feedback_report": [(10, 300), (60, 3600)],
     # Browser error reports. A page stuck in an error loop can fire these
     # as fast as it renders, and one broken screen must not be able to
     # fill the error table with the same row. Generous enough that a real

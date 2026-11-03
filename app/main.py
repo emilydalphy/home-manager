@@ -11182,6 +11182,46 @@ def health_report(request: Request, days: int = 1):
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
+@app.get("/api/feedback-report")
+def feedback_report(request: Request, days: int = 30):
+    """
+    Every household's "Something not working?" reports, word for word, for
+    Emily (2026-11-02: she filed one and had nowhere to see it — the email
+    half was never switched on, and /api/feedback only answers for the
+    household that is signed in).
+
+    WHY ITS OWN TOKEN, NOT REPORT_TOKEN. /api/health-report deliberately
+    carries no feedback prose, because the overnight routine reads it under
+    an instruction to act on what it reads. This route is the opposite: it
+    is nothing but typed text. Giving it a separate FEEDBACK_TOKEN means the
+    routine, which holds REPORT_TOKEN, cannot reach it, and the text only
+    ever lands in front of whoever runs observability_report.py --feedback,
+    which prints it under the untrusted fence.
+
+    Same shape as the passphrase read, built by the same function, so the
+    printer needs nothing new. Unset FEEDBACK_TOKEN disables the route; a
+    missing or wrong token answers 404, as the health report does.
+    """
+    # Rate-limited BEFORE the token check, so a wrong guess counts too: this
+    # route is nothing but people's words, and its token must not be
+    # guessable by asking without limit.
+    _enforce_rate_limit(request, "feedback_report")
+
+    token = os.environ.get("FEEDBACK_TOKEN", "")
+    supplied = request.headers.get("x-feedback-token", "")
+    if not token or not supplied or not secrets.compare_digest(supplied, token):
+        raise HTTPException(status_code=404, detail="Not found")
+
+    days = max(1, min(int(days), 30))
+    try:
+        from observability_report import _collect_feedback_from_db
+
+        return {"days": days, "households": _collect_feedback_from_db(days)}
+    except Exception as e:
+        logger.exception("Feedback report failed")
+        raise HTTPException(status_code=500, detail=f"Server error: {e}")
+
+
 @app.get("/robots.txt", response_class=PlainTextResponse)
 def robots():
     return "User-agent: *\nDisallow: /\n"
