@@ -13,6 +13,8 @@ detail lives in the commit that made the change (`git log --oneline` /
 `git show <hash>`) — this log is for surfacing *that something happened and
 why*, not duplicating the diff.
 
+- **A can, tin or jar of tomatoes is not "Better fresh" on the prep list** (2026-11-03, overnight hunt; branch `overnight/prep-canned-not-fresh-1103`; `tests/test_prep_list_canned_is_not_fresh.py`).
+  "Diced tomatoes · 1 can" with no category read as cut tomato ("goes soft and watery overnight"). `prep_list._produce_kind` now returns None when the amount names a can/tin/jar/carton (`_CONTAINER_QTY`), so it is neither chopped ahead nor called fresh.
 - **What is put onto a Kitchen row in quarts or gallons stays on it** (2026-11-02, defect hunt, branch `overnight/hunt-quantities-1102`; `tests/test_kitchen_add_onto_a_quart_keeps_it.py`).
   `inventory._merged_quantity` used `_big_volume_text`'s DOWN-to-whole-cups reading (right for what comes off), so 1/2 cup of cream onto "1 quart" read "1 quart", three 3/4 cups still "1 quart", and "use 1 quart" then deleted a row holding 2 1/4 cups. An add (`adding=True`) keeps a measuring step past its whole cups, said in cups ("4 1/2 cups"); whole cups still read in quarts, spoons still floor away. Then (`_cup_row_text`) a cups row with cups or spoons used off it reads on a cup step ("3 1/2 cups", "15 1/3 cups"; from 4 cups DOWN to the step, never "75 tbsp"); whole cups stay cups — the row no longer remembers the quart, and "16 cups" of flour is not a gallon. Open for Emily: "4 1/2 cups" vs rounding up to "1 1/4 quarts".
 - **A prep-list step says the amount the Cook card cooks (batch or guest night)** (2026-11-02, overnight defect hunt; branch `overnight/hunt-kitchen-1102`; `tests/test_prep_list_batch_amounts.py`).
