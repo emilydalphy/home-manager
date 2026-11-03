@@ -1,0 +1,150 @@
+{
+ "dish_name": "Chilli Chicken",
+ "cuisine": "Indian",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Serrano chilies",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Sweet red chili sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Tomato ketchup",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "White rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put 3 cups of water and the rice in a pot with a pinch of salt and bring it to a boil. Cover, turn the heat to low and cook for 15 minutes, until the water is gone. Leave it covered off the heat.",
+  "Cut the chicken into 3/4-inch pieces. Mince 2 of the garlic cloves and 1 tbsp of the ginger. In a large bowl, mix the chicken with 1 tbsp of the soy sauce, 1 tbsp of the chili sauce, 1/2 tsp of the paprika, 1/2 tsp of the black pepper, the salt, the minced garlic and ginger, and the egg.",
+  "Mix in the cornstarch and flour until every piece is coated in a thick, sticky batter. Let it sit while you do the next steps.",
+  "Make the sauce in a small bowl: stir together the remaining 2 tbsp of soy sauce, the remaining 1 tbsp of chili sauce, the ketchup, the vinegar, the remaining 1/2 tsp of paprika, the remaining 1/2 tsp of black pepper and 1/4 cup of water.",
+  "Cut the onions and the bell pepper into 1-inch squares. Mince the last 2 garlic cloves. Slice the scallions, keeping the white and green parts separate. Slice the serrano chilies and put them in a small bowl for the table.",
+  "Heat 1/2 cup of the oil in a large skillet over medium-high heat for about 2 minutes, until a pinch of batter sizzles right away.",
+  "Add half the chicken in a single layer, pulling the pieces apart as they go in. Cook for 4 minutes, turning once or twice, until deep golden and crisp. Transfer to a plate lined with paper towels. Cook the second half the same way. You're cooking it to 175°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest piece: it's done when the juices run clear.",
+  "Carefully pour the oil out of the pan into a heatproof bowl and wipe the pan out. Add the remaining 1 1/2 tbsp of oil and heat it over high heat.",
+  "Add the minced garlic and the scallion whites and stir for 30 seconds. Add the onions and cook for 2 minutes, then add the bell pepper and cook for 1 minute. The vegetables should still be crunchy.",
+  "Stir the sauce and pour it in. Let it bubble for 1 minute, until it thickens slightly.",
+  "Add the chicken and toss for 1 minute, until every piece is glossy.",
+  "Take the pan off the heat. Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice, with the scallion greens on top and the sliced serranos on the table for anyone who wants heat."
+ ],
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 25,
+ "method_notes": "This is not a 30 minute dish when written honestly: it comes to about 45 minutes with the batter, frying in two batches and the stir fry. Swasthi's Recipes (the lead, 50 minutes) and My Food Story (30 minutes) both coat the chicken, fry it crisp, then toss it with onion, bell pepper and a soy, chili sauce and ketchup glaze. I shallow fried instead of deep frying, skipped the overnight marinade and the second fry, and moved the green chilies to the table to keep the base mild. Ratings are the visible page ratings.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Chilli Chicken Recipe (Crispy Restaurant Style)",
+   "url": "https://www.indianhealthyrecipes.com/chilli-chicken-dry-recipe-indo-chinese-/",
+   "rating": 4.96,
+   "rating_count": 579,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "My Food Story",
+   "title": "Easy Chinese Chilli Chicken Dry",
+   "url": "https://myfoodstory.com/easy-chinese-chilli-chicken-dry/",
+   "rating": 4.92,
+   "rating_count": 50,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "default_servings": 4
+}

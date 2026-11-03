@@ -1,0 +1,116 @@
+{
+ "dish_name": "Poulet a l'Estragon",
+ "cuisine": "French",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken breasts",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Baby potatoes",
+   "qty": "1.5 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Shallots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh tarragon",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1/2 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "2/3 cup",
+   "category": "other"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "1 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Halve the potatoes and put them in a pot with cold water to cover and 1 tsp of the salt. Bring to a boil, then simmer for 15 minutes, until a knife slides in easily.",
+  "Meanwhile, slice each chicken breast in half through the thickness so you have 2 thin cutlets. Pat them dry and season both sides with 1/2 tsp of the salt and the pepper.",
+  "Finely chop the shallots and mince the garlic. Strip the leaves from the tarragon and chop 2 tbsp of them.",
+  "Heat the oil in a large skillet over medium-high heat until it shimmers. Add the chicken in a single layer and cook for 3 minutes, until the underside is golden and lets go of the pan. Flip and cook for 2 minutes. Transfer the chicken to a plate. It will finish cooking in the sauce.",
+  "Add the shallots to the same pan and cook over medium heat for 2 minutes, scraping up the browned bits, until soft. Add the garlic and stir for 30 seconds.",
+  "Add the wine and let it bubble for 2 minutes, until it's reduced by about half. Add the broth and the cream and bring it to a simmer.",
+  "Return the chicken and any juices on the plate to the pan. Simmer, flipping once, for 5 minutes, until the sauce coats a spoon. You're cooking the chicken to 160°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest piece: it's done when there's no pink left.",
+  "Drain the potatoes and return them to the pot. Add the butter and the remaining 1/2 tsp of salt and toss until the butter melts.",
+  "Take the pan off the heat and stir in the chopped tarragon. Taste it. If it's flat, add a pinch more salt.",
+  "Serve the chicken with the sauce spooned over and the buttered potatoes."
+ ],
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "method_notes": "The sources agree on the order: brown the chicken, soften shallot and garlic in the same pan, reduce white wine, then add stock, cream and tarragon. Eat Little Bird (the lead) and Cup of Yum use quick breast cutlets in 30 minutes, while Pardon Your French (3.9 from 57) braises a whole cut-up chicken for over an hour. I used the lead's quick cutlet method, left out its cornstarch slurry and let the cream reduce instead, and added the potatoes as the side. Ratings are the visible page ratings.",
+ "sources": [
+  {
+   "name": "Eat Little Bird",
+   "title": "Creamy Tarragon Chicken",
+   "url": "https://eatlittlebird.com/creamy-tarragon-chicken/",
+   "rating": 4.88,
+   "rating_count": 41,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cup of Yum",
+   "title": "Creamy Tarragon Chicken Recipe",
+   "url": "https://cupofyum.com/recipes/creamy-tarragon-chicken-recipe",
+   "rating": 4.7,
+   "rating_count": 52,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Pardon Your French",
+   "title": "Creamy French Chicken Tarragon",
+   "url": "https://www.pardonyourfrench.com/creamy-french-chicken-tarragon/",
+   "rating": 3.9,
+   "rating_count": 57,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "default_servings": 4
+}
