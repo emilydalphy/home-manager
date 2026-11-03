@@ -1,0 +1,101 @@
+{
+ "dish_name": "Khai Krata",
+ "cuisine": "Thai",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Ground pork",
+   "qty": "8 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Chinese sausage",
+   "qty": "2 links",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Ground white pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Baguette",
+   "qty": "1",
+   "category": "other"
+  },
+  {
+   "item": "Sriracha",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 350°F. Thinly slice the sausage on an angle. Thinly slice the green onions. Mince the garlic.",
+  "In a bowl, mix the pork with the garlic, 1 tbsp soy sauce and 1/4 tsp of the white pepper.",
+  "Heat the oil in a 12 inch nonstick skillet over medium-high heat. Add the pork and cook for 4 minutes, breaking it up, until it's browned and there's no pink left. Transfer it to a bowl.",
+  "Add the sausage to the same skillet. Cook for 2 minutes, until the edges are browned. Transfer it to the bowl with the pork and stir in half of the green onions.",
+  "Cut the baguette into 4 pieces and split each one open. Spread the cut sides with 1 tbsp of the butter, set them on a baking sheet and toast for 5 minutes.",
+  "Wipe out the skillet and turn the heat to medium-low. Add the remaining 2 tbsp butter. When it foams, crack in the 8 eggs, spaced around the pan.",
+  "Cook for 1 minute. Scatter the pork and sausage over the whites, cover the pan and cook for 3 to 4 minutes, until the whites are set and the yolks are still soft.",
+  "Sprinkle the eggs with the remaining 1/4 tsp white pepper and the rest of the green onions. Bring the pan to the table. Serve with the warm baguette and the sriracha."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The versions agree that the eggs cook in the small pan they're served in, in butter, with sliced Chinese sausage or pork pâté on top, and eaten with toasted bread. Hot Thai Kitchen's page, the best known, was blocked, so this is a fallback: Bangkok Glutton leads and gives no rating, and Austin Bush describes the dish without amounts. The minced pork is our own simple seasoning, since the pâté is hard to find, and the dish is cooked in one 12 inch skillet instead of individual pans. The sriracha is for the table.",
+ "sources": [
+  {
+   "name": "Bangkok Glutton",
+   "title": "Kai kata a la Aim Och",
+   "url": "https://bangkokglutton.com/2013/03/26/whats-cooking-aim-och/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Austin Bush",
+   "title": "Khai katha",
+   "url": "https://www.austinbushphotography.com/blog/blog/khai-katha.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

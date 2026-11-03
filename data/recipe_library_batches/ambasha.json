@@ -1,0 +1,109 @@
+{
+ "dish_name": "Ambasha",
+ "cuisine": "Ethiopian",
+ "main_protein": "vegetarian",
+ "default_servings": 16,
+ "prep_time_minutes": 120,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Active dry yeast",
+   "qty": "2 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup + 1 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cardamom",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground ginger",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "3 1/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "5 tbsp",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "On Sunday, or up to 4 days ahead: in a large bowl, stir 1 cup warm water with 1 tsp of the sugar. It should feel warm to the touch, not hot. Sprinkle the yeast over it and leave it for 10 minutes, until it's foamy.",
+  "Add the remaining 1/4 cup sugar, the salt, cardamom, ginger and 3 cups of the flour. Mix until a rough dough forms.",
+  "Turn the dough out onto a counter dusted with the remaining 1/4 cup flour. Knead for 5 minutes, until it's soft and smooth. If it sticks, dust it with a spoonful of flour.",
+  "Rub 1 tbsp of the oil around a clean bowl. Put the dough in, turn it once so it's coated, cover and leave it somewhere warm for 1 hour, until doubled.",
+  "Heat the oven to 350°F. Rub the remaining 1 tbsp oil over two baking sheets.",
+  "Melt 3 tbsp of the butter. Cut the dough in half and press and roll each half into a 10 inch round on a baking sheet.",
+  "Cut 3 or 4 lines across the center of each round, then add a few curved lines around them. Don't cut all the way through. Brush the tops with some of the melted butter.",
+  "Bake for 20 to 25 minutes, until golden. Brush the tops with the rest of the melted butter.",
+  "Cool on a rack for at least 30 minutes. Cut each round into 8 wedges. This makes 16 wedges.",
+  "Keep the wedges in a sealed container in the fridge for up to 4 days, or wrap them and freeze them for up to 1 month.",
+  "In the morning, warm a wedge in a toaster oven for 3 minutes or in the microwave for 15 seconds. A frozen wedge takes 30 seconds in the microwave. Serve with the remaining 2 tbsp butter and a cup of tea."
+ ],
+ "advance_prep_notes": "Bake both breads on Sunday, or up to 4 days ahead, and eat them through the week.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10
+ ],
+ "method_notes": "The versions agree on a lightly sweet yeast dough, scored on top and baked at 350°F. Cook with Kushi (the lead) flavors it with cardamom and ginger and makes two 10 inch rounds, and this follows it, without the optional semolina. The other two read, On the Chocolate Trail and What's Out Addis, use fenugreek and cumin seeds, a stovetop pan and a half day rise, so spices differ by region. The rising takes about 90 minutes of the total, and the keeping times are our own.",
+ "sources": [
+  {
+   "name": "Cook with Kushi",
+   "title": "Ethiopian Bread | Himbasha, Ambasha, H'mbasha",
+   "url": "https://www.cookwithkushi.com/ethiopian-bread/",
+   "rating": 4.96,
+   "rating_count": 24,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "On the Chocolate Trail",
+   "title": "Ambasha aka Himbasha Hambasha Ethiopian Wedding Bread",
+   "url": "https://onthechocolatetrail.org/2019/08/ambasha-aka-himbasha-hambasha-ethiopian-wedding-bread/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "What's Out Addis",
+   "title": "Ambasha Bread",
+   "url": "https://whatsoutaddis.com/?p=8237",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
