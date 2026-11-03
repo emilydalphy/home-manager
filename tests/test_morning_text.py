@@ -40,7 +40,7 @@ import pytest
 from app import agent, households, tools
 from app.db import get_conn
 from app.tools import digest
-from conftest import household_today
+from conftest import before_tonight_closes, household_today
 
 # Switched on before the morning each test then plays (conftest).
 pytestmark = pytest.mark.usefixtures("switched_on_before_the_morning")
@@ -243,6 +243,7 @@ def test_tomorrows_dinner_gap_is_not_tonights():
     assert "still open" not in text
 
 
+@before_tonight_closes()
 def test_tonights_gap_is_said_plainly_with_no_exclamation():
     _adults()
     tools.add_recipe("Quick Eggs", ingredients=[{"item": "Eggs", "qty": "6"}], prep_time_minutes=5, cook_time_minutes=5)

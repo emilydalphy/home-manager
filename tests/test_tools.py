@@ -11,7 +11,7 @@ import datetime
 import pytest
 
 from app import tools
-from conftest import household_today
+from conftest import before_tonight_closes, household_today
 from conftest import on_the_weeks_monday
 
 # Approval buys only from the household's today on: run on the seeded week's Monday.
@@ -487,6 +487,7 @@ class TestNeedsYouSurfacesAnOpenDinner:
     'planned' dinner still surfaces nothing, correctly.
     """
 
+    @before_tonight_closes()
     def test_an_open_dinner_surfaces_with_its_own_options_and_reason(self):
         plan_id = tools.create_weekly_plan(_week_start())["weekly_plan_id"]
         tools.plan_slot_open(

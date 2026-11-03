@@ -29,6 +29,7 @@ from conftest import household_today
 from shop_harness import CLICK, FIXTURE, STUB, cook_progress, grocery_block
 
 from app import tools
+from app.tools import cooker as _cooker
 from app.db import get_conn
 
 REPO = Path(__file__).resolve().parent.parent
@@ -233,11 +234,22 @@ def test_bought_n_days_ago_counts_from_the_purchase_not_the_listing():
     bought two days ago: inventory_added_at is the tick, created_at only
     the listing (the fallback for an older row)."""
     item_id = tools.add_grocery_item("Milk", "2 L", category="dairy")["item_id"]
+    # Stamped at the household's noon two and thirty days back, not
+    # `datetime('now', '-2 days')`: 48 hours is two of the household's
+    # days only when no clock change falls between. The night after the
+    # fall-back (Mon 2 Nov 2026, 23:00-midnight Toronto) 48 hours ago was
+    # Sunday, so the app rightly said "bought yesterday" (2026-11-03).
+    def _utc_noon(days_back: int) -> str:
+        noon = datetime.datetime.combine(
+            household_today() - datetime.timedelta(days=days_back), datetime.time(12, 0),
+            tzinfo=_cooker.household_zone(),
+        )
+        return noon.astimezone(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+
     conn = get_conn()
     conn.execute(
-        "UPDATE grocery_items SET status = 'purchased', created_at = datetime('now', '-30 days'), "
-        "inventory_added_at = datetime('now', '-2 days') WHERE id = ?",
-        (item_id,),
+        "UPDATE grocery_items SET status = 'purchased', created_at = ?, inventory_added_at = ? WHERE id = ?",
+        (_utc_noon(30), _utc_noon(2), item_id),
     )
     conn.commit()
     conn.close()

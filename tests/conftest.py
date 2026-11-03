@@ -1176,6 +1176,24 @@ def on_the_weeks_monday(monday: _dt.date | None = None):
     return pytest.mark.today(household_pin(9, on=monday))
 
 
+def before_tonight_closes():
+    """
+    `@before_tonight_closes()` — run a test at the household's midday, today.
+
+    For the tests about TONIGHT'S dinner card (needs-you's "Tonight needs a
+    dinner", an open tonight, a cook's "Start by" chip, the morning text's
+    "Tonight's still open"). From 9pm on the household's clock tonight isn't
+    asked about any more (weekly_plan.TONIGHT_QUESTION_CLOSES, 2026-10-26),
+    and a cook's start-by goes once the evening is over (moves.evening_over,
+    7pm default) — both on purpose. Unpinned, eleven such tests went red
+    every night from 9pm Toronto (02:00 UTC) to midnight, and read as a flake
+    the next morning (overnight hunt, 2026-11-03). Today's date, so the
+    file's own `household_today()` seeds still name the same day; read at
+    collection, so a run that crosses midnight stays on one day.
+    """
+    return pytest.mark.today(household_pin(12))
+
+
 @contextlib.contextmanager
 def approving_on(day: _dt.date):
     """

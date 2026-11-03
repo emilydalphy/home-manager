@@ -39,7 +39,7 @@ import datetime
 
 from app import households, tools
 from app.tools import digest
-from conftest import household_pin, household_today
+from conftest import before_tonight_closes, household_pin, household_today
 
 
 def _d(offset_days: int = 0) -> str:
@@ -80,6 +80,7 @@ def _cooks_today():
 class TestABrandNewHouseholdWithNoPlanAtAll:
     """The beta tester's first evening: no plan on file anywhere."""
 
+    @before_tonight_closes()
     def test_the_card_is_offered_and_the_meal_is_saved(self):
         _a_recipe()
         # The holiday ask is subtracted, and everything else still has to be
@@ -96,6 +97,7 @@ class TestABrandNewHouseholdWithNoPlanAtAll:
 
         assert [e["meal"] for e in tools.get_meal_plan(days_ahead=1)] == ["Chili"]
 
+    @before_tonight_closes()
     def test_it_becomes_a_cook_move_on_now_with_a_start_by_time_and_a_tick(self):
         _a_recipe()
         tools.resolve_needs_you_dinner(_d(), "Chili")

@@ -15,12 +15,19 @@ from __future__ import annotations
 
 import datetime
 
-from conftest import household_today
+from conftest import household_today, on_the_weeks_monday
 
 from app import households, tools
 from app.tools._shared import use_household
 
 OUT = "Out — nothing to cook"
+
+# On the Monday of the seeded week. Approving it later in the week, with
+# Monday's chili never ticked, rightly hands Tuesday's leftovers back as a
+# question ("Monday's gone", weekly_plan._reask_reheats_of_gone_cooks) — so
+# unpinned, the two reheat-night tests went red every Tuesday on the
+# household's clock (overnight hunt, 2026-11-03).
+pytestmark = on_the_weeks_monday()
 
 
 def _monday() -> datetime.date:
