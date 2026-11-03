@@ -1,0 +1,39 @@
+{
+ "dish_name": "Black Bean Dip",
+ "cuisine": "Mexican",
+ "main_protein": "beans",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {"item": "Black beans", "qty": "1 can (15 oz)", "category": "pantry"},
+  {"item": "Salsa", "qty": "1 jar", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "Sour cream", "qty": "1 tub", "category": "dairy", "cook_qty": "1/4 cup"},
+  {"item": "Shredded cheddar cheese", "qty": "1 bag (8 oz)", "category": "dairy", "cook_qty": "1 cup"},
+  {"item": "Lime", "qty": "1", "category": "produce"},
+  {"item": "Chili powder", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Ground cumin", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce", "cook_qty": "2 tbsp chopped"},
+  {"item": "Tortilla chips", "qty": "1 bag", "category": "pantry"}
+ ],
+ "instructions": [
+  "Heat the oven to 400°F. Lightly grease a small baking dish, about 8 inches across.",
+  "Drain the beans into a sieve and rinse them under cold water. Shake well.",
+  "Transfer the beans to a bowl. Mash about half of them with a fork or a potato masher and leave the rest whole.",
+  "Stir in 1/2 cup salsa, 1/4 cup sour cream, 1/2 cup of the cheddar, 1 tsp chili powder, 1 tsp cumin, 1/2 tsp salt and 1 tsp lime juice.",
+  "Spread the dip in the baking dish and sprinkle the remaining 1/2 cup cheddar over the top.",
+  "Bake for 15 minutes, until it's bubbling at the edges and the cheese has melted.",
+  "Let it cool for 5 minutes. Chop 2 tbsp of the cilantro and scatter it over the top.",
+  "Serve warm with the tortilla chips and the rest of the lime cut into wedges."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version of this dish had a rating of 4.0 or more with 20 or more ratings, so this is a fallback lead: Real and Vibrant (5.0 from 8 ratings), a warm baked dip of beans, salsa, sour cream and cheddar. Brown Eyed Baker blocked the fetch, and Oh Sweet Basil (2.83 from 76 ratings) is a skillet version with cream cheese and diced tomatoes. Both bake at 375 to 400°F until bubbling. The lead blends everything in a food processor, so this mashes half the beans by hand like Oh Sweet Basil and keeps the rest whole. It also swaps the taco seasoning packet for chili powder and cumin and drops the green chiles to keep the dip mild.",
+ "sources": [
+  {"name": "Real and Vibrant", "title": "Black Bean Dip (Warm, Cheesy Black Bean Dip)", "url": "https://realandvibrant.com/black-bean-dip-warm/", "rating": 5.0, "rating_count": 8, "read": true, "lead": true},
+  {"name": "Oh Sweet Basil", "title": "Easy One Skillet Cheesy Black Bean Dip", "url": "https://ohsweetbasil.com/easy-one-skillet-cheesy-black-bean-dip-recipe/", "rating": 2.83, "rating_count": 76, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

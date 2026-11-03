@@ -1,0 +1,41 @@
+{
+ "dish_name": "Chinese Egg Tarts",
+ "cuisine": "Chinese",
+ "main_protein": "eggs",
+ "default_servings": 16,
+ "prep_time_minutes": 90,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {"item": "All-purpose flour", "qty": "2 cups", "category": "pantry"},
+  {"item": "Salt", "qty": "1/8 tsp", "category": "pantry"},
+  {"item": "Unsalted butter", "qty": "12 tbsp", "category": "dairy"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "Eggs", "qty": "3", "category": "dairy"},
+  {"item": "Evaporated milk", "qty": "1 can (12 oz)", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "Vanilla extract", "qty": "1 bottle", "category": "pantry", "cook_qty": "1 tsp"}
+ ],
+ "instructions": [
+  "On Sunday, or up to a day ahead: stir 2 cups flour and 1/8 tsp salt together in a large bowl. Cut 12 tbsp butter into small cubes. It should be soft enough to press but not melting.",
+  "Rub the butter into the flour with your fingertips until it looks like coarse crumbs, with some pea-size pieces left.",
+  "Add 2 tbsp cold water and press the dough together. If it's dry, add water 1/2 tsp at a time, up to 3 tsp in all. Wrap it and chill for 20 minutes.",
+  "Roll the dough out on a floured counter into a rectangle about 6 by 15 inches. Fold the top third down and the bottom third up, like a letter. Turn it a quarter turn.",
+  "Roll it out to 6 by 15 inches again and fold it the same way. Wrap it and chill for 1 hour, or up to a day.",
+  "Measure 1/2 cup sugar into a heatproof bowl and stir in 1 cup hot water until it dissolves. Leave it to cool to room temperature.",
+  "In a large bowl, whisk 3 eggs, 1/2 cup evaporated milk and 1 tsp vanilla until smooth. Whisk in the cooled sugar water.",
+  "Pour the custard through a fine sieve into a jug. That should be about 2 cups. Cover and keep it in the fridge until you're ready to bake.",
+  "Put a rack in the lower third of the oven and heat it to 375°F.",
+  "Roll the dough out to about 1/5 inch thick. Cut 4-inch circles and press each one into a mini tart tin or a shallow muffin cup, leaving a little lip above the rim. Gather the scraps, roll them out again and cut more circles. This makes about 16 tarts.",
+  "Fill each shell about three-quarters full with the custard.",
+  "Carefully transfer the pan to the oven and turn the heat down to 350°F straight away. Bake for 26 to 29 minutes, until the custard is set. A toothpick pushed into the middle should come out clean.",
+  "Let the tarts cool in the pan for at least 10 minutes. Lift them out and serve warm or at room temperature."
+ ],
+ "advance_prep_notes": "make the dough up to a day ahead; it needs 80 minutes of chilling",
+ "advance_prep_step_indices": [1, 2, 3, 4, 5],
+ "method_notes": "Lead is The Woks of Life (4.81 from 146 ratings), a Hong Kong style flaky butter pastry with a light custard of eggs, evaporated milk and sugar water, baked at 375 then 350°F. Hungry Huy (4.89 from 17 ratings) agrees on the custard being strained and on baking hot and then lower, but uses sour cream in the dough and condensed milk with yolks in the filling. This follows the lead's amounts and method, and it is the long one: about 90 minutes before baking, most of it chilling, so the dough can be made a day ahead. Hungry Huy's sour cream dough is a shorter option if Emily wants a quicker tart.",
+ "sources": [
+  {"name": "The Woks of Life", "title": "Hong Kong Egg Tarts (Chinese Dim Sum/Pastry)", "url": "https://thewoksoflife.com/hong-kong-egg-tarts/", "rating": 4.81, "rating_count": 146, "read": true, "lead": true},
+  {"name": "Hungry Huy", "title": "Egg Tarts (Dim Sum Style)", "url": "https://www.hungryhuy.com/egg-tarts/", "rating": 4.89, "rating_count": 17, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

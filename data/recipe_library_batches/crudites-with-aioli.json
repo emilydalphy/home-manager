@@ -1,0 +1,37 @@
+{
+ "dish_name": "Crudites with Aioli",
+ "cuisine": "French",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {"item": "Mayonnaise", "qty": "1 jar", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Lemon", "qty": "1", "category": "produce"},
+  {"item": "Salt", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/4 tsp", "category": "pantry"},
+  {"item": "Carrots", "qty": "1 lb", "category": "produce"},
+  {"item": "Persian cucumbers", "qty": "2", "category": "produce"},
+  {"item": "Red bell pepper", "qty": "1", "category": "produce"},
+  {"item": "Radishes", "qty": "1 bunch", "category": "produce"}
+ ],
+ "instructions": [
+  "Peel the garlic and grate the 2 cloves on the fine side of a grater into a small bowl.",
+  "Add 1/2 cup of the mayonnaise, 1 tbsp juice from the lemon, 1/4 tsp salt and 1/4 tsp pepper. Stir until it's smooth.",
+  "Taste the aioli. Add a little more lemon juice or salt if you like.",
+  "Peel the carrots and cut them into sticks about the length of your finger. Cut the cucumbers into sticks the same size.",
+  "Cut the bell pepper into strips. Trim the radishes and halve any big ones.",
+  "Put the aioli in a small bowl in the middle of a platter and arrange the vegetables around it. Serve with the rest of the lemon cut into wedges."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version of this exact dish had 20 or more ratings, so this is a fallback lead: Anatomy of a Pineapple, a mayonnaise, garlic and lemon aioli with a plate of raw vegetables, whose page shows a rating widget but no numbers to me. Darina Allen's version (Octopus Books) is the classic hand-whisked egg yolk aioli, and Olive Magazine's stirs chipotle and chives into mayonnaise. All three agree on garlic in the dip and a plate of crisp raw vegetables around it. This keeps the mayonnaise base so there is no raw egg and no whisking, and leaves out the Tabasco and sugar from the lead so the dip stays mild.",
+ "sources": [
+  {"name": "Anatomy of a Pineapple", "title": "Crudites with Lemon Garlic Aioli", "url": "https://anatomyofapineapple.com/crudites-with-lemon-garlic-aioli/", "rating": null, "rating_count": null, "read": true, "lead": true},
+  {"name": "Octopus Books (Darina Allen)", "title": "Crudites with Aioli", "url": "https://www.octopusbooks.co.uk/octopus-news/2022/08/24/crudites-with-aioli/", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Olive Magazine", "title": "Crudites with chipotle aioli", "url": "https://www.olivemagazine.com/recipes/vegetarian/crudites-with-chipotle-aioli/", "rating": 5.0, "rating_count": 1, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
