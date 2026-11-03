@@ -2389,6 +2389,11 @@ CREATE TABLE IF NOT EXISTS recipe_library (
     advance_prep_step_indices_json TEXT NOT NULL DEFAULT '[]',
     method_notes TEXT NOT NULL DEFAULT '',
     fallback_used INTEGER NOT NULL DEFAULT 0,
+    -- Library first (2026-11-03): the meal it is for ('' = the starter
+    -- list's own), and for a variant what it was written around, as kinds
+    -- ("allergies", "children", "eating_style", "kitchen_kit", "use_up").
+    meal TEXT NOT NULL DEFAULT '',
+    adapted_for_json TEXT NOT NULL DEFAULT '[]',
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_recipe_library_dish ON recipe_library (dish_key, kind, id);

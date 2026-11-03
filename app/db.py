@@ -433,6 +433,11 @@ _MIGRATIONS = [
     # Shared Recipe Library step 1 (2026-10-19): the library entry a
     # recipe was filed as or copied from. NULL for typed/imported recipes.
     ("recipes", "library_id", "INTEGER"),
+    # Library first (2026-11-03): which meal a library dish is for (blank =
+    # the starter list's own `meal`), and what a variant was written around
+    # (kinds only, never a household's words) — recipe_library.file_new_recipe.
+    ("recipe_library", "meal", "TEXT NOT NULL DEFAULT ''"),
+    ("recipe_library", "adapted_for_json", "TEXT NOT NULL DEFAULT '[]'"),
     # 1 for a dish the week-draft generator wrote (agent._ensure_recipe_saved);
     # Settings -> Recipes lists one only once it has been on an approved week,
     # cooked or rated (recipes.recipe_shelf). 0 for everything a person saved.

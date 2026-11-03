@@ -212,7 +212,24 @@ def test_the_first_household_writing_around_an_allergy_files_no_base(
 
 
 @pytest.mark.parametrize("key, value", [
-    ("eating_style", "vegetarian"), ("kitchen_kit", ["oven", "stovetop"]), ("children_at_table", True),
+    ("kitchen_kit", ["oven", "stovetop"]), ("children_at_table", True),
+])
+def test_children_or_a_kit_no_longer_stop_the_copy(b, research_calls, writer_calls, key, value):
+    """Emily, 2026-11-03 (library first): a library dish is used as the
+    library has it — a household with children or a listed kit is copied
+    the base, no writer call. (Until then they were written their own.)"""
+    _write(_plan_pending())
+    with tools.use_household(b):
+        recipe = _plan_pending()
+        shared = {**agent._shared_recipe_details_context(), key: value}
+        assert agent._write_one_pending_recipe(recipe, "dinner", shared, [])["ok"]
+        mine = tools.get_recipe("Grilled Chicken Skewers")
+    assert len(writer_calls) == 1, f"a {key} household was written its own instead of copied"
+    assert not mine["details_pending"] and mine["ingredients"]
+
+
+@pytest.mark.parametrize("key, value", [
+    ("eating_style", "vegetarian"), ("eating_style", "keto"),
 ])
 def test_a_household_the_base_wasnt_written_for_gets_its_own_write_not_a_copy(
         b, research_calls, writer_calls, monkeypatch, key, value):

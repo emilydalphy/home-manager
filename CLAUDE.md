@@ -410,6 +410,14 @@ names, correct the claim in the same change.
   (`tests/test_moves_household_clock.py` is the model). CI's `straddle`
   matrix is what catches the next one of these.
 
+- **Every recipe Pomona researches or writes goes back into the shared
+  library through `recipe_library.file_new_recipe`** (Emily, 2026-11-03,
+  "library first"). A new path that saves a model-written recipe must call
+  it (or `library_first.file_written`); `tests/test_library_first.py` fails
+  otherwise. Household-private recipes (typed, imported, chat-dictated,
+  Tell Pomona rewrites, `must_use`) are never filed. Suggestions pick from
+  the library first (`app/tools/library_first.py`).
+
 - **`home_manager` logger's INFO output was silently dropped** until
   `main.py` added `logging.basicConfig(level=logging.INFO, ...)`. Nothing
   else in the app configures logging, and Python's default "handler of last

@@ -567,7 +567,7 @@ def _clean_ingredients(raw) -> list[dict]:
     return out
 
 
-def _save_recipe_if_new(pick: dict, serves: int) -> None:
+def _save_recipe_if_new(pick: dict, serves: int, slot: str = "") -> None:
     """
     Make the dish cookable and shoppable, the same way a chat swap does
     (the system prompt's one-off-meal rule: build it into a real recipe
@@ -601,7 +601,7 @@ def _save_recipe_if_new(pick: dict, serves: int) -> None:
         return
     if _recipes.existing_recipe_named(name):
         return
-    _recipes.add_recipe(
+    saved = _recipes.add_recipe(
         measure_spices=True,  # the model wrote it (spice_measures_not_packages)
         name=name,
         ingredients=ingredients,
@@ -613,6 +613,11 @@ def _save_recipe_if_new(pick: dict, serves: int) -> None:
         prep_time_minutes=pick.get("prep_time_minutes"),
         cook_time_minutes=pick.get("cook_time_minutes"),
     )
+    # THE WRITE-BACK RULE (2026-11-03): a dish the model just wrote goes into
+    # the shared library (recipe_library.file_new_recipe), shaped by what
+    # this household is (the writer was told it in the swap's context).
+    from . import library_first as _library_first
+    _library_first.file_written(saved, slot=slot)
 
 
 def _hard_clash(pick: dict) -> list[dict]:
@@ -824,6 +829,16 @@ def swap_meal_in_place(
     group = batch_days(weekly_plan_id, entry_id) if whole_dish else fed_days(weekly_plan_id, entry_id)
     if len(group) < 2:
         group = [entry]
+    # LIBRARY FIRST (Emily, 2026-11-03): the first tap puts on a dish from
+    # the shared library that fits this slot — every gate a model pick
+    # passes (allergens, taste veto, the time cap, the rest of the week) —
+    # copied as the library has it: no model call, no writer call. A second
+    # tap (`avoid` non-empty: they turned what they got down) asks the model
+    # for something new, as before.
+    if not avoid:
+        library_out = _library_swap(weekly_plan_id, entry, group, tried)
+        if library_out is not None:
+            return library_out
     for attempt in range(1, MAX_PICK_ATTEMPTS + 1):
         if len(group) > 1:
             context = build_dish_swap_context(weekly_plan_id, group, tried)
@@ -880,6 +895,40 @@ def swap_meal_in_place(
     # as the next tap's `avoid`, and it has to name the dish it can see.
     out["avoid"] = _dedup(tried + [out["meal"]])
     return out
+
+
+def _library_swap(weekly_plan_id: int, entry: dict, group: list[dict], tried: list[str]) -> dict | None:
+    """swap_meal_in_place's library-first answer, or None to ask the model.
+    Never raises."""
+    from . import library_first as _library_first
+    try:
+        if len(group) > 1:
+            context = build_dish_swap_context(weekly_plan_id, group, tried)
+        else:
+            context = build_swap_context(weekly_plan_id, entry, tried)
+        week = {line.split(": ", 1)[-1].strip().lower() for line in _other_dishes(weekly_plan_id, entry["entry_id"])}
+        for pick in _library_first.swap_picks(weekly_plan_id, entry, tried, context, limit=6):
+            name = pick["meal_name"]
+            if name.lower() in week:
+                continue
+            why = next((w for w in (pick_gate(pick, m) for m in group) if w), None)
+            if not why:
+                why = cap_gate(weekly_plan_id, pick, group)
+            if why:
+                logger.info("swap_in_place: library dish %r passed over: %s", name, why)
+                continue
+            if not _library_first.copy_for_swap(name, batch_serves(weekly_plan_id, group, entry)):
+                continue
+            out = apply_pick(weekly_plan_id, entry, pick, correct_title=False, group=group)
+            out["status"] = "swapped"
+            out["avoid"] = _dedup(tried + [name, out["meal"]])
+            logger.info("swap_in_place for entry %s: library dish %r, no model call", entry["entry_id"], name)
+            return out
+    except _weekly_plan.SlotRefused:
+        raise
+    except Exception:
+        logger.exception("Library-first swap failed; asking the model")
+    return None
 
 
 # ---------- a blank day, planned ----------
@@ -1072,7 +1121,7 @@ def _fill_one_slot(weekly_plan_id: int, meal_date: str, item: dict, pick_one,
         return None
     serves = _table_for(meal_date, item["slot"])["serves"]
     pick["meal_name"] = honest_meal_name(pick)
-    _save_recipe_if_new(pick, serves)
+    _save_recipe_if_new(pick, serves, slot=item["slot"])
     reason = (pick.get("reason") or "").strip()
     _weekly_plan._replace_slot_entries(
         weekly_plan_id, item["old_ids"], meal_date, item["slot"], pick["meal_name"],
@@ -1334,7 +1383,7 @@ def apply_pick(weekly_plan_id: int, entry: dict, pick: dict, carry_sides: bool =
     serves = _table_for(entry["date"], entry["slot"])["serves"]
     if correct_title:
         pick["meal_name"] = honest_meal_name(pick)
-    _save_recipe_if_new(pick, serves)
+    _save_recipe_if_new(pick, serves, slot=entry["slot"])
     # Read before the swap below deletes the row they hang off: carried
     # onto the new entry, or recorded for Undo (_with_outgoing_sides).
     outgoing_sides = _plates.get_sides(entry["entry_id"])
@@ -2186,7 +2235,7 @@ def apply_pick_to_days(weekly_plan_id: int, entries: list[dict], pick: dict,
     first = entries[0]
     if correct_title:
         pick["meal_name"] = honest_meal_name(pick)
-    _save_recipe_if_new(pick, serves or _table_for(first["date"], first["slot"])["serves"])
+    _save_recipe_if_new(pick, serves or _table_for(first["date"], first["slot"])["serves"], slot=first["slot"])
     # Read before the write: the rows they hang off are about to go.
     outgoing_sides = {e["entry_id"]: _plates.get_sides(e["entry_id"]) for e in entries}
     sides_by_entry = outgoing_sides if carry_sides else {}
