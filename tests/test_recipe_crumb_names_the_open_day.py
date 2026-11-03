@@ -40,6 +40,9 @@ def test_see_wednesdays_recipe_from_thursday_on_the_root_says_thursday():
     assert len(out) == 1
     assert out[0]["label"] == "Thursday"
     assert out[0]["mealsStep"] == "week"
+    # ...and the root comes back with Thursday SELECTED too, so "+ Add a
+    # meal" there adds to Thursday, not Wednesday (review, 2026-11-03).
+    assert out[0]["mealsDay"] == 1
 
 
 @_needs_node
@@ -48,8 +51,8 @@ def test_a_day_step_crumb_still_names_the_meals_own_day():
     out = _run(_prelude()
                + "weekState.step = 'day';\n"
                + "(async function () { await planOpenMeal({ dayIndex: 0, slot: 'dinner', back: 'day' });\n"
-               + "console.log(JSON.stringify(CALLS[0].label)); })();")
-    assert out == "Wednesday"
+               + "console.log(JSON.stringify([CALLS[0].label, CALLS[0].mealsDay])); })();")
+    assert out == ["Wednesday", 0]
 
 
 @_needs_node

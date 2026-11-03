@@ -21503,7 +21503,10 @@
         // Back lands on the Plan screen the tap came from, not on a Meal
         // step nobody opened.
         mealsStep: weekState.step === 'meal' ? weekState.mealBack : weekState.step,
-        mealsDay: index,
+        // The same day the crumb names: the root's selected day is restored
+        // from this, so the meal's own index made "+ Add a meal" on
+        // Thursday prefill Wednesday after the round trip (review, 2026-11-03).
+        mealsDay: (back === 'week' && weekState.planDay != null && days[weekState.planDay]) ? weekState.planDay : index,
         mealsSlot: slot,
         mealsBack: weekState.mealBack
       });
