@@ -26,7 +26,7 @@ from app.db import get_conn
 from app.tools import tonight as _tonight
 from app.tools import weekly_plan as _weekly_plan
 from tests.test_planning_periods import _dates_on, _full_period, _monday, _plan_row, recipes, stub_model  # noqa: F401
-from conftest import household_today, pin_household_clock
+from conftest import before_tonight_closes, household_today, pin_household_clock
 
 
 def _needed() -> dict:
@@ -256,6 +256,7 @@ class TestNowAndAwayFollowTheApprovedWeek:
         tools.clear_plan_slot(plan_id, day, "dinner")
         tools.plan_slot_open(plan_id, day, "dinner", reason)
 
+    @before_tonight_closes()
     def test_nows_dinner_card_is_the_approved_weeks_not_the_drafts(self, recipes, stub_model):
         today, approved, draft = self._today_over(stub_model)
         # The approved week's tonight is open; the draft's tonight is planned.
@@ -270,6 +271,7 @@ class TestNowAndAwayFollowTheApprovedWeek:
         self._open(draft, today, "Still thinking.")
         assert [i for i in tools.get_needs_you_items() if i["type"] == "dinner_open"] == []
 
+    @before_tonight_closes()
     def test_the_pick_from_now_lands_on_the_approved_week(self, recipes, stub_model, signed_in):
         today, approved, draft = self._today_over(stub_model)
         self._open(approved, today, "Deciding nearer the time.")

@@ -24,7 +24,7 @@ import datetime
 
 from app import tools
 from app.tools.usual_week import WEEKDAYS
-from conftest import household_today
+from conftest import before_tonight_closes, household_today
 
 
 def _d(offset_days: int = 0) -> str:
@@ -70,6 +70,7 @@ def test_dinner_switched_off_all_week_is_never_asked():
     assert _dinner_cards() == []
 
 
+@before_tonight_closes()
 def test_a_night_the_usual_week_has_on_is_still_asked():
     # Guard, green before the fix: only the DINNERS they turned off go
     # quiet — tonight's lunch off says nothing about tonight's dinner.
@@ -79,6 +80,7 @@ def test_a_night_the_usual_week_has_on_is_still_asked():
     assert [c["title"] for c in _dinner_cards()] == ["Tonight needs a dinner"]
 
 
+@before_tonight_closes()
 def test_a_household_that_never_answered_the_usual_week_is_still_asked():
     # Guard, green before the fix: no usual week saved is no night off.
     _a_recipe()

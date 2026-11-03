@@ -24,7 +24,7 @@ recipe) — the plan is the only evidence of what a dish is for.
 import datetime
 
 from app import households, tools
-from conftest import household_today
+from conftest import before_tonight_closes, household_today
 
 
 def _d(offset_days: int = 0) -> str:
@@ -44,6 +44,7 @@ def _offered() -> list[str]:
     return [o["meal"] for o in tools._suggest_quick_dinners()]
 
 
+@before_tonight_closes()
 def test_the_weeks_breakfasts_and_snacks_are_not_offered_as_dinner():
     _recipe("Apple slices", 3)
     _recipe("Overnight oats", 5)

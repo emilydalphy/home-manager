@@ -28,7 +28,7 @@ import datetime
 import pytest
 from fastapi.testclient import TestClient
 
-from conftest import household_today
+from conftest import before_tonight_closes, household_today
 
 from app import households, tools
 from app.db import get_conn
@@ -109,6 +109,7 @@ def _count(table: str, hid: int) -> int:
 
 # ---------- GET /api/needs-you ----------
 
+@before_tonight_closes()
 def test_needs_you_answers_the_signed_in_households_open_dinner(two):
     a, _, _ = two
     plan_id = _approved_week_with_open_tonight()
@@ -120,6 +121,7 @@ def test_needs_you_answers_the_signed_in_households_open_dinner(two):
     assert A_REASON in res.text
 
 
+@before_tonight_closes()
 def test_needs_you_never_shows_another_households_decision(two):
     a, b, b_id = two
     a_plan = _approved_week_with_open_tonight()
