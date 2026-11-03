@@ -1,0 +1,102 @@
+{
+ "dish_name": "Peynirli Tepsi Boregi",
+ "cuisine": "Turkish",
+ "main_protein": "cheese",
+ "default_servings": 12,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Feta cheese",
+   "qty": "6 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Shredded mozzarella",
+   "qty": "4 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Eggs",
+   "qty": "3",
+   "category": "dairy"
+  },
+  {
+   "item": "Milk",
+   "qty": "1/2 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Phyllo dough",
+   "qty": "1 box",
+   "category": "frozen",
+   "cook_qty": "12 sheets"
+  }
+ ],
+ "instructions": [
+  "The night before you bake, move the phyllo from the freezer to the fridge to thaw.",
+  "On Sunday, or up to 4 days ahead: heat the oven to 350°F. Rub 1 tbsp of the olive oil over the bottom and sides of a 9 by 13-inch baking dish.",
+  "Mash the feta with a fork in a bowl. Chop the parsley leaves finely. That should be about 1 cup. Stir the parsley, the mozzarella and 2 of the eggs, beaten, into the feta.",
+  "In a large measuring cup, whisk the last egg with the milk, 1/2 cup of water and the remaining 2 tbsp olive oil.",
+  "Unroll the phyllo and keep it under a damp towel while you work. Lay 2 sheets in the baking dish, folding any extra over. Spoon about 3 tbsp of the milk mixture over them. Repeat until 6 sheets are in. The pastry will look very wet, and that's right.",
+  "Spread the cheese filling evenly over the top sheet.",
+  "Add the remaining 6 sheets in pairs, spooning 3 tbsp of the milk mixture over each pair. Pour whatever is left over the top.",
+  "Bake for 35 minutes, until the top is golden brown. This makes 12 squares.",
+  "Let it cool for 30 minutes, then cut it into 12 squares. They keep in the fridge for up to 4 days in a sealed container. For the freezer, put parchment between the layers and freeze for up to 3 months.",
+  "In the morning, put 2 squares on a baking sheet and sprinkle them with a little milk and water. Cover with foil and heat in a 350°F oven for 10 minutes, or 15 minutes from frozen. The microwave makes the pastry soft, so use the oven if you can. Serve warm."
+ ],
+ "advance_prep_notes": "Bake the tray on Sunday, or up to 4 days ahead, and reheat squares through the week. Thaw the phyllo in the fridge the night before.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9
+ ],
+ "method_notes": "Ozlem's Turkish Table (the lead) wets each pair of phyllo sheets with an egg, milk, water and olive oil mixture, layers in a feta, mozzarella and parsley filling, and bakes at 350°F for about 35 minutes. Almost Turkish Recipes does the same in a round pan with fewer sheets. Cooking Gorgeous gave the storage times (5 days in the fridge, 3 months in the freezer) for its triangle version of the same cheese borek. The lead has no star rating on its page, so this is a fallback, and the sheet count is halved from 24 small sheets to 12 larger US phyllo sheets.",
+ "sources": [
+  {
+   "name": "Ozlem's Turkish Table",
+   "title": "Cheese and Parsley filled Tray Pastry (Peynirli Tepsi Boregi)",
+   "url": "https://ozlemsturkishtable.com/2011/07/cheese-and-parsley-filled-tray-pastry-peynirli-tepsi-boregi/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Almost Turkish Recipes",
+   "title": "Easy Phyllo Pie (Kolay Peynirli Borek)",
+   "url": "https://www.almostturkishrecipes.com/2016/02/easy-phyllo-pie-kolay-peynirli-borek.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Cooking Gorgeous",
+   "title": "Cheese Borek (Peynirli Borek)",
+   "url": "https://cookingorgeous.com/blog/cheese-borek/",
+   "rating": 5.0,
+   "rating_count": 18,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

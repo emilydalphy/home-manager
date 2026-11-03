@@ -1,0 +1,142 @@
+{
+ "dish_name": "Breakfast Enchiladas",
+ "cuisine": "Mexican",
+ "main_protein": "eggs",
+ "default_servings": 8,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Pork breakfast sausage",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Chili powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red enchilada sauce",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Flour tortillas (8-inch)",
+   "qty": "8",
+   "category": "pantry"
+  },
+  {
+   "item": "Shredded Monterey Jack cheese",
+   "qty": "6 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Avocado",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Hot sauce",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "On Sunday, or up to 4 days ahead: heat the oven to 375°F. Rub the olive oil over the bottom and sides of a 9 by 13-inch baking dish.",
+  "Beat the eggs with 1/4 tsp salt in a bowl and set them aside.",
+  "Heat a large skillet over medium-high heat. Add the sausage and cook for 6 to 8 minutes, breaking it up with a spoon, until it's browned and cooked through. Transfer it to a plate lined with paper towels.",
+  "Lower the heat to medium. Dice the bell pepper and onion into 1/4-inch pieces and add them to the pan with the chili powder, oregano and cumin. Cook for 5 minutes, stirring now and then, until the onion is soft.",
+  "Return the sausage to the pan and add the eggs. Stir for 1 to 2 minutes, until they're mostly set but still a little wet. Take the pan off the heat. They finish cooking in the oven.",
+  "Spread 1/4 cup of the enchilada sauce over the bottom of the baking dish.",
+  "Divide the egg mixture between the 8 tortillas. Roll each one up and set it seam side down in the dish.",
+  "Pour the rest of the sauce over the top and sprinkle with the cheese. Bake for 15 minutes, until the cheese is melted and the sauce is bubbling at the edges. This makes 8 enchiladas.",
+  "Let the dish cool for 30 minutes, then cut or lift out the 8 enchiladas. They keep in the fridge for up to 4 days in a sealed container. For the freezer, wrap each one tightly and freeze for up to 2 months.",
+  "In the morning, put one enchilada on a plate and microwave it for 1 1/2 to 2 minutes, until it's hot in the middle. From frozen, thaw it in the fridge overnight first.",
+  "Top with sliced avocado and a few cilantro leaves. Serve with hot sauce on the side."
+ ],
+ "advance_prep_notes": "Make and bake the enchiladas on Sunday, or up to 4 days ahead, and keep them in the fridge or freezer.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9
+ ],
+ "method_notes": "Well Plated (the lead) browns the sausage, softens a pepper and onion with chili powder, oregano and cumin, then scrambles the eggs in with them until still a little wet, and bakes 15 minutes. Girl Gone Gourmet and Dinners, Dishes and Desserts assemble the dish the night before and bake it cold, and Well Plated gives the storage times (4 days in the fridge, 2 months in the freezer). This version bakes them on Sunday and reheats single portions through the week, and puts the hot sauce on the side. The lead has only 8 ratings, so no version had 20 or more.",
+ "sources": [
+  {
+   "name": "Well Plated",
+   "title": "Breakfast Enchiladas",
+   "url": "https://www.wellplated.com/breakfast-enchiladas",
+   "rating": 5.0,
+   "rating_count": 8,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Girl Gone Gourmet",
+   "title": "Make-Ahead Breakfast Enchiladas",
+   "url": "https://www.girlgonegourmet.com/breakfast-enchiladas",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Dinners, Dishes and Desserts",
+   "title": "Breakfast Enchiladas",
+   "url": "https://dinnersdishesanddesserts.com/breakfast-enchiladas/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
