@@ -1,0 +1,96 @@
+{
+ "dish_name": "Melitzanosalata",
+ "cuisine": "Greek",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 55,
+ "ingredients": [
+  {
+   "item": "Eggplants",
+   "qty": "2 large",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Red wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Pita bread",
+   "qty": "1 package",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F (200°C). Line a baking sheet with foil.",
+  "Prick the eggplants all over with a fork and put them on the sheet. Roast for 50 to 60 minutes, turning them once halfway, until they've collapsed and a knife slides in with no resistance.",
+  "Let the eggplants cool for 30 minutes, until you can handle them.",
+  "Peel off the skin and transfer the flesh to a colander. Let it drain for 30 minutes.",
+  "Meanwhile, grate the garlic and chop 3 tbsp of parsley.",
+  "Put the eggplant, garlic, parsley, olive oil, vinegar, salt and pepper in a food processor. Pulse until it's mostly smooth with a little texture left. No food processor? Mash it with a fork in a bowl.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Warm the pita in a dry pan over medium heat for 30 seconds on each side, then cut it into wedges.",
+  "Serve with the warm pita. Leftovers keep in the fridge for up to 3 days in a sealed container."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree on roasting whole eggplants until collapsed, draining the flesh, and mixing it with garlic, parsley, olive oil and red wine vinegar. Souvlaki for the Soul (the lead, 4.67 out of 5 from 9 ratings, so below the 20 needed) roasts at 350°F for an hour and adds breadcrumbs, while The Greek Foodie roasts at 400°F and Nikolopaa at a higher heat with roasted red pepper. This follows the lead at about two thirds of its amounts, with a hotter oven and fewer garlic cloves, and leaves out the breadcrumbs.",
+ "sources": [
+  {
+   "name": "Souvlaki For The Soul",
+   "title": "Melitzanosalata Recipe (Greek Eggplant Dip)",
+   "url": "https://souvlakiforthesoul.com/melitzanosalata-recipe/",
+   "rating": 4.67,
+   "rating_count": 9,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Greek Foodie",
+   "title": "Melitzanosalata-Greek Eggplant Dip",
+   "url": "https://thegreekfoodie.com/melitzanosalata-greek-eggplant-dip/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Nikolopaa",
+   "title": "Melitzanosalata Recipe (Traditional Greek Eggplant Dip)",
+   "url": "https://nikolopaa.com/melitzanosalata-recipe-greek-eggplant-dip/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

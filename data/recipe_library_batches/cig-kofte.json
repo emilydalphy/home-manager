@@ -1,0 +1,144 @@
+{
+ "dish_name": "Cig Kofte",
+ "cuisine": "Turkish",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 40,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Fine bulgur",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Red leaf lettuce",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Roasted red peppers",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Pomegranate molasses",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sumac",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Allspice",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red chili flakes",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the bulgur in a large bowl and pour 1 1/2 cups warm water over it. Stir, cover and let it sit for 20 minutes, until the bulgur has soaked up all the water.",
+  "Meanwhile, finely dice the onion and mince the garlic. Chop 3 tbsp of parsley. Blend the roasted red peppers into a paste. That should be about 1/4 cup.",
+  "Juice 1 of the lemons. Cut the other lemon into wedges.",
+  "Add the onion, garlic, tomato paste, red pepper paste, pomegranate molasses, olive oil, 2 tbsp lemon juice, salt, black pepper, cumin, paprika, sumac and allspice to the bulgur.",
+  "Knead it with your hands for 15 minutes, squeezing the bulgur hard. It's done when the mix holds together when you squeeze a handful and doesn't crumble. If it feels dry, knead in 1 tbsp of cold water.",
+  "Knead in the parsley.",
+  "Wet your hands and shape the mix into about 20 small ovals. Press each one in your palm so your fingers leave dents.",
+  "Wash the lettuce and separate the leaves. Put the kofte on a platter with the lettuce and the lemon wedges. Sprinkle the chili flakes over your own portion if you want heat.",
+  "Taste one. If it's flat, add a pinch more salt.",
+  "Serve with the lettuce leaves and lemon wedges. Leftovers keep in the fridge for up to 3 days in a sealed container."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "This is not cooked. The soaked bulgur is kneaded with paste, spices and olive oil until it holds together, so the 40 minutes are mostly soaking and kneading by hand. Every Little Crumb (the lead, 5 out of 5 from 7 votes, so below the 20 ratings needed) and Cooking Gorgeous both soak fine bulgur, use tomato paste, red pepper, pomegranate molasses and sumac, and serve in lettuce with lemon. They differ in kneading time and in using a stand mixer. This follows the lead at three quarters of its amounts, kneads by hand, leaves out the walnuts, chili powder, coriander and ice, and moves the chili flakes to the table.",
+ "sources": [
+  {
+   "name": "Every Little Crumb",
+   "title": "Cig Kofte",
+   "url": "https://everylittlecrumb.com/cig-kofte/",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cooking Gorgeous",
+   "title": "Cig Kofte Recipe Without Meat",
+   "url": "https://cookingorgeous.com/blog/easy-meatless-cig-kofte-recipe/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Vegan Eating",
+   "title": "Classic Vegan Cig Kofte",
+   "url": "https://veganeating.com/recipes/classic-vegan-cig-kofte",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

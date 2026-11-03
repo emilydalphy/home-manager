@@ -1,0 +1,66 @@
+{
+ "dish_name": "Manchego with Membrillo",
+ "cuisine": "Spanish",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Manchego cheese",
+   "qty": "6 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Membrillo (quince paste)",
+   "qty": "1 block",
+   "category": "other",
+   "cook_qty": "3 oz"
+  },
+  {
+   "item": "Plain crackers",
+   "qty": "1 box",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Cut the manchego into slices about 1/4 inch thick, then cut the slices into pieces that fit on a cracker.",
+  "Wet a sharp knife and cut 3 oz of the membrillo into slices about 1/4 inch thick. Cut the slices into rectangles the size of the cheese pieces.",
+  "Put the cheese on a plate with the membrillo and the crackers.",
+  "Serve with the crackers. Top each piece of cheese with a slice of membrillo."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree that this is cheese and quince paste, sliced thin and eaten together, on a cracker or on its own. Mama Ia (the lead, no rating shown) serves the pair as a tapa or a dessert, and Cooking and More (3.13 out of 5 from 23 votes, below the 4.0 needed) gives the amounts and wets the knife to cut the membrillo. Recipes Food and Cooking shows how to make the paste at home. No version qualified, so the lead is the best read page. This follows Cooking and More's amounts at about three quarters, with store-bought membrillo.",
+ "sources": [
+  {
+   "name": "Mama Ia",
+   "title": "Quince Paste with Manchego Cheese",
+   "url": "https://www.natachasanzcaballero.com/quince-paste-with-manchego-cheese/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cooking and More",
+   "title": "Membrillo with Manchego Cheese",
+   "url": "https://cookingandmore.com/membrillo-with-manchego-cheese/",
+   "rating": 3.13,
+   "rating_count": 23,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Recipes Food and Cooking",
+   "title": "Membrillo (aka Quince Paste) with Manchego Cheese",
+   "url": "https://recipesfoodandcooking.com/2015/09/17/membrillo-aka-quince-paste-with-manchego-cheese/",
+   "rating": 4.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

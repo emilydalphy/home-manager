@@ -1,0 +1,121 @@
+{
+ "dish_name": "Acili Ezme",
+ "cuisine": "Turkish",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Pomegranate molasses",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried mint",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Pul biber (Aleppo pepper)",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Pita bread",
+   "qty": "1 package",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Cut the tomatoes in half and scoop out the seeds and watery middle. Finely dice the tomatoes, the green pepper and the onion, as small as you can, and put them in a large bowl.",
+  "Chop 2 tbsp of parsley and add it to the bowl.",
+  "In a small bowl, grate the garlic and add the tomato paste, 2 1/2 tbsp lemon juice, the pomegranate molasses, the olive oil, the dried mint and the salt. Stir until smooth.",
+  "Pour the dressing over the vegetables and stir to coat. Let it sit for 15 minutes.",
+  "Warm the pita in a dry pan over medium heat for 30 seconds on each side, then cut it into wedges.",
+  "Spoon the ezme onto a plate. Sprinkle the pul biber over your own portion if you want heat.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the warm pita."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree that acili ezme is finely diced tomato, pepper and onion in a dressing of tomato paste, pomegranate molasses, lemon and olive oil, with parsley and pul biber. Cooking Gorgeous (the lead, 5 out of 5 from 5 votes, so below the 20 ratings needed) keeps the dressing short, while Sinful Kitchen adds sumac and more pepper and Zaffaron adds mint, cumin and red pepper paste. This follows the lead, without the red pepper paste, and moves the pul biber to the table.",
+ "sources": [
+  {
+   "name": "Cooking Gorgeous",
+   "title": "Turkish Acili Ezme Salad",
+   "url": "https://cookingorgeous.com/blog/ezme-salad/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Sinful Kitchen",
+   "title": "Authentic Turkish Ezme Recipe (Spicy Tomato & Pepper Dip)",
+   "url": "https://sinfulkitchen.com/turkish-ezme-spicy-tomato-pepper-dip/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Zaffaron",
+   "title": "Acili Ezme Recipe (Turkish Spicy Tomato Dip)",
+   "url": "https://zaffaron.com/recipe/acili-ezme",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

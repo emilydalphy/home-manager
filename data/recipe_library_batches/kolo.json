@@ -1,0 +1,84 @@
+{
+ "dish_name": "Kolo",
+ "cuisine": "Ethiopian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Pearl barley",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Canned chickpeas",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Peanuts",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Berbere",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 375°F (190°C).",
+  "Drain the chickpeas and pat them very dry with a clean towel. Leave them uncovered for 20 minutes while the oven heats.",
+  "Put the chickpeas on a large baking sheet and toss them with half the oil. Roast for 20 minutes.",
+  "Add the barley and the rest of the oil to the sheet. Stir once and roast for 15 minutes.",
+  "Add the peanuts and roast for 8 to 10 minutes, until everything smells toasty and a few grains of barley are crunchy when you bite one.",
+  "Transfer everything to a bowl and stir in the salt while it's hot. Spread it out on the baking sheet and let it cool completely.",
+  "Put the kolo in a jar or a bowl. Sprinkle the berbere over your own portion if you want some heat.",
+  "Serve at room temperature. Once it's fully cool, it keeps in a sealed jar for up to 1 week."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree that kolo is barley, peanuts and chickpeas roasted until crunchy and seasoned with salt and berbere. The World on a Plate (the lead) roasts everything in the oven, while Ethiopian Food dry roasts in a pan with dried chickpeas, and Made in Hackney boils the grains first. None of the three pages showed a rating, so the lead is the most detailed method I read. This follows The World on a Plate at about 40 percent of its amounts, with canned chickpeas, and the berbere is kept for the table.",
+ "sources": [
+  {
+   "name": "The World on a Plate",
+   "title": "Kolo",
+   "url": "https://www.theworldonaplate.co.uk/recipes/kolo",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Ethiopian Food",
+   "title": "Kolo: The Ultimate Crunchy Ethiopian Snack",
+   "url": "https://ethiopian-food.org/kolo-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Made in Hackney",
+   "title": "Kolo Roast",
+   "url": "https://madeinhackney.org/recipe/kolo-roast/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
