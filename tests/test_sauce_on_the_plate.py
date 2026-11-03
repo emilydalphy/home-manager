@@ -26,6 +26,8 @@ from test_menu_first_generation import household  # noqa: F401  (fixture)
     "the broth, 1 1/2 cups a bowl",
     "½ cup tomato sauce each",
     "60 ml dressing each",
+    "marinara, a 1/4-cup ladle each",
+    "4 oz of the sauce each",
 ])
 def test_a_named_sauce_with_enough_of_it_passes(text):
     assert agent._sauce_on_the_plate_problem(text) is None
@@ -132,3 +134,31 @@ def test_breakfast_and_lunch_are_not_held_to_it(household, monkeypatch):
         agent._write_one_pending_recipe(
             _pending(f"Dish {slot}", slot), slot, {"serves": 2, "must_not_contain": []}, [])
         assert len(specs) == 1, slot
+
+
+def test_a_failed_rewrite_keeps_the_first_answer(household, monkeypatch):
+    """The first, dry answer passed the allergen gate; a rewrite that comes
+    back empty must not leave the dish pending instead."""
+    specs = _writer(monkeypatch, _DRY, {})
+    out = agent._write_one_pending_recipe(
+        _pending("Turkey Meatballs", "dinner"), "dinner", {"serves": 2, "must_not_contain": []}, [])
+    assert len(specs) == 2
+    assert out.get("ok") is not False
+    assert tools.get_recipe("Turkey Meatballs")["instructions"]
+
+
+def test_a_rewrite_that_raises_keeps_the_first_answer(household, monkeypatch):
+    calls = []
+
+    def _fake(spec):
+        calls.append(spec)
+        if len(calls) == 2:
+            raise RuntimeError("the API fell over")
+        return dict(_DRY)
+
+    monkeypatch.setattr(agent, "generate_recipe_details_llm", _fake)
+    out = agent._write_one_pending_recipe(
+        _pending("Turkey Meatballs", "dinner"), "dinner", {"serves": 2, "must_not_contain": []}, [])
+    assert len(calls) == 2
+    assert out.get("ok") is not False
+    assert tools.get_recipe("Turkey Meatballs")["instructions"]

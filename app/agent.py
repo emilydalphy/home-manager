@@ -5490,11 +5490,12 @@ Call submit_recipe_amounts with the result."""
 
 
 _PLATE_MEASURE = re.compile(
-    r"(\d+\s+\d/\d|\d/\d|\d+(?:\.\d+)?|[½¼¾⅓⅔])\s*"
-    r"(cups?|tablespoons?|tbsp|teaspoons?|tsp|ml)\b",
+    r"(\d+\s+\d/\d|\d/\d|\d+(?:\.\d+)?|[½¼¾⅓⅔])[\s-]*"
+    r"(cups?|tablespoons?|tbsp|teaspoons?|tsp|ml|oz|ounces?)\b",
     re.IGNORECASE,
 )
-_PLATE_UNIT_TBSP = {"cup": 16.0, "tablespoon": 1.0, "tbsp": 1.0, "teaspoon": 1 / 3, "tsp": 1 / 3, "ml": 1 / 14.8}
+_PLATE_UNIT_TBSP = {"cup": 16.0, "tablespoon": 1.0, "tbsp": 1.0, "teaspoon": 1 / 3, "tsp": 1 / 3,
+                    "ml": 1 / 14.8, "oz": 2.0, "ounce": 2.0}
 _PLATE_GLYPHS = {"½": 0.5, "¼": 0.25, "¾": 0.75, "⅓": 1 / 3, "⅔": 2 / 3}
 # Two tablespoons a person: a spoonful of yogurt sauce counts, a film of
 # pan juice doesn't.
@@ -5875,9 +5876,22 @@ def _write_one_pending_recipe(recipe: dict, slot: str, shared: dict, avoidances:
     writer_research = _recipe_research.research_for_writer(found)
     if writer_research:
         spec["research"] = writer_research
+    # The first answer, when it was turned back only for want of a sauce: a
+    # complete recipe that passed the allergen gate, kept in case the rewrite
+    # fails outright. A dull dinner beats a dish left pending.
+    dry_first = None
     try:
         for attempt in (1, 2):
-            detail = generate_recipe_details_llm(spec)
+            try:
+                detail = generate_recipe_details_llm(spec)
+            except Exception:
+                if dry_first is None:
+                    raise
+                logger.exception("The sauce rewrite for %r failed; keeping the first answer", name)
+                detail = dry_first
+            if dry_first is not None and not (detail.get("ingredients") and detail.get("instructions")):
+                logger.warning("The sauce rewrite for %r came back empty; keeping the first answer", name)
+                detail = dry_first
             # A 0 or negative count from the model is dropped, so the
             # household's own table (shared serves) is used instead.
             detail["default_servings"] = tools.positive_servings(detail.get("default_servings"))
@@ -5915,6 +5929,7 @@ def _write_one_pending_recipe(recipe: dict, slot: str, shared: dict, avoidances:
                 logger.warning("Recipe %s quality [sauce_on_the_plate/info]: %s; %s",
                                name, wet, "rewriting once" if attempt == 1 else "keeping it")
                 if attempt == 1:
+                    dry_first = detail
                     spec = {**spec, "note": (
                         f"Your previous attempt had no real sauce on the plate ({wet}). Write it "
                         "again so each person gets at least 2 tablespoons of sauce, dressing or "
