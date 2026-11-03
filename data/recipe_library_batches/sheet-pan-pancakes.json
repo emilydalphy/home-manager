@@ -1,0 +1,114 @@
+{
+ "dish_name": "Sheet Pan Pancakes",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 12,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "2 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Baking powder",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Milk",
+   "qty": "2 1/2 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Butter",
+   "qty": "1/2 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Maple syrup",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "On Sunday, or up to 3 days ahead: Heat the oven to 425°F. Melt the 1/2 cup butter in a large bowl in the microwave, about 1 minute.",
+  "Brush 2 tbsp of the melted butter over a 17 by 11 inch rimmed baking sheet. Leave the rest in the bowl.",
+  "In a second large bowl, whisk the 2 1/2 cups flour, 3 tbsp baking powder, 1/3 cup sugar and 1/2 tsp salt.",
+  "Add the 2 1/2 cups milk, the 2 eggs and the 2 tsp vanilla to the bowl with the melted butter. Whisk until it's smooth.",
+  "Pour the wet mix into the dry bowl and stir until there's no dry flour left. A few small lumps are fine.",
+  "Pour the batter onto the baking sheet and spread it to the corners.",
+  "Bake for 12 to 15 minutes, until the top is golden and set and springs back when you press it.",
+  "Let it cool on the pan for 10 minutes. Cut it into 12 squares. This makes 12 squares.",
+  "Fridge: let the squares cool completely, then keep them in a sealed container for up to 5 days.",
+  "Freezer: spread the squares out on a parchment lined pan and freeze for 1 to 2 hours, until solid. Transfer them into a freezer bag. They keep for up to 2 months.",
+  "In the morning, microwave 2 squares for 30 to 60 seconds (45 to 90 seconds from frozen), until hot in the middle. Or warm them in a 325°F oven for 5 to 10 minutes. Serve with the maple syrup."
+ ],
+ "advance_prep_notes": "Bake the whole pan on Sunday, or up to 3 days ahead, and keep it in the fridge or freezer.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10
+ ],
+ "method_notes": "All three mix a thick pancake batter, spread it on a rimmed baking sheet and bake at 400 to 425°F for 11 to 15 minutes. Jo Cooks (the lead) uses plenty of baking powder and melted butter, brushes some on the pan, and gives the fridge and freezer times and both ways to reheat. Kristine's Kitchen uses Greek yogurt and a little baking soda, and a baking spray and parchment instead of butter. Bake Eat Repeat uses buttermilk and oil. The Bake Eat Repeat page shows no rating, and Kristine's has one rating. This one follows the lead and leaves the toppings off, so the squares freeze flat.",
+ "sources": [
+  {
+   "name": "Jo Cooks",
+   "title": "Sheet Pan Pancakes",
+   "url": "https://www.jocooks.com/recipes/sheet-pan-pancakes/",
+   "rating": 4.69,
+   "rating_count": 92,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Kristine's Kitchen",
+   "title": "Sheet Pan Pancakes",
+   "url": "https://kristineskitchenblog.com/sheet-pan-pancakes/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Bake Eat Repeat",
+   "title": "Sheet Pan Pancakes",
+   "url": "https://bake-eat-repeat.com/sheet-pan-pancakes-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,115 @@
+{
+ "dish_name": "Overnight French Toast Casserole",
+ "cuisine": "American",
+ "main_protein": "eggs",
+ "default_servings": 8,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 50,
+ "ingredients": [
+  {
+   "item": "Challah bread",
+   "qty": "1 loaf",
+   "category": "other"
+  },
+  {
+   "item": "Eggs",
+   "qty": "5",
+   "category": "dairy"
+  },
+  {
+   "item": "Milk",
+   "qty": "1 1/2 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground nutmeg",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Pecans",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Maple syrup",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "The night before: Use 1 tbsp of the butter to grease a 9 by 13 inch baking dish. Cut the challah into 1 inch cubes. You want a loaf that's a day or two old. Spread the cubes in the dish.",
+  "In a large bowl, whisk the 5 eggs, 1 1/2 cups milk, 2 tbsp of the brown sugar, 2 tsp vanilla, 1 tsp cinnamon, 1/4 tsp nutmeg and 1/4 tsp salt until no streaks of egg are left.",
+  "Pour it over the bread. Press the cubes down gently so they all get wet. Cover the dish with plastic wrap and put it in the fridge overnight.",
+  "In the morning, take the dish out of the fridge and heat the oven to 350°F. Leave the dish on the counter while the oven heats.",
+  "Melt the remaining 2 tbsp butter in a small bowl in the microwave, about 20 seconds. Stir in the remaining 2 tbsp brown sugar.",
+  "Drizzle the butter mixture over the top of the casserole, then scatter the 1/2 cup pecans over it.",
+  "Cover the dish with foil and bake for 35 minutes. Take the foil off and bake for 10 to 15 minutes, until the top is golden and the middle is set. Push a knife into the center. It should come out without any wet egg on it.",
+  "Let it rest for 10 minutes, then cut it into 8 pieces. This makes 8 pieces. Serve with the maple syrup.",
+  "Leftovers keep in the fridge for up to 4 days in a sealed container. To reheat a piece, microwave it for 40 to 60 seconds, or warm it in a 350°F oven for 10 minutes."
+ ],
+ "advance_prep_notes": "Assemble the night before and refrigerate it overnight (at least 4 hours).",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3
+ ],
+ "method_notes": "All three versions soak bread cubes or slices in a milk and egg custard overnight and bake in a 9 by 13 inch dish. Cup of Yum (the lead) uses challah cubes, 5 eggs and a brown sugar pecan topping added in the morning, and bakes covered, then uncovered. A Spicy Perspective uses far more egg and half and half and a cinnamon custard with no topping, and the Just a Pinch version puts the brown sugar and butter under the bread and adds ginger. This one follows the lead, and the fridge keeping time is from the other reads; the lead page gives no storage notes. The lead's own 4.9 from 218 reviews counted; the other two have only 5 ratings each. Cup of Yum lists no freezing, so none is given here.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "French Toast Casserole",
+   "url": "https://cupofyum.com/recipes/french-toast-casserole-2",
+   "rating": 4.9,
+   "rating_count": 218,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "A Spicy Perspective",
+   "title": "Overnight French Toast Casserole",
+   "url": "https://aspicyperspective.com/overnight-french-toast-casserole",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Just a Pinch",
+   "title": "Overnight French Toast Casserole",
+   "url": "https://www.justapinch.com/recipes/breakfast/breakfast-casserole/overnight-french-toast-casserole.html",
+   "rating": null,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
