@@ -1,0 +1,126 @@
+{
+ "dish_name": "Dwaeji Kimchi Bokkeum",
+ "cuisine": "Korean",
+ "main_protein": "pork",
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Pork belly",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Sour napa cabbage kimchi",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "about 1 lb with its juice"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Short-grain white rice",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece",
+   "category": "produce",
+   "cook_qty": "1 tsp grated"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "White sesame seeds",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Gochugaru",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 2 cups of rice in a strainer under cold water until the water runs mostly clear. Put it in a saucepan with 2 1/4 cups water and bring it to a boil over high heat. Turn the heat to low, cover and cook for 15 minutes. Take it off the heat and keep the lid on until you serve.",
+  "Meanwhile, cut the pork belly into 1-inch pieces. Cut the kimchi into bite-size pieces and keep its juice. Slice the onion thinly. Mince the garlic cloves and slice the green onions.",
+  "Heat a large skillet over medium-high heat for 1 minute. Add the pork in a single layer, with no oil. Cook for 8 minutes, turning now and then, until the pieces are golden and crisp at the edges and the fat has melted into the pan.",
+  "You're cooking the pork to 145°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into a thick piece: it's done when there's no pink left.",
+  "Transfer the pork to a plate. Pour off all but about 2 tbsp of the fat in the pan.",
+  "Add the onion to the same pan and cook for 3 minutes, until soft and starting to brown.",
+  "Add the kimchi and its juice. Cook for 4 minutes, stirring, until it softens and the juice has mostly cooked off.",
+  "Add the garlic, the ginger and the sugar. Stir for 30 seconds, until you can smell the garlic.",
+  "Return the pork to the pan, add the soy sauce and toss for 1 minute. Take it off the heat and stir in the sesame oil, sesame seeds and green onions.",
+  "Serve with the rice and the gochugaru at the table.",
+  "Taste it. If it's flat, add a pinch more salt. If it's too sour, add a pinch more sugar."
+ ],
+ "method_notes": "The sources agree on cooking the pork belly first with no added oil, then frying very sour kimchi in the rendered fat. Ahnest Kitchen uses gochugaru, dashida and ginger; Onolicious Hawaii uses a 1 to 1 weight of pork and kimchi with onion and a little soy sauce; The Peach Kitchen adds gochujang. This version follows Ahnest Kitchen's method, uses Onolicious's onion and soy sauce, and moves the gochugaru to the table. No version had 20 or more ratings, so the lead is the best-read real version.",
+ "sources": [
+  {
+   "name": "Ahnest Kitchen",
+   "title": "Korean Pork Belly Kimchi Stir Fry (Dwaejigogi Kimchi Bokkeum)",
+   "url": "https://ahnestkitchen.squarespace.com/food/porkbelly-kimchi-stir-fry",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Onolicious Hawaii",
+   "title": "Kimchi Pork",
+   "url": "https://onolicioushawaii.com/kimchi-pork/",
+   "rating": 5,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "The Peach Kitchen",
+   "title": "Korean Pork Belly Kimchi Stir Fry",
+   "url": "https://www.thepeachkitchen.com/2024/04/korean-pork-belly-kimchi-stir-fry/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

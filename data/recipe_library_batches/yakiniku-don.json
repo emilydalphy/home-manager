@@ -1,0 +1,114 @@
+{
+ "dish_name": "Yakiniku Don",
+ "cuisine": "Japanese",
+ "main_protein": "beef",
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Thinly sliced beef",
+   "qty": "1 1/4 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Short-grain white rice",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece",
+   "category": "produce",
+   "cook_qty": "2 tsp grated"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "White sesame seeds",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 2 cups of rice in a strainer under cold water until the water runs mostly clear. Put it in a saucepan with 2 1/4 cups water and bring it to a boil over high heat. Turn the heat to low, cover and cook for 15 minutes. Take it off the heat and keep the lid on until you serve.",
+  "Meanwhile, make the sauce. In a small bowl, stir together 1/3 cup soy sauce, 3 tbsp mirin, 2 tbsp sugar, the sesame oil, the garlic cloves, minced, and 2 tsp grated ginger until the sugar dissolves.",
+  "Thinly slice the green onions. Pat the beef dry with paper towels and lay it out on a plate.",
+  "Heat a large skillet over medium-high heat for 2 minutes, then add the vegetable oil.",
+  "Add half the beef in a single layer. Leave it alone for 30 seconds, until the underside is browned. Flip each piece and cook for 15 seconds. Transfer it to a clean plate and cook the rest the same way.",
+  "Return all the beef and its juices to the pan, and pour in about 1/2 cup of the sauce. Toss for 30 seconds, until the sauce bubbles and coats the beef. Take it off the heat right away, since thin beef toughens fast.",
+  "Divide the rice between 4 bowls. Top with the beef and the pan sauce, drizzle with some of the remaining sauce, and scatter over the green onions and sesame seeds. Serve with the red pepper flakes at the table.",
+  "Taste it. If it's flat, add a pinch more salt."
+ ],
+ "method_notes": "The sources agree on thin, well-marbled beef seared fast in batches, then coated in a sweet soy sauce at the end and served over rice with green onion and sesame. Just One Cookbook uses a gochujang-based sauce and gives a very short cook; Feed Me Better cooks the sauce down first with sesame oil, mirin and ginger. This version stirs a no-cook sauce of soy, mirin, sugar, garlic, ginger and sesame oil, so there is no extra pot, and moves the heat to the table. No version had 20 or more ratings, so the lead is the best-read real version.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Yakiniku Don (Japanese Grilled Beef Bowl)",
+   "url": "https://www.justonecookbook.com/yakiniku-don/",
+   "rating": 5,
+   "rating_count": 3,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Feed Me Better",
+   "title": "Yakiniku Beef Donburi",
+   "url": "https://feedmebetter.com/yakiniku/",
+   "rating": 5,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

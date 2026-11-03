@@ -1,0 +1,93 @@
+{
+ "dish_name": "Pad Kana",
+ "cuisine": "Thai",
+ "main_protein": "pork",
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 18,
+ "ingredients": [
+  {
+   "item": "Pork tenderloin",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Chinese broccoli",
+   "qty": "2 bunches",
+   "category": "produce"
+  },
+  {
+   "item": "Short-grain white rice",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Thai chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 2 cups of rice in a strainer under cold water until the water runs mostly clear. Put it in a saucepan with 2 1/4 cups water and bring it to a boil over high heat. Turn the heat to low, cover and cook for 15 minutes. Take it off the heat and keep the lid on until you serve.",
+  "Meanwhile, slice the thick Chinese broccoli stalks on a diagonal into 1-inch pieces. Cut the leaves into large pieces. Keep the stalks and leaves in separate piles.",
+  "In a small bowl, stir together the oyster sauce, soy sauce, sugar and 1/4 cup water until the sugar dissolves. Mince the garlic cloves.",
+  "Slice the pork thinly, about 1/4 inch thick, and pat it dry. Sprinkle the pinch of salt over it.",
+  "Heat a wok or large skillet over high heat for 2 minutes, then add 1 tbsp of the oil.",
+  "Add half the pork in a single layer. Leave it alone for 1 minute, then stir for 1 minute, until browned with no pink left. Transfer it to a plate and cook the rest the same way, adding 1 tbsp of the oil.",
+  "You're cooking the pork to 145°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest slice: it's done when there's no pink left.",
+  "Add the last 1 tbsp oil and the stalks. Stir-fry for 2 minutes, until they turn bright green.",
+  "Add the garlic and stir for 20 seconds, until you can smell it. Add the leaves and stir for 30 seconds, until they wilt.",
+  "Return the pork and add the sauce. Toss for 1 minute, until the sauce is thick enough to coat everything and the pan is almost dry. Take it off the heat.",
+  "Slice the chili thinly and put it in a small bowl. Serve with the rice and the chili at the table.",
+  "Taste it. If it's flat, add a pinch more salt."
+ ],
+ "method_notes": "Thai Cookbook's version, the best rated by far, is a quick stir-fry of garlic, sliced pork, oyster sauce, a little light soy sauce and sugar, with the Chinese broccoli added last for about 30 seconds. Only that one page was readable; the other pad kana pages found were the crispy pork belly dish or blocked, so no second version could be compared. This version scales the sauce for four, adds a splash of water so there is a little sauce for the rice, and moves the chili to the table.",
+ "sources": [
+  {
+   "name": "Thai Cookbook",
+   "title": "Pad Kana Moo (Stir-fried Chinese Broccoli with Pork)",
+   "url": "https://www.thaicookbook.tv/thai-recipes/one-dish-meals/chinese-broccoli-leaves-with-pork-pad-kana-moo",
+   "rating": 4.5,
+   "rating_count": 6211,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}
