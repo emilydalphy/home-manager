@@ -11113,6 +11113,33 @@ def healthz():
     return {"status": "ok"}
 
 
+def _report_token_matches(request: Request, env_name: str, header: str) -> bool:
+    """
+    Does this request carry the token the environment variable holds?
+
+    Both sides are stripped first (defect hunt, 2026-11-03). The reader,
+    observability_report.py, has always stripped its copy, and no HTTP
+    client can send a header value ending in a newline anyway — so a
+    value pasted into Railway with a trailing newline or space matched
+    nothing, ever: the overnight check got 404 every morning with the
+    same token set at both ends, and "token refused" was all it could say.
+    A value that is nothing but whitespace strips to empty and leaves the
+    route off, as an unset one does.
+
+    compare_digest on both arms so a wrong-length token takes the same
+    time as a wrong-value one. The empty-token check comes first because
+    comparing against "" would otherwise let any caller in. Bytes, not
+    str: compare_digest raises TypeError on a str holding any non-ASCII
+    character, so one "café" header was a 500 — telling a stranger the
+    route exists, the one thing the 404 is for (2026-10-20).
+    """
+    token = os.environ.get(env_name, "").strip()
+    supplied = request.headers.get(header, "").strip()
+    return bool(token and supplied) and secrets.compare_digest(
+        supplied.encode("utf-8", "surrogateescape"), token.encode("utf-8", "surrogateescape")
+    )
+
+
 @app.get("/api/health-report")
 def health_report(request: Request, days: int = 1):
     """
@@ -11145,17 +11172,7 @@ def health_report(request: Request, days: int = 1):
     worth grinding at, and this route's existence is not something a
     stranger needs to learn.
     """
-    token = os.environ.get("REPORT_TOKEN", "")
-    supplied = request.headers.get("x-report-token", "")
-    # compare_digest on both arms so a wrong-length token takes the same
-    # time as a wrong-value one. The empty-token check comes first because
-    # comparing against "" would otherwise let any caller in.
-    # Bytes, not str: compare_digest raises TypeError on a str holding any
-    # non-ASCII character, so one "café" header was a 500 — telling a
-    # stranger the route exists, the one thing the 404 is for (2026-10-20).
-    if not token or not supplied or not secrets.compare_digest(
-        supplied.encode("utf-8", "surrogateescape"), token.encode("utf-8", "surrogateescape")
-    ):
+    if not _report_token_matches(request, "REPORT_TOKEN", "x-report-token"):
         raise HTTPException(status_code=404, detail="Not found")
 
     _enforce_rate_limit(request, "health_report")
@@ -11207,13 +11224,7 @@ def feedback_report(request: Request, days: int = 30):
     # guessable by asking without limit.
     _enforce_rate_limit(request, "feedback_report")
 
-    token = os.environ.get("FEEDBACK_TOKEN", "")
-    supplied = request.headers.get("x-feedback-token", "")
-    # As bytes, as the health report does: compare_digest raises on a
-    # non-ASCII str, and a 500 there would confirm the route exists.
-    if not token or not supplied or not secrets.compare_digest(
-        supplied.encode("utf-8", "surrogateescape"), token.encode("utf-8", "surrogateescape")
-    ):
+    if not _report_token_matches(request, "FEEDBACK_TOKEN", "x-feedback-token"):
         raise HTTPException(status_code=404, detail="Not found")
 
     days = max(1, min(int(days), 30))
