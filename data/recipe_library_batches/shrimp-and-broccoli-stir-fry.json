@@ -1,0 +1,122 @@
+{
+ "dish_name": "Shrimp and Broccoli Stir-Fry",
+ "cuisine": "Chinese",
+ "main_protein": "shrimp",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {
+   "item": "Large shrimp",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Broccoli",
+   "qty": "2 crowns",
+   "category": "produce"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 tbsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tbsp 1/2 tsp"
+  },
+  {
+   "item": "White pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Start the rice first. Rinse 1 1/2 cups of jasmine rice and cook it the way the package says.",
+  "Pat the shrimp dry and put them in a bowl. Add the Shaoxing wine, the salt, 1/8 tsp of the white pepper and 1/2 tsp of the cornstarch. Toss and let them sit for 15 minutes.",
+  "Meanwhile, make the sauce. In a small bowl, stir the chicken broth, oyster sauce, soy sauce, sugar, the remaining 1/8 tsp white pepper and the remaining 1 tbsp cornstarch until the cornstarch dissolves.",
+  "Cut the broccoli into small florets. Mince the garlic and 1 tsp of the ginger.",
+  "Put 1/4 cup water in a large skillet over medium-high heat. When it boils, add the broccoli, cover and cook for 1 minute. Transfer the broccoli to a plate and wipe out the skillet.",
+  "Heat the vegetable oil in the skillet over medium-high heat for 1 minute. Add the shrimp in a single layer. Cook for 1 minute per side, until golden on the outside and curled.",
+  "Add the garlic and ginger. Stir for 30 seconds, until you can smell them.",
+  "Stir the sauce again, then pour it into the skillet. Add the broccoli and stir for 1 to 2 minutes, until the sauce is glossy and thick enough to coat the back of a spoon. The shrimp is done when it's pink and opaque all the way through.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the rice."
+ ],
+ "method_notes": "Takeout-style shrimp and broccoli agree on a quick sear, broccoli cooked separately so it stays bright, and a thin cornstarch-thickened sauce poured in last. The lead (Omnivore's Cookbook, 5.0 from 12 votes) uses oyster sauce and soy with garlic and ginger. Well Plated (5.0 from 7 reviews) uses a honey, soy and rice vinegar sauce with sesame oil instead. No version read shows 20 or more ratings, so this is a fallback to the best-read version. I left out the dark soy sauce to keep the sauce light.",
+ "sources": [
+  {
+   "name": "Omnivore's Cookbook",
+   "title": "Easy Shrimp and Broccoli",
+   "url": "https://omnivorescookbook.com/shrimp-and-broccoli/",
+   "rating": 5,
+   "rating_count": 12,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Well Plated",
+   "title": "Shrimp and Broccoli",
+   "url": "https://www.wellplated.com/shrimp-and-broccoli-stir-fry/",
+   "rating": 5,
+   "rating_count": 7,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

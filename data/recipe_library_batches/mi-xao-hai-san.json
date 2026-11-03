@@ -1,0 +1,167 @@
+{
+ "dish_name": "Mi Xao Hai San",
+ "cuisine": "Vietnamese",
+ "main_protein": "seafood",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Fresh egg noodles",
+   "qty": "12 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Large shrimp",
+   "qty": "1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Squid tubes",
+   "qty": "1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Cremini mushrooms",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Baby bok choy",
+   "qty": "4 heads",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "White pepper",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Bring a large pot of water to a boil for the noodles.",
+  "Slice the squid tubes into 1/2 inch rings. Pat the squid and shrimp dry and put them in a bowl. Add 1/4 tsp of the salt and 1/4 tsp of the white pepper and toss.",
+  "In a small bowl, stir the chicken broth, oyster sauce, soy sauce, sugar, sesame oil, the cornstarch and the remaining 1/2 tsp white pepper until the cornstarch dissolves.",
+  "Cut the onion into thin wedges. Slice the carrots thinly on an angle and slice the mushrooms. Cut the bok choy in half lengthwise. Mince the garlic and 1 tsp of the ginger. Slice the green onions.",
+  "Add the noodles to the boiling water and cook for 1 minute, just until they loosen. Drain well and toss with 1 tsp of the oil so they don't stick.",
+  "Heat a large wok or skillet over high heat for 1 minute. Add 1 tbsp of the oil, then the shrimp in a single layer. Cook for 1 minute per side, until pink and curled. Transfer to a plate.",
+  "Add the squid to the same pan. Cook for 30 to 45 seconds, until white and opaque. Transfer to the plate with the shrimp. Squid turns rubbery if it cooks any longer.",
+  "Add the remaining 1 tbsp oil. Add the onion and carrots and stir for 2 minutes. Add the mushrooms and stir for 2 minutes, until they start to brown.",
+  "Add the garlic and ginger and stir for 30 seconds. Add the bok choy and stir for 1 minute.",
+  "Stir the sauce again and pour it in. Let it bubble for 1 minute, until it thickens and coats the vegetables.",
+  "Add the noodles and toss for 1 to 2 minutes, until they are coated and hot. Return the shrimp and squid and toss for 30 seconds, until they are hot.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve topped with the green onions, with extra white pepper at the table."
+ ],
+ "method_notes": "This is the soft stir-fried noodle version the dish name describes. The rated versions I read are the crispy noodle (mi xao gion) kind, so I took their sauce, vegetables and seafood and left out the deep-fried noodle nest, which is not a weeknight job. The lead (Savory Sweet Spoon, 5.0 from 56 votes) builds a broth sauce thickened with cornstarch and oyster sauce, which I kept. Take Two Eggs adds squid and a garlic and shallot base, and Delightful Plate shows the quick pan order for seafood and vegetables. Scallops left out to keep the shopping short.",
+ "sources": [
+  {
+   "name": "Savory Sweet Spoon",
+   "title": "Mi Xao Gion (Crispy Pan-Fried Noodles with Seafood and Vegetables)",
+   "url": "https://www.savorysweetspoon.com/mi-xao-gion-crispy-pan-fried-noodles/",
+   "rating": 5,
+   "rating_count": 56,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Take Two Eggs",
+   "title": "Mi Xao Gion (Crispy Noodle Stir Fry)",
+   "url": "https://takestwoeggs.com/mi-xao-gion/",
+   "rating": 5,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Vicky Pham",
+   "title": "Seafood Bird Nest (Mi Xao Gion Hai San)",
+   "url": "https://vickypham.com/blog/crispy-fried-egg-noodles-bird-nest/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Delightful Plate",
+   "title": "Stir-fried Glass Noodles with Seafood",
+   "url": "https://delightfulplate.com/stir-fried-glass-noodles-with-seafood/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}
