@@ -866,10 +866,15 @@ def set_household_timezone(timezone: str = "", keep: bool = False) -> dict:
             conn.execute("UPDATE households SET timezone_set = 1 WHERE id = ?", (household_id(),))
         else:
             zone = checked_timezone(timezone)
+            from . import digest as _digest
+            clock_before = _digest.morning_clock_state(conn)
             conn.execute(
                 "UPDATE households SET timezone = ?, timezone_set = 1 WHERE id = ?",
                 (zone, household_id()),
             )
+            # A new zone that puts this morning's text behind the clock
+            # starts it tomorrow, as a moved hour does (digest).
+            _digest.hold_today_if_the_save_made_it_due(conn, clock_before)
         conn.commit()
     finally:
         conn.close()
@@ -1006,10 +1011,14 @@ def save_rhythm_answers(
             _upsert(conn, "", "", "prep_days", json.dumps(normalized_prep_days), "", source)
             logged.append("rhythm:prep_days")
         if zone:
+            from . import digest as _digest
+            clock_before = _digest.morning_clock_state(conn)
             conn.execute(
                 "UPDATE households SET timezone = ?, timezone_set = 1 WHERE id = ?",
                 (zone, household_id()),
             )
+            # See set_household_timezone: same rule, same helper.
+            _digest.hold_today_if_the_save_made_it_due(conn, clock_before)
             logged.append("rhythm:timezone")
         conn.commit()
     except Exception:
