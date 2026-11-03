@@ -1,0 +1,140 @@
+{
+ "dish_name": "Spetsofai",
+ "cuisine": "Greek",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Pork sausage",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell peppers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 tube",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sweet paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Canned diced tomatoes",
+   "qty": "1 can (14 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Crusty bread",
+   "qty": "1 loaf",
+   "category": "other"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Slice the sausage into 1-inch rounds. Halve the onion and slice it into half-moons. Cut the peppers into 1-inch pieces. Mince the garlic.",
+  "Heat a large, wide skillet over medium-high heat. Add 1 tbsp of the olive oil and the sausage in a single layer. Cook for 5 minutes, turning once, until both sides are browned.",
+  "Transfer the sausage to a plate. Spoon all but about 1 tbsp of the fat out of the pan.",
+  "Add the remaining 1 tbsp olive oil and the onion, with 1/4 tsp salt. Cook over medium heat for 2 minutes, stirring, until it starts to soften.",
+  "Add the peppers and cook for 3 minutes, stirring now and then.",
+  "Add the garlic and cook for 30 seconds, until you can smell it.",
+  "Add the tomato paste, oregano and paprika. Stir for 1 minute, until the paste turns a shade darker.",
+  "Add the wine and scrape up the browned bits from the bottom of the pan. Bubble for 2 minutes, until most of it has cooked off.",
+  "Add the canned tomatoes with their juice, 1/4 cup water and 1/2 tsp salt. Return the sausage and any juices from the plate. Bring to a simmer, cover, and cook over medium-low heat for 9 minutes, until the peppers are tender and the sauce has thickened.",
+  "You're cooking the sausage to 160°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest piece: it's done when there's no pink left.",
+  "Chop 2 tbsp of the parsley and stir it in off the heat.",
+  "Serve with the crusty bread. Put the red pepper flakes on the table for anyone who wants heat.",
+  "Taste it. If it's flat, add a pinch more salt."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 23,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Runs about 31 minutes, a touch over 30, because the sausage browns first and the peppers need a covered simmer. No version had 20 or more ratings (Real Greek Recipes has 4.75 from 16, Mia Kouppa 5 from 11, the other sites show none), so the lead is the best-read real version. Sources agree on browned sausage, onion and bell pepper, tomato, wine, oregano and a covered simmer; they differ on fresh against canned tomato, tomato paste, red against white wine and whether it's a 20 or 45 minute dish. I used canned tomato and a short simmer to keep it near 30 minutes, added paste fried until dark for depth, and moved the pepper flakes to the table.",
+ "sources": [
+  {
+   "name": "Real Greek Recipes",
+   "title": "Spetsofai - Greek Sausage In Tomato Sauce",
+   "url": "https://realgreekrecipes.com/spetsofai-greek-sausage-in-tomato-sauce/",
+   "rating": 4.75,
+   "rating_count": 16,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Diane Kochilas",
+   "title": "Spetsofai (Traditional Greek Sausage and Peppers)",
+   "url": "https://www.dianekochilas.com/spetsofai-sausage-and-peppers/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "The Hungry Bites",
+   "title": "30 minute Greek sausage and peppers (Spetzofai)",
+   "url": "https://www.thehungrybites.com/30-minute-sausage-and-pepper-stew-spejofae/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Mia Kouppa",
+   "title": "Greek Spetzofai (spetsofai) - Sausages with peppers and tomato",
+   "url": "https://miakouppa.com/recipe-spetzofai-spetsofai-sausages-with-peppers-and-tomato/",
+   "rating": 5.0,
+   "rating_count": 11,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

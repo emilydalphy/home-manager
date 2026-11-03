@@ -1,0 +1,140 @@
+{
+ "dish_name": "Arayes",
+ "cuisine": "Lebanese",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Ground beef",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Pita bread",
+   "qty": "1 bag (5 pitas)",
+   "category": "other"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground allspice",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Smoked paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Tahini",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cayenne pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Set the oven to 200°F and put a rack on a baking sheet in it to keep the cooked pitas warm.",
+  "Grate half the onion on the large holes of a box grater into a large bowl. Finely grate 2 of the garlic cloves into the bowl. Finely chop 1/4 cup of the parsley and add it.",
+  "Add the beef, coriander, cumin, allspice, cinnamon, paprika and 1 1/4 tsp of the salt. Mix with your hands for about 30 seconds, until it's evenly combined.",
+  "Cut each pita in half and open each half into a pocket. If one tears or won't open, microwave it for 30 seconds.",
+  "Divide the meat into 10 portions. Flatten each into a half-circle a little smaller than a pita half, then slide it into a pocket and press it out toward the edges.",
+  "Brush both sides of each stuffed pita with the olive oil, using 2 tbsp for all ten.",
+  "Heat a large skillet over medium-high heat. Add 3 or 4 stuffed pitas, leaving a little room between them. Cook for 2 minutes per side, pressing lightly with a spatula, until golden and crisp.",
+  "You're cooking the beef to 160°F in the middle, so if you have a thermometer, check it there. No thermometer? Open one pita and check that the meat has no pink left.",
+  "Transfer the cooked pitas to the rack in the oven. Cook the rest in the same way. That takes 2 more rounds.",
+  "While the last batch cooks, make the sauce. In a bowl, whisk the yogurt, tahini, juice of the lemon, the last garlic clove, the remaining 1/2 tsp salt and 1 tbsp water until it looks like soft whipped cream.",
+  "Put the sauce in a bowl on the table, with the cayenne in a small dish for anyone who wants heat. Serve the arayes whole or cut in half, with the tahini yogurt sauce.",
+  "Taste the sauce. If it's flat, add a pinch more salt or a squeeze of lemon."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 16,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Comes in at about 31 minutes, a touch over 30, because three rounds in the skillet add up. The lead is RecipeTin Eats (4.98 from 106): raw spiced meat in pita halves, pan-fried until crisp, with a whipped tahini yogurt sauce. I kept its 10 half pita format and moved the cayenne to the table. The other versions agree on raw kafta in a pita pocket that's crisped on both sides, and they add parsley, allspice and cinnamon, so I added parsley and a little cinnamon to the lead's spice mix. To avoid the pan, bake them at 400°F for 15 to 20 minutes, flipping halfway.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Arayes - Lebanese Meat-Stuffed Crispy Pita",
+   "url": "https://www.recipetineats.com/arayes-lebanese-meat-stuffed-pita/",
+   "rating": 4.98,
+   "rating_count": 106,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Salt and Sweet Kitchen",
+   "title": "Arayes Kafta",
+   "url": "https://thesaltandsweet.com/arayes-kafta/",
+   "rating": 5.0,
+   "rating_count": 12,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Alphafoodie",
+   "title": "Arayes (Lebanese Meat-Stuffed Pita)",
+   "url": "https://www.alphafoodie.com/arayes-lebanese-meat-stuffed-pita/",
+   "rating": 4.5,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

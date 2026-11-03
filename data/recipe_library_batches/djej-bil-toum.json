@@ -1,0 +1,94 @@
+{
+ "dish_name": "Djej bil Toum",
+ "cuisine": "Lebanese",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Pita bread",
+   "qty": "1 bag",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Pat the chicken dry. Halve any large thighs so the pieces are about the same size.",
+  "Mince 1 of the garlic cloves and set it aside. Put the other 4 cloves on a cutting board with 1/2 tsp of the salt and mash them with the flat of a knife into a smooth paste.",
+  "Juice the lemons. That should be about 1/3 cup. Chop 2 tbsp of the parsley.",
+  "In a small bowl, stir the garlic paste with 2 tbsp of the olive oil and half the lemon juice. This is the toum sauce.",
+  "Mix the paprika, cumin, the minced clove and 1 tsp of the salt. Rub it over the chicken.",
+  "Heat a large skillet over medium-high heat for 2 minutes. Add the remaining 2 tbsp olive oil and lay in the chicken, leaving room between pieces. Cook in 2 batches if they don't fit.",
+  "Cook for 5 minutes, until the underside is deep golden and lets go of the pan. Flip and cook the other side for 5 minutes.",
+  "You're cooking the thighs to 175°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest piece: it's done when the juices run clear.",
+  "Turn the heat to low. Pour the rest of the lemon juice and 1/4 cup water into the pan and scrape up the browned bits.",
+  "Take the pan off the heat. Stir in the toum sauce and the last 1/4 tsp salt, then turn the chicken in it for 1 minute.",
+  "Scatter the parsley over the top. Serve with the warm pita.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of lemon."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 18,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Real toum is a garlic and oil emulsion that takes about 25 minutes in a food processor, so this is a quick stand in: crushed garlic and salt stirred with oil and lemon into the pan sauce off the heat. No rated version of djej bil toum was reachable (Hungrily Homemade shows no rating, Growing Spaces was blocked), so the lead is the best-read real version, Hungrily Homemade, which whisks toum with lemon, water and oil into a sauce for the chicken. It bakes there and I pan seared instead. RecipeTin Eats' Al Aseel lemon garlic chicken (4.76 from 49) is a close cousin with a yogurt sauce and an overnight marinade, so it is not listed as a source, but I borrowed the hot sear and the warm garlic sauce idea.",
+ "sources": [
+  {
+   "name": "Hungrily Homemade",
+   "title": "Lebanese One Pan Garlic Chicken & Potatoes",
+   "url": "https://www.hungrilyhomemade.com/blog/garlic-loaded-chicken-and-potatoes",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Free Tasty",
+   "title": "Lebanese Lemon Garlic Chicken (Djej Bi Toum w Bi Limon)",
+   "url": "https://freetasty.com/recipe/lebanese-lemon-garlic-chicken",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
