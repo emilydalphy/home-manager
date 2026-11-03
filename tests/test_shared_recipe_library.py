@@ -82,6 +82,7 @@ def _satay(spec):
         "instructions": ["Marinate the chicken in coconut milk and turmeric.",
                          "Grill on skewers; stir peanut butter into a sauce and squeeze in the limes."],
         "default_servings": 4, "prep_time_minutes": 20, "cook_time_minutes": 15,
+        "on_the_plate": "peanut sauce, 3 tbsp each",
     }
 
 

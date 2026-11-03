@@ -122,6 +122,7 @@ _NO_CILANTRO = {
     "ingredients": [{"item": "Chicken thighs", "qty": "1 lb"}, {"item": "Lime", "qty": "2"}],
     "instructions": ["Grill the chicken.", "Squeeze over the lime."],
     "default_servings": 4,
+    "on_the_plate": "lime crema, 2 tbsp each",
 }
 
 
@@ -262,7 +263,8 @@ def test_a_draft_dish_not_written_yet_is_written_then_changed(signed_in, monkeyp
     tools.add_recipe("Chicken Tacos", [], details_pending=True, prep_time_minutes=10, cook_time_minutes=20)
     entry = _meal(plan, TUE, "Chicken Tacos")
     first = {"ingredients": [{"item": "Chicken thighs", "qty": "1 lb"}, {"item": "Cilantro", "qty": "1 bunch"}],
-             "instructions": ["Grill.", "Top with cilantro."], "default_servings": 4}
+             "instructions": ["Grill.", "Top with cilantro."], "default_servings": 4,
+             "on_the_plate": "salsa, 1/4 cup each"}
     writer = _writer(first, _NO_CILANTRO)
     monkeypatch.setattr(agent, "generate_recipe_details_llm", writer)
 
