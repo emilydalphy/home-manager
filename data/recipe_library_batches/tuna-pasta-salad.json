@@ -1,0 +1,106 @@
+{
+ "dish_name": "Tuna Pasta Salad",
+ "cuisine": "American",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Small shell pasta",
+   "qty": "8 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Canned tuna in water",
+   "qty": "2 cans (5 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "1 cup",
+   "category": "frozen"
+  },
+  {
+   "item": "Celery",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Plain Greek yogurt",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Dried dill",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Bring a large pot of water to a boil and add 1 tsp of the salt. Add the pasta and cook it for 1 minute less than the package says, until it's just tender.",
+  "Add the frozen peas for the last 1 minute. Drain everything and rinse it under cold water until cool. Shake off the water.",
+  "Meanwhile, finely chop 2 ribs of the celery and 1/4 cup of the red onion. Drain the tuna and flake it with a fork.",
+  "In a large bowl, stir the mayonnaise, Greek yogurt, dill, the remaining salt and the pepper until smooth.",
+  "Add the pasta and peas, the celery, the onion and the tuna. Fold gently until everything is coated.",
+  "Cover and chill for at least 30 minutes. It's fine to make it the night before.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Divide it into 4 containers. It keeps in the fridge for 3 days and is eaten cold. Stir it before packing, since the dressing settles."
+ ],
+ "method_notes": "No version of the dish we read had 20 or more ratings, so this is a fallback and leads with Baked by Bree (no rating shown): shells, tuna in water, peas, celery and red onion in a mayo and Greek yogurt dressing with dill. Kristine's Kitchen has no ratings and uses a mayo, cider vinegar and Dijon dressing with bell pepper and pickles, and Taste of Home (4 reviews, no stars shown) adds relish and eggs. This one follows Bree's dressing and leaves out the pickles, eggs and extras. Bree says 5 days in the fridge, the others say 3, and this uses 3.",
+ "sources": [
+  {
+   "name": "Baked by Bree",
+   "title": "Tuna Pasta Salad",
+   "url": "https://bakedbree.com/tuna-pasta-salad",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Kristine's Kitchen",
+   "title": "Tuna Pasta Salad",
+   "url": "https://kristineskitchenblog.com/tuna-pasta-salad/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Taste of Home",
+   "title": "Tuna Macaroni Salad",
+   "url": "https://tasteofhome.com/recipes/tuna-pasta-salad/",
+   "rating": null,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

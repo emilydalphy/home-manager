@@ -1,0 +1,108 @@
+{
+ "dish_name": "Egg Roll in a Bowl",
+ "cuisine": "American",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Ground pork",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Coleslaw mix",
+   "qty": "1 bag (14 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground ginger",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Finely dice half the yellow onion, mince the garlic and thinly slice 3 of the green onions.",
+  "Heat the oil in a large skillet over medium-high heat for 1 minute. Add the pork, the salt and the pepper.",
+  "Break the pork up with a spatula and cook for 5 minutes, until it's browned and there's no pink left. Leave it alone for the first minute so it browns.",
+  "Add the onion and cook for 3 minutes, until it's soft. Add the garlic and ginger and stir for 30 seconds.",
+  "Add the coleslaw mix, the soy sauce, the sesame oil and the sugar. Stir well and cook for 5 minutes, until the coleslaw mix is wilted and tender.",
+  "Take the pan off the heat and stir in the green onions.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Divide it into 4 containers. It keeps in the fridge for 3 days and is good cold or reheated in a skillet or the microwave until hot."
+ ],
+ "method_notes": "Natasha's Kitchen (4.97, 407 ratings) is the lead, though it uses beef. Once Upon a Chef (4.89, 131 ratings) uses ground pork, which is what this one uses, with Natasha's browning order and sauce. Natasha adds carrot and sliced cabbage, Once Upon a Chef uses a bag of coleslaw mix and ginger and scallions, and this one takes the coleslaw mix so the effort stays small. Once Upon a Chef tops it with sweet and sour sauce and cashews, which this version leaves out. It follows Natasha's 3 day fridge time.",
+ "sources": [
+  {
+   "name": "Natasha's Kitchen",
+   "title": "Egg Roll in a Bowl Recipe",
+   "url": "https://natashaskitchen.com/egg-roll-in-a-bowl-recipe/",
+   "rating": 4.97,
+   "rating_count": 407,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Once Upon a Chef",
+   "title": "Egg Roll In A Bowl",
+   "url": "https://www.onceuponachef.com/recipes/egg-roll-in-a-bowl.html",
+   "rating": 4.89,
+   "rating_count": 131,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}
