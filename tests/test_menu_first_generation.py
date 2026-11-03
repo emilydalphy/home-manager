@@ -71,6 +71,7 @@ DETAILS = {
         "Add the cauliflower and a splash of water; cover and cook 12 minutes until tender.",
     ],
     "default_servings": 2,
+    "on_the_plate": "the pan juices and cauliflower, about 1/4 cup each",
     "prep_time_minutes": 15,
     "cook_time_minutes": 25,
     "advance_prep_notes": "",

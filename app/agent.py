@@ -218,11 +218,18 @@ in bowls. cook_time_minutes is the time from the first pan going on to the plate
 honest total breaks the night's cap, choose a different dish — never shave the estimate to \
 fit. A number the household can't hit is a promise the app broke.
   * SOMETHING WET, ON PURPOSE. Every dinner plate carries a sauce, dressing, broth or spoonable \
-something. The default is the pan sauce made where the protein was seared: a splash of liquid \
-(stock, wine, or plain water), scrape the browned bits up, let it bubble down by half, a knob \
-of cold butter off the heat, taste — three minutes, no extra pan. Otherwise a yogurt, tahini, \
-herb or salsa-style sauce made while something roasts. A plate of well-cooked dry things still \
-reads as dull, and this is the cheapest fix there is.
+something, at least 2 tablespoons of it for each person when it's served, and you name it and \
+its amount in on_the_plate. A splash of liquid that the food simmers in and soaks up does not \
+count: when meat finishes cooking in a covered pan with vegetables, it needs about 1/4 cup of \
+liquid per person to still have sauce left at the end, and a jar of marinara, a can of tomatoes \
+or a can of coconut milk is the easy way to get there. The default for a seared protein is the \
+pan sauce made where it was seared: a splash of liquid (stock, wine, or plain water), scrape \
+the browned bits up, let it bubble down by half, a knob of cold butter off the heat, taste — \
+three minutes, no extra pan. Otherwise a yogurt, tahini, herb or salsa-style sauce made while \
+something roasts. Lean ground turkey or chicken dries out on its own: soak the breadcrumbs in a \
+little milk before they go in, and cook the meatballs or patties in a real sauce or serve one \
+with them. A plate of well-cooked dry things still reads as dull, and this is the cheapest fix \
+there is.
   * THE OTHER THREE. Salt, acid and browning are above; the rest of the kit is savoury depth, \
 fat and a little sweet. Where the dish can carry it, cook ONE savoury-depth ingredient into \
 the base early — tomato paste fried a minute until it darkens, a parmesan rind in the pot, \
@@ -4239,6 +4246,10 @@ _RECIPE_DETAILS_TOOL = {
                 "type": "array", "items": {"type": "string"},
                 "description": "Short lines naming what you changed for THIS household from the usual version of the dish (the `research` versions when given): an allergen taken out and what replaced it, naming who it's for ('No cashews — Asha can't have tree nuts; sunflower seeds instead'), heat moved to the table for the children, a kitchen workaround. One change per line, under 15 words. Empty when nothing was changed.",
             },
+            "on_the_plate": {
+                "type": "string",
+                "description": "For a dinner: the sauce, dressing or broth that is on the plate when it's served, and how much each serving gets, as a measure ('the marinara they simmer in, about 1/2 cup each', 'garlic yogurt sauce, 3 tbsp each'). Liquid the food soaks up while it cooks is not on the plate. For anything else, leave it blank.",
+            },
         },
         "required": ["ingredients", "instructions", "default_servings"],
     },
@@ -5478,6 +5489,50 @@ Call submit_recipe_amounts with the result."""
     return {}
 
 
+_PLATE_MEASURE = re.compile(
+    r"(\d+\s+\d/\d|\d/\d|\d+(?:\.\d+)?|[½¼¾⅓⅔])[\s-]*"
+    r"(cups?|tablespoons?|tbsp|teaspoons?|tsp|ml|oz|ounces?)\b",
+    re.IGNORECASE,
+)
+_PLATE_UNIT_TBSP = {"cup": 16.0, "tablespoon": 1.0, "tbsp": 1.0, "teaspoon": 1 / 3, "tsp": 1 / 3,
+                    "ml": 1 / 14.8, "oz": 2.0, "ounce": 2.0}
+_PLATE_GLYPHS = {"½": 0.5, "¼": 0.25, "¾": 0.75, "⅓": 1 / 3, "⅔": 2 / 3}
+# Two tablespoons a person: a spoonful of yogurt sauce counts, a film of
+# pan juice doesn't.
+_PLATE_MIN_TBSP = 2.0
+
+
+def _sauce_on_the_plate_problem(on_the_plate) -> str | None:
+    """
+    None when the writer named a sauce and at least 2 tbsp a person of it;
+    otherwise what is wrong, for the retry note and the log. It reads the
+    writer's own on_the_plate line rather than guessing from the
+    ingredients: run over the 898-dish library, a word list flagged 412 of
+    them, curries and salsa tacos among them (2026-11-02).
+    """
+    text = (on_the_plate or "").strip() if isinstance(on_the_plate, str) else ""
+    if not text or text.lower().startswith("none"):
+        return "on_the_plate was empty"
+    m = _PLATE_MEASURE.search(text)
+    if not m:
+        return f"on_the_plate gave no amount: {text[:80]!r}"
+    raw, unit = m.group(1), m.group(2).lower().rstrip("s")
+    if raw in _PLATE_GLYPHS:
+        amount = _PLATE_GLYPHS[raw]
+    else:
+        amount = 0.0
+        for part in raw.split():
+            top, _, bottom = part.partition("/")
+            if not bottom:
+                amount += float(top)
+            elif int(bottom):
+                amount += int(top) / int(bottom)
+    tbsp = amount * _PLATE_UNIT_TBSP.get(unit, 0.0)
+    if tbsp < _PLATE_MIN_TBSP:
+        return f"only {text[:80]!r} a person"
+    return None
+
+
 def _settle_recipe_amounts(
     recipe_name: str, ingredients: list[dict], instructions: list[str], servings: int,
 ) -> tuple[list[str], list[dict], dict]:
@@ -5821,9 +5876,22 @@ def _write_one_pending_recipe(recipe: dict, slot: str, shared: dict, avoidances:
     writer_research = _recipe_research.research_for_writer(found)
     if writer_research:
         spec["research"] = writer_research
+    # The first answer, when it was turned back only for want of a sauce: a
+    # complete recipe that passed the allergen gate, kept in case the rewrite
+    # fails outright. A dull dinner beats a dish left pending.
+    dry_first = None
     try:
         for attempt in (1, 2):
-            detail = generate_recipe_details_llm(spec)
+            try:
+                detail = generate_recipe_details_llm(spec)
+            except Exception:
+                if dry_first is None:
+                    raise
+                logger.exception("The sauce rewrite for %r failed; keeping the first answer", name)
+                detail = dry_first
+            if dry_first is not None and not (detail.get("ingredients") and detail.get("instructions")):
+                logger.warning("The sauce rewrite for %r came back empty; keeping the first answer", name)
+                detail = dry_first
             # A 0 or negative count from the model is dropped, so the
             # household's own table (shared serves) is used instead.
             detail["default_servings"] = tools.positive_servings(detail.get("default_servings"))
@@ -5852,6 +5920,22 @@ def _write_one_pending_recipe(recipe: dict, slot: str, shared: dict, avoidances:
                 if attempt == 1:
                     continue
                 return {"name": name, "ok": False, "clash": clashes}
+            # A dinner names the sauce on its plate and how much (2026-11-02,
+            # Tester Home's dry turkey meatballs: 1/3 cup of broth the pan
+            # soaked up). No sauce, or no measure of it, is rewritten once —
+            # through the allergen gate again above — and kept on the second.
+            wet = _sauce_on_the_plate_problem(detail.get("on_the_plate")) if slot == "dinner" else None
+            if wet:
+                logger.warning("Recipe %s quality [sauce_on_the_plate/info]: %s; %s",
+                               name, wet, "rewriting once" if attempt == 1 else "keeping it")
+                if attempt == 1:
+                    dry_first = detail
+                    spec = {**spec, "note": (
+                        f"Your previous attempt had no real sauce on the plate ({wet}). Write it "
+                        "again so each person gets at least 2 tablespoons of sauce, dressing or "
+                        "broth when it's served, and say what it is and how much in on_the_plate."
+                    )}
+                    continue
             servings = detail.get("default_servings") or shared.get("serves") or 4
             # The amounts have to add up before anyone cooks from it, and
             # this runs AFTER the allergen gate on purpose: the repair may
