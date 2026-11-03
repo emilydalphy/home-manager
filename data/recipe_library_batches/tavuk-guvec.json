@@ -1,0 +1,134 @@
+{
+ "dish_name": "Tavuk Guvec",
+ "cuisine": "Turkish",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 45,
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cremini mushrooms",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 tube",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sweet paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Crusty bread",
+   "qty": "1 loaf",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F. Cut the chicken into 1 1/2 inch pieces. Toss them in a bowl with the paprika, the cumin, the black pepper, 1 tbsp of the olive oil and 3/4 tsp of the salt.",
+  "Meanwhile, slice the mushrooms, cut the onion into half moons, chop the red pepper small and cut the green pepper into large chunks. Chop the tomatoes and mince the garlic.",
+  "Heat a large oven-safe skillet over medium-high. Add 1 tbsp of the olive oil. Add half the chicken in a single layer and leave it alone for 3 minutes, until the underside is browned. Turn the pieces and cook for 2 minutes. Transfer to a plate and repeat with the rest of the chicken.",
+  "Lower the heat to medium. Add the butter and the last 1 tbsp olive oil to the same pan. Add the mushrooms and cook for 5 minutes, stirring now and then, until they're browned.",
+  "Add the onion and red pepper and cook for 4 minutes, until soft. Add 1/2 tsp of the salt.",
+  "Add the tomato paste and stir for 1 minute, until it darkens. Add the garlic and thyme and stir for 30 seconds.",
+  "Add the tomatoes and 1/2 cup water. Scrape up the browned bits from the bottom of the pan. Simmer for 5 minutes, until the tomatoes start to break down.",
+  "Return the chicken and any juices to the pan. Press the pieces into the sauce and lay the green pepper on top.",
+  "Bake for 25 minutes, until the sauce is bubbling and the green pepper has softened. You're cooking the chicken to 175°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest piece: it's done when the juices run clear.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the crusty bread. Put the red pepper flakes on the table for anyone who wants heat."
+ ],
+ "method_notes": "No version with 20 or more ratings turned up, so this is a fallback. Turkey's For Life (5 from 1 rating, read from the visible rating) leads with a clay pot method: sear the chicken, fry the vegetables, layer them over the chicken with diluted tomato paste and finish with a green pepper on top. Ozlem's Turkish Table (5 from 3 ratings) simmers a bigger pot of chicken, potato, beans and zucchini on the stove for 2 hours. Pomona follows the oven version, uses thighs instead of breast, drops the 2 hour marinade to the seasoning step, and moves the chile flakes from the marinade to the table.",
+ "sources": [
+  {
+   "name": "Turkey's For Life",
+   "title": "Turkish Chicken Casserole (Tavuk Guvec)",
+   "url": "https://www.turkeysforlife.com/2026/01/turkish-chicken-casserole-tavuk-guvec.html",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Ozlem's Turkish Table",
+   "title": "Tavuk Guvec (Turkish Chicken and Vegetable Stew in Earthenware Pot)",
+   "url": "https://ozlemsturkishtable.com/2014/06/tavuk-guvec-turkish-chicken-and-vegetable-stew-in-earthenware-pot/",
+   "rating": 5,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}
