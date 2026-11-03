@@ -1,0 +1,152 @@
+{
+ "dish_name": "Dum Aloo",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Baby potatoes",
+   "qty": "1.5 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Raw cashews",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1/2 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce",
+   "cook_qty": "1 tbsp grated"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaf",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Green cardamom pods",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Turmeric",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chili powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kasuri methi",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3/4 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Put the baby potatoes in a large pot, cover them with cold water and add 1/2 tsp of the salt. Bring to a boil over high heat.",
+  "Meanwhile, roughly chop the onions and tomatoes. Mince the garlic and grate the ginger.",
+  "Once the potatoes are boiling, cook them for 4 minutes. Add the chopped onions and cook for 6 minutes, until a fork meets a little resistance in the potatoes.",
+  "Drain everything in a colander. Transfer the potatoes to a plate and run cold water over the onions. Prick each potato 3 times with a fork.",
+  "Put the onions, tomatoes and cashews in a blender with 1/4 cup water. Blend to a smooth puree.",
+  "Heat 2 tbsp of the oil in a large skillet over medium-high. Add the potatoes and cook for 6 to 8 minutes, turning now and then, until golden. Sprinkle with 1/4 tsp of the salt and transfer them back to the plate.",
+  "Turn the heat down to medium and add the remaining 2 tbsp oil, the bay leaf and the cardamom pods. After about 20 seconds they'll smell warm.",
+  "Add the garlic and ginger and cook for 1 minute.",
+  "Pour in the puree. Stand back a little, it will spatter. Cook for 8 minutes, stirring, until it's thick and the raw smell is gone.",
+  "Add the turmeric, chili powder, ground coriander, garam masala, sugar and the last 1/2 tsp salt. Cook for 1 minute, stirring.",
+  "Whisk the yogurt in a bowl until it's smooth. Stir 2 tbsp of the hot masala into it, then add it to the pan. Stir for 2 minutes, until it's thick.",
+  "Add the potatoes and 1/2 cup water. Bring to a boil, then turn the heat to low, cover and cook for 7 minutes, until the potatoes are soft and the gravy is thick.",
+  "Crush the kasuri methi between your palms over the pan and stir for 1 minute. Take the pan off the heat and stir in 2 tbsp chopped cilantro. Taste it. If it's flat, add a pinch more salt.",
+  "Serve with rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 50,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Swasthi's (the lead) boils the onions, blends them with tomato and cashews, builds the masala, whisks the yogurt in with a spoon of hot masala, then simmers the potatoes sealed on low. Sailu's Kitchen skips the blender and finishes with cream and cashew paste, and Nik Sharma sears halved potatoes and blends the spices raw. This one follows Swasthi's, with the potatoes boiled together with the onions to save a pot and browned in the pan, and no green chili to keep it mild. Sailu's and Nik Sharma's pages show no ratings.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Dum Aloo Recipe (Restaurant Style)",
+   "url": "https://www.indianhealthyrecipes.com/dum-aloo/",
+   "rating": 4.99,
+   "rating_count": 344,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Sailu's Food",
+   "title": "Aloo Dum",
+   "url": "https://www.sailusfood.com/aloo-dum/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Nik Sharma Cooks",
+   "title": "Dum Aloo",
+   "url": "https://niksharmacooks.com/dum-aloo/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

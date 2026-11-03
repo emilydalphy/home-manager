@@ -1,0 +1,201 @@
+{
+ "dish_name": "Vegetable Biryani",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Basmati rice",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 1/2 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Yukon gold potato",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green beans",
+   "qty": "1/4 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce",
+   "cook_qty": "1 tbsp grated"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Mint",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Crispy fried onions",
+   "qty": "1 container",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Ghee",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole milk",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Saffron threads",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chili powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Turmeric",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Green cardamom pods",
+   "qty": "4",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole cloves",
+   "qty": "4",
+   "category": "pantry"
+  },
+  {
+   "item": "Star anise",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the potato into 1/2 inch cubes, slice the carrot into thin rounds, cut the green beans into 1 inch pieces and the pepper into 1 inch pieces. Mince the garlic and grate the ginger. Finely chop the onion. Chop 2 tbsp each of the mint and cilantro.",
+  "In a large bowl, mix 1 cup of the yogurt, 2 of the garlic cloves, half the ginger, 2 tsp lemon juice, 1 tsp of the garam masala, the ground coriander, chili powder, turmeric, 1/2 tsp of the salt and half the chopped mint and cilantro. Add the potato, carrot, beans and pepper and toss. Leave it for 30 minutes.",
+  "Meanwhile, rinse the rice in a bowl of cold water, pouring it off and refilling until the water runs mostly clear. Cover with fresh cold water and soak for 20 minutes.",
+  "Warm the milk in a small bowl in the microwave for 10 seconds. Crumble in the saffron and set it aside.",
+  "Melt 2 tbsp of the ghee with the oil in a large heavy pot over medium. Add the onion and cook for about 8 minutes, stirring, until deep golden.",
+  "Add the last garlic clove and the rest of the ginger and cook for 1 minute.",
+  "Add the marinated vegetables and all the yogurt from the bowl. Cook for 15 minutes, stirring now and then, until the potato is nearly tender and oil shows at the edges. Stir in half of the fried onions and take the pot off the heat.",
+  "While the vegetables cook, bring 8 cups water to a boil in a second large pot. Add the bay leaves, cinnamon stick, cardamom, cloves, star anise, cumin seeds, 2 tsp of the salt and 1 tsp lemon juice.",
+  "Drain the soaked rice and add it to the boiling water. Boil for 5 to 6 minutes, until a grain breaks when you press it but still has a firm center. Drain it in a colander right away.",
+  "Spread the rice over the vegetables in the pot without pressing it down. Drizzle the saffron milk over the top, then scatter on the rest of the fried onions, the rest of the mint and cilantro and the remaining 1 tbsp ghee in small pieces. Sprinkle the remaining 1 tsp garam masala over the rice.",
+  "Cover the pot with foil, then set the lid on tight. Cook on the lowest heat for 30 minutes. Don't lift the lid.",
+  "Take the pot off the heat and leave it covered for 5 minutes. Fluff with a fork from the edges, bringing the vegetables up through the rice. Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the remaining 1/2 cup yogurt."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 70,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Hebbar's Kitchen (the lead) marinates the vegetables in yogurt and spices, cooks them into a gravy, layers it with par-boiled rice and saffron milk and steams it for 30 minutes. Foodviva does the same without a marinade and finishes on low heat for 12 to 15 minutes, and Recipes Are Simple cooks it as a single pot pulao in about 30 minutes. This one follows Hebbar's, using a pot with foil under the lid instead of a banana leaf and plain spices instead of a boxed biryani masala. It is long for a weeknight at about 95 minutes. Foodviva shows 29 votes with no rating value on the page. The Hebbar's rating is from the page data.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "veg biriyani recipe | vegetable biryani recipe in banana leaf | veg dum biryani",
+   "url": "https://hebbarskitchen.com/veg-biriyani-recipe-vegetable-biryani/",
+   "rating": 5.0,
+   "rating_count": 89,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Foodviva",
+   "title": "Vegetable Biryani Recipe (Hyderabadi Veg Dum Biryani)",
+   "url": "https://foodviva.com/lunch-recipes/vegetable-biryani",
+   "rating": null,
+   "rating_count": 29,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Recipes Are Simple",
+   "title": "Vegetable Biryani",
+   "url": "https://recipesaresimple.com/recipe/vegetable-biryani",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
