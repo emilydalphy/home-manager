@@ -274,7 +274,7 @@ def test_the_meal_step_shows_the_recipe_and_none_of_its_controls():
         + "".join(_extract(n) + "\n" for n in (
             "humanQtyAmount", "humanQtyText", "cookIngredientLabel", "cookUnscaledHtml", "cookServesShown",
             "cookIngTickId", "cookGetOutRowHtml", "recipeServesHtml", "recipeIngredientsHtml",
-            "recipeIngredientRowHtml", "recipeStepsHtml", "isSnackSlot"))
+            "recipeIngredientRowHtml", "recipeStepsHtml", "cookUnderway", "isSnackSlot"))
         + "console.log(JSON.stringify({\n"
         + f"  plain: recipeIngredientsHtml({json.dumps(meal)}, 'wk', false) + recipeStepsHtml({json.dumps(meal)}, false),\n"
         + f"  cooking: recipeServesHtml({json.dumps(meal)}, 3) + recipeIngredientsHtml({json.dumps(meal)}, 3, true) + recipeStepsHtml({json.dumps(meal)}, true)\n"

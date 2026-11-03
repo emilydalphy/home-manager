@@ -464,6 +464,7 @@ def _cook_screen(meal: dict, stage: str) -> str:
             # the real ones, for the same reason as the pair above.
             "recipeExtraFor", "recipeForLine", "recipeTabsHtml", "recipeCreditHtml", "recipeChangesHtml",
             "recipeTimeHtml", "recipeJumpsHtml", "recipeOverviewHtml", "recipePlainIngredientsHtml",
+            "cookUnderway", "recipeAlreadyDoneHtml", "recipePlateHtml",
             "recipeStarsLabel", "recipeSourceRowHtml", "recipeSourcesHtml", "recipeTabBodyHtml", "recipeMoreHtml",
             "recipeTitleHtml", "recipeServesHtml", "recipeIngredientsHtml", "recipeIngredientRowHtml",
             "recipeStepsHtml", "cookRecipeLinesHtml", "cookDockHtml", "cookDockCookedHtml", "cookRecipeDockHtml",

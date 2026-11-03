@@ -40,6 +40,7 @@ _PRELUDE = (
     + _extract_var("RECIPE_TWEAK_GO", SHELL_JS) + "\n"
     + _extract("recipeIsChangeable", SHELL_JS) + "\n"
     + _extract("recipeTweakBtnHtml", SHELL_JS) + "\n"
+    + _extract("cookUnderway", SHELL_JS) + "\n"
     + _extract("cookRecipeDockHtml", SHELL_JS) + "\n"
     + _extract("tweakElseHtml", SHELL_JS) + "\n"
     + _extract("recipeTweakSheetBodyHtml", SHELL_JS) + "\n"

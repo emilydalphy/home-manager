@@ -169,7 +169,10 @@ def test_cook_empty_state_links_to_the_plan_tab():
 
 
 def test_prep_section_says_what_is_next_once_prep_is_done():
-    _assert_in("Prep’s done — the rest is tonight.", SHELL_JS, "the finished-prep note", "shell.js")
+    # Since 2026-11-02 (one recipe screen) finished prep moves up to an
+    # "Already done" card at the top of the recipe's Overview, and the prep
+    # section goes once nothing is left in it.
+    _assert_in("<span class=\"recipe-done-eyebrow\">Already done</span>", SHELL_JS, "the Already done card", "shell.js")
 
 
 def test_end_of_cook_offers_the_next_step():
