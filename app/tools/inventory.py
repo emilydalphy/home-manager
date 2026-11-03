@@ -667,17 +667,32 @@ def _find_row_by_name(conn, item: str, location: str | None, columns: str):
     category default at insert time — so there is nothing better to
     prefer; the callers that know the place pass it and skip all this.
     """
+    sql = f"SELECT {columns}, item AS _match_item FROM inventory_items WHERE household_id = ?"
+    params: list = [household_id()]
     if location:
-        return conn.execute(
-            f"SELECT {columns} FROM inventory_items WHERE household_id = ? AND LOWER(item) = LOWER(?) AND location = ? "
-            "ORDER BY updated_at DESC, id DESC LIMIT 1",
-            (household_id(), item, location),
-        ).fetchone()
-    return conn.execute(
-        f"SELECT {columns} FROM inventory_items WHERE household_id = ? AND LOWER(item) = LOWER(?) "
-        "ORDER BY updated_at DESC, id DESC LIMIT 1",
-        (household_id(), item),
-    ).fetchone()
+        sql += " AND location = ?"
+        params.append(location)
+    return _first_named(conn.execute(sql + " ORDER BY updated_at DESC, id DESC", params).fetchall(), item)
+
+
+def _first_named(rows, item: str):
+    """
+    The first of `rows` (already in preference order) that is `item` by the
+    grocery list's merge key — case, spacing, accents, a trailing plural,
+    the plain-name list (grocery._merge_key). It was LOWER(item) =
+    LOWER(?), so ticking "Onions" off the list made a second row beside the
+    Kitchen's "Onion", and "used the chicken thigh" found nothing on
+    "Chicken thighs" (defect hunt, 2026-11-03). The list, the Kitchen's
+    Say/Type it (kitchen_add._match_key) and a cooked dinner's take-off
+    (eaten_receipt._twin) already read names this way.
+    """
+    key = _grocery._merge_key(item or "")
+    if not key:
+        return None
+    for row in rows:
+        if _grocery._merge_key(row["_match_item"] or "") == key:
+            return row
+    return None
 
 
 # Names whose fresh-sounding word is not the food on the shelf: canned
@@ -941,13 +956,13 @@ def _add_to_inventory(
         # bought fresh goes where fresh food goes: onto a row outside the
         # freezer, or a new one at its usual place. Into the freezer only
         # by "Yes, freezing it" (defrost._freeze_ticked_pack), never by name.
-        existing = conn.execute(
-            "SELECT id, quantity, category, expiration_date, location FROM inventory_items "
-            "WHERE household_id = ? AND LOWER(item) = LOWER(?) "
+        existing = _first_named(conn.execute(
+            "SELECT id, quantity, category, expiration_date, location, item AS _match_item FROM inventory_items "
+            "WHERE household_id = ? "
             "AND LOWER(TRIM(COALESCE(location, ''))) != 'freezer' "
-            "ORDER BY updated_at DESC, id DESC LIMIT 1",
-            (household_id(), item),
-        ).fetchone()
+            "ORDER BY updated_at DESC, id DESC",
+            (household_id(),),
+        ).fetchall(), item)
         if existing is not None and _quantities._display_location(dict(existing)).strip().lower() == "freezer":
             existing = None  # a legacy row with no location, filed by its frozen category
     if existing:
@@ -1574,7 +1589,9 @@ def get_cross_location_duplicates() -> list[dict]:
     items = get_inventory()
     by_name: dict[str, list[dict]] = {}
     for it in items:
-        by_name.setdefault(it["item"].strip().lower(), []).append(it)
+        # The same key a name-only write lands by (_first_named), so
+        # "Onion" in the pantry and "Onions" in the fridge are one food.
+        by_name.setdefault(_grocery._merge_key(it["item"] or "") or it["item"].strip().lower(), []).append(it)
     duplicates = []
     for entries in by_name.values():
         locations = {e["location"] for e in entries}

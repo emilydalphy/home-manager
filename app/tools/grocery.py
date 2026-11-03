@@ -4573,10 +4573,7 @@ def move_grocery_item_to_inventory(item_id: int) -> dict:
     # Same match _add_to_inventory itself will use (no location passed
     # below) — checked first so we know, after the fact, whether its write
     # was a fresh insert or a merge into this pre-existing row.
-    pre_existing = conn.execute(
-        "SELECT id FROM inventory_items WHERE household_id = ? AND LOWER(item) = LOWER(?)",
-        (household_id(), row["item"]),
-    ).fetchone()
+    pre_existing = _inventory._find_row_by_name(conn, row["item"], None, "id")
     conn.close()
 
     inventory_result = _inventory._add_to_inventory(
