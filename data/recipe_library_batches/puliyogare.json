@@ -1,0 +1,150 @@
+{
+ "dish_name": "Puliyogare",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {
+   "item": "Medium-grain rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Tamarind",
+   "qty": "1 block",
+   "category": "pantry",
+   "cook_qty": "a lemon-sized ball"
+  },
+  {
+   "item": "Jaggery",
+   "qty": "1 block",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp, grated"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Peanuts",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Chana dal",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Urad dal",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried red chilies",
+   "qty": "3",
+   "category": "pantry"
+  },
+  {
+   "item": "Curry leaves",
+   "qty": "1 small bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Mustard seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Coriander seeds",
+   "qty": "1 1/2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fenugreek seeds",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried unsweetened coconut",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Asafoetida",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups of rice until the water runs mostly clear. Cook it with 3 cups of water, covered, until each grain is separate and tender. Check the package for the time.",
+  "Spread the rice on a large plate or tray and let it cool completely. It mixes better when it's cool and dry.",
+  "Meanwhile, put the tamarind in a bowl with the jaggery and 1 cup of hot water. Leave it for 15 minutes.",
+  "Squeeze the tamarind with your fingers until it breaks down, then press the liquid through a strainer into a bowl. Throw away the fibers and seeds.",
+  "Make the spice powder. Heat a dry pan over medium-low heat. Add 1 tbsp of the chana dal, 1 tbsp of the urad dal and 2 of the dried red chilies, and stir for 2 minutes, until the dals are light gold.",
+  "Add the coriander seeds, cumin seeds, fenugreek seeds, 1/2 tsp of the mustard seeds and the black pepper. Stir for 1 minute, until they smell toasty.",
+  "Add the sesame seeds and coconut and stir for 30 seconds, until the coconut is pale gold. Stir in half of the asafoetida, then transfer everything to a plate and let it cool for 5 minutes.",
+  "Grind it to a fine powder in a spice grinder.",
+  "Heat the sesame oil in a wide pan over medium heat. Add the remaining 1/2 tsp mustard seeds. After about 20 seconds they will start to pop. That's your cue for the next step.",
+  "Add the peanuts and the remaining 1 tbsp chana dal and 1 tbsp urad dal. Stir for 1 to 2 minutes, until the peanuts and dals are golden.",
+  "Add the remaining dried red chili, broken in half, the curry leaves and the rest of the asafoetida. Stand back a little, because the leaves will spatter. Stir for 15 seconds.",
+  "Pour in the tamarind liquid, then add the turmeric and 1 tsp of the salt. Simmer over medium heat for 10 to 12 minutes, until it's thick and the oil starts to separate at the edges.",
+  "Stir in the spice powder, a little at a time. Cook for 2 minutes, until it's a thick paste, adding a splash of water if it gets stiff.",
+  "Add the paste to the cooled rice a few spoonfuls at a time, folding gently so the grains stay whole. Stop when every grain is coated. You may not need all of it.",
+  "Sprinkle over the last 1/2 tsp salt, taste it, and add a pinch more if it's flat. Cover and leave it for 30 minutes.",
+  "Serve at room temperature, with yogurt or papad if you have them. Packed in a lunch box, it keeps in the fridge for up to 2 days. Eat it cold or at room temperature, or microwave it for about 1 minute."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Swasthi's and Hebbar's agree on cooked short-grain rice cooled before mixing, a tamarind paste with peanuts, dals and curry leaves, and a roasted spice powder stirred in, then a rest so the rice takes on the flavor. They differ in that Hebbar's makes a big jar of gojju (a paste that keeps a month) and uses more oil and chilies, while Swasthi's makes just enough paste for one batch. The app's rating rule makes Hebbar's the lead, but its jar-sized gojju batch was scaled down using Swasthi's single-batch amounts, scaled up for 4 and with the dried chilies cut back to keep it mild. Swasthi's page showed only a visible rating (5 from 81 votes), not the JSON-LD; Hebbar's shows 4.98 from 193 votes.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Puliyogare Recipe | Tamarind Rice - Karnataka Style",
+   "url": "https://hebbarskitchen.com/puliyogare-recipe-tamarind-rice-karnataka-style/",
+   "rating": 4.98,
+   "rating_count": 193,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Puliyogare Recipe (Tamarind Rice Recipe)",
+   "url": "https://indianhealthyrecipes.com/puliyogare-recipe",
+   "rating": 5.0,
+   "rating_count": 81,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

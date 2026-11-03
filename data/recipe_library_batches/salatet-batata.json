@@ -1,0 +1,93 @@
+{
+ "dish_name": "Salatet Batata",
+ "cuisine": "Lebanese",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "1 3/4 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "Dried mint",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce",
+   "cook_qty": "1/4 cup juice"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Wash the potatoes and put them in a large pot. Cover with cold water by 1 inch and add 1 tsp of salt. Bring to a gentle boil over medium-high heat.",
+  "Lower the heat to medium and cook for 15 to 20 minutes, until a fork slides in easily. Don't let them go soft and break apart.",
+  "Meanwhile, chop 1/4 cup of parsley and 1/4 cup of scallions, and crush the garlic clove.",
+  "Squeeze the lemons. That should be about 1/4 cup of juice. Whisk it with the olive oil, 1/2 tsp salt and the pepper in a small bowl.",
+  "Drain the potatoes and let them cool for 10 minutes. Cut them into bite-sized chunks, with the skins on.",
+  "Put the potatoes in a large bowl with the parsley, scallions, garlic and dried mint. Pour the dressing over and fold gently so the potatoes stay in pieces.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve warm or cold. It keeps in the fridge for up to 3 days, and the flavor gets better as it sits."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Plant Based Folk and Cup of Yum agree on boiled potatoes dressed with olive oil, lemon juice, garlic and scallions, with no mayonnaise. Plant Based Folk uses parsley and dried mint and a lot of lemon juice, while Cup of Yum uses fresh mint, much less lemon and less oil. This follows Plant Based Folk, scaled to 1 3/4 lbs of potatoes. Little Ferraro Kitchen blocked the fetch and was skipped.",
+ "sources": [
+  {
+   "name": "Plant Based Folk",
+   "title": "Lebanese Potato Salad (Salata Batata)",
+   "url": "https://plantbasedfolk.com/lebanese-potato-salad-recipe/",
+   "rating": 4.93,
+   "rating_count": 51,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cup of Yum",
+   "title": "Lebanese Potato Salad Recipe",
+   "url": "https://cupofyum.com/recipes/lebanese-potato-salad-recipe",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
