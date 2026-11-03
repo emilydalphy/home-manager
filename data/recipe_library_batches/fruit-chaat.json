@@ -12,7 +12,7 @@
   {"item": "Lime", "qty": "1", "category": "produce"},
   {"item": "Mint", "qty": "1 bunch", "category": "produce", "cook_qty": "6 leaves"},
   {"item": "Chaat masala", "qty": "1/2 tsp", "category": "pantry"},
-  {"item": "Black salt (kala namak)", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Black salt (kala namak)", "qty": "1 jar", "category": "pantry", "cook_qty": "1/2 tsp"},
   {"item": "Ground cumin", "qty": "1/4 tsp", "category": "pantry"}
  ],
  "instructions": [

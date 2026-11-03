@@ -23,7 +23,7 @@
   },
   {
    "item": "Fennel",
-   "qty": "1 bulb",
+   "qty": "1",
    "category": "produce"
   },
   {
@@ -89,8 +89,9 @@
   },
   {
    "item": "Saffron threads",
-   "qty": "2 pinches",
-   "category": "pantry"
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 pinches"
   },
   {
    "item": "Fennel seeds",
@@ -104,7 +105,7 @@
   },
   {
    "item": "Cayenne pepper",
-   "qty": "1 pinch",
+   "qty": "a pinch",
    "category": "pantry"
   },
   {

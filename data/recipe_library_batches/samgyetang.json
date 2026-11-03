@@ -10,8 +10,9 @@
   },
   {
    "item": "Sweet glutinous rice",
-   "qty": "6 tbsp",
-   "category": "pantry"
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "6 tbsp"
   },
   {
    "item": "Fresh ginseng",

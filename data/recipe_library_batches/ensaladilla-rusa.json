@@ -10,13 +10,14 @@
   },
   {
    "item": "Carrots",
-   "qty": "1 lb",
+   "qty": "8 oz",
    "category": "produce"
   },
   {
    "item": "Frozen peas",
    "qty": "1 bag",
-   "category": "frozen"
+   "category": "frozen",
+   "cook_qty": "1 cup"
   },
   {
    "item": "Tuna in olive oil",
@@ -57,7 +58,7 @@
   }
  ],
  "instructions": [
-  "Cut the potatoes into 1 inch chunks. Peel 8 oz of the carrots and cut them into 1/2 inch pieces. Put both in a large pot, cover with cold water and add 1/2 tsp of the salt.",
+  "Cut the potatoes into 1 inch chunks. Peel the carrots and cut them into 1/2 inch pieces. Put both in a large pot, cover with cold water and add 1/2 tsp of the salt.",
   "Bring the pot to a boil over high heat, then turn it to medium and cook for 10 minutes, until a knife slides into the potato with no push.",
   "Add 1 cup of the peas and cook for 1 minute.",
   "Drain everything in a colander, then spread it on a baking sheet. Leave it for 15 minutes, until it's cool to the touch.",
