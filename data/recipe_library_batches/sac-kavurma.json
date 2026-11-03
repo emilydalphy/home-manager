@@ -1,0 +1,117 @@
+{
+ "dish_name": "Sac Kavurma",
+ "cuisine": "Turkish",
+ "main_protein": "lamb",
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 18,
+ "ingredients": [
+  {
+   "item": "Lamb shoulder",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Ghee",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cubanelle peppers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 small can",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Flatbread",
+   "qty": "1 pack",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the lamb into 3/4-inch pieces and pat them dry. Slice the onion and the peppers into thin strips, and chop the tomatoes. Finely chop the garlic.",
+  "Heat a large, wide pan over high heat for 2 minutes. Add the ghee and let it melt.",
+  "Add the lamb and spread it out. Leave it alone for 2 minutes so it browns, then stir. Keep cooking over high heat, stirring often, for 6 to 8 minutes. The lamb will let go of its juices, then take them back up and start to sizzle.",
+  "Add the cumin, paprika, thyme and black pepper. Cook for 1 minute, stirring, until it smells toasty.",
+  "Add the onion and peppers. Cook over high heat for 4 minutes, stirring often, until the onion is just soft and has a few browned edges.",
+  "Add the garlic, the tomato paste and the tomatoes. Cook for 3 minutes, stirring, until the tomatoes have softened but still hold their shape.",
+  "Take the pan off the heat and stir in the salt.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Warm the flatbread. Serve the lamb with the flatbread and the red pepper flakes at the table for anyone who wants heat."
+ ],
+ "method_notes": "The two sources that give ratings agree on the method: cube the lamb, brown it hard over high heat in fat, add spices, then the onion and peppers, then the tomatoes at the end so they stay fresh. They differ on the fat, which is traditionally rendered lamb fat; this version uses ghee because most stores do not sell lamb fat. Cubanelle peppers stand in for Turkish green peppers. I cut the lamb larger than the sources and moved the garlic to the tomato step because the sources list it but never place it; the chilli is moved to the table. Total time is 30 minutes.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "Sac Kavurma (Turkish Lamb Sauté)",
+   "url": "https://cupofyum.com/recipes/sac-kavurma-turkish-lamb-saute",
+   "rating": 5,
+   "rating_count": 20,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cooking Gorgeous",
+   "title": "Sac Kavurma - Turkish Lamb Sauté",
+   "url": "https://cookingorgeous.com/blog/sac-kavurma-turkish-lamb-saute/",
+   "rating": 5,
+   "rating_count": 10,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

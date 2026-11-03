@@ -1,0 +1,123 @@
+{
+ "dish_name": "Solomillo al Whisky",
+ "cuisine": "Spanish",
+ "main_protein": "pork",
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Pork tenderloin",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Whisky",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Chicken stock",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "1 stick",
+   "category": "dairy",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Crusty bread",
+   "qty": "1 loaf",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Trim the pork and slice it crosswise into medallions about 1/2 inch thick. Pat them dry. Mix the flour with 1/2 tsp of the salt and the black pepper on a plate. Lightly press each medallion into it.",
+  "Lightly crush the garlic cloves with the side of a knife and leave the skins on. Juice the lemon. Chop 2 tbsp of the parsley.",
+  "Heat 2 tbsp of the olive oil in a large skillet over high heat until it shimmers. Add half the medallions in a single layer. Cook for 1 1/2 minutes on each side, until deep golden. Transfer them to a plate. Repeat with the rest of the pork.",
+  "Turn the heat to medium and add the last 1 tbsp of oil and the garlic. Cook for 1 minute, stirring, until the garlic smells toasty.",
+  "Add the whisky and the cumin. Stand back a little. Let it bubble for 1 to 2 minutes, scraping up the browned bits from the bottom of the pan.",
+  "Add the chicken stock. Turn the heat up and boil for 6 minutes, until the sauce has reduced by about half and the garlic is soft.",
+  "Return the pork and any juices from the plate to the pan. Cook for 1 minute, turning the pieces in the sauce. You're cooking it to 145°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest piece: it should be just barely pink.",
+  "Take the pan off the heat. Stir in the butter and the lemon juice.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze more lemon.",
+  "Sprinkle with the chopped parsley. Serve with the crusty bread."
+ ],
+ "method_notes": "No version of this dish had a rating, so this is a fallback built on the Irish Examiner recipe. All the sources agree on thin pork medallions seared hard, whole unpeeled garlic cooked in the oil, and a sauce of whisky and stock reduced in the same pan. They differ on the flour (dusted on the pork or whisked into the sauce), on lemon, and on flaming the whisky; this version dusts the pork, skips the flame and adds the lemon at the end. The sources serve it over fried potatoes; bread keeps this within 30 minutes. Total time is 30 minutes.",
+ "sources": [
+  {
+   "name": "Irish Examiner",
+   "title": "Solomillo Al Whiskey",
+   "url": "https://www.irishexaminer.com/recipes/recipe-13892.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Devour Tours",
+   "title": "Spanish Pork in Whiskey Sauce (Solomillo Al Whisky)",
+   "url": "https://devourtours.com/blog/whiskey-sauce-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Why I Hate Recipes",
+   "title": "Solomillo al whisky (a mi manera)",
+   "url": "https://whyihaterecipes.blogspot.com/2023/06/solomillo-al-whisky-mi-manera.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

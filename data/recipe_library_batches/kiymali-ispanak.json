@@ -1,0 +1,111 @@
+{
+ "dish_name": "Kiymali Ispanak",
+ "cuisine": "Turkish",
+ "main_protein": "beef",
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Ground beef",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Baby spinach",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 small can",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Flatbread",
+   "qty": "1 pack",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Finely chop the onion. Mince 2 of the garlic cloves. Mince the last clove and put it in a small bowl with the yogurt and a pinch of the salt. Stir and set aside.",
+  "Heat the olive oil in a large pot over medium heat. Add the onion and 1/4 tsp of the salt. Cook for 4 minutes, stirring now and then, until it's soft.",
+  "Add the beef, the black pepper and 1/2 tsp of the salt. Break the meat up with a spoon. Cook for 6 minutes, until there's no pink left and the juices have mostly cooked off.",
+  "Add the 2 minced garlic cloves and the tomato paste. Cook for 1 minute, stirring, until the paste darkens.",
+  "Add the spinach in 3 big handfuls, stirring each in until it wilts before adding the next. The pot will look overfull at first.",
+  "Cook uncovered for 5 minutes, stirring now and then, until the spinach is soft and the pot is nearly dry.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Warm the flatbread. Serve with the garlic yogurt and the flatbread, and put the red pepper flakes on the table for anyone who wants heat."
+ ],
+ "method_notes": "None of the versions read had enough ratings to qualify, so this is a fallback built on Binnur's Turkish Cookbook (Turkish home cook, no rating shown). All three versions agree on onion and beef cooked first, then spinach, tomato or pepper paste, and garlic yogurt on the side. They differ on rice: Binnur's, the Turkish Culture ministry's and April's versions add a little rice, which needs 15 to 20 minutes covered and pushes the dish past 30 minutes. This version leaves the rice out to match the quick-dinner brief, and uses tomato paste in place of Turkish red pepper paste. Total time is 30 minutes.",
+ "sources": [
+  {
+   "name": "Binnur's Turkish Cookbook",
+   "title": "Spinach with Ground Beef",
+   "url": "https://binnurturkishcookbook.blogspot.com/2009/04/spinach-with-ground-beef.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "In the Kitchen with April",
+   "title": "Kiymali Ispanak",
+   "url": "https://www.inthekitchenwithapril.com/2013/01/one-of-my-favorite-turkish-comfort-foods-kiymali-ispanak-spinach-with-ground-beef.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Turkish Ministry of Culture and Tourism",
+   "title": "Spinach with Ground Meat",
+   "url": "https://www.ktb.gov.tr/EN-99113/spinach-with-ground-meat.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

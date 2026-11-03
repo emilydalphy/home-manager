@@ -1,0 +1,122 @@
+{
+ "dish_name": "Garbanzos con Chorizo",
+ "cuisine": "Spanish",
+ "main_protein": "chickpeas",
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 22,
+ "ingredients": [
+  {
+   "item": "Cured Spanish chorizo",
+   "qty": "8 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Canned chickpeas",
+   "qty": "2 cans",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Smoked paprika",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chicken stock",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Piquillo peppers",
+   "qty": "1 jar",
+   "category": "pantry"
+  },
+  {
+   "item": "Sherry vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Crusty bread",
+   "qty": "1 loaf",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Dice the chorizo into 1/2-inch pieces. Finely chop the onion. Mince the garlic. Drain and rinse the chickpeas. Drain the piquillo peppers and slice them into strips. Chop 2 tbsp of the parsley.",
+  "Heat the olive oil in a large, deep skillet over medium heat. Add the chorizo. Cook for 4 minutes, stirring now and then, until the edges are crisp and the oil has turned red.",
+  "Add the onion and the salt. Cook for 5 minutes, stirring now and then, until the onion is soft.",
+  "Add the garlic and the smoked paprika. Cook for 30 seconds, stirring, until it smells toasty.",
+  "Add the chickpeas, the chicken stock and the black pepper. Bring to a boil, then turn the heat to medium-low.",
+  "Simmer uncovered for 10 minutes, stirring now and then. With the back of a spoon, mash a handful of the chickpeas against the side of the pan to thicken the sauce.",
+  "Add the piquillo peppers and cook for 2 minutes, until hot.",
+  "Take the pan off the heat and stir in the sherry vinegar.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Sprinkle with the chopped parsley. Serve with the crusty bread."
+ ],
+ "method_notes": "No version of this dish reached 20 ratings, so this is a fallback with Food.com's Garbanzos Con Chorizo as the lead (no rating shown). Food.com and Spanish Fiestas agree on chorizo, onion and garlic cooked in olive oil, then chickpeas, piquillo peppers and a splash of sherry vinegar. The Cup of Yum stew (5.0 from 16 ratings) is wetter, with crushed tomato and chilli powder. This version follows the first two and adds smoked paprika and a short simmer in stock to make it a one-pan supper. Total time is 30 minutes.",
+ "sources": [
+  {
+   "name": "Food.com",
+   "title": "Garbanzos Con Chorizo - Chickpeas With Chorizo",
+   "url": "https://www.food.com/recipe/garbanzos-con-chorizo-chickpeas-with-chorizo-480573",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Spanish Fiestas",
+   "title": "Chickpeas and Chorizo",
+   "url": "https://www.spanish-fiestas.com/recipes/chickpeas-and-chorizo/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Cup of Yum",
+   "title": "Chorizo Chickpea Stew (Spanish)",
+   "url": "https://cupofyum.com/recipes/chorizo-chickpea-stew-spanish",
+   "rating": 5,
+   "rating_count": 16,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}
