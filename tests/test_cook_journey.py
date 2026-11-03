@@ -188,6 +188,11 @@ _FUNCTIONS = [
     "cookStepNeeds",
     "cookFocusPrepTasks",
     "cookFocusPrepHtml",
+    # One recipe screen (2026-11-02): the opening tab, Already done, the plate.
+    "cookUnderway",
+    "cookOpeningTab",
+    "recipeAlreadyDoneHtml",
+    "recipePlateHtml",
     # A dish whose eggs an earlier cook boiled (batch_components.py).
     "cookMadeAheadLinesHtml",
     "cookServesShown",
@@ -694,7 +699,9 @@ def test_prep_ticks_are_still_the_servers_and_nothing_here_touches_them():
     )
     assert 'data-cook="check-prep"' in html
     assert 'data-prep-id="5"' in html
-    assert "1 of 1" in html or "Prep’s done" in html
+    # Done prep leads the Overview under "Already done" (2026-11-02), its
+    # tick still the server's.
+    assert "Already done" in html
 
 
 # ---------- the rules this screen inherited ----------
