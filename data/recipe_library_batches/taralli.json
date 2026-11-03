@@ -1,0 +1,76 @@
+{
+ "dish_name": "Taralli",
+ "cuisine": "Italian",
+ "main_protein": "vegetarian",
+ "default_servings": 32,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "2 1/8 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1/2 cup",
+   "category": "other"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fennel seeds",
+   "qty": "2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "In a large bowl, stir together the 2 1/8 cups flour, 1 tsp of the salt and the 2 tsp fennel seeds.",
+  "Add the 1/4 cup olive oil and half the wine. Mix with a fork until it comes together, then add the rest of the wine.",
+  "Turn the dough out onto a clean counter and knead it for 5 to 10 minutes, until it's smooth and firm.",
+  "Break off pieces of dough about the size of a small walnut, 32 in all. Roll each into a rope about 5 inches long, overlap the ends slightly and press them together to make a ring. Set the rings on a parchment-lined baking sheet. Keep them small, because big taralli lose their crunch. This makes about 32 taralli.",
+  "Bring a large pot of water to a boil over high heat and add the last 1/4 tsp salt. Lower the heat so it's boiling gently.",
+  "Add 5 or 6 taralli to the water. Remove each one with a slotted spoon as soon as it floats, and set it on a clean kitchen towel. Repeat with the rest.",
+  "At least 4 hours ahead, or the night before: leave the taralli on the towel to dry, turning them over halfway through.",
+  "Heat the oven to 375°F and line a baking sheet with parchment.",
+  "Set the dried taralli on the sheet and bake for 25 to 30 minutes, until they're golden.",
+  "Turn off the oven, prop the door open halfway and leave the taralli inside for 10 minutes.",
+  "Transfer them to a wire rack and cool completely. They crisp up as they cool.",
+  "Store them in an airtight container at room temperature for up to 3 days. Serve on their own or with cheese."
+ ],
+ "advance_prep_notes": "dry the boiled taralli at least 4 hours ahead, or overnight",
+ "advance_prep_step_indices": [
+  7
+ ],
+ "method_notes": "Both read versions are the Apulian dough of flour, olive oil, dry white wine, salt and fennel seed, shaped into small rings, boiled until they float, dried and baked until golden. An Italian in My Kitchen kneads for 7 to 10 minutes, dries the boiled rings for 4 to 5 hours and bakes at 375°F, and Stefano Faita rests the dough overnight and bakes at 350°F with a much bigger batch, so this follows the first. Rating note: Stefano Faita shows no rating. The 4 to 5 hour drying is not in the 70 minutes of prep and cook, and the source says they keep 3 days.",
+ "sources": [
+  {
+   "name": "An Italian in My Kitchen",
+   "title": "Italian Taralli",
+   "url": "https://anitalianinmykitchen.com/taralli/",
+   "rating": 4.78,
+   "rating_count": 45,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Stefano Faita",
+   "title": "Fennel taralli",
+   "url": "https://www.stefanofaita.com/en/recipes/fennel-taralli/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
