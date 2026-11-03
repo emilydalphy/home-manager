@@ -27,6 +27,8 @@ def test_a_bunch_or_bag_keeps_both_amounts(item, raw):
     ("Carrots", "16 + 1.25 lbs", "21"),        # pieces and pounds are still one count
     ("carrots", "3 carrots + 1 lb", "7 carrots"),
     ("apple", "2 each + 1 lb", "5 each"),
+    ("onions", "2 pcs + 1 lb", "4 pcs"),       # abbreviations are pieces too (review)
+    ("onions", "2 ea + 1 lb", "4 ea"),
 ])
 def test_pieces_and_pounds_still_read_as_one_count(item, raw, expected):
     assert q.tidy_display_quantity(item, raw) == expected

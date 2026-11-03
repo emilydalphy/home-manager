@@ -1439,8 +1439,9 @@ def _volume_step(amount: float) -> float:
     return out if out > 0 or amount <= 0 else 0.25
 
 
-# Units that mean one piece of the thing (see tidy_display_quantity).
-_PIECE_WORDS = frozenset({"each", "piece", "pieces", "whole"})
+# Units that mean one piece of the thing (see tidy_display_quantity) —
+# the same piece abbreviations inventory treats as pieces ("2 pcs", "3 ea").
+_PIECE_WORDS = frozenset({"each", "ea", "piece", "pieces", "pc", "pcs", "ct", "count"})
 
 
 def _pounds_each(item: str) -> float | None:
