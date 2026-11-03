@@ -1,0 +1,118 @@
+{
+ "dish_name": "Djej w Batata",
+ "cuisine": "Lebanese",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 60,
+ "ingredients": [
+  {
+   "item": "Bone-in chicken thighs",
+   "qty": "2.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "11 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "6 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lebanese seven spice",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F with a rack in the middle.",
+  "Peel the garlic. Mince 5 cloves and smash the other 6 with the flat of a knife. Slice the potatoes into 1/4 inch rounds and cut the onion into 8 wedges.",
+  "In a large roasting pan, toss the potatoes, onion and smashed garlic with 3 tbsp of the oil and 1 tsp of the salt. Spread them in a single layer.",
+  "Pat the chicken dry. Rub it with 1 tbsp of the oil, 1 tsp salt, the black pepper, the seven spice and the cumin.",
+  "Lay the thighs skin side up on top of the vegetables.",
+  "In a bowl, whisk the minced garlic, the remaining 2 tbsp oil, the remaining 1/2 tsp salt, the broth and the juice of 1 lemon plus half of the second. That should be about 1/4 cup of juice.",
+  "Pour the sauce around the chicken so the skin stays dry. Slice the remaining half lemon into rounds and tuck them in among the potatoes.",
+  "Bake for 45 minutes, until the potatoes are tender and the chicken is golden. You're cooking the thighs to 175°F, so if you have a thermometer, check the thickest piece near the bone. No thermometer? Cut into the thickest piece: it's done when the juices run clear.",
+  "Switch the oven to broil. Cook for 5 to 8 minutes, until the skin is deep golden. Watch it closely so it doesn't burn.",
+  "Let it rest for 5 minutes. Chop 1/4 cup of the parsley leaves and scatter them over the pan.",
+  "Taste the potatoes and the sauce. If it's flat, add a pinch more salt or squeeze a lemon slice over it.",
+  "Serve with the lemon slices and the pan juices."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree on bone-in chicken baked over potatoes in a lemon and garlic sauce. The Salt and Sweet version (5.0 stars from 68 visible ratings) is the lead, with raw potatoes, onion and a raw lemon garlic oil sauce. I took the seven spice and cumin from Mediterranean Living and Simply Lebanese, and a little broth from Simply Lebanese so the potatoes cook through without frying them first. I used thighs instead of drumsticks and baked at 400°F instead of 350°F to brown the skin.",
+ "sources": [
+  {
+   "name": "The Salt and Sweet",
+   "title": "Djej w Batata, Lebanese Baked Chicken and Potato",
+   "url": "https://thesaltandsweet.com/lemon-garlic-chicken-with-potatoes-and-onions/",
+   "rating": 5.0,
+   "rating_count": 68,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Simply Lebanese",
+   "title": "Lemon Chicken & Potato Bake (Djej w Batata)",
+   "url": "https://www.simplyleb.com/recipe/lemon-chicken-potato-bake-djej-w-batata/",
+   "rating": 4.76,
+   "rating_count": 25,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Mediterranean Living",
+   "title": "Lebanese Lemon Chicken and Potatoes (Djej w Batata)",
+   "url": "https://www.mediterraneanliving.com/lebanese-lemon-chicken-and-potatoes-djej-w-batata/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

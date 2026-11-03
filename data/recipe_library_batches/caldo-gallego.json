@@ -1,0 +1,131 @@
+{
+ "dish_name": "Caldo Gallego",
+ "cuisine": "Spanish",
+ "main_protein": "beans",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 110,
+ "ingredients": [
+  {
+   "item": "Dried white beans",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Smoked ham hock",
+   "qty": "1",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Thick cut bacon",
+   "qty": "4 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Cured Spanish chorizo",
+   "qty": "6 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Russet potatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Collard greens",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Smoked paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "to taste",
+   "category": "pantry"
+  },
+  {
+   "item": "Crusty bread",
+   "qty": "1 loaf",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "The night before, or at least 6 hours ahead: put the beans in a large bowl and cover them with water by 3 inches. Leave them on the counter. Drain and rinse them before you start.",
+  "Heat the oil in a large Dutch oven over medium-high. Dice the bacon, add it and cook for 5 minutes, until the fat runs and the edges brown.",
+  "Slice the chorizo 1/4 inch thick and add it. Cook for 3 minutes, until it browns at the edges and the fat turns red.",
+  "Dice the onion and add it. Turn the heat to medium and cook for 5 minutes, scraping up the browned bits, until it's soft.",
+  "Mince the garlic, add it with the paprika and stir for 30 seconds, until it smells fragrant.",
+  "Add the ham hock, the drained beans, the bay leaves, the broth and 4 cups of water. Bring it to a boil, then turn the heat down so it bubbles gently. Cover and cook for 1 hour, until the beans are nearly tender. If the beans poke above the liquid, add a splash of water.",
+  "Meanwhile, peel the potatoes and cut them into 3/4 inch cubes. Strip the collard leaves off the stems, stack them and slice them into ribbons. That should be about 6 cups.",
+  "Transfer the hock to a cutting board. When it's cool enough to touch, pull the meat off the bone and shred it. Throw away the bone and skin.",
+  "Add the potatoes to the pot and simmer, uncovered, for 20 minutes, until they're tender when you poke them with a fork.",
+  "Scoop out a ladleful of beans and potatoes, mash them against the side of the bowl and stir them back into the pot.",
+  "Add the collards and the shredded ham. Simmer for 10 minutes, until the greens are tender.",
+  "Taste it. If it's flat, add a pinch more salt. Take out the bay leaves.",
+  "Serve with the crusty bread."
+ ],
+ "advance_prep_notes": "Soak the beans at least 6 hours ahead, or overnight.",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "The sources agree on dried white beans, a smoked ham hock, chorizo, potatoes and collards or turnip greens, simmered for about an hour before the potatoes and greens go in. They differ on the base: A Sassy Spoon builds it on bacon, onion and bell pepper, Camino Ways on onion and garlic, and Food.com adds turnips and cabbage. I followed A Sassy Spoon but dropped the bell pepper and oregano, and used the mashed ladleful to thicken it, as Galician cooks do with potato. Collards stand in for grelos, the Galician turnip greens. No version had 20 ratings (A Sassy Spoon shows 5 stars from 6), so this is a fallback lead.",
+ "sources": [
+  {
+   "name": "A Sassy Spoon",
+   "title": "Caldo Gallego (Galician White Bean Soup)",
+   "url": "https://asassyspoon.com/caldo-gallego/",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Camino Ways",
+   "title": "Caldo Gallego, Galician Soup",
+   "url": "https://caminoways.com/caldo-gallego",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Food.com",
+   "title": "Caldo Gallego",
+   "url": "https://www.food.com/recipe/caldo-gallego-369744",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

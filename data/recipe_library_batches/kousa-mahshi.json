@@ -1,0 +1,137 @@
+{
+ "dish_name": "Kousa Mahshi",
+ "cuisine": "Lebanese",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 40,
+ "cook_time_minutes": 65,
+ "ingredients": [
+  {
+   "item": "Small Lebanese zucchini",
+   "qty": "2 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Ground beef",
+   "qty": "3/4 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Short grain rice",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Canned diced tomatoes",
+   "qty": "1 can (14.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Beef broth",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 tube",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Lebanese seven spice",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the rice in a bowl, cover it with water and leave it for 30 minutes. Drain it well.",
+  "Meanwhile, cut the stem end off each zucchini. Hollow each one out with a zucchini corer or a long thin spoon, leaving the walls about 1/4 inch thick. Don't cut through the bottom.",
+  "Dice the onion. Mince the garlic. Chop 1/4 cup of the parsley leaves.",
+  "In a bowl, mix the drained rice, the beef, half the onion, 2 of the garlic cloves, the chopped parsley, the seven spice, 1 tsp of the salt, 1/2 tsp of the pepper and 1 tbsp of the oil. Mix with your hands until it's even.",
+  "Fill each zucchini about three quarters full, pressing the filling in lightly. Leave a finger width at the top so the rice has room.",
+  "Heat the remaining 2 tbsp oil in a wide Dutch oven over medium. Add the rest of the onion and 1/2 tsp of the salt and cook for 5 minutes, until soft.",
+  "Add the 3 remaining garlic cloves and stir for 30 seconds, until fragrant. Add the tomato paste and cook for 1 minute, until it darkens.",
+  "Stir in the tomatoes, the broth, the sugar, the remaining 1/2 tsp salt and the remaining 1/2 tsp pepper. Bring it to a boil.",
+  "Lay the zucchini in the sauce, side by side, in layers if you need to. Add a splash of water if the sauce doesn't come halfway up. Set an upside down plate on top to keep them under the sauce.",
+  "Cover the pot, turn the heat down to medium-low so it simmers gently, and cook for 50 minutes, until the zucchini is soft and the rice is tender.",
+  "Lift one out and cut into the filling. You're cooking the beef to 160°F, so if you have a thermometer, check it there. No thermometer? The beef should have no pink left.",
+  "Take the pot off the heat. Stir in the juice of the lemon, about 3 tbsp, and 2 tbsp chopped parsley.",
+  "Taste the sauce. If it's flat, add a pinch more salt.",
+  "Serve in shallow bowls with the sauce spooned over."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree on small zucchini cored and filled with a loose rice and beef mixture, then simmered in tomato sauce under a plate so they stay under the liquid. They differ on the herbs, the spice (seven spice, baharat or allspice and cinnamon), and whether the sauce has lemon or just tomato paste. I led with Not Quite Nigella for the fried onion and garlic tomato sauce and the lemon at the end, and scaled the rice and beef up from its version for 2. I used parsley alone and left out the cherry tomato plugs. No version had 20 ratings (Not Quite Nigella shows 5 stars from 13 readers), so this is a fallback lead.",
+ "sources": [
+  {
+   "name": "Not Quite Nigella",
+   "title": "Stuffed Lebanese Zucchini (Kousa Mahshi)",
+   "url": "https://notquitenigella.com/2021/11/26/stuffed-zucchini-lebanese",
+   "rating": 5.0,
+   "rating_count": 13,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "This Healthy Table",
+   "title": "Kousa Mahshi (Stuffed Zucchini)",
+   "url": "https://thishealthytable.com/blog/kousa-mahshi-stuffed-zucchini/",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "The Odehlicious",
+   "title": "Kousa Mahshi (Lebanese Stuffed Zucchini)",
+   "url": "https://theodehlicious.com/kousa-mahshi-stuffed-zucchini/",
+   "rating": 5.0,
+   "rating_count": 8,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

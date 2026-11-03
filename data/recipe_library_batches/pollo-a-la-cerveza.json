@@ -1,0 +1,120 @@
+{
+ "dish_name": "Pollo a la Cerveza",
+ "cuisine": "Spanish",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 75,
+ "ingredients": [
+  {
+   "item": "Bone-in chicken thighs",
+   "qty": "3 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Baby potatoes",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Lager beer",
+   "qty": "1 bottle (12 oz)",
+   "category": "other"
+  },
+  {
+   "item": "Fresh thyme",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Pat the chicken dry. Season both sides with 1 1/2 tsp of the salt and the black pepper.",
+  "Spread the flour on a plate. Coat the thighs in it, shaking off the extra.",
+  "Meanwhile, slice the onions thin, cut the carrots into thin half moons, mince the garlic and halve the potatoes.",
+  "Heat the oil in a large deep skillet or Dutch oven over medium-high until it shimmers. Lay in half the thighs skin side down. Stand back a little. They'll spatter.",
+  "Cook for 6 to 7 minutes without moving them, until the skin is deep golden and lets go of the pan. Flip them and cook the other side for 3 minutes. Transfer them to a plate and brown the rest the same way.",
+  "Pour off all but 2 tbsp of the fat. Turn the heat down to medium, add the onions, the carrots and the remaining 1/2 tsp salt, and cook for 10 minutes. Scrape up the browned bits as the onions soften, and stop when they're soft and golden at the edges.",
+  "Add the garlic and stir for 30 seconds, until it smells fragrant.",
+  "Pour in the beer and turn the heat up to high. Boil for 2 minutes, scraping the bottom of the pan.",
+  "Add the potatoes, 4 sprigs of thyme and the bay leaf. Nestle the chicken back in, skin side up, with any juices from the plate. The liquid should come about halfway up the chicken.",
+  "Bring it to a bubble, cover and turn the heat down low so it barely bubbles. Cook for 35 minutes. You're cooking the thighs to 175°F, so if you have a thermometer, check the thickest piece near the bone. No thermometer? Cut into the thickest piece: it's done when the juices run clear and the meat pulls easily from the bone.",
+  "Take off the lid and cook for 10 minutes, until the sauce thickens enough to coat a spoon.",
+  "Take out the bay leaf and the thyme stems.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve from the pan with the potatoes and carrots."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The Spanish versions agree on chicken browned in olive oil, a base of onion and carrot or pepper, beer as the main braising liquid, and a gentle simmer until the sauce thickens. They differ on the extras: a bay leaf or thyme, tomato, flour on the chicken, and potatoes in the pot. I led with the onion, carrot and thyme version from Javi Show Curiosity because it matches the dish name, then took the flour dredge and potatoes from Food.com to thicken the sauce, and the garlic and bay leaf from Monix. None of the pages shows a rating, so this is a fallback lead.",
+ "sources": [
+  {
+   "name": "Javi Show Curiosity",
+   "title": "Pollo a la cerveza",
+   "url": "https://javishowcuriosity.blogspot.com/2017/10/pollo-la-cerveza.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food.com",
+   "title": "Chicken in Beer Sauce, Pollo a la Cerveza",
+   "url": "https://www.food.com/recipe/chicken-in-beer-sauce-pollo-a-la-cerveza-87857",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Monix",
+   "title": "Chicken thighs in beer",
+   "url": "https://monix.es/en/blogs/blog/muslos-de-pollo-a-la-cerveza",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
