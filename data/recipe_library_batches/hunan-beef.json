@@ -1,0 +1,150 @@
+{
+ "dish_name": "Hunan Beef",
+ "cuisine": "Chinese",
+ "main_protein": "beef",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Flank steak",
+   "qty": "1.25 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Baking soda",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "White pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Fermented black beans",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small piece",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Fresno chilies",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a strainer under cold water until it runs mostly clear. Add it to a medium pot with 2 1/4 cups water and bring to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Leave the lid on.",
+  "Slice the flank steak across the grain into strips about 1/4 inch thick. Transfer it to a bowl and add the baking soda, the cornstarch, the oyster sauce and 1 tbsp water. Mix with your hands until the liquid is absorbed. Leave it for 15 minutes.",
+  "Meanwhile, slice both bell peppers into thin strips. Cut 2 tbsp of ginger into thin matchsticks, slice the garlic and cut the scallions into 2 inch pieces.",
+  "Slice the chilies into rings and transfer them to a small bowl for the table. Rinse the black beans and roughly chop them.",
+  "In a small bowl, stir the soy sauce, sugar, rice vinegar, white pepper and 1 tbsp hot water until the sugar dissolves.",
+  "Heat a wok or large skillet over high heat until it's smoking. Add 2 tbsp of the oil and spread the beef in a single layer. Leave it for 1 minute, until the underside is browned, then stir-fry for 30 seconds. Transfer it to a plate. Cook the beef in two batches so it browns.",
+  "Add the last 1 tbsp oil to the wok over medium-high heat. Add the ginger and stir for 20 seconds, then add the bell peppers. Stir-fry for 2 minutes, until the edges blister.",
+  "Add the garlic and black beans. Pour the Shaoxing wine around the edge of the wok. Stir for 30 seconds.",
+  "Return the beef and any juices to the wok, then add the sauce and the scallions. Toss over high heat for 1 minute, until the sauce clings and most of it has cooked off. Cut into a thick slice of beef to check it. It's done when there's no pink left.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the rice. Put the sliced chilies on the table for anyone who wants heat."
+ ],
+ "method_notes": "The honest total is 30 minutes with the rice cooking alongside, so it just makes the quick dinner mark. Both versions agree on thin flank steak with baking soda, fermented black beans, fresh peppers and a dry finish; the lead fries the beef in cornstarch and marinates for 30 minutes, the other uses a short marinade and a thicker sauce. This version uses the short marinade, keeps the base mild with bell peppers, and moves the chilies to the table.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Hunan Beef",
+   "url": "https://thewoksoflife.com/hunan-beef/",
+   "rating": 4.93,
+   "rating_count": 27,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Khin's Kitchen",
+   "title": "Hunan Beef",
+   "url": "https://khinskitchen.com/hunan-beef/",
+   "rating": 5,
+   "rating_count": 15,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed",
+ "default_servings": 4
+}

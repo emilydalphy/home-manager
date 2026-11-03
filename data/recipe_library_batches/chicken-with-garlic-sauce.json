@@ -1,0 +1,138 @@
+{
+ "dish_name": "Chicken with Garlic Sauce",
+ "cuisine": "Chinese",
+ "main_protein": "chicken",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "8 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Broccoli",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a strainer under cold water until it runs mostly clear. Add it to a medium pot with 2 1/4 cups water and bring to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Leave the lid on.",
+  "Slice the chicken thinly across the grain into bite-size pieces. Transfer it to a bowl and add the wine, the salt and 1 tsp of the cornstarch. Mix and leave it for 10 minutes.",
+  "Meanwhile, cut the broccoli into small florets and the bell peppers into 1 inch pieces. Mince the garlic. Cut the scallions into 1 inch pieces, keeping the whites and greens apart.",
+  "In a small bowl, stir together the broth, soy sauce, oyster sauce, sugar and the remaining 2 tsp cornstarch.",
+  "Heat a large skillet or wok over medium-high heat. Add 1 tbsp of the oil. Spread half the chicken in a single layer and leave it for 1 minute, until it's browned underneath. Stir for 1 minute and transfer it to a plate. Cook the second half the same way.",
+  "Add 1 tbsp oil to the pan, then the broccoli and 1/4 cup water. Cover and cook for 2 minutes. Uncover and cook for 1 minute, until the water has cooked off.",
+  "Add the last 1 tbsp oil, the bell peppers and the scallion whites. Stir-fry for 2 minutes. Add the garlic and stir for 30 seconds.",
+  "Stir the sauce again and pour it in. Bring it to a boil, stirring, until it thickens and turns glossy, about 1 minute.",
+  "Return the chicken and any juices to the pan. Cook for 2 minutes, until it's cooked through. You're cooking it to 175°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest piece: it's done when the juices run clear.",
+  "Take the pan off the heat and stir in the sesame oil and the scallion greens.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the rice."
+ ],
+ "method_notes": "No version found had 20 or more ratings, so this leads with the best-rated one I could read. The versions agree on a cornstarch thickened soy sauce with plenty of garlic and red pepper; they differ on honey or sugar and on breast or thigh. This version uses thighs, sugar and a little oyster sauce, and adds broccoli for the vegetables. Total is 30 minutes with the rice cooking alongside.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "Chicken with Garlic Sauce",
+   "url": "https://cupofyum.com/recipes/chicken-with-garlic-sauce-1",
+   "rating": 5,
+   "rating_count": 8,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Taste of Home",
+   "title": "Chinese Chicken with Garlic Sauce",
+   "url": "https://www.tasteofhome.com/article/chinese-chicken-with-garlic-sauce/",
+   "rating": null,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Izzy Cooking",
+   "title": "Chinese Chicken With Garlic Sauce",
+   "url": "https://izzycooking.com/chinese-chicken-with-garlic-sauce/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed",
+ "default_servings": 4
+}

@@ -1,0 +1,116 @@
+{
+ "dish_name": "Stir-Fried Cabbage with Pork",
+ "cuisine": "Chinese",
+ "main_protein": "pork",
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 12,
+ "ingredients": [
+  {
+   "item": "Pork tenderloin",
+   "qty": "3/4 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp + 1 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Green cabbage",
+   "qty": "1 small head",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small piece",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a strainer under cold water until it runs mostly clear. Add it to a medium pot with 2 1/4 cups water and bring to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Leave the lid on.",
+  "Slice the pork thinly across the grain. Transfer it to a bowl and add the wine, the cornstarch, 1 tsp of the soy sauce and half the ginger, grated. Mix and leave it while you prep.",
+  "Cut the cabbage into bite-size pieces. That should be about 8 cups. Cut the other half of the ginger into thin matchsticks, slice the garlic and cut the scallions into 1 inch pieces, keeping the whites and greens apart.",
+  "In a small bowl, stir the remaining 2 tbsp soy sauce, the sugar, the salt and the sesame oil.",
+  "Heat a wok or large skillet over high heat until it's smoking. Add 1 tbsp of the oil and spread the pork in a single layer. Leave it for 1 minute, until it's browned underneath. Stir for 1 minute and transfer it to a plate.",
+  "Add the remaining 2 tbsp oil. Add the garlic, ginger and scallion whites and stir for 15 seconds.",
+  "Add the cabbage. Leave it for 1 minute, then stir, and repeat for 4 minutes in all, until the edges are browned and the cabbage is just tender.",
+  "Return the pork and any juices to the wok, pour in the sauce and add the scallion greens. Toss for 1 minute. You're cooking the pork to 145°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest piece: it should have no raw pink.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the rice."
+ ],
+ "method_notes": "No version found had 20 or more ratings, so this leads with the best-rated one I could read. The versions agree on thin sliced pork seared first, then cabbage in the same pan with garlic and ginger; one uses pork belly and plain seasoning, the other tenderloin with a soy sauce and cornstarch slurry. This version uses tenderloin and skips the slurry so the cabbage stays dry and browned. Total is 22 minutes.",
+ "sources": [
+  {
+   "name": "Omnivore's Cookbook",
+   "title": "Pork and Cabbage Stir Fry",
+   "url": "https://omnivorescookbook.com/pork-and-cabbage-stir-fry",
+   "rating": 5,
+   "rating_count": 6,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "River Ten Kitchen",
+   "title": "Pork and Cabbage Stir Fry",
+   "url": "https://www.rivertenkitchen.com/cabbage-stir-fry.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed",
+ "default_servings": 4
+}
