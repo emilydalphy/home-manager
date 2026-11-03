@@ -1,0 +1,143 @@
+{
+ "dish_name": "Ga Ro Ti",
+ "cuisine": "Vietnamese",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Chicken leg quarters",
+   "qty": "4 (about 3 lbs)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Chinese five-spice powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Shallot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece",
+   "category": "produce"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Limes",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "English cucumber",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Chili garlic sauce",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  }
+ ],
+ "instructions": [
+  "At least 1 hour ahead, or the night before: finely mince the shallot, the garlic and 1 tbsp of the ginger. Put them in a large bowl with 3 tbsp of the soy sauce, the oyster sauce, the sugar, the honey, the five-spice, the pepper and the salt, and stir until the sugar dissolves. Add the chicken and turn it until every piece is coated. Cover and refrigerate.",
+  "When you're ready to cook, set a rack in the upper third of the oven and preheat to 425°F. Line a rimmed baking sheet with foil and set a wire rack on top.",
+  "Lay the chicken skin side down on the rack, with space between the pieces. Roast for 30 minutes.",
+  "Flip the chicken skin side up. Spoon some of the drippings from the foil over each piece. Roast for 30 minutes, until the skin is deep golden and the meat is cooked through. You're cooking it to 175°F in the thickest part of the thigh, so if you have a thermometer, check it there. No thermometer? Cut next to the bone in the thickest piece: it's done when the juices run clear.",
+  "Meanwhile, rinse the rice and cook it according to the package. Slice the cucumber and the tomatoes and put them on a platter.",
+  "Turn the oven to broil. Broil the chicken for 5 to 8 minutes, until the skin is crisp and dark in spots. Watch it closely, since sugar burns fast.",
+  "Transfer the chicken to a cutting board and let it rest for 5 minutes.",
+  "Carefully pour the drippings from the foil into a small bowl and spoon off the fat on top. Squeeze in the juice of the lime and stir in the remaining 1 tbsp soy sauce.",
+  "Taste the dipping sauce. If it's flat, add a pinch more salt.",
+  "Serve the chicken with the rice, the cucumber and tomato, and the dipping sauce. Put the chili garlic sauce on the table for anyone who wants heat."
+ ],
+ "advance_prep_notes": "Marinate at least 1 hour ahead, or overnight",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 75,
+ "method_notes": "The sources agree on a soy-based marinade with five-spice, garlic and sugar, and rice, cucumber and tomato on the side. They differ on the cooking: the lead roasts leg quarters at 425°F for an hour and broils them, Ravenous Couple roasts Cornish hens at 350°F, and Ang Cooks sears thighs and simmers them in the marinade. I followed the lead, added the honey from the Ravenous Couple version for a stickier skin, and made the lime dipping sauce from the pan drippings as that version does. The lead is rated 5 from 1 review, so this is a fallback lead.",
+ "sources": [
+  {
+   "name": "Vicky Pham",
+   "title": "Vietnamese Crispy Roasted Chicken (Ga Roti)",
+   "url": "https://vickypham.com/blog/vietnamese-crispy-roasted-chicken-ga-roti/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Ravenous Couple",
+   "title": "Ga Roti Vietnamese Roasted Chicken",
+   "url": "https://theravenouscouple.com/2009/09/ga-roti-vietnamese-roasted-chicken.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Ang Cooks",
+   "title": "Vietnamese Braised 5-Spice Chicken - Ga Roti",
+   "url": "https://ang-cooks.com/post/ga-roti/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed",
+ "default_servings": 4
+}
