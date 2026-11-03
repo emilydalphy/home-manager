@@ -262,9 +262,9 @@ def _offer_why(cand: dict, avoidances: list[dict] | None) -> str | None:
 def _clash_line(meal_name: str, clash: list[dict]) -> str:
     """\"Pineapple Salsa has pineapple, which Emily can't have\" — what the
     model is told about a candidate it may not offer."""
-    food = next((c.get("matched") for c in clash if c.get("matched")), None) \
-        or next((c.get("restriction") for c in clash if c.get("restriction")), None) \
-        or "something this house can’t have"
+    # The gate's own food word, so a celiac clash reaches the model as
+    # gluten, not as the condition (2026-11-03).
+    food = _allergen_gate._food_word(clash)
     who = next((c.get("member") for c in clash if c.get("member")), None)
     return f"{meal_name} has {food}, which {who + ' can’t have' if who else 'this house can’t have'}"
 
