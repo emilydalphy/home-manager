@@ -689,10 +689,26 @@ def _first_named(rows, item: str):
     key = _grocery._merge_key(item or "")
     if not key:
         return None
+    worked = _worked_words(item)
     for row in rows:
-        if _grocery._merge_key(row["_match_item"] or "") == key:
+        name = row["_match_item"] or ""
+        # The key drops a post-comma "diced" / "crushed" (right for a
+        # shopping line); a shelf is not: "Tomatoes, diced" is a tin and
+        # never lands on the fresh tomatoes (review, 2026-11-03).
+        if _grocery._merge_key(name) == key and _worked_words(name) == worked:
             return row
     return None
+
+
+# Words that make a name a tin or a processed form rather than the fresh
+# food, wherever they sit in it ("Tomatoes, diced", "Chickpeas, drained").
+_WORKED_WORDS_RE = re.compile(
+    r"\b(diced|crushed|canned|tinned|drained|rinsed|pur[eé]e[ds]?|paste|stewed|whole peeled)\b"
+)
+
+
+def _worked_words(name: str) -> frozenset:
+    return frozenset(m.group(1) for m in _WORKED_WORDS_RE.finditer((name or "").lower()))
 
 
 # Names whose fresh-sounding word is not the food on the shelf: canned
@@ -1075,11 +1091,21 @@ def record_already_home(
         params.append(location)
     rows = [dict(r) for r in conn.execute(sql + " ORDER BY updated_at DESC, id DESC", params).fetchall()]
     match, confident = _find_inventory_match(item, rows)
+    if match is None or not confident:
+        # The same food under another spelling ("Yellow onion" on a
+        # Kitchen holding "Onions") is a confirmation too: _add_to_inventory
+        # would merge onto it, and a receipt saying fresh let the Undo
+        # delete the household's own row (review, 2026-11-03).
+        named = _find_row_by_name(conn, item, location, "id")
+        if named is not None:
+            match, confident = {"id": named["id"]}, True
     if match is not None and confident:
         inventory_id, fresh, after = match["id"], False, None
     else:
         added = _add_to_inventory(item, quantity, source=source, category=category, location=location, conn=conn)
-        inventory_id, fresh, after = added["item_id"], True, added["after"] or {}
+        # Fresh only when the write created the row — never assumed.
+        fresh = bool(added["fresh"])
+        inventory_id, after = added["item_id"], (added["after"] or {}) if fresh else None
     conn.execute(
         "INSERT INTO already_home_receipts (household_id, grocery_item_id, weekly_plan_id, item_key, "
         "inventory_item_id, fresh, after_rev, after_quantity) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",

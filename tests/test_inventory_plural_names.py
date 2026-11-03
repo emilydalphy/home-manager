@@ -81,3 +81,56 @@ def test_onion_in_the_pantry_and_onions_in_the_fridge_are_a_two_places_pair():
     tools.update_inventory("Onions", "add", quantity="2", location="fridge")
     dupes = tools.get_cross_location_duplicates()
     assert len(dupes) == 1 and len(dupes[0]["entries"]) == 2, dupes
+
+
+# ---- review, 2026-11-03: "Have it" before the shop, then Undo ----
+
+def _have_it_then_undo(client, kitchen_name: str, list_name: str) -> list[dict]:
+    r = client.post("/api/inventory/update",
+                    json={"item": kitchen_name, "action": "add", "quantity": "2", "location": "fridge"})
+    assert r.status_code == 200, r.text
+    line = client.post("/api/grocery-list/add",
+                       json={"item": list_name, "quantity": "3", "category": "produce"}).json()
+    r = client.post(f"/api/grocery-list/{line['item_id']}/pre-shop", json={"decision": "drop"})
+    assert r.status_code == 200, r.text
+    # "Have it" confirms the row; it does not add the list's amount.
+    assert [(x["item"], x["quantity"]) for x in _rows()] == [(kitchen_name, "2")]
+    r = client.post(f"/api/grocery-list/{line['item_id']}/pre-shop-undo", json={})
+    assert r.status_code == 200, r.text
+    return _rows()
+
+
+def test_have_it_on_yellow_onion_then_undo_keeps_the_kitchens_onions(signed_in):
+    rows = _have_it_then_undo(signed_in, "Onions", "Yellow onion")
+    assert [(x["item"], x["quantity"]) for x in rows] == [("Onions", "2")]
+
+
+def test_have_it_on_tomato_then_undo_keeps_the_kitchens_tomatoes(signed_in):
+    rows = _have_it_then_undo(signed_in, "Tomatoes", "Tomato")
+    assert [(x["item"], x["quantity"]) for x in rows] == [("Tomatoes", "2")]
+
+
+def test_freezer_chip_on_a_size_noted_name_only_confirms_the_pack():
+    from app.tools import inventory as inv
+    tools.update_inventory("Chicken thighs", "add", quantity="2 lb", location="freezer")
+    conn = get_conn()
+    try:
+        got = inv.record_already_home(conn, "Chicken thighs (about 2 lb)", "2 lb", category="meat/seafood",
+                                      location="freezer", source=inv.FREEZER_STEP_SOURCE, item_key="chicken thigh")
+        receipt = conn.execute("SELECT id FROM already_home_receipts ORDER BY id DESC LIMIT 1").fetchone()["id"]
+        removed = inv.release_already_home(conn, [receipt])
+        conn.commit()
+    finally:
+        conn.close()
+    assert got["fresh"] is False
+    assert removed == 0
+    assert [(x["item"], x["quantity"]) for x in _rows()] == [("Chicken thighs", "2 lb")]
+
+
+def test_a_tin_of_diced_tomatoes_is_not_the_fresh_tomatoes():
+    tools.update_inventory("Tomatoes", "add", quantity="4", location="fridge")
+    tools.update_inventory("Tomatoes, diced", "add", quantity="1 can", location="fridge")
+    tools.update_inventory("Tomatoes, crushed", "add", quantity="1 can", location="fridge")
+    assert sorted((x["item"], x["quantity"]) for x in _rows()) == [
+        ("Tomatoes", "4"), ("Tomatoes, crushed", "1 can"), ("Tomatoes, diced", "1 can"),
+    ]
