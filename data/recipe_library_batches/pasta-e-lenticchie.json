@@ -1,0 +1,41 @@
+{
+ "dish_name": "Pasta e Lenticchie",
+ "cuisine": "Italian",
+ "main_protein": "lentils",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 40,
+ "ingredients": [
+  {"item": "Green lentils", "qty": "1 cup", "category": "pantry"},
+  {"item": "Ditalini pasta", "qty": "6 oz", "category": "pantry"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Carrots", "qty": "2", "category": "produce"},
+  {"item": "Celery", "qty": "2 stalks", "category": "produce"},
+  {"item": "Garlic", "qty": "2 cloves", "category": "produce"},
+  {"item": "Fresh rosemary", "qty": "1 bunch", "category": "produce", "cook_qty": "1 sprig"},
+  {"item": "Olive oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Tomato paste", "qty": "1 tube", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Vegetable broth", "qty": "4 cups", "category": "pantry"},
+  {"item": "Salt", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Rinse the lentils in a sieve and pick out any small stones. Finely chop the onion, carrots and celery. Mince the 2 garlic cloves and finely chop the leaves from 1 sprig of rosemary.",
+  "Heat 3 tbsp of the olive oil in a large heavy pot over medium. Add the onion, carrots, celery and 1/2 tsp of the salt. Cook for 8 minutes, stirring now and then, until the onion is soft and see-through. Don't rush this part. It's where the flavor starts.",
+  "Add the garlic, rosemary and 1 tbsp tomato paste. Cook for 1 minute, stirring, until the paste darkens a shade.",
+  "Add the lentils, the 4 cups of broth and 1 cup of water. Turn the heat to high until it boils, then turn it down to medium-low. Cover and cook for 20 minutes, until the lentils are almost tender.",
+  "Add the pasta, the remaining 1/2 tsp salt and the 1/2 tsp pepper. Cook uncovered for 10 minutes, stirring often, until the pasta is tender. If it gets too thick, add a splash of water.",
+  "Take the pot off the heat and let it sit for 5 minutes. Stir in the remaining 1 tbsp olive oil. Taste it. If it's flat, add a pinch more salt.",
+  "Serve in bowls with a little extra black pepper. For lunches, cool it and pack it into containers. It keeps in the fridge for up to 4 days and gets thicker each day, so stir in a splash of water when you reheat it."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The Pasta Project version is the lead: a soffritto, tomato paste and rosemary, lentils simmered first, then pasta cooked in the same pot. I used its ratios scaled to 4, with vegetable broth in place of part of the water. Well Seasoned Studio adds pancetta, canned tomatoes and a Parmesan rind and keeps 4 days in the fridge; I left those out for a lunch-sized version. The lead shows 5 stars from 66 votes (visible rating). Both note leftovers thicken, which is why the last step says to loosen with water.",
+ "sources": [
+  {"name": "The Pasta Project", "title": "Umbrian Lentil Soup with Pasta", "url": "https://www.the-pasta-project.com/umbrian-lentil-soup-with-pasta/", "rating": 5, "rating_count": 66, "read": true, "lead": true},
+  {"name": "Well Seasoned Studio", "title": "Pasta e Lenticchie: Hearty Italian Comfort Food", "url": "https://www.wellseasonedstudio.com/italian-lentil-stew-with-pancetta-and-pasta/", "rating": 5, "rating_count": 1, "read": true, "lead": false},
+  {"name": "Vincenzo's Plate", "title": "Lentils Pasta", "url": "https://www.vincenzosplate.com/lentils-pasta/", "rating": 4.34, "rating_count": 6, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

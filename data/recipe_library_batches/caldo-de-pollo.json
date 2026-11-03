@@ -1,0 +1,46 @@
+{
+ "dish_name": "Caldo de Pollo",
+ "cuisine": "Mexican",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 75,
+ "ingredients": [
+  {"item": "Bone-in chicken thighs", "qty": "2 lbs", "category": "meat/seafood"},
+  {"item": "White onion", "qty": "1", "category": "produce"},
+  {"item": "Celery", "qty": "2 stalks", "category": "produce"},
+  {"item": "Garlic", "qty": "3 cloves", "category": "produce"},
+  {"item": "Carrots", "qty": "3", "category": "produce"},
+  {"item": "Zucchini", "qty": "2", "category": "produce"},
+  {"item": "Corn on the cob", "qty": "2 ears", "category": "produce"},
+  {"item": "Fresh parsley", "qty": "1 bunch", "category": "produce", "cook_qty": "4 sprigs"},
+  {"item": "Bay leaves", "qty": "2", "category": "pantry"},
+  {"item": "Dried thyme", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Dried marjoram", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Black peppercorns", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Long-grain white rice", "qty": "1 cup", "category": "pantry"},
+  {"item": "Limes", "qty": "2", "category": "produce"},
+  {"item": "Fresh cilantro", "qty": "1 bunch", "category": "produce", "cook_qty": "1/4 cup chopped"}
+ ],
+ "instructions": [
+  "Put the chicken thighs in a large pot with 7 cups of water. Add half the onion, the celery cut in large pieces, the 3 garlic cloves, 1 of the carrots in large pieces, the parsley sprigs, bay leaves, thyme, marjoram and peppercorns.",
+  "Bring it to a boil over high heat, then turn it down to low. Partly cover and simmer for 45 minutes, until the chicken is cooked through. You're cooking it to 175°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest thigh: it's done when the juices run clear.",
+  "Skim the foam and fat off the top with a spoon. Lift the chicken onto a plate. Strain the broth into a clean pot and throw out the vegetables, herbs and peppercorns.",
+  "While the chicken cools, cut the remaining 2 carrots and the zucchini into 1/2-inch rounds, chop the rest of the onion, and cut each ear of corn into 3 pieces.",
+  "Add the chopped onion, carrots, corn and 1 1/2 tsp salt to the broth and simmer for 10 minutes. Add the zucchini and cook for 10 minutes, until all the vegetables are tender.",
+  "Meanwhile, cook the rice. Rinse 1 cup of rice, add it to a small pot with 2 cups of water and 1/2 tsp salt, and bring it to a boil. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave it covered for 5 minutes.",
+  "Remove the skin and bones from the chicken and shred the meat into bite-size pieces. Add it to the soup and warm it for 2 minutes. Taste it. If it's flat, add a pinch more salt.",
+  "Chop 1/4 cup of the cilantro and cut the limes into wedges. Put rice in each bowl, ladle the soup over it, and serve with the cilantro and lime wedges.",
+  "For a week of lunches, cool the soup and keep the rice in a separate container. The soup keeps in the fridge for up to 5 days, or in the freezer for 3 months. Reheat a portion on the stove and add the rice to your bowl."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Bossy Kitchen is the lead: a broth simmered from bone-in thighs with celery, onion, carrot, garlic and herbs, then strained, with fresh carrots, zucchini and corn simmered in it, and rice, lime and cilantro in the bowl. I scaled it from 6 to 4 and dropped the avocado and tortillas. Stacy Lyn Harris agrees on the method and serves it over rice with garnishes. Neither has 20+ ratings (5 stars from 1 each), and the busier caldo pages were blocked, so this is a fallback on the best-read versions. RecipeTin Eats has no caldo de pollo.",
+ "sources": [
+  {"name": "The Bossy Kitchen", "title": "Caldo de Pollo Recipe (Mexican Chicken Soup)", "url": "https://www.thebossykitchen.com/caldo-de-pollo-recipe-mexican-chicken-soup/", "rating": 5, "rating_count": 1, "read": true, "lead": true},
+  {"name": "Stacy Lyn Harris", "title": "Mexican Chicken Soup (Caldo de Pollo)", "url": "https://stacylynharris.com/mexican-chicken-soup-caldo-de-pollo/", "rating": 5, "rating_count": 1, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

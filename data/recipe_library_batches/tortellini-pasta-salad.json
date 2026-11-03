@@ -1,0 +1,36 @@
+{
+ "dish_name": "Tortellini Pasta Salad",
+ "cuisine": "Italian",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {"item": "Cheese tortellini", "qty": "1 package (9 oz)", "category": "dairy"},
+  {"item": "Italian dressing", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "Cherry tomatoes", "qty": "1 pint", "category": "produce"},
+  {"item": "Salami", "qty": "4 oz", "category": "meat/seafood"},
+  {"item": "Red onion", "qty": "1", "category": "produce"},
+  {"item": "Red bell pepper", "qty": "1", "category": "produce"},
+  {"item": "Parmesan cheese", "qty": "1 wedge (about 4 oz)", "category": "dairy", "cook_qty": "2 tbsp grated"},
+  {"item": "Fresh parsley", "qty": "1 bunch", "category": "produce", "cook_qty": "1 tbsp chopped"},
+  {"item": "Salt", "qty": "1 tbsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Fill a large pot with water, add the 1 tbsp salt and bring it to a boil over high heat.",
+  "Meanwhile, halve the cherry tomatoes. Cut the salami into small dice. Finely dice half the red onion and the whole red bell pepper. Transfer all of it to a large bowl.",
+  "Add the tortellini to the boiling water and cook for the time on the package, usually 3 to 5 minutes, until they float and the filling is hot.",
+  "Drain the tortellini and rinse them under cold water for 30 seconds, until they feel cool. Shake off the water.",
+  "Add the tortellini to the bowl with 1/2 cup of the Italian dressing, 2 tbsp grated Parmesan and 1 tbsp chopped parsley. Toss gently.",
+  "Cover and chill for at least 1 hour. Tortellini soak up dressing as they sit, so before you eat, stir in a splash more dressing.",
+  "Pack it into 4 containers. It keeps in the fridge for up to 4 days and is good straight from the fridge."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Spend with Pennies is the lead: cooked refrigerated cheese tortellini, salami, tomatoes, peppers and red onion in Italian dressing, with Parmesan and parsley, chilled. I halved its 18 oz and 1 cup of dressing for 4, and dropped the green pepper. The page shows 5 stars from 106 votes (visible rating, JSON-LD not shown). Other tortellini salad pages were blocked (403), so only this one version was read in full.",
+ "sources": [
+  {"name": "Spend With Pennies", "title": "Italian Tortellini Salad", "url": "https://www.spendwithpennies.com/italian-tortellini-salad/", "rating": 5, "rating_count": 106, "read": true, "lead": true}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
