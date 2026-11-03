@@ -1,0 +1,141 @@
+{
+ "dish_name": "Menestra de Verduras",
+ "cuisine": "Spanish",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Baby potatoes",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Green beans",
+   "qty": "1/2 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Frozen artichoke hearts",
+   "qty": "1 bag (9 oz)",
+   "category": "frozen"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "1 1/2 cups",
+   "category": "frozen"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sweet paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "3 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Crusty bread",
+   "qty": "1 loaf",
+   "category": "other"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the potatoes in half. Peel the carrots and slice them into 1/4-inch coins. Trim the green beans and cut them into 1-inch pieces. Cut any large artichoke hearts into quarters. Chop 1/4 cup of parsley. Finely chop the onion and mince the garlic.",
+  "Heat the olive oil in a Dutch oven or large pot over medium heat. Add the onion and 1/2 tsp of the salt. Cook for 6 minutes, stirring now and then, until soft and golden.",
+  "Add the garlic and cook for 1 minute, until you can smell it.",
+  "Stir in the paprika and flour and cook for 1 minute, until the flour smells toasty.",
+  "Pour in the wine and let it bubble for 2 minutes, scraping up any bits from the bottom of the pan.",
+  "Add the broth a little at a time, stirring until smooth. Add the potatoes and carrots and bring it to a simmer. Cover and cook for 10 minutes.",
+  "Add the green beans and artichoke hearts. Cover and cook for 8 minutes, until the potatoes and carrots are tender when you poke them.",
+  "Add the peas and cook for 3 minutes, until they're hot through. The sauce should coat the back of a spoon. If it's thin, cook uncovered for 2 minutes.",
+  "Take the pot off the heat and stir in the parsley.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve in bowls with the crusty bread."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 40,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version had 20 or more ratings, so the lead is the fallback: Claudia Roden's spring menestra, a real version of the dish with artichokes, peas and a wine and flour sauce. The sources agree on spring vegetables and a light sauce of onion, garlic, flour and white wine; Spanish versions cook each vegetable separately with ham, while the vegan ones use one pot. This follows the lead's sauce, leaves out the ham and chicken broth, uses green beans in place of fava beans and adds carrots and baby potatoes so it works as a dinner. Paprika comes from The Vegan Atlas, and the sauce is made first in one pot so the vegetables cook in it. The lead and Spain-recipes.com show no rating.",
+ "sources": [
+  {
+   "name": "Cooks Without Borders",
+   "title": "Claudia Roden's Medley of Spring Vegetables",
+   "url": "https://cookswithoutborders.com/claudia-roden-spring-vegetables",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Vegan Atlas",
+   "title": "Spanish Vegetable Stew (Menestra de Verduras)",
+   "url": "https://theveganatlas.com/spanish-vegetable-stew-menestra-de-verduras/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Spain-recipes.com",
+   "title": "Menestra de Verduras",
+   "url": "https://www.spain-recipes.com/menestra.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Great British Chefs",
+   "title": "Menestra",
+   "url": "https://www.greatbritishchefs.com/recipes/menestra-recipe",
+   "rating": 5.0,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
