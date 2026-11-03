@@ -9391,9 +9391,20 @@ def _replace_slot_entries(
         # of the freezer and off what this row carries forward
         # (freezer_portions.release_if_dish_changes).
         from . import freezer_portions as _freezer_portions  # local: it imports this module
-        if any([_freezer_portions.release_if_dish_changes(conn, old_id, new_meal) for old_id in old_entry_ids]) \
-                and derived_from:
+        # The same dish typed over keeps its portion: carried across when
+        # the caller hands none (swap_meal_in_plan passes no derived_from).
+        same_dish_extra = next(
+            (x for x in (_freezer_portions.night_off_extra_for_same_dish(conn, old_id, new_meal)
+                         for old_id in old_entry_ids) if x),
+            None,
+        )
+        portion_released = any(
+            [_freezer_portions.release_if_dish_changes(conn, old_id, new_meal) for old_id in old_entry_ids]
+        )
+        if portion_released and derived_from:
             derived_from = {k: v for k, v in derived_from.items() if k != _leftovers.FREEZER_EXTRA_KEY}
+        elif same_dish_extra and _leftovers.FREEZER_EXTRA_KEY not in (derived_from or {}):
+            derived_from = {**(derived_from or {}), _leftovers.FREEZER_EXTRA_KEY: same_dish_extra}
         # By id, not by (date, slot): a slot legitimately holding two
         # snacks must lose only the one being replaced. With no old_meal
         # this is every row in the slot, which is exactly what the by-slot
@@ -9439,6 +9450,10 @@ def _replace_slot_entries(
         # the household the meat did not go with the meal.
         if held_thawed:
             result["held_thawed"] = held_thawed
+        # Read by swap_in_place.apply_pick, which writes the new row's note
+        # after this and must leave the old dish's portion off it.
+        if portion_released:
+            result["freezer_portion_released"] = True
         conn.commit()
     except Exception:
         conn.rollback()

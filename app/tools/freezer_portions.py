@@ -834,16 +834,30 @@ def release_if_dish_changes(conn, entry_id: int, new_meal: str | None) -> bool:
     freezer and on next week's draft, and the swap carried the portion onto
     the pasta, so Cook scaled a batch nobody had bought for.
 
-    The SAME dish is left alone (a door that rewrites a row with the dish it
-    already had carries the key itself). `new_meal` None means the slot is
-    being emptied. Returns True when the portion was let go, so the caller
-    leaves FREEZER_EXTRA_KEY off whatever it carries onto the new row.
+    The SAME dish is left alone: the batch is still cooked, so the portion
+    stands (night_off_extra_for_same_dish carries the key across for a door
+    that hands no derived_from). `new_meal` None means the slot is being
+    emptied.
+
+    Returns True when the caller must leave FREEZER_EXTRA_KEY off whatever
+    it carries onto the new row:
+      * the cook was already ticked done — the portion is REAL food in the
+        freezer now, so the row stays (review, 2026-11-03: a cooked batch
+        swapped afterwards lost its real portion); only the key goes, so
+        the freezer list stops hiding it as "not cooked yet";
+      * otherwise the portion's freezer row is deleted
+        (release_uncooked_extra).
+    Returns False, and touches nothing, when a live plan already has a
+    night eating one of its portions (_claimed_item_ids): deleting it would
+    leave that night on food nobody made, and stripping the key would make
+    it read as real food — so the week stays exactly as it was (the
+    "plan something else for that night?" question is not built here).
     Runs on the caller's connection and transaction.
     """
     from . import leftovers as _leftovers
 
     row = conn.execute(
-        "SELECT mpe.derived_from_json, COALESCE(r.name, mpe.freeform_meal) AS meal "
+        "SELECT mpe.derived_from_json, mpe.cooked_status, COALESCE(r.name, mpe.freeform_meal) AS meal "
         "FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id "
         "WHERE mpe.id = ? AND mpe.household_id = ?",
         (entry_id, household_id()),
@@ -851,12 +865,39 @@ def release_if_dish_changes(conn, entry_id: int, new_meal: str | None) -> bool:
     if row is None:
         return False
     extra = _derived(row["derived_from_json"]).get(_leftovers.FREEZER_EXTRA_KEY)
-    if not isinstance(extra, dict) or not extra.get("inventory_item_ids"):
+    ids = _extra_ids(row["derived_from_json"])
+    if not isinstance(extra, dict) or not ids:
         return False
     if new_meal is not None and _leftovers.dish_identity(new_meal) == _leftovers.dish_identity(row["meal"]):
         return False
+    if (row["cooked_status"] or "") == "done":
+        return True
+    if ids & _claimed_item_ids(conn):
+        return False
     release_uncooked_extra(conn, entry_id)
     return True
+
+
+def night_off_extra_for_same_dish(conn, entry_id: int, new_meal: str | None) -> dict | None:
+    """The outgoing cook's night-off FREEZER_EXTRA_KEY when `new_meal` is the
+    same dish — what a door rewriting the slot with that dish (a typed
+    "garlic shrimp" over Garlic Shrimp) must carry onto the new row, or a
+    later swap orphans the portion. None otherwise."""
+    from . import leftovers as _leftovers
+
+    if new_meal is None:
+        return None
+    row = conn.execute(
+        "SELECT mpe.derived_from_json, COALESCE(r.name, mpe.freeform_meal) AS meal "
+        "FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id "
+        "WHERE mpe.id = ? AND mpe.household_id = ?",
+        (entry_id, household_id()),
+    ).fetchone()
+    if row is None or not _extra_ids(row["derived_from_json"]):
+        return None
+    if _leftovers.dish_identity(new_meal) != _leftovers.dish_identity(row["meal"]):
+        return None
+    return _derived(row["derived_from_json"]).get(_leftovers.FREEZER_EXTRA_KEY)
 
 
 # ---------- a portion a later week counts on, and the cook was skipped ----------

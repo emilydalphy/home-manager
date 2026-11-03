@@ -189,3 +189,68 @@ def test_undoing_the_swap_brings_the_dish_back_without_a_ghost_portion():
     assert _leftovers.freezer_servings(fri["derived"]) == 0
     assert _freezer_rows() == []
     assert _to_buy("Greens for Garlic Shrimp") == ["1 lb"]
+
+
+# ------------------------------------------------ review, 2026-11-03 (FIX FIRST)
+
+def _inventory_id():
+    conn = get_conn()
+    row = conn.execute("SELECT id FROM inventory_items WHERE household_id = 1 AND location = 'freezer'").fetchone()
+    conn.close()
+    return row["id"]
+
+
+@ON_MONDAY
+def test_a_cooked_batch_keeps_its_real_portion_when_swapped_afterwards():
+    """CATCH (of the first version of this fix). Friday's shrimp ticked done:
+    the portion is real food in the freezer now. Swapping Friday afterwards
+    must not delete it — and the soup still doesn't carry it."""
+    plan = _night_off_with_a_portion()
+    tools.check_off_meal(_friday()["id"], "done")
+
+    _swap.swap_meal_in_place(plan, _friday()["id"], picker=_picker("Lentil Soup"))
+
+    assert _freezer_rows() == ["Garlic Shrimp (cooked)"]
+    assert _leftovers.FREEZER_EXTRA_KEY not in _friday()["derived"]
+    conn = get_conn()
+    hidden = _fp.not_yet_cooked_portion_ids(conn)
+    conn.close()
+    assert not hidden, "real food: shown in the freezer, not waiting on a cook"
+
+
+@ON_MONDAY
+def test_a_portion_next_week_already_eats_is_left_as_it_was():
+    """CATCH (of the first version). Next week's draft has Tuesday eating the
+    portion. Swapping Friday neither deletes it (that night would eat food
+    nobody made) nor strips the key (it would read as real food): the week
+    is left exactly as it was."""
+    plan = _night_off_with_a_portion()
+    inv_id = _inventory_id()
+    _recipe("Next Week Tacos")
+    later = tools.create_weekly_plan((_monday() + datetime.timedelta(days=7)).isoformat())["weekly_plan_id"]
+    tools.plan_meal((_monday() + datetime.timedelta(days=8)).isoformat(), "Next Week Tacos", slot="dinner",
+                    weekly_plan_id=later,
+                    derived_from={_fp.KEY: {"inventory_item_id": inv_id, "dish": "Garlic Shrimp"}})
+
+    _swap.swap_meal_in_place(plan, _friday()["id"], picker=_picker("Lentil Soup"))
+
+    assert _freezer_rows() == ["Garlic Shrimp (cooked)"]
+    extra = _friday()["derived"].get(_leftovers.FREEZER_EXTRA_KEY) or {}
+    assert extra.get("inventory_item_ids") == [inv_id]
+
+
+@ON_MONDAY
+def test_typing_the_same_dish_over_keeps_its_portion():
+    """CATCH (of the first version). "garlic shrimp " typed over Garlic
+    Shrimp is the same batch: the new row carries the portion, so a later
+    swap still finds it and lets it go."""
+    plan = _night_off_with_a_portion()
+
+    tools.swap_meal_in_plan(plan, FRI, "garlic shrimp ")
+
+    extra = _friday()["derived"].get(_leftovers.FREEZER_EXTRA_KEY) or {}
+    assert extra.get("inventory_item_ids") == [_inventory_id()]
+    assert _freezer_rows() == ["Garlic Shrimp (cooked)"]
+
+    _swap.swap_meal_in_place(plan, _friday()["id"], picker=_picker("Lentil Soup"))
+    assert _freezer_rows() == []
