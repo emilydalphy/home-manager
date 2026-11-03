@@ -11209,7 +11209,11 @@ def feedback_report(request: Request, days: int = 30):
 
     token = os.environ.get("FEEDBACK_TOKEN", "")
     supplied = request.headers.get("x-feedback-token", "")
-    if not token or not supplied or not secrets.compare_digest(supplied, token):
+    # As bytes, as the health report does: compare_digest raises on a
+    # non-ASCII str, and a 500 there would confirm the route exists.
+    if not token or not supplied or not secrets.compare_digest(
+        supplied.encode("utf-8", "surrogateescape"), token.encode("utf-8", "surrogateescape")
+    ):
         raise HTTPException(status_code=404, detail="Not found")
 
     days = max(1, min(int(days), 30))

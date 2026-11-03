@@ -51,6 +51,12 @@ def test_an_empty_token_cannot_match_an_empty_env(client, monkeypatch):
     assert client.get("/api/feedback-report", headers=_hdr("")).status_code == 404
 
 
+def test_a_non_ascii_token_gets_404_not_a_crash(client, with_token):
+    """A 500 here would tell a stranger the route exists."""
+    res = client.get("/api/feedback-report", headers={"x-feedback-token": "caf\u00e9".encode("latin-1")})
+    assert res.status_code == 404
+
+
 def test_the_report_token_does_not_open_it(client, with_token, monkeypatch):
     """The overnight routine's token must not reach people's words."""
     monkeypatch.setenv("REPORT_TOKEN", "the-routine-token")
