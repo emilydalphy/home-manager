@@ -1,0 +1,116 @@
+{
+ "dish_name": "Yebeg Wat",
+ "cuisine": "Ethiopian",
+ "main_protein": "lamb",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 95,
+ "ingredients": [
+  {
+   "item": "Boneless lamb shoulder",
+   "qty": "2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece",
+   "category": "produce"
+  },
+  {
+   "item": "Ghee",
+   "qty": "1 jar",
+   "category": "dairy",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Berbere",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 tube",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Dry red wine",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cardamom",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Finely chop the onions. Mince the garlic and 1 tbsp of the ginger. Cut the lamb into 1 1/2-inch cubes, pat them dry, and toss them with 1 tsp of the salt and the pepper.",
+  "Heat 1 tbsp of the ghee in a large heavy pot over medium-high heat. Add half the lamb in a single layer and leave it alone until the underside is deep brown, about 4 minutes. Turn the pieces and brown them for 3 minutes. Transfer to a plate and brown the second half the same way.",
+  "Turn the heat to medium. Add the onions, 1/4 cup water and the remaining 1/2 tsp salt to the same pot. Cook for 12 minutes, stirring now and then, until the onions are soft and golden. Add a splash of water if they start to stick. Don't rush this. The onions are the base of the sauce.",
+  "Add the remaining 2 tbsp ghee, the garlic and the ginger. Stir for 1 minute.",
+  "Add 2 tbsp of the berbere and the tomato paste. Stir for 1 minute, until the oil turns deep red and it smells toasty.",
+  "Add the wine and scrape up the browned bits from the bottom of the pot. Let it bubble for 1 minute.",
+  "Return the lamb and its juices to the pot, add 2 cups of water, and bring to a simmer. Cover, turn the heat to low, and cook for 1 hour, stirring now and then, until a piece of lamb falls apart when you press it with a spoon. If the sauce is thin, take the lid off for the last 10 minutes.",
+  "Meanwhile, about 25 minutes before the lamb is done, rinse the rice and cook it according to the package.",
+  "Take the pot off the heat. Stir in the cardamom and the juice of half the lemon.",
+  "Spoon a few tablespoons of the sauce into a small bowl and stir in the remaining 1 tbsp berbere for anyone who wants more heat.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of the lemon.",
+  "Serve with the rice or with injera. Keep the hot bowl on the table."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version I could read showed a rating, so this is a fallback lead: the Yewoin family recipe is the most traditional, with onions cooked down in water, then butter, berbere, garlic and cardamom added at the end. The Grub Files version (adapted from Food and Wine) browns the lamb first and adds wine, tomato and lemon. I browned the lamb as that one does, kept the long onion step and the cardamom from the lead, used 2 tbsp of berbere in the pot (the lead is far hotter) with 1 tbsp on the side, and used ghee for niter kibbeh.",
+ "sources": [
+  {
+   "name": "Yewoin's Family Recipes",
+   "title": "Ethiopian Spicy Lamb Stew (YeBeg Wot)",
+   "url": "https://yewoinsfamilyrecipes.blogspot.com/2008/02/ethiopian-spicy-lamb-stew-yebeg-wot.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Grub Files",
+   "title": "Yebeg Wat (Spiced Lamb Stew)",
+   "url": "https://thegrubfiles.blogspot.com/2013/06/yebeg-wat-spiced-lamb-stew.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

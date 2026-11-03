@@ -1,0 +1,97 @@
+{
+ "dish_name": "Ye Misir Alicha",
+ "cuisine": "Ethiopian",
+ "main_protein": "lentils",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Red lentils",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Finely chop the onions. Mince the garlic and grate 1 tbsp of the ginger. Rinse the lentils in a strainer until the water runs mostly clear.",
+  "Heat the oil in a medium pot over medium heat. Add the onions, 1/4 cup water and 1/4 tsp of the salt. Cook for 10 minutes, stirring now and then, until the onions are soft and starting to turn golden. Add a splash of water if they start to stick.",
+  "Add the garlic, ginger and turmeric. Stir for 1 minute, until it smells fragrant.",
+  "Add the lentils and 4 1/2 cups of water, and bring to a boil. Skim off any foam.",
+  "Turn the heat to low and simmer, stirring every few minutes, for 20 to 25 minutes, until the lentils have broken down into a thick, soft stew. Add a splash of water if it gets too thick.",
+  "Meanwhile, rinse the rice and cook it according to the package.",
+  "Stir in the remaining 1 tsp salt and the pepper. Cook for 2 minutes.",
+  "Slice the jalapeño into rings and put them in a small bowl for anyone who wants heat.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the rice or with injera, and the jalapeño on the table."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version I could read showed a rating, so this is a fallback lead: the Food.com mild split lentil stew (yemser alicha), a Yewoin family recipe, cooks onion in oil and water, adds garlic, ginger and turmeric, and finishes with a green pepper. Luladey Moges's misir wot (CBC) uses 1 cup of lentils to 1 cup of water and swaps 1 tsp of turmeric in for the berbere. I used the turmeric amount from Moges, a thicker lentil to water ratio than the lead, a smaller amount of ginger, black pepper in place of white, and the green pepper on the side so it stays kid friendly.",
+ "sources": [
+  {
+   "name": "Food.com",
+   "title": "Ethiopian Mild Split Lentils Stew (Yemser Alicha)",
+   "url": "https://www.food.com/recipe/ethiopian-mild-split-lentils-stew-yemser-alicha-327834",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "CBC Food",
+   "title": "Misir Wot: Luladey Moges shares how to make this lentil stew exactly to your taste",
+   "url": "https://amp.cbc.ca/lite/story/1.6668328",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

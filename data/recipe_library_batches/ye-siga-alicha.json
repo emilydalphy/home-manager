@@ -1,0 +1,104 @@
+{
+ "dish_name": "Ye Siga Alicha",
+ "cuisine": "Ethiopian",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 90,
+ "ingredients": [
+  {
+   "item": "Beef chuck",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece",
+   "category": "produce"
+  },
+  {
+   "item": "Ghee",
+   "qty": "1 jar",
+   "category": "dairy",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cardamom",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Finely chop the onions. Mince the garlic and grate 1 tbsp of the ginger. Cut the beef into 1 1/2-inch cubes, pat them dry, and toss them with 1 tsp of the salt and the pepper.",
+  "Heat 1 tbsp of the ghee in a large heavy pot over medium-high heat. Add half the beef in a single layer and leave it alone until the underside is deep brown, about 4 minutes. Turn the pieces and brown them for 2 minutes. Transfer to a plate and brown the second half the same way.",
+  "Turn the heat to medium. Add the onions, 1/4 cup water and the remaining 1/2 tsp salt to the same pot. Cook for 10 minutes, stirring now and then, until the onions are soft and just starting to turn golden. Add a splash of water if they start to stick.",
+  "Add the remaining 2 tbsp ghee, the garlic and the ginger. Stir for 1 minute.",
+  "Add the turmeric and stir for 30 seconds, until it smells fragrant. Keep it moving so it doesn't clump.",
+  "Return the beef and its juices to the pot, add 2 cups of water, and bring to a simmer. Cover, turn the heat to low, and cook for 1 hour, stirring now and then, until the beef is tender when you press it with a spoon.",
+  "Meanwhile, about 25 minutes before the beef is done, rinse the rice and cook it according to the package.",
+  "Take the lid off for the last 10 minutes if the sauce is thin. It should be thick enough to coat the beef.",
+  "Take the pot off the heat and stir in the cardamom. Slice the jalapeño into rings and put them in a small bowl for anyone who wants heat.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the rice or with injera, and the jalapeño on the table."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version I could read showed a rating, so this is a fallback lead: Tara's Multicultural Table mild lamb stew (4 stars from 1 vote) is the closest real alicha, with onions, ginger, garlic, turmeric, coriander and cardamom and no berbere. The Wikibooks alicha wot browns the beef before the spices. I used beef as the dish asks, browned it first, left out the coriander and used a smaller pinch of cardamom (a reader of the lead found the cardamom too strong), and kept the sauce thick since the lead's water amounts disagree.",
+ "sources": [
+  {
+   "name": "Tara's Multicultural Table",
+   "title": "Ye Beg Alicha Wot (Ethiopian Mild Lamb Stew)",
+   "url": "https://tarasmulticulturaltable.com/ye-beg-alicha-wot/",
+   "rating": 4,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Wikibooks Cookbook",
+   "title": "Alicha Wot (Mild Ethiopian Stew)",
+   "url": "https://en.wikibooks.org/wiki/Cookbook:Alicha_Wot_%28Mild_Ethiopian_Stew%29",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
