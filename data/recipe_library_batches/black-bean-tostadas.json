@@ -1,0 +1,123 @@
+{
+ "dish_name": "Black Bean Tostadas",
+ "cuisine": "Mexican",
+ "main_protein": "beans",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chili powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black beans",
+   "qty": "2 cans (15 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tostada shells",
+   "qty": "12",
+   "category": "other"
+  },
+  {
+   "item": "Romaine lettuce",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Avocados",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Cotija cheese",
+   "qty": "4 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Finely chop half the onion. Heat the oil in a large skillet over medium-high. Add the chopped onion and cook for 3 to 4 minutes, until soft.",
+  "Add the garlic cloves, minced, along with the cumin and chili powder. Stir for 30 seconds, until it smells toasty.",
+  "Add both cans of beans with their liquid and 1/2 tsp of the salt. Bring to a simmer, then turn the heat to medium-low and cook for 10 to 12 minutes, stirring now and then, until most of the liquid is gone and the beans are thick.",
+  "Meanwhile, dice the tomatoes and toss them with 1/4 tsp of the salt and the juice of half a lime. Shred about half of the lettuce. Crumble the cheese and chop 1/4 cup of the cilantro. Cut the rest of the limes into wedges.",
+  "Mash the beans in the pan with a potato masher or the back of a spoon until they're thick and spreadable, with a few beans left whole. If they're too stiff, add a splash of water.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of lime.",
+  "Halve and slice the avocados. Spread about 1/4 cup of the beans over each tostada shell. Top with the lettuce, tomatoes, avocado, cotija and cilantro. Serve with the lime wedges."
+ ],
+ "method_notes": "No black bean tostada page with 20 or more ratings was readable, so there is no qualifying lead. The lead is My Everyday Table (5 from 3 reviews, reviewCount only): beans simmered undrained with onion and garlic until the liquid cooks off, then mashed and spread on tostada shells with lettuce, tomato and cheese. She Likes Food and Hey Nutrition Lady (no ratings shown) bake their own tortilla shells and add cumin, chili powder and avocado. Changed: two cans of beans rather than three, cumin and chili powder added to the beans, and a salted tomato topping and avocado added.",
+ "sources": [
+  {
+   "name": "My Everyday Table",
+   "title": "Easy Black Bean Tostadas",
+   "url": "https://myeverydaytable.com/easy-black-bean-tostadas-recipe/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "She Likes Food",
+   "title": "Homemade Black Bean Tostadas",
+   "url": "https://www.shelikesfood.com/black-bean-tostadas/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Hey Nutrition Lady",
+   "title": "Super Simple Black Bean Tostadas",
+   "url": "https://www.heynutritionlady.com/?p=24167",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "fallback_used": true,
+ "origin": "seed",
+ "default_servings": 4
+}

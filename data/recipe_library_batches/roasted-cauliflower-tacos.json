@@ -1,0 +1,115 @@
+{
+ "dish_name": "Roasted Cauliflower Tacos",
+ "cuisine": "Mexican",
+ "main_protein": "vegetarian",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Cauliflower",
+   "qty": "1 large head",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chili powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Smoked paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red cabbage",
+   "qty": "1 small head",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Sour cream",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Corn tortillas",
+   "qty": "12",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 425°F. Cut the cauliflower into florets about 1 inch across. Pat them dry.",
+  "Transfer the florets to a rimmed baking sheet. Add 2 tbsp of the oil, the cumin, coriander, chili powder, smoked paprika and 3/4 tsp of the salt and toss. Spread them in a single layer, flat sides down, with space between the pieces.",
+  "Roast for 25 to 30 minutes, stirring once at the 15 minute mark, until the edges are deep brown and a knife slides in easily.",
+  "Meanwhile, thinly slice half the cabbage. That should be about 3 cups. Transfer it to a bowl and toss with the remaining 1 tbsp oil, the juice of 1 lime and 1/4 tsp of the salt.",
+  "Chop 1/4 cup of the cilantro. In a small bowl, stir together the sour cream, 1 tbsp juice from the second lime, 2 tbsp of the chopped cilantro, the remaining 1/4 tsp salt and 2 tbsp water. It should be thin enough to drizzle. Cut the rest of the second lime into wedges.",
+  "Warm a dry skillet over medium-high. Heat each tortilla for 20 seconds on each side, then stack them in a clean towel.",
+  "Squeeze a lime wedge over the hot cauliflower. Taste it. If it's flat, add a pinch more salt.",
+  "Fill each tortilla with a spoonful of the slaw and some cauliflower. Drizzle with the lime crema and top with the rest of the chopped cilantro. Serve with the lime wedges."
+ ],
+ "method_notes": "Love & Lemons (5.0 from 25 ratings) is the lead: cauliflower roasted with cumin, coriander and salt on corn tortillas with a cool green sauce. Inspired Taste and Kathleen Ashmore agree on roasting at 425°F in a single layer and on a lime crema or sauce, and add chili powder and smoked paprika. They differ on the sauce (sour cream crema versus avocado) and on whether the cabbage is roasted. Changed: the dish calls for a lime crema, so the sauce is sour cream with lime, and the red cabbage is kept raw as a crunchy slaw rather than roasted with the cauliflower.",
+ "fallback_used": false,
+ "sources": [
+  {
+   "name": "Love & Lemons",
+   "title": "Roasted Cauliflower Tacos",
+   "url": "https://www.loveandlemons.com/cauliflower-tacos/",
+   "rating": 5.0,
+   "rating_count": 25,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Inspired Taste",
+   "title": "Chili Lime Cauliflower Tacos",
+   "url": "https://inspiredtaste.net/52670/roasted-cauliflower-tacos",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Kathleen Ashmore",
+   "title": "Roasted Cauliflower Tacos with Avocado Lime Crema",
+   "url": "https://kathleenashmore.com/roasted-cauliflower-tacos/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed",
+ "default_servings": 4
+}
