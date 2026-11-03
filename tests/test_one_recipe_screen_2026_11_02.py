@@ -225,8 +225,9 @@ def _plan_prelude() -> str:
         "var VIEW = null; function planCookView() { return VIEW; }\n"
         "var FAILED = false; function planCookViewFailed() { return FAILED; }\n"
         "var LATER = null, READS = 0;\n"
-        "async function ensureCookDataForMeals(p) { READS++; if (LATER) VIEW = LATER; }\n"
+        "async function ensureCookDataForMeals(p) { READS++; await Promise.resolve(); if (LATER) VIEW = LATER; }\n"
         "var panels = { week: {} };\n"
+        "var planOpenMealSeq = 0; var cookState = { data: null };\n"
         "function cookMealForEntry(id) { return (VIEW && VIEW.meals || []).filter(function (m) { return m.entry_id === id; })[0] || null; }\n"
         "var weekState = { step: 'week', mealBack: 'week', selectedIndex: 0, days: [{ date: '2026-11-05',"
         " dinner: { state: 'planned', entry_id: 7, title: 'Lemon chicken', source: 'recipe' },"
@@ -298,6 +299,41 @@ def test_anything_cook_cant_open_keeps_the_meal_step(view):
                + "(async function () { await planOpenMeal({ slot: 'dinner', back: 'week', dayIndex: 0 });\n"
                + "console.log(JSON.stringify(CALLS)); })();")
     assert len(out) == 1 and out[0][0] == "meal" and out[0][1] == "meal"
+
+
+@_needs_node
+def test_a_cook_view_that_is_behind_keeps_the_meal_step():
+    # Plan's view has the new dish (a swap just made); Cook's own view,
+    # loaded earlier, still has the old one in that slot. Cook mode would
+    # open the old dish (date + slot) or its root — so the Meal step.
+    out = _run(_plan_prelude()
+               + "VIEW = { is_current_plan: true, meals: [{ entry_id: 7 }] };\n"
+               + "cookState.data = { meals: [{ entry_id: 3, date: '2026-11-05', slot: 'dinner', meal: 'Old dish' }] };\n"
+               + "(async function () { await planOpenMeal({ slot: 'dinner', back: 'week', dayIndex: 0 });\n"
+               + "console.log(JSON.stringify(CALLS)); })();")
+    assert out[0][0] == "meal"
+
+
+@_needs_node
+def test_a_second_tap_while_the_view_is_read_wins():
+    out = _run(_plan_prelude()
+               + "LATER = { is_current_plan: true, meals: [{ entry_id: 7 }] };\n"
+               + "(async function () {\n"
+               + "var first = planOpenMeal({ slot: 'dinner', back: 'week', dayIndex: 0 });\n"
+               + "var second = planOpenMeal({ slot: 'dinner', back: 'week', dayIndex: 0 });\n"
+               + "await first; await second;\n"
+               + "console.log(JSON.stringify(CALLS.length)); })();")
+    assert out == 1
+
+
+@_needs_node
+def test_moving_to_another_plan_screen_during_the_read_does_nothing():
+    out = _run(_plan_prelude()
+               + "LATER = { is_current_plan: true, meals: [{ entry_id: 7 }] };\n"
+               + "ensureCookDataForMeals = async function () { weekState.step = 'day'; VIEW = LATER; };\n"
+               + "(async function () { await planOpenMeal({ slot: 'dinner', back: 'week', dayIndex: 0 });\n"
+               + "console.log(JSON.stringify(CALLS.length)); })();")
+    assert out == 0
 
 
 @_needs_node

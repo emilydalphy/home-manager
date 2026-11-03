@@ -128,7 +128,7 @@ _RECIPE = (
         # the screen says pass whatever the screen said.
         "recipeBatchLineHtml",
         "recipeTitleHtml", "recipeServesHtml", "recipeIngredientsHtml", "recipeIngredientRowHtml",
-        "recipeStepsHtml"))
+        "recipeStepsHtml", "cookUnderway"))
 )
 
 
@@ -553,7 +553,7 @@ def _tap_cook(html: str, step: str, cook_meals: list) -> dict:
         + "function activateTab(tab, push, opts) { TABS.push(tab); if (opts && opts.cookFocus) kitchenEnterCook(opts.cookFocus, !!opts.cookStart); }\n"
         + "".join(_extract(n) + "\n" for n in (
             "isSnackSlot", "daySlotEntry", "isRealCook", "mealsOriginFor", "openRecipeFor", "kitchenEnterCook",
-            "cookResolveFocusIndex", "cookEnterFocus", "cookFocusMeal", "cookFirstUndoneStep", "cookGoStage",
+            "cookResolveFocusIndex", "cookEnterFocus", "cookOpeningTab", "cookUnderway", "cookFocusMeal", "cookFirstUndoneStep", "cookGoStage",
             "cookStartCooking", "cookRecordStart", "cookPost", "isoClockMinutes", "cookStartOffsetLabel",
             "clockLabel", "minutesInWords", "numberWord"))
         + _var("START_SLACK_MINUTES") + "\n" + _var("START_MOVED_TROUBLE") + "\n"

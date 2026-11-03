@@ -21231,7 +21231,11 @@
     // on every render (the render this call ends with would otherwise ask
     // again, and again); goMealsStep drops it, so opening the meal afresh
     // is the retry, and so is anything that reloads the week.
-    if (view && view.planId === planId && !view.stale && (view.loading || view.data || view.failed)) return;
+    // A read already out hands back its own wait, so a caller that needs
+    // the answer (planOpenMeal) gets it rather than nothing.
+    if (view && view.planId === planId && !view.stale && (view.loading || view.data || view.failed)) {
+      return view.loading ? view.wait : undefined;
+    }
     // Each read carries its own number, and only the LATEST read for a
     // plan may land. A week marked stale while a read is still out (a
     // swap answering before the first read has) starts a second read on
@@ -21240,8 +21244,10 @@
     // last and stand as settled (found by the verifying pass, 2026-09-13).
     var seq = (weekState.cookViewSeq || 0) + 1;
     weekState.cookViewSeq = seq;
+    var landed;
     weekState.cookView = {
       planId: planId, seq: seq, loading: true, stale: false, failed: false,
+      wait: new Promise(function (resolve) { landed = resolve; }),
       // The old answer stays readable while the new one is on its way, so
       // a meal that didn't change doesn't lose its steps for a beat.
       data: view && view.planId === planId ? view.data : null
@@ -21253,14 +21259,15 @@
       var res = await Api.fetch('/api/cooker-view?weekly_plan_id=' + encodeURIComponent(planId));
       if (!res.ok) throw new Error('cooker-view failed');
       var fresh = await res.json();
-      if (!mine()) return;
+      if (!mine()) { landed(); return; }
       weekState.cookView = { planId: planId, seq: seq, data: fresh, loading: false, stale: false, failed: false };
     } catch (err) {
       console.warn('Recipe lookup for the plan failed:', err);
-      if (!mine()) return;
+      if (!mine()) { landed(); return; }
       weekState.cookView.loading = false;
       weekState.cookView.failed = !weekState.cookView.data;
     }
+    landed();
     if (weekState.step === 'meal' || weekState.step === 'day') renderMealsStep(panel);
   }
 
@@ -21448,6 +21455,7 @@
   // root doesn't read the plan's view until a day or meal is open, so a tap
   // there reads it first — one small request, the same one the Meal step
   // would have made.
+  var planOpenMealSeq = 0;
   async function planOpenMeal(opts) {
     opts = opts || {};
     var days = weekState.days || [];
@@ -21456,13 +21464,30 @@
     var slot = opts.slot || weekState.mealSlot;
     var entry = day ? daySlotEntry(day, slot) : null;
     var target = entry && entry.state === 'planned' ? recipeTargetForEntry(entry, day.date, slot) : null;
+    // A second tap, or a move to another screen, while the read is out
+    // wins: this one then does nothing rather than pulling the person into
+    // Cook a beat later.
+    var seq = ++planOpenMealSeq;
+    var stepAt = weekState.step;
     var view = planCookView();
     if (target && !view && !planCookViewFailed() && panels['week']) {
       await ensureCookDataForMeals(panels['week']);
+      if (seq !== planOpenMealSeq || weekState.step !== stepAt ||
+          (typeof window !== 'undefined' && window.location && !/^\/week/.test(window.location.pathname))) return;
       view = planCookView();
     }
+    // Resolved against the list cook mode will actually search — Cook's
+    // own view once it has loaded, else the plan's (the same plan, as
+    // is_current_plan says) — so a Cook view that is behind (a swap made
+    // here a moment ago) keeps the Meal step instead of landing on Cook's
+    // root.
+    var cookMeals = (cookState.data && cookState.data.meals) || (view && view.meals) || [];
     if (target && view && view.is_current_plan === true && target.entryId != null &&
-        cookMealForEntry(target.entryId)) {
+        cookMeals.some(function (m) {
+          // By the entry itself: a date-and-slot match on a Cook view that
+          // is behind would be the dish that was there before a swap.
+          return m.entry_id === target.entryId || (m.entry_ids && m.entry_ids.indexOf(target.entryId) !== -1);
+        })) {
       var back = (opts.back === 'week' || opts.back === 'review') ? opts.back : 'day';
       // Plan's root with a day open (weekState.planDay) is that day, so the
       // crumb names it — "‹ Monday" — and only the All view is "This week".

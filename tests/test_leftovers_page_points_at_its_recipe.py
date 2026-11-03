@@ -121,6 +121,10 @@ def test_the_link_reaches_a_cook_in_another_week():
         "async function loadWeekMenu(panel) { CALLS.push(['load', weekState.showWeekStart]);"
         " weekState.days = [{ date: '2026-09-30' }, { date: '2026-10-01' }]; }\n"
         "function goMealsStep(step, opts) { CALLS.push([step, opts]); }\n"
+        # planOpenMeal (2026-11-02) decides between Cook's recipe page and
+        # the Meal step; this test is about which week loads, so it stands
+        # in as the Meal step it falls back to.
+        "function planOpenMeal(opts) { goMealsStep('meal', opts); }\n"
         + _extract("wkDayIndexOf") + "\n" + _extract("openSourceMeal") + "\n"
         + "(async function () {\n"
         "  await openSourceMeal({}, '2026-10-01', 'dinner', 'day');\n"
