@@ -1,0 +1,103 @@
+{
+ "dish_name": "Miang Kham",
+ "cuisine": "Thai",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Butter lettuce",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Unsweetened shredded coconut",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Roasted peanuts",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece",
+   "category": "produce"
+  },
+  {
+   "item": "Shallots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Palm sugar",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Thai chilies",
+   "qty": "2",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Heat a dry skillet over medium heat. Add the coconut and stir often for 5 minutes, until it's golden brown and smells toasty. Transfer it to a bowl.",
+  "Wash the lettuce, separate the leaves and pat them dry. Stack them on a platter.",
+  "Peel the ginger and cut 2 tbsp of it into 1/4-inch cubes. Mince 1 tsp more and set that aside for the sauce.",
+  "Peel the shallots. Cut one into 1/4-inch cubes. Mince 1 tbsp of the second and set the rest aside for another day.",
+  "Cut the limes, skin on, into 1/4-inch cubes. Slice the chilies thin.",
+  "Make the sauce. In a small pot, add the palm sugar, 1/4 cup water, the soy sauce, the minced ginger, the minced shallot and 2 tbsp of the toasted coconut. Bring it to a simmer over medium heat, stirring, and cook for 5 minutes, until it coats the back of a spoon.",
+  "Take the sauce off the heat and let it cool for 10 minutes. It thickens as it cools.",
+  "Put the peanuts, the rest of the coconut, the ginger cubes, the shallot cubes and the lime cubes in separate small piles on a plate. Put the chilies in a small bowl on the side for the adults.",
+  "To eat, put a lettuce leaf in your palm, add a pinch of each pile, a small spoon of sauce and a little chili if you like. Fold it into a parcel and eat it in one bite.",
+  "Serve with the sauce on the side."
+ ],
+ "method_notes": "The versions agree on the same build: toasted coconut, peanuts, diced ginger, shallot and whole lime with peel on a leaf, finished with a sweet sauce made from palm sugar and toasted coconut. Messy Vegan Cook, the lead, makes a vegan sauce with soy sauce in place of shrimp paste and fish sauce, and uses pounded aromatics and tamarind; this one keeps the sauce short with soy sauce, ginger, shallot and coconut. Golden Dennis and Just As Delish use dried shrimp and fish sauce, which are left out. Butter lettuce replaces wild betel leaves, which the sources say to use only if sold for food. The lead has 2 ratings and the other two pages show none, so this is a fallback. Hot Thai Kitchen's page was behind a paywall and was skipped. The chilies are on the side.",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "sources": [
+  {
+   "name": "Messy Vegan Cook",
+   "title": "Vegan miang kham",
+   "url": "https://messyvegancook.com/vegan-miang-kham-recipe-%E0%B9%80%E0%B8%A1%E0%B8%B5%E0%B9%88%E0%B8%A2%E0%B8%87%E0%B8%84%E0%B8%B3/",
+   "rating": 5,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Golden Dennis",
+   "title": "Thai Miang Kham Leaf Wraps",
+   "url": "https://goldendennis.com/en/recipe-thai-miang-kham.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Just As Delish",
+   "title": "Mieng Kham (Wrapped Leaf Snack)",
+   "url": "https://justasdelish.com/mieng-kham/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
