@@ -55,6 +55,7 @@ from datetime import date, datetime, timedelta
 from ..db import get_conn
 from ._shared import household_id
 from . import leftovers as _leftovers
+from . import prep_list as _prep_list
 from . import weekly_plan as _weekly_plan
 from . import tonight as _tonight
 from . import usual_week as _usual_week
@@ -828,6 +829,11 @@ def move_meal(weekly_plan_id: int, entry_id: int, to_date: str,
         vetoed = _veto(by_id[i]["meal"], d, by_id[i]["slot"])
         if vetoed:
             return {"status": "refused", "message": f"{vetoed}."}
+    # Meat marinated in the fridge on a prep day already gone by, read
+    # before the move (after it, a meal moved past that day's reach is on
+    # no prep list): moved later than it keeps, the move says so, as it
+    # does for thawed food (defect hunt, 2026-11-03).
+    marinated = _prep_list.fridge_marinades(weekly_plan_id, first["placement"], today)
 
     move_id = uuid.uuid4().hex[:12]
     at = datetime.now().isoformat(timespec="seconds")
@@ -872,13 +878,17 @@ def move_meal(weekly_plan_id: int, entry_id: int, to_date: str,
     list_changed = _list_follows_the_tables({i: by_id[i]["date"] for i in placement})
     still_owed = _after_move(weekly_plan_id, list(placement))
     dates = sorted({m["from"] for m in moved} | {m["to"] for m in moved})
+    marinade_waits = [
+        said for i, d in placement.items() if i in marinated
+        for said in [_prep_list.marinade_wait_sentence(marinated[i][1], marinated[i][0], d, today)] if said
+    ]
     return {
         "status": "moved",
         "list_changed": list_changed,
         "said": _said(snap, placement, planned["members"], entry_id),
         "moved": moved,
         "move_id": move_id,
-        "thaw_notes": _thaw_notes(done["thaw"], today, [*still_owed, *(done.get("thawed_waits") or [])],
+        "thaw_notes": _thaw_notes(done["thaw"], today, [*still_owed, *(done.get("thawed_waits") or []), *marinade_waits],
                                   meals={i: (d, by_id[i]["slot"]) for i, d in placement.items()}),
         "prep_tasks_moved": done["prep_moved"],
         "days": _weekly_plan._menu_days_for(weekly_plan_id, dates),
