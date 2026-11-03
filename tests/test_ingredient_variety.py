@@ -264,7 +264,8 @@ def test_persian_cucumbers_and_cucumbers_from_two_recipes_stay_two_lines():
         ("Greek Salad", [{"item": "Cucumbers", "qty": "1", "category": "produce"}]),
     )
     assert bought["Persian cucumbers"] == "6"
-    assert bought["Cucumbers"] == "1"
+    # ...and the plain one says which kind it is (Emily, 2026-11-03).
+    assert bought["English cucumbers"] == "1"
 
 
 @ON_MONDAY
@@ -280,7 +281,7 @@ def test_a_vague_count_is_recomputed_now_and_still_flagged_for_its_kind():
     maximum for a table of two.
     """
     bought = _approve(("Cucumber Salad", [{"item": "Cucumbers", "qty": "6", "category": "produce"}]))
-    assert bought == {"Cucumbers": "2"}
+    assert bought == {"English cucumbers": "2"}
     # The kind question is untouched: the recipe as written is still worth
     # asking about, which is what reaches the morning report.
     assert _problem("Cucumbers", "6", 2) is not None

@@ -407,3 +407,56 @@ def test_fresh_coriander_joins_cilantro_and_the_ground_seed_stays_its_own_line()
     lines = sorted((r["item"], r["quantity"]) for r in _needed())
     assert ("Fresh coriander", "2 bunches") in lines
     assert len(lines) == 2, lines
+
+
+# ---------- same kind, one line; a different kind says which (Emily, 2026-11-03) ----------
+#
+# "it listed persian cucumber, and cucumber separately. if the other cucumber
+# is english, then it's fine. but if it's the same kind then it should be
+# together" -- and the same for "flat parsley" beside "parsley".
+
+
+@pytest.mark.parametrize("first,second", [
+    ("Flat parsley", "Parsley"),
+    ("Parsley", "Flat parsley"),
+    ("Flat parsley", "Fresh parsley"),
+    ("Flat-leaf parsley", "Flat parsley"),
+])
+def test_flat_parsley_joins_the_parsley_line_named_flat_leaf(first, second):
+    pid = _plan()
+    tools.add_grocery_item(first, quantity="1 bunch", source_weekly_plan_id=pid)
+    tools.add_grocery_item(second, quantity="1 bunch", source_weekly_plan_id=pid)
+    assert [(r["item"], r["quantity"]) for r in _needed()] == [("Flat-leaf parsley", "2 bunches")]
+
+
+def test_a_plans_bare_cucumber_says_english_and_persian_stays_its_own_line():
+    pid = _plan()
+    tools.add_grocery_item("Persian cucumbers", quantity="6", source_weekly_plan_id=pid)
+    tools.add_grocery_item("Cucumber", quantity="1", source_weekly_plan_id=pid)
+    lines = sorted((r["item"], r["quantity"]) for r in _needed())
+    assert lines == [("English cucumber", "1"), ("Persian cucumbers", "6")]
+
+
+@pytest.mark.parametrize("variety", ["English cucumber", "Seedless cucumber", "Long English cucumber"])
+def test_a_plain_cucumber_and_an_english_one_are_one_line(variety):
+    pid = _plan()
+    tools.add_grocery_item("Cucumbers", quantity="2", source_weekly_plan_id=pid)
+    tools.add_grocery_item(variety, quantity="1", source_weekly_plan_id=pid)
+    lines = _needed()
+    assert len(lines) == 1, lines
+    assert lines[0]["quantity"] == "3"
+    assert "cucumber" in lines[0]["item"].lower() and lines[0]["item"] != "Cucumbers"
+
+
+def test_a_cucumber_a_person_types_keeps_their_words():
+    tools.add_grocery_item("Cucumber", quantity="1")
+    assert [r["item"] for r in _needed()] == ["Cucumber"]
+
+
+@pytest.mark.parametrize("other", ["Persian cucumbers", "Mini cucumbers", "Field cucumbers", "Curly parsley"])
+def test_a_different_kind_stays_its_own_line(other):
+    pid = _plan()
+    plain = "Cucumber" if "cucumber" in other.lower() else "Parsley"
+    tools.add_grocery_item(plain, quantity="1", source_weekly_plan_id=pid)
+    tools.add_grocery_item(other, quantity="1", source_weekly_plan_id=pid)
+    assert len(_needed()) == 2

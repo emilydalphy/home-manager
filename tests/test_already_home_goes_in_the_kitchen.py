@@ -68,22 +68,22 @@ def week() -> int:
 
 @ON_MONDAY
 def test_already_have_adds_the_line_to_the_kitchen_and_undo_takes_it_back(signed_in, week):
-    cucumber = _needed()["Cucumber"]
-    assert _kitchen("Cucumber") == [], "premise: nothing tracked"
+    cucumber = _needed()["English cucumber"]
+    assert _kitchen("English cucumber") == [], "premise: nothing tracked"
 
     res = signed_in.post(f"/api/grocery-list/{cucumber['id']}/pre-shop", json={"decision": "drop", "author": "user"})
     assert res.status_code == 200
-    (row,) = _kitchen("Cucumber")
+    (row,) = _kitchen("English cucumber")
     assert row["quantity"] == "1"
     assert row["location"] == "fridge", "its likely place"
 
     # A second tap is not a second answer.
     signed_in.post(f"/api/grocery-list/{cucumber['id']}/pre-shop", json={"decision": "drop", "author": "user"})
-    assert len(_kitchen("Cucumber")) == 1
+    assert len(_kitchen("English cucumber")) == 1
 
     assert signed_in.post(f"/api/grocery-list/{cucumber['id']}/pre-shop-undo").status_code == 200
-    assert _kitchen("Cucumber") == []
-    assert _needed()["Cucumber"]["quantity"] == "1"
+    assert _kitchen("English cucumber") == []
+    assert _needed()["English cucumber"]["quantity"] == "1"
 
 
 @ON_MONDAY
@@ -101,12 +101,12 @@ def test_already_have_confirms_a_row_that_is_there_and_undo_leaves_it(signed_in,
 
 @ON_MONDAY
 def test_undo_leaves_a_row_the_household_has_changed_since(signed_in, week):
-    cucumber = _needed()["Cucumber"]
+    cucumber = _needed()["English cucumber"]
     signed_in.post(f"/api/grocery-list/{cucumber['id']}/pre-shop", json={"decision": "drop", "author": "user"})
-    (row,) = _kitchen("Cucumber")
+    (row,) = _kitchen("English cucumber")
     tools.step_inventory_quantity(row["id"], 1)
     signed_in.post(f"/api/grocery-list/{cucumber['id']}/pre-shop-undo")
-    assert [r["quantity"] for r in _kitchen("Cucumber")] == ["2"], "their later word is the truer record"
+    assert [r["quantity"] for r in _kitchen("English cucumber")] == ["2"], "their later word is the truer record"
 
 
 @ON_MONDAY

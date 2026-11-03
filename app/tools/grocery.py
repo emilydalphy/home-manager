@@ -228,6 +228,10 @@ _SAME_PURCHASE = {
     "fresh flat-leaf parsley": "parsley",
     "fresh flat leaf parsley": "parsley",
     "fresh italian parsley": "parsley",
+    # "Flat parsley" is flat-leaf without the "-leaf" (Emily, 2026-11-03:
+    # "flat parsley" and "parsley" were two lines on one week's list).
+    "flat parsley": "parsley",
+    "fresh flat parsley": "parsley",
     "fresh parsley": "parsley",
     "fresh parsley leave": "parsley",   # keys singularise the last word
     "parsley leave": "parsley",
@@ -250,7 +254,41 @@ _SAME_PURCHASE = {
     "fresh ginger root": "ginger",
     "gingerroot": "ginger",
     "fresh gingerroot": "ginger",
+    # Cucumbers (Emily, 2026-11-03: "persian cucumber" and "cucumber" on one
+    # list -- fine if the other one is English, but then say so). A bare
+    # "cucumber" is the full-size English one in this app (recipes.py's
+    # _PRODUCE_COUNT_PER_SERVING reads it that way), so the names a recipe
+    # gives that same cucumber are one line with it, and a plan's bare line
+    # reads "English cucumber" (_SHELF_NAME). Persian, mini and field
+    # cucumbers are a different thing to buy and are NOT here.
+    "english cucumber": "cucumber",
+    "long english cucumber": "cucumber",
+    "seedless cucumber": "cucumber",
+    "english seedless cucumber": "cucumber",
+    "seedless english cucumber": "cucumber",
+    "hothouse cucumber": "cucumber",
+    "greenhouse cucumber": "cucumber",
 }
+
+# A bare name that leaves the shopper guessing which kind, when the app
+# already knows which kind it means: a plan's line is written under the
+# kind's own name (singular, plural). Keyed on the plain name's key. Only
+# a plan's add is renamed -- a line a person typed keeps their words.
+_SHELF_NAME = {
+    "cucumber": ("English cucumber", "English cucumbers"),
+    # The shelf tag's name, the one every other parsley line already reads.
+    "flat parsley": ("Flat-leaf parsley", "Flat-leaf parsley"),
+    "fresh flat parsley": ("Flat-leaf parsley", "Flat-leaf parsley"),
+}
+
+
+def _shelf_name(name: str) -> str:
+    """"Cucumbers" -> "English cucumbers"; any other name unchanged."""
+    names = _SHELF_NAME.get(_plain_name_key(name))
+    if not names:
+        return name
+    head = re.sub(r"\s*\(.*$|,.*$", "", (name or "").strip())
+    return names[1] if head.lower().endswith("s") else names[0]
 
 # Names in _SAME_PURCHASE that add only "fresh" (or "leaves") to the plain
 # name, so they tell the shopper less than a real variety does: the merged
@@ -1966,7 +2004,7 @@ def add_grocery_item(
     # Imported here: pantry.py imports this module for its singulariser.
     from . import pantry as _pantry
     if source_weekly_plan_id is not None:
-        item = _pantry.canonical_name(item)
+        item = _shelf_name(_pantry.canonical_name(item))
     if _pantry.is_canned(item):
         category = "canned"
     # Compared in Python rather than SQL because the comparison is a

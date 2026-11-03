@@ -288,7 +288,7 @@ def test_a_recipe_written_for_this_table_is_left_byte_identical(week):
     tools.approve_weekly_plan(week, approved_by="A")
 
     assert _qty("Tomatoes") == "3"
-    assert _qty("Cucumbers") == "2"
+    assert _qty("English cucumbers") == "2"  # a bare cucumber says its kind (2026-11-03)
     assert _qty("Lemons") == "1"
 
 
@@ -891,7 +891,7 @@ def test_the_whole_week_the_tester_reported(week):
     bought = _bought()
 
     assert bought["Apples"] == "5", "was 15"
-    assert bought["Cucumbers"] == "10", "was 15"
+    assert bought["English cucumbers"] == "10", "was 15"
     assert bought["Tomatoes"] == "16", "was 21"
     # The per-portion line in the same week is untouched by any of it.
     assert bought["Chicken breast"] == "1 lb"

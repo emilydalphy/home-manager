@@ -202,14 +202,14 @@ def test_have_it_is_the_pre_shop_drop_and_counts_as_home_until_undone(week):
     # Policy 2026-09-01 ("a per-week answer, not a record") was lifted by
     # Emily on 2026-10-25: the same drop now puts the cucumber in the
     # kitchen, and its undo takes it back out.
-    cucumber = _needed()["Cucumber"]
+    cucumber = _needed()["English cucumber"]
     tools.drop_grocery_item_pre_shop(cucumber["id"], author="Emily")
-    assert "Cucumber" not in _needed()
-    assert [i["item"] for i in tools.get_inventory() if i["item"].lower() == "cucumber"] == ["Cucumber"]
-    assert "Cucumber" in {d["item"] for d in tools.get_already_have_decisions()}
+    assert "English cucumber" not in _needed()
+    assert [i["item"] for i in tools.get_inventory() if i["item"].lower() == "english cucumber"] == ["English cucumber"]
+    assert "English cucumber" in {d["item"] for d in tools.get_already_have_decisions()}
     tools.undo_pre_shop_drop(cucumber["id"])
-    assert _needed()["Cucumber"]["quantity"] == "1"
-    assert all(i["item"].lower() != "cucumber" for i in tools.get_inventory())
+    assert _needed()["English cucumber"]["quantity"] == "1"
+    assert all("cucumber" not in i["item"].lower() for i in tools.get_inventory())
 
 
 # ---------- over HTTP ----------
