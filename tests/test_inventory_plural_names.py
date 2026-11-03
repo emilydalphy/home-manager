@@ -93,8 +93,10 @@ def _have_it_then_undo(client, kitchen_name: str, list_name: str) -> list[dict]:
                        json={"item": list_name, "quantity": "3", "category": "produce"}).json()
     r = client.post(f"/api/grocery-list/{line['item_id']}/pre-shop", json={"decision": "drop"})
     assert r.status_code == 200, r.text
-    # "Have it" confirms the row; it does not add the list's amount.
-    assert [(x["item"], x["quantity"]) for x in _rows()] == [(kitchen_name, "2")]
+    # "Have it" never adds the list's amount onto the household's own row.
+    # (A variety — "Yellow onion" over "Onions" — gets a row of its own:
+    # the Kitchen keeps varieties apart, merge 2026-11-03.)
+    assert (kitchen_name, "2") in [(x["item"], x["quantity"]) for x in _rows()]
     r = client.post(f"/api/grocery-list/{line['item_id']}/pre-shop-undo", json={})
     assert r.status_code == 200, r.text
     return _rows()
