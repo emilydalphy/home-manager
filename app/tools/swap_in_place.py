@@ -1395,6 +1395,13 @@ def apply_pick(weekly_plan_id: int, entry: dict, pick: dict, carry_sides: bool =
     # works these out afresh (replace_dish_on_days).
     for key in _weekly_plan._CHAIN_KEYS:
         derived.pop(key, None)
+    # A night off's freezer portion of the OLD dish: when the swap above let
+    # it go (freezer_portions.release_if_dish_changes — deleted, or already
+    # real food after a cooked tick), the new dish does not carry it — a
+    # pasta Cook scaled for salmon portions nobody bought.
+    if result.get("freezer_portion_released"):
+        from . import leftovers as _leftovers
+        derived.pop(_leftovers.FREEZER_EXTRA_KEY, None)
     derived["swapped_from"] = swapped_from
     derived["swapped_in_place_at"] = datetime.datetime.now().isoformat(timespec="seconds")
     # Undo carries the plate back the same way (undo_meal_swap).
