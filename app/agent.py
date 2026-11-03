@@ -1509,6 +1509,13 @@ on that part with the usual tools and hold only the rest; (2) small talk, thanks
 mind" and things with nothing in them to hold get a plain human answer, not a hold. When \
 something held bears on what's being planned or asked ("that's the Monday Nana's here"), \
 bring it up in one line; "done with that" / "you can drop it" is resolve_held_thing.
+
+FINDING A TOOL: only the everyday tools are loaded up front. Every other tool named in these \
+instructions is still yours, loaded on demand: when you want one you can't see, call \
+tool_search_tool_regex with its exact name (pattern "^swap_dinner_nights$"; several at once \
+"^(add_staple|list_staples)$"), or with a keyword such as "staple|pantry" when you don't know \
+the name, then call the tool it finds. A tool not being loaded yet is never a reason to tell \
+the household you can't do something.
 """
 
 TOOL_DEFINITIONS = [
@@ -10993,8 +11000,9 @@ def tools_for_request() -> list[dict]:
     card). Delete the gate and a stale conversation half-works instead of
     saying one plain sentence.
 
-    Switched on, this returns TOOL_DEFINITIONS itself rather than a copy
-    of it, so "on is exactly what it always was" is literally true.
+    Switched on, every catalogue entry is sent (2026-11-03: the everyday
+    ones loaded, the rest deferred behind the tool search tool — see
+    _chat_wire_tools); switched off, the chores ones are not sent at all.
 
     One consequence worth knowing: the tool block renders before `system`
     in the request, so two households with different switches no longer
@@ -11005,8 +11013,74 @@ def tools_for_request() -> list[dict]:
     lengthening any one of them.
     """
     if tools.chores_enabled():
-        return TOOL_DEFINITIONS
-    return [d for d in TOOL_DEFINITIONS if d["name"] not in CHORES_TOOLS]
+        catalogue = TOOL_DEFINITIONS
+    else:
+        catalogue = [d for d in TOOL_DEFINITIONS if d["name"] not in CHORES_TOOLS]
+    return _chat_wire_tools(catalogue)
+
+
+# ---------- the chat's slim briefing (2026-11-03) ----------
+#
+# Every chat turn carried all ~139 tool schemas (~117K chars, ~29K tokens)
+# plus SYSTEM_PROMPT (~13K) — a ~41K-token prefix, and cache WRITES of it
+# were most of chat's bill. Now only CHAT_ALWAYS_LOADED_TOOLS load into
+# the model's context; every other tool is still SENT (the API needs the
+# full definition to expand a search hit) but marked defer_loading, and
+# the server-side tool search tool (tool_search_tool_regex_20251119 —
+# supported on claude-haiku-4-5-20251001 and claude-sonnet-5, no beta
+# header) loads one when the turn needs it. Deferred tools are left out of
+# the cached prefix by the API, and a search hit is appended inline in the
+# conversation, so the prefix stays byte-stable: these tools, in catalogue
+# order, + the search tool + SYSTEM_PROMPT. Nothing is unreachable: a
+# deferred tool is one search away, and the dispatch runs any tool_use by
+# name exactly as before.
+#
+# Picked as the everyday jobs and the safety-relevant memory tools: read
+# the week, change a night, the grocery list, recipes, remembering a fact /
+# dislike / allergy, holding a thing. ~19.6K chars (~4.9K tokens), against
+# ~117K for the whole catalogue. Keep it small — every name here is paid
+# for on every turn; tools_called in chat_turns says which deferred tools
+# are reached for often enough to earn a place.
+CHAT_ALWAYS_LOADED_TOOLS = frozenset({
+    "get_weekly_plan", "get_meal_plan", "plan_meal", "swap_meal_in_plan",
+    "propose_plan_changes", "move_meal_to_day", "check_off_meal",
+    "add_grocery_item", "add_grocery_items", "remove_grocery_item", "list_grocery_list",
+    "get_recipe", "list_recipes", "mark_recipe_feedback",
+    "add_fact", "add_food_dislikes", "set_member_dietary_restrictions", "hold_thing",
+    "get_household_memory", "list_members", "get_household_setup_status",
+})
+
+# The server-side tool search tool. Regex rather than BM25: SYSTEM_PROMPT
+# names nearly every tool, so the model usually knows the exact name, and
+# an anchored pattern loads exactly that tool (and several in one search).
+CHAT_TOOL_SEARCH = {"type": "tool_search_tool_regex_20251119", "name": "tool_search_tool_regex"}
+
+# The stable prefix (tools + SYSTEM_PROMPT) is cached for an hour rather
+# than five minutes: turns in this app are minutes-to-hours apart, so a
+# five-minute entry was re-written on nearly every turn. A 1h write is 2x
+# base input against 1.25x for 5m, so it pays as soon as one turn in the
+# hour lands more than five minutes after the last (see DECISION_LOG
+# 2026-11-03). The conversation tail keeps the 5-minute automatic cache:
+# it changes every turn, and a longer TTL may only come before a shorter.
+CHAT_PREFIX_CACHE_CONTROL = {"type": "ephemeral", "ttl": "1h"}
+
+
+def _chat_wire_tools(catalogue: list[dict]) -> list[dict]:
+    """The `tools` list one chat request sends: the catalogue in its own
+    order, everyday tools as they are, every other one a copy marked
+    defer_loading, then the search tool. A definition is never edited in
+    place — TOOL_DEFINITIONS is what every schema test and the dispatch
+    read."""
+    wire = [d if d["name"] in CHAT_ALWAYS_LOADED_TOOLS else {**d, "defer_loading": True}
+            for d in catalogue]
+    wire.append(CHAT_TOOL_SEARCH)
+    return wire
+
+
+def _chat_prefix_system_block() -> dict:
+    """The first system block of every chat request and of its warm-up —
+    the one carrying the prefix's (1-hour) cache breakpoint."""
+    return {"type": "text", "text": SYSTEM_PROMPT, "cache_control": dict(CHAT_PREFIX_CACHE_CONTROL)}
 
 
 # ---------- chat hands recipe writing to the recipe writer (2026-10-25) ----------
@@ -12533,16 +12607,19 @@ def _emit_turn_progress(tool_name: str, tool_input, state: dict) -> None:
         logger.exception("Sending a chat progress line failed; the turn goes on")
 
 
-# Warming the chat's prompt cache when the sheet opens. The cache entry
-# (tools + SYSTEM_PROMPT, ~37K tokens) lives five minutes from its last
-# use; a first message after that pays a cold write in round 1 (measured
-# in production: 3.05s, 50,112 tokens written). A `max_tokens: 0` request
-# with the same tools and first system block does that write while the
-# household is still typing. Kept per household (the prefix is per
-# household's tool set), and skipped when a warm-up or a real round ran
-# inside the last _CHAT_WARM_FRESH_SECONDS, well inside the five minutes.
-_CHAT_WARM_FRESH_SECONDS = 180
-_CHAT_WARM_BACKOFF_SECONDS = 600
+# Warming the chat's prompt cache once the household starts TYPING (not
+# when the sheet opens — 2026-11-03: an open nobody typed into paid a whole
+# prefix write for nothing). A first message on a cold cache pays the
+# prefix write in round 1 (measured in production: 3.05s on the old ~41K
+# prefix); a `max_tokens: 0` request with the same tools and first system
+# block does that write while they are still typing, at the same price
+# the first round would have paid. The prefix is cached for an hour
+# (CHAT_PREFIX_CACHE_CONTROL), so a warm-up or a real round inside the last
+# _CHAT_WARM_FRESH_SECONDS (50 min, inside the hour) means none is due.
+# Kept per household (the prefix is per household's tool set).
+_CHAT_WARM_FRESH_SECONDS = 3000
+# A refused warm-up holds further tries off this long (from the refusal).
+_CHAT_WARM_BACKOFF_SECONDS = 3600
 _CHAT_CACHE_WARM_AT: dict[int, float] = {}
 _CHAT_CACHE_WARM_LOCK = threading.Lock()
 
@@ -12584,7 +12661,7 @@ def warm_chat_cache() -> bool:
             max_attempts=1,
             model=CHAT_MODEL,  # caches are per model: warm the one chat reads
             max_tokens=0,
-            system=[{"type": "text", "text": SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}}],
+            system=[_chat_prefix_system_block()],
             tools=tools_for_request(),
             messages=[{"role": "user", "content": "warmup"}],
             output_config=_effort_config("chat"),
@@ -12649,12 +12726,15 @@ def run_agent_turn(
     # longer the same for every household — a paused module's tools are
     # left out (tools_for_request) — so the cached prefix is per switch
     # setting rather than one shared by the whole organisation.
+    # The breakpoint is the 1-hour one (CHAT_PREFIX_CACHE_CONTROL), and the
+    # tools it covers are only the loaded ones: deferred tools are kept out
+    # of the prefix by the API (see _chat_wire_tools).
     # The household's day, not the server's (UTC is tomorrow from 8pm Toronto).
     # This block sits AFTER the cache_control breakpoint, so changing what it
     # says never touches the cached prefix.
     today = tools.cooker.household_today()
     system_blocks = [
-        {"type": "text", "text": SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}},
+        _chat_prefix_system_block(),
         {
             "type": "text",
             "text": (
@@ -12810,6 +12890,14 @@ def run_agent_turn(
                               and not answered_by.startswith(CHAT_MODEL) else CHAT_MODEL)
 
         conversation.append({"role": "assistant", "content": response.content})
+
+        if response.stop_reason == "pause_turn":
+            # The server paused its own loop (the tool search tool runs
+            # server-side) — the assistant message is sent back as it is,
+            # with nothing after it, and the model carries on. Bounded by
+            # MAX_TOOL_ROUNDS like any other round.
+            logger.info("run_agent_turn got pause_turn (round %d) — resuming", rounds)
+            continue
 
         if response.stop_reason != "tool_use":
             # A response can still contain one or more tool_use blocks here

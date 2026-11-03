@@ -784,11 +784,11 @@ _CALL_SITE_LABELS = {
     "read_setup_note_llm": "setup's \u201cAnything else?\u201d note",
 }
 
-# Emily's target, set 2026-09-03: all-in API cost under this, per
-# household, per month. See the "Get API token usage down" Loop Board
-# ticket. Measure-only for now -- this is the number that pass exists to
-# make answerable, not to hit yet.
-_MONTHLY_TARGET_DOLLARS = 1.00
+# Emily's target: all-in API cost under this, per household, per month.
+# Set at $1.00 on 2026-09-03 ("Get API token usage down" Loop Board
+# ticket); raised to $1.50 on 2026-11-03 (Emily, with the cheaper-chat
+# change). Measure-only -- this is the number the report is judged against.
+_MONTHLY_TARGET_DOLLARS = 1.50
 
 
 def _money(dollars: float) -> str:

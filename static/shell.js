@@ -30159,10 +30159,13 @@
     return null;
   }
 
-  // Opening the chat asks the server to warm the prompt cache so the first
-  // message's reply starts sooner. Fire and forget: no answer is needed,
-  // a failure changes nothing, and the server skips it when one ran in
-  // the last few minutes (this only spares the round trip).
+  // Opening the chat asks the server to warm nothing (2026-11-03): an open
+  // nobody typed into paid a whole briefing write for nothing — 8 of one
+  // week's chat calls were warm-ups at ~41K tokens each. Starting to type
+  // (askInput's input listener) asks the server to warm the prompt cache
+  // so the first message's reply starts sooner. Fire and forget:
+  // no answer is needed, a failure changes nothing, and the server skips
+  // it while the last one is still fresh (this only spares the round trip).
   var ASK_WARM_MIN_GAP_MS = 120000;
   var askLastWarmAt = 0;
   function warmAskCache() {
@@ -30326,7 +30329,6 @@
     // says so again (card 8). Closing the sheet never threw the proposal
     // away, so neither does reopening.
     renderAskSaveDock();
-    if (!askAlreadyOpen) warmAskCache();
     if (!askSheetHistoryPushed) {
       window.history.pushState({ tab: currentTabKey(), askSheet: true }, '', window.location.pathname);
       askSheetHistoryPushed = true;
@@ -30513,6 +30515,9 @@
     // words, not a leftover preset — see askDraftIsPreset.
     askDraftIsPreset = false;
     autoGrowAskInput(askInput);
+    // The household has started a message: now the briefing is worth
+    // preparing (see warmAskCache — never on open).
+    if (askInput.value.trim()) warmAskCache();
   });
 
   // ---------- Voice dictation (restored per testing feedback) ----------

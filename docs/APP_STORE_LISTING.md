@@ -247,7 +247,7 @@ Checked 2026-10-26 on current `main`, on a throwaway database at 390px
 **What a household costs to run** (from measured numbers in the Decision
 log): one chat turn ≈ 16¢; a light month of chat was $1.78, most of it
 cache writes; generating a week ≈ $0.13–0.23. The target written into the
-code is $1 per household per month. A household that chats daily and plans
+code is $1.50 per household per month (raised from $1 on 2026-11-03). A household that chats daily and plans
 every week is more like **$3–6 a month** today. Hosting (Railway) is small
 next to that.
 

@@ -76,7 +76,7 @@ from . import weekly_plan as _weekly_plan
 logger = logging.getLogger("home_manager")
 
 # One retry, and only for an allergen clash. Not a general "try until it's
-# good" loop: every attempt is a real API call against a $1/household/month
+# good" loop: every attempt is a real API call against a $1.50/household/month
 # budget, and a model that has just been told the exclusion in the prompt
 # and broken it twice is not going to be talked round on a third.
 MAX_PICK_ATTEMPTS = 2
@@ -798,7 +798,7 @@ def swap_meal_in_place(
     #
     # Asked HERE, above the picker, rather than left to apply_pick's
     # backstop below: every attempt down there is a real API call against a
-    # $1/household/month budget, and spending one to be told the night is
+    # $1.50/household/month budget, and spending one to be told the night is
     # gone is a cost with nothing on the other side of it. _entry's own
     # connection is closed by the time it returns, so nothing nests.
     #

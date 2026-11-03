@@ -369,7 +369,7 @@ def test_month_to_date_cost_breaks_down_by_call_site():
 def test_month_to_date_cost_excludes_last_calendar_month():
     """
     Deliberately the calendar month, not a rolling 30-day window -- a
-    target of $1/household/month means "since the 1st", not "in the last
+    target of $1.50/household/month means "since the 1st", not "in the last
     30 days", and the two disagree for anyone who reads this on the 2nd.
     """
     usage_module.record_api_call(

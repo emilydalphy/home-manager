@@ -436,15 +436,19 @@ def test_no_chores_definition_is_sent_while_the_switch_is_off(monkeypatch):
 
 def test_every_chores_definition_comes_back_with_the_switch(monkeypatch):
     """
-    The half that matters most: the flag genuinely brings them back, and
-    what an on house is sent is TOOL_DEFINITIONS itself rather than a copy
-    reassembled from it, so "on is exactly what it always was" is literal.
+    The half that matters most: the flag genuinely brings them back. Since
+    2026-11-03 (cheaper chat) an on house is sent every catalogue entry in
+    catalogue order — the everyday ones as they are, the rest deferred
+    behind the tool search tool — rather than TOOL_DEFINITIONS itself.
     """
     _adult("Emily")
     tools.set_chores_enabled(True)
     sent = _tools_sent(monkeypatch)
-    assert sent is agent.TOOL_DEFINITIONS
-    assert agent.CHORES_TOOLS <= {d["name"] for d in sent}
+    by_name = {d["name"]: d for d in sent}
+    assert [d["name"] for d in sent if "input_schema" in d] == [d["name"] for d in agent.TOOL_DEFINITIONS]
+    for d in agent.TOOL_DEFINITIONS:
+        assert {k: v for k, v in by_name[d["name"]].items() if k != "defer_loading"} == d
+    assert agent.CHORES_TOOLS <= set(by_name)
 
 
 def test_off_drops_the_chores_tools_and_not_one_other(monkeypatch):

@@ -41,7 +41,7 @@ a time, was the only one that did not. This closes it, in three places:
      swap_in_place.swap_meal_in_place, and dropped to an open slot if that
      refuses. Silent means: it fixes, it never renders a card.
 
-Cost: every re-pick is a real API call against a $1/household/month
+Cost: every re-pick is a real API call against a $1.50/household/month
 budget. MAX_REPICK_CALLS caps what one generation may spend; past the cap
 a held-back slot goes straight to open rather than clashing. A clash is
 rare once the prompt states the exclusions, so the cap is a ceiling, not a

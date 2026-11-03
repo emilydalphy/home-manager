@@ -221,7 +221,9 @@ def test_the_warmup_is_a_max_tokens_zero_call_with_the_chats_cached_prefix(monke
     (kw,) = sent
     assert kw["max_tokens"] == 0
     assert "tool_choice" not in kw  # refused alongside max_tokens 0, as in the recipe warm-up
-    assert kw["system"] == [{"type": "text", "text": agent.SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}}]
+    # The 1-hour breakpoint the real rounds carry (2026-11-03, cheaper chat).
+    assert kw["system"] == [{"type": "text", "text": agent.SYSTEM_PROMPT,
+                             "cache_control": {"type": "ephemeral", "ttl": "1h"}}]
     assert kw["tools"] == agent.tools_for_request()
     # Warmed on the model chat runs on (caches are per model), and sent
     # exactly as a chat round would be: Haiku 4.5 refuses effort, so the
@@ -284,10 +286,16 @@ def test_the_endpoint_needs_a_session(client, fresh_warm_clock):
     assert client.post("/api/chat/warm").status_code in (401, 403, 302, 303)
 
 
-def test_opening_the_sheet_asks_for_the_warmup_once_per_open():
+def test_typing_asks_for_the_warmup_and_opening_does_not():
+    """Reversed 2026-11-03 (cheaper chat, fix A): an open nobody typed
+    into paid a whole prefix write. The warm-up now waits for a keystroke.
+    tests/test_cheaper_chat.py drives this through node."""
     a = SHELL_JS.index("  function openAskSheet(")
     body = SHELL_JS[a:SHELL_JS.index("  // Clears the sheet back to nothing-said-yet", a)]
-    assert "if (!askAlreadyOpen) warmAskCache();" in body
+    assert "warmAskCache" not in body
+    listener = SHELL_JS[SHELL_JS.index("  askInput.addEventListener('input', function () {"):]
+    listener = listener[:listener.index("  });")]
+    assert "warmAskCache()" in listener
     assert "'/api/chat/warm'" in SHELL_JS
 
 

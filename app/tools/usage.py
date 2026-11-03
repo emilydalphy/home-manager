@@ -420,7 +420,7 @@ def _cost_breakdown(conn, hid: int, since_sql: str) -> dict:
 def get_month_to_date_cost() -> dict:
     """
     All-in cost so far this calendar month, across every call site -- the
-    number Emily's $1/household/month target (set 2026-09-03) is judged
+    number Emily's $1.50/household/month target (set 2026-09-03) is judged
     against. Deliberately the calendar month, not a rolling 30-day window:
     the target is a monthly bill, and a rolling window would drift out of
     sync with it (and would keep showing spend from a month that's over).
@@ -793,7 +793,7 @@ def _summarize(conn, hid: int, days: int, since: str) -> dict:
     #
     # Chat-only, from chat_turns -- kept for backward compatibility with
     # what already reads this key. The all-in figure below (every call
-    # site, from api_calls) is the one the $1/household/month target is
+    # site, from api_calls) is the one the $1.50/household/month target is
     # judged against.
     summary["cost"] = _chat_cost_by_model(conn, hid, since)
 

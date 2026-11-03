@@ -205,7 +205,7 @@ def test_the_verdict_block_stays_small(couple, stub_model):
     Token budget. Three rated dishes, a week with two different tables in
     it — the whole block has to stay well under a paragraph, because it
     rides on every generation call of every household against the
-    $1/household/month target.
+    $1.50/household/month target.
     """
     for name in ("Mushroom Risotto", "Chicken Skewers", "Chili"):
         tools.add_recipe(name, ingredients=[{"item": "something", "qty": "1"}])

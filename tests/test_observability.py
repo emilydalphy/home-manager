@@ -998,7 +998,7 @@ def test_a_real_bill_reads_as_money(capsys):
     """Above a dollar, decimal places stop helping and start looking odd."""
     out = _printed(_usage(month_to_date_cost=_month_cost(12.50)), capsys)
     assert "$12.50" in out
-    assert "OVER" in out, "$12.50 is well past the $1/household/month target"
+    assert "OVER" in out, "$12.50 is well past the $1.50/household/month target"
 
 
 def test_the_breakdown_is_shown_by_call_site_not_just_a_total(capsys):

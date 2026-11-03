@@ -207,7 +207,7 @@ def generation_taste_lines(attendance_context: dict) -> list[str]:
     whole-table line.
 
     Kept deliberately cheap, because this rides on every generation call
-    of every household against a $1/household/month budget:
+    of every household against a $1.50/household/month budget:
 
       * only dishes with real per-person feedback appear at all;
       * a deviating slot whose verdicts match the whole-table line is
