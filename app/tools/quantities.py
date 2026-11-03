@@ -1439,6 +1439,11 @@ def _volume_step(amount: float) -> float:
     return out if out > 0 or amount <= 0 else 0.25
 
 
+# Units that mean one piece of the thing (see tidy_display_quantity) —
+# the same piece abbreviations inventory treats as pieces ("2 pcs", "3 ea").
+_PIECE_WORDS = frozenset({"each", "ea", "piece", "pieces", "pc", "pcs", "ct", "count"})
+
+
 def _pounds_each(item: str) -> float | None:
     key = (item or "").strip().lower()
     for cand in (key, key[:-1] if key.endswith("s") else key, key[:-2] if key.endswith("es") else key):
@@ -1523,6 +1528,13 @@ def tidy_display_quantity(item: str, qty: str) -> str:
     for _amount, unit in parsed:
         if unit and not _measurable_unit(unit) and not _pack_group(unit):
             count_unit = unit
+    # The weight table turns pounds into PIECES, so it only adds onto a
+    # count of pieces: a bare number, "each", or the item's own word
+    # ("3 carrots"). A bunch, bag or net is many pieces — "6 + 1 bunch" of
+    # bananas read "7 bunches", and "5 lbs + 1 bag" of potatoes "11 bags"
+    # (defect hunt, 2026-11-03). Those keep both amounts, below.
+    if count_unit is not None and count_unit not in _PIECE_WORDS and _pounds_each(count_unit) is None:
+        each = None
     if each is not None:
         total_count = 0.0
         for amount, unit in parsed:
