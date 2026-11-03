@@ -821,6 +821,44 @@ def release_uncooked_extra(conn, entry_id: int) -> list[str]:
     return released
 
 
+def release_if_dish_changes(conn, entry_id: int, new_meal: str | None) -> bool:
+    """
+    A cook carrying a night off's portion for the freezer is about to be
+    replaced on its slot — a swap, a typed dish, the Review "−". When the
+    dish that lands there is a DIFFERENT dish, the one the portion was
+    going to be is never cooked: release_uncooked_extra, before the row
+    goes. Overnight hunt 2026-11-03: a night off moved tonight's double
+    batch of salmon onto Wednesday and froze its spare ahead; swapping
+    Wednesday to pasta (or stepping it down) took the salmon off the list
+    but left "Salmon Rice Bowls (cooked), 2 servings" in the Kitchen's
+    freezer and on next week's draft, and the swap carried the portion onto
+    the pasta, so Cook scaled a batch nobody had bought for.
+
+    The SAME dish is left alone (a door that rewrites a row with the dish it
+    already had carries the key itself). `new_meal` None means the slot is
+    being emptied. Returns True when the portion was let go, so the caller
+    leaves FREEZER_EXTRA_KEY off whatever it carries onto the new row.
+    Runs on the caller's connection and transaction.
+    """
+    from . import leftovers as _leftovers
+
+    row = conn.execute(
+        "SELECT mpe.derived_from_json, COALESCE(r.name, mpe.freeform_meal) AS meal "
+        "FROM meal_plan_entries mpe LEFT JOIN recipes r ON r.id = mpe.recipe_id "
+        "WHERE mpe.id = ? AND mpe.household_id = ?",
+        (entry_id, household_id()),
+    ).fetchone()
+    if row is None:
+        return False
+    extra = _derived(row["derived_from_json"]).get(_leftovers.FREEZER_EXTRA_KEY)
+    if not isinstance(extra, dict) or not extra.get("inventory_item_ids"):
+        return False
+    if new_meal is not None and _leftovers.dish_identity(new_meal) == _leftovers.dish_identity(row["meal"]):
+        return False
+    release_uncooked_extra(conn, entry_id)
+    return True
+
+
 # ---------- a portion a later week counts on, and the cook was skipped ----------
 #
 # Emily's pick #32 (2026-10-26). A night off loaded a later cook with the
