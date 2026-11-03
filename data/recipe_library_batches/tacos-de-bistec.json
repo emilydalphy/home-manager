@@ -1,0 +1,101 @@
+{
+ "dish_name": "Tacos de Bistec",
+ "cuisine": "Mexican",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Thin-cut sirloin steak",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Limes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Corn tortillas",
+   "qty": "12",
+   "category": "pantry"
+  },
+  {
+   "item": "White onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salsa",
+   "qty": "1 jar",
+   "category": "pantry"
+  }
+ ],
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "instructions": [
+  "Pat the steak dry and put it on a plate. Squeeze the juice of 2 limes over it, then add the salt, pepper, oregano and cumin and turn the steak to coat it. Let it sit for 10 minutes while you do the next steps.",
+  "Finely chop the onion. Chop about 1/2 cup of cilantro. Cut the last lime into wedges. Put the onion, cilantro, lime wedges and salsa in separate small bowls.",
+  "Heat 1 tbsp of the oil in a large skillet over high heat until it shimmers.",
+  "Add half the steak in a single layer and cook for 2 minutes, until the underside is deep brown. Flip it and cook for 1 to 2 minutes, until browned on the other side. You're cooking it to 145°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into a thick piece: it's done when there's no red left. Transfer it to a cutting board.",
+  "Add the remaining tbsp of oil and cook the rest of the steak the same way.",
+  "Chop all the steak into small bite-size pieces. Transfer it to a bowl.",
+  "Warm the tortillas one at a time in a dry skillet over medium-high heat for 30 seconds on each side. Stack them in a clean towel to keep them warm.",
+  "Taste a piece of the chopped steak. If it's flat, add a pinch more salt or a squeeze of lime.",
+  "Serve the steak with the warm tortillas, the onion, the cilantro, the lime wedges and the salsa."
+ ],
+ "method_notes": "Honest time is 30 minutes, with a 10-minute lime marinade done while the toppings are prepped. The lead marinates 30 to 60 minutes; I shortened it to fit the night, which gives a lighter lime flavor. Maricruz Avalos stews the chopped steak in water for 15 minutes, a different style, so I kept the lead's quick sear. Both ratings are visible page ratings, not JSON-LD; the Maricruz page had no rating count.",
+ "sources": [
+  {
+   "name": "In Mama Maggie's Kitchen",
+   "title": "Tacos de Bistec",
+   "url": "https://inmamamaggieskitchen.com/tacos-de-bistec/",
+   "rating": 5,
+   "rating_count": 30,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Maricruz Avalos",
+   "title": "Tacos de Bistec",
+   "url": "https://www.maricruzavalos.com/authentic-tacos-de-bistec/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "default_servings": 4,
+ "origin": "seed"
+}
