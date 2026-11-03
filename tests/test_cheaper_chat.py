@@ -309,3 +309,32 @@ def test_the_monthly_target_is_a_dollar_fifty(capsys):
     )
     out = capsys.readouterr().out
     assert "vs target $1.50/household/month: under" in out
+
+
+def test_a_searched_turn_goes_through_the_stream_route_is_stored_and_resent(signed_in, monkeypatch):
+    """Over the real /api/chat/stream: the turn with a tool search reaches
+    "done", is stored in the chat_sessions table, and the NEXT turn sends
+    the stored search blocks back to the model."""
+    monkeypatch.setitem(agent.TOOL_FUNCTIONS, "list_staples", lambda **kw: {"staples": []})
+    searched = _sdk_message([
+        {"type": "server_tool_use", "id": "srvtoolu_1", "name": "tool_search_tool_regex",
+         "input": {"pattern": "^list_staples$"}},
+        {"type": "tool_search_tool_result", "tool_use_id": "srvtoolu_1",
+         "content": {"type": "tool_search_tool_search_result",
+                     "tool_references": [{"type": "tool_reference", "tool_name": "list_staples"}]}},
+        {"type": "tool_use", "id": "toolu_1", "name": "list_staples", "input": {}},
+    ], "tool_use")
+    fake = _stub_client(monkeypatch, [
+        searched,
+        _sdk_message([{"type": "text", "text": "No staples yet."}], "end_turn"),
+        _sdk_message([{"type": "text", "text": "Of course."}], "end_turn"),
+    ])
+    for message in ("what are our staples?", "thanks"):
+        with signed_in.stream("POST", "/api/chat/stream", json={"message": message}) as response:
+            assert response.status_code == 200
+            lines = list(response.iter_lines())
+        assert any(line.startswith("event: done") for line in lines), lines
+    third = fake.requests[2]["messages"]
+    blocks = [b for m in third if isinstance(m["content"], list) for b in m["content"]]
+    kinds = [b["type"] if isinstance(b, dict) else b.type for b in blocks]
+    assert "server_tool_use" in kinds and "tool_search_tool_result" in kinds
