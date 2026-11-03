@@ -1,0 +1,124 @@
+{
+ "dish_name": "Thai Peanut Noodle Salad",
+ "cuisine": "Thai",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {
+   "item": "Rice noodles",
+   "qty": "8 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Red cabbage",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "4"
+  },
+  {
+   "item": "Roasted peanuts",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Peanut butter",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece",
+   "category": "produce",
+   "cook_qty": "1/2 tsp, grated"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Bring a large pot of water to a boil. Cook the rice noodles for the time on the package, until they're tender but still chewy. Drain, rinse under cold water and shake the colander well. Leave them to drain while you do the rest.",
+  "Meanwhile, make the dressing. Grate the garlic and the ginger. Juice 1 of the limes. That should be about 2 tbsp.",
+  "In a bowl, whisk the peanut butter, brown sugar, garlic, ginger, lime juice, soy sauce and oil. Whisk in warm water 1 tbsp at a time, using 2 to 3 tbsp, until the dressing is thin enough to pour.",
+  "Shred half the head of cabbage as finely as you can. That should be about 4 cups. Grate the carrots. Chop 1/2 cup of the cilantro, slice the green onions and roughly chop the peanuts.",
+  "In a large bowl, toss the noodles with the cabbage, carrots, cilantro and green onions. Pour over the dressing and toss until everything is coated.",
+  "Top with the peanuts. Cut the other lime into wedges. Serve with the lime wedges.",
+  "To pack it for lunch: divide the salad between containers, with the dressing in small separate cups and the peanuts in a separate bag. It keeps for 4 days in the fridge. Pour the dressing over just before you eat."
+ ],
+ "method_notes": "Cup of Yum's Cold Peanut Noodle Salad (4.8 from 196 ratings) leads, and it is a peanut lime dressing over shredded red cabbage, carrots, cilantro, green onions and peanuts. Tupperware's Thai version has no rating on its page and Yepprecipes shows only 18 likes, so neither could lead. I swapped the spaghetti for rice noodles as in the Thai versions, and left the red pepper flakes and sesame oil out to keep the dressing mild.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "Cold Peanut Noodle Salad",
+   "url": "https://cupofyum.com/recipes/cold-peanut-noodle-salad",
+   "rating": 4.8,
+   "rating_count": 196,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Tupperware",
+   "title": "Thai Peanut Noodle Salad",
+   "url": "https://www.tupperware.com/blogs/recipes/thai-peanut-noodle-salad",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Yepprecipes",
+   "title": "Thai Vegetable Peanut Noodles",
+   "url": "https://www.yeprecipes.com/img-thai-vegetable-peanut-noodles-1139.htm",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

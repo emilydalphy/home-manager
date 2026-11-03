@@ -1,0 +1,126 @@
+{
+ "dish_name": "Curry Udon",
+ "cuisine": "Japanese",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Pork shoulder",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Instant dashi powder",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "5 tsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Japanese curry roux",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "3 1/2 oz (about 90 g)"
+  },
+  {
+   "item": "Frozen udon noodles",
+   "qty": "4 portions",
+   "category": "frozen"
+  }
+ ],
+ "instructions": [
+  "Slice the yellow onion thinly. Cut the carrots into thin half-moons. Cut the pork into thin bite-size slices, about 1/4 inch thick. Slice the green onions.",
+  "Heat the oil in a large pot over medium-high. Add the pork and sprinkle over the 1/4 tsp salt. Cook for 3 minutes, stirring now and then, until the pork has lost its pink and is browning at the edges.",
+  "Add the onion and carrots. Cook for 4 minutes, until the onion is soft and a little golden.",
+  "Add 5 cups of water, the 5 tsp dashi powder, 2 tbsp soy sauce and 2 tbsp mirin. Bring it to a boil, skim off any foam, then turn the heat to medium-low and simmer for 8 minutes, until the carrots are tender.",
+  "Meanwhile, bring a second pot of water to a boil for the udon.",
+  "Turn the heat off under the soup. Ladle about 1 cup of the hot broth into a bowl, break the curry roux into it and whisk until it's smooth. Stir it back into the pot.",
+  "Put the soup back on low and simmer for 3 minutes, stirring, until it's lightly thickened and coats the back of a spoon.",
+  "Drop the udon into the boiling water and cook for 1 to 2 minutes, loosening the noodles with chopsticks, until they're separate and hot all the way through. Drain well and divide between 4 bowls.",
+  "Taste the soup. If it's flat, add a pinch more salt.",
+  "Ladle the curry over the noodles and scatter over the green onions.",
+  "To pack it for lunch: let the soup cool, then pack it in a jar or thermos container and the drained noodles in a separate container. The soup keeps for 3 days in the fridge, and the noodles for 2. Reheat the soup until it's steaming, then pour it over the noodles."
+ ],
+ "method_notes": "No version had 20 or more ratings, so this is a fallback and the weak lead is flagged: Norecipes (4.91 from 11 ratings) leads; the trusted cook RecipeTin Eats had no curry udon page. All versions agree on dashi, soy and mirin with curry, onion, and a thickening step; they differ on roux (Takes Two Eggs, Japanese Taste) versus curry powder with grated vegetables (Norecipes). I used the roux for a lunch-sized effort, thin pork as in Japanese Taste, and instant dashi powder, and left out the aburaage and sour cream.",
+ "sources": [
+  {
+   "name": "Norecipes",
+   "title": "Curry Udon",
+   "url": "https://norecipes.com/curry-udon/",
+   "rating": 4.91,
+   "rating_count": 11,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Taste Asian Food",
+   "title": "Japanese Curry Udon",
+   "url": "https://tasteasianfood.com/curry-udon-recipe/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Takes Two Eggs",
+   "title": "Japanese Curry Udon",
+   "url": "https://takestwoeggs.com/japanese-curry-udon/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Japanese Taste",
+   "title": "How to Make Curry Udon",
+   "url": "https://japanesetaste.com/blogs/japanese-taste-recipes/how-to-make-curry-udon-japanese-curry-noodles-recipe",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}
