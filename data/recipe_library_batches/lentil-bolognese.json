@@ -1,0 +1,131 @@
+{
+ "dish_name": "Lentil Bolognese",
+ "cuisine": "Italian",
+ "main_protein": "lentils",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Spaghetti",
+   "qty": "12 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Celery",
+   "qty": "3 stalks",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 tube",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Italian seasoning",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato passata",
+   "qty": "24 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Canned brown lentils",
+   "qty": "2 cans (15 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Fill a large pot with water, add 1 tbsp of the salt, and put it on the stove over high heat. You'll use it for the pasta in a few minutes.",
+  "Finely chop the onion, carrots and celery. Mince the garlic.",
+  "Heat the olive oil in a large deep skillet over medium-high heat. Add the onion, carrots and celery with 1/2 tsp of the remaining salt. Cook for 8 minutes, stirring now and then, until the onion is soft and starting to brown at the edges.",
+  "Add the garlic and cook for 30 seconds. Add the tomato paste and cook for 1 minute, stirring, until it darkens to a brick red. Stir in the Italian seasoning and cook for 20 seconds, until it smells toasty.",
+  "Pour in the passata and the broth, add the bay leaves, and scrape up anything stuck to the bottom of the pan. Bring to a bubble, then turn the heat to medium-low, cover, and simmer for 15 minutes.",
+  "Drain and rinse the lentils. Add them to the sauce with the black pepper and simmer uncovered for 10 minutes, until the sauce is thick and no longer watery. Pull out the bay leaves.",
+  "Meanwhile, cook the spaghetti in the boiling water for 1 minute less than the package says. Scoop out 1 cup of the pasta water, then drain.",
+  "Add the pasta to the sauce with a splash of the pasta water and toss over low heat for 1 minute, adding more water if it looks tight. Chop 2 tbsp of the parsley and stir it in off the heat.",
+  "Taste it. If it's flat, add a pinch more salt. Serve in bowls with the rest of the parsley scattered on top."
+ ],
+ "method_notes": "Nish Kitchen (the lead) builds the sauce on onion, carrot and celery with passata, broth and canned lentils, and finishes the lentils in the sauce for 10 minutes. Running to the Kitchen and Two Spoons agree on the soffritto and tomato base but use red wine, tomato paste or mushrooms for more depth. I followed the lead and added the tomato paste step from the others. Parmesan is optional in the lead and left off so the dish stays dairy free. The sauce freezes well for up to 3 months without the pasta.",
+ "sources": [
+  {
+   "name": "Nish Kitchen",
+   "title": "Lentil Bolognese",
+   "url": "https://www.nishkitchen.com/lentil-bolognese/",
+   "rating": 5,
+   "rating_count": 45,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Running to the Kitchen",
+   "title": "Lentil Bolognese",
+   "url": "https://www.runningtothekitchen.com/lentil-bolognese/",
+   "rating": 5,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Two Spoons",
+   "title": "Lentil Bolognese",
+   "url": "https://www.twospoons.ca/lentil-bolognese",
+   "rating": 5,
+   "rating_count": 8,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}
