@@ -4570,10 +4570,6 @@ def move_grocery_item_to_inventory(item_id: int) -> dict:
     if not row:
         conn.close()
         raise ValueError(f"No grocery list item with id {item_id}.")
-    # Same match _add_to_inventory itself will use (no location passed
-    # below) — checked first so we know, after the fact, whether its write
-    # was a fresh insert or a merge into this pre-existing row.
-    pre_existing = _inventory._find_row_by_name(conn, row["item"], None, "id")
     conn.close()
 
     inventory_result = _inventory._add_to_inventory(
@@ -4582,7 +4578,11 @@ def move_grocery_item_to_inventory(item_id: int) -> dict:
         source="grocery_list_already_have",
         category=row["category"] or None,
     )
-    fresh_inventory_id = None if pre_existing else inventory_result.get("item_id")
+    # Its own answer, not a second name lookup beside it: the merge matches
+    # "Onion" onto "Onions" (inventory._find_row_by_name), and a look-up of
+    # its own that missed would record the household's existing row as
+    # fresh — for undo_pre_shop_drop to delete.
+    fresh_inventory_id = inventory_result.get("item_id") if inventory_result.get("fresh") else None
 
     conn = get_conn()
     conn.execute(
