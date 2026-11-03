@@ -1,0 +1,118 @@
+{
+ "dish_name": "Camarones al Mojo de Ajo",
+ "cuisine": "Mexican",
+ "main_protein": "shrimp",
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Large shrimp, peeled and deveined",
+   "qty": "1 1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Garlic",
+   "qty": "8 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1/2",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup chopped"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "4 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Smoked paprika",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put 1 1/2 cups rice, 2 1/4 cups water and 1/4 tsp of the salt in a medium pot. Bring to a boil over high heat, then cover, lower the heat to low and cook for 15 minutes. Take it off the heat and leave it covered while you cook the shrimp.",
+  "Pat the shrimp dry. Mince 4 of the garlic cloves.",
+  "In a large bowl, mix 2 tbsp of the olive oil, the smoked paprika, the paprika, the cumin, 3/4 tsp salt and the minced garlic. Add the shrimp and toss until they're coated.",
+  "Thinly slice the red onion and the other 4 garlic cloves. Squeeze the limes. That should be about 1/4 cup of juice. Chop the cilantro until you have about 1/4 cup.",
+  "Heat the last 1 tbsp olive oil and 2 tbsp of the butter in a large skillet over medium heat. When the butter foams, add the onion. Cook for 4 minutes, stirring, until soft.",
+  "Add the sliced garlic and cook for 1 to 2 minutes, stirring, until the edges turn pale gold. Don't let it go dark brown or it turns bitter.",
+  "Raise the heat to medium-high. Add the shrimp and everything left in the bowl in a single layer. Cook for 2 minutes without moving them, until the underside is pink.",
+  "Flip them and cook for 1 to 2 minutes, until they're pink all over and curled into a loose C. Cut one in half to check. It's done when it's opaque all the way through.",
+  "Take the skillet off the heat. Add the remaining 2 tbsp butter and the lime juice and stir until the butter melts into the sauce.",
+  "Add the cilantro. Taste it. If it's flat, add a pinch more salt.",
+  "Fluff the rice with a fork. Serve the shrimp and all the garlic sauce over the rice."
+ ],
+ "method_notes": "All Ways Delicious (the lead) marinates the shrimp with paprika, cumin and garlic, cooks sliced garlic and red onion, and finishes with butter, lime and cilantro. Thrift and Spice uses 6 tbsp butter and garlic salt, and La Cocina de Leslie uses a half cup of butter with onion and parsley. All three cook the garlic gently in fat and add the shrimp last. This one follows the lead and raises the butter to 4 tbsp for a saucier pan, and adds the rice that all three suggest serving it with. Thrift and Spice and La Cocina de Leslie show no visible rating.",
+ "sources": [
+  {
+   "name": "All Ways Delicious",
+   "title": "Camarones al Mojo de Ajo",
+   "url": "https://allwaysdelicious.com/camarones-al-mojo-de-ajo/",
+   "rating": 4.74,
+   "rating_count": 34,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Thrift and Spice",
+   "title": "Camarones al Mojo de Ajo (Mexican Garlic Shrimp)",
+   "url": "https://thriftandspice.com/camarones-al-mojo-de-ajo/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "La Cocina de Leslie",
+   "title": "Camarones al Mojo de Ajo (Mexican Garlic Shrimp)",
+   "url": "https://www.lacocinadeleslie.com/2009/09/camarones-al-mojo-de-ajo.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed",
+ "default_servings": 4
+}

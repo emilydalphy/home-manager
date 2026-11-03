@@ -1,0 +1,120 @@
+{
+ "dish_name": "Cod alla Livornese",
+ "cuisine": "Italian",
+ "main_protein": "fish",
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Cod fillets",
+   "qty": "1 1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "1 can (28 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/2 cup chopped"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Capers",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Kalamata olives, pitted",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Crusty bread",
+   "qty": "1 loaf",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Pat the cod dry with paper towels. Cut it into 4 even pieces and sprinkle both sides with 1/2 tsp of the salt and the pepper.",
+  "Thinly slice the garlic. Chop the parsley until you have about 1/2 cup. Halve the olives and drain the capers.",
+  "Heat 3 tbsp of the olive oil in a large deep skillet over medium-high heat until it shimmers. Lay in the cod and leave it alone for 2 minutes, until the underside is lightly golden.",
+  "Transfer the cod to a plate, browned side up. It won't be cooked through yet.",
+  "Lower the heat to medium. Add the garlic to the same skillet and cook for 30 seconds, stirring, until it smells fragrant. Don't let it brown.",
+  "Add the wine and bring it to a bubble. Cook for 2 minutes, scraping up the browned bits, until it has reduced by about half.",
+  "Add the tomatoes, olives, capers, half of the parsley and the remaining 1/4 tsp salt. Simmer for 5 minutes, stirring now and then, until the sauce thickens a little.",
+  "Nestle the cod back into the sauce, browned side up, and spoon some sauce over each piece. Cover, lower the heat to medium-low and cook for 6 to 8 minutes, until the fish is opaque and flakes when you press the thickest part.",
+  "Take the skillet off the heat. Drizzle with the last 1 tbsp olive oil and scatter the rest of the parsley over the top.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the crusty bread and the red pepper flakes on the table."
+ ],
+ "method_notes": "2 Sisters Recipes (the lead) is the fresh cod version: it sears the fish, deglazes with white wine, adds crushed tomatoes, capers and olives, and finishes covered in about 8 minutes. The Stove Diaries browns garlic, cooks the cod over low heat and adds the wine after flipping, and Italian Food Therapy uses cherry tomatoes instead. Salt cod versions (baccala) need days of soaking, so this is the fresh cod style only. This one follows the lead, scaled to 1 1/2 lb of cod, and moves the chili flakes to the table. Only the lead shows a rating.",
+ "sources": [
+  {
+   "name": "2 Sisters Recipes",
+   "title": "Cod Livornese",
+   "url": "https://2sistersrecipes.com/cod-livornese/",
+   "rating": 4.5,
+   "rating_count": 46,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Stove Diaries",
+   "title": "Merluzzo alla livornese || Livornese style Cod",
+   "url": "https://thestovediaries.com/2021/04/29/merluzzo-alla-livornese-livornese-style-cod/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Italian Food Therapy",
+   "title": "Merluzzo alla livornese (braised cod)",
+   "url": "https://www.italianfoodtherapy.com/post/braised-cod",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed",
+ "default_servings": 4
+}

@@ -1,0 +1,131 @@
+{
+ "dish_name": "Salmon Patties",
+ "cuisine": "American",
+ "main_protein": "fish",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Canned salmon",
+   "qty": "2 cans (14.75 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/2 cup chopped"
+  },
+  {
+   "item": "Panko bread crumbs",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "7 tbsp"
+  },
+  {
+   "item": "Worcestershire sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Drain both cans of salmon well and transfer the salmon to a large bowl. Flake it with a fork. The skin and bones are soft and safe to eat, so you can mash them in or pick them out.",
+  "Finely dice the onion and the bell pepper. Chop the parsley until you have about 1/2 cup.",
+  "Heat 1 tbsp of the olive oil and 1 tbsp of the butter in a large skillet over medium heat. Add the onion, bell pepper and 1/4 tsp of the salt. Cook for 7 to 9 minutes, stirring now and then, until soft with no crunch left.",
+  "Transfer the onion and pepper to a plate and let them cool for 5 minutes.",
+  "Meanwhile, make the sauce. In a small bowl, stir together 4 tbsp of the mayonnaise, 1 tbsp of lemon juice squeezed from the lemon and 1 tbsp of the parsley. Cut the rest of the lemon into wedges.",
+  "Add the cooled onion and pepper to the salmon, then add the panko, eggs, the remaining 3 tbsp mayonnaise, the Worcestershire sauce, the garlic powder, the pepper, the last 1/2 tsp salt and the rest of the parsley. Mix with your hands until it holds together when you squeeze it. If it feels loose, let it sit for 5 minutes.",
+  "Shape the mixture into 12 patties, each about 2 1/2 inches wide and 3/4 inch thick.",
+  "Wipe out the skillet and set it over medium heat. Add half of the remaining oil and butter. When the butter stops foaming, lay in 6 patties with space between them.",
+  "Cook for 3 to 4 minutes, until the underside is deep golden. Don't move them. Flip them with a spatula and cook the other side for 3 to 4 minutes, until golden and firm in the middle.",
+  "Transfer the patties to a plate lined with paper towels. Add the rest of the oil and butter to the skillet and cook the other 6 patties the same way.",
+  "Taste the sauce. If it's flat, add a pinch more salt.",
+  "Serve the patties with the lemon sauce and the lemon wedges."
+ ],
+ "method_notes": "Natasha's Kitchen (the lead) cooks onion and bell pepper first, binds the salmon with panko, egg, mayo and Worcestershire, and fries the patties in oil and butter until golden. Self Proclaimed Foodie skips the cooked vegetables and uses green onion, Parmesan and lime, and Feed Me Phoebe uses dill, capers and Dijon. All three keep the binder light and fry hard for a crisp crust. This one follows the lead, doubles it to two cans so four people get three patties each, and adds a quick lemon mayonnaise from the mayo already on the list. Self Proclaimed Foodie's rating (4.96 from 540 votes) was read from the page's visible rating, not JSON-LD.",
+ "sources": [
+  {
+   "name": "Natasha's Kitchen",
+   "title": "Easy Salmon Patties Recipe",
+   "url": "https://natashaskitchen.com/salmon-patties/",
+   "rating": 4.96,
+   "rating_count": 612,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Self Proclaimed Foodie",
+   "title": "The Best Crispy Salmon Patties (Made with Canned Salmon)",
+   "url": "https://selfproclaimedfoodie.com/salmon-patties/",
+   "rating": 4.96,
+   "rating_count": 540,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Feed Me Phoebe",
+   "title": "15-Minute Pan-Fried Canned Salmon Patties",
+   "url": "https://feedmephoebe.com/canned-salmon-patties/",
+   "rating": 5,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed",
+ "default_servings": 4
+}
