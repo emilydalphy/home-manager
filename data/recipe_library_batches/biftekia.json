@@ -1,0 +1,124 @@
+{
+ "dish_name": "Biftekia",
+ "cuisine": "Greek",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Ground beef",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Breadcrumbs",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "English cucumber",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Greek yogurt",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Feta",
+   "qty": "4 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "6 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Grate the cucumber on the large holes of a box grater, using half of it. Squeeze it hard in a clean towel to get the water out. That should be about 1/2 cup.",
+  "In a bowl, stir together the squeezed cucumber, the yogurt, 1 minced garlic clove, 1 tbsp of the olive oil and 1/4 tsp salt. Put it in the fridge.",
+  "Grate the onion and 2 of the tomatoes on the large holes of the grater into a large bowl, with all their juices. Throw away the tomato skins.",
+  "Add the beef, egg, breadcrumbs, 1 tbsp olive oil, 1/4 cup chopped parsley, 2 minced garlic cloves, 1/2 tsp oregano, 1 1/2 tsp salt and the pepper. Mix with your hands until it just comes together. It will be soft and wet.",
+  "With wet hands, shape the mixture into 8 patties, about 3 inches wide and 1/2 inch thick.",
+  "Heat a 12-inch skillet over medium-high heat. Add 1 tbsp of the olive oil, then 4 of the patties. Cook for 3 minutes without moving them, until deep brown and they lift off the pan. Flip and cook for 3 minutes. You're cooking them to 160°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut into the thickest patty: it's done when it's no longer pink. Transfer to a plate.",
+  "Wipe out the pan, add 1 tbsp olive oil, and cook the other 4 patties the same way.",
+  "Meanwhile, cut the 2 remaining tomatoes into wedges and slice the rest of the cucumber into half moons. Put them in a bowl with 2 tbsp olive oil, the juice of half the lemon, the remaining 1/2 tsp oregano and 1/4 tsp salt. Crumble the feta over the top.",
+  "Cut the other half of the lemon into wedges.",
+  "Taste the salad. If it's flat, add a pinch more salt or a squeeze of the lemon.",
+  "Serve the patties with the tzatziki, the salad and the lemon wedges."
+ ],
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 14,
+ "method_notes": "Honest time is about 34 minutes, a little over the 30 for a quick dinner, because the onion and tomatoes are grated and 8 patties are fried in two batches. The two versions read both bake the patties on lemon potatoes; this one pan-fries them as the dish was asked, and drops the potatoes. Both agree on grated onion and tomato in the mix, an egg and breadcrumbs for binding, and parsley; the second adds mint, cumin and cinnamon, which are left out here to keep it mild. The tzatziki is a plain yogurt, cucumber and garlic one, as neither source gave amounts.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "Bifteki (Greek Baked Beef Patties)",
+   "url": "https://cupofyum.com/recipes/bifteki-greek-baked-beef-patties",
+   "rating": 5,
+   "rating_count": 48,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Scrummy Lane",
+   "title": "Bifteki (One Pan Greek Burgers and Potatoes)",
+   "url": "https://scrummylane.com/bifteki/",
+   "rating": 5,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

@@ -1,0 +1,127 @@
+{
+ "dish_name": "Somen Salad",
+ "cuisine": "Japanese",
+ "main_protein": "eggs",
+ "ingredients": [
+  {
+   "item": "Somen noodles",
+   "qty": "1 package (14 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sliced ham",
+   "qty": "6 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "English cucumber",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "In a small saucepan, combine 1 cup chicken broth, 2 tbsp sugar, 1/4 cup rice vinegar, 1/4 cup soy sauce and 2 tbsp sesame oil. Bring it to a boil, stirring until the sugar dissolves. Pour it into a jar or bowl and let it cool while you make the rest.",
+  "Bring a large pot of water to a boil for the noodles.",
+  "Beat the 4 eggs with a pinch of salt. Heat 1 tsp of the vegetable oil in a nonstick skillet over medium-low heat. Pour in half the eggs, tilt the pan so they spread thin, and cook for 1 to 2 minutes, until set. Slide the egg out onto a board and repeat with the rest of the oil and eggs.",
+  "Roll up each egg sheet and slice it into thin strips. Cut the ham into thin strips, cut the cucumber and carrot into thin matchsticks, and slice the green onions.",
+  "Cook all the somen in the boiling water for 3 minutes. Drain right away and rinse under cold water, rubbing the noodles gently, until they're cool. Drain well.",
+  "Divide the noodles between 4 bowls. Arrange the egg, ham, cucumber, carrot and green onions over the top and sprinkle with the 2 tsp sesame seeds.",
+  "Pour the sauce over each bowl, or let everyone pour their own, and mix with chopsticks. Serve cold.",
+  "To pack it for lunch, keep the noodles, the toppings and the sauce in separate containers. They keep in the fridge for 2 days. Pour the sauce over just before eating."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead is Onolicious Hawaii's Somen Salad (4.3 from 89 reviews, taken from the visible rating). Onohawaiianrecipes (5 from 1 vote) and Uwajimaya (no rating) were read too. All use cold rinsed somen, thin strips of egg, cucumber and a soy, vinegar and sesame oil sauce. This follows Onolicious doubled for 4, and uses ham in place of its kamaboko as the other two allow. The sauce is boiled once and cooled, as in the lead.",
+ "sources": [
+  {
+   "name": "Onolicious Hawaii",
+   "title": "Somen Salad",
+   "url": "https://onolicioushawaii.com/somen-salad/",
+   "rating": 4.3,
+   "rating_count": 89,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Ono Hawaiian Recipes",
+   "title": "Somen Salad",
+   "url": "https://onohawaiianrecipes.com/recipes/somen-salad/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Uwajimaya",
+   "title": "Somen Salad",
+   "url": "https://www.uwajimaya.com/recipes/somen-salad/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

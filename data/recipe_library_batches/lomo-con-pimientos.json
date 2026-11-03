@@ -1,0 +1,106 @@
+{
+ "dish_name": "Lomo con Pimientos",
+ "cuisine": "Spanish",
+ "main_protein": "pork",
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Thin-cut boneless pork loin chops",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cubanelle peppers",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Sweet paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "1 can",
+   "category": "pantry"
+  },
+  {
+   "item": "Chicken stock",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Crusty bread",
+   "qty": "1 loaf",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Slice the peppers into thin strips, discarding the stems and seeds. Slice the onion into thin strips. Mince the garlic.",
+  "Pat the pork dry. Mix the flour, 3/4 tsp of the salt and the black pepper on a plate. Lightly press each chop into it.",
+  "Heat 2 tbsp of the olive oil in a large, wide skillet over medium-high heat until it shimmers. Add half the pork in a single layer. Cook for 1 1/2 minutes on each side, until golden. Transfer to a plate. Repeat with the other half.",
+  "Add the last 2 tbsp of oil, the peppers, the onion and 1/4 tsp of the salt to the same pan. Cook over medium-high heat for 5 minutes, stirring often, until the peppers are soft and browned in spots.",
+  "Add the garlic and the paprika. Cook for 30 seconds, stirring.",
+  "Add the crushed tomatoes and the chicken stock. Scrape up the browned bits from the bottom of the pan. Simmer for 4 minutes, until the sauce is thick enough to coat a spoon.",
+  "Return the pork and any juices from the plate to the pan, and spoon the sauce over it. Cover and cook over low heat for 4 minutes. You're cooking it to 145°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest chop: it should be just barely pink.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the crusty bread."
+ ],
+ "method_notes": "No version of this dish had a rating, so this is a fallback with Publico's lomo con pimientos as the lead. It floured and seared the pork, built a sauce of onion, garlic, paprika and tomato, and cooked the pork in it with the peppers for about 20 minutes. It uses roasted red or piquillo peppers; the dish was named for sweet green peppers, so this version fries Cubanelle peppers, as Directo al Paladar does for its green-pepper lomo. To make it fit 30 minutes the pork is cut thin and simmers for 4 minutes, not 20. Total time is 30 minutes.",
+ "sources": [
+  {
+   "name": "Publico",
+   "title": "Receta de lomo con pimientos",
+   "url": "https://www.publico.es/culturas/recetas/receta-lomo-pimientos.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Directo al Paladar",
+   "title": "Bocata de lomo con queso y pimientos",
+   "url": "https://www.directoalpaladar.com/recetas-de-carnes-y-aves/bocata-de-lomo-con-queso-y-pimientos-receta",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

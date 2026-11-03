@@ -1,0 +1,113 @@
+{
+ "dish_name": "Tavuk Durum",
+ "cuisine": "Turkish",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Sumac",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Plain Greek yogurt",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Lavash",
+   "qty": "1 pack of 4",
+   "category": "other"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Thinly slice the red onion into a bowl. Add 1/2 tsp of the salt and rub it in with your fingers for 1 minute. Drain off the liquid.",
+  "Add the sumac, the juice of half the lemon and the leaves from half the bunch of parsley, chopped. Stir and set aside.",
+  "In a small bowl, stir the yogurt with the garlic, grated, 1/4 tsp of the salt and the juice of the other half of the lemon.",
+  "Cut the chicken into 1/2 inch pieces and pat them dry. Toss them with 3/4 tsp of the salt and the black pepper.",
+  "Heat 1 tbsp of the butter in a large skillet over medium-high heat. Add the chicken in a single layer and leave it alone for 3 minutes, until the underside is browned. Stir and cook for 3 minutes.",
+  "Turn the heat to medium. Add the remaining 1 tbsp butter and the paprika and stir for 30 seconds, until fragrant. Add 1/4 cup of water and cook for 2 minutes, until the water is gone and the chicken is coated. You're cooking it to 175°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into a thick piece: it's done when the juices run clear.",
+  "Meanwhile, slice the tomatoes. Warm each lavash in a dry skillet over medium heat for 30 seconds on each side, until soft.",
+  "Taste a piece of the chicken. If it's flat, add a pinch more salt.",
+  "Spread each lavash with the garlic yogurt. Add the chicken, a few tomato slices and a spoonful of the sumac onions, then roll it up tightly and cut it in half.",
+  "To pack it, keep the chicken, onions, yogurt and tomatoes in separate containers in the fridge for up to 3 days, and roll the wraps on the day."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "method_notes": "Neither version read showed ratings, so this is a fallback and A Food Lover's Kitchen's chicken durum wrap leads. Yemek.com's tavuklu durum manti is a baked cousin of the wrap, so it is listed as a second source for its chicken: small pieces cooked in butter with a sumac and lemon onion salad and a garlic yogurt. This one cooks diced thighs (the lead uses seasoned ground chicken), uses paprika instead of red pepper flakes to keep it mild, and adds tomato as the lead does.",
+ "sources": [
+  {
+   "name": "A Food Lover's Kitchen",
+   "title": "Chicken Durum Doner Kebab Wraps",
+   "url": "https://afoodloverskitchen.com/chicken-durum-doner-kebab-wraps/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Yemek.com",
+   "title": "Tavuklu Durum Manti",
+   "url": "https://yemek.com/tarif/tavuklu-durum-manti/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "fallback_used": true,
+ "origin": "seed"
+}

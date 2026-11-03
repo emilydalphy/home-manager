@@ -1,0 +1,134 @@
+{
+ "dish_name": "Machher Jhol",
+ "cuisine": "Indian",
+ "main_protein": "fish",
+ "ingredients": [
+  {
+   "item": "Cod fillets",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Baby potatoes",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Green chilies",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Panch phoron",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaf",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried red chilies",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the cod into 2 inch pieces and pat them dry. Transfer them to a bowl and toss with 1/2 tsp of the turmeric and 1/2 tsp of the salt. Leave them on the counter while you prep.",
+  "Halve the potatoes. Thinly slice the onion, chop the tomatoes, and mince 1 tbsp of the ginger. Mince the garlic. Slice the green chilies lengthwise and chop 1/4 cup of the cilantro.",
+  "Heat 2 tbsp of the oil in a large deep skillet over medium-high until it shimmers. Add half the fish in a single layer and cook for 2 minutes per side, until light golden. Transfer it to a plate. Cook the rest the same way. The fish will finish cooking in the curry.",
+  "Add 1 tbsp of the oil to the same pan. Add the potatoes cut side down with 1/4 tsp of the salt and cook for 5 minutes, until golden underneath. Transfer them to the plate with the fish.",
+  "Turn the heat down to medium and add the last 1 tbsp oil. Add the panch phoron, bay leaf and dried chilies. After about 20 seconds the seeds will sizzle and smell toasty. That's your cue for the onion.",
+  "Add the onion and cook for 6 minutes, stirring now and then, until soft and lightly golden. Don't rush it. That's where the flavor starts.",
+  "Add the ginger and stir for 1 minute. Add the garlic and stir for 30 seconds. Add the tomatoes and cook for 5 minutes, until they break down into a thick sauce.",
+  "Add the remaining 1/2 tsp turmeric and the coriander. Stir for 30 seconds, until fragrant.",
+  "Add 2 1/2 cups water and 1/2 tsp of the salt. Bring it to a boil, then add the potatoes. Turn the heat down, cover and simmer for 10 minutes, until the potatoes are nearly tender.",
+  "Gently add the fish. Simmer uncovered for 4 minutes, until it flakes when you press it. Shake the pan instead of stirring so the fish stays in pieces.",
+  "Off the heat, stir in the chopped cilantro.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with steamed rice, and pass the sliced green chilies at the table for anyone who wants heat."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 40,
+ "method_notes": "Hari Ghotra is the lead (4.0 from 20 votes, read off the page): fry the fish and potatoes first, build an onion, ginger, garlic, tomato and turmeric base, then finish them in a thin sauce. Hari cooks the onion about 20 minutes; we keep it to 6 so the dish fits a weeknight. Two other versions (The Big Sweet Tooth, Kitchen of Debjani) show no ratings but both use panch phoron, bay leaf and dried red chilies, so we took those whole spices in place of Hari's cumin, mustard and cardamom. Mustard oil is traditional; vegetable oil is used here, and the chilies are left for the table.",
+ "sources": [
+  {
+   "name": "Hari Ghotra",
+   "title": "Maacher Jhol",
+   "url": "https://www.harighotra.co.uk/macacher-jhol-recipe/",
+   "rating": 4.0,
+   "rating_count": 20,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Big Sweet Tooth",
+   "title": "Macher Jhol ~ Bengali Fish Potato Curry",
+   "url": "https://www.thebigsweettooth.com/macher-jhol-bengali-fish-potato-curry/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Kitchen of Debjani",
+   "title": "Macher Jhol Piyaj, Aloo, Tomato, Dhonepata",
+   "url": "https://kitchenofdebjani.com/2025/08/macher-jhol-piyaj-aloo-tomato-dhonepata-diye-bengali-fish-curry-with-all-season-vegetables-recipe-with-video",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

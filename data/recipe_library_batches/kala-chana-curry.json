@@ -1,0 +1,133 @@
+{
+ "dish_name": "Kala Chana Curry",
+ "cuisine": "Indian",
+ "main_protein": "chickpeas",
+ "ingredients": [
+  {
+   "item": "Dried black chickpeas",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce",
+   "cook_qty": "2 tsp grated"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Turmeric",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chili powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Kasuri methi",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green chile",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "The night before, or at least 6 hours ahead: rinse the black chickpeas 3 times, put them in a big bowl and cover with 5 cups cold water. Leave them to soak for 6 to 8 hours or overnight.",
+  "Drain and rinse the chickpeas. Finely chop the onion and the tomatoes. Mince the garlic and grate the ginger.",
+  "Slice the green chile and put it in a small bowl for the table. Cut the lemon into wedges.",
+  "Heat the oil in a pressure cooker pot, with the lid off, over medium. Add the cumin seeds. After about 20 seconds they'll sizzle and smell toasty.",
+  "Add the onion and 1/2 tsp of the salt. Cook for about 8 minutes, stirring now and then, until light golden.",
+  "Add the garlic and ginger and cook for 1 minute.",
+  "Add the tomatoes and cook for 5 to 6 minutes, until they break down and the mixture is thick.",
+  "Turn the heat to low and add the turmeric, chili powder and ground coriander. Stir for 1 minute, until the oil separates from the masala.",
+  "Add the drained chickpeas, 3 cups water and the remaining 3/4 tsp salt. Stir, lock the lid and cook over medium-high until the cooker is at full pressure. Turn the heat down to medium and pressure cook for 25 minutes. Let the pressure drop on its own.",
+  "Open the cooker and press a chickpea between two fingers. It should mash easily. If it doesn't, close the lid and pressure cook for 5 minutes, then check again.",
+  "Simmer with the lid off for 5 minutes, mashing a few chickpeas against the side of the pot, until the gravy is thick enough to coat a spoon.",
+  "Stir in the garam masala. Crush the kasuri methi between your palms over the pot and simmer for 2 minutes. Take the pot off the heat and stir in 2 tbsp chopped cilantro. Taste it. If it's flat, add a pinch more salt or a squeeze of the lemon.",
+  "Serve with rice, with the sliced green chile and the lemon wedges on the side."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 45,
+ "advance_prep_notes": "soak the black chickpeas overnight, the night before",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "Hebbar's Kitchen (the lead) and Swasthi's agree on the base: cumin, onion, ginger, garlic and tomato cooked down with turmeric, chili and coriander, then the soaked chickpeas pressure cooked in it. Hebbar's adds whole spices, kasuri methi and mango powder; Swasthi's keeps it to ground spices and finishes with garam masala and coriander. This one follows Swasthi's simpler spice list with Hebbar's kasuri methi, and the green chile moves to the table. It needs a stovetop pressure cooker. Without one, simmer the soaked chickpeas in 5 cups of water for about 1 hour 30 minutes until tender, then add them to the masala and simmer for 15 to 20 minutes. Swasthi's has a 5 from 123 ratings, Hebbar's 4.99 from 256.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "kala chana recipe | black chana masala recipe | black chickpeas curry",
+   "url": "https://hebbarskitchen.com/kala-chana-recipe-black-chana-masala/",
+   "rating": 4.99,
+   "rating_count": 256,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Kala Chana Recipe (Black Chickpeas Curry)",
+   "url": "https://www.indianhealthyrecipes.com/kala-chana/",
+   "rating": 5.0,
+   "rating_count": 123,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

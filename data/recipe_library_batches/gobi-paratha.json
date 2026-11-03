@@ -1,0 +1,126 @@
+{
+ "dish_name": "Gobi Paratha",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "default_servings": 8,
+ "prep_time_minutes": 40,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Whole wheat flour (atta)",
+   "qty": "2 1/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ajwain (carom seeds)",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cauliflower",
+   "qty": "1 small head",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small piece",
+   "category": "produce",
+   "cook_qty": "1 inch"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Amchur (dry mango powder)",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Parchment paper",
+   "qty": "1 roll",
+   "category": "other"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub",
+   "category": "dairy"
+  },
+  {
+   "item": "Indian pickle",
+   "qty": "1 jar",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "On Sunday, or up to 4 days ahead: in a large bowl, mix 2 cups of the flour with 1/2 tsp salt and the ajwain. Add about 3/4 cup of water a little at a time, kneading for 5 minutes, until you have a soft, smooth dough that isn't sticky. Cover and rest it for 20 minutes.",
+  "Meanwhile, coarsely grate half the cauliflower. That should be about 2 cups. Grate the ginger and chop 2 tbsp of the cilantro. Keep them separate for now.",
+  "Right before you fill the parathas, mix the cauliflower, ginger, cilantro, garam masala, cumin, coriander, amchur and the remaining 1/2 tsp salt. Don't do this earlier. The cauliflower turns watery as it sits.",
+  "Knead the dough for a minute and divide it into 8 balls. Flatten one into a disc about 4 inches wide. Put about 1/4 cup of the cauliflower mixture in the middle, gather the edges up over it and pinch to seal. Pinch off any extra dough.",
+  "Dust the ball with some of the remaining 1/4 cup flour and roll it gently into a round about 6 to 7 inches wide. Roll lightly so the filling stays inside. Fill and roll the rest the same way.",
+  "Heat a griddle or large skillet over medium-high heat. Cook one paratha for 1 minute, until small spots show on the underside. Flip it and brush with 1 tsp of the oil.",
+  "Cook for 1 minute, then flip again, brush the top with another 1 tsp oil and press gently with a spatula. Cook for 1 to 2 minutes, until both sides are golden and the cauliflower is cooked through. Cook the rest the same way. This makes 8 parathas.",
+  "Let the parathas cool completely. Stack them with parchment between each, in a sealed container. They keep in the fridge for up to 4 days. For the freezer, put them in a freezer bag and freeze for up to 1 month.",
+  "In the morning, heat a dry griddle or skillet over medium heat. Put 2 parathas straight from the fridge or freezer on the pan and heat for 1 to 2 minutes on each side, or 2 to 3 minutes from frozen, until hot and a little crisp. Serve with plain yogurt and a spoonful of pickle."
+ ],
+ "advance_prep_notes": "Cook the batch of parathas on Sunday, or up to 4 days ahead, and keep them in the fridge or freezer.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8
+ ],
+ "method_notes": "Hebbar's Kitchen (the lead) stuffs a wheat dough with raw grated cauliflower and garam masala, cumin, coriander, amchur, ginger and ajwain, and warns to mix the stuffing right before rolling. Easy Indian Cookbook cooks the parathas the same way and gives the keeping advice, with parchment between them, 4 to 5 days in the fridge and a freezer option, reheated on a hot griddle straight from cold or frozen. This version drops the lead's green chilies from the filling and puts the heat in the pickle at the table, and the freezer time of 1 month is cautious since the sources give none.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Gobi Paratha Recipe | Cauliflower Paratha",
+   "url": "https://hebbarskitchen.com/gobi-paratha-recipe-gobhi-paratha-recipe/",
+   "rating": 5.0,
+   "rating_count": 288,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Easy Indian Cookbook",
+   "title": "Gobi Paratha (Cauliflower Stuffed Flatbread)",
+   "url": "https://easyindiancookbook.com/gobi-paratha/",
+   "rating": 5.0,
+   "rating_count": 62,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

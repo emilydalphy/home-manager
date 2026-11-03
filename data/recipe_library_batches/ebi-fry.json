@@ -1,0 +1,119 @@
+{
+ "dish_name": "Ebi Fry",
+ "cuisine": "Japanese",
+ "main_protein": "shrimp",
+ "ingredients": [
+  {
+   "item": "Jumbo shrimp",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Eggs",
+   "qty": "5",
+   "category": "dairy"
+  },
+  {
+   "item": "Panko breadcrumbs",
+   "qty": "3 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Japanese mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Dill pickles",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green cabbage",
+   "qty": "1 small head",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put 2 of the eggs in a small saucepan and cover them with water. Bring it to a boil over high heat, then turn the heat down so it boils gently and cook for 12 minutes.",
+  "Meanwhile, dice 1/4 of the onion very fine and soak it in cold water for 10 minutes. Drain it and squeeze it dry in a paper towel.",
+  "Peel and devein the shrimp, leaving the tails on. Cut 3 shallow slits across the belly of each one and press gently so it lies flat. Pat them dry. Sprinkle with 3/4 tsp of the salt and 1/2 tsp of the pepper.",
+  "Set out three plates: the flour, the other 3 eggs beaten, and the panko. Coat each shrimp in flour and shake off the extra. Dip it in the egg, then press it into the panko. Transfer them to a tray.",
+  "Drain the boiled eggs, cool them under cold water and peel them. Break them into small pieces with a fork.",
+  "Finely chop the pickle. Stir it into the eggs with the onion, the mayonnaise, 1 tbsp lemon juice, 1/4 tsp salt and 1/4 tsp pepper. Cover and refrigerate.",
+  "Shred about 3 cups of the cabbage and divide it among 4 plates. Cut the rest of the lemon into wedges.",
+  "Heat the oil in a 12 inch skillet over medium-high to 350°F. If you don't have a thermometer, drop in a pinch of panko. It should sizzle right away and turn golden in about 30 seconds.",
+  "Fry the shrimp in 3 batches, 1 1/2 minutes per side, until deep golden and curled. Stay with the pan. Panko browns fast.",
+  "Transfer the shrimp to a wire rack or a tray lined with paper towels. Skim the loose crumbs out of the oil between batches.",
+  "Taste the tartar sauce. If it's flat, add a pinch more salt or a squeeze of the lemon.",
+  "Serve the shrimp on the shredded cabbage with the tartar sauce and lemon wedges."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 20,
+ "method_notes": "Cup of Yum is the lead (4.5 from 26 reviews, read off the page): salted shrimp, flour, egg and panko, fried at 350°F, with a tartar sauce of boiled egg, onion, pickle and Japanese mayonnaise. Just One Cookbook (4.58 from 14) and Cup of Yum's other version (4.7 from 12) agree. The lead deep fries and dredges twice; we shallow fry in a skillet and coat once, to keep it a weeknight dinner. Even so the honest time is about 50 minutes, which is long for a weeknight, mostly the breading and the tartar sauce.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "Ebi Fry (Japanese Fried Shrimp)",
+   "url": "https://cupofyum.com/recipes/ebi-fry-japanese-fried-shrimp",
+   "rating": 4.5,
+   "rating_count": 26,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Just One Cookbook",
+   "title": "Ebi Fry (Japanese Fried Shrimp)",
+   "url": "https://www.justonecookbook.com/ebi-fry/",
+   "rating": 4.58,
+   "rating_count": 14,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Cup of Yum",
+   "title": "Ebi Furai (Japanese Deep-fried Shrimp with Panko)",
+   "url": "https://cupofyum.com/recipes/ebi-furai-japanese-deep-fried-shrimp-with-panko",
+   "rating": 4.7,
+   "rating_count": 12,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

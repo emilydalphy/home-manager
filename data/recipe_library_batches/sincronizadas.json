@@ -1,0 +1,72 @@
+{
+ "dish_name": "Sincronizadas",
+ "cuisine": "Mexican",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 4,
+ "cook_time_minutes": 8,
+ "ingredients": [
+  {
+   "item": "Flour tortillas",
+   "qty": "8",
+   "category": "pantry"
+  },
+  {
+   "item": "Shredded Oaxaca cheese",
+   "qty": "8 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Sliced ham",
+   "qty": "8 slices",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Mild salsa",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  }
+ ],
+ "instructions": [
+  "Heat a large nonstick skillet or comal over medium heat for 1 minute.",
+  "Lay 2 tortillas in the pan. Spread 1/4 cup of the cheese over each, lay 2 slices of ham on top, then 1/4 cup more cheese. Cover each with a second tortilla.",
+  "Cook for 2 to 3 minutes, until the bottom is golden and the cheese starts to melt. Flip them with a spatula and cook for 2 minutes, until the other side is golden and a little cheese has oozed out and browned.",
+  "Transfer them to a cutting board. Make the other 2 sincronizadas the same way with the rest of the tortillas, cheese and ham.",
+  "Cut each one into halves or quarters. Serve with the salsa."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "This takes about 12 minutes for four, not 10, because only two fit in the pan at a time. Every version is two flour tortillas filled with a melting cheese and thin ham, toasted in a dry pan on both sides. None has a rating of 4.0 or more from 20 or more people, so the lead is a fallback: Pati Jinich (5 from 3 ratings, so it has the strongest method) uses about 8 oz of cheese for 6 sincronizadas, and In Mama Maggie's Kitchen (5 from 13 ratings) uses 1/2 cup cheese and 2 slices of ham per sincronizada, which this follows. Pati Jinich allows Chihuahua, Oaxaca or Monterey Jack, and CuernaKitchen (no rating shown) names Oaxaca. Use pre-shredded cheese to keep the prep short.",
+ "sources": [
+  {
+   "name": "Pati Jinich",
+   "title": "Ham and Cheese Sincronizadas with Flour Tortillas",
+   "url": "https://patijinich.com/ham-and-cheese-sincronizadas-with-flour-tortillas/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "In Mama Maggie's Kitchen",
+   "title": "Sincronizadas (Mexican Ham and Cheese Quesadillas)",
+   "url": "https://inmamamaggieskitchen.com/sincronizadas/",
+   "rating": 5.0,
+   "rating_count": 13,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "CuernaKitchen",
+   "title": "Mexican Sincronizada Recipe (Ham and Cheese Quesadilla)",
+   "url": "https://cuernakitchen.com/mexican-sincronizada-recipe-ham-and-cheese-quesadilla/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

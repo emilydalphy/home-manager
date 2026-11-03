@@ -1,0 +1,123 @@
+{
+ "dish_name": "Ciambellone",
+ "cuisine": "Italian",
+ "main_protein": "vegetarian",
+ "default_servings": 12,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 45,
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "2 1/2 cups + 1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Baking powder",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/4 cups"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Orange",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3/4 cup + 1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Milk",
+   "qty": "1/2 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Powdered sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  }
+ ],
+ "instructions": [
+  "On Sunday, or up to 4 days ahead: heat the oven to 350°F. Rub a 10 cup bundt or ring pan with 1 tbsp of the oil, then dust it with 1 tbsp of the flour and tap out the extra.",
+  "In a medium bowl, whisk the remaining 2 1/2 cups flour with the baking powder and salt.",
+  "Zest the orange and the lemon into a large bowl. Add the eggs, 1 1/4 cups sugar and the vanilla.",
+  "Beat on high with a hand mixer for 3 minutes, until the eggs are pale and frothy.",
+  "Keep the mixer going and pour in the remaining 3/4 cup oil in a slow, steady stream.",
+  "Turn the mixer to low. Add the flour mixture in two goes, with the milk between them, and mix until the batter is smooth. Stop as soon as there are no dry streaks.",
+  "Pour the batter into the pan. Bake in the middle of the oven for 45 minutes, until the top is golden and a toothpick in the center comes out dry. If the top is browning fast at the 25 minute mark, turn the oven down to 340°F.",
+  "Let the cake cool in the pan for 15 minutes. Turn it out onto a rack and cool completely. This makes 12 slices.",
+  "Dust the top with the powdered sugar. Keep it in a sealed container on the counter for up to 3 days or in the fridge for up to 4 days. For longer, slice it, wrap the slices and freeze them for up to 1 month.",
+  "In the morning, slice a piece and eat it at room temperature. A frozen slice takes about 30 minutes on the counter, or 20 seconds in the microwave. Serve with coffee or milk."
+ ],
+ "advance_prep_notes": "Bake the cake on Sunday, or up to 4 days ahead, and slice it through the week.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9
+ ],
+ "method_notes": "All the versions beat eggs and sugar with citrus zest, add oil and milk, then fold in flour and baking powder, and bake in a ring or bundt pan at 340 to 350°F. No version had 20 ratings, so Nonna Box (the best rated and a plain oil and milk batter) leads and this is a fallback. Pomona's version takes its orange and lemon zest and vanilla, and skips the pearl sugar topping for a plain dusting of powdered sugar. The Petite Cook uses olive oil, but a neutral oil keeps the lemon clear, and the sources agree on 3 days on the counter and a month in the freezer.",
+ "sources": [
+  {
+   "name": "Nonna Box",
+   "title": "Ciambellone or Ciambella Italian Cake",
+   "url": "https://www.nonnabox.com/ciambellone-recipe",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Petite Cook",
+   "title": "Ciambellone - Olive Oil Bundt Cake",
+   "url": "https://www.thepetitecook.com/ciambellone/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "One Sarcastic Baker",
+   "title": "Ciambellone (Italian Breakfast Cake)",
+   "url": "https://www.onesarcasticbaker.com/ciambellone-italian-breakfast-cake/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

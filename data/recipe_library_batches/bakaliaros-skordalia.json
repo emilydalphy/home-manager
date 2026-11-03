@@ -1,0 +1,132 @@
+{
+ "dish_name": "Bakaliaros Skordalia",
+ "cuisine": "Greek",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Cod fillets",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Russet potatoes",
+   "qty": "1.5 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Red wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Baking powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Beer",
+   "qty": "1 can",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Pita bread",
+   "qty": "1 pack",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Peel the potatoes and cut them into 1 inch cubes. Put them in a pot, cover with cold water and add 1 tsp of the salt. Bring to a boil over high heat, then turn it down to medium and cook for 15 to 20 minutes, until a fork slides in with no resistance.",
+  "Meanwhile, cut the cod into pieces about 2 inches wide. Pat them dry, lay them on a plate and sprinkle 1 tsp of the salt over both sides. Let them sit for 20 minutes.",
+  "Heat the oven to 200°F for keeping the fish warm.",
+  "Grate or crush the garlic to a paste with a pinch of the remaining salt.",
+  "Drain the potatoes, saving 1/2 cup of the cooking water. Transfer the potatoes to a large bowl and mash them until smooth. Let them cool for 5 minutes.",
+  "Stir the garlic, the olive oil and the red wine vinegar into the potatoes. Add the cooking water a spoonful at a time until the skordalia is thick but spreadable. Taste it, and add a pinch more salt if it's flat. Set it aside.",
+  "Make the batter. In a bowl, whisk 1 cup of the flour, the cornstarch, baking powder, 1/2 tsp of the salt and the pepper. Pour in the beer and whisk until smooth. Put the remaining 1/2 cup flour on a plate.",
+  "Pour the vegetable oil into a large, heavy skillet or pot, about 1 inch deep, and heat it over medium-high heat to 350°F. If you don't have a thermometer, drop in a spoonful of batter. It should sizzle right away and float.",
+  "Pat the cod dry again. Press each piece into the flour on the plate, shake off the extra, then dip it in the batter, letting the extra drip off.",
+  "Lower 4 or 5 pieces into the oil, away from you. Don't crowd the pan. Fry for 4 minutes, turning once, until deep golden. Cut one open to check. The fish is done when it flakes.",
+  "Transfer the fish to a paper towel lined plate, then to the oven. Fry the rest in batches, letting the oil come back to 350°F between each.",
+  "Cut the lemon into wedges. Taste a piece of fish. If it's flat, add a pinch more salt.",
+  "Serve with the skordalia, the lemon wedges and the pita."
+ ],
+ "method_notes": "Traditional bakaliaros is salt cod soaked for 2 to 3 days. The lead (My Greek Dish, 4.93 from 701 votes) says fresh cod skips the soak, so this uses fresh or thawed cod with a short salting instead. The sources agree on a flour dredge, a batter and frying around 350 to 360°F, with a skordalia of boiled potato, a lot of garlic, olive oil and red wine vinegar. They differ on the batter (beer and yeast in the lead, sparkling water and cornstarch in Dimitra's Dishes) and on the sauce liquid; I used a quick beer batter without yeast and potato water for the sauce. The lead page has no skordalia steps, so those follow Mia Kouppa and Dimitra's Dishes.",
+ "sources": [
+  {
+   "name": "My Greek Dish",
+   "title": "Cod Fritters with Garlic Potato Puree (Bakaliaros Skordalia)",
+   "url": "https://www.mygreekdish.com/recipe/cod-fritters-garlicky-potato-puree-bakaliaros-skordalia/",
+   "rating": 4.93,
+   "rating_count": 701,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Dimitra's Dishes",
+   "title": "Bakaliaros Skordalia: Fried Salt Cod with Garlicky Potato Dip",
+   "url": "https://www.dimitrasdishes.com/bakaliaros-skordalia-fried-salt-cod-with-garlicky-potato-dip",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Mia Kouppa",
+   "title": "Cod and Skordalia",
+   "url": "https://miakouppa.com/cod-and-skordalia-μπακαλιάρος-και-σκορδαλιά/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

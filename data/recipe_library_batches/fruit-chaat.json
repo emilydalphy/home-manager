@@ -1,0 +1,36 @@
+{
+ "dish_name": "Fruit Chaat",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 0,
+ "ingredients": [
+  {"item": "Apples", "qty": "2", "category": "produce"},
+  {"item": "Bananas", "qty": "2", "category": "produce"},
+  {"item": "Green grapes", "qty": "1 bunch", "category": "produce", "cook_qty": "1 cup"},
+  {"item": "Lime", "qty": "1", "category": "produce"},
+  {"item": "Mint", "qty": "1 bunch", "category": "produce", "cook_qty": "6 leaves"},
+  {"item": "Chaat masala", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Black salt (kala namak)", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Ground cumin", "qty": "1/4 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Cut the apples into bite-size pieces and transfer them into a large bowl. Halve the grapes and add them.",
+  "Chop 6 of the mint leaves and add them to the bowl.",
+  "In a small bowl, stir together 1/2 tsp chaat masala, 1/2 tsp black salt and 1/4 tsp cumin.",
+  "Squeeze the lime over the fruit, then sprinkle over the spice mix. Toss gently.",
+  "Peel the bananas and cut them into rounds. Fold them in last so they don't get mashed.",
+  "Serve right away, with a few mint leaves on top."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version of this dish had 20 or more ratings, so this is a fallback lead: Cook with Manali, a trusted cook for Indian food, whose page shows no ratings yet. Piping Pot Curry (5.0 from 6 ratings) and Mamta's Kitchen agree on the method: cut fruit, chaat masala, black salt, cumin and citrus, tossed gently and served soon after. They differ in the fruit (Piping Pot uses mango, pear, orange and strawberries and chills it for 30 minutes) and Manali adds optional fried potato, which is left out here. This uses Manali's apples, bananas and grapes, and leaves out her optional sugar and black pepper.",
+ "sources": [
+  {"name": "Cook with Manali", "title": "Fruit Chaat", "url": "https://www.cookwithmanali.com/fruit-chaat/", "rating": null, "rating_count": null, "read": true, "lead": true},
+  {"name": "Piping Pot Curry", "title": "Fruit Chaat (Fruit Salad with Chaat Masala)", "url": "https://pipingpotcurry.com/fruit-chaat/", "rating": 5.0, "rating_count": 6, "read": true, "lead": false},
+  {"name": "Mamta's Kitchen", "title": "Fruit Chaat - A Spicy Indian Fruit Salad", "url": "https://www.mamtaskitchen.com/recipe/fruit-chaat-spicy-fruit-salad/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

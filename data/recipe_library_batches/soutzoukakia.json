@@ -1,0 +1,46 @@
+{
+ "dish_name": "Soutzoukakia",
+ "cuisine": "Greek",
+ "main_protein": "beef",
+ "ingredients": [
+  {"item": "Ground beef", "qty": "1 1/2 lbs", "category": "meat/seafood"},
+  {"item": "White bread", "qty": "1 loaf", "category": "pantry", "cook_qty": "3 slices"},
+  {"item": "Red wine", "qty": "1 bottle", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Eggs", "qty": "1", "category": "dairy"},
+  {"item": "Garlic", "qty": "5 cloves", "category": "produce"},
+  {"item": "Ground cumin", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Ground cinnamon", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "2 1/2 tsp", "category": "pantry"},
+  {"item": "Crushed tomatoes", "qty": "1 can (28 oz)", "category": "pantry"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1/2 tsp"},
+  {"item": "Olive oil", "qty": "5 tbsp", "category": "pantry"},
+  {"item": "White rice", "qty": "1 cup", "category": "pantry"},
+  {"item": "Flat-leaf parsley", "qty": "1 bunch", "category": "produce"}
+ ],
+ "instructions": [
+  "Cut the crusts off the bread and tear the slices into a bowl. Add 1/2 cup of water and the wine and leave for 5 minutes. Squeeze the bread out with your hand and throw away the liquid.",
+  "In a large bowl, combine the beef, the squeezed bread, 4 grated garlic cloves, the egg, the cumin, cinnamon, pepper and 1 1/2 tsp of the salt. Mix with your hands until it just comes together. Stop as soon as there are no dry patches. Any longer and the meatballs turn dense. Cover and refrigerate for 20 minutes.",
+  "Meanwhile, heat 2 tbsp of the oil in a wide, deep skillet over medium heat. Grate in the last garlic clove and stir for 30 seconds. Add the tomatoes, 1/2 cup of water, the sugar and 1/2 tsp of the salt. Bring to a gentle simmer and cook for 20 minutes, until it thickens a little.",
+  "Rinse the rice in cold water until it runs clear. Put it in a pot with 2 cups of water and the last 1/2 tsp salt. Bring to a boil, turn the heat to low, cover, and cook for 15 minutes. Leave it covered off the heat for 5 minutes, then fluff with a fork.",
+  "Wet your hands. Shape about 2 tbsp of the meat mixture at a time into ovals about 3 inches long. You should get about 18.",
+  "Heat the remaining 3 tbsp oil in a large skillet over medium-high heat. Add half the meatballs and brown them for 5 minutes, turning, until browned on all sides. They won't be cooked through. Transfer them to the sauce, then brown the rest the same way.",
+  "Nestle all the meatballs into the sauce. Cover, turn the heat to low, and simmer for 20 minutes. You're cooking them to 160°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut one open: it's done when there's no pink left.",
+  "Take the pan off the heat. Chop 2 tbsp of the parsley leaves and scatter them over the meatballs.",
+  "Serve the soutzoukakia and sauce over the rice.",
+  "Taste it. If it's flat, add a pinch more salt."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 45,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "None of the versions read has 20 or more ratings (The Hungry Bites 5.0 from 1 vote; Greek City Times and Insights Greece show none), so the lead is the best-read real Smyrna version, Greek City Times, and fallback is marked. The sources agree on oval beef meatballs bound with soaked bread, garlic, egg and cumin, browned, then simmered in tomato sauce, and the Smyrna cooks say there is no onion. They differ on baking versus frying, cinnamon in the sauce, and wine in the meat. Pomona follows Greek City Times (fry, then simmer, no onion), swaps six fresh pureed tomatoes for a can of crushed tomatoes, and serves it over rice.",
+ "sources": [
+  {"name": "Greek City Times", "title": "Soutzoukakia Smyrneika", "url": "https://greekcitytimes.com/2026/01/23/soutzoukakia-smyrneika-recipe/", "rating": null, "rating_count": null, "read": true, "lead": true},
+  {"name": "The Hungry Bites", "title": "Soutzoukakia Recipe: Greek Meatballs in Tomato Sauce", "url": "https://www.thehungrybites.com/soutzoukakia-recipe-greek-meatballs-in-tomato-sauce", "rating": 5.0, "rating_count": 1, "read": true, "lead": false},
+  {"name": "Insights Greece", "title": "Traditional Soutzoukakia Recipe", "url": "https://insightsgreece.com/traditional-soutzoukakia-recipe/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

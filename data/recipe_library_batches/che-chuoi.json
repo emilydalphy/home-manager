@@ -1,0 +1,85 @@
+{
+ "dish_name": "Che Chuoi",
+ "cuisine": "Vietnamese",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Small tapioca pearls",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Coconut milk",
+   "qty": "1 can (13.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Ripe bananas",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Roasted peanuts",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Bring 6 cups water to a boil in a medium pot. Add the tapioca pearls, stirring, then turn the heat to low, cover and cook for 10 minutes, until they're nearly clear with a small white dot in the middle.",
+  "Drain the pearls in a strainer and rinse them under cold water. Rinse the pot too.",
+  "Meanwhile, put the peanuts and 1/4 tsp of the salt in a small bag or between two towels and crush them with a rolling pin or the bottom of a pan until coarse.",
+  "Peel the bananas and cut them into 1/2-inch slices.",
+  "Return the pot to medium heat and add 1 1/2 cups water, the sugar and the last 1/4 tsp salt. Stir until the sugar dissolves, then add the pearls.",
+  "Add the coconut milk and stir. Keep the heat low enough that it doesn't boil.",
+  "Add the banana slices and cook for 2 to 3 minutes, until warm. Take the pot off the heat.",
+  "Spoon into four bowls and sprinkle with the peanuts. Serve warm."
+ ],
+ "method_notes": "The versions agree on small tapioca pearls cooked clear, coconut milk, sugar and ripe banana, served warm or chilled. Onolicious Hawaii, the lead, cooks the pearls on their own and rinses them before warming everything in coconut milk, and tops the bowls with salted crushed peanuts; this one follows that, scaled to 4 servings. Cooking the Globe soaks the pearls and adds mango and sesame, and Sift and Simmer soaks them off the heat in a pandan infusion; those extras are left out. The lead's 4.4 rating comes from 16 ratings, under the 20 needed, so this is a fallback.",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "sources": [
+  {
+   "name": "Onolicious Hawaii",
+   "title": "Banana Tapioca (Che Chuoi)",
+   "url": "https://onolicioushawaii.com/banana-tapioca-che-chuoi/",
+   "rating": 4.4,
+   "rating_count": 16,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cooking the Globe",
+   "title": "Che Chuoi - Vietnamese Banana Tapioca Pudding",
+   "url": "https://cookingtheglobe.com/che-chuoi-vietnamese-banana-tapioca-pudding/",
+   "rating": 5,
+   "rating_count": 6,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Sift and Simmer",
+   "title": "Che Chuoi (Vietnamese Banana Tapioca Dessert)",
+   "url": "https://www.siftandsimmer.com/che-chuoi-vietnamese-banana-tapioca-dessert/",
+   "rating": 5,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

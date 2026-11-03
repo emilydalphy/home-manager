@@ -1,0 +1,134 @@
+{
+ "dish_name": "Vegetable Hakka Noodles",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Hakka noodles",
+   "qty": "12 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 knob",
+   "category": "produce",
+   "cook_qty": "a 2 inch piece"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Cabbage",
+   "qty": "1 small head",
+   "category": "produce",
+   "cook_qty": "a quarter of the head"
+  },
+  {
+   "item": "Green beans",
+   "qty": "4 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Ketchup",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Chili garlic sauce",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "for the table"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Bring a large pot with 8 cups of water to a boil. Add 1 tsp of the salt and 1 tbsp of the oil.",
+  "Cook the noodles for about 3 minutes, until they're just tender with a little bite.",
+  "Drain the noodles and rinse them under cold water until they're cool. Drain well, then toss them with 1 tbsp of the oil so they don't stick.",
+  "Meanwhile, chop everything. Mince the garlic and the ginger. Slice the scallions, keeping the white parts and the green parts apart. Slice the onion and bell pepper into thin strips, cut the carrots into thin matchsticks, shred a quarter of the cabbage, and cut the green beans into thin pieces.",
+  "In a small bowl, mix 3 tbsp soy sauce, 2 tbsp rice vinegar, 2 tbsp ketchup, the black pepper and the remaining 1/2 tsp salt.",
+  "Heat a wok or your largest skillet over high heat until it's very hot. Add the remaining 2 tbsp oil.",
+  "Add the garlic, ginger and the white parts of the scallions. Stir for 15 seconds, until they smell fragrant.",
+  "Add the onion, carrots and green beans and stir-fry for 2 minutes. Add the bell pepper and cabbage and stir-fry for 1 to 2 minutes, until they've shrunk a little but are still crisp.",
+  "Add the noodles and pour the sauce over them. Toss for 2 minutes with tongs, until the noodles are hot and evenly coated.",
+  "Take the pan off the heat and stir in most of the scallion greens. Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the rest of the scallion greens on top and the chili garlic sauce at the table. It also packs well for lunch: it keeps in the fridge for up to 3 days, and you can eat it cold or microwave it for about 1 minute."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Hebbar's Kitchen and Cook with Manali agree on boiling the noodles briefly, rinsing them cold, and stir-frying the vegetables hot and short so they stay crisp, then adding soy sauce, vinegar and pepper at the end. Hebbar's uses chili sauce and ketchup in the sauce, while Manali's uses sesame oil, celery and a splash of hot sauce. This follows Hebbar's lead, scaled from 2 to 4 servings, with the chili sauce moved to the table to keep the base mild and bean sprouts left out.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Hakka Noodles Recipe | Veg Hakka Noodles Recipe | Vegetable Noodles",
+   "url": "https://hebbarskitchen.com/hakka-noodles-recipe-veg-hakka-noodles/",
+   "rating": 5.0,
+   "rating_count": 297,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cook with Manali",
+   "title": "Vegetable Hakka Noodles",
+   "url": "https://www.cookwithmanali.com/vegetable-hakka-noodles/",
+   "rating": 5.0,
+   "rating_count": 43,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

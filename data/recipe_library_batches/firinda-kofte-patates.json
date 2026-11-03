@@ -1,0 +1,129 @@
+{
+ "dish_name": "Firinda Kofte Patates",
+ "cuisine": "Turkish",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 70,
+ "ingredients": [
+  {
+   "item": "Ground beef",
+   "qty": "1 1/4 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Sandwich bread",
+   "qty": "1 loaf",
+   "category": "other",
+   "cook_qty": "2 slices"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "1 1/2 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Mini sweet peppers",
+   "qty": "1 bag",
+   "category": "produce"
+  },
+  {
+   "item": "Cherry tomatoes",
+   "qty": "1 pint",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato sauce",
+   "qty": "1 can",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sweet paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 425°F. Toast the bread slices, then soak them in a bowl of water for a minute and squeeze them out hard. Tear them into small pieces in a large bowl.",
+  "Grate the onion into the bowl. Mince 2 of the garlic cloves and chop 1/2 cup of the parsley. Add them to the bowl with the beef, the egg, the cumin, the paprika, the black pepper and 1 tsp of the salt.",
+  "Mix with your hands until it holds together. Stop as soon as there are no streaks left. Any longer and the meatballs come out dense.",
+  "Slice the potatoes 1/2 inch thick. Toss them in a bowl with 1/2 tsp of the salt. Lay them in a 9 by 13 inch baking dish in overlapping rows.",
+  "Shape the meat into about 16 meatballs, a little less than the size of a golf ball. Flatten each one slightly and set one on each potato slice.",
+  "Meanwhile, slice the peppers into rings and halve the cherry tomatoes. Scatter them over the meatballs with the last garlic clove, minced, and 2 tbsp of the parsley. Dot the butter over the top.",
+  "In a small bowl, stir the tomato sauce with 1/4 cup water and the last 1/2 tsp salt. Pour it over the dish.",
+  "Cover the dish with parchment, then with foil. Bake for 45 minutes.",
+  "Take off the foil and parchment. Bake for 25 minutes, until the potatoes are soft and the edges of the meatballs are browned. You're cooking the meatballs to 160°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut into one: it's done when there's no pink left.",
+  "Taste the sauce. If it's flat, add a pinch more salt.",
+  "Sprinkle the rest of the parsley over the top and serve from the dish. Put the red pepper flakes on the table for anyone who wants heat."
+ ],
+ "method_notes": "Cup of Yum (4.9 from 22 ratings, read from the visible rating) leads. It layers a potato slice, a meatball, then peppers, tomato, garlic and parsley, covers the dish for 55 minutes at 450°F and uncovers it for 20. In the Kitchen with April (no rating shown) bakes the same layers at a lower heat in a thinner tomato sauce. Pomona uses 425°F, a full can of tomato sauce, a fixed 70 minutes, and a meatball mix from the April version since Cup of Yum's lives on another page.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "Oven Baked Meatballs and Potatoes",
+   "url": "https://cupofyum.com/recipes/oven-baked-meatballs-and-potatoes",
+   "rating": 4.9,
+   "rating_count": 22,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "In the Kitchen with April",
+   "title": "Oven Roasted Kofte with Potatoes (Firinda Kofte Patates)",
+   "url": "https://www.inthekitchenwithapril.com/2013/03/oven-roasted-kofte-with-potatoes-or-firinda-kofte-patates.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

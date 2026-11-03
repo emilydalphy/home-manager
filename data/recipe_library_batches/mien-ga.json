@@ -1,0 +1,114 @@
+{
+ "dish_name": "Mien Ga",
+ "cuisine": "Vietnamese",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 55,
+ "ingredients": [
+  {
+   "item": "Bone-in skin-on chicken thighs",
+   "qty": "2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Shallots",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece",
+   "category": "produce",
+   "cook_qty": "2-inch piece"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "4"
+  },
+  {
+   "item": "Dried wood ear mushrooms",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "1/2 oz"
+  },
+  {
+   "item": "Dried shiitake mushrooms",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "4"
+  },
+  {
+   "item": "Mung bean glass noodles",
+   "qty": "6 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Peel 3 of the shallots and leave them whole. Peel the ginger and slice it into thick coins. Cut the white parts off 4 green onions and keep the green parts for later.",
+  "Put the chicken in a large pot with 8 cups of cold water and the 2 tsp salt. Add the whole shallots, ginger and green onion whites. Bring it to a boil over high, then skim off the foam.",
+  "Turn the heat to low so the pot barely bubbles. Partly cover and simmer for 25 minutes. You're cooking the chicken to 175°F near the bone, so if you have a thermometer, check it there. No thermometer? Cut into the thickest piece: it's done when the juices run clear.",
+  "Meanwhile, put the wood ear and shiitake mushrooms in a bowl and cover them with hot water. Soak for 15 minutes. In a second bowl, cover the glass noodles with room temperature water and soak for 20 minutes, then drain.",
+  "Drain the mushrooms. Slice the wood ear into thin strips. Cut off the shiitake stems and keep the caps whole.",
+  "Transfer the chicken to a board and let it cool for 10 minutes. Pull off the skin, then pull the meat off the bones and shred it. Return the skin and bones to the pot with the shiitake caps. Simmer for 20 minutes.",
+  "Mince the last shallot. Heat the oil in a small skillet over medium. Add the shallot and cook for 30 seconds, until it smells sweet. Add the wood ear and cook for 1 minute. Add 1/2 tbsp of the fish sauce and 1/2 tsp of the pepper. Cook for 1 minute, then take the pan off the heat.",
+  "Lift the bones, skin, ginger, shallots and green onion whites out of the broth with a slotted spoon and throw them away. Keep the shiitake caps in. Turn the heat to medium-high until the broth is at a steady boil.",
+  "Add the noodles and cook for 30 to 45 seconds, until they're clear and tender. Take the pot off the heat.",
+  "Stir in the remaining 1/2 tbsp fish sauce. Taste the broth. If it's flat, add a pinch more salt.",
+  "Divide the noodles between 4 bowls. Top with the shredded chicken, the wood ear, a few shiitake caps and the green onion greens. Chop 1/2 cup of the cilantro and scatter it over, with the remaining 1/2 tsp pepper. Ladle over the hot broth.",
+  "To pack it for lunch: let the broth cool, then pack it in a jar, with the chicken, mushrooms and noodles in a separate container. It all keeps for 3 days in the fridge. Reheat the broth until it's steaming and pour it over the rest."
+ ],
+ "method_notes": "No version had 20 or more ratings, so this is a fallback and the lead is a weak one: Season and Thyme (5.0 from 6 ratings), with Delightful Plate (5.0 from 3) as the second read. Both poach the chicken in a plain ginger and shallot broth and season with fish sauce; Delightful Plate adds wood ear and shiitake and finishes with sauteed shallot, which I kept. I used bone-in thighs instead of a whole chicken to make it lunch-sized, which gives a lighter broth than the 90-minute version.",
+ "sources": [
+  {
+   "name": "Season and Thyme",
+   "title": "Miến Gà (Vietnamese Clear Noodle Soup)",
+   "url": "https://seasonandthyme.com/mien-ga-vietnamese-clear-noodle-soup/",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Delightful Plate",
+   "title": "Chicken Glass Noodle Soup (Miến Gà)",
+   "url": "https://delightfulplate.com/chicken-glass-noodle-soup-mien-ga/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

@@ -1,0 +1,121 @@
+{
+ "dish_name": "Lemon Poppy Seed Muffins",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 12,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "2 1/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Baking powder",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Baking soda",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Greek yogurt",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2/3 cup"
+  },
+  {
+   "item": "Butter",
+   "qty": "1/2 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Milk",
+   "qty": "1/2 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Poppy seeds",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "On Sunday, or up to 2 days ahead: Heat the oven to 400°F. Line a 12 cup muffin pan with paper liners.",
+  "Melt the 1/2 cup butter in a small bowl in the microwave, about 1 minute. Set it aside to cool a little.",
+  "Zest the lemons until you have 2 tbsp of zest, then juice them. That should be about 1/4 cup juice.",
+  "In a medium bowl, whisk the 2 1/4 cups flour, 2 tsp baking powder, 1/2 tsp baking soda and 1/2 tsp salt.",
+  "In a large bowl, whisk the 1 cup yogurt, the 2 eggs, 2/3 cup sugar, the melted butter, 1/2 cup milk, the lemon juice, the lemon zest and 1 tsp vanilla.",
+  "Add the flour mixture and stir until there are no dry streaks. Stop there. Any longer and the muffins come out tough. Fold in the 2 tbsp poppy seeds.",
+  "Divide the batter between the 12 cups, about 1/3 cup each. This makes 12 muffins.",
+  "Bake for 17 to 22 minutes, until the tops spring back when you press them and a toothpick in the middle comes out clean.",
+  "Let them cool in the pan for 10 minutes, then lift them onto a rack to cool completely.",
+  "They keep in a sealed container on the counter for 2 days, or in the fridge for up to 5 days. For the freezer, transfer them into a freezer bag. They keep for up to 3 months.",
+  "In the morning, eat one at room temperature, or microwave it for about 30 seconds. From the freezer, leave one on the counter for about an hour, or microwave it for 30 seconds."
+ ],
+ "advance_prep_notes": "Bake the batch on Sunday, or up to 2 days ahead, and keep them in a sealed container or the freezer.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10
+ ],
+ "method_notes": "Both use a lot of lemon zest and juice and 2 tbsp of poppy seeds in a 12 muffin batch. Love and Lemons (the lead) uses Greek yogurt and melted butter at 400°F, which keeps the muffins moist, and gives the freezer time. Once Upon a Chef curdles milk with the lemon and uses more butter and sugar at 375°F, with 15 ratings. The glaze both sources offer is left off so the muffins freeze plain. The fridge time is not on either page; it is added for the week-long batch.",
+ "sources": [
+  {
+   "name": "Love and Lemons",
+   "title": "Lemon Poppy Seed Muffins",
+   "url": "https://www.loveandlemons.com/lemon-poppy-seed-muffins/",
+   "rating": 4.82,
+   "rating_count": 43,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Once Upon a Chef",
+   "title": "Lemon Poppy Seed Muffins",
+   "url": "https://onceuponachef.com/recipes/lemon-poppy-seed-muffins.html",
+   "rating": 4.54,
+   "rating_count": 15,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

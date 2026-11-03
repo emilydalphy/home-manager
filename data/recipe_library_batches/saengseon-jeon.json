@@ -1,0 +1,123 @@
+{
+ "dish_name": "Saengseon Jeon",
+ "cuisine": "Korean",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Cod fillets",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Short-grain rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "6 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  },
+  {
+   "item": "Gochugaru",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Start the rice first. Rinse 1 1/2 cups of short-grain rice and cook it the way the package says.",
+  "Slice the cod 1/2 inch thick on a slight angle into pieces about 2 inches long. Pat them dry with paper towels and lay them on a plate. Sprinkle 3/4 tsp of the salt over both sides and let them sit for 10 minutes.",
+  "Meanwhile, make the dipping sauce. In a small bowl, stir 3 tbsp soy sauce, 2 tbsp rice vinegar, 2 tbsp water, the sesame oil and the sugar until the sugar dissolves. Put the gochugaru in its own small bowl for the table.",
+  "Put the flour on a large plate. Crack the eggs into a shallow bowl, add the remaining 1/4 tsp salt and beat them with a fork until no streaks of white are left.",
+  "Heat a large nonstick skillet over medium-low heat with 3 tbsp of the oil for 1 minute. Dredge half the cod in the flour and shake off the extra. Dip each piece in the egg so it's coated all over.",
+  "Lay the coated pieces in the skillet in a single layer. Cook for 3 minutes, until the underside is pale gold. Don't turn the heat up. The egg should stay light, not dark brown.",
+  "Flip the pieces and cook the other side for 2 to 3 minutes. The fish is done when it flakes if you press a piece with a fork. Transfer to a plate.",
+  "Wipe the skillet with a paper towel, add the remaining 3 tbsp oil and repeat with the rest of the cod.",
+  "Taste a piece. If it's flat, add a pinch more salt.",
+  "Serve with the rice and the dipping sauce, with the gochugaru on the side for the adults."
+ ],
+ "method_notes": "Every version is the same idea: salt thin slices of white fish, flour, then egg, then pan-fry gently so the egg stays pale. The lead (Food Network Kitchen) fries 3 to 4 minutes a side over medium-low and uses a soy and vinegar dipping sauce; Korea Times and Easy Korean Food use less egg and shorter times, and Korea Times adds sesame oil to the sauce, which I kept. No page for this dish shows 20 or more ratings (Food Network Kitchen shows none), so the lead is the best-read version and it is a fallback. Gochugaru is on the side so the base stays mild.",
+ "sources": [
+  {
+   "name": "Food Network Kitchen",
+   "title": "Saeng Sun Jeon (Fish Jeon)",
+   "url": "https://www.foodnetwork.com/recipes/food-network-kitchen/saeng-sun-jeon-fish-jeon-11543377",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Korea Times",
+   "title": "Saengseon Jeon (Pan-Grilled Fish With Egg)",
+   "url": "https://www.koreatimes.co.kr/www/news/culture/2013/01/318_57066.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Easy Korean Food",
+   "title": "Saengseon Jeon",
+   "url": "https://www.easykoreanfood.com/Pan-Fried-Cod.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Kimchimari",
+   "title": "Pan-Fried Fish and Shrimp Jeon",
+   "url": "https://kimchimari.com/korean-fish-and-shrimp-jeon-saengsun-and-saewoo-jeon/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

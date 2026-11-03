@@ -1,0 +1,143 @@
+{
+ "dish_name": "Rad Na",
+ "cuisine": "Thai",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Pork shoulder",
+   "qty": "12 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Fresh wide rice noodles",
+   "qty": "1.5 lbs",
+   "category": "other"
+  },
+  {
+   "item": "Chinese broccoli",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Red chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "White vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Fermented soybean paste",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 1/2 tbsp"
+  },
+  {
+   "item": "Dark soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "3 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "White pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Slice the pork against the grain, about 1/8 inch thick. Put it in a bowl.",
+  "Add 1 tbsp of the soy sauce, 1 tbsp of the oyster sauce, the sesame oil, 1/4 tsp of the white pepper and 1 tbsp of the cornstarch. Mix well with your hands and set it aside.",
+  "Slice the chili thinly and put it in a small bowl with the white vinegar. This is the chili vinegar for the table.",
+  "Mince the garlic. Slice the Chinese broccoli stems 1/2 inch thick and roughly chop the leaves, keeping them in two piles.",
+  "In a small bowl, stir the remaining 3 tbsp cornstarch into 1/4 cup cold water until smooth. This is the slurry.",
+  "Gently pull the noodles apart and toss them with the dark soy sauce.",
+  "Heat a large nonstick or cast iron skillet over high heat. Add 1 tbsp of the oil, then spread half the noodles in the pan. Leave them alone for 2 minutes, until the underside is browned in spots. Flip them and cook for 1 minute. Transfer to a platter.",
+  "Repeat with 1 tbsp oil and the rest of the noodles. Transfer them to the platter.",
+  "Turn the heat down to medium and add the last 2 tbsp oil. Add the soybean paste and stir for 30 seconds. Add the garlic and stir for 30 seconds, until it smells toasty.",
+  "Pour in the chicken broth and scrape up any browned bits from the pan. Add the remaining 1 1/2 tbsp soy sauce, the remaining 1 tbsp oyster sauce, the sugar and the remaining 1/4 tsp white pepper. Bring it to a boil over high heat.",
+  "Add the pork, pulling the slices apart as they go in, and the broccoli stems. Return to a boil and cook for 2 minutes. Add the leaves and cook for 1 minute, until the stems are bright green. You're cooking the pork to 145°F in the middle, so if you have a thermometer, check a thick slice. No thermometer? Cut a slice open: it's done when there's no pink left.",
+  "Stir the slurry, then pour in half while stirring. Boil for 1 minute. If the gravy doesn't coat the back of a spoon, stir in the rest of the slurry and boil for 30 seconds.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Divide the noodles between four bowls and ladle the gravy over them. Serve with the chili vinegar."
+ ],
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "method_notes": "Both versions read build the dish the same way: sliced marinated pork, noodles charred in a hot pan with dark soy, and a starch-thickened gravy built on fermented soybean paste, garlic and Chinese broccoli. The lead uses pork stock and tapioca starch; this version uses chicken broth and cornstarch, and oyster sauce in place of Golden Mountain sauce, so nothing needs a special trip. The egg white in the pork marinade is dropped and the chili vinegar moves to the table.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "Rad Na (Fresh Rice Noodles with Pork Gravy)",
+   "url": "https://cupofyum.com/recipes/rad-na-fresh-rice-noodles-with-pork-gravy",
+   "rating": 5,
+   "rating_count": 22,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Marion's Kitchen",
+   "title": "Thai Pork & Gravy Noodles (Rad Naa)",
+   "url": "https://www.marionskitchen.com/?p=16958",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

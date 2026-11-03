@@ -1,0 +1,104 @@
+{
+ "dish_name": "Choo Chee Pla",
+ "cuisine": "Thai",
+ "main_protein": "fish",
+ "ingredients": [
+  {
+   "item": "Cod fillets",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Coconut milk",
+   "qty": "1 can",
+   "category": "pantry"
+  },
+  {
+   "item": "Thai red curry paste",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Makrut lime leaves",
+   "qty": "6",
+   "category": "produce"
+  },
+  {
+   "item": "Red chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Thinly slice the lime leaves and the red chili. Keep them in separate piles.",
+  "Pat the cod dry and cut it into 4 portions. Sprinkle the salt over both sides.",
+  "Heat 2 tbsp of the oil in a large nonstick skillet over medium-high until it shimmers. Add the fish and cook for 3 to 4 minutes, until the underside is golden and lets go of the pan. Flip it and cook the other side for 3 minutes. Transfer it to a plate.",
+  "Heat the last 2 tbsp oil in a wide saucepan over low. Add the curry paste and stir for 1 minute, until it smells fragrant and the oil separates.",
+  "Shake the can of coconut milk and pour it in. Stir until smooth. Add the fish sauce, sugar and half the lime leaves.",
+  "Turn the heat up to medium and simmer for 5 minutes, until the sauce is thick enough to coat the back of a spoon.",
+  "Add the fish and any juices from the plate. Spoon the sauce over and simmer for 1 minute, until the fish flakes.",
+  "Off the heat, scatter the rest of the lime leaves over the top.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with jasmine rice. Pass the sliced red chili at the table for anyone who wants heat."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "method_notes": "Nobody read had 20 ratings, so this leads with Marion's Kitchen (5.0 from 2): sear firm fish, then toss it in a short curry of fried paste, coconut milk, fish sauce and sugar. Chef Spencil (5 from 1) and Adam Liaw on SBS (no rating) agree on the same order and on makrut lime leaves, and Liaw simmers the sauce thick, which we followed. Hungry in Thailand (5 from 4) is a shrimp version. We use 4 tbsp paste for 1.5 lb of fish to keep it mild, and the red chili goes on at the table.",
+ "sources": [
+  {
+   "name": "Marion's Kitchen",
+   "title": "Thai Choo Chee Fish Curry",
+   "url": "https://www.marionskitchen.com/thai-choo-chee-fish-curry/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "SBS Food",
+   "title": "Choo chee salmon",
+   "url": "https://www.sbs.com.au/food/recipes/choo-chee-salmon",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Chef Spencil",
+   "title": "Thai Red Curry Salmon (Choo Chee Pla)",
+   "url": "https://www.chefspencil.com/thai-red-curry-salmon-choo-chee-pla/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

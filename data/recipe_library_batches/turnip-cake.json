@@ -1,0 +1,142 @@
+{
+ "dish_name": "Turnip Cake",
+ "cuisine": "Chinese",
+ "main_protein": "pork",
+ "default_servings": 12,
+ "prep_time_minutes": 45,
+ "cook_time_minutes": 70,
+ "ingredients": [
+  {
+   "item": "Vegetable oil",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried shrimp",
+   "qty": "1 small bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Dried shiitake mushrooms",
+   "qty": "1 small bag",
+   "category": "pantry",
+   "cook_qty": "4 mushrooms"
+  },
+  {
+   "item": "Chinese sausage (lap cheong)",
+   "qty": "1 pack",
+   "category": "meat/seafood",
+   "cook_qty": "1 link"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Daikon radish",
+   "qty": "20 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Rice flour (regular, not glutinous)",
+   "qty": "1 1/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "White pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Chili crisp",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  }
+ ],
+ "instructions": [
+  "On Sunday, or up to 3 days ahead: put the dried shrimp and mushrooms in two separate bowls and cover each with hot water. Let them soak for 30 minutes.",
+  "Meanwhile, peel the daikon and grate it on the large holes. That should be about 4 cups. Finely chop the scallions and dice the sausage.",
+  "Drain the shrimp and mushrooms. Cut the stems off the mushrooms, then chop the mushrooms and shrimp small.",
+  "Heat 2 tbsp of the oil in a wok or large skillet over medium heat. Add the shrimp, mushrooms and sausage and stir for 5 minutes, until the sausage looks glossy and smells good. Add the scallions, stir for 30 seconds, then transfer everything to a bowl.",
+  "Add the grated daikon to the same pan with 1 cup of water. Simmer over medium heat for 10 minutes, stirring often, until the daikon is see-through and about 1 cup of liquid is left.",
+  "While the daikon simmers, whisk the rice flour, 2 tbsp cornstarch and 3/4 cup of water in a bowl until there are no lumps.",
+  "Stir the rice flour mixture into the daikon. Add the salt, 1/2 tsp sugar, white pepper and the shrimp mixture. It should look like thick pancake batter. If it's thinner, cook it over low heat, stirring all the time, until it thickens.",
+  "Rub 1 tbsp of the oil over the inside of a 9 by 5-inch loaf pan. Pour in the batter and smooth the top.",
+  "Bring a few inches of water to a boil in a steamer or a large pot with a rack. Set the pan on the rack, cover and steam over medium-high heat for 50 minutes, until a chopstick pushed into the middle comes out clean. Add more boiling water if it runs low. This makes 12 slices.",
+  "Let the cake cool in the pan for 30 minutes. Cover it and put it in the fridge for at least 4 hours, until it's firm. It keeps in the pan in the fridge for up to 3 days. You can also wrap it tightly and freeze it for up to 1 month, but the texture is softer. Thaw it in the fridge overnight.",
+  "In the morning, turn the cake out and cut off 4 slices, each about 1/2 inch thick. Dip the knife in water between cuts so it doesn't stick.",
+  "Heat 2 tbsp of the oil in a nonstick skillet over medium-low heat. Add the slices and fry for 4 to 5 minutes on each side, until they're golden and crisp. Don't move them while they brown.",
+  "Serve with the oyster sauce for dipping and the chili crisp on the side for anyone who wants heat."
+ ],
+ "advance_prep_notes": "Steam the cake on Sunday, or up to 3 days ahead, and keep it in the fridge until you slice and fry it.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10
+ ],
+ "method_notes": "The Woks of Life (the lead) simmers grated daikon, stirs in a rice flour and cornstarch batter, steams it in a loaf pan for 50 minutes, then chills it so it can be sliced and fried. Cook with Dana and Two Plaid Aprons cook the filling and batter in much the same way, and Two Plaid Aprons fries only the slices you'll eat. Freezing is a caveat: Woks of Life says 3 months, Cook with Dana 1 month, and Two Plaid Aprons says the texture suffers, so this version leans on the fridge. The soaking time is shortened to 30 minutes from the lead's 2 hours, which Cook with Dana supports.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Turnip Cake (Chinese Lo Bak Go)",
+   "url": "https://thewoksoflife.com/turnip-cake/",
+   "rating": 4.92,
+   "rating_count": 157,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cook with Dana",
+   "title": "Turnip Cake (Loh Bak Go)",
+   "url": "https://cookwithdana.com/turnip-cake-loh-bak-go/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Two Plaid Aprons",
+   "title": "Turnip Cake (Lo Bak Go)",
+   "url": "https://twoplaidaprons.com/turnip-cake-lo-bak-go/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

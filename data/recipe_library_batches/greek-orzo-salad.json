@@ -1,0 +1,119 @@
+{
+ "dish_name": "Greek Orzo Salad",
+ "cuisine": "Greek",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Orzo",
+   "qty": "1 3/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "6 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cherry tomatoes",
+   "qty": "1 pint",
+   "category": "produce"
+  },
+  {
+   "item": "English cucumber",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Kalamata olives",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "about 1/2 cup"
+  },
+  {
+   "item": "Fresh dill",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "a small handful"
+  },
+  {
+   "item": "Feta cheese",
+   "qty": "6 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat 3 tbsp of the olive oil in a large saucepan over medium-high heat. Add the orzo and stir for 2 to 3 minutes, until some of it turns light gold.",
+  "Add 6 cups of boiling water and 1 tsp of the salt. Cook for 10 to 12 minutes, until the orzo is tender with a little bite.",
+  "Drain the orzo and rinse it under cold water until the water runs clear. Drain well and shake off the extra water. Transfer it to a large bowl.",
+  "Meanwhile, quarter the cherry tomatoes. Halve the cucumber lengthwise, then slice it into half moons. Finely chop the red onion. Cut the olives in half. Roughly chop a small handful of dill.",
+  "In a small bowl, whisk the remaining 3 tbsp olive oil with the zest of the lemon and 2 tbsp of its juice. Add 4 tsp red wine vinegar, the garlic clove, minced, the oregano, the remaining 1/2 tsp salt and the pepper.",
+  "Add the tomatoes, cucumber, onion, olives and dill to the orzo. Pour the dressing over and toss.",
+  "Crumble or cube the feta and fold it in gently.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Chill for 1 hour before serving, so the orzo takes up the dressing. Serve cold with a little more olive oil stirred in if it looks dry. Packed for lunch, it keeps in the fridge for up to 3 days."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "My Greek Dish and Simply Delicious Food agree on cooked, rinsed orzo tossed with tomatoes, cucumber, red onion, Kalamata olives and feta in an olive oil, red wine vinegar and oregano dressing. My Greek Dish toasts the orzo first and uses basil, dill and lemon zest, while Simply Delicious Food uses garlic and lemon juice and no herbs. This follows My Greek Dish as the lead, adds the lemon juice and garlic from the other, and drops the basil.",
+ "sources": [
+  {
+   "name": "My Greek Dish",
+   "title": "Greek Orzo Salad (Orzo Feta Salad)",
+   "url": "https://www.mygreekdish.com/recipe/greek-orzo-salad-orzo-feta-salad/",
+   "rating": 4.51,
+   "rating_count": 133,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Simply Delicious",
+   "title": "Easy Greek Orzo Salad",
+   "url": "https://simply-delicious-food.com/easy-greek-orzo-salad/",
+   "rating": 4.75,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

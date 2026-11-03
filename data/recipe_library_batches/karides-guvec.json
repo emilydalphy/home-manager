@@ -1,0 +1,127 @@
+{
+ "dish_name": "Karides Guvec",
+ "cuisine": "Turkish",
+ "main_protein": "shrimp",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Large shrimp",
+   "qty": "1 1/4 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Cremini mushrooms",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "5",
+   "category": "produce"
+  },
+  {
+   "item": "Shredded mozzarella",
+   "qty": "8 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Butter",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 tube",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Crusty bread",
+   "qty": "1 loaf",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F. Slice the mushrooms, chop the onion and bell pepper, mince the garlic and chop the tomatoes. Pat the shrimp dry.",
+  "Melt 2 tbsp of the butter in a large oven-safe skillet or pot over medium-high heat. Add the mushrooms and cook for 5 to 6 minutes, stirring only now and then, until they're browned.",
+  "Add the onion and bell pepper and cook for 4 minutes, until soft.",
+  "Add the tomato paste and stir for 1 minute, until it darkens. Add the garlic and stir for 30 seconds.",
+  "Add the tomatoes, the salt and the black pepper. Simmer over medium-low heat for 7 to 8 minutes, stirring now and then, until the tomatoes have broken down into a thick sauce.",
+  "Take the pan off the heat and stir in the shrimp. Spoon everything into a baking dish, or leave it in the skillet if it's oven-safe, and spread it level.",
+  "Sprinkle the mozzarella and the thyme over the top and dot with the remaining 1 tbsp butter.",
+  "Bake for 10 to 12 minutes, until the cheese is melted and bubbling and the shrimp are pink and curled. For a browner top, broil for 1 to 2 minutes at the end.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the crusty bread. Put the red pepper flakes on the table for anyone who wants heat."
+ ],
+ "method_notes": "No version with 20 or more ratings could be read, so Cup of Yum (5 from 8 ratings) leads. It and Cooking Gorgeous (5 from 4) agree on the order: brown the mushrooms, soften the peppers, simmer the tomatoes, stir in the raw shrimp off the heat, top with cheese and bake. Mozzarella stands in for kashar, and the chile heat moves to the table. Almost Turkish Recipes (no rating shown) adds onion, bay and parsley.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "Cheesy Baked Shrimp (Karides Guvec)",
+   "url": "https://cupofyum.com/recipes/cheesy-baked-shrimp-karides-guvec",
+   "rating": 5,
+   "rating_count": 8,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cooking Gorgeous",
+   "title": "Oven Baked Shrimp (Karides Guvec)",
+   "url": "https://cookingorgeous.com/blog/baked-prawns-karides-guvec/",
+   "rating": 5,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Almost Turkish Recipes",
+   "title": "Shrimp Stew (Karides Guvec)",
+   "url": "https://www.almostturkishrecipes.com/2008/03/shrimp-stew-karides-gve.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

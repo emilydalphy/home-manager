@@ -1,0 +1,115 @@
+{
+ "dish_name": "Mushroom Takikomi Gohan",
+ "cuisine": "Japanese",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Short-grain rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried shiitake mushrooms",
+   "qty": "1 small bag",
+   "category": "produce"
+  },
+  {
+   "item": "Kombu",
+   "qty": "1 small package",
+   "category": "pantry"
+  },
+  {
+   "item": "Cremini mushrooms",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Aburaage (fried tofu pouches)",
+   "qty": "1 package",
+   "category": "dairy"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Put 2 large dried shiitake and a 4-inch piece of kombu in a bowl with 2 cups of warm water. Let them soak for 30 minutes.",
+  "Meanwhile, put the rice in a bowl, cover with cold water and swish it with your hand. Pour off the cloudy water. Do this 3 or 4 times, until the water is mostly clear. Drain the rice in a sieve.",
+  "Slice the cremini. Cut the carrot into thin matchsticks. Cut 1 aburaage into thin strips. Slice the green onions.",
+  "Lift the shiitake and kombu out of the soaking water and squeeze them over the bowl. Discard the kombu. Cut the stems off the shiitake and slice the caps thin.",
+  "Measure 1 3/4 cups of the soaking water into a heavy pot with a tight lid, adding plain water if you're short. Add the rice and the salt and leave it to sit while you cook the mushrooms.",
+  "Heat the oil in a frying pan over medium-high heat. Add the shiitake, cremini and carrot. Cook for 4 minutes, stirring, until the mushrooms shrink and start to brown.",
+  "Add the mirin and soy sauce and cook for 1 minute, until the liquid is mostly gone.",
+  "Spread the aburaage over the rice, then spread the mushroom mixture on top. Don't stir.",
+  "Bring the pot to a boil over high heat. When steam starts to come out from under the lid, turn the heat to the lowest setting. Cover and cook for 12 minutes.",
+  "Turn off the heat and leave the pot covered for 10 minutes. Don't lift the lid.",
+  "Fold the mushrooms through the rice. Taste it. If it's flat, add a pinch more salt.",
+  "Serve in bowls, topped with the green onions."
+ ],
+ "method_notes": "No version of this dish has 20 or more ratings. The lead is No Recipes' mushroom takikomi (4.75 from 8 votes), and Chef JA Cooks (5 from 1 vote, taken from the visible rating) and La Fuji Mama (no rating) agree on rice cooked with soy and mushrooms, fried tofu on top, covered 12 minutes then rested 10. They differ on the dashi: shiitake soaking water, shiitake with kombu, or dashi powder (which can have bonito). I used shiitake and kombu soaking water so it's meatless, mirin from La Fuji Mama in place of the lead's sake, and left out burdock. Just One Cookbook's popular version has chicken, so I didn't use it.",
+ "sources": [
+  {
+   "name": "No Recipes",
+   "title": "Takikomi Gohan (Mushroom & Root Vegetable Rice)",
+   "url": "https://norecipes.com/takikomi-gohan-recipe/",
+   "rating": 4.75,
+   "rating_count": 8,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Chef JA Cooks",
+   "title": "Mushroom Takikomi Gohan (Japanese Mixed Rice)",
+   "url": "https://chefjacooks.com/en/mushroom-takikomi-gohan/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "La Fuji Mama",
+   "title": "Takikomi Gohan, Japanese Mixed Rice",
+   "url": "https://www.lafujimama.com/takikomi-gohan-japanese-mixed-rice/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

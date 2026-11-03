@@ -1,0 +1,117 @@
+{
+ "dish_name": "Boeuf Carottes",
+ "cuisine": "French",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Beef chuck roast",
+   "qty": "2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1 bottle",
+   "category": "other",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Beef broth",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh thyme",
+   "qty": "1 package",
+   "category": "produce"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Crusty bread",
+   "qty": "1 loaf",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Cut the beef into 2-inch chunks and pat them dry. Season them with 1 tsp of the salt and 1/2 tsp of the pepper. Chop the onions. Peel the carrots and cut them into 1-inch pieces.",
+  "Heat the butter and olive oil in a Dutch oven over medium-high heat. Brown the beef in 3 batches, about 3 minutes a side, until deeply browned all over. Transfer each batch to a plate.",
+  "Turn the heat to medium. Add the onions and cook for 6 minutes, until soft. Add the tomato paste and stir for 1 minute.",
+  "Add the wine and scrape up the browned bits from the bottom of the pot. Boil for 3 minutes, until it has reduced by about a third.",
+  "Return the beef and any juices to the pot. Add the broth, 4 thyme sprigs, the bay leaves, and the last 1 tsp salt and 1/2 tsp pepper. Bring to a boil, cover, turn the heat to low and simmer for 2 hours.",
+  "Add the carrots, cover, and simmer for 45 minutes, until a fork slides into the beef and carrots with no resistance.",
+  "Take the pot off the heat. Remove the thyme stems and bay leaves. Chop 2 tbsp of the parsley and stir it in.",
+  "Taste it. If it's flat, add a pinch more salt. Serve in bowls with the crusty bread."
+ ],
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 195,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "This is a slow Sunday pot, about 3 hours 35 minutes in all, so it is not a weeknight dinner. Magnolia Days, Amiable Foods and House & Home agree on browned beef, onions, white wine and carrots in a covered pot, and differ on tomato paste, bacon and whether the carrots go in at the start or for the last hour. Ratings are weak and none reaches 20 (Magnolia Days 3 from 2 votes shown on the page; Amiable Foods shows no rating), so this is a fallback. This version takes Amiable Foods' tomato paste and wine reduction on Magnolia Days' longer, richer method, and cuts the carrot time to 45 minutes so they hold their shape.",
+ "sources": [
+  {
+   "name": "Amiable Foods",
+   "title": "French Beef and Carrot Stew",
+   "url": "https://amiablefoods.com/?p=2640",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Magnolia Days",
+   "title": "Boeuf aux Carottes (Beef and Carrots)",
+   "url": "https://magnoliadays.com/beouf-aux-carottes/",
+   "rating": 3,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "default_servings": 4,
+ "fallback_used": true,
+ "origin": "seed"
+}

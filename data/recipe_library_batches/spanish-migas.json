@@ -1,0 +1,109 @@
+{
+ "dish_name": "Spanish Migas",
+ "cuisine": "Spanish",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Crusty bread",
+   "qty": "8 oz",
+   "category": "other"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Smoked paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Spanish chorizo",
+   "qty": "5 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Sherry vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 tbsp"
+  }
+ ],
+ "instructions": [
+  "Whisk 1/4 cup water with 1/2 tsp of the salt and 1/2 tsp of the paprika in a large bowl. Cut the bread into 1/2 inch cubes, add them and knead gently until the water is absorbed and about half the bread has broken into smaller pieces. If it isn't breaking down, add water 1 tbsp at a time.",
+  "Crack the eggs into two small bowls, 2 in each. Slice the chorizo 1/4 inch thick and smash the garlic. Cut the peppers into 1/2 inch pieces.",
+  "Put the oil, chorizo and garlic in a 12 inch nonstick skillet over medium heat. Cook for 4 to 5 minutes, stirring often, until the chorizo has given up its fat and the edges are browned.",
+  "Move the chorizo to a bowl with a slotted spoon and throw out the garlic. Leave 2 tbsp of fat in the skillet and pour the rest over the bread. Toss.",
+  "Add the bread to the skillet and turn the heat to medium-high. Cook for 10 to 12 minutes, stirring often, until the small pieces are browned and crisp and the bigger pieces are crisp outside and moist inside. Transfer it to the bowl it came from.",
+  "Add 1 tbsp of the skillet fat, the peppers, the remaining 1/4 tsp salt and the remaining 1/2 tsp paprika to the empty skillet. Cook over high heat for 3 to 5 minutes, until softened and a little blistered.",
+  "Return the chorizo and cook for 30 seconds, until heated through. Sprinkle with the vinegar and 2 tsp of the parsley and toss.",
+  "Combine it with the bread and transfer to a wide serving bowl.",
+  "Heat the remaining 1 tbsp fat in the empty skillet over medium-high heat until it shimmers. Pour in the eggs, one bowl on each side. Cover and cook for 1 minute.",
+  "Take the pan off the heat and keep it covered for 45 to 60 seconds, for soft but set yolks.",
+  "Set the eggs on top of the migas, sprinkle with the remaining 1 tsp parsley and serve."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The versions agree on soaking stale bread, frying it in chorizo fat until crisp outside and soft inside, cooking peppers and garlic in the same pan, and topping with a fried egg. America's Test Kitchen (the lead) uses bacon and two kinds of pepper for six eggs, and this cuts it to chorizo and bell peppers for four. Great British Chefs soaks the bread in milk for an hour and adds onion, and Caroline's Cooking is a single serving with paprika and optional grapes. This takes 45 minutes in all, longer than the 30 minutes of a quick weekday breakfast, mostly in frying the bread. The Great British Chefs page shows a rating of 5.00 but no count.",
+ "sources": [
+  {
+   "name": "America's Test Kitchen",
+   "title": "Spanish Migas with Fried Eggs",
+   "url": "https://www.americastestkitchen.com/recipes/12832-spanish-migas-with-fried-eggs",
+   "rating": 4.0,
+   "rating_count": 61,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Great British Chefs",
+   "title": "Migas",
+   "url": "https://greatbritishchefs.com/recipes/migas-recipe",
+   "rating": 5.0,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Caroline's Cooking",
+   "title": "Spanish Migas",
+   "url": "https://www.carolinescooking.com/spanish-migas/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

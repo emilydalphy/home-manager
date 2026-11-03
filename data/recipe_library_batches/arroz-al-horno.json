@@ -1,0 +1,122 @@
+{
+ "dish_name": "Arroz al Horno",
+ "cuisine": "Spanish",
+ "main_protein": "pork",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 55,
+ "ingredients": [
+  {
+   "item": "Pork ribs",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Cured Spanish chorizo",
+   "qty": "8 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Canned chickpeas",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Bomba or short grain rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "3 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Sweet paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Saffron threads",
+   "qty": "1 pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 450°F with a rack in the lower third.",
+  "Pat the ribs dry and season them with 1 tsp of the salt and the black pepper.",
+  "Meanwhile, slice the potato 1/4 inch thick. Cut 1 tomato into 4 round slices and grate the other on the large holes of a box grater, skin side against your palm. Slice the chorizo 1/2 inch thick. Drain and rinse the chickpeas. Slice the top off the head of garlic so the cloves show.",
+  "Heat 2 tbsp of the oil in a 12 inch oven-safe skillet or a wide shallow casserole over medium-high until it shimmers. Add the ribs in a single layer and cook for 8 to 10 minutes, turning them now and then, until browned all over. Transfer them to a plate.",
+  "Add the chorizo to the pan and cook for 2 minutes, until it browns at the edges and the oil turns red. Transfer it to the plate with the ribs.",
+  "Add the remaining 2 tbsp oil and the potato slices. Cook for 3 minutes on each side, until golden at the edges, then transfer them to a separate plate.",
+  "Turn the heat down to medium. Add the grated tomato and cook for 3 minutes, scraping up the browned bits, until it darkens and thickens.",
+  "Stir in the paprika, the saffron and the bay leaf and cook for 30 seconds.",
+  "Add the rice and the chickpeas and stir for 1 minute, until the rice is coated.",
+  "Pour in the broth and the remaining 1/2 tsp salt. Bring it to a bubble, stir once and don't stir again.",
+  "Nestle the ribs and chorizo into the rice. Set the garlic head cut side up in the middle. Arrange the potato slices and the tomato rounds on top.",
+  "Transfer the pan to the oven, uncovered, and bake for 25 to 30 minutes, until the broth has soaked in, the rice is tender and the edges are crisp. The ribs should be tender enough that the meat pulls from the bone.",
+  "Let it rest, uncovered, for 5 minutes.",
+  "Taste the rice. If it's flat, add a pinch more salt.",
+  "Serve from the pan, with the soft garlic cloves squeezed over the rice."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The Valencian tourism board's recipe and the BBC Good Food Middle East version agree on the method: brown the pork, fry grated tomato, toast the rice in that base, add chickpeas and stock, set a whole head of garlic in the middle, and finish in a hot oven. They differ on the sausage (blood sausage against chorizo), the stock amount and the oven heat. I used cured chorizo because blood sausage is hard to find, 450°F instead of the 475°F in the tourism recipe, and added saffron and paprika from the BBC version. Neither page shows a rating, so the lead is the tourism board's traditional version.",
+ "sources": [
+  {
+   "name": "Comunitat Valenciana tourism board",
+   "title": "Arroz al horno",
+   "url": "https://multimedia.comunitatvalenciana.com/AAD76C13FC514501B90E24DFAD0491AE/doc/22E6641A1CC84FD28E4F41929A36D02C/Arroz_al_horno_EN.pdf",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "BBC Good Food Middle East",
+   "title": "Arroz al horno (baked meaty rice)",
+   "url": "https://www.bbcgoodfoodme.com/recipes/arroz-al-horno-baked-meaty-rice/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

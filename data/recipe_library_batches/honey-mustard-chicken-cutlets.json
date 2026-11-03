@@ -1,0 +1,102 @@
+{
+ "dish_name": "Honey Mustard Chicken Cutlets",
+ "cuisine": "American",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken breasts",
+   "qty": "3 (about 1 1/2 lb)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Butter",
+   "qty": "1 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  }
+ ],
+ "instructions": [
+  "Slice each chicken breast in half through the side, like opening a book, so you have 6 thin cutlets. If any is thicker than 1/2 inch, pound it between two sheets of plastic wrap until even.",
+  "Pat the cutlets dry and sprinkle both sides with the salt and pepper.",
+  "In a small bowl, whisk together 1 cup of the broth, the Dijon and the honey. Mince the garlic.",
+  "Heat 1 tbsp of the oil in a large skillet over medium-high heat for 1 minute. Add 3 cutlets in a single layer and cook for 3 minutes, until the underside is deep golden and lets go of the pan. Flip them and cook the other side for 2 minutes. Transfer them to a plate.",
+  "You're cooking the chicken to 160°F in the middle, and it rises to 165°F as it rests. If you have a thermometer, check it there. No thermometer? Cut into the thickest cutlet: it's done when there's no pink and the juices run clear.",
+  "Add the remaining 1 tbsp oil to the pan and cook the other 3 cutlets the same way. Transfer them to the plate.",
+  "Lower the heat to medium. Add the garlic and stir for 20 seconds, until it smells good.",
+  "Pour in the broth mixture and scrape up the browned bits from the bottom of the pan. Let it bubble for 4 to 5 minutes, until it has reduced by about half and coats the back of a spoon.",
+  "Take the pan off the heat and whisk in the butter until the sauce is smooth. Return the cutlets and any juices from the plate to the pan, and turn them to coat.",
+  "Chop 2 tbsp of the parsley and scatter it over the top. Serve with mashed potatoes and a green salad.",
+  "Taste it. If it's flat, add a pinch more salt."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both sources sear the chicken, then build the sauce in the same pan from broth, Dijon and honey. RecipeTin Eats uses chicken strips and thickens with a flour and mayo paste; Recipe Runner uses halved, pounded breasts, white wine and shallot, and finishes with cold butter. This version uses cutlets like Recipe Runner, RecipeTin Eats' garlic, broth, Dijon and honey for the sauce, reduces it instead of adding a thickener, and finishes with butter off the heat. The lead is a strips version of the dish (cutlets version has only 15 ratings).",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Honey Mustard Chicken",
+   "url": "https://www.recipetineats.com/honey-mustard-chicken/",
+   "rating": 4.82,
+   "rating_count": 103,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Recipe Runner",
+   "title": "Sautéed Chicken Cutlets with Honey Mustard Pan Sauce",
+   "url": "https://reciperunner.com/sauteed-chicken-cutlets-honey-mustard-pan-sauce/",
+   "rating": 4.41,
+   "rating_count": 15,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

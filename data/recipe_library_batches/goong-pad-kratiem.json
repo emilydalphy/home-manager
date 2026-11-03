@@ -1,0 +1,95 @@
+{
+ "dish_name": "Goong Pad Kratiem",
+ "cuisine": "Thai",
+ "main_protein": "shrimp",
+ "ingredients": [
+  {
+   "item": "Large shrimp",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Garlic",
+   "qty": "8 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground white pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Peel and devein the shrimp if they aren't already, and pat them dry. Transfer them to a bowl and toss with the salt and 1/2 tsp of the white pepper.",
+  "Mince the garlic, but not too fine. Stir it with the remaining 1/2 tsp white pepper in a small bowl. Slice the green onions.",
+  "In another small bowl, stir together the oyster sauce, soy sauce, sugar and 1/4 cup water.",
+  "Heat 2 tbsp of the oil in a large skillet over medium-high until it shimmers. Add half the shrimp in a single layer and cook for 1 minute per side, until pink. Transfer them to a plate. Cook the rest the same way.",
+  "Turn the heat down to medium-low. Add the last 2 tbsp oil and the garlic and pepper. Stir for 30 to 45 seconds, until fragrant and pale gold. If it starts to brown, take the pan off the heat. Burnt garlic turns bitter.",
+  "Pour in the sauce and simmer for 1 minute, until it's slightly thick and glossy.",
+  "Add the shrimp and any juices from the plate. Toss for 1 minute, until they're coated and curled into a loose C.",
+  "Off the heat, stir in half the green onions.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with jasmine rice and the rest of the green onions on top."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 12,
+ "method_notes": "This is a quick dinner, about 27 minutes in total. Neither version had enough ratings, so Hungry in Thailand (no rating shown) leads as the best-read real version: pound garlic and pepper, sear the shrimp and set them aside, fry the garlic briefly, make a short oyster and soy sauce, then toss the shrimp back in. Hot Thai Kitchen's garlic shrimp (no rating) agrees on garlic, white pepper and a very short cook. We scaled the sauce for 1.5 lb, used ground white pepper instead of a mortar, and left out the shells and heads.",
+ "sources": [
+  {
+   "name": "Hungry in Thailand",
+   "title": "Thai Fried Garlic Pepper Shrimp (20 Minutes)",
+   "url": "https://hungryinthailand.com/fried-garlic-pepper-shrimp-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Hot Thai Kitchen",
+   "title": "Garlic Shrimp",
+   "url": "https://hot-thai-kitchen.com/garlic-shrimp",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

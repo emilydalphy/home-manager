@@ -1,0 +1,94 @@
+{
+ "dish_name": "Yaki Onigiri",
+ "cuisine": "Japanese",
+ "main_protein": "vegetarian",
+ "default_servings": 6,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Short-grain sushi rice",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "White miso paste",
+   "qty": "1 tub",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Butter",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Chives",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Roasted seaweed sheets (nori)",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "6 sheets"
+  }
+ ],
+ "instructions": [
+  "Put the 2 cups rice in a bowl, cover it with cold water and swish it with your hand. Pour the water off and repeat for 2 minutes, until the water is only a little cloudy. Drain the rice well in a sieve.",
+  "Put the rice in a heavy pot with 2 1/4 cups cold water. Bring it to a boil over high heat, cover, turn the heat to the lowest setting and cook for 13 minutes. Take it off the heat and leave the lid on for 10 minutes.",
+  "Meanwhile, whisk the 2 tbsp soy sauce, 1 tbsp miso and 1 tbsp mirin together in a small bowl until smooth.",
+  "Spread the cooked rice in a wide bowl and pour the sauce over it. Fold it through gently with a rice paddle or spoon, then leave it for about 15 minutes, until it's comfortable to handle.",
+  "Wet your hands and divide the rice into 6 portions. Press each into a triangle about 2 inches thick, pressing firmly so it holds together. Meanwhile, finely chop the chives. This makes 6 onigiri.",
+  "Melt 1 1/2 tbsp of the butter in a large nonstick or cast iron skillet over medium-high heat. Add 3 triangles and cook for 2 minutes on each side, until crispy and golden. Transfer them to a plate.",
+  "Wipe out the pan, melt the last 1 1/2 tbsp butter and cook the other 3 the same way.",
+  "Sprinkle the chives over the triangles. Serve warm with the nori sheets."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Tasting Table seasons the rice itself with soy, miso and mirin, shapes it and sears it in butter. Just One Cookbook seasons the rice with soy, sugar and sesame oil and brushes a soy and sesame glaze on the crisp rice at the end, and Takes Two Eggs brushes a soy, mirin and sugar glaze. Tasting Table has the highest rating with 20 or more votes, so it leads, and its glaze is stirred into the rice, so there is no brushed glaze. Check the miso label if no fish stock is wanted.",
+ "sources": [
+  {
+   "name": "Tasting Table",
+   "title": "Yaki Onigiri Recipe",
+   "url": "https://www.tastingtable.com/1177070/yaki-onigiri-recipe/",
+   "rating": 4.9,
+   "rating_count": 33,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Just One Cookbook",
+   "title": "Yaki Onigiri (Grilled Rice Ball)",
+   "url": "https://www.justonecookbook.com/yaki-onigiri-grilled-rice-ball/",
+   "rating": 4.68,
+   "rating_count": 86,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Takes Two Eggs",
+   "title": "Yaki Onigiri (Grilled Rice Balls)",
+   "url": "https://takestwoeggs.com/?p=8265",
+   "rating": 5,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

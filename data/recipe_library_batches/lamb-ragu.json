@@ -1,0 +1,142 @@
+{
+ "dish_name": "Lamb Ragu",
+ "cuisine": "Italian",
+ "main_protein": "lamb",
+ "ingredients": [
+  {
+   "item": "Boneless lamb shoulder",
+   "qty": "2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Celery",
+   "qty": "2 stalks",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh rosemary",
+   "qty": "1 small bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Dry red wine",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "1 can",
+   "category": "pantry"
+  },
+  {
+   "item": "Low-sodium chicken broth",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Pappardelle",
+   "qty": "12 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "3 oz",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 350°F. Trim the thickest fat off the lamb and cut it into 3 big pieces. Pat them dry and season with 1 tsp of the salt and 1/2 tsp of the black pepper.",
+  "Finely chop the onion. Grate the celery and carrot on the large holes of a box grater, discarding any stringy bits of celery. Mince the garlic. Pull the leaves off 1 sprig of rosemary and chop 1 tbsp of them.",
+  "Heat the olive oil in a large Dutch oven over high heat. Brown the lamb in batches for 3 to 4 minutes per side, until deep golden all over. Transfer it to a bowl.",
+  "Turn the heat to medium. Add the onion, celery, carrot and chopped rosemary and cook for 7 minutes, stirring now and then, until soft but not browned.",
+  "Add the garlic and stir for 1 minute.",
+  "Turn the heat to high. Add the tomato paste and stir for 1 1/2 minutes, until it darkens to a deep red.",
+  "Pour in the red wine and scrape up the browned bits. Boil for 4 minutes, until it has reduced by half.",
+  "Add the crushed tomatoes, the chicken broth, the bay leaves, 3 whole rosemary sprigs, 1 tsp of the salt and the remaining 1/2 tsp black pepper. Return the lamb and any juices in the bowl to the pot and bring it to a simmer.",
+  "Cover and bake for 2 hours. Check the lamb: it should shred easily with a fork. If it doesn't, cover it and bake for another 30 minutes.",
+  "Transfer the lamb to a cutting board and shred it with two forks. Take out the rosemary sprigs and bay leaves from the sauce.",
+  "Return the shredded lamb to the pot with 2 more whole rosemary sprigs. Simmer uncovered over medium-low heat for 25 minutes, stirring often, until the sauce is thick.",
+  "Meanwhile, bring a large pot of water to a boil and add the remaining salt (about 1 tbsp). Cook the pappardelle for 1 minute less than the package says. Scoop out a mugful of the water, then drain the pappardelle.",
+  "Take the rosemary sprigs out of the ragu. Return the pappardelle to its pot with the ragu and 1/4 cup of the water. Toss over medium-high heat for 1 minute, until the sauce coats the pappardelle with none pooling in the pot.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Grate the Parmesan. Serve with the Parmesan on top."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 200,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version of this dish has 20 or more ratings, so RecipeTin Eats (a trusted cook with this dish, 5.0 from 13 votes) is the lead. It browns lamb shoulder hard, cooks a grated soffritto with rosemary, darkens tomato paste, reduces red wine, braises the lamb in crushed tomato and stock for 2 to 2 1/2 hours, shreds it and reduces the sauce before tossing with pasta. The Burnt Butter Table (5.0 from 6) bakes lamb leg the same way with olives; Food My Muse (no ratings) braises 4 hours with anchovy, chili paste, a parmesan rind and finishes with crème fraîche. This version follows the lead, uses chicken broth alone in place of its stock cubes, and cuts it to 2 lbs of lamb for 4 servings. It takes about 3 1/2 hours, so it is a weekend dish, not a weeknight one.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Slow Cooked Rosemary Lamb Ragu",
+   "url": "https://www.recipetineats.com/slow-cooked-lamb-ragu-pasta/",
+   "rating": 5.0,
+   "rating_count": 13,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Burnt Butter Table",
+   "title": "Slow Cooked Lamb Ragu",
+   "url": "https://www.theburntbuttertable.com/slow-cooked-lamb-ragu/",
+   "rating": 5.0,
+   "rating_count": 6,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Food My Muse",
+   "title": "Lamb Ragu Pappardelle",
+   "url": "https://foodmymuse.com/lamb-ragu-pappardelle/",
+   "rating": null,
+   "rating_count": 0,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

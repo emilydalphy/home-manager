@@ -1,0 +1,122 @@
+{
+ "dish_name": "White Chicken Chili",
+ "cuisine": "American",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Rotisserie chicken",
+   "qty": "1",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "White beans",
+   "qty": "2 cans (15 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "3 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Poblano peppers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Frozen corn",
+   "qty": "1/2 cup",
+   "category": "frozen"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 1/2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ancho chile powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse and drain both cans of white beans. Put one can in a blender with 1 cup of the broth and blend until smooth. Set the other can aside.",
+  "Dice the onion and the poblano peppers, removing the poblano seeds. Mince the garlic.",
+  "Heat the olive oil in a large pot over medium-high heat. Add the onion and poblanos and cook for 6 minutes, until soft.",
+  "Add the garlic, cumin, coriander and ancho chile powder. Stir for 1 minute, until it smells toasty.",
+  "Add the remaining 2 cups broth, the blended beans and 1/2 tsp of the salt. Bring it to a boil, then turn the heat down and simmer, uncovered, for 20 minutes.",
+  "Meanwhile, remove the skin from the rotisserie chicken and shred all the meat. That should be about 3 to 4 cups. Thinly slice the jalapeño, chop 1/4 cup of the cilantro and cut one lime into wedges.",
+  "Add the chicken, the whole beans, the corn and the remaining 1/2 tsp salt. Simmer for 5 minutes, until everything is hot.",
+  "Take the pot off the heat. Stir in the juice of the other lime (about 1 tbsp) and the cilantro.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of the lime wedges.",
+  "Serve with the lime wedges and the sliced jalapeño at the table for anyone who wants heat. For lunches, divide it into 4 containers. It keeps in the fridge for 3 days and in the freezer for 3 months. It thickens as it sits, so reheat it in a pot over medium-low heat or in the microwave with a splash of water or broth."
+ ],
+ "method_notes": "Once Upon a Chef (4.87, 441 ratings) is the lead: half the beans blended into the broth for body, a poblano and onion base, cumin, coriander and ancho bloomed in the pot, then rotisserie chicken, corn and lime at the end. Black People's Recipes (1 rating) is a faster chili powder, paprika and green chile version without blending. This follows the lead, scaled down to 4, with the jalapeño moved to the table so the pot stays mild. At about 50 minutes it is long for a lunch, but the pot is hands off and it makes four lunches.",
+ "sources": [
+  {
+   "name": "Once Upon a Chef",
+   "title": "White Chicken Chili",
+   "url": "https://www.onceuponachef.com/recipes/white-chicken-chili.html",
+   "rating": 4.87,
+   "rating_count": 441,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Black People's Recipes",
+   "title": "White Chicken Chili",
+   "url": "https://blackpeoplesrecipes.com/white-chicken-chili/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

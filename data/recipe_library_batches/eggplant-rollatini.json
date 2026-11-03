@@ -1,0 +1,114 @@
+{
+ "dish_name": "Eggplant Rollatini",
+ "cuisine": "Italian",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 50,
+ "ingredients": [
+  {
+   "item": "Eggplant",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole milk ricotta",
+   "qty": "16 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Pecorino Romano",
+   "qty": "2 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Marinara sauce",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Pine nuts",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh basil",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 425°F and set the racks in the top and bottom thirds. Line two baking sheets with parchment.",
+  "Trim the eggplants and slice them lengthwise into planks about 1/4 inch thick. That should be about 16 planks. Lay them on a clean towel, sprinkle them with 1 tsp of the salt, and let them sit for 20 minutes.",
+  "Blot the planks dry. Lay them in a single layer on the two baking sheets and brush both sides with the olive oil.",
+  "Roast for 20 to 25 minutes, flipping the planks and swapping the pans halfway, until they're soft enough to bend and golden at the edges.",
+  "Meanwhile, in a bowl, stir together the ricotta, the pecorino (grate it first), the garlic (grated), the oregano, the zest of the lemon, the remaining 1/2 tsp salt and the black pepper.",
+  "Spread the marinara in a 9x13 inch baking dish. Let the planks cool for 5 minutes so you can handle them.",
+  "Spoon about 2 tbsp of the ricotta filling onto the wide end of a plank and roll it up. Set it seam side down in the sauce. Repeat with the rest, using up all the filling.",
+  "Cover the dish with foil and bake for 20 minutes, until the sauce is bubbling at the edges.",
+  "While it bakes, toast the pine nuts in a dry skillet over medium heat for 2 to 3 minutes, shaking the pan, until golden. Transfer them to a small bowl.",
+  "Taste the sauce around the rolls. If it's flat, add a pinch more salt.",
+  "Scatter the pine nuts over the rollatini and tear the basil leaves on top. Put the red pepper flakes in a small bowl on the table for anyone who wants heat. Serve with a green salad or crusty bread."
+ ],
+ "method_notes": "Love and Lemons (the lead) salts and roasts the planks instead of frying them, fills them with ricotta, pecorino, garlic, oregano and lemon zest, and bakes them covered in marinara at 425°F. Cooking with Nonna uses an egg and mozzarella in the filling and bakes at a lower heat, with a lighter hand on the sauce. I followed the lead's roast-then-bake method and moved its red pepper flakes to the table so the base stays mild. The pine nuts are toasted for crunch. Love and Lemons' rating was read from its page JSON as 5 from 20 votes.",
+ "sources": [
+  {
+   "name": "Love and Lemons",
+   "title": "Eggplant Rollatini",
+   "url": "https://loveandlemons.com/eggplant-rollatini",
+   "rating": 5,
+   "rating_count": 20,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cooking with Nonna",
+   "title": "Eggplant Rollatini",
+   "url": "https://www.cookingwithnonna.com/italian-cuisine/eggplant-rollatini.html",
+   "rating": 4,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

@@ -1,0 +1,147 @@
+{
+ "dish_name": "Vegetable Massaman Curry",
+ "cuisine": "Thai",
+ "main_protein": "vegetarian",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece (2 inches)",
+   "category": "produce"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Massaman curry paste",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "1 1/2 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Coconut milk",
+   "qty": "2 cans (13.5 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Peanut butter",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Roasted unsalted peanuts",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the rice on first. Rinse 1 1/2 cups of jasmine rice, then add it to a medium pot with 2 1/4 cups water and 1/4 tsp of the salt. Bring it to a boil, cover, turn the heat to its lowest setting and cook for 15 minutes. Leave the lid on and take it off the heat until the curry is ready.",
+  "Meanwhile, cut the potatoes into 3/4-inch chunks and slice the carrots into 1/4-inch coins. Finely chop the onion, mince the garlic cloves and grate the ginger. Roughly chop the peanuts and about 1/4 cup of the cilantro.",
+  "Heat the oil in a large pot or deep skillet over medium. Add the onion and the remaining 1/4 tsp salt and cook for 4 minutes, stirring now and then, until soft and just starting to turn gold.",
+  "Add the garlic, ginger, cumin and cinnamon and stir for 30 seconds, until it smells toasty.",
+  "Add the curry paste and stir it into the onion. Cook for 2 to 3 minutes, until it darkens and smells strong. Don't rush this part. It's where the flavor starts.",
+  "Add the potatoes and carrots and stir for 1 minute, until they're coated in the paste.",
+  "Add both cans of coconut milk, the broth, 2 tbsp peanut butter, 1 tbsp soy sauce and 2 tsp sugar. Stir until the peanut butter melts in, then bring it to a gentle simmer.",
+  "Turn the heat to medium-low, cover with the lid slightly open and cook for 20 minutes, stirring every few minutes, until a fork slides into the potatoes easily. The sauce should coat the back of a spoon.",
+  "Take the pot off the heat. Stir in half of the chopped peanuts and the juice of the lime.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice, topped with the rest of the peanuts and the chopped cilantro."
+ ],
+ "method_notes": "No vegetable massaman with 20 or more ratings was readable, so there is no qualifying lead. The lead is Vegan with Gusto (page shows 5 stars from 1 vote; JSON-LD not shown). Well Plated (chicken) and RecipeTin Eats (beef, a trusted cook) were also read for ratios and order but are different dishes, so they are not listed as sources: bloom the paste with aromatics, then potatoes, carrots and about 2 cans of coconut milk, peanut butter for body, a sweet and salty finish, lime off the heat. All agree on potatoes and peanuts; they differ on paste (jar versus made from scratch) and how much liquid. Changed: soy sauce takes the place of fish sauce, no green beans, and the jar paste must be checked for shrimp paste before it goes in the basket.",
+ "sources": [
+  {
+   "name": "Vegan with Gusto",
+   "title": "Vegetable Massaman Curry (Vegan Recipe)",
+   "url": "https://veganwithgusto.com/massaman-curry/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cleveland Clinic",
+   "title": "Lighter Thai Vegetable Massaman Curry",
+   "url": "https://health.clevelandclinic.org/recipe-lighter-thai-vegetable-massaman-curry",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "fallback_used": true,
+ "origin": "seed",
+ "default_servings": 4
+}

@@ -1,0 +1,124 @@
+{
+ "dish_name": "Di San Xian",
+ "cuisine": "Chinese",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Chinese eggplants",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow potatoes",
+   "qty": "1 1/2 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell peppers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "White pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "6 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse 1 1/2 cups of rice in a pot until the water runs mostly clear. Add 2 cups of water, bring it to a boil, then cover and turn the heat to low. Cook for 15 minutes, then take it off the heat and leave it covered.",
+  "Peel the potatoes and cut them into 1-inch pieces. Cut the eggplants into 1-inch pieces on an angle. Cut the peppers into 1-inch pieces. Cook the potatoes and eggplants soon after cutting.",
+  "Smash and peel the garlic cloves. Slice the green onions. Stir 1 tbsp cornstarch into 3 tbsp water in a small bowl.",
+  "In another small bowl, stir together 2 tbsp Shaoxing wine, 3 tbsp soy sauce, 1 tsp sugar, 1/2 tsp white pepper and the sesame oil.",
+  "Heat 2 tbsp of the oil in a large skillet or wok over medium heat. Add the potatoes in a single layer and cook for 12 minutes, stirring every minute or two, until golden and a knife slides in easily.",
+  "Add the peppers and cook for 1 minute. Transfer the potatoes and peppers to a large plate.",
+  "Add 2 tbsp oil to the same pan and turn the heat to medium-high. Add half the eggplant in a single layer. Cook for 5 to 6 minutes, stirring now and then and covering the pan for 1 minute at a time, until browned and soft. Transfer it to the plate.",
+  "Add 2 tbsp oil and cook the rest of the eggplant the same way.",
+  "Turn the heat to medium-low and add the garlic. Stir for 10 seconds, until you can smell it.",
+  "Return all the vegetables to the pan and pour in the sauce. Turn the heat to high and stir for 30 seconds.",
+  "Stir the cornstarch mixture again and pour it in, then add most of the green onions. Stir for 30 seconds, until the sauce turns glossy and coats everything.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the rice and the remaining green onions on top."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 35,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead and the other versions agree on the method: cook the potato first, the pepper briefly, and the eggplant in between, then bring them together in a light garlic soy sauce thickened with cornstarch. They differ on frying: one deep fries, one coats the eggplant in cornstarch and soaks it in salt water, and the lead pan-fries in a few tablespoons of oil, which is what this does. Quantities are scaled from the lead's 2 servings to 4 with green peppers as the dish is named, and the lead's rating is the page's visible 4.80 from 45 votes.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Stir-fried Eggplant, Potatoes & Peppers (Di San Xian)",
+   "url": "https://thewoksoflife.com/di-san-xian-stir-fry/",
+   "rating": 4.8,
+   "rating_count": 45,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "China Sichuan Food",
+   "title": "Di San Xian: Chinese Sauteed Potato, Eggplants and Green Peppers",
+   "url": "https://www.chinasichuanfood.com/di-san-xian-chinese-sauteed-potato-eggplants-and-green-peppers/",
+   "rating": 4.93,
+   "rating_count": 14,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,121 @@
+{
+ "dish_name": "Mushroom Bourguignon",
+ "cuisine": "French",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Cremini mushrooms",
+   "qty": "2 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Frozen pearl onions",
+   "qty": "9 oz",
+   "category": "frozen"
+  },
+  {
+   "item": "Baby carrots",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Dry red wine",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh thyme",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Wide egg noodles",
+   "qty": "8 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the mushrooms into thick pieces, quartering the small ones and cutting the large ones into 6. Mince the garlic. Tie 5 thyme sprigs together with kitchen string.",
+  "Heat 1 tbsp of the oil in a large Dutch oven or pot over medium-high heat. Add half the mushrooms and 1/2 tsp salt. Cook for 7 minutes, stirring now and then, until the liquid is gone and they're deep brown. Transfer them to a bowl.",
+  "Add 1 tbsp oil and cook the rest of the mushrooms with 1/2 tsp salt the same way. Transfer them to the bowl.",
+  "Add the last 1 tbsp oil and the carrots to the pot. Cook for 3 minutes, until they start to brown.",
+  "Add the frozen pearl onions and cook for 4 minutes. Stand back a little, as they will spatter. Stir now and then until they're lightly browned.",
+  "Add the garlic and cook for 1 minute, until you can smell it. Add the tomato paste and stir for 1 minute, until it darkens.",
+  "Pour in the wine and let it bubble for 2 minutes, scraping up the browned bits from the bottom of the pan.",
+  "Add the broth, the bundle of thyme, the bay leaves, 1/2 tsp salt, the pepper and the mushrooms with any juices in the bowl. Bring it to a simmer, then cover and turn the heat to low. Cook for 25 minutes, until the carrots are tender.",
+  "Meanwhile, bring a large pot of salted water to a boil. Cook the noodles for 7 minutes, or according to the package. Drain and toss with 1 tbsp of the butter.",
+  "Uncover the stew and cook for 5 minutes on medium-low, until the sauce is thick enough to coat the vegetables. Take out the thyme and bay leaves.",
+  "Take the pot off the heat and stir in the remaining 1 tbsp butter.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the buttered noodles."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 55,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead and the other versions agree on the order: brown the mushrooms hard, cook the carrots and small onions, add garlic and tomato paste, deglaze with red wine, then add stock and thyme and simmer. The lead bakes it for 40 minutes at 375°F; this simmers it on the stove with the lid on, then uncovered to thicken, which gives the same result with one pot. Frozen pearl onions replace the fresh baby onions to save peeling, and butter is stirred in at the end. The lead's rating is the page's visible 4.91 from 194 votes.",
+ "sources": [
+  {
+   "name": "Easy Cheesy Vegetarian",
+   "title": "Easy Mushroom Bourguignon",
+   "url": "https://www.easycheesyvegetarian.com/mushroom-bourguignon/",
+   "rating": 4.91,
+   "rating_count": 194,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Two Spoons",
+   "title": "40-Minute Stove Top Vegan Mushroom Bourguignon",
+   "url": "https://www.twospoons.ca/mushroom-bourguignon/",
+   "rating": 4.89,
+   "rating_count": 9,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

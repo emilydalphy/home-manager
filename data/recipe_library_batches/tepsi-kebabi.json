@@ -1,0 +1,124 @@
+{
+ "dish_name": "Tepsi Kebabi",
+ "cuisine": "Turkish",
+ "main_protein": "lamb",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 45,
+ "ingredients": [
+  {
+   "item": "Ground lamb",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 tube",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sweet paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Pita bread",
+   "qty": "1 pack",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F. Chop the onion fine, chop half the green pepper fine, chop 1/4 cup of the parsley and mince the garlic. Chop 1 of the tomatoes fine as well.",
+  "Put the lamb in a large bowl. Add the chopped onion, pepper, parsley, garlic and tomato, the paprika, the cumin, the black pepper, 1 tsp of the salt and 1/2 tsp of the red pepper flakes.",
+  "Knead with your hands for 2 minutes, until the mix is sticky and holds together.",
+  "Rub the bottom of a 9 by 13 inch baking dish with 1 tbsp of the olive oil. Press the meat into the dish in an even layer about 1/2 inch thick, right to the edges.",
+  "Slice the potatoes thin, about 1/8 inch. Cut the 2 remaining tomatoes into wedges and the other half of the green pepper into chunks.",
+  "Score the meat into 8 squares. Tuck the potato slices into the cuts and along the edges, overlapping them. Lay the tomato wedges and green pepper over the top. Sprinkle with 1/2 tsp of the salt.",
+  "In a small bowl, whisk the tomato paste with 1 cup water, the last 1 tbsp olive oil and the last 1/4 tsp salt. Pour it evenly over the dish.",
+  "Bake for 40 minutes, until the potatoes are soft and golden at the edges and the sauce has thickened. You're cooking the lamb to 160°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the center: it's done when there's no pink left.",
+  "Let it rest for 5 minutes. Meanwhile, wrap the pita in foil and warm it in the oven.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Cut along the scored lines and serve with the warm pita. Put the remaining red pepper flakes on the table for anyone who wants heat, and sprinkle the rest of the parsley over the top."
+ ],
+ "method_notes": "No version with 20 or more ratings turned up, so this is a fallback. Cooking Gorgeous (5 from 1 rating, read from the visible rating) leads: a lamb and beef mix pressed thin with onion, pepper, tomato and parsley, topped with potatoes and a tomato paste sauce. Ozlem's Turkish Table (no rating shown) cooks nearly the same tray with the potato tucked along the cuts. Both bake at 350 to 356°F; Pomona uses 400°F, ground lamb alone, and moves the pul biber to the table.",
+ "sources": [
+  {
+   "name": "Cooking Gorgeous",
+   "title": "Patatesli Tepsi Kebabi (Turkish Tray Kebab)",
+   "url": "https://cookingorgeous.com/blog/patatesli-tepsi-kebabi-turkish-tray-kebab/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Ozlem's Turkish Table",
+   "title": "Tray Kebab, Antakya Style (Tepsi Kebabi)",
+   "url": "https://ozlemsturkishtable.com/2011/04/tray-kebab-antakya-style-tepsi-kebabi/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

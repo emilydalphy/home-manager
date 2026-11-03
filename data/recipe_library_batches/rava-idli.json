@@ -1,0 +1,151 @@
+{
+ "dish_name": "Rava Idli",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "default_servings": 10,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Ghee",
+   "qty": "2 tbsp + 1 tsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Cashews",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mustard seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Urad dal",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chana dal",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Curry leaves",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Asafoetida",
+   "qty": "1 pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 inch",
+   "category": "produce"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Semolina",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Baking soda",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "On Sunday, or up to 4 days ahead: warm 2 tbsp of the ghee in a wide pan over medium-low heat. Add the cashews, halved, and fry for about 1 minute, until light golden. Transfer them to a plate.",
+  "Add the mustard seeds, cumin seeds, urad dal and chana dal to the same pan. Cook for about 30 seconds, until the mustard seeds pop and the dal turns golden. Stand back a little. They'll spatter.",
+  "Add the curry leaves, the asafoetida, 1 inch of ginger, grated, and the green chili, seeded and chopped. Cook for 30 seconds.",
+  "Add the semolina. Roast it over low heat, stirring, for 5 minutes, until it smells toasty and looks loose and dry. Don't let it brown.",
+  "Transfer it to a large bowl and let it cool for 10 minutes.",
+  "Stir in the yogurt, the salt, 2 tbsp chopped cilantro and 1/2 cup water. The batter should be thick and fall slowly off a spoon. Cover and leave it for 20 minutes.",
+  "Meanwhile, pour about 2 inches of water into a large pot, set a steamer rack in it and bring it to a boil. Grease the idli moulds with the remaining 1 tsp ghee and put a few cashew halves in each.",
+  "Stir 1 tsp lemon juice and the baking soda into the batter. It will lighten and foam. If it's too thick to pour, stir in 1 tbsp water.",
+  "Fill the moulds right away. Steam, covered, over high heat for 12 minutes, until a toothpick comes out clean. This makes 10 idli.",
+  "Let them sit for 5 minutes, then loosen each one with a wet spoon.",
+  "Cool them completely. They keep in the fridge for up to 4 days in a sealed container, or in the freezer for up to 1 month.",
+  "In the morning, cover 2 or 3 idli with a damp paper towel and microwave for 30 to 40 seconds. Frozen ones take about 1 minute. Serve with coconut chutney or sambar."
+ ],
+ "advance_prep_notes": "Steam the idli on Sunday, or up to 4 days ahead, and reheat them through the week.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  11
+ ],
+ "method_notes": "All three roast the semolina in ghee with a mustard, dal and curry leaf tempering, cool it, mix it with yogurt and rest it for about 20 minutes before steaming. Hebbar's Kitchen (the lead) uses Eno fruit salt for lift and steams for 15 minutes. Pomona's version swaps the Eno for baking soda and a little lemon juice, as Swasthi's Recipes allows, since Eno is hard to find, and steams for 12 minutes as Swasthi's does. It uses one green chili where the lead uses two, to keep it mild, and it needs an idli stand. None of the three give reheating times, so those are our own, and the freezer time is our own too.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Rava Idli Recipe | Instant Suji Idli in 15 Mins",
+   "url": "https://hebbarskitchen.com/rava-idli-recipe-instant-semolina-idli/",
+   "rating": 4.99,
+   "rating_count": 304,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Rava Idli Recipe | Instant Idli with Suji",
+   "url": "https://indianhealthyrecipes.com/rava-idli-recipe/",
+   "rating": 4.98,
+   "rating_count": 276,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Cook with Manali",
+   "title": "Rava Idli",
+   "url": "https://www.cookwithmanali.com/rava-idli/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

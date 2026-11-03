@@ -1,0 +1,119 @@
+{
+ "dish_name": "Sausage and Kale Gnocchi",
+ "cuisine": "Italian",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Italian sausage",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Potato gnocchi",
+   "qty": "1 lb",
+   "category": "pantry"
+  },
+  {
+   "item": "Kale",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Milk",
+   "qty": "3/4 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1/3 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Parmesan cheese",
+   "qty": "1/3 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "instructions": [
+  "Remove the stems from the kale and chop the leaves. That should be about 6 cups. Chop the onion and mince the garlic. Grate the Parmesan.",
+  "Heat the oil in a large, deep skillet over medium-high heat. Add the sausage, breaking it up with a spoon, and cook for 6 minutes, until it is deeply browned. Transfer it to a bowl and leave about 1 tbsp of fat in the pan.",
+  "Add the onion to the pan and cook for 3 minutes, until soft. Add the garlic and stir for 30 seconds.",
+  "Add the gnocchi straight from the package. Spread them out and cook for 4 minutes, stirring now and then, until they are golden in spots.",
+  "Add the broth and milk and scrape up the browned bits from the bottom of the pan. Add the kale and the pepper. Bring it to a simmer, cover, and cook for 4 minutes, stirring once, until the gnocchi are tender and the kale has wilted.",
+  "Return the sausage to the pan. Add the cream and Parmesan and stir for 1 minute, until the sauce coats the gnocchi.",
+  "Take the pan off the heat. Serve with the red pepper flakes at the table for anyone who wants heat.",
+  "Taste it. If it's flat, add a pinch more salt."
+ ],
+ "method_notes": "Honest time is 30 minutes. The sources agree on the base: brown the sausage, soften onion and garlic, simmer the gnocchi in broth with kale, finish with cream and Parmesan. The lead cooks the gnocchi only in the liquid; I brown them in the pan first for some crisp edges, as the lead never does, so expect golden spots rather than fully crisp gnocchi. Red pepper flakes moved to the table. No version with a rating of 20 votes or more existed on the pages I could read other than the lead, whose rating is the same recipe as Cooking Classy; ratings are the visible ones on each page.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "One Pan Creamy Gnocchi with Italian Sausage and Kale",
+   "url": "https://cupofyum.com/recipes/one-pan-creamy-gnocchi-with-italian-sausage-and-kale-227330",
+   "rating": 5,
+   "rating_count": 96,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cooking Classy",
+   "title": "One Pan Creamy Gnocchi with Italian Sausage and Kale",
+   "url": "https://www.cookingclassy.com/one-pan-creamy-gnocchi-with-italian-sausage-and-kale/",
+   "rating": 4.97,
+   "rating_count": 32,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Craving Homecooked",
+   "title": "Skillet Gnocchi with Sausage and Kale",
+   "url": "https://cravinghomecooked.com/skillet-gnocchi-with-sausage-and-kale/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "default_servings": 4,
+ "origin": "seed"
+}

@@ -1,0 +1,87 @@
+{
+ "dish_name": "Sweet Potato Toast",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Sweet potatoes",
+   "qty": "2 large",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Almond butter",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Bananas",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Avocados",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F. Line a baking sheet with parchment.",
+  "Scrub the sweet potatoes and pat them dry. Leave the skin on. Cut each one lengthwise into slices about 1/4 inch thick. You want 8 slices from the widest middle parts.",
+  "Arrange the slices on the baking sheet in a single layer. Brush them with 2 tbsp of the olive oil and sprinkle with 1/2 tsp salt and the pepper.",
+  "Bake for 8 minutes. Flip the slices and bake for 6 to 8 minutes, until a fork slides in easily and the edges are browned. Don't let them go much longer or they fall apart.",
+  "Meanwhile, slice the bananas. In a bowl, mash the avocados with 1/4 tsp salt with a fork.",
+  "Heat the last 1 tbsp olive oil in a large skillet over medium heat. Crack in the 4 eggs and cook for 3 minutes, until the whites are set and the yolks are still soft. Cook them a little longer if you like the yolks firm.",
+  "Spread 4 of the slices with the almond butter and top with the banana.",
+  "Spread the other 4 slices with the avocado and top each with a fried egg.",
+  "Serve with a fork and knife."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree on thin lengthwise slices of sweet potato cooked until tender and browned, then used like bread. Cozymeal (the lead) bakes slices 1/4 to 1/3 inch thick at 400°F and gives both a sweet topping of almond butter and banana and a savory one of avocado and a fried egg. The Toasted Pinenut fries the slices in ghee instead. This version follows the lead's oven method, with the bake time lengthened a little so the slices are properly tender. Half the slices get the sweet topping and half the savory one. The lead has only 2 ratings, so this is a fallback.",
+ "sources": [
+  {
+   "name": "Cozymeal",
+   "title": "Sweet Potato Toast",
+   "url": "https://www.cozymeal.com/recipes/r/sweet-potato-toast",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Toasted Pinenut",
+   "title": "Loaded Almond Butter + Banana Sweet Potato Toast",
+   "url": "https://thetoastedpinenut.com/loaded-almond-butter-banana-sweet-potato-toast",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

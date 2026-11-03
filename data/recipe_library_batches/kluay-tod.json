@@ -1,0 +1,94 @@
+{
+ "dish_name": "Kluay Tod",
+ "cuisine": "Thai",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Ripe bananas",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Rice flour",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsweetened shredded coconut",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "In a medium bowl, whisk the rice flour, all-purpose flour, coconut, sesame seeds, sugar and salt.",
+  "Add 1/3 cup ice cold water and whisk until there are no dry pockets. The batter should be thick enough to coat a spoon. If it's too thick to drip, whisk in 1 tbsp more water at a time.",
+  "Peel the bananas and cut each in half crosswise, then cut each half in half lengthwise. That should be 12 pieces.",
+  "Pour the oil into a medium heavy skillet so it's about 1 inch deep and heat it over medium heat. You're heating it to 350°F, so if you have a thermometer, check it there. No thermometer? Drop in a drop of batter: it should sizzle at once and rise to the top.",
+  "Dip 4 or 5 banana pieces in the batter and turn to coat them. Lift each out and let the extra drip off, then lower it into the oil.",
+  "Fry for 3 to 4 minutes, turning once, until deep golden and crisp. Transfer to a plate lined with paper towels. Coat and fry the rest in two more batches.",
+  "Serve warm."
+ ],
+ "method_notes": "The versions agree on a rice flour batter with shredded coconut, sesame seeds and sugar, thin slices of banana and shallow or deep frying until golden. Hungry in Thailand, the lead, thins its batter with ice cold water, and this one scales its ratios down to 3 bananas. Cuisine Atlas and Recipes Journey add baking powder and coconut milk, which are left out to keep the list short. None has 20 ratings (Hungry in Thailand shows 2 votes, Recipes Journey 1, Cuisine Atlas none), so this is a fallback. Simply Suwanee and Hot Thai Kitchen were blocked and skipped. Regular firm ripe bananas replace small Thai bananas.",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "sources": [
+  {
+   "name": "Hungry in Thailand",
+   "title": "Best Thai Fried Bananas Recipe (Authentic Kluay Kaek)",
+   "url": "https://hungryinthailand.com/thai-fried-bananas-recipe/",
+   "rating": 5,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Recipes Journey",
+   "title": "Thai Fried Bananas Kluay Tod",
+   "url": "https://recipesjourney.com/en/thai-fried-bananas-kluay-tod/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Cuisine Atlas",
+   "title": "How to Make Thai Fried Bananas (Gluay Tod)",
+   "url": "https://cuisineatlas.com/asian/thai/thai-fried-bananas-gluay-tod/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

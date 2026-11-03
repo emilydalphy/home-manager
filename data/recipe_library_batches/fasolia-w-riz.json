@@ -1,0 +1,47 @@
+{
+ "dish_name": "Fasolia w Riz",
+ "cuisine": "Lebanese",
+ "main_protein": "beans",
+ "ingredients": [
+  {"item": "Beef stew meat", "qty": "1 lb", "category": "meat/seafood"},
+  {"item": "Cannellini beans", "qty": "3 cans", "category": "pantry"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Garlic", "qty": "6 cloves", "category": "produce"},
+  {"item": "Cilantro", "qty": "1 bunch", "category": "produce"},
+  {"item": "Tomato paste", "qty": "1 can", "category": "pantry", "cook_qty": "3 tbsp"},
+  {"item": "Bay leaf", "qty": "1", "category": "pantry"},
+  {"item": "Ground coriander", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Ground allspice", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "3 tsp", "category": "pantry"},
+  {"item": "Vegetable oil", "qty": "5 tbsp", "category": "pantry"},
+  {"item": "White rice", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Vermicelli noodles", "qty": "1/4 cup", "category": "pantry"}
+ ],
+ "instructions": [
+  "Pat the beef dry. Mix 1 tsp of the salt with 1/2 tsp of the pepper and sprinkle it over the beef.",
+  "Heat 1 tbsp of the oil in a heavy pot over medium-high heat. Add half the beef in a single layer and leave it alone for 3 minutes, until it lets go of the pot and is browned underneath. Turn the pieces and brown them for 2 minutes. Transfer to a plate and brown the rest the same way.",
+  "Chop the onion. Add it to the same pot with 1 tbsp of the oil, scraping up the brown bits. Cook for 5 minutes, until soft.",
+  "Add the tomato paste and cook for 1 minute, until it darkens. Add the coriander, allspice and bay leaf and stir for 30 seconds. Add 4 cups of water and the beef, and bring to a boil.",
+  "Turn the heat to low, cover, and simmer for 1 hour, until the beef is tender. Stir every 20 minutes or so.",
+  "Meanwhile, pick the cilantro leaves off the stems and chop the leaves fine. Crush the garlic with 1/2 tsp of the salt into a rough paste. Drain and rinse the beans.",
+  "When the beef is tender, heat 2 tbsp of the oil in a small skillet over medium heat. Add the cilantro and the garlic and cook for 4 minutes, stirring, until fragrant. Don't let the garlic brown.",
+  "Add the cilantro and garlic to the stew along with the beans and the remaining 1/2 tsp pepper. Simmer, partly covered, for 20 minutes, until the sauce is thick and a little of the beans have broken down.",
+  "While the stew simmers, rinse the rice in cold water 3 or 4 times, until the water runs clear. Break the vermicelli into short pieces. Heat the last 2 tbsp oil in a medium pot over medium-high heat, add the vermicelli, and stir for 2 minutes, until golden.",
+  "Add the rice and stir for 1 minute. Add 2 1/4 cups of water and 1 tsp of the salt. Bring to a boil, then turn the heat to low, cover, and cook for 15 minutes. Leave it covered off the heat for 5 minutes, then fluff with a fork.",
+  "Serve the stew over the rice and vermicelli.",
+  "Taste it. If it's flat, add a pinch more salt."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 105,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Simply Lebanese (4.77 from 17 ratings, so under the 20-rating bar) is the lead and is the only source that is this exact dish, bean and beef stew over vermicelli rice, so fallback is marked. It builds the stew from beef broth, a cilantro and garlic saute, canned cannellini and tomato paste, and cooks the rice with toasted vermicelli. The Matbakh version (5.0 from 6) uses lamb, dried lima beans and allspice, and cooks it about 3 hours. Pomona follows Simply Lebanese, cuts it to 3 cans of beans for 4, simmers the beef in a pot instead of a pressure cooker, adds an onion base and a little allspice from the other version, and leaves out the pressure-cooker blanch.",
+ "sources": [
+  {"name": "Simply Lebanese", "title": "Fasolia wa Roz", "url": "https://www.simplyleb.com/recipe/fasolia-wa-roz/", "rating": 4.77, "rating_count": 17, "read": true, "lead": true},
+  {"name": "The Matbakh", "title": "Fasolia Lebanese Lamb and Lima Bean Stew", "url": "https://thematbakh.com/large-lima-beans-recipe-with-lamb-fassoulia-butter-beans-stew/", "rating": 5.0, "rating_count": 6, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

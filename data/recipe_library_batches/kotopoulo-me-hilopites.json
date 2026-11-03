@@ -1,0 +1,124 @@
+{
+ "dish_name": "Kotopoulo me Hilopites",
+ "cuisine": "Greek",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Bone-in skin-on chicken thighs",
+   "qty": "2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 tube",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "1 can",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Allspice berries",
+   "qty": "3",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Hilopites",
+   "qty": "8 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "3 oz",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 350°F. Pat the chicken dry. Sprinkle it with 1 tsp of the salt, the black pepper and the oregano on both sides.",
+  "Heat the olive oil in a large Dutch oven over medium-high heat. Add the chicken skin side down, in two batches if it doesn't fit in one layer. Cook for 5 minutes, until the skin is deep golden and lets go of the pot. Flip and cook for 1 minute, then transfer it to a plate.",
+  "Pour off all but about 1 tbsp of the fat. Add the tomato paste and stir for 1 minute, until it darkens.",
+  "Pour in the white wine and scrape up the browned bits. Boil for 2 minutes, until it has reduced by half.",
+  "Add the crushed tomatoes, the cinnamon stick, the allspice berries, the bay leaves, 1/2 tsp of the salt and 1 cup of hot water. Stir, then nestle the chicken back in, skin side up, with any juices on the plate.",
+  "Cover and bake for 40 minutes. You're cooking the thighs to 175°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest piece next to the bone: it's done when the juices run clear.",
+  "Transfer the chicken to a plate. Fish the cinnamon stick, bay leaves and allspice berries out of the sauce.",
+  "Put the pot on the stove over medium-high heat. Add 2 cups of hot water and the remaining 1/2 tsp salt and bring it to a boil.",
+  "Add the hilopites and stir. Turn the heat to medium and cook uncovered for 12 to 15 minutes, stirring often, until the hilopites are tender and most of the liquid has been absorbed. If it gets dry before they're tender, add 1/4 cup hot water at a time.",
+  "Nestle the chicken on top of the hilopites. Cover and heat for 3 minutes.",
+  "Grate the Parmesan. Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the Parmesan on top."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 80,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Kopiaste (the lead) roasts a whole chicken in tomato, wine, cinnamon, allspice, bay and oregano, then cooks the hilopites in the roasting liquid with hot water and tops them with hard cheese. Greek Boston browns the chicken in butter, simmers it in tomato and bakes the noodles in the sauce, and Diane Kochilas browns onion first and simmers the bird in tomato paste and water before boiling the noodles in the pot. This version follows Kopiaste's flavors but uses thighs, browns them first, halves the quantities, and adds a little tomato paste for depth (Greek Boston and Kochilas both use it). If hilopites are hard to find, small wide egg noodles or orzo work. Greek Boston shows no rating; Kochilas has no rating shown. Kopiaste's rating is from its visible '4.5 from 54 reviews' line. This is a different dish from Kotopoulo Kokkinisto already in the library (that one is served with rice).",
+ "sources": [
+  {
+   "name": "Kopiaste",
+   "title": "Kotopoulo me Hilopites (Chicken with Greek Pasta)",
+   "url": "https://www.kopiaste.org/?p=416",
+   "rating": 4.5,
+   "rating_count": 54,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Greek Boston",
+   "title": "Greek Style Chicken with Noodles (Kotopoula Hilopites)",
+   "url": "https://www.greekboston.com/food/poultry/chicken-noodle-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Diane Kochilas",
+   "title": "Kokoras me Hilopites",
+   "url": "https://www.dianekochilas.com/?p=26185",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

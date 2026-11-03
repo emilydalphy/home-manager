@@ -1,0 +1,141 @@
+{
+ "dish_name": "Bo Bit Tet",
+ "cuisine": "Vietnamese",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Sirloin steak",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cherry tomatoes",
+   "qty": "1 pint",
+   "category": "produce"
+  },
+  {
+   "item": "Butter",
+   "qty": "4 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Liver pâté",
+   "qty": "1 small tub",
+   "category": "dairy",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "English cucumber",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Baguette",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Pat the steak dry and cut it into 4 even pieces. In a bowl, mix the oyster sauce, the soy sauce, the sugar, the garlic (mince it first), 1/2 tsp of the pepper and 1 tbsp of the oil. Add the steak and turn to coat. Leave it on the counter for 30 minutes.",
+  "Meanwhile, slice the onion into thin wedges. Slice the cucumber into rounds and halve the cherry tomatoes if they're large. Cut the baguette into 4 pieces.",
+  "Make the dip. In a small bowl, mix 1 tsp of the salt and 1 tsp of the pepper, then squeeze in the juice of half the lime and stir. Cut the other half into wedges.",
+  "Heat a large cast iron or heavy skillet over medium-high heat for 2 minutes. Add 1 tbsp of the oil and the onion. Cook for 5 minutes, stirring now and then, until soft and browned at the edges. Transfer to a plate.",
+  "Add the last 1 tbsp oil to the skillet and raise the heat to high. Lay in the steak and leave it alone for 3 minutes, until the underside is deep brown and lets go of the pan. Stand back a little. It will spatter.",
+  "Flip the steak. Add 2 tbsp of the butter and spoon it over the steak as it melts. Cook for 3 minutes. You're cooking it to 130°F in the middle for medium-rare, so if you have a thermometer, check it there. No thermometer? Cut into the thickest piece: it should be pink in the middle.",
+  "Transfer the steak to a cutting board and let it rest for 5 minutes. Slice it across the grain into strips about 1/2 inch thick.",
+  "Return the skillet to medium-high heat. Add the tomatoes and the remaining 1/2 tsp salt and cook for 2 minutes, until blistered. Transfer to the plate with the onion.",
+  "Lower the heat to medium. Melt the remaining 2 tbsp butter in the skillet. Crack in the eggs and cook for 2 to 3 minutes, until the whites are set and the yolks are still runny.",
+  "Taste a slice of the steak. If it's flat, add a pinch more salt.",
+  "Divide the steak, onion, tomatoes and eggs among 4 plates. Add a spoonful of the liver pâté, the cucumber and the lime wedge to each. Serve with the baguette and the lime-pepper dip."
+ ],
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 30,
+ "method_notes": "The sources agree on a quickly seared, oyster-sauce-marinated steak with a fried egg, tomato, onion, pâté, a lime, salt and pepper dip, and bread. They differ on size and style: Cooking Therapy sears one thick steak, Vicky Pham slices the beef thin and cooks it in small batches, and Vietnam Discovery adds fries and pounds the beef. I followed the lead's method but cut the steak into four pieces and sliced it after resting so it serves four. No version has 20 or more ratings (the lead shows 5 from 6 on the page, JSON-LD not shown), so this is a fallback lead; this dish is also called bò né.",
+ "sources": [
+  {
+   "name": "Cooking Therapy",
+   "title": "Bo Ne (Vietnamese Steak and Eggs)",
+   "url": "https://www.cooking-therapy.com/bo-ne/",
+   "rating": 5,
+   "rating_count": 6,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Vicky Pham",
+   "title": "Vietnamese Sizzling Steak and Eggs (Bò Né)",
+   "url": "https://vickypham.com/blog/vietnamese-steak-eggs-bo-ne/",
+   "rating": 5,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "The Ravenous Couple",
+   "title": "Vietnamese Steak and Eggs Bo Ne",
+   "url": "https://theravenouscouple.com/2011/08/bo-ne-vietnamese-steak-and-eggs.html",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed",
+ "default_servings": 4
+}

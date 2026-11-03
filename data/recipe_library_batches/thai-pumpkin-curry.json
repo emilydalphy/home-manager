@@ -1,0 +1,141 @@
+{
+ "dish_name": "Thai Pumpkin Curry",
+ "cuisine": "Thai",
+ "main_protein": "tofu",
+ "ingredients": [
+  {
+   "item": "Extra-firm tofu",
+   "qty": "1 block (14 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Butternut squash",
+   "qty": "1 (2 lb)",
+   "category": "produce"
+  },
+  {
+   "item": "Coconut milk",
+   "qty": "2 cans (13.5 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Red curry paste",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce",
+   "cook_qty": "1 tbsp grated"
+  },
+  {
+   "item": "Thai basil",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Tamari",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice, then put it in a pot with 2 1/4 cups water and a pinch of salt. Bring to a boil, turn the heat to low, cover and cook for 12 minutes. Leave it covered, off the heat, until the curry is done.",
+  "Peel the squash, scoop out the seeds and cut it into 3/4 inch cubes. Slice the onion and the pepper. Mince the garlic and grate the ginger. Pat the tofu dry with a towel and cut it into 3/4 inch cubes.",
+  "Heat 1 tbsp of the oil in a large nonstick skillet over medium-high. Add the tofu in a single layer and cook for 8 minutes, turning now and then, until golden on most sides. Sprinkle with 1 tsp of the tamari and transfer it to a plate.",
+  "Add the remaining 1 tbsp oil to the pan and turn the heat to medium. Add the onion and cook for 3 minutes, until it starts to soften.",
+  "Add the garlic and ginger and cook for 1 minute.",
+  "Add the curry paste and stir for 1 minute, until it smells fragrant and darkens a little.",
+  "Pour in the coconut milk and 1/2 cup water. Stir, scraping up anything stuck to the pan, until the paste is smooth.",
+  "Add the squash and bring to a simmer. Cover and cook for 10 minutes.",
+  "Add the pepper and cook uncovered for 5 minutes, until the squash is tender when you poke it with a fork.",
+  "Add the tofu, the remaining 2 tsp tamari, the sugar and the salt. Cook for 2 minutes. Take the pan off the heat and stir in the juice of 1 lime and a handful of torn Thai basil leaves. Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice with the other lime cut into wedges, the rest of the basil and the red pepper flakes on the table."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 40,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "None of the versions had 20 or more ratings, so this leads with the best-read tofu and squash curry, Vegan Richa's. It browns garlic, cooks the red curry paste in oil, whisks in coconut milk, simmers the squash covered and adds the pepper, basil and tofu late. Sweet Potato Soul simmers the squash for 15 minutes with crispy tofu on top, and Vanilla and Bean adds mushrooms, pumpkin puree and maple. This one uses butternut squash, browns the tofu in the pan, uses tamari for the gluten-free promise and doubles Vegan Richa's coconut milk for four. Check the red curry paste label: some brands contain shrimp paste, so use one that is vegan. Vegan Richa shows 5 stars from 11 ratings, Sweet Potato Soul 5 from 1, Vanilla and Bean 4.75 from 4.",
+ "sources": [
+  {
+   "name": "Vegan Richa",
+   "title": "Thai Pumpkin Curry Vegan",
+   "url": "https://www.veganricha.com/thai-pumpkin-curry/",
+   "rating": 5.0,
+   "rating_count": 11,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Sweet Potato Soul",
+   "title": "Thai Pumpkin Curry",
+   "url": "https://sweetpotatosoul.com/thai-pumpkin-curry/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Vanilla and Bean",
+   "title": "Thai Mushroom Pumpkin Curry with Tofu or Chickpeas",
+   "url": "https://vanillaandbean.com/thai-mushroom-pumpkin-curry/",
+   "rating": 4.75,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

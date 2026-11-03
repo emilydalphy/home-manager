@@ -1,0 +1,75 @@
+{
+ "dish_name": "Apple Nachos",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 1,
+ "ingredients": [
+  {
+   "item": "Fuji apples",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Peanut butter",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Mini chocolate chips",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Unsweetened shredded coconut",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  }
+ ],
+ "instructions": [
+  "Quarter the 3 apples, cut out the cores, and slice each wedge thinly.",
+  "Lay the slices on a large plate in an overlapping layer.",
+  "Put the 1/2 cup peanut butter in a microwave-safe bowl and microwave it for 20 seconds. Stir it, until it's loose enough to drizzle.",
+  "Drizzle the peanut butter over the apples in a zig-zag.",
+  "Sprinkle the 1/4 cup chocolate chips and the 2 tbsp coconut over the top.",
+  "Serve right away. Cut apples brown if they sit, so slice them just before you eat."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Stemilt (the lead, 5.0 from 2 votes, visible rating, so no version has 20 ratings) warms peanut butter, drizzles it over thin apple slices and tops them with mini chocolate chips and coconut. Nature's Path and Hormel agree on the build and offer other toppings (almonds, cereal puffs, pistachios, dried cranberries); Hormel stirs honey into the peanut butter, which this leaves out. This skips the lemon soak Stemilt lists as optional and uses 3 apples for the plate. Contains peanuts.",
+ "sources": [
+  {
+   "name": "Stemilt",
+   "title": "Apple Nachos",
+   "url": "https://www.stemilt.com/recipe/apple-nachos/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Nature's Path",
+   "title": "Apple Nachos",
+   "url": "https://naturespath.com/blogs/recipes/apple-nachos",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Hormel Foods",
+   "title": "Peanut Butter and Apple Nachos",
+   "url": "https://www.hormelfoods.com/recipe/peanut-butter-and-apple-nachos/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,135 @@
+{
+ "dish_name": "Sweet Potato Black Bean Enchiladas",
+ "cuisine": "Mexican",
+ "main_protein": "beans",
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 45,
+ "ingredients": [
+  {
+   "item": "Sweet potatoes",
+   "qty": "2 large",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chili powder",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Smoked paprika",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Black beans",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Red enchilada sauce",
+   "qty": "2 cans (10 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Corn tortillas",
+   "qty": "12",
+   "category": "other"
+  },
+  {
+   "item": "Monterey Jack cheese",
+   "qty": "8 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Sour cream",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 425°F. Peel the sweet potatoes and cut them into 1/2-inch cubes. That should be about 4 cups.",
+  "Transfer the cubes to a rimmed baking sheet. Add 1 tbsp of the oil, 1/2 tsp of the salt, 1 tsp of the chili powder and 1/2 tsp of the cumin and toss. Spread them in a single layer with space between the pieces. Roast for 20 to 25 minutes, stirring halfway, until tender and browned at the edges.",
+  "Meanwhile, finely chop the onion and mince the garlic cloves. Drain and rinse the beans. Shred the cheese. Chop 1/4 cup of the cilantro and cut the lime in half.",
+  "Heat the remaining 1 tbsp oil in a large skillet over medium. Add the onion and the remaining 1/4 tsp salt and cook for 4 minutes, until soft.",
+  "Add the garlic, the remaining 2 tsp chili powder, the remaining 1/2 tsp cumin and the smoked paprika. Stir for 30 seconds, until it smells toasty.",
+  "Add the beans and 2 tbsp water. Cook for 3 minutes, pressing a few of the beans with the back of your spoon.",
+  "Take the skillet off the heat. Add the roasted sweet potatoes and squeeze in half of the lime. Stir gently so most of the cubes stay whole. Taste it, and add a pinch more salt if it's flat.",
+  "Lower the oven to 350°F. Spread 1/2 cup of the enchilada sauce over the bottom of a 9 by 13 inch baking dish.",
+  "Wrap the tortillas in a damp paper towel and microwave them for 45 seconds. Warm tortillas roll without cracking.",
+  "Spoon about 1/3 cup of the filling down the middle of a tortilla, roll it up and lay it seam side down in the dish. Do the rest the same way, packing them in side by side.",
+  "Pour the rest of the sauce over the top. Make sure it covers the ends of the tortillas, or they'll dry out and go hard. Sprinkle the cheese over the top.",
+  "Bake uncovered for 20 minutes, until the cheese is melted and the sauce is bubbling at the edges. Let them sit for 5 minutes.",
+  "Serve with the sour cream, the chopped cilantro and wedges from the other half of the lime. Put hot sauce on the table for anyone who wants it."
+ ],
+ "method_notes": "No sweet potato black bean enchilada page that was readable shows 20 or more ratings, so there is no qualifying lead. The lead is 5 Dollar Dinners (no rating shown on the page), read as the closest plain version: sweet potato and black bean filling, corn tortillas, red sauce and cheese, baked at 350°F. Food Network and Whole Foods Market were also read (no ratings shown); they roast or bake the sweet potatoes whole, which takes about an hour, and Food Network makes a sauce from scratch. Changed: the sweet potatoes are cubed and roasted at 425°F so it fits a weeknight, a canned red sauce is used, and the filling is browned in a skillet with chili powder, cumin and smoked paprika.",
+ "sources": [
+  {
+   "name": "5 Dollar Dinners",
+   "title": "Sweet Potato Black Bean Enchiladas",
+   "url": "https://www.5dollardinners.com/sweet-potato-black-bean-enchiladas-5-dinner-challenge/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food Network",
+   "title": "Sweet Potato Black Bean Enchiladas",
+   "url": "https://www.foodnetwork.com/recipes/sweet-potato-black-bean-enchiladas-13634428",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Whole Foods Market",
+   "title": "Black Bean and Sweet Potato Enchiladas",
+   "url": "https://wholefoodsmarket.com/recipe/black-bean-and-sweet-potato-enchiladas",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "fallback_used": true,
+ "origin": "seed",
+ "default_servings": 4
+}

@@ -1,0 +1,105 @@
+{
+ "dish_name": "Gomen be Siga",
+ "cuisine": "Ethiopian",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 80,
+ "ingredients": [
+  {
+   "item": "Beef chuck",
+   "qty": "1 1/4 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Collard greens",
+   "qty": "1 1/2 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece",
+   "category": "produce"
+  },
+  {
+   "item": "Ghee",
+   "qty": "1 jar",
+   "category": "dairy",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Ground cardamom",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Basmati rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Finely chop the onions. Mince the garlic and grate 1 tbsp of the ginger. Cut the beef into 3/4-inch cubes, pat them dry, and toss them with 1 tsp of the salt and the pepper.",
+  "Cut the stems off the collards and roll the leaves up in a few stacks. Slice them into ribbons about 1 inch wide, and wash them well.",
+  "Heat 1 tbsp of the ghee in a large heavy pot over medium-high heat. Add the beef in a single layer and leave it alone until the underside is deep brown, about 4 minutes. Turn the pieces and brown them for 2 minutes. Transfer to a plate.",
+  "Turn the heat to medium. Add the onions, 1/4 cup water and 1/4 tsp of the salt to the same pot. Cook for 10 minutes, stirring now and then, until the onions are soft and golden.",
+  "Add the remaining 2 tbsp ghee, the garlic and the ginger. Stir for 1 minute.",
+  "Return the beef and its juices to the pot, add 1 1/2 cups of water, and bring to a simmer. Cover, turn the heat to low, and cook for 30 minutes.",
+  "Meanwhile, rinse the rice and cook it according to the package so it's ready when the stew is.",
+  "Add the collards in handfuls, stirring each handful down before the next. Add the remaining 1/4 tsp salt, cover, and cook for 25 minutes, stirring now and then, until the greens are very tender and the beef is soft.",
+  "Take the pot off the heat and stir in the cardamom.",
+  "Slice the jalapeños into rings and put them in a small bowl for anyone who wants heat.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the rice or with injera, and the jalapeños on the table."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version I could read showed a rating, so this is a fallback lead: the Yewoin family recipe for collard green and meat stew (gomen bisega) cooks onion and garlic, adds butter, ginger and the meat, then adds the greens and cardamom at the end. Mark Wiens's write-up agrees on lots of onion and garlic with Ethiopian butter, but gives no amounts. I used boneless chuck instead of ribs, skipped the separate boiling of the meat and greens, and moved the hot peppers to the table.",
+ "sources": [
+  {
+   "name": "Yewoin's Family Recipes",
+   "title": "Ethiopian Collard Green and Meat Stew (Gomen Bisega)",
+   "url": "https://yewoinsfamilyrecipes.blogspot.com/2008/02/ethiopian-collard-green-and-meat-stew.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Migrationology",
+   "title": "Gomen Be Siga: Tasty Ethiopian Sizzling Beef and Greens",
+   "url": "https://migrationology.com/gomen-be-siga-ethiopian-food/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

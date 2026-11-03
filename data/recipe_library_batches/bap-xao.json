@@ -1,0 +1,89 @@
+{
+ "dish_name": "Bap Xao",
+ "cuisine": "Vietnamese",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {
+   "item": "Corn on the cob",
+   "qty": "3 ears",
+   "category": "produce"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Shallots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "a pinch"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Stand each ear of corn on its end in a wide bowl and cut the kernels off with a sharp knife. That should be about 3 cups.",
+  "Thinly slice 3 of the scallions, keeping the white and green parts in separate piles. Thinly slice the shallot.",
+  "Melt 1 tbsp of the butter in a large skillet over medium heat. Add the shallot and the white scallion parts and cook for 1 minute, until they smell sweet.",
+  "Add the corn and the salt. Cook, stirring often, for 4 to 5 minutes, until the corn is glossy and tender.",
+  "Add the last 1 tbsp butter and a pinch of sugar and stir until the butter melts. Take the pan off the heat and stir in the green scallion parts.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve warm, with the red pepper flakes on the side for the adults."
+ ],
+ "method_notes": "The versions agree on fresh sweet corn cooked in butter with scallions and finished with a little salt. Keep Up Cooking, the lead, stir-fries shallot first and adds a pinch of sugar; this one follows that and holds the scallion greens until the end as Delightful Plate does. All three sources add dried shrimp and fish sauce, which are left out to make it vegetarian. Gastronomy Blog adds red pepper flakes, kept here on the side. None of the pages shows a rating, so this is a fallback and the lead is the best-read real version. The Kitchn's page was blocked and skipped.",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "sources": [
+  {
+   "name": "Keep Up Cooking",
+   "title": "Vietnamese Corn Stir Fry (Bắp Xào Bơ)",
+   "url": "https://keepupcooking.com/vietnamese-corn-stir-fry-bap-xao-bo/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Delightful Plate",
+   "title": "Bắp Xào (Vietnamese Sautéed Corn with Dried Shrimp)",
+   "url": "https://delightfulplate.com/vietnamese-sauteed-corn-bap-xao/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Gastronomy Blog",
+   "title": "Bap Xao Recipe",
+   "url": "https://gastronomyblog.com/2012/05/21/bap-xao-vietnamese-sauteed-corn/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

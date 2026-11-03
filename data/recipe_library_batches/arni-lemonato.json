@@ -1,0 +1,43 @@
+{
+ "dish_name": "Arni Lemonato",
+ "cuisine": "Greek",
+ "main_protein": "lamb",
+ "ingredients": [
+  {"item": "Lamb shoulder, bone-in", "qty": "3 lbs", "category": "meat/seafood"},
+  {"item": "Yukon gold potatoes", "qty": "2 lbs", "category": "produce"},
+  {"item": "Lemons", "qty": "3", "category": "produce"},
+  {"item": "Garlic", "qty": "5 cloves", "category": "produce"},
+  {"item": "Rosemary", "qty": "1 pack", "category": "produce", "cook_qty": "2 sprigs"},
+  {"item": "Dried oregano", "qty": "1 tbsp", "category": "pantry"},
+  {"item": "Dijon mustard", "qty": "1 jar", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Honey", "qty": "1 jar", "category": "pantry", "cook_qty": "1 tbsp"},
+  {"item": "Beef broth", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Olive oil", "qty": "1/4 cup", "category": "pantry"},
+  {"item": "Salt", "qty": "4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "3/4 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "The night before, or at least 4 hours ahead: Pat the lamb dry. Cut about 10 small slits in it with a knife. Slice 4 of the garlic cloves into slivers and push them into the slits with the leaves from the rosemary sprigs. Squeeze the juice of 2 lemons into a large zip bag or dish, add the lamb, and turn it to coat. Refrigerate, turning it once.",
+  "Heat the oven to 325°F. Mix 2 tbsp of the olive oil, the Dijon, 2 tsp of the oregano, 2 tsp of the salt and 1/4 tsp of the pepper into a paste.",
+  "Put the lamb in a roasting dish with its lemon juice and spread the paste over the top. Pour in 1 cup of the beef broth, cover tightly with foil, and roast for 2 hours.",
+  "Meanwhile, cut the potatoes into wedges about 1 inch thick. In a large bowl, toss them with the last 2 tbsp olive oil, the last 1 tsp oregano, the remaining 2 tsp salt, the remaining 1/2 tsp pepper, the zest of the third lemon and the last garlic clove, grated.",
+  "After 2 hours, heat the oven to 425°F. Take off the foil, spoon the pan juices over the lamb and drizzle the honey over the top. Add the last 1/2 cup broth if the dish looks dry.",
+  "Spread the potatoes in a single layer on a rimmed baking sheet. Put the lamb on the upper rack and the potatoes below it. Roast for 40 minutes, turning the potatoes halfway, until they're crisp and golden at the edges and the lamb is dark and pulls apart easily. You're cooking the lamb to 195°F in the middle, so if you have a thermometer, check it there. No thermometer? Twist a fork in the thickest part: it's done when the meat gives way with no resistance.",
+  "Cover the lamb loosely with foil and rest it for 15 minutes. Pull the meat into large pieces with two forks and spoon the pan juices over it.",
+  "Squeeze the juice of the third lemon over the lamb and potatoes. Serve with the roasted potatoes.",
+  "Taste the pan juices. If they're flat, add a pinch more salt."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 175,
+ "advance_prep_notes": "marinate in the lemon juice overnight, the night before",
+ "advance_prep_step_indices": [1],
+ "method_notes": "This takes about 3 hours of oven time, so it is a weekend dinner, not a weeknight one. Not Quite Nigella's Greek Lamb & Lemon Potatoes (5.0 from 24 readers) is the lead: lemon-marinated bone-in shoulder, mustard and oregano paste, garlic and rosemary pushed in, honey at the end, and lemon potatoes. It roasts 6.5 hours, so Pomona shortens it to 2 hours covered and 40 minutes uncovered at higher heat, which is how the Greek Boston and slow cooker versions get there in less time. Those two (no ratings shown) agree on lemon, garlic and oregano as the core, and on potatoes in the pan.",
+ "sources": [
+  {"name": "Not Quite Nigella", "title": "Greek Lamb & Lemon Potatoes", "url": "https://www.notquitenigella.com/2021/04/21/greek-lamb-potatoes/", "rating": 5.0, "rating_count": 24, "read": true, "lead": true},
+  {"name": "Greek Boston", "title": "Recipe for Greek Style Roasted Lamb with Lemon", "url": "https://www.greekboston.com/food/roasted-lamb-recipe/", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "I Can Cook That", "title": "Slow Cooker Lamb in Zesty Lemon Sauce", "url": "https://icancookthat.org/2020/04/slow-cooker-lamb-in-zesty-lemon-sauce.html", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

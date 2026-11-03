@@ -1,0 +1,129 @@
+{
+ "dish_name": "Islim Kebabi",
+ "cuisine": "Turkish",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 40,
+ "cook_time_minutes": 55,
+ "ingredients": [
+  {
+   "item": "Eggplants",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Ground beef",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Plain breadcrumbs",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Cherry tomatoes",
+   "qty": "1 pint",
+   "category": "produce"
+  },
+  {
+   "item": "Mini sweet peppers",
+   "qty": "1 bag",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 tube",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sweet paprika",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 425°F. Slice the eggplants lengthwise 1/4 inch thick. Brush both sides with 1/4 cup of the olive oil and sprinkle with 1/2 tsp of the salt.",
+  "Lay the slices on two baking sheets in a single layer. Bake for 15 minutes, turning them once halfway, until they're soft enough to bend without cracking. Lower the oven to 375°F.",
+  "Meanwhile, grate the onion into a large bowl. Mince the garlic and chop 2 tbsp of the parsley. Add them to the bowl with the beef, the egg, the breadcrumbs, the cumin, the paprika, the black pepper and 1 1/2 tsp of the salt.",
+  "Mix with your hands for 2 minutes, until it holds together. Roll into 12 meatballs, each a little bigger than a walnut.",
+  "Heat a large skillet over medium-high with the last 1 tbsp olive oil. Add the meatballs in a single layer and brown them for 4 minutes, turning them as they brown. They don't need to cook through. Transfer them to a plate.",
+  "Take the pan off the heat and stir in the tomato paste and 1 1/4 cups water. Put it back over medium heat and scrape up the browned bits. Simmer for 2 minutes, then pour into a 9 by 13 inch baking dish.",
+  "Halve the cherry tomatoes and cut the peppers into 12 pieces.",
+  "Cross 2 eggplant slices on the counter. Set a meatball in the middle and fold the ends over it. Push a toothpick through a pepper piece, a tomato half and the wrap. Repeat with the rest and set them in the dish, seam side down.",
+  "Bake for 25 minutes, until the sauce is bubbling and the tomatoes have softened. You're cooking the meatballs to 160°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut into one: it's done when there's no pink left.",
+  "Taste the sauce. If it's flat, add a pinch more salt.",
+  "Let it rest for 5 minutes. Sprinkle the rest of the parsley over the top and serve with the sauce spooned around the wraps. Put the red pepper flakes on the table for anyone who wants heat. Take out the toothpicks before eating."
+ ],
+ "method_notes": "No version with 20 or more ratings turned up, so this is a fallback. Cooking Gorgeous (5 from 7 ratings, read from the visible rating) leads: fried eggplant strips wrapped around browned meatballs, secured with a toothpick through a pepper and tomato, baked in tomato paste and water. The Kalofagas version (no rating shown) builds a fuller sauce with onion, garlic and cinnamon and salts the eggplant first. Pomona roasts the eggplant instead of frying it, browns the meatballs, and makes the sauce in the same pan.",
+ "sources": [
+  {
+   "name": "Cooking Gorgeous",
+   "title": "Islim Kebabi (Eggplant Meatball Wraps)",
+   "url": "https://cookingorgeous.com/blog/aubergine-meatball-wraps-turkish-islim-kebabi/",
+   "rating": 5,
+   "rating_count": 7,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Kalofagas",
+   "title": "Islim Kebabi",
+   "url": "https://kalofagas.ca/2012/01/15/islim-kebabi",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

@@ -1,0 +1,120 @@
+{
+ "dish_name": "Niku Udon",
+ "cuisine": "Japanese",
+ "main_protein": "beef",
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Thinly sliced beef",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Frozen udon noodles",
+   "qty": "4 blocks",
+   "category": "frozen"
+  },
+  {
+   "item": "Instant dashi granules",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "6 tbsp"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "5 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece",
+   "category": "produce",
+   "cook_qty": "2 tsp grated"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Shichimi togarashi",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "In a large pot, bring 8 cups of water and the dashi granules to a boil over high heat. Turn the heat to low, stir in 3 tbsp of the soy sauce and 2 tbsp of the mirin, and keep it covered.",
+  "Put a second pot of water on to boil for the noodles.",
+  "Cut the onion in half and slice it thinly. Slice the green onions, keeping the white parts and the green parts in separate piles.",
+  "Heat the oil in a large skillet over medium-high heat. Add the onion and cook for 5 minutes, stirring now and then, until it's soft and browning at the edges.",
+  "Add the beef, the sugar, the ginger and the green onion whites. Cook for 2 minutes, separating the slices, until the beef has lost its pink and is lightly browned.",
+  "Add the remaining 3 tbsp mirin, the remaining 3 tbsp soy sauce and 1 cup of the hot broth. Simmer for 5 minutes, until it thins down to a little sauce.",
+  "Meanwhile, add the frozen udon to the boiling water and cook for 2 to 3 minutes, until the blocks loosen and the noodles are hot. Drain.",
+  "Divide the noodles between 4 bowls and ladle the hot broth over them. Top with the beef and onion and spoon over the sauce from the pan. Scatter with the green onion greens. Serve with the shichimi togarashi at the table.",
+  "Taste it. If it's flat, add a pinch more salt."
+ ],
+ "method_notes": "The sources agree on onion and thin beef simmered in a sweet soy and mirin sauce until nearly dry, set over udon in a light dashi broth. NoRecipes simmers the beef for about 15 minutes in dashi and sake; The Woks of Life browns the onion first and finishes in 10 minutes; Japanese Cooking 101 makes the dashi from scratch. This version follows NoRecipes for the sauce and The Woks of Life for browning the onion, uses instant dashi and frozen udon to stay at 30 minutes, and skips the sake. No version had 20 or more ratings, so the lead is the best-read real version.",
+ "sources": [
+  {
+   "name": "NoRecipes",
+   "title": "Beef Udon (Niku Udon)",
+   "url": "https://norecipes.com/beef-udon/",
+   "rating": 4.8,
+   "rating_count": 5,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Woks of Life",
+   "title": "Beef Udon (Niku Udon)",
+   "url": "https://thewoksoflife.com/beef-udon/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Japanese Cooking 101",
+   "title": "Niku Udon",
+   "url": "https://japanesecooking101.com/niku-udon-recipe/",
+   "rating": 4.75,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

@@ -1,0 +1,145 @@
+{
+ "dish_name": "Beef and Tomato Stir-Fry",
+ "cuisine": "Chinese",
+ "main_protein": "beef",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 12,
+ "ingredients": [
+  {
+   "item": "Flank steak",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tbsp + 1/2 tsp"
+  },
+  {
+   "item": "Baking soda",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "White pepper",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ketchup",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Shallot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 small piece",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a strainer under cold water until it runs mostly clear. Add it to a medium pot with 2 1/4 cups water and bring to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Leave the lid on.",
+  "Slice the flank steak across the grain into strips about 1/4 inch thick. Transfer it to a bowl and add 1 tbsp water, 2 tsp of the cornstarch, the baking soda, 1 tbsp of the oil and the oyster sauce. Mix well and leave it for 15 minutes.",
+  "Meanwhile, cut the tomatoes into wedges. Slice the shallot, mince the garlic and cut 2 thin slices of ginger. Cut the scallions into 2 inch pieces, keeping the whites and greens apart.",
+  "In a small bowl, stir the soy sauce, sugar, sesame oil and white pepper. In a second small bowl, stir the remaining 1 1/2 tsp cornstarch with 1 tbsp water.",
+  "Heat a wok or large skillet over high heat until it's smoking. Add 1 tbsp of the oil and spread the beef in a single layer. Cook for 1 minute, until it's browned and about 80 percent cooked. Transfer it to a plate.",
+  "Add the last 1 tbsp oil to the wok over medium heat. Add the ginger and cook for 10 seconds. Turn the heat to high and add the garlic, shallot and scallion whites. Stir for 10 seconds.",
+  "Add the ketchup and fry for 30 seconds. Add the tomatoes in an even layer and leave them for 15 seconds. Add the wine and stir for 10 seconds.",
+  "Push the tomatoes to one side. Pour the soy sauce mixture into the cleared space and stir until it bubbles.",
+  "Return the beef and any juices to the wok. Stir-fry for 20 seconds, then add the scallion greens. The tomatoes should be soft but still holding their shape.",
+  "Stir the cornstarch mixture and add it a little at a time, until the sauce coats the beef. Cook for 15 seconds. Cut into a thick slice of beef to check it. It's done when there's no pink left.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice."
+ ],
+ "method_notes": "The lead marinates for 30 minutes to an hour, which would break the 30 minute mark, so this uses a 15 minute marinade with baking soda while you prep. Both versions agree on thin flank steak seared first, tomato wedges added late so they hold their shape, and a light sauce; the second also uses red onion and sesame oil at the end. Total is 27 minutes with the rice cooking alongside.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Beef Tomato Stir-fry",
+   "url": "https://thewoksoflife.com/beef-tomato-stir-fry/",
+   "rating": 5,
+   "rating_count": 50,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Taste Asian Food",
+   "title": "Beef and Tomato Stir-Fry",
+   "url": "https://tasteasianfood.com/beef-and-tomato/",
+   "rating": 4.8,
+   "rating_count": 6,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed",
+ "default_servings": 4
+}

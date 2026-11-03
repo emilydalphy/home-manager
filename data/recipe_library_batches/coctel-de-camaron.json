@@ -1,0 +1,40 @@
+{
+ "dish_name": "Coctel de Camaron",
+ "cuisine": "Mexican",
+ "main_protein": "shrimp",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {"item": "Large shrimp", "qty": "1 1/4 lbs", "category": "meat/seafood"},
+  {"item": "Tomato vegetable juice", "qty": "1 can (11.5 oz)", "category": "pantry", "cook_qty": "1 cup"},
+  {"item": "Ketchup", "qty": "1 bottle", "category": "pantry", "cook_qty": "1/2 cup"},
+  {"item": "Limes", "qty": "3", "category": "produce"},
+  {"item": "Hot sauce", "qty": "1 bottle", "category": "pantry", "cook_qty": "2 tsp"},
+  {"item": "English cucumber", "qty": "1", "category": "produce"},
+  {"item": "Red onion", "qty": "1", "category": "produce"},
+  {"item": "Avocado", "qty": "1", "category": "produce"},
+  {"item": "Fresh cilantro", "qty": "1 bunch", "category": "produce", "cook_qty": "1/4 cup chopped"},
+  {"item": "Saltines", "qty": "1 box", "category": "pantry"},
+  {"item": "Salt", "qty": "2 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Fill a large bowl with ice and water. Peel the shrimp and remove the tails and veins if they're still on.",
+  "Bring 3 cups of water and 1 3/4 tsp of the salt to a boil in a medium pot over high heat. Add the shrimp, put the lid on and take the pot off the heat. Let it sit for 5 minutes, until the shrimp are pink and opaque all the way through.",
+  "Drain the shrimp and transfer them to the ice water for 3 minutes, until they're cold. Drain again and cut each shrimp into 3 pieces.",
+  "In a large bowl, stir together the tomato juice, the ketchup, the juice of 2 limes (about 3 tbsp) and the remaining 1/4 tsp salt.",
+  "Cut the cucumber into 1/2-inch pieces. Finely chop the red onion. That should be about 1 cup. Chop 1/4 cup of the cilantro.",
+  "Add the shrimp, cucumber, onion and cilantro to the sauce and stir. Taste it. If it's flat, add a pinch more salt. Cover and chill for at least 30 minutes.",
+  "Cut the third lime into wedges. Keep the avocado whole until you're ready to eat. Dice it and fold it in right before serving.",
+  "Serve in bowls with the saltines, the lime wedges and the hot sauce at the table for anyone who wants heat. For lunches, pack the coctel without the avocado. It keeps in the fridge for up to 1 day. Add fresh diced avocado when you eat."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "America's Test Kitchen is the lead: shrimp poached off the heat, then chilled in a V8 and ketchup sauce with lime, cucumber, red onion, avocado and cilantro. I moved its 2 tsp of hot sauce to the table to keep the base mild and added 1 lime for wedges. Grantourismo uses tomato puree, Clamato and Worcestershire, with chilli in the sauce, and shorter poaching on the stove; I followed the ATK method. ATK shows 4.5 from 238 ratings. Shrimp cocktail keeps about a day, so lunches are packed without avocado.",
+ "sources": [
+  {"name": "America's Test Kitchen", "title": "Mexican Shrimp Cocktail (Coctel de Camaron)", "url": "https://www.americastestkitchen.com/recipes/11905-mexican-shrimp-cocktail-coctel-de-camaron", "rating": 4.5, "rating_count": 238, "read": true, "lead": true},
+  {"name": "Grantourismo Travels", "title": "Mexican Shrimp Cocktail Recipe (Coctel de Camarones)", "url": "https://grantourismotravels.com/mexican-shrimp-cocktail-recipe-coctel-de-camarones/", "rating": 5, "rating_count": 1, "read": true, "lead": false}
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

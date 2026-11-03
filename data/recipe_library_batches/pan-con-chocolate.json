@@ -1,0 +1,33 @@
+{
+ "dish_name": "Pan con Chocolate",
+ "cuisine": "Spanish",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {"item": "Baguette", "qty": "1", "category": "other"},
+  {"item": "Dark chocolate", "qty": "4 oz", "category": "pantry"},
+  {"item": "Olive oil", "qty": "3 tbsp", "category": "pantry"},
+  {"item": "Flaky sea salt", "qty": "1/2 tsp", "category": "pantry"}
+ ],
+ "instructions": [
+  "Turn the oven to 200°F and set a rack in the middle. Turn the broiler on high too, and set a second rack about 4 inches below it.",
+  "Cut half of the baguette on an angle into slices about 1/2 inch thick. That should be about 12 slices. Lay them in a single layer on a baking sheet.",
+  "Broil for 2 to 3 minutes, until the edges are golden. Keep an eye on them. They go from golden to burnt fast.",
+  "Turn the broiler off. Break the dark chocolate into pieces about 1 inch across and put a piece or two on each slice.",
+  "Put the sheet in the oven, on the middle rack, for 4 to 5 minutes. Take it out when the chocolate looks glossy and soft at the edges but still holds its shape.",
+  "Drizzle the olive oil over the slices and sprinkle on the flaky salt.",
+  "Serve while the toast is warm, with the rest of the baguette on the side."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "All three read versions agree on crusty bread, good dark chocolate, olive oil and flaky salt. Tara's Multicultural Table, the lead, toasts the slices under the broiler, then lets the chocolate soften on them in the warm oven with the broiler off. Chef Mimi bakes plain slices at 200°F and uses 4 tbsp of oil for 4 slices, which I cut to 3 tbsp for about 12. Biscuits and Bubbly sets a chilled cream ganache instead of melting the bar, which I left out as it needs 4 hours and cream. None of the pages shows a rating or rating count, so the lead is the best-read version (fallback), and RecipeTin Eats, the trusted cook for Spanish, has no version.",
+ "sources": [
+  {"name": "Tara's Multicultural Table", "title": "Pan con Chocolate (Bread with Chocolate)", "url": "https://tarasmulticulturaltable.com/spain-cookbook-review-and-pan-con-chocolate/", "rating": null, "rating_count": null, "read": true, "lead": true},
+  {"name": "Chef Mimi Blog", "title": "Rustic Bread with Dark Chocolate, Olive Oil, and Salt", "url": "https://chefmimiblog.com/bread-with-chocolate/", "rating": null, "rating_count": null, "read": true, "lead": false},
+  {"name": "Biscuits and Bubbly", "title": "Pan con Chocolate", "url": "https://biscuitsandbubbly.com/pan-con-chocolate-bread-with-chocolate-spanish-tapas-dessert/", "rating": null, "rating_count": null, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

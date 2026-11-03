@@ -1,0 +1,94 @@
+{
+ "dish_name": "Banana Oat Pancakes",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Ripe bananas",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Eggs",
+   "qty": "3",
+   "category": "dairy"
+  },
+  {
+   "item": "Milk",
+   "qty": "3/4 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Rolled oats",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Baking powder",
+   "qty": "2 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Blueberries",
+   "qty": "1 pint",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Put the bananas, eggs, milk and vanilla in a blender. Add the oats, baking powder, cinnamon and salt.",
+  "Blend on high for 30 to 60 seconds, until smooth. Leave the batter in the blender while you heat the pan.",
+  "Heat a large non-stick skillet or griddle over medium heat. Add 1 tsp of the butter and let it melt.",
+  "Pour in the batter 1/3 cup at a time, making 3 pancakes at once. Cook for 2 to 4 minutes, until the edges are set and bubbles pop on top.",
+  "Flip them and cook for 1 to 2 minutes, until the underside is golden. If they brown too fast, turn the heat down.",
+  "Transfer the pancakes to a plate and cover them with a clean towel. Wipe the pan, add another 1 tsp butter and repeat with the rest of the batter. That should be about 12 pancakes.",
+  "Serve with the blueberries."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The sources agree that ripe banana, egg, milk and rolled oats go into a blender, with no flour and no sugar added, and cook on a medium pan. Ambitious Kitchen (the lead) adds baking powder, cinnamon and vanilla so the pancakes puff, and uses about 1/3 cup of batter each. The Healthy Maven's baby version blends the oats to flour first and leaves out the baking powder, and makes smaller pancakes for little kids. This version scales the lead from 9 pancakes to 12, uses milk in place of almond milk, and leaves the sweetness to the bananas. Use bananas with plenty of brown spots. For small kids, pour smaller rounds of batter.",
+ "sources": [
+  {
+   "name": "Ambitious Kitchen",
+   "title": "Healthy Banana Oatmeal Pancakes (made in the blender)",
+   "url": "https://www.ambitiouskitchen.com/banana-oatmeal-pancakes/",
+   "rating": 4.88,
+   "rating_count": 914,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Healthy Maven",
+   "title": "Banana Baby Pancakes",
+   "url": "https://www.thehealthymaven.com/baby-pancakes/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

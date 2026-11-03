@@ -1,0 +1,115 @@
+{
+ "dish_name": "Alambre",
+ "cuisine": "Mexican",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Beef sirloin steak",
+   "qty": "1.25 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Bacon",
+   "qty": "6 slices",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Worcestershire sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Oaxaca cheese",
+   "qty": "8 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Corn tortillas",
+   "qty": "12",
+   "category": "pantry"
+  },
+  {
+   "item": "Salsa",
+   "qty": "1 jar",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "instructions": [
+  "Cut the steak into 1-inch pieces and pat them dry. Chop the bacon. Dice the bell peppers and the onion. Mince the garlic. Shred the cheese. That should be about 2 cups.",
+  "Put the bacon in a large, deep skillet over medium heat. Cook for 4 to 5 minutes, until crisp. Transfer it to a bowl, and leave 2 tbsp of the fat in the pan.",
+  "Raise the heat to medium-high. Add the bell peppers and onion and cook for 5 minutes, until soft with browned edges. Transfer them to the bowl with the bacon.",
+  "Turn the heat to high. Add half the steak in a single layer and sprinkle with 1/4 tsp of the salt and 1/4 tsp of the pepper. Cook for 3 minutes without stirring, then stir, until browned. Transfer it to the bowl. Cook the rest of the steak the same way.",
+  "Wrap the tortillas in a damp paper towel and microwave them for 1 minute.",
+  "Return everything in the bowl to the pan on medium heat. Add the garlic and the Worcestershire sauce and stir for 1 minute.",
+  "Spread the cheese over the top. Cover and cook for 2 minutes, until it melts.",
+  "Taste it. If it's flat, add a pinch more salt. Serve with the warm tortillas and the salsa."
+ ],
+ "method_notes": "Honest time is 25 minutes. The lead and Food Faith Fitness agree on the method: crisp the bacon, cook peppers and onion in the fat, brown the beef, then melt cheese over everything. They differ on the cheese (Monterey Jack in one, Oaxaca in the other) and the seasoning (Worcestershire or Maggi, chili powder). I used Oaxaca, Worcestershire sauce as the lead allows, and no chili powder to keep the base mild. Ratings are the visible page ratings, not JSON-LD.",
+ "sources": [
+  {
+   "name": "In Mama Maggie's Kitchen",
+   "title": "Alambre de Res",
+   "url": "https://inmamamaggieskitchen.com/alambre-de-res/",
+   "rating": 5,
+   "rating_count": 29,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food Faith Fitness",
+   "title": "Alambre",
+   "url": "https://www.foodfaithfitness.com/alambre-recipe/",
+   "rating": 5,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Milk Street",
+   "title": "Steak and Bacon Tacos (Tacos de Alambre)",
+   "url": "https://prod.177milkstreet.com/recipes/steak-and-bacon-tacos-tacos-de-alambre",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "default_servings": 4,
+ "origin": "seed"
+}

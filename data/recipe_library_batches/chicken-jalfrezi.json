@@ -1,0 +1,169 @@
+{
+ "dish_name": "Chicken Jalfrezi",
+ "cuisine": "Indian",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece",
+   "category": "produce"
+  },
+  {
+   "item": "Serrano chilies",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "1 can (14 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Tomato ketchup",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "White rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put 3 cups of water and the rice in a pot with a pinch of salt and bring it to a boil. Cover, turn the heat to low and cook for 15 minutes, until the water is gone. Leave it covered off the heat.",
+  "Finely chop the yellow onion. Mince the garlic and 1 tbsp of the ginger. Cut the chicken into 3/4-inch pieces. Cut the bell peppers and the red onion into 1-inch squares. Slice the serrano chilies and put them in a small bowl for the table.",
+  "Heat the oil in a large deep skillet over medium-high heat. Add the cumin seeds and the yellow onion with 1/2 tsp of the salt. Cook, stirring often, for 7 minutes, until golden.",
+  "Add the garlic and ginger and stir for 1 minute.",
+  "Add the chicken and cook, stirring, for 3 minutes, until it turns pale on the outside.",
+  "Add the coriander, paprika, turmeric, garam masala, black pepper and the remaining 1 tsp of salt. Stir for 1 minute, until it smells toasty.",
+  "Add the crushed tomatoes and cook for 6 minutes, stirring now and then, until the oil shows around the edges of the sauce.",
+  "Add the bell peppers, the red onion, the soy sauce, the ketchup and the vinegar. Cook for 4 minutes, until the peppers are soft but still have some bite. If the pan gets dry, add 1/4 cup of water. You're cooking the chicken to 175°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest piece: it's done when the juices run clear.",
+  "Take the pan off the heat. Chop 2 tbsp of cilantro and stir in half of it. Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice, with the rest of the cilantro on top and the sliced serranos on the table for anyone who wants heat."
+ ],
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 25,
+ "method_notes": "This takes about 37 minutes honestly, a little over the 30 minute goal, because the onion needs 7 minutes to turn golden. Tea for Turmeric (4.92 from 74) is the one pan method I followed for the steps, and Swasthi's Recipes (the lead, 5.0 from 129) agrees on the shape: onion first, ginger and garlic, spices, tomato until the oil separates, then peppers kept crisp. Swasthi stir fries the peppers in a second pan and uses kasuri methi; I kept one pan, left out the fenugreek, and moved the green chilies to the table. Archana's Kitchen showed 6,970 ratings but no average, so its rating is null. Ratings are the visible page ratings.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Chicken Jalfrezi Recipe (Restaurant Style)",
+   "url": "https://www.indianhealthyrecipes.com/chicken-jalfrezi/",
+   "rating": 5.0,
+   "rating_count": 129,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Tea for Turmeric",
+   "title": "Chicken Jalfrezi (Easy and Authentic)",
+   "url": "https://www.teaforturmeric.com/chicken-jalfrezi",
+   "rating": 4.92,
+   "rating_count": 74,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Archana's Kitchen",
+   "title": "Chicken Jalfrezi Recipe - Chicken And Bell Peppers In Tomato Gravy",
+   "url": "https://www.archanaskitchen.com/chicken-jalfrezi-recipe",
+   "rating": null,
+   "rating_count": 6970,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "default_servings": 4
+}

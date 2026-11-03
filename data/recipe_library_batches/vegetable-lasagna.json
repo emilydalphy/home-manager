@@ -1,0 +1,129 @@
+{
+ "dish_name": "Vegetable Lasagna",
+ "cuisine": "Italian",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 65,
+ "ingredients": [
+  {
+   "item": "Zucchini",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cremini mushrooms",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato passata",
+   "qty": "24 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Frozen chopped spinach",
+   "qty": "10 oz",
+   "category": "frozen"
+  },
+  {
+   "item": "Ricotta",
+   "qty": "15 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Shredded mozzarella",
+   "qty": "3 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "No-boil lasagna sheets",
+   "qty": "1 box",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 425°F. Put the frozen spinach in a bowl on the counter to thaw.",
+  "Cut the zucchini, bell pepper and 1 of the onions into 3/4 inch pieces. Halve or quarter the mushrooms. Spread the vegetables across two baking sheets, leaving space between pieces, then toss with 2 tbsp of the olive oil, 3/4 tsp of the salt and 1/2 tsp of the black pepper.",
+  "Roast for 25 minutes, stirring once halfway, until the vegetables are soft and browned at the edges.",
+  "Meanwhile, finely chop the remaining onion. Heat the remaining 1 tbsp olive oil in a medium saucepan over medium heat. Cook the onion for 4 minutes, until soft.",
+  "Add 2 of the garlic cloves, minced, along with the oregano and thyme. Cook for 30 seconds, until fragrant.",
+  "Add the passata and 1/2 cup of water, with 1/4 tsp of the salt. Simmer over medium-low heat for 10 minutes. The extra water is for the dry lasagna sheets.",
+  "Squeeze the thawed spinach in your hands until it's dry. That should be about 1 cup. In a bowl, mix the spinach with the ricotta, the egg, the last garlic clove (minced), the remaining 1/2 tsp salt and the remaining 1/2 tsp black pepper.",
+  "When the vegetables come out, turn the oven down to 375°F. Spread 1/2 cup of the sauce over the bottom of a 9x9 inch baking dish.",
+  "Layer in this order: a layer of lasagna sheets (break one to fill the gaps), half the ricotta mixture, half the roasted vegetables, 1 cup of the mozzarella and a third of the remaining sauce. Repeat once more. Finish with a layer of sheets, the last of the sauce and the remaining 1 cup mozzarella.",
+  "Cover the dish tightly with foil and bake for 25 minutes. Uncover and bake for 10 to 15 minutes, until the cheese is golden and the sauce is bubbling at the edges.",
+  "Let it rest for 10 minutes so it cuts cleanly.",
+  "Taste the sauce at the edge. If it's flat, add a pinch more salt. Serve with a green salad."
+ ],
+ "method_notes": "This takes about 90 minutes in total, which is long for a weeknight. RecipeTin Eats (the lead) roasts pumpkin, zucchini and onion, layers spinach ricotta and a tomato sauce, and covers it all with mozzarella. Wyse Guide roasts mushrooms, pepper, carrot and eggplant and bakes it longer at 350°F. I used the lead's layering and cooked the vegetables on two pans so they brown. I swapped pumpkin for bell pepper and mushrooms, scaled it to a 9x9 dish, used no-boil sheets with extra water in the sauce, and left out the Parmesan so it stays vegetarian.",
+ "sources": [
+  {
+   "name": "RecipeTin Eats",
+   "title": "Vegetarian Lasagna",
+   "url": "https://recipetineats.com/vegetarian-lasagna",
+   "rating": 4.97,
+   "rating_count": 169,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Wyse Guide",
+   "title": "Vegetable Lasagna",
+   "url": "https://www.wyseguide.com/vegetable-lasagna/",
+   "rating": 5,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

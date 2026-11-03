@@ -1,0 +1,122 @@
+{
+ "dish_name": "Dak Bulgogi",
+ "cuisine": "Korean",
+ "main_protein": "chicken",
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Short-grain white rice",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece",
+   "category": "produce",
+   "cook_qty": "2 tsp grated"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Onion powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red leaf lettuce",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Gochujang",
+   "qty": "1 tub",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the 2 cups of rice in a strainer under cold water until the water runs mostly clear. Put it in a saucepan with 2 1/4 cups water and bring it to a boil over high heat. Turn the heat to low, cover and cook for 15 minutes. Take it off the heat and keep the lid on until you serve.",
+  "Meanwhile, cut the chicken thighs into strips about 1/2 inch thick and 2 inches long.",
+  "In a large bowl, stir together the soy sauce, mirin, brown sugar, sesame oil, onion powder, the garlic cloves, minced, and 2 tsp grated ginger until the sugar dissolves. Add the chicken and toss to coat. Leave it for 15 minutes while you do the next step.",
+  "Wash and dry the lettuce leaves and arrange them on a platter. Slice the green onions and put the gochujang in a small bowl.",
+  "Heat the vegetable oil in a large skillet over medium-high heat until it shimmers.",
+  "Add half the chicken in a single layer. Leave it alone for 3 minutes, until the underside is browned and lets go of the pan. Flip the pieces and cook for 2 minutes. Transfer it to a plate and cook the rest the same way. The sugar in the marinade burns quickly, so lower the heat a little if the pan smokes.",
+  "You're cooking the chicken to 175°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest piece: it's done when the juices run clear.",
+  "Return all the chicken to the pan, add 1/4 cup water and scrape up the browned bits. Bubble for 1 minute, until the sauce coats the chicken. Take it off the heat and stir in the green onions.",
+  "Serve with the rice, the lettuce leaves and the gochujang at the table.",
+  "Taste it. If it's flat, add a pinch more salt."
+ ],
+ "method_notes": "The sources agree on boneless thighs in a soy, mirin or rice wine, brown sugar, garlic and sesame oil marinade, seared in a hot skillet. Carmyy adds onion powder and cooks whole thighs for 8 to 10 minutes; Korean Bapsang cuts the chicken small, adds ginger, honey and lemon juice, and cooks about 2 minutes a side. This version follows Carmyy's marinade, cuts the thighs into strips as Korean Bapsang does so they cook fast, adds ginger, and adds a splash of water to make a little sauce. The marinade runs 15 minutes while the rice cooks, which is why the total stays near 30. Gochujang at the table is an addition, to keep the base mild.",
+ "sources": [
+  {
+   "name": "Carmyy",
+   "title": "Chicken Bulgogi (Dak Bulgogi)",
+   "url": "https://carmyy.com/chicken-bulgogi/",
+   "rating": 5,
+   "rating_count": 29,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Korean Bapsang",
+   "title": "Dak Bulgogi (Korean BBQ Chicken)",
+   "url": "https://www.koreanbapsang.com/dak-bulgogi-korean-bbq-chicken/",
+   "rating": 4.55,
+   "rating_count": 349,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

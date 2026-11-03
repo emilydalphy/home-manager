@@ -1,0 +1,87 @@
+{
+ "dish_name": "Kinche",
+ "cuisine": "Ethiopian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Cracked wheat",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Milk",
+   "qty": "1 1/2 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Ground cardamom",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground ginger",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put 1 1/2 cups milk and 3 cups water in a medium pot over medium-high heat. Bring it to a boil.",
+  "Stir in the 1 1/2 cups cracked wheat and the salt. When it comes back to a boil, turn the heat to low and cover the pot.",
+  "Cook for 20 minutes, stirring every 5 minutes or so. Any wheat that sits on the bottom will stick. It's ready when the wheat is soft and the porridge is thick but still loose.",
+  "Meanwhile, melt the butter in a small pan over low heat. Add the cardamom, ginger and turmeric, and stir for 1 minute, until it smells fragrant. Take the pan off the heat.",
+  "Stir the spiced butter into the porridge until it's mixed in. Taste it. If it's flat, add a pinch more salt.",
+  "Spoon the kinche into bowls and serve hot."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The three versions all cook cracked wheat in water or milk and finish with Ethiopian spiced butter (niter kibbeh), but none has a star rating, so the lead is a fallback. Ethiopian-Food.org (the lead) cooks it covered in half milk and half water at 1 part wheat to 3 parts liquid for about 20 minutes. Brundo uses water only with a short cook, and The Berbere Diaries uses all milk and stirs often for 20 to 30 minutes, and mentions onions fried in oil as the other finish. Niter kibbeh is hard to find, so this melts butter with cardamom, ginger and turmeric for a quick spiced butter. If you have niter kibbeh, use 3 tbsp of it instead. Cracked wheat is sometimes labelled bulgur (coarse), which cooks faster.",
+ "sources": [
+  {
+   "name": "Ethiopian-Food.org",
+   "title": "Kinche Recipe",
+   "url": "https://ethiopian-food.org/kinche-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Brundo",
+   "title": "Ethiopian Kinche (Cracked Wheat)",
+   "url": "https://www.brundo.com/blogs/recipes/how-to-cook-ethiopian-kinche-cracked-wheat",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "The Berbere Diaries",
+   "title": "Recipe: Kinche",
+   "url": "https://theberberediaries.wordpress.com/2009/12/27/recipe-kinche/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

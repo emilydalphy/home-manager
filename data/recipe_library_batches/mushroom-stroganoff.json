@@ -1,0 +1,135 @@
+{
+ "dish_name": "Mushroom Stroganoff",
+ "cuisine": "American",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Wide egg noodles",
+   "qty": "8 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Cremini mushrooms",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sour cream",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Fill a large pot with water, add 1 tbsp of the salt, and bring it to a boil over high heat.",
+  "Slice the mushrooms about 1/4 inch thick. Thinly slice the onion. Mince the garlic.",
+  "Heat the olive oil and 1 tbsp of the butter in a large skillet over medium-high heat. Add half the mushrooms in a single layer with 1/4 tsp of the salt. Leave them alone for 3 minutes, then stir and cook them for 3 minutes, until deep brown. Transfer them to a bowl and repeat with the rest.",
+  "Cook the noodles in the boiling water as the package says. Drain and set aside.",
+  "Return all the mushrooms to the skillet. Add the remaining 2 tbsp butter and the onion. Cook for 5 minutes, until the onion is soft.",
+  "Add the garlic and cook for 30 seconds. Sprinkle in the flour and stir for 1 minute.",
+  "Stir in the broth, Dijon, soy sauce and thyme. Simmer over medium heat for 3 minutes, until the sauce coats the back of a spoon.",
+  "Take the skillet off the heat and let it sit for a minute. Stir in the sour cream and the black pepper. Boiling it will make the sour cream split.",
+  "Chop 2 tbsp of the parsley and stir it in. Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the egg noodles, with the rest of the parsley on top."
+ ],
+ "method_notes": "Salt and Lavender (the lead, 4.75 from 8 votes, no version had 20 ratings) cooks the onion and mushrooms in butter and oil, thickens with a little flour and vegetable broth, and stirs in sour cream off the heat. Dinners, Dishes and Desserts and Berly's Kitchen agree on the method and add thyme and wine. I replaced the Worcestershire sauce, which contains anchovy, with soy sauce and kept Dijon. I browned the mushrooms in two batches for more flavor, and used one pound for four.",
+ "sources": [
+  {
+   "name": "Salt and Lavender",
+   "title": "Mushroom Stroganoff",
+   "url": "https://www.saltandlavender.com/mushroom-stroganoff/",
+   "rating": 4.75,
+   "rating_count": 8,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Dinners, Dishes and Desserts",
+   "title": "Mushroom Stroganoff",
+   "url": "https://dinnersdishesanddesserts.com/mushroom-stroganoff/",
+   "rating": 4.34,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Berly's Kitchen",
+   "title": "Mushroom Stroganoff",
+   "url": "https://www.berlyskitchen.com/mushroom-stroganoff/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

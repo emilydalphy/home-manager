@@ -1,0 +1,131 @@
+{
+ "dish_name": "Mushroom Fajitas",
+ "cuisine": "Mexican",
+ "main_protein": "vegetarian",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Cremini mushrooms",
+   "qty": "1 1/2 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Bell peppers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chili powder",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Smoked paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Lime",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Flour tortillas",
+   "qty": "8",
+   "category": "other"
+  },
+  {
+   "item": "Avocados",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Sour cream",
+   "qty": "1 tub",
+   "category": "dairy"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Slice the mushrooms 1/2 inch thick. Slice the bell peppers into strips and the onion into half-moons. Mince the garlic cloves. In a small bowl, mix the chili powder, cumin and smoked paprika.",
+  "Heat a large skillet over medium-high for 2 minutes. Add 1 tbsp of the oil, then half of the mushrooms in a single layer. Sprinkle with 1/4 tsp of the salt. Leave them alone for 3 minutes, then stir and cook for 3 to 4 minutes, until the liquid is gone and they're deep brown. Transfer to a plate.",
+  "Add 1 tbsp of the oil and cook the rest of the mushrooms the same way with another 1/4 tsp of the salt. Transfer to the plate.",
+  "Add the last 1 tbsp oil to the pan, then the peppers, onion and the remaining 1/4 tsp salt. Cook for 5 to 6 minutes, stirring now and then, until the edges are browned and they're tender but still have some bite.",
+  "Add the garlic and the spice mix and stir for 30 seconds, until it smells toasty.",
+  "Return the mushrooms to the pan, add 2 tbsp soy sauce and cook for 1 to 2 minutes, until the pan is nearly dry.",
+  "Meanwhile, halve and slice the avocados, chop 1/4 cup of the cilantro and cut the lime into wedges. Wrap the tortillas in a damp paper towel and microwave them for 30 seconds.",
+  "Take the pan off the heat and squeeze in a lime wedge. Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the warm tortillas, the avocado, the sour cream, the cilantro and the rest of the lime wedges. Put hot sauce on the table for anyone who wants it."
+ ],
+ "method_notes": "No mushroom fajita page with 20 or more ratings was readable, so there is no qualifying lead. The lead is Dora's Table (5 from 1 rating): mushrooms browned hard first, then onion and garlic, then soy sauce at the end. Crunch Time Kitchen (5 from 1) and Adams Farms (no rating shown) add bell peppers and a chili, cumin and smoked paprika seasoning. They differ on method: skillet versus a sheet pan in the oven. Changed: cremini mushrooms only, peppers and onion cooked separately from the mushrooms, and the spices bloomed in the pan with the garlic.",
+ "sources": [
+  {
+   "name": "Dora's Table",
+   "title": "Mushroom Fajitas",
+   "url": "https://dorastable.com/mushroom-fajitas/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Crunch Time Kitchen",
+   "title": "Simple Mushroom Fajitas",
+   "url": "https://www.crunchtimekitchen.com/simple-mushroom-fajitas/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Adams Farms",
+   "title": "Sheet Pan Mushroom Fajitas",
+   "url": "https://adamsfarms.com/recipes/sheet-pan-mushroom-fajitas/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "fallback_used": true,
+ "origin": "seed",
+ "default_servings": 4
+}

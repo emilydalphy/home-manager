@@ -1,0 +1,45 @@
+{
+ "dish_name": "Freekeh with Chicken",
+ "cuisine": "Lebanese",
+ "main_protein": "chicken",
+ "ingredients": [
+  {"item": "Chicken thighs, bone-in, skin-on", "qty": "2 lbs", "category": "meat/seafood"},
+  {"item": "Cracked freekeh", "qty": "1 1/2 cups", "category": "pantry"},
+  {"item": "Yellow onion", "qty": "1", "category": "produce"},
+  {"item": "Butter", "qty": "3 tbsp", "category": "dairy"},
+  {"item": "Olive oil", "qty": "2 tbsp", "category": "pantry"},
+  {"item": "Chicken broth", "qty": "3 1/2 cups", "category": "pantry"},
+  {"item": "Ground cinnamon", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Ground cardamom", "qty": "1/2 tsp", "category": "pantry"},
+  {"item": "Ground coriander", "qty": "3/4 tsp", "category": "pantry"},
+  {"item": "Black pepper", "qty": "1 tsp", "category": "pantry"},
+  {"item": "Salt", "qty": "2 tsp", "category": "pantry"},
+  {"item": "Slivered almonds", "qty": "1/2 cup", "category": "pantry"},
+  {"item": "Pine nuts", "qty": "1/4 cup", "category": "pantry"}
+ ],
+ "instructions": [
+  "Heat the oven to 425°F. Put the freekeh in a bowl, cover it with cold water and swirl it with your hand. Drain, and repeat until the water runs mostly clear. Pick out any small stones, then leave the freekeh to drain in a sieve.",
+  "Pat the chicken thighs dry. In a small bowl, mix 1/4 tsp of the cinnamon, 1/4 tsp of the cardamom, 1/4 tsp of the coriander, 1/2 tsp of the pepper and 3/4 tsp of the salt. Rub the thighs with 1 tbsp of the olive oil, then with the spice mix.",
+  "Put the thighs skin side up on a rimmed baking sheet. Roast for 40 minutes, until the skin is deep golden. You're cooking them to 175°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest thigh: it's done when the juices run clear.",
+  "While the chicken roasts, chop the onion. Melt 2 tbsp of the butter with the remaining 1 tbsp olive oil in a large pot over medium heat. Add the onion and cook for 8 minutes, stirring now and then, until soft and golden at the edges.",
+  "Add the drained freekeh and stir for 2 minutes. Add the remaining 1/2 tsp cinnamon, 1/4 tsp cardamom, 1/2 tsp coriander, 1/2 tsp pepper and 1 1/4 tsp salt. Stir for 1 minute, until you can smell the spices.",
+  "Add the chicken broth and bring it to a boil. Turn the heat to low, cover the pot tightly, and cook for 40 minutes, until the broth is absorbed and the grains are tender. Don't stir it while it cooks.",
+  "While the freekeh cooks, melt the last 1 tbsp butter in a small skillet over medium heat. Add the almonds and pine nuts and stir for 4 minutes, until golden. Watch them closely. They go from golden to burnt fast. Transfer them to a bowl and sprinkle with a pinch of salt.",
+  "Take the pot off the heat and leave it covered for 10 minutes. Fluff the freekeh with a fork.",
+  "Spread the freekeh on a platter, set the chicken on top and scatter the nuts over everything. Serve with the pan juices from the baking sheet spooned over the chicken.",
+  "Taste it. If it's flat, add a pinch more salt."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 55,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "None of the versions read has 20 or more ratings (Munaty Cooking 5.0 from 1 vote, A Pinch of Adventure 5.0 from 2, Simply Lebanese's freekeh soup 4.84 from 6), so this uses the best-read real version of the dish as the lead. The sources agree on browned or roasted chicken over freekeh that is sauteed with onion and warm spices (cinnamon, cardamom, coriander) and finished with fried almonds, with the grain cooked about 40 to 50 minutes. They differ on soaking, boiling the chicken versus roasting it, and pine nuts versus cashews. Pomona follows Munaty Cooking, uses cracked freekeh so no soak is needed, roasts bone-in thighs for crisp skin, and keeps the heat out of the base (the sources with chili flakes were left out).",
+ "sources": [
+  {"name": "Munaty Cooking", "title": "Freekeh with Chicken", "url": "https://www.munatycooking.com/freekeh-with-chicken/", "rating": 5.0, "rating_count": 1, "read": true, "lead": true},
+  {"name": "A Pinch of Adventure", "title": "Freekeh Recipe with Chicken", "url": "https://apinchofadventure.com/lebanese-freekeh-recipe", "rating": 5.0, "rating_count": 2, "read": true, "lead": false},
+  {"name": "Simply Lebanese", "title": "Freekeh Soup with Chicken", "url": "https://www.simplyleb.com/recipe/freekeh-soup-with-chicken/", "rating": 4.84, "rating_count": 6, "read": true, "lead": false}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

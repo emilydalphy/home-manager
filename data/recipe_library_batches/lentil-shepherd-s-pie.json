@@ -1,0 +1,160 @@
+{
+ "dish_name": "Lentil Shepherd's Pie",
+ "cuisine": "American",
+ "main_protein": "lentils",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 55,
+ "ingredients": [
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "2 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Whole milk",
+   "qty": "1/3 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Brown lentils",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cremini mushrooms",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Celery",
+   "qty": "2 stalks",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried rosemary",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 tube",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Tamari",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "3/4 cup",
+   "category": "frozen"
+  },
+  {
+   "item": "Frozen corn",
+   "qty": "3/4 cup",
+   "category": "frozen"
+  }
+ ],
+ "instructions": [
+  "Peel the potatoes and cut them into 1 1/2 inch chunks. Put them in a large pot, cover with cold water, add 1 tsp of the salt, and bring to a boil over high heat. Cook for 15 minutes, until a fork slides in easily.",
+  "Meanwhile, rinse the lentils and put them in a medium saucepan with 2 1/4 cups of water. Bring to a boil, turn the heat to medium-low, and simmer for 25 minutes, until tender but not mushy. Drain.",
+  "Finely chop the mushrooms, onion and celery. Mince the garlic. Heat the oven to 400°F.",
+  "Drain the potatoes and return them to the empty pot. Add the butter, milk, garlic powder, 1/2 tsp of the salt and the black pepper. Mash until smooth and cover to keep warm.",
+  "Heat the olive oil in a large skillet over medium-high heat. Add the mushrooms and cook for 5 minutes without much stirring, until they release their liquid and brown.",
+  "Add the onion, celery, thyme and rosemary. Cook for 4 minutes, until the onion is soft. Add the garlic and cook for 30 seconds.",
+  "Stir in the tomato paste and cook for 1 minute, until it darkens. Sprinkle in the cornstarch and stir for 30 seconds.",
+  "Add the tamari and the broth. Bring to a simmer and cook for 3 minutes, until it thickens. Stir in the lentils, peas and corn and cook for 3 minutes. Season with the last 1/4 tsp salt if it needs it.",
+  "Spread the filling in a 2 quart baking dish. Spoon the mashed potatoes over the top and spread them to the edges. Drag a fork across the top to make ridges.",
+  "Set the dish on a baking sheet and bake for 25 minutes, until the filling bubbles at the edges and the ridges are golden. For more color, broil for 1 to 2 minutes at the end.",
+  "Let it rest for 5 minutes. Taste a bit of the filling. If it's flat, add a pinch more salt. Serve with a green salad."
+ ],
+ "method_notes": "Running on Real Food (the lead) cooks mushrooms, onion and celery with herbs, thickens with flour, tamari, tomato paste and stock, and tops it with garlic mashed potatoes. Slimming Eats simmers the lentils in the stock and uses sweet potato with cheddar. 12 Tomatoes uses wine, Worcestershire and BBQ sauce. I followed the lead, swapped the flour for cornstarch and used tamari so it's gluten free, and scaled it down to a 2 quart dish. Check that the broth is labeled gluten free. The filling freezes well.",
+ "sources": [
+  {
+   "name": "Running on Real Food",
+   "title": "Lentil Shepherd's Pie",
+   "url": "https://runningonrealfood.com/lentil-shepherds-pie/",
+   "rating": 5,
+   "rating_count": 24,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Slimming Eats",
+   "title": "Lentil Shepherd's Pie",
+   "url": "https://www.slimmingeats.com/blog/lentil-shepherds-pie",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "12 Tomatoes",
+   "title": "Lentil Shepherd's Pie",
+   "url": "https://12tomatoes.com/lentil-shepherds-pie/",
+   "rating": 5,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

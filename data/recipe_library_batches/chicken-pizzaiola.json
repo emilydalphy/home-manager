@@ -1,0 +1,109 @@
+{
+ "dish_name": "Chicken Pizzaiola",
+ "cuisine": "Italian",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Thin-sliced chicken breast cutlets",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato purée",
+   "qty": "1 carton",
+   "category": "pantry",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh mozzarella",
+   "qty": "8 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Fresh basil",
+   "qty": "1 small bunch",
+   "category": "produce"
+  }
+ ],
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "instructions": [
+  "Pat the cutlets dry. If any are thicker than 1/2 inch, pound them with a rolling pin or the bottom of a heavy pan until they are about 1/2 inch thick.",
+  "Put the flour on a plate. Season both sides of the cutlets with 1/2 tsp of the salt and 1/4 tsp of the pepper. Press each cutlet into the flour and shake off the extra.",
+  "Slice the mozzarella into thin rounds and set them on a paper towel. Tear 8 to 10 basil leaves and set them aside.",
+  "Heat 1 tbsp of the oil in a large skillet over medium-high heat until it shimmers. Add half the cutlets and cook for 2 minutes, until the underside is golden. Flip them and cook for 1 minute. Transfer them to a plate.",
+  "Add 1 tbsp of oil to the pan and cook the rest of the cutlets the same way. They will finish cooking in the sauce.",
+  "Lower the heat to medium and add the last tbsp of oil. Add the garlic and stir for 30 seconds, until it smells sweet. Don't let it brown.",
+  "Add the oregano and stir for 10 seconds. Add the tomato purée, the remaining 1/2 tsp salt and the remaining 1/4 tsp pepper. If it's very thick, add a splash of water.",
+  "Bring the sauce to a simmer, scraping up the browned bits from the bottom of the pan. Simmer for 3 minutes.",
+  "Return the cutlets to the pan with any juices and spoon some sauce over them. Cover and simmer gently for 5 minutes. You're cooking the chicken to 160°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest cutlet: it's done when there's no pink left.",
+  "Lay the mozzarella over the cutlets, cover, and cook for 2 minutes, until it melts.",
+  "Take the pan off the heat and scatter the torn basil over the top.",
+  "Taste the sauce. If it's flat, add a pinch more salt. Serve with crusty bread or buttered pasta."
+ ],
+ "method_notes": "Honest time is 30 minutes using thin-sliced cutlets from the store; if you slice whole breasts yourself, add about 5 minutes. All three sources agree on the method: a quick sear, then the chicken finishes in a tomato sauce built on garlic and dried oregano, with mozzarella melted on top at the end. They differ on extras (capers and chili flakes in one, a breaded cutlet and a longer-simmered sauce in another); I followed the lead, kept the base mild, and left out the capers. Ratings come from the visible rating on each page, since the page text did not show the JSON-LD.",
+ "sources": [
+  {
+   "name": "Marcella in Cucina",
+   "title": "Chicken Pizzaiola",
+   "url": "https://www.marcellinaincucina.com/chicken-pizzaiola/",
+   "rating": 5,
+   "rating_count": 75,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Hilltop Recipes",
+   "title": "Chicken Pizzaiola",
+   "url": "https://hilltoprecipes.com/chicken-pizzaiola/",
+   "rating": 5,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "2 Sisters Recipes",
+   "title": "Easy Chicken Pizzaiolo",
+   "url": "https://2sistersrecipes.com/easy-chicken-pizzaiolo/",
+   "rating": 5,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "default_servings": 4,
+ "origin": "seed"
+}

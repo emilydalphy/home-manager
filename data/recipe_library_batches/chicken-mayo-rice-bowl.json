@@ -1,0 +1,134 @@
+{
+ "dish_name": "Chicken Mayo Rice Bowl",
+ "cuisine": "Korean",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Short-grain rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp plus 1 tsp"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Roasted seaweed snack sheets",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "1 package (about 5 g)"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3"
+  },
+  {
+   "item": "Toasted sesame seeds",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Gochujang",
+   "qty": "1 tub",
+   "category": "pantry",
+   "cook_qty": "1 tbsp, for the table"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a bowl, changing the water until it runs mostly clear. Put it in a medium pot with 1 3/4 cups of water, bring it to a boil, then cover and turn the heat to the lowest setting. Cook for 15 minutes. Leave the lid on and let it sit off the heat for 10 minutes.",
+  "Meanwhile, cut the chicken into 1-inch pieces and pat them dry. Transfer them to a bowl, sprinkle over the 1/2 tsp salt and add the 1/3 cup cornstarch. Toss until every piece is coated.",
+  "Grate the garlic. In a small bowl, stir together the garlic, 3 tbsp soy sauce, 1 tbsp of the honey and 2 tbsp water. This is the glaze.",
+  "In another small bowl, stir together the mayonnaise, the remaining 1 tsp honey and the rice vinegar. Slice the green onions and tear the seaweed into small pieces.",
+  "Heat the oil in a large skillet over medium-high for 2 minutes, until a piece of chicken sizzles right away when it goes in. Add half the chicken in a single layer. Cook for 4 minutes without moving it, until the underside is deep golden and lets go of the pan. Flip the pieces and cook the other side for 3 minutes. Transfer to a plate lined with paper towels. Cook the second batch the same way.",
+  "You're cooking the chicken to 175°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest piece: it's done when the juices run clear.",
+  "Pour off the oil, leaving a thin film in the skillet. Turn the heat to medium, add the glaze and let it bubble for 1 minute, until it turns syrupy. Add the chicken and toss for 30 seconds, until every piece is glossy. Take the pan off the heat.",
+  "Taste a piece of chicken. If it's flat, add a pinch more salt.",
+  "Divide the rice between 4 bowls. Top with the chicken, drizzle over the mayo, and scatter the seaweed, green onions and sesame seeds. Serve with the gochujang on the side, for stirring into your own mayo.",
+  "To pack it for lunch: pack the rice and chicken in one container and the mayo and seaweed in small separate containers. It keeps for 3 days in the fridge. Reheat the chicken and rice in the microwave for 1 to 2 minutes, then add the mayo and seaweed. For crisper chicken, warm it in a 400°F oven or air fryer for 5 minutes."
+ ],
+ "method_notes": "No version I could read had a rating on its page, so this is a fallback and the lead is a weak one: the Kewpie gochujang mayo chicken bowl, which is crispy cornstarch chicken, a mayo sauce, seaweed and rice. Cook with Juyea has the soy glaze, seaweed and mayo over rice but uses shredded cooked chicken, and Great British Chefs has a soy and honey glaze. I combined them: crispy thigh pieces, a soy and honey glaze, and a plain mayo sauce with the gochujang moved to the table so the base stays mild.",
+ "sources": [
+  {
+   "name": "Kewpie",
+   "title": "Gochujang Mayo Chicken Bowl",
+   "url": "https://community.kewpieshop.com/gochujang-mayo-chicken-bowl-a-spicy-sweet-kewpie-creation/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cook with Juyea",
+   "title": "Chicken & Mayo Rice Bowl with a Korean Twist",
+   "url": "https://cookwithjuyea.blogspot.com/2024/05/level-up-your-leftovers-chicken-mayo.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Great British Chefs",
+   "title": "Korean Rice Bowls with Mayak Eggs, Soy-Glazed Chicken and Avocado",
+   "url": "https://www.greatbritishchefs.com/recipes/korean-rice-bowls-mayak-eggs-soy-glazed-chicken-recipe",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

@@ -1,0 +1,99 @@
+{
+ "dish_name": "Daigaku Imo",
+ "cuisine": "Japanese",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Japanese sweet potatoes",
+   "qty": "1 1/4 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Kosher salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "5 tbsp"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Black sesame seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Scrub the 1 1/4 lbs sweet potatoes but leave the skin on. Cut them diagonally into bite-size pieces, turning the potato a quarter turn between cuts.",
+  "Stir the 2 tsp salt into 8 cups of water in a large bowl. Add the potato pieces and soak for 15 minutes.",
+  "Drain the potatoes and pat them very dry with a clean towel.",
+  "Pour the 2 cups oil into a medium pot and heat it over medium heat to 320°F. No thermometer? Dip the end of a wooden chopstick in the oil: small, steady bubbles should rise around it.",
+  "Add half the potatoes and fry for 5 to 7 minutes, until golden brown. A skewer should slide in easily. Transfer them to a wire rack or paper towels. Repeat with the rest.",
+  "In a large frying pan, off the heat, mix the 5 tbsp sugar, 1 1/2 tbsp water and 1 tbsp mirin. Put it on medium heat and bring it to a boil.",
+  "Once it's bubbling, stir in the 1 tsp rice vinegar and 1 tsp soy sauce. Simmer for 2 to 3 minutes, stirring constantly, until the syrup thickens. It's ready when a line drawn across the pan with your spatula holds its shape.",
+  "Turn off the heat, add all the fried potatoes and toss until each piece is coated. Sprinkle the 1 tsp sesame seeds over the top while the coating is still soft.",
+  "Spread them out and leave for a few minutes. The coating hardens as it cools. Serve warm or at room temperature. Let them cool completely before packing them in a lunchbox."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Just One Cookbook soaks the cut potato in salted water, fries at 320°F and tosses it in a sugar, water and mirin syrup finished with rice vinegar and soy. RecipeTin Japan fries twice (320°F then 356°F) in a honey or sugar syrup, and No Recipes steams the potato first and glazes with rice syrup, so this follows the first. Just One Cookbook also has a shallow fry version, which was not used because the deep fry gives the crunchy outside. Frying time per batch is an estimate, so use the skewer test. RecipeTin Japan shows 2 ratings and No Recipes 3.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Candied Sweet Potatoes (Daigaku Imo)",
+   "url": "https://www.justonecookbook.com/candied-sweet-potatoes/",
+   "rating": 4.53,
+   "rating_count": 80,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Japan",
+   "title": "Candied Sweet Potato (Daigaku Imo)",
+   "url": "https://japan.recipetineats.com/candied-sweet-potato-daigaku-imo/",
+   "rating": 5,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "No Recipes",
+   "title": "Glazed Japanese Sweet Potatoes (Daigaku Imo)",
+   "url": "https://norecipes.com/daigaku-japanese-sweet-potatoes/",
+   "rating": 4.34,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

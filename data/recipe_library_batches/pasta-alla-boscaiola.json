@@ -1,0 +1,127 @@
+{
+ "dish_name": "Pasta alla Boscaiola",
+ "cuisine": "Italian",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Rigatoni",
+   "qty": "12 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Italian sausage",
+   "qty": "12 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Cremini mushrooms",
+   "qty": "8 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Shallot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 small can",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "3/4 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Parmesan cheese",
+   "qty": "1/4 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 small bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "instructions": [
+  "Fill a large pot with water, add 2 tsp of the salt and put it on high heat. While it heats, slice the mushrooms, chop the shallot, mince the garlic, grate the Parmesan and chop 2 tbsp of parsley.",
+  "Add the rigatoni to the boiling water and cook for about 11 minutes, until al dente. Scoop out 1 cup of the pasta water, then drain the pasta.",
+  "Meanwhile, heat the oil in a large, deep skillet over medium-high heat. Add the sausage, breaking it up, and cook for 5 minutes, until browned. Transfer it to a bowl and leave the fat in the pan.",
+  "Add the mushrooms and 1/4 tsp of the salt to the pan. Cook for 5 minutes without stirring much, until they are browned and the liquid has cooked off.",
+  "Add the shallot and cook for 1 minute. Add the garlic, thyme and tomato paste and stir for 1 minute, until the paste darkens.",
+  "Pour in the wine and scrape up the browned bits from the bottom of the pan. Cook for 1 minute, until it has mostly cooked off.",
+  "Return the sausage to the pan. Add the cream and the pepper and simmer for 2 minutes, until the sauce thickens slightly.",
+  "Take the pan off the heat. Add the pasta and the Parmesan and toss, adding a splash of the pasta water until the sauce coats the pasta.",
+  "Scatter the parsley over the top.",
+  "Taste it. If it's flat, add a pinch more salt."
+ ],
+ "method_notes": "Honest time is 30 minutes, with the sauce made while the pasta boils. The lead is a cream sauce with sausage, mushrooms, shallot and wine; the other versions (Closet Cooking, All Cooked Up) bring in tomato, so I added tomato paste cooked into the base for a light tomato cream, which the lead does not use. I left out the dried porcini to keep to the time. Skinny Spatula's rating is as shown on the page; the page text did not show the JSON-LD.",
+ "sources": [
+  {
+   "name": "Skinny Spatula",
+   "title": "Pasta alla Boscaiola (Creamy Italian Sausage Pasta)",
+   "url": "https://skinnyspatula.com/pasta-alla-boscaiola-creamy-italian-sausage-pasta/",
+   "rating": 4.6,
+   "rating_count": 75,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Closet Cooking",
+   "title": "Pasta alla Boscaiola",
+   "url": "https://www.closetcooking.com/pasta-alla-boscaiola/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "All Cooked Up",
+   "title": "Penne alla Boscaiola",
+   "url": "https://allcookedup.com/penne-alla-boscaiola/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "default_servings": 4,
+ "origin": "seed"
+}

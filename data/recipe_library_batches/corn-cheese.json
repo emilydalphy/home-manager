@@ -1,0 +1,88 @@
+{
+ "dish_name": "Corn Cheese",
+ "cuisine": "Korean",
+ "main_protein": "cheese",
+ "default_servings": 3,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 12,
+ "ingredients": [
+  {
+   "item": "Canned sweet corn",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Shredded mozzarella",
+   "qty": "1 bag",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 scallion"
+  }
+ ],
+ "instructions": [
+  "Move an oven rack to the second position from the top and heat the oven to 450°F. Rub the 1 tsp oil over the inside of a 6-inch cast iron skillet or a small baking dish.",
+  "Drain the corn in a sieve, shake it well, then pat it dry with a clean towel.",
+  "In a bowl, stir together the corn, 3/4 cup of the mozzarella, the 2 tbsp mayonnaise, 1 tsp sugar, a pinch of salt and the 1/4 tsp pepper.",
+  "Spread the mixture evenly in the skillet and sprinkle the last 1/4 cup mozzarella over the top. This makes a small skillet, enough for 3 people.",
+  "Bake for about 10 minutes, until the cheese is melted, bubbling at the edges and golden in spots.",
+  "Meanwhile, thinly slice the scallion.",
+  "Let it cool for 2 minutes, then sprinkle the scallion over the top. Serve warm in the skillet."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Every version is canned corn, mayonnaise, mozzarella and a little sugar, spread in a hot pan and baked until the cheese bubbles. Two Plaid Aprons bakes at 450°F for about 10 minutes with no butter or onion, while Beyond Kimchee first softens onion and garlic in butter and adds Mexican blend cheese at 400°F, so this follows the first and adds the scallion that Beyond Kimchee suggests. No version has 20 ratings (Two Plaid Aprons has 7, Beyond Kimchee 3), so the lead is a fallback.",
+ "sources": [
+  {
+   "name": "Two Plaid Aprons",
+   "title": "Korean Cheese Corn",
+   "url": "https://twoplaidaprons.com/korean-cheese-corn/",
+   "rating": 4.7,
+   "rating_count": 7,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Beyond Kimchee",
+   "title": "Korean Corn Cheese Skillet",
+   "url": "https://www.beyondkimchee.com/korean-corn-cheese/",
+   "rating": 5,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

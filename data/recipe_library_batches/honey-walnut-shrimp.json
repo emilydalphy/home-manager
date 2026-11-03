@@ -1,0 +1,159 @@
+{
+ "dish_name": "Honey Walnut Shrimp",
+ "cuisine": "Chinese",
+ "main_protein": "shrimp",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Large shrimp",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Walnuts",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Butter",
+   "qty": "1 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Sweetened condensed milk",
+   "qty": "1 can",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Onion powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Broccoli",
+   "qty": "2 crowns",
+   "category": "produce"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Start the rice first. Rinse 1 1/2 cups of jasmine rice and cook it the way the package says.",
+  "Make the candied walnuts. In a nonstick skillet over medium heat, melt the butter. Add the walnuts, the sugar, 2 tbsp water and the 1/4 tsp salt. Stir for 4 to 5 minutes, until the walnuts are golden and the syrup is sticky.",
+  "Spread the walnuts on a sheet of parchment or a plate and pull them apart with a fork. Wipe out the skillet.",
+  "Meanwhile, make the sauce. In a large bowl, whisk the mayonnaise, condensed milk, honey, rice vinegar and 1/2 tsp of the soy sauce until smooth.",
+  "Pat the shrimp very dry. Cut a shallow slit, about 1/4 inch deep, along the back of each one. In a bowl, beat the egg with the onion powder and the remaining 1 tsp soy sauce. Add the shrimp and toss to coat.",
+  "Put the cornstarch on a plate. Press each shrimp into it, coating it all over, including inside the slit. Shake off the extra.",
+  "Heat the vegetable oil in the skillet over medium-high heat for 2 minutes. Add half the shrimp in a single layer and cook for 2 minutes per side, until golden and opaque all the way through. Transfer to a plate. Cook the rest the same way.",
+  "Meanwhile, cut the broccoli into florets. Put them in a pan with 3 tbsp water, cover, and cook over medium-high heat for 3 to 4 minutes, until bright green and just tender.",
+  "Let the shrimp cool for 1 to 2 minutes. Chop 2 of the green onions. Add the shrimp, the green onions and the walnuts to the sauce and fold until everything is coated.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the rice and the broccoli."
+ ],
+ "method_notes": "All versions pair crisp shrimp with a mayonnaise, condensed milk and honey sauce and sticky candied walnuts. The lead (Pups with Chopsticks) pan-fries the shrimp in a cornstarch coating, which keeps it a weeknight dish; Food Network Kitchen and Coop Can Cook deep-fry in batter and Coop Can Cook swaps in club soda. I dropped the double fry and the boiling of the walnuts. No version shows 20 or more ratings (Damn Delicious has 18 and Rasa Malaysia 47, but both blocked reading), so the lead is the best-read version and it is a fallback. The honey is in the sauce as the name promises.",
+ "sources": [
+  {
+   "name": "Pups with Chopsticks",
+   "title": "Honey Walnut Shrimp (Panda Express Copycat Recipe)",
+   "url": "https://pupswithchopsticks.com/honey-walnut-shrimp/",
+   "rating": 5,
+   "rating_count": 10,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food Network Kitchen",
+   "title": "Honey Walnut Shrimp",
+   "url": "https://www.foodnetwork.com/recipes/food-network-kitchen/honey-walnut-shrimp-11723746",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Coop Can Cook",
+   "title": "Honey Walnut Shrimp",
+   "url": "https://coopcancook.com/honey-walnut-shrimp-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Cozymeal",
+   "title": "Honey Walnut Shrimp",
+   "url": "https://www.cozymeal.com/recipes/r/honey-walnut-shrimp",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

@@ -1,0 +1,107 @@
+{
+ "dish_name": "Mayak Eggs",
+ "cuisine": "Korean",
+ "main_protein": "eggs",
+ "default_servings": 3,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "6",
+   "category": "dairy"
+  },
+  {
+   "item": "White vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1/4 onion"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 scallion"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "10 tbsp"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "5 tbsp"
+  },
+  {
+   "item": "Toasted sesame seeds",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "At least 6 hours ahead, or the night before: bring about 5 cups of water and the 2 tbsp vinegar to a boil in a medium pot over high heat.",
+  "Lower the 6 eggs into the water one at a time with a spoon. Turn the heat to medium so it bubbles gently, and cook for 6 minutes for a soft, jammy yolk. This makes 6 eggs, enough for 3 people.",
+  "Meanwhile, fill a bowl with ice and cold water. Transfer the eggs into it with a slotted spoon and leave them for about 10 minutes, until completely cold.",
+  "Finely chop 1/4 of the onion, mince the 3 garlic cloves and slice the scallion.",
+  "In an airtight container big enough to hold the eggs, stir together the onion, garlic, scallion, 10 tbsp soy sauce, 5 tbsp honey, 1/4 cup water and the sesame seeds until the honey dissolves.",
+  "Peel the eggs gently and add them to the container. If they float, press a piece of plastic wrap onto the surface so the eggs stay under the marinade.",
+  "Close the container and refrigerate for at least 6 hours, or overnight.",
+  "Halve the eggs and spoon some of the marinade over them. Serve cold. Keep the rest in the marinade in the fridge for up to 1 week, best within 3 to 4 days."
+ ],
+ "advance_prep_notes": "marinate at least 6 hours ahead, or overnight",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7
+ ],
+ "method_notes": "Two Plaid Aprons and Take Two Eggs both soft-boil large eggs for 6 minutes, chill them in ice water and marinate in soy, honey, garlic, onion, scallion and sesame for at least 6 hours. Two Plaid Aprons uses more soy to honey and a little water, and Take Two Eggs adds a second chili, which is left out here to keep the base mild. The lead's chili is optional and skipped. Running to the Kitchen uses hard-boiled eggs with a shorter 2 hour marinade.",
+ "sources": [
+  {
+   "name": "Two Plaid Aprons",
+   "title": "Mayak Eggs (Korean Marinated Eggs)",
+   "url": "https://twoplaidaprons.com/mayak-eggs-korean-marinated-eggs/",
+   "rating": 4.92,
+   "rating_count": 24,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Take Two Eggs",
+   "title": "Mayak Eggs",
+   "url": "https://takestwoeggs.com/?p=5888",
+   "rating": 5,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Running to the Kitchen",
+   "title": "Korean Marinated Eggs (Mayak Eggs)",
+   "url": "https://www.runningtothekitchen.com/korean-marinated-eggs/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

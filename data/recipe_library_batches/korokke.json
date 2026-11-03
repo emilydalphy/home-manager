@@ -1,0 +1,130 @@
+{
+ "dish_name": "Korokke",
+ "cuisine": "Japanese",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 35,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Russet potatoes",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Ground beef",
+   "qty": "1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Butter",
+   "qty": "1 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Panko",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Green cabbage",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Tonkatsu sauce",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Peel the potatoes and cut them into 1-inch chunks. Put them in a pot, cover with cold water and add 1/2 tsp of the salt.",
+  "Bring the pot to a boil over high heat, then turn it to medium and cook for 12 to 15 minutes, until a fork slides into a chunk with no push.",
+  "Meanwhile, finely chop the onion. Heat a large skillet over medium heat, add the butter and the onion, and cook for 4 minutes, until soft and just turning golden.",
+  "Add the beef, 1/4 tsp of the salt and the pepper. Break the beef up with a spoon and cook for 5 minutes, until there's no pink left.",
+  "Add 1 tbsp soy sauce and 1 tsp sugar. Cook for 1 minute, until the pan is dry, then take it off the heat.",
+  "Drain the potatoes, return them to the empty pot and mash them until mostly smooth. Add the beef mixture and the last 1/4 tsp salt, and stir well. Spread it on a plate and let it cool for 10 minutes.",
+  "Set out three shallow dishes: the flour in one, the egg beaten in the second, and the panko in the third.",
+  "Divide the potato mixture into 8 portions and press each into a flat oval about 1 inch thick. Coat each one in flour, then egg, then press it into the panko until it's covered all over.",
+  "Transfer the croquettes to a plate and chill them in the fridge for 20 minutes. This helps them hold together in the oil.",
+  "Pour the oil into a heavy skillet so it's about 1 inch deep and heat it over medium heat. You're heating it to 350°F, so if you have a thermometer, check it there. No thermometer? Drop in a pinch of panko: it should sizzle at once and turn golden in about 20 seconds.",
+  "Fry 4 croquettes at a time for 2 to 3 minutes per side, until deep golden. Transfer them to a wire rack or a plate lined with paper towels. Fry the other 4 the same way.",
+  "Meanwhile, finely shred a quarter of the cabbage. Serve the croquettes with the cabbage and the tonkatsu sauce."
+ ],
+ "method_notes": "All three versions boil russet potatoes, mash them with browned onion and ground beef, shape ovals, coat them in flour, egg and panko, and fry. Japanese Cooking 101 and Okonomi Kitchen use the same beef to potato ratio and both chill the shaped croquettes, which this one follows. Okonomi Kitchen adds carrot and a sake and mirin seasoning, and Pickled Plum fries balls with garlic; this one keeps the lead's plain beef and onion and seasons with soy sauce and sugar. None of the three has 20 ratings (the ratings shown on the pages are 2, 1 and 1 votes, read from the visible page), so the lead is the best-read real version. Fried in 1 inch of oil in a skillet instead of a deep fryer.",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "sources": [
+  {
+   "name": "Japanese Cooking 101",
+   "title": "Potato Korokke (croquette) Recipe",
+   "url": "https://japanesecooking101.com/potato-korokke-recipe/",
+   "rating": 5,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Okonomi Kitchen",
+   "title": "Korokke (Japanese Potato Croquettes)",
+   "url": "https://www.okonomikitchen.com/korokke-japanese-potato-croquettes/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Pickled Plum",
+   "title": "Beef and Potato Croquettes - Korokke",
+   "url": "https://pickledplum.com/recipe-japanese-beef-and-potato-croquettes/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

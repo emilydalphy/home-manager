@@ -1,0 +1,116 @@
+{
+ "dish_name": "Tandoori Salmon",
+ "cuisine": "Indian",
+ "main_protein": "fish",
+ "ingredients": [
+  {
+   "item": "Salmon fillets",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Greek yogurt",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green chilies",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 450°F with a rack in the top third. Line a rimmed baking sheet with parchment.",
+  "Pat the salmon dry and cut it into 4 portions. Transfer them to the baking sheet, skin side down if they have skin.",
+  "In a bowl, grate in 1 tbsp of the ginger and the 3 garlic cloves. Add the yogurt, 2 tbsp juice from the lemon, the oil, garam masala, paprika, coriander, turmeric and salt. Stir until it's a thick paste.",
+  "Spoon the marinade over the salmon and spread it over the top and sides. Leave it on the counter for 20 minutes while the oven finishes heating.",
+  "Slice the green chili and cut the rest of the lemon into wedges.",
+  "Roast the salmon for 10 to 12 minutes, until it flakes when you press the thickest part with a fork and the marinade is browned in spots. Thicker pieces take the full time.",
+  "For more char, switch the oven to broil and cook for 1 to 2 minutes. Watch it closely.",
+  "Taste a piece. If it's flat, add a pinch more salt or a squeeze of the lemon.",
+  "Serve with steamed rice and the lemon wedges. Pass the green chili at the table for anyone who wants heat."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 14,
+ "method_notes": "Cup of Yum is the lead (4.8 from 141 reviews): a ginger, garlic, garam masala and turmeric rub, then very hot cooking. That version has no yogurt, so the yogurt comes from Bon Appeteach (1/2 cup for 4 fillets), which also says to cook it hot and not to pan sear because yogurt burns. My Heart Beets (4.56 from 9) agrees on 425°F and about 10 minutes. We use 450°F with a short broil for char, and swapped the lead's hot Kashmiri chili for mild paprika, with fresh chili on the side.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "Tandoori Salmon",
+   "url": "https://cupofyum.com/recipes/tandoori-salmon",
+   "rating": 4.8,
+   "rating_count": 141,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Bon Appeteach",
+   "title": "Tandoori Salmon Recipe",
+   "url": "https://www.bonappeteach.com/tandoori-salmon-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "My Heart Beets",
+   "title": "10-Minute Tandoori Salmon",
+   "url": "https://myheartbeets.com/tandoori-salmon/",
+   "rating": 4.56,
+   "rating_count": 9,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}
