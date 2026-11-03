@@ -1,0 +1,139 @@
+{
+ "dish_name": "Tteok Galbi",
+ "cuisine": "Korean",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Boneless beef short ribs",
+   "qty": "1 1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 small piece",
+   "category": "produce"
+  },
+  {
+   "item": "Asian pear",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Mirin",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sweet rice flour",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Pine nuts",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Short-grain rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Trim the fat off the short ribs. Freeze the meat for 30 minutes, until firm but not solid. Cut it into small pieces and pulse it in a food processor in short bursts until it's finely chopped. Don't run it to a paste.",
+  "Finely chop the onion. Chop 3 of the scallions. Mince the garlic and 1 tsp of the ginger. Grate 3 tbsp of the pear. Chop the pine nuts.",
+  "In a large bowl, mix the soy sauce, sugar, honey, mirin, sesame oil, pepper, salt, onion, scallions, garlic, ginger and pear. Add the beef and the rice flour. Knead with your hands for 3 minutes, until the mix turns sticky and holds together.",
+  "Cover and refrigerate for at least 2 hours, or overnight.",
+  "Rinse the rice in a bowl until the water runs mostly clear. Add it to a pot with 1 3/4 cups water, bring to a boil, then cover and cook on low for 15 minutes. Leave it covered off the heat for 10 minutes.",
+  "Wet your hands and shape the beef mix into 8 oval patties about 1/2 inch thick.",
+  "Heat the broiler with a rack 6 inches from the heat. Line a baking sheet with foil and brush it with the vegetable oil. Lay the patties on it.",
+  "Broil for 5 minutes, flip, and broil for 4 minutes more, until browned and a little charred at the edges. You're cooking them to 160°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest patty: it's done when it's browned all the way through with no pink.",
+  "Scatter the pine nuts over the patties. Serve with the rice and set out chili flakes or kimchi on the table for anyone who wants heat."
+ ],
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "marinate the patty mix at least 2 hours ahead, or overnight",
+ "advance_prep_step_indices": [
+  4
+ ],
+ "method_notes": "Korean Bapsang, Beyond Kimchee and a repost of the Bapsang recipe agree on finely minced short rib meat, an onion, garlic, ginger, soy, sugar or honey and sesame oil mix, kneaded until sticky, then broiled about 4 to 5 minutes a side. They differ on binder (Beyond Kimchee uses sweet rice flour and nuts, Bapsang relies on kneading and an overnight rest) and on a soy honey glaze (Beyond Kimchee only). None had 20 ratings (Korean Bapsang 5 from 4 votes, Beyond Kimchee 5 from 1), so this is a fallback. This version follows Korean Bapsang's marinade with Beyond Kimchee's rice flour, scaled to 1 1/2 lb of meat. Boneless short rib can be hard to find, so a butcher can grind it, or chuck works.",
+ "sources": [
+  {
+   "name": "Korean Bapsang",
+   "title": "Tteokgalbi (Korean Short Rib Patties)",
+   "url": "https://www.koreanbapsang.com/tteokgalbi-korean-short-rib-patties/",
+   "rating": 5,
+   "rating_count": 4,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Beyond Kimchee",
+   "title": "Easy Tteok Galbi (Korean Short Ribs Patties)",
+   "url": "https://www.beyondkimchee.com/easy-tteok-galbi-korean-short-ribs-patties/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "default_servings": 4,
+ "fallback_used": true,
+ "origin": "seed"
+}

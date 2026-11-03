@@ -1,0 +1,106 @@
+{
+ "dish_name": "Kimchi Jjim",
+ "cuisine": "Korean",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Pork belly",
+   "qty": "1 1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Aged cabbage kimchi",
+   "qty": "1 jar (32 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 small piece",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Firm tofu",
+   "qty": "1 block (14 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Short-grain rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the pork belly into 3 pieces. Slice the ginger into thin coins. Slice the onion 1/2 inch thick. Mince the garlic. Cut the scallions into 1-inch lengths. Cut the tofu into 1/2-inch slices.",
+  "Put the pork belly in a wide heavy pot and cover it with cold water. Add the ginger, bring to a boil, and boil hard for 10 minutes. Drain, rinse the pork under cold water, discard the ginger, and wash the pot.",
+  "Spread the onion over the bottom of the clean pot and scatter the garlic over it. Set the pork on top. Lay the kimchi over the pork, then pour in 1/2 cup of the kimchi juice from the jar and 1 1/2 cups water.",
+  "Bring to a boil over medium-high heat. Cover, turn the heat to medium-low and simmer for 45 minutes, until a skewer slides into the pork with no resistance. Check once halfway and add a splash of water if the pot is dry.",
+  "Meanwhile, rinse the rice in a bowl until the water runs mostly clear. Add it to a pot with 1 3/4 cups water, bring to a boil, then cover and cook on low for 15 minutes. Leave it covered off the heat for 10 minutes.",
+  "Transfer the pork to a cutting board and slice it 1/2 inch thick. Return the slices to the pot, tucking them in between the kimchi.",
+  "Add the sugar, tofu and scallions. Cover and simmer for 5 minutes, until the tofu is hot. Drizzle with the sesame oil.",
+  "Taste it. If it's flat, add a splash more kimchi juice. Serve with the rice and set out chili flakes at the table for anyone who wants heat."
+ ],
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 70,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Korean Bapsang, The Subversive Table and Crazy Korean Cooking agree on sour, aged kimchi braised with fatty pork in very little liquid until the pork is tender. They differ on the pork (belly, or shoulder in Crazy Korean Cooking), liquid (kimchi juice and water, or water only), seasoning (gochugaru, doenjang) and whether the pork is parboiled with ginger and tofu added at the end (The Subversive Table). None had 20 ratings (Korean Bapsang 5 from 8 votes, Crazy Korean Cooking 5 from 2, The Subversive Table 5 from 1), so this is a fallback. This version uses Korean Bapsang's base and The Subversive Table's ginger parboil and tofu, and leaves out gochugaru since the kimchi is already spicy.",
+ "sources": [
+  {
+   "name": "Korean Bapsang",
+   "title": "Kimchi Jjim (Braised Kimchi)",
+   "url": "https://www.koreanbapsang.com/kimchi-jjim-braised-kimchi/",
+   "rating": 5,
+   "rating_count": 8,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Crazy Korean Cooking",
+   "title": "Kimchi Jjim, Braised Kimchi with Pork",
+   "url": "https://crazykoreancooking.com/recipe/kimchi-jjim-braised-kimchi-with-pork",
+   "rating": 5,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "The Subversive Table",
+   "title": "Braised Kimchi with Pork Belly + Tofu (Kimchi Jjim)",
+   "url": "https://thesubversivetable.com/kimchi-jjim/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "default_servings": 4,
+ "fallback_used": true,
+ "origin": "seed"
+}

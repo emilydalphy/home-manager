@@ -1,0 +1,139 @@
+{
+ "dish_name": "Kreatopita",
+ "cuisine": "Greek",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Ground beef",
+   "qty": "1 1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sweet paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Crushed tomatoes",
+   "qty": "1 can (14 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Feta cheese",
+   "qty": "5 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Phyllo dough",
+   "qty": "1/2 lb",
+   "category": "frozen"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "6 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Panko breadcrumbs",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Take the phyllo out of the freezer the night before and thaw it in the fridge. Leave it in its wrapper until you use it.",
+  "Heat the oven to 400°F. Finely chop the onion, mince the garlic, chop 1/4 cup of the parsley, crumble the feta, and melt the butter in a small bowl.",
+  "Heat the olive oil in a large deep skillet over medium heat. Add the onion and 1/2 tsp of the salt and cook for 6 minutes, until soft and starting to brown.",
+  "Add the garlic, paprika and cinnamon and stir for 30 seconds. Add the beef, 1/2 tsp of the salt and the pepper. Break the beef up and cook for 6 minutes, until no pink is left and some bits are browned.",
+  "Add the crushed tomatoes and oregano. Simmer for 12 minutes, stirring now and then, until the filling is thick and not runny. Take the pan off the heat and taste it. If it's flat, add the last 1/2 tsp salt. Transfer the filling to a bowl and let it cool for 10 minutes.",
+  "Beat the eggs and stir them into the cooled filling with the feta and the chopped parsley.",
+  "Brush a 9x13-inch baking dish with butter and scatter the breadcrumbs over the bottom. Lay in half of the phyllo sheets one at a time, brushing each with butter and letting the edges hang over the sides of the dish.",
+  "Spread the filling over the phyllo. Fold the overhanging phyllo in over the filling.",
+  "Lay the rest of the phyllo sheets on top one at a time, brushing each with butter. Pour any butter that's left over the top. Cut through the top layers only, into 8 squares.",
+  "Bake for 40 minutes, until deep golden brown. Let it rest for 15 minutes so it cuts cleanly.",
+  "Cut along the lines and serve with plain Greek yogurt on the side and a green salad."
+ ],
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 65,
+ "advance_prep_notes": "thaw the phyllo in the fridge the night before",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "Dimitra's Dishes, Chef Denise and Greek Boston all agree on spiced ground beef cooked first, cooled, bound with cheese and then baked between buttered phyllo; they differ on binders (Dimitra uses a thick tomato sauce, Greek Boston uses eggs and breadcrumbs, Chef Denise uses eggs, yogurt and feta) and on shape (braids and spirals versus a pan). None of the three pages shows a rating (Chef Denise, Dimitra's Dishes and Greek Boston had none in the page data, so no version could reach 20 ratings and this is a fallback). This version uses Dimitra's tomato filling and a pan, with Chef Denise's cinnamon, feta and eggs so the squares hold together. No pepper flakes in the filling; the heat can go on at the table.",
+ "sources": [
+  {
+   "name": "Dimitra's Dishes",
+   "title": "Kreatopita: Greek Minced Meat & Phyllo Pie",
+   "url": "https://www.dimitrasdishes.com/kreatopita-greek-minced-meat-phyllo-pie/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Chef Denise",
+   "title": "Greek Meat Pie (Kreatopita)",
+   "url": "https://www.chefdenise.com/all/greek-meat-pie",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Greek Boston",
+   "title": "Kreatopita (Greek-Style Meat Pie)",
+   "url": "https://www.greekboston.com/food/pies/kreatopita-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "default_servings": 4,
+ "fallback_used": true,
+ "origin": "seed"
+}
