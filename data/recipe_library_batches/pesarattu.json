@@ -1,0 +1,128 @@
+{
+ "dish_name": "Pesarattu",
+ "cuisine": "Indian",
+ "main_protein": "lentils",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Whole green moong beans",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Raw rice",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 piece",
+   "category": "produce",
+   "cook_qty": "2 1/4 inches"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ghee",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Chana dal",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried red chilies",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Tamarind paste",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "The night before, or at least 4 hours ahead: Rinse the moong beans and the rice together a few times in a large bowl. Cover them with water by about 2 inches and let them soak for 4 to 6 hours. Drain them in the morning and rinse once more.",
+  "Make the chutney. Heat the oil in a small pan over medium heat. Add the chana dal and dried red chilies and stir for about 2 minutes, until the dal is light golden. Transfer them to a plate.",
+  "Finely chop a quarter of the onion and set it aside for the topping. Cut the rest into cubes and peel and slice a 1 1/2 inch piece of the ginger.",
+  "Add the cubed onion and sliced ginger to the same pan. Cook over medium heat, stirring, until the onion is pink at the edges, about 3 minutes. Don't let the ginger brown. Add 1/2 tsp of the cumin seeds, take the pan off the heat and let everything cool for 10 minutes.",
+  "In a blender, combine the cooled onion mixture and the dal mixture with the tamarind paste, the brown sugar, 1/4 tsp of the salt and 1/4 cup water. Blend until smooth. Add a splash more water if it's too thick to spoon. Transfer the chutney to a bowl.",
+  "Rinse the blender. Add the soaked moong and rice, the remaining 3/4 inch of ginger, the green chili, the remaining 1/2 tsp cumin seeds, the remaining 1/4 tsp salt and 1/2 cup water. Blend until smooth.",
+  "Add more water 2 tablespoons at a time until the batter pours off a spoon in a thick ribbon. A runny batter won't get crisp.",
+  "Heat a large nonstick skillet or griddle over medium heat for 2 minutes. Flick a few drops of water on it. They should sizzle and disappear fast. Then turn the heat down a little.",
+  "Stir the batter. Pour 1/4 cup into the center of the pan and spread it into a thin 6 to 7 inch round with the back of the ladle, moving in circles. Sprinkle about 1 tsp of the chopped onion over the top and drizzle 1/2 tsp of the ghee around the edge.",
+  "Cook for 2 to 3 minutes, until the edges lift and the underside is golden and crisp. Flip it and cook for 1 minute, until the batter is no longer raw. Fold it in half and transfer it to a plate.",
+  "Repeat with the rest of the batter, stirring it each time and letting the pan cool a little between crepes. That should make 12 to 14 pesarattu, about 3 for each person.",
+  "Serve the pesarattu hot with the ginger chutney."
+ ],
+ "advance_prep_notes": "Soak the moong beans and rice for 4 to 6 hours, or overnight.",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "All the versions grind soaked whole green moong with ginger, green chili and cumin into a batter that needs no fermenting, spread it thin on a hot pan and top it with chopped onion. Swasthi's Recipes (the lead, 4.99 from 132 votes) soaks 4 to 6 hours and adds a little raw rice, and Sharmis Passions (4.6 from 5 votes) is close, with 2 tbsp of rice. The ginger chutney is Swasthi's separate ginger chutney (4.99 from 61 votes), cooked with onion, chana dal and tamarind. The batter here uses one green chili instead of two and puts the heat in the chutney, and the onion topping goes on raw. Brown sugar stands in for jaggery. Ratings are the page's visible counts.",
+ "sources": [
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Pesarattu Recipe",
+   "url": "https://www.indianhealthyrecipes.com/andhra-pesarattu-whole-moong-dosa/",
+   "rating": 4.99,
+   "rating_count": 132,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Swasthi's Recipes",
+   "title": "Ginger Chutney Recipe",
+   "url": "https://www.indianhealthyrecipes.com/ginger-chutney-allam-chutney/",
+   "rating": 4.99,
+   "rating_count": 61,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Sharmis Passions",
+   "title": "Pesarattu Recipe",
+   "url": "https://www.sharmispassions.com/pesarattu-dosai-whole-green-gram-dosa/",
+   "rating": 4.6,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

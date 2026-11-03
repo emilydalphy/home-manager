@@ -1,0 +1,82 @@
+{
+ "dish_name": "Okayu",
+ "cuisine": "Japanese",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 35,
+ "cook_time_minutes": 45,
+ "ingredients": [
+  {
+   "item": "Japanese short-grain rice",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3"
+  },
+  {
+   "item": "Toasted sesame seeds",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Nori sheets",
+   "qty": "1 pack",
+   "category": "pantry",
+   "cook_qty": "1 sheet"
+  },
+  {
+   "item": "Umeboshi",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "4"
+  }
+ ],
+ "instructions": [
+  "Put the 1 cup rice in a sieve and rinse it under cold water, stirring with your hand, until the water runs clear. Drain well.",
+  "Transfer the rice to a heavy 3-quart pot and add 5 cups water. Let it soak for at least 30 minutes.",
+  "Cover the pot and bring it to a boil over high heat. Once it boils, turn the heat to the lowest setting, lift the lid and stir gently once from the bottom.",
+  "Cover again and simmer for 30 minutes. Don't stir. If it starts to boil over, leave the lid a little open.",
+  "Turn off the heat and leave the pot covered for 10 minutes. The porridge should be soft and thick.",
+  "Meanwhile, thinly slice the 3 scallions. Cut the nori sheet into thin shreds with scissors.",
+  "Spoon the okayu into 4 bowls. Top each with some scallions, sesame seeds, nori and 1 umeboshi.",
+  "Serve hot. Stir the umeboshi into the porridge as you eat."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The versions agree on about 1 part rice to 5 parts water, a slow simmer with the lid a little open, and a plain pot seasoned by the toppings. Just One Cookbook (the lead, 4.71 from 61 votes) soaks the rice for 30 minutes, simmers it for 30 and lets it steam for 10, and it also gives the thinner ratios. Japanese Cooking 101 (5 from 1 vote) skips the soak and uses 1 part rice to 7 parts water, and Umami Pot (5 from 1 vote) has a faster version from cooked rice: 1 cup cooked rice and 1 1/2 cups water, simmered 10 to 15 minutes. The salted salmon and fish toppings are left out to keep it vegetarian. The times above include the 30 minute soak.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Rice Porridge Recipe (Okayu)",
+   "url": "https://www.justonecookbook.com/rice-porridge-okayu/",
+   "rating": 4.71,
+   "rating_count": 61,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Japanese Cooking 101",
+   "title": "Okayu Recipe",
+   "url": "https://japanesecooking101.com/okayu/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Umami Pot",
+   "title": "Okayu (Japanese Rice Porridge)",
+   "url": "https://umamipot.com/okayu/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

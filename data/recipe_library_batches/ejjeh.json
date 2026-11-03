@@ -1,0 +1,119 @@
+{
+ "dish_name": "Ejjeh",
+ "cuisine": "Lebanese",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "6",
+   "category": "dairy"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 1/2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Baking powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground allspice",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Mint",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Pita bread",
+   "qty": "4",
+   "category": "pantry"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 cup",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "Wash the parsley, mint and scallions and pat them dry. Finely chop 1/4 cup of the parsley, 2 tbsp of the mint and 2 of the scallions.",
+  "Crack the 6 eggs into a large bowl and whisk until smooth. Whisk in the flour, baking powder, allspice, salt and pepper until there are only a few small lumps left.",
+  "Stir in the parsley, mint and scallions.",
+  "Heat an 8-inch nonstick skillet over medium heat. Add 1 tsp of the olive oil and wait until it shimmers.",
+  "Pour in about 1/2 cup of the batter and tilt the pan so it spreads into an even layer. Cook for 2 to 3 minutes, until the bottom is golden and the top is mostly set.",
+  "Flip it and cook for 2 to 3 minutes, until it's golden and set all the way through. Fold it in half and transfer it to a plate.",
+  "Repeat with the remaining oil and batter, 1 tsp of oil for each, to make 4 omelettes in all.",
+  "Warm the pitas in a dry skillet or the microwave until they're soft.",
+  "Spread 1/4 cup of the yogurt over each pita. Unfold an omelette, lay it on the yogurt and roll the pita up around it.",
+  "Serve the rolls while they're warm."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Every version whisks eggs with chopped herbs, a spoonful or two of flour and a pinch of baking powder and seven spice, then cooks them as thin omelettes or small fritters. No version has a rating of 4.0 or more from 20 or more people, so the lead is a fallback, and the app's rule picks Cosette's Kitchen (5 from 1 review, using the visible rating) for its herbs: parsley, mint and scallions. The batter ratios and the thin omelette method follow Amy's Dish (3.9 from 60 reviews, using the review count), cut from 8 omelettes to 4, since Cosette's makes thick fritters in a lot of oil. Ground allspice stands in for seven spice, as Cosette's suggests, and the zucchini is left out.",
+ "sources": [
+  {
+   "name": "Cosette's Kitchen",
+   "title": "Ejjeh - Vegetarian Lebanese Herb Omelette",
+   "url": "https://cosetteskitchen.com/ejjeh-vegetarian-lebanese-herb-omelette",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Amy's Dish",
+   "title": "Ejjeh: Traditional Lebanese Herb Omelette Recipe for Bright Flavors",
+   "url": "https://amysdish.com/ejjeh-traditional-lebanese-herb-omelette-recipe/",
+   "rating": 3.9,
+   "rating_count": 60,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Dobbernation Loves",
+   "title": "Ejjeh Fresh Herb Lebanese Omelette",
+   "url": "https://dobbernationloves.com/food-drink/ejjeh-lebanese-omelette-recipe/",
+   "rating": 4.5,
+   "rating_count": 4,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
