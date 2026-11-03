@@ -1,0 +1,102 @@
+{
+ "dish_name": "Zeytinyagli Pirasa",
+ "cuisine": "Turkish",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Leeks",
+   "qty": "2 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh dill",
+   "qty": "1 bunch",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Cut the roots and the tough dark green tops off the leeks. Slice them in half lengthwise and rinse well under cold water, fanning the layers to wash out any grit. Cut them into 1-inch pieces.",
+  "Dice the onion and slice the carrots into thin rounds. Rinse the rice in a sieve and drain it. Chop 2 tbsp of the dill.",
+  "Heat the olive oil in a large pot over medium heat. Add the onion and carrots. Cook for 5 minutes, stirring now and then, until soft but not brown.",
+  "Add the leeks and cook for 5 minutes, stirring, until they wilt.",
+  "Add the rice, 1 1/4 cups of hot water, the juice of 1 lemon, the sugar and the salt. Stir once.",
+  "Bring to a simmer, then cover and cook on low for 20 minutes. Don't stir. It's done when the rice and leeks are tender and the liquid is absorbed.",
+  "Take the pot off the heat and leave it covered for 15 minutes.",
+  "Meanwhile, cut the other lemon into wedges.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve warm or at room temperature, topped with the dill and with the lemon wedges."
+ ],
+ "method_notes": "Özlem's Turkish Table (the lead) and Almost Turkish Recipes both braise leeks with carrot and a little rice in olive oil, with lemon juice and sugar, and cool the pot covered. Melissa's adds tomato; Özlem uses 1 tbsp of rice and Almost Turkish a quarter cup. None of the three versions shows a usable rating (Melissa's has 5.0 from one vote, Özlem's and Almost Turkish have none), so this is a fallback lead with a real, well-detailed version. I scaled the leeks up to 2 lb so it works as a dinner for four, used the larger rice amount, and kept the dill as a finish.",
+ "sources": [
+  {
+   "name": "Özlem's Turkish Table",
+   "title": "Zeytinyağlı Pırasa (Leeks, Carrots and Rice Cooked with Olive Oil)",
+   "url": "https://ozlemsturkishtable.com/2010/06/zeytinyagli-pirasa-leeks-carrots-and-rice-cooked-with-olive-oil/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Almost Turkish Recipes",
+   "title": "Leeks in Olive Oil (Zeytinyağlı Pırasa)",
+   "url": "https://www.almostturkishrecipes.com/2008/11/leeks-in-olive-oil-zeytinyal-prasa.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Melissa's",
+   "title": "Leeks and Rice Cooked in Olive Oil (Zeytinyagli Pirasa)",
+   "url": "https://www.melissas.com/blogs/side-dish/leeks-cooked-in-olive-oil-zeytinyagli-pirasa",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

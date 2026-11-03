@@ -1,0 +1,152 @@
+{
+ "dish_name": "Tofu Katsu",
+ "cuisine": "Japanese",
+ "main_protein": "tofu",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Extra-firm tofu",
+   "qty": "2 blocks (14 oz each)",
+   "category": "dairy"
+  },
+  {
+   "item": "Short-grain rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Panko breadcrumbs",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ketchup",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Vegan Worcestershire sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Green cabbage",
+   "qty": "1 small head",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lemons",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a sieve until the water runs mostly clear. Put it in a medium pot with 1 3/4 cups of water, bring to a boil, then cover and cook on the lowest heat for 15 minutes. Leave it covered, off the heat, for 10 minutes.",
+  "Meanwhile, drain the tofu and cut each block crosswise into 4 slabs. Lay them on a towel, cover with another towel and set a plate on top. Leave them to press for 10 minutes.",
+  "Make the sauce: in a small bowl, stir together 1/4 cup ketchup, 1 1/2 tbsp soy sauce, 2 tsp vegan Worcestershire sauce, 1 tsp sugar and 1/4 tsp of the garlic powder. Stir in 1 to 2 tsp of water if it's too thick to pour.",
+  "Make the slaw: shred half of the cabbage head so you have about 4 cups, and grate the carrot. Toss them in a bowl with 1 tbsp rice vinegar, the sesame oil and 1/4 tsp of the salt. Slice the green onions and cut the lemon into 4 wedges.",
+  "Pat the pressed tofu dry. Sprinkle both sides with 1/2 tsp of the salt and the pepper.",
+  "In a shallow dish, whisk the flour with 3/4 cup of cold water until smooth. In a second dish, stir the panko with the rest of the garlic powder and the last 1/2 tsp of salt.",
+  "Dip a tofu slab in the batter, let the extra drip off, then press it into the panko on both sides until it's coated. Set it on a plate and repeat with the rest.",
+  "Heat the vegetable oil in a large heavy skillet over medium heat until a panko crumb sizzles right away, about 3 minutes.",
+  "Fry half of the slabs for 3 to 4 minutes per side, until deep golden and crisp. Transfer them to a paper towel-lined plate. Fry the rest the same way.",
+  "Taste the slaw. If it's flat, add a pinch more salt.",
+  "Slice each slab into strips. Serve over the rice with the slaw, the sauce, the green onions and the lemon wedges."
+ ],
+ "method_notes": "No tofu katsu I could read has 20 or more ratings (best: Running on Real Food 4.67 from 3, No Recipes 4.60 from 5, Urban Farmie 5 from 2), so the lead is the best-read real version and this is a fallback. All three bread pressed extra-firm tofu in panko over a wet binder and shallow-fry it, serving with cabbage, rice and a ketchup-based tonkatsu sauce. I used the egg-free flour and water batter from No Recipes (the others use ground flax or soy milk) so nothing special has to be bought, and Running on Real Food's sauce without its chili-garlic sauce. Vegan Worcestershire is used because regular Worcestershire has anchovy.",
+ "sources": [
+  {
+   "name": "Running on Real Food",
+   "title": "Tofu Katsu",
+   "url": "https://runningonrealfood.com/tofu-katsu/",
+   "rating": 4.67,
+   "rating_count": 3,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "No Recipes",
+   "title": "Tofu Katsu",
+   "url": "https://norecipes.com/tofu-katsu-recipe/",
+   "rating": 4.6,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Urban Farmie",
+   "title": "Tofu Katsu",
+   "url": "https://urbanfarmie.com/tofu-katsu/",
+   "rating": 5,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}
