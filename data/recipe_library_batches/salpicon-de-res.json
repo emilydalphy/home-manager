@@ -1,0 +1,149 @@
+{
+ "dish_name": "Salpicon de Res",
+ "cuisine": "Mexican",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Flank steak",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "White vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Limes",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Romaine lettuce",
+   "qty": "1 head",
+   "category": "produce"
+  },
+  {
+   "item": "Avocados",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeno",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Tostadas",
+   "qty": "1 package",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "On Sunday, or up to 3 days ahead: put the 1 1/2 lbs flank steak in a large pot with the yellow onion cut in half, the 2 garlic cloves (smash them with the side of a knife), the 2 bay leaves and 2 tsp of the salt. Add enough water to cover the beef by about 1 inch.",
+  "Bring it to a boil over high heat. Turn the heat down to medium-low, partly cover the pot and simmer for 1 hour, until the beef pulls apart easily with a fork. If the water drops below the beef, add a splash.",
+  "Meanwhile, dice the Roma tomatoes. Thinly slice half the red onion, and chop 1/2 cup of the cilantro. Put them all in a large bowl.",
+  "Meanwhile, in a small bowl, whisk 3 tbsp olive oil, 2 tbsp white vinegar, the juice of the lime (that should be about 2 tbsp), 1 tsp oregano, the remaining 1/2 tsp salt and 1/4 tsp pepper.",
+  "Transfer the beef to a cutting board and let it cool for 20 minutes. Throw out the onion, garlic, bay leaves and broth.",
+  "Shred the beef into fine strands with two forks. Add it to the bowl with the tomatoes, onion and cilantro, pour the dressing over and toss.",
+  "Taste it. If it's flat, add a pinch more salt. Cover and refrigerate for at least 30 minutes. It keeps in the fridge for 3 days.",
+  "To serve, shred half the romaine. That should be about 3 cups. Halve, pit and slice the avocados. Thinly slice the jalapeno into a small bowl.",
+  "Toss the lettuce through the beef salad. Spoon it onto the tostadas and top with the avocado. Serve with the sliced jalapeno.",
+  "To pack it for lunch, keep the beef salad on its own and add the lettuce and avocado on the day. The lettuce goes soft within a few hours once it's dressed."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 60,
+ "advance_prep_notes": "Simmer, shred and dress the beef up to 3 days ahead",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6
+ ],
+ "method_notes": "None of the versions read shows a rating, so the lead is a best-read real version, Marisol Cooks. All of them simmer a cut of beef with onion, garlic and bay leaf until it shreds, then toss it with tomato, onion and an oil and vinegar dressing with oregano, and serve it on tostadas with avocado. They differ in the cut (brisket at 2 1/2 hours for Food Network, flank at about an hour for Marisol Cooks, chuck or skirt for Maricruz Avalos) and in extras like radish, capers and cucumber. This one follows Marisol Cooks with flank for the shorter simmer, adds the lime juice from the Maricruz Avalos dressing, and puts the jalapeno on the side so the base stays mild. Total time is mostly the simmer, so it suits a lunch cooked ahead.",
+ "sources": [
+  {
+   "name": "Marisol Cooks",
+   "title": "Salpicon de Res (Shredded beef salad)",
+   "url": "https://marisolcooks.com/2024/08/08/salpicon-de-res-shredded-beef-salad/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food Network (Marcela Valladolid)",
+   "title": "Shredded Beef Tostadas (Salpicon)",
+   "url": "https://www.foodnetwork.com/recipes/marcela-valladolid/shredded-beef-tostadas-salpicon-recipe-2120471",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Maricruz Avalos",
+   "title": "Salpicon de Res (Mexican Shredded Beef Salad)",
+   "url": "https://www.maricruzavalos.com/salpicon/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

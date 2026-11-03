@@ -1,0 +1,130 @@
+{
+ "dish_name": "Pork Fried Rice",
+ "cuisine": "Chinese",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Jasmine rice",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Pork tenderloin",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Frozen peas and carrots",
+   "qty": "1 bag (12 oz)",
+   "category": "frozen"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 small piece",
+   "category": "produce"
+  },
+  {
+   "item": "Butter",
+   "qty": "1 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Eggs",
+   "qty": "3",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "The day before, or up to 2 days ahead: rinse the 1 cup jasmine rice in a sieve until the water runs mostly clear. Put it in a medium pot with 1 1/2 cups water and bring it to a boil over high heat. Cover, turn the heat to low and cook for 15 minutes. Take it off the heat and leave it covered for 10 minutes.",
+  "Spread the rice on a plate or tray to cool, then cover and refrigerate. Cold, dry rice is what fries well, so don't use it warm.",
+  "Cut the pork tenderloin into 3/4-inch cubes. Sprinkle 1 tsp salt and 1/2 tsp pepper over them and toss.",
+  "In a small bowl, stir together 3 tbsp soy sauce, 3 tbsp oyster sauce and 1 tbsp sesame oil. Dice the red bell pepper, mince the 3 garlic cloves, mince 1 tbsp of ginger and slice the green onions, keeping the white and green parts apart. Break up any clumps in the cold rice with your fingers.",
+  "Heat 2 tbsp of the vegetable oil in your largest wok or skillet over high heat until it shimmers. Add the pork in a single layer and leave it alone for 2 minutes, until the underside is browned. Stir and cook for 3 minutes, until browned all over. Transfer it to a bowl.",
+  "You're cooking the pork to 145°F in the middle, so if you have a thermometer, check a larger piece. No thermometer? Cut into one: it's done when it's just barely pink or white all the way through.",
+  "Add 1/2 tbsp of the oil to the pan, then the bell pepper and the frozen peas and carrots straight from the bag. Cook over medium-high heat, stirring now and then, for 5 minutes, until the pepper has softened and the peas and carrots are hot. Transfer them to the bowl with the pork.",
+  "Take the pan off the heat and add the last 1/2 tbsp oil, then the garlic, the ginger and the white parts of the green onions. Stir for 15 seconds, until fragrant.",
+  "Add the butter and the rice. Put the pan back on medium-high heat and stir, pressing the rice against the pan, for 3 minutes, until it's hot and the grains look separate and dry.",
+  "Push the rice to one side. Crack the 3 eggs into the empty space and scramble them for about 1 minute, until nearly set. Stir them into the rice.",
+  "Add the pork and vegetables with any juices from the bowl, the sauce and the green parts of the green onions. Toss for 1 minute, until everything is coated and hot. Take the pan off the heat.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve it hot, straight from the pan. For lunches, divide the rest into containers once it's cooled. It keeps in the fridge for 3 days. Reheat in the microwave for 1 1/2 to 2 minutes, stirring halfway."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "Cook and chill the rice a day ahead",
+ "advance_prep_step_indices": [
+  1,
+  2
+ ],
+ "method_notes": "The lead is Well Plated's Pork Fried Rice (4.91 from 64 ratings, taken from the JSON-LD). Easy Peasy Foodie uses diced leftover pork, peas and sesame oil in a much shorter method, and The Kitchn and Eating on a Dime were blocked (403) so were not read. The sources agree on cold cooked rice, a hot wide pan, eggs scrambled in a cleared space and a soy and oyster sauce. This follows Well Plated: tenderloin browned first, vegetables next, then ginger and garlic off the heat, butter for the rice, and the sauce at the end. It uses 1 bell pepper and 1 bag of frozen peas and carrots for 4, and the rice is cooked a day ahead so the dish works as leftover-rice fried rice.",
+ "sources": [
+  {
+   "name": "Well Plated",
+   "title": "Pork Fried Rice",
+   "url": "https://www.wellplated.com/pork-fried-rice/",
+   "rating": 4.91,
+   "rating_count": 64,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Easy Peasy Foodie",
+   "title": "Leftover Pork Fried Rice",
+   "url": "https://www.easypeasyfoodie.com/leftover-pork-fried-rice/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

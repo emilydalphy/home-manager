@@ -1,0 +1,124 @@
+{
+ "dish_name": "Chicken Katsu Sando",
+ "cuisine": "Japanese",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Ketchup",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "6 tbsp"
+  },
+  {
+   "item": "Worcestershire sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Green cabbage",
+   "qty": "1 small head",
+   "category": "produce"
+  },
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1 1/4 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Panko",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Soft white sandwich bread",
+   "qty": "1 loaf",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "In a small bowl, stir together 6 tbsp ketchup, 3 tbsp Worcestershire sauce, 2 tbsp oyster sauce and 1 tbsp sugar until the sugar dissolves. This is the tonkatsu sauce.",
+  "Shred a quarter of the cabbage as thin as you can with a sharp knife. That should be about 2 cups. Keep it in the fridge until you build the sandwiches.",
+  "Cut the chicken thighs into 4 pieces about the same size. Lay them between two sheets of plastic wrap and pound with a meat mallet or rolling pin to an even 1/2 inch. Pat them dry and sprinkle both sides with the 1 tsp salt and 1/4 tsp pepper.",
+  "Set out three plates: the 1/3 cup flour on one, the 2 eggs beaten on the next, and the 1 1/2 cups panko on the last. Coat each cutlet in flour and shake off the extra. Dip it in the egg, then lay it in the panko and press so the crumbs stick on both sides.",
+  "Pour the oil into a large skillet. It should be about 1/2 inch deep. Heat it over medium heat for about 3 minutes, until a crumb of panko sizzles as soon as it hits the oil.",
+  "Lay 2 cutlets in the oil, away from you. Stand back a little. They'll spatter. Fry for 3 to 4 minutes, until the underside is deep golden brown, then flip them and cook the other side for 3 minutes.",
+  "You're cooking the chicken to 175°F in the middle, so if you have a thermometer, check the thickest part. No thermometer? Cut into the center of one: it's done when there's no pink left and the juices run clear.",
+  "Transfer the cutlets to a wire rack and fry the other 2 the same way.",
+  "Spread the 1/4 cup mayonnaise over one side of all 8 slices of bread. Pile the cabbage on 4 of them and spoon 1 tbsp of the tonkatsu sauce over each pile.",
+  "Lay a cutlet on each pile of cabbage and spoon 2 tbsp of the sauce over it. Close each sandwich with a second slice, mayo side down. Press down gently with your palm.",
+  "Trim the crusts if you like and cut each sandwich in half. Serve with any sauce left in the bowl.",
+  "To pack them for lunch, wrap each sandwich tightly in plastic wrap once it's cool. They keep in the fridge for 1 day and are good cold."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No chicken version read has 20 or more ratings (the best are 5 from 3 votes for Something About Sandwiches, 5 from 2 for Honest Food Talks), so the lead is a best-read real chicken version and the fallback is flagged. Just One Cookbook's pork katsu sando (4.95 from 37) was read for the bread and pressing, but it is the pork dish, so it is not listed as a source. The versions agree on a pounded, panko-crusted cutlet, shredded cabbage, mayo and tonkatsu sauce on soft white bread. They differ on frying versus baking. This follows Something About Sandwiches' shallow fry, uses thighs per the app's rules, and makes the sauce at home from the Honest Food Talks ratios so no specialty bottle is needed.",
+ "sources": [
+  {
+   "name": "Something About Sandwiches",
+   "title": "Chicken Katsu Sandwich (Katsu Sando)",
+   "url": "https://somethingaboutsandwiches.com/chicken-katsu-sandwich/",
+   "rating": 5,
+   "rating_count": 3,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Honest Food Talks",
+   "title": "Katsu Sando",
+   "url": "https://www.honestfoodtalks.com/katsu-sando/",
+   "rating": 5,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
