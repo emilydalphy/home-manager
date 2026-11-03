@@ -135,16 +135,16 @@ _HARDY = (
 )
 _GREENS = ("lettuce", "romaine", "spinach", "arugula", "greens", "chard", "collard", "collards", "spring mix", "mesclun")
 _NOT_FRESH_WORDS = (
-    "powder", "dried", "ground", "flakes", "flake", "paste", "sauce", "oil", "juice", "canned",
+    "powder", "dried", "ground", "flakes", "flake", "paste", "sauce", "oil", "juice", "canned", "tinned",
     "frozen", "pickled", "jarred", "roasted red", "sun-dried", "sundried", "seed", "seeds", "salt",
 )
-# Grains worth cooking ahead, with the minutes they sit on the stove.
 # A can, tin or jar in the AMOUNT means it was bought ready: "Diced
 # tomatoes · 1 can" has no category and no "canned" in its name, and was
 # being listed under "Made on the night" as "Cut tomato goes soft and
 # watery overnight" (2026-11-03 hunt). Nothing in a can needs chopping
 # ahead or keeping fresh.
 _CONTAINER_QTY = re.compile(r"\b(?:cans?|tins?|jars?|cartons?)\b", re.I)
+# Grains worth cooking ahead, with the minutes they sit on the stove.
 _GRAINS = (
     ("brown rice", 40), ("wild rice", 45), ("rice", 20), ("quinoa", 15), ("farro", 30),
     ("barley", 40), ("bulgur", 15),
