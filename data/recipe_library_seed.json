@@ -1039,7 +1039,7 @@
   {"dish_name": "Kinche", "dish_key": "kinche", "cuisine": "Ethiopian", "meal": "breakfast", "main_protein": "vegetarian", "why": "Ethiopian cracked wheat porridge with spiced butter."},
   {"dish_name": "Ejjeh", "dish_key": "ejjeh", "cuisine": "Lebanese", "meal": "breakfast", "main_protein": "eggs", "why": "Lebanese herb and onion omelette, rolled into pita."},
   {"dish_name": "Pesarattu", "dish_key": "pesarattu", "cuisine": "Indian", "meal": "breakfast", "main_protein": "lentils", "why": "Green moong dal crepes from Andhra, high in protein, with ginger chutney."},
-  {"dish_name": "Sincronizadas", "dish_key": "sincronizadas", "cuisine": "Mexican", "meal": "breakfast", "main_protein": "pork", "why": "Ham and cheese tortilla sandwiches toasted crisp, ready in 10 minutes."},
+  {"dish_name": "Sincronizadas", "dish_key": "sincronizadas", "cuisine": "Mexican", "meal": "breakfast", "main_protein": "pork", "why": "Ham and cheese tortilla sandwiches toasted crisp, ready in about 15 minutes."},
   {"dish_name": "Okayu", "dish_key": "okayu", "cuisine": "Japanese", "meal": "breakfast", "main_protein": "vegetarian", "why": "Soft Japanese rice porridge with simple toppings for a gentle morning."},
   {"dish_name": "Jumeokbap", "dish_key": "jumeokbap", "cuisine": "Korean", "meal": "breakfast", "main_protein": "fish", "why": "Korean rice balls with tuna mayo and seaweed, quick to shape in the morning."},
   {"dish_name": "Sweet Potato Toast", "dish_key": "sweet potato toast", "cuisine": "American", "meal": "breakfast", "main_protein": "vegetarian", "why": "Toasted sweet potato slices with nut butter and banana or avocado and egg."},
