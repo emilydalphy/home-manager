@@ -198,6 +198,7 @@ def test_every_cook_row_carries_its_slot_tile_and_stays_the_same_size():
         _icon_prelude()
         + "var COOK_ROW_CHECK = '<svg></svg>';\n"
         + "function cookSlotLabel(s) { return s.charAt(0).toUpperCase() + s.slice(1); }\n"
+        + "function cookRowCookName() { return ''; }\n"
         + _extract("cookTodayRowHtml", SHELL_JS) + "\n"
         + "var rows = [['breakfast', true], ['lunch', false], ['snack', false], ['dinner', false], ['snack2', false]]"
         + ".map(function (r, i) { return cookTodayRowHtml({ slot: r[0], done: r[1], idx: i, title: 'X', right: '20 min' }, i === 1); });\n"
