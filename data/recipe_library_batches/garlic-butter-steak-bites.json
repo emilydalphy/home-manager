@@ -1,0 +1,87 @@
+{
+ "dish_name": "Garlic Butter Steak Bites",
+ "cuisine": "American",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Sirloin steak",
+   "qty": "1 1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried rosemary",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "3 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 tbsp chopped"
+  }
+ ],
+ "instructions": [
+  "Pat the steak dry and cut it into 1-inch cubes. Transfer them to a bowl and toss with the salt, pepper and rosemary. Mince the garlic.",
+  "Heat a large skillet over medium-high heat for 2 minutes. Add the oil.",
+  "Add half the steak in a single layer, with space between the pieces. Leave it alone for 2 minutes, until the underside is deep brown. Stir and cook for 1 to 2 minutes. Transfer to a plate.",
+  "You're cooking the steak to 135°F in the middle for medium rare, and it rises a few degrees as it sits. If you have a thermometer, check a piece there. No thermometer? Cut one in half: it should be pink in the middle.",
+  "Cook the rest of the steak the same way and transfer it to the plate.",
+  "Lower the heat to medium. Add the butter and the garlic and stir for 30 seconds, until the garlic smells good. Don't let it brown.",
+  "Return the steak and any juices from the plate to the pan. Toss for 30 seconds to coat it in the butter, then take the pan off the heat.",
+  "Chop 1 tbsp of the parsley and scatter it over the top. Serve with mashed potatoes and green beans.",
+  "Taste it. If it's flat, add a pinch more salt."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 12,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both sources sear cubed sirloin hot in a single layer, then add the butter and garlic over lower heat and toss the steak back in. Spend with Pennies seasons with rosemary and finishes with 2 tbsp butter; Crayons and Cravings uses Italian seasoning and cooks diced onion in 4 tbsp butter. This follows the lead, with a little more butter (3 tbsp) and garlic for a proper garlic butter sauce, and the steak is cooked in two batches so it browns. About 22 minutes in all.",
+ "sources": [
+  {
+   "name": "Spend With Pennies",
+   "title": "Garlic Butter Steak Bites",
+   "url": "https://www.spendwithpennies.com/garlic-butter-steak-bites/",
+   "rating": 4.94,
+   "rating_count": 46,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Crayons and Cravings",
+   "title": "Garlic Butter Steak Bites",
+   "url": "https://crayonsandcravings.com/garlic-butter-steak-bites/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

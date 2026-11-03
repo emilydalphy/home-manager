@@ -1,0 +1,112 @@
+{
+ "dish_name": "Kielbasa and Cabbage Skillet",
+ "cuisine": "American",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Smoked kielbasa",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green cabbage",
+   "qty": "1 small head (about 2 lb)",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "1 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Apple cider vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  }
+ ],
+ "instructions": [
+  "Cut the kielbasa into 1/4-inch rounds.",
+  "Heat the oil in a large, deep skillet over medium-high heat for 1 minute. Add the kielbasa in a single layer and cook for 5 minutes, until it's browned on the underside. Stir it and cook for 2 minutes. Transfer it to a plate.",
+  "Meanwhile, if you haven't yet, slice the onion. Cut the cabbage in half, cut out the core and slice it thinly.",
+  "Add the onion to the fat in the pan and cook for 3 minutes, until soft.",
+  "Add the cabbage, the butter, the salt and the pepper. It will look like too much. Cook, stirring every minute or two, for 10 minutes, until it has wilted and some edges are browned.",
+  "Mince the garlic. Add it with the paprika and stir for 1 minute.",
+  "Return the kielbasa to the pan. Add the vinegar and the Dijon and stir for 2 minutes, until everything is hot.",
+  "Serve with buttered egg noodles or rye bread.",
+  "Taste it. If it's flat, add a pinch more salt."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 22,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The honest time is about 34 minutes, a little over the 25 the dish promises, mostly from slicing a whole small cabbage. No version with 20+ ratings and a rating of 4.0 or more was found on a site that allowed reading, so the lead is Insanely Good Recipes (4.6 from 43 ratings, which does qualify) and Budget Bytes, Yellow Bliss Road and The Forked Spoon blocked reading. Insanely Good Recipes browns the sausage first and cooks the cabbage uncovered in its fat, finishing with vinegar and mustard; This Farm Girl Cooks steams the cabbage with broth under a lid; Taste of Home adds potatoes and tomato sauce and takes over an hour. This follows the lead, adds a little butter for the buttery cabbage the dish promises, and puts garlic in late.",
+ "sources": [
+  {
+   "name": "Insanely Good Recipes",
+   "title": "Kielbasa and Cabbage Skillet",
+   "url": "https://insanelygoodrecipes.com/kielbasa-and-cabbage-skillet/",
+   "rating": 4.6,
+   "rating_count": 43,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "This Farm Girl Cooks",
+   "title": "Easy Kielbasa Cabbage Skillet",
+   "url": "https://www.thisfarmgirlcooks.com/easy-kielbasa-cabbage-skillet",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Taste of Home",
+   "title": "Kielbasa Cabbage Skillet",
+   "url": "https://www.tasteofhome.com/recipes/kielbasa-cabbage-skillet/",
+   "rating": null,
+   "rating_count": 38,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,109 @@
+{
+ "dish_name": "Cheesy Beef and Rice Skillet",
+ "cuisine": "American",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Ground beef",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Long grain white rice",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Diced tomatoes",
+   "qty": "1 can (14.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Beef broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Worcestershire sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Shredded cheddar cheese",
+   "qty": "1 bag (8 oz)",
+   "category": "dairy",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Hot sauce",
+   "qty": "1 bottle",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Dice the onion and the bell pepper. Mince the garlic.",
+  "Heat a large, deep skillet with a lid over medium-high heat for 1 minute. Add the beef and 1/2 tsp of the salt. Break it up with a spoon and cook for 5 to 6 minutes, until it's browned and there's no pink left.",
+  "Spoon off all but about 1 tbsp of the fat.",
+  "Add the onion and bell pepper and cook for 3 minutes, until they start to soften. Add the garlic and the pepper and stir for 30 seconds.",
+  "Add the rice and stir to coat it in the fat. Pour in the tomatoes with their juices, the broth and the Worcestershire, then stir in the remaining 1/2 tsp salt.",
+  "Bring it to a boil. Cover, lower the heat to low and cook for 18 minutes, until the rice is tender and the liquid is gone. Don't lift the lid while it cooks.",
+  "Take the pan off the heat. Scatter 1 1/2 cups of the cheddar over the top, cover and leave it for 4 minutes, until the cheese has melted.",
+  "Serve with hot sauce on the side for anyone who wants heat.",
+  "Taste it. If it's flat, add a pinch more salt."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 35,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The honest time here is about 45 minutes, not the 30 the one-skillet promise suggests: the rice needs its full 18 minutes covered, and browning the beef and vegetables takes about 10 more. One Hot Oven lists 30 minutes total, but its own steps (brown, soften, 20 minute simmer, 5 minute rest) add up to more. Both sources cook the rice right in the pan with broth and tomatoes and melt the cheese on top at the end; Simply Scratch uses taco seasoning, corn and tomato paste for a Tex-Mex version, while One Hot Oven is closer to a plain American skillet. This follows One Hot Oven, with a mild canned tomato in place of Rotel and the heat moved to hot sauce at the table.",
+ "sources": [
+  {
+   "name": "One Hot Oven",
+   "title": "Easy Ground Beef and Rice Skillet",
+   "url": "https://onehotoven.com/easy-ground-beef-and-rice-skillet/",
+   "rating": 5.0,
+   "rating_count": 39,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Simply Scratch",
+   "title": "Cheesy Mexican Beef and Rice Skillet",
+   "url": "https://www.simplyscratch.com/cheesy-mexican-beef-and-rice-skillet/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

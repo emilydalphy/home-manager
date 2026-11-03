@@ -1,0 +1,115 @@
+{
+ "dish_name": "Turkey Cutlets with Cranberry Pan Sauce",
+ "cuisine": "American",
+ "main_protein": "turkey",
+ "ingredients": [
+  {
+   "item": "Turkey breast cutlets",
+   "qty": "1 1/4 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Flour",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried sage",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Fresh cranberries",
+   "qty": "1 bag (12 oz)",
+   "category": "produce",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Balsamic vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "1 carton (32 oz)",
+   "category": "pantry",
+   "cook_qty": "3/4 cup"
+  }
+ ],
+ "instructions": [
+  "Pat the turkey dry. If any cutlet is thicker than 1/2 inch, pound it between two sheets of plastic wrap until even. Sprinkle both sides with 3/4 tsp of the salt, the pepper and 1/2 tsp of the sage.",
+  "Spread the flour on a plate and press each cutlet into it on both sides. Shake off the extra.",
+  "Heat 1 tbsp of the oil in a large skillet over medium-high heat for 1 minute. Add half the cutlets in a single layer and cook for 2 to 3 minutes, until the underside is golden. Flip them and cook the other side for 2 to 3 minutes. Transfer them to a plate.",
+  "You're cooking the turkey to 160°F in the middle, and it rises to 165°F as it rests. If you have a thermometer, check a cutlet there. No thermometer? Cut into the thickest one: it's done when there's no pink and the juices run clear.",
+  "Add the remaining 1 tbsp oil and cook the rest of the cutlets the same way. Transfer them to the plate.",
+  "Lower the heat to medium. Add 1 tbsp of the butter, the remaining 1/2 tsp sage and 1 1/2 cups of the cranberries. Stir for 1 minute.",
+  "Add the brown sugar, the balsamic and the broth, and scrape up the browned bits from the bottom of the pan. Bring it to a simmer and cook for 8 minutes, stirring now and then, until the cranberries have burst and the sauce coats a spoon.",
+  "Take the pan off the heat and stir in the remaining 1 tbsp butter and the remaining 1/4 tsp salt.",
+  "Return the cutlets and any juices from the plate to the pan and spoon the sauce over them. Serve with mashed potatoes and green beans.",
+  "Taste it. If it's flat, add a pinch more salt."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 22,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "About 32 minutes, a touch over the 30 a quick dinner aims for, because the cranberries need about 8 minutes to burst. None of the three pages read had a published rating, so the lead is the best-read pan sauce version (Foody Schmoody's cranberry brown butter sauce), not a rated one. Foody Schmoody breads the cutlets and simmers cranberries with molasses, balsamic, broth and sage for 12 to 15 minutes; For the Love of Cooking blends a spiced cranberry coulis separately; Melanie Cooks flours and sears the cutlets with no sauce. This version flours the cutlets lightly, skips the breading and the browned butter, and uses brown sugar for the molasses to keep it to one pan.",
+ "sources": [
+  {
+   "name": "Foody Schmoody",
+   "title": "Turkey Scallopini with Cranberry Brown Butter",
+   "url": "https://foodyschmoodyblog.com/turkey-scallopini-with-cranberry-brown-butter/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "For the Love of Cooking",
+   "title": "Turkey Cutlets with Cranberry Coulis",
+   "url": "https://fortheloveofcooking.net/turkey-cutlets-with-cranberry-coulis/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Melanie Cooks",
+   "title": "Sauteed Turkey Cutlets",
+   "url": "https://www.melaniecooks.com/sauteed-turkey-cutlets-recipe/70",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
