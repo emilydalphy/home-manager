@@ -667,17 +667,48 @@ def _find_row_by_name(conn, item: str, location: str | None, columns: str):
     category default at insert time — so there is nothing better to
     prefer; the callers that know the place pass it and skip all this.
     """
+    sql = f"SELECT {columns}, item AS _match_item FROM inventory_items WHERE household_id = ?"
+    params: list = [household_id()]
     if location:
-        return conn.execute(
-            f"SELECT {columns} FROM inventory_items WHERE household_id = ? AND LOWER(item) = LOWER(?) AND location = ? "
-            "ORDER BY updated_at DESC, id DESC LIMIT 1",
-            (household_id(), item, location),
-        ).fetchone()
-    return conn.execute(
-        f"SELECT {columns} FROM inventory_items WHERE household_id = ? AND LOWER(item) = LOWER(?) "
-        "ORDER BY updated_at DESC, id DESC LIMIT 1",
-        (household_id(), item),
-    ).fetchone()
+        sql += " AND location = ?"
+        params.append(location)
+    return _first_named(conn.execute(sql + " ORDER BY updated_at DESC, id DESC", params).fetchall(), item)
+
+
+def _first_named(rows, item: str):
+    """
+    The first of `rows` (already in preference order) that is `item` by the
+    grocery list's merge key — case, spacing, accents, a trailing plural,
+    the plain-name list (grocery._merge_key). It was LOWER(item) =
+    LOWER(?), so ticking "Onions" off the list made a second row beside the
+    Kitchen's "Onion", and "used the chicken thigh" found nothing on
+    "Chicken thighs" (defect hunt, 2026-11-03). The list, the Kitchen's
+    Say/Type it (kitchen_add._match_key) and a cooked dinner's take-off
+    (eaten_receipt._twin) already read names this way.
+    """
+    key = _grocery._merge_key(item or "")
+    if not key:
+        return None
+    worked = _worked_words(item)
+    for row in rows:
+        name = row["_match_item"] or ""
+        # The key drops a post-comma "diced" / "crushed" (right for a
+        # shopping line); a shelf is not: "Tomatoes, diced" is a tin and
+        # never lands on the fresh tomatoes (review, 2026-11-03).
+        if _grocery._merge_key(name) == key and _worked_words(name) == worked:
+            return row
+    return None
+
+
+# Words that make a name a tin or a processed form rather than the fresh
+# food, wherever they sit in it ("Tomatoes, diced", "Chickpeas, drained").
+_WORKED_WORDS_RE = re.compile(
+    r"\b(diced|crushed|canned|tinned|drained|rinsed|pur[eé]e[ds]?|paste|stewed|whole peeled)\b"
+)
+
+
+def _worked_words(name: str) -> frozenset:
+    return frozenset(m.group(1) for m in _WORKED_WORDS_RE.finditer((name or "").lower()))
 
 
 # Names whose fresh-sounding word is not the food on the shelf: canned
@@ -941,13 +972,13 @@ def _add_to_inventory(
         # bought fresh goes where fresh food goes: onto a row outside the
         # freezer, or a new one at its usual place. Into the freezer only
         # by "Yes, freezing it" (defrost._freeze_ticked_pack), never by name.
-        existing = conn.execute(
-            "SELECT id, quantity, category, expiration_date, location FROM inventory_items "
-            "WHERE household_id = ? AND LOWER(item) = LOWER(?) "
+        existing = _first_named(conn.execute(
+            "SELECT id, quantity, category, expiration_date, location, item AS _match_item FROM inventory_items "
+            "WHERE household_id = ? "
             "AND LOWER(TRIM(COALESCE(location, ''))) != 'freezer' "
-            "ORDER BY updated_at DESC, id DESC LIMIT 1",
-            (household_id(), item),
-        ).fetchone()
+            "ORDER BY updated_at DESC, id DESC",
+            (household_id(),),
+        ).fetchall(), item)
         if existing is not None and _quantities._display_location(dict(existing)).strip().lower() == "freezer":
             existing = None  # a legacy row with no location, filed by its frozen category
     if existing:
@@ -1060,11 +1091,21 @@ def record_already_home(
         params.append(location)
     rows = [dict(r) for r in conn.execute(sql + " ORDER BY updated_at DESC, id DESC", params).fetchall()]
     match, confident = _find_inventory_match(item, rows)
+    if match is None or not confident:
+        # The same food under another spelling ("Yellow onion" on a
+        # Kitchen holding "Onions") is a confirmation too: _add_to_inventory
+        # would merge onto it, and a receipt saying fresh let the Undo
+        # delete the household's own row (review, 2026-11-03).
+        named = _find_row_by_name(conn, item, location, "id")
+        if named is not None:
+            match, confident = {"id": named["id"]}, True
     if match is not None and confident:
         inventory_id, fresh, after = match["id"], False, None
     else:
         added = _add_to_inventory(item, quantity, source=source, category=category, location=location, conn=conn)
-        inventory_id, fresh, after = added["item_id"], True, added["after"] or {}
+        # Fresh only when the write created the row — never assumed.
+        fresh = bool(added["fresh"])
+        inventory_id, after = added["item_id"], (added["after"] or {}) if fresh else None
     conn.execute(
         "INSERT INTO already_home_receipts (household_id, grocery_item_id, weekly_plan_id, item_key, "
         "inventory_item_id, fresh, after_rev, after_quantity) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -1574,7 +1615,9 @@ def get_cross_location_duplicates() -> list[dict]:
     items = get_inventory()
     by_name: dict[str, list[dict]] = {}
     for it in items:
-        by_name.setdefault(it["item"].strip().lower(), []).append(it)
+        # The same key a name-only write lands by (_first_named), so
+        # "Onion" in the pantry and "Onions" in the fridge are one food.
+        by_name.setdefault(_grocery._merge_key(it["item"] or "") or it["item"].strip().lower(), []).append(it)
     duplicates = []
     for entries in by_name.values():
         locations = {e["location"] for e in entries}
