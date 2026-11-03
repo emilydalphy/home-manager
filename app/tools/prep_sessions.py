@@ -457,14 +457,14 @@ def prep_sessions_for_plan(weekly_plan_id: int) -> list[dict]:
     """
     # Marinade thaws are reconciled with what this read found (2026-11-01
     # review): booked, moved or removed — this module's own rows only.
-    ctx = {"wants": [], "windows": [], "plans": {weekly_plan_id}}
+    ctx = {"wants": [], "windows": [], "plans": {weekly_plan_id}, "facts": _prep_list.MarinadeFacts()}
     sessions = _sessions_for_plan(weekly_plan_id, ctx)
     if ctx["plans"]:
         # Every live plan, because a Sunday prep reaches into next week's.
         # Only rows whose meal sits in a reach this read covered (or whose
         # meal is gone) can be removed, so another plan's are safe.
         plans = set(ctx["plans"]) | {p["id"] for p in _prep_list._live_plans()}
-        _prep_list.reconcile_marinade_thaws(ctx["wants"], plans, ctx["windows"])
+        _prep_list.reconcile_marinade_thaws(ctx["wants"], plans, ctx["windows"], facts=ctx["facts"])
     return sessions
 
 
@@ -643,13 +643,13 @@ def _pinned_marinade(step: dict, task: dict, prep_date: str, entries: dict, week
     # (follow-up, 2026-11-01 — matching words booked a second thaw).
     still_frozen = entry["id"] in (frozen or {})
     return _prep_list.marinade_items(e, meat, "", f"task{task['id']}", days_out, still_frozen, ctx["wants"],
-                                     existing=step)
+                                     existing=step, facts=ctx.get("facts"))
 
 
 def _build_session(weekly_plan_id, plan, prep_date, prep_day, batches, entries, tasks,
                    prepped_cook_ids, prep_weekdays, all_prep_dates, ctx=None) -> dict | None:
     if ctx is None:
-        ctx = {"wants": [], "windows": [], "plans": {weekly_plan_id}}
+        ctx = {"wants": [], "windows": [], "plans": {weekly_plan_id}, "facts": _prep_list.MarinadeFacts()}
     budget = prep_day.get("minutes") or _prep_list.DEFAULT_BUDGET_MINUTES
     items: list[dict] = []
     fresh_batches = _prep_list.fresh_cook_entry_ids(
@@ -772,7 +772,7 @@ def _build_session(weekly_plan_id, plan, prep_date, prep_day, batches, entries, 
         prep_date, last, weekly_plan_id, plan,
         exclude_entry_ids=exclude, covered_by_rows=covered_cuts, marinated_by_rows=marinated,
         frozen_meat=frozen, batch_grain_entries=grain_batched, fresh_batch_entries=fresh_batches,
-        thaw_wants=ctx["wants"],
+        thaw_wants=ctx["wants"], facts=ctx.get("facts"),
     ))
     ctx["windows"].append((prep_date, last))
     if not items:

@@ -761,7 +761,8 @@ def thaw_date_for(meal_date: str) -> str:
 
 
 def marinade_items(e: dict, meat: str, qty: str, mkey: str, days_out: int, frozen: bool,
-                   thaw_wants: list, *, existing: dict | None = None) -> list[dict]:
+                   thaw_wants: list, *, existing: dict | None = None,
+                   facts: "MarinadeFacts | None" = None) -> list[dict]:
     """
     The marinade for one meal, ALWAYS on the prep day and never removable:
       * fresh meat, meal within two days: marinate, keep in the fridge;
@@ -773,15 +774,17 @@ def marinade_items(e: dict, meat: str, qty: str, mkey: str, days_out: int, froze
         within two days, back into the freezer otherwise (its own thaw is
         defrost.py's row, already booked, so none is added here).
     `existing` is a pinned prep task's own step, which keeps its key and
-    row and gains the freezer half.
+    row and gains the freezer half. `facts` is the read's shared clock and
+    booked-thaw lookup (one of each per read, not per marinade).
     """
+    facts = facts or MarinadeFacts()
     uses = _uses_of([e])
     title = (f"Marinate the frozen {meat}" if frozen else f"Marinate the {meat}") + (f", {qty}" if qty else "")
     out: list[dict] = []
     freeze = days_out > MARINADE_FRIDGE_DAYS
     prep_date = (date.fromisoformat(e["date"]) - timedelta(days=days_out)).isoformat()
     fridge_until = e["date"]
-    if not frozen and _prep_day_gone_by(prep_date):
+    if not frozen and prep_date < facts.today():
         # A prep day that has gone by is what happened, not a plan: the bag
         # went into the freezer only if this list said so then, and the
         # thaw it booked is the record of that. Read off the meal's NEW day,
@@ -791,7 +794,7 @@ def marinade_items(e: dict, meat: str, qty: str, mkey: str, days_out: int, froze
         # booked for chicken that had been in the fridge since Monday
         # (defect hunt, 2026-11-03). In the fridge, it keeps two days from
         # the prep day, whatever night the meal is now on.
-        freeze = _marinade_thaw_booked(e["id"])
+        freeze = facts.thaw_booked(e["id"])
         if not freeze:
             fridge_until = min(e["date"], (date.fromisoformat(prep_date)
                                            + timedelta(days=MARINADE_FRIDGE_DAYS)).isoformat())
@@ -829,28 +832,45 @@ def marinade_items(e: dict, meat: str, qty: str, mkey: str, days_out: int, froze
     return out
 
 
-def _prep_day_gone_by(prep_date: str) -> bool:
-    """The prep day is before the household's today. Read only when a
-    marinade is found (the Cook view counts its clock reads)."""
-    from . import cooker as _cooker
-    try:
-        return prep_date < _cooker.household_today().isoformat()
-    except Exception:
-        return prep_date < date.today().isoformat()
+class MarinadeFacts:
+    """
+    What one read of the prep days knows about time and frozen marinades,
+    each looked up at most ONCE and only when a marinade asks: the
+    household's today (the Cook view counts its clock reads —
+    test_cooker_household_clock), and which meals this list already booked
+    a marinade thaw for (one query, not one per marinade). Shared by every
+    session of a read and by reconcile_marinade_thaws.
+    """
 
+    def __init__(self):
+        self._today: str | None = None
+        self._booked: set[int] | None = None
 
-def _marinade_thaw_booked(entry_id: int) -> bool:
-    """This list's own thaw for the meal exists, in any state — the record
-    that its marinade went into the freezer."""
-    conn = get_conn()
-    try:
-        return conn.execute(
-            "SELECT 1 FROM prep_tasks WHERE household_id = ? AND task_type = 'defrost' "
-            "AND meal_plan_entry_id = ? AND COALESCE(json_extract(detail_json, '$.kind'), '') = ?",
-            (household_id(), entry_id, MARINADE_THAW_KIND),
-        ).fetchone() is not None
-    finally:
-        conn.close()
+    def today(self) -> str:
+        if self._today is None:
+            from . import cooker as _cooker
+            try:
+                self._today = _cooker.household_today().isoformat()
+            except Exception:
+                self._today = date.today().isoformat()
+        return self._today
+
+    def thaw_booked(self, entry_id: int) -> bool:
+        """This list's own thaw for the meal exists, in any state — the
+        record that its marinade went into the freezer. Read before the
+        read's reconcile writes, so it is what earlier reads booked."""
+        if self._booked is None:
+            conn = get_conn()
+            try:
+                self._booked = {r["meal_plan_entry_id"] for r in conn.execute(
+                    "SELECT meal_plan_entry_id FROM prep_tasks WHERE household_id = ? AND task_type = 'defrost' "
+                    "AND meal_plan_entry_id IS NOT NULL "
+                    "AND COALESCE(json_extract(detail_json, '$.kind'), '') = ?",
+                    (household_id(), MARINADE_THAW_KIND),
+                ).fetchall()}
+            finally:
+                conn.close()
+        return entry_id in self._booked
 
 
 def marinade_wait_sentence(meat: str, prep_date: str, cook_date: str, today: str) -> str | None:
@@ -884,6 +904,13 @@ def fridge_marinades(weekly_plan_id: int, entry_ids, today: str) -> dict[int, tu
     {entry id: (prep date, meat)} for the meals whose meat was marinated in
     the fridge on a prep day that has gone by — read BEFORE a move, so a
     meal moved past that prep day's reach is still known. Never raises.
+
+    Only a marinade TICKED done on that day's list: that tick is the one
+    record that it happened. A gone-by list re-reads every meal now in its
+    reach, including one planned after the day (Wednesday's add for Friday
+    is on Monday's list too), so "on the list" would say "marinated
+    Monday" of steak nobody marinated (review, 2026-11-03). No tick, no
+    line — never a sentence that may be false.
     """
     from . import prep_sessions as _prep_sessions
     wanted = {int(i) for i in entry_ids or () if i}
@@ -896,7 +923,8 @@ def fridge_marinades(weekly_plan_id: int, entry_ids, today: str) -> dict[int, tu
                 continue
             for item in session.get("items") or []:
                 key = str(item.get("key") or "")
-                if item.get("kind") != "marinate" or not key.startswith("marinate:") or not item.get("in_fridge"):
+                if (item.get("kind") != "marinate" or not key.startswith("marinate:")
+                        or not item.get("in_fridge") or not item.get("done")):
                     continue
                 try:
                     entry_id = int(key.split(":")[1])
@@ -934,7 +962,8 @@ def _marinade_ticked(conn, entry_id: int) -> bool:
     ).fetchone() is not None
 
 
-def reconcile_marinade_thaws(wants: list[dict], plan_ids, windows: list[tuple[str, str]]) -> None:
+def reconcile_marinade_thaws(wants: list[dict], plan_ids, windows: list[tuple[str, str]],
+                             facts: MarinadeFacts | None = None) -> None:
     """
     Make this module's OWN thaw rows (defrost rows with detail_json.kind =
     marinade_thaw; defrost.sync_defrost_tasks, scoped to rows with a freezer
@@ -949,18 +978,10 @@ def reconcile_marinade_thaws(wants: list[dict], plan_ids, windows: list[tuple[st
     else is ever touched: defrost.py's own rows are never read for writing.
     Idempotent; never raises (a failure leaves the rows as they were).
     """
-    from . import cooker as _cooker
-    today_cache: list[str] = []
-
-    def today() -> str:
-        # Read the household clock only when a thaw is about to be booked:
-        # the Cook view counts its clock reads (test_cooker_household_clock).
-        if not today_cache:
-            try:
-                today_cache.append(_cooker.household_today().isoformat())
-            except Exception:
-                today_cache.append(date.today().isoformat())
-        return today_cache[0]
+    # The household clock is read only when a thaw is about to be booked
+    # (the Cook view counts its clock reads, test_cooker_household_clock),
+    # and once for the whole read: the sessions' MarinadeFacts if given.
+    today = (facts or MarinadeFacts()).today
 
     plan_ids = sorted({p for p in plan_ids if p} | {w["weekly_plan_id"] for w in wants})
     if not plan_ids:
@@ -1276,7 +1297,7 @@ def derive_steps(prep_date: str, last_date: str, weekly_plan_id: int, plan_row, 
                  exclude_entry_ids: set[int], covered_by_rows: dict[int, set[str]],
                  marinated_by_rows: set[int], frozen_meat: dict[int, set[str]],
                  batch_grain_entries: set[int], fresh_batch_entries: set[int],
-                 thaw_wants: list | None = None) -> list[dict]:
+                 thaw_wants: list | None = None, facts: MarinadeFacts | None = None) -> list[dict]:
     """The steps (and better-fresh notes) the meals between the prep day
     and `last_date` offer. Nothing is written here: the thaw a frozen
     marinade needs is appended to `thaw_wants`, and
@@ -1346,7 +1367,7 @@ def derive_steps(prep_date: str, last_date: str, weekly_plan_id: int, plan_row, 
             # raw dish instead (review, 2026-11-01).
             still_frozen = any(w in meat for w in frozen_meat.get(e["id"], set()))
             items.extend(marinade_items(
-                e, meat, _qty_of(mar["ing"]), mar["key"], days_out, still_frozen, thaw_wants))
+                e, meat, _qty_of(mar["ing"]), mar["key"], days_out, still_frozen, thaw_wants, facts=facts))
             offered = True
         # A recipe that offers nothing to do ahead: the dish itself, made
         # ahead, when it keeps that long and isn't better fresh.
