@@ -4654,7 +4654,10 @@ def retire_overlapping_plans(
     over every live plan at once: walk them newest-first, and each may keep
     only days nothing newer has already claimed. Newest-first is not
     arbitrary — it is the same tiebreak _current_weekly_plan_row has always
-    used to decide which of two overlapping plans wins.
+    used to decide which of two overlapping plans wins. One exception: an
+    APPROVED plan only gives days up to the period being approved or to a
+    newer approved plan, never to a waiting draft (_plan_takeover's
+    approved_claimed, 2026-11-03).
 
     What a loser keeps is then the longest contiguous run of days still
     available to it, because a period is a start plus a length and cannot
