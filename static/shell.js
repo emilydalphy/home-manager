@@ -21492,8 +21492,13 @@
       // Plan's root with a day open (weekState.planDay) is that day, so the
       // crumb names it — "‹ Monday" — and only the All view is "This week".
       var onDay = back === 'day' || (back === 'week' && weekState.planDay != null);
+      // Back to the root lands on the day the ROOT has open, which is not
+      // always the meal's: Thursday's "See Wednesday's recipe" opens
+      // Wednesday's cook, and back is Thursday — the crumb said
+      // "‹ Wednesday" and landed on Thursday (defect hunt, 2026-11-03).
+      var crumbDay = (back === 'week' && weekState.planDay != null && days[weekState.planDay]) || day;
       openRecipeFor(target, {
-        label: back === 'review' ? 'Check the week' : onDay ? dayName(day.date, { weekday: 'long' }) : 'This week',
+        label: back === 'review' ? 'Check the week' : onDay ? dayName(crumbDay.date, { weekday: 'long' }) : 'This week',
         tab: 'week',
         // Back lands on the Plan screen the tap came from, not on a Meal
         // step nobody opened.
