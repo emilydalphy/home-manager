@@ -161,6 +161,19 @@ _WHEAT_WORDS = {
     # A bare "soba" line or a dish named "Zaru Soba" went through before;
     # yakisoba is wheat noodles by definition.
     "soba", "yakisoba", "injera",
+    # Allergy door hunt (2026-11-03): the third audit's reasoning, carried
+    # to the boxes and bags. A mix, a frozen waffle, a nugget or a pierogi
+    # is one line on a list — "Pancake mix", "Frozen chicken nuggets" —
+    # and never says flour, so a celiac child's Saturday Pancakes, Nugget
+    # Night and Pierogi Supper all went through the import sheet, an open
+    # night and Approve without a word. "muffin mix" was already here; its
+    # siblings were not. No bare "waffle" (waffle fries are potato), no
+    # bare "nugget" (nugget potatoes) and no bare "dumpling" (dumpling
+    # squash). A "gluten-free pancake mix" line is still believed.
+    "pancake mix", "waffle mix", "biscuit mix", "baking mix", "bisquick", "cake mix",
+    "brownie mix", "cookie mix", "cornbread mix", "stuffing mix", "gravy mix",
+    "frozen waffle", "eggo", "chicken nugget", "fish stick", "fish finger", "breaded",
+    "pierogi", "pierogy", "perogy", "perogies", "pizza base", "pizza shell", "crumpet",
 }
 _ALLERGEN_ALIASES: dict[str, set[str]] = {
     "nut": {"peanut", "walnut", "almond", "cashew", "pecan", "hazelnut",
@@ -174,7 +187,11 @@ _ALLERGEN_ALIASES: dict[str, set[str]] = {
             "baklava", "nougat", "romesco", "dukkah",
             "muhammara", "amaretto", "pignoli", "kung pao", "korma", "orgeat", "mole",
             "chestnut", "filbert", "marcona", "biscotti"},
-    "peanut": {"satay", "groundnut"},
+    # Kung pao is in "nut" above because it is made with peanuts, so a
+    # PEANUT allergy has to reach it too — "Kung Pao Chicken" passed one on
+    # its name (allergy door hunt, 2026-11-03). Arachis oil is peanut oil
+    # by its label name.
+    "peanut": {"satay", "groundnut", "kung pao", "arachis"},
     "shellfish": {"shrimp", "prawn", "crab", "lobster", "clam", "mussel",
                   "scallop", "oyster", "squid", "calamari", "crawfish", "crayfish",
                   "langoustine", "langostino", "scampi", "octopus", "cockle", "whelk",
@@ -577,6 +594,8 @@ _COMPOUND_EXCEPTIONS: tuple[tuple, ...] = (
         r"\b100\s+percent\s+buckwheat\s+soba\b|\bjuwari\s+soba\b"
     )),
     (frozenset({"injera", "injeras"}), re.compile(r"\b100\s+percent\s+teff\s+injeras?\b")),
+    # "Frozen waffle fries" are potato, not frozen waffles (2026-11-03).
+    (frozenset({"frozen waffle", "frozen waffles"}), re.compile(r"\bfrozen\s+waffle[\s-]+(?:fries|fry|cut)\b")),
     # Vermicelli is wheat unless it says what else it is (review, 2026-10-23).
     # A dish NAMED "Vermicelli Bowl" with no qualifier is still held on its
     # name even over a rice list — over-safe, as every name is.

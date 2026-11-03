@@ -253,7 +253,7 @@ def _food_word(clashes: list[dict]) -> str:
     for c in clashes:
         word = (c.get("matched") or "").strip()
         if word:
-            return word
+            return _CONDITION_FOOD.get(word.lower(), word)
     for c in clashes:
         label = (c.get("restriction") or "").strip()
         if label:
@@ -264,6 +264,15 @@ def _food_word(clashes: list[dict]) -> str:
 def _person(clashes: list[dict]) -> str | None:
     names = [c.get("member") for c in clashes if c.get("member")]
     return names[0] if names else None
+
+
+# A condition is matched as the word the household wrote ("Celiac" on a
+# child, coordination._WHOLE_WORD_FAMILIES), so `matched` is the condition,
+# not a food: every door said "Spaghetti Bolognese has celiac, which Theo
+# can’t have" and "I couldn’t find a dinner without celiac" (allergy door
+# hunt, 2026-11-03). The food it means is said instead. Not milk/lactose:
+# "has milk" is true of cheese, and a person says it that way.
+_CONDITION_FOOD = {"celiac": "gluten", "coeliac": "gluten"}
 
 
 # The few allergen words the matcher keeps singular that a person says in
@@ -281,6 +290,7 @@ def plain_food(word: str) -> str:
     """A matched allergen word the way a person says it ("peanut" ->
     "peanuts"); anything not on the short list is left as it is."""
     word = (word or "").strip().lower()
+    word = _CONDITION_FOOD.get(word, word)
     return _PLURAL_FOOD.get(word, word)
 
 
