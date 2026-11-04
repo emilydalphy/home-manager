@@ -71,8 +71,10 @@ Subtitle (30), best first:
 
 Words to check before approving:
 
-- "Everyone at home can sign in" — true today with the shared passphrase and
-  the "Who's this?" pick; reword if Builder C's sign-up changes the model.
+- "Everyone at home can sign in" — true: each adult signs in with their own
+  email and a 6-digit code, or joins from an invite link another adult
+  sends; the shared household passphrase still works as the quiet way in
+  (it's how Apple's reviewer signs in, §9).
 - "even with no signal" — true once the list has opened with signal (the
   service worker); kept short on purpose.
 - "I'll say so the day before" — the defrost ask; in-app, not a push, unless
@@ -175,11 +177,11 @@ In `ios-app/store/screenshots/`, from the demo household
 
 | File | Shows |
 |---|---|
-| `1-plan.png` | Plan: the week, today's meals, Done / Swap / Move |
+| `1-plan.png` | Plan: the whole week's dinners, today marked |
 | `2-list.png` | Shop: the list, sorted, with amounts |
-| `3-cook.png` | Cook mode: one step of Weeknight Chili |
+| `3-cook.png` | Cook mode: one step of Weeknight Chili (reached from Plan → the chili → See the recipe → Start cooking) |
 | `4-chat.png` | Ask: the chat sheet with a question typed |
-| `5-today.png` | Today: yesterday's check-in, today's meals |
+| `5-tonight.png` | Cook: tonight's cook and Start cooking |
 
 Sizes: `iphone-6.9in/` 1320 × 2868 (the size App Store Connect requires;
 it scales down for smaller phones) and `iphone-6.7in/` 1290 × 2796 (a
@@ -194,9 +196,13 @@ backup in case the 6.9" slot rejects anything).
   deploy and send the message for real.
 - Plain screenshots, no captions or frames. Captions over a frame ("Your
   week, planned in five minutes") sell better; that's a design pass.
-- The dates in them are 2026-10-06's week. Retake right before submitting.
-- Tacos (Tuesday) has no saved recipe in the demo household, which is why
-  Cook mode is shown on Wednesday's chili.
+- The dates in them are 2026-11-03's week (retaken that night, on the
+  four-tab app: Plan, Shop, Kitchen, Cook). Retake right before submitting.
+- `5-tonight.png` shows whatever is tonight's dinner on the day it's taken
+  (Tacos on a Tuesday). Tacos and Pizza night have no saved recipe in the
+  demo household, which is why cook mode is shown on Wednesday's chili.
+- The fifth shot is Cook, not the Kitchen tab: the demo household has
+  nothing home, so Kitchen opens on "Nothing home yet".
 
 ## 9. App Review notes (for the "Sign-in information" box)
 
@@ -213,7 +219,7 @@ anywhere in this repo.
 > 3. On "Who's this?", tap "Maya".
 >
 > You're in the demo household: a whole week planned on Plan, a shopping
-> list on Shop and tonight's dinner on Today and Cook. The first time you
+> list on Shop and tonight's dinner on Cook. The first time you
 > open Plan a short tour shows; tap "Skip the tour" to close it. Sharing
 > with Claude is already allowed for this household. Ask (bottom right)
 > uses Anthropic's Claude and answers live.
@@ -231,8 +237,8 @@ Checked 2026-10-26 on current `main`, on a throwaway database at 390px
   succeeds, that phone opens on the passphrase step next time.
 - `create_demo_household.py` makes two adults, **Maya** and **Theo**, so
   "Who's this?" ("I'll remember on this device.") always shows. Picking
-  Maya lands on Today with tonight's dinner; Plan shows the week Approved
-  with all seven nights; consent comes back `granted`.
+  Maya lands on Plan (the app opens there since 2026-11-01), with the
+  week Approved and all seven nights; consent comes back `granted`.
 - Deleting from Preferences calls `/api/household/delete`, removes the
   household and its passphrase, and goes to `/goodbye`. The passphrase
   then stops working. **Re-running the script puts it back**:
@@ -343,8 +349,8 @@ Words to check before approving:
 - "Plan next week" and "Approve the week" are the real labels in
   `static/shell.js` today. The number of questions isn't named on purpose:
   it has changed before.
-- "Start cooking" is the Cook screen's button (Kitchen tab, labelled Cook
-  in the tab bar).
+- "Start cooking" is the Cook tab's button. (The Cook tab is still pathed
+  `/kitchen` in the code; the Kitchen tab, what's home, is `/home`.)
 - Nothing about the morning text or push: both need keys set before
   they're true for a tester.
 - If §10 lands on a subscription, tell testers before the first build

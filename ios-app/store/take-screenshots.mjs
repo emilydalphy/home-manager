@@ -17,19 +17,35 @@ const ctx = await b.newContext({ viewport: { width: +w, height: +h }, deviceScal
 const p = await ctx.newPage();
 const go = async (path) => { await p.goto('http://localhost:8104' + path); await p.waitForTimeout(2500); };
 await go('/login');
+// Sign-in opens on the email step now; the passphrase is the quiet way in.
+await p.click('#switch-passphrase');
 await p.fill('input[name=password]', 'maple river copper lantern');
 await p.press('input[name=password]', 'Enter'); await p.waitForTimeout(2500);
-await p.getByText('Maya').first().click(); await p.waitForTimeout(2500);
-await go('/week'); await p.screenshot({ path: `${out}/1-plan.png` });
+await p.locator('text=Maya >> visible=true').first().click(); await p.waitForTimeout(2500);
+await go('/week');
+// A fresh demo household's adults haven't seen the Plan tour (kept per
+// adult on the server, /api/tour), and it covers the week and swallows taps.
+await p.getByText('Skip the tour').first().click({ timeout: 3000 }).catch(() => {});
+await p.waitForTimeout(1000); await p.screenshot({ path: `${out}/1-plan.png` });
 await go('/grocery');
 await p.getByText('One list is fine').first().click({ timeout: 3000 }).catch(() => {});
 await p.waitForTimeout(1500); await p.screenshot({ path: `${out}/2-list.png` });
-await go('/kitchen');
-await p.getByText('Chili').first().click(); await p.waitForTimeout(1500);
+// Cook mode on Weeknight Chili, reached from Plan's meal sheet rather than
+// the Cook tab: Cook's root shows only tonight's cook now, and on a Tuesday
+// or Saturday that's a dinner with no saved recipe (Tacos, Pizza night).
+// "See the recipe" → "Start cooking" opens the chili's steps on any day.
+await go('/week');
+await p.locator('text=Weeknight Chili >> visible=true').first().click(); await p.waitForTimeout(1500);
+await p.locator('text=See the recipe >> visible=true').first().click(); await p.waitForTimeout(2500);
 await p.getByRole('button', { name: /start cooking/i }).first().click();
 await p.waitForTimeout(6000); await p.screenshot({ path: `${out}/3-cook.png` });
-await go('/');
-await p.screenshot({ path: `${out}/5-today.png` });
+// The Today tab is gone (2026-11-01); its place in the set is the Cook
+// tab's root — tonight's cook. Not the Kitchen tab: the demo household has
+// nothing home, so Kitchen opens on "Nothing home yet". NAMING TRAP: the
+// Cook tab is pathed /kitchen; Kitchen is /home.
+await go('/kitchen');
+await p.screenshot({ path: `${out}/5-tonight.png` });
+await go('/week');
 await p.click('#chat-fab'); await p.waitForTimeout(2000);
 await p.locator('textarea:visible').first().fill('Can we swap Friday for something quicker?');
 await p.waitForTimeout(800); await p.screenshot({ path: `${out}/4-chat.png` });
