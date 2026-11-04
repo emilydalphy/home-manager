@@ -72,9 +72,9 @@ Subtitle (30), best first:
 Words to check before approving:
 
 - "Everyone at home can sign in" — true: each adult signs in with their own
-  email and a 6-digit code, joining by an invite from whoever set the
-  household up; the shared household passphrase still works as the quiet
-  way in (it's how Apple's reviewer signs in, §9).
+  email and a 6-digit code, or joins from an invite link another adult
+  sends; the shared household passphrase still works as the quiet way in
+  (it's how Apple's reviewer signs in, §9).
 - "even with no signal" — true once the list has opened with signal (the
   service worker); kept short on purpose.
 - "I'll say so the day before" — the defrost ask; in-app, not a push, unless

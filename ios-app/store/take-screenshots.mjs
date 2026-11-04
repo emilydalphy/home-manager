@@ -22,7 +22,11 @@ await p.click('#switch-passphrase');
 await p.fill('input[name=password]', 'maple river copper lantern');
 await p.press('input[name=password]', 'Enter'); await p.waitForTimeout(2500);
 await p.locator('text=Maya >> visible=true').first().click(); await p.waitForTimeout(2500);
-await go('/week'); await p.screenshot({ path: `${out}/1-plan.png` });
+await go('/week');
+// A fresh demo household's adults haven't seen the Plan tour (kept per
+// adult on the server, /api/tour), and it covers the week and swallows taps.
+await p.getByText('Skip the tour').first().click({ timeout: 3000 }).catch(() => {});
+await p.waitForTimeout(1000); await p.screenshot({ path: `${out}/1-plan.png` });
 await go('/grocery');
 await p.getByText('One list is fine').first().click({ timeout: 3000 }).catch(() => {});
 await p.waitForTimeout(1500); await p.screenshot({ path: `${out}/2-list.png` });
