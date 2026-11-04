@@ -177,6 +177,32 @@ console.log(JSON.stringify([
     assert "Sunday, up to 3 hours and Monday, up to 1 hour." in html[2]
 
 
+def test_settings_prep_days_has_how_long_chips_that_save_the_standing_answer():
+    # Emily, 2026-11-01: the usual length of a prep day is changed under
+    # Settings > Prep days, from the same four chips as onboarding.
+    out = _run(_harness("wwkPrepDaysHtml", "wwkSetPrepMinutes", "wwkPrepSummary") + """
+var WWK_PREP_DAYS = [{ key: 'sunday', label: 'Sun' }, { key: 'wednesday', label: 'Wed' }];
+var WWK_PREP_LENGTHS = [60, 120, 180, 240]; var WWK_PREP_MINUTES = 120;
+prefsState.memory = { rhythm: { prep_days: [{ weekday: 'sunday', minutes: 120 }, { weekday: 'wednesday', minutes: 120 }] } };
+var sent = null;
+function wwkSaveRhythm(section, body, apply) { sent = body; apply(); return Promise.resolve(true); }
+var one = wwkPrepDaysHtml({ rhythm: { prep_days: [{ weekday: 'sunday', minutes: 240 }] } });
+var two = wwkPrepDaysHtml(prefsState.memory);
+wwkSetPrepMinutes('wednesday', 60);
+wwkSetPrepMinutes('sunday', 90);
+console.log(JSON.stringify({ one: one, two: two, sent: sent, summary: prefsState.memory.rhythm.prep_days_summary,
+  after: wwkPrepDaysHtml(prefsState.memory) }));
+""")
+    assert out["one"].count('data-wwk="prep-minutes"') == 4 and ">How long?<" in out["one"]
+    assert 'data-value="240"' in out["one"] and "Sunday, up to 4 hours." in out["one"]
+    assert "How long on Sunday?" in out["two"] and "How long on Wednesday?" in out["two"]
+    assert out["two"].count('data-wwk="prep-minutes"') == 8
+    assert out["sent"]["prep_days"] == [{"weekday": "sunday", "minutes": 120}, {"weekday": "wednesday", "minutes": 60}]
+    assert out["summary"] == "Preps on Sunday (up to 2 hours) and Wednesday (up to 1 hour)."
+    assert "Sunday, up to 2 hours and Wednesday, up to 1 hour." in out["after"]
+    assert "case 'prep-minutes': return wwkSetPrepMinutes" in SHELL_JS
+
+
 # --- review fixes (2026-10-06) ---------------------------------------------------
 
 def _snacks(house: int, script: str) -> list:
