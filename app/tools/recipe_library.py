@@ -593,9 +593,9 @@ def servable_recipe(name: str, *, children: bool, has_avoidances: bool, clashes)
 
 
 def children_variant(name: str, clashes) -> dict | None:
-    """The variant of this dish made for children and nothing else, that
-    `clashes(entry)` lets through; None when there is none. A tweak filed
-    by one household, reused by the next (library_tweak.ready_variant)."""
+    """A tweak of this dish made for children and nothing else, that
+    `clashes(entry)` lets through; None when there is none. Filed by one
+    household, reused by the next (library_tweak.fit)."""
     if not library_enabled():
         return None
     conn = get_conn()
@@ -609,7 +609,7 @@ def children_variant(name: str, clashes) -> dict | None:
     finally:
         conn.close()
     for entry in entries:
-        if list(entry["adapted_for"]) == ["children"] and not clashes(entry):
+        if entry["origin"] == "tweak" and list(entry["adapted_for"]) == ["children"] and not clashes(entry):
             return entry
     return None
 

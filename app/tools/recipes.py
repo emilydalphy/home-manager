@@ -685,7 +685,6 @@ def fill_recipe_details(
     research_id: int | None = None,
     library_id: int | None = None,
     library_amounts: bool = False,
-    model_lines: set[str] | None = None,
 ) -> dict:
     """
     The recipe pass's save: write a pending recipe out in full — the
@@ -707,8 +706,7 @@ def fill_recipe_details(
     (agent._copy_from_library, origin "seed"): every line given is marked
     `library_amount` and the per-serving check leaves its amounts alone,
     as it does a household's imported recipe (Emily, 2026-10-31). Never
-    set it for lines a model wrote: a light tweak of a library recipe names
-    those in `model_lines` (lower-cased items), and they keep the check.
+    set it for lines a model wrote.
     """
     # The model's count (or the library's): a 0 or a negative is dropped
     # for 4, as add_recipe does, never saved (2026-10-20).
@@ -724,12 +722,7 @@ def fill_recipe_details(
     # there is the app's own guess and keeps the check.
     ingredients = without_household_marks(ingredients or [])
     if library_amounts:
-        ingredients = [
-            {**ing, "library_amount": True}
-            if isinstance(ing, dict) and str(ing.get("item") or "").strip().lower() not in (model_lines or ())
-            else ing
-            for ing in ingredients
-        ]
+        ingredients = [{**ing, "library_amount": True} if isinstance(ing, dict) else ing for ing in ingredients]
     ingredients = complete_ingredient_list(ingredients, instructions or [], default_servings)
     # measure_spices only where the model wrote the recipe: the library's
     # researched copy says what it says, as an imported one does.

@@ -5838,25 +5838,26 @@ def _library_entry_for(plain: str, avoidances: list[dict], shared: dict | None =
 # so the cheap model does it.
 TWEAK_MODEL = os.environ.get("TWEAK_MODEL", "claude-haiku-4-5-20251001")
 
-_TWEAK_INSTRUCTIONS = """You make small edits to a finished, tested recipe so it suits one household. \
-Change as little as you can. Leave every step and ingredient alone unless the reason below needs it.
+_TWEAK_INSTRUCTIONS = """You make small edits to the steps of a finished, tested recipe so it suits \
+one household. You change steps only: the ingredient list and its amounts stay exactly as they are, \
+and you never bring in a food that isn't on the list. Leave every step alone unless the reason \
+below needs it.
 
 - heat_for_a_child lists hot ingredients, and a child eats this too. Keep the pot mild enough for \
-them: take that heat out of the pot, or cut it right down, and have the adults add it at the table \
-or to their own bowl. Say so in the step where it happens. If the amount is already mild for a \
+them. Rewrite EVERY step that names one of them: hold it back from the pot, or use far less, and \
+say the adults add the rest at the table or to their own bowl. If the amount is already mild for a \
 child, change nothing.
-- equipment_they_lack lists what the steps call for that they don't own. Rewrite only those steps, \
-using kitchen_kit or an ordinary pot, pan, oven or knife. If the step already gives a way that \
-works for them, change nothing.
+- equipment_they_lack lists what the steps call for that they don't own. Rewrite every step that \
+names it, using kitchen_kit or an ordinary pot, pan, oven or knife, and don't name that machine \
+any more. If a step already gives a way that works for them, change nothing.
 
-Write steps the way the recipe writes them. Any amount a step names has to match the ingredient \
-list. Never add an ingredient on must_not_contain. household_changes says what you changed in \
-short lines, one change each, under 15 words, naming no person. Send empty lists when nothing \
-needs changing."""
+Write steps the way the recipe writes them. household_changes says what you changed in short \
+lines, one change each, under 15 words, naming no person. Send empty lists when nothing needs \
+changing."""
 
 _TWEAK_TOOL = {
     "name": "submit_recipe_tweak",
-    "description": "Submit the small edit to this recipe, or empty lists when it needs none.",
+    "description": "Submit the small edit to this recipe's steps, or empty lists when it needs none.",
     "input_schema": {
         "type": "object",
         "properties": {
@@ -5871,28 +5872,6 @@ _TWEAK_TOOL = {
                     "required": ["step", "text"],
                 },
             },
-            "change_ingredients": {
-                "type": "array",
-                "description": "A line whose amount changes. `item` exactly as listed.",
-                "items": {
-                    "type": "object",
-                    "properties": {"item": {"type": "string"}, "qty": {"type": "string"}},
-                    "required": ["item", "qty"],
-                },
-            },
-            "remove_ingredients": {
-                "type": "array", "items": {"type": "string"},
-                "description": "Lines to take off, exactly as listed.",
-            },
-            "add_ingredients": {
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "properties": {"item": {"type": "string"}, "qty": {"type": "string"},
-                                   "category": {"type": "string"}},
-                    "required": ["item", "qty"],
-                },
-            },
             "household_changes": {"type": "array", "items": {"type": "string"}},
         },
         "required": ["step_edits", "household_changes"],
@@ -5902,21 +5881,23 @@ _TWEAK_TOOL = {
 
 def tweak_library_recipe_llm(entry: dict, why: dict, shared: dict) -> dict | None:
     """The small edit a library recipe needs for this household. Called only
-    when library_tweak.reasons found something, and read through
-    library_tweak.apply_edit. A short timeout: a swap's tap waits on this."""
+    when library_tweak.reasons found something, and checked by
+    library_tweak.fit. A swap's tap waits on this, so one try and a short
+    timeout. What this household avoids is not sent: the edit can bring in no
+    new food, the gate checks it anyway, and steps can go in the shared library."""
     payload = {
         "dish": entry.get("dish_name") or "",
-        "ingredients": [{k: i.get(k) for k in ("item", "qty") if i.get(k)} for i in entry["ingredients"]],
+        "ingredients": [{"item": i.get("item"), "amount": i.get("cook_qty") or i.get("qty") or ""}
+                        for i in entry["ingredients"]],
         "steps": {str(n): s for n, s in enumerate(entry["instructions"], 1)},
-        "must_not_contain": shared.get("must_not_contain") or [],
-        "kitchen_kit": shared.get("kitchen_kit") or [],
         **why,
     }
+    if why.get("equipment_they_lack"):
+        payload["kitchen_kit"] = shared.get("kitchen_kit") or []
     response = _create_with_retry(
-        _client(),
+        _client().with_options(max_retries=0, timeout=15),
         label="tweak_library_recipe",
-        max_attempts=2,
-        timeout=45,
+        max_attempts=1,
         model=TWEAK_MODEL,
         max_tokens=1500,
         tools=[_TWEAK_TOOL],
@@ -5963,7 +5944,7 @@ def _copy_from_library(recipe: dict, name: str, plain: str, avoidances: list[dic
             copied = _recipe_research.save_research(plain, entry["sources"], entry.get("method_notes") or "",
                                                     entry.get("fallback_used"))
             research_id = (copied or {}).get("id")
-        saved = tools.fill_recipe_details(
+        tools.fill_recipe_details(
             name,
             ingredients=entry["ingredients"],
             instructions=entry["instructions"],
@@ -5980,23 +5961,13 @@ def _copy_from_library(recipe: dict, name: str, plain: str, avoidances: list[dic
             # cook card (Emily, 2026-10-31); an entry the app wrote for a
             # household ("written", or a "research" base it filled) keeps
             # the per-serving check, as every AI-written recipe does.
-            library_amounts=entry.get("origin") == "seed",
-            model_lines=fitted["touched"],
+            # A tweak changes steps, never the list, so a variant keeps the
+            # researched amounts too.
+            library_amounts=entry.get("origin") in ("seed", "tweak"),
         )
         _recipe_library.record_use(plain, "recipe")
         if fitted["why"]:
-            # A tweak is its own entry, a variant of the dish (THE WRITE-BACK
-            # RULE), with the sources it came from.
-            try:
-                _recipe_library.file_new_recipe(
-                    (saved or {}).get("id") or recipe.get("id"),
-                    spec=_library_tweak.filing_spec(fitted["why"]),
-                    research={"sources": entry["sources"], "method_notes": entry.get("method_notes") or "",
-                              "fallback_used": entry.get("fallback_used")},
-                    origin="tweak", meal=entry.get("meal") or "",
-                )
-            except Exception:
-                logger.exception("Filing the tweak of %r in the library failed; the recipe is saved", plain)
+            _library_tweak.file_back(plain, fitted)
         return {"name": plain, "ok": True, "clash": [], "was": name}, False
     except Exception:
         logger.exception("Copying %r from the recipe library failed; writing it instead", plain)
