@@ -592,6 +592,28 @@ def servable_recipe(name: str, *, children: bool, has_avoidances: bool, clashes)
     return None, clashed
 
 
+def children_variant(name: str, clashes) -> dict | None:
+    """The variant of this dish made for children and nothing else, that
+    `clashes(entry)` lets through; None when there is none. A tweak filed
+    by one household, reused by the next (library_tweak.ready_variant)."""
+    if not library_enabled():
+        return None
+    conn = get_conn()
+    try:
+        rows = conn.execute(
+            "SELECT * FROM recipe_library WHERE dish_key = ? AND kind = 'variant' "
+            "AND ingredients_json NOT IN ('', '[]') AND instructions_json NOT IN ('', '[]') ORDER BY id",
+            (dish_key(name),),
+        ).fetchall()
+        entries = [_entry(conn, r) for r in rows]
+    finally:
+        conn.close()
+    for entry in entries:
+        if list(entry["adapted_for"]) == ["children"] and not clashes(entry):
+            return entry
+    return None
+
+
 def written_dishes() -> list[dict]:
     """Every dish the library holds a written recipe for, one row per dish
     (its base, else its earliest variant), without the steps: name, meal,

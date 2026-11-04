@@ -13,7 +13,9 @@ Emily's decisions, built here and at the call sites:
      household's rules before inventing anything. A library pick is copied
      as the library has it (agent._copy_from_library): no research, no
      writer call. The household's own serving size still scales it the way
-     every recipe is scaled (scale_recipe / the cook card).
+     every recipe is scaled (scale_recipe / the cook card). A recipe that
+     doesn't suit a child or the household's kit gets a small model edit
+     (Emily, 2026-11-04: library_tweak).
   2. Only when nothing in the library fits — or, on a swap, the household
      turns the library's options down ("show me different ones", or types
      what they want) — is a new dish researched and written, as before.
