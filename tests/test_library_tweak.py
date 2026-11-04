@@ -36,7 +36,7 @@ def _fit(entry=HOT, shared=KID, edit=EDIT, clash=lambda e: False):
 
 @pytest.mark.parametrize("item", ["Cayenne pepper", "Red chili flakes", "Jalapeño", "Sriracha", "Gochujang",
                                   "Thai bird chilies", "Hot sauce", "Chipotle in adobo", "Berbere", "Aleppo pepper",
-                                  "Kimchi", "Red chilli", "Massaman curry paste", "Frank's RedHot"])
+                                  "Kimchi", "Red chilli", "Massaman curry paste", "Frank's RedHot", "Fresno chile"])
 def test_a_hot_ingredient_is_a_reason_when_a_child_eats(item):
     entry = {**HOT, "ingredients": [{"item": item, "qty": "1"}]}
     assert lt.reasons(entry, KID) == {"heat_for_a_child": [item]}
@@ -276,3 +276,59 @@ def test_what_a_household_avoids_is_not_sent_and_only_a_kit_reason_sends_the_kit
     body = seen["messages"][0]["content"]
     assert "sesame" not in body and "grill" not in body and "2 tbsp" in body and "1 tub" not in body
     assert seen["options"]["max_retries"] == 0 and seen["max_attempts"] == 1
+
+
+def _edit(text, step=1):
+    return {"step_edits": [{"step": step, "text": text}], "household_changes": ["Heat at the table."]}
+
+
+@pytest.mark.parametrize("item, steps", [
+    ("Dried red chilies", ["Fry the chilies, then hold them back for the table.", "Add ginger, garlic and chili."]),
+    ("Crushed red pepper flakes", ["Serve the flakes at the table.", "Add 1/2 tsp of the pepper flakes."]),
+    ("Jalapeños", ["Adults add jalapeños at the table.", "Stir in the jalapeño."]),
+])
+def test_heat_a_left_alone_step_cooks_in_under_another_name_is_refused(item, steps):
+    entry = {**HOT, "ingredients": [{"item": item, "qty": "1"}], "instructions": ["Cook it.", steps[1]]}
+    out, _ = _fit(entry=entry, edit=_edit(steps[0]))
+    assert out["entry"] is entry
+
+
+@pytest.mark.parametrize("text", [
+    "Cut the onion and fry it with the 1 tsp cayenne.",
+    "Reduce the heat and fry the onion with the cayenne.",
+    "Stir in more cayenne.",
+])
+def test_an_edit_with_a_loose_word_but_the_heat_still_in_is_refused(text):
+    out, _ = _fit(edit=_edit(text))
+    assert out["entry"] is HOT
+
+
+@pytest.mark.parametrize("steps", [
+    ["Fry the jalapeño with the onion.", "Slice the jalapeño.", "Serve with jalapeño on the side."],
+    ["Fry the jalapeño with the onion.", "Simmer until the chili has thickened."],
+])
+def test_prep_table_and_dish_name_mentions_dont_refuse_a_good_edit(steps):
+    entry = {**HOT, "dish_name": "Turkey Chili", "ingredients": [{"item": "Jalapeño", "qty": "1"}],
+             "instructions": steps}
+    out, _ = _fit(entry=entry, edit=_edit("Fry the onion. Adults add jalapeño at the table."))
+    assert out["why"] and out["entry"]["instructions"][1:] == steps[1:]
+
+
+def test_heat_already_kept_at_the_table_needs_no_call():
+    entry = {**HOT, "instructions": ["Cook the lentils.", "Pass the cayenne at the table."]}
+    assert lt.reasons(entry, KID) == {}
+
+
+def test_a_step_that_adds_a_food_to_the_shopping_list_is_refused():
+    out, _ = _fit(edit=_edit("Cook the onion. Adults add cayenne at the table with a dollop of yogurt."))
+    assert out["entry"] is HOT
+
+
+def test_a_written_recipes_tweak_keeps_the_per_serving_check_on_reuse(stub_edit, monkeypatch):
+    lib.file_entry(HOT["dish_name"], ingredients=HOT["ingredients"], instructions=HOT["instructions"],
+                   default_servings=4, cuisine="Indian", main_protein="vegetarian", origin="written", meal="dinner")
+    _copy()
+    assert lib.children_variant(HOT["dish_name"], lambda e: False)["origin"] == "tweak_written"
+    with tools.use_household(households.create_household("Next Door", "next-door-pass")):
+        _copy()
+        assert not any(i.get("library_amount") for i in tools.get_recipe(HOT["dish_name"])["ingredients"])

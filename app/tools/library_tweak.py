@@ -17,9 +17,9 @@ would give the savings back, so:
     the researched amounts stay as they are, and no new food can come in.
   * THE EDIT IS CHECKED, NOT TRUSTED (review, 2026-11-04). The gate reads
     a list, so changed steps are read as list lines too: a step saying
-    "adults add crushed peanuts" is a clash. No step may still name the heat
-    unless it was edited, and the edit has to move it somewhere; no step
-    may still need the missing machine. Anything wrong, or a failed call,
+    "adults add crushed peanuts" is a clash. No step may still cook the heat
+    in the pot, an edit has to say where it went, no step may still need the
+    missing machine, and steps may add nothing to the shopping list. Anything wrong, or a failed call,
     leaves the library recipe as filed.
   * A tweak for children is filed back as a variant, so the next household
     with children reuses it with no model call (ready_variant).
@@ -43,7 +43,7 @@ logger = logging.getLogger("home_manager")
 # Hot ingredients, read from the ingredient list only: a step saying "hot
 # pan" is not one. A false match costs one small call that may change nothing.
 _HEAT = re.compile(
-    r"\b(cayenne|chill?(i|y|ie)e?s?|jalape[nñ]os?|habaneros?|scotch bonnets?|serranos?|"
+    r"\b(cayenne|chill?[iey]e?s?|jalape[nñ]os?|habaneros?|scotch bonnets?|serranos?|"
     r"sriracha|gochujang|gochugaru|sambal|harissa|hot sauce|hot paprika|red pepper flakes|"
     r"crushed red pepper|chipotles?|wasabi|vindaloo|berbere|aleppo|pul biber|kimchi|doubanjiang|"
     r"hot (cherry )?peppers?|redhot|hot mustard|shichimi|"
@@ -69,9 +69,38 @@ _EQUIPMENT = (
 # isn't a list of what they own.
 _NOT_MACHINES = ("no dishwasher", "cast iron")
 
-# How an edited step says where the heat went.
-_MOVED = re.compile(r"\b(at the table|on the table|adults?|grown.?ups?|own (bowl|plate)|on the side|set aside|"
-                    r"hold back|leave out|leave off|skip|less|reduce|cut)\b", re.I)
+# Reading a step for heat. Prose can't be proved, so this is a sturdy guess:
+# heat is "in the pot" when a cooking step names it, unless the step is only
+# prep, or says it's for the table or held back from the child.
+_TABLE = re.compile(r"\b(at|for|on|to) the table\b|\bon the side\b|\bto serve\b|\bat serving\b|\bgarnish|"
+                    r"\badults?\b|\bgrown.?ups?\b|\bown (bowl|plate)s?\b|\bserved? separately\b", re.I)
+_HELD = re.compile(r"\b(hold(ing)? back|leave out|leave off|keep (it )?out|use only|just a pinch|a small pinch|"
+                   r"(kids?|child(ren)?)'?s?'? (portions?|bowls?|plates?|servings?))\b", re.I)
+_PREP_ONLY = re.compile(r"^\s*(thinly |finely )?(slice|chop|mince|seed|dice|measure|wash|trim|core|stem|halve)\b", re.I)
+_COOKS = re.compile(r"\b(add|stir|fry|cook|simmer|toss|saut[eé]|sear|roast|bake|mix|whisk|combine)\b", re.I)
+_THE_DISH = re.compile(r"\bthe chil[ie]\b", re.I)
+
+
+def _heat_words(items: list[str]) -> set[str]:
+    """What a step may call these: "Red chili flakes" is chili, or flakes."""
+    words: set[str] = set()
+    for item in items:
+        low = item.lower()
+        m = _HEAT.search(low)
+        word = m.group(0) if m else low
+        words.add("chil" if word.startswith("chil") else "jalape" if word.startswith("jalape") else word.rstrip("s"))
+        words.update(w for w in ("flakes", "curry paste") if w in low)
+    return words
+
+
+def _in_the_pot(step: str, words: set[str], dish: str) -> bool:
+    text = step.lower()
+    if "chil" in dish.lower():
+        text = _THE_DISH.sub("", text)      # "until the chili has thickened" is the dish
+    if not any(w in text for w in words) or _TABLE.search(step) or _HELD.search(step):
+        return False
+    return not (_PREP_ONLY.search(step) and not _COOKS.search(step))
+
 
 REUSED_CHANGE = "Milder in the pot, with the heat added at the table."
 
@@ -108,7 +137,11 @@ def reasons(entry: dict, shared: dict | None) -> dict:
     why: dict = {}
     if shared.get("children_at_table") and "children" not in (entry.get("adapted_for") or ()):
         hot = _hot_items(entry)
-        if hot:
+        steps = [str(s) for s in entry.get("instructions") or []]
+        dish = entry.get("dish_name") or ""
+        # Heat every step already keeps at the table needs nothing.
+        if hot and (any(_in_the_pot(s, _heat_words(hot), dish) for s in steps)
+                    or not any(w in s.lower() for w in _heat_words(hot) for s in steps)):
             why["heat_for_a_child"] = hot
     missing = _missing_kit(entry, shared.get("kitchen_kit"))
     if missing:
@@ -144,17 +177,26 @@ def apply_edit(entry: dict, edit: dict | None) -> tuple[list[str], list[int]] | 
 
 
 def _does_the_job(entry: dict, steps: list[str], changed: list[int], why: dict, kit) -> bool:
-    """The edit did what it was asked: a step left alone names no heat, an
-    edited one says where the heat went, and no step needs the machine."""
+    """The edit did what it was asked: no step cooks the heat in, an edited
+    step says where it went, no step needs the machine, and the steps bring
+    no new line onto the shopping list."""
     if why.get("heat_for_a_child"):
-        words = {m.group(0).lower() for item in why["heat_for_a_child"] for m in [_HEAT.search(item)] if m}
-        for n, step in enumerate(steps):
-            if n not in changed and any(w in step.lower() for w in words):
-                return False
-        if not any(_MOVED.search(steps[n]) for n in changed):
+        words = _heat_words(why["heat_for_a_child"])
+        dish = entry.get("dish_name") or ""
+        if any(_in_the_pot(s, words, dish) for s in steps):
             return False
-    tweaked = {**entry, "instructions": steps}
-    return not (why.get("equipment_they_lack") and _missing_kit(tweaked, kit))
+        if not any(_TABLE.search(steps[n]) or _HELD.search(steps[n]) for n in changed):
+            return False
+    if why.get("equipment_they_lack") and _missing_kit({**entry, "instructions": steps}, kit):
+        return False
+    return _list_after(entry, steps) == _list_after(entry, entry.get("instructions") or [])
+
+
+def _list_after(entry: dict, steps: list[str]) -> set[str]:
+    from . import recipes as _recipes
+    judged = _recipes.complete_ingredient_list(entry.get("ingredients") or [], steps,
+                                               entry.get("default_servings") or 4)
+    return {str(i.get("item") or "").strip().lower() for i in judged if isinstance(i, dict)}
 
 
 def fit(entry: dict, plain: str, avoidances: list[dict], shared: dict | None, *, clash, write_edit) -> dict:
@@ -214,7 +256,10 @@ def file_back(plain: str, fitted: dict) -> None:
             main_protein=e.get("main_protein"), advance_prep_notes=e.get("advance_prep_notes") or "",
             advance_prep_step_indices=e.get("advance_prep_step_indices") or [],
             sources=e.get("sources") or [], method_notes=e.get("method_notes") or "",
-            fallback_used=bool(e.get("fallback_used")), origin="tweak", variant=True,
+            fallback_used=bool(e.get("fallback_used")),
+            # Whose amounts these are: a researched recipe's stay as filed
+            # on reuse, a written recipe's keep the per-serving check.
+            origin="tweak" if e.get("origin") in ("seed", "tweak") else "tweak_written", variant=True,
             meal=e.get("meal") or "", adapted_for=sorted(kinds),
         )
     except Exception:

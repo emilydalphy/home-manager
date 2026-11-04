@@ -2373,7 +2373,7 @@ CREATE INDEX IF NOT EXISTS idx_recipe_sources_research ON recipe_sources (househ
 -- of dish fields. kind: 'base' is THE recipe for a dish_key, the one a
 -- household's plan copies from; 'variant' is a tweak of it, or a version
 -- written around one household's must-avoids, filed beside it and never
--- copied in step 1. origin: research | written | tweak | seed. A base may be
+-- copied in step 1. origin: research | written | tweak | tweak_written | seed. A base may be
 -- filed with sources only (research landed, recipe not yet written) and
 -- filled in later; file_entry only fills gaps, never overwrites.
 CREATE TABLE IF NOT EXISTS recipe_library (

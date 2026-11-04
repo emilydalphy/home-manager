@@ -51,7 +51,7 @@ from .recipe_research import dish_key
 
 logger = logging.getLogger("home_manager")
 
-ORIGINS = ("research", "written", "tweak", "seed")
+ORIGINS = ("research", "written", "tweak", "tweak_written", "seed")
 
 MEALS = ("breakfast", "lunch", "dinner", "snack")
 
@@ -609,7 +609,7 @@ def children_variant(name: str, clashes) -> dict | None:
     finally:
         conn.close()
     for entry in entries:
-        if entry["origin"] == "tweak" and list(entry["adapted_for"]) == ["children"] and not clashes(entry):
+        if entry["origin"].startswith("tweak") and list(entry["adapted_for"]) == ["children"] and not clashes(entry):
             return entry
     return None
 
