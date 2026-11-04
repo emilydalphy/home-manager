@@ -24,6 +24,11 @@ Emily's decisions, the later one winning:
     isolation tests cover it.
   * ONE write path — file_entry — for live research, a household's tweak
     and (later) the 500-dish seed.
+  * 2026-11-03 ("library first"): EVERY recipe Pomona writes is filed, through
+    file_new_recipe — the dish's base when written for the dish, else a
+    variant that carries only the kinds of thing it was written around
+    (servable_recipe decides who may be copied one). Suggestions now pick
+    from the library first: tools/library_first.py.
 
 Copy on use: a household planning a library dish gets its OWN recipes row
 filled from the entry (recipes.library_id says which). Its servings,
@@ -46,7 +51,24 @@ from .recipe_research import dish_key
 
 logger = logging.getLogger("home_manager")
 
-ORIGINS = ("research", "written", "tweak", "seed")
+ORIGINS = ("research", "written", "tweak", "tweak_written", "seed")
+
+MEALS = ("breakfast", "lunch", "dinner", "snack")
+
+# What a recipe written around one household was shaped by, as KINDS — the
+# writer spec's key -> the word a variant carries in adapted_for_json. Never
+# the household's own words (which allergy, which style, whose plate):
+# only that it was written around one. The keys missing here are never
+# filed at all: must_use (a dish chosen to carry what they typed) and
+# change_requested (their own words, "Tell Pomona what to change").
+ADAPTATIONS = {
+    "must_not_contain": "allergies",
+    "children_at_table": "children",
+    "eating_style": "eating_style",
+    "kitchen_kit": "kitchen_kit",
+    "current_inventory": "use_up",
+}
+_NEVER_FILED_SPEC_KEYS = ("must_use", "change_requested")
 
 # The ingredient keys an entry keeps. The writer's own tool asks for these
 # and nothing else (agent._RECIPE_DETAILS_TOOL); cook_qty is the settled
@@ -230,7 +252,7 @@ def file_entry(dish_name: str, *, ingredients=None, instructions=None, default_s
                main_protein: str = "", advance_prep_notes: str = "",
                advance_prep_step_indices=None, sources=None, method_notes: str = "",
                fallback_used: bool = False, origin: str = "research",
-               variant: bool = False) -> int | None:
+               variant: bool = False, meal: str = "", adapted_for=()) -> int | None:
     """
     File a dish in the library; returns the entry's id, or None when
     nothing was filed. Every column is built from the named dish fields —
@@ -263,6 +285,8 @@ def file_entry(dish_name: str, *, ingredients=None, instructions=None, default_s
         return None
     method_notes = str(method_notes or "").strip()
     advance_prep_notes = str(advance_prep_notes or "").strip()
+    meal = meal if meal in MEALS else ""
+    adapted = sorted({a for a in (adapted_for or ()) if a in ADAPTATIONS.values()})
     # The seed (its own card) is filed in no household's name: nothing of a
     # household to check it against, and household 1 must not be read for it.
     from_household = origin != "seed"
@@ -292,22 +316,34 @@ def file_entry(dish_name: str, *, ingredients=None, instructions=None, default_s
             "FROM recipe_library l WHERE dish_key = ? AND kind = 'base' ORDER BY id LIMIT 1",
             (key,),
         ).fetchone()
+        if variant and has_body:
+            # One variant per dish and kind of adaptation: the second
+            # household writing peanut-free satay adds nothing new.
+            same = conn.execute(
+                "SELECT id FROM recipe_library WHERE dish_key = ? AND kind = 'variant' "
+                "AND adapted_for_json = ? AND ingredients_json NOT IN ('', '[]') ORDER BY id LIMIT 1",
+                (key, json.dumps(adapted)),
+            ).fetchone()
+            if same:
+                return same["id"]
         if variant or not base:
             entry_id = conn.execute(
                 "INSERT INTO recipe_library (dish_key, dish_name, kind, variant_of, origin, "
                 "ingredients_json, instructions_json, default_servings, prep_time_minutes, "
                 "cook_time_minutes, cuisine, main_protein, advance_prep_notes, "
-                "advance_prep_step_indices_json, method_notes, fallback_used) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "advance_prep_step_indices_json, method_notes, fallback_used, meal, adapted_for_json) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (key, str(dish_name or "").strip(), "variant" if variant else "base",
                  base["id"] if (variant and base) else None, origin)
                 + (body if has_body else ("[]", "[]", None, None, None, body[5], body[6], "", "[]"))
-                + (method_notes, 1 if fallback_used else 0),
+                + (method_notes, 1 if fallback_used else 0, meal, json.dumps(adapted if variant else [])),
             ).lastrowid
             if sources:
                 _insert_sources(conn, entry_id, sources)
             return entry_id
         entry_id = base["id"]
+        if meal:
+            conn.execute("UPDATE recipe_library SET meal = ? WHERE id = ? AND meal = ''", (meal, entry_id))
         base_has_body = json.loads(base["ingredients_json"] or "[]") and json.loads(base["instructions_json"] or "[]")
         if has_body and not base_has_body:
             conn.execute(
@@ -339,44 +375,67 @@ def _insert_sources(conn, entry_id: int, sources: list[dict]) -> None:
         )
 
 
-def file_from_recipe(recipe_id: int, *, research: dict | None = None, origin: str = "written",
-                     spec: dict | None = None) -> int | None:
+def file_new_recipe(recipe_id: int, *, spec: dict | None, research: dict | None = None,
+                    meal: str = "", origin: str | None = None) -> int | None:
     """
-    File this household's just-written recipe row as the dish's BASE, read
-    back from the database so the entry is exactly what was saved, and
-    point the row at the entry. `research` is the research it was written
-    from (its sources and method notes go in with it).
+    THE WRITE-BACK RULE (Emily, 2026-11-03): every recipe Pomona itself
+    researched or wrote for a household goes back into the shared library,
+    so the next household gets it with no research and no writer call.
+    Every new-recipe path calls this one function after it saves — the
+    recipe pass (agent._write_one_pending_recipe), "Swap · I'll pick" and a
+    filled day (swap_in_place._save_recipe_if_new, which a tapped swap
+    option's write-out also goes through) and a big meal's main
+    (big_meal._recipe_for_main). tests/test_library_first.py holds every
+    one of them to it, and fails when a new "the model wrote it" save
+    appears that doesn't.
 
-    Only a recipe written for the DISH is filed: `spec`, the writer's own
-    input, must carry nothing about the household (written_for_a_household)
-    and the writer must have changed nothing for them ("Changed for your
-    household" lines). Anything else files nothing — the research was
-    filed when it landed, which is most of the cost, and a version written
-    around one table's peanut allergy or air fryer is not everyone's base.
-    Typed and imported recipes are never filed.
+    `spec` is what the writer was told (the recipe pass's spec, a swap's
+    slot context). Read back from the saved row, so the entry is exactly the
+    recipe. Filed as:
+      * the dish's BASE when the writer was told nothing about the
+        household and changed nothing for it (as before);
+      * a VARIANT when it was written around them (an allergy, children,
+        an eating style, their kit, a use-up), carrying only the KINDS it
+        was shaped by (ADAPTATIONS) — served to a household the base
+        doesn't suit (servable_recipe), never as everyone's base.
+    Never filed: a typed or link-imported recipe (source_url/source_book),
+    a dish chosen around what they typed (must_use), a rewrite in their own
+    words (change_requested), a planner note naming someone, and anything
+    file_entry's own checks refuse (a name or family word in it).
     """
-    if not library_enabled() or not recipe_id:
+    if not library_enabled() or not recipe_id or spec is None:
         return None
-    if spec is None or written_for_a_household(spec):
+    if any(spec.get(k) for k in _NEVER_FILED_SPEC_KEYS):
+        return None
+    if spec.get("dish_note") and _names_someone([spec.get("dish_note") or ""], _household_words()):
         return None
     conn = get_conn()
     try:
         row = conn.execute(
             "SELECT name, ingredients_json, instructions_json, default_servings, prep_time_minutes, "
             "cook_time_minutes, cuisine, main_protein, advance_prep_notes, "
-            "advance_prep_step_indices_json, household_changes_json, source_url, source_book "
-            "FROM recipes WHERE id = ? AND household_id = ?",
+            "advance_prep_step_indices_json, household_changes_json, source_url, source_book, "
+            "library_private FROM recipes WHERE id = ? AND household_id = ?",
             (int(recipe_id), household_id()),
         ).fetchone()
     finally:
         conn.close()
     if not row or (row["source_url"] or "").strip() or (row["source_book"] or "").strip():
         return None
+    if row["library_private"]:
+        # Saved from the household's own words (mark_private): theirs.
+        return None
     try:
-        if json.loads(row["household_changes_json"] or "[]"):
-            return None
+        changed =bool(json.loads(row["household_changes_json"] or "[]"))
     except (TypeError, ValueError):
         return None
+    adapted = sorted({ADAPTATIONS[k] for k in ADAPTATIONS if spec.get(k)})
+    if changed and not adapted:
+        # "Changed for your household" with nothing named in the spec: it
+        # was shaped around something — filed as allergies, the strictest
+        # kind, so it is only ever served to a household with must-avoids.
+        adapted = ["allergies"]
+    variant = bool(adapted)
     sources = (research or {}).get("sources") or []
     entry_id = file_entry(
         row["name"],
@@ -389,11 +448,31 @@ def file_from_recipe(recipe_id: int, *, research: dict | None = None, origin: st
         advance_prep_step_indices=json.loads(row["advance_prep_step_indices_json"] or "[]"),
         sources=sources, method_notes=(research or {}).get("method_notes") or "",
         fallback_used=bool((research or {}).get("fallback_used")),
-        origin=origin,
+        origin=origin or ("research" if sources else "written"),
+        variant=variant, meal=meal, adapted_for=adapted,
     )
-    if entry_id:
+    if entry_id and not variant:
         _link(recipe_id, entry_id)
     return entry_id
+
+
+def mark_private(name: str) -> None:
+    """Mark this household's recipe of that name as theirs alone: it came
+    from their own words, so file_new_recipe never files it — now, or when
+    the recipe pass writes a pending row up later."""
+    if not (name or "").strip():
+        return
+    with write() as conn:
+        conn.execute(
+            "UPDATE recipes SET library_private = 1 WHERE household_id = ? AND name_key(name) = name_key(?)",
+            (household_id(), name.strip()),
+        )
+
+
+def file_from_recipe(recipe_id: int, *, research: dict | None = None, origin: str = "written",
+                     spec: dict | None = None, meal: str = "") -> int | None:
+    """The pre-2026-11-03 name, kept for its callers: see file_new_recipe."""
+    return file_new_recipe(recipe_id, spec=spec, research=research, meal=meal, origin=origin)
 
 
 def _link(recipe_id: int, entry_id: int) -> None:
@@ -429,6 +508,8 @@ def _entry(conn, row) -> dict:
         "advance_prep_step_indices": json.loads(row["advance_prep_step_indices_json"] or "[]"),
         "method_notes": row["method_notes"],
         "fallback_used": bool(row["fallback_used"]),
+        "meal": row["meal"] or "",
+        "adapted_for": json.loads(row["adapted_for_json"] or "[]"),
         "sources": [
             {"name": s["name"], "title": s["title"], "url": s["url"], "rating": s["rating"],
              "rating_count": s["rating_count"], "lead": bool(s["is_lead"]),
@@ -473,6 +554,100 @@ def research_for(name: str) -> dict | None:
         return _entry(conn, row) if row else None
     finally:
         conn.close()
+
+
+def servable_recipe(name: str, *, children: bool, has_avoidances: bool, clashes) -> tuple[dict | None, bool]:
+    """
+    The library's written recipe for this dish that THIS household may be
+    copied, or None; and whether one was turned away by `clashes(entry)`
+    (the household's allergen gate). The base first. A variant (a recipe
+    written around another household, file_new_recipe) only when every kind
+    it was shaped by holds here too: "children" for a household with
+    children at the table, "allergies" for one with must-avoids (gated like
+    the base), "use_up" always; never one shaped by an eating style or a
+    kit — that is that household's own version.
+    """
+    if not library_enabled():
+        return None, False
+    conn = get_conn()
+    try:
+        rows = conn.execute(
+            "SELECT * FROM recipe_library WHERE dish_key = ? "
+            "AND ingredients_json NOT IN ('', '[]') AND instructions_json NOT IN ('', '[]') "
+            "ORDER BY (kind = 'base') DESC, id",
+            (dish_key(name),),
+        ).fetchall()
+        entries = [_entry(conn, r) for r in rows]
+    finally:
+        conn.close()
+    allowed = {"use_up"} | ({"children"} if children else set()) | ({"allergies"} if has_avoidances else set())
+    clashed = False
+    for entry in entries:
+        if entry["kind"] == "variant" and not set(entry["adapted_for"]) <= allowed:
+            continue
+        if clashes(entry):
+            clashed = True
+            continue
+        return entry, False
+    return None, clashed
+
+
+def children_variant(name: str, clashes) -> dict | None:
+    """A tweak of this dish made for children and nothing else, that
+    `clashes(entry)` lets through; None when there is none. Filed by one
+    household, reused by the next (library_tweak.fit)."""
+    if not library_enabled():
+        return None
+    conn = get_conn()
+    try:
+        rows = conn.execute(
+            "SELECT * FROM recipe_library WHERE dish_key = ? AND kind = 'variant' "
+            "AND ingredients_json NOT IN ('', '[]') AND instructions_json NOT IN ('', '[]') ORDER BY id",
+            (dish_key(name),),
+        ).fetchall()
+        entries = [_entry(conn, r) for r in rows]
+    finally:
+        conn.close()
+    for entry in entries:
+        if entry["origin"].startswith("tweak") and list(entry["adapted_for"]) == ["children"] and not clashes(entry):
+            return entry
+    return None
+
+
+def written_dishes() -> list[dict]:
+    """Every dish the library holds a written recipe for, one row per dish
+    (its base, else its earliest variant), without the steps: name, meal,
+    kind, cuisine, protein, minutes and the ingredient items. What
+    library_first narrows for a household — one read."""
+    if not library_enabled():
+        return []
+    conn = get_conn()
+    try:
+        rows = conn.execute(
+            "SELECT id, dish_key, dish_name, kind, meal, cuisine, main_protein, prep_time_minutes, "
+            "cook_time_minutes, ingredients_json, adapted_for_json FROM recipe_library "
+            "WHERE ingredients_json NOT IN ('', '[]') AND instructions_json NOT IN ('', '[]') "
+            "ORDER BY (kind = 'base') DESC, id"
+        ).fetchall()
+    finally:
+        conn.close()
+    out: dict[str, dict] = {}
+    for r in rows:
+        if r["dish_key"] in out:
+            continue
+        try:
+            items = [str(i.get("item") or "") for i in json.loads(r["ingredients_json"] or "[]")
+                     if isinstance(i, dict)]
+            adapted = json.loads(r["adapted_for_json"] or "[]")
+        except (TypeError, ValueError):
+            continue
+        out[r["dish_key"]] = {
+            "id": r["id"], "dish_key": r["dish_key"], "name": r["dish_name"], "kind": r["kind"],
+            "meal": r["meal"] or "", "cuisine": r["cuisine"] or "", "main_protein": r["main_protein"] or "",
+            "minutes": (int(r["prep_time_minutes"] or 0) + int(r["cook_time_minutes"] or 0)) or None,
+            "items": items, "adapted_for": adapted,
+        }
+    return list(out.values())
 
 
 # ---------- the morning report's counts ----------

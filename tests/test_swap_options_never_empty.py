@@ -78,9 +78,19 @@ def test_the_library_never_offers_the_dish_going_one_turned_down_or_one_on_the_w
     assert [o["meal"] for o in out["options"]] == ["Lentil Soup"]
 
 
-def test_model_picks_that_survive_are_never_topped_up_from_the_library(week, monkeypatch):
+def test_library_dishes_come_first_and_the_model_fills_the_rest(week, monkeypatch):
+    """Library first (Emily, 2026-11-03) replaced "model picks are never
+    topped up from the library": the library's fitting dishes lead, the
+    model only fills the places the library can't."""
     _library(monkeypatch, [("Lentil Soup", "dinner", "Lentils")])
     out = tools.swap_options(week, _entry_id(week, DAY1), asker=_asker(_pick("Fish Tacos", protein="cod")))
+    assert [o["meal"] for o in out["options"]] == ["Lentil Soup", "Fish Tacos"]
+
+
+def test_asked_for_different_ones_the_model_answers_not_the_library(week, monkeypatch):
+    _library(monkeypatch, [("Lentil Soup", "dinner", "Lentils")])
+    out = tools.swap_options(week, _entry_id(week, DAY1), avoid=["Bean Tacos"],
+                             asker=_asker(_pick("Fish Tacos", protein="cod")))
     assert [o["meal"] for o in out["options"]] == ["Fish Tacos"]
 
 

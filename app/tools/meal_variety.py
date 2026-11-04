@@ -1396,7 +1396,7 @@ def _pick_a_snack(plan_id: int, date: str, avoid: list[str], budget, picker=None
         # "Snacks never reach the grocery list", 2026-10-02). This runs on
         # a draft only, so nothing needs a quantity yet.
         candidate["details_pending"] = True
-    _swap._save_recipe_if_new(candidate, _swap._table_for(date, "snack")["serves"])
+    _swap._save_recipe_if_new(candidate, _swap._table_for(date, "snack")["serves"], slot="snack", file=True)
     return name, candidate.get("food_groups"), (candidate.get("reason") or "").strip()
 
 # ---------- Surprise me means new to you ----------
@@ -1554,6 +1554,11 @@ def surprise_context(intake: dict | None, period_start: str | None = None, day_c
     }
 
 
+# context_extra keys that are Pomona's own words, never the household's
+# (cuisine_spread's avoid_cuisines, dinner_gaps' replacing_because).
+_POMONAS_OWN_CONTEXT = frozenset({"avoid_cuisines", "replacing_because"})
+
+
 def _repick_entry(
     plan_id: int, entry: dict, budget, *, avoid: list[str], because: str, reject,
     derived_key: str, picker=None, context_extra: dict | None = None, reject_pick=None,
@@ -1632,7 +1637,13 @@ def _repick_entry(
         return None
     serves = _swap._table_for(entry["date"], entry["slot"])["serves"]
     pick["meal_name"] = _swap.honest_meal_name(pick)
-    _swap._save_recipe_if_new(pick, serves)
+    # The write-back rule (2026-11-03) files a re-pick only when Pomona's own
+    # brief chose it: the swap's context plus at most a cuisine to steer away
+    # from or Pomona's own reason. Anything a household typed rides in
+    # context_extra (typed_requests' must_contain / must_be_cuisine /
+    # dislikes, cap_enforce's chosen chip) and keeps the dish theirs.
+    _swap._save_recipe_if_new(pick, serves, slot=entry["slot"],
+                              file=set(context_extra or {}) <= _POMONAS_OWN_CONTEXT)
     derived = dict(json.loads(entry.get("derived_from_json") or "{}") or {})
     derived[derived_key] = {"dropped": entry["meal"], "because": because}
     if derived_extra:

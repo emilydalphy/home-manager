@@ -28,12 +28,14 @@ from .tools import draft_opener as _draft_opener
 from .tools import model_shapes as _model_shapes
 from .tools import plan_quality
 from .tools import recipe_research as _recipe_research
+from .tools import library_tweak as _library_tweak
 from .tools import recipe_library as _recipe_library
 from .tools import cuisine_spread as _cuisine_spread
 from .tools import breakfast_variety as _breakfast_variety
 from .tools import meal_variety as _meal_variety
 from .tools import snack_variety as _snack_variety
 from .tools import everyday_snacks as _everyday_snacks
+from .tools import library_first as _library_first
 from .tools import leftovers_spread as _leftovers_spread
 from .tools import leftovers as _leftovers_mod
 from .tools import weekday_lunches as _weekday_lunches
@@ -3657,6 +3659,16 @@ ONE new recipe (never zero — this is a floor, not optional), the rest can lean
 "surprise_me_often" -> most of the week can be new/untested recipes, favorites become the \
 minority. Regardless of setting, never let the rotation shrink to only "safe" meals — that's \
 the floor this whole rule exists to enforce.
+- NEW DINNERS AND LUNCHES COME FROM `library_dishes` FIRST, when it is present. It lists dishes \
+from Pomona's recipe library ("Name | cuisine | main protein | minutes", under `dinner` and \
+`lunch`), already checked against this household's allergies, diets, dislikes and recent weeks, \
+with recipes already written. Whenever the week needs a dish that isn't one of saved_recipes, \
+choose it from that list by its EXACT name (is_new_recipe=true; copy its cuisine and protein), \
+and the "new recipe" counts above are met by these just the same. Every other rule still holds \
+— variety, night tags and time caps (use the minutes), leftovers, the counts. Invent a dish of \
+your own only for a meal none of them fits: a dish they asked for by name, a typed request or a \
+use-up item the list can't answer, or a cap or tag no listed dish meets. Never rename a listed \
+dish or add to its name — a different name is a different, new dish.
 - A recipe's recent_one_off_notes (see saved_recipes) are a single occurrence's comment, not a \
 verdict — weigh them softly (e.g. avoid the exact same misstep if a note calls one out), but \
 don't treat them like rating='disliked'. Only an actual 'disliked' rating should exclude a \
@@ -4773,6 +4785,23 @@ def _research_tools(remaining: dict, trusted: list | None, *, search: bool, fetc
     return out
 
 
+# Prompt caching on research (2026-11-03; live: 16 calls, ~18K uncached
+# input each, cache_read 0). WHERE it pays, and where it can't:
+#   * NOT across dishes or rounds: the tools render first and carry each
+#     request's max_uses and, for reading, that dish's own allowed_domains,
+#     so no prefix is shared — and tools + prompt are under the model's
+#     1,024-token minimum anyway. An explicit breakpoint there would only
+#     ever write (review, same day), so there is none.
+#   * WITHIN one request: every server-side step is billed the whole
+#     context again, and with caching on the API writes a cache entry after
+#     each tool result, so later steps read what came before at a tenth of
+#     the price. The READ step has 3-4 steps over two pages (~3K each):
+#     roughly 21K billed uncached -> ~11K-equivalent cached. The FIND step
+#     has one step after the search results, which would be written at
+#     1.25x and never read — so it stays uncached.
+_CACHED_RESEARCH_STEPS = {"read"}
+
+
 def _research_step(client, name: str, step: str, prompt: str, client_tool: dict, *,
                    left: dict, spent: dict, tokens: dict, trusted: list | None,
                    search: bool, fetch: bool, deadline: float | None,
@@ -4820,6 +4849,9 @@ def _research_step(client, name: str, step: str, prompt: str, client_tool: dict,
             tools=tools_now + [client_tool],
             messages=messages,
             output_config=_effort_config("recipes"),
+            # The automatic breakpoint, read step only: see
+            # _CACHED_RESEARCH_STEPS for where caching pays and where it can't.
+            **({"cache_control": {"type": "ephemeral"}} if step in _CACHED_RESEARCH_STEPS else {}),
             **timing,
         )
         content = list(response.content or [])
@@ -5761,12 +5793,15 @@ def _research_capped(plain: str, recipe: dict, *, search: bool, weekly_plan_id=N
     return box.get("found")
 
 
-# Facts about a household a library base was written without — the
-# writer would have shaped the recipe around them, so a household with any
-# of these gets its own write (from the library's research; nothing new is
-# billed) rather than a copy. eating_style for safety of a kind (vegetarian,
-# keto), kit and children for whether they can cook and eat it as written.
-_WRITE_INSTEAD_OF_COPY = ("eating_style", "kitchen_kit", "children_at_table")
+# Until 2026-11-03 a household with an eating style, a kitchen kit or
+# children at the table was written its own recipe instead of copied
+# (_WRITE_INSTEAD_OF_COPY). Emily, 2026-11-03 ("library first"): a library
+# pick uses the library's recipe as it is — no writer call. What still
+# stops a copy: an eating style the code can't read (keto, low-FODMAP:
+# everyday_snacks.style_stands_down), a diet word that refuses the dish
+# (library_first.diet_refuses), a diet the gate can't read (below), and the
+# allergen gate itself. Children and kit no longer do: since 2026-11-04 a
+# recipe that doesn't suit them gets a small edit instead (library_tweak).
 # The same, said on a PERSON: the allergen gate held no meat back for these
 # (coordination's matcher read foods, not diets), so a copy was unguarded —
 # a "vegetarian" member's household was copied Broccoli Cheddar Soup on
@@ -5788,6 +5823,117 @@ _DIET_THE_GATE_CANT_READ = re.compile(
 )
 
 
+def _library_entry_for(plain: str, avoidances: list[dict], shared: dict | None = None) -> tuple[dict | None, bool]:
+    """The library recipe this household may be copied for `plain`, or None
+    — and whether one was turned away by the allergen gate. Every check a
+    copy passes, with nothing written (so a swap can ask before it saves).
+    Raises only what the reads raise; _copy_from_library catches it."""
+    style = (shared or {}).get("eating_style") or ""
+    # The one diet check every library path asks (library_first.
+    # diet_blocks_the_library): a diet the gate can't read — on the eating
+    # style, a member or a hard fact — or a style the code can't read is
+    # written for, never copied (review, 2026-11-03: a vegetarian style was
+    # copied a Pad Thai with prawns and oyster sauce).
+    if _library_first.diet_blocks_the_library(style):
+        return None, False
+    # Judged on the list the copy will SAVE, steps' ingredients included
+    # (fill_recipe_details completes it the same way) — an egg only the
+    # method uses is a clash here, as it is on every written recipe.
+    # The base first; a version another household's recipe pass filed
+    # (a variant) only when what it was written around holds here too
+    # (recipe_library.servable_recipe).
+    entry, clashed = _recipe_library.servable_recipe(
+        plain, children=bool((shared or {}).get("children_at_table")), has_avoidances=bool(avoidances),
+        clashes=lambda e: _library_first.entry_clashes(e, avoidances),
+    )
+    if not entry:
+        if clashed:
+            logger.info("Library recipe for %r clashes with this household's must-avoids; "
+                        "writing this household its own", plain)
+        return None, clashed
+    if _library_first.diet_refuses(entry, {"eating_style": style}):
+        logger.info("Library recipe for %r doesn't fit the eating style; writing this household its own", plain)
+        return None, False
+    return entry, False
+
+
+# The light tweak of a library recipe (library_tweak): a small, checked edit,
+# so the cheap model does it.
+TWEAK_MODEL = os.environ.get("TWEAK_MODEL", "claude-haiku-4-5-20251001")
+
+_TWEAK_INSTRUCTIONS = """You make small edits to the steps of a finished, tested recipe so it suits \
+one household. You change steps only: the ingredient list and its amounts stay exactly as they are, \
+and you never bring in a food that isn't on the list. Leave every step alone unless the reason \
+below needs it.
+
+- heat_for_a_child lists hot ingredients, and a child eats this too. Keep the pot mild enough for \
+them. Rewrite EVERY step that names one of them: hold it back from the pot, or use far less, and \
+say the adults add the rest at the table or to their own bowl. If the amount is already mild for a \
+child, change nothing.
+- equipment_they_lack lists what the steps call for that they don't own. Rewrite every step that \
+names it, using kitchen_kit or an ordinary pot, pan, oven or knife, and don't name that machine \
+any more. If a step already gives a way that works for them, change nothing.
+
+Write steps the way the recipe writes them. household_changes says what you changed in short \
+lines, one change each, under 15 words, naming no person. Send empty lists when nothing needs \
+changing."""
+
+_TWEAK_TOOL = {
+    "name": "submit_recipe_tweak",
+    "description": "Submit the small edit to this recipe's steps, or empty lists when it needs none.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "step_edits": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "step": {"type": "integer", "description": "1-based step number."},
+                        "text": {"type": "string", "description": "The whole new text of that step."},
+                    },
+                    "required": ["step", "text"],
+                },
+            },
+            "household_changes": {"type": "array", "items": {"type": "string"}},
+        },
+        "required": ["step_edits", "household_changes"],
+    },
+}
+
+
+def tweak_library_recipe_llm(entry: dict, why: dict, shared: dict) -> dict | None:
+    """The small edit a library recipe needs for this household. Called only
+    when library_tweak.reasons found something, and checked by
+    library_tweak.fit. A swap's tap waits on this, so one try and a short
+    timeout. What this household avoids is not sent: the edit can bring in no
+    new food, the gate checks it anyway, and steps can go in the shared library."""
+    payload = {
+        "dish": entry.get("dish_name") or "",
+        "ingredients": [{"item": i.get("item"), "amount": i.get("cook_qty") or i.get("qty") or ""}
+                        for i in entry["ingredients"]],
+        "steps": {str(n): s for n, s in enumerate(entry["instructions"], 1)},
+        **why,
+    }
+    if why.get("equipment_they_lack"):
+        payload["kitchen_kit"] = shared.get("kitchen_kit") or []
+    response = _create_with_retry(
+        _client().with_options(max_retries=0, timeout=15),
+        label="tweak_library_recipe",
+        max_attempts=1,
+        model=TWEAK_MODEL,
+        max_tokens=1500,
+        tools=[_TWEAK_TOOL],
+        tool_choice={"type": "tool", "name": "submit_recipe_tweak"},
+        system=_TWEAK_INSTRUCTIONS,
+        messages=[{"role": "user", "content": json.dumps(payload, ensure_ascii=False)}],
+    )
+    for block in response.content:
+        if block.type == "tool_use":
+            return block.input
+    return None
+
+
 def _copy_from_library(recipe: dict, name: str, plain: str, avoidances: list[dict],
                        shared: dict | None = None) -> tuple[dict | None, bool]:
     """
@@ -5801,23 +5947,19 @@ def _copy_from_library(recipe: dict, name: str, plain: str, avoidances: list[dic
     that can't have them. Returns (outcome or None, clashed).
     """
     try:
-        if any((shared or {}).get(k) for k in _WRITE_INSTEAD_OF_COPY):
-            return None, False
-        if any(_DIET_THE_GATE_CANT_READ.search(line) for line in tools.swap_hard_exclusions()):
-            return None, False
-        entry = _recipe_library.base_recipe(plain)
+        entry, clashed = _library_entry_for(plain, avoidances, shared)
         if not entry:
-            return None, False
-        # Judged on the list the copy will SAVE, steps' ingredients included
-        # (fill_recipe_details completes it the same way) — an egg only the
-        # method uses is a clash here, as it is on every written recipe.
-        judged = tools.complete_ingredient_list(entry["ingredients"], entry["instructions"],
-                                                entry.get("default_servings") or 4)
-        clashes = _allergen_gate.hard_clashes(plain, ingredients=judged, avoidances=avoidances)
-        if clashes:
-            logger.info("Library recipe for %r has %s; writing this household its own",
-                        plain, _allergen_gate._food_word(clashes))
-            return None, True
+            return None, clashed
+        # Library first, then a light tweak (Emily, 2026-11-04): a recipe
+        # that doesn't suit a child or the household's kit gets a small
+        # edit; the rest make no model call (library_tweak).
+        fitted = _library_tweak.fit(
+            entry, plain, avoidances, shared,
+            clash=lambda e: (_library_first.entry_clashes(e, avoidances)
+                             or _library_first.diet_refuses(e, shared or {})),
+            write_edit=tweak_library_recipe_llm,
+        )
+        entry = fitted["entry"]
         research_id = None
         if entry["sources"]:
             # Its sources, as researched, into this household's own
@@ -5835,16 +5977,20 @@ def _copy_from_library(recipe: dict, name: str, plain: str, avoidances: list[dic
             advance_prep_notes=entry.get("advance_prep_notes") or "",
             advance_prep_step_indices=entry.get("advance_prep_step_indices") or [],
             new_name=plain if plain != name else None,
-            household_changes=[],
+            household_changes=fitted["changes"],
             research_id=research_id,
             library_id=entry["id"],
             # The researched set (origin "seed") keeps its own amounts on the
             # cook card (Emily, 2026-10-31); an entry the app wrote for a
             # household ("written", or a "research" base it filled) keeps
             # the per-serving check, as every AI-written recipe does.
-            library_amounts=entry.get("origin") == "seed",
+            # A tweak changes steps, never the list, so a variant keeps the
+            # researched amounts too.
+            library_amounts=entry.get("origin") in ("seed", "tweak"),
         )
         _recipe_library.record_use(plain, "recipe")
+        if fitted["why"]:
+            _library_tweak.file_back(plain, fitted)
         return {"name": plain, "ok": True, "clash": [], "was": name}, False
     except Exception:
         logger.exception("Copying %r from the recipe library failed; writing it instead", plain)
@@ -5883,9 +6029,8 @@ def _write_one_pending_recipe(recipe: dict, slot: str, shared: dict, avoidances:
     # it clashes with THIS household's must-avoids, or the dish was chosen
     # to carry an ingredient they typed (must_use), which the library's
     # version knows nothing about. Either way it is then written for them.
-    library_clash = False
     if not recipe.get("must_use"):
-        copied, library_clash = _copy_from_library(recipe, name, plain, avoidances, shared)
+        copied, _clashed = _copy_from_library(recipe, name, plain, avoidances, shared)
         if copied:
             return copied
     spec = _recipe_details_spec(recipe, slot, shared)
@@ -5990,21 +6135,21 @@ def _write_one_pending_recipe(recipe: dict, slot: str, shared: dict, avoidances:
                 # sources only through this link, never by name.
                 research_id=(found or {}).get("id") if writer_research else None,
             )
-            if not library_clash:
-                # Into the shared library (2026-10-19): read back from the
-                # row just saved, so the entry is exactly the recipe — and
-                # only when the writer was told nothing about this household
-                # (file_from_recipe checks the spec): a version written
-                # around their must-avoids or kit is never the dish's base.
-                try:
-                    _recipe_library.file_from_recipe(
-                        (saved or {}).get("id") or recipe.get("id"),
-                        research=found if writer_research else None,
-                        origin="research" if writer_research else "written",
-                        spec=spec,
-                    )
-                except Exception:
-                    logger.exception("Filing %r in the recipe library failed; the recipe is saved", plain)
+            # Into the shared library — THE WRITE-BACK RULE (Emily,
+            # 2026-11-03; recipe_library.file_new_recipe): read back from the
+            # row just saved, so the entry is exactly the recipe. Written for
+            # the dish, it is the base; written around this household (their
+            # must-avoids, children, kit, style, a use-up — or a library
+            # base that clashed here), a variant carrying only those kinds.
+            try:
+                _recipe_library.file_new_recipe(
+                    (saved or {}).get("id") or recipe.get("id"),
+                    spec=spec, research=found if writer_research else None,
+                    origin="research" if writer_research else "written",
+                    meal=slot,
+                )
+            except Exception:
+                logger.exception("Filing %r in the recipe library failed; the recipe is saved", plain)
             return {"name": plain, "ok": True, "clash": [], "was": name}
         # Two answers with no ingredients or no steps: Claude answered, but
         # with nothing to save — filed, as an outage is.
@@ -7712,6 +7857,21 @@ def _generate_weekly_plan(
     )
     if library_breakfasts:
         context["library_breakfasts"] = library_breakfasts
+    # Library first (Emily, 2026-11-03): dinners and lunches from the shared
+    # library, narrowed in code by every hard rule for THIS household (the
+    # allergen gate on each dish's own list, diet words, dislikes, disliked
+    # or set-aside recipes, the last two weeks) and spread across proteins —
+    # the planner chooses the week from them before inventing anything, and
+    # a library dish is copied at approval with no research and no writer
+    # call (_copy_from_library). Absent when the library stands down for the
+    # household (library_first.stands_down). See the `library_dishes` bullet.
+    library_dishes = _library_first.for_prompt(
+        effective_memory,
+        avoid=sorted(_draft_opener.recent_dish_names(content_start_date, None, slots=("dinner", "lunch")) or ()),
+        seed=content_start_date,
+    )
+    if library_dishes:
+        context["library_dishes"] = library_dishes
     # Loop Board "Per-person taste learning + solo-night personalization":
     # enrich the subset-attendance slots above with what's actually known
     # about the present people individually, so generation can lean into a
@@ -8032,7 +8192,7 @@ def _generate_weekly_plan(
             # tests' hand-written weeks still send full recipes, and those
             # are saved whole exactly as before.
             pending = not item.get("ingredients")
-            tools.add_recipe(
+            saved_row = tools.add_recipe(
                 measure_spices=True,  # the model wrote it (spice_measures_not_packages)
                 name=meal_name,
                 from_draft=True,
@@ -8050,6 +8210,11 @@ def _generate_weekly_plan(
                 details_pending=pending,
                 dish_note=item.get("dish_note", "") if pending else "",
             )
+            if not pending:
+                # Written whole by the model here (the component planner):
+                # THE WRITE-BACK RULE, as for every new recipe. A pending row
+                # is filed when the recipe pass writes it.
+                _library_first.file_written(saved_row, slot=item.get("slot") or "")
 
         if is_component_based:
             for item in items:

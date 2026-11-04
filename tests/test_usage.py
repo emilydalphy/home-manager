@@ -513,6 +513,10 @@ def test_every_llm_call_site_passes_the_shared_model_constant():
         # (twice when the open search finds nothing well rated and the
         # trusted cooks are searched). See agent.research_dish_llm.
         "research_dish_llm",
+        # Library first, then a light tweak (2026-11-04): a small edit, only
+        # when a library recipe doesn't suit a child or the household's kit.
+        # See agent.tweak_library_recipe_llm / tools/library_tweak.py.
+        "tweak_library_recipe",
     ]
     # generate_weekly_plan_llm and generate_component_plan_llm route through
     # _stream_forced_tool_call instead of _create_with_retry directly (added
@@ -533,7 +537,8 @@ def test_every_llm_call_site_passes_the_shared_model_constant():
     for label in labels:
         idx = source.index(f'label="{label}"')
         window = source[idx: idx + 150]
-        expected = "model=CHAT_MODEL" if label in chat_labels else "model=MODEL"
+        expected = ("model=CHAT_MODEL" if label in chat_labels
+                    else "model=TWEAK_MODEL" if label == "tweak_library_recipe" else "model=MODEL")
         assert expected in window, (
             f"{label} does not pass model=MODEL -- it will be priced at "
             f"whatever _PRICED_MODEL says even if it actually runs on "

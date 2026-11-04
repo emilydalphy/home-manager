@@ -484,11 +484,10 @@ def _diet_the_library_cant_judge() -> bool:
     eating style, kosher, "no meat" in a fact): the library offers nothing,
     for the same reason agent._copy_from_library writes instead of copying —
     a library dish is not written around it, and nothing here could tell."""
-    from .. import agent
-    from . import memory as _memory
-    lines = [(_memory.get_household_memory() or {}).get("eating_style") or ""]
-    lines += list(_swap._hard_exclusions() or [])
-    return any(agent._DIET_THE_GATE_CANT_READ.search(line or "") for line in lines)
+    # One check for every library path (library_first.diet_blocks_the_library,
+    # 2026-11-03), so the sheet, the draft and the copy can never disagree.
+    from . import library_first as _library_first
+    return _library_first.diet_blocks_the_library()
 
 
 def _dish_key(name: str) -> str:
@@ -682,13 +681,43 @@ def _swap_options_locked(weekly_plan_id: int, entry: dict, avoid: list[str] | No
     ask = asker or _ask_options
     unavailable = False
     started = time.perf_counter()
+    # LIBRARY FIRST (Emily, 2026-11-03): the plain open of the sheet offers
+    # dishes from the shared library that fit — through the same gates as a
+    # model pick — and asks the model only for the places the library can't
+    # fill. A tapped library dish is copied, never written out (no writer
+    # call). Asked again with a request or an `avoid` list, the household
+    # has turned the library's options down ("show me different ones", or
+    # what they typed): that is the model's, as before.
+    from_library_first: list[dict] = []
+    if not request and not avoid:
+        from . import library_first as _library_first
+        try:
+            from_library_first = _gated(
+                entry, _library_first.swap_picks(weekly_plan_id, entry, tried, context, limit=OPTION_COUNT * 3),
+                tried, group, weekly_plan_id, request) or []
+        except Exception:
+            logger.exception("Library-first swap options failed; asking the model")
+            from_library_first = []
+    if len(from_library_first) >= OPTION_COUNT:
+        raw = []
+        options = from_library_first[:OPTION_COUNT]
+        logger.info("swap_options for entry %s: %d library dishes offered, no model call",
+                    entry_id, len(options))
+        _OPTIONS_CACHE[key] = {"at": time.time(), "meal": entry["meal"], "options": options,
+                               "unavailable": False, "context": context, "group": _group_key(group)}
+        return {"entry_id": entry_id, "meal": entry["meal"],
+                "options": [_option_view(i, p) for i, p in enumerate(options)],
+                "options_unavailable": False}
     try:
         raw = ask(context)
     except Exception:
         logger.exception("Asking for swap options failed; the sheet will offer the chat only")
         raw = []
         unavailable = True
-    options = _gated(entry, raw, tried, group, weekly_plan_id, request)
+    # The library's few first, the model's picks after them to make three.
+    options = _gated(entry, from_library_first + list(raw or []), tried, group, weekly_plan_id, request)
+    if options and from_library_first:
+        unavailable = False
     if options is None:
         # The household check couldn't run: nothing unchecked is shown and
         # nothing cached, so the next open asks again.
@@ -834,6 +863,26 @@ def choose_swap_option(weekly_plan_id: int, entry_id: int, index: int, writer=No
     why = _gate_all(pick, group)
     if why:
         return {"status": "refused", "message": f"I left it as it was — {pick['meal_name']} {why}."}
+    if pick.get("from_library") and not _saved_dish(pick["meal_name"]):
+        # Library first (2026-11-03): a library dish is copied as the
+        # library has it — gated again on its full list for this household
+        # (agent._copy_from_library) — draft or approved, with no writer
+        # call. The household now has the recipe by that name, so nothing
+        # below writes it out and apply_pick saves nothing new. A copy that
+        # is refused falls through to the usual path.
+        from . import library_first as _library_first
+        try:
+            library_copied = _library_first.copy_for_swap(pick["meal_name"],
+                                                          _swap.batch_serves(weekly_plan_id, group, entry))
+        except Exception:
+            logger.exception("Copying the library swap pick %r failed; writing it as usual", pick["meal_name"])
+            library_copied = False
+    else:
+        library_copied = False
+    # The write-back rule files a written-out pick only when Pomona chose the
+    # dish itself: picks asked for with words the household typed into the
+    # box ("something with our smoked paprika") are theirs, never shared.
+    file_new = not (cached.get("context") or {}).get("household_request")
     on_draft = not _plan_is_approved(weekly_plan_id)
     if on_draft and needs_write_out(pick):
         # A DRAFT saves the pick straight away as a pending recipe — the
@@ -848,7 +897,8 @@ def choose_swap_option(weekly_plan_id: int, entry_id: int, index: int, writer=No
                     cook_time_minutes=_minutes(pick))
         correct_title = False
     else:
-        correct_title = True
+        # A library dish keeps the library's name (it is its own recipe).
+        correct_title = not library_copied
     if not on_draft and needs_write_out(pick):
         context = cached.get("context") or _swap.build_swap_context(
             weekly_plan_id, entry, _swap._dedup([entry["meal"]]))
@@ -889,13 +939,13 @@ def choose_swap_option(weekly_plan_id: int, entry_id: int, index: int, writer=No
         out = _swap.apply_pick_to_days(weekly_plan_id, group, pick, correct_title=correct_title,
                                        instead=instead,
                                        serves=_swap.batch_serves(weekly_plan_id, keeping, entry),
-                                       own_pick=True)
+                                       own_pick=True, file_new=file_new)
     else:
         # `group` rather than letting apply_pick widen for itself: it has
         # already been read here (and the picks asked and gated against
         # it), so a second read would answer the same question twice.
         out = _swap.apply_pick(weekly_plan_id, entry, pick, correct_title=correct_title, group=group,
-                               own_pick=True)
+                               own_pick=True, file_new=file_new)
     out["status"] = "swapped"
     for member in group:
         forget_options(member["entry_id"])

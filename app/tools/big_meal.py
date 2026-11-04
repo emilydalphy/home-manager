@@ -715,6 +715,10 @@ def _recipe_for_main(main: dict, holiday_name: str) -> int:
         prep_time_minutes=main["prep_minutes"],
         cook_time_minutes=main["cook_minutes"],
     )
+    # THE WRITE-BACK RULE (2026-11-03): into the shared library
+    # (recipe_library.file_new_recipe), base or variant by the household.
+    from . import library_first as _library_first
+    _library_first.file_written(saved, slot="dinner")
     return saved["recipe_id"]
 
 

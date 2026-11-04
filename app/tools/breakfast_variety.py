@@ -168,7 +168,12 @@ def _library_pick(night: dict, on_week: list[str], memory: dict, recent: list[st
     from . import breakfast_prep as _breakfast_prep
     from . import rhythm as _rhythm
 
-    if _everyday.style_stands_down(memory):
+    from . import library_first as _library_first
+    # The one diet check every library copy asks (2026-11-03): a diet the
+    # gate can't read (vegetarian, halal, kosher…) or a style the code can't
+    # read is never copied a library dish; the word lists below are a
+    # second net, not the first.
+    if _everyday.style_stands_down(memory) or _library_first.diet_blocks_the_library(memory.get("eating_style")):
         return None
     # A make-ahead household's breakfasts are made on the prep day, so a
     # dish only good fresh (toast, a fried egg) is not theirs to be given

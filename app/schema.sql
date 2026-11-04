@@ -409,6 +409,11 @@ CREATE TABLE IF NOT EXISTS recipes (
     -- household's servings, tweaks, ratings and exclusions stay on THIS row
     -- and never flow back. NULL for anything typed in or imported.
     library_id INTEGER,
+    -- 1 when the dish came from the household's own words (a chat change,
+    -- a plate-part edit, a typed request, a swap asked for in their words):
+    -- recipe_library.file_new_recipe never files it, also when the recipe
+    -- pass writes it up later (2026-11-03).
+    library_private INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -2375,7 +2380,7 @@ CREATE INDEX IF NOT EXISTS idx_recipe_sources_research ON recipe_sources (househ
 -- of dish fields. kind: 'base' is THE recipe for a dish_key, the one a
 -- household's plan copies from; 'variant' is a tweak of it, or a version
 -- written around one household's must-avoids, filed beside it and never
--- copied in step 1. origin: research | written | tweak | seed. A base may be
+-- copied in step 1. origin: research | written | tweak | tweak_written | seed. A base may be
 -- filed with sources only (research landed, recipe not yet written) and
 -- filled in later; file_entry only fills gaps, never overwrites.
 CREATE TABLE IF NOT EXISTS recipe_library (
@@ -2396,6 +2401,11 @@ CREATE TABLE IF NOT EXISTS recipe_library (
     advance_prep_step_indices_json TEXT NOT NULL DEFAULT '[]',
     method_notes TEXT NOT NULL DEFAULT '',
     fallback_used INTEGER NOT NULL DEFAULT 0,
+    -- Library first (2026-11-03): the meal it is for ('' = the starter
+    -- list's own), and for a variant what it was written around, as kinds
+    -- ("allergies", "children", "eating_style", "kitchen_kit", "use_up").
+    meal TEXT NOT NULL DEFAULT '',
+    adapted_for_json TEXT NOT NULL DEFAULT '[]',
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_recipe_library_dish ON recipe_library (dish_key, kind, id);

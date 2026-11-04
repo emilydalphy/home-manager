@@ -171,7 +171,10 @@ def test_an_existing_household_gets_the_same_generation_inputs_before_and_after(
         agent.generate_weekly_plan(week)
         ctx = dict(seen["ctx"])
         conn = get_conn()
-        for table in ("meal_plan_grocery_links", "prep_tasks", "meal_plan_entries", "weekly_plans", "recipes"):
+        # The library too: the first run files its whole recipes there (the
+        # write-back rule, 2026-11-03), and the second would be handed them.
+        for table in ("meal_plan_grocery_links", "prep_tasks", "meal_plan_entries", "weekly_plans", "recipes",
+                      "recipe_library_sources", "recipe_library"):
             conn.execute(f"DELETE FROM {table}")
         conn.commit()
         conn.close()
