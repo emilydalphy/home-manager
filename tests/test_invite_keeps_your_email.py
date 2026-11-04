@@ -161,6 +161,35 @@ def test_nobody_is_sent_to_the_email_step_when_codes_cannot_be_sent(outbox, monk
     assert alex.get("/api/whoami").json()["must_add_email"] is False
 
 
+def test_a_household_with_a_passphrase_is_not_stopped_on_its_next_open(outbox):
+    from app.db import get_conn
+
+    owner, alex = _household_with_an_invited_adult(outbox, "owner-c@example.com")
+    household = owner.get("/api/whoami").json()["household_id"]
+    conn = get_conn()
+    try:
+        conn.execute(
+            "INSERT INTO household_credentials (household_id, password_hash) VALUES (?, ?)",
+            (household, "not-a-real-hash"),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    assert alex.get("/api/whoami").json()["must_add_email"] is False
+
+
+def test_an_address_already_in_use_is_told_to_use_another(outbox):
+    dana = TestClient(app)
+    _email_sign_in(dana, "dana@example.com", outbox)
+    assert dana.post(
+        "/api/onboarding/household",
+        json={"members": [{"name": "Dana", "age_group": "Adult"}], "pets": [], "goals": "", "primary_name": "Dana"},
+    ).status_code == 200
+    _, alex = _household_with_an_invited_adult(outbox, "owner-d@example.com")
+    assert alex.post("/api/account/email/start", json={"email": "dana@example.com"}).status_code == 200
+    assert "use a different one" in outbox[-1].get_content()
+
+
 def test_the_shell_and_the_link_page_share_the_required_step():
     shell = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
     assert "data.must_add_email === true" in shell

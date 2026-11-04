@@ -30981,8 +30981,9 @@
       if (!res.ok) throw new Error('whoami failed');
       var data = await res.json();
       // Joined by invite and left before adding an email (required, Emily
-      // 2026-11-04): back to that step. Once per tab, so a page that can't
-      // show it right now never bounces back and forth with this one.
+      // 2026-11-04): back to that step each time Pomona opens. Once per tab,
+      // so the two pages can't bounce, and nobody is shut out for good when
+      // a code can't reach them: opening it again from there lets them in.
       if (data.must_add_email === true) {
         var alreadySent = false;
         try {

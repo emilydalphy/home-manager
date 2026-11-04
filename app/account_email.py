@@ -532,16 +532,19 @@ def claim_signup_email(household_id: int, member_id: int | None) -> bool:
 
 def joined_by_invite_without_email(household_id: int, member_id: int) -> bool:
     """
-    Did this adult come in on an invite link and never add an address?
+    Did this adult come in on an invite link to a household with no
+    passphrase, and never add an address?
 
     Emily, 2026-11-04: the email is required when an adult joins. The link
-    works once, so without an address they have no way back in on a new
-    phone or in the iPhone app (a link opens in the phone's browser, and the
-    app has its own sign-in). Closing the page on the email step must not
-    get round that, so the shell asks this and sends them back to it.
+    works once and an email household has no passphrase, so without an
+    address they have no way back in on a new phone or in the iPhone app (a
+    link opens in the phone's browser, and the app has its own sign-in).
+    Closing the page on the email step must not get round that, so the
+    shell asks this and sends them back to it.
 
-    Only an adult with a used invite: someone who set the household up, or
-    who signs in with the household passphrase, is never held up by this.
+    A household with a passphrase isn't asked: everyone there still has a
+    way back in, and today's testers aren't stopped on their next open.
+    /join's own email step has no skip for anyone.
     """
     conn = get_conn()
     try:
@@ -551,6 +554,9 @@ def joined_by_invite_without_email(household_id: int, member_id: int) -> bool:
                  AND NOT EXISTS (
                      SELECT 1 FROM member_emails e
                      WHERE e.household_id = i.household_id AND e.member_id = i.member_id
+                 )
+                 AND NOT EXISTS (
+                     SELECT 1 FROM household_credentials c WHERE c.household_id = i.household_id
                  )
                LIMIT 1""",
             (int(household_id), int(member_id)),

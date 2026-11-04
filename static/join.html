@@ -215,12 +215,13 @@
 
   // Already signed in on this browser? Then "Back to the start" is not the
   // way forward. Signed out or offline, the link stays.
-  async function signedIn() {
+  async function whoami() {
     try {
       var res = await fetch('/api/whoami', { credentials: 'same-origin' });
-      return res.ok;
-    } catch (e) { return false; }
+      return res.ok ? await res.json() : null;
+    } catch (e) { return null; }
   }
+  async function signedIn() { return (await whoami()) !== null; }
 
   async function trouble(line) {
     document.getElementById('jn-trouble-sub').textContent = line;
@@ -386,11 +387,9 @@
   // back an adult who joined and left before adding their email.
   async function start() {
     if (!token) {
-      try {
-        var res = await fetch('/api/whoami', { credentials: 'same-origin' });
-        var who = res.ok ? await res.json() : null;
-        if (who && who.must_add_email === true) { askForEmail(); return; }
-      } catch (e) { /* offline: the usual page below */ }
+      show('jn-working');
+      var who = await whoami();
+      if (who && who.must_add_email === true) { askForEmail(); return; }
     }
     askToAgree();
   }

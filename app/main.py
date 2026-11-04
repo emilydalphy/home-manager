@@ -10186,10 +10186,10 @@ def whoami(request: Request):
         # hasn't said the address is theirs. None every other time, and for
         # a device that is nobody yet (it asks "Who's this?" first).
         "sign_in_note": account_email.sign_in_notice(current, member["id"]) if member else None,
-        # An adult who joined by invite and left before adding their email
-        # (Emily, 2026-11-04: required, no skip). The shell sends them back
-        # to /join's email step. Never when codes can't be sent: asking for
-        # something that can't be given would shut them out of the app.
+        # An adult who joined a household with no passphrase by invite and
+        # left before adding their email (Emily, 2026-11-04: required, no
+        # skip). The shell sends them back to /join's email step. Never
+        # when codes are switched off.
         "must_add_email": bool(
             member
             and _email_delivery_mode(request) != "off"
@@ -10556,7 +10556,8 @@ def _send_code_or_say_so(request: Request, email: str, purpose: str, **who) -> d
         account_email.send_notice(
             email,
             "Someone signed in to Pomona tried to use this email address for their account.\n"
-            "It's already in use, so nothing changed. You don't need to do anything.\n",
+            "It's already in use, so nothing changed. You don't need to do anything.\n"
+            "If that was you, each household needs its own email address, so use a different one.\n",
             mode=mode,
         )
         return {"sent": True, "detail": account_email.SENT_LINE}
