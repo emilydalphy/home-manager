@@ -95,8 +95,10 @@ def test_the_link_page_asks_for_the_email_after_the_link_lets_them_in():
     assert "post('/api/account/email/verify'" in html
     # Email codes switched off on the server: straight in, never stuck.
     assert "if (r.status === 503) { into(); return; }" in html
-    # They are already signed in, so there is always a way past.
-    assert re.search(r'<a class="jn-quiet" id="jn-later" href="/">Not now</a>', html)
+    # Required, with no skip (Emily, 2026-11-04). The wrong person still
+    # has a way out, which doesn't get them into the app.
+    assert "Not now" not in html and "jn-later" not in html
+    assert re.search(r'<a class="jn-quiet" id="jn-not-you" href="/logout">Not you\? Sign out</a>', html)
     # One apricot button on each step.
     for step in ("jn-email", "jn-code"):
         start = html.index(f'id="{step}"')
@@ -120,3 +122,50 @@ def test_sign_out_from_onboarding_lands_on_the_sign_in_screen(outbox):
     res = stranger.get("/logout", follow_redirects=False)
     assert res.status_code == 303 and res.headers["location"].startswith("/login")
     assert stranger.get("/api/whoami").status_code == 401
+
+
+# ---------- The email is required, with no skip (Emily, 2026-11-04) ----------
+
+
+def _household_with_an_invited_adult(outbox, owner_email):
+    owner = TestClient(app)
+    _email_sign_in(owner, owner_email, outbox)
+    res = owner.post(
+        "/api/onboarding/household",
+        json={"members": [{"name": "Rowan", "age_group": "Adult"}], "pets": [], "goals": "", "primary_name": "Rowan"},
+    )
+    assert res.status_code == 200, res.text
+    path = owner.post("/api/household/invites", json={"name": "Alex"}).json()["path"]
+    alex = TestClient(app)
+    assert alex.post("/api/join", json={"token": path.split("#", 1)[1], "agreed": True}).status_code == 200
+    return owner, alex
+
+
+def test_an_invited_adult_who_left_before_the_email_step_is_asked_again(outbox):
+    owner, alex = _household_with_an_invited_adult(outbox, "owner-a@example.com")
+    assert alex.get("/api/whoami").json()["must_add_email"] is True
+    # The adult who set the household up is never held up by this.
+    assert owner.get("/api/whoami").json()["must_add_email"] is False
+    # The page that asks stays reachable and the way out still works.
+    assert alex.get("/join").status_code == 200
+
+    assert alex.post("/api/account/email/start", json={"email": "alex-a@example.com"}).status_code == 200
+    res = alex.post("/api/account/email/verify", json={"email": "alex-a@example.com", "code": _code(outbox)})
+    assert res.status_code == 200, res.text
+    assert alex.get("/api/whoami").json()["must_add_email"] is False
+
+
+def test_nobody_is_sent_to_the_email_step_when_codes_cannot_be_sent(outbox, monkeypatch):
+    _, alex = _household_with_an_invited_adult(outbox, "owner-b@example.com")
+    monkeypatch.setattr(account_email, "delivery_mode", lambda: "off")
+    assert alex.get("/api/whoami").json()["must_add_email"] is False
+
+
+def test_the_shell_and_the_link_page_share_the_required_step():
+    shell = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
+    assert "data.must_add_email === true" in shell
+    assert "window.location.replace('/join')" in shell
+    # Once per tab, so the two pages can never bounce between each other.
+    assert "pomona-sent-to-add-email" in shell
+    html = (REPO / "static" / "join.html").read_text(encoding="utf-8")
+    assert "who.must_add_email === true" in html and "askForEmail()" in html

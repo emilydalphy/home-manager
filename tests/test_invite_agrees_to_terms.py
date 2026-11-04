@@ -100,7 +100,7 @@ def test_the_join_page_asks_for_the_tick_before_it_spends_the_link():
     assert "JSON.stringify({ token: token, agreed: true })" in html
     # The page opens on the question, not on spending the link.
     assert html.rstrip().endswith("</html>")
-    assert "askToAgree();\n})();" in html
+    assert "askToAgree();\n  }\n  start();\n})();" in html
     # The About line on the joiner's own phone reads their own agreement.
     shell = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
     assert "legal_you_accepted_version" in shell and "you agreed when you joined" in shell

@@ -172,7 +172,7 @@
       <button type="submit" class="btn-primary" id="jn-email-send">Send me a code</button>
     </form>
     <div class="jn-links">
-      <a class="jn-quiet" id="jn-later" href="/">Not now</a>
+      <a class="jn-quiet" id="jn-not-you" href="/logout">Not you? Sign out</a>
     </div>
   </div>
   <div class="jn-state" id="jn-code" hidden>
@@ -282,9 +282,11 @@
   }
 
   // ---- The email, now that the link has said who this is ----
-  // Anything that can't ask (the adult already has an address, email
-  // codes aren't switched on, the connection dropped) goes straight into
-  // the app: they are signed in either way, and Preferences can add it.
+  // Required, with no skip (Emily, 2026-11-04): the link works once, so
+  // without an address there's no way back in on a new phone or in the
+  // iPhone app. Anything that can't ask (the adult already has an address,
+  // email codes aren't switched on, the connection dropped) goes straight
+  // into the app rather than leaving them stuck here.
   var email = '';
   var busy = false;
   function into() { window.location.replace('/'); }
@@ -379,7 +381,20 @@
   document.getElementById('jn-agree-form').addEventListener('submit', function (e) { e.preventDefault(); join(); });
   document.getElementById('jn-agree-box').addEventListener('change', function () { say('jn-agree-msg', ''); });
   document.getElementById('jn-retry').addEventListener('click', join);
-  askToAgree();
+
+  // No link in hand: either the Back from Terms lost it, or the shell sent
+  // back an adult who joined and left before adding their email.
+  async function start() {
+    if (!token) {
+      try {
+        var res = await fetch('/api/whoami', { credentials: 'same-origin' });
+        var who = res.ok ? await res.json() : null;
+        if (who && who.must_add_email === true) { askForEmail(); return; }
+      } catch (e) { /* offline: the usual page below */ }
+    }
+    askToAgree();
+  }
+  start();
 })();
 </script>
 </body>

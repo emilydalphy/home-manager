@@ -10186,6 +10186,15 @@ def whoami(request: Request):
         # hasn't said the address is theirs. None every other time, and for
         # a device that is nobody yet (it asks "Who's this?" first).
         "sign_in_note": account_email.sign_in_notice(current, member["id"]) if member else None,
+        # An adult who joined by invite and left before adding their email
+        # (Emily, 2026-11-04: required, no skip). The shell sends them back
+        # to /join's email step. Never when codes can't be sent: asking for
+        # something that can't be given would shut them out of the app.
+        "must_add_email": bool(
+            member
+            and _email_delivery_mode(request) != "off"
+            and account_email.joined_by_invite_without_email(current, member["id"])
+        ),
         **_legal_for(current, member),
     }
 

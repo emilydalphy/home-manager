@@ -30980,6 +30980,20 @@
       var res = await Api.fetch('/api/whoami');
       if (!res.ok) throw new Error('whoami failed');
       var data = await res.json();
+      // Joined by invite and left before adding an email (required, Emily
+      // 2026-11-04): back to that step. Once per tab, so a page that can't
+      // show it right now never bounces back and forth with this one.
+      if (data.must_add_email === true) {
+        var alreadySent = false;
+        try {
+          alreadySent = window.sessionStorage.getItem('pomona-sent-to-add-email') === '1';
+          window.sessionStorage.setItem('pomona-sent-to-add-email', '1');
+        } catch (e) { alreadySent = true; }
+        if (!alreadySent) {
+          window.location.replace('/join');
+          return null;
+        }
+      }
       shellWho.household_id = typeof data.household_id === 'number' ? data.household_id : null;
       // Preferences → Household name reads it back (householdNameRowHtml).
       shellWho.household_name = typeof data.household_name === 'string' ? data.household_name : '';
