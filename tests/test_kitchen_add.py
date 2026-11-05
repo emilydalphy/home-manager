@@ -76,9 +76,10 @@ def test_the_sheet_offers_four_ways_in_in_the_mockups_order_and_words():
     html = _ka("k.htmlFor({step: 'menu'})")
     assert '<h2 class="ka-title" id="ka-title">Add to the kitchen</h2>' in html
     assert "Shopped with Pomona? It’s already in. This is for everything else." in html
-    titles = re.findall(r'<p class="ka-opt-title">([^<]*)</p>', html)
+    titles = re.findall(r'<span class="ka-opt-title">([^<]*)</span>', html)
     assert titles == ["Snap a shelf", "Scan a receipt", "Say it", "Type it"]
-    assert html.count('stroke-width="2.2"') == 4
+    assert html.count('class="ka-opt"') == 4
+    assert html.count('stroke-width="2.2"') == 1, "the options are text tiles: only the round close has an icon"
 
 
 def test_the_dock_opens_the_sheet_snap_straight_to_the_photo_step():
@@ -126,7 +127,7 @@ def test_items_pomona_isnt_sure_of_start_unticked_and_the_button_counts_the_rest
     html = _ka(f"k.htmlFor({{step: 'review', kind: 'fridge', rows: k.reviewRows({json.dumps(items)})}})")
     assert "Here’s what <em>I saw</em>" in html
     assert "Untick anything that’s wrong." in html
-    assert re.findall(r'aria-pressed="(\w+)"><span class="ka-box">', html) == ["true", "true", "false", "true"]
+    assert re.findall(r'aria-pressed="(\w+)"><span class="ka-box tick-ring">', html) == ["true", "true", "false", "true"]
     assert "Hot sauce?" in html and ">not sure<" in html
     assert html.count('class="ka-primary"') == 1, "one button"
     assert ">Add 3 to the fridge</button>" in html
@@ -192,7 +193,7 @@ def test_a_skipped_shelf_does_not_look_finished():
     html = _ka("k.htmlFor({mode: 'setup', step: 'setup', setup: {fridge: 4, freezer: 'skipped', pantry: null}})")
     steps = re.findall(r'<span class="ka-ic([^"]*)">', html)
     assert steps == [" is-done", " is-skipped", ""]
-    assert "is-skipped{background:var(--sand)" in KA_JS_PATH.read_text()
+    assert ".ka-step .ka-ic.is-skipped,.ka-step .ka-ic.is-later{background:var(--blush)" in KA_JS_PATH.read_text()
 
 
 def test_setup_progress_survives_a_close_and_esc_spares_typed_words():

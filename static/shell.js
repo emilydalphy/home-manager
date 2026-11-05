@@ -11624,20 +11624,14 @@
   // buildKitchenPanel, kitchenState, the /kitchen path, chat actions tagged
   // tab 'kitchen' — is the COOK tab.
   //
-  // The root, top to bottom (mockups-c Kitchen.dc.html screen 1):
-  //   - the band: "41 things home" (the count is every row the segments
-  //     show — never a spice or a regular, those stay with Staples) and
-  //     "Up to date after Saturday's shop and last night's dinner." when
-  //     the server knows both halves (whats_home.up_to_date_line); no line
-  //     at all when it knows neither, rather than a guess;
-  //   - "Use soon": up to three rows going off, a terracotta dot for today
-  //     and an apricot one for soon, each with its plan or a "Freeze it"
-  //     pill when nothing is planned;
-  //   - Fridge · N / Freezer · N / Pantry · N, and that shelf's rows: the
-  //     plan ("in Tue dinner") or the amount as a word ("about half"),
-  //     never a number to count;
-  //   - the dock: "Snap a shelf" (the screen's one apricot) and "+ Add".
-  // A tap on any row opens the item sheet (C3, homeItemSheetHtml).
+  // The root, top to bottom (Z-Kitchen, Bright Dusk): the head, "Kitchen"
+  // with the round + (Snap a shelf) and the server's "Up to date after
+  // Saturday's shop and last night's dinner." when it knows both halves
+  // (whats_home.up_to_date_line); the Fridge / Freezer / Pantry switcher;
+  // "Use soon" in dusk, up to three things going off, each with its plan or
+  // a "Freeze it" pill; that shelf's tiles, the amount as a word ("about
+  // half"), never a number to count. A tap on any tile opens the item sheet
+  // (C3, homeItemSheetHtml).
   var HOME_LOCATIONS = ['fridge', 'freezer', 'pantry'];
   var HOME_LOCATION_LABELS = { fridge: 'Fridge', freezer: 'Freezer', pantry: 'Pantry' };
   // "How much is left?" — the three chips, in the mockup's words.
@@ -11647,8 +11641,8 @@
     { level: 'almost_gone', label: 'Almost gone' }
   ];
   var HOME_ICONS = {
-    camera:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>'
+    plus:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>'
   };
 
   var homeState = { data: null, seg: null, loadError: false, sheetId: null, busy: false,
@@ -11664,18 +11658,11 @@
   function buildHomePanel(panel) {
     panel.innerHTML =
       '<div class="home-content">' +
-        rootBandHtml({ id: 'home-band', eyebrow: 'Kitchen', title: '' }) +
+        // The head's round + is Snap a shelf (Z-Kitchen); the sheet it opens
+        // has the way back to the other three ways in (openKitchenAdd).
+        rootBandHtml({ id: 'home-band', title: 'Kitchen', noGear: true,
+          tools: roundBtnHtml({ label: 'Snap a shelf', icon: HOME_ICONS.plus, cls: 'home-snap', attrs: ' data-home="snap"' }) }) +
         '<div class="home-body" id="home-body"></div>' +
-        // The dock (nav rule 2): the one apricot is "Snap a shelf"; "+ Add"
-        // rides beside it as an outline, a second way in rather than a
-        // second action. Both open openKitchenAdd — card C2's sheet.
-        '<div class="dock home-dock" id="home-dock">' +
-          '<div class="home-dock-row">' +
-            '<button type="button" class="dock-primary home-snap" data-home="snap">' +
-              HOME_ICONS.camera + '<span>Snap a shelf</span></button>' +
-            '<button type="button" class="home-add" data-home="add">+ Add</button>' +
-          '</div>' +
-        '</div>' +
       '</div>';
     panel.addEventListener('click', onHomeClick);
     loadHome(false);
@@ -11784,74 +11771,48 @@
     return 'fridge';
   }
 
-  // "41 things home", "1 thing home". The italic "home" is the mockup's
-  // accent word (.home-band-accent).
-  function homeTitleHtml(count) {
-    return escapeHtml(count + (count === 1 ? ' thing ' : ' things ')) +
-      '<span class="home-band-accent">home</span>';
-  }
-
   function renderHome() {
     var panel = homePanel();
     if (!panel) return;
     var body = panel.querySelector('#home-body');
-    var titleEl = panel.querySelector('#home-band-title');
-    var content = panel.querySelector('.home-content');
     var data = homeState.data;
     if (homeState.loadError || !data) {
-      if (titleEl) titleEl.textContent = 'Kitchen';
       setRootBand(panel, 'home-band', { sub: '' });
       if (body) body.innerHTML = homeState.loadError ?
-        emptyMomentHtml('home', 'Couldn’t check just now — pull to refresh.') : '';
-      if (content) content.classList.toggle('is-empty', !!homeState.loadError);
+        '<p class="note-card">Couldn’t check just now — pull to refresh.</p>' : '';
       return;
     }
     if (!data.count) {
-      if (titleEl) titleEl.textContent = 'Nothing home yet';
       setRootBand(panel, 'home-band', { sub: '' });
       if (body) body.innerHTML = homeEmptyHtml();
-      if (content) content.classList.add('is-empty');
       return;
     }
-    if (content) content.classList.remove('is-empty');
     var seg = homeSegment(data);
     var frozen = ((data.counts || {}).freezer) || 0;
-    if (seg === 'freezer' && frozen) {
-      // The Freezer segment has its own band (mockups-c screen 4): the
-      // count of rows shown, and the promise the sort keeps.
-      if (titleEl) titleEl.innerHTML = homeFreezerTitleHtml(frozen);
-      setRootBand(panel, 'home-band', { sub: 'Oldest first. Next week’s plan starts from the top.' });
-    } else {
-      if (titleEl) titleEl.innerHTML = homeTitleHtml(data.count);
-      setRootBand(panel, 'home-band', { sub: data.up_to_date || '' });
-    }
+    // The Freezer's line is the promise its sort keeps.
+    setRootBand(panel, 'home-band', {
+      sub: seg === 'freezer' && frozen ? 'Oldest first. Next week’s plan starts from the top.' : (data.up_to_date || '')
+    });
     if (body) body.innerHTML = homeBodyHtml(data, seg);
   }
 
-  // "9 things in the freezer", "1 thing in the freezer".
-  function homeFreezerTitleHtml(count) {
-    return escapeHtml(count + (count === 1 ? ' thing ' : ' things ')) +
-      '<span class="home-band-accent">in the freezer</span>';
-  }
-
-  // A new household's Kitchen starts empty (mockups-c's trade-off card:
-  // "It needs a friendly empty screen that points to the first shop or
-  // one photo"). The next step is the dock, as on every empty root.
+  // A new household's Kitchen starts empty: one plain line and the one
+  // next step, a note card (Z-EmptyPlan's shape).
   function homeEmptyHtml() {
-    return emptyMomentHtml('home', 'Your kitchen fills itself as you shop.',
-      'Tick things off on the list and they land here. Or snap a shelf to start.');
+    return '<div class="note-card">Your kitchen fills itself as you shop.' +
+      '<button type="button" class="btn-main" data-home="snap">Snap a shelf</button></div>';
   }
 
   function homeBodyHtml(data, seg) {
     if (seg === 'freezer') {
-      // No "Use soon" here: the freezer's own band leads, and the planning
-      // check's freezer chips follow the rows (screen 4).
+      // No "Use soon" here: the planning check's freezer chips follow the
+      // tiles instead (mockups-c screen 4).
       return homeSegHtml(data.counts || {}, seg) +
         homeShelfHtml((data.locations || {})[seg] || [], seg) +
         homeCheckHtml(homeState.check.items, homeState.check.gone);
     }
-    return homeUseSoonHtml(data.use_soon || []) +
-      homeSegHtml(data.counts || {}, seg) +
+    return homeSegHtml(data.counts || {}, seg) +
+      homeUseSoonHtml(data.use_soon || []) +
       homeShelfHtml((data.locations || {})[seg] || [], seg);
   }
 
@@ -11864,7 +11825,7 @@
   function homeCheckHtml(items, gone) {
     if (!items || !items.length) return '';
     gone = gone || {};
-    return '<section class="home-card home-check" aria-labelledby="home-check-title">' +
+    return '<section class="note-card home-check" aria-labelledby="home-check-title">' +
       '<h2 class="home-card-title" id="home-check-title">Quick check: any of these gone?</h2>' +
       '<p class="home-check-sub">Tap anything that’s gone.</p>' +
       '<div class="home-check-chips">' +
@@ -11878,47 +11839,46 @@
     '</section>';
   }
 
+  // Use soon, in dusk (Z-Kitchen). A row with nothing planned and a freezer
+  // that can take it has the Freeze it pill at its right.
   function homeUseSoonHtml(list) {
     if (!list.length) return '';
-    return '<section class="home-card home-soon" aria-labelledby="home-soon-title">' +
-      '<h2 class="home-card-title" id="home-soon-title">Use soon</h2>' +
+    return '<section class="home-soon" aria-labelledby="home-soon-title">' +
+      '<h2 class="home-soon-title" id="home-soon-title">Use soon</h2>' +
       list.map(function (it) {
-        var right = it.freeze_ok ?
-          '<button type="button" class="home-freeze-pill" data-home="freeze" data-id="' + it.id + '">Freeze it</button>' :
-          '<span class="home-row-line">' + escapeHtml(it.line || '') + '</span>';
         return '<div class="home-row home-soon-row">' +
           '<button type="button" class="home-row-name" data-home="row" data-id="' + it.id + '" ' +
             'aria-label="' + escapeHtml(it.item + (it.dot === 'today' ? ', use today' : ', use soon')) + '">' +
-            '<span class="home-dot home-dot-' + (it.dot === 'today' ? 'today' : 'soon') + '" aria-hidden="true"></span>' +
             '<span class="home-row-item">' + escapeHtml(it.item) + '</span>' +
-          '</button>' + right +
+            (it.line ? '<span class="home-row-line">' + escapeHtml(it.line) + '</span>' : '') +
+          '</button>' +
+          (it.freeze_ok ? '<button type="button" class="home-freeze-pill" data-home="freeze" data-id="' + it.id + '">Freeze it</button>' : '') +
         '</div>';
       }).join('') +
     '</section>';
   }
 
-  // Fridge · N / Freezer · N / Pantry · N — the Plan root's .wk-seg control.
+  // Fridge / Freezer / Pantry (Z-Kitchen's switcher).
   function homeSegHtml(counts, seg) {
-    return '<div class="wk-seg home-seg" role="tablist" aria-label="Where it is">' +
-      HOME_LOCATIONS.map(function (loc) {
-        var on = loc === seg;
-        return '<button type="button" class="wk-seg-btn' + (on ? ' is-on' : '') + '" role="tab" ' +
-          'aria-selected="' + on + '" data-home="seg" data-seg="' + loc + '">' +
-          escapeHtml(HOME_LOCATION_LABELS[loc] + ' · ' + (counts[loc] || 0)) + '</button>';
-      }).join('') +
-    '</div>';
+    return segHtml(HOME_LOCATIONS.map(function (loc) {
+      return { label: HOME_LOCATION_LABELS[loc], on: loc === seg, attrs: ' data-home="seg" data-seg="' + loc + '"' };
+    }), { cls: 'home-seg', attrs: ' role="group" aria-label="Where it is"' });
   }
 
   function homeShelfHtml(rows, seg) {
     if (!rows.length) {
-      return '<p class="home-shelf-empty">Nothing in the ' + escapeHtml(seg) + '.</p>';
+      return '<p class="note-card home-shelf-empty">Nothing in the ' + escapeHtml(seg) + '.</p>';
     }
-    return '<section class="home-card home-shelf" aria-label="' + escapeHtml(HOME_LOCATION_LABELS[seg]) + '">' +
+    return '<section class="tiles home-shelf" aria-label="' + escapeHtml(HOME_LOCATION_LABELS[seg]) + '">' +
       rows.map(function (r) {
-        return '<button type="button" class="home-row home-shelf-row" data-home="row" data-id="' + r.id + '">' +
-          '<span class="home-row-item">' + escapeHtml(r.label || r.item) + '</span>' +
-          '<span class="home-row-line' + (r.plan ? ' is-plan' : '') + '">' + escapeHtml(r.line || '') + '</span>' +
-        '</button>';
+        return tileHtml({
+          attrs: ' data-home="row" data-id="' + r.id + '"',
+          name: r.label || r.item,
+          sub: r.line || '',
+          cls: 'home-row home-shelf-row',
+          nameCls: 'home-row-item',
+          subCls: 'home-row-line' + (r.plan ? ' is-plan' : '')
+        });
       }).join('') +
     '</section>';
   }
@@ -11959,10 +11919,9 @@
 
   // ---- "Snap a shelf" and "+ Add" (Loop Board C2) ----
   //
-  // ONE door for both dock buttons: static/kitchen-add.js's sheet, the
-  // same one first-run setup's "Show me your kitchen" runs (C5). `mode` is
-  // 'snap' (straight to the photo step, on the shelf showing) or 'add'
-  // (the four ways in). Nothing is saved before its review; a save re-reads
+  // ONE door: static/kitchen-add.js's sheet, the same one first-run setup's
+  // "Show me your kitchen" runs (C5). `mode` is 'snap' (straight to the
+  // photo step, on the shelf showing) or 'add' (the four ways in). Nothing is saved before its review; a save re-reads
   // the tab and says what went in, with Undo.
   function openKitchenAdd(mode) {
     if (!window.KitchenAdd) return;
@@ -11970,6 +11929,8 @@
     window.KitchenAdd.open({
       mode: mode === 'snap' ? 'snap' : 'add',
       place: homeSegment(homeState.data),
+      // The head's + lands on the photo; the other ways in are one back.
+      menuBack: mode === 'snap',
       onSaved: function (res) {
         refreshHomePanel();
         refreshGoingOff();
@@ -12025,22 +11986,22 @@
 
   // Pure: the sheet's body from one row of /api/whats-home.
   function homeItemSheetHtml(row) {
-    var chips = HOME_AMOUNTS.map(function (a) {
-      var on = row.amount === a.level;
-      return '<button type="button" class="gro-pill' + (on ? ' gro-pill-on' : '') + '" data-home-item="amount" ' +
-        'data-level="' + a.level + '" aria-pressed="' + on + '">' + escapeHtml(a.label) + '</button>';
-    }).join('');
+    var amounts = segHtml(HOME_AMOUNTS.map(function (a) {
+      return { label: a.label, on: row.amount === a.level, attrs: ' data-home-item="amount" data-level="' + a.level + '"' };
+    }), { cls: 'home-item-chips', attrs: ' role="group" aria-labelledby="home-item-q"' });
     var moveTo = row.move_to === 'pantry' ? 'pantry' : 'fridge';
+    function act(label, attrs) {
+      return tileHtml({ attrs: attrs, name: label, cls: 'home-act' });
+    }
     var actions = [
-      '<button type="button" class="home-act" data-home-item="used">Used it up</button>',
-      row.freeze_ok ? '<button type="button" class="home-act" data-home-item="freeze">Freeze it</button>' : '',
-      '<button type="button" class="home-act" data-home-item="thrown">Threw it out</button>',
-      '<button type="button" class="home-act" data-home-item="move" data-to="' + moveTo + '">Move to ' + moveTo + '</button>'
+      act('Used it up', ' data-home-item="used"'),
+      row.freeze_ok ? act('Freeze it', ' data-home-item="freeze"') : '',
+      act('Threw it out', ' data-home-item="thrown"'),
+      act('Move to ' + moveTo, ' data-home-item="move" data-to="' + moveTo + '"')
     ].join('');
     return '<p class="home-item-detail">' + escapeHtml(row.detail || '') + '</p>' +
-      '<p class="home-item-q">How much is left?</p>' +
-      '<div class="home-item-chips">' + chips + '</div>' +
-      '<div class="home-item-acts">' + actions + '</div>';
+      '<p class="home-item-q" id="home-item-q">How much is left?</p>' + amounts +
+      '<div class="tiles in-sheet home-item-acts">' + actions + '</div>';
   }
 
   function homeItemName(item) {

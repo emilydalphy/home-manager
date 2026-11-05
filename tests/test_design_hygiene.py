@@ -75,9 +75,7 @@ NO_TOKEN_TWIN = {
     # Emptied 2026-09-13: the "#fff on spruce", trip-checkbox rim and sign-in
     # field rim literals became --on-spruce-ink, --hairline-deep and
     # --on-spruce-edge (Emily's call on the hygiene card).
-    # #inv-toast's color: #FFFDF8 predates this pass and already carries its
-    # own "literal on purpose... correct in BOTH modes" comment.
-    "inventory.html": {"#FFFDF8"},
+    # #inv-toast's #FFFDF8 went with Bright Dusk: it reads --toast-ink now.
 }
 
 # Exact literals inside a `<meta name="theme-color" ...>` tag. A meta tag's

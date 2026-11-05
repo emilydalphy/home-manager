@@ -90,7 +90,9 @@
     say: SVG + '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>',
     type: SVG + '<path d="M5 12h14M12 5v14"/></svg>',
     tick: SVG + '<path d="M5 12.5l4.5 4.5L19 7"/></svg>',
-    skip: SVG + '<path d="M7 12h10"/></svg>'
+    skip: SVG + '<path d="M7 12h10"/></svg>',
+    back: SVG + '<path d="M14.5 6l-6 6 6 6"/></svg>',
+    close: SVG + '<path d="M6 6l12 12M18 6L6 18"/></svg>'
   };
 
   // ---- Pure helpers (tests/test_kitchen_add.py runs these under node) ----
@@ -170,85 +172,88 @@
 
   // ---- The sheet ----
 
+  // Bright Dusk: a cream sheet, a 26px title, a round close, tiles, tick
+  // rings. theme.css holds the tokens and .round-btn on every page that
+  // loads this.
   var STYLE =
     '#ka-scrim{position:fixed;inset:0;z-index:70;background:var(--scrim);animation:ka-fade var(--motion-fast) var(--motion-ease)}' +
     '#ka-sheet{position:fixed;left:0;right:0;bottom:0;z-index:71;max-height:92%;overflow-y:auto;box-sizing:border-box;' +
-      'background:var(--surface);color:var(--ink);border-radius:var(--radius-hero) var(--radius-hero) 0 0;box-shadow:var(--shadow-sheet);' +
-      'padding:14px 18px calc(24px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:10px;' +
+      'background:var(--ground);color:var(--ink);border-radius:var(--radius-sheet) var(--radius-sheet) 0 0;box-shadow:var(--shadow-sheet);' +
+      'padding:10px 16px calc(30px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:12px;' +
       'font-family:var(--font-body);animation:ka-up var(--motion-base) var(--motion-ease)}' +
     '#ka-sheet *{box-sizing:border-box}' +
     '#ka-scrim[hidden],#ka-sheet[hidden]{display:none}' +
     '@keyframes ka-fade{from{opacity:0}to{opacity:1}}' +
     '@keyframes ka-up{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}' +
     '@media (min-width:768px){#ka-sheet{left:50%;right:auto;transform:translateX(-50%);width:520px;max-width:100%}}' +
-    '.ka-handle{width:40px;height:5px;border-radius:var(--radius-pill);background:var(--hairline-deep);margin:0 auto 6px;flex:none}' +
-    '.ka-crumb{align-self:flex-start;min-height:44px;margin:-8px 0 -6px -4px;padding:0 4px;background:none;border:0;' +
-      'font:600 15px var(--font-body);color:var(--ink-secondary);cursor:pointer}' +
-    '.ka-eyebrow{margin:0;font:600 12px/1.2 var(--font-body);letter-spacing:.08em;text-transform:uppercase;color:var(--celadon-label)}' +
-    '.ka-title{font-family:var(--font-display);font-weight:700;font-size:24px;letter-spacing:-0.03em;line-height:1.1;color:var(--ink);margin:0}' +
-    '.ka-title em{font-family:var(--font-accent);font-style:italic;font-weight:400;color:var(--apricot-label)}' +
-    '.ka-sub{font-size:14px;line-height:1.4;color:var(--ink-secondary);margin:0 0 4px}' +
-    '.ka-opt{display:flex;align-items:center;gap:14px;width:100%;min-height:64px;padding:12px 14px;text-align:left;' +
-      'background:transparent;border:1px solid var(--hairline-strong);border-radius:var(--radius-card);color:var(--ink);cursor:pointer;font:inherit}' +
-    '.ka-opt:hover{border-color:var(--ink-strong)}' +
-    '.ka-ic{width:44px;height:44px;flex:none;border-radius:var(--radius-badge);background:var(--celadon-tint);color:var(--celadon-label);' +
+    '.ka-handle{width:40px;height:4px;border-radius:2px;background:var(--grab);margin:0 auto;flex:none}' +
+    '.ka-head{display:flex;align-items:center;gap:12px;padding:2px 4px 0}' +
+    '.ka-head-text{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}' +
+    '.ka-eyebrow{margin:0;font-size:13px;line-height:18px;font-weight:600;color:var(--slate)}' +
+    '.ka-title{font-size:26px;line-height:30px;font-weight:700;letter-spacing:-0.025em;color:var(--ink);margin:0}' +
+    '.ka-title em{font-style:normal}' +
+    '.ka-sub{font-size:14px;line-height:20px;font-weight:500;color:var(--slate);margin:0;padding:0 4px}' +
+    '.ka-opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}' +
+    '.ka-opt{display:flex;flex-direction:column;gap:2px;width:100%;min-height:76px;padding:14px;text-align:left;' +
+      'background:var(--white);border:0;border-radius:var(--radius-card);box-shadow:var(--shadow-card);color:var(--ink);cursor:pointer;font:inherit;' +
+      'transition:transform var(--motion-press) ease}' +
+    '.ka-opt:active{transform:scale(.98)}' +
+    '.ka-ic{width:44px;height:44px;flex:none;border-radius:var(--radius-pill);background:var(--blush);color:var(--ink);' +
       'display:flex;align-items:center;justify-content:center}' +
-    '.ka-ic svg{width:22px;height:22px}' +
-    '.ka-opt-title{margin:0;font-size:15px;font-weight:700;color:var(--ink)}' +
-    '.ka-opt-line{margin:2px 0 0;font-size:13px;line-height:1.35;color:var(--ink-secondary)}' +
-    '.ka-chips{display:flex;gap:8px}' +
-    '.ka-chip{flex:1;min-height:44px;border-radius:var(--radius-chip);border:1.5px solid var(--hairline-strong);background:transparent;' +
-      'font:600 14px var(--font-body);color:var(--ink);cursor:pointer}' +
-    '.ka-chip[aria-pressed="true"]{background:var(--celadon);border-color:var(--celadon);color:var(--on-accent-ink)}' +
-    '.ka-list{display:flex;flex-direction:column;border:1px solid var(--hairline);border-radius:var(--radius-card);padding:2px 12px}' +
-    '.ka-row{display:flex;align-items:center;gap:12px;width:100%;min-height:48px;padding:4px 0;background:none;border:0;' +
-      'border-top:1px solid var(--hairline);text-align:left;cursor:pointer;font:500 15px var(--font-body);color:var(--ink)}' +
+    '.ka-ic svg{width:20px;height:20px}' +
+    '.ka-opt-title{font-size:16px;line-height:20px;font-weight:500;color:var(--ink)}' +
+    '.ka-opt-line{font-size:13px;line-height:18px;color:var(--slate)}' +
+    '.ka-chips{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:2px;height:46px;padding:3px;background:var(--blush);border-radius:var(--radius-button)}' +
+    '.ka-chip{position:relative;min-height:0;border:0;border-radius:var(--radius-control);background:none;' +
+      'font:500 14px var(--font-body);color:var(--slate);cursor:pointer}' +
+    '.ka-chip::after{content:"";position:absolute;inset:-3px 0}' +
+    '.ka-chip[aria-pressed="true"]{background:var(--white);box-shadow:var(--shadow-seg);color:var(--ink);font-weight:600}' +
+    '.ka-list{display:flex;flex-direction:column;background:var(--white);border-radius:var(--radius-card);box-shadow:var(--shadow-card);padding:2px 14px}' +
+    '.ka-row{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;padding:4px 0;background:none;border:0;' +
+      'border-top:1px solid var(--line);text-align:left;cursor:pointer;font:500 16px var(--font-body);color:var(--ink)}' +
     '.ka-row:first-child{border-top:0}' +
-    '.ka-box{width:22px;height:22px;flex:none;border-radius:var(--radius-pill);border:2px solid var(--hairline-strong);color:transparent;' +
-      'display:flex;align-items:center;justify-content:center}' +
-    '.ka-box svg{width:13px;height:13px}' +
-    '.ka-row[aria-pressed="true"] .ka-box{background:var(--celadon);border-color:var(--celadon);color:var(--on-accent-ink)}' +
+    '.ka-box{color:transparent}' +
+    '.ka-box svg{width:14px;height:14px}' +
+    '.ka-row[aria-pressed="true"] .ka-box{background:var(--apricot);box-shadow:none;color:var(--night-ink)}' +
     '.ka-row-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
-    '.ka-row[aria-pressed="false"] .ka-row-name{color:var(--ink-secondary)}' +
-    '.ka-row-qty{flex:none;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;color:var(--ink-secondary)}' +
-    '.ka-primary{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:52px;border:0;border-radius:var(--radius-action);' +
-      'background:var(--apricot);color:var(--on-accent-ink);font-family:var(--font-display);font-weight:700;font-size:16px;letter-spacing:-0.02em;' +
-      'cursor:pointer;box-shadow:var(--shadow-action);margin-top:4px}' +
+    '.ka-row[aria-pressed="false"] .ka-row-name{color:var(--slate)}' +
+    '.ka-row-qty{flex:none;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;color:var(--slate)}' +
+    '.ka-primary{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:52px;border:0;border-radius:var(--radius-button);' +
+      'background:var(--apricot);color:var(--night-ink);font-family:var(--font-body);font-weight:700;font-size:16px;cursor:pointer;' +
+      'transition:transform var(--motion-press) ease}' +
+    '.ka-primary:active{transform:scale(.98)}' +
     '.ka-primary svg{width:20px;height:20px}' +
-    '.ka-primary:disabled{opacity:.45;cursor:default;box-shadow:none}' +
-    '.ka-outline{display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;border-radius:var(--radius-action);' +
-      'background:transparent;border:1.5px solid var(--hairline-strong);font-family:var(--font-display);font-weight:700;font-size:15px;' +
-      'color:var(--ink-strong);cursor:pointer}' +
+    '.ka-primary:disabled{opacity:.6;cursor:default}' +
+    '.ka-outline{display:flex;align-items:center;justify-content:center;width:100%;min-height:52px;border:0;border-radius:var(--radius-button);' +
+      'background:var(--blush);font-family:var(--font-body);font-weight:700;font-size:16px;color:var(--night-ink);cursor:pointer}' +
     '.ka-quiet{display:flex;align-items:center;justify-content:center;width:100%;min-height:44px;background:none;border:0;padding:0;' +
-      'font:italic 400 16px var(--font-accent);color:var(--ink-secondary);cursor:pointer}' +
-    '.ka-input{width:100%;border:1.5px solid var(--hairline-strong);border-radius:var(--radius-control);padding:12px 14px;' +
-      'font:500 16px var(--font-body);color:var(--ink);background:var(--surface);resize:none;line-height:1.4}' +
-    '.ka-input:focus{outline:none;border-color:var(--ink-strong)}' +
-    '.ka-input::placeholder{color:var(--ink-placeholder)}' +
+      'font:600 14px var(--font-body);color:var(--slate);cursor:pointer}' +
+    '.ka-input{width:100%;border:0;border-radius:var(--radius-button);padding:14px 16px;min-height:52px;' +
+      'font:500 16px var(--font-body);color:var(--ink);background:var(--white);box-shadow:var(--shadow-card);resize:none;line-height:22px}' +
+    '.ka-input::placeholder{color:var(--slate)}' +
     '.ka-say{display:flex;gap:8px;align-items:flex-start}' +
-    '.ka-mic{width:48px;height:48px;flex:none;border-radius:var(--radius-pill);border:1.5px solid var(--hairline-strong);background:transparent;' +
+    '.ka-mic{width:44px;height:44px;flex:none;border-radius:var(--radius-pill);border:0;background:var(--blush);' +
       'color:var(--ink);display:flex;align-items:center;justify-content:center;cursor:pointer}' +
-    '.ka-mic svg{width:22px;height:22px}' +
-    '.ka-mic.active{background:var(--celadon);border-color:var(--celadon);color:var(--on-accent-ink)}' +
+    '.ka-mic svg{width:20px;height:20px}' +
+    '.ka-mic.active{background:var(--apricot);color:var(--night-ink)}' +
     '.ka-mic[hidden]{display:none}' +
-    '.ka-wait{display:flex;align-items:center;gap:12px;min-height:88px;color:var(--ink-secondary);font-size:15px}' +
-    '.ka-spin{width:22px;height:22px;flex:none;border-radius:50%;border:2.5px solid var(--hairline-strong);border-top-color:var(--celadon-label);' +
+    '.ka-wait{display:flex;align-items:center;gap:12px;min-height:88px;padding:0 4px;color:var(--slate);font-size:14px;font-weight:500}' +
+    '.ka-spin{width:22px;height:22px;flex:none;border-radius:50%;border:2.5px solid var(--blush);border-top-color:var(--apricot);' +
       'animation:ka-spin 0.9s linear infinite}' +
     '@keyframes ka-spin{to{transform:rotate(360deg)}}' +
     '@media (prefers-reduced-motion:reduce){.ka-spin{animation:none}}' +
-    '.ka-note{margin:0;font-size:14px;line-height:1.4;color:var(--urgent-label)}' +
-    '.ka-step{display:flex;align-items:center;gap:14px;padding:10px 0;border-top:1px solid var(--hairline)}' +
+    '.ka-note{margin:0;padding:0 4px;font-size:14px;line-height:20px;color:var(--clay)}' +
+    '.ka-step{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}' +
     '.ka-step:first-child{border-top:0}' +
-    '.ka-step .ka-ic.is-done{background:var(--celadon);color:var(--on-accent-ink)}' +
-    '.ka-step .ka-ic.is-skipped{background:var(--sand);color:var(--ink-muted)}' +
-    '.ka-more{min-height:44px;background:none;border:0;border-top:1px solid var(--hairline);text-align:left;cursor:pointer;' +
-      'font:600 14px var(--font-body);color:var(--ink-secondary)}' +
-    '.ka-step .ka-ic.is-later{background:var(--sand);color:var(--ink-muted)}' +
-    '.ka-step-title{margin:0;font-size:15px;font-weight:700;color:var(--ink)}' +
-    '.ka-step.is-later .ka-step-title{color:var(--ink-secondary)}' +
-    '.ka-step-line{margin:2px 0 0;font-size:13px;color:var(--ink-secondary)}' +
-    '.ka-link{align-self:flex-start;min-height:44px;padding:0 4px;background:none;border:0;font:500 14px var(--font-body);' +
-      'color:var(--ink-secondary);text-decoration:underline;text-underline-offset:3px;cursor:pointer}';
+    '.ka-step .ka-ic.is-done{background:var(--apricot);color:var(--night-ink)}' +
+    '.ka-step .ka-ic.is-skipped,.ka-step .ka-ic.is-later{background:var(--blush);color:var(--slate)}' +
+    '.ka-more{min-height:44px;background:none;border:0;border-top:1px solid var(--line);text-align:left;cursor:pointer;' +
+      'font:600 14px var(--font-body);color:var(--slate)}' +
+    '.ka-step-title{margin:0;font-size:16px;line-height:20px;font-weight:500;color:var(--ink)}' +
+    '.ka-step.is-later .ka-step-title{color:var(--slate)}' +
+    '.ka-step-line{margin:2px 0 0;font-size:13px;line-height:18px;color:var(--slate)}' +
+    '.ka-link{align-self:flex-start;min-height:44px;padding:0 4px;background:none;border:0;font:600 14px var(--font-body);' +
+      'color:var(--slate);cursor:pointer}';
 
   var sheetEl = null;
   var setupMemory = null;
@@ -319,7 +324,9 @@
       place: place,
       kind: place,
       rows: [],
-      fromMenu: false,
+      // The Kitchen head's + lands on the photo step with the other ways
+      // in one Back away (opts.menuBack).
+      fromMenu: !!opts.menuBack,
       error: '',
       busy: false,
       setup: { fridge: null, freezer: null, pantry: null },
@@ -351,8 +358,24 @@
     }
   }
 
+  // The round Back, on the steps reached from the menu.
   function crumbHtml() {
-    return st.fromMenu ? '<button type="button" class="ka-crumb" data-ka="menu">' + esc(COPY.back) + '</button>' : '';
+    return st.fromMenu
+      ? '<button type="button" class="round-btn ka-crumb" data-ka="menu" aria-label="' + esc(COPY.back) + '">' + ICONS.back + '</button>'
+      : '';
+  }
+
+  // Every screen's head: the handle, the title, the round close.
+  function headHtml(titleHtml, eyebrow) {
+    return '<div class="ka-handle" aria-hidden="true"></div>' +
+      '<div class="ka-head">' + crumbHtmlFor() +
+        '<div class="ka-head-text">' + (eyebrow || '') +
+          '<h2 class="ka-title" id="ka-title">' + titleHtml + '</h2></div>' +
+        '<button type="button" class="round-btn ka-close" data-ka="close" aria-label="Close">' + ICONS.close + '</button>' +
+      '</div>';
+  }
+  function crumbHtmlFor() {
+    return ['snap', 'say', 'type'].indexOf(st.step) !== -1 ? crumbHtml() : '';
   }
 
   function placeChipsHtml(selected) {
@@ -363,30 +386,26 @@
   }
 
   function menuHtml() {
-    return '<div class="ka-handle" aria-hidden="true"></div>' +
-      '<h2 class="ka-title" id="ka-title">' + esc(COPY.title) + '</h2>' +
+    return headHtml(esc(COPY.title)) +
       '<p class="ka-sub">' + esc(COPY.sub) + '</p>' +
-      OPTIONS.map(function (o) {
+      '<div class="ka-opts">' + OPTIONS.map(function (o) {
         return '<button type="button" class="ka-opt" data-ka="opt" data-opt="' + o.key + '">' +
-          '<span class="ka-ic">' + ICONS[o.key] + '</span>' +
-          '<span><p class="ka-opt-title">' + esc(o.title) + '</p><p class="ka-opt-line">' + esc(o.line) + '</p></span>' +
+          '<span class="ka-opt-title">' + esc(o.title) + '</span><span class="ka-opt-line">' + esc(o.line) + '</span>' +
         '</button>';
-      }).join('');
+      }).join('') + '</div>';
   }
 
   // The photo step: which shelf, then the camera. The dock's "Snap a shelf"
   // lands here with the shelf on screen already picked.
   function snapHtml() {
-    return '<div class="ka-handle" aria-hidden="true"></div>' + crumbHtml() +
-      '<h2 class="ka-title" id="ka-title">' + esc(COPY.snapTitle) + '</h2>' +
+    return headHtml(esc(COPY.snapTitle)) +
       placeChipsHtml(st.place) +
       '<button type="button" class="ka-primary" data-ka="camera">' + ICONS.snap +
         '<span>Take a photo of the ' + esc(st.place) + '</span></button>';
   }
 
   function waitHtml(text) {
-    return '<div class="ka-handle" aria-hidden="true"></div>' +
-      '<h2 class="ka-title" id="ka-title">' + (st.kind === 'say' ? COPY.heardTitle : COPY.reviewTitle) + '</h2>' +
+    return headHtml(st.kind === 'say' ? COPY.heardTitle : COPY.reviewTitle) +
       '<div class="ka-wait" role="status"><span class="ka-spin" aria-hidden="true"></span><span>' + esc(text) + '</span></div>';
   }
 
@@ -413,22 +432,20 @@
     var place = reviewPlace(st.kind, st.rows);
     var eyebrow = COPY.eyebrows[st.kind] ? '<p class="ka-eyebrow">' + esc(COPY.eyebrows[st.kind]) + '</p>' : '';
     if (!st.rows.length) {
-      return '<div class="ka-handle" aria-hidden="true"></div>' + eyebrow +
-        '<h2 class="ka-title" id="ka-title">' + esc(COPY.emptyTitle) + '</h2>' +
+      return headHtml(esc(COPY.emptyTitle), eyebrow) +
         '<p class="ka-sub">' + esc(st.kind === 'say' ? COPY.emptySaid : COPY.emptySub) + '</p>' + leftOutHtml() +
         '<button type="button" class="ka-primary" data-ka="again">' + esc(COPY.tryAgain) + '</button>' +
         (st.mode === 'setup' && PLACES.indexOf(st.kind) !== -1 ? reviewWayOutHtml() : '');
     }
     var shown = st.showAll ? st.rows.length : Math.min(st.rows.length, REVIEW_FOLD);
     var more = st.rows.length - shown;
-    return '<div class="ka-handle" aria-hidden="true"></div>' + eyebrow +
-      '<h2 class="ka-title" id="ka-title">' + (st.kind === 'say' ? COPY.heardTitle : COPY.reviewTitle) + '</h2>' +
+    return headHtml(st.kind === 'say' ? COPY.heardTitle : COPY.reviewTitle, eyebrow) +
       '<p class="ka-sub">' + esc(COPY.reviewSub) + '</p>' +
       '<div class="ka-list">' + st.rows.slice(0, shown).map(function (r, i) {
         // A photo replaces a tracked amount: show what it was ("1 (was 6)").
         var right = r.sure ? r.quantity + (r.was && r.quantity ? ' (was ' + r.was + ')' : '') : COPY.notSure;
         return '<button type="button" class="ka-row" data-ka="tick" data-i="' + i + '" aria-pressed="' + (r.ticked ? 'true' : 'false') + '">' +
-          '<span class="ka-box">' + ICONS.tick + '</span>' +
+          '<span class="ka-box tick-ring">' + ICONS.tick + '</span>' +
           '<span class="ka-row-name">' + esc(r.item) + (r.sure ? '' : '?') + '</span>' +
           (right ? '<span class="ka-row-qty">' + esc(right) + '</span>' : '') +
         '</button>';
@@ -441,15 +458,13 @@
   }
 
   function errorHtml() {
-    return '<div class="ka-handle" aria-hidden="true"></div>' +
-      '<h2 class="ka-title" id="ka-title">' + esc(st.errorTitle || COPY.errorTitle) + '</h2>' +
+    return headHtml(esc(st.errorTitle || COPY.errorTitle)) +
       '<p class="ka-sub">' + esc(st.error) + '</p>' +
       '<button type="button" class="ka-primary" data-ka="again">' + esc(COPY.tryAgain) + '</button>';
   }
 
   function sayHtml() {
-    return '<div class="ka-handle" aria-hidden="true"></div>' + crumbHtml() +
-      '<h2 class="ka-title" id="ka-title">' + esc(COPY.sayTitle) + '</h2>' +
+    return headHtml(esc(COPY.sayTitle)) +
       '<div class="ka-say"><textarea id="ka-say-text" class="ka-input" rows="3" aria-label="' + esc(COPY.sayTitle) + '" placeholder="' +
         esc(COPY.sayPlaceholder) + '">' + esc(st.said || '') + '</textarea>' +
         '<button type="button" class="ka-mic" id="ka-say-mic" aria-label="Talk">' + ICONS.say + '</button></div>' +
@@ -458,8 +473,7 @@
   }
 
   function typeHtml() {
-    return '<div class="ka-handle" aria-hidden="true"></div>' + crumbHtml() +
-      '<h2 class="ka-title" id="ka-title">' + esc(COPY.typeTitle) + '</h2>' +
+    return headHtml(esc(COPY.typeTitle)) +
       '<input id="ka-type-text" class="ka-input" type="text" autocomplete="off" aria-label="' + esc(COPY.typeTitle) + '" placeholder="' +
         esc(COPY.typePlaceholder) + '" value="' + esc(st.typed || '') + '">' +
       placeChipsHtml(st.place) +
@@ -478,9 +492,7 @@
   function setupHtml() {
     var next = setupNext();
     var anyDone = PLACES.some(function (p) { return st.setup[p] !== null; });
-    return '<div class="ka-handle" aria-hidden="true"></div>' +
-      '<p class="ka-eyebrow">' + esc(COPY.setupEyebrow) + '</p>' +
-      '<h2 class="ka-title" id="ka-title">' + COPY.setupTitle + '</h2>' +
+    return headHtml(COPY.setupTitle, '<p class="ka-eyebrow">' + esc(COPY.setupEyebrow) + '</p>') +
       '<p class="ka-sub">' + esc(COPY.setupSub) + '</p>' +
       '<div class="ka-list">' + PLACES.map(function (p) {
         var result = st.setup[p];
@@ -553,6 +565,7 @@
     var el = e.target && e.target.closest && e.target.closest('[data-ka]');
     if (!el || !st) return;
     var what = el.getAttribute('data-ka');
+    if (what === 'close') { close(); return; }
     if (what === 'opt') {
       var opt = el.getAttribute('data-opt');
       st.fromMenu = true;

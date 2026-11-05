@@ -342,9 +342,8 @@ def test_the_freezer_segment_has_its_own_band_and_no_use_soon():
     render = _fn("renderHome")
     assert "seg === 'freezer' && frozen" in render
     assert "Oldest first. Next week’s plan starts from the top." in render
-    assert '<span class="home-band-accent">in the freezer</span>' in _fn("homeFreezerTitleHtml")
     body = _fn("homeBodyHtml")
-    freezer_part = body[body.index("if (seg === 'freezer')"):body.index("return homeUseSoonHtml")]
+    freezer_part = body[body.index("if (seg === 'freezer')"):body.rindex("return homeSegHtml")]
     assert "homeUseSoonHtml" not in freezer_part and "homeCheckHtml" in freezer_part
     assert "r.label || r.item" in _fn("homeShelfHtml")
     assert "location=freezer" not in _fn("loadHomeCheck")  # every shelf's chips (verify item 4)

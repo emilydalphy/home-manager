@@ -10724,158 +10724,88 @@ button.cook-badge-tap::after { content: ""; position: absolute; inset: -10px -6p
   }
 }
 
-/* ---------- The Kitchen TAB: what's home (2026-10-26, Loop Board C1/C3) ----------
+/* ---------- The Kitchen TAB: what's home (Z-Kitchen) ----------
    Keyed `home` in code (panel-home, buildHomePanel in shell.js) because
-   `kitchen` is the Cook tab's name. Canonical tokens only. The root: the
-   band, "Use soon", the Fridge / Freezer / Pantry control (the Plan
-   root's .wk-seg), the shelf's rows, and the dock. */
+   `kitchen` is the Cook tab's name. The head with its round +, the
+   switcher, Use soon in dusk, that shelf's tiles. */
 .home-content { display: flex; flex-direction: column; min-height: 100%; }
-.home-content.is-empty .home-body { flex: 1 0 auto; display: flex; flex-direction: column; }
-.home-body { padding: 0 20px; display: flex; flex-direction: column; gap: 12px; }
-/* The band title's one accent word: "41 things home" (the mockup's
-   Newsreader italic in apricot-light on spruce). */
-.home-band-accent {
-  font-family: var(--font-accent);
-  font-weight: 400;
-  color: var(--apricot-light);
-}
-.home-card {
-  background: var(--surface);
-  border: 1.5px solid transparent; box-shadow: var(--shadow-card);
+.home-body { display: flex; flex-direction: column; padding-bottom: 24px; }
+.home-soon {
+  margin: 14px 16px 0;
+  padding: 16px 18px;
+  background: var(--dusk);
+  color: var(--on-dusk);
   border-radius: var(--radius-card);
-  padding: 6px 16px;
+  box-shadow: var(--shadow-float);
   display: flex;
   flex-direction: column;
+  gap: 3px;
 }
-.home-soon { border-color: var(--celadon-edge); }
-.home-card-title {
-  margin: 8px 0 2px;
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--ink);
-}
-.home-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  min-height: 44px;
-  border-top: 1px solid var(--hairline);
-}
-.home-card-title + .home-row, .home-shelf .home-row:first-child { border-top: 0; }
-button.home-row, .home-row-name {
-  background: none;
-  border: none;
-  padding: 0;
+.home-soon-title {
   margin: 0;
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 600;
+  color: var(--soft-apricot);
+}
+.home-soon-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.home-soon-row + .home-soon-row { margin-top: 6px; }
+.home-row-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
   font: inherit;
   color: inherit;
   text-align: left;
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
 }
-button.home-row { width: 100%; }
-.home-row-name { display: flex; align-items: center; flex: 1 1 auto; min-width: 0; min-height: 44px; }
-.home-row-item {
+.home-soon .home-row-item { font-size: 16px; line-height: 22px; font-weight: 700; overflow-wrap: anywhere; }
+.home-soon .home-row-line { font-size: 14px; line-height: 20px; font-weight: 400; }
+.home-freeze-pill {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--blush);
+  color: var(--night-ink);
   font-family: var(--font-body);
   font-size: 14px;
   font-weight: 600;
-  color: var(--ink);
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.home-row-line {
-  flex: 0 0 auto;
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--ink-secondary);
-  white-space: nowrap;
-}
-.home-shelf .home-row-line { color: var(--celadon-label); }
-.home-shelf .home-row-line.is-plan { color: var(--ink-secondary); }
-/* Terracotta = today, apricot = soon (the mockup's two dots). */
-.home-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; margin-right: 10px; }
-.home-dot-today { background: var(--urgent); }
-.home-dot-soon { background: var(--apricot); }
-.home-freeze-pill {
-  flex: 0 0 auto;
-  min-height: 32px;
-  padding: 0 12px;
-  border-radius: var(--radius-pill);
-  /* Celadon tint, not apricot (Rule 5, 2026-10-27): the dock's "Snap a
-     shelf" is this screen's one apricot, and Use soon can hold three of
-     these. The mockup drew apricot; flagged to Emily. */
-  border: 1.5px solid transparent;
-  background: var(--celadon-tint);
-  color: var(--ink-on-celadon);
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 700;
   cursor: pointer;
-  /* 32px drawn, 44px to the thumb (rule 6). */
-  position: relative;
 }
-.home-freeze-pill::after { content: ''; position: absolute; inset: -6px 0; }
-.home-seg .wk-seg-btn { font-size: 13px; }
-/* C4: the planning check's chips on the freezer (mockups-c screen 4) — a
-   celadon-edged card like Use soon; chips are the app's .gro-pill, tapped
-   gone = .gro-pill-on. No apricot: the dock keeps the screen's one. */
-.home-check { border-color: var(--celadon-edge); padding-bottom: 14px; margin-bottom: 16px; }
+.tiles.home-shelf { margin-top: 10px; }
+.home-seg + .tiles.home-shelf { margin-top: 14px; }
+.tile.home-shelf-row { min-height: 86px; }
+/* C4: the planning check's chips on the freezer. */
+.home-check { gap: 2px; margin-top: 10px; }
+.home-card-title {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 700;
+  color: var(--ink);
+}
 .home-check-sub {
-  margin: 0 0 10px;
+  margin: 0 0 8px;
   font-family: var(--font-body);
   font-size: 13px;
-  line-height: 1.35;
+  line-height: 18px;
+  font-weight: 400;
   color: var(--ink-secondary);
 }
 .home-check-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-.home-shelf-empty {
-  margin: 4px 2px;
-  font-family: var(--font-body);
-  font-size: 14px;
-  color: var(--ink-secondary);
-}
-.home-content .home-dock { margin-top: auto; }
-.home-dock-row { display: flex; gap: 8px; }
-.home-dock-row .home-snap {
-  flex: 1.4 1 0;
-  width: auto;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-.home-snap svg { width: 20px; height: 20px; flex: 0 0 auto; }
-.home-snap span { white-space: nowrap; }
-.home-add {
-  flex: 1 1 0;
-  min-width: 0;
-  min-height: 52px;
-  border-radius: var(--radius-action);
-  border: 1.5px solid transparent;
-  background: var(--blush);
-  color: var(--ink-strong);
-  font-family: var(--font-display);
-  font-size: 16px;
-  font-weight: 700;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.home-add:hover { border-color: var(--ink-strong); }
-@media (max-width: 359px) {
-  /* 320px: 236px of dock for two buttons (the chat icon takes the right).
-     "Snap a shelf" keeps one line; both stay 52px tall (rule 6). */
-  .home-dock-row { gap: 6px; }
-  .home-dock-row .home-snap { flex: 1 1 auto; gap: 6px; padding: 0 10px; font-size: 14px; }
-  .home-snap svg { width: 18px; height: 18px; }
-  .home-add { flex: 0 0 auto; padding: 0 12px; font-size: 14px; }
-}
 
-/* The item sheet (C3). Same geometry and motion as #tonight-sheet. */
+/* The item sheet (C3). */
 #home-item-scrim {
   position: fixed;
   inset: 0;
@@ -10893,13 +10823,10 @@ button.home-row { width: 100%; }
   z-index: 41;
   max-height: 84%;
   overflow-y: auto;
-  background: var(--surface);
-  border-radius: 26px 26px 0 0;
   box-shadow: var(--shadow-sheet);
-  padding: 16px 16px 24px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
   translate: 0 100%;
   transition: translate var(--motion-base) var(--motion-ease);
 }
@@ -10908,39 +10835,27 @@ button.home-row { width: 100%; }
 @media (min-width: 768px) {
   #home-item-sheet { left: 50%; right: auto; transform: translateX(-50%); width: 520px; max-width: 100%; }
 }
-#home-item-title { font-size: 26px; }
-#home-item-body { padding: 0 18px; display: flex; flex-direction: column; gap: 10px; }
+#home-item-body { display: flex; flex-direction: column; gap: 10px; }
 .home-item-detail {
   margin: 0;
+  padding: 0 4px;
   font-family: var(--font-body);
   font-size: 14px;
-  line-height: 1.4;
+  line-height: 20px;
+  font-weight: 500;
   color: var(--ink-secondary);
 }
 .home-item-q {
   margin: 6px 0 0;
+  padding: 0 4px;
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: 16px;
+  line-height: 22px;
   font-weight: 700;
   color: var(--ink);
 }
-/* One row of three at 375px, as the mockup draws them. */
-.home-item-chips { display: flex; gap: 8px; }
-.home-item-chips .gro-pill { flex: 1 1 auto; padding: 10px 8px; white-space: nowrap; }
-.home-item-acts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 6px; }
-.home-act {
-  min-height: 48px;
-  padding: 0 10px;
-  border-radius: var(--radius-action);
-  border: 1.5px solid transparent;
-  background: var(--blush);
-  color: var(--ink-strong);
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.home-act:hover { border-color: var(--ink-strong); }
+.home-item-chips.seg { margin: 0; }
+.home-item-acts.tiles { margin-top: 6px; }
 
 /* ---------- "Who's this?" (slice 1 of per-adult login, 2026-09-11) ----------
    The one screen between the passphrase and the shell, for a household

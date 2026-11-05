@@ -135,8 +135,11 @@ def test_the_dock_has_a_seam_for_card_c2():
     """CATCH — both dock buttons go through one function a later branch
     replaces; until then they open the working scan/add page."""
     build = _fn("buildHomePanel")
-    assert 'data-home="snap">' in build and "Snap a shelf" in build
-    assert 'data-home="add">+ Add</button>' in build
+    # Z-Kitchen: the head's round + is Snap a shelf, and its sheet's Back
+    # reaches the other ways in.
+    assert 'data-home="snap"' in build and "label: 'Snap a shelf'" in build
+    assert "noGear: true" in build
+    assert "menuBack: mode === 'snap'" in _fn("openKitchenAdd")
     click = _fn("onHomeClick")
     assert "openKitchenAdd('snap')" in click and "openKitchenAdd('add')" in click
     # UPDATED 2026-10-27 (C2): the seam's body is the real sheet now.
@@ -277,7 +280,9 @@ def test_empty_kitchen_has_a_friendly_empty_state():
     data = whats_home.get_whats_home()
     assert data["count"] == 0 and data["use_soon"] == []
     empty = _fn("homeEmptyHtml")
-    assert "Tick things off on the list" in empty and "snap a shelf" in empty
+    # Z-EmptyPlan's shape: one plain line and the one next step.
+    assert "note-card" in empty and "Your kitchen fills itself as you shop." in empty
+    assert 'class="btn-main" data-home="snap">Snap a shelf</button>' in empty
 
 
 def test_the_item_sheet_line_reads_like_the_mockup():
@@ -498,20 +503,14 @@ def test_almost_gone_closes_the_sheet_and_the_pill_is_not_apricot():
     assert "closeHomeItemSheet();" in amount
     pill = SHELL_CSS[SHELL_CSS.index(".home-freeze-pill {"):]
     pill = pill[:pill.index("}")]
-    assert "var(--apricot)" not in pill and "var(--celadon-tint)" in pill
+    assert "var(--apricot)" not in pill and "var(--blush)" in pill
 
 
-def test_snap_a_shelf_keeps_one_line_at_320():
-    """CATCH — verify #6 (320px): the label wrapped to two lines."""
-    assert ".home-snap span { white-space: nowrap; }" in SHELL_CSS
-    at = SHELL_CSS.index("@media (max-width: 359px) {\n  /* 320px: 236px of dock")
-    narrow = SHELL_CSS[at:]
-    narrow = narrow[:narrow.index("\n}\n")]
-    assert ".home-dock-row .home-snap" in narrow and ".home-add" in narrow
-    # Re-verify R2: the narrow rules have to come AFTER the base ones they
-    # override, or the base `.home-add { flex: 1 1 0 }` wins at 320px.
-    assert SHELL_CSS.index("\n.home-add {") < at
-    assert SHELL_CSS.index("\n.home-dock-row .home-snap {") < at
+def test_kitchen_has_no_dock_snap_a_shelf_is_the_head_plus():
+    """Z-Kitchen: the old dock's two buttons went into the head's round +,
+    so nothing has to hold one line at 320px any more."""
+    assert 'class="dock home-dock"' not in SHELL_JS
+    assert ".home-dock-row" not in SHELL_CSS
 
 
 def test_undo_still_restores_when_an_older_batch_shares_the_shelf():

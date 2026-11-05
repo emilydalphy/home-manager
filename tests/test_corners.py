@@ -68,7 +68,7 @@ def test_inventory_dictate_button_is_not_repainted_by_the_generic_button_rule():
     idx = INVENTORY_HTML.index(".inv-add-row .dictate-btn")
     rule = INVENTORY_HTML[idx: INVENTORY_HTML.index("}", idx) + 1]
     assert "background: transparent" in rule
-    assert "var(--ink-strong)" in rule
+    assert "var(--ink)" in rule
 
 
 def test_inventory_still_wires_up_the_mic_button():
