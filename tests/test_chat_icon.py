@@ -38,13 +38,13 @@ def test_ask_sits_in_the_bar_and_the_dock_runs_the_full_width():
 
 
 def test_one_line_for_the_composer_on_every_tab():
-    assert "_default: 'What\\u2019s on your mind?'" in SHELL_JS
+    assert "_default: 'Ask anything about the week'" in SHELL_JS
     for old in ("today: 'Ask me anything", "week: 'Tweak this week", "kitchen: 'What", "grocery: 'Add oat milk"):
         assert old not in SHELL_JS, old
-    assert SHELL_HTML.count('placeholder="What&rsquo;s on your mind?"') == 1
+    assert SHELL_HTML.count('placeholder="Ask anything about the week"') == 1
     assert 'Ask me anything about today&hellip;' not in SHELL_JS
-    # The sheet's title says the same thing.
-    assert '<div class="ask-sheet-title">What&rsquo;s on your mind?</div>' in SHELL_HTML
+    # The sheet's title, as drawn (Z-Ask).
+    assert '<div class="ask-sheet-title">Ask Pomona</div>' in SHELL_HTML
     assert "Tell me what to change" not in SHELL_HTML
 
 
@@ -77,7 +77,7 @@ def test_the_design_system_describes_the_icon_not_the_bar():
 # ordinary foot: Plan's More row, Cook's root, Shop's list, Now's content.
 def test_each_trailing_row_keeps_an_ordinary_foot():
     for rule in (".wk-foot:not(:has(+ .dock)) { padding-bottom: 24px; }",
-                 ".kit-body:not(:has(+ .dock:not([hidden]))) { padding-bottom: 24px; }",
+                 ".kit-body { padding: 0 0 24px; display: block; }",
                  ".gro-body:has(+ .gro-dock:empty) { padding-bottom: 24px; }",
                  ".today-content:not(:has(> .today-dock:not([hidden]))) { padding-bottom: 24px; }"):
         assert rule in SHELL_CSS, rule

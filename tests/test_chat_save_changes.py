@@ -554,16 +554,15 @@ def test_the_cards_own_save_and_leave_are_gone():
 
 
 def test_the_dock_is_the_sheets_one_apricot():
-    """Rule 5. The send button beside it is a SPRUCE fill with an apricot
-    glyph, not an apricot fill, so it needed no change — but if that ever
-    becomes a fill there would be two."""
+    """The dock adds no second fill of its own. Send is apricot (Z-Ask,
+    Emily 2026-11-05: its one button when the dock is down), and the dock's
+    Save shares the sheet with it only while there is something to save."""
     i = SHELL_CSS.index(".ask-composer-send {")
     send = SHELL_CSS[i:i + 400]
-    assert "background: var(--spruce)" in send
-    assert "background: var(--apricot)" not in send
-    # And the dock's own two: one apricot (.dock-primary), one sand.
+    assert "background: var(--apricot)" in send and "var(--spruce)" not in send
+    # And the dock's own two: one apricot (.dock-primary), one quiet.
     j = SHELL_CSS.index(".ask-save-dock {")
-    dock = SHELL_CSS[j:SHELL_CSS.index(".ask-composer-send {", j)]
+    dock = SHELL_CSS[j:SHELL_CSS.index(".ask-composer-mic {", j)]
     assert "var(--apricot)" not in dock, "the apricot is .dock-primary's, not a second one here"
     assert re.search(r"#[0-9a-fA-F]{3,6}\b", dock) is None, "tokens only (Rule 9)"
 

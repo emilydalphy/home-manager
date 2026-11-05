@@ -300,7 +300,7 @@
   // hold a line per tab for the always-open bar; the object stays so the
   // one line has a name, and the per-tab keys are gone with the bar.
   var ASK_HINTS = {
-    _default: 'What\u2019s on your mind?'
+    _default: 'Ask anything about the week'
   };
 
   function setAskHintForTab(key) {
@@ -28973,7 +28973,7 @@
   //
   // `byName` is that lookup, and `entries` is only the set that is safe to
   // link at all — see the ambiguity rule in setDishIndex.
-  var dishIndex = { entries: [], byName: {}, re: null };
+  var dishIndex = { entries: [], byName: {}, tiles: {}, re: null };
 
   // A dish on TWO different nights is not linked at all (2026-09-10, found
   // by review). The index used to keep the first occurrence and drop the
@@ -29006,7 +29006,7 @@
         var slotKey = target.entryId != null
           ? 'e:' + target.entryId
           : 'd:' + (target.date || '?') + '/' + (target.slot || '?');
-        if (!groups[key]) { groups[key] = { target: target, slots: {}, count: 0 }; order.push(key); }
+        if (!groups[key]) { groups[key] = { target: target, slots: {}, count: 0, tile: { plate: entry.plate, date: day.date, slot: slot } }; order.push(key); }
         if (!groups[key].slots[slotKey]) {
           groups[key].slots[slotKey] = true;
           groups[key].count += 1;
@@ -29015,14 +29015,17 @@
     });
     var entries = [];
     var byName = {};
+    var tiles = {};
     order.forEach(function (key) {
       if (groups[key].count !== 1) return; // two nights, one name: prose.
       entries.push(groups[key].target);
       byName[key] = groups[key].target;
+      tiles[key] = groups[key].tile;
     });
     entries.sort(function (a, b) { return b.title.length - a.title.length; });
     dishIndex.entries = entries;
     dishIndex.byName = byName;
+    dishIndex.tiles = tiles;
     dishIndex.re = entries.length
       ? new RegExp('(^|[^A-Za-z0-9])(' +
           entries.map(function (e) { return escapeRegExp(e.title.trim()); }).join('|') +
@@ -29057,6 +29060,31 @@
     var key = String(name == null ? '' : name).trim().toLowerCase();
     var hit = key && dishIndex.byName[key];
     return hit ? { title: hit.title } : null;
+  }
+
+  // The dishes a reply names, as tiles under it (Z-Ask): plate, name, "Thursday,
+  // dinner". Same data-dish hook as the name in the words, so a tile resolves
+  // the same way when tapped (openDishFromChat). Four at most: a reply reading
+  // out the whole week is a list, not a shelf.
+  function askDishTilesHtml(bubble) {
+    var seen = {};
+    var html = '';
+    var count = 0;
+    Array.prototype.forEach.call(bubble.querySelectorAll('[data-dish]'), function (btn) {
+      var name = btn.getAttribute('data-dish');
+      var key = String(name).trim().toLowerCase();
+      var meta = dishIndex.tiles && dishIndex.tiles[key];
+      if (!meta || seen[key] || count >= 4) return;
+      seen[key] = true;
+      count += 1;
+      html += tileHtml({
+        art: (typeof Plates !== 'undefined' && Plates.html(meta.plate, 96)) || '',
+        name: name,
+        sub: dayName(meta.date, { weekday: 'long' }) + ', ' + (typeof cookSlotLabel === 'function' ? cookSlotLabel(meta.slot).toLowerCase() : meta.slot),
+        attrs: ' data-dish="' + escapeHtml(name) + '"'
+      });
+    });
+    return html;
   }
 
   function escapeRegExp(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
@@ -29481,16 +29509,27 @@
     // business.
     bubble.innerHTML = renderMarkdownLite(text);
     if (role === 'assistant') linkifyDishNamesIn(bubble);
-    bubble.querySelectorAll('[data-dish]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        // Resolved from the NAME, against the plan as it stands right now
-        // — never from a position recorded when the bubble was drawn, and
-        // never carrying that moment's entry id or night either. See
-        // openDishFromChat / dishTargetForName.
-        openDishFromChat(btn.getAttribute('data-dish'));
+    var dishTiles = null;
+    var tilesHtml = role === 'assistant' ? askDishTilesHtml(bubble) : '';
+    if (tilesHtml) {
+      dishTiles = document.createElement('div');
+      dishTiles.className = 'tiles in-sheet ask-dish-tiles';
+      dishTiles.innerHTML = tilesHtml;
+    }
+    [bubble, dishTiles].forEach(function (holder) {
+      if (!holder) return;
+      holder.querySelectorAll('[data-dish]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          // Resolved from the NAME, against the plan as it stands right now
+          // — never from a position recorded when the bubble was drawn, and
+          // never carrying that moment's entry id or night either. See
+          // openDishFromChat / dishTargetForName.
+          openDishFromChat(btn.getAttribute('data-dish'));
+        });
       });
     });
     wrap.appendChild(bubble);
+    if (dishTiles) wrap.appendChild(dishTiles);
     (actions || []).forEach(function (action) {
       // A fact the turn remembered ("the kids won't eat shrimp") is shown
       // as what it is — Remembered · Kids: no shrimp — with "Not quite"
