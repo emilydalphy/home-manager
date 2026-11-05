@@ -473,7 +473,7 @@ document.querySelectorAll('[data-step-back]').forEach(function (b) {
   b.addEventListener('click', function () { goBackFrom(b.dataset.stepBack); });
 });
 function tapBack(step) { document.querySelector('[data-step-back="' + step + '"]').click(); }
-function backLabel(step) { return document.querySelector('[data-step-back="' + step + '"]').textContent; }
+function backLabel(step) { return document.querySelector('[data-step-back="' + step + '"]').getAttribute('aria-label'); }
 """,
         seed,
         # The page's own first line, run for real rather than restated — a
@@ -537,37 +537,37 @@ const labels = {};
 console.log(JSON.stringify(labels));
 """ % json.dumps(STEPS_AFTER_THE_FIRST))
     assert out == {
-        "intro-help": "‹ Hello",
-        "intro-talk": "‹ What I help with",
-        "intro-know": "‹ How it works",
+        "intro-help": "Back to Hello",
+        "intro-talk": "Back to What I help with",
+        "intro-know": "Back to How it works",
         # UPDATED 2026-10-05: the first question is "What's your name?",
         # so it is the one that goes back to the intro and "Who's here" --
         # which is what the second screen still is -- goes back to it.
-        "your-name": "‹ Getting to know you",
-        "household": "‹ Your name",
-        "helpers": "‹ Who's here",
-        "restrictions": "‹ Who helps",
+        "your-name": "Back to Getting to know you",
+        "household": "Back to Your name",
+        "helpers": "Back to Who's here",
+        "restrictions": "Back to Who helps",
         # UPDATED 2026-10-06 (Onboarding regrouped): the new order, and
         # "Dietary restrictions" / "Dinner timings" are those steps' names.
         # UPDATED 2026-10-13: "Who usually cooks dinner?" ends the household.
-        "who-cooks": "‹ Dietary restrictions",
-        "meals-days": "‹ Who cooks",
-        "shop-day": "‹ Who's eating",
-        "prep": "‹ Shop day",
-        "variety-breakfast": "‹ Cook ahead",
-        "lunch-needs": "‹ Breakfast",
-        "variety-lunch": "‹ Weekday lunches",
-        "dinner-time": "‹ Lunch",
-        "variety-dinner": "‹ Dinner timings",
-        "snacks": "‹ Dinner",
-        "eating-style": "‹ Snacks",
-        "wont-eat": "‹ How you eat",
-        "excited-about": "‹ Never recommend",
-        "kit-repeats": "‹ Cuisines you like",
-        "ai-consent": "‹ Your kit",
+        "who-cooks": "Back to Dietary restrictions",
+        "meals-days": "Back to Who cooks",
+        "shop-day": "Back to Who's eating",
+        "prep": "Back to Shop day",
+        "variety-breakfast": "Back to Cook ahead",
+        "lunch-needs": "Back to Breakfast",
+        "variety-lunch": "Back to Weekday lunches",
+        "dinner-time": "Back to Lunch",
+        "variety-dinner": "Back to Dinner timings",
+        "snacks": "Back to Dinner",
+        "eating-style": "Back to Snacks",
+        "wont-eat": "Back to How you eat",
+        "excited-about": "Back to Never recommend",
+        "kit-repeats": "Back to Cuisines you like",
+        "ai-consent": "Back to Your kit",
         # UPDATED 2026-10-05: setup's last answer goes back to the consent
         # card it was reached through.
-        "anything-else": "‹ Sharing with Claude",
+        "anything-else": "Back to Sharing with Claude",
     }
 
 

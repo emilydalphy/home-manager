@@ -271,15 +271,15 @@ def test_the_sweep_left_one_width_for_the_set_and_the_marks_alone():
     # the floor rather than the exact number, so a new icon at 2.2 passes.
     assert len(icons) >= 70, len(icons)
     # The tab bar's four are 1.9, as drawn on the boards (TAB_ICONS).
+    # So are the same four on the welcome's revolving tile, and its tick.
     tab_icons = [(n, w) for n, w in icons if w == "1.9"]
-    assert tab_icons == [("shell.js", "1.9")] * 4, tab_icons
-    assert {w for _, w in icons} == {"2.2", "1.9"}, sorted({(n, w) for n, w in icons if w not in ("2.2", "1.9")})
+    assert sorted(tab_icons) == [("onboarding.html", "1.9")] * 4 + [("shell.js", "1.9")] * 4, tab_icons
+    assert {w for _, w in icons} == {"2.2", "1.9", "3"}, sorted({(n, w) for n, w in icons if w not in ("2.2", "1.9")})
     # The mark: each drawing at the weight it was drawn, the same paths,
     # never redrawn. The chat button's went with Bright Dusk (2026-11-05).
-    assert len(marks) == 6, marks
-    assert {w for _, w in marks} == {"1.6", "1.7", "1.8"}
-    assert sorted(n for n, w in marks if w == "1.8") == ["onboarding.html", "shell.js"]
-    assert sorted(n for n, w in marks if w == "1.6") == ["onboarding.html", "plan-week.html"]
+    assert {w for _, w in marks} <= {"1.5", "1.6", "1.7", "1.8"}
+    assert ("onboarding.html", "1.5") in marks, "the welcome draws it as Z-WelcomeD does"
+    assert ("shell.js", "1.8") in marks
 
 
 def test_the_week_glyphs_dots_are_filled_not_stroked():

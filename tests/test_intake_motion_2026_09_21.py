@@ -152,8 +152,8 @@ class TestOneQuestionAScreen:
         chip = PAGE[PAGE.index("  .chip {"):PAGE.index("  .chip:hover")]
         assert "background: var(--surface);" in chip and "box-shadow: var(--shadow-card);" in chip
         assert "min-height: 44px" in chip
-        # The only spruce ground is the drafting screen.
-        assert PAGE.count("background: var(--spruce); padding-bottom: 40px; }") == 1
+        # The drafting screen is on cream now too.
+        assert PAGE.count("background: var(--cream); padding-bottom: 40px; }") == 1
         # The old dark tags-on-a-card look is gone from the steps.
         assert ".day-tile" not in PAGE and "--plum-panel" not in PAGE
 
@@ -378,7 +378,7 @@ class TestBuildingYourWeek:
         assert "What I&rsquo;m using" not in section and "Here&rsquo;s what I&rsquo;m building this week from:" not in section
         assert "No need to wait &mdash; the draft lands on Plan when it&rsquo;s done." in section
         assert "document.body.classList.add('drafting');" in _extract("showDraftProgress")
-        assert "body.drafting { background: var(--spruce);" in PAGE
+        assert "body.drafting { background: var(--cream);" in PAGE
         # The old ivory list of ticked days is gone.
         assert "Building your week" not in PAGE and "draft-day-check" not in PAGE
         assert "Nothing is approved until you say so." not in PAGE

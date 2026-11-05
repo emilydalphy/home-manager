@@ -905,9 +905,7 @@ def test_the_chip_rows_are_the_screens_own_recipe_and_carry_no_apricot():
     assert step.count('class="rhythm-chip-row"') == 2
     assert "btn-primary" in step and step.count("btn-primary") == 1
     assert "#" not in step.replace("&mdash;", ""), "no literal hex in the step"
-    # The recipe itself, so the test fails if the chip stops being 46px or
-    # starts being apricot.
-    assert "min-height: 46px;" in ONBOARDING
-    assert ".chip.active, .rhythm-chip.active {" in ONBOARDING
-    recipe = ONBOARDING[ONBOARDING.index(".chip.active, .rhythm-chip.active {"):]
-    assert "var(--spruce)" in recipe[: recipe.index("}")]
+    # The recipe itself, so the test fails if a choice stops being a 64px tile
+    # or its fill goes: only the ring turns apricot, never the tile.
+    assert "min-height: 64px;" in ONBOARDING
+    assert ".chip.active, .rhythm-chip.active, .q-opt.is-on { font-weight: 600; }" in ONBOARDING

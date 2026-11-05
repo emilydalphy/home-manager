@@ -127,15 +127,14 @@ def test_the_page_starts_on_hello_not_on_the_first_question():
 
 
 APPROVED = {
+    # Z-WelcomeD (Emily, 2026-11-05): her words, exactly.
     "intro-hello": [
         "Hi, I’m Pomona.",
-        # Card 1 (2026-09-18): the old "Nice to meet you" purpose screen
-        # folded into this one — the purpose line now sits right under the
-        # title, in the same breath as the hello.
-        "I’m your home manager. My job is to make your life easier by taking "
-        "on the mental load of planning your weekly meals and helping you "
-        "get food on the table.",
-        "Nice to meet you",
+        "Leave making your weekly plans to me",
+        "One shopping list generated from your custom plan",
+        "Keeping track of what needs to be used",
+        "Step-by-step recipe guides",
+        "Continue",
     ],
     "intro-help": [
         "Here’s what I help you with.",
@@ -179,24 +178,24 @@ def test_every_line_on_each_screen_is_the_approved_one(step, lines):
         assert line in text, f"{step}: {line!r} is not on the screen (or not as approved)"
 
 
-def test_the_first_screen_says_hello_and_its_purpose_and_nothing_more():
-    """
-    UPDATED 2026-09-18 (Card 1): the hello screen used to say nothing but
-    hello, with the purpose ("this is my purpose") on its own screen right
-    after. That screen is gone — the purpose line now sits under the title
-    here, in the same breath, and this is what replaces the old
-    one-line-and-a-button assertion.
-
-    UPDATED 2026-10-13: plus the quiet "Not you? Sign out" under the
-    button (Emily's decision, 2026-10-12 — an address nobody knew starts a
-    new household and lands HERE, with no way out but finishing setup).
-    """
-    assert _text("intro-hello") == (
-        "Hi, I’m Pomona. I’m your home manager. My job is to make your life "
-        "easier by taking on the mental load of planning your weekly meals "
-        "and helping you get food on the table. Nice to meet you "
-        "Not you? Sign out"
-    )
+def test_the_first_screen_is_the_revolving_tile():
+    """Z-WelcomeD: dusk with the mark, four tiles taking turns, Continue, and
+    the quiet "Not you? Sign out" under it (Emily's decision, 2026-10-12: an
+    address nobody knew starts a new household and lands HERE, with no way
+    out but finishing setup)."""
+    markup = _step_markup("step-intro-hello")
+    assert markup.count('class="rv"') == 4
+    for word in ("Plan", "Shop", "Kitchen", "Cook"):
+        assert f"<b>{word}</b>" in markup
+    text = _text("intro-hello")
+    assert text.startswith("Hi, I’m Pomona. Plan Leave making your weekly plans to me")
+    assert text.endswith("Continue Not you? Sign out")
+    css = ONBOARDING[ONBOARDING.index("<style>"): ONBOARDING.index("</style>")]
+    assert "animation: rvspin 12s infinite;" in css
+    assert ".rv:nth-child(4) { animation-delay: 9s; }" in css
+    # Reduced motion shows the first tile, still.
+    reduced = css[css.index(".wck span"):]
+    assert ".rv { animation: none !important; }" in reduced and ".rv:first-child { opacity: 1; }" in reduced
 
 
 def test_no_screen_offers_a_skip():
@@ -302,24 +301,17 @@ console.log(JSON.stringify(seen));
 
 
 def _intro_css() -> str:
-    start = ONBOARDING.index("The welcome flow (Loop Board")
+    start = ONBOARDING.index("---------- The welcome ----------")
     return ONBOARDING[start: ONBOARDING.index("</style>", start)]
 
 
 def test_every_colour_in_the_intro_css_is_a_token():
     css = _intro_css()
-    # The one literal allowed is the apricot glow, which static/login.html
-    # paints the same way and which has no token (it's an alpha over
-    # apricot, not a colour of its own).
     literals = [h for h in re.findall(r"#[0-9a-fA-F]{3,6}\b", css)]
     assert literals == [], f"literal colours in the intro CSS: {literals}"
-    rgbas = re.findall(r"rgba\([^)]*\)", css)
-    assert all("224, 145, 92" in r for r in rgbas), (
-        f"an rgba() that isn't the apricot glow: {rgbas}"
-    )
-    for token in ("--spruce", "--spruce-raised", "--ivory-ink", "--ivory-ink-muted",
-                  "--apricot", "--apricot-light", "--on-accent-ink", "--radius-action",
-                  "--shadow-action", "--font-display", "--font-body"):
+    assert "rgba(" not in css
+    for token in ("--dusk", "--on-dusk", "--apricot", "--night-ink", "--white", "--slate",
+                  "--radius-card", "--radius-sheet", "--radius-button"):
         assert f"var({token})" in css, f"{token} isn't used"
 
 
@@ -332,8 +324,7 @@ def test_icons_are_stroke_svg_not_emoji():
 
 def test_nothing_tappable_is_under_44px():
     css = _intro_css()
-    for cls in (".intro-next", ".intro-chip"):
-        block = css[css.index(cls + " {"):]
-        block = block[: block.index("}")]
-        m = re.search(r"min-height:\s*(\d+)px", block)
-        assert m and int(m.group(1)) >= 44, f"{cls} is under 44px"
+    block = css[css.index(".intro-next {"):]
+    block = block[: block.index("}")]
+    assert "height: 52px" in block
+    assert "min-height: 44px" in css[css.index(".not-you {"):]

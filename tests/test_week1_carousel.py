@@ -440,8 +440,10 @@ def test_the_tabs_and_swap_clear_44px_on_a_375_phone():
     """Seven tabs sharing 335px (375 less the gutter) with 4px gaps are
     43.3px wide, so the pad has to reach sideways as well as up and down."""
     css = ONBOARDING[ONBOARDING.index("<style>"): ONBOARDING.index("</style>")]
-    assert "height: 36px" in css[css.index(".reveal-tab {"): css.index(".reveal-tab::before")]
-    assert ".reveal-tab::before { content: ''; position: absolute; left: -2px; right: -2px; top: -4px; bottom: -4px; }" in css
-    assert ".reveal-swap::before { content: ''; position: absolute; left: 0; right: 0; top: -4px; bottom: -4px; }" in css
+    # The track is 46 and the segment 40, the switcher's own recipe; the tap
+    # is the track. Swap is a 44px pill.
+    assert ".reveal-tabs {\n    display: flex; gap: 2px; height: 46px; padding: 3px;" in css
+    assert ".reveal-tab::before { content: ''; position: absolute; left: -1px; right: -1px; top: -3px; bottom: -3px; }" in css
+    assert "height: 44px" in css[css.index(".reveal-swap {"): css.index(".reveal-swap svg")]
     width = (375 - 2 * 20 - 6 * 4) / 7
     assert width + 4 >= 44 and 36 + 8 >= 44

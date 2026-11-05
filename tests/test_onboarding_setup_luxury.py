@@ -54,7 +54,7 @@ def _css() -> str:
 def _question_css() -> str:
     """The question screens' block of the stylesheet, up to the welcome flow's."""
     css = _css()
-    return css[: css.index("The welcome flow (Loop Board")]
+    return css[: css.index("---------- The welcome ----------")]
 
 
 def _rule(css: str, selector: str) -> str:
@@ -91,11 +91,15 @@ def test_the_eyebrow_sits_between_the_crumb_and_the_question():
         )
 
 
-def test_the_eyebrow_is_the_systems_eyebrow():
-    rule = _rule(_question_css(), ".q-eyebrow")
-    assert "font-size: 10px" in rule and "font-weight: 800" in rule
-    assert "text-transform: uppercase" in rule
-    assert "var(--ink-muted)" in rule
+def test_the_section_name_is_for_a_screen_reader_and_the_bar_is_the_cue():
+    """Z-Setup1: a round Back and a 6px bar. The section's name stays for a
+    screen reader, with no caps."""
+    css = _question_css()
+    assert "position: absolute" in _rule(css, ".q-eyebrow")
+    bar = _rule(css, ".q-progress")
+    assert "height: 6px" in bar and "background: var(--blush)" in bar
+    assert "background: var(--apricot)" in _rule(css, ".q-progress span")
+    assert ".style.width" in _fn("renderProgress")
 
 
 # ---------- one apricot, the welcome screens' button ----------
@@ -110,33 +114,23 @@ def test_the_one_button_on_each_question_is_btn_primary(step):
     assert "q-next" in buttons[0].split()
 
 
-def test_the_question_button_takes_its_fill_from_btn_primary_not_a_darker_apricot():
-    """
-    Continue used to be `.next-btn` with its own fill, and theme.css's
-    `.btn-primary` hover swaps to --apricot-deep — so the questions carried
-    a darker apricot than the welcome screens. The question CSS now sets no
-    fill of its own, so the button is exactly the welcome screens' button.
-    """
+def test_the_question_button_is_the_one_apricot_at_52px():
     css = _question_css()
     assert ".next-btn" not in css
     next_rule = _rule(css, ".q-next")
-    assert "background" not in next_rule, ".q-next sets its own fill — it must inherit .btn-primary's"
+    assert "background: var(--apricot)" in next_rule
+    assert "color: var(--night-ink)" in next_rule
+    assert "height: 52px" in next_rule
     assert "background: var(--apricot-deep)" not in css, "a question control paints the darker apricot"
-    # theme.css is the source of the fill: apricot with dark ink (hard rule 1).
-    theme = (_HERE.parent / "static" / "theme.css").read_text()
-    primary = theme[theme.index(".btn-primary, button.btn-primary {"):]
-    primary = primary[: primary.index("}")]
-    assert "background: var(--apricot);" in primary
-    assert "color: var(--night-ink);" in primary
 
 
 def test_no_question_screen_carries_a_second_fill():
-    """One apricot per screen (hard rule 5): the add-person row is an
-    outline, the skip lines are text, the chips are spruce when chosen."""
+    """One apricot per screen: the add-person row is blush, the skip lines are
+    text, and a chosen tile keeps its white with an apricot ring."""
     css = _question_css()
-    assert "background: transparent" in _rule(css, ".add-btn")
-    assert "background" not in _rule(css, ".skip-link")
-    assert "var(--spruce)" in _rule(css, ".chip.active, .rhythm-chip.active")
+    assert "background: var(--blush)" in _rule(css, ".add-btn")
+    assert "background: none" in _rule(css, ".skip-link, .q-skip-quiet")
+    assert "background" not in _rule(css, ".chip.active, .rhythm-chip.active, .q-opt.is-on")
 
 
 # ---------- no × on an empty name row ----------
@@ -191,37 +185,35 @@ def test_the_empty_row_rule_hides_the_control_and_the_control_is_44px():
     assert "&times;" not in _fn("addMemberRow")
 
 
-def test_add_person_is_a_quiet_full_width_outline_row():
+def test_add_person_is_a_quiet_full_width_blush_row():
     add = _rule(_question_css(), ".add-btn")
     assert "width: 100%" in add
-    assert "border: 1.5px solid var(--ink-strong)" in add
-    assert "min-height: 50px" in add
+    assert "background: var(--blush)" in add
+    assert "height: 52px" in add
 
 
 # ---------- controls with air ----------
 
 
-def test_the_question_is_display_face_with_air_above_and_below():
+def test_the_question_is_as_drawn():
     css = _question_css()
     title = _rule(css, ".q-title")
-    assert "var(--font-display)" in title and "font-weight: 700" in title
-    size = int(re.search(r"font-size:\s*(\d+)px", title).group(1))
-    assert 31 <= size <= 34
-    assert "text-wrap: balance" in title
-    assert "padding-top: 64px" in _rule(css, ".q-body")
+    assert "font-size: 32px" in title and "line-height: 38px" in title and "font-weight: 700" in title
+    assert "margin: 22px 0 0" in title
     line = _rule(css, ".q-line")
-    assert "font-size: 17px" in line and "var(--ink-secondary)" in line
-    gap = int(re.search(r"margin-top:\s*(\d+)px", _rule(css, ".q-controls")).group(1))
-    assert gap >= 28
+    assert "font-size: 16px" in line and "var(--slate)" in line
+    assert "margin: 22px -4px 0" in _rule(css, ".q-controls")
 
 
-def test_chips_are_at_least_44px_tall_in_wrapping_rows_with_ten_to_twelve_px_gaps():
+def test_choices_are_tiles_two_across_with_ten_px_gaps():
     css = _question_css()
-    chip = _rule(css, ".chip, .rhythm-chip")
+    chip = _rule(css, ".chip, .rhythm-chip, .q-opt")
     assert int(re.search(r"min-height:\s*(\d+)px", chip).group(1)) >= 44
-    row = _rule(css, ".chip-row, .rhythm-chip-row")
-    assert "flex-wrap: wrap" in row
+    row = _rule(css, ".chip-row, .rhythm-chip-row, .q-opts")
+    assert "repeat(2, minmax(0, 1fr))" in row
     assert 10 <= int(re.search(r"gap:\s*(\d+)px", row).group(1)) <= 12
+    # Two options: full width and stacked.
+    assert ".q-opts:has(> :nth-child(2):last-child) { grid-template-columns: minmax(0, 1fr); }" in css
     # The × inside a typed chip is its own 44px target.
     x = _rule(css, ".chip.removable button")
     assert "width: 44px" in x and "height: 44px" in x
@@ -318,14 +310,8 @@ def test_no_italics_no_emoji_no_literal_colours_on_the_question_screens():
     css = _question_css()
     # The reveal's "Nothing planned" italic predates this work and is the
     # only font-style on the page; the question screens add none.
-    question_only = css.split("The reveal: Week 1 (rule S5")[0]
-    # Card 5 (2026-09-18, mock 07-dinner-time): dinner-time's Skip is a
-    # quiet italic line, approved in the mockup — the one other font-style
-    # on the question screens, carved out the same way as the reveal's.
-    skip_quiet_rule = _rule(css, ".q-skip-quiet") + "}"
-    assert "font-style: italic" in skip_quiet_rule, "the carve-out no longer matches .q-skip-quiet"
-    question_only_sans_skip_quiet = question_only.replace(skip_quiet_rule, "")
-    assert "font-style" not in question_only_sans_skip_quiet
+    question_only = css.split("Your first week: the finish")[0]
+    assert "font-style" not in question_only
     # Narrowed 2026-10-05 (onboarding-names): this used to scan the raw text,
     # so a hex quoted in an EXPLANATORY COMMENT read as a literal colour in a
     # rule. All four values it exempted one at a time (#7C7161, #FBF6EE,
@@ -369,13 +355,12 @@ def test_no_italics_no_emoji_no_literal_colours_on_the_question_screens():
 def test_every_step_arrives_as_a_crossfade_not_a_cut():
     css = _css()
     assert "@keyframes step-in" in css
-    rule = _rule(css, ".step-enter > :not(.q-foot)")
+    rule = _rule(css, ".step-enter > :not(.q-foot):not(.intro-foot):not(.intro-screen):not(.reveal-screen)")
     assert "var(--motion-base)" in rule and "var(--motion-ease)" in rule
     frames = css[css.index("@keyframes step-in"):]
     frames = frames[: frames.index("}\n  }") + 4]
     assert "translateY(8px)" in frames and "opacity: 0" in frames
     assert "@media (prefers-reduced-motion: reduce)" in css
-    assert "transition: background-color var(--motion-base)" in _rule(css, "body")
     # showStep is what adds the class, and only on a real arrival.
     body = _fn("showStep")
     assert "classList.add('step-enter')" in body
@@ -396,19 +381,16 @@ console.log(JSON.stringify([a, ELS['step-meals-days']._classes.has('step-enter')
 # ---------- the reveal is the finish ----------
 
 
-def test_the_reveal_is_on_spruce_with_the_mark_and_one_button():
-    """Since 2026-09-18 (Week 1: the day-card carousel) the head is the mark
-    and wordmark over "Here's week 1."; the big number that used to stand
-    under the title is gone — it lives on the app's All set screen."""
+def test_the_reveal_is_on_cream_with_one_button():
+    """The finish: "Here's week 1." on cream, the day cards, one apricot."""
     markup = _step_markup("step-reveal")
-    assert 'class="reveal-mark"' in markup, "the reveal has no mark"
     assert 'id="reveal-number"' not in markup and "reveal-receipt" not in markup
     assert markup.count("btn-primary") == 2, "one apricot per foot state (done / failed)"
     assert 'class="reveal-actions q-foot on-spruce"' in markup
     body = _fn("showStep")
     assert "classList.toggle('reveal-active', key === 'reveal')" in body
     css = _css()
-    assert "body.intro-active, body.reveal-active { background-color: var(--spruce); }" in css
+    assert "background-color: var(--cream)" in _rule(css, "body")
     assert ".reveal-number-value" not in css
 
 

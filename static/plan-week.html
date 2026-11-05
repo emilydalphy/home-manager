@@ -64,9 +64,8 @@
     color: var(--ink);
     transition: background-color var(--motion-base) var(--motion-ease);
   }
-  /* The drafting screen is spruce edge to edge, the way onboarding's
-     first-week reveal is (body.reveal-active there). */
-  body.drafting { background: var(--spruce); padding-bottom: 40px; }
+  /* The drafting screen, on cream, the way onboarding's first week is. */
+  body.drafting { background: var(--cream); padding-bottom: 40px; }
 
   /* ---------- The step chrome ---------- */
   /* One way back, named for its parent (nav v2 rule 1): "‹ Plan" on the
@@ -81,8 +80,6 @@
     color: var(--ink-secondary);
   }
   .crumb:hover { color: var(--ink-strong); }
-  body.drafting .crumb { color: var(--ivory-ink-muted); }
-  body.drafting .crumb:hover { color: var(--ivory-ink); }
   /* "Plan a week · 2 of 5" — an eyebrow (the only uppercase in the
      system) over the five bars, the ones done in apricot. */
   .eyebrow {
@@ -126,7 +123,7 @@
     cursor: pointer;
   }
   .chip:hover { border-color: var(--ink-strong); }
-  .chip.on { background: var(--spruce); border-color: var(--spruce); color: var(--ivory-ink); font-weight: 700; }
+  .chip.on { background: var(--apricot); border-color: var(--apricot); color: var(--night-ink); font-weight: 700; }
   /* The cuisines: the same chip a step down in size (14px) so the row
      reads as the second question on the screen — still 44px tall, hard
      rule 6, where the mockup drew them at 32. */
@@ -331,7 +328,7 @@
     background: var(--sand); color: var(--ink); cursor: pointer;
   }
   .pill:hover { border-color: var(--ink-strong); }
-  .pill.on { background: var(--spruce); border-color: var(--spruce); color: var(--on-spruce-ink); font-weight: 700; }
+  .pill.on { background: var(--apricot); border-color: var(--apricot); color: var(--night-ink); font-weight: 700; }
   /* Same two notes as .opt below: :focus-visible so a tap leaves nothing
      behind, and outranked by theme.css's !important copy. */
   .pill:focus-visible { outline: 2px solid var(--apricot); outline-offset: 2px; }
@@ -376,7 +373,7 @@
     cursor: pointer;
   }
   .tag:hover { border-color: var(--ink-strong); }
-  .tag.on { background: var(--spruce); border-color: var(--spruce); color: var(--on-spruce-ink); }
+  .tag.on { background: var(--apricot); border-color: var(--apricot); color: var(--night-ink); }
 
   /* ---- The holiday (Loop Board "Holidays: Pomona knows 12 October is
      coming and asks how you're spending it", 2026-09-11). One quiet card
@@ -488,7 +485,7 @@
      here: the screen's own crumb and foot are this page's (#leave, #cta),
      so onboarding's are not shown, and its 64px of air under the crumb is
      this page's 18px. */
-  #setup-host .back-link, #setup-host .q-foot, #setup-host .q-skip-quiet,
+  #setup-host .back-link, #setup-host .q-progress, #setup-host .q-foot, #setup-host .q-skip-quiet,
   #setup-host .dictate-btn, #setup-host .ae-working, #setup-host .ae-confirm,
   #setup-host #lunch-max-group, #setup-host #prep-breakfast { display: none !important; }
   #setup-host > div > .q-body { padding-top: 8px; }
@@ -630,22 +627,22 @@
      "Draft my week", and the server keeps building on its own thread. */
   .draft-screen { display: flex; flex-direction: column; gap: 18px; padding-top: 8px; }
   .draft-head { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; padding-top: 20px; }
-  .draft-mark { color: var(--apricot-light); display: flex; }
+  .draft-mark { color: var(--apricot); display: flex; }
   .draft-mark svg { width: 56px; height: 56px; }
   .draft-eyebrow {
-    font-family: var(--font-body); font-weight: 700; font-size: 11px; color: var(--apricot-light); margin: 0;
+    font-family: var(--font-body); font-weight: 700; font-size: 13px; color: var(--slate); margin: 0;
   }
   .draft-title {
     font-family: var(--font-display); font-weight: 700; font-size: 32px;
-    letter-spacing: -0.03em; line-height: 1.05; color: var(--ivory-ink); margin: 0; text-wrap: balance;
+    letter-spacing: -0.03em; line-height: 38px; color: var(--ink); margin: 0;
   }
   .draft-status {
     display: flex; align-items: center; gap: 10px;
-    font-family: var(--font-body); font-weight: 500; font-size: 14px; color: var(--ivory-ink-muted); margin: 0;
+    font-family: var(--font-body); font-weight: 500; font-size: 14px; color: var(--slate); margin: 0;
   }
   .draft-spinner {
     flex: none; width: 16px; height: 16px; border-radius: 26px;
-    border: 2.5px solid var(--apricot-light); border-right-color: transparent;
+    border: 2.5px solid var(--apricot); border-right-color: transparent;
     animation: draft-spin .8s linear infinite;
   }
   .draft-progress.done .draft-spinner { display: none; }
@@ -654,18 +651,18 @@
   .draft-status-text.line-in { animation: draft-line-in .32s ease-out; }
   @keyframes draft-line-in { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
   .using {
-    background: var(--spruce-raised); border-radius: var(--radius-card);
-    padding: 16px 18px 6px; text-align: left;
+    background: var(--white); border-radius: var(--radius-card); box-shadow: var(--shadow-card);
+    padding: 14px 14px 4px; text-align: left;
   }
   .using[hidden] { display: none; }
   .using-eyebrow {
-    font-family: var(--font-body); font-weight: 700; font-size: 11px; color: var(--apricot-light); margin: 0 0 4px;
+    font-family: var(--font-body); font-weight: 700; font-size: 13px; color: var(--slate); margin: 0 0 4px;
   }
   .using-rows { display: flex; flex-direction: column; }
-  .using-row { display: flex; gap: 12px; align-items: center; padding: 11px 0; border-top: 1.5px solid var(--apricot-rule); }
-  .using-icon { color: var(--apricot-light); flex: none; display: flex; }
+  .using-row { display: flex; gap: 12px; align-items: center; padding: 11px 0; border-top: 1px solid var(--line); }
+  .using-icon { display: none; }
   .using-icon svg { width: 20px; height: 20px; }
-  .using-text { font-family: var(--font-body); font-size: 14px; font-weight: 500; line-height: 1.4; color: var(--ivory-ink); margin: 0; min-width: 0; }
+  .using-text { font-family: var(--font-body); font-size: 14px; font-weight: 500; line-height: 1.4; color: var(--ink); margin: 0; min-width: 0; }
   /* The typed note: two lines at most, then an ellipsis (board D3). */
   .using-text.using-note {
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
@@ -673,7 +670,7 @@
   }
   .draft-leave-note {
     font-family: var(--font-accent); font-weight: 400;
-    font-size: 16px; line-height: 1.4; color: var(--ivory-ink-muted); text-align: center; margin: 0;
+    font-size: 14px; line-height: 20px; color: var(--slate); text-align: center; margin: 0;
   }
   @media (prefers-reduced-motion: reduce) {
     .draft-status-text.line-in { animation: none; }
@@ -729,7 +726,7 @@
     color: var(--ink-secondary); cursor: pointer;
   }
   .opt.wide-label { font-size: 13px; font-weight: 600; }
-  .opt.on { background: var(--spruce); border-color: var(--spruce); color: var(--ivory-ink); font-weight: 700; }
+  .opt.on { background: var(--apricot); border-color: var(--apricot); color: var(--night-ink); font-weight: 700; }
   /* Same two notes as .pill's rule above: :focus-visible so a tap leaves
      nothing behind, and outranked by theme.css's !important copy. */
   .opt:focus-visible { outline: 2px solid var(--apricot); outline-offset: 2px; }
@@ -740,7 +737,7 @@
     display: inline-flex; align-items: center; font-family: var(--font-body);
     font-size: 13px; font-weight: 600; color: var(--ink); cursor: pointer;
   }
-  .who-opt.on { background: var(--spruce); border-color: var(--spruce); color: var(--ivory-ink); font-weight: 700; }
+  .who-opt.on { background: var(--apricot); border-color: var(--apricot); color: var(--night-ink); font-weight: 700; }
   .range-divider { display: flex; align-items: center; gap: 10px; }
   .range-divider span.rule { flex: 1 1 auto; height: 1.5px; background: var(--hairline); display: block; }
   .range-divider span.rule.short { flex: 0 0 30px; }

@@ -287,7 +287,7 @@ def test_screen_twos_two_buttons_are_next_and_just_me_with_one_apricot():
     assert '<button class="btn-soft" id="household-just-me" type="button">Just me</button>' in HOUSEHOLD_MARKUP
     assert '<button class="btn-primary q-next" id="household-next" type="button">Next</button>' in HOUSEHOLD_MARKUP
     assert HOUSEHOLD_MARKUP.count("btn-primary") == 1, "two apricots on one screen"
-    assert "background: var(--sand)" in ONBOARDING.split(".btn-soft {")[1].split("}")[0]
+    assert "background: var(--blush)" in ONBOARDING.split(".btn-soft {")[1].split("}")[0]
 
 
 def test_the_two_screens_use_tokens_only():

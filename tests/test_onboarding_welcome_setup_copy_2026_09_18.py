@@ -50,27 +50,16 @@ def _run(script: str):
 # ---------- Card 1: the hello screen's pager and purpose line ----------
 
 
-def test_every_intro_pager_now_has_four_dots_not_five():
+def test_the_intro_steps_have_no_pager():
+    """The welcome has its revolving tile and the later steps a round Back: no dots."""
     for step in ("intro-hello", "intro-help", "intro-talk", "intro-know"):
-        markup = _step_markup(f"step-{step}")
-        pager = markup[markup.index('class="intro-pager"'):]
-        pager = pager[: pager.index("</div>") + len("</div>")]
-        assert pager.count("<span") == 4, f"{step}'s pager has {pager.count('<span')} dots, not 4"
-        assert pager.count('class="is-on"') == 1, f"{step}'s pager doesn't light exactly one dot"
+        assert "intro-pager" not in _step_markup(f"step-{step}")
 
 
-def test_the_hello_screen_carries_its_purpose_line_and_keeps_the_glyph():
+def test_the_hello_screen_keeps_the_mark_and_loses_the_old_lead():
     markup = _step_markup("step-intro-hello")
-    assert 'class="intro-glyph"' in markup, "the real Pomona mark is gone from the hello screen"
-    assert 'class="intro-lead"' in markup
-    assert (
-        "I&rsquo;m your home manager. My job is to make your life easier by "
-        "taking on the mental load of planning your weekly meals and helping "
-        "you get food on the table." in markup
-    )
-    assert markup.index("is-hello") < markup.index('class="intro-lead"'), (
-        "the purpose line renders above the title"
-    )
+    assert "M12 20.4c-3.1" in markup, "the real Pomona mark is gone from the hello screen"
+    assert "home manager" not in markup, "Z-WelcomeD replaced the lead"
 
 
 def test_intro_purpose_has_no_step_left_at_all():
@@ -114,11 +103,11 @@ def test_dinner_times_skip_sits_under_continue_and_reads_quiet():
     assert "skip-link" not in skip_tag
 
 
-def test_q_skip_quiet_is_italic_and_44px_and_full_width():
+def test_q_skip_quiet_is_plain_and_44px_and_full_width():
     css = ONBOARDING[ONBOARDING.index("<style>"): ONBOARDING.index("</style>")]
-    rule = css[css.index(".q-skip-quiet {"): ]
+    rule = css[css.index(".skip-link, .q-skip-quiet {"): ]
     rule = rule[: rule.index("}")]
-    assert "font-style: italic" in rule
+    assert "font-style: italic" not in rule
     assert "min-height: 44px" in rule
     assert "width: 100%" in rule
 
