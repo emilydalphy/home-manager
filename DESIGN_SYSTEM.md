@@ -1,142 +1,87 @@
-# Pomona Design System
+# Pomona Design System: Bright Dusk
 
-For agents. Read this before touching anything visual. It describes what
-`static/theme.css` already does — not a wishlist, a spec of the live app.
-Sources of truth, in priority order: `static/theme.css` (the code), then the
-Brand Guide canvas ("The Inn", approved by Emily 1 Sep 2026) and the Nav
-Blueprint canvas (both in `/private/tmp/.../scratchpad/brand-canvas/` at the
-time of writing — ask Emily for current copies if that path is gone), then
-this document. If code and this document disagree, trust the code and flag
-the drift.
+For agents. Read this before touching anything visual. Emily approved Bright Dusk on 2026-11-05, and it replaces The Inn.
 
-Everything below is written as a rule you can check, not a vibe.
+Sources of truth, in priority order:
+
+1. The boards in `design_handoff_bright_dusk/` (`Z-*.dc.html`, the approved screens; their inline styles give exact values). `README.md` there holds the binding decisions, `N-Rules.dc.html` the rules, `R-Palette.dc.html` the colours, and `playable-prototype.html` the motion and tap behaviour.
+2. `static/theme.css`, the code.
+3. This document.
+
+If they disagree, trust the boards and flag the drift. Everything below is written as a rule you can check, not a vibe.
+
+**The rebuild runs in stages.** Plan, the tab bar, the toast, the head and the shared components are Bright Dusk now. Shop, Kitchen, Cook, Recipe, Settings, Ask, the welcome and sign-in ride on the new tokens but keep their old layout until their stage. Where old code disagrees with this document on those screens, this document wins and the old code is on its way out.
+
+**The look changes, the flows don't.** If a behaviour would have to change to fit a screen, leave the behaviour alone and note it.
 
 ---
 
 ## 1. Tokens
 
-**Use canonical names only.** `theme.css` used to also define `--plum`,
-`--gold`, `--midnight-violet`, `--oat-cream`, `--violet-light`, `--ink-faint`,
-`--card`, `--muted`, etc. as thin `var()` aliases forwarding to the canonical
-tokens below, kept only so ~40 existing files kept working. The design
-hygiene pass (2026-09-12) migrated every remaining call site to its
-canonical name (same value, so no visual change) and deleted the alias
-block — there is now exactly one name for each token, and there are no
-aliases left to avoid.
+All in `static/theme.css`. New work uses the canonical names below and nothing else.
 
-All values below are lifted directly from `theme.css`. "Dark" = the
-`@media (prefers-color-scheme: dark)` block. By default the app follows the
-phone. Since 2026-09-24, **Settings → Appearance** lets each device choose
-Auto (follows the phone — the default), Light or Dark — a `.wk-seg` radio group under
-the Morning text row in the gear's sheet (`appearanceRowHtml` in
-`shell.js`). The choice is saved per device in localStorage
-(`pomona-appearance`) and applied by one identical script in the `<head>`
-of every page that loads `theme.css` (not `share.html`, which stays light
-for every recipient) before first paint: it sets `data-theme="light"` or
-`"dark"` on `<html>`, or no attribute for Auto, and points the
-`theme-color` meta tags at the forced value. How the CSS follows: every
-dark block is guarded with `:root:not([data-theme="light"])` (component
-rules as `:where(…)`, so specificity doesn't change) and is followed by a
-forced-dark twin under `[data-theme="dark"]` — the token block in
-`theme.css` is copied value for value. Change a dark value in the media
-block and its twin together; `tests/test_appearance.py` fails if they
-drift, or if a dark block has an unguarded selector or an `@keyframes`.
+### The palette
 
-### Ground & surface
-
-| Token | Light | Dark | Role |
+| Token | Value | Name | Job |
 |---|---|---|---|
-| `--ground` | `#FBF6EE` | `#101F19` | App canvas. Every screen starts here. |
-| `--surface` | `#FFFDF8` | `#172C22` | Cards, list containers, the ask bar. One step brighter than ground; the lift is a hairline, not a shadow. |
-| `--surface-raised` | `#fff` | `#192F24` | The pure-white tier: notification panel, ask-message tables, some hovers. |
-| `--spruce` | `#1B3328` | `#22422F` (lighter, deliberately, so it lifts off the darker ground) | Hero panel, dark buttons, active nav ink. One spruce panel per screen. |
-| `--spruce-raised` | `#24402F` | `#2E5140` | Chips/icon tiles **on spruce only** — never on ivory. |
-| `--spruce-hover` | `#2B4A37` | `#32573F` | Hover on a fill already sitting on spruce. |
-| `--spruce-edge` | `transparent` | `#2C4B38` | Dark-only hairline separating the hero from a ground that's now nearly the same value. Safe to reference unconditionally — costs light mode nothing. |
-| `--field` | `#12211A` | `#0B1712` | The room the phone sits in at ≥768px (the "phone in the room" desktop stance, 2026-09-11): one step darker than spruce so the root band still reads as the app's own top edge. Nothing is ever set in it. |
-| `--ink-strong` | `#1B3328` | `#F3EBDD` | Spruce playing the role of *ink* (active tab, "add" links, outline-button labels). Swings to Ink in dark because spruce itself becomes a panel there. |
-| `--celadon-tint` | `#E2EDE5` | `#1C3B2C` | The gentle, non-urgent tile — the nudge, not the task. |
+| `--cream` | `#FFFAF3` | Warm Cream | The page. |
+| `--white` | `#FFFFFF` | White | Tiles and cards. |
+| `--dusk` | `#1B4392` | Dusk Blue | The tab bar, Use soon, timers, the welcome. Nothing else. |
+| `--night-ink` | `#14264A` | Night Ink | Main text, the toast. |
+| `--apricot` | `#FFA45C` | Ripe Apricot | The one main button and Ask. Always dark text. |
+| `--soft-apricot` | `#FFC08F` | Soft Apricot | Small labels on dusk, Undo on the toast. |
+| `--blush` | `#FBE9D9` | Blush | Quiet tints: the switcher's track, round buttons, quiet buttons. |
+| `--slate` | `#55607A` | Slate | Second lines and small details. |
+| `--clay` | `#A8461A` | Baked Clay | Today on the day bar, and problems. |
+| `--on-dusk` | `#FFF6EA` | | Text on dusk and on the toast. |
+| `--on-dusk-soft` | `#C6D2E8` | | The tab bar's resting icons and labels. |
+| `--line` | `#F4ECE2` | | The thin line between rows. |
+| `--grab` | `#C9CEDA` | | A sheet's grab handle. |
+| `--tick-ring` | `#8791A8` | | An unticked box's ring. |
 
-### Ink ramp (warm-shifted; never pure black or pure white)
+Green stays in the food. No teal, no pale blue. Purple never leads.
 
-| Token | Light | Dark | Role |
-|---|---|---|---|
-| `--ink` | `#23302A` | `#F3EBDD` | Headlines and body on ground/cards. |
-| `--ink-on-celadon` | `#24362D` | `#F3EBDD` | Body inside celadon tiles. |
-| `--ivory-ink` | `#F6EEE1` | `#F3EBDD` | Text on spruce (hero headlines, dark-button labels). |
-| `--ivory-ink-muted` | `rgba(246,238,225,.92)` | `#E4DCCE` (solid) | Chip labels on spruce only. |
-| `--on-spruce-ink` | `#fff` | `#fff` | Pure white, on purpose, for a selected chip, the household's own chat bubble and the active mic — things that sit on a saturated fill and read one notch brighter than ivory. Added 2026-09-13 (Emily) so the last literals could go. |
-| `--ink-secondary` | `#7C7161` | `#BFB6A5` | Supporting copy, outline-button labels. |
-| `--ink-muted` | `#7E7360` | `#BFB6A5` | 10px/800 uppercase eyebrows **only**. |
-| `--ink-placeholder` | `#797060` | `#9C9384` | Ask-bar placeholder. Darkened 2026-09-03 (from `#8E8370`, 3.47:1) to clear WCAG AA for normal text — now 4.54:1 on ground. |
-| `--ink-inactive` | `#948970` | `#9C9384` | Unselected navigation. |
-| `--ink-done` | `#7A705E` | `#A9A091` | Completed/struck list text. Darkened 2026-09-03 (from `#A29886`, 2.65:1) — now 4.53:1 on ground, clearing the gap noted below for `--ink-done-soft`. |
-| `--ink-done-soft` | `#C6BCA9` | `#9C9384` | Quantity beside completed text. **Known gap:** light value is 1.85:1 on card ivory — fails 4.5:1 today. Pre-existing, not yet fixed; don't copy this pattern into new work. |
+### Roles
 
-### Apricot — the accent that acts
+`--ground` (the page), `--surface` and `--surface-raised` (a tile), `--ink` (text), `--ink-secondary` (second lines), `--hairline` (a thin line), `--field` (the room the phone sits in at 768px and up), `--scrim`, `--toast-bg`, `--toast-ink`, `--plate-shadow`.
 
-| Token | Light | Dark | Role |
-|---|---|---|---|
-| `--apricot` | `#E0915C` | `#E9A16C` | Primary action fill, badges. **One per screen.** |
-| `--apricot-light` | `#F2B98E` | `#F2B98E` (unchanged) | Apricot on spruce; the italic accent line's color. |
-| `--apricot-deep` | `#C4703C` | `#E9A16C` (folds into Apricot) | Status dots, line-icon strokes at small sizes. |
-| `--apricot-label` | `#A2582F` | `#F2B98E` | Uppercase micro-labels, links. |
-| `--apricot-label-hover` | `#82441F` | `#F7D2B4` | Hover state of the above. |
-| `--apricot-rule` | `rgba(224,145,92,.34)` | `rgba(233,161,108,.30)` | The **only** divider permitted inside the hero panel. |
+### Legacy names
 
-### Celadon — the accent that reassures
+`theme.css` still defines The Inn's names (`--spruce`, `--celadon-tint`, `--sand`, `--apricot-label` and so on) in a marked LEGACY block, forwarding to Bright Dusk, because shell.css still says them about 3,000 times. A screen moves to the canonical names when its stage rebuilds it, and the block goes when the last stage is done. **Never add a new use of a legacy name.**
 
-| Token | Light | Dark | Role |
-|---|---|---|---|
-| `--celadon` | `#A9C4B0` | `#A9C4B0` (unchanged) | Confirmation chips, the "New" badge. Says settled, handled, already true. |
-| `--celadon-edge` | `#C7DACD` | `#2E5240` | Hairline — only ever borders a celadon-tint surface. |
-| `--celadon-label` | `#4F6B5B` | `#97BDA4` | Label + icon stroke inside celadon tiles. |
+### Light mode only
 
-### The accent-fill rule, as a token
-
-| Token | Light | Dark | Role |
-|---|---|---|---|
-| `--on-accent-ink` | `#1B3328` | `#14261D` | Text/glyphs on apricot **or** celadon **or** (dark-only) urgent. See Rule 1. |
-
-### Lines, edges, warm neutrals
-
-| Token | Light | Dark | Role |
-|---|---|---|---|
-| `--hairline` | `#EEE3D0` | `#26382E` | Card borders, nav divider, header rule. 1.5px, always. |
-| `--hairline-strong` | `#E6D9C4` | `#33473B` | Ask bar, outline buttons, italic underline — an edge that's also a tap target. |
-| `--hairline-deep` | `#D9C9AF` | `#33473B` | The trip checkbox's rim — one step past strong so an unticked box reads as a box. Folds into strong in dark. |
-| `--on-spruce-edge` | `#2E5240` | `#2E5240` | A field's rim on spruce (sign-in). Mode-independent because that page is spruce in both. |
-| `--sand` | `#F3EBDC` | `#223328` | Soft secondary-button / soft-card fill. |
-| `--sand-deep` | `#E6D9C4` (= `--hairline-strong`) | `#33473B` | Deeper warm-neutral step. |
-
-### Status
-
-| Token | Light | Dark | Role |
-|---|---|---|---|
-| `--urgent` | `#B23A22` | `#E6705B` | Needs a decision / overdue. **Not from the brand guide** — flagged as the assistant's pick, not an approved swatch; still Emily's call to formalize. On light it's a dark saturated fill carrying ivory text (`--urgent-ink`). On dark it flips to a **light** accent fill carrying `--on-accent-ink` — Rule 1 reaches it there, unlike on light, because on dark no single terracotta satisfies both its fill role and its body-text role. |
-| `--urgent-ink` | `#F6EEE1` | `#14261D` | Text on an urgent fill. |
-| `--urgent-tint` | `#F7E6DE` | `#3B1D16` | Soft urgent background. |
-| `--urgent-label` | `#8F2C17` | `#F0A594` | Urgent text on the tint or the ground. |
-| `--good` / `--good-ink` | = `--celadon` / `--celadon-label` | same pattern | Done, handled, your turn. |
-| `--warn` / `--warn-ink` | = `--apricot` / `--apricot-label` | same pattern | Time-boxed, wants doing. |
-
-**Legacy aliases are gone** (design hygiene pass, 2026-09-12). `theme.css` used to also carry `--oat-cream`, `--midnight-violet`, `--turmeric-gold`, `--vivid-leaf`, `--electric-coral`, `--oat-cream-dark`, `--violet-soft`, `--violet-hover`, `--gold-hover`, `--text-muted`, `--text-body`, `--card-border`, `--violet-light`, `--ink-faint`, `--qty-done`, `--leaf-dark`, `--plum`, `--plum-ink`, `--gold`, `--gold-ink`, `--cream`, `--card`, `--menu-paper`, `--menu-rule`, `--menu-ink`, `--rule`, `--muted`, `--faded` and `--font-heading` (28 names — a few more than this paragraph used to list) as `var()` forwards to the tokens above, kept for ~40 old call sites. Every call site was moved to its canonical name (identical value, so no visual change) and the alias block was deleted once nothing referenced it. If you're reading an old branch or a stale comment that still names one of these, look up its canonical replacement in this file's git history rather than reintroducing it.
+Emily, 2026-11-05: light mode only for now, dark mode comes later. Settings → Appearance is gone. Every page's `<html>` carries `data-theme="light"`, which switches off every dark rule, because they are all guarded with `:root:not([data-theme="light"])`. The dark blocks are left in `theme.css` and `shell.css`, dormant, with The Inn's values. To bring dark back: give them Bright Dusk values, then take the attribute off the pages. `tests/test_appearance.py` keeps the guards honest.
 
 ---
 
 ## 2. Hard rules
 
-Each one is checkable — a reviewer (human or agent) should be able to grep or measure, not guess.
+Each one is checkable.
 
-1. **Dark spruce text on light accent fills, always.** Apricot and celadon (and, on dark mode only, urgent) are light-value accents; the ink on them is `var(--on-accent-ink)`. Ivory-on-saturated-accent fails contrast outright, with no exception, including icon strokes. Grep check: any `color:#fff` (or `--ivory-ink*`) inside a rule whose background is apricot/celadon/dark-urgent is a bug.
-2. **Purple never leads.** It is never a primary surface, focal point, or brand color. Small, purposeful doses are fine (a warning about a genuinely enterprise-flavored feature, say) but plum-as-main-color reads as enterprise SaaS — the dashboard, the seat license, the quarterly review — the fastest way to make a home feel like a workplace.
-3. **`--urgent` is `#B23A22` (light) / `#E6705B` (dark), and it means genuinely urgent only** — overdue, needs-a-decision. It is not a second apricot for "something to look at."
-4. **One hero moment per screen.** The full-bleed spruce panel answers one question first (the household on Kitchen until 2026-09-08; since 2026-09-13 Cook's is the Tonight card, §5 — a spruce card in the gutter rather than a full-bleed panel; until 2026-09-11 tonight's dinner on Today — Today's next-up is the one tinted row in its Shop / Cook group since 2026-09-17, §2b S3, and Today has no hero). The root band (§5, 2026-09-11) is not a hero: it is the roots' header, carries no button and answers no question, so a root can still have its one hero moment below it. A second hero on the same screen demotes the first — don't add one. **At most one, not exactly one** — Emily's approved 2026-09-08 redesigns took the hero off two screens rather than replacing it: Meals' Week/Day/Meal steps and Grocery's List/Sort/Trip/Wrap up steps each opened with a title, a subtitle and (on Meals' root) a badge, and put the screen's one apricot at the foot. This line used to name the selected day on Meals and the trip's state on Grocery as live examples; they are gone. (Emily, 2026-09-17: Shop's root is the checklist — the band, one card per store with a tick per row — sorting has one screen, "Sort them all", and there is no trip; Shop has no hero. 2026-09-22: the add row at the top of the list is gone — "Add something" is an outline button in the root's dock beside the chat FAB and opens the add sheet, so Shop's root has a dock, and still no hero.)
-5. **One apricot primary per screen.** Kitchen's root deliberately had zero until 2026-09-13 — nothing there was urgent, and giving it an apricot button would have been a lie about what the screen was for; the shelf design gave it "Start cooking" in the dock, which is the one thing the screen is for (§6). If a screen you're building wants a second apricot fill, that's a sign something else should be spruce/outline/plain text instead.
-6. **Nothing tappable is under 44×44px**, including text links — e.g. the italic "or start over" sits inside its own 44px row rather than being sized to its text.
-7. **Icons are inline stroke SVG, never emoji.** (`stroke="currentColor"`, ~2.2px stroke (one width for the whole set since 2026-09-13; the mark is 1.8), round caps/joins — see any `.hero-icon svg` or `.notif-bell-icon svg` in `shell.css` for the pattern.) Emily's Identity Round Q4 (2026-09-13): the app used to draw its icons at seven weights (2 to 3) and at 24px that read as "not quite the same set"; every inline stroke SVG in `shell.js`, `shell.html` and the standalone pages is `stroke-width="2.2"` now, and `tests/test_design_hygiene.py` (d) fails any new one that isn't. The one exception is the Pomona mark — a logo, not an icon — which keeps the weight it was drawn at: 1.8 in the root band and on the chat button, 1.7 on the sign-in plaque and the desktop field mark, 1.6 on the welcome screens' large glyphs. Filled shapes inside an icon (Plan's five dots) carry `fill="currentColor" stroke="none"` of their own; the rule is about strokes.
-8. **Contrast is measured in-browser (computed-style / real WCAG check), never eyeballed.** The dark-mode pass in `theme.css` carries a measured ratio in a comment next to every derived (non-brand-guide) value — that's the standard: if you add or change a token, compute and record its ratio against every surface it actually sits on, the same way.
-9. **Every color goes through a token.** A literal hex value in a diff (outside `theme.css` itself, where new tokens are defined) is a review failure. If you need a color that isn't tokenized yet, that's a Tier 2 change (see Governance) — raise it, don't hardcode it.
+1. **Dark text on apricot, always.** Night Ink on `--apricot` is 7.62:1. Nothing light ever sits on it, icon strokes included.
+2. **Purple never leads.** It is never a primary surface, focal point or brand colour.
+3. **`--clay` means a problem or today, nothing else.** It is not a second apricot for "something to look at".
+4. **Dinner is never highlighted.** Every meal is an equal tile. There is no Tonight card and no dark hero on a meal.
+5. **One main apricot button per screen.** Ask in the tab bar is always apricot too, so the bar never changes. If a screen wants a second, the other one is a quiet blush button or plain words.
+6. **Nothing tappable is under 44×44px**, text links included.
+7. **Icons are inline stroke SVG, never emoji.** `stroke="currentColor"`, 2.2px, round caps and joins. Two exceptions, both checked by `tests/test_design_hygiene.py`: the tab bar's four icons are 1.9, as drawn on the boards, and the Pomona mark, a logo, keeps the weight it was drawn at.
+8. **Contrast is measured, never eyeballed.** Every pair below is measured; a new pair gets measured the same way and recorded here. `tests/test_contrast.py` fails a palette change that takes a text colour under 4.5:1.
+9. **Every colour goes through a token.** A literal hex in a diff, outside `theme.css`, is a review failure. The meta theme-color tags and the manifest are the exception: they can't read a CSS variable.
+10. **No outlines.** No beige rims around cards and chips. Cards take the one soft shadow; thin lines are only between rows. A selected state may still draw a rim.
+
+Measured pairs (WCAG 2.1):
+
+| Text | On | Ratio |
+|---|---|---|
+| Night Ink | cream / white / blush / apricot | 14.38 / 14.94 / 12.63 / 7.62 |
+| Slate | cream / white / blush | 6.05 / 6.29 / 5.32 |
+| Clay | cream / white / blush | 5.69 / 5.91 / 4.99 |
+| `--on-dusk`, white | dusk | 8.67, 9.27 |
+| `--on-dusk-soft` | dusk | 6.09 |
+| Soft Apricot | dusk / Night Ink | 5.82 / 9.38 |
+| `--on-dusk` | Night Ink / clay | 13.96 / 5.52 |
+| White | the current tab's pill on dusk | 6.09 |
 
 ---
 
@@ -169,7 +114,7 @@ run rather than a vibe. They apply to every screen, mockup or built.*
   cooking role and planning anchor are stored and shown but never acted on; only
   `dinner_window`, `leftovers_stance`, `prep_days` and the intake's packed-lunch days are.)
 - **S5 · Finishes get their own screen.** The moments where something is done — week
-  approved, shopping done, dinner on the table — break the template: spruce, big type, one
+  approved, shopping done, dinner on the table — break the template: big type, one
   number, one next step. *Why: "it's boring to look at the same screen types all the
   time."* **Test:** can you tell you finished without reading?
 - **S6 · A highlight says why.** Any tint, badge or colour on a row carries the word for it
@@ -255,93 +200,107 @@ run rather than a vibe. They apply to every screen, mockup or built.*
 
 ## 3. Type
 
-Three faces, each with exactly one job (`--font-display`, `--font-body`, `--font-accent` in `theme.css`):
+One face: **Figtree**, self-hosted from `static/fonts/` so the iOS app works offline and no page calls Google. Six sizes and no others:
 
-- **Bricolage Grotesque** (display) — every headline, screen title, and button label. Always 700, always tightened (tracking runs from ‑0.038em at hero size down to ‑0.02em at button size).
-- **Figtree** (body/interface) — everything else: body copy, list rows, chips, navigation, all uppercase eyebrows. Full 400–800 weight range in use.
-- **Newsreader italic** (accent) — 17px, 400 weight. For a line that carries a real fact, said the way a person would say it aloud ("on the table by a quarter past seven") — never a line that could appear in a project-management tool. **At most one per screen, and most screens should have none.** Two lines and it becomes a serif brand instead of an accent.
-  *Changed 2026-09-09 (Emily, Tier 2).* This used to read *"exactly one line per screen — the brand's exhale"*, and a required flourish is a flourish somebody has to invent: screens ended up carrying italic lines that restated what was already above them ("Nine dishes, and the whole week is fed"). Her instruction, reviewing the Review-step mockups: *"get rid of the useless italics text... as a new rule don't add useless fluff text."* The face is still available; the quota is gone. If a screen has nothing worth saying this way, it says nothing.
+| Size | Line | Weight | Job |
+|---|---|---|---|
+| 32 | 38 | 700, ‑0.03em | Screen title. |
+| 26 | 30 | 700, ‑0.025em | A sheet's title, a feature. |
+| 16 | 20–22 | 500 for a row or tile name, 700 for a section heading or button | Rows. |
+| 14 | 20 | 500 | Support: the line under a title, the toast. |
+| 13 | 18 | 400 or 600 | Small: the line in a tile, labels. |
+| 11 | 13 | 500, 700 when current | Tiny: tab labels, the day bar's weekday. |
 
-Eyebrows are the only uppercase text in the system: 10px / 800 / 0.13–0.18em tracking, `--ink-muted` colored.
-
-Scale reference (size / weight / tracking → where):
-- 33px/700/‑0.038em — hero dish title
-- 31px/700/‑0.038em — screen title (`h1`)
-- 30px/700/1.05 line-height/‑0.035em — greeting
-- 21px/700/‑0.028em — card headline (`h2`)
-- 17px/700/‑0.02em — button label, `h3`/card title
-- 17px/400 italic — the accent line, on the screens that have earned one
-- 19px/800 — active day number; 16px/700 — day number
-- 15px/600 — list rows, placeholder text
-- 14px/600 — tile body copy; 14px/700 — in-card button label
-- 12px/700 — metadata chips
-- 11px/700–800/‑0.01em — navigation labels
-- 10px/800/0.13–0.18em caps — eyebrows and badges
+Weights are 400, 500, 600 and 700. No uppercase eyebrows, no tracking under 26px, no italics. `--font-display` and `--font-accent` are legacy names for the same face. Inputs are 16px, so iOS doesn't zoom the page.
 
 ---
 
-## 4. Shape & space
+## 4. Shape and space
 
-- **Radii family** (large, soft, and specific to role — don't pick a radius, look it up): `--radius-hero` 30px (hero panel, bottom corners only) · `--radius-card` 20px (cards/tiles) · `--radius-ask` 18px (ask bar) · `--radius-action` 17px (primary action; active day tile, top corners only) · `--radius-tile` 15px (day tiles, 44px icon button) · `--radius-control` 14px (in-card buttons/inputs) · `--radius-send` 13px (send tile) · `--radius-chip` 11px (metadata chips) · `--radius-badge` 10px (badges, hero icon tile) · `--radius-badge-sm` 9px (small caps badges) · `--radius-pill` 999px.
-- **The joined/notched tile motif**: a tile that touches another surface is *square on that shared edge, round everywhere else* — never both round. Example: on Meals, the selected day tile drops its bottom radius exactly where the spruce hero panel drops its top radius, so the two read as one poured shape. This is the system's signature move; don't round every corner of everything "for consistency."
-- **Spacing rhythm**: 20px screen gutter (the one true constant — full-bleed panels break it deliberately, which is what makes them read as architecture rather than as cards) · 24/22px top padding above the first line · 12px between cards/grid cells · 14px card padding · 8–10px between chips/buttons · 4px between navigation cells.
-- **Elevation**: within a screen's normal content, shadow belongs to the hero panel and the apricot primary action *only* — a card, tile, or row never gets one; it separates via a `--hairline` instead. Shadow is also used, separately, by things that float over the *whole screen* rather than sit within it — `--shadow-sheet` (bottom sheets), `--shadow-dialog` (centered dialogs), `--shadow-panel` (the notification panel), `--shadow-toast` — because those need to read as detached from everything beneath them. Don't add a shadow to ordinary in-page content; do reach for the matching token if you're building a new full-screen overlay. In dark mode the hero's shadow all but disappears against the dark ground, so its lift comes from a **lighter fill plus a hairline edge** (`--spruce-edge`) instead — a shadow reads as nothing on a dark ground, don't try to keep using one there.
-- **Motion** (Emily, 2026-09-11 — "I like the idea of adding in motion into the app"): five animations in the whole app (three approved 2026-09-11; a fourth added with the 2026-09-13 "Sort them all: a row leaves the moment I sort it" ticket; a fifth — a done store card rolling up — approved by Emily 2026-09-22, Tier 2), each under 250ms, each off under `prefers-reduced-motion: reduce`. Tokens in `theme.css`: `--motion-fast` (180ms), `--motion-base` (240ms), `--motion-ease` (`cubic-bezier(.2,.7,.2,1)`, ease-out — the standard for anything settling into place), `--motion-ease-in` (`cubic-bezier(.4,0,1,1)`, for anything leaving). A `@media (prefers-reduced-motion: reduce)` block collapses the duration tokens to 0ms, on top of the blanket `transition-duration`/`animation-duration` override this file already carried. The five: (1) every bottom sheet and centered dialog slides up / scales in over a scrim that fades in, and reverses on close (`shell.js`'s `openSheet()`/`closeSheet()` helper, routed through by every sheet and dialog in §5's Sheets/Toast row); (2) tab panels crossfade with a 6px rise when a tab becomes active (`activateTab`, `shell.js`); (3) a ticked grocery row on the shopping trip settles — its checkbox fill, strike-through and ink all ease to the done state, and reverse on untick; (4) a row on Shop's "Sort them all" screen collapses out (`--motion-fast`, `--motion-ease-in`) the moment it is given a store, so the rows below slide up rather than jump (`groSortAllLeave`, `shell.js`); (5) *(added 2026-09-22, Emily's "a store done" mockup)* a store card whose last row was just ticked rolls up, after a beat with "Done at Costco" in its head, to one line below the stores still to do — its rows fold (height to 0 over `--motion-base`, `--motion-ease-in`) and the one-line row settles into place (`--motion-base`, `--motion-ease`); one motion in two halves, instant under reduced motion (`groRollUp`, `shell.js`). **Nothing else animates** — no decorative motion, no attention-getting movement, anywhere else in the app.
-
----
-
-## 5. Component vocabulary
-
-Reference implementations to copy patterns from, not to import as-is (there's no shared component library — everything is CSS classes plus vanilla JS in `static/shell.js`/`static/shell.css`):
-
-| Component | Where to look | Notes |
-|---|---|---|
-| Hero panel | `shell.css` `.dinner-hero, .day-hero` (~line 386) | Full-bleed spruce, `--radius-hero` bottom corners, `--shadow-hero`. |
-| Root band | `shell.css` `.root-band` (its own section, just above Today's); `rootBandHtml`/`setRootBand` in `shell.js` | How every tab root opens (Emily, 2026-09-11, Option B — Tier 2). One full-bleed spruce band, about 110–130px showing on a phone. **Since 2026-09-13 (Emily, Identity Round Q1 = C) its top-left is the Pomona mark (20px, stroke 1.8, `--apricot-light`) and the wordmark "Pomona" (`--font-display` 15px/700/‑0.02em, `--ivory-ink-muted`), and the date or context that used to be the eyebrow joins the sub-line with " · " in front of whatever it already said** — "Sep 14–20 · a draft, your turn", "Sunday, Sep 13 · 60 things · 1 stop", "Sunday, Sep 13 · 1 cook tonight". This is `BAND_IDENTITY` in `shell.js`: `'wordmark'` (C, the default), `'mark'` (B, kept in reserve: the mark before the date eyebrow, the eyebrow keeps the date), `'none'` (the band as it was before 2026-09-13 — an eyebrow in `--apricot-light` carrying the date or the context: "Friday, Sep 11", "Aug 24–30", "60 things · 1 stop", "Friday"); one builder renders all three. Under any of them: the title in `--font-display` 31px, at most one status chip ("Draft", "Approved", "Week set" — small caps on `--spruce-raised` with `--ivory-ink-muted`, never an accent fill) and at most one 15px `--ivory-ink-muted` line. The gear and the bell's slot sit top-right in it as 44px tiles on `--spruce-raised`. The ivory content pours over its foot with `--radius-hero` top corners (the band's `::after`; the joined-tile motif at screen scale, same shape as sign-in's card). It never carries a button — the dock is where the one thing to press lives — and it is under a third of the screen at 375×812. In dark it lifts by the lighter `--spruce` plus the `--spruce-edge` hairline along that curve; the measured ratios are in the CSS comment. Roots only: sub-screens keep the step head + crumb below. The band's line and an empty moment under it must never say the same thing (Cook's band says "Friday", its empty state says "nothing to cook"). Now's band carries the date and the week chip and no line: no "N of M done" score there or on its Cook card (Emily, 2026-09-24; the ticks on the rows are the progress). |
-| Empty moment | `shell.css` `.empty-moment`; `emptyMomentHtml` in `shell.js` | A root with nothing on it (Emily, 2026-09-11): a 24px stroke icon in a `--celadon-tint` tile with `--celadon-label` stroke, one sentence in `--ink` 17px `--font-display` 700, an optional second line in `--ink-secondary`, and the next step in the dock — never a button in the block. It fills the space between the band and the dock and centres itself there. Now: "Quiet day. Want me to sort dinner, or the whole week?" (dock: "Let's plan the week" · "Just tonight"); Shop: "Nothing to buy. Approve a week and I'll build the list." (dock: "Go to Plan"); Cook: "Nothing to cook tonight." plus the next cook when there is one (no dock on a night with nothing to cook — since 2026-09-13 Cook's root has a dock only when tonight has a cook; the shelf still shows above the moment). |
-| Icon tile | `shell.css` `.icon-tile`, `.status-icon`, `.gro-aisle-icon`; `iconTileHtml`/`slotIconTileHtml`/`prepSectionTileHtml`/`statusIconHtml`, `SLOT_ICONS`/`PREP_SECTION_ICONS`/`AISLE_ICONS` in `shell.js` (icons in `ICONS`) | Emily, 2026-11-01 (I1 + I2, "icons in soft tiles"). A 44px tile at `--radius-control` holding a 22px line icon: `--celadon-tint` with a `--celadon-label` stroke, or `.is-sand` (`--sand` with an `--apricot-label` stroke; `--sand-deep` when the tile sits on a sand card, as on Made on the night). Ivory surfaces only, never on spruce. **I1:** every meal row on Plan's day view and on Cook's list leads with its slot: breakfast sunrise, lunch bowl, snack apple, dinner pot (the week menu is already grouped by meal type, so no tiles there). A Plan day row's status word carries a 15px `--celadon-label` icon before it: a check for food made already ("Made ahead", "Made Sunday"), the loop for "Leftovers", a clock for minutes. Cook's Option A rows take the tile and nothing else. **I2:** each prep-list section's head leads with a tile: celadon for Move to thaw (snowflake), Set to soak (drop), Chop and wash (knife), Sauces, marinades, drinks (bottle), Mix and chill (whisk), Move to freezer (snowflake in a box); sand for In the oven (oven), On the stove (flame), In the slow cooker (slow cooker), Special occasion prep (star), Pack it up (container), Made on the night (moon). Shop's aisle eyebrows carry a 16px `--apricot-label` icon before the name: produce leaf, dairy bottle, meat and fish fish, pantry jar, canned can, frozen snowflake, other bag (bakery bread, should a store file one). |
-| Meal sheet (M2) | `shell.css` `.plan-acts`/`.plan-act`, `.plan-recipe`; `planRowSheetHtml`, `PLAN_SHEET_OPTS` in `shell.js` | Emily, 2026-11-01, mockup M2 (locked). The sheet a Plan meal opens: the head (slot · day, the dish) and the close, any "To serve" step for food made earlier, then one row of equal outline pills — Swap, Tweak, Move, only those that can do something — 48px, `--radius-pill`, a 1.5px `--hairline-strong` edge, no fill, an 18px `--celadon-label` icon and a 14/700 word; then a full-width 58px `--apricot` pill in `--on-accent-ink`, the display face 18/700, a book at the left and the arrow at the right: "See the recipe" (or "See Sunday's recipe" for food made earlier). The dock's apricot is behind the scrim, so it is still one apricot in view. |
-| Cook's day list | `shell.css` `.cook-today*`, `.cook-quiet-line`, `.cook-off` (Kitchen section); `cookRootParts`/`cookTodayRowHtml` in `shell.js` | Cook's root, Emily 2026-11-01 (Option A, "every meal the same size", Cook declutter canvas — it replaced the 2026-09-13 shelf and Tonight card). One `--surface` card (`--hairline`, `--radius-card`) holding today's meals in eating order — breakfast, lunch, the first snack, dinner, later snacks — every row the same 64px: the slot's 44px icon tile (I1, below), the slot 12/700 `--ink-muted` on top, the dish 17/600 `--ink`, the minutes on the right 14px `--ink-secondary` ("Ready" in `--celadon-label` for food made ahead, "Reheat", "Takeout"). Done: a 2.2 check in `--celadon-label` and the dish in `--ink-done` 400. The first meal not done is next: a 10px `--apricot` dot and "Lunch · next" in `--apricot-label` — no clock, ever (no start-by, no table time). A leftovers row says just "Leftovers". Every row is one button that opens its meal. Under it, quiet 44px lines in `--ink-secondary` ("Before bed: 2 things for Wednesday", "Sunday prep is done · 13 of 13", the next prep day). A day with nothing on it is a `.cook-off` card, "Night off", and "Next: Friday, Salmon Tacos". The dock names the next meal's action: "Make lunch", "Start cooking" (dinner), "Keep cooking", "Mark eaten". |
-| The strip (Plan root) | `shell.css` `.wk-strip`/`.wk-tile`, `.wk-root-day`, `.wk-snacks`; `weekStripHtml`/`weekTileHtml`/`weekDayHtml`/`weekSnacksHtml` in `shell.js` | The Plan root's week, Emily 2026-09-14 ("Plan root: the week as a strip", canvas B1 + S4 — the seven-row card is gone). One tile per day of the planning period side by side in the gutter (`--surface` + `--hairline`, `--radius-tile`, 6px gaps, sharing the width; eight or more scroll sideways): the day as a 10px eyebrow, the date in the display face (16/700; 19/800 today) — and nothing under it, the tile only as tall as those two (no 72px floor since 2026-10-06; `min-height: 44px` keeps the tap target) (the three-dot legend was removed 2026-10-05, tester: "confusing and not helpful"; an open slot is found on the day's own cards, which keep Pick). Today is `--sand` with a `TODAY` eyebrow in `--apricot-label` (§2b S6); the selected tile carries the `--ink-strong` rim; past days sit at .62 and stay tappable. Tapping a tile selects the day **in place** — no step, no history push — and the day renders under the strip as the Day step's own slot cards (`daySlotCardHtml`, quiet: no Cook this / Swap row on the root, those live on the Meal step's dock; an open slot keeps Pick), then the snacks two-up: a `SNACKS` eyebrow on the ground (`--ink-strong`) and one tile per snack side by side. A root card's Meal step comes back with "‹ This week". Opens on today, else the first day not yet past. |
-| Draft flag | `shell.css` `.wk-flags`/`.wk-flag` (just under `.week-suggested-note`); `weekFlagsHtml` in `shell.js`, built from `get_week_menu`'s `draft_flags` (`app/tools/draft_flags.py`) | What the draft had to bend, at the top of the draft (Emily's decided snag rules, 2026-09-23: *"one line to the top of the draft. You don't get a pop-up, and you don't have to answer anything"*). A `--celadon-tint` block with a `--celadon-edge` rim, a `--celadon-label` eyebrow ("Worth knowing"), one sentence, and the fixes Pomona already worked out as `.wk-mini is-ghost` buttons ("Prep it Tuesday night", "Move it to Saturday") — the shape `.gro-athome` uses on Shop for the same job. **Never `--urgent`** (rule 3: nothing is overdue and nothing needs a decision — the week is approvable exactly as it stands) and **no apricot** (rule 5: the draft's one primary is Approve). Drawn ONCE, above the What we're eating / Which days branch, so "the top of the draft" is true whichever way it is read. Every word is the server's: the renderer composes no sentence and fills in no night. `fixes` may be empty — a flag with nothing to offer is still worth saying. |
-| Tonight card | `shell.css` `.cook-tonight` (Kitchen section); `cookTonightCardHtml` in `shell.js` | Cook's root's one hero moment (rule 4), same decision. One spruce card in the gutter (`--radius-card`, 18px padding, `--shadow-hero`, and the `--spruce-edge` hairline the band wears so it lifts on the dark ground): an `--apricot-light` eyebrow "MONDAY · TONIGHT · EMILY" (the cook by name only when the household named one — `cook_name` on `/api/cooker-view`), the dish at 26px/700/‑0.034em, a two-up of `--spruce-raised` tiles ("START 6:00" / "ON THE TABLE 6:30", the moves engine's own arithmetic — and once the cook has really begun, "STARTED 6:02" / "ON THE TABLE 6:37" off `cook_started_at`, 2026-09-13), and one 14px/500 `--ivory-ink-muted` line: the thaw or prep fact for this meal, else "Nothing to thaw or prep ahead." — or, once started two minutes or more off the plan, "Started 17 minutes late — the clock's moved with you." (never inside two minutes: no nagging over a minute). (The cook hero's `.cook-meta-chip.is-live` chip that used to echo "Started 6:02" one step down is gone — Emily, 2026-09-17, "The recipe is the recipe": the recipe and cooker screens show no clock; this card and Today are where the real start reads.) Under a third of the screen (§2b S3); no button in it — the dock has the action. Under it, at most two quiet get-ready rows (`.cook-ready-row`: 52px, a 32px icon tile — `--celadon-tint` for a thaw, `--sand` for prep — title in the display face, one line, a chevron). |
-| Cook's two spruce moments | `shell.css` `.cook-prepday`, `.cook-bed` (Kitchen section); `cookPrepDayCardHtml`/`cookBedCardHtml`/`cookBedTick` in `shell.js` | Emily 2026-11-01 (Option A): dark spruce on Cook's root is kept for exactly two things, never for a meal ("what if I have lunch on my mind still"). Both: `--spruce`, `--radius-hero`, `--spruce-edge`, `--shadow-hero`, an 11/800/.08em caps eyebrow in `--apricot-light`, a 28/700 display title in `--ivory-ink`, `--apricot-rule` between rows. (1) A prep day before the prep is done: the session leads at the top — "UP TO 1.5 HR", "Sunday prep", "For Sunday to Wednesday", a 6px progress bar (`--spruce-raised` track, `--apricot-light` fill) with "0 of 13 done", its sections with their lines — the whole card opens the prep list, and the dock is "Start prep" ("Keep prepping" once begun). Done, it is one quiet line. (2) The night before: once the day's meals are done, today's fridge moves and prep for later days become one checklist, "BEFORE BED" / "Get ready for Tuesday", a 24px `--apricot-light` box per job (the real checkbox covers the 52px row), the dock "All done"; before that it is the quiet "Before bed: N things for Tuesday" line, which opens it. A thaw is in this list and nowhere else on the root; a step on today's prep list or for today's own meal is left out. A move too late for the fridge shows its `too_late_note`. Ticking is the same `/api/today/moves/<id>/done` Today's tick was. This replaced the A4 thaw card (same day). |
-| Hero chip / badge | `shell.css` `.hero-chip` (~488), `.hero-badge`/`.hero-tag` (~399) | Chips row inside the hero; `--radius-chip`. |
-| Segmented control | `shell.css` `.meals-seg` | Meals' Plan/Cook — the last one left. Grocery's To buy/Plan stops/Review (`.gro-seg`) was deleted on 2026-09-08 with the four-step Grocery redesign; the reference implementation is `.meals-seg` alone now. One control per screen. |
-| Step head + crumb | `shell.css` `.wk-head`/`.wk-title`/`.wk-sub`, `.gro-head`/`.gro-sub`, and `.crumb` for the back link | A tab's DEEPER steps (a day, a meal; on Shop, last week's leftovers and "Sort them all" — the sort queue and the trip went on 2026-09-17, Emily: Shop's root is the checklist) open with a title and one line, and a named "‹ Parent" crumb — never `history.back()`, never a new page. Added 2026-09-08; since 2026-09-11 the roots themselves open with the Root band instead (below), so this head is never on a root. The back link was three near-identical classes (`.wk-back`, `.gro-back`, `.cook-focus-back`) until 2026-09-10; it is one `.crumb` now, with `.on-spruce` for the variant inside Cook's hero. |
-| Dock | `shell.css` `.dock` (+ `.cook-dock`/`.gro-dock`/`.wk-decide` for per-screen padding) | The screen's one action, sticky above the ask bar. Built as `.cook-dock` for the cook journey and generalised on 2026-09-10 when nav rule 2 put the same strip on Plan and Shop. Quiet secondaries ride along as `.dock-link` text; a second APRICOT would break Rule 5. When the second path is a real one rather than a rare action it is a `.dock-secondary` — a full-width sand button (the same one as Shop's `.gro-secondary` "Skip the rest") ABOVE the apricot, re-inked to `--spruce-raised` on a spruce dock: All set's "See the week" over "Open the list · 53 ingredients" (Emily, 2026-09-13: seeing the week you just made is a first-class path, and the list keeps its pull with the number on it). *(Gone 2026-09-18: All set is one button, "Next · Anything in the freezer?", so `.dock-secondary` has no instance and was removed; the approved Plan root's dock has no apricot at all — "Plan next week" as an outline `.wk-plan-next` at the right.)* A screen with no single action has no dock. Cook's root got one on 2026-09-13 (`.cook-root-dock`, "Start cooking" / "Mark eaten"; nothing on a night with no cook). Since 2026-09-21 Shop's root dock carries "+ Add something" as an outline (`.gro-add-open`, 48px) beside the chat FAB — a side errand kept in reach while the list scrolls, not the screen's action, so still no apricot; the add itself is a body-level sheet (`groAddSheetHtml`) that asks "Where do you get it?" with one chip per store and remembers the pick. |
-| Ask-bar chips | `shell.css` `.ask-chips`/`.ask-chip` (~828) | Suggestion chips above the chat composer. |
-| Change card | `shell.css` `.ask-change-card` (its own section above `.ask-chips`); `mountChangeCard`/`changeRowHtml` in `shell.js`; `app/tools/proposals.py` | What the chat proposes for the week, drawn under its reply (Emily, 2026-09-13, "Shaping the Draft" Flows C and D). One row per slot: the day as an eyebrow, what was (struck) → what would be, minutes, the one-line reason; two to four options render as tappable pills (`.ask-change-opt`, `--celadon-tint` when chosen); a night they said to leave shows the celadon **Kept** tile. *Another* (an `--apricot-label` link) re-picks that row alone; **Save changes** is spruce (the dock behind the sheet keeps the screen's apricot, Rule 5); "Leave the week as it was" is the quiet way out. Nothing is written until Save; then the pop-up names what changed, with Undo (S10), and the week's rows carry **Changed** (`.wk-changed`, S6) for eight seconds. |
-| Plate parts | `shell.css` `.plate`/`.plate-part` (Day card), `.plate-rows`/`.plate-row` (Meal step); `plateRowHtml`/`platePartsRowsHtml` in `shell.js`; `app/tools/plate_parts.py` | The plate as its parts (Emily, 2026-09-13, "Shaping the Draft" Flows A and B). On the Day card: 32px sand chips — the role as a quiet word, the part, a caret ("Protein · Turkey", "Carb · Roasted potatoes"); a part the rule wants and nothing covers is a dashed `--hairline-strong` outline in `--apricot-label` ("+ Add a carb"). A dish that records no food groups shows a plain Protein chip and no dashed ones — unknown is not short. Each is a tap: the protein opens "Change the protein" (options written for this dish, cut-level: thighs vs breasts, ground meats for a burger; Save rewrites the recipe around the pick through the swap's own gates and apply, so Undo is the swap's own); a veg or carb opens "Add something" narrowed to that part, with "Take X off" as the quiet line when a side is already there. On the Meal step the same parts are rows under a "The plate" eyebrow, each with Change / Add. **Tweak** (Emily, 2026-09-25, 1A) puts the same rows in one sheet off a Plan row (`openTweakSheet`/`tweakSheetBodyHtml`, `#wk-tweak-sheet` on the swap sheet's geometry): "Tweak" as the title, the dish as its head (slot · day eyebrow, the name), the present parts as `.plate-row`s, a missing part as the dashed "+ Add a carb" chip, and "Leave it as it is". It changes nothing itself — a part's button closes it and opens that part's sheet above, which saves with its toast and Undo; the person lands back on the row, marked **Changed** for eight seconds. The sheet follows S10: tap to choose (tick + `--celadon-tint`), an apricot Save under the rows (the dock's apricot is behind the scrim), one quiet way out. |
-| Remembered chip | `shell.css` `.ask-remembered`; `buildAskMessageEl` in `shell.js` | A fact the turn remembered ("Kids: no shrimp"), shown as what it is under the reply: a `--celadon-tint` chip with the REMEMBERED eyebrow, the words, and "Not quite" opening What we know to correct it (§7: observe → infer → confirm → remember → correct, in one breath). Replaces the generic "Household info updated" card for memory writes. |
-| Sheets | `shell.css` `#ask-sheet` (~742), `#week-sheet` (~1631), `#kit-sheet` (~3486) | Slides up over the current tab, dismisses down; each has a `[hidden]` guard pair — see Nav rules below for when a sheet is the right choice vs. a new page. |
-| Toast | `shell.css` `.toast` (~359) | Uses its own `--toast-bg`/`--toast-ink` pair (not `--ink`, which inverts) because it's dark-on-light in light mode specifically. |
-| Bell / notifications | `shell.css` `.notif-bell` (~1750) | Permanent entry point (Emily's call, 2026-09-02) — stays visible even when the feed is empty; sits beside the ask bar. On the spruce rail it uses a lifted fill (`--spruce-raised`-family) since a spruce bell on spruce would disappear. |
-| Cards / surfaces | `theme.css` `.card`, `.surface` (~350) | `--surface` background, 1.5px `--hairline` border, `--radius-card`. Lift is the hairline, not a shadow. |
-| Buttons | `theme.css` `.btn-primary`/`.btn-secondary` (~301) | Primary = apricot fill + `--on-accent-ink` text, `--radius-action`; one per screen (Rule 5). Secondary = spruce outline/text-only. |
-| Pills | `theme.css` `.pill-success`/`.pill-attention`/`.pill-neutral` (~345) | Status chips; accent fills always carry dark ink per Rule 1. |
-| The draft's band extras | `shell.css` `.wk-replan`, `.wk-draft-lead`, `.wk-draft-seg` (the "draft's front door" block after the carousel); `weekBandExtras`/`fillWeekBandExtras` in `shell.js` | Emily, 2026-09-21 (boards A2/C2/C3). Three things filled into the Plan root's band after `rootBandHtml` builds it: the **Re-plan** pill top right (36px `--apricot-light` on spruce, 44px through `::before`; on a draft AND an approved week — the board's call, noted against Rule 5 since the draft's dock already holds the Approve apricot), the draft's two-line **opener** *(no longer shown — Emily, 2026-09-25: "Remove the paragraph in the header it's cluttering and not valuable." `draft_opener` is still computed by `get_week_menu` / `app/tools/draft_opener.py`; `weekBandTailHtml` just stops drawing it)*, and the **What we're eating \| Which days** toggle — a `.wk-seg` variant on spruce: `--spruce-raised` track, `--surface` + `--ink-strong` selected half, 44px halves. A draft's title is "Here's your week." and its line "your turn" (the chip says Draft). **Plan next week on a draft** (Emily, 2026-09-27): a draft's Re-plan leaves the top-right tools for a row of its own under the brand row (`.wk-band-actions`, `weekBandActionsHtml`), beside **Plan next week** (`.wk-band-next`: 36px, `--spruce-raised` + `--ivory-ink`, 44px through `::before`, never apricot — the dock's Approve stays the screen's one). Its words and tap are the approved dock's own (`planNextLabel` over `nextPeriodFor`, `planNextWeek`), so it reads "Re-plan next week" when that week already has a plan. An approved week is unchanged: Re-plan top right, Plan next week in the dock. |
-| The menu (What we're eating) | `shell.css` `.wk-menu`, `.wk-menu-card`, `.wk-menu-head`; `wkMenuGroups`/`wkMenuRowHtml`/`wkMenuHtml` in `shell.js` | The draft's front door (Emily's decision D, 2026-09-15; again 2026-09-21): one card per meal type, one `.wk-row` per dish with the days it covers and its time — "Mon, Wed · 30 min", nothing else (Emily, 2026-09-26: no `asked` fact and no reason here; both stay on Which days' rows; a dish with no minutes keeps "takeout"/"leftovers" or says nothing after the days). A dish whose days are all gone by is `.is-past` — name, chevron and line in `--ink-done`, no buttons — and reads "Had Thu, Fri" / "Had Wednesday"; a dish with some days gone names only the days ahead. Swap on every row through the same swap sheet as the day cards (`data-wk-day-index` names the dish's first day ahead), and Tweak where the Plan row (1A) rule allows. No day notes, no steppers. |
-| The reason, said on the line | `shell.css` `.wk-row-meta`, `.wk-row-foot`; `wkRowMetaHtml` in `shell.js` | *(Changed 2026-09-25, Emily's option 1A — it was "The reason a tap away": the meta line was a button with a dotted underline that popped the reason as a floating note, `.wk-row-why`/`.wk-why-pop`, both gone.)* On a Which days / Check the week / root row (not What we're eating, since 2026-09-26): when the slot has a stored `reason`, it is plain text after the time on the row's one line — "30 min · Mexican, as asked · Lighter than the chops" — first letter up, closing full stop off. Nothing on that line is a tap; no reason, nothing added. |
-| Plan row (1A) | `shell.css` `.wk-row.has-foot`, `.wk-row-chev`, `.wk-row-foot`; `wkMealRowHtml`/`wkMenuRowHtml` in `shell.js` | Emily, 2026-09-25 (option 1A), for the draft's rows on Which days and What we're eating, and the same shape on Check the week and the approved root. A planned row is the slot eyebrow (Which days only), the dish as the link into its Meal step with a 14px `--apricot-label` stroke chevron after its last word (the text stays `--ink`; the whole title is the 44px target), then one line: the time and reason as plain `--ink-secondary` text, with sand 36px buttons (44px targets) at its right — **Swap** and **Tweak** (sliders icon) on a draft or Check the week, **Done** and **Swap** on the approved root (no room for three beside the time at 375px). Tweak shows only where `plateCanChange()` is true, and on a What we're eating row only when the dish is one cook still ahead — the part sheets change one entry, so a dish on several days is tweaked a day at a time on Which days. An open, empty or away slot keeps its single button beside the name. **Changed** (S6) sits in the eyebrow 10px after the slot word — `3px 8px`, 10px/800 caps, `--radius-badge-sm` — or in an eyebrow of its own on a menu row. |
+- **Four corner sizes:** 13 controls (`--radius-control`), 16 buttons (`--radius-button`), 22 tiles (`--radius-card`), 26 sheets (`--radius-sheet`). Round buttons and pills are fully round (`--radius-pill`).
+- **One card shadow:** `--shadow-card`, `0 1px 2px rgba(20,38,74,.05), 0 10px 28px rgba(20,38,74,.07)`. The switcher's chosen segment has `--shadow-seg`. Dusk cards and the toast have `--shadow-float`.
+- **Plates on cream and white** get `--plate-shadow`, from the app, not the drawing. On dusk, none.
+- **Space:** a 20px gutter for words, 16px for tiles, 10px between tiles, 14px above the first thing under a head, 18px above a section heading and 6px under it.
+- **Motion**: small, quick motion on every press, tab change, sheet and tick, and always off for people who turn motion off (`prefers-reduced-motion`, which also zeroes the tokens). A press scales to .98 over `--motion-press` (120ms). Sheets slide up over `--motion-base` (240ms) on a scrim that fades in, through `openSheet()`/`closeSheet()` in `shell.js`. Tab panels crossfade (`activateTab`). A tick eases to done. Toasts rise in. On Shop, a row on Shop's "Sort them all" screen collapses out when it gets a store (`groSortAllLeave`), and a finished store rolls up (`groRollUp`). Nothing moves to get attention.
 
 ---
 
-## 6. Navigation rules (from the Nav Blueprint)
+## 5. Components
 
-- **Four native screens, period: Plan, Shop, Kitchen, Cook — and the app opens on Plan.** (Emily, 2026-11-01, retired the Today tab: "The only benefit of the today screen at the moment, is having it tell the user to thaw things. Besides that everything is a repeat of information that can be found in the other tabs" — its thaw is the card at the top of Cook's root (§5, the thaw card), and `/`, Today's old path, opens Plan. A dashboard may come later; it is not this tab. Five from 2026-10-26 to 2026-11-01; four until 2026-10-26, when Emily approved a fifth tab between Shop and Cook — Loop Board C1, "what's home": shopping fills it, cooking empties it. NAMING TRAP: it is keyed and pathed `home` (`/home`), because `kitchen` / `/kitchen` in code is still the Cook tab. The first was "Now" from nav v2 part 1, 2026-09-09, until Emily renamed it back to Today on 2026-09-17 — the day's moves grouped as Shop and Cook, tagged Morning / Afternoon / Evening; the other three were Meals, Grocery and Kitchen until nav v2 part 1; the code still spells the tab keys `today`/`week`/`grocery`/`kitchen`, which is deliberate — internal identifiers were left alone, as at the rebrand.) Their tab-bar glyphs (Today's sunrise retired with it): the week as a row (five dots between two rules — the day tiles in miniature; Emily, 2026-09-13, Identity Round Q3 = B, replacing a bullseye nobody read as a plate), a bag, a fridge (Kitchen, 2026-10-26), a pot — `ICONS` in `shell.js`, one 24-grid, one stroke (rule 7). Everything else is a *state* (a segmented control inside a tab), a *sheet* (slides over, dismisses down), or a *step* — never a new page with its own header or its own back button. If you're about to add a page with a back arrow to a sibling tab, stop — it should be a sheet or a segmented state instead. Every tab root opens with the root band (§5) — the same spruce band with the date or context, the title, the gear and the bell, and the ivory sheet pouring over its foot — and nothing deeper than a root does (Emily, 2026-09-11).
-- **The chat is one icon on every screen, and the sheet it opens is part of the shell, not any one screen.** (Emily, 2026-09-11, reviewing the screen-by-screen mockups; §2b S2.) A round spruce button sits bottom-right on all four screens, same place always — floating above the tab bar, or at the right end of the dock row when a screen has a dock (`.chat-fab` in `shell.css`; the `.dock` clears it with right padding). Its icon is the Pomona mark, 26px in `--apricot-light` on the spruce at the logo's own 1.8 stroke (Emily, 2026-09-13, Identity Round Q2 = B — it was a speech bubble until then; "talk to Pomona" is, literally, the fruit); `aria-label` and `title` still read "Chat with Pomona". Because the fruit doesn't say "chat" on its own, a 9px/800/.14em uppercase "Ask" in `--apricot-light` sits under the mark inside the same 54px button (the mark drops to 22px while it shows) for a device's first three visits — `FAB_LABEL_VISITS` in `shell.js`, a per-device localStorage counter on its own key (`pomona.fabLabelVisits`), 0 = never, `Infinity` = always — and after that the mark alone; nothing outside the button moves either way. Tapping it opens the ask sheet, whose title and composer both read "What's on your mind?" on every tab. The example-prompt chips (a tab's first three visits) and the "?" into Helpful tips live *inside* the sheet; nothing about the chat sits on the screen but the icon. Until 2026-09-11 this was an always-open ask bar above the tab bar with the chips and the "?" beside it — that bar is gone. The sheet's answer still arrives over whatever tab you're on; it never navigates you somewhere you didn't ask to go. The notifications bell moved from the old bar's row into every root's header beside the gear (`prefsGearHtml`).
-- **Cooking is a *step* of Cook** (Emily, 2026-09-08), not a state of Plan and not its own tab. Cook's root answers "what's cooking, and what's in the house?"; the focused single-meal screen is one level down it, and `shell.js`'s own `TABS` comment says the same thing. It stays a step rather than becoming a sibling tab for the reason this rule has always given: it is the same week's data with the recipes opened up, and two tabs over one dataset is exactly the kind of drift this rule exists to prevent. (Until 2026-09-08 this was a `Plan | Cook` segmented state at `/week`; that control is gone.)
-- **Cook's root has one primary action: "Start cooking", in its dock** (Emily, 2026-09-13, Tier 2 — decided by picking "Cook · D · The shelf"; changed in the same commit as the code). Until then this line read *"Cook's root has no primary action. Nothing on it is urgent by design — it's what today asks of the cook, read rather than acted on"*, and rule 2 below named Cook's root as the live example of a screen with no dock. Since Option A (2026-11-01) the dock names the next meal's own action — "Make lunch", "Start cooking" for dinner, "Keep cooking", "Mark eaten" — and on a prep day before the prep is done it is "Start prep"; once the day's meals are done and the night-before list is open, "All done". Before that, the shelf design gave the root the one thing it is for: the dock opens tonight's cook on its recipe (`cookEnterFocus` — the screen was "Before you start" until Emily's 2026-09-17 "The recipe is the recipe": the dish, "Cooking for", the Ingredients and Steps cards, "Start cooking"), or reads "Mark eaten" on a reheat night. A night with nothing to cook, or a dinner already cooked, still has no dock — the empty moment (§5) and the shelf stand alone. One step down: the recipe's "Start cooking" and the cooker's "Next step" / "Done — on the table" (it read "Mark it cooked" until 2026-09-17) are each their screen's one apricot. Rule 5 holds one screen at a time.
-- **One way back, and it names its parent** (Emily, 2026-09-09 — nav v2 rule 1). Every screen deeper than a tab root carries **exactly one** breadcrumb, and it says where it goes: `‹ This week`, `‹ Monday`, `‹ Shop`. Never a bare arrow, never `history.back()` (which after any wandering points at the previous *view* rather than the parent — a link reading "This week" must not land on a meal), and never a second exit competing with the tab bar. The tab bar never leaves, so the way out of the whole branch is always on screen too; the crumb is the way up *one level*. The phone's back gesture goes up one level as well and matches the crumb. A tab root has no crumb.
-- **One dock** (Emily, 2026-09-09 — nav v2 rule 2). The single thing a screen is for lives in a fixed strip above the tab bar, in the same place on every screen, labelled for what it does ("Approve and build my shopping list", "Start cooking"; "Done at Loblaws" was the trip's until 2026-09-17 — Emily: Shop's root is the checklist, a tick per row and no dock, and "Done at Loblaws" is the card's own head once every row is ticked), and it does not scroll away. **A screen with no single action has no dock** — Cook's root was the live example until 2026-09-13, when the shelf design gave it "Start cooking" (see the Cook's-root rule above); a Cook night with nothing to cook, and Today's day with nothing featured, are the live examples now. Inventing a dock for a screen with nothing to press would be the same lie an apricot button on it would be (Rule 5). Today (called Now until 2026-09-17) got a dock on 2026-09-11 (Build 2 of the screen-by-screen redesign): the featured move's action ("Cook this", "Done", "Go shopping" — `moves.py` SHOP_ACTION_LABEL; "Open the list" until 2026-09-17) or, with no week planned, "Let's plan the week" with "Not now" as its quiet link — the action left the next-up card for the dock, so the card could stop being a hero (§2b S3). A day with nothing featured has no dock; ticking a line is the action. Rare actions go behind a `···`, not into a second dock button. This is still one apricot per screen; the dock is where that apricot lives.
-- **Refresh policy** (what must be true after each kind of event):
-  - *You change something* → the screen updates on tap, before the server confirms. A failed save reverts the row and says so; the common case never waits.
-  - *One screen's change touches another* → every screen reads from the same store, so it's already correct (e.g. approving the week on Plan updates Shop before you get there). This is why native screens matter more than they look like they should — an iframe can't share a store.
-  - *You switch tabs* → nothing reloads. A quiet background check folds in server changes without the screen jumping under your thumb.
-  - *You return after being away a while (a couple of minutes+)* → refetch everything once, quietly — someone else in the house may have shopped or cooked.
-  - *You pull down* → pull-to-refresh exists on all four tabs and does the obvious thing, but it's a courtesy, never the only way to see the truth.
-  - If you add a new native panel or a new action tool, wire it into `refreshStaleTabsFromActions()` (`shell.js`) — a panel that's built once and never told to refresh goes stale silently. See CLAUDE.md's "Tab panels build once per page load" gotcha for the exact failure mode this has already caused twice.
+One of each, used the same way on every screen. The CSS is in the SHARED COMPONENTS part of `theme.css`, so a page without `shell.js` can use the classes. The HTML builders are the "Bright Dusk parts" near the top of `shell.js`. A later screen reuses these and does not build its own.
+
+| Component | CSS | Builder | Notes |
+|---|---|---|---|
+| Screen title | `.screen-head`, `.screen-title`, `.screen-sub`, `.screen-tools` | `rootBandHtml(opts)`, `setRootBand` | How every tab root opens. No band: a plain title and one line on cream, round buttons at the right. `opts.noGear` leaves the gear out. The name is history; its ids are what `setRootBand` writes to. Sub-screens have a round Back button above the title (Z-Prep, Z-Settings). |
+| Round header button | `.round-btn` | `roundBtnHtml({ label, icon, attrs })` | 44px, blush. Back, More ···, close, +. |
+| Segmented switcher | `.seg`, `.seg-btn`, `.seg-days` | `segHtml(items, { days })` | Blush track, the chosen segment white. 46px, or 52px with a weekday and date. Today's segment is clay. |
+| Section heading | `.section-head` | `sectionHeadHtml(text)` | 16/700 over a group of tiles. |
+| Tile | `.tiles`, `.tile`, `.tile-row`, `.tile-text`, `.tile-plates`, `.tile-name`, `.tile-sub` | `tileHtml({ attrs, art, name, sub, kind, cls, extra, label })` | The base of the whole app: two across, one thing each, with a plate where there is a dish. With `attrs` it is a button, without them a thing to read. `kind: 'row'` is the 68px small tile (snacks), `'text'` words only (a menu). No art means a text tile: no filler pictures. `.is-wide` spans both columns, `.is-quiet` is the slate name. |
+| Note card | `.note-card` | | One plain line, and one button when there is a next step. Empty and error states (Z-EmptyPlan, Z-Error). No icons. |
+| Main button | `.btn-main`, `.btn-quiet` | | 52px, radius 16. Apricot with dark text, one per screen; blush for the quiet one. `.btn-primary`, `.dock-primary` and `.btn-gold` are older names that look the same. |
+| Field | `.field` | | 52px, white, the card shadow. |
+| Tick box | `.tick-ring`, `.is-ticked` | | 22px, `--tick-ring`, an apricot circle when done. |
+| Sheet | `.quiet-sheet` and the "Sheets, one look" block at the end of `shell.css` | `openQuietSheet(html, wire)`, `quietSheetHeadHtml(eyebrow, title)` | Everything extra slides up from the bottom: a grab handle, a 26px title, a round close, the content, on a dimmed screen. Tiles in a sheet are `.tiles.in-sheet`. |
+| Toast | `.toast`, `.toast-action` | `showToast(message, action)` | One dark bar above the tab bar. It names the thing, and Undo sits at its right when it can be undone. It rises above a dock when there is one. |
+| Tab bar | `#tab-bar`, `.tab-btn`, `.tab-chip`, `.chat-fab` | `TABS`, `TAB_ICONS` | Solid dusk on every main screen, in the page's flow. Icons and labels; the current tab in a soft pill; `#chat-fab` is Ask, the apricot pill with the word Ask at its end. It replaced the floating chat button and never covers anything. |
+| Dock | `.dock` | | The screen's one action, sticky above the tab bar on a cream strip. A screen with no single action has no dock. |
+| Plate | `.dish-plate`, `.dish-plate.on-dark` | `Plates.html(key, size)` | See 5b. |
+
+### Plan (Z-Week, Z-Day, Z-PlanMenu)
+
+`planWeekHtml` is one screen for a draft and an approved week: approving changes the chip and the dock, never the layout.
+
+- **The head:** "This week" on All, the weekday and "Today · Nov 4" on a day (`planDayBandParts`). A draft's title is "Here's your week." with its dates, "your turn" and the Draft chip. No counts under titles.
+- **The day bar** (`planDayBarHtml`): All, then one segment per day. Past days are hidden. It scrolls past seven days and into the plans either side, with All pinned.
+- **All** is a menu: Breakfast, Lunch, Dinner, Snacks, each a section heading over tiles. A repeat shows once with its days ("Wed, Fri"), from `wkMenuGroups`. A night eating a batch made earlier says "Leftovers". Snacks are the small tile. A dish whose days have all gone by leaves the menu.
+- **A day** is one grid in order: breakfast, lunch, dinner ("Dinner · 35 min"), then one Snacks tile with its plates and how many. One snack opens its sheet; several open a sheet to choose from.
+- **Every tile opens the meal's sheet** (`openPlanRowSheet`): Swap, Tweak, Move, See the recipe.
+- **··· on a day** is `openPlanDaySheet`, four tiles: Add a meal, Add from the freezer, Swap with another day, Take the night off, each only where it can do something. Each opens the flow it always opened; the night off is today's only, and goes to the chat with the words ready.
+- **··· on All** is the More sheet (`openMealsMoreSheet`): re-planning, the week after, the freezer, the whole week, setup, start over, help. The boards show no buttons on All's head and no way to Settings, so All carries ··· and the gear to keep both reachable.
+- **A slot is never absent.** An open slot is a text tile, "Your call", that reveals its options across the screen. A meal nobody's home for is a quiet text tile. A meal the household asked none of isn't drawn.
+
+### Behaviour that stays
+
+These parts of older screens keep their behaviour through the rebuild. The stage that reaches them changes their look, not what they do.
+
+- **Draft flag** (`weekFlagsHtml`): what the draft had to bend, one line at the top with Pomona's own fixes. Never urgent, no apricot. Every word is the server's.
+- **Change card** (`mountChangeCard`): what the chat proposes, one row per slot, nothing written until Save, then a toast with Undo and **Changed** on the row for eight seconds.
+- **Meal sheet** (`planRowSheetHtml`): Swap, Tweak and Move only where they can do something, then See the recipe.
+- **Plate parts and Tweak** (`plateRowHtml`, `openTweakSheet`): the plate as its parts, with a Save and one quiet way out.
+- **Cook's day** (`cookRootParts`): today's meals in eating order. No clock, ever.
+- **Before bed** (`cookBedCardHtml`): today's fridge moves and tomorrow's prep as one checklist.
+- **Empty moment** (`emptyMomentHtml`): becomes a note card at its stage.
+
+---
+
+## 5b. Plates
+
+Every dish shows its plate. Plates carry the colour, so the interface stays calm. The rules for the drawings are in `plates/PLATE_RULES.md`, and they apply to every plate, including new ones. When Emily gives feedback on a plate, it becomes a rule there and is applied across the library. The test: cover the name. Could you still tell what the dish is?
+
+In the app:
+
+- `Plates.html(key, size)` in `static/plates.js` is the one way a screen shows one. `key` is the `plate` the API puts on a meal row or a recipe. `{ onDark: true }` drops the shadow.
+- A drawing that fails to load falls back to `neutral`, then to nothing, never a broken image. A planned dish with no key shows `neutral`.
+- Sizes: 96 on a tile, 62 for a pair on one tile, 44 on a small tile, 216 at the top of a recipe.
+
+---
+
+## 6. Navigation rules
+
+- **Four screens, period: Plan, Shop, Kitchen, Cook. The app opens on Plan.** (Emily retired Today on 2026-11-01.) The code still spells the tab keys `week`, `grocery`, `home` and `kitchen`, on purpose. **Naming trap:** `kitchen` / `/kitchen` in code is the Cook tab, and `home` / `/home` is the Kitchen tab. Everything else is a *state* (a switcher inside a tab), a *sheet*, or a *step*, never a new page with its own header.
+- **Ask is in the tab bar on every main screen, and the sheet it opens is part of the shell, not any one screen.** Its answer arrives over whatever tab you're on and never navigates you somewhere you didn't ask to go. Example chips show only on an empty chat.
+- **Cooking is a *step* of Cook**, not a state of Plan and not its own tab.
+- **Cook's root has one primary action: "Start cooking", in its dock** (Emily, 2026-09-13). It used to read "Cook's root has no primary action". The dock names the next meal's own action: "Make lunch", "Start cooking" for dinner, "Keep cooking", "Mark eaten", and "Start prep" on a prep day. There's no dock on a night with nothing to cook. One step down, the recipe's "Start cooking" and the cooker's "Next step" / "Done — on the table" (it read "Mark it cooked" until 2026-09-17) are each their screen's one apricot.
+- **One way back, and it names its parent**. Every screen deeper than a tab root has exactly one way up, and it goes to the parent, never `history.back()`. The phone's back gesture matches it. The boards draw it as a round Back button; older steps still have the named `‹ This week` crumb until their stage. A tab root has none.
+- **One dock**. The single thing a screen is for lives in a fixed strip above the tab bar, labelled for what it does, and it does not scroll away. A screen with no single action has no dock. Rare actions go behind `···`.
+- **Each screen has one job, and nothing appears twice.**
+- **Refresh policy**:
+  - *You change something:* the screen updates on tap, before the server confirms. A failed save reverts the row and says so.
+  - *One screen's change touches another:* every screen reads from the same store, so it's already correct.
+  - *You switch tabs:* nothing reloads. A quiet background check folds in server changes.
+  - *You return after being away a couple of minutes or more:* refetch everything once, quietly.
+  - *You pull down:* pull-to-refresh exists on all four tabs, as a courtesy.
+  - A new native panel or action tool gets wired into `refreshStaleTabsFromActions()` (`shell.js`). A panel built once and never told to refresh goes stale silently.
 
 ---
 
@@ -370,9 +329,10 @@ Pomona learns from what a household does — this section is how it's allowed to
 - Warm, first-person, concise — and a little playful, especially in titles (Emily, 2026-09-05). State the thing, then soften it — never the reverse, and never at length.
 - Encouraging, never sarcastic or deadpan. A joke at the user's expense, or a flat/robotic aside, isn't playful — it's the opposite of kind.
 - Exclamation marks and emoji are allowed, used sparingly. Rule of thumb: at most one per screen. Never in error or safety copy — that copy stays calm and plain, no exceptions (see the calm-in-trouble rule below, which still governs).
+- **No fluff anywhere in the app. Every line has a job. If taking it away loses nothing, take it away** (Emily, 2026-11-05, Bright Dusk).
 - **Every word earns its place — and this one is a hard rule, not a preference** (Emily, 2026-09-09: *"as a new rule don't add useless fluff text"*). Pomona doesn't add copy for the sake of tone or personality. If a line can be cut without losing meaning, cut it. Three failures to watch for, all of which shipped before she caught them:
   - **Restating the screen.** A subtitle that says in a sentence what the content below says in a list. If the reader can already see it, don't narrate it.
-  - **Filling a slot.** Copy written because a template has a place for a subtitle, an accent line or a reassurance. An empty slot is a fine outcome; see the italic accent line in §3, which used to be mandatory and no longer is.
+  - **Filling a slot.** Copy written because a template has a place for a subtitle, an accent line or a reassurance. An empty slot is a fine outcome; the italic accent line was one, mandatory until 2026-09-09 and gone with Bright Dusk.
   - **Explaining what the label already says.** A button reading "Approve and build my shopping list" needs no line under it explaining that approving builds the shopping list.
   The test: delete the line. If nothing is lost, it was never doing anything. Prefer a shorter true thing to a longer warm one — the warmth is in the accuracy.
 - Never promises a feature the app doesn't do, and never pre-announces what's coming. Describe only what's true right now — enthusiasm doesn't get to write checks the product can't cash.
