@@ -1,0 +1,5 @@
+- Linguine with Clams: no clam shell part; used dark `wedges` as closest. Needs an open clam shell.
+- Fruit Skewers with Yogurt Dip: `skewers` is fixed to grilled-meat pieces, so fruit sits in clusters around the dip with no sticks. Needs a skewer with fruit colours.
+- Cinnamon Rolls: no spiral bun part; used `noodles` as the swirl. Needs a cinnamon roll spiral.
+- Chicken Salad Sandwiches: no sliced-bread sandwich part; used `bread` (a split roll). Needs a sandwich on sliced bread, cut in half.
+- Turkey Burgers: `sandwiches` has a cheese square and the recipe has no cheese; built a bun from `cutlet`. Needs a burger part with no cheese.

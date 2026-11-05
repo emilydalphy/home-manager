@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Bright Dusk design rules</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 1320px; height: 1920px; box-sizing: border-box; background: #FFFAF3; color: #14264A; font-family: Figtree, system-ui, sans-serif; -webkit-font-smoothing: antialiased; padding: 44px 48px; display: flex; flex-direction: column; gap: 22px">
+
+  <div style="display: flex; flex-direction: column; gap: 4px">
+    <h1 style="margin: 0; font-size: 34px; line-height: 40px; font-weight: 700; letter-spacing: -0.03em">Bright Dusk</h1>
+    <p style="margin: 0; font-size: 17px; color: #55607A">The orchard at dusk: a deep blue sky, warm cream, one ripe apricot. Food brings the rest of the colour.</p>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px">
+    <sc-for list="{{colours}}" as="s" hint-placeholder-count="5">
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <span style="height: 58px; border-radius: 14px; box-shadow: inset 0 0 0 1px rgba(20, 38, 74, 0.1); background: {{s.c}}"></span>
+        <span style="font-size: 15px; font-weight: 700">{{s.n}}</span>
+        <span style="font-size: 13px; line-height: 18px; color: #55607A">{{s.j}}</span>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="background: #FFFFFF; border-radius: 22px; box-shadow: 0 1px 2px rgba(20, 38, 74, 0.05), 0 10px 28px rgba(20, 38, 74, 0.07); padding: 6px 24px; display: flex; flex-direction: column">
+    <div style="display: grid; grid-template-columns: 170px 1fr 1.5fr; gap: 24px; height: 38px; align-items: center; font-size: 13px; font-weight: 600; color: #55607A">
+      <span>What</span><span>The rule today</span><span>The new rule</span>
+    </div>
+    <sc-for list="{{rules}}" as="r" hint-placeholder-count="18">
+      <div style="display: grid; grid-template-columns: 170px 1fr 1.5fr; gap: 24px; padding: 9px 0; border-top: 1px solid #F4ECE2; font-size: 15px; line-height: 21px">
+        <span style="font-weight: 700">{{r.what}}</span>
+        <span style="color: #55607A">{{r.before}}</span>
+        <span style="font-weight: 500">{{r.after}}</span>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="background: #FFFFFF; border-radius: 22px; box-shadow: 0 1px 2px rgba(20, 38, 74, 0.05), 0 10px 28px rgba(20, 38, 74, 0.07); padding: 14px 24px 16px 24px; display: flex; flex-direction: column; gap: 8px">
+    <h2 style="margin: 0; font-size: 16px; line-height: 22px; font-weight: 700">Plates: cover the name, could you still tell what the dish is?</h2>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3px 32px; font-size: 14px; line-height: 20px">
+      <sc-for list="{{plateRules}}" as="p" hint-placeholder-count="32"><span>{{p}}</span></sc-for>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+    <div style="background: #FBE9D9; border-radius: 22px; padding: 16px 22px; display: flex; flex-direction: column; gap: 5px">
+      <h2 style="margin: 0; font-size: 16px; line-height: 22px; font-weight: 700">Staying the same</h2>
+      <p style="margin: 0; font-size: 15px; line-height: 22px">Pomona's voice and all the copy rules. The apricot mark. One main button per screen. Buttons big enough to tap. Purple never leads. Every colour pair measured for contrast.</p>
+    </div>
+    <div style="background: #14264A; color: #FFF6EA; border-radius: 22px; padding: 16px 22px; display: flex; flex-direction: column; gap: 5px">
+      <h2 style="margin: 0; font-size: 16px; line-height: 22px; font-weight: 700; color: #FFC08F">Still to design</h2>
+      <p style="margin: 0; font-size: 15px; line-height: 22px">The app icon on dusk. App Store screenshots. Light mode only for now, dark mode comes later.</p>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1320,"height":1920}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      colours: [
+        { n: 'Warm Cream', c: '#FFFAF3', j: 'The page. Cards are a touch lighter.' },
+        { n: 'Dusk Blue', c: '#1B4392', j: 'The tab bar, use soon and timers.' }, { n: 'Night Ink', c: '#14264A', j: 'Main text.' },
+        { n: 'Ripe Apricot', c: '#FFA45C', j: 'The one main button and Ask.' },
+        { n: 'Blush', c: '#FBE9D9', j: 'Quiet tints: day bar, small tiles.' },
+        { n: 'Slate', c: '#55607A', j: 'Second lines and small details.' }
+      ],
+      plateRules: [
+        "The main food is plainly visible, never hidden by sauce.",
+        "One hero: the main food is the biggest thing on the plate.",
+        "Build it the way the dish is served, sauce on top if it goes on top.",
+        "Show 3 to 5 identifying ingredients. An unclear side is worse than none.",
+        "No more than five foods on a plate.",
+        "Nothing on the plate that isn't in the recipe.",
+        "Plates look full, generous and delicious, with rich colour and shine.",
+        "Food stands out from what's under it. No dark food on dark sauce.",
+        "Nothing leaves the plate.",
+        "The same food always looks the same on every plate.",
+        "Long noodles twirl, wide noodles fold, short pasta is short pieces.",
+        "Filled pasta shows its fold. Pasta has sauce on top, never soup.",
+        "Blended soups are smooth, with fine flecks and a small garnish.",
+        "Stir-fries are long tossed strips in glossy sauce.",
+        "Stews are thick and chunky, soups are brothy.",
+        "Salads look crisp. Desserts read as sweet at a glance.",
+        "Drinks go in a glass.",
+        "Dips never cover what's being dipped.",
+        "Dishes look together, never rigid. Rice shows under its toppings.",
+        "Rice is a clear mound, never half a pie chart.",
+        "Eggs look like eggs, and soups never look like omelettes.",
+        "Show what holds the dish: the tortilla, the bun, the bowl.",
+        "Use the real shape: oval potatoes, chops with a bone, flaky fish.",
+        "Shrimp curl with a tail. Bacon is wavy. Eggplant shows purple skin.",
+        "Meats look like themselves: pale pork, deep brown beef, golden chicken.",
+        "No eyes or faces on food.",
+        "Porridges are smooth, never strips.",
+        "A borrowed shape fits the dish: no carrot in a chocolate sandwich.",
+        "No two dishes look alike. Colour alone never separates them.",
+        "Layouts vary between dishes.",
+        "Plates read on every background. On cream and white they get one soft shadow.",
+        "Icons, not realistic food, but always clear what the dish is."
+      ],
+      rules: [
+        { what: 'Colour', before: 'Spruce, ivory, apricot, celadon', after: 'Warm cream, deep dusk blue, ripe apricot, blush and slate only. No teal or pale blue. Green stays in the food.' },
+        { what: 'Top of the screen', before: 'A spruce band with the logo and a curved edge', after: 'No band. A plain title and one line on cream, so the content starts higher.' },
+        { what: 'Tab bar', before: 'Light bar with a floating Ask button over the content', after: 'A solid dusk blue bar anchors every main screen. The current tab sits in a soft pill. Ask is the apricot button at its end and never covers anything.' },
+        { what: 'Dark moments', before: 'A dark hero panel on most screens', after: 'Dusk blue is for the tab bar, use soon, timers and the welcome. Every meal is an equal tile, and dinner is never highlighted.' },
+        { what: 'Apricot', before: 'Used for buttons, badges, labels and icons', after: 'One main apricot button per screen, always with dark text. Ask in the tab bar is always apricot too, so the bar never changes.' },
+        { what: 'Fonts', before: 'Three: Bricolage, Figtree and Newsreader italic', after: 'One: Figtree. Six sizes: 32 title, 26 feature, 16 row, 14 support, 13 small, 11 tiny.' },
+        { what: 'Corners', before: 'Big soft corners, up to 30px', after: 'Four sizes: 13 controls, 16 buttons, 22 tiles, 26 for sheets. Round buttons and pills are fully round.' },
+        { what: 'Edges and depth', before: 'Beige outlines around cards and chips', after: 'No outlines. One soft shadow for cards. Thin lines only between rows.' },
+        { what: 'Tiles', before: 'Long lists of rows with several buttons and labels', after: 'Tiles are the base of the whole app: two across, one thing each, with a plate where there is a dish. Everything else is one tap in.' },
+        { what: 'Food', before: 'Text rows and a repeated pot icon', after: 'Every dish shows its plate. Plates carry the colour, so the interface stays calm.' },
+        { what: 'Same parts everywhere', before: 'Each screen built its own version', after: 'One tab bar, one switcher, one tile, one round header button, used the same way on every screen. Titles start at the same height. Details sit under the name in a tile.' },
+        { what: 'Sheets', before: 'Different pop-ups and panels', after: 'Everything extra slides up from the bottom: a title, a round close button and the content, on a dimmed screen.' },
+        { what: 'Messages', before: 'Toasts in several styles', after: 'One dark bar above the tab bar. It names the thing, and Undo sits on the right when it can be undone.' },
+        { what: 'Empty and errors', before: 'Icons and mixed wording', after: 'One plain line under the title, and one button when there is a next step. No filler pictures. Errors say what happened and what to do.' },
+        { what: 'Words', before: 'Friendly lines that say nothing', after: 'No fluff anywhere in the app. Every line has a job. If taking it away loses nothing, take it away.' },
+        { what: 'Each screen', before: 'Several jobs on one screen, some shown twice', after: 'One job per screen, and nothing appears twice. No counts under titles.' },
+        { what: 'What stays', before: 'Everything shown at once', after: 'Plan hides past days and shows tonight on a day, with add meal and freezer under the ··· menu. Cook is tonight and Start cooking. Recipe opens on plate and name. Ask chips show only on an empty chat. Snap a shelf is the + in the Kitchen header.' },
+        { what: 'Motion', before: 'Capped at five animations in the whole app', after: 'Small, quick motion on every press, tab change, sheet and tick. Always off for people who turn motion off.' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

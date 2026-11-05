@@ -1,0 +1,5 @@
+- BBQ Chicken Drumsticks: no drumstick part (tapered leg with a bone end). Used three glazed `fillet` shapes.
+- Banana Oat Muffins, Lemon Poppy Seed Muffins: `cups` carries red and green flecks, so it can't be used for sweet muffins. Used three `mash` domes; a plain muffin part with a paper case would be better.
+- Breakfast Quesadillas: no folded quesadilla or wedge part with filling showing. Used `pastries` half-moons.
+- Chicken Satay, Chicken Souvlaki: `skewers` sticks run past the well onto the rim (rule 10).
+- Shrimp and Broccoli Stir-Fry: no broccoli floret part. Used green `nuggets`.

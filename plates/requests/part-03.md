@@ -1,0 +1,8 @@
+- Tacos de Papa: the `tacos` part has a fixed dark brown filling that reads as meat on a vegetarian dish, so this uses `pastries` half. Needs `tacos` with a filling colour.
+- Shrimp Tacos: same `tacos` filling problem, so this is drawn as an open tortilla (`flatbread`) with shrimp on top. Needs `tacos` with a filling colour.
+- Madeleines: needs a shell-shaped small cake with ridges; `wedges` is the closest.
+- Veggie Sticks with Ranch Dip: `strips` always curve, so sticks use thin `block` pieces, one per side. Needs a straight stick part that can sit at an angle.
+- Tteokbokki: needs short rice-cake cylinders; thick `strips` are the closest.
+- Thai Coconut Pancakes: needs a small round cupped pancake; `rounds` is the closest.
+- Breakfast Burritos: the recipe has bacon, but check_part.py flags the `bacon` part on an eggs dish, so the side uses dark `strips`.
+- Buddha's Delight, Mushroom Takikomi Gohan: needs a mushroom cap shape; `nuggets` are the closest.

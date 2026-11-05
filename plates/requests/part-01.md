@@ -1,0 +1,7 @@
+- Champinones al Ajillo (also Chicken Marsala, Tavuk Guvec): no mushroom part; rounds read as rings. Needs a sliced mushroom with cap and stem.
+- Lamb Kofta with Tahini: skewers part is fixed golden chicken colour, so lamb kofta uses brown rolls with no stick. Needs a colour option on skewers.
+- Bouillabaisse (also Cioppino): no clam or mussel part; grey and dark nuggets stand in. Needs an open shell.
+- Mozzarella in Carrozza: no fried sandwich with cheese oozing from the edge; toast has fixed green flecks, sandwiches has a burger bun. Needs a plain square sandwich with filling colour.
+- Chilaquiles: no tortilla chip part; wedges stand in. Needs a triangle chip.
+- Tea Eggs: no marbled egg part; brown nuggets with thin strips stand in.
+- Tuna Mayo Onigiri (also Yaki Onigiri): no triangle rice ball; rice mounds with nori stand in.
