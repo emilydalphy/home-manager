@@ -163,9 +163,8 @@ def test_somewhere_else_triage_chip():
 
 def test_cook_empty_state_links_to_the_plan_tab():
     """Cook with nothing planned offers the way out instead of dead-ending."""
-    _assert_in("cook-empty-link", SHELL_JS, "the Cook empty-state link", "shell.js")
-    _assert_in("data-cook=\"goto-plan\"", SHELL_JS, "the Cook empty-state link target", "shell.js")
-    _assert_in(".cook-empty-link", SHELL_CSS, "the Cook empty-state link style", "shell.css")
+    _assert_in("data-cook=\"goto-plan\">Go to Plan<", SHELL_JS, "the Cook empty-state button", "shell.js")
+    _assert_in(".cook-empty .btn-main", SHELL_CSS, "the Cook empty-state button style", "shell.css")
 
 
 def test_prep_section_says_what_is_next_once_prep_is_done():

@@ -261,7 +261,7 @@ def test_with_no_plan_the_band_still_follows_the_suggestion():
 def _next_line(today: str, meals: list[dict]) -> str:
     return _node(
         _date_helpers()
-        + _function("kitchenNextCookLine") + "\n"
+        + _function("kitchenNextCookLine") + "\n" + _function("kitchenNextCook") + "\n" + _function("kitchenNextWhen") + "\n"
         "console.log(JSON.stringify(kitchenNextCookLine(" + json.dumps(meals) + ", " + json.dumps(today) + ")));"
     )
 

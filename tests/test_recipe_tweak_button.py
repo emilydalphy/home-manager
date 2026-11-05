@@ -40,6 +40,8 @@ _PRELUDE = (
     + _extract_var("RECIPE_TWEAK_GO", SHELL_JS) + "\n"
     + _extract("recipeIsChangeable", SHELL_JS) + "\n"
     + _extract("recipeTweakBtnHtml", SHELL_JS) + "\n"
+    + _extract("recipeTweakTileHtml", SHELL_JS) + "\n"
+    + _extract("tileHtml", SHELL_JS) + "\n"
     + _extract("cookUnderway", SHELL_JS) + "\n"
     + _extract("cookRecipeDockHtml", SHELL_JS) + "\n"
     + _extract("tweakElseHtml", SHELL_JS) + "\n"
@@ -59,16 +61,19 @@ _MEAL = {"entry_id": 41, "meal": "Chicken Tacos", "date": "2026-10-26", "slot": 
 
 
 @_needs_node
-def test_cooks_recipe_dock_has_a_small_tweak_beside_change_recipe_and_start_cooking_keeps_its_row():
+def test_cooks_recipe_has_tweak_beside_change_recipe_under_the_more():
+    # Z-Recipe (2026-11-05): the dock is Start cooking alone, the two ways to
+    # change the recipe are the first tiles under the ···.
     dock = _run(f"cookRecipeDockHtml({json.dumps(_MEAL)})")
-    alts = dock[dock.index('recipe-dock-alts'):dock.index('cook-hero-action')]
-    # Beside Change recipe, in the same row, ahead of it.
-    assert alts.index('data-recipe-tweak="1"') < alts.index('data-cr="open"')
-    assert 'data-entry-id="41"' in alts and 'data-date="2026-10-26"' in alts and 'data-slot="dinner"' in alts
-    assert '<span>Tweak</span>' in alts
-    # Outline, never a second apricot (Rule 5): the only apricot is Start cooking.
     assert dock.count("cook-hero-action") == 1
-    assert 'class="cook-dock-back recipe-dock-tweak recipe-tweak-btn"' in alts
+    assert "data-recipe-tweak" not in dock and 'data-cr="open"' not in dock
+    tile = _run(f"recipeTweakTileHtml({json.dumps(_MEAL)})")
+    assert 'data-recipe-tweak="1"' in tile
+    assert 'data-entry-id="41"' in tile and 'data-date="2026-10-26"' in tile and 'data-slot="dinner"' in tile
+    assert ">Tweak<" in tile
+    rows = _extract("recipeMoreRowsHtml", SHELL_JS)
+    assert rows.index("recipeTweakTileHtml(meal)") < rows.index("CHANGE_RECIPE_LABEL")
+    assert "recipeIsChangeable(meal) ? recipeTweakTileHtml(meal)" in rows
 
 
 @_needs_node

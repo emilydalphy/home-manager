@@ -83,8 +83,12 @@ _PRELUDE = (
     # import this harness and still read whose move it is.
     + _between("  var MOVE_OWNER_WORDS = {", "  // The two groups' own icons")
     + _between("  function kitchenTodayRows(", "  function cookBandEyebrow(")
-    + _function("kitchenNextCookLine") + "\n"
+    + _function("kitchenNextCookLine") + "\n" + _function("kitchenNextCook") + "\n" + _function("kitchenNextWhen") + "\n"
     + _function("cookSessionOn") + "\n"
+    + _function("tileHtml") + "\n"
+    + _function("recipeTopHtml") + "\n"
+    + _function("roundBtnHtml") + "\n"
+    + "var RECIPE_ICONS = { chevLeft: '' };\nfunction cookDockHtml(h){ return '<div class=\"dock cook-dock\">' + h + '</div>'; }\n"
     # The whole root block: the even list through the More link.
     + _between("  // ---------- Cook's root: today, in the order it is eaten", "  function renderKitchen()")
 )
@@ -150,23 +154,23 @@ def test_start_cooking_enters_cook_focus_for_tonight_from_the_root():
 
 def test_recipes_add_from_a_link_and_inventory_are_behind_one_more_link():
     root = _function("renderKitchen")
-    assert root.count("cookMoreLinkHtml()") == 3, "on the root, the no-plan state and the error state alike"
-    link = _function("cookMoreLinkHtml")
-    assert 'data-kit="more">More ···</button>' in link
-    assert "cook-empty-link" in link, "the 44px in-prose link (rule 6)"
+    # The round ··· in the head, so the root, the no-plan state and the error
+    # state all carry it (2026-11-05).
+    build = _function("buildKitchenPanel")
+    assert 'data-kit="more"' in build and "label: 'More'" in build
+    assert "cookMoreLinkHtml" not in SHELL_JS
     rows = _function("cookMoreRowsHtml")
     # Three rows since 2026-10-26: Inventory left for its own tab (Kitchen,
     # TABS key 'home' — Loop Board C1; tests/test_kitchen_tab.py).
-    assert rows.count('class="kit-row"') == 3  # + "Add from a cookbook" (recipe photo import, 2026-09-13)
-    for needle in ('data-kit="recipes"', ">Ask about our recipes<", 'data-kit="recipe-link"',
-                   'kit-row-title">Add from a link',
-                   'data-kit="recipe-photo"', ">Add from a cookbook<"):
+    assert rows.count("tileHtml(") == 3  # + "Add from a cookbook" (recipe photo import, 2026-09-13)
+    for needle in ('data-kit="recipes"', "name: 'Ask about our recipes'", 'data-kit="recipe-link"',
+                   "name: 'Add from a link'",
+                   'data-kit="recipe-photo"', "name: 'Add from a cookbook'"):
         assert needle in rows, needle
     assert 'data-sheet="inventory"' not in rows
-    # "Add from a link" carries the neutral "In development" pill
-    # (RECIPE_LINK_IN_DEVELOPMENT); Inventory's row, which had the other
-    # one, is gone with the row.
-    assert rows.count('pill pill-neutral kit-row-pill">In development</span>') == 1
+    # "Add from a link" says "In development" while
+    # RECIPE_LINK_IN_DEVELOPMENT is on; Inventory's row is gone.
+    assert "sub: RECIPE_LINK_IN_DEVELOPMENT ? 'In development' : ''" in rows
     assert "dock-primary" not in rows and "btn-primary" not in rows
     assert 'id="cook-more-sheet"' in SHELL_HTML and 'id="cook-more-scrim"' in SHELL_HTML
     assert 'id="cook-more-rows"' in SHELL_HTML
@@ -196,10 +200,9 @@ def test_the_old_lists_are_gone():
 # The doc moved with the code (Tier 2: the dock on Cook's root)
 # --------------------------------------------------------------------------
 
-def test_design_system_and_the_decision_log_say_cooks_root_has_a_dock_now():
-    assert "**Cook's root has no primary action.**" not in DESIGN
-    assert "Cook's root has one primary action" in DESIGN
-    assert "Start cooking" in DESIGN
+def test_design_system_and_the_decision_log_say_what_cooks_root_dock_holds():
+    assert "Cook's root has no dock on a normal day" in DESIGN
+    assert "\"Start cooking\" for dinner" in DESIGN
     # Nav rule 2 no longer names Cook's root as the screen with no dock.
     rule2 = DESIGN.split("- **One dock**", 1)[1][:1200]
     assert "Cook's root is the live example" not in rule2

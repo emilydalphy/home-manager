@@ -207,13 +207,11 @@ _FUNCTIONS = [
     "cookStartCooking",
     "cookStepForward",
     "cookStepBack",
-    "cookIngTickId",
-    "cookGetOutRowHtml",
-    "recipeCitationHtml",  # the credit line at the foot of the recipe (recipe photo import)
+            "recipeCitationHtml",  # the credit line at the foot of the recipe (recipe photo import)
     "cookDockHtml",
     "cookDockCookedHtml",
     # The recipe and the cooker (2026-09-18).
-    "recipeTitleHtml",
+    "recipeTopHtml", "recipeTitleHtml", "recipeIngredientTileHtml", "recipeIngredientsTabHtml", "recipeTakesHtml", "recipeMoreHtml", "roundBtnHtml", "segHtml", "tileHtml", "sectionHeadHtml",
     "recipeServesHtml",
     # ADDED 2026-10-05 (card 9, "a double-batch dinner says so up top").
     # cookRecipeHtml gained a callee, so without this the whole file is a
@@ -234,9 +232,7 @@ _FUNCTIONS = [
     "recipeChangeBtnHtml",
     # ADDED 2026-10-25: the dock's Tweak beside Change recipe, real too.
     "recipeTweakBtnHtml",
-    "recipeIngredientsHtml",
-    "recipeIngredientRowHtml",
-    "recipeStepsHtml",
+            "recipeStepsHtml",
     "cookRecipeLinesHtml",
     # ADDED 2026-10-06 (the recipe page, "Recipes people trust" slice 1):
     # cookRecipeHtml draws tabs, the credit and changes rows, a plain
@@ -248,9 +244,7 @@ _FUNCTIONS = [
     "recipeCreditHtml",
     "recipeChangesHtml",
     "recipeTimeHtml",
-    "recipeJumpsHtml",
-    "recipeOverviewHtml",
-    "recipePlainIngredientsHtml",
+            "recipePlainIngredientsHtml",
     "recipeStarsLabel",
     "recipeSourceRowHtml",
     "recipeSourcesHtml",
@@ -263,7 +257,21 @@ _FUNCTIONS = [
     "cookCookerHtml",
     "cookCookerDockHtml",
     "cookFocusHtml",
+    # Bright Dusk (2026-11-05): the recipe's ···, the timers, the reheat action.
+    "recipeMoreRowsHtml",
+    "recipeMoreSheetHtml",
+    "recipeTweakTileHtml",
+    "quietSheetHeadHtml",
+    "cookStepTimers",
+    "cookTimerClock",
+    "cookTimerTileHtml",
+    "cookStepTimerTilesHtml",
 ]
+
+
+def _tile(name: str, amount: str) -> str:
+    """An ingredient tile: the thing, then its amount (Z-Recipe)."""
+    return f'<span class="tile-name">{name}</span><span class="tile-sub">{amount}</span>'
 
 
 def _run(body: str, state: dict | None = None) -> object:
@@ -301,6 +309,10 @@ def _run(body: str, state: dict | None = None) -> object:
         + _string_const("RECIPE_SOURCES_LINE")
         + "\n"
         + _var_block("RECIPE_TABS")
+        + "\n"
+        + "\nvar PREP_LIST_ICONS = { close: '<svg/>', chevron: '<svg/>' };\n"
+        + "var GRO_ICONS = { dots: '<svg/>', back: '<svg/>' };\n"
+        + _var_block("COOK_TIMER_VERBS")
         + "\nvar recipeExtras = {};\n"
         # cookIngredientLabel reads amounts through humanQtyText (item 14,
         # design-tidy pass 2026-09-11) — its own array of nice fractions,
@@ -378,18 +390,18 @@ def test_cook_this_opens_the_recipe():
     html = _focus("recipe")
     assert '<h1 class="recipe-title">Sheet-pan chicken thighs</h1>' in html
     assert '<span class="cook-serves-label">Cooking for</span>' in html
-    # UPDATED 2026-10-06 (the recipe page, "Recipes people trust" slice 1):
-    # the recipe opens on its Overview, with Ingredients · Steps · Sources
-    # as tabs beside it.
-    for tab in ("Overview", "Ingredients", "Steps", "Sources"):
+    # UPDATED 2026-11-05 (Z-Recipe): two tabs, Ingredients and Steps, and the
+    # rest under the ···.
+    for tab in ("Ingredients", "Steps"):
         assert '">' + tab + '</button>' in html, tab
+    assert "Overview" not in html and ">Sources</button>" not in html
     ings = _focus("recipe", recipeTab="ingredients")
     # The list, with the amount that actually goes in the pan -- and NO
     # tick: "No ticking off here. Checking what you have stays in Shop ->
     # Before you shop." (Emily, 2026-10-05).
     assert 'aria-label="Ingredients"' in ings
-    assert "4 Chicken thighs" in ings
-    assert "2 tbsp Olive oil" in ings
+    assert _tile("Chicken thighs", "4") in ings
+    assert _tile("Olive oil", "2 tbsp") in ings
     assert 'data-cook="check-ing"' not in ings
     html = _focus("recipe", recipeTab="steps")
     # ...and the steps, numbered.
@@ -430,28 +442,29 @@ def test_starting_enters_one_step_at_a_time():
 @_needs_node
 def test_one_step_at_a_time_shows_exactly_one_instruction():
     html = _focus("step", step=1)
-    assert '<p class="cook-bigstep">Toss the potatoes with olive oil and smoked paprika.</p>' in html
+    assert '<h1 class="cook-bigstep">Toss the potatoes with olive oil and smoked paprika.</h1>' in html
     assert "Preheat the oven" not in html
-    # The crumb goes back to the recipe; the eyebrow says where you are.
-    assert '<button type="button" class="crumb" data-cook="stage" data-stage="recipe">&lsaquo; Recipe</button>' in html
-    assert 'class="cook-eyebrow cook-cooker-eyebrow">Sheet-pan chicken thighs · step 2 of 3</p>' in html
-    # The bar: one segment per step, lit up to this one.
-    assert html.count('class="cook-progress-seg is-done"') == 2
-    assert html.count('class="cook-progress-seg"') == 1
+    # The round close goes back to the recipe; the head says where you are.
+    assert 'data-cook="stage" data-stage="recipe" aria-label="Back to the recipe"' in html
+    assert '>Step 2 of 3</span>' in html
+    assert 'aria-label="Sheet-pan chicken thighs, step 2 of 3"' in html
+    # The bar, filled up to this step (Z-CookMode).
+    assert 'class="cook-bar-fill" style="width:67%"' in html
     assert 'aria-valuenow="2"' in html and 'aria-valuemax="3"' in html
     # The next step, previewed in passing.
     assert '<p class="cook-next">Next: roast for 35 minutes, until the chicken thighs read 165°F.</p>' in html
     # Back and Next step in the dock, and nothing else.
-    assert '<button type="button" class="cook-dock-back" data-cook="step-prev">' in html
+    assert 'data-cook="step-prev">Back a step</button>' in html
     assert '<button type="button" class="cook-hero-action" data-cook="step-next"><span>Next step</span></button>' in html
-    for gone in ("Start at", "Step 2 of 3", "The whole method", "cook-hero-slim", "For this step", "batch cook"):
+    for gone in ("Start at", "The whole method", "cook-hero-slim", "For this step", "batch cook"):
         assert gone not in html, gone
 
 
 @_needs_node
 def test_a_step_names_what_that_step_needs_from_its_own_words():
     html = _focus("step", step=1)
-    assert '<p class="cook-step-needs">2 tbsp Olive oil · 1 lb Baby potatoes, halved · 1 tsp Smoked paprika</p>' in html
+    assert '<span class="cook-needs-label">You’ll need</span>' in html
+    assert '<span class="cook-step-needs">2 tbsp Olive oil<br>1 lb Baby potatoes, halved<br>1 tsp Smoked paprika</span>' in html
     # Nothing the step doesn't mention.
     assert "4 Chicken thighs" not in html
     # A step that needs nothing gets no line.
@@ -619,20 +632,6 @@ def test_a_tick_is_filed_under_the_meal_not_its_place_in_the_list():
 
 
 @_needs_node
-def test_an_ingredient_tick_is_filed_under_its_name_so_rescaling_keeps_it():
-    """The serving stepper rewrites every quantity in place, and a plates
-    pass can add a side's ingredients to the list — a tick keyed by position
-    would move onto the wrong row for both."""
-    got = _run(
-        "console.log(JSON.stringify([\n"
-        "  cookIngTickId({ qty: '2 tbsp', item: 'Olive oil' }, 0),\n"
-        "  cookIngTickId({ qty: '4 tbsp', item: 'Olive oil' }, 3)\n"
-        "]));"
-    )
-    assert got[0] == got[1] == "olive oil"
-
-
-@_needs_node
 def test_last_weeks_ticks_expire_with_last_weeks_plan():
     """Keyed by weekly_plan_id: a new week is a new id, and writing prunes
     every other plan's entry so the store cannot only ever grow."""
@@ -725,16 +724,13 @@ def test_cook_root_has_one_apricot_and_it_is_the_docks():
         assert "cook-hero-action" not in body, f"{name} put a primary on the root"
         assert "dock-primary" not in body, f"{name} put a second primary on the root"
     root_dock = _extract("cookRootDockHtml")
-    # One per BRANCH, and exactly one branch ever runs — so the rendered
-    # screen still has one apricot. Three since 2026-09-26: a lunch prepped
-    # on an earlier day has nothing to start, and its tick is the dock's
-    # (the card's own row is not drawn under it, so an empty dock would
-    # leave the meal with nowhere to tick it).
-    # Five since Option A (2026-11-01): a prep day's Start prep and the
-    # night-before list's All done joined them.
-    assert root_dock.count("dock-primary") == 5, (
-        "one per branch: Start prep, All done, Mark it cooked, Mark eaten, or the meal's own start"
-    )
+    # Since Z-CookDay (2026-11-05) the dock holds only a tick: All done here,
+    # and through cookNextActionHtml, one branch of which ever runs, a lunch
+    # prepped on an earlier day or food already made. The meal's own start is
+    # the big card's when one meal is left, and a tile's tap otherwise.
+    assert root_dock.count("dock-primary") == 1 and "cookNextActionHtml(row)" in root_dock
+    assert _extract("cookNextActionHtml").count("dock-primary") == 3
+    assert "cookNextActionHtml(row)" in _extract("cookOneLeftHtml")
     assert "cookRecipeDockHtml(meal)" in _extract("cookRecipeHtml")
     assert "cookCookerDockHtml(meal)" in _extract("cookCookerHtml")
     assert "cook-dock" in _extract("cookDockHtml")
@@ -756,10 +752,9 @@ def test_each_cooking_stage_has_exactly_one_apricot():
     for stage, step in (("recipe", 0), ("step", 0), ("step", 2)):
         html = _focus(stage, step=step, meal=batched)
         assert html.count("cook-hero-action") == 1, (stage, step)
-    # Back is an outline, not a second fill.
-    back = SHELL_CSS[SHELL_CSS.index(".cook-dock-back {"):]
-    back = back[:back.index("}")]
-    assert "var(--apricot)" not in back and "border: 1.5px solid transparent" in back
+    # Back a step is blush, not a second fill.
+    assert 'class="btn-quiet cook-step-back" data-cook="step-prev">Back a step<' in _focus("step", step=1)
+    assert "step-prev" not in _focus("step", step=0), "the round close is the way back from step one"
 
 
 @_needs_node
@@ -832,16 +827,6 @@ def test_a_stage_with_nothing_behind_it_falls_back_rather_than_rendering_a_hole(
 # ---------- the shape of it, in CSS ----------
 
 
-def test_the_get_out_row_clears_the_44px_floor():
-    """Rule 6. The whole row is the control on this screen, not just the box
-    beside it — it is read at arm's length with wet hands."""
-    block = SHELL_CSS[SHELL_CSS.index("\n.cook-getout-row {") :][:400]
-    assert "min-height: 48px" in block
-    assert "width: 100%" in block
-    # ...and the recipe card's rows keep the floor (board 13-recipe: 44px).
-    assert "min-height: 44px" in SHELL_CSS[SHELL_CSS.index(".recipe-card .cook-getout-row {") :][:80]
-
-
 def test_the_dock_is_sticky_and_uses_tokens_only():
     # The box is `.dock` as of nav v2 part 2 (2026-09-10) — Emily's rule 2
     # puts the same strip on Plan and Shop, and one component cannot be two
@@ -912,26 +897,8 @@ def test_every_stage_reads_its_amounts_off_the_meal():
     # ...and stepping back to the recipe does not undo it: the stepper and
     # the list agree with it.
     assert ">8<" in got["back"], "the serving count follows the rescale"
-    assert "8 Chicken thighs" in got["back"]
-    assert "4 Chicken thighs" not in got["back"]
-
-
-@_needs_node
-def test_a_tick_is_read_by_the_renderer_not_patched_in_beside_it():
-    """Same caveat as the test above: this hand-mutates rather than tapping,
-    so it is a statement about the renderer, not a guard on the blocker."""
-    got = _run(
-        "var meal = cookState.data.meals[0];\n"
-        "cookState.focusMealKey = cookMealKey(meal);\n"
-        "cookToggleTick('ings', cookMealKey(meal) + ':olive oil');\n"
-        "meal.ingredients = [{ qty: '4 tbsp', item: 'Olive oil' }];\n"
-        "meal.default_servings = 8;\n"
-        "console.log(JSON.stringify(recipeIngredientsHtml(meal, 0, true)));",
-        {"data": _VIEW},
-    )
-    assert "4 tbsp Olive oil" in got
-    # The tick is filed under the name, so rescaling keeps it.
-    assert "is-done" in got
+    assert _tile("Chicken thighs", "8") in got["back"]
+    assert _tile("Chicken thighs", "4") not in got["back"]
 
 
 def test_the_serving_stepper_no_longer_rewrites_the_lists_in_place():
@@ -979,7 +946,7 @@ def test_a_freeform_meal_is_not_pointed_at_a_fill_button_that_does_not_exist():
     empty = dict(_MEAL, ingredients=[], instructions=[])
     html = _focus("recipe", meal=empty)
     assert "No steps saved yet." in html
-    assert 'class="cook-fill" data-cook="fill" data-recipe="Sheet-pan chicken thighs">Fill in this recipe</button>' in html
+    assert 'class="cook-fill btn-quiet" data-cook="fill" data-recipe="Sheet-pan chicken thighs">Fill in this recipe</button>' in html
 
 
 @_needs_node
@@ -1060,9 +1027,9 @@ def test_a_tap_on_the_stepper_is_carried_by_every_stage():
     # "2.5 tbsp" reads as "2½ tbsp" now (item 14, design-tidy pass
     # 2026-09-11) — cookIngredientLabel runs every qty through humanQtyText.
     for where in ("recipe", "back"):
-        assert "10 Chicken thighs" in got[where], f"{where} lost the rescale"
-        assert "2 ½ tbsp Olive oil" in got[where]
-        assert "4 Chicken thighs" not in got[where]
+        assert _tile("Chicken thighs", "10") in got[where], f"{where} lost the rescale"
+        assert _tile("Olive oil", "2 ½ tbsp") in got[where]
+        assert _tile("Chicken thighs", "4") not in got[where]
     # ...and the cooker's "needs" line is the new amounts too.
     assert "2 ½ tbsp Olive oil" in got["step"]
     # The count in the stepper agrees with the amounts under it.
@@ -1285,7 +1252,7 @@ def test_it_lives_in_the_tick_record_rather_than_a_second_store_beside_it():
         {"data": _VIEW},
     )
     assert got["keys"] == [got["prefix"] + "12"], got["keys"]
-    assert sorted(got["record"].keys()) == ["ings", "serves", "steps"]
+    assert sorted(got["record"].keys()) == ["ings", "serves", "steps", "timers"]
     assert got["record"]["serves"]["e41"]["servings"] == 5
 
 

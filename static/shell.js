@@ -407,6 +407,17 @@
     return DEFAULT_TAB;
   }
 
+  // A recipe, the prep list and the cooker take the whole screen: no tab bar
+  // (Z-Recipe, Z-Prep, Z-CookMode). Read off the active tab and its state, so
+  // every way in or out, a chat action's View included, lands right.
+  function syncFullScreen(tabKey) {
+    if (typeof document === 'undefined' || !document.body || !document.body.classList) return;
+    var key = tabKey || currentTabKey();
+    var full = (key === 'kitchen' && cookState.screen !== 'overview') ||
+      (key === 'week' && !!weekState && weekState.step === 'meal');
+    document.body.classList.toggle('is-full-screen', !!full);
+  }
+
   function escapeHtml(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -1146,6 +1157,7 @@
       el.classList.toggle('active', el.dataset.tab === key);
     });
     setAskHintForTab(key);
+    if (typeof syncFullScreen === 'function') syncFullScreen(key);
     // Onboarding coaching part 1: this tab's two example prompts, for its
     // first three visits. Counted here rather than in each build*Panel,
     // because a re-visit to an already-built panel is still a visit.
@@ -11530,17 +11542,15 @@
         // hidden at a time — the same shape Grocery's shopping mode uses,
         // and never a route: /kitchen is the path in both.
         '<div id="kit-root-view">' +
-          // The root band: the day as its eyebrow, "1 cook tonight" as its
-          // one line (renderKitchen), the gear in it. Cook mode replaces
-          // this whole view, so the band never shows over a step.
-          rootBandHtml({ id: 'kit-band', eyebrow: cookBandEyebrow(todayLocalStr()), title: 'Cook' }) +
+          // The plain head: Cook and the day (Z-CookDay), then the ··· for
+          // the three rare entry points and the gear. Cook mode replaces this
+          // whole view, so the head never shows over a step.
+          rootBandHtml({ id: 'kit-band', eyebrow: cookBandEyebrow(todayLocalStr()), title: 'Cook',
+            tools: roundBtnHtml({ cls: 'root-band-more', attrs: ' data-kit="more" aria-haspopup="dialog"', label: 'More', icon: GRO_ICONS.dots }) }) +
           '<div class="kit-body" id="kit-body"></div>' +
-          // The root's dock (nav rule 2): "Start cooking" for tonight's
-          // cook, "Mark eaten" for a reheat night, nothing at all when
-          // tonight has no cook. Last in the markup because that is where
-          // a sticky footer's flow position has to be (same as Shop's).
-          // Until 2026-09-13 Cook's root had no dock by rule — see the
-          // decision-log entry and DESIGN_SYSTEM §6 for the change.
+          // The root's dock: only for what a tile can't do, a tick
+          // (cookRootDockHtml). Last in the markup because that is where a
+          // sticky footer's flow position has to be (same as Shop's).
           '<div class="dock cook-root-dock" id="kit-dock" hidden></div>' +
         '</div>' +
         '<div id="kit-cook-view" hidden></div>' +
@@ -12221,42 +12231,11 @@
     return s.charAt(0).toUpperCase() + s.slice(1);
   }
 
-  // "1 cook tonight" — the band's one line; the day itself is the band's
-  // eyebrow (buildKitchenPanel). "tonight" only while every cook left
-  // today really is a dinner — a lunch to make at eleven in the morning
-  // is not tonight, and saying so would be the kind of small lie that
-  // stops anyone trusting the line.
-  //
-  // Once anything today has been ticked the count says "left": at eight in
-  // the evening with two of three cooked, "3 cooks today" is a number
-  // nobody recognises and it reads as though the evening has not started.
-  // The done state is the rows' own, which is the plan's and the moves'
-  // taken together (kitchenTodayRows).
-  //
-  // A day with nothing on it at all returns nothing: the empty moment
-  // under the band says "nothing to cook tonight", and the band must not
-  // say it too (Emily, 2026-09-11 — the two used to say it twice).
-  // Cook's eyebrow is the whole date, and it leads the sub-line: "Sunday, Sep 13 · 1 cook tonight".
+  // Cook's one line is the day (Z-CookDay).
   function cookBandEyebrow(todayIso) {
-    return bandDateLabel(todayIso);
+    return dayName(todayIso, { weekday: 'long' });
   }
 
-  function kitchenSubtitle(rows, meals, todayIso) {
-    var cooks = rows.filter(function (r) { return !r.isReheat && !r.isTakeout && !r.done && !r.prepped; });
-    var anyDone = rows.some(function (r) { return r.done; });
-    if (!cooks.length) {
-      // Only takeout today: nothing was ever there to cook, so not "left".
-      if (rows.length && rows.every(function (r) { return r.isTakeout && !r.done; })) return 'nothing to cook today';
-      return rows.length ? 'nothing left to cook today' : '';
-    }
-    var allDinner = cooks.every(function (r) {
-      var meal = (meals || [])[r.idx];
-      return meal && meal.slot === 'dinner';
-    });
-    var noun = cooks.length === 1 ? 'cook' : 'cooks';
-    return cooks.length + ' ' + noun + (anyDone ? ' left' : '') +
-      (allDinner ? ' tonight' : ' today');
-  }
 
   // "Next: Saturday, pancakes." — the first real cook after today, so a
   // quiet day still says what is coming. Plain text (the empty moment
@@ -12266,39 +12245,38 @@
   // with the year when it isn't this one, so a plan sitting in another
   // year never reads as this month's Wednesday (Loop Board, 2026-09-15).
   function kitchenNextCookLine(meals, todayIso) {
-    var next = (meals || []).filter(function (m) {
-      return m.date && !m.component_category && m.date > todayIso && !m.is_leftovers && !m.is_takeout && m.meal;
-    }).sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; })[0];
+    var next = kitchenNextCook(meals, todayIso);
     if (!next) return '';
-    if (daysBetweenLocal(todayIso, next.date) <= 6) {
-      return 'Next: ' + dayName(next.date, { weekday: 'long' }) + ', ' + next.meal + '.';
-    }
+    return 'Next: ' + kitchenNextWhen(next, todayIso) + (daysBetweenLocal(todayIso, next.date) <= 6 ? ', ' : ' — ') + next.meal + '.';
+  }
+
+  // The first real cook after today.
+  function kitchenNextCook(meals, todayIso) {
+    return (meals || []).filter(function (m) {
+      return m.date && !m.component_category && m.date > todayIso && !m.is_leftovers && !m.is_takeout && m.meal;
+    }).sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; })[0] || null;
+  }
+
+  function kitchenNextWhen(next, todayIso) {
+    if (daysBetweenLocal(todayIso, next.date) <= 6) return dayName(next.date, { weekday: 'long' });
     var when = dayName(next.date, { weekday: 'short' }) + ' ' + dayName(next.date, { month: 'short', day: 'numeric' });
     if (next.date.slice(0, 4) !== todayIso.slice(0, 4)) when += ', ' + next.date.slice(0, 4);
-    return 'Next: ' + when + ' — ' + next.meal + '.';
+    return when;
   }
 
   // ---------- Cook's root: today, in the order it is eaten ----------
-  // Emily picked Option A, "every meal the same size", on 2026-11-01 (the
-  // Cook declutter canvas). The root is one calm ivory list of today's
-  // meals — Breakfast, Lunch, Snack, Dinner, Snack — each row the same
-  // size: the slot small on top, the dish, the minutes on the right. A done
-  // meal is a check and muted text; the first meal not yet done carries a
-  // small apricot dot and "· next". A tap on any row opens that meal (its
-  // recipe, or the leftovers card), where it is cooked and ticked.
-  //
-  // Dark spruce is kept for two moments only (Emily: the dark dinner card
-  // "gives it too much attention… what if I have lunch on my mind still"):
-  //   - a prep day before the prep is done: the prep session leads, big,
-  //     above the list (it was "way too hidden"), and the dock says Start
-  //     prep. Once it is done it is one quiet line.
-  //   - the night before: once the day's last meal is done, tomorrow's
-  //     fridge moves and prep become one "Get ready for <day>" checklist.
-  //     Before that they are one quiet line under the list. A thaw shows
-  //     there and nowhere else on the root — never twice.
+  // Z-CookDay (Emily, 2026-11-05): today's prep tile, then the meals as equal
+  // tiles, then next up. No meal is highlighted. Z-Cook, one big plain card,
+  // only when a single meal is left. A done meal keeps its tile, with a tick.
+  // A tap on any tile opens that meal (its recipe, or the leftovers card),
+  // where it is cooked and ticked.
+  //   - a prep day before the prep is done: the prep tile leads. Once it is
+  //     done it is one quiet line.
+  //   - the night before: once the day's last meal is done, tomorrow's fridge
+  //     moves and prep become one "Get ready for <day>" checklist. Before
+  //     that they are one quiet line under the tiles. A thaw shows there and
+  //     nowhere else on the root, never twice.
   // No clock times anywhere: minutes, never "start by" or "on the table".
-  // What came off: the week shelf, the Tonight card, the thaw card at the
-  // top, the get-ready rows and each row's box/Cook button/start-by line.
 
   // Eating order: breakfast, lunch, the first snack (an afternoon one),
   // dinner, then any later snacks. Ties keep the plan's own order.
@@ -12322,6 +12300,7 @@
     return null;
   }
 
+  // A tile's plate, the tick on a done one.
   var COOK_ROW_CHECK =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg>';
   var COOK_ROW_CHEV =
@@ -12338,41 +12317,75 @@
   }
 
   function cookTodayRowHtml(row, isNext, data) {
-    var who = row.done ? '' : cookRowCookName(row, data);
-    var label = cookSlotLabel(row.slot) + (who ? ' · ' + who : '') + (isNext ? ' · next' : '');
-    var mark = row.done
-      ? '<span class="cook-today-mark is-done" role="img" aria-label="Done">' + COOK_ROW_CHECK + '</span>'
-      : '<span class="cook-today-mark">' + (isNext ? '<span class="cook-today-dot" aria-hidden="true"></span>' : '') + '</span>';
-    return '<button type="button" class="cook-today-row' + (row.done ? ' is-done' : '') + (isNext ? ' is-next' : '') + '" ' +
-        'data-cook="focus" data-idx="' + row.idx + '">' +
-      mark +
-      ((typeof Plates !== 'undefined' && Plates.html(row.plate, 44)) ||
-        (typeof slotIconTileHtml === 'function' ? slotIconTileHtml(row.slot) : '')) +
-      '<span class="cook-today-text">' +
-        '<span class="cook-today-slot">' + escapeHtml(label) + '</span>' +
-        '<span class="cook-today-dish">' + escapeHtml(row.title) + '</span>' +
-      '</span>' +
-      (row.right
-        ? '<span class="cook-today-right' + (row.right === 'Ready' ? ' is-ready' : '') + '">' + escapeHtml(row.right) + '</span>'
-        : '') +
-    '</button>';
+    return tileHtml({
+      art: (typeof Plates !== 'undefined' && Plates.html(row.plate, 96)) || '',
+      name: row.title,
+      sub: cookTileSub(row, data),
+      cls: 'cook-today-row' + (row.done ? ' is-done' : ''),
+      attrs: ' data-cook="focus" data-idx="' + row.idx + '"',
+      extra: row.done ? '<span class="cook-tile-tick is-ticked" role="img" aria-label="Done"><span class="tick-ring">' + COOK_ROW_CHECK + '</span></span>' : ''
+    });
   }
 
-  function cookTodayListHtml(ordered, next, data) {
-    return '<div class="cook-today" aria-label="Today’s meals">' +
+  // "Breakfast", "Dinner · Vineeth · 35 min", "Lunch · Reheat". Minutes on
+  // dinner only, as drawn, as on Plan's day; the state words on any meal.
+  function cookTileSub(row, data) {
+    var who = row.done ? '' : cookRowCookName(row, data);
+    var right = row.right;
+    if (/\d\s*min$/.test(right || '') && row.slot !== 'dinner') right = '';
+    return [cookSlotLabel(row.slot), who, right].filter(Boolean).join(' · ');
+  }
+
+  function cookTodayListHtml(ordered, next, data, nextUp) {
+    return '<div class="tiles cook-today" aria-label="Today’s meals">' +
       ordered.map(function (r) { return cookTodayRowHtml(r, r === next, data); }).join('') +
+      (nextUp || '') +
     '</div>';
   }
 
-  // Nothing at all to eat from this plan today (A-Thu): "Night off", and
-  // the next real cook by name, so a quiet day still says what is coming.
+  // Z-Cook: one meal left, one big plain card. The card's action is the one
+  // that meal's tile would lead to (cookNextActionHtml). The meals already
+  // done keep their tiles under it.
+  function cookOneLeftHtml(row, ordered, data) {
+    var done = ordered.filter(function (r) { return r !== row; });
+    var who = cookRowCookName(row, data);
+    return '<section class="cook-one" aria-label="Today’s meal">' +
+      '<button type="button" class="cook-one-open" data-cook="focus" data-idx="' + row.idx + '">' +
+        ((typeof Plates !== 'undefined' && Plates.html(row.plate, 216)) || '') +
+        '<span class="cook-one-words">' +
+          '<span class="cook-one-slot">' + escapeHtml(cookSlotLabel(row.slot) + (who ? ' · ' + who : '')) + '</span>' +
+          '<span class="cook-one-name">' + escapeHtml(row.title) + '</span>' +
+          (row.right ? '<span class="cook-one-time">' + escapeHtml(row.right) + '</span>' : '') +
+        '</span>' +
+      '</button>' +
+      cookNextActionHtml(row) +
+    '</section>' +
+    (done.length ? cookTodayListHtml(done, null, data) : '');
+  }
+
+  // "Chicken Jalfrezi", "Next up, Fri": the next real cook, after today's.
+  function cookNextUpTileHtml(meals, todayIso) {
+    var next = kitchenNextCook(meals, todayIso);
+    if (!next) return '';
+    var near = daysBetweenLocal(todayIso, next.date) <= 6;
+    return tileHtml({
+      art: (typeof Plates !== 'undefined' && Plates.html(next.plate, 96)) || '',
+      name: next.meal,
+      sub: 'Next up, ' + (near ? dayName(next.date, { weekday: 'short' }) : kitchenNextWhen(next, todayIso)),
+      cls: 'cook-next-up',
+      attrs: ' data-cook="focus" data-idx="' + (meals || []).indexOf(next) + '"'
+    });
+  }
+
+  // Nothing at all to eat from this plan today: "Night off" on a plain card,
+  // and the next real cook as a tile, so a quiet day still says what is coming.
   function cookNightOffHtml(meals, todayIso) {
-    var next = kitchenNextCookLine(meals, todayIso).replace(/\.$/, '');
-    return '<section class="cook-off" aria-label="Today">' +
+    var next = cookNextUpTileHtml(meals, todayIso);
+    return '<section class="note-card cook-off" aria-label="Today">' +
         '<h2 class="cook-off-title">Night off</h2>' +
         '<p class="cook-off-line">Nothing to cook today.</p>' +
       '</section>' +
-      (next ? '<p class="cook-quiet-line">' + escapeHtml(next) + '</p>' : '');
+      (next ? '<div class="tiles">' + next + '</div>' : '');
   }
 
   // ---- The night before ----
@@ -12421,7 +12434,7 @@
     '</button>';
   }
 
-  // The checklist (A-NightList): one dark spruce card, a box per job.
+  // The checklist: one plain card, a tick box per job.
   // No minutes in the eyebrow: a prep row carries no estimate, and a made-up
   // "about 20 min" is the kind of number nobody trusts twice.
   function cookBedCardHtml(tasks, todayIso) {
@@ -12432,7 +12445,7 @@
         tasks.map(function (t) {
           return '<label class="cook-bed-item' + (t.done ? ' is-done' : '') + '">' +
             '<input type="checkbox" class="cook-bed-input" data-move-id="' + escapeHtml(t.id) + '"' + (t.done ? ' checked' : '') + '>' +
-            '<span class="cook-bed-box" aria-hidden="true">' + COOK_ROW_CHECK + '</span>' +
+            '<span class="cook-bed-box tick-ring" aria-hidden="true">' + COOK_ROW_CHECK + '</span>' +
             '<span class="cook-bed-text">' +
               '<span class="cook-bed-task">' + escapeHtml(t.title) + '</span>' +
               // Missed, and too late for the fridge now: the freezer step's
@@ -12491,32 +12504,22 @@
     return 'For ' + first + ' to ' + dayName(days[days.length - 1], { weekday: 'long' });
   }
 
-  // A prep day before the prep is done (Main.dc): the session is the big
-  // spruce card at the top — the one time a big card leads during the day.
-  // The whole card opens the prep list; so does the dock's Start prep.
+  // "up to 2 hours": the server's "Up to 2 hr", said the way the board does.
+  function cookPrepBudgetWords(session) {
+    var lead = String((session && session.header) || '').split(' · ')[0];
+    var whole = /^Up to (\d+) hr$/.exec(lead);
+    if (whole) return 'up to ' + whole[1] + (whole[1] === '1' ? ' hour' : ' hours');
+    return lead.charAt(0).toLowerCase() + lead.slice(1);
+  }
+
+  // A prep day before the prep is done (Z-CookDay): the wide tile at the top
+  // says today's budget and what is left. The whole tile opens the prep list.
   function cookPrepDayCardHtml(session) {
-    var total = session.items_total || 0, done = session.items_done || 0;
-    var pct = total ? Math.round(done / total * 100) : 0;
-    var lead = String(session.header || '').split(' · ')[0];
-    var forLine = cookPrepForLabel(session.covers);
+    var left = Math.max((session.items_total || 0) - (session.items_done || 0), 0);
+    var lead = cookPrepBudgetWords(session);
     return '<button type="button" class="cook-prepday" data-cook="session" data-date="' + escapeHtml(session.date) + '">' +
-      '<span class="cook-prepday-head">' +
-        (lead ? '<span class="cook-prepday-eyebrow">' + escapeHtml(lead) + '</span>' : '') +
-        '<span class="cook-prepday-title">' + escapeHtml(session.weekday + ' prep') + '</span>' +
-        (forLine ? '<span class="cook-prepday-for">' + escapeHtml(forLine) + '</span>' : '') +
-      '</span>' +
-      '<span class="cook-prepday-progress">' +
-        '<span class="cook-prepday-bar" aria-hidden="true"><span class="cook-prepday-fill" style="width:' + pct + '%"></span></span>' +
-        '<span class="cook-prepday-count">' + done + ' of ' + total + ' done</span>' +
-      '</span>' +
-      ((session.sections || []).length
-        ? '<span class="cook-prepday-secs">' + session.sections.map(function (sec) {
-            return '<span class="cook-prepday-sec' + (sec.done ? ' is-done' : '') + '">' +
-              '<span class="cook-prepday-sec-title">' + escapeHtml(sec.title) + '</span>' +
-              '<span class="cook-prepday-sec-line">' + escapeHtml(sec.done ? 'Done' : (sec.line || '')) + '</span>' +
-            '</span>';
-          }).join('') + '</span>'
-        : '') +
+      '<span class="cook-prepday-eyebrow">Prep today' + (lead ? ' · ' + escapeHtml(lead) : '') + '</span>' +
+      '<span class="cook-prepday-title">' + left + (left === 1 ? ' thing to do' : ' things to do') + '</span>' +
     '</button>';
   }
 
@@ -12541,25 +12544,11 @@
     '</button>';
   }
 
-  // The dock names the next thing to do. A prep day before the prep is
-  // done: "Start prep". Otherwise the next meal's action — "Make lunch",
-  // "Start cooking" for dinner, "Keep cooking" once under way — which opens
-  // its recipe (cookEnterFocus; every way in lands there). Food that is
-  // already made is ticked from here: "Mark eaten", or "Mark it cooked" for
-  // a dish cooked on an earlier prep day. Once the day's meals are done and
-  // the night-before list is open: "All done". Nothing left: no dock.
-  function cookRootDockHtml(row, opts) {
-    opts = opts || {};
-    var s = opts.session;
-    if (s) {
-      return '<button type="button" class="dock-primary" data-cook="session" data-date="' + escapeHtml(s.date) + '">' +
-        (s.items_done ? 'Keep prepping' : 'Start prep') + '</button>';
-    }
-    if (!row || row.done) {
-      return opts.bedLeft
-        ? '<button type="button" class="dock-primary" data-cook="bed-all">All done</button>'
-        : '';
-    }
+  // The next meal's action: "Make lunch", "Start cooking" for dinner, "Keep
+  // cooking" once under way, which opens its recipe (cookEnterFocus; every
+  // way in lands there). Food already made is a tick: "Mark eaten", or "Mark
+  // it cooked" for a dish cooked on an earlier prep day.
+  function cookNextActionHtml(row) {
     // Cooked on an earlier prep day: what is left is the tick, and it has
     // to be here — the row opens the recipe, not a box. The aria-label is
     // what tells cookCheckMeal this is a cook being logged.
@@ -12580,6 +12569,22 @@
       escapeHtml(label) + '</button>';
   }
 
+  // The root's dock holds only what a tile can't do. Z-CookDay draws no
+  // button: a tile opens the meal, and the prep tile opens the prep. What
+  // stays is a tick with no other way to it on this screen, for the next
+  // meal: food already made, and "All done" on the night-before list.
+  function cookRootDockHtml(row, opts) {
+    opts = opts || {};
+    if (opts.session) return '';
+    if (!row || row.done) {
+      return opts.bedLeft
+        ? '<button type="button" class="dock-primary" data-cook="bed-all">All done</button>'
+        : '';
+    }
+    if (opts.oneLeft) return '';
+    return (row.prepped || row.isReheat || row.isTakeout || row.ready) ? cookNextActionHtml(row) : '';
+  }
+
   // The root under the band, as markup: { html, dock }. Pure — the data,
   // the day's moves, the kitchen's day and the day the night-before list
   // was opened by hand — so the tests run it whole under node.
@@ -12589,11 +12594,14 @@
     var ordered = cookEatingOrder(rows);
     var next = cookNextRow(ordered);
     var allEaten = rows.length > 0 && !next;
+    // One meal left: the big card (Z-Cook). A day with two or more left, or
+    // none, is the tiles (Z-CookDay).
+    var oneLeft = !!next && ordered.filter(function (r) { return !r.done; }).length === 1;
     // A prep day before the prep is done: the session leads.
     var session = cookSessionOn(data, todayIso);
     var prepLeads = !!(session && session.items_total > 0 && session.items_done < session.items_total);
-    // The night before: a line under the list, the spruce checklist once
-    // the day's meals are done (or the line was tapped).
+    // The night before: a line under the tiles, the checklist once the
+    // day's meals are done (or the line was tapped).
     var bed = cookBedTasks(moves, meals, todayIso, data);
     var bedLeft = bed.filter(function (t) { return !t.done; }).length;
     var bedOpen = bed.length > 0 && (bedOpenOn === todayIso || (allEaten && bedLeft > 0));
@@ -12602,25 +12610,19 @@
       html:
         (prepLeads ? cookPrepDayCardHtml(session) : '') +
         (bedLeads ? cookBedCardHtml(bed, todayIso) : '') +
-        (rows.length ? cookTodayListHtml(ordered, next, data) : cookNightOffHtml(meals, todayIso)) +
+        (rows.length
+          ? (oneLeft ? cookOneLeftHtml(next, ordered, data)
+            : cookTodayListHtml(ordered, next, data, cookNextUpTileHtml(meals, todayIso)))
+          : cookNightOffHtml(meals, todayIso)) +
         (session && !prepLeads && session.items_total > 0 ? cookPrepDoneLineHtml(session) : '') +
         (bed.length && !bedLeads ? (bedOpen ? cookBedCardHtml(bed, todayIso) : cookBedLineHtml(bed, todayIso)) : '') +
         cookNextPrepLineHtml(data, todayIso),
       dock: cookRootDockHtml(next, {
         session: prepLeads ? session : null,
+        oneLeft: oneLeft,
         bedLeft: bedOpen ? bedLeft : 0
       })
     };
-  }
-
-  // The quiet way to the tab's three rare entry points — Recipes, Add
-  // from a link, Inventory — one tap off the root (cookMoreSheet) rather
-  // than three rows on it. Kept reachable from Cook rather than moved into
-  // Preferences: they are things the cook does, not settings.
-  function cookMoreLinkHtml() {
-    return '<div class="cook-more-foot">' +
-      '<button type="button" class="cook-empty-link cook-more-link" data-kit="more">More ···</button>' +
-    '</div>';
   }
 
   // The root itself. Rendered by renderCook (below) whenever cook mode is
@@ -12634,7 +12636,7 @@
     var dock = panel.querySelector('#kit-dock');
     var content = panel.querySelector('.kitchen-content');
     var todayIso = kitchenDayIso();
-    setRootBand(panel, 'kit-band', { eyebrow: cookBandEyebrow(todayIso) });
+    setRootBand(panel, 'kit-band', { eyebrow: cookBandEyebrow(todayIso), sub: '' });
 
     function setDock(html) {
       if (!dock) return;
@@ -12644,48 +12646,36 @@
     }
 
     if (cookState.loadError || !cookState.data) {
-      setRootBand(panel, 'kit-band', { sub: '' });
-      body.classList.remove('is-empty');
       body.innerHTML =
-        '<p class="cook-error">Couldn’t load the kitchen right now — switch tabs and back to try again.' + snwLink() + '</p>' +
-        cookMoreLinkHtml();
+        '<p class="note-card cook-error">Couldn’t load the kitchen right now — switch tabs and back to try again.' + snwLink() + '</p>';
       setDock('');
       return;
     }
 
     var data = cookState.data;
     var meals = data.meals || [];
-    var rows = kitchenTodayRows(meals, kitchenState.moves, todayIso);
-    setRootBand(panel, 'kit-band', { sub: kitchenSubtitle(rows, meals, todayIso) });
 
     if (!data.weekly_plan_id && !meals.length) {
-      // No plan covers today: the empty moment (it fills the panel and
-      // centres itself, so the body is told it carries one), with the way
-      // to a plan as its second line. Two honest wordings for two different
-      // truths (get_cooker_view, 2026-09-13):
-      //
-      // - A household that has never planned at all gets "No plan yet".
-      // - A household whose last approved week has simply run out gets
-      //   told THAT, with the week itself named (last_planned_label).
-      // The in-prose link keeps its own 44px row either way.
-      body.classList.add('is-empty');
+      // No plan covers today: one plain card and the way to a plan. Two
+      // honest wordings for two different truths (get_cooker_view,
+      // 2026-09-13): a household that has never planned, and one whose last
+      // approved week has run out, with the week named (last_planned_label).
       var lastPlanned = data.last_planned_label;
       body.innerHTML =
-        emptyMomentHtml('pot', lastPlanned ? 'Nothing planned this week yet.' : 'Nothing to cook tonight.',
-          lastPlanned ? 'Last planned: ' + lastPlanned : null) +
-        '<p class="cook-empty">' + (lastPlanned ? 'Ready to plan the next one? ' : 'No plan yet this week &mdash; ') +
-          '<button type="button" class="cook-empty-link" data-cook="goto-plan">plan one on the Plan tab' + (lastPlanned ? '' : ' first') + '</button>.</p>' +
-        cookMoreLinkHtml();
+        '<div class="note-card cook-empty">' +
+          '<p class="cook-empty-line">' + (lastPlanned ? 'Nothing planned this week yet.' : 'Nothing to cook tonight.') + '</p>' +
+          (lastPlanned ? '<p class="cook-empty-detail">Last planned: ' + escapeHtml(lastPlanned) + '</p>' : '') +
+          '<button type="button" class="btn-main" data-cook="goto-plan">Go to Plan</button>' +
+        '</div>';
       setDock('');
       return;
     }
-    body.classList.remove('is-empty');
 
     // "Show me tomorrow" with no cook to open (cookShowTomorrow) lands on
     // the night-before list, open.
     if (kitchenState.scrollToPrep) cookState.bedOpenOn = todayIso;
     var parts = cookRootParts(data, kitchenState.moves, todayIso, cookState.bedOpenOn);
-    body.innerHTML = parts.html + cookAttentionHtml() + cookMoreLinkHtml();
+    body.innerHTML = parts.html + cookAttentionHtml();
     setDock(parts.dock);
   }
 
@@ -12724,33 +12714,18 @@
   var cookMoreSheet = document.getElementById('cook-more-sheet');
 
   function cookMoreRowsHtml() {
-    return '<div class="kit-rows">' +
+    return '<div class="tiles in-sheet">' +
       // There is no recipe browser in this app, and this row does not
       // pretend there is one: it opens the chat on the question, which
       // the assistant answers off list_recipes (app/tools/recipes.py).
-      '<button type="button" class="kit-row" data-kit="recipes">' +
-        '<span class="kit-row-icon">' + KITCHEN_ICONS.book + '</span>' +
-        '<span class="kit-row-text"><span class="kit-row-title">Ask about our recipes</span></span>' +
-        '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
-      '</button>' +
+      tileHtml({ name: 'Ask about our recipes', kind: 'text', attrs: ' data-kit="recipes"' }) +
       // Bring in a recipe the household already makes, from a web page —
       // the review-before-save sheet (recipe import, 2026-09-11).
-      '<button type="button" class="kit-row" data-kit="recipe-link">' +
-        '<span class="kit-row-icon">' + KITCHEN_ICONS.link + '</span>' +
-        '<span class="kit-row-text"><span class="kit-row-title">Add from a link' +
-        (RECIPE_LINK_IN_DEVELOPMENT ?
-          ' <span class="pill pill-neutral kit-row-pill">In development</span>' : '') +
-        '</span></span>' +
-        '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
-      '</button>' +
+      tileHtml({ name: 'Add from a link', sub: RECIPE_LINK_IN_DEVELOPMENT ? 'In development' : '', kind: 'text', attrs: ' data-kit="recipe-link"' }) +
       // ...or from a photograph of a cookbook page — the same sheet, the
       // same review-before-save, and the book gets its credit (recipe
       // photo import, 2026-09-13).
-      '<button type="button" class="kit-row" data-kit="recipe-photo">' +
-        '<span class="kit-row-icon">' + GRO_ICONS.camera + '</span>' +
-        '<span class="kit-row-text"><span class="kit-row-title">Add from a cookbook</span></span>' +
-        '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
-      '</button>' +
+      tileHtml({ name: 'Add from a cookbook', kind: 'text', attrs: ' data-kit="recipe-photo"' }) +
       // No Inventory row any more (2026-10-26, Loop Board C1): what's home
       // has its own tab, Kitchen (TABS key 'home'), between Shop and Cook.
     '</div>';
@@ -21527,7 +21502,7 @@
     var isCook = !!(cookMeal && info.isCook);
     var canAdd = !!(entry && entry.state === 'planned' && !day.isPast && isCook);
     var card = isCook && cookMeal.has_full_recipe && (cookMeal.ingredients || []).length
-      ? recipeIngredientsHtml(cookMeal, 'wk', false)
+      ? recipePlainIngredientsHtml(cookMeal, 'wk')
       : '';
     // "Change recipe" (card 12, 2026-10-05): under the ingredients, on
     // every meal that HAS a recipe to change — never a reheat night, which
@@ -21552,19 +21527,12 @@
     '</section>';
   }
 
-  // The recipe screen (Emily, 2026-09-18, "The recipe is the recipe" —
-  // board 13-recipe): the crumb, the dish as the title, "Cooking for" and
-  // the count, the plate's parts (the Plan step's own way to change the
-  // plate), the Ingredients card, the Steps card, where the recipe came
-  // from, and "Start cooking" in the dock. No clock (no "Start at", no
-  // "on the table by"), no minutes, no batch question, no "for 6" chip —
+  // The recipe screen for a meal Cook doesn't hold (Z-Recipe, Z-Steps): next
+  // week's draft, a reheat night. A round Back goes up one level BY NAME to
+  // wherever this meal was opened from (weekState.mealBack), then the plate,
+  // the name and the two tabs. No clock, no batch question, no "for 6" chip:
   // the servings control is the one place the number lives, and on a batch
   // night it shows the number really being cooked.
-  //
-  // The crumb goes up one level BY NAME to wherever this meal was opened
-  // from (weekState.mealBack): "‹ Monday" when it was the Day step's card,
-  // "‹ This week" when it was a dish name on the root's list — the same
-  // words the Day step's own crumb uses for the same destination.
   // Whether a reheat night can be marked eaten now (Emily, 2026-09-27):
   // today, on the approved week Cook holds. On a draft, or a day still
   // ahead, nothing has been eaten yet — "Mark eaten" there was a button
@@ -21586,6 +21554,24 @@
     return '<button type="button" class="recipe-source-link" data-wk-source-date="' + escapeHtml(from.date) + '" ' +
       'data-wk-source-slot="' + escapeHtml(from.slot) + '">' +
       escapeHtml('See ' + dayName(from.date, { weekday: 'long' }) + '’s recipe') + '</button>';
+  }
+
+  // The Meal step's two tabs: a tap shows the other pane.
+  function wireMealRecipeTabs(root) {
+    root.querySelectorAll('[data-wk-recipe-tab]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var tab = btn.getAttribute('data-wk-recipe-tab');
+        weekState.mealTab = tab;
+        root.querySelectorAll('[data-wk-recipe-tab]').forEach(function (b) {
+          var on = b === btn;
+          b.classList.toggle('is-on', on);
+          b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+        root.querySelectorAll('[data-recipe-pane]').forEach(function (pane) {
+          pane.hidden = pane.getAttribute('data-recipe-pane') !== tab;
+        });
+      });
+    });
   }
 
   function wkDayIndexOf(date) {
@@ -21683,6 +21669,7 @@
       });
       return;
     }
+    weekState.mealTab = 'ingredients';
     goMealsStep('meal', opts);
   }
 
@@ -21697,23 +21684,42 @@
     var line = mealHeroLine(entry);
     var back = (weekState.mealBack === 'week' || weekState.mealBack === 'review') ? weekState.mealBack : 'day';
     var hasRecipe = info.isCook && cookMeal.has_full_recipe;
+    var hasSteps = hasRecipe && (cookMeal.instructions || []).length > 0;
+    var tab = hasSteps && weekState.mealTab === 'steps' ? 'steps' : 'ingredients';
+    var backWords = back === 'week' ? 'This week' : back === 'review' ? 'Check the week' : dayName(day.date, { weekday: 'long' });
+    var ingredients =
+      (hasRecipe ? recipeServesHtml(cookMeal, 'wk') : '') +
+      recipeBatchLineHtml(cookMeal) +
+      (typeof platePartsRowsHtml === 'function' ? platePartsRowsHtml(day, slot, entry) : '') +
+      mealIngredientsHtml(day, slot, entry, info) +
+      (hasRecipe && !hasSteps ? recipeStepsHtml(cookMeal, false) : '') +
+      (hasRecipe ? '' : mealNoRecipeHtml(slot, info)) +
+      // Where the recipe came from — the book and page, or the site —
+      // and the kept page photo behind it (recipe photo import).
+      (cookMeal ? recipeCitationHtml(cookMeal.citation, cookMeal.photo_urls, 'wk-meal-cite') : '');
+    // Both tabs are drawn and one is hidden, so a tap on the switcher costs
+    // no redraw (wireMealsStep) and the Plan step's own wiring reaches both.
     // 'review' on a draft folds to the root (renderMealsStep), which IS the
-    // review — so the crumb lands right either way.
-    return '<button type="button" class="crumb" data-wk-back="' + back + '">‹ ' +
-        escapeHtml(back === 'week' ? 'This week' : back === 'review' ? 'Check the week' : dayName(day.date, { weekday: 'long' })) + '</button>' +
+    // review — so the back button lands right either way.
+    return recipeTopHtml(
+        roundBtnHtml({ label: 'Back to ' + backWords, icon: RECIPE_ICONS.chevLeft, cls: 'recipe-back', attrs: ' data-wk-back="' + back + '"' }),
+        '', entry.plate) +
       '<div class="wk-meal-body recipe-body">' +
-        (typeof Plates !== 'undefined' ? Plates.html(entry.plate, 96) : '') +
         '<h1 class="recipe-title">' + escapeHtml(mealDisplayName(entry)) + '</h1>' +
         (line ? '<p class="recipe-line">' + escapeHtml(line) + '</p>' : '') +
         (typeof mealSourceLinkHtml === 'function' ? mealSourceLinkHtml(entry) : '') +
-        (hasRecipe ? recipeServesHtml(cookMeal, 'wk') : '') +
-        recipeBatchLineHtml(cookMeal) +
-        (typeof platePartsRowsHtml === 'function' ? platePartsRowsHtml(day, slot, entry) : '') +
-        mealIngredientsHtml(day, slot, entry, info) +
-        (hasRecipe ? recipeStepsHtml(cookMeal, false) : mealNoRecipeHtml(slot, info)) +
-        // Where the recipe came from — the book and page, or the site —
-        // and the kept page photo behind it (recipe photo import).
-        (cookMeal ? recipeCitationHtml(cookMeal.citation, cookMeal.photo_urls, 'wk-meal-cite') : '') +
+        (hasSteps
+          ? segHtml([
+              { label: 'Ingredients', on: tab === 'ingredients', attrs: ' data-wk-recipe-tab="ingredients"' },
+              { label: 'Steps', on: tab === 'steps', attrs: ' data-wk-recipe-tab="steps"' }
+            ], { cls: 'recipe-tabs', attrs: ' aria-label="Recipe"' })
+          : '') +
+        '<div class="recipe-pane" data-recipe-pane="ingredients"' + (tab === 'ingredients' ? '' : ' hidden') + '>' + ingredients + '</div>' +
+        (hasSteps
+          ? '<div class="recipe-pane" data-recipe-pane="steps"' + (tab === 'steps' ? '' : ' hidden') + '>' +
+              recipeTakesHtml(cookMeal) + recipeStepsHtml(cookMeal, false) +
+            '</div>'
+          : '') +
       '</div>' +
       // The screen's one apricot primary (Rule 5), in the dock like every
       // other screen's (nav v2 rule 2).
@@ -22211,6 +22217,7 @@
     // The All set screen paints the whole panel spruce, not just its own
     // box, so the ground never shows under the dock.
     panel.classList.toggle('is-allset', weekState.step === 'allset');
+    if (typeof syncFullScreen === 'function') syncFullScreen();
     // Chores fills the panel the same way (is-chores, shell.css) so its
     // empty moment centres and its one dock sits at the foot — scoped to
     // this state rather than fixed on #week-plan-view for every step, so
@@ -22307,6 +22314,7 @@
 
   function wireMealsStep(panel, steps) {
     if (typeof wireCouldntFit === 'function') wireCouldntFit(panel, steps);
+    if (typeof wireMealRecipeTabs === 'function') wireMealRecipeTabs(steps);
     steps.querySelectorAll('[data-wk-day]').forEach(function (row) {
       row.addEventListener('click', function () {
         goMealsStep('day', { dayIndex: Number(row.getAttribute('data-wk-day')) });
@@ -23252,6 +23260,18 @@
       'data-date="' + escapeHtml(meal.date || '') + '" data-slot="' + escapeHtml(meal.slot || '') + '" ' +
       'aria-label="' + escapeHtml('Tweak — ' + (meal.meal || 'this recipe')) + '">' +
       WK_ICONS.tweak + '<span>' + escapeHtml(RECIPE_TWEAK_LABEL) + '</span></button>';
+  }
+
+  // The same door as a tile, on the recipe's ···.
+  function recipeTweakTileHtml(meal) {
+    return tileHtml({
+      kind: 'text',
+      name: RECIPE_TWEAK_LABEL,
+      label: 'Tweak — ' + (meal.meal || 'this recipe'),
+      attrs: ' data-recipe-tweak="1" data-entry-id="' + escapeHtml(String(meal.entry_id)) + '" ' +
+        'data-dish="' + escapeHtml(meal.meal || '') + '" data-date="' + escapeHtml(meal.date || '') + '" ' +
+        'data-slot="' + escapeHtml(meal.slot || '') + '"'
+    });
   }
 
   function openRecipeTweakSheet(entryId, dish, date, slot) {
@@ -25395,7 +25415,9 @@
     if (!parsed || typeof parsed !== 'object') parsed = {};
     cookState.ticks = {
       steps: (parsed.steps && typeof parsed.steps === 'object') ? parsed.steps : {},
-      ings: (parsed.ings && typeof parsed.ings === 'object') ? parsed.ings : {}
+      ings: (parsed.ings && typeof parsed.ings === 'object') ? parsed.ings : {},
+      // A running timer's end time, by meal, step and place in the step.
+      timers: (parsed.timers && typeof parsed.timers === 'object') ? parsed.timers : {}
     };
     // The serving overrides ride in the same record and are hydrated with
     // it — exactly once per plan, since this function returns early once
@@ -25442,6 +25464,7 @@
       window.localStorage.setItem(COOK_TICKS_PREFIX + planId, JSON.stringify({
         steps: cookState.ticks.steps,
         ings: cookState.ticks.ings,
+        timers: cookState.ticks.timers,
         serves: cookState.serves
       }));
       // Every other plan's ticks belong to a week that is over. Nobody is
@@ -25759,6 +25782,8 @@
     }
 
     updateCookVoiceButtons();
+    if (typeof syncFullScreen === 'function') syncFullScreen();
+    if (cookState.screen === 'focus' && cookState.focusStage === 'step' && typeof cookTimerPulse === 'function') cookTimerPulse();
     // Entering/leaving a screen resets to the top (Grocery's shopping-mode
     // precedent does the same); every other render — a step checked, a box
     // ticked — keeps the reader's place.
@@ -25803,34 +25828,25 @@
   // is cooked on ONE night, and the night that eats the leftovers should
   // not be a second cook. So: no recipe, no steps, no prep, no Bulk badge,
   // no "Start cooking" — the source it came from, an optional line of the
-  // recipe's own reheating advice, and one action.
+  // recipe's own reheating advice, and one action, in the dock.
   function cookReheatCardHtml(meal, chipLabel) {
     var isDone = meal.cooked_status === 'done';
-    var chips = [];
-    if (meal.servings) chips.push('for ' + meal.servings);
     var note = meal.reheat_note || '';
-    return '<div class="cook-hero-top">' +
-        '<span class="cook-hero-chip">' + escapeHtml(chipLabel) + '</span>' +
-        '<span class="cook-hero-rule"></span>' +
-      '</div>' +
-      '<div class="cook-hero-line">' +
-        '<h2 class="cook-hero-headline' + (isDone ? ' is-done' : '') + '">' +
-          escapeHtml(meal.leftovers_headline || 'Leftovers') +
-        '</h2>' +
-        (note ? '<p class="cook-hero-note">' + escapeHtml(note) + '</p>' : '') +
-      '</div>' +
-      (chips.length
-        ? '<div class="cook-hero-chips">' + chips.map(function (c) {
-            return '<span class="cook-meta-chip">' + escapeHtml(c) + '</span>';
-          }).join('') + '</div>'
-        : '') +
-      '<div class="cook-hero-actions">' +
-        '<button type="button" class="cook-hero-action" ' +
-          'data-cook="check-meal" data-entry-id="' + meal.entry_id + '" data-next="' + (isDone ? 'pending' : 'done') + '" ' +
-          'data-name="' + escapeHtml(meal.leftovers_headline || meal.meal || '') + '">' +
-          '<span>' + escapeHtml(isDone ? REHEAT_UNDO_LABEL : REHEAT_ACTION_LABEL) + '</span>' + (isDone ? '' : ICONS.arrow) +
-        '</button>' +
-      '</div>';
+    return '<h1 class="recipe-title' + (isDone ? ' is-done' : '') + '">' +
+        escapeHtml(meal.leftovers_headline || 'Leftovers') + '</h1>' +
+      '<p class="recipe-line cook-reheat-for">' +
+        escapeHtml(chipLabel + (meal.servings ? ' · for ' + meal.servings : '')) + '</p>' +
+      (note ? '<p class="recipe-line">' + escapeHtml(note) + '</p>' : '');
+  }
+
+  // Its one action: "Mark eaten", or the undo once it is ticked.
+  function cookReheatActionHtml(meal) {
+    var isDone = meal.cooked_status === 'done';
+    return '<button type="button" class="cook-hero-action' + (isDone ? ' is-done' : '') + '" ' +
+      'data-cook="check-meal" data-entry-id="' + meal.entry_id + '" data-next="' + (isDone ? 'pending' : 'done') + '" ' +
+      'data-name="' + escapeHtml(meal.leftovers_headline || meal.meal || '') + '">' +
+      '<span>' + escapeHtml(isDone ? REHEAT_UNDO_LABEL : REHEAT_ACTION_LABEL) + '</span>' +
+    '</button>';
   }
 
   // The overview's spruce "Tonight" hero (cookHeroHtml, and its reheat
@@ -25879,37 +25895,26 @@
     return null;
   }
 
-  // The session's own screen — the prep list (Emily, 2026-11-01, mockup C2
-  // on the "Sunday prep" canvas, LOCKED). The spruce band as before
-  // ("‹ Cook", the day, "Sunday prep", and the header line the server
-  // writes: "Up to 2 hr · about 1 hr 25 hands-on"), then one card per
-  // section in the server's order (prep_list.SECTIONS), each folded to its
-  // name and "2 things · 25 min hands-on". Only one is open at a time,
-  // starting with the first not yet done. At the foot, Made on the night
-  // (sand): what didn't fit, what was taken off, and what is better fresh,
-  // each with its line, and "Add it" on everything that may come back. No
-  // apricot primary: the work here IS the ticking (Rule 5).
+  // The session's own screen — the prep list (Z-Prep, Emily 2026-11-05): a
+  // round Back, Prep, the day and the budget, a progress bar, then the
+  // server's sections in the server's order (prep_list.SECTIONS) as tiles
+  // with tick boxes, two across. All open; each folds on a tap of its head.
+  // At the foot, Made on the night: what didn't fit, what was taken off and
+  // what is better fresh, each with its line, and "Add it" on everything that
+  // may come back. The work here IS the ticking, so there is no dock.
   var PREP_LIST_ICONS = {
     chevron:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>',
     close:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7l10 10"/><path d="M17 7L7 17"/></svg>'
   };
-  // Which section is open, per prep day: a key, '' for all folded, or
-  // absent for "the first one not done yet". A screen preference, not a
-  // fact — it lives here, not on the server.
-  var prepListOpen = {};
+  // Which sections are folded, per prep day: { date: { key: true } }. All
+  // open until someone folds one. A screen preference, not a fact, so it
+  // lives here, not on the server, and outlives every re-render a tick makes.
+  var prepListFolded = {};
 
-  function prepListOpenKey(session) {
-    var sections = session.sections || [];
-    if (Object.prototype.hasOwnProperty.call(prepListOpen, session.date)) {
-      var key = prepListOpen[session.date];
-      if (!key || sections.some(function (s) { return s.key === key; })) return key;
-    }
-    for (var i = 0; i < sections.length; i++) {
-      if (!sections[i].done) return sections[i].key;
-    }
-    return '';
+  function prepSectionFolded(session, key) {
+    return !!(prepListFolded[session.date] && prepListFolded[session.date][key]);
   }
 
   function prepListItem(session, key) {
@@ -25922,30 +25927,37 @@
 
   function cookSessionHtml(data, session, meals) {
     if (!session) return '';
-    var allDone = session.items_total > 0 && session.items_done === session.items_total;
-    var note = allDone ? 'That’s the prep done.' : (session.header || '');
-    var openKey = prepListOpenKey(session);
+    var total = session.items_total || 0;
+    var done = session.items_done || 0;
+    var allDone = total > 0 && done === total;
+    var over = session.over_budget_minutes
+      ? String(session.header || '').split(' · ').pop() : '';
+    var sub = allDone ? 'That’s the prep done.'
+      : [session.weekday, cookPrepBudgetWords(session), over].filter(Boolean).join(' · ');
+    var pct = total ? Math.round(done / total * 100) : 0;
     var sections = (session.sections || []).map(function (sec) {
-      return cookPrepSectionHtml(session, sec, sec.key === openKey, meals);
-    }).join('');
+      return cookPrepSectionHtml(session, sec, !prepSectionFolded(session, sec.key), meals);
+    });
+    // Two columns, the first half down the left: the board's reading order.
+    var half = Math.ceil(sections.length / 2);
     var fresh = (session.made_fresh || []).map(function (k) { return prepListItem(session, k); }).filter(Boolean);
-    return '<div class="cook-focus">' +
-      '<div class="cook-hero">' +
-        '<button type="button" class="crumb on-spruce" data-cook="exit-session">&lsaquo; Cook</button>' +
-        '<div class="cook-hero-top">' +
-          '<span class="cook-hero-chip">' + escapeHtml(cookDateLabel(session.date)) + '</span>' +
-          '<span class="cook-hero-rule"></span>' +
-          '<span class="cook-hero-tag">' + session.items_done + ' of ' + session.items_total + '</span>' +
-        '</div>' +
-        '<div class="cook-hero-line">' +
-          '<h2 class="cook-hero-headline' + (allDone ? ' is-done' : '') + '">' +
-            escapeHtml(session.weekday + ' prep') +
-          '</h2>' +
-          (note ? '<p class="cook-hero-note">' + escapeHtml(note) + '</p>' : '') +
-        '</div>' +
+    return '<div class="cook-focus cook-prep">' +
+      '<div class="cook-prep-top">' +
+        roundBtnHtml({ label: 'Back to Cook', icon: RECIPE_ICONS.chevLeft, cls: 'recipe-back', attrs: ' data-cook="exit-session"' }) +
       '</div>' +
-      '<div class="cook-body prep-list">' +
-        sections +
+      '<div class="cook-prep-head">' +
+        '<h1 class="screen-title">Prep</h1>' +
+        '<p class="screen-sub">' + escapeHtml(sub) + '</p>' +
+      '</div>' +
+      '<div class="cook-bar" role="progressbar" aria-label="' + escapeHtml(done + ' of ' + total + ' done') + '" ' +
+        'aria-valuemin="0" aria-valuemax="' + total + '" aria-valuenow="' + done + '"><span class="cook-bar-fill" style="width:' + pct + '%"></span></div>' +
+      '<div class="prep-list">' +
+        (sections.length
+          ? '<div class="prep-cols">' +
+              '<div class="prep-col">' + sections.slice(0, half).join('') + '</div>' +
+              (sections.length > 1 ? '<div class="prep-col">' + sections.slice(half).join('') + '</div>' : '') +
+            '</div>'
+          : '') +
         (fresh.length ? cookPrepFreshHtml(session, fresh) : '') +
       '</div>' +
     '</div>';
@@ -25960,10 +25972,9 @@
       '<button type="button" class="prep-sec-head" data-cook="prep-section" ' +
         'data-date="' + escapeHtml(session.date) + '" data-section="' + escapeHtml(sec.key) + '" ' +
         'aria-expanded="' + (open ? 'true' : 'false') + '" aria-controls="' + escapeHtml(bodyId) + '">' +
-        (typeof prepSectionTileHtml === 'function' ? prepSectionTileHtml(sec.key) : '') +
         '<span class="prep-sec-text">' +
           '<span class="prep-sec-title">' + escapeHtml(sec.title) + '</span>' +
-          '<span class="prep-sec-line">' + escapeHtml(sec.done ? 'Done' : sec.line) + '</span>' +
+          '<span class="prep-sec-line">' + escapeHtml(sec.done ? 'Done' : prepSectionTime(sec)) + '</span>' +
         '</span>' +
         '<span class="prep-sec-chev">' + PREP_LIST_ICONS.chevron + '</span>' +
       '</button>' +
@@ -25973,6 +25984,12 @@
           '</div>'
         : '') +
     '</section>';
+  }
+
+  // "25 min": the server's section line, "2 things · 25 min hands-on", at the
+  // length the board draws. The rows under it are the count.
+  function prepSectionTime(sec) {
+    return String(sec.line || '').split(' · ').pop().replace(/ hands-on$/, '');
   }
 
   function cookSessionItemHtml(item, meals, session) {
@@ -26059,15 +26076,13 @@
     '</div>';
   }
 
-  // Made on the night — Emily: "keep this card exactly as mocked". The
-  // title, the one line under it (the server's made_fresh_line, which
+  // Made on the night: the title, the one line under it (the server's made_fresh_line, which
   // follows the budget: "your 2 hours", "your 1 hour"), and each item with
   // its line and "Add it". A better-fresh item has no Add it: it is never
   // prepped.
   function cookPrepFreshHtml(session, items) {
     return '<section class="prep-fresh">' +
-      '<div class="prep-fresh-head">' + (typeof prepSectionTileHtml === 'function' ? prepSectionTileHtml('fresh') : '') +
-        '<h3 class="prep-fresh-title">Made on the night</h3></div>' +
+      '<h3 class="prep-fresh-title">Made on the night</h3>' +
       '<p class="prep-fresh-line">' + escapeHtml(session.made_fresh_line || '') + '</p>' +
       '<div class="prep-fresh-list">' +
         items.map(function (item) {
@@ -26091,9 +26106,8 @@
   function cookTogglePrepSection(el) {
     var date = el.getAttribute('data-date');
     var key = el.getAttribute('data-section');
-    var session = cookSessionOn(cookState.data, date);
-    if (!session) return;
-    prepListOpen[date] = prepListOpenKey(session) === key ? '' : key;
+    var folded = prepListFolded[date] || (prepListFolded[date] = {});
+    if (folded[key]) delete folded[key]; else folded[key] = true;
     renderCook();
   }
 
@@ -26237,12 +26251,9 @@
     // half-cooked dish resumes it.
     cookState.focusStage = 'recipe';
     cookState.stepIdx = 0;
-    // The recipe page opens on its Overview, folded (2026-10-06) — except
-    // on the tab the visit is for (Emily, 2026-11-02): a cook under way
-    // opens on its Steps, and a recipe opened from Shop on what to buy.
-    cookState.recipeTab = cookOpeningTab(cookState.data.meals[idx], cookState.focusOrigin);
-    cookState.recipeChangesOpen = false;
-    cookState.recipeMenuOpen = false;
+    // The recipe page opens on its Ingredients (Z-Recipe), except a cook
+    // under way, which opens on its Steps (Emily, 2026-11-02).
+    cookState.recipeTab = cookOpeningTab(cookState.data.meals[idx]);
     cookState.recipeRateOpen = false;
     // WHICH dish this focus is on, by identity rather than by its place in
     // the list — see the guard in renderCook.
@@ -26263,11 +26274,8 @@
       steps.some(function (st, i) { return cookTicked('steps', cookMealKey(meal) + ':' + i); });
   }
 
-  function cookOpeningTab(meal, origin) {
-    if (!meal || !meal.has_full_recipe) return 'overview';
-    if (cookUnderway(meal)) return 'steps';
-    if (origin && origin.tab === 'grocery' && (meal.ingredients || []).length) return 'ingredients';
-    return 'overview';
+  function cookOpeningTab(meal) {
+    return cookUnderway(meal) ? 'steps' : 'ingredients';
   }
 
   function cookExitFocus() {
@@ -26385,7 +26393,7 @@
     var done = tasks.filter(function (t) { return t.status === 'done' || t.status === 'skipped'; }).length;
     var allDone = done === tasks.length;
     var total = tasks.length;
-    // On the recipe's Overview the done rows lead, under "Already done"
+    // On the recipe the done rows lead, under "Already done"
     // (recipeAlreadyDoneHtml, 2026-11-02), so this section holds only
     // what is still to do — and goes once nothing is.
     if (allDone) return '';
@@ -26456,17 +26464,14 @@
     var srcLine = meal.made_at_prep
       ? 'Made at ' + meal.made_at_prep.weekday + '’s prep.'
       : (src.date ? 'Cooked on ' + cookDateLabel(src.date) + '.' : '');
-    return '<div class="cook-focus">' +
-      '<div class="cook-hero cook-hero-quiet">' +
-        '<button type="button" class="crumb on-spruce" data-cook="exit-focus">&lsaquo; ' +
-          escapeHtml(cookBackLabel()) + '</button>' +
+    return '<div class="cook-focus cook-recipe">' +
+      recipeTopHtml(roundBtnHtml({ label: 'Back to ' + cookBackLabel(), icon: RECIPE_ICONS.chevLeft, cls: 'recipe-back', attrs: ' data-cook="exit-focus"' }),
+        '', meal.plate) +
+      '<div class="cook-body recipe-body">' +
         cookReheatCardHtml(meal, dayLabel) +
+        (srcLine ? '<p class="recipe-line">' + escapeHtml(srcLine) + '</p>' : '') +
       '</div>' +
-      (srcLine
-        ? '<div class="cook-body"><div class="card cook-focus-recipe">' +
-            '<p class="cook-dim">' + escapeHtml(srcLine) + '</p>' +
-          '</div></div>'
-        : '') +
+      cookDockHtml(cookReheatActionHtml(meal)) +
     '</div>';
   }
 
@@ -26588,40 +26593,10 @@
     renderCook();
   }
 
-  // What a tick is filed under. The item's own name, not its position:
-  // the serving stepper rewrites every quantity in place, and a plates
-  // pass can add a side's ingredients to the list, so a position would
-  // move the ticks onto the wrong rows.
-  function cookIngTickId(ing, i) {
-    var name = String((ing && ing.item) || '').trim().toLowerCase();
-    return name || ('#' + i);
-  }
-
-  // The WHOLE row is the control, not just the box beside it — this is the
-  // one screen in the app read at arm's length with wet hands, and the
-  // 44px the .cook-box::after inset already guarantees is the floor, not
-  // the target. The box keeps its class (so a ticked ingredient reads
-  // exactly like a ticked prep task or a ticked step) and becomes a span,
-  // since a button inside a button is not a thing.
-  function cookGetOutRowHtml(ing, i, mealKey) {
-    var id = cookIngTickId(ing, i);
-    var done = cookTicked('ings', mealKey + ':' + id);
-    return '<li class="cook-getout-item' + (done ? ' is-done' : '') + '">' +
-      '<button type="button" class="cook-getout-row" ' +
-        'data-cook="check-ing" data-meal-key="' + escapeHtml(mealKey) + '" ' +
-        'data-ing="' + escapeHtml(id) + '" aria-pressed="' + (done ? 'true' : 'false') + '">' +
-        '<span class="cook-box' + (done ? ' checked' : '') + '">' + COOK_ICONS.check + '</span>' +
-        '<span class="cook-getout-text">' + escapeHtml(cookIngredientLabel(ing)) + '</span>' +
-      '</button>' +
-    '</li>';
-  }
-
   // ---------- The dock ----------
-  // Each stage's one apricot. Rule 5 holds one screen at a time: the
-  // root's one apricot is its own dock's "Start cooking" (cookRootDockHtml,
-  // 2026-09-13), and this is a step of the tab one level down with one of
-  // its own. Sticky rather than in flow, because the phone is across the
-  // counter and the next thing to do must not be a scroll away.
+  // Each stage's one apricot, at the foot of a screen with no tab bar.
+  // Sticky rather than in flow, because the phone is across the counter and
+  // the next thing to do must not be a scroll away.
   function cookDockHtml(primaryHtml) {
     return '<div class="dock cook-dock">' + primaryHtml + '</div>';
   }
@@ -26641,18 +26616,28 @@
   }
 
   // ---------- The recipe, as the recipe ----------
-  // Board 13-recipe: the crumb, the dish as the title, "Cooking for" and
-  // the count, the Ingredients card, the Steps card, "Start cooking" in
-  // the dock. These renderers are shared with Plan's Meal step
+  // Z-Recipe and Z-Steps (Emily, 2026-11-05): round Back, round ···, the
+  // plate at 216, the name, two tabs. Ingredients are tiles with amounts,
+  // steps are numbered tiles under "Takes about N min", "Start cooking" in
+  // the dock and no tab bar. These renderers are shared with Plan's Meal step
   // (mealStepHtml), which is the same screen reached from the plan — one
-  // recipe, two doors, never two drawings of it. `live` is cook mode's
-  // copy: the ingredient rows tick (the cupboard is open) and an empty
-  // recipe offers "Fill in this recipe"; the plan's copy reads.
+  // recipe, two doors, never two drawings of it. `live` is cook mode's copy:
+  // an empty recipe offers "Fill in this recipe"; the plan's copy reads.
 
-  // The title: the dish, in the display face at screen-title size.
+  // The top of the screen: the back button and the ··· over the plate. With
+  // no plate the two buttons still get their row.
+  function recipeTopHtml(backHtml, moreHtml, plateKey) {
+    var plate = typeof Plates !== 'undefined' ? Plates.html(plateKey, 216) : '';
+    return '<div class="recipe-top' + (plate ? '' : ' no-plate') + '">' +
+      backHtml +
+      (moreHtml ? '<span class="recipe-top-more">' + moreHtml + '</span>' : '') +
+      plate +
+    '</div>';
+  }
+
+  // The title: the dish.
   function recipeTitleHtml(meal) {
-    return (typeof Plates !== 'undefined' ? Plates.html(meal.plate, 96) : '') +
-      '<h1 class="recipe-title' + (meal.cooked_status === 'done' ? ' is-done' : '') + '">' +
+    return '<h1 class="recipe-title' + (meal.cooked_status === 'done' ? ' is-done' : '') + '">' +
       escapeHtml(meal.meal || 'Dinner') + '</h1>';
   }
 
@@ -26711,58 +26696,32 @@
     return '<p class="recipe-batch">' + escapeHtml(said) + '</p>';
   }
 
-  // Ingredients: one card, the eyebrow, one row per ingredient with a box
-  // beside it. Live, the row is cook mode's tick (cookGetOutRowHtml — the
-  // same store the steps are ticked in, per device, per plan); on the
-  // plan's copy the box is the look of that list and the row is text.
-  // The "eyeball these" note (cookUnscaledHtml) rides inside the card,
-  // since it is about these amounts.
-  function recipeIngredientsHtml(meal, idx, live) {
-    var ings = meal.ingredients || [];
-    if (!ings.length) return '';
-    var mealKey = cookMealKey(meal);
-    var rows = live
-      ? ings.map(function (ing, i) { return cookGetOutRowHtml(ing, i, mealKey); }).join('')
-      : ings.map(function (ing) { return recipeIngredientRowHtml(ing); }).join('');
-    // "Ingredients · 8 servings" on a batch night (Emily's card,
-    // 2026-10-05), so the heading answers the question the amounts under
-    // it raise. The number is cookServesShown — the count the amounts
-    // below are really written for, which on a batch card starts as the
-    // whole batch and follows the cook's own stepper taps. Reading
-    // meal.servings instead would leave the heading claiming the batch
-    // over a list the cook had just halved.
-    var count = meal.batch_line ? cookServesShown(meal) : null;
-    return '<section class="card recipe-card recipe-ings" aria-label="Ingredients">' +
-      '<span class="cook-eyebrow recipe-eyebrow">Ingredients' +
-        (count ? ' &middot; ' + escapeHtml(String(count)) + (String(count) === '1' ? ' serving' : ' servings') : '') + '</span>' +
-      '<ul class="cook-getout">' + rows + '</ul>' +
-      cookUnscaledHtml(meal, idx) +
-    '</section>';
-  }
+  // Ingredients: tiles, two across, the thing and its amount (Z-Recipe). A
+  // tile reads; ticking what you have stays in Shop → Before you shop.
 
-  // The plan's copy of a row: the amount and the thing (cookIngredientLabel
-  // — the same words cook mode ticks), then the tags the plate pass put on
-  // it ("added", "at home", a made-ahead note, a substitute).
-  function recipeIngredientRowHtml(ing) {
-    if (!ing || !ing.item) return '';
+  // One tile: the thing, its amount, then the tags the plate pass put on it
+  // ("added", "at home", a made-ahead note, a substitute).
+  function recipeIngredientTileHtml(ing) {
     var tags = [];
     if (ing.added) tags.push('added');
     if (ing.at_home) tags.push('at home');
     if (ing.made_ahead) tags.push(ing.made_ahead);
     if (ing.substitute) tags.push('using ' + ing.substitute + ' instead');
-    return '<li class="cook-getout-item' + (ing.added ? ' is-added' : '') + '">' +
-      '<span class="cook-getout-row recipe-row">' +
-        '<span class="cook-box recipe-box" aria-hidden="true"></span>' +
-        '<span class="cook-getout-text">' + escapeHtml(cookIngredientLabel(ing)) +
-          tags.map(function (t) { return ' <span class="wk-ing-tag">' + escapeHtml(t) + '</span>'; }).join('') +
-        '</span>' +
-      '</span>' +
-    '</li>';
+    return tileHtml({
+      kind: 'text',
+      name: ing.item_label || ing.item,
+      sub: ing.qty ? humanQtyText(ing.qty) : '',
+      cls: 'recipe-ing' + (ing.added ? ' is-added' : ''),
+      extra: tags.length
+        ? '<span class="recipe-ing-tags">' + tags.map(function (t) { return '<span class="wk-ing-tag">' + escapeHtml(t) + '</span>'; }).join('') + '</span>'
+        : ''
+    });
   }
 
-  // Steps: one card, the eyebrow, a sand number tile and the step. The
-  // make-ahead steps (advance_prep_step_indices, 1-based) keep their "Do
-  // ahead" word beside the number, so the night-before job reads as one.
+
+  // Steps: one numbered tile each (Z-Steps). The make-ahead steps
+  // (advance_prep_step_indices, 1-based) keep their "Do ahead" word, so the
+  // night-before job reads as one.
   // A recipe with no steps says so; cook mode's copy offers "Fill in this
   // recipe" (a write, through onCookClick), the plan's copy says the fact
   // and leaves the button to the screen that can run it.
@@ -26777,10 +26736,10 @@
       var emptyLine = meal.details_pending && !live
         ? 'I’ll write this one up when you approve the week.'
         : 'No steps saved yet' + (live ? '.' : ' — ask me for the recipe in the chat.');
-      body = '<p class="cook-dim recipe-empty">' + emptyLine + '</p>' +
+      body = '<div class="note-card recipe-empty"><p class="cook-dim">' + emptyLine + '</p>' +
         (live
-          ? '<button type="button" class="cook-fill" data-cook="fill" data-recipe="' + escapeHtml(meal.meal || '') + '">Fill in this recipe</button>'
-          : '');
+          ? '<button type="button" class="cook-fill btn-quiet" data-cook="fill" data-recipe="' + escapeHtml(meal.meal || '') + '">Fill in this recipe</button>'
+          : '') + '</div>';
     } else {
       // A cook under way shows where it got to (Emily, 2026-11-02): the
       // steps the cooker ticked read as done, the first one left says
@@ -26808,9 +26767,7 @@
         }).join('') +
       '</ol>';
     }
-    return '<section class="card recipe-card recipe-method" aria-label="Steps">' +
-      '<span class="cook-eyebrow recipe-eyebrow">Steps</span>' + body +
-    '</section>';
+    return '<section class="recipe-method" aria-label="Steps">' + body + '</section>';
   }
 
   // The quiet lines under the title on cook mode's copy: what an earlier
@@ -26823,28 +26780,21 @@
       (meal.advance_prep_notes ? '<p class="recipe-line">' + escapeHtml(meal.advance_prep_notes) + '</p>' : '');
   }
 
-  // ---------- The recipe page (2026-10-06) ----------
-  // Loop Board "Recipes people trust", slice 1 — the page as Emily locked
-  // it on 2026-10-05: the dish, one line "who it's for · serves N", four
-  // tabs (Overview · Ingredients · Steps · Sources), Start cooking and
-  // Change recipe in the dock, and a ⋯ menu (Save to my recipes · Add to
-  // shopping list · Rate this recipe). Ingredients are a plain list: "No
-  // ticking off here. Checking what you have stays in Shop → Before you
-  // shop."
+  // ---------- The recipe page ----------
+  // Two tabs on the screen (Z-Recipe, Z-Steps). Everything else the page
+  // carries is under its ···: Tweak, Change recipe, Save to my recipes, Add
+  // to shopping list, Rate this recipe, Sources, what changed for this
+  // household, who it's for, the time split, the plate's parts and Ask.
   //
   // Where a recipe came from and what was changed for this household are
   // the RECIPE's facts, not the plan's, so they come from
-  // GET /api/recipes/{id} (`research`, `household_changes` — the server
-  // half is a sibling slice). Fetched once per recipe per page load and
-  // drawn when it lands; absent (an older server, a recipe written before
-  // research existed, a failed read) the credit line and the changes row
-  // are simply not there, and Sources falls back to the recipe's own
-  // citation or says there is none.
+  // GET /api/recipes/{id} (`research`, `household_changes`). Fetched once per
+  // recipe per page load; absent (an older server, a recipe written before
+  // research existed, a failed read) those rows are simply not there, and
+  // Sources falls back to the recipe's own citation or says there is none.
   var RECIPE_TABS = [
-    { key: 'overview', label: 'Overview' },
     { key: 'ingredients', label: 'Ingredients' },
-    { key: 'steps', label: 'Steps' },
-    { key: 'sources', label: 'Sources' }
+    { key: 'steps', label: 'Steps' }
   ];
   var RECIPE_SOURCES_LINE = 'Opens the original recipe on their site. Pomona’s version is adapted for your household.';
 
@@ -26879,7 +26829,11 @@
             (cookState.data.meals || [])[cookState.focusIdx];
           // Only on success: a failed read redraws nothing (so it cannot
           // loop), and the next real render asks again.
-          if (recipeExtras[id] && on && on.recipe_id === id && cookState.focusStage === 'recipe') renderCook();
+          if (recipeExtras[id] && on && on.recipe_id === id && cookState.focusStage === 'recipe') {
+            renderCook();
+            // ...and the ··· sheet, if it opened while the read was out.
+            if (quietSheetEl && !quietSheetEl.hidden) recipeSheetRefresh(on);
+          }
         });
       return null;
     }
@@ -26902,103 +26856,72 @@
     }
     var serves = meal.default_servings ? cookServesShown(meal) : null;
     if (serves) parts.push('serves ' + serves);
-    if (!parts.length) return '';
-    return '<p class="recipe-for">' + escapeHtml(parts.join(' · ')) + '</p>';
+    return parts.join(' · ');
   }
 
   function recipeTabsHtml(active) {
-    return '<div class="wk-seg recipe-tabs" role="tablist" aria-label="Recipe">' +
-      RECIPE_TABS.map(function (t) {
-        var on = t.key === active;
-        return '<button type="button" class="wk-seg-btn' + (on ? ' is-on' : '') + '" role="tab" ' +
-          'aria-selected="' + (on ? 'true' : 'false') + '" data-cook="recipe-tab" data-tab="' + t.key + '">' +
-          t.label + '</button>';
-      }).join('') +
-    '</div>';
+    return segHtml(RECIPE_TABS.map(function (t) {
+      return { label: t.label, on: t.key === active, attrs: ' data-cook="recipe-tab" data-tab="' + t.key + '"' };
+    }), { cls: 'recipe-tabs', attrs: ' aria-label="Recipe"' });
   }
 
   // The credit line, the server's own sentence ("Based on Swasthi's
   // Recipes, checked against Hebbar's Kitchen and Cook with Manali" — or
-  // "Originally based on …" once the household has changed it a lot), then
-  // "See sources". Nothing without research.
+  // "Originally based on …" once the household has changed it a lot), at the
+  // top of Sources. Nothing without research. Never under the name.
   function recipeCreditHtml(extra) {
     var credit = extra && extra.research && extra.research.credit;
     if (!credit) return '';
-    return '<div class="recipe-credit">' +
-      '<p class="recipe-credit-line">' + escapeHtml(credit) + '</p>' +
-      '<button type="button" class="recipe-link" data-cook="recipe-tab" data-tab="sources">See sources</button>' +
-    '</div>';
+    return '<p class="recipe-credit-line">' + escapeHtml(credit) + '</p>';
   }
 
-  // "Changed for your household" — ONE row by default ("3 changes ›"),
-  // opening on tap to the list (Emily, 2026-10-05: collapse the changes
-  // card). Nothing when nothing was changed.
+  // "Changed for your household": the list, in a sheet off the ···. Nothing
+  // when nothing was changed.
   function recipeChangesHtml(extra) {
     var changes = (extra && extra.household_changes) || [];
     if (!changes.length) return '';
-    var open = !!cookState.recipeChangesOpen;
-    var count = changes.length + (changes.length === 1 ? ' change' : ' changes');
-    return '<section class="card recipe-changes' + (open ? ' is-open' : '') + '">' +
-      '<button type="button" class="recipe-changes-row" data-cook="recipe-changes" aria-expanded="' + (open ? 'true' : 'false') + '">' +
-        '<span class="recipe-changes-title">Changed for your household</span>' +
-        '<span class="recipe-changes-count">' + escapeHtml(count) + ' ' + (open ? '&#8964;' : '&rsaquo;') + '</span>' +
-      '</button>' +
-      (open
-        ? '<ul class="recipe-changes-list">' + changes.map(function (c) {
-            return '<li>' + escapeHtml(String(c)) + '</li>';
-          }).join('') + '</ul>'
-        : '') +
-    '</section>';
+    return '<ul class="recipe-changes-list">' + changes.map(function (c) {
+      return '<li>' + escapeHtml(String(c)) + '</li>';
+    }).join('') + '</ul>';
   }
 
   // "Time · 45 min" with the split when both halves are known.
   function recipeTimeHtml(meal) {
     var prep = Number(meal.prep_time_minutes) || 0;
     var cook = Number(meal.cook_time_minutes) || 0;
-    if (!prep && !cook) return '';
-    var split = prep && cook ? ' (' + prep + ' prep, ' + cook + ' cook)' : '';
+    if (!prep || !cook) return '';
     return '<p class="recipe-fact"><span class="recipe-fact-label">Time</span>' +
-      escapeHtml((prep + cook) + ' min' + split) + '</p>';
+      escapeHtml((prep + cook) + ' min (' + prep + ' prep, ' + cook + ' cook)') + '</p>';
   }
 
-  // The two ways on from the overview, as rows: "Ingredients · 9 ›",
-  // "Steps · 6 ›".
-  function recipeJumpsHtml(meal) {
-    var ings = (meal.ingredients || []).length;
-    var steps = (meal.instructions || []).length;
-    var row = function (tab, label, n) {
-      return '<button type="button" class="recipe-jump" data-cook="recipe-tab" data-tab="' + tab + '">' +
-        '<span>' + label + '</span><span class="recipe-jump-n">' + n + ' &rsaquo;</span></button>';
-    };
-    return '<div class="card recipe-jumps">' +
-      (ings ? row('ingredients', 'Ingredients', ings) : '') +
-      (steps ? row('steps', 'Steps', steps) : '') +
-    '</div>';
+  // "Takes about 35 min", at the top of the Steps tab. The same minutes the
+  // tiles use. typeof: the tests run this alone.
+  function recipeTakesHtml(meal) {
+    var mins = typeof mealClockTotal === 'function' ? mealClockTotal(meal)
+      : ((Number(meal.prep_time_minutes) || 0) + (Number(meal.cook_time_minutes) || 0));
+    return mins ? '<p class="recipe-takes">Takes about ' + escapeHtml(String(mins)) + ' min</p>' : '';
   }
 
-  function recipeOverviewHtml(data, meal, idx, extra) {
+  // The Ingredients tab: where every way in lands. What the board doesn't
+  // draw and a cook needs before starting stays on the page, above the tiles.
+  function recipeIngredientsTabHtml(data, meal, idx) {
     var prep = cookFocusPrepTasks(data, meal);
     // What's already done leads (Emily, 2026-11-02): the marinade made on
     // Sunday is the first thing the cook needs to know tonight.
     return recipeAlreadyDoneHtml(prep) +
-      recipeCreditHtml(extra) +
-      recipeChangesHtml(extra) +
+      cookFocusPrepHtml(prep) +
+      cookRecipeLinesHtml(meal) +
       recipeServesHtml(meal, idx) +
       recipeBatchLineHtml(meal) +
-      recipeTimeHtml(meal) +
-      recipePlateHtml(meal) +
-      // The night-before line, and anything an earlier cook already made.
-      cookRecipeLinesHtml(meal) +
-      (meal.has_full_recipe ? recipeJumpsHtml(meal) : '') +
+      recipePlainIngredientsHtml(meal, idx) +
       // A recipe with no steps yet says so here, where every way in lands,
       // with "Fill in this recipe" (recipeStepsHtml's live empty state)
       // rather than hiding that behind the Steps tab.
-      (meal.has_full_recipe && !(meal.instructions || []).length ? recipeStepsHtml(meal, true) : '') +
-      cookFocusPrepHtml(prep);
+      (!(meal.instructions || []).length ? recipeStepsHtml(meal, true) : '');
   }
 
   // "Already done": this meal's prep that is ticked off (or skipped), one
-  // celadon card at the top of the Overview. Each row keeps its tick, so a
+  // plain card at the top of the Ingredients. Each row keeps its tick, so a
   // tick made by mistake comes off here too. Nothing when nothing is done.
   function recipeAlreadyDoneHtml(tasks) {
     var done = (tasks || []).filter(function (t) { return t.status === 'done' || t.status === 'skipped'; });
@@ -27047,8 +26970,8 @@
     '</div>';
   }
 
-  // A plain list, grouped as the recipe groups it (an ingredient's `group`
-  // when the recipe carries one; otherwise one list). No box, no tick.
+  // Tiles, grouped as the recipe groups it (an ingredient's `group` when the
+  // recipe carries one). No box, no tick.
   function recipePlainIngredientsHtml(meal, idx) {
     var ings = (meal.ingredients || []).filter(function (ing) { return ing && ing.item; });
     if (!ings.length) return '';
@@ -27059,22 +26982,15 @@
       if (!byName[g]) { byName[g] = []; groups.push(g); }
       byName[g].push(ing);
     });
+    // "8 servings" on a batch night (Emily's card, 2026-10-05), so the page
+    // answers the question the amounts raise. The number is cookServesShown,
+    // the count the amounts are really written for.
     var count = meal.batch_line ? cookServesShown(meal) : null;
-    return '<section class="card recipe-card recipe-ings" aria-label="Ingredients">' +
-      '<span class="cook-eyebrow recipe-eyebrow">Ingredients' +
-        (count ? ' &middot; ' + escapeHtml(String(count)) + (String(count) === '1' ? ' serving' : ' servings') : '') + '</span>' +
+    return '<section class="recipe-ings" aria-label="Ingredients">' +
+      (count ? '<p class="recipe-count">' + escapeHtml(String(count)) + (String(count) === '1' ? ' serving' : ' servings') + '</p>' : '') +
       groups.map(function (g) {
-        return (g ? '<p class="recipe-ing-group">' + escapeHtml(g) + '</p>' : '') +
-          '<ul class="recipe-ing-list">' + byName[g].map(function (ing) {
-            var tags = [];
-            if (ing.added) tags.push('added');
-            if (ing.at_home) tags.push('at home');
-            if (ing.made_ahead) tags.push(ing.made_ahead);
-            if (ing.substitute) tags.push('using ' + ing.substitute + ' instead');
-            return '<li class="recipe-ing">' + escapeHtml(cookIngredientLabel(ing)) +
-              tags.map(function (t) { return ' <span class="wk-ing-tag">' + escapeHtml(t) + '</span>'; }).join('') +
-            '</li>';
-          }).join('') + '</ul>';
+        return (g ? sectionHeadHtml(g, 'recipe-ing-group') : '') +
+          '<div class="tiles recipe-ing-tiles">' + byName[g].map(recipeIngredientTileHtml).join('') + '</div>';
       }).join('') +
       cookUnscaledHtml(meal, idx) +
     '</section>';
@@ -27124,13 +27040,13 @@
     // link stopped working, and keeps the credit by design): the credit IS
     // the list. Never the "no outside recipe" line under a "Based on …".
     if (!sources.length && research && research.credit) {
-      return '<section class="card recipe-card recipe-sources" aria-label="Sources">' +
+      return '<section class="recipe-sources" aria-label="Sources">' +
         '<p class="recipe-sources-credit">' + escapeHtml(research.credit) + '</p>' +
       '</section>' +
       '<p class="recipe-sources-line">The original links aren’t working just now. Pomona’s version is adapted for your household.</p>';
     }
     if (sources.length) {
-      return '<section class="card recipe-card recipe-sources" aria-label="Sources">' +
+      return '<section class="recipe-sources" aria-label="Sources">' +
         '<ul class="recipe-src-list">' + sources.map(recipeSourceRowHtml).join('') + '</ul>' +
       '</section>' +
       '<p class="recipe-sources-line">' + RECIPE_SOURCES_LINE + '</p>';
@@ -27146,67 +27062,91 @@
 
   function recipeTabBodyHtml(data, meal, idx, tab, extra) {
     if (!meal.has_full_recipe) {
-      return '<p class="cook-norecipe recipe-norecipe">No saved recipe for this one — ask me for it in the chat.</p>';
+      return '<p class="note-card cook-norecipe recipe-norecipe">No saved recipe for this one — ask me for it in the chat.</p>';
     }
-    // The stepper rides on the Ingredients tab too, beside the amounts it
-    // rewrites — the same control and the same number as the Overview's.
-    if (tab === 'ingredients') return recipeServesHtml(meal, idx) + recipePlainIngredientsHtml(meal, idx);
-    if (tab === 'steps') return recipeStepsHtml(meal, true);
-    if (tab === 'sources') return recipeSourcesHtml(meal, extra);
-    return recipeOverviewHtml(data, meal, idx, extra);
+    if (tab === 'steps') return recipeTakesHtml(meal) + cookRecipeLinesHtml(meal) + recipeStepsHtml(meal, true);
+    return recipeIngredientsTabHtml(data, meal, idx);
   }
 
-  // The ⋯ menu: three quiet actions, never the screen's primary.
+  // The ···: everything the page carries that the board doesn't draw, in a
+  // sheet (recipeMoreRowsHtml). Nothing to offer without a recipe.
   function recipeMoreHtml(meal) {
     if (!meal.has_full_recipe) return '';
-    var open = !!cookState.recipeMenuOpen;
+    return roundBtnHtml({ cls: 'recipe-more-btn', attrs: ' data-cook="recipe-menu" aria-haspopup="dialog"', label: 'More', icon: GRO_ICONS.dots });
+  }
+
+  // Tweak is a small change to this recipe, Change recipe a different one
+  // (Emily, 2026-10-25). Each keeps its own delegated listener
+  // (data-recipe-tweak, data-cr), so the sheet is only a new door to them.
+  function recipeMoreRowsHtml(meal) {
+    var extra = recipeExtraFor(meal);
+    var changes = (extra && extra.household_changes) || [];
     var rating = cookState.recipeRateOpen;
-    return '<div class="recipe-more">' +
-      '<button type="button" class="recipe-more-btn" data-cook="recipe-menu" aria-haspopup="true" aria-expanded="' +
-        (open ? 'true' : 'false') + '" aria-label="More">' + '&middot;&middot;&middot;' + '</button>' +
-      (open
-        ? '<div class="recipe-menu" role="menu">' +
-            '<button type="button" role="menuitem" data-cook="recipe-save">Save to my recipes</button>' +
-            '<button type="button" role="menuitem" data-cook="recipe-add-list">Add to shopping list</button>' +
-            (rating
-              ? '<div class="recipe-rate">' +
-                  '<button type="button" role="menuitem" class="cook-attn-fb" data-cook="recipe-rate" data-rating="liked">Liked it</button>' +
-                  '<button type="button" role="menuitem" class="cook-attn-fb" data-cook="recipe-rate" data-rating="disliked">Not a hit</button>' +
-                '</div>'
-              : '<button type="button" role="menuitem" data-cook="recipe-rate-open">Rate this recipe</button>') +
-          '</div>'
+    var row = function (name, attrs, sub) { return tileHtml({ kind: 'text', name: name, sub: sub, attrs: attrs }); };
+    return '<div class="tiles in-sheet recipe-more-rows">' +
+      (recipeIsChangeable(meal) ? recipeTweakTileHtml(meal) +
+        row(CHANGE_RECIPE_LABEL, ' data-cr="open" data-entry-id="' + escapeHtml(String(meal.entry_id)) + '" data-dish="' + escapeHtml(meal.meal || '') + '"') : '') +
+      row('Save to my recipes', ' data-cook="recipe-save"') +
+      row('Add to shopping list', ' data-cook="recipe-add-list"') +
+      (rating
+        ? row('Liked it', ' data-cook="recipe-rate" data-rating="liked"') + row('Not a hit', ' data-cook="recipe-rate" data-rating="disliked"')
+        : row('Rate this recipe', ' data-cook="recipe-rate-open"')) +
+      row('Sources', ' data-cook="recipe-sources"') +
+      (changes.length
+        ? row('Changed for your household', ' data-cook="recipe-changes"', changes.length + (changes.length === 1 ? ' change' : ' changes'))
         : '') +
+      row('Ask Pomona', ' data-cook="recipe-ask"') +
     '</div>';
   }
 
-  // The ⋯ menu closes on a tap anywhere outside it, and on Escape.
-  function recipeCloseMenu() {
-    if (!cookState.recipeMenuOpen) return;
-    cookState.recipeMenuOpen = false;
-    cookState.recipeRateOpen = false;
-    renderCook();
+  // A row of the ···, and a tile in a sheet of its own: quiet-sheet clicks
+  // reach onCookClick here, since the sheet sits outside the panel. A row
+  // that hands over to another sheet closes this one first.
+  function wireCookSheet(body) {
+    body.addEventListener('click', function (e) {
+      var t = e.target && e.target.closest && e.target.closest('[data-cook],[data-recipe-tweak],[data-cr]');
+      if (!t) return;
+      if (!t.hasAttribute('data-cook')) { closeQuietSheet(); return; }
+      onCookClick(e);
+    });
   }
-  document.addEventListener('click', function (e) {
-    if (!cookState.recipeMenuOpen) return;
-    if (e.target && e.target.closest && e.target.closest('.recipe-more')) return;
-    recipeCloseMenu();
-  });
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') recipeCloseMenu();
-  });
+
+  function openRecipeMoreSheet(meal) {
+    if (!meal) return;
+    openQuietSheet(recipeMoreSheetHtml(meal), wireCookSheet, function () { cookState.recipeRateOpen = false; }, 'recipe-more');
+  }
+
+  function recipeMoreSheetHtml(meal) {
+    return quietSheetHeadHtml(recipeForLine(meal), meal.meal || 'Dinner') +
+      recipeTimeHtml(meal) + recipePlateHtml(meal) + recipeMoreRowsHtml(meal);
+  }
+
+  // A second level of the ···, on the same sheet: Sources, or what changed.
+  function openRecipeDetailSheet(key, title, html) {
+    openQuietSheet(quietSheetHeadHtml('', title) + html, wireCookSheet, null, key);
+  }
+
+  function openRecipeSourcesSheet(meal) {
+    var extra = recipeExtraFor(meal);
+    openRecipeDetailSheet('recipe-sources', 'Sources', recipeCreditHtml(extra) + recipeSourcesHtml(meal, extra));
+  }
+
+  // A sheet that opened before the recipe's extras landed draws them now.
+  function recipeSheetRefresh(meal) {
+    var key = quietSheetEl.getAttribute('data-for');
+    if (key === 'recipe-sources') openRecipeSourcesSheet(meal);
+    else if (key === 'recipe-more') openRecipeMoreSheet(meal);
+  }
 
   async function recipeRate(el, meal) {
     el.disabled = true;
     try {
       await cookPost('/api/recipe-feedback', { recipe_name: meal.meal, rating: el.getAttribute('data-rating'), notes: '' });
-      cookState.recipeMenuOpen = false;
       cookState.recipeRateOpen = false;
+      closeQuietSheet();
       // The rating answers "How did it go?" for this dish too — re-read the
       // attention list the way cookRateMeal does, or the banner keeps
       // asking about a dish just rated until the page reloads.
-      // refreshCookAttention renders on success; the render here covers a
-      // failed re-read, so the menu still closes.
-      renderCook();
       await refreshCookAttention();
       showToast('Noted — that’ll steer next week.');
     } catch (err) {
@@ -27215,25 +27155,18 @@
     }
   }
 
-  // Cook mode's recipe screen — the recipe page (2026-10-06, see the
-  // section above): the crumb with the ⋯ menu beside it, the dish, "who
-  // it's for · serves N", the four tabs and the open tab's body, then the
-  // dock. The prep rows (cookFocusPrepHtml — the thaw the root's get-ready
-  // row opens this screen to tick) ride on the Overview, under the recipe.
-  // The prep-cut offer that sat beside them came out on 2026-11-01: the
-  // prep schedule plans those cuts itself now.
+  // Cook mode's recipe screen (Z-Recipe, Z-Steps, see the section above). The
+  // prep rows (cookFocusPrepHtml — the thaw the root's get-ready row opens
+  // this screen to tick) ride on the Ingredients, above the tiles.
   function cookRecipeHtml(data, meal, idx) {
-    var tab = cookState.recipeTab || 'overview';
+    var tab = cookState.recipeTab === 'steps' ? 'steps' : 'ingredients';
     var extra = recipeExtraFor(meal);
     return '<div class="cook-focus cook-recipe">' +
-      '<div class="cook-recipe-head">' +
-        '<button type="button" class="crumb" data-cook="exit-focus">&lsaquo; ' +
-          escapeHtml(cookBackLabel()) + '</button>' +
-        recipeMoreHtml(meal) +
-      '</div>' +
+      recipeTopHtml(
+        roundBtnHtml({ label: 'Back to ' + cookBackLabel(), icon: RECIPE_ICONS.chevLeft, cls: 'recipe-back', attrs: ' data-cook="exit-focus"' }),
+        recipeMoreHtml(meal), meal.plate) +
       '<div class="cook-body recipe-body">' +
         recipeTitleHtml(meal) +
-        recipeForLine(meal) +
         (meal.has_full_recipe ? recipeTabsHtml(tab) : '') +
         recipeTabBodyHtml(data, meal, idx, tab, extra) +
       '</div>' +
@@ -27241,55 +27174,28 @@
     '</div>';
   }
 
-  // The recipe's dock: "Start cooking" (the screen's one apricot, Rule 5),
-  // or "Keep cooking" once a cook is under way — by its ticks, or by the
-  // real start being on record — and never a time on the button. Beside it,
-  // as an outline, "Change recipe" (the existing Change recipe sheet,
-  // 2026-10-06) where the meal can be changed. A recipe with nothing to
-  // step through is not offered a step-through: its one action is the
-  // finish (cookDockCookedHtml), as before.
+  // The recipe's dock: "Start cooking", or "Keep cooking" once a cook is under
+  // way — by its ticks, or by the real start being on record — and never a
+  // time on the button. A recipe with nothing to step through is not offered
+  // a step-through: its one action is the finish (cookDockCookedHtml).
   function cookRecipeDockHtml(meal) {
     var steps = meal.instructions || [];
     if (!steps.length) return cookDockHtml(cookDockCookedHtml(meal));
-    var underway = cookUnderway(meal);
-    // "Tweak" sits beside it, small (Emily, 2026-10-25): Tweak is a small
-    // change to this recipe, Change recipe a different one.
-    var change = recipeIsChangeable(meal)
-      ? recipeTweakBtnHtml(meal, 'cook-dock-back recipe-dock-tweak') +
-        '<button type="button" class="cook-dock-back recipe-dock-change" data-cr="open" ' +
-          'data-entry-id="' + escapeHtml(String(meal.entry_id)) + '" data-dish="' + escapeHtml(meal.meal || '') + '">' +
-          '<span>' + escapeHtml(CHANGE_RECIPE_LABEL) + '</span></button>'
-      : '';
-    var start = '<button type="button" class="cook-hero-action" data-cook="start-cooking">' +
-      '<span>' + (underway ? 'Keep cooking' : 'Start cooking') + '</span>' + ICONS.arrow + '</button>';
-    // With Tweak there are three buttons, and three do not fit one row
-    // beside the chat button at 390px without squeezing "Start cooking"
-    // off its own label: the two ways to change the recipe sit as a row
-    // of their own above it, beside each other, and Start cooking keeps
-    // the full row it is the screen's one apricot on.
-    return change
-      ? '<div class="dock cook-dock recipe-dock"><div class="dock-row recipe-dock-alts">' + change + '</div>' +
-          '<div class="dock-row">' + start + '</div></div>'
-      : cookDockHtml(start);
+    return cookDockHtml('<button type="button" class="cook-hero-action" data-cook="start-cooking">' +
+      '<span>' + (cookUnderway(meal) ? 'Keep cooking' : 'Start cooking') + '</span></button>');
   }
 
   // ---------- The cooker: one step at a time ----------
-  // Board 14-cooking: "‹ Recipe", the dish and "step 2 of 4" as the
-  // eyebrow, a segmented bar (one segment per step, lit up to the one you
-  // are on), the step in big type inside a card with what it needs as one
-  // quiet line, the next step previewed under it, and Back / Next step in
-  // the dock — "Done — on the table" on the last. No timestamps, no
-  // "Start at", no batch question (2026-09-18). Big type, because it is
-  // read across a counter rather than held (Emily's choice: "best when
-  // your hands are busy and the phone is across the counter").
+  // Z-CookMode: a round close, "Step 2 of 4", a round ···, a progress bar, the
+  // step in big type, then its timers in dusk and what it needs, the next
+  // step previewed under them, and Next step in the dock — "Done — on the
+  // table" on the last. No "Start at", no batch question (2026-09-18). Big
+  // type, because it is read across a counter rather than held.
 
   function cookProgressHtml(count, pos) {
-    var segs = '';
-    for (var i = 0; i < count; i++) {
-      segs += '<span class="cook-progress-seg' + (i <= pos ? ' is-done' : '') + '"></span>';
-    }
-    return '<div class="cook-progress" role="progressbar" aria-label="Steps" aria-valuemin="1" ' +
-      'aria-valuemax="' + count + '" aria-valuenow="' + (pos + 1) + '">' + segs + '</div>';
+    var pct = count ? Math.round((pos + 1) / count * 100) : 0;
+    return '<div class="cook-bar cook-progress" role="progressbar" aria-label="Steps" aria-valuemin="1" ' +
+      'aria-valuemax="' + count + '" aria-valuenow="' + (pos + 1) + '"><span class="cook-bar-fill" style="width:' + pct + '%"></span></div>';
   }
 
   // "Next: pour in the stock and the lemon juice." — the next step's first
@@ -27316,30 +27222,41 @@
     // the two screens.
     var isAhead = (meal.advance_prep_step_indices || []).indexOf(pos + 1) !== -1;
     var next = pos < steps.length - 1 ? cookNextStepLine(steps[pos + 1]) : '';
+    var text = steps[pos] || '';
+    // (typeof guard: the tests run the stages alone.)
+    var timers = typeof cookStepTimerTilesHtml === 'function' ? cookStepTimerTilesHtml(meal, pos) : '';
+    var tiles = timers +
+      (needs.length
+        ? '<div class="tile tile-text cook-needs' + (timers ? '' : ' is-wide') + '">' +
+            '<span class="cook-needs-label">You’ll need</span>' +
+            '<span class="cook-step-needs">' + needs.map(escapeHtml).join('<br>') + '</span>' +
+          '</div>'
+        : '');
     return '<div class="cook-focus cook-cooker">' +
-      '<button type="button" class="crumb" data-cook="stage" data-stage="recipe">&lsaquo; Recipe</button>' +
+      '<div class="cook-cooker-top">' +
+        roundBtnHtml({ label: 'Back to the recipe', icon: PREP_LIST_ICONS.close, attrs: ' data-cook="stage" data-stage="recipe"' }) +
+        '<span class="cook-cooker-count" aria-label="' + escapeHtml(meal.meal || 'Dinner') + ', step ' + (pos + 1) + ' of ' + steps.length + '">' +
+          escapeHtml('Step ' + (pos + 1) + ' of ' + steps.length) + '</span>' +
+        roundBtnHtml({ label: 'More', icon: GRO_ICONS.dots, attrs: ' data-cook="cook-menu" aria-haspopup="dialog"' }) +
+      '</div>' +
+      cookProgressHtml(steps.length, pos) +
       '<div class="cook-body cook-cooker-body">' +
-        '<p class="cook-eyebrow cook-cooker-eyebrow">' +
-          escapeHtml((meal.meal || 'Dinner') + ' · step ' + (pos + 1) + ' of ' + steps.length) + '</p>' +
-        cookProgressHtml(steps.length, pos) +
-        '<div class="card cook-step-card">' +
-          (isAhead ? '<span class="recipe-step-tag">Do ahead</span>' : '') +
-          // The batch, at the pot. The first step carries the fact
-          // ("Double batch: half goes in containers for lunch tomorrow")
-          // and the LAST one the job ("Pack 3 servings for lunch
-          // tomorrow") — Emily's card, 2026-10-05. Both are the server's
-          // sentences, built from the same chain read as the recipe
-          // screen's line, so the three cannot drift apart. A one-step
-          // recipe is first AND last and honestly gets both.
-          (pos === 0 && meal.batch_first_step
-            ? '<p class="cook-step-batch">' + escapeHtml(meal.batch_first_step) + '</p>'
-            : '') +
-          '<p class="cook-bigstep">' + escapeHtml(steps[pos] || '') + '</p>' +
-          (pos === steps.length - 1 && meal.batch_last_step
-            ? '<p class="cook-step-batch cook-step-pack">' + escapeHtml(meal.batch_last_step) + '</p>'
-            : '') +
-          (needs.length ? '<p class="cook-step-needs">' + escapeHtml(needs.join(' · ')) + '</p>' : '') +
-        '</div>' +
+        (isAhead ? '<span class="recipe-step-tag">Do ahead</span>' : '') +
+        // The batch, at the pot. The first step carries the fact
+        // ("Double batch: half goes in containers for lunch tomorrow")
+        // and the LAST one the job ("Pack 3 servings for lunch
+        // tomorrow") — Emily's card, 2026-10-05. Both are the server's
+        // sentences, built from the same chain read as the recipe
+        // screen's line, so the three cannot drift apart. A one-step
+        // recipe is first AND last and honestly gets both.
+        (pos === 0 && meal.batch_first_step
+          ? '<p class="cook-step-batch">' + escapeHtml(meal.batch_first_step) + '</p>'
+          : '') +
+        '<h1 class="cook-bigstep' + (text.length > 70 ? ' is-long' : '') + '">' + escapeHtml(text) + '</h1>' +
+        (pos === steps.length - 1 && meal.batch_last_step
+          ? '<p class="cook-step-batch cook-step-pack">' + escapeHtml(meal.batch_last_step) + '</p>'
+          : '') +
+        (tiles ? '<div class="tiles cook-step-tiles">' + tiles + '</div>' : '') +
         (next ? '<p class="cook-next">' + escapeHtml(next) + '</p>' : '') +
       '</div>' +
       cookCookerDockHtml(meal) +
@@ -27357,11 +27274,132 @@
       ? cookDockCookedHtml(meal)
       : '<button type="button" class="cook-hero-action" data-cook="step-next"><span>Next step</span></button>';
     return '<div class="dock cook-dock cook-cooker-dock">' +
-      '<div class="dock-row">' +
-        '<button type="button" class="cook-dock-back" data-cook="step-prev">' + RECIPE_ICONS.chevLeft + '<span>Back</span></button>' +
-        primary +
-      '</div>' +
+      (cookState.stepIdx > 0
+        ? '<button type="button" class="btn-quiet cook-step-back" data-cook="step-prev">Back a step</button>'
+        : '') +
+      primary +
     '</div>';
+  }
+
+  // The cooker's ···: the recipe, and the chat, which has no tab bar here.
+  function openCookerMoreSheet(meal) {
+    openQuietSheet(quietSheetHeadHtml('', meal.meal || 'Dinner') +
+      '<div class="tiles in-sheet">' +
+        tileHtml({ kind: 'text', name: 'See the recipe', attrs: ' data-cook="stage" data-stage="recipe"' }) +
+        tileHtml({ kind: 'text', name: 'Ask Pomona', attrs: ' data-cook="recipe-ask"' }) +
+      '</div>', wireCookSheet, null, 'cooker-more');
+  }
+
+  // ---------- Timers: a step's own times, in dusk ----------
+  // Z-CookMode's timer tile. A step that says how long something takes
+  // ("simmer for 15 minutes") offers that time: a sentence gives one timer,
+  // its first time, so "30 minutes or up to 2 hours" offers the 30, and a step
+  // gives two at most. A running timer is an end time, not a count, so it is
+  // right after the phone sleeps, and it lives in the same per-device,
+  // per-plan record as the ticks (cookReadTicks), so it outlives a reload.
+  // A timer started on an earlier step of this dish stays on screen.
+  var COOK_TIMER_VERBS = ['simmer', 'bake', 'roast', 'boil', 'rest', 'steam', 'fry', 'sear', 'brown', 'broil', 'grill',
+    'marinate', 'chill', 'soak', 'cool', 'reduce', 'poach', 'cook', 'stir', 'whisk'];
+
+  function cookStepTimers(step) {
+    var out = [];
+    String(step || '').split(/[.;!?]\s+/).forEach(function (sentence) {
+      if (out.length >= 2) return;
+      var m = /\b(\d+)(?:\s*(?:to|-|–)\s*\d+)?\s*(?:more\s+)?(minutes?|mins?|hours?|hrs?)\b/i.exec(sentence);
+      if (!m) return;
+      var seconds = parseInt(m[1], 10) * (/^h/i.test(m[2]) ? 3600 : 60);
+      if (!seconds) return;
+      var lower = sentence.toLowerCase();
+      var verb = '';
+      COOK_TIMER_VERBS.some(function (v) {
+        if (new RegExp('\\b' + v + '(?:s|ing)?\\b').test(lower)) { verb = v; return true; }
+        return false;
+      });
+      out.push({ seconds: seconds, label: verb ? verb.charAt(0).toUpperCase() + verb.slice(1) : 'Timer' });
+    });
+    return out;
+  }
+
+  // "15:00", "1:30:00".
+  function cookTimerClock(seconds) {
+    var s = Math.max(Math.ceil(seconds), 0);
+    var h = Math.floor(s / 3600);
+    var m = Math.floor((s % 3600) / 60);
+    var two = function (n) { return (n < 10 ? '0' : '') + n; };
+    return (h ? h + ':' + two(m) : String(m)) + ':' + two(s % 60);
+  }
+
+  function cookTimerTileHtml(key, timer, endsAt) {
+    var left = endsAt ? (endsAt - Date.now()) / 1000 : timer.seconds;
+    var done = !!endsAt && left <= 0;
+    return '<div class="cook-timer' + (endsAt ? ' is-running' : '') + (done ? ' is-done' : '') + '">' +
+      '<span class="cook-timer-label">' + escapeHtml(timer.label) + '</span>' +
+      '<span class="cook-timer-clock" data-timer-key="' + escapeHtml(key) + '" data-timer-ends="' + (endsAt || '') + '">' +
+        escapeHtml(done ? 'Done' : cookTimerClock(left)) + '</span>' +
+      '<button type="button" class="cook-timer-btn" data-cook="timer" data-timer="' + escapeHtml(key) + '" ' +
+        'data-seconds="' + timer.seconds + '" data-label="' + escapeHtml(timer.label) + '">' +
+        (endsAt ? (done ? 'Clear' : 'Stop') : 'Start timer') + '</button>' +
+    '</div>';
+  }
+
+  // This step's timers, then any still running from this dish's other steps.
+  function cookStepTimerTilesHtml(meal, pos) {
+    var steps = meal.instructions || [];
+    var running = cookReadTicks().timers;
+    var mealKey = cookMealKey(meal);
+    var html = '';
+    cookStepTimers(steps[pos]).forEach(function (t, i) {
+      var key = mealKey + ':' + pos + ':' + i;
+      html += cookTimerTileHtml(key, t, running[key]);
+    });
+    Object.keys(running).forEach(function (key) {
+      var cut = key.lastIndexOf(':');
+      var at = key.lastIndexOf(':', cut - 1);
+      if (key.slice(0, at) !== mealKey) return;
+      var stepAt = parseInt(key.slice(at + 1, cut), 10);
+      if (stepAt === pos) return;
+      var t = cookStepTimers(steps[stepAt])[parseInt(key.slice(cut + 1), 10)];
+      if (t) html += cookTimerTileHtml(key, t, running[key]);
+    });
+    return html;
+  }
+
+  function cookToggleTimer(el) {
+    var key = el.getAttribute('data-timer');
+    var store = cookReadTicks().timers;
+    if (store[key]) delete store[key];
+    else store[key] = Date.now() + parseInt(el.getAttribute('data-seconds'), 10) * 1000;
+    cookWriteTicks();
+    renderCook();
+    cookTimerPulse();
+  }
+
+  // One tick a second while a timer shows, writing only the clocks, so a
+  // cook's scroll and taps are never disturbed.
+  var cookTimerInterval = null;
+  function cookTimerPulse() {
+    if (typeof document === 'undefined') return;
+    var clocks = document.querySelectorAll('.cook-timer-clock[data-timer-ends]');
+    var live = false;
+    clocks.forEach(function (el) {
+      var ends = parseInt(el.getAttribute('data-timer-ends'), 10);
+      if (!ends) return;
+      var left = (ends - Date.now()) / 1000;
+      if (left > 0) { live = true; el.textContent = cookTimerClock(left); return; }
+      if (el.textContent !== 'Done') {
+        el.textContent = 'Done';
+        el.setAttribute('data-timer-ends', '');
+        var label = el.parentNode.querySelector('.cook-timer-label');
+        showToast((label ? label.textContent + ' timer' : 'Timer') + ' is done');
+        renderCook();
+      }
+    });
+    if (live && cookTimerInterval === null) {
+      cookTimerInterval = setInterval(cookTimerPulse, 1000);
+    } else if (!live && cookTimerInterval !== null) {
+      clearInterval(cookTimerInterval);
+      cookTimerInterval = null;
+    }
   }
 
   // A written-in takeout meal opened from the shelf, Plan's dock or "Cook
@@ -27530,14 +27568,10 @@
       return;
     }
     if (what === 'focus-check') return cookFocusCheckMeal(el);
-    if (what === 'check-ing') {
-      cookToggleTick('ings', el.getAttribute('data-meal-key') + ':' + el.getAttribute('data-ing'));
-      renderCook();
-      return;
-    }
     // Moving between the two stages of one cook. Never history, never a
     // tab switch: they are stages of one step (see cookState.focusStage).
-    if (what === 'stage') return cookGoStage(el.getAttribute('data-stage'));
+    if (what === 'stage') { closeQuietSheet(); return cookGoStage(el.getAttribute('data-stage')); }
+    if (what === 'timer') return cookToggleTimer(el);
     if (what === 'start-cooking') return cookStartCooking();
     if (what === 'step-next') return cookStepForward();
     if (what === 'step-prev') return cookStepBack();
@@ -27550,40 +27584,37 @@
     if (what === 'attn-use') return cookLogUsage(el);
     if (what === 'feedback') return cookRateMeal(el);
     if (what === 'voice') return cookToggleVoice(el);
-    // The recipe page (2026-10-06): its tabs, the changes row, the ⋯ menu.
+    // The recipe page: its tabs, and the ···'s sheet.
     if (what === 'recipe-tab') {
-      cookState.recipeTab = el.getAttribute('data-tab') || 'overview';
-      cookState.recipeMenuOpen = false;
+      cookState.recipeTab = el.getAttribute('data-tab') || 'ingredients';
       cookState.pendingScrollTop = true;
       renderCook();
       return;
     }
-    if (what === 'recipe-changes') { cookState.recipeChangesOpen = !cookState.recipeChangesOpen; renderCook(); return; }
-    if (what === 'recipe-menu') {
-      cookState.recipeMenuOpen = !cookState.recipeMenuOpen;
-      cookState.recipeRateOpen = false;
-      renderCook();
-      return;
-    }
     var recipeMeal = cookState.data && (cookState.data.meals || [])[cookState.focusIdx];
+    if (what === 'recipe-menu') return openRecipeMoreSheet(recipeMeal);
+    if (what === 'cook-menu') return openCookerMoreSheet(recipeMeal);
+    if (what === 'recipe-sources') return openRecipeSourcesSheet(recipeMeal);
+    if (what === 'recipe-changes') {
+      return openRecipeDetailSheet('recipe-changes', 'Changed for your household', recipeChangesHtml(recipeExtraFor(recipeMeal)));
+    }
+    if (what === 'recipe-ask') { closeQuietSheet(); openAskSheet(); return; }
     if (what === 'recipe-save') {
       // Every recipe Pomona writes or imports is already the household's —
       // it is on Preferences › Recipes from the moment it exists — so this
       // says where it is rather than writing a second copy.
-      cookState.recipeMenuOpen = false;
-      renderCook();
+      closeQuietSheet();
       showToast('It’s in your recipes.', { label: 'Open', onClick: function () { openRecipesSheet(); } });
       return;
     }
     if (what === 'recipe-add-list') {
       // Through the chat, which already adds a recipe's ingredients with
       // the list's own merging — the person sees the ask and sends it.
-      cookState.recipeMenuOpen = false;
-      renderCook();
+      closeQuietSheet();
       openAskSheet('Add the ingredients for ' + ((recipeMeal && recipeMeal.meal) || 'this recipe') + ' to the shopping list');
       return;
     }
-    if (what === 'recipe-rate-open') { cookState.recipeRateOpen = true; renderCook(); return; }
+    if (what === 'recipe-rate-open') { cookState.recipeRateOpen = true; openRecipeMoreSheet(recipeMeal); return; }
     if (what === 'recipe-rate' && recipeMeal) return recipeRate(el, recipeMeal);
   }
 
@@ -34151,7 +34182,7 @@
         (facts ? '<p class="recipe-line">' + escapeHtml(facts) + '</p>' : '') +
         (r.advance_prep_notes ? '<p class="recipe-line">' + escapeHtml(r.advance_prep_notes) + '</p>' : '') +
         (hasBody
-          ? recipeIngredientsHtml(meal, 'rv', false) + (meal.instructions.length ? recipeStepsHtml(meal, false) : '')
+          ? recipePlainIngredientsHtml(meal, 'rv') + (meal.instructions.length ? recipeStepsHtml(meal, false) : '')
           : '<p class="recipes-empty">Nothing written down for this one yet.</p>') +
       '</div>';
   }

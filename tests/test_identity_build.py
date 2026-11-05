@@ -176,7 +176,6 @@ def test_shop_and_cook_lead_their_lines_with_their_eyebrow():
         + "r.shop = groBandEyebrow({ all: 60, stops: ['A'] });\n"
         + "r.shopNone = groBandEyebrow({ all: 0, stops: [] });\n"
         + "r.cook = cookBandEyebrow('2026-09-13');\n"
-        + "r.cookLine = after(bandPanel(cookBandEyebrow('2026-09-13'), ''), { sub: '1 cook tonight' }).sub;\n"
         + "r.shopLine = after(bandPanel(r.shop, ''), { sub: groBandLine({ all: 14, stops: ['A', 'B'] }) }).sub;\n"
         + "r.shopLineNone = after(bandPanel(r.shopNone, ''), { sub: groBandLine({ all: 0, stops: [] }) }).sub;\n"
         + "console.log(JSON.stringify(r));"
@@ -184,8 +183,7 @@ def test_shop_and_cook_lead_their_lines_with_their_eyebrow():
     assert out["shop"] == "This week" and out["shopNone"] == "This week"
     assert out["shopLine"] == "This week · 14 things, two stores."
     assert out["shopLineNone"] == "This week", "nothing to buy: the eyebrow alone — the empty moment says the rest"
-    assert out["cook"] == "Sunday, Sep 13"
-    assert out["cookLine"] == "Sunday, Sep 13 · 1 cook tonight"
+    assert out["cook"] == "Sunday"  # Z-CookDay: the day, and no count
 
 
 def test_plan_and_cook_pass_through_the_same_band_builder():
@@ -194,8 +192,7 @@ def test_plan_and_cook_pass_through_the_same_band_builder():
     parts = _function("weekBandParts")
     assert "sub: sub.join(' · ')," in parts and "eyebrow: eyebrow," in parts
     kitchen = _function("renderKitchen")
-    assert "setRootBand(panel, 'kit-band', { eyebrow: cookBandEyebrow(todayIso) });" in kitchen
-    assert "setRootBand(panel, 'kit-band', { sub: kitchenSubtitle(rows, meals, todayIso) });" in kitchen
+    assert "setRootBand(panel, 'kit-band', { eyebrow: cookBandEyebrow(todayIso), sub: '' });" in kitchen
     shop = _function("renderGrocery")
     assert "setRootBand(panel, 'gro-band', { eyebrow: '', sub: '' });" in shop
 

@@ -77,11 +77,11 @@ MEAL = ("{ entry_id: 7, meal: 'Lemon chicken', has_full_recipe: true, cooked_sta
 # ---------------------------------------------------------------------------
 
 @_needs_node
-def test_opens_on_overview_from_plan_and_cook():
+def test_opens_on_ingredients_from_plan_and_cook():
     out = _run(PRELUDE + f"var m = {MEAL};\n"
                "console.log(JSON.stringify([cookOpeningTab(m, null), cookOpeningTab(m, { tab: 'week' }), "
                "cookOpeningTab(m, { tab: 'today' })]));")
-    assert out == ["overview", "overview", "overview"]
+    assert out == ["ingredients", "ingredients", "ingredients"]
 
 
 @_needs_node
@@ -100,20 +100,20 @@ def test_opens_on_steps_once_a_cook_is_under_way_wherever_it_was_tapped():
                "var c = cookOpeningTab(m, null);\n"
                "console.log(JSON.stringify([a, b, c]));")
     # Ticks or a recorded start mean under way; a cooked meal is not.
-    assert out == ["steps", "steps", "overview"]
+    assert out == ["steps", "steps", "ingredients"]
 
 
 @_needs_node
-def test_a_dish_with_no_saved_recipe_always_opens_on_overview():
+def test_a_dish_with_no_saved_recipe_opens_on_ingredients():
     out = _run(PRELUDE + "var m = { entry_id: 1, has_full_recipe: false, ingredients: [], instructions: [] };\n"
                "console.log(JSON.stringify(cookOpeningTab(m, { tab: 'grocery' })));")
-    assert out == "overview"
+    assert out == "ingredients"
 
 
 def test_cook_enter_focus_uses_the_opening_tab_and_the_dock_the_same_test():
     enter = _extract("cookEnterFocus")
-    assert "cookState.recipeTab = cookOpeningTab(cookState.data.meals[idx], cookState.focusOrigin);" in enter
-    assert "var underway = cookUnderway(meal);" in _extract("cookRecipeDockHtml")
+    assert "cookState.recipeTab = cookOpeningTab(cookState.data.meals[idx]);" in enter
+    assert "cookUnderway(meal) ? 'Keep cooking'" in _extract("cookRecipeDockHtml")
 
 
 # ---------------------------------------------------------------------------
@@ -153,11 +153,11 @@ def test_for_this_meal_holds_only_what_is_left_and_goes_when_nothing_is():
     assert none == ""
 
 
-def test_the_overview_leads_with_already_done_then_the_plate():
-    body = _extract("recipeOverviewHtml")
-    assert body.index("recipeAlreadyDoneHtml(prep)") < body.index("recipeCreditHtml(extra)")
-    assert "recipePlateHtml(meal)" in body
+def test_the_ingredients_lead_with_already_done_and_the_plate_is_under_the_more():
+    body = _extract("recipeIngredientsTabHtml")
+    assert body.index("recipeAlreadyDoneHtml(prep)") < body.index("recipePlainIngredientsHtml(meal, idx)")
     assert "cookFocusPrepHtml(prep)" in body
+    assert "recipePlateHtml(meal)" in _extract("recipeMoreSheetHtml")
 
 
 # ---------------------------------------------------------------------------
@@ -203,9 +203,9 @@ def test_steps_mark_ticked_steps_and_youre_here_on_the_next():
 
 
 def test_the_new_styles_use_tokens():
-    for sel in (".recipe-done {", ".recipe-plate-part {", ".recipe-step-here {"):
+    for sel in (".recipe-done", ".recipe-plate-part", ".recipe-step-here {"):
         assert sel in SHELL_CSS, sel
-    block = SHELL_CSS[SHELL_CSS.index("One recipe screen (Emily, 2026-11-02"):]
+    block = SHELL_CSS[SHELL_CSS.index("COOK, PREP, RECIPE, COOKING, ASK"):]
     for line in block.splitlines():
         if ":" in line and "{" not in line and "/*" not in line:
             assert "#" not in line, line

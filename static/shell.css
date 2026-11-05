@@ -2089,30 +2089,6 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
   flex-shrink: 0;
   cursor: pointer;
 }
-/* The real close control (Julia, 2026-09-08 — the handle alone was too
-   thin to hit reliably). Same shape as the .crumb step links
-   elsewhere in the shell: plain text + chevron, min 44x44 tap target,
-   always visible at the top-left of the sheet, never just the handle. */
-.ask-sheet-back {
-  align-self: flex-start;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  min-width: 44px;
-  min-height: 44px;
-  margin: -4px 0 -8px -10px;
-  padding: 0 10px;
-  border: 0;
-  background: none;
-  cursor: pointer;
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--ink-secondary);
-  flex-shrink: 0;
-}
-.ask-sheet-back svg { flex-shrink: 0; }
-.ask-sheet-back:hover { color: var(--ink-strong); }
 .ask-messages {
   overflow-y: auto;
   display: flex;
@@ -2596,23 +2572,6 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
 }
 .ask-save-dock .dock-secondary:hover { background: var(--sand-deep); }
 .ask-save-dock .dock-secondary:disabled { opacity: .6; cursor: default; }
-
-.ask-composer-send {
-  flex-shrink: 0;
-  width: 40px;
-  height: 40px;
-  border-radius: 13px;
-  background: var(--spruce);
-  color: var(--apricot);
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 16px;
-  cursor: pointer;
-}
-.ask-composer-send:disabled { opacity: .5; cursor: default; }
 
 /* Voice dictation mic button — restored per testing feedback (see
    design_handoff_home_manager README's Phase 5 note on why this was
@@ -5504,17 +5463,6 @@ p.gro-empty:not(.note-card) { font-size: 14px; color: var(--ink-secondary); marg
    as its eyebrow, "1 cook tonight" as its line — and nothing on it is
    urgent. */
 #kit-root-view[hidden], #kit-cook-view[hidden] { display: none; }
-
-.kit-body { padding: 16px 20px 0; display: flex; flex-direction: column; gap: 12px; }
-/* Same FAB-clearance bug as .wk-foot (Loop Board
-   3da1f4c0-5231-81c9-8123-f230175d2310): #kit-dock (the root's "Start
-   cooking"/"Mark eaten" dock) is a sibling of .kit-body, toggled [hidden]
-   rather than added/removed — so a load error, no plan yet, or tonight's
-   cook already done all leave cookMoreLinkHtml()'s "More ···" as
-   .kit-body's own last child with no dock to clear the FAB. When the dock
-   *is* showing it's sticky and already clears the FAB itself (see .dock's
-   84px right padding), so this only pads when there's no visible dock. */
-.kit-body:not(:has(+ .dock:not([hidden]))) { padding-bottom: 24px; }
 /* The quiet rows that replaced the tiles (2026-09-11). One card, one
    hairline between rows, one fact each. */
 .kit-rows {
@@ -5547,224 +5495,6 @@ p.gro-empty:not(.note-card) { font-size: 14px; color: var(--ink-secondary); marg
 .kit-row-sub { font-family: var(--font-body); font-size: 13px; color: var(--ink-secondary); line-height: 1.35; }
 .kit-row-chev { flex: 0 0 auto; color: var(--ink-inactive); display: flex; }
 .kit-row-chev svg { width: 16px; height: 16px; }
-/* ---------- Cook's root: today, in the order it is eaten ----------
-   Option A, "every meal the same size" (Emily, 2026-11-01). One ivory list,
-   every row the same height: the slot small on top, the dish, the minutes
-   on the right. Done: the celadon check and muted text. Next: a small
-   apricot dot and an apricot label. Dark spruce is for two moments only —
-   the prep day's card (.cook-prepday) and the night-before checklist
-   (.cook-bed). The week shelf, the Tonight card, the thaw card and the
-   get-ready rows that lived here came off with this design. */
-.cook-today {
-  display: flex;
-  flex-direction: column;
-  background: var(--surface);
-  border: 1.5px solid transparent; box-shadow: var(--shadow-card);
-  border-radius: var(--radius-card);
-  padding: 4px 18px;
-}
-.cook-today-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  min-height: 64px;
-  /* 10px, not 14: the 44px slot tile (I1) plus this is the same 64px row
-     on every meal, so the list stays even (Option A). */
-  padding: 10px 0;
-  border: 0;
-  border-bottom: 1px solid var(--hairline);
-  background: none;
-  text-align: left;
-  color: var(--ink);
-  font: inherit;
-  cursor: pointer;
-}
-.cook-today-row:last-child { border-bottom: 0; }
-.cook-today-mark {
-  width: 24px;
-  height: 24px;
-  flex: 0 0 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--celadon-label);
-}
-.cook-today-mark svg { width: 24px; height: 24px; display: block; }
-.cook-today-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--apricot); }
-.cook-today-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.cook-today-slot {
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--ink-muted);
-}
-.cook-today-row.is-next .cook-today-slot { color: var(--apricot-label); }
-.cook-today-dish {
-  font-family: var(--font-body);
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 1.25;
-  color: var(--ink);
-}
-.cook-today-row.is-done .cook-today-dish { font-weight: 400; color: var(--ink-done); }
-.cook-today-row.is-done .slot-tile { opacity: .62; }
-.cook-today-right {
-  flex: 0 0 auto;
-  font-family: var(--font-body);
-  font-size: 14px;
-  color: var(--ink-secondary);
-  white-space: nowrap;
-}
-.cook-today-right.is-ready { color: var(--celadon-label); font-weight: 600; }
-
-/* One quiet line under the list: "Before bed: 2 things for Wednesday",
-   "Sunday prep is done · 13 of 13", "Next: Friday, Salmon Tacos". Its own
-   44px row (rule 6); a chevron when it opens something. */
-.cook-quiet-line {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  width: 100%;
-  min-height: 44px;
-  margin: 0;
-  padding: 4px 6px;
-  border: 0;
-  background: none;
-  text-align: left;
-  font-family: var(--font-body);
-  font-size: 14px;
-  color: var(--ink-secondary);
-}
-.cook-quiet-line.is-link { cursor: pointer; }
-.cook-quiet-line svg { width: 16px; height: 16px; flex: 0 0 16px; }
-
-/* A day with nothing to eat from the plan (A-Thu). */
-.cook-off {
-  background: var(--surface);
-  border: 1.5px solid transparent; box-shadow: var(--shadow-card);
-  border-radius: var(--radius-card);
-  padding: 22px 22px 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.cook-off-title {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: 26px;
-  font-weight: 700;
-  letter-spacing: -0.025em;
-  color: var(--ink-strong);
-}
-.cook-off-line { margin: 0; font-size: 14px; color: var(--ink-secondary); }
-
-/* ---------- The two spruce moments ----------
-   Shared shape: the hero's spruce, its radius and edge, ivory ink, an
-   apricot-light eyebrow, the title in the display face, and apricot rules
-   between rows (the only divider on spruce, theme.css). */
-.cook-prepday, .cook-bed {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  width: 100%;
-  box-sizing: border-box;
-  background: var(--spruce);
-  color: var(--ivory-ink);
-  border: 1.5px solid var(--spruce-edge);
-  border-radius: var(--radius-hero);
-  padding: 22px 22px 18px;
-  box-shadow: var(--shadow-hero);
-  text-align: left;
-  font: inherit;
-}
-.cook-prepday { cursor: pointer; }
-.cook-prepday-head { display: flex; flex-direction: column; gap: 6px; }
-.cook-prepday-eyebrow, .cook-bed-eyebrow {
-  font-family: var(--font-body);
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--apricot-light);
-}
-.cook-prepday-title, .cook-bed-title {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: 26px;
-  font-weight: 700;
-  letter-spacing: -0.025em;
-  line-height: 1.1;
-  color: var(--ivory-ink);
-}
-.cook-prepday-for { font-size: 14px; color: var(--ivory-ink-muted); }
-.cook-prepday-progress { display: flex; align-items: center; gap: 12px; }
-.cook-prepday-bar {
-  flex: 1 1 auto;
-  height: 6px;
-  border-radius: var(--radius-pill);
-  background: var(--spruce-raised);
-  overflow: hidden;
-}
-.cook-prepday-fill { display: block; height: 100%; background: var(--apricot-light); border-radius: inherit; }
-.cook-prepday-count { flex: 0 0 auto; font-size: 13px; font-weight: 600; color: var(--ivory-ink-muted); }
-.cook-prepday-secs { display: flex; flex-direction: column; border-top: 1px solid var(--apricot-rule); }
-.cook-prepday-sec {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 11px 0;
-  border-bottom: 1px solid var(--apricot-rule);
-}
-.cook-prepday-sec:last-child { border-bottom: 0; padding-bottom: 2px; }
-.cook-prepday-sec-title { font-size: 16px; font-weight: 600; }
-.cook-prepday-sec-line { font-size: 14px; color: var(--apricot-light); white-space: nowrap; }
-.cook-prepday-sec.is-done .cook-prepday-sec-title { color: var(--ivory-ink-muted); text-decoration: line-through; }
-
-/* The night-before checklist (A-NightList). The real checkbox covers the
-   row, so the whole 52px line is the target. */
-.cook-bed-list { display: flex; flex-direction: column; border-top: 1px solid var(--apricot-rule); }
-.cook-bed-item {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  min-height: 52px;
-  padding: 12px 0;
-  border-bottom: 1px solid var(--apricot-rule);
-  cursor: pointer;
-}
-.cook-bed-item:last-child { border-bottom: 0; padding-bottom: 2px; }
-.cook-bed-input {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-.cook-bed-box {
-  width: 24px;
-  height: 24px;
-  flex: 0 0 24px;
-  border: 2px solid var(--apricot-light);
-  border-radius: 13px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: transparent;
-}
-.cook-bed-box svg { width: 16px; height: 16px; display: block; }
-.cook-bed-input:checked + .cook-bed-box { background: var(--apricot-light); color: var(--spruce); }
-.cook-bed-input:focus-visible + .cook-bed-box { outline: 2px solid var(--ivory-ink); outline-offset: 2px; }
-.cook-bed-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.cook-bed-task { font-size: 16px; font-weight: 600; line-height: 1.3; }
-.cook-bed-note { font-size: 13px; line-height: 1.35; color: var(--apricot-light); }
-.cook-bed-item.is-done .cook-bed-task { color: var(--ivory-ink-muted); text-decoration: line-through; }
-
-/* "More ···" — the foot's one quiet link to the three rare entry points
-   (the Cook More sheet). Its own 44px row (rule 6). */
-.cook-more-foot { display: flex; padding: 2px 0 0; }
 /* Inventory's row is quiet — a neutral stroke and no badge of any kind
    (the "In development" pill came off 2026-10-27). */
 .kit-row[data-sheet="inventory"] .kit-row-icon { color: var(--ink-placeholder); }
@@ -6677,20 +6407,6 @@ textarea.wwk-text { resize: vertical; }
 .rli-cite-input.is-short { font-style: normal; }
 .rli-cite-input::placeholder { color: var(--ink-placeholder); font-style: normal; }
 .rli-cite-input:focus { outline: none; border-bottom-color: var(--spruce); }
-
-/* Where a recipe came from, on every screen that shows one (recipe photo
-   import, 2026-09-13; recipeCitationHtml in shell.js). One quiet line —
-   the book in italics, its author, the page — never a "Source:" label.
-   With a kept page photo it is a button, sized to rule 6. */
-.recipe-cite {
-  display: block;
-  margin: 0;
-  font-family: var(--font-body);
-  font-size: 13px;
-  line-height: 1.4;
-  color: var(--ink-secondary);
-}
-.recipe-cite i { }
 button.recipe-cite {
   min-height: 44px;
   padding: 0;
@@ -6700,7 +6416,6 @@ button.recipe-cite {
   cursor: pointer;
   width: 100%;
 }
-.recipe-cite-open { color: var(--apricot-label); font-weight: 700; white-space: nowrap; }
 button.recipe-cite:hover .recipe-cite-open { color: var(--apricot-label-hover); }
 .wk-meal-cite { padding: 6px 4px 0; }
 .wk-slot-cite { font-size: 13px; margin-top: 2px; }
@@ -6752,167 +6467,6 @@ button.recipe-cite:hover .recipe-cite-open { color: var(--apricot-label-hover); 
    carries the same layout the rows lost. Cook is a plain block instead:
    its sections carry their own spacing. */
 #week-plan-view { display: flex; flex-direction: column; gap: 12px; }
-/* The Cook overview's title row (.cook-titlerow / .cook-title /
-   .cook-count) went with the overview on 2026-09-08: the Kitchen root has
-   its own title and subtitle (.kit-title / .kit-sub), and "N of M cooked"
-   is not what a cook opens the tab to find out. */
-.cook-empty, .cook-error {
-  font-family: var(--font-body);
-  font-size: 14px;
-  color: var(--ink-secondary);
-  padding: 18px 20px;
-  margin: 0;
-}
-.cook-error { color: var(--urgent-label); }
-/* "plan one on the Plan tab first" — the whole reason the empty state
-   exists is to send someone there, so it's the tappable part of the
-   sentence rather than dead text. Inline-flex keeps it sitting in the
-   paragraph's own flow while still getting the full 44px target (Rule 6),
-   the same idiom .week-tweak-link already uses for an in-prose link. */
-.cook-empty-link {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  background: none;
-  border: none;
-  padding: 0;
-  font: inherit;
-  font-weight: 700;
-  color: var(--apricot-label);
-  cursor: pointer;
-}
-.cook-empty-link:hover { color: var(--apricot-label-hover); }
-
-/* ---------- The hero: tonight ---------- */
-.cook-hero {
-  background: var(--spruce);
-  border-radius: 0 0 var(--radius-hero) var(--radius-hero);
-  padding: 15px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  box-shadow: var(--shadow-hero);
-}
-.cook-hero-top { display: flex; align-items: center; gap: 10px; }
-.cook-hero-chip {
-  height: 26px;
-  padding: 0 11px;
-  border-radius: var(--radius-badge-sm);
-  background: var(--apricot);
-  display: flex;
-  align-items: center;
-  font-family: var(--font-body);
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--on-accent-ink);
-  white-space: nowrap;
-}
-/* Nothing to cook is not a decision to make, so the chip stops being apricot. */
-.cook-chip-quiet { background: var(--spruce-raised); color: var(--ivory-ink-muted); }
-.cook-hero-rule { flex: 1 1 auto; height: 1.5px; border-radius: 1px; background: var(--apricot-rule); }
-/* The prep session's "3 of 5" tag (cookSessionHtml). */
-.cook-hero-tag {
-  height: 26px;
-  padding: 0 10px;
-  border-radius: var(--radius-badge-sm);
-  background: var(--celadon);
-  display: flex;
-  align-items: center;
-  font-family: var(--font-body);
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--on-accent-ink);
-  white-space: nowrap;
-}
-.cook-hero-line { display: flex; flex-direction: column; gap: 6px; }
-.cook-hero-headline {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 26px;
-  letter-spacing: -0.025em;
-  line-height: 1.04;
-  color: var(--ivory-ink);
-  margin: 0;
-}
-.cook-hero-headline.is-done { text-decoration: line-through; color: var(--ivory-ink-muted); }
-.cook-hero-note {
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.35;
-  color: var(--ivory-ink-muted);
-  margin: 0;
-}
-.cook-hero-chips { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.cook-meta-chip {
-  height: 32px;
-  padding: 0 12px;
-  border-radius: var(--radius-chip);
-  background: var(--spruce-raised);
-  display: flex;
-  align-items: center;
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--ivory-ink-muted);
-  white-space: nowrap;
-}
-.cook-hero-actions { display: flex; align-items: center; gap: 8px; }
-/* The one apricot action on this screen. */
-.cook-hero-action {
-  flex: 1 1 auto;
-  min-height: 54px;
-  border: none;
-  border-radius: var(--radius-action);
-  background: var(--apricot);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
-  color: var(--on-accent-ink);
-  font-family: var(--font-display);
-  font-size: 16px;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: var(--shadow-action);
-}
-.cook-hero-action:hover { background: var(--apricot-light); }
-.cook-hero-action svg { width: 18px; height: 18px; }
-.cook-hero-icon, .cook-hero-check {
-  width: 54px;
-  height: 54px;
-  flex: 0 0 auto;
-  border: none;
-  border-radius: var(--radius-action);
-  background: var(--spruce-raised);
-  color: var(--apricot-light);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-.cook-hero-icon svg, .cook-hero-check svg { width: 20px; height: 20px; }
-.cook-hero-icon:hover, .cook-hero-check:hover { background: var(--spruce-hover); }
-.cook-hero-check { color: var(--ivory-ink-muted); }
-.cook-hero-check.checked { background: var(--celadon); color: var(--on-accent-ink); }
-
-/* ---------- Focused single-meal cook mode ----------
-   A state of this same screen (never a route), exactly like Grocery's
-   shopping mode — see .gro-hero-back, the precedent this back link copies.
-   The reheat night's screen still wears .cook-hero (cookReheatFocusHtml)
-   with .crumb.on-spruce; a cook's screens are the recipe and the cooker
-   below, on the ground. */
-/* Marking a cooked meal not-cooked is an undo, not a call to action, so it
-   drops the apricot fill for a quiet outline (re-inked for the ivory dock
-   further down, .cook-dock .cook-focus-check.is-done). */
-.cook-focus-check.is-done {
-  background: none;
-  border: 1.5px solid var(--apricot-rule);
-  color: var(--ivory-ink);
-  box-shadow: none;
-}
-.cook-focus-check.is-done:hover { background: var(--spruce-hover); }
-.cook-focus-recipe { padding: 14px; }
 
 /* ---------- The recipe, as the recipe ----------
    Emily, 2026-09-18 (boards 13-recipe and 14-cooking): cook mode opens on
@@ -6922,486 +6476,12 @@ button.recipe-cite:hover .recipe-cite-open { color: var(--apricot-label-hover); 
    (mealStepHtml), so the classes are named for the recipe, not the tab.
    The spruce hero with its chips, the "Before you start" stage and the
    whole-method stage are gone; the crumb sits on the ground (.crumb). */
-/* Under the crumb (44px tall, so the title already sits a breath below
-   it) the body starts almost at once, on Cook and on Plan alike. */
-.recipe-body { gap: 14px; }
 .cook-recipe .cook-body, .cook-cooker .cook-body, .wk-meal-body.recipe-body { padding-top: 4px; }
-.recipe-title {
-  margin: 0;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 32px;
-  letter-spacing: -0.03em;
-  line-height: 1.05;
-  color: var(--ink);
-  overflow-wrap: anywhere;
-}
-.recipe-title.is-done { text-decoration: line-through; color: var(--ink-done); }
-/* The one quiet line under the title when there is a fact to say: the thaw
-   the plan wrote, where a reheat came from, "Marinate overnight". */
-.recipe-line {
-  margin: -4px 0 0;
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.4;
-  color: var(--ink-secondary);
-}
-.recipe-body .cook-made-ahead { color: var(--ink-secondary); }
-/* "See Thursday's recipe" on a reheat night's page (Emily, 2026-09-27):
-   a text link in --apricot-label (the token for links), 44px tall (rule 6). */
-.recipe-source-link {
-  appearance: none;
-  -webkit-appearance: none;
-  align-self: flex-start;
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  margin: -8px 0 0;
-  padding: 0;
-  background: none;
-  border: 0;
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--apricot-label);
-  text-align: left;
-  cursor: pointer;
-}
-/* "Cooking for · − · 4 · +" on one line. The buttons are 36px of box on a
-   44px target (the ::after inset .cook-serves-btn already carries). */
-/* "Double batch: 3 tonight, 3 for lunch tomorrow." — the line directly
-   under the "Cooking for" stepper (Emily's card, 2026-10-05; Gowthami's
-   household: "It needs to call out that it's double the quantity because
-   its calling for leftovers").
-
-   A LINE, in --celadon-label as the card specifies — never a tile, never
-   a chip, never a second accent (rule 5: the recipe screen's one apricot
-   is "Start cooking" in the dock). The same sentence appears on Cook's
-   Tonight card and in cook mode's steps, and each of those lands on a
-   DIFFERENT background, so each has its own ink chosen for its own pair
-   rather than inheriting this one: see .cook-tonight-batch (on --spruce)
-   and .cook-step-batch (on --surface).
-
-   Contrast measured off computed styles in Chromium at 390x844:
-     5.44:1 light / 8.22:1 dark on the recipe body's ground. */
-.recipe-batch {
-  margin: -4px 0 0;
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 1.4;
-  color: var(--celadon-label);
-}
-.recipe-serves { gap: 10px; }
-.recipe-serves .cook-serves-label { font-size: 14px; font-weight: 500; color: var(--ink-secondary); }
-.recipe-serves .cook-serves-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-control);
-  background: var(--surface);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-.recipe-serves .cook-serves-btn svg { width: 16px; height: 16px; }
-.recipe-serves .cook-serves-btn:hover { border-color: var(--ink-strong); }
-.recipe-serves .cook-serves-count { font-size: 16px; }
-/* The two cards: the eyebrow on its own line, then the rows. */
-.recipe-card { padding: 4px 14px 6px; display: flex; flex-direction: column; }
-.recipe-eyebrow { padding: 10px 0 4px; }
-/* The ingredient ticklist (cookGetOutRowHtml): the whole row is the
-   control, not just the box beside it — read at arm's length with wet
-   hands. */
-.cook-getout { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-.cook-getout-item { border-bottom: 1px solid var(--hairline); }
-.cook-getout-item:last-child { border-bottom: none; }
-.cook-getout-row {
-  width: 100%;
-  min-height: 48px;
-  padding: 6px 0;
-  border: none;
-  background: none;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  text-align: left;
-  cursor: pointer;
-}
-.cook-getout-text {
-  flex: 1 1 auto;
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.35;
-  color: var(--ink);
-}
-/* --ink-done is 4.53:1 on ground (theme.css, measured 2026-09-03); the
-   struck-through state is the same one the prep tiles use, so a ticked
-   ingredient reads like every other ticked thing on this screen. */
-.cook-getout-item.is-done .cook-getout-text { color: var(--ink-done); text-decoration: line-through; }
-/* ...on the recipe card: 44px rows (board 13-recipe), a hairline above
-   each. Live (cook mode) the row is the tick's button; on Plan it is text
-   with the same box drawn beside it. */
-.recipe-card .cook-getout-item { border-top: 1px solid var(--hairline); border-bottom: 0; }
-.recipe-card .cook-getout-row { min-height: 44px; padding: 5px 0; }
-.recipe-card .cook-getout-text { font-weight: 500; }
-.recipe-row { cursor: default; }
-.recipe-card .cook-box { width: 22px; height: 22px; border-radius: 13px; border-color: var(--hairline-deep); }
-.recipe-card .cook-box.checked { border-color: var(--celadon); }
-.recipe-box { cursor: default; }
-.recipe-box::after { display: none; }
-.recipe-card .cook-unscaled { margin: 6px 0 8px; }
-/* Steps: a sand number tile and the step's words. */
-.recipe-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-.recipe-step {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  padding: 10px 0;
-  border-top: 1px solid var(--hairline);
-}
-.recipe-step-num {
-  flex: 0 0 auto;
-  width: 30px;
-  height: 30px;
-  border-radius: var(--radius-badge-sm);
-  background: var(--sand);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 14px;
-  color: var(--ink);
-}
-.recipe-step-text {
-  flex: 1 1 auto;
-  min-width: 0;
-  padding-top: 5px;
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.45;
-  color: var(--ink);
-  overflow-wrap: anywhere;
-}
-/* "Do ahead" on a make-ahead step (advance_prep_step_indices) — the same
-   small sand-and-apricot word the whole method used to carry. */
-.recipe-step-tag {
-  display: inline-block;
-  vertical-align: 2px;
-  margin-right: 4px;
-  padding: 2px 8px;
-  border-radius: var(--radius-badge-sm);
-  background: var(--sand);
-  font-family: var(--font-body);
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--apricot-label);
-}
-.recipe-empty { padding: 6px 0 8px; }
-.recipe-card .cook-fill { margin: 0 0 8px; }
-.recipe-norecipe { margin: 0; }
-/* The prep rows sit under the recipe, quietly. */
-.recipe-body .cook-section { padding-top: 4px; }
-
-/* ---------- The recipe page (2026-10-06) ----------
-   Loop Board "Recipes people trust", slice 1 (Emily locked it 2026-10-05):
-   the dish, one line "who it's for · serves N", four tabs (the .wk-seg
-   control, reused — never a second segmented recipe), Start cooking and
-   Change recipe in the dock, a ⋯ menu beside the crumb. Ingredients are a
-   plain list: no box, no tick (that lives in Shop → Before you shop).
-   Every colour is a token already measured where it sits: --ink-secondary
-   on --ground for the line and the quiet facts, --apricot-label for links
-   (the token for links), the Lead badge --ink-on-celadon on
-   --celadon-tint (10.65 light / 10.37 dark, the pair the "Not us" pill
-   uses). */
-.cook-recipe-head { display: flex; align-items: center; justify-content: space-between; }
-/* A tab can be short (Sources, a two-line Overview), so the page fills the
-   panel and the dock keeps to its foot rather than floating up under the
-   content — the same flex chain the Cook root uses for its dock. */
-.kitchen-content > :has(> .cook-recipe) { display: flex; flex-direction: column; flex: 1 0 auto; }
-.cook-focus.cook-recipe { display: flex; flex-direction: column; flex: 1 0 auto; }
-.cook-focus.cook-recipe > .cook-dock { margin-top: auto; }
-.recipe-for {
-  margin: -6px 0 0;
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.4;
-  color: var(--ink-secondary);
-}
-/* .wk-seg.recipe-tabs: the control sits in the body's own gutter, not the
-   root's 20px one (.wk-seg is defined further down, so this needs the pair). */
-.wk-seg.recipe-tabs { margin: 0; }
-.recipe-tabs .wk-seg-btn { font-size: 13px; padding: 0 2px; min-width: 0; }
-.recipe-credit { display: flex; flex-direction: column; gap: 0; }
-.recipe-credit-line {
-  margin: 0;
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.4;
-  color: var(--ink-secondary);
-}
-.recipe-link {
-  appearance: none;
-  -webkit-appearance: none;
-  align-self: flex-start;
-  min-height: 44px;
-  padding: 0;
-  background: none;
-  border: 0;
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--apricot-label);
-  cursor: pointer;
-}
-.recipe-changes { padding: 0 14px; }
-.recipe-changes-row {
-  width: 100%;
-  min-height: 48px;
-  padding: 0;
-  background: none;
-  border: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  cursor: pointer;
-  font-family: var(--font-body);
-  text-align: left;
-}
-.recipe-changes-title { font-size: 14px; font-weight: 700; color: var(--ink); }
-.recipe-changes-count { font-size: 14px; font-weight: 700; color: var(--apricot-label); white-space: nowrap; }
-.recipe-changes-list {
-  margin: 0;
-  padding: 0 0 12px 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.4;
-  color: var(--ink);
-}
-.recipe-fact { margin: 0; font-size: 14px; font-weight: 500; color: var(--ink); }
-.recipe-fact-label {
-  margin-right: 8px;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--ink-secondary);
-}
-.recipe-jumps { padding: 0 14px; display: flex; flex-direction: column; }
-.recipe-jump {
-  min-height: 48px;
-  padding: 0;
-  background: none;
-  border: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-family: var(--font-display);
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--ink);
-  cursor: pointer;
-}
-.recipe-jump + .recipe-jump { border-top: 1px solid var(--hairline); }
-.recipe-jump-n { font-family: var(--font-body); font-size: 14px; color: var(--apricot-label); }
-/* The plain ingredient list — rows, a hairline above each, no box. */
-.recipe-ing-group {
-  margin: 8px 0 2px;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--ink-secondary);
-}
-.recipe-ing-list { list-style: none; margin: 0; padding: 0; }
-.recipe-ing {
-  padding: 11px 0;
-  border-top: 1px solid var(--hairline);
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.35;
-  color: var(--ink);
-}
-.recipe-src-list { list-style: none; margin: 0; padding: 0; }
-.recipe-src + .recipe-src { border-top: 1px solid var(--hairline); }
-.recipe-src-link {
-  min-height: 56px;
-  padding: 10px 0;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  column-gap: 10px;
-  color: var(--ink);
-  text-decoration: none;
-}
-.recipe-src-main { display: flex; align-items: center; gap: 8px; grid-column: 1; }
-.recipe-src-name { font-family: var(--font-display); font-size: 16px; font-weight: 700; }
-.recipe-src-lead {
-  padding: 2px 8px;
-  border-radius: var(--radius-badge-sm);
-  background: var(--celadon-tint);
-  color: var(--ink-on-celadon);
-  font-size: 11px;
-  font-weight: 700;
-}
-.recipe-src-title, .recipe-src-meta { grid-column: 1; font-size: 13px; font-weight: 500; color: var(--ink-secondary); }
-.recipe-src-go { grid-column: 2; grid-row: 1; align-self: center; font-size: 16px; color: var(--apricot-label); }
-.recipe-sources-credit { margin: 0; padding: 14px 0; font-size: 14px; font-weight: 600; line-height: 1.4; color: var(--ink); }
-.recipe-sources-line { margin: 0; font-size: 14px; font-weight: 500; line-height: 1.4; color: var(--ink-secondary); }
-/* The ⋯ menu: a 44px tile beside the crumb, opening a small card. */
-.recipe-more { position: relative; }
-.recipe-more-btn {
-  width: 44px;
-  height: 44px;
-  border: 0;
-  border-radius: var(--radius-control);
-  background: none;
-  color: var(--ink);
-  font-size: 16px;
-  font-weight: 700;
-  cursor: pointer;
-}
-.recipe-menu {
-  position: absolute;
-  right: 0;
-  top: 46px;
-  z-index: 5;
-  min-width: 220px;
-  padding: 6px;
-  display: flex;
-  flex-direction: column;
-  background: var(--surface);
-  border: 1.5px solid transparent;
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-card);
-}
-.recipe-menu > button {
-  min-height: 44px;
-  padding: 0 12px;
-  border: 0;
-  background: none;
-  text-align: left;
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--ink);
-  border-radius: var(--radius-control);
-  cursor: pointer;
-}
-.recipe-menu > button:hover { background: var(--surface-raised); }
-.recipe-rate { display: flex; gap: 6px; padding: 4px; }
-/* Change recipe in the dock: an outline above Start cooking (rule 5 —
-   the dock's one apricot stays Start cooking). Tweak (Emily, 2026-10-25)
-   is its small sibling just left of it, same outline. The two share a row of their own above Start
-   cooking (three would squeeze the apricot off its label at 390px), at
-   the 44px floor (rule 6) rather than the dock's 54, so the dock grows
-   by one short row and the apricot stays the biggest thing in it. */
-.recipe-dock-alts { gap: 8px; margin-bottom: 8px; }
-.recipe-dock-alts > button { min-height: 44px; font-size: 14px; }
-.recipe-dock-alts .recipe-dock-change { padding: 0 14px; }
-.recipe-dock-alts .recipe-dock-tweak { padding: 0 14px 0 10px; gap: 6px; }
-.recipe-dock-alts .recipe-dock-tweak svg { width: 16px; height: 16px; }
-
-/* ---------- The cooker: one step at a time ----------
-   Board 14-cooking: "‹ Recipe", the dish and the step count as the
-   eyebrow, the progress bar, the step in a card, the next step under it.
-   The instruction IS the screen — display face at 26px, because it is read
-   across a counter rather than held. */
-.cook-cooker-body { gap: 14px; }
 /* Two classes, not one: .cook-eyebrow (below, same specificity) sets
    white-space: nowrap for its short labels and, coming later, used to win —
    so a long dish name ("DISH · STEP 10 OF 10") ran the step screen sideways
    on a phone. The dish name wraps, and a name with no spaces breaks. */
 .cook-eyebrow.cook-cooker-eyebrow { margin: 0; white-space: normal; overflow-wrap: anywhere; min-width: 0; }
-/* One 4px segment per step; lit (apricot) up to the one you are on, the
-   rest a hairline. It changes on the tap, it does not animate — the app's
-   motions are spoken for (§4), and under reduced motion there is nothing
-   to reduce. */
-.cook-progress { display: flex; gap: 4px; }
-.cook-progress-seg { flex: 1 1 0; height: 4px; border-radius: var(--radius-pill); background: var(--hairline-strong); }
-.cook-progress-seg.is-done { background: var(--apricot); }
-.cook-step-card {
-  padding: 22px 20px;
-  min-height: 38vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 12px;
-}
-.cook-step-card .recipe-step-tag { align-self: flex-start; margin: 0; }
-.cook-bigstep {
-  margin: 0;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 26px;
-  line-height: 1.2;
-  letter-spacing: -0.025em;
-  color: var(--ink);
-  overflow-wrap: anywhere;
-}
-/* What this step needs, as one quiet line: "3 cloves garlic · 1 cup orzo". */
-/* The batch, at the pot: the first step's fact and the last step's job
-   (leftovers.batch_first_step_note / batch_last_step_note). Same sentence
-   family as .recipe-batch, on the step card's --surface.
-   Measured: 5.76:1 light / 7.14:1 dark. */
-.cook-step-batch {
-  margin: 0;
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 1.4;
-  color: var(--celadon-label);
-}
-.cook-step-needs {
-  margin: 0;
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.4;
-  color: var(--ink-secondary);
-}
-/* "Next: pour in the stock and the lemon juice." — the screen's one
-   accent line (§3), a real fact said in passing. */
-.cook-next {
-  margin: 0;
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  font-family: var(--font-accent);
-  font-weight: 400;
-  font-size: 16px;
-  line-height: 1.3;
-  color: var(--ink-secondary);
-}
-/* The cooker's dock: Back (outline, its own width) beside Next step /
-   "Done — on the table" (apricot, the rest of the row). */
-.cook-cooker-dock .dock-row { gap: 10px; }
-.cook-cooker-dock .cook-hero-action { flex: 1 1 auto; min-width: 0; }
-.cook-dock-back {
-  flex: 0 0 auto;
-  min-height: 54px;
-  padding: 0 18px 0 14px;
-  border: 1.5px solid transparent;
-  border-radius: var(--radius-action);
-  background: var(--blush);
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--ink);
-  font-family: var(--font-display);
-  font-size: 16px;
-  font-weight: 700;
-  cursor: pointer;
-}
-.cook-dock-back svg { width: 18px; height: 18px; }
-.cook-dock-back:hover { border-color: var(--ink-strong); }
 
 /* ---------- The dock: where a screen's one action lives ----------
    Nav v2 rule 2 (Emily, 2026-09-09): the single thing a screen is for sits
@@ -7468,16 +6548,6 @@ button.recipe-cite:hover .recipe-cite-open { color: var(--apricot-label-hover); 
   white-space: nowrap;
 }
 .dock-link:hover { color: var(--apricot-label-hover); }
-/* "Mark not cooked" is an undo, not a call to action, so it drops the
-   apricot fill — and in the dock it sits on the ivory ground rather than
-   on spruce, so it takes the ground's own quiet-outline vocabulary
-   (.cook-fill's) rather than the hero's ivory-on-spruce one, which would
-   be invisible here. */
-.cook-dock .cook-focus-check.is-done {
-  border-color: var(--hairline-strong);
-  color: var(--ink-strong);
-}
-.cook-dock .cook-focus-check.is-done:hover { background: var(--sand); }
 
 @media (min-width: 1024px) {
   /* Read from further away on a laptop propped up in the kitchen. And no
@@ -7557,29 +6627,6 @@ button.recipe-cite:hover .recipe-cite-open { color: var(--apricot-label-hover); 
 .cook-prep-card.is-done .cook-prep-date { color: var(--ink-muted); }
 .cook-prep-text { font-family: var(--font-body); font-size: 13px; font-weight: 600; line-height: 1.35; }
 .cook-prep-card.is-done .cook-prep-text { color: var(--ink-inactive); text-decoration: line-through; }
-
-/* The check control, everywhere it appears. 26px of visible box, 44px of
-   tap target via the ::after inset — this screen is read at arm's length
-   with wet hands. */
-.cook-box {
-  width: 26px;
-  height: 26px;
-  flex: 0 0 auto;
-  border-radius: var(--radius-badge-sm);
-  border: 1.5px solid var(--celadon);
-  background: var(--surface);
-  color: transparent;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  padding: 0;
-  position: relative;
-}
-.cook-box::after { content: ''; position: absolute; inset: -9px; }
-.cook-box svg { width: 15px; height: 15px; }
-.cook-box.checked { background: var(--celadon); border-color: var(--celadon); color: var(--on-accent-ink); }
-.cook-box:disabled { opacity: .55; cursor: default; }
 .cook-week-row .cook-box { border-color: var(--sand-deep); background: var(--ground); }
 .cook-week-row .cook-box.checked { background: var(--celadon); border-color: var(--celadon); }
 
@@ -7594,132 +6641,8 @@ button.recipe-cite:hover .recipe-cite-open { color: var(--apricot-label-hover); 
   color: var(--ink-inactive);
 }
 .cook-week-item.is-done .cook-week-sub { color: var(--ink-done-soft); }
-/* The foot's "More ···" link (cookMoreLinkHtml). */
-.cook-more-link { padding-left: 2px; }
-
-/* ---------- The prep list (cookSessionHtml, mockup C2, 2026-11-01) ----------
-   One card per section, folded to its name and "2 things · 25 min
-   hands-on"; one open at a time. Made on the night sits at the foot in
-   sand. Tokens only; no apricot (the work here is the ticking). */
-.prep-list { gap: 10px; }
-.prep-sec {
-  border-radius: var(--radius-card);
-  background: var(--surface);
-  border: 1.5px solid transparent; box-shadow: var(--shadow-card);
-  overflow: hidden;
-}
-.prep-sec-head {
-  width: 100%;
-  min-height: 64px;
-  padding: 12px 16px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  border: none;
-  background: none;
-  text-align: left;
-  cursor: pointer;
-  color: var(--ink);
-}
-.prep-sec-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.prep-sec.is-done .prep-sec-tile { opacity: .62; }
-/* Made on the night is itself a sand card, so its tile steps one deeper
-   (--sand-deep) to read as a tile; the stroke stays --apricot-label. */
-.prep-fresh-head { display: flex; align-items: center; gap: 12px; margin-bottom: 2px; }
-.prep-fresh .icon-tile.is-sand { background: var(--sand-deep); }
-.prep-sec-title {
-  font-family: var(--font-display);
-  font-size: 16px;
-  font-weight: 700;
-  line-height: 1.2;
-  color: var(--ink);
-}
-.prep-sec-line { font-family: var(--font-body); font-size: 13px; font-weight: 500; color: var(--ink-secondary); }
-.prep-sec.is-done .prep-sec-title { color: var(--ink-done); }
-.prep-sec-chev { flex: 0 0 auto; width: 22px; height: 22px; color: var(--ink-secondary); transition: transform .18s ease; }
-.prep-sec-chev svg { width: 22px; height: 22px; display: block; }
-.prep-sec.is-open .prep-sec-chev { transform: rotate(180deg); }
 @media (prefers-reduced-motion: reduce) { .prep-sec-chev { transition: none; } }
-.prep-sec-body { border-top: 1px solid var(--hairline); padding: 2px 8px 4px 16px; }
-.prep-step {
-  min-height: 56px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 6px 0;
-}
-.prep-step + .prep-step { border-top: 1px solid var(--hairline); }
-.prep-step .cook-box { border-color: var(--sand-deep); background: var(--ground); }
-.prep-step .cook-box.checked { background: var(--celadon); border-color: var(--celadon); }
-.prep-step-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; padding: 4px 0; }
-.prep-step-name {
-  border: none;
-  background: none;
-  padding: 0;
-  text-align: left;
-  font-family: var(--font-body);
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 1.3;
-  color: var(--ink);
-  overflow-wrap: anywhere;
-}
 button.prep-step-name { cursor: pointer; }
-.prep-step-line { margin: 0; font-family: var(--font-body); font-size: 13px; font-weight: 500; line-height: 1.35; color: var(--ink-secondary); }
-.prep-step.is-done .prep-step-name { color: var(--ink-done); text-decoration: line-through; }
-.prep-step-off {
-  flex: 0 0 auto;
-  width: 44px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  background: none;
-  border-radius: var(--radius-tile);
-  color: var(--ink-secondary);
-  cursor: pointer;
-  padding: 0;
-}
-.prep-step-off svg { width: 18px; height: 18px; }
-.prep-step-off:hover { background: var(--sand); }
-.prep-fresh {
-  border-radius: var(--radius-card);
-  background: var(--sand);
-  padding: 16px 16px 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.prep-fresh-title {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--ink);
-}
-/* Lines on sand take body ink: --ink-secondary measured 4.04:1 on --sand
-   in-browser (2026-11-01), under AA for 13px. 4.70:1 on --surface, so the
-   section cards above keep it. */
-.prep-fresh-line { margin: 0 0 6px; font-family: var(--font-body); font-size: 13px; font-weight: 500; line-height: 1.4; color: var(--ink); }
-.prep-fresh .prep-step-line { color: var(--ink); }
-.prep-fresh-item { min-height: 56px; display: flex; align-items: center; gap: 12px; padding: 6px 0; }
-.prep-fresh-item + .prep-fresh-item { border-top: 1px solid var(--hairline); }
-.prep-fresh-add {
-  flex: 0 0 auto;
-  min-height: 44px;
-  min-width: 44px;
-  padding: 0 14px;
-  border-radius: var(--radius-control);
-  border: 1.5px solid transparent; box-shadow: var(--shadow-card);
-  background: var(--surface);
-  font-family: var(--font-display);
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--ink-strong);
-  cursor: pointer;
-}
-.prep-fresh-add:disabled { opacity: .55; cursor: default; }
 
 /* ---------- The rest of the week: subordinate, dense on purpose ---------- */
 .cook-week {
@@ -7889,13 +6812,6 @@ button.cook-badge-tap::after { content: ""; position: absolute; inset: -10px -6p
 .cook-voice-log li { padding: 3px 0; border-top: 1px solid var(--hairline); }
 .cook-voice-log li:first-child { border-top: none; }
 .cook-voice-note { display: block; margin-top: 6px; color: var(--celadon-label); font-size: 13px; }
-
-/* ---------- Needs your attention ---------- */
-/* The Kitchen root renders this inside .kit-body, which already carries
-   the 20px gutter — so the band's own horizontal margin is zeroed there
-   rather than doubling it. */
-.kit-body > .cook-attention { margin-left: 0; margin-right: 0; }
-.kit-body > .cook-voice { margin-left: 0; margin-right: 0; }
 .cook-attention {
   margin: 14px 20px 0;
   border-radius: var(--radius-card);
@@ -8364,10 +7280,6 @@ button.cook-badge-tap::after { content: ""; position: absolute; inset: -10px -6p
 .wk-ing-acts { display: flex; flex-wrap: wrap; gap: 8px; }
 .wk-ing-acts:empty { display: none; }
 .cook-ing-acts { margin-top: 12px; }
-.recipe-change-btn { font-size: 14px; }
-/* Tweak beside it: the same outline, a step tighter (the "small" of
-   Emily's 2026-10-25 decision). The pair wraps as one. */
-.recipe-change-pair { display: inline-flex; gap: 8px; }
 .wk-ing-add.recipe-tweak-btn { padding: 0 14px 0 10px; gap: 6px; }
 .wk-ing-add.recipe-tweak-btn svg { width: 16px; height: 16px; }
 /* Row 4 reads as a different KIND of answer — it changes the meal rather
@@ -11630,9 +10542,6 @@ body.first-open-active { overflow: hidden; }
 .status-icon { display: inline-flex; flex: 0 0 auto; color: var(--celadon-label); }
 .status-icon svg { width: 15px; height: 15px; display: block; }
 .wk-qrow.is-past .dish-plate, .wk-qrow.is-done .dish-plate, .cook-today-row.is-done .dish-plate { opacity: .62; }
-/* A drawn plate (static/plates.js). The shadow is the app's, not the
-   drawing's: a white rim disappears on cream without it (PLATE_RULES 39). */
-.recipe-body > .dish-plate { margin-bottom: 12px; }
 .quiet-section { display: flex; flex-direction: column; gap: 8px; }
 .quiet-section-head {
   font-family: var(--font-body);
@@ -11765,65 +10674,25 @@ button.day-meal { flex-direction: row; align-items: center; gap: 10px; cursor: p
 /* The row's sheet: its one action, full width. */
 .quiet-act { width: 100%; }
 
-/* ---------- One recipe screen (Emily, 2026-11-02, option B) ----------
-   "Already done" leads the recipe's Overview: this meal's ticked prep on
-   one gentle celadon card, each row keeping its tick so it can come off. */
-.recipe-done {
-  background: var(--celadon-tint);
-  border: 1.5px solid transparent;
-  border-radius: 22px;
-  padding: 12px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.recipe-done-eyebrow {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--celadon-label);
-}
-.recipe-done-row { display: flex; align-items: center; gap: 12px; }
-.recipe-done-text { font-size: 14px; font-weight: 500; line-height: 1.4; color: var(--ink-on-celadon); }
-/* What's on the plate: the plan entry's parts, read-only. */
-.recipe-plate { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.recipe-plate-parts { display: flex; flex-wrap: wrap; gap: 6px; }
-.recipe-plate-part {
-  padding: 6px 12px;
-  border-radius: 999px;
-  border: 1.5px solid transparent; box-shadow: var(--shadow-card);
-  background: var(--surface);
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--ink);
-}
-.recipe-plate-role { font-weight: 500; color: var(--ink-secondary); }
-/* A cook under way, on the Steps tab: done steps quiet, the next one marked. */
-.recipe-step.is-done .recipe-step-text { color: var(--ink-done); }
-.recipe-step.is-done .recipe-step-num { background: var(--celadon); color: var(--on-accent-ink); }
-.recipe-step.is-done .recipe-step-num svg { width: 15px; height: 15px; }
-.recipe-step.is-here .recipe-step-num { background: var(--apricot); color: var(--on-accent-ink); }
-.recipe-step-here {
-  display: block;
-  margin-bottom: 2px;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--apricot-label);
-}
-
 /* =====================================================================
    SHEETS, ONE LOOK (Bright Dusk, Z-PlanMenu)
    =====================================================================
    Everything extra slides up from the bottom: a title, a round close
    button and the content, on a dimmed screen. These sheets were each built
    on their own, so the shared look is stated once here, last, so it wins
+   over each sheet's own older rule. New sheets use openQuietSheet. */SHEETS, ONE LOOK (Bright Dusk, Z-PlanMenu)
+   =====================================================================
+   Everything extra slides up from the bottom: a title, a round close
+   button and the content, on a dimmed screen. These sheets were each built
+   on their own, so the shared look is stated once here, last, so it wins
    over each sheet's own older rule. New sheets use openQuietSheet. */
-.quiet-sheet, #ask-sheet, #week-sheet, #meals-more-sheet, #kit-sheet, .wk-swap-sheet, #wk-swap-sheet, #wk-tweak-sheet,
+.quiet-sheet, #ask-sheet, #week-sheet, #meals-more-sheet, #cook-more-sheet, #kit-sheet, .wk-swap-sheet, #wk-swap-sheet, #wk-tweak-sheet,
 #gro-add-sheet, #gro-scan-sheet, #home-item-sheet {
   background: var(--ground);
   border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
 }
-.quiet-sheet, #gro-add-sheet, #gro-scan-sheet, #home-item-sheet { padding: 10px 16px 30px; gap: 12px; }
-#gro-add-sheet .kit-sheet-titlerow, #gro-scan-sheet .kit-sheet-titlerow, #home-item-sheet .kit-sheet-titlerow { padding: 2px 4px 0; align-items: center; }
+.quiet-sheet, #gro-add-sheet, #gro-scan-sheet, #home-item-sheet, #cook-more-sheet { padding: 10px 16px 30px; gap: 12px; }
+#gro-add-sheet .kit-sheet-titlerow, #gro-scan-sheet .kit-sheet-titlerow, #home-item-sheet .kit-sheet-titlerow, #cook-more-sheet .kit-sheet-titlerow { padding: 2px 4px 0; align-items: center; }
 .ask-sheet-handle {
   width: 40px;
   height: 4px;
@@ -11853,3 +10722,598 @@ button.day-meal { flex-direction: row; align-items: center; gap: 10px; cursor: p
   letter-spacing: -0.025em;
   font-weight: 700;
 }
+
+/* =====================================================================
+   COOK, PREP, RECIPE, COOKING, ASK (Bright Dusk, stage 3)
+   =====================================================================
+   Z-CookDay, Z-Cook, Z-Prep, Z-Recipe, Z-Steps, Z-CookMode, Z-Ask. Built from
+   the shared parts in theme.css; this is what those screens add. */
+
+/* --- The screens that take the whole screen have no tab bar. syncFullScreen
+   in shell.js sets the class. --- */
+body.is-full-screen #tab-bar { display: none; }
+
+/* --- Cook's root --- */
+.kit-body { padding: 0 0 24px; display: block; }
+.cook-prepday {
+  appearance: none;
+  border: 0;
+  font: inherit;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-sizing: border-box;
+  width: calc(100% - 32px);
+  margin: 14px 16px 0;
+  padding: 14px;
+  background: var(--white);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  transition: transform var(--motion-press) ease;
+}
+.cook-prepday:active, .cook-quiet-line:active, .cook-one-open:active { transform: scale(.98); }
+.cook-prepday-eyebrow { font-size: 13px; line-height: 18px; font-weight: 600; color: var(--ink-secondary); }
+.cook-prepday-title { font-size: 16px; line-height: 22px; font-weight: 500; }
+.cook-prepday + .tiles, .cook-bed + .tiles { margin-top: 10px; }
+.cook-today-row { position: relative; }
+.cook-tile-tick { position: absolute; top: 10px; right: 10px; }
+.cook-today-row.is-done .tile-name { color: var(--ink-secondary); }
+.cook-today-row.is-done .dish-plate { opacity: .62; }
+
+/* One tick box everywhere on these screens: a 22px ring, a filled apricot
+   circle when done, and 44px to tap. The check inks only when done. */
+.tick-ring svg, .cook-box svg { width: 14px; height: 14px; display: block; }
+.cook-tile-tick .tick-ring { color: var(--night-ink); }
+.cook-box {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: none;
+  box-shadow: inset 0 0 0 1.6px var(--tick-ring);
+  color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--motion-fast) ease;
+}
+.cook-box::after { content: ''; position: absolute; inset: -11px; }
+.cook-box.checked { background: var(--apricot); box-shadow: none; color: var(--night-ink); }
+.cook-box:disabled { opacity: .55; cursor: default; }
+
+/* Z-Cook: one meal left. */
+.cook-one {
+  margin: 14px 16px 0;
+  padding: 26px 18px 18px;
+  background: var(--white);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 18px;
+}
+.cook-one-open {
+  appearance: none;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  transition: transform var(--motion-press) ease;
+}
+.cook-one-words { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
+.cook-one-slot { font-size: 13px; line-height: 18px; color: var(--ink-secondary); }
+.cook-one-name { font-size: 26px; line-height: 30px; font-weight: 700; letter-spacing: -0.025em; overflow-wrap: anywhere; }
+.cook-one-time { font-size: 14px; line-height: 20px; color: var(--ink-secondary); }
+
+/* A line that opens something: prep done, the night before, the next prep. */
+.cook-quiet-line {
+  appearance: none;
+  border: 0;
+  font: inherit;
+  box-sizing: border-box;
+  width: calc(100% - 32px);
+  min-height: 52px;
+  margin: 10px 16px 0;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: var(--white);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  text-align: left;
+  transition: transform var(--motion-press) ease;
+}
+.cook-quiet-line.is-link { cursor: pointer; }
+.cook-quiet-line.is-set { color: var(--ink-secondary); }
+.cook-quiet-line svg { width: 16px; height: 16px; flex: 0 0 16px; color: var(--ink-secondary); }
+
+/* A plain card with nothing to cook on it, or a load that failed. */
+.cook-off { gap: 2px; }
+.cook-off-title { margin: 0; font-size: 16px; line-height: 22px; font-weight: 700; }
+.cook-off-line, .cook-empty-line, .cook-empty-detail { margin: 0; }
+.cook-off-line, .cook-empty-detail { font-size: 14px; line-height: 20px; font-weight: 400; color: var(--ink-secondary); }
+.cook-empty { gap: 2px; }
+.cook-empty .btn-main { margin-top: 12px; }
+.cook-error { font-size: 14px; line-height: 20px; }
+
+/* The night-before checklist: the real checkbox covers the row. */
+.cook-bed {
+  margin: 14px 16px 0;
+  padding: 14px;
+  background: var(--white);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.cook-bed-eyebrow { font-size: 13px; line-height: 18px; font-weight: 600; color: var(--ink-secondary); }
+.cook-bed-title { margin: 0 0 4px; font-size: 16px; line-height: 22px; font-weight: 700; color: var(--ink); }
+.cook-bed-list { display: flex; flex-direction: column; }
+.cook-bed-item { position: relative; display: flex; align-items: center; gap: 10px; min-height: 44px; }
+.cook-bed-input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.cook-bed-box { color: transparent; }
+.cook-bed-input:checked + .cook-bed-box { background: var(--apricot); box-shadow: none; color: var(--night-ink); }
+.cook-bed-input:focus-visible + .cook-bed-box { outline: 2px solid var(--dusk); outline-offset: 2px; }
+.cook-bed-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; padding: 6px 0; }
+.cook-bed-task { font-size: 14px; line-height: 18px; font-weight: 500; }
+.cook-bed-note { font-size: 13px; line-height: 18px; color: var(--ink-secondary); }
+.cook-bed-item.is-done .cook-bed-task { color: var(--ink-secondary); text-decoration: line-through; }
+
+/* "How did it go?" */
+.cook-attention { margin: 14px 16px 0; }
+.cook-attn-go { background: var(--apricot); color: var(--night-ink); }
+
+/* --- Every whole-screen step of the tab: its dock at the foot --- */
+.kitchen-content > :has(> .cook-focus) { display: flex; flex-direction: column; flex: 1 0 auto; }
+.cook-focus { display: flex; flex-direction: column; flex: 1 0 auto; }
+.cook-focus > .cook-dock { margin-top: auto; }
+.cook-focus > .cook-dock, .wk-meal-dock { padding: 12px 16px max(18px, env(safe-area-inset-bottom, 0px)); gap: 10px; }
+.cook-hero-action {
+  appearance: none;
+  width: 100%;
+  min-height: 52px;
+  border: 0;
+  border-radius: var(--radius-button);
+  background: var(--apricot);
+  color: var(--night-ink);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform var(--motion-press) ease;
+}
+.cook-hero-action:active { transform: scale(.98); }
+.cook-hero-action:disabled { opacity: .6; cursor: default; }
+.cook-hero-action.is-done { background: var(--blush); }
+.cook-bar {
+  margin: 14px 20px 0;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--blush);
+  overflow: hidden;
+  flex: none;
+}
+.cook-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--apricot);
+  transition: width var(--motion-fast) ease;
+}
+
+/* --- Prep (Z-Prep) --- */
+.cook-prep-top { padding: calc(env(safe-area-inset-top, 0px) + 14px) 20px 0; }
+.cook-prep-head { padding: 14px 20px 0; display: flex; flex-direction: column; gap: 3px; }
+.prep-list { padding-bottom: 24px; }
+.prep-cols {
+  margin: 14px 16px 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  align-items: start;
+}
+.prep-cols:has(> :only-child) { grid-template-columns: minmax(0, 1fr); }
+.prep-col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.prep-sec {
+  background: var(--white);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: 8px 14px 8px;
+}
+.prep-sec-head {
+  appearance: none;
+  border: 0;
+  background: none;
+  font: inherit;
+  width: 100%;
+  min-height: 44px;
+  padding: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px;
+  text-align: left;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+.prep-sec-text { min-width: 0; display: flex; flex-direction: column; }
+.prep-sec-title { font-size: 13px; line-height: 18px; font-weight: 600; }
+.prep-sec-line { font-size: 13px; line-height: 18px; font-weight: 400; }
+.prep-sec-chev { flex: 0 0 20px; width: 20px; height: 20px; transition: transform var(--motion-fast) ease; }
+.prep-sec-chev svg { width: 20px; height: 20px; display: block; }
+.prep-sec:not(.is-open) .prep-sec-chev { transform: rotate(-90deg); }
+.prep-step {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: start;
+  min-height: 44px;
+  padding: 5px 0;
+  box-sizing: border-box;
+}
+.prep-step .cook-box { margin-top: 2px; }
+.prep-step-text { min-width: 0; display: flex; flex-direction: column; gap: 1px; padding-top: 3px; }
+.prep-step-name {
+  appearance: none;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 14px;
+  line-height: 18px;
+  font-weight: 500;
+  color: var(--ink);
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+button.prep-step-name { cursor: pointer; }
+.prep-step-line { margin: 0; font-size: 13px; line-height: 18px; color: var(--ink-secondary); }
+.prep-step.is-done .prep-step-name { color: var(--ink-secondary); text-decoration: line-through; }
+.prep-step-off {
+  position: relative;
+  width: 18px;
+  height: 26px;
+  margin-right: -4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--tick-ring);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.prep-step-off::after { content: ''; position: absolute; left: -13px; right: -13px; top: -9px; bottom: -9px; }
+.prep-step-off svg { width: 16px; height: 16px; }
+.prep-fresh {
+  margin: 10px 16px 0;
+  padding: 14px;
+  background: var(--white);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+.prep-fresh-title { margin: 0; font-size: 13px; line-height: 18px; font-weight: 600; color: var(--ink-secondary); }
+.prep-fresh-line { margin: 2px 0 0; font-size: 14px; line-height: 20px; color: var(--ink-secondary); }
+.prep-fresh-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px; }
+.prep-fresh .prep-step-name { font-size: 16px; line-height: 22px; }
+.prep-fresh-add {
+  appearance: none;
+  flex: 0 0 84px;
+  width: 84px;
+  height: 44px;
+  border: 0;
+  border-radius: var(--radius-button);
+  background: var(--apricot);
+  color: var(--night-ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.prep-fresh-add:disabled { opacity: .55; cursor: default; }
+
+/* --- The recipe (Z-Recipe, Z-Steps) --- */
+.recipe-top {
+  position: relative;
+  padding: calc(env(safe-area-inset-top, 0px) + 14px) 20px 0;
+  display: flex;
+  justify-content: center;
+  min-height: 44px;
+}
+.recipe-top .recipe-back { position: absolute; left: 20px; top: calc(env(safe-area-inset-top, 0px) + 14px); }
+.recipe-top-more { position: absolute; right: 20px; top: calc(env(safe-area-inset-top, 0px) + 14px); }
+.recipe-body { padding: 0 0 24px; display: block; }
+.recipes-view.recipe-body { padding: 0; }
+.recipe-title {
+  margin: 18px 20px 0;
+  font-size: 26px;
+  line-height: 30px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.recipe-title.is-done { color: var(--ink-secondary); }
+.recipe-line { margin: 8px 20px 0; font-size: 14px; line-height: 20px; font-weight: 500; color: var(--ink-secondary); }
+.recipe-body .cook-made-ahead {
+  margin: 8px 20px 0;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  color: var(--ink-secondary);
+}
+.recipe-source-link {
+  appearance: none;
+  display: block;
+  min-height: 44px;
+  margin: 0 20px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--apricot-label);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.recipe-serves {
+  margin: 14px 20px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.recipe-serves .cook-serves-label { flex: 1 1 auto; font-size: 14px; font-weight: 500; color: var(--ink-secondary); }
+.recipe-serves .cook-serves-btn {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--blush);
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.recipe-serves .cook-serves-btn::after { content: none; }
+.recipe-serves .cook-serves-btn svg { width: 18px; height: 18px; }
+.recipe-serves .cook-serves-count { min-width: 26px; text-align: center; font-size: 16px; font-weight: 700; color: var(--ink); }
+.recipe-batch { margin: 8px 20px 0; font-size: 14px; line-height: 20px; font-weight: 500; color: var(--ink); }
+.recipe-count { margin: 14px 20px -6px; font-size: 13px; line-height: 18px; font-weight: 600; color: var(--ink-secondary); }
+.recipe-ing-group { padding-bottom: 0; }
+.recipe-ing-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.recipe-ings .cook-unscaled { margin: 12px 20px 0; font-size: 13px; line-height: 18px; color: var(--ink-secondary); }
+.recipe-takes { margin: 14px 20px 0; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--ink-secondary); }
+.recipe-steps {
+  list-style: none;
+  margin: 8px 16px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.recipe-method:first-child .recipe-steps { margin-top: 14px; }
+.recipe-step {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 12px;
+  padding: 14px;
+  background: var(--white);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+.recipe-step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-pill);
+  background: var(--blush);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.recipe-step-num svg { width: 14px; height: 14px; }
+.recipe-step.is-done .recipe-step-num { background: var(--apricot); }
+.recipe-step-text { font-size: 16px; line-height: 22px; color: var(--ink); }
+.recipe-step.is-done .recipe-step-text { color: var(--ink-secondary); }
+.recipe-step-here { display: block; font-size: 13px; line-height: 18px; font-weight: 600; color: var(--clay); }
+.recipe-step-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 9px;
+  border-radius: var(--radius-pill);
+  background: var(--blush);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+.recipe-empty { gap: 12px; }
+.recipe-norecipe, .recipe-empty .cook-dim { margin: 0; font-size: 14px; line-height: 20px; font-weight: 400; color: var(--ink-secondary); }
+.recipe-pane[hidden] { display: none; }
+.recipe-done, .recipe-body .cook-section {
+  margin: 14px 16px 0;
+  padding: 12px 14px;
+  background: var(--white);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.recipe-done-eyebrow { font-size: 13px; line-height: 18px; font-weight: 600; color: var(--ink-secondary); }
+.recipe-done-row { display: flex; align-items: center; gap: 10px; min-height: 44px; }
+.recipe-done-text { font-size: 14px; line-height: 18px; font-weight: 500; color: var(--ink-secondary); text-decoration: line-through; }
+.recipe-body .cook-sectionhead { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.recipe-body .cook-eyebrow { font-size: 13px; line-height: 18px; font-weight: 600; color: var(--ink-secondary); }
+.recipe-body .cook-rule { display: none; }
+.recipe-body .cook-sectionnote { font-size: 13px; line-height: 18px; color: var(--ink-secondary); }
+.recipe-body .cook-prep-grid { display: flex; flex-direction: column; }
+.recipe-body .cook-prep-card {
+  background: none;
+  box-shadow: none;
+  border: 0;
+  padding: 0;
+  min-height: 44px;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  column-gap: 10px;
+  align-items: center;
+}
+.recipe-body .cook-prep-card .cook-box { grid-row: 1 / span 2; position: relative; inset: auto; }
+.recipe-body .cook-prep-date { font-size: 13px; line-height: 18px; font-weight: 400; color: var(--ink-secondary); }
+.recipe-body .cook-prep-text { font-size: 14px; line-height: 18px; font-weight: 500; color: var(--ink); }
+.cook-fill { margin: 0; }
+.wk-whatsin { display: block; }
+.wk-ing-acts { margin: 14px 16px 0; }
+.recipe-change-pair { gap: 8px; }
+.recipe-body .plate-rows-wrap { margin: 14px 16px 0; }
+.recipe-body .plate-rows-wrap > :first-child { padding: 0 4px; font-size: 13px; line-height: 18px; font-weight: 600; color: var(--ink-secondary); }
+.wk-meal-cite { padding: 10px 20px 0; }
+
+/* The ···'s sheet: the facts first, then the rows. */
+.recipe-fact { margin: 0 4px; font-size: 14px; line-height: 20px; color: var(--ink-secondary); }
+.recipe-fact-label { display: block; font-size: 13px; line-height: 18px; font-weight: 600; color: var(--ink-secondary); }
+.recipe-plate { margin: 0 4px; }
+.recipe-plate-parts { font-size: 14px; line-height: 20px; color: var(--ink); }
+.recipe-plate-part + .recipe-plate-part::before { content: " · "; color: var(--ink-secondary); }
+.recipe-plate-role { color: var(--ink-secondary); }
+.recipe-credit-line { margin: 0 4px; font-size: 14px; line-height: 20px; color: var(--ink-secondary); }
+.recipe-sources {
+  background: var(--white);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: 2px 14px;
+}
+.recipe-sources-line { margin: 0 4px; font-size: 13px; line-height: 18px; color: var(--ink-secondary); }
+.recipe-changes-list {
+  margin: 0;
+  padding: 12px 14px 12px 30px;
+  background: var(--white);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ink);
+}
+
+/* Sources: the rows the sheet lists. */
+.recipe-cite {
+  display: block;
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink-secondary);
+}
+.recipe-cite i { }
+.recipe-cite-open { color: var(--apricot-label); font-weight: 700; white-space: nowrap; }
+.recipe-src-list { list-style: none; margin: 0; padding: 0; }
+.recipe-src + .recipe-src { border-top: 1px solid var(--hairline); }
+.recipe-src-link {
+  min-height: 56px;
+  padding: 10px 0;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  column-gap: 10px;
+  color: var(--ink);
+  text-decoration: none;
+}
+.recipe-src-main { display: flex; align-items: center; gap: 8px; grid-column: 1; }
+.recipe-src-name { font-family: var(--font-body); font-size: 16px; font-weight: 700; }
+.recipe-src-lead {
+  padding: 2px 8px;
+  border-radius: var(--radius-badge-sm);
+  background: var(--celadon-tint);
+  color: var(--ink-on-celadon);
+  font-size: 11px;
+  font-weight: 700;
+}
+.recipe-src-title, .recipe-src-meta { grid-column: 1; font-size: 13px; font-weight: 500; color: var(--ink-secondary); }
+.recipe-src-go { grid-column: 2; grid-row: 1; align-self: center; font-size: 16px; color: var(--apricot-label); }
+.recipe-sources-credit { margin: 0; padding: 14px 0; font-size: 14px; font-weight: 600; line-height: 1.4; color: var(--ink); }
+.recipe-change-btn { font-size: 14px; }
+
+/* --- Cooking (Z-CookMode) --- */
+.cook-cooker-top {
+  padding: calc(env(safe-area-inset-top, 0px) + 14px) 20px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.cook-cooker-count { font-size: 14px; line-height: 20px; font-weight: 600; color: var(--ink-secondary); }
+.cook-cooker-body { padding: 0 0 24px; display: block; }
+.cook-cooker-body > .recipe-step-tag { margin: 30px 20px -18px; }
+.cook-bigstep {
+  margin: 30px 20px 0;
+  font-size: 32px;
+  line-height: 38px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+}
+.cook-bigstep.is-long { font-size: 26px; line-height: 30px; letter-spacing: -0.025em; }
+.cook-step-batch { margin: 30px 20px -18px; font-size: 14px; line-height: 20px; font-weight: 600; color: var(--ink); }
+.cook-step-pack { margin: 14px 20px 0; }
+.cook-step-tiles { margin-top: 24px; align-items: start; }
+.cook-timer {
+  box-sizing: border-box;
+  background: var(--dusk);
+  color: var(--on-dusk);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-float);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.cook-timer-label { font-size: 13px; line-height: 18px; font-weight: 600; color: var(--soft-apricot); }
+.cook-timer-clock { font-size: 32px; line-height: 38px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.cook-timer-btn {
+  appearance: none;
+  height: 44px;
+  border: 0;
+  border-radius: var(--radius-button);
+  background: rgba(255, 255, 255, .16);
+  color: var(--white);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.cook-needs { justify-content: flex-start; gap: 6px; }
+.cook-needs-label { font-size: 13px; line-height: 18px; font-weight: 600; color: var(--ink-secondary); }
+.cook-step-needs { font-size: 16px; line-height: 22px; font-weight: 500; color: var(--ink); overflow-wrap: anywhere; }
+.cook-next { margin: 14px 20px 0; font-size: 14px; line-height: 20px; color: var(--ink-secondary); }

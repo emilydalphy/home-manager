@@ -565,12 +565,12 @@ _PRELUDE = (
     # row in this file carries no owner, so every line is what it was.
     + _between("  var MOVE_OWNER_WORDS = {", "  // The two groups' own icons")
     + _between("  function kitchenTodayRows(", "  function cookBandEyebrow(")
-    + _function("kitchenSubtitle") + "\n"
     + _function("cookSessionItemHtml") + "\n"
     + _function("cookResolveFocusIndex") + "\n"
     + _function("cookMealKey") + "\n"
     + _function("cookSessionOn") + "\n"
-    + _function("kitchenNextCookLine") + "\n"
+    + _function("tileHtml") + "\n"
+    + _function("kitchenNextCookLine") + "\n" + _function("kitchenNextCook") + "\n" + _function("kitchenNextWhen") + "\n"
     + _between("  // ---------- Cook's root: today, in the order it is eaten", "  function renderKitchen()")
 )
 
@@ -609,7 +609,6 @@ def _root(meals, moves=(), data=None, iso=MON, tonight_idx=0):
         "console.log(JSON.stringify({\n"
         "  rows: rows.map(function (r) { return { idx: r.idx, right: r.right,"
         "      title: r.title, prepped: r.prepped || null }; }),\n"
-        "  subtitle: kitchenSubtitle(rows, meals, " + json.dumps(iso) + "),\n"
         "  card: parts.html,\n"
         "  dock: parts.dock\n"
         "}));\n"
@@ -630,38 +629,30 @@ class TestTheScreen:
         assert row["title"] == "Chili", "the dish keeps its name — it is still what is eaten"
         assert "start by" not in out["card"].lower() and "11:20" not in out["card"]
 
-    def test_it_is_not_counted_as_a_cook_left_to_do(self):
-        """CATCH — "not shown as a cook", in the band's own words. main says
-        "1 cook today"."""
-        out = _root([_meal(prepped_ahead=_PREPPED)], [_COOK_MOVE])
-        assert out["subtitle"] == "nothing left to cook today"
-        # A real cook beside it is still counted.
-        pair = [_meal(prepped_ahead=_PREPPED), _meal(entry_id=2, slot="dinner", meal="Tacos")]
-        out = _root(pair, [_COOK_MOVE])
-        assert out["subtitle"] == "1 cook tonight"
-
-    def test_the_prepped_lunch_is_next_before_dinner_and_the_dock_ticks_it(self):
+    def test_the_prepped_lunch_ticks_from_the_dock_beside_dinner(self):
         """Eating order, no clock: the lunch comes before dinner, so it is
-        next, and the dock offers its tick; the dinner is a row with its
+        next, and the dock offers its tick; the dinner is a tile with its
         minutes."""
         pair = [_meal(prepped_ahead=_PREPPED), _meal(entry_id=2, slot="dinner", meal="Tacos")]
         out = _root(pair, [_COOK_MOVE])
-        assert '<span class="cook-today-slot">Lunch · next</span>' in out["card"]
+        assert '<span class="tile-sub">Lunch · Ready</span>' in out["card"]
         assert ">Mark it cooked<" in out["dock"]
         assert out["rows"][1]["right"] == "40 min"
 
-    def test_the_dock_is_the_tick_not_start_cooking(self):
-        """CATCH. The root's rows carry no box, so the dock is the ONLY tick
-        on the root a prepped meal has, and "Start cooking" would be the app
-        asking for a cook it has already asked for on the prep day."""
+    def test_the_tick_is_not_start_cooking(self):
+        """CATCH. The root's tiles carry no box, so this is the ONLY tick on
+        the root a prepped meal has, and "Start cooking" would be the app
+        asking for a cook it has already asked for on the prep day. Alone it
+        is the big card's action, beside dinner the dock's."""
         out = _root([_meal(prepped_ahead=_PREPPED)], [_COOK_MOVE])
-        assert 'data-cook="start-tonight"' not in out["dock"]
-        assert 'data-cook="check-meal"' in out["dock"] and 'data-entry-id="1"' in out["dock"]
-        assert 'data-next="done"' in out["dock"]
+        assert 'data-cook="start-tonight"' not in out["card"]
+        assert 'data-cook="check-meal"' in out["card"] and 'data-entry-id="1"' in out["card"]
+        assert 'data-next="done"' in out["card"]
         # The aria-label is what tells cookCheckMeal this is a cook being
         # logged rather than one being put back.
-        assert 'aria-label="Mark cooked"' in out["dock"]
-        assert ">Mark it cooked<" in out["dock"]
+        assert 'aria-label="Mark cooked"' in out["card"]
+        assert ">Mark it cooked<" in out["card"]
+        assert out["dock"] == ""
 
     def test_a_done_prepped_lunch_reads_done_and_has_no_dock(self):
         """GUARD on the existing done rule — pinned by the mutation that makes
@@ -678,15 +669,14 @@ class TestTheScreen:
         same = {"date": MON, "weekday": "Monday", "lunches": [MON]}
         out = _root([_meal(prepped_ahead=same)], [_COOK_MOVE])
         assert out["rows"][0]["right"] == "40 min"
-        assert 'data-cook="start-tonight"' in out["dock"]
+        assert 'data-cook="start-tonight"' in out["card"]
 
     def test_a_meal_with_no_prepped_ahead_is_exactly_what_it_was(self):
         """GUARD — at the row level. Pinned by the mutation that makes
         cookPreppedAhead answer for every meal."""
         out = _root([_meal()], [_COOK_MOVE])
         assert out["rows"][0]["right"] == "40 min"
-        assert out["subtitle"] == "1 cook today"
-        assert 'data-cook="start-tonight"' in out["dock"] and ">Make lunch<" in out["dock"]
+        assert 'data-cook="start-tonight"' in out["card"] and ">Make lunch<" in out["card"]
 
     def test_a_reheat_of_a_prepped_batch_names_the_dish_not_a_cook_day(self):
         """The later lunches' row: a made-ahead portion is the dish itself,

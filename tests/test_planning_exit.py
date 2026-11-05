@@ -205,9 +205,15 @@ def test_the_more_button_on_the_draft_is_wired_and_the_sheet_has_the_draft_rows(
 
 def test_the_tab_bar_is_never_hidden_by_the_plan_tab():
     """The shell's way out of any branch is the tab bar, and nothing on the
-    Plan tab may take it away — the draft and All set included."""
+    Plan tab may take it away — the draft and All set included. The one
+    exception is a recipe (Z-Recipe, 2026-11-05: no tab bar), which has its
+    round Back. Only `step === 'meal'` counts as one."""
     assert "tabBarEl.hidden" not in SHELL_JS
-    assert re.search(r"#tab-bar\b[^{]*\{[^}]*display:\s*none", (REPO / "static" / "shell.css").read_text()) is None
+    hides = re.findall(r"[^\n}]*#tab-bar\b[^{]*\{[^}]*display:\s*none", (REPO / "static" / "shell.css").read_text())
+    assert [h.split("{")[0].strip() for h in hides] == ["body.is-full-screen #tab-bar"]
+    sync = SHELL_JS[SHELL_JS.index("function syncFullScreen("):]
+    sync = sync[:sync.index("\n  }\n")]
+    assert "(key === 'week' && !!weekState && weekState.step === 'meal')" in sync
 
 
 # --------------------------------------------------------------------------

@@ -188,9 +188,8 @@ def test_the_band_says_one_thing_once():
     # Now: no line at all — no "3 of 4 done" score (Emily, 2026-09-24).
     moves = _function("renderTodayMoves")
     assert "sub: ''" in moves and "' done'" not in moves
-    # Cook: no line on a day with nothing to cook; the day is the eyebrow.
-    sub = _function("kitchenSubtitle")
-    assert "return rows.length ? 'nothing left to cook today' : '';" in sub
+    # Cook: the day and no count (Z-CookDay).
+    assert "kitchenSubtitle" not in SHELL_JS
     # Since Option A (2026-11-01, mockup A-Thu) the empty day is "Night off".
     assert "Nothing to cook today." in _function("cookNightOffHtml")
     # The chips: no "nothing planned" chip over a moment that says so.
@@ -275,11 +274,14 @@ def test_now_shop_and_cook_each_have_their_moment_and_its_next_step():
     # the moment, below). cookRootDockHtml has nothing for no meal unless the
     # night-before list is open.
     off = _function("cookNightOffHtml")
-    assert ">Night off</h2>" in off and "kitchenNextCookLine(meals, todayIso)" in off
+    assert ">Night off</h2>" in off and "cookNextUpTileHtml(meals, todayIso)" in off
     assert "dock-primary" not in off
     dock = _function("cookRootDockHtml")
     assert "if (!row || row.done) {" in dock and ": '';" in dock
-    assert "emptyMomentHtml('pot', lastPlanned ? 'Nothing planned this week yet.' : 'Nothing to cook tonight.'," in _function("renderKitchen")
+    # Bright Dusk: one plain line on a note card, and the way to a plan.
+    empty = _function("renderKitchen")
+    assert "lastPlanned ? 'Nothing planned this week yet.' : 'Nothing to cook tonight.'" in empty
+    assert '<div class="note-card cook-empty">' in empty and 'data-cook="goto-plan">Go to Plan<' in empty
 
 
 def test_the_moment_sits_in_the_middle_of_the_content_area():
@@ -289,10 +291,8 @@ def test_the_moment_sits_in_the_middle_of_the_content_area():
     assert "flex: 1 0 auto;" in moment and "justify-content: center;" in moment
     assert ".gro-body.is-empty, .kit-body.is-empty { flex: 1 0 auto; }" in SHELL_CSS
     assert "body.classList.toggle('is-empty', !!body.querySelector('.empty-moment'));" in _function("renderGrocery")
-    # Cook carries the moment only with no plan at all (Option A's "Night off"
-    # is a card in the list's place, not a moment).
-    kit = _function("renderKitchen")
-    assert "body.classList.add('is-empty');" in kit and "body.classList.remove('is-empty');" in kit
+    # Cook carries none now: its empty states are note cards (2026-11-05).
+    assert "is-empty" not in _function("renderKitchen")
     for container in (".grocery-content {", ".kitchen-content {"):
         assert "flex: 1 0 auto;" in SHELL_CSS.split(container, 1)[1][:600], f"{container} should fill the panel"
 

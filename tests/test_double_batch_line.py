@@ -480,7 +480,11 @@ def _render(fn: str, *args: object) -> str:
         _PRELUDE
         + _extract("cookServesShown") + "\n"
         + _extract("recipeBatchLineHtml") + "\n"
-        + _extract("recipeIngredientsHtml") + "\n"
+        + _extract("recipePlainIngredientsHtml") + "\n"
+        + _extract("recipeIngredientTileHtml") + "\n"
+        + _extract("tileHtml") + "\n"
+        + _extract("sectionHeadHtml") + "\n"
+        + "function humanQtyText(q) { return q; }\n"
         + f"console.log(JSON.stringify({fn}({body})));\n"
     )
     res = nodeharness.run_node(script, timeout=30)
@@ -523,32 +527,31 @@ def test_the_batch_is_said_once_and_the_old_note_is_not_said_beside_it():
 
 
 @_needs_node
-def test_the_ingredients_heading_carries_the_batch_size():
+def test_the_ingredients_say_the_batch_size():
     meal = {"batch_line": "Double batch: 3 tonight, 3 for lunch tomorrow.",
             "default_servings": 6, "ingredients": [{"item": "Ground beef", "qty": "1.5 lbs"}]}
-    out = _render("recipeIngredientsHtml", meal, "x", False)
-    assert "Ingredients &middot; 6 servings" in out
+    out = _render("recipePlainIngredientsHtml", meal, "x")
+    assert '<p class="recipe-count">6 servings</p>' in out
 
 
 @_needs_node
-def test_the_heading_follows_the_cooks_own_stepper_not_the_chain():
+def test_the_count_follows_the_cooks_own_stepper_not_the_chain():
     """The amounts under it follow the stepper (cookApplyServesOverride
-    rewrites them), so the heading has to as well — a heading claiming the
+    rewrites them), so the count has to as well — a count claiming the
     batch over a list the cook had just halved would be the wrong one of
     the two to be honest about."""
     meal = {"batch_line": "Double batch: 3 tonight, 3 for lunch tomorrow.",
             "default_servings": 6, "serves_target": 4,
             "ingredients": [{"item": "Ground beef", "qty": "1 lb"}]}
-    out = _render("recipeIngredientsHtml", meal, "x", False)
-    assert "Ingredients &middot; 4 servings" in out
+    out = _render("recipePlainIngredientsHtml", meal, "x")
+    assert '<p class="recipe-count">4 servings</p>' in out
 
 
 @_needs_node
-def test_a_plain_dinners_heading_still_says_just_ingredients():
+def test_a_plain_dinner_says_no_count():
     meal = {"default_servings": 3, "ingredients": [{"item": "Eggs", "qty": "6"}]}
-    out = _render("recipeIngredientsHtml", meal, "x", False)
-    assert ">Ingredients<" in out
-    assert "servings" not in out
+    out = _render("recipePlainIngredientsHtml", meal, "x")
+    assert "recipe-count" not in out and "servings" not in out
 
 
 # ------------------------------------------------- source markers
@@ -560,10 +563,10 @@ def test_a_plain_dinners_heading_still_says_just_ingredients():
 def test_both_recipe_surfaces_render_the_line_under_the_stepper():
     """Cook mode's recipe screen AND Plan's Meal step — one recipe, two
     doors, and the line must not be on only one of them."""
-    # UPDATED 2026-10-06 (the recipe page): cook mode's stepper and line
-    # are on the recipe's Overview tab (recipeOverviewHtml) now.
+    # UPDATED 2026-11-05 (Z-Recipe): cook mode's stepper and line are at the
+    # top of the Ingredients tab (recipeIngredientsTabHtml) now.
     for call in ("recipeServesHtml(meal, idx) +\n      recipeBatchLineHtml(meal) +",
-                 "recipeServesHtml(cookMeal, 'wk') : '') +\n        recipeBatchLineHtml(cookMeal) +"):
+                 "recipeServesHtml(cookMeal, 'wk') : '') +\n      recipeBatchLineHtml(cookMeal) +"):
         assert call in SHELL_JS, call
 
 
@@ -593,17 +596,13 @@ def test_the_servings_stepper_is_untouched():
 
 
 def test_the_three_inks_are_each_chosen_for_their_own_background():
-    """Each surface its own measured pair, tokens only (rule 9). The spruce
-    Tonight card's --celadon pair went with the card (Option A, 2026-11-01)."""
-    for sel, token in ((".recipe-batch", "--celadon-label"),
-                       (".cook-step-batch", "--celadon-label")):
+    """Tokens only (rule 9). Both lines sit on cream in Night Ink since
+    Bright Dusk (2026-11-05): green stays in the food."""
+    for sel in (".recipe-batch", ".cook-step-batch"):
         i = SHELL_CSS.index(sel + " {")
         block = SHELL_CSS[i:SHELL_CSS.index("}", i)]
-        assert f"color: var({token})" in block, (sel, block)
+        assert "color: var(--ink)" in block, (sel, block)
         assert "#" not in block, (sel, "a literal hex")
-    # and every one of them records what it measured
-    for ratio in ("5.44:1 light / 8.22:1 dark", "5.76:1 light / 7.14:1 dark"):
-        assert ratio in SHELL_CSS, ratio
 
 
 def test_the_line_is_never_a_tile_or_a_chip():

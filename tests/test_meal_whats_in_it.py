@@ -18,6 +18,7 @@ covers the screen). These run shell.js's own functions under node
 from __future__ import annotations
 
 import json
+import re
 import shutil
 from pathlib import Path
 
@@ -78,8 +79,7 @@ _PURE = (
     # number is the one thing a stub would get wrong silently.
     + "".join(_extract(n) + "\n" for n in (
         "humanQtyAmount", "humanQtyText", "cookIngredientLabel", "cookUnscaledHtml",
-        "cookServesShown",
-        "recipeIngredientRowHtml", "recipeIngredientsHtml",
+        "cookServesShown", "recipePlainIngredientsHtml", "recipeIngredientTileHtml", "tileHtml", "sectionHeadHtml",
         "recipeIsChangeable", "recipeChangeBtnHtml", "mealIngredientsHtml"))
 )
 
@@ -140,10 +140,10 @@ def _overview(meal: dict | None, is_past: bool = False, state: str = "planned", 
 @_needs_node
 def test_the_ingredients_are_one_per_row_with_the_amount_for_tonight():
     html = _overview(SHRIMP)
-    assert '<span class="cook-eyebrow recipe-eyebrow">Ingredients</span>' in html
-    assert html.count('<li class="cook-getout-item') == 3
-    assert '<span class="cook-getout-text">½ lb Shrimp</span>' in html
-    assert '<span class="cook-getout-text">½ Lemon</span>' in html
+    assert 'aria-label="Ingredients"' in html
+    assert html.count('class="tile tile-text recipe-ing"') == 3
+    assert '<span class="tile-name">Shrimp</span><span class="tile-sub">½ lb</span>' in html
+    assert '<span class="tile-name">Lemon</span><span class="tile-sub">½</span>' in html
     # Not a dot-separated sentence.
     assert " · Broccolini · " not in html
     # The one way to change the plate from here, plain, under the rows.
@@ -160,15 +160,15 @@ def test_an_added_thing_and_a_thing_already_at_home_are_marked():
     meal = _with_side(SHRIMP, POTATOES, [{"item": "Yukon Gold potatoes", "qty": "1 lb", "added": True}])
     meal["ingredients"][2]["at_home"] = True
     html = _overview(meal)
-    assert 'Yukon Gold potatoes <span class="wk-ing-tag">added</span>' in html
-    assert 'Lemon <span class="wk-ing-tag">at home</span>' in html
+    assert re.search(r'Yukon Gold potatoes</span>.*?<span class="wk-ing-tag">added</span>', html)
+    assert re.search(r'Lemon</span>.*?<span class="wk-ing-tag">at home</span>', html)
     assert html.count("wk-ing-tag") == 2
 
 
 @_needs_node
 def test_a_past_day_shows_what_was_in_it_but_offers_nothing_to_add():
     html = _overview(SHRIMP, is_past=True)
-    assert "½ lb Shrimp" in html
+    assert '<span class="tile-name">Shrimp</span><span class="tile-sub">½ lb</span>' in html
     assert "data-wk-add" not in html
 
 
@@ -221,7 +221,7 @@ def test_add_something_is_an_outline_control_not_a_second_apricot():
     assert "var(--apricot)" not in block
     assert "background: var(--surface)" in block and "box-shadow: var(--shadow-card)" in block, "a quiet white button"
     assert "min-height: 44px" in block, "tappable at 44px (Rule 6)"
-    for cls in (".wk-whatsin", ".wk-ing-tag", ".recipe-card .cook-getout-row",
+    for cls in (".wk-whatsin", ".wk-ing-tag", ".recipe-ing-tags",
                 "#wk-add-sheet", ".wk-add-option", ".wk-add-input"):
         assert cls in SHELL_CSS, cls
     assert "#wk-add-scrim[hidden], #wk-add-sheet[hidden] { display: none; }" in SHELL_CSS

@@ -1,18 +1,19 @@
 """
-Cook's root, Option A — "every meal the same size" (Emily, 2026-11-01, the
-Cook declutter canvas; mockups A-AlsoOpen, A-NightList, Main, A-Wed, A-Thu).
+Cook's root: every meal the same size (Emily, 2026-11-01), as equal tiles
+since Bright Dusk (Z-CookDay, Z-Cook, 2026-11-05).
 
 Pinned here, running shell.js's own functions under node:
-  - today's meals are one even list in eating order (Breakfast, Lunch,
-    Snack, Dinner, Snack); "next" is the first one not done — no clock;
+  - today's meals are equal tiles in eating order (Breakfast, Lunch, Snack,
+    Dinner, Snack), then next up; none is marked;
+  - one big plain card only when a single meal is left;
   - no clock time is ever drawn on the root (minutes only);
-  - a thaw shows once: in the night-before list, never also as a row or a
+  - a thaw shows once: in the night-before list, never also as a tile or a
     card of its own, and never when today's prep list already holds it;
-  - the prep session leads as the big card only on a prep day before the
-    prep is done; done, it is one line;
-  - a leftovers row says just "Leftovers";
-  - a day with nothing on it says "Night off" and names the next cook;
-  - the dock names the next meal's action.
+  - the prep tile leads only on a prep day before the prep is done; done,
+    it is one line;
+  - a leftovers tile says just "Leftovers";
+  - a day with nothing on it says "Night off" and shows the next cook;
+  - the dock holds only a tick with no other way to it.
 """
 from __future__ import annotations
 
@@ -63,8 +64,9 @@ _PRELUDE = (
     + _function("daysBetweenLocal") + "\n"
     + _function("cookPreppedAhead") + "\n"
     + _function("cookSessionOn") + "\n"
+    + _function("tileHtml") + "\n"
     + _between("  function kitchenTodayRows(", "  function cookBandEyebrow(")
-    + _function("kitchenNextCookLine") + "\n"
+    + _function("kitchenNextCookLine") + "\n" + _function("kitchenNextCook") + "\n" + _function("kitchenNextWhen") + "\n"
     + ROOT_BLOCK
 )
 
@@ -100,11 +102,11 @@ def _root(meals, moves=None, today=TUE, sessions=None, bed_open=None):
 
 
 def _slots(html):
-    return re.findall(r'<span class="cook-today-slot">([^<]*)</span>', html)
+    return re.findall(r'<span class="(?:tile-sub|cook-one-slot)">([^<]*)</span>', html)
 
 
 def _dishes(html):
-    return re.findall(r'<span class="cook-today-dish">([^<]*)</span>', html)
+    return re.findall(r'<span class="(?:tile-name|cook-one-name)">([^<]*)</span>', html)
 
 
 def _a_full_day():
@@ -122,48 +124,54 @@ def _a_full_day():
 
 
 # --------------------------------------------------------------------------
-# The list, and "next"
+# The tiles, and the one big card
 # --------------------------------------------------------------------------
 
 @_needs_node
-def test_todays_meals_are_one_list_in_eating_order_with_next_marked():
-    out = _root(_a_full_day())
+def test_todays_meals_are_equal_tiles_in_eating_order_then_next_up():
+    day = _a_full_day() + [_meal(20, WED, "Sheet-Pan Salmon")]
+    out = _root(day)
     html = out["html"]
-    assert html.count('class="cook-today"') == 1
-    # Breakfast, Lunch, the first snack, Dinner, the later snack.
-    assert _slots(html) == ["Breakfast", "Lunch · next", "Snack", "Dinner", "Snack"]
+    assert html.count('class="tiles cook-today"') == 1
+    # Breakfast, Lunch, the first snack, Dinner, the later snack, next up.
+    # Minutes on dinner only, as drawn; a state word on any meal.
+    assert _slots(html) == ["Breakfast", "Lunch", "Snack", "Dinner · 45 min", "Snack · Ready", "Next up, Wed"]
     assert _dishes(html) == ["Overnight Oats with Berries", "Chicken Caesar Wraps", "Orange Ginger Shots",
-                             "Sheet-Pan Chicken Thighs", "Veg sticks and hummus"]
-    # Every row the same shape: one button each, a tap opens that meal.
-    assert html.count('class="cook-today-row') == 5
-    assert html.count('data-cook="focus"') == 5
-    # One next, one dot; the done breakfast is a check.
-    assert html.count("is-next") == 1 and html.count("cook-today-dot") == 1
-    assert 'cook-today-row is-done' in html and 'aria-label="Done"' in html
-    # Minutes on the right; food made ahead says Ready.
-    assert '<span class="cook-today-right">15 min</span>' in html
-    assert '<span class="cook-today-right">45 min</span>' in html
-    assert '<span class="cook-today-right is-ready">Ready</span>' in html
+                             "Sheet-Pan Chicken Thighs", "Veg sticks and hummus", "Sheet-Pan Salmon"]
+    # Every tile the same shape: a tap opens that meal.
+    assert html.count("cook-today-row") == 5 and "cook-next-up" in html
+    assert html.count('data-cook="focus"') == 6
+    # No meal is marked, dinner least of all (Emily, 2026-11-05).
+    assert "is-next" not in html and "cook-today-dot" not in html and "· next" not in html
+    assert "cook-today-row is-done" in html and 'aria-label="Done"' in html
     # No per-row box, Cook button or second line any more.
     for gone in ("cook-box", "cook-badge", "cook-week", "cook-tonight", "shelf-tile", "cook-ready"):
         assert gone not in html, gone
-    assert 'data-cook="start-tonight"' in out["dock"] and ">Make lunch<" in out["dock"]
+    # Z-CookDay draws no button: a tile opens the meal.
+    assert out["dock"] == ""
 
 
 @_needs_node
-def test_next_is_the_first_meal_not_done_whatever_the_hour():
-    meals = [_meal(1, TUE, "Pancakes", "breakfast"), _meal(4, TUE, "Chili", "dinner")]
+def test_one_meal_left_is_the_one_big_plain_card():
+    meals = [_meal(1, TUE, "Pancakes", "breakfast"), _meal(4, TUE, "Chili", "dinner"), _meal(9, FRI, "Salmon")]
     out = _root(meals)
-    assert _slots(out["html"]) == ["Breakfast · next", "Dinner"]
-    assert ">Make breakfast<" in out["dock"]
-    # Breakfast done: dinner is next, and the dock says Start cooking.
+    assert "cook-one" not in out["html"]
+    # Breakfast done: dinner is the one left, and the done tile stays under it.
     meals[0]["cooked_status"] = "done"
     out = _root(meals)
-    assert _slots(out["html"]) == ["Breakfast", "Dinner · next"]
-    assert ">Start cooking<" in out["dock"]
+    html = out["html"]
+    assert html.count('class="cook-one"') == 1
+    assert '<span class="cook-one-name">Chili</span>' in html
+    assert '<span class="cook-one-time">45 min</span>' in html
+    assert 'data-cook="start-tonight"' in html and ">Start cooking<" in html
+    assert html.index('class="cook-one"') < html.index("cook-today-row is-done")
+    assert "Salmon" not in html, "Z-Cook is the one card: no next up"
+    assert out["dock"] == "", "the action is on the card"
     # A cook under way keeps going.
     meals[1]["cook_started_at"] = "2026-09-15T17:50:00"
-    assert ">Keep cooking<" in _root(meals)["dock"]
+    assert ">Keep cooking<" in _root(meals)["html"]
+    # Not dinner: the card makes that meal, and nothing marks dinner.
+    assert ">Make lunch<" in _root([_meal(2, TUE, "Wraps", "lunch")])["html"]
 
 
 @_needs_node
@@ -196,26 +204,33 @@ def test_a_leftovers_row_says_just_leftovers():
     out = _root(meals)
     assert _dishes(out["html"]) == ["Leftovers", "Leftovers"]
     assert "Monday" not in out["html"] and "freezer" not in out["html"] and "from " not in out["html"]
-    assert '<span class="cook-today-right">Reheat</span>' in out["html"]
+    assert "Dinner · Reheat" in _slots(out["html"])
+    # Food already made is the one thing the dock still ticks.
     assert ">Mark eaten<" in out["dock"] and 'data-cook="check-meal"' in out["dock"]
 
 
 @_needs_node
-def test_a_day_with_nothing_on_it_is_a_night_off_and_names_the_next_cook():
+def test_a_day_with_nothing_on_it_is_a_night_off_and_shows_the_next_cook():
     meals = [_meal(9, FRI, "Salmon Tacos")]
     out = _root(meals)
     assert '<h2 class="cook-off-title">Night off</h2>' in out["html"]
     assert "Nothing to cook today." in out["html"]
-    assert '<p class="cook-quiet-line">Next: Friday, Salmon Tacos</p>' in out["html"]
+    assert 'class="note-card cook-off"' in out["html"]
+    assert _dishes(out["html"]) == ["Salmon Tacos"] and _slots(out["html"]) == ["Next up, Fri"]
     assert "cook-today-row" not in out["html"]
     assert out["dock"] == ""
 
 
 @_needs_node
 def test_takeout_is_named_and_ticked_never_cooked():
-    out = _root([_meal(6, TUE, "Pizza night", "dinner", is_takeout=True)])
-    assert '<span class="cook-today-right">Takeout</span>' in out["html"]
-    assert ">Mark eaten<" in out["dock"] and "Start cooking" not in out["dock"]
+    day = [_meal(6, TUE, "Pizza night", "dinner", is_takeout=True), _meal(7, TUE, "Toast", "lunch")]
+    out = _root(day)
+    assert "Dinner · Takeout" in _slots(out["html"])
+    assert "Start cooking" not in out["html"]
+    # On its own, the big card says it and ticks it.
+    out = _root(day[:1])
+    assert '<span class="cook-one-time">Takeout</span>' in out["html"]
+    assert ">Mark eaten<" in out["html"] and "Start cooking" not in out["html"]
 
 
 # --------------------------------------------------------------------------
@@ -236,11 +251,11 @@ def test_during_the_day_the_night_before_is_one_quiet_line():
 
 
 @_needs_node
-def test_after_the_last_meal_the_night_before_is_the_spruce_checklist_and_the_thaw_is_there_once():
+def test_after_the_last_meal_the_night_before_is_the_checklist_and_the_thaw_is_there_once():
     meals = [_meal(4, TUE, "Chili", "dinner", cooked_status="done"), _meal(20, WED, "Sheet-Pan Chicken")]
     out = _root(meals, [_fridge(12)])
     html = out["html"]
-    assert html.index('class="cook-bed"') < html.index('class="cook-today"'), "the checklist leads"
+    assert html.index('class="cook-bed"') < html.index('class="tiles cook-today"'), "the checklist leads"
     assert '<span class="cook-bed-eyebrow">Before bed</span>' in html
     assert '>Get ready for Wednesday</h2>' in html
     assert html.count("Move the chicken thighs to the fridge") == 1
@@ -254,7 +269,7 @@ def test_after_the_last_meal_the_night_before_is_the_spruce_checklist_and_the_th
     # Opened by hand earlier in the day: the card sits under the list.
     meals[0]["cooked_status"] = "pending"
     out = _root(meals, [_fridge(12)], bed_open=TUE)
-    assert out["html"].index('class="cook-today"') < out["html"].index('class="cook-bed"')
+    assert out["html"].index('class="cook-one"') < out["html"].index('class="cook-bed"')
 
 
 @_needs_node
@@ -300,17 +315,16 @@ def test_the_prep_card_leads_only_on_a_prep_day_before_the_prep_is_done():
     out = _root(meals, sessions=[_session(0)])
     html = out["html"]
     assert html.startswith('<button type="button" class="cook-prepday" data-cook="session" data-date="' + TUE + '">')
-    assert '<span class="cook-prepday-eyebrow">Up to 1.5 hr</span>' in html
-    assert '<span class="cook-prepday-title">Tuesday prep</span>' in html
-    assert '<span class="cook-prepday-for">For Tuesday to Thursday</span>' in html
-    assert '0 of 13 done' in html and 'Move to thaw' in html and '5 · 25 min' in html
-    assert ">Start prep<" in out["dock"] and 'data-cook="session"' in out["dock"]
-    assert ">Keep prepping<" in _root(meals, sessions=[_session(4)])["dock"]
-    # Done: one quiet line, no big card, and the dock is the meal's again.
+    assert '<span class="cook-prepday-eyebrow">Prep today · up to 1.5 hr</span>' in html
+    assert '<span class="cook-prepday-title">13 things to do</span>' in html
+    # The tile opens the prep: no dock of its own.
+    assert out["dock"] == ""
+    assert '<span class="cook-prepday-title">9 things to do</span>' in _root(meals, sessions=[_session(4)])["html"]
+    assert '<span class="cook-prepday-title">1 thing to do</span>' in _root(meals, sessions=[_session(12)])["html"]
+    # Done: one quiet line, no tile.
     out = _root(meals, sessions=[_session(13)])
     assert "cook-prepday" not in out["html"]
     assert "<span>Tuesday prep is done · 13 of 13</span>" in out["html"]
-    assert ">Start cooking<" in out["dock"]
     # Not a prep day: no card at all — a later prep day is one line.
     later = dict(_session(0), date="2026-09-17", weekday="Thursday")
     out = _root(meals, sessions=[later])
@@ -340,12 +354,14 @@ def test_a_tick_on_the_night_list_posts_the_same_done_today_did():
 
 
 def test_the_new_root_is_drawn_in_tokens_only():
-    start = SHELL_CSS.index("/* ---------- Cook's root: today, in the order it is eaten")
-    block = SHELL_CSS[start: SHELL_CSS.index("/* \"More ···\"", start)]
+    start = SHELL_CSS.index("/* --- Cook's root --- */")
+    block = SHELL_CSS[start: SHELL_CSS.index("/* --- Every whole-screen step of the tab", start)]
     assert not re.search(r"#[0-9a-fA-F]{3,8}\b", block), "a literal colour in the root's CSS"
-    for need in ("background: var(--surface)", "background: var(--spruce)", "background: var(--apricot)",
-                 "color: var(--apricot-label)", "min-height: 44px"):
+    for need in ("background: var(--white)", "background: var(--apricot)", "min-height: 44px"):
         assert need in block, need
+    # Dusk is for the tab bar, Use soon, timers and the welcome: not a meal.
+    assert "var(--dusk)" not in block.replace("outline: 2px solid var(--dusk)", "")
+    assert "var(--spruce)" not in block
 
 
 @_needs_node
@@ -355,8 +371,8 @@ def test_a_dish_plated_at_the_prep_list_says_plate():
                    leftovers_headline="Chicken Salad — made at Sunday’s prep")]
     out = _root(meals)
     assert _dishes(out["html"]) == ["Chicken Salad"]
-    assert '<span class="cook-today-right">Plate</span>' in out["html"]
-    assert ">Mark eaten<" in out["dock"]
+    assert '<span class="cook-one-time">Plate</span>' in out["html"]
+    assert ">Mark eaten<" in out["html"]
 
 
 # --------------------------------------------------------------------------
@@ -384,7 +400,10 @@ def test_a_household_that_takes_turns_sees_whose_night_it_is():
     meals = [_meal(2, TUE, "Chicken Caesar Wraps", "lunch", cooked_status="done"),
              _meal(4, TUE, "Sheet-Pan Chicken Thighs", "dinner")]
     html = _root_with(meals, [_cook_move(4, "Vineeth")], None)["html"]
-    assert "Dinner · Vineeth · next" in _slots(html)
+    assert "Dinner · Vineeth" in _slots(html)
+    meals.append(_meal(5, TUE, "Fruit", "snack"))
+    html = _root_with(meals, [_cook_move(4, "Vineeth")], None)["html"]
+    assert "Dinner · Vineeth · 45 min" in _slots(html)
 
 
 @_needs_node
@@ -392,8 +411,8 @@ def test_one_cook_households_and_done_meals_name_nobody():
     meals = [_meal(2, TUE, "Chicken Caesar Wraps", "lunch", cooked_status="done"),
              _meal(4, TUE, "Sheet-Pan Chicken Thighs", "dinner")]
     one_cook = _root_with(meals, [_cook_move(4, "Emily")], "Emily")["html"]
-    assert "Dinner · next" in _slots(one_cook)
+    assert "Dinner" in _slots(one_cook)
     done = _root_with(meals, [_cook_move(2, "Vineeth", done=True)], None)["html"]
     assert "Lunch" in _slots(done)
     nobody = _root_with(meals, [_cook_move(4, None)], None)["html"]
-    assert "Dinner · next" in _slots(nobody)
+    assert "Dinner" in _slots(nobody)

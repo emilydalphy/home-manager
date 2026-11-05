@@ -435,7 +435,7 @@ def test_the_meal_step_reuses_the_recipe_renderers():
     view card, and no longer carries the cook-ahead picker (the batch
     question is the plan's)."""
     _assert_in("function cookMealForEntry(", SHELL_JS, "the cook card lookup", "shell.js")
-    for shared in ("recipeServesHtml(cookMeal, 'wk')", "recipeIngredientsHtml(cookMeal, 'wk', false)",
+    for shared in ("recipeServesHtml(cookMeal, 'wk')", "recipePlainIngredientsHtml(cookMeal, 'wk')",
                    "recipeStepsHtml(cookMeal, false)"):
         _assert_in(shared, SHELL_JS, "the shared recipe renderer", "shell.js")
     assert "cookAheadHtml(" not in SHELL_JS and "cookSetCookAhead(" not in SHELL_JS
@@ -720,15 +720,13 @@ def _meal_step_html(day: dict, slot: str) -> str:
         + "var RECIPE_ICONS = { minus: '<svg/>', plus: '<svg/>', chevLeft: '<svg/>' };\n"
         + "".join(_extract(name, SHELL_JS) + "\n" for name in (
             "mealCookUnderway", "mealRecipeFor", "mealHeroLine", "mealNoRecipeHtml",
-            "cookUnscaledHtml", "cookIngTickId", "cookGetOutRowHtml",
-            # recipeBatchLineHtml — the batch line under the stepper
+            "cookUnscaledHtml",             # recipeBatchLineHtml — the batch line under the stepper
             # (card 9, 2026-10-05). THE REAL FUNCTION, not a stub: it is
             # five pure lines over escapeHtml, which this harness already
             # has, and a stub returning '' would make a test about what
             # the screen says pass whatever the screen said.
             "recipeBatchLineHtml",
-            "recipeTitleHtml", "recipeServesHtml", "recipeIngredientsHtml", "recipeIngredientRowHtml",
-            "recipeStepsHtml", "recipeIsChangeable", "recipeChangeBtnHtml",
+            "recipeTopHtml", "recipePlainIngredientsHtml", "recipeTitleHtml", "recipeIngredientTileHtml", "recipeIngredientsTabHtml", "recipeTakesHtml", "recipeMoreHtml", "roundBtnHtml", "segHtml", "tileHtml", "sectionHeadHtml", "recipeServesHtml",             "recipeStepsHtml", "recipeIsChangeable", "recipeChangeBtnHtml",
             "mealIngredientsHtml"))
         + _extract("swapStateFor", SHELL_JS) + "\n"
         + _extract("swapLineHtml", SHELL_JS) + "\n"

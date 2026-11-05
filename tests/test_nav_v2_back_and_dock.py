@@ -66,7 +66,9 @@ def test_every_back_link_is_the_one_crumb_component():
 
     # And every deeper screen actually uses it: Meals' three steps, Grocery's
     # shared one, Cook's three.
-    assert len(_crumb_buttons()) >= 7
+    # Bright Dusk (2026-11-05): Cook's recipe, reheat, prep and cooker, and
+    # Plan's Meal step, use the round Back instead.
+    assert len(_crumb_buttons()) >= 5
 
 
 def test_no_crumb_names_a_tab_by_its_retired_name():

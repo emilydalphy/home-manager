@@ -167,69 +167,11 @@ def test_a_plan_tile_is_its_plate_and_no_slot_icon():
     assert 'class="tile tile-text wk-qrow is-quiet"' in out["open"], "no plate, words only"
 
 
-@_needs_node
-def test_every_cook_row_carries_its_slot_tile_and_stays_the_same_size():
-    script = (
-        _icon_prelude()
-        + "var COOK_ROW_CHECK = '<svg></svg>';\n"
-        + "function cookSlotLabel(s) { return s.charAt(0).toUpperCase() + s.slice(1); }\n"
-        + "function cookRowCookName() { return ''; }\n"
-        + _extract("cookTodayRowHtml", SHELL_JS) + "\n"
-        + "var rows = [['breakfast', true], ['lunch', false], ['snack', false], ['dinner', false], ['snack2', false]]"
-        + ".map(function (r, i) { return cookTodayRowHtml({ slot: r[0], done: r[1], idx: i, title: 'X', right: '20 min' }, i === 1); });\n"
-        + "console.log(JSON.stringify({ rows: rows, icons: ICONS }));"
-    )
-    out = _run(script)
-    want = ["sunrise", "bowl", "apple", "pot", "apple"]
-    for html, icon in zip(out["rows"], want):
-        assert '<span class="icon-tile slot-tile" aria-hidden="true">' + out["icons"][icon] + "</span>" in html
-        assert html.count("icon-tile") == 1, "the slot tile is the one addition"
-        # No status icon on Cook's rows: the minutes stay plain text (Option A).
-        assert "status-icon" not in html
-    row = _css_rule(".cook-today-row")
-    assert "min-height: 64px" in row and "padding: 10px 0" in row, "44px tile + 10px + 10px = the same 64px row"
-
-
-# ---------------------------------------------------------------------------
-# I2: the prep list's sections and Shop's aisles
-# ---------------------------------------------------------------------------
-
-PREP_WANT = {
-    "thaw": ("snowflake", "celadon"), "soak": ("drop", "celadon"), "oven": ("oven", "sand"),
-    "stove": ("flame", "sand"), "slow_cooker": ("slowCooker", "sand"), "chop": ("knife", "celadon"),
-    "sauces": ("bottle", "celadon"), "chill": ("whisk", "celadon"), "freezer": ("freezerBox", "celadon"),
-    "special": ("star", "sand"), "pack": ("container", "sand"),
-}
-
-
-def test_every_prep_section_the_server_knows_has_an_icon():
-    assert set(prep_list.SECTION_ORDER) == set(PREP_WANT)
-
-
-@_needs_node
-def test_each_prep_section_and_made_on_the_night_has_its_tile():
-    keys = prep_list.SECTION_ORDER
-    script = (
-        _icon_prelude()
-        + _extract_var("PREP_LIST_ICONS", SHELL_JS) + "\n"
-        + _extract("prepListItem", SHELL_JS) + "\n"
-        + "function cookSessionItemHtml() { return ''; }\n"
-        + _extract("cookPrepSectionHtml", SHELL_JS) + "\n"
-        + _extract("cookPrepFreshHtml", SHELL_JS) + "\n"
-        + "var session = { date: '2026-11-01', weekly_plan_id: 1, items: [], made_fresh_line: 'x' };\n"
-        + "var keys = " + json.dumps(keys) + ";\n"
-        + "console.log(JSON.stringify({ icons: ICONS,\n"
-        + "  secs: keys.map(function (k) { return cookPrepSectionHtml(session, { key: k, title: k, line: 'l', step_keys: [] }, false, []); }),\n"
-        + "  fresh: cookPrepFreshHtml(session, [{ key: 'a', title: 'Rice', state: 'off' }]) }));"
-    )
-    out = _run(script)
-    for key, html in zip(keys, out["secs"]):
-        icon, tone = PREP_WANT[key]
-        cls = "icon-tile" + (" is-sand" if tone == "sand" else "") + " prep-sec-tile"
-        assert f'<span class="{cls}" aria-hidden="true">' + out["icons"][icon] + "</span>" in html, key
-        assert html.index("prep-sec-tile") < html.index("prep-sec-text")
-    assert '<span class="icon-tile is-sand prep-sec-tile" aria-hidden="true">' + out["icons"]["moon"] in out["fresh"]
-    assert ".prep-fresh .icon-tile.is-sand { background: var(--sand-deep); }" in SHELL_CSS
+def test_cook_and_prep_tiles_carry_a_plate_or_words_and_no_icon():
+    """Bright Dusk (Z-CookDay, Z-Prep, 2026-11-05): no filler pictures."""
+    for name in ("cookTodayRowHtml", "cookPrepSectionHtml", "cookPrepFreshHtml"):
+        body = _extract(name, SHELL_JS)
+        assert "IconTileHtml" not in body and "SectionTileHtml" not in body, name
 
 
 @_needs_node

@@ -417,15 +417,13 @@ def _meal_screen(back: str, cookable: bool) -> str:
             "isSnackSlot", "daySlotEntry", "slotWord", "isRealCook", "mealDisplayName",
             "chipsRowHtml", "cookTimeChip", "planCookableNow", "cookMealForEntry",
             "mealCookUnderway", "mealRecipeFor", "mealHeroLine", "mealNoRecipeHtml",
-            "cookUnscaledHtml", "cookIngTickId", "cookGetOutRowHtml",
-            # recipeBatchLineHtml — the batch line under the stepper
+            "cookUnscaledHtml",             # recipeBatchLineHtml — the batch line under the stepper
             # (card 9, 2026-10-05). THE REAL FUNCTION, not a stub: it is
             # five pure lines over escapeHtml, which this harness already
             # has, and a stub returning '' would make a test about what
             # the screen says pass whatever the screen said.
             "recipeBatchLineHtml",
-            "recipeTitleHtml", "recipeServesHtml", "recipeIngredientsHtml", "recipeIngredientRowHtml",
-            "recipeStepsHtml", "recipeIsChangeable", "recipeChangeBtnHtml",
+            "recipeTopHtml", "recipePlainIngredientsHtml", "recipeTitleHtml", "recipeIngredientTileHtml", "recipeIngredientsTabHtml", "recipeTakesHtml", "recipeMoreHtml", "roundBtnHtml", "segHtml", "tileHtml", "sectionHeadHtml", "recipeServesHtml",             "recipeStepsHtml", "recipeIsChangeable", "recipeChangeBtnHtml",
             "mealIngredientsHtml", "swapStateFor", "swapLineHtml",
             "mealDockHtml", "mealStepHtml"))
         + f"console.log(JSON.stringify(mealStepHtml({json.dumps(day)}, 'dinner')));\n"
@@ -436,9 +434,9 @@ def _meal_screen(back: str, cookable: bool) -> str:
 @_needs_node
 def test_the_crumb_names_where_the_meal_was_opened_from():
     from_list = _meal_screen("week", True)
-    assert '<button type="button" class="crumb" data-wk-back="week">‹ This week</button>' in from_list
+    assert 'data-wk-back="week" aria-label="Back to This week"' in from_list
     from_day = _meal_screen("day", True)
-    assert '<button type="button" class="crumb" data-wk-back="day">‹ Tuesday</button>' in from_day
+    assert 'data-wk-back="day" aria-label="Back to Tuesday"' in from_day
 
 
 @_needs_node

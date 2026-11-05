@@ -44,7 +44,7 @@ def _clock_fns() -> str:
     return "\n".join(_extract(n, SHELL_JS) for n in (
         "todayLocalStr", "householdHourNow", "bandDateLabel",
         "tomorrowLocalStr", "thisWeekStartLocal", "cookBandEyebrow",
-    )) + "\nfunction dayName() { return 'x'; }\n"
+    )) + "\nfunction dayName(iso, opts) { return iso ? new Date(iso + 'T12:00:00Z').toLocaleDateString('en-US', opts) : 'x'; }\n"
 
 
 @_needs_node
@@ -61,7 +61,7 @@ console.log(JSON.stringify({
     assert out["phone"] == 6, "the harness really is a day behind the household"
     assert out["today"] == "2026-10-07"
     assert out["band"] == "Wednesday, Oct 7", "Today's band"
-    assert out["cook"] == "Wednesday, Oct 7", "Cook's eyebrow"
+    assert out["cook"] == "Wednesday", "Cook's eyebrow"
     assert out["tomorrow"] == "2026-10-08"
     assert out["monday"] == "2026-10-05"
     assert out["hour"] == 1

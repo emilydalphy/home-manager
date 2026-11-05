@@ -23,10 +23,9 @@ def test_the_week_is_not_on_cooks_root():
 
 
 def test_empty_means_empty_and_names_the_next_cook():
-    # Option A (2026-11-01, mockup A-Thu): a day with nothing on it is
-    # "Night off", with the next cook as its line.
+    # A day with nothing on it is "Night off", then the next cook as a tile.
     off = _fn("cookNightOffHtml")
-    assert ">Night off</h2>" in off and "kitchenNextCookLine(meals, todayIso)" in off
+    assert ">Night off</h2>" in off and "cookNextUpTileHtml(meals, todayIso)" in off
     nxt = _fn("kitchenNextCookLine")
     assert "'Next: '" in nxt
 
@@ -45,9 +44,9 @@ def test_the_two_italic_headings_left_the_root_and_prep_days_is_not_on_it():
 def test_inventory_and_recipes_are_rows_in_one_card():
     # In the More sheet since 2026-09-13; same rows, same card.
     tiles = _fn("cookMoreRowsHtml")
-    assert '<div class="kit-rows">' in tiles
+    assert '<div class="tiles in-sheet">' in tiles
     # Recipes, Add from a link, Add from a cookbook (recipe photo import,
     # 2026-09-13). Inventory was the fourth until 2026-10-26, when it left
     # for its own tab (Kitchen, TABS key 'home' — Loop Board C1).
-    assert tiles.count('class="kit-row"') == 3
+    assert tiles.count("tileHtml(") == 3
     assert ".kit-rows {" in SHELL_CSS and ".kit-row {" in SHELL_CSS

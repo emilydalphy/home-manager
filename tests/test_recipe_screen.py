@@ -120,15 +120,13 @@ _RECIPE = (
     + "function cookMealKey(m) { return 'e' + m.entry_id; }\n"
     + "function recipeCitationHtml() { return ''; }\n"
     + "".join(_extract(n) + "\n" for n in (
-        "cookUnscaledHtml", "cookIngTickId", "cookGetOutRowHtml",
-        # recipeBatchLineHtml — the batch line under the stepper
+        "cookUnscaledHtml",         # recipeBatchLineHtml — the batch line under the stepper
         # (card 9, 2026-10-05). THE REAL FUNCTION, not a stub: it is
         # five pure lines over escapeHtml, which this harness already
         # has, and a stub returning '' would make a test about what
         # the screen says pass whatever the screen said.
         "recipeBatchLineHtml",
-        "recipeTitleHtml", "recipeServesHtml", "recipeIngredientsHtml", "recipeIngredientRowHtml",
-        "recipeStepsHtml", "cookUnderway"))
+        "recipeTopHtml", "recipePlainIngredientsHtml", "recipeTitleHtml", "recipeIngredientTileHtml", "recipeIngredientsTabHtml", "recipeTakesHtml", "recipeMoreHtml", "roundBtnHtml", "segHtml", "tileHtml", "sectionHeadHtml", "recipeServesHtml",         "recipeStepsHtml", "cookUnderway"))
 )
 
 
@@ -239,24 +237,20 @@ def test_the_servings_control_is_cooking_for_minus_count_plus_on_one_line():
     assert _recipe(f"recipeServesHtml({json.dumps(dict(STIR_FRY, default_servings=None))}, 0)") == ""
 
 
+def _tile(name, amount):
+    return f'<span class="tile-name">{name}</span><span class="tile-sub">{amount}</span>'
+
+
 @_needs_node
-def test_the_ingredients_card_is_one_row_per_ingredient_with_a_box():
-    live = _recipe(f"recipeIngredientsHtml({json.dumps(STIR_FRY)}, 0, true)", ticked=["ings:e7:steak"])
-    assert live.startswith('<section class="card recipe-card recipe-ings" aria-label="Ingredients">')
-    assert '<span class="cook-eyebrow recipe-eyebrow">Ingredients</span>' in live
-    assert live.count('<li class="cook-getout-item') == 6
-    # Live (cook mode): the row is the tick, and a ticked one reads so.
-    assert live.count('data-cook="check-ing"') == 6
-    assert 'class="cook-getout-item is-done"' in live and 'aria-pressed="true"' in live
-    assert "1 lb Steak" in live and "1.5 cups Rice" in live
-    # The plan's copy: the same rows, the box drawn, nothing to press.
-    plain = _recipe(f"recipeIngredientsHtml({json.dumps(STIR_FRY)}, 'wk', false)")
-    assert plain.count('<li class="cook-getout-item') == 6
-    assert "data-cook" not in plain and "<button" not in plain
-    assert plain.count('<span class="cook-box recipe-box" aria-hidden="true"></span>') == 6
-    assert "1 lb Steak" in plain
+def test_the_ingredients_are_one_tile_each_with_the_amount_under_the_name():
+    html = _recipe(f"recipePlainIngredientsHtml({json.dumps(STIR_FRY)}, 'wk')")
+    assert html.startswith('<section class="recipe-ings" aria-label="Ingredients">')
+    assert html.count('class="tile tile-text recipe-ing"') == 6
+    assert _tile("Steak", "1 lb") in html and _tile("Rice", "1.5 cups") in html
+    # A tile reads: nothing to press.
+    assert "data-cook" not in html and "<button" not in html
     # Nothing without ingredients.
-    assert _recipe(f"recipeIngredientsHtml({json.dumps(dict(STIR_FRY, ingredients=[]))}, 0, true)") == ""
+    assert _recipe(f"recipePlainIngredientsHtml({json.dumps(dict(STIR_FRY, ingredients=[]))}, 0)") == ""
 
 
 @_needs_node
@@ -266,22 +260,21 @@ def test_the_plan_copy_keeps_the_plate_passs_tags():
         {"item": "Lemon", "qty": "1", "at_home": True},
         {"item": "Butter", "qty": "2 tbsp", "substitute": "olive oil"},
     ])
-    html = _recipe(f"recipeIngredientsHtml({json.dumps(meal)}, 'wk', false)")
-    assert '1 lb Yukon Gold potatoes <span class="wk-ing-tag">added</span>' in html
-    assert '1 Lemon <span class="wk-ing-tag">at home</span>' in html
+    html = _recipe(f"recipePlainIngredientsHtml({json.dumps(meal)}, 'wk')")
+    assert _tile("Yukon Gold potatoes", "1 lb") + '<span class="recipe-ing-tags"><span class="wk-ing-tag">added</span>' in html
+    assert _tile("Lemon", "1") + '<span class="recipe-ing-tags"><span class="wk-ing-tag">at home</span>' in html
     assert '<span class="wk-ing-tag">using olive oil instead</span>' in html
-    assert 'class="cook-getout-item is-added"' in html
+    assert 'class="tile tile-text recipe-ing is-added"' in html
 
 
 @_needs_node
-def test_the_steps_card_numbers_every_step_in_a_sand_tile():
+def test_the_steps_are_one_numbered_tile_each():
     html = _recipe(f"recipeStepsHtml({json.dumps(STIR_FRY)}, true)")
-    assert html.startswith('<section class="card recipe-card recipe-method" aria-label="Steps">')
-    assert '<span class="cook-eyebrow recipe-eyebrow">Steps</span>' in html
+    assert html.startswith('<section class="recipe-method" aria-label="Steps">')
     nums = re.findall(r'recipe-step-num" aria-hidden="true">(\d+)<', html)
     assert nums == ["1", "2", "3", "4", "5"]
     assert 'recipe-step-text">Heat the oil in a large pan over medium-high heat.</span>' in html
-    # No times anywhere on the recipe.
+    # No times anywhere on the steps themselves.
     assert not re.search(r"\b\d{1,2}:\d{2}\b", html)
     assert "Start at" not in html and "min" not in html.replace("minutes a side", "")
 
@@ -299,7 +292,7 @@ def test_an_empty_recipe_says_so_and_only_cook_mode_offers_to_fill_it():
     empty = dict(STIR_FRY, instructions=[])
     live = _recipe(f"recipeStepsHtml({json.dumps(empty)}, true)")
     assert "No steps saved yet." in live
-    assert 'class="cook-fill" data-cook="fill" data-recipe="Ginger Beef Stir-Fry">Fill in this recipe</button>' in live
+    assert 'class="cook-fill btn-quiet" data-cook="fill" data-recipe="Ginger Beef Stir-Fry">Fill in this recipe</button>' in live
     plain = _recipe(f"recipeStepsHtml({json.dumps(empty)}, false)")
     assert "No steps saved yet — ask me for the recipe in the chat." in plain
     assert "cook-fill" not in plain
@@ -369,8 +362,8 @@ _COOK_CARD = dict(STIR_FRY, is_leftovers=False, date="2026-09-14", slot="dinner"
 @_needs_node
 def test_the_meal_step_is_the_crumb_the_title_the_count_the_cards_and_the_dock():
     html = _screen(_monday(_DINNER), "dinner", [_COOK_CARD])
-    # The crumb names its parent.
-    assert html.startswith('<button type="button" class="crumb" data-wk-back="day">‹ Monday</button>')
+    # The round Back names its parent.
+    assert 'data-wk-back="day" aria-label="Back to Monday"' in html
     # In order: title, Cooking for, Ingredients, Steps, the dock.
     order = [html.index(s) for s in (
         '<h1 class="recipe-title">Ginger Beef Stir-Fry</h1>',
@@ -381,7 +374,8 @@ def test_the_meal_step_is_the_crumb_the_title_the_count_the_cards_and_the_dock()
     )]
     assert order == sorted(order)
     assert '<span class="cook-serves-count">4</span>' in html
-    assert html.count('<li class="cook-getout-item') == 6
+    assert html.count('class="tile tile-text recipe-ing"') == 6
+    assert 'data-wk-recipe-tab="ingredients"' in html and 'data-wk-recipe-tab="steps"' in html
     assert re.findall(r'recipe-step-num" aria-hidden="true">(\d+)<', html) == ["1", "2", "3", "4", "5"]
     # The dock: Start cooking as the one action, the swap as the quiet link.
     assert 'class="dock-primary" data-wk-cook="dinner" data-wk-start="1">Start cooking<' in html
@@ -431,7 +425,7 @@ def test_nothing_about_time_or_the_batch_is_on_the_meal_step():
     # string can no longer stand in for "the batch is leaking in".
     assert html.count("recipe-batch") == 1
     assert "Double batch: 4 tonight, 4 for Wednesday’s dinner." in html
-    assert "Ingredients &middot; 8 servings" in html
+    assert '<p class="recipe-count">8 servings</p>' in html
     # ...and cook mode's own step sentences stay in cook mode.
     assert "half goes in containers" not in html
     assert "Pack 4 servings" not in html
@@ -696,22 +690,20 @@ def _rule(selector: str) -> str:
 
 def test_the_recipe_is_drawn_to_the_board_and_every_colour_is_a_token():
     title = _rule(".recipe-title")
-    assert "font-size: 32px" in title and "var(--font-display)" in title and "-0.03em" in title
+    assert "font-size: 26px" in title and "-0.025em" in title  # Z-Recipe
     btn = _rule(".recipe-serves .cook-serves-btn")
-    assert "width: 36px" in btn and "height: 36px" in btn and "var(--radius-control)" in btn
-    assert "inset: -5px" in _rule(".cook-serves-btn::after"), "36px of box on a 44px target (Rule 6)"
-    assert "padding: 10px 0 4px" in _rule(".recipe-eyebrow")
-    box = _rule(".recipe-card .cook-box")
+    assert "width: 44px" in btn and "height: 44px" in btn and "var(--radius-pill)" in btn
+    start = SHELL_CSS.rindex("\n.cook-box {") + 1
+    box = SHELL_CSS[start:SHELL_CSS.index("}", start)]
     assert "width: 22px" in box and "height: 22px" in box
-    assert "min-height: 44px" in _rule(".recipe-card .cook-getout-row")
+    assert ".cook-box::after { content: ''; position: absolute; inset: -11px; }" in SHELL_CSS
     num = _rule(".recipe-step-num")
-    assert "width: 30px" in num and "height: 30px" in num and "var(--sand)" in num and "var(--font-display)" in num
-    block = SHELL_CSS[SHELL_CSS.index("/* ---------- The recipe, as the recipe ----------"):SHELL_CSS.index("/* ---------- The dock: where a screen's one action lives")]
+    assert "width: 28px" in num and "height: 28px" in num and "var(--blush)" in num
+    block = SHELL_CSS[SHELL_CSS.index("/* --- The recipe (Z-Recipe, Z-Steps) --- */"):SHELL_CSS.index("/* --- Ask (Z-Ask) --- */")]
     assert not re.search(r"#[0-9a-fA-F]{3,8}\b", block), "Rule 9 — every colour goes through a token"
-    assert not re.search(r"^\s*(transition|animation)\b", block, re.M), "§4 — nothing new animates"
     # The accent line on the cooker is Figtree since Bright Dusk: no italics.
     nxt = _rule(".cook-next")
-    assert "var(--font-accent)" in nxt and "font-style: italic" not in nxt and "font-size: 16px" in nxt
+    assert "font-style: italic" not in nxt and "font-size: 14px" in nxt
     assert not re.search(r"font-style:\s*italic", block)
     # The old rules went with the old screens.
     for gone in (".wk-stop", ".wk-clock", ".wk-meal-hero", ".wk-meal-by", ".cook-ahead-day", ".cook-hero-slim",

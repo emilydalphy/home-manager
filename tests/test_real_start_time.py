@@ -416,7 +416,7 @@ def test_a_started_cook_shows_no_clock_on_the_root_only_keep_cooking():
         "console.log(JSON.stringify(parts));\n"
     )
     assert "Started" not in out["html"] and "5:50" not in out["html"] and "6:" not in out["html"]
-    assert ">Keep cooking</button>" in out["dock"]
+    assert ">Keep cooking</button>" in out["html"]
 
 
 # ---------- the recipe and the cooker ----------
@@ -440,12 +440,13 @@ def _cook_screen(meal: dict, stage: str) -> str:
         + _var("NUMBER_WORDS") + "\n" + _var("TENS_WORDS") + "\n"
         + _var("CHANGE_RECIPE_LABEL") + "\n"
         + "var RECIPE_TWEAK_LABEL = 'Tweak';\nvar WK_ICONS = WK_ICONS || { tweak: '<svg/>' };\n"
+        + "var GRO_ICONS = { dots: '<svg/>' };\nvar PREP_LIST_ICONS = { close: '<svg/>' };\n"
         # The recipe page (2026-10-06): its tabs, Sources line and cache.
         + _var("RECIPE_TABS") + "\n" + _var("RECIPE_SOURCES_LINE") + "\n"
         + "var recipeExtras = {};\n"
         + "".join(_extract(n) + "\n" for n in (
             "numberWord", "minutesInWords", "clockLabel", "mealTotalMinutes", "mealClockSides", "mealClockTotal",
-            "cookUnscaledHtml", "cookIngTickId", "cookGetOutRowHtml", "cookStepNeeds",
+            "cookUnscaledHtml", "cookStepNeeds",
             # recipeBatchLineHtml — the batch line under the stepper
             # (card 9, 2026-10-05). THE REAL FUNCTION, not a stub: it is
             # five pure lines over escapeHtml, which this harness already
@@ -463,11 +464,10 @@ def _cook_screen(meal: dict, stage: str) -> str:
             # The recipe page (2026-10-06): cookRecipeHtml's new callees,
             # the real ones, for the same reason as the pair above.
             "recipeExtraFor", "recipeForLine", "recipeTabsHtml", "recipeCreditHtml", "recipeChangesHtml",
-            "recipeTimeHtml", "recipeJumpsHtml", "recipeOverviewHtml", "recipePlainIngredientsHtml",
+            "recipeTimeHtml", "recipePlainIngredientsHtml",
             "cookUnderway", "recipeAlreadyDoneHtml", "recipePlateHtml",
             "recipeStarsLabel", "recipeSourceRowHtml", "recipeSourcesHtml", "recipeTabBodyHtml", "recipeMoreHtml",
-            "recipeTitleHtml", "recipeServesHtml", "recipeIngredientsHtml", "recipeIngredientRowHtml",
-            "recipeStepsHtml", "cookRecipeLinesHtml", "cookDockHtml", "cookDockCookedHtml", "cookRecipeDockHtml",
+            "recipeTopHtml", "recipeTitleHtml", "recipeIngredientTileHtml", "recipeIngredientsTabHtml", "recipeTakesHtml", "recipeMoreHtml", "roundBtnHtml", "segHtml", "tileHtml", "sectionHeadHtml", "recipeServesHtml",             "recipeStepsHtml", "cookRecipeLinesHtml", "cookDockHtml", "cookDockCookedHtml", "cookRecipeDockHtml",
             "cookRecipeHtml", "cookProgressHtml", "cookNextStepLine", "cookCookerDockHtml", "cookCookerHtml",
             "cookFocusHtml"))
         + _live_helpers()
@@ -605,7 +605,11 @@ def test_a_failed_post_is_one_calm_line_and_nothing_else():
 def test_every_string_a_person_reads_goes_through_escape_html():
     # Cook's root (Option A, 2026-11-01): the row's slot, dish and minutes.
     row = _extract("cookTodayRowHtml")
-    assert "escapeHtml(label)" in row and "escapeHtml(row.title)" in row and "escapeHtml(row.right)" in row
+    assert "name: row.title" in row and "sub: cookTileSub(row, data)" in row
+    tile = _extract("tileHtml")
+    assert "escapeHtml(o.name)" in tile and "escapeHtml(o.sub)" in tile
+    one = _extract("cookOneLeftHtml")
+    assert "escapeHtml(row.title)" in one and "escapeHtml(row.right)" in one
     assert "escapeHtml(meal.meal || 'Dinner')" in _extract("recipeTitleHtml")
 
 

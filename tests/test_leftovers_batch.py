@@ -428,8 +428,9 @@ def _render(fn: str, arg, extra_args: str = "") -> str:
         # forgotten prelude would render no name and no error at all. Every
         # row in this file carries no owner, so every line is what it was.
         + _extract("cookSessionOn", src) + "\n"
-        + _extract("kitchenNextCookLine", src) + "\n"
+        + _extract("kitchenNextCookLine", src) + "\n" + _extract("kitchenNextCook", src) + "\n" + _extract("kitchenNextWhen", src) + "\n"
         + _extract("daysBetweenLocal", src) + "\n"
+        + _extract("tileHtml", src) + "\n"
         # Cook's root as Option A draws it (2026-11-01): the rows and the
         # root block, run whole through cookRootParts.
         + src[src.index("  function kitchenTodayRows("):src.index("  function cookBandEyebrow(")]
@@ -473,10 +474,10 @@ def test_a_reheat_today_offers_one_action_and_no_cook_flow():
     recipe, one action and it says "eaten". The row says just "Leftovers"
     (Emily, 2026-10-30), never the night it came from."""
     html = _card([_REHEAT_MEAL], THU)
-    assert '<span class="cook-today-dish">Leftovers</span>' in html
+    assert '<span class="cook-one-name">Leftovers</span>' in html
     assert "Tuesday" not in html
-    assert '<span class="cook-today-right">Reheat</span>' in html
-    assert "Mark eaten" in html and 'data-cook="check-meal"' in html, "the dock's one action"
+    assert '<span class="cook-one-time">Reheat</span>' in html
+    assert "Mark eaten" in html and 'data-cook="check-meal"' in html, "the card's one action"
     assert "Start cooking" not in html, "nothing to cook — there is no recipe here"
 
 
@@ -485,7 +486,7 @@ def test_a_cook_today_is_a_line_that_opens_the_recipe():
     html = _card([_COOK_MEAL], TUE)
     assert "Bulgogi Wraps" in html
     assert "Start cooking" in html and 'data-cook="start-tonight" data-idx="0"' in html, (
-        "the dock opens the focused screen"
+        "the big card opens the focused screen"
     )
 
 
@@ -500,7 +501,7 @@ def test_the_line_says_how_long_and_never_when():
         "time_label": "6:30 tonight", "detail": "dinner · 55 min · 6:30",
     }
     html = _card([dict(_COOK_MEAL, prep_time_minutes=20, cook_time_minutes=35)], TUE, [move])
-    assert '<span class="cook-today-right">55 min</span>' in html
+    assert '<span class="cook-one-time">55 min</span>' in html
     assert "5:35" not in html and "6:30" not in html and "Start<" not in html
 
 

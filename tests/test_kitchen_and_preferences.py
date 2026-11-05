@@ -92,9 +92,9 @@ def test_the_kitchen_root_is_the_cooks_tab():
     them (2026-09-13)."""
     root = _function("renderKitchen")
     assert "cookRootParts(data, kitchenState.moves, todayIso, cookState.bedOpenOn)" in root
-    assert "body.innerHTML = parts.html + cookAttentionHtml() + cookMoreLinkHtml();" in root
+    assert "body.innerHTML = parts.html + cookAttentionHtml();" in root
     parts = _function("cookRootParts")
-    order = ["cookPrepDayCardHtml(session)", "cookBedCardHtml(bed, todayIso)", "cookTodayListHtml(ordered, next, data)",
+    order = ["cookPrepDayCardHtml(session)", "cookBedCardHtml(bed, todayIso)", "cookTodayListHtml(ordered, next, data,",
              "cookPrepDoneLineHtml(session)", "cookBedLineHtml(bed, todayIso)", "cookNextPrepLineHtml(data, todayIso)"]
     at = [parts.index(call) for call in order]
     assert at == sorted(at), "the root's parts are out of order"
@@ -102,22 +102,14 @@ def test_the_kitchen_root_is_the_cooks_tab():
         assert gone not in SHELL_JS, f"the old root's {gone!r} eyebrow is back"
 
 
-def test_the_kitchen_root_says_the_day_and_the_count():
-    """"1 cook tonight" under the band's "Friday" — and "today" rather than
-    "tonight" the moment a cook left today is not a dinner. Since the root
-    band (2026-09-11) the day is the band's eyebrow, not part of this line,
-    and a day with nothing on it has no line at all: the empty moment says
-    "nothing to cook tonight", and the band must not say it a second time."""
-    fn = _function("kitchenSubtitle")
-    assert "' tonight'" in fn and "' today'" in fn
-    assert "slot === 'dinner'" in fn, "the tonight/today test no longer reads the slot"
-    assert "return rows.length ? 'nothing left to cook today' : '';" in fn
-    assert "dayName(" not in fn, "the day belongs to the band's eyebrow now"
+def test_the_kitchen_root_says_the_day_and_no_count():
+    """Z-CookDay: "Cook", then the day. No count under a title (Emily,
+    2026-11-05)."""
     build = _function("buildKitchenPanel")
-    # cookBandEyebrow: the whole date, which leads the sub-line
-    # (tests/test_identity_build.py).
-    assert "rootBandHtml({ id: 'kit-band', eyebrow: cookBandEyebrow(todayLocalStr()), title: 'Cook' })" in build
-    assert "bandDateLabel(todayIso)" in _function("cookBandEyebrow")
+    assert "eyebrow: cookBandEyebrow(todayLocalStr()), title: 'Cook'," in build
+    assert "dayName(todayIso, { weekday: 'long' })" in _function("cookBandEyebrow")
+    assert "kitchenSubtitle" not in SHELL_JS
+    assert "sub: ''" in _function("renderKitchen")
 
 
 def test_a_row_says_how_long_never_when():
@@ -149,8 +141,8 @@ def test_the_two_quiet_tiles_are_inventory_and_recipes():
     tiles = _function("cookMoreRowsHtml")
     # Inventory left this sheet for its own tab on 2026-10-26 (Kitchen,
     # TABS key 'home' — Loop Board C1; tests/test_kitchen_tab.py).
-    assert 'kit-row-title">Inventory' not in tiles and ">Ask about our recipes<" in tiles
-    assert 'class="kit-row"' in tiles, "Kitchen's entry points are quiet rows"
+    assert "Inventory'" not in tiles and "name: 'Ask about our recipes'" in tiles
+    assert "tileHtml(" in tiles, "Kitchen's entry points are quiet tiles"
     assert "btn-primary" not in tiles and "apricot" not in tiles, (
         "the entry points are quiet — the root's one apricot is the dock's (DESIGN_SYSTEM Rule 5)"
     )
@@ -226,10 +218,10 @@ def test_the_back_link_says_where_it_came_from():
     default. The prep session's link stayed literal, so it carries the new
     name directly.
     """
-    _assert_in('data-cook="exit-focus">&lsaquo; \' +\n          escapeHtml(cookBackLabel())',
-               SHELL_JS, "the focused screen's back link", "shell.js")
-    _assert_in('data-cook="exit-session">&lsaquo; Cook</button>', SHELL_JS,
-               "the prep session's back link", "shell.js")
+    _assert_in("label: 'Back to ' + cookBackLabel(), icon: RECIPE_ICONS.chevLeft, cls: 'recipe-back', attrs: ' data-cook=\"exit-focus\"'",
+               SHELL_JS, "the focused screen's back button", "shell.js")
+    _assert_in("label: 'Back to Cook', icon: RECIPE_ICONS.chevLeft, cls: 'recipe-back', attrs: ' data-cook=\"exit-session\"'",
+               SHELL_JS, "the prep session's back button", "shell.js")
     assert "history.back()" not in _function("cookExitFocus")
     fn = _function("cookBackLabel")
     assert "'Cook'" in fn, "the tab's name is still the answer when nothing set an origin"
@@ -413,7 +405,7 @@ def test_the_chat_carries_one_line_on_every_tab():
     """Since 2026-09-11 the chat is an icon and its composer says the same
     thing on every tab — the topic isn't always today (Emily). The per-tab
     hints, Kitchen's included, went with the always-open bar."""
-    _assert_in("_default: 'What\\u2019s on your mind?'", SHELL_JS,
+    _assert_in("_default: 'Ask anything about the week'", SHELL_JS,
                "the one chat hint", "shell.js")
     assert "kitchen: 'What" not in SHELL_JS
 
@@ -739,7 +731,6 @@ _SUBTITLE_JS = (
     # row in this file carries no owner, so every line is what it was.
     + _OWNER_JS
     + _between("  function kitchenTodayRows(", "  function cookBandEyebrow(")
-    + _function("kitchenSubtitle") + "\n"
 )
 
 
@@ -748,8 +739,7 @@ def _subtitle(meals: list, moves: list, iso: str = "2026-09-07"):
         _SUBTITLE_JS
         + f"const meals = {json.dumps(meals)}, moves = {json.dumps(moves)};\n"
         + f"const rows = kitchenTodayRows(meals, moves, {json.dumps(iso)});\n"
-        + "console.log(JSON.stringify({ subtitle: kitchenSubtitle(rows, meals, "
-        + json.dumps(iso) + "), lines: rows.map(function (r) { return r.right; }) }));\n"
+        + "console.log(JSON.stringify({ lines: rows.map(function (r) { return r.right; }) }));\n"
     )
     return _node(script)
 
@@ -761,27 +751,6 @@ def _three_dinners(done_count: int) -> list:
          "cooked_status": "done" if i <= done_count else "pending"}
         for i in (1, 2, 3)
     ]
-
-
-@_needs_node
-def test_the_subtitle_counts_what_is_left_once_anything_is_cooked():
-    """At eight in the evening with two of three cooked, "3 cooks today" is
-    a number nobody recognises."""
-    assert _subtitle(_three_dinners(0), [])["subtitle"] == "3 cooks tonight"
-    assert _subtitle(_three_dinners(2), [])["subtitle"] == "1 cook left tonight"
-    assert _subtitle(_three_dinners(3), [])["subtitle"] == "nothing left to cook today"
-    # An empty day has no line: the empty moment says it (root band, 2026-09-11).
-    assert _subtitle([], [])["subtitle"] == ""
-
-
-@_needs_node
-def test_the_subtitle_believes_the_moves_done_state_too():
-    """The plan row and the move are the same fact from two reads; either
-    can be the fresher one after a tick."""
-    meals = _three_dinners(0)
-    moves = [{"kind": "cook", "entry_id": 1, "done": True, "chips": []},
-             {"kind": "cook", "entry_id": 2, "done": True, "chips": []}]
-    assert _subtitle(meals, moves)["subtitle"] == "1 cook left tonight"
 
 
 @_needs_node
@@ -834,7 +803,7 @@ def test_the_cook_mode_apricot_and_the_end_button_say_the_same_thing():
     # "Mark cooked" as its aria-label — cookCheckMeal reads that exact string
     # to tell a real cook from a reheat before it offers the "Rate it" toast.
     # (The root's per-row boxes that carried it went with Option A.)
-    assert 'aria-label="Mark cooked"' in _function("cookRootDockHtml")
+    assert 'aria-label="Mark cooked"' in _function("cookNextActionHtml")
     assert "el.getAttribute('aria-label') === 'Mark cooked'" in _function("cookCheckMeal")
 
 

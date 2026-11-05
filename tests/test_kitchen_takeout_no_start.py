@@ -112,16 +112,11 @@ def test_kitchen_names_a_takeout_night_with_no_start_and_no_clock():
     this read went; the rule did not.)"""
     meals = [_meal(1, MON, "Takeout pizza", is_takeout=True, prep_time_minutes=None, cook_time_minutes=None)]
     out = _tonight(meals, [], {"cook_name": "Emily"}, MON, 0)
-    assert '<span class="cook-today-dish">Takeout pizza</span>' in out["html"]
-    assert '<span class="cook-today-right">Takeout</span>' in out["html"]
+    assert '<span class="cook-one-name">Takeout pizza</span>' in out["html"]
+    assert '<span class="cook-one-time">Takeout</span>' in out["html"]
     assert " min<" not in out["html"]
-    assert 'data-cook="check-meal" data-entry-id="1" data-next="done"' in out["dock"]
-    assert ">Mark eaten</button>" in out["dock"] and "Start cooking" not in out["dock"]
-    sub = _node(
-        _function("kitchenSubtitle") + "\nvar meals = " + json.dumps(meals) + ";\n"
-        "console.log(JSON.stringify(kitchenSubtitle(kitchenTodayRows(meals, [], '" + MON + "'), meals, '" + MON + "')));"
-    )
-    assert sub == "nothing to cook today"
+    assert 'data-cook="check-meal" data-entry-id="1" data-next="done"' in out["html"]
+    assert ">Mark eaten</button>" in out["html"] and "Start cooking" not in out["html"]
 
 
 @_needs_node
@@ -132,10 +127,11 @@ def test_a_cook_lunch_beside_a_takeout_dinner_still_gets_the_start():
     meals = [_meal(1, MON, "Weeknight Chili", slot="lunch"),
              _meal(2, MON, "Takeout pizza", is_takeout=True)]
     out = _tonight(meals, [_MOVE], {}, MON)
-    assert '<span class="cook-today-slot">Lunch · next</span>' in out["html"]
-    assert 'data-cook="start-tonight" data-idx="0">Make lunch</button>' in out["dock"]
-    assert '<span class="cook-today-dish">Takeout pizza</span>' in out["html"]
-    assert 'data-cook="start-tonight" data-idx="1"' not in out["dock"]
+    assert '<span class="tile-sub">Lunch</span>' in out["html"]
+    assert '<span class="tile-name">Takeout pizza</span>' in out["html"]
+    assert '<span class="tile-sub">Dinner · Takeout</span>' in out["html"]
+    assert 'data-cook="start-tonight"' not in out["html"] + out["dock"], "a tile opens the meal"
+    assert 'data-cook="focus" data-idx="0"' in out["html"]
 
 
 @_needs_node
@@ -146,13 +142,14 @@ def test_a_takeout_night_opened_from_the_shelf_or_plan_is_the_reheat_screen_with
     html = _node(
         _function("cookReheatCardHtml") + "\n" + _function("cookReheatFocusHtml") + "\n"
         + _function("cookTakeoutFocusHtml") + "\n"
+        + _function("cookReheatActionHtml") + "\n" +
         "var ICONS = { arrow: '' };\n"
         "function cookBackLabel(){ return 'Cook'; }\n"
         "function cookDateLabel(d){ return d; }\n"
         + _function("cookFocusHtml").split("var steps")[0] + "}\n"
         "console.log(JSON.stringify(cookFocusHtml({}, " + json.dumps([_meal(7, MON, "Takeout pizza", is_takeout=True)]) + ", 0)));"
     )
-    assert ">Takeout pizza</h2>" in html
+    assert ">Takeout pizza</h1>" in html
     assert ">Nothing to cook for this one.<" in html
     assert 'data-cook="check-meal" data-entry-id="7" data-next="done"' in html and "Mark eaten" in html
     assert "ask me for it" not in html and "Start cooking" not in html

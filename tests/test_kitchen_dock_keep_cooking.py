@@ -1,6 +1,6 @@
 """
-Cook's root dock says "Keep cooking" once tonight's cook has started
-(defect hunt, 2026-10-14).
+Cook's root says "Keep cooking" once tonight's cook has started (defect hunt,
+2026-10-14). The word is on the one-meal card since Z-Cook (2026-11-05).
 
 Found by using the app: tap "Start cooking", step back out to Cook's root,
 and the Tonight card reads "STARTED 5:50 · ON THE TABLE 6:25 — Started 5
@@ -19,15 +19,15 @@ from test_cook_shelf import MON, _MOVE, _meal, _needs_node, _tonight
 def test_a_started_cook_says_keep_cooking_on_the_root_dock():
     meals = [_meal(1, MON, "Weeknight Chili", cook_started_at=f"{MON}T17:50:00")]
     out = _tonight(meals, [_MOVE], {}, MON, 0)
-    assert 'data-cook="start-tonight" data-idx="0">Keep cooking</button>' in out["dock"]
-    assert "Start cooking" not in out["dock"]
+    assert 'data-cook="start-tonight" data-idx="0">Keep cooking</button>' in out["html"]
+    assert "Start cooking" not in out["html"]
 
 
 @_needs_node
 def test_a_cook_not_yet_started_still_says_start_cooking():
     meals = [_meal(1, MON, "Weeknight Chili", cook_started_at=None)]
     out = _tonight(meals, [_MOVE], {}, MON, 0)
-    assert 'data-cook="start-tonight" data-idx="0">Start cooking</button>' in out["dock"]
+    assert 'data-cook="start-tonight" data-idx="0">Start cooking</button>' in out["html"]
 
 
 @_needs_node

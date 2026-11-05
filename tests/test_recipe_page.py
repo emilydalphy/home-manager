@@ -1,10 +1,9 @@
 """
-The recipe page (Loop Board "Recipes people trust", slice 1 — Emily locked
-it 2026-10-05): the dish, "who it's for · serves N", tabs Overview ·
-Ingredients · Steps · Sources, the credit line with See sources, "Changed
-for your household" folded to one row, no ticking off ingredients, linked
-Sources with a Lead badge, Start cooking + Change recipe in the dock, and a
-⋯ menu. Sources and changes come from GET /api/recipes/{id} (`research`,
+The recipe page (Emily, 2026-10-05; Z-Recipe and Z-Steps, 2026-11-05): plate,
+name, two tabs, no ticking off ingredients, Start cooking in the dock. The rest
+is under the ···: who it's for, the time split, Tweak, Change recipe, Save, Add
+to shopping list, Rate, linked Sources with a Lead badge, and "Changed for your
+household". Sources and changes come from GET /api/recipes/{id} (`research`,
 `household_changes`, the server half's shape) and degrade when absent.
 
 Runs the page's own renderers under node through tests/test_cook_journey.py's
@@ -39,63 +38,98 @@ _RESEARCH = {
 _CHANGES = ["No cashews (Asha can't have tree nuts) — sunflower seeds instead", "Chilli on the side"]
 
 
-def _page(tab="overview", extra=None, meal=None, **state):
-    m = dict(meal or _MEAL, recipe_id=7, attendance={"present_names": ["Gowthami", "Ravi", "Arjun"], "guest_count": 0})
-    st = {"data": dict(_VIEW, meals=[m]), "recipeTab": tab}
+def _meal(meal=None):
+    return dict(meal or _MEAL, recipe_id=7, attendance={"present_names": ["Gowthami", "Ravi", "Arjun"], "guest_count": 0})
+
+
+def _seed(extra):
+    return "recipeExtras[7] = %s;\n" % (__import__("json").dumps(extra) if extra is not None else "null")
+
+
+def _page(tab="ingredients", extra=None, meal=None, **state):
+    st = {"data": dict(_VIEW, meals=[_meal(meal)]), "recipeTab": tab}
     st.update(state)
-    seed = "recipeExtras[7] = %s;\n" % (__import__("json").dumps(extra) if extra is not None else "null")
-    return _run(seed + "console.log(JSON.stringify(cookFocusHtml(cookState.data, cookState.data.meals, 0)));", st)
+    return _run(_seed(extra) + "console.log(JSON.stringify(cookFocusHtml(cookState.data, cookState.data.meals, 0)));", st)
+
+
+def _more(extra=None, meal=None, **state):
+    """The ···'s sheet."""
+    st = {"data": dict(_VIEW, meals=[_meal(meal)])}
+    st.update(state)
+    return _run(_seed(extra) + "console.log(JSON.stringify(recipeMoreSheetHtml(cookState.data.meals[0])));", st)
+
+
+def _sources(extra=None, meal=None):
+    """The Sources sheet's body."""
+    st = {"data": dict(_VIEW, meals=[_meal(meal)])}
+    return _run(_seed(extra) + "var m = cookState.data.meals[0], x = recipeExtraFor(m);\n"
+                "console.log(JSON.stringify(recipeCreditHtml(x) + recipeSourcesHtml(m, x)));", st)
 
 
 @_needs_node
-def test_band_line_and_the_four_tabs_overview_first():
+def test_plate_name_and_two_tabs_ingredients_first():
     html = _page()
-    assert '<p class="recipe-for">Gowthami, Ravi and Arjun · serves 4</p>' in html
     tabs = [t for t in ("Overview", "Ingredients", "Steps", "Sources") if '">' + t + "</button>" in html]
-    assert tabs == ["Overview", "Ingredients", "Steps", "Sources"]
-    assert 'aria-selected="true" data-cook="recipe-tab" data-tab="overview"' in html
+    assert tabs == ["Ingredients", "Steps"]
+    assert 'class="seg-btn is-on" aria-pressed="true" data-cook="recipe-tab" data-tab="ingredients"' in html
+    # No source line and no "who it's for" under the name.
+    assert "recipe-credit-line" not in _page(extra={"research": _RESEARCH, "household_changes": _CHANGES})
+    assert "recipe-for" not in html and "Gowthami" not in html
+    # Recipe has no tab bar: the dock is the foot of the screen.
+    assert "body.is-full-screen #tab-bar { display: none; }" in _cj.SHELL_CSS
 
 
 @_needs_node
-def test_overview_credit_changes_folded_stepper_time_and_links():
-    html = _page(extra={"research": _RESEARCH, "household_changes": _CHANGES})
-    assert "Based on Swasthi&#39;s Recipes" in html or "Based on Swasthi's Recipes" in html
-    assert 'data-tab="sources">See sources</button>' in html
-    # Folded to one row by default: the count, not the list.
-    assert "Changed for your household" in html and "2 changes" in html
-    assert "sunflower seeds" not in html
-    assert "Cooking for" in html
+def test_the_steps_tab_says_how_long_it_takes():
+    html = _page("steps")
+    assert '<p class="recipe-takes">Takes about 50 min</p>' in html
+    assert "recipe-takes" not in _page("ingredients")
+
+
+@_needs_node
+def test_the_more_sheet_says_who_it_is_for_and_the_time_split():
+    html = _more()
+    assert "Gowthami, Ravi and Arjun · serves 4" in html
     assert "50 min (15 prep, 35 cook)" in html
-    assert 'data-tab="ingredients"' in html and 'data-tab="steps"' in html
-    opened = _page(extra={"research": _RESEARCH, "household_changes": _CHANGES}, recipeChangesOpen=True)
-    assert "sunflower seeds instead" in opened
+
+
+@_needs_node
+def test_the_changes_are_one_row_under_the_more_and_the_list_a_sheet_of_its_own():
+    html = _more(extra={"research": _RESEARCH, "household_changes": _CHANGES})
+    assert "Changed for your household" in html and "2 changes" in html
+    assert 'data-cook="recipe-changes"' in html
+    assert "sunflower seeds" not in html
+    listed = _run(_seed({"research": None, "household_changes": _CHANGES}) +
+                  "console.log(JSON.stringify(recipeChangesHtml(recipeExtras[7])));", {})
+    assert "sunflower seeds instead" in listed
 
 
 @_needs_node
 def test_originally_based_on_is_the_servers_words():
     research = dict(_RESEARCH, credit="Originally based on Swasthi's Recipes", credit_prefix="Originally based on")
-    assert "Originally based on Swasthi" in _page(extra={"research": research, "household_changes": []})
+    assert "Originally based on Swasthi" in _sources(extra={"research": research, "household_changes": []})
 
 
 @_needs_node
 def test_no_research_means_no_credit_no_changes_row_and_a_plain_sources_line():
-    html = _page(extra=None)
-    assert "recipe-credit" not in html and "Changed for your household" not in html
-    src = _page("sources", extra={"research": None, "household_changes": []})
+    html = _more(extra=None)
+    assert "Changed for your household" not in html
+    src = _sources(extra={"research": None, "household_changes": []})
+    assert "recipe-credit-line" not in src
     assert "No outside recipe behind this one." in src
 
 
 @_needs_node
-def test_ingredients_are_a_plain_list_with_no_ticking():
+def test_ingredients_are_tiles_with_no_ticking():
     html = _page("ingredients")
-    assert "4 Chicken thighs" in html
+    assert '<span class="tile-name">Chicken thighs</span><span class="tile-sub">4</span>' in html
     assert 'data-cook="check-ing"' not in html and "cook-box" not in html
 
 
 @_needs_node
 def test_sources_lead_first_with_badge_stars_and_links_to_their_site():
-    html = _page("sources", extra={"research": _RESEARCH, "household_changes": []})
-    a, b = html.index("Swasthi"), html.index("Hebbar")
+    html = _sources(extra={"research": _RESEARCH, "household_changes": []})
+    a, b = html.index('recipe-src-name">Swasthi'), html.index('recipe-src-name">Hebbar')
     assert a < b
     assert '<span class="recipe-src-lead">Lead</span>' in html
     assert html.count("recipe-src-lead") == 1
@@ -106,18 +140,27 @@ def test_sources_lead_first_with_badge_stars_and_links_to_their_site():
 
 
 @_needs_node
-def test_dock_is_start_cooking_and_change_recipe_with_one_apricot():
+def test_the_dock_is_start_cooking_with_one_apricot():
     html = _page()
     dock = html[html.index('class="dock'):]
-    assert "Start cooking" in dock and "Change recipe" in dock
+    assert "Start cooking" in dock and "Change recipe" not in dock
     assert dock.count("cook-hero-action") == 1, "one apricot (rule 5)"
 
 
 @_needs_node
-def test_the_more_menu_offers_the_three_actions():
-    html = _page(recipeMenuOpen=True)
-    for words in ("Save to my recipes", "Add to shopping list", "Rate this recipe"):
-        assert words in html
+def test_the_more_sheet_keeps_every_action():
+    html = _more()
+    for words in ("Tweak", "Change recipe", "Save to my recipes", "Add to shopping list", "Rate this recipe",
+                  "Sources", "Ask Pomona"):
+        assert ">" + words + "<" in html, words
+    assert 'data-recipe-tweak="1"' in html and 'data-cr="open"' in html
+    assert ">Liked it<" in _more(recipeRateOpen=True) and ">Not a hit<" in _more(recipeRateOpen=True)
+
+
+@_needs_node
+def test_a_reheat_or_no_recipe_page_has_no_more_button():
+    assert "recipe-more-btn" in _page()
+    assert "recipe-more-btn" not in _page(meal=dict(_MEAL, has_full_recipe=False))
 
 
 def test_the_cooker_view_carries_the_recipe_id_and_who_is_eating():
@@ -136,7 +179,7 @@ def test_the_cooker_view_carries_the_recipe_id_and_who_is_eating():
 @_needs_node
 def test_a_credit_with_every_link_gone_still_names_the_cooks_never_no_outside_recipe():
     research = dict(_RESEARCH, sources=[], lead=None, others=[])
-    html = _page("sources", extra={"research": research, "household_changes": []})
+    html = _sources(extra={"research": research, "household_changes": []})
     assert "Based on Swasthi" in html
     assert "No outside recipe" not in html and "I wrote this one" not in html
 
@@ -145,15 +188,13 @@ def test_a_credit_with_every_link_gone_still_names_the_cooks_never_no_outside_re
 def test_a_lead_with_a_broken_link_is_shown_unlinked_with_its_badge():
     lead = dict(_RESEARCH["sources"][0], url="")
     research = dict(_RESEARCH, sources=[lead, _RESEARCH["sources"][1]])
-    html = _page("sources", extra={"research": research, "household_changes": []})
+    html = _sources(extra={"research": research, "household_changes": []})
     first = html[html.index('<li class="recipe-src">'):html.index("</li>")]
     assert "Swasthi" in first and "recipe-src-lead" in first and "href=" not in first
     assert 'href="https://example.com/b"' in html
 
 
 def test_the_cache_is_emptied_on_refresh_and_never_keeps_a_failure():
-    import re
-
     js = _cj.SHELL_JS
     refresh = js[js.index("function refreshKitchenPanel() {"):]
     refresh = refresh[: refresh.index("\n  }\n")]
@@ -162,5 +203,5 @@ def test_the_cache_is_emptied_on_refresh_and_never_keeps_a_failure():
     fetcher = fetcher[: fetcher.index("\n  }\n")]
     assert "recipeExtras[id] = null" not in fetcher
     assert fetcher.count("delete recipeExtras[id]") == 2
-    assert re.search(r"keydown[\s\S]{0,80}Escape[\s\S]{0,40}recipeCloseMenu", js)
-    assert "closest('.recipe-more')" in js
+    # The ···'s sheet is a quiet sheet: Escape and the scrim come with it.
+    assert "'quiet-scrim'" in js and "function recipeCloseMenu" not in js

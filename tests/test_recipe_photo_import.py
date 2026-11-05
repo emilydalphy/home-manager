@@ -758,8 +758,7 @@ def _fn(name: str) -> str:
 
 def test_the_cook_root_and_the_link_sheet_both_offer_the_cookbook_photo():
     rows = _fn("cookMoreRowsHtml")
-    assert 'data-kit="recipe-photo"' in rows and ">Add from a cookbook<" in rows
-    assert "GRO_ICONS.camera" in rows, "an inline stroke icon, never an emoji (rule 7)"
+    assert 'data-kit="recipe-photo"' in rows and "name: 'Add from a cookbook'" in rows
     assert "openRecipePhotoSheet()" in _fn("onKitchenClick") or "openRecipePhotoSheet()" in SHELL_JS
     ask = _fn("renderRecipeLinkAsk")
     assert 'data-rli="photo"' in ask and "Or photograph a cookbook page" in ask

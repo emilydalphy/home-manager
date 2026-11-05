@@ -112,7 +112,7 @@ def test_inventory_leaves_cooks_more_sheet():
     """CATCH — the Inventory row was the fourth row of Cook's More."""
     rows = _fn("cookMoreRowsHtml")
     assert 'data-sheet="inventory"' not in rows and "Inventory" not in rows.replace("No Inventory row", "")
-    assert rows.count('class="kit-row"') == 3
+    assert rows.count("tileHtml(") == 3
 
 
 def test_the_tab_never_shows_the_in_development_label_or_line():

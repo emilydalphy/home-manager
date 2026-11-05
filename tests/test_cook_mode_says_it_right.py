@@ -57,10 +57,11 @@ function cookReadTicks(){}
 var cookState = { serves: {} };
 var SAVED_PLAIN = 'Saved';
 var SAVED_NAME_MAX = 44;
+function humanQtyText(q){ return q; }
 """
 
 _FUNCS = ("cookServesShown", "cookApplyServesOverride", "cookScaledIngredients", "recipeBatchLineHtml",
-          "recipeIngredientsHtml", "recipePlainIngredientsHtml", "savedName", "markedLine")
+          "recipePlainIngredientsHtml", "recipeIngredientTileHtml", "tileHtml", "sectionHeadHtml", "savedName", "markedLine")
 
 
 def _run(body: str):
@@ -114,16 +115,16 @@ console.log(JSON.stringify(recipeBatchLineHtml(meal)));
     assert LINE in out
 
 
-@pytest.mark.parametrize("fn", ["recipeIngredientsHtml", "recipePlainIngredientsHtml"])
+@pytest.mark.parametrize("fn", ["recipePlainIngredientsHtml"])
 def test_one_serving_is_singular_and_more_stay_plural(fn):
     out = _run(f"""
 var one = {{batch_line: 'x', default_servings: 1, ingredients: [{{item: 'Eggs', qty: '2'}}]}};
 var six = {{batch_line: 'x', default_servings: 6, ingredients: [{{item: 'Eggs', qty: '12'}}]}};
 console.log(JSON.stringify([{fn}(one, 'x', false), {fn}(six, 'x', false)]));
 """)
-    assert "Ingredients &middot; 1 serving<" in out[0]
+    assert ">1 serving<" in out[0]
     assert "1 servings" not in out[0]
-    assert "Ingredients &middot; 6 servings<" in out[1]
+    assert ">6 servings<" in out[1]
 
 
 def test_the_yesterday_toast_needs_no_was_or_were():

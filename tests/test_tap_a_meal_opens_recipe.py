@@ -273,11 +273,11 @@ def test_the_meal_step_shows_the_recipe_and_none_of_its_controls():
         + _var_block("HUMAN_QTY_FRACTIONS") + "\n"
         + "".join(_extract(n) + "\n" for n in (
             "humanQtyAmount", "humanQtyText", "cookIngredientLabel", "cookUnscaledHtml", "cookServesShown",
-            "cookIngTickId", "cookGetOutRowHtml", "recipeServesHtml", "recipeIngredientsHtml",
-            "recipeIngredientRowHtml", "recipeStepsHtml", "cookUnderway", "isSnackSlot"))
+            "recipeServesHtml", "recipePlainIngredientsHtml", "recipeIngredientTileHtml", "tileHtml", "sectionHeadHtml",
+            "recipeStepsHtml", "cookUnderway", "isSnackSlot"))
         + "console.log(JSON.stringify({\n"
-        + f"  plain: recipeIngredientsHtml({json.dumps(meal)}, 'wk', false) + recipeStepsHtml({json.dumps(meal)}, false),\n"
-        + f"  cooking: recipeServesHtml({json.dumps(meal)}, 3) + recipeIngredientsHtml({json.dumps(meal)}, 3, true) + recipeStepsHtml({json.dumps(meal)}, true)\n"
+        + f"  plain: recipePlainIngredientsHtml({json.dumps(meal)}, 'wk') + recipeStepsHtml({json.dumps(meal)}, false),\n"
+        + f"  cooking: recipeServesHtml({json.dumps(meal)}, 3) + recipePlainIngredientsHtml({json.dumps(meal)}, 3) + recipeStepsHtml({json.dumps(meal)}, true)\n"
         + "}));\n"
     )
     got = _run_node(harness)
@@ -293,9 +293,9 @@ def test_the_meal_step_shows_the_recipe_and_none_of_its_controls():
                     'data-cook="fill"', 'data-cook="focus-check"', "cook-serves", "cook-mic", "<button"):
         assert control not in plain, f"the reading copy still carries {control!r}"
 
-    # The cooking copy is the one with the controls.
-    for control in ('data-cook="serves"', 'data-cook="check-ing"'):
-        assert control in cooking, f"cook mode lost {control!r}"
+    # The cooking copy is the one with the controls. Ingredients read on both:
+    # no ticking off on the recipe (Emily, 2026-10-05).
+    assert 'data-cook="serves"' in cooking, "cook mode lost the stepper"
 
 
 def _recipe_html(cook_meal, slot: str, plan_view: str = "undefined") -> str:
@@ -321,8 +321,7 @@ def _recipe_html(cook_meal, slot: str, plan_view: str = "undefined") -> str:
            if plan_view != "undefined" else "")
         + _extract("isSnackSlot") + "\n"
         + "".join(_extract(n) + "\n" for n in (
-            "cookUnscaledHtml", "cookIngTickId", "cookGetOutRowHtml", "recipeIngredientsHtml",
-            "recipeIngredientRowHtml", "recipeStepsHtml", "mealRecipeFor", "mealNoRecipeHtml",
+            "cookUnscaledHtml",             "recipeStepsHtml", "mealRecipeFor", "mealNoRecipeHtml",
             "recipeIsChangeable", "recipeChangeBtnHtml", "recipeTweakBtnHtml", "mealIngredientsHtml"))
         + f"var meal = {json.dumps(cook_meal)};\n"
         + "var entry = meal ? { source: meal.is_leftovers ? 'leftovers' : 'plan', entry_id: meal.entry_id, state: 'planned', title: meal.meal } : null;\n"
