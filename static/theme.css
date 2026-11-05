@@ -1,269 +1,167 @@
 /*
-  Pomona design system — "The Inn"
-  Source of truth: the Brand Guide canvas (v1, approved by Emily 1 Sep 2026),
-  measured from the InnToday / InnMeals screens.
+  Pomona design system: Bright Dusk.
+  Approved by Emily, 2026-11-05. The boards in design_handoff_bright_dusk/ are
+  the source of truth, and DESIGN_SYSTEM.md is the written rule book.
 
-  Premium, capable, warm: two grounds, one anchor (spruce), two accents
-  (apricot acts, celadon reassures).
+  The orchard at dusk: warm cream, deep dusk blue, one ripe apricot. Food
+  brings the rest of the colour.
 
-  Load this on every page AFTER the Bricolage Grotesque / Figtree / Newsreader
-  Google Fonts <link>, BEFORE any page-specific <style> block, so page styles
-  can still override specifics while inheriting the shared tokens/components.
-
-  ---------------------------------------------------------------------------
-  ONE VOCABULARY (2026-09-02)
-  ---------------------------------------------------------------------------
-  This file used to carry three overlapping colour vocabularies that had grown
-  up separately and drifted:
-
-    1. the original brand names   (--midnight-violet, --turmeric-gold, …)
-    2. the Grocery-redesign set   (--violet-light, --ink, --ink-muted, …)
-    3. the app-shell set          (--plum, --gold, --cream, --sand, …)
-
-  Three names for the same colour meant no single place to change it, and
-  three near-but-not-equal values for the same *role*. The Pomona repaint
-  re-pointed every value anyway, so the two jobs were done in one pass.
-
-  There is now exactly ONE canonical set — the block marked CANONICAL below,
-  named after the brand guide. Everything under COMPATIBILITY ALIASES is a
-  thin `var()` forward kept only so the ~40 files that already reference the
-  old names keep working. Do not introduce new uses of an alias, and when you
-  touch a call site, move it to the canonical name.
+  Load this on every page AFTER fonts.css and BEFORE any page-specific <style>
+  block, so page styles can override specifics while inheriting the tokens and
+  the shared components at the end of the first half of this file.
 
   ---------------------------------------------------------------------------
-  LIGHT AND DARK (dark added 2026-09-02, Pomona stage 3)
+  TWO SETS OF NAMES, FOR NOW
   ---------------------------------------------------------------------------
-  The light values live on :root. The dark values live in exactly one
-  `@media (prefers-color-scheme: dark)` block at the BOTTOM of this file,
-  which redefines only these same custom properties — no selectors, no
-  component rules. Everything styled through a token therefore follows the
-  phone's system setting for free.
+  The CANONICAL block is the palette. New work uses these names only.
 
-  Settings → Appearance (2026-09-24) adds a per-device choice: Match my
-  phone (the default — exactly the media query below), Light or Dark. It
-  works through data-theme on <html>; see THE OPT-OUT and FORCED DARK at
-  the bottom of this file.
+  The LEGACY block keeps The Inn's names (--spruce, --celadon-tint, --sand...)
+  forwarding to Bright Dusk, because about 12,000 lines of shell.css still say
+  them. A screen moves to the canonical names when it is rebuilt. Once all of
+  them are rebuilt, the block goes. Never add a new use of a legacy name.
 
-  Two rules that make dark work, both from the brand guide:
-    - Elevation in dark is a LIGHTER FILL plus a HAIRLINE, not a shadow.
-      A shadow reads as nothing against a dark ground.
-    - The hero panel goes LIGHTER than the light-mode spruce (#22422F, up
-      from #1B3328) so it lifts off the deeper ground, and gains the
-      dark-only Spruce Edge hairline (#2C4B38) where the shadow used to do
-      that job.
+  ---------------------------------------------------------------------------
+  LIGHT MODE ONLY FOR NOW
+  ---------------------------------------------------------------------------
+  Emily, 2026-11-05: "Light mode only for now, dark mode comes later." Every
+  page carries data-theme="light" on its <html>, which switches off every dark
+  rule in this file and shell.css (they are all guarded with
+  :root:not([data-theme="light"])). The dark blocks at the bottom are left in
+  place, dormant, and still hold The Inn's dark values: they want new values
+  before they are turned on. To bring dark mode back, give them Bright Dusk
+  values and take the attribute off the pages.
 */
 
 :root {
   color-scheme: light;
 
-  /* ======================= CANONICAL — Pomona ======================= */
+  /* ======================= CANONICAL: Bright Dusk ======================= */
 
-  /* --- Ground & surface --- */
-  --ground:         #FBF6EE;  /* app canvas; every screen starts here */
-  --surface:        #FFFDF8;  /* cards, list containers, the ask bar */
-  --spruce:         #1B3328;  /* hero panel, dark buttons, active nav ink */
-  --spruce-raised:  #24402F;  /* chips/icon tiles ON spruce — never on ivory */
-  --spruce-hover:   #2B4A37;  /* hover on a fill that already sits ON spruce */
-  --celadon-tint:   #E2EDE5;  /* the gentle, non-urgent tile */
+  /* --- The palette --- */
+  --cream:        #FFFAF3;  /* Warm Cream: the page */
+  --white:        #FFFFFF;  /* tiles and cards */
+  --dusk:         #1B4392;  /* Dusk Blue: tab bar, Use soon, timers, welcome */
+  --night-ink:    #14264A;  /* Night Ink: main text, the toast */
+  --apricot:      #FFA45C;  /* Ripe Apricot: the one main button and Ask */
+  --soft-apricot: #FFC08F;  /* Soft Apricot: small labels on dusk */
+  --blush:        #FBE9D9;  /* Blush: switcher track, round buttons, quiet tints */
+  --slate:        #55607A;  /* Slate: second lines and small details */
+  --clay:         #A8461A;  /* Baked Clay: today's day, problems */
+  --on-dusk:      #FFF6EA;  /* text on dusk and on the toast */
+  --on-dusk-soft: #C6D2E8;  /* tab bar's resting icons and labels */
+  --line:         #F4ECE2;  /* the thin line between rows */
+  --grab:         #C9CEDA;  /* a sheet's grab handle */
+  --tick-ring:    #8791A8;  /* an unticked box's ring */
 
-  /*
-    Dark-only hairline, `transparent` in light so a rule can carry
-    `border/box-shadow: … var(--spruce-edge)` unconditionally and cost
-    light mode nothing. In dark it separates the hero panel from a ground
-    that is now nearly the same value.
-  */
-  --spruce-edge:    transparent;
-  /* The room the phone sits in on a wide screen (shell.css, >=768px):
-     one step darker than spruce so the root band (spruce) still reads as
-     the app's own top edge and not as the wall behind it. Spruce on this
-     field measures 1.35:1 — a seam, not text; nothing is set in it. */
-  --field:          #12211A;
+  /* --- Roles --- */
+  --ground:         var(--cream);
+  --surface:        var(--white);
+  --surface-raised: var(--white);
+  --ink:            var(--night-ink);
+  --ink-secondary:  var(--slate);
+  --hairline:       var(--line);
+  --field:          #E9E6E0;  /* the room the phone sits in at >=768px */
+  --plate-shadow:   drop-shadow(0 2px 5px rgba(20, 38, 74, .18));
 
-  /*
-    THE PURE-WHITE TIER. A handful of surfaces used literal #fff rather than
-    Card Ivory — notification panel, ask-message tables, some :hover fills.
-    In light this token IS #fff, so pointing them at it changes nothing; in
-    dark it becomes the one step above --surface that those surfaces want.
-  */
-  --surface-raised: #fff;
-
-  /*
-    SPRUCE PLAYING INK. In light, spruce doubles as the strongest text
-    colour (active tab, "add" links, outline-button labels) — the brand
-    guide's own dark table anticipates this: "Active tabs take Spruce
-    (light) or Ink (dark), never apricot." In dark, spruce becomes a raised
-    PANEL, so anything using it as text has to swing to Ink instead. This
-    token is that swing. Identical to --spruce in light.
-  */
-  --ink-strong:     #1B3328;
-
-  /* --- Ink ramp (warm-shifted; never pure black or pure white) --- */
-  --ink:              #23302A;  /* headlines and body on ground/cards */
-  --ink-on-celadon:   #24362D;  /* body inside celadon tiles */
-  --ivory-ink:        #F6EEE1;  /* text on spruce */
-  --ivory-ink-muted:  rgba(246, 238, 225, .92); /* chip labels on spruce */
-  /* Pure white, on purpose: the selected chip / the household's own chat
-     bubble / the active mic sit on a saturated fill (spruce, urgent) and
-     read one notch brighter than ivory there. Emily, 2026-09-13: token it
-     rather than let it drift warmer. Same in dark — the fills it sits on
-     are the lighter dark-mode spruce/urgent, where white still reads. */
-  --on-spruce-ink:    #fff;
-  --ink-secondary:    #7C7161;  /* supporting copy, outline-button labels */
-  --ink-muted:        #7E7360;  /* 10px/800 uppercase eyebrows only */
-  /* Darkened 2026-09-03 from #8E8370 (3.47:1 on ground) to clear WCAG AA
-     for normal text. Placeholder text is read by people who most need the
-     hint, so it is the last thing that should be the faintest ink here. */
-  --ink-placeholder:  #797060;  /* ask-bar + input placeholders — 4.54:1 on ground */
-  --ink-inactive:     #948970;  /* unselected navigation */
-  /* Darkened 2026-09-03 from #A29886 (2.65:1 on ground). The strikethrough
-     is what says "done"; the colour was doing that job a second time and
-     failing legibility to do it. */
-  --ink-done:         #7A705E;  /* completed/struck list text — 4.53:1 on ground */
-  --ink-done-soft:    #C6BCA9;  /* the quantity beside completed text */
-
-  /* --- Apricot: the accent that acts --- */
-  --apricot:        #E0915C;             /* primary action fill, badges */
-  --apricot-light:  #F2B98E;             /* apricot ON spruce; italic accent */
-  --apricot-deep:   #C4703C;             /* status dots, line-icon strokes */
-  --apricot-label:  #A2582F;             /* uppercase micro-labels, links */
-  --apricot-label-hover: #82441F;
-  --apricot-rule:   rgba(224, 145, 92, .34); /* the only divider on spruce */
-
-  /* --- Celadon: the accent that reassures --- */
-  --celadon:        #A9C4B0;  /* confirmation chips, the "New" badge */
-  --celadon-edge:   #C7DACD;  /* hairline on a celadon-tint surface */
-  --celadon-label:  #4F6B5B;  /* label + icon stroke inside celadon tiles */
-
-  /*
-    Store identity colours, kept for a future use: they coloured Grocery's
-    per-store avatar until 2026-09-17 (Emily: Shop's root is the checklist,
-    and its cards carry no avatar), so nothing in shell.js reads them
-    today. Arbitrary identity colours, not semantic roles —
-    unlike every token above, they are deliberately the SAME value in light
-    and dark (not redefined in the dark block below), because the avatar
-    always carries --on-accent-ink per Rule 1 and needs to stay a light
-    accent in both modes. Measured against --on-accent-ink in both modes,
-    the worst pair is 5.40:1 (light) / 6.32:1 (dark). Added design hygiene
-    pass, 2026-09-12 — previously six literal hexes hardcoded in shell.js.
-  */
-  --store-1: #E0915C;
-  --store-2: #A9C4B0;
-  --store-3: #F2B98E;
-  --store-4: #C7DACD;
-  --store-5: #E6D9C4;
-  --store-6: #EFD3A9;
-  /* The "Unassigned"/"Any store" fallback of the same retired avatar — a
-     quiet neutral, not a store identity, but it shares --store-5's exact
-     value and the same "fixed regardless of theme" reasoning: it must NOT
-     move to --sand-deep/--hairline-strong's dark value, since it was never
-     dark-aware before this token existed and this pass changes no pixels. */
-  --store-none: #E6D9C4;
-
-  /*
-    RULE ONE, made a token. Dark spruce text on light accent fills, always.
-    Ivory on saturated apricot or celadon fails contrast outright. There is
-    no exception, including icon strokes.
-  */
-  --on-accent-ink:  #1B3328;
-
-  /* --- Lines & edges (1.5px, always — this is what makes a card a card) --- */
-  --hairline:        #EEE3D0;  /* card borders, nav divider, header rule */
-  --hairline-strong: #E6D9C4;  /* ask bar, outline buttons, italic underline */
-  --hairline-deep:   #D9C9AF;  /* the trip checkbox's rim — one step past strong so an unticked box reads as a box */
-  --on-spruce-edge:  #2E5240;  /* a field's rim ON spruce (sign-in); mode-independent because the page is spruce in both */
-
-  /* --- Warm neutrals ---
-     Soft sand fills that sit between the ground and a hairline: secondary
-     buttons, soft cards, inactive tracks. This replaces the scattered
-     one-off creams (#ECDFC8, #E0D3BF, #EADFC7, #E2D2B6 …) that used to be
-     invented per screen. */
-  --sand:       #F3EBDC;
-  --sand-deep:  #E6D9C4;  /* = --hairline-strong */
-
-  /* --- Status ---
-     The brand guide covers "settled" (celadon) and "wants doing" (apricot)
-     but has no swatch for genuinely urgent, so this is the one value in this
-     file NOT lifted from it. Deep terracotta: the same hue family as apricot,
-     dropped far enough in value and pushed far enough to red that it reads
-     as a warning rather than as another action. It is a dark, saturated fill
-     (not a light accent), so it carries ivory text — RULE ONE governs the
-     light accent fills, not this one. FLAGGED FOR EMILY: the exact value is
-     the assistant's pick, not an approved brand swatch. */
-  --urgent:        #B23A22;  /* needs a decision / overdue */
-  --urgent-ink:    #F6EEE1;  /* text on an urgent fill */
-  --urgent-tint:   #F7E6DE;  /* soft urgent background, dark text on it */
-  --urgent-label:  #8F2C17;  /* urgent text ON the tint or the ground */
-
-  --good:       var(--celadon);        /* done, handled, your turn */
-  --good-ink:   var(--celadon-label);  /* "good" text on ground */
-  --warn:       var(--apricot);        /* time-boxed, wants doing */
-  --warn-ink:   var(--apricot-label);  /* "warn" text on ground */
-
-  /* --- Typography: three faces, each with one job ---
-     Bricolage Grotesque carries every headline and button (always 700,
-     always tightened). Figtree carries everything else. Newsreader appears
-     once per screen, in italic — two lines and it becomes a serif brand. */
-  --font-display: "Bricolage Grotesque", "Figtree", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  /* --- Type: one face, six sizes ---
+     32 title, 26 feature, 16 row, 14 support, 13 small, 11 tiny. */
   --font-body:    "Figtree", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-  --font-accent:  "Newsreader", Georgia, "Times New Roman", Times, serif;
+  --font-display: var(--font-body);  /* legacy name, same face */
+  --font-accent:  var(--font-body);  /* legacy name, same face */
+  --text-title:   32px;
+  --text-feature: 26px;
+  --text-row:     16px;
+  --text-support: 14px;
+  --text-small:   13px;
+  --text-tiny:    11px;
 
-  /* --- Radii: soft geometry, joined at the edges ---
-     The signature move is a tile that joins the panel below it instead of
-     floating above it: square where they meet, round where they leave. */
-  --radius-hero:    30px;  /* hero panel, bottom corners only */
-  --radius-card:    20px;  /* cards and tiles */
-  --radius-ask:    999px;  /* Ask Pomona + bell: circles */
-  --radius-action: 999px;  /* primary action: pill */
-  --radius-day:     17px;  /* active day tile, top only */
-  --radius-tile:    15px;  /* day tiles, 44px icon button */
-  --radius-control: 14px;  /* in-card buttons, inputs */
-  --radius-send:    13px;  /* send tile */
-  --radius-chip:    11px;  /* metadata chips */
-  --radius-badge:   10px;  /* badges, hero icon tile */
-  --radius-badge-sm: 9px;  /* small caps badges */
-  --radius-pill:   999px;
+  /* --- Corners: four sizes, and fully round --- */
+  --radius-control: 13px;   /* controls: switcher segment, inputs, chips */
+  --radius-button:  16px;   /* buttons, the toast, the switcher's track */
+  --radius-card:    22px;   /* tiles and cards */
+  --radius-sheet:   26px;   /* sheets, big cards */
+  --radius-pill:    999px;  /* round buttons and pills */
 
-  /* --- Elevation ---
-     Shadow belongs to the hero panel and the apricot action — nothing else.
-     Cards are separated by a hairline. --shadow-card is kept as a whisper
-     for the many existing cards that still lean on it; Stage 2 replaces
-     those with hairlines per the guide. */
-  --shadow-hero:   0 26px 48px -30px rgba(18, 36, 25, .85);
-  --shadow-action: 0 16px 28px -18px rgba(224, 145, 92, .8);
-  --shadow-card:   0 1px 2px rgba(35, 48, 42, .05);
-  --shadow-sheet:  0 -8px 30px rgba(35, 48, 42, .2);   /* bottom sheets */
-  --shadow-dialog: 0 18px 44px rgba(35, 48, 42, .28);  /* centred dialogs */
-  --shadow-panel:  0 12px 32px rgba(0, 0, 0, .22);     /* the notification panel */
-  --shadow-toast:  0 6px 20px rgba(0, 0, 0, .18);
+  /* --- Depth: one soft shadow for cards --- */
+  --shadow-card:   0 1px 2px rgba(20, 38, 74, .05), 0 10px 28px rgba(20, 38, 74, .07);
+  --shadow-float:  0 12px 30px rgba(20, 38, 74, .2);  /* dusk cards, the toast */
+  --shadow-seg:    0 1px 3px rgba(20, 38, 74, .14);   /* the switcher's chosen segment */
+  --shadow-sheet:  0 -8px 30px rgba(20, 38, 74, .2);
+  --shadow-dialog: 0 18px 44px rgba(20, 38, 74, .28);
+  --shadow-panel:  0 12px 32px rgba(20, 38, 74, .22);
+  --shadow-toast:  var(--shadow-float);
+  --scrim: rgba(20, 38, 74, .45);
+  --toast-bg:  var(--night-ink);
+  --toast-ink: var(--on-dusk);
 
-  /* Modal backdrop. Dark mode needs a blacker, heavier one — a spruce wash
-     over an already-dark ground barely dims anything. */
-  --scrim: rgba(35, 48, 42, .45);
+  /* --- Tab bar: 56px, plus the phone's own safe area ---
+     88px on the boards, whose phone has a 32px home bar. */
+  --tab-bar-h: calc(56px + max(12px, env(safe-area-inset-bottom, 0px)));
 
-  /* The toast is the one surface that is dark-on-light in light mode, so it
-     cannot ride --ink (which inverts). Its own pair of tokens instead. */
-  --toast-bg:  #23302A;
-  --toast-ink: #fff;
-
-  /* ---------- Motion (Emily, 2026-09-11) ----------
-     Exactly three animations in the whole app — sheets/dialogs opening,
-     tab panels crossfading, a ticked grocery row settling. See
-     DESIGN_SYSTEM.md §4 "Motion" and shell.js's openSheet()/closeSheet().
-     Same values regardless of light/dark, so defined once here rather than
-     duplicated in the dark-mode block below. */
+  /* --- Motion: small and quick, off under reduced motion --- */
   --motion-fast:    180ms;
   --motion-base:    240ms;
-  --motion-ease:    cubic-bezier(.2,.7,.2,1);  /* ease-out: settles in, doesn't bounce */
-  --motion-ease-in: cubic-bezier(.4,0,1,1);    /* ease-in: for anything leaving */
+  --motion-press:   120ms;
+  --motion-ease:    cubic-bezier(.2,.7,.2,1);  /* settling into place */
+  --motion-ease-in: cubic-bezier(.4,0,1,1);    /* anything leaving */
 
-  /* The COMPATIBILITY ALIASES block that used to live here (--oat-cream,
-     --midnight-violet, --plum, --muted, --font-heading, 28 names in all —
-     see DESIGN_SYSTEM.md §1's history) is gone: design hygiene pass,
-     2026-09-12, migrated every remaining call site to its canonical token
-     (same value, so no visual change) and deleted the block once nothing
-     referenced it. If a future revert needs one of these names back, the
-     canonical token it forwarded to is in this file's git history at this
-     comment's location. */
+  /* ===================== LEGACY: The Inn's names =====================
+     Forwards only. See the note at the top of this file. */
+  --spruce:          var(--dusk);
+  --spruce-raised:   #3F61A3;  /* rgba(255,255,255,.16) over dusk, solid */
+  --spruce-hover:    #4A6BAC;
+  --spruce-edge:     transparent;
+  --ink-strong:      var(--night-ink);
+  --celadon:         var(--apricot);
+  --celadon-tint:    var(--blush);
+  --celadon-edge:    var(--line);
+  --celadon-label:   var(--slate);
+  --ink-on-celadon:  var(--night-ink);
+  --ivory-ink:       var(--on-dusk);
+  --ivory-ink-muted: var(--on-dusk);
+  --on-spruce-ink:   var(--white);
+  --on-spruce-edge:  #3F61A3;
+  --ink-muted:       var(--slate);
+  --ink-placeholder: var(--slate);
+  --ink-inactive:    var(--slate);
+  --ink-done:        var(--slate);
+  --ink-done-soft:   var(--slate);
+  --apricot-light:   var(--soft-apricot);
+  --apricot-deep:    #F08C3E;  /* hover on an apricot fill; dark text still reads */
+  --apricot-label:   var(--clay);
+  --apricot-label-hover: #8A3813;
+  --apricot-rule:    rgba(255, 192, 143, .34);
+  --on-accent-ink:   var(--night-ink);
+  --hairline-strong: var(--line);
+  --hairline-deep:   var(--tick-ring);
+  --sand:            var(--blush);
+  --sand-deep:       #F7DFCB;  /* blush one step down, for a tile on blush */
+  --urgent:          var(--clay);
+  --urgent-ink:      var(--on-dusk);
+  --urgent-tint:     var(--blush);
+  --urgent-label:    #8A3813;
+  --good:            var(--apricot);
+  --good-ink:        var(--slate);
+  --warn:            var(--apricot);
+  --warn-ink:        var(--clay);
+  --store-1: #FFA45C;
+  --store-2: #FFC08F;
+  --store-3: #FBE9D9;
+  --store-4: #F7DFCB;
+  --store-5: #F4ECE2;
+  --store-6: #FFD9BC;
+  --store-none: #F4ECE2;
+  --radius-hero:    var(--radius-sheet);
+  --radius-ask:     var(--radius-pill);
+  --radius-action:  var(--radius-button);
+  --radius-day:     var(--radius-control);
+  --radius-tile:    var(--radius-control);
+  --radius-send:    var(--radius-control);
+  --radius-chip:    var(--radius-control);
+  --radius-badge:   var(--radius-pill);
+  --radius-badge-sm: var(--radius-pill);
+  --shadow-hero:    var(--shadow-float);
+  --shadow-action:  none;
 }
 
 /* ---------- Base ---------- */
@@ -271,29 +169,23 @@ body {
   font-family: var(--font-body);
   background: var(--ground);
   color: var(--ink);
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Placeholders had no rule anywhere in the shared stylesheet, so every
-   field that didn't set its own inherited the browser's default grey --
-   a colour chosen by Chrome against a white page, not by this palette
-   against ivory. Stated once here, in the file every page loads, so a new
-   input is legible by default rather than by remembering to say so.
-   Pages that set their own ::placeholder still win, as they should. */
 ::placeholder {
   color: var(--ink-placeholder);
-  opacity: 1;  /* Firefox dims placeholders to .54 unless told not to,
-                  which would undo the contrast this value was picked for. */
+  opacity: 1;
 }
 
 h1, h2, h3, .h1, .h2, .h3 {
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   color: var(--ink);
   font-weight: 700;
-  margin: 0 0 4px;
+  margin: 0;
 }
-h1, .h1 { font-size: 31px; line-height: 1.05; letter-spacing: -0.038em; font-weight: 700; }
-h2, .h2 { font-size: 21px; line-height: 1.20; letter-spacing: -0.028em; font-weight: 700; }
-h3, .h3, .card-title { font-size: 17px; line-height: 1.3; letter-spacing: -0.02em; font-weight: 700; }
+h1, .h1 { font-size: 32px; line-height: 38px; letter-spacing: -0.03em; }
+h2, .h2 { font-size: 26px; line-height: 30px; letter-spacing: -0.025em; }
+h3, .h3, .card-title { font-size: 16px; line-height: 22px; }
 
 p, li, td, label, input, select, textarea, button {
   font-family: var(--font-body);
@@ -301,143 +193,356 @@ p, li, td, label, input, select, textarea, button {
 
 .subtitle, p.subtitle {
   color: var(--ink-secondary);
-  font-size: 0.9rem;
+  font-size: 14px;
 }
 
-/* Eyebrows are the only uppercase in the system: 10px, 800, .13–.18em. */
 .caption {
   font-family: var(--font-body);
-  font-weight: 800;
-  font-size: 10px;
-  line-height: 1.4;
-  color: var(--ink-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ink-secondary);
 }
 
-/* The one accent line — Newsreader italic, 17px, once per screen. */
 .accent-line {
-  font-family: var(--font-accent);
-  font-style: italic;
+  font-family: var(--font-body);
   font-weight: 400;
-  font-size: 17px;
-  line-height: 1.3;
-  color: var(--apricot-label);
+  font-size: 16px;
+  line-height: 22px;
+  color: var(--ink-secondary);
 }
 
-a { color: var(--apricot-label); }
+a { color: var(--clay); }
 a:hover { color: var(--apricot-label-hover); }
 
-/* ---------- Shared components ---------- */
-
-/* Primary CTA — apricot fill, dark spruce text (RULE ONE). Reserve for the
-   single most important action on a screen: one apricot fill per screen. */
+/* ---------- Buttons, in The Inn's names ---------- */
 .btn-primary, button.btn-primary {
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-weight: 700;
-  font-size: 17px;
-  letter-spacing: -0.02em;
+  font-size: 16px;
   background: var(--apricot);
-  color: var(--on-accent-ink);
+  color: var(--night-ink);
   border: none;
-  border-radius: var(--radius-action);
-  padding: 15px 22px;
+  border-radius: var(--radius-button);
+  min-height: 52px;
+  padding: 0 22px;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: background var(--motion-fast) ease, transform var(--motion-press) ease;
 }
 .btn-primary:hover:not(:disabled) { background: var(--apricot-deep); }
 .btn-primary:disabled { opacity: 0.5; cursor: default; }
 
-/* Secondary / ghost — spruce outline or text-only. Frequent, lower-stakes
-   actions (add item, edit, cancel). */
 .btn-secondary, button.btn-secondary {
   font-family: var(--font-body);
   font-weight: 700;
   font-size: 14px;
-  background: transparent;
-  color: var(--ink-secondary);
-  border: 1.5px solid var(--hairline-strong);
-  border-radius: var(--radius-control);
-  padding: 11px 18px;
+  background: var(--blush);
+  color: var(--night-ink);
+  border: none;
+  border-radius: var(--radius-button);
+  min-height: 44px;
+  padding: 0 18px;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: background var(--motion-fast) ease, transform var(--motion-press) ease;
 }
-.btn-secondary:hover:not(:disabled) { background: var(--sand); }
+.btn-secondary:hover:not(:disabled) { background: var(--sand-deep); }
 .btn-secondary:disabled { opacity: 0.5; cursor: default; }
 
-/* Status tag / pill — 12px/700 metadata chips. Accent fills carry dark ink. */
 .pill {
   display: inline-flex;
   align-items: center;
   font-family: var(--font-body);
-  font-weight: 700;
-  font-size: 12px;
-  border-radius: var(--radius-chip);
+  font-weight: 600;
+  font-size: 13px;
+  border-radius: var(--radius-pill);
   padding: 4px 10px;
-  line-height: 1.4;
+  line-height: 18px;
 }
-.pill-success   { background: var(--celadon); color: var(--on-accent-ink); }
-.pill-attention { background: var(--urgent);  color: var(--urgent-ink); }
-.pill-neutral   { background: var(--celadon-tint); color: var(--ink-on-celadon); }
+.pill-success   { background: var(--blush); color: var(--night-ink); }
+.pill-attention { background: var(--clay);  color: var(--on-dusk); }
+.pill-neutral   { background: var(--blush); color: var(--night-ink); }
 
-/* Card — the lift comes from the hairline, not a shadow. */
-.card {
+.card, .surface {
   background: var(--surface);
-  border: 1.5px solid var(--hairline);
   border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
 }
 
-/* Surfaces that sit "above" the ground use card ivory — exactly one step
-   brighter than the ground. */
-.surface {
-  background: var(--surface);
-  border: 1.5px solid var(--hairline);
-  border-radius: var(--radius-card);
-}
-
-/* List row — min 44x44 tap targets on interactive elements is enforced
-   per-element (checkboxes, icon buttons), not just on the row. */
 .list-row {
   background: var(--surface);
   font-family: var(--font-body);
-  font-weight: 600;
-  font-size: 15px;
+  font-weight: 500;
+  font-size: 16px;
   color: var(--ink);
 }
 .list-row .row-caption {
   font-family: var(--font-body);
-  font-weight: 800;
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--ink-muted);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--ink-secondary);
 }
 .tap-target {
   min-width: 44px;
   min-height: 44px;
 }
 
-/* Empty state — warm, first-person copy, not "No items." */
 .empty-state {
   color: var(--ink-secondary);
-  font-size: 0.95rem;
+  font-size: 14px;
   padding: 1rem 0;
 }
 
-/* Top nav strip shared by every page. Active nav ink is spruce, never
-   apricot — apricot is for the thing that wants doing, not for "you are
-   here". */
 .app-nav {
   font-family: var(--font-body);
-  font-size: 0.85rem;
+  font-size: 13px;
   color: var(--ink-secondary);
 }
 .app-nav a {
-  color: var(--ink-strong);
+  color: var(--ink);
   text-decoration: none;
   font-weight: 700;
 }
 .app-nav a:hover { text-decoration: underline; }
+
+/* ==========================================================================
+   SHARED COMPONENTS. One of each, used the same way on every screen.
+   Measured off the Z- boards. DESIGN_SYSTEM.md section 5 says when to use
+   which; the matching HTML builders are the "Bright Dusk parts" at the top of
+   shell.js.
+   ========================================================================== */
+
+/* --- Screen title: no band. A plain title and one line on cream. ---
+   The board's 58px top is its 44px status bar plus 14. On a real phone the
+   status bar is the safe area, so the padding is that plus 14. */
+.screen-head {
+  padding: calc(env(safe-area-inset-top, 0px) + 14px) 20px 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.screen-head-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.screen-title {
+  margin: 0;
+  font-size: 32px;
+  line-height: 38px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+}
+.screen-sub {
+  margin: 0;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  color: var(--ink-secondary);
+}
+.screen-tools { display: flex; align-items: center; gap: 8px; flex: none; }
+
+/* --- Round header button: 44px, blush --- */
+.round-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-pill);
+  background: var(--blush);
+  color: var(--ink);
+  border: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  cursor: pointer;
+  transition: transform var(--motion-press) ease;
+}
+.round-btn svg { width: 20px; height: 20px; }
+
+/* --- Segmented switcher. .seg-days is the taller one, with a day and date --- */
+.seg {
+  margin: 14px 20px 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 2px;
+  height: 46px;
+  background: var(--blush);
+  border-radius: var(--radius-button);
+  padding: 3px;
+  box-sizing: border-box;
+}
+.seg-days { height: 52px; }
+.seg-btn {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-secondary);
+  border-radius: var(--radius-control);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--motion-fast) ease, color var(--motion-fast) ease;
+}
+.seg-days .seg-btn { color: var(--ink); }
+.seg-btn.is-on {
+  background: var(--white);
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow: var(--shadow-seg);
+}
+.seg-days .seg-btn.is-on { font-size: 13px; }
+.seg-dow { font-size: 11px; line-height: 13px; font-weight: 500; }
+.seg-num { font-size: 14px; line-height: 18px; font-weight: 500; }
+.seg-btn.is-today { color: var(--clay); }
+.seg-btn.is-today .seg-dow, .seg-btn.is-today .seg-num { font-weight: 700; }
+
+/* --- Section heading --- */
+.section-head {
+  display: block;
+  padding: 18px 20px 0;
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* --- Tiles: two across, one thing each ---
+   .tile           a dish: plate, name, one line
+   .tile-row       a small dish: 44px plate beside the name (snacks)
+   .tile-text      words only, left aligned (a menu, Settings)
+   A tile is a button when it does something, a div when it is to read. */
+.tiles {
+  margin: 14px 16px 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.section-head + .tiles { margin-top: 6px; }
+.tile {
+  appearance: none;
+  border: 0;
+  font: inherit;
+  color: var(--ink);
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--white);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: 14px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  transition: transform var(--motion-press) ease;
+}
+button.tile { cursor: pointer; }
+.tile-plates {
+  display: flex;
+  height: 96px;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+}
+.tile-words { display: flex; flex-direction: column; gap: 1px; min-width: 0; max-width: 100%; }
+.tile-name { font-size: 16px; line-height: 20px; font-weight: 500; overflow-wrap: anywhere; }
+.tile-sub { font-size: 13px; line-height: 18px; font-weight: 400; color: var(--ink-secondary); }
+.tile-row {
+  flex-direction: row;
+  text-align: left;
+  height: 68px;
+  padding: 0 12px;
+  gap: 10px;
+}
+.tile-row .tile-name { font-size: 14px; line-height: 18px; }
+.tile-text {
+  align-items: stretch;
+  justify-content: center;
+  text-align: left;
+  min-height: 76px;
+  padding: 14px;
+  gap: 2px;
+}
+.tile.is-quiet .tile-name { color: var(--ink-secondary); }
+.tile.is-wide { grid-column: 1 / -1; }
+
+/* --- Plain card: one thing with words and a button (empty, error) --- */
+.note-card {
+  margin: 14px 16px 0;
+  background: var(--white);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+/* --- Buttons: one main apricot per screen, always dark text --- */
+.btn-main, .btn-quiet {
+  appearance: none;
+  width: 100%;
+  height: 52px;
+  border: 0;
+  border-radius: var(--radius-button);
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--night-ink);
+  cursor: pointer;
+  transition: transform var(--motion-press) ease;
+}
+.btn-main { background: var(--apricot); }
+.btn-quiet { background: var(--blush); }
+.btn-main:disabled, .btn-quiet:disabled { opacity: .6; cursor: default; }
+
+/* --- A text field --- */
+.field {
+  height: 52px;
+  width: 100%;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: var(--radius-button);
+  background: var(--white);
+  box-shadow: var(--shadow-card);
+  padding: 0 16px;
+  font: 500 16px var(--font-body);
+  color: var(--ink);
+}
+
+/* --- A tick box: 22px, an apricot circle when done --- */
+.tick-ring {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-pill);
+  box-shadow: inset 0 0 0 1.6px var(--tick-ring);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  transition: background var(--motion-fast) ease;
+}
+.is-ticked > .tick-ring { background: var(--apricot); box-shadow: none; }
+
+/* --- A plate on cream or white: the one soft shadow. On dusk, none. --- */
+.dish-plate { display: block; flex: none; filter: var(--plate-shadow); }
+.dish-plate.on-dark { filter: none; }
+
+/* ---------- Motion on every press ---------- */
+.round-btn:active, .tile:active, .btn-main:active, .btn-quiet:active,
+.seg-btn:active, .tab-btn:active, .chat-fab:active,
+.btn-primary:active, .btn-secondary:active, .dock-primary:active {
+  transform: scale(.98);
+}
 
 /* ---------- Focus visibility ---------- */
 
@@ -448,9 +553,9 @@ a:hover { color: var(--apricot-label-hover); }
   had no way to tell where they were.
 
   :focus-visible rather than :focus so the ring appears for keyboard and
-  assistive-tech users without drawing a box around every mouse click. Apricot
-  reads clearly on both the ivory ground and the spruce panels, and it is
-  already the palette's "something here" colour.
+  assistive-tech users without drawing a box around every mouse click. Dusk blue
+  reads clearly on cream and white. On dusk or apricot it swaps to something
+  that shows there (below).
 */
 /*
   !important is deliberate here, and is the one place in this file that uses
@@ -466,15 +571,13 @@ select:focus-visible,
 textarea:focus-visible,
 summary:focus-visible,
 [tabindex]:focus-visible {
-  outline: 3px solid var(--apricot) !important;
+  outline: 2px solid var(--dusk) !important;
   outline-offset: 2px !important;
 }
 
-/* On apricot surfaces an apricot ring would vanish — switch to spruce there. */
-.btn-primary:focus-visible,
-.btn-gold:focus-visible,
-.kh-btn-gold:focus-visible {
-  outline-color: var(--on-accent-ink) !important;
+/* On dusk a dusk ring would vanish. */
+#tab-bar button:focus-visible {
+  outline-color: var(--on-dusk) !important;
 }
 
 /* ---------- Voice dictation button ---------- */
@@ -501,7 +604,7 @@ summary:focus-visible,
   cursor: pointer;
 }
 .dictate-btn svg { width: 16px; height: 16px; }
-.dictate-btn:hover { background: var(--celadon-tint); }
+.dictate-btn:hover { background: var(--blush); }
 .dictate-btn.active {
   background: var(--urgent);
   color: var(--urgent-ink);
@@ -509,8 +612,8 @@ summary:focus-visible,
 }
 .dictate-btn:disabled { opacity: .5; cursor: default; animation: none; }
 @keyframes dictateBtnPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(178, 58, 34, .45); }
-  50% { box-shadow: 0 0 0 6px rgba(178, 58, 34, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(168, 70, 26, .45); }
+  50% { box-shadow: 0 0 0 6px rgba(168, 70, 26, 0); }
 }
 /* A textarea (multi-line) paired with a dictate button sits in its own
    row rather than inline with other fields — the textarea shrinks to
@@ -536,8 +639,8 @@ summary:focus-visible,
 .waiting-line {
   font-family: var(--font-body);
   font-weight: 600;
-  font-size: 0.92rem;
-  line-height: 1.4;
+  font-size: 14px;
+  line-height: 20px;
   color: var(--ink-secondary);
 }
 .waiting-line-in { animation: waitingLineIn .32s ease-out; }
@@ -563,9 +666,9 @@ summary:focus-visible,
 /* ---------- Motion ---------- */
 
 /*
-  The shell animates tab transitions, the ask sheet, the week sheet and
-  toasts. Honour the OS-level request to cut that down: elements still
-  appear and disappear, they just stop sliding and fading.
+  Small, quick motion on every press, tab change, sheet and tick. Honour the
+  OS-level request to cut that down: elements still appear and disappear,
+  they just stop sliding, fading and pressing in.
 */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -575,6 +678,11 @@ summary:focus-visible,
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+  .round-btn:active, .tile:active, .btn-main:active, .btn-quiet:active,
+  .seg-btn:active, .tab-btn:active, .chat-fab:active,
+  .btn-primary:active, .btn-secondary:active, .dock-primary:active {
+    transform: none;
   }
 }
 
@@ -587,12 +695,17 @@ summary:focus-visible,
   :root {
     --motion-fast: 0ms;
     --motion-base: 0ms;
+    --motion-press: 0ms;
   }
 }
 
 /* ==========================================================================
-   DARK MODE
+   DARK MODE: DORMANT
    ==========================================================================
+   Off everywhere since 2026-11-05: every page has data-theme="light". These
+   values are still The Inn's and want Bright Dusk ones before this is turned
+   back on. What follows is the note as it stood.
+
    Values marked (guide) are lifted verbatim from the brand guide's Dark
    column. Values marked (derived) are NOT in the guide — the guide's dark
    pass covered the Today screen's vocabulary, and the app uses a few tokens
@@ -748,7 +861,7 @@ summary:focus-visible,
   }
 }
 
-/* FORCED DARK — Settings → Appearance → Dark (2026-09-24).
+/* FORCED DARK — dormant too. It was Settings → Appearance → Dark (2026-09-24).
    A media query can't sit in a selector list, so "the phone is dark" and
    "Dark was chosen" can't share one rule: this is a copy of the block
    above, value for value, applied whatever the phone says. The block above

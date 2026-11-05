@@ -1,33 +1,25 @@
-"""Settings → Appearance: Auto / Light / Dark (2026-09-24).
+"""Light mode only for now (Emily, 2026-11-05), and dark ready to come back.
 
-The choice is saved per device (localStorage) and applied by one small
-script in the <head> of every page that loads theme.css, which puts
-data-theme="light" or "dark" on <html> (or nothing, for Auto)
-before the first paint. What this file pins:
+Settings → Appearance is gone. Every page that loads theme.css carries
+data-theme="light" on its <html>, in the markup, so no script has to run
+before first paint. That one attribute is what switches dark off, because
+every dark rule is guarded by it. What this file pins:
 
-  - every `@media (prefers-color-scheme: dark)` block is followed by a
-    forced-dark twin — the same rules under `[data-theme="dark"]` instead
-    of `:not([data-theme="light"])` — and the two never drift;
-  - every component rule inside a dark block is guarded so a dark phone
-    with Light chosen gets full light (only the token block and the guarded
-    selectors may live in there — no bare selectors, no @keyframes);
-  - the head script is on every themed page, byte-identical, and not on
-    share.html (which stays light for every recipient);
-  - the Settings row exists with the approved words;
-  - the head script itself, run under node: forced choices set the
-    attribute and point the theme-color tags at the forced colour, Match my
-    phone restores both, and a throwing localStorage still renders.
+  - every themed page is light, with one cream theme-color and no leftover
+    Appearance script or control;
+  - every `@media (prefers-color-scheme: dark)` block is still followed by a
+    forced-dark twin, the same rules under `[data-theme="dark"]` instead of
+    `:not([data-theme="light"])`, and the two never drift;
+  - every component rule inside a dark block is guarded, so a dark phone gets
+    full light (only the token block and the guarded selectors may live in
+    there: no bare selectors, no @keyframes).
 """
 from __future__ import annotations
 
-import json
 import re
-import shutil
 from pathlib import Path
 
 import pytest
-
-import nodeharness
 
 REPO = Path(__file__).resolve().parent.parent
 STATIC = REPO / "static"
@@ -44,8 +36,6 @@ DARK_FILES = ["theme.css", "shell.css", "login.html", "inventory.html", "onboard
 MATCH = ':root:not([data-theme="light"])'
 FORCED = ':root[data-theme="dark"]'
 GUARD = ':where(:root:not([data-theme="light"])) '
-
-HEAD_RE = re.compile(r"<script>\s*\(function \(\) \{\s*var root = document\.documentElement;.*?</script>", re.DOTALL)
 
 
 def _read(name: str) -> str:
@@ -132,18 +122,15 @@ def test_dark_rules_are_guarded_against_forced_light(name):
                     assert part.startswith(GUARD), f"{name}: unguarded dark selector {part!r}"
 
 
-@pytest.mark.parametrize("name", THEMED_PAGES)
-def test_the_head_script_is_on_every_themed_page(name):
+@pytest.mark.parametrize("name", THEMED_PAGES + ["share.html"])
+def test_every_page_is_light_in_its_markup(name):
     html = _read(name)
+    assert '<html lang="en" data-theme="light">' in html, name
+    assert "pomona-appearance" not in html and "pomonaAppearance" not in html, name
     head = html[: html.index("</head>")]
-    m = HEAD_RE.search(head)
-    assert m, f"{name} is missing the Appearance head script"
-    assert m.group(0) == HEAD_RE.search(_read("shell.html")).group(0), f"{name}'s copy has drifted from shell.html's"
-    # Before any stylesheet but theme.css can paint over it, and after the
-    # theme-color tags it re-points.
+    assert 'media="(prefers-color-scheme' not in head, f"{name}: one theme-color, not a light and a dark one"
     if '<meta name="theme-color"' in head:
-        assert head.rindex('<meta name="theme-color"') < m.start()
-    assert 'href="/static/theme.css"' in head[: m.start()]
+        assert '<meta name="theme-color" content="#FFFAF3" />' in head, f"{name}: the status bar is cream, no band"
 
 
 def test_every_page_that_loads_theme_css_is_covered():
@@ -151,98 +138,21 @@ def test_every_page_that_loads_theme_css_is_covered():
     assert pages - {"share.html"} == set(THEMED_PAGES)
 
 
-def test_share_page_stays_light_with_no_head_script():
-    share = _read("share.html")
-    assert '<html lang="en" data-theme="light">' in share
-    assert "pomonaAppearance" not in share
-    assert "pomona-appearance" not in share
-
-
-def test_the_settings_row():
+def test_the_appearance_control_is_gone():
     js = _read("shell.js")
-    assert "appearanceRowHtml() +" in js
-    assert "'<span class=\"prefs-row-title\" id=\"prefs-appearance-title\">Appearance</span>'" in js
-    labels = re.findall(r"\{ key: '(phone|light|dark)', label: '([^']+)' \}", js)
-    assert labels == [("phone", "Auto"), ("light", "Light"), ("dark", "Dark")]
-    # The existing segmented control, not a new component.
-    assert '<div class="wk-seg" role="radiogroup"' in js
-    # Every storage touch is wrapped.
-    fn = js[js.index("function appearanceChoice"):js.index("function appearanceRowHtml")]
-    assert fn.count("localStorage") == 3 and fn.count("try {") == 2
+    for dead in ("appearanceRowHtml", "setAppearance", "APPEARANCE_OPTIONS", "pomona-appearance", "pomonaAppearance", "data-appearance"):
+        assert dead not in js, dead
+    assert 'id="prefs-appearance-title"' not in js
 
 
-# ---------- the head script itself, under node ----------
-
-_needs_node = pytest.mark.skipif(shutil.which("node") is None, reason="node runs the head script")
-
-
-def _head_js() -> str:
-    m = HEAD_RE.search(_read("shell.html"))
-    return m.group(0)[len("<script>"):-len("</script>")]
+def test_light_mode_is_stated_where_dark_would_come_back():
+    theme = _read("theme.css")
+    assert "LIGHT MODE ONLY FOR NOW" in theme
+    assert "color-scheme: light;" in theme
 
 
-def _run(saved, then=None, storage_throws=False):
-    harness = """
-    function El(attrs) { this.a = Object.assign({}, attrs); }
-    El.prototype.setAttribute = function (k, v) { this.a[k] = String(v); };
-    El.prototype.getAttribute = function (k) { return k in this.a ? this.a[k] : null; };
-    El.prototype.hasAttribute = function (k) { return k in this.a; };
-    El.prototype.removeAttribute = function (k) { delete this.a[k]; };
-    var html = new El({});
-    var metas = [
-      new El({ name: 'theme-color', content: '#1B3328', media: '(prefers-color-scheme: light)' }),
-      new El({ name: 'theme-color', content: '#22422F', media: '(prefers-color-scheme: dark)' })
-    ];
-    global.document = { documentElement: html, querySelectorAll: function () { return metas; } };
-    var listeners = {};
-    global.window = { addEventListener: function (k, f) { listeners[k] = f; } };
-    var SAVED = %s, THROWS = %s, THEN = %s;
-    Object.defineProperty(global.window, 'localStorage', { get: function () {
-      if (THROWS) throw new Error('SecurityError');
-      return { getItem: function () { return SAVED; } };
-    } });
-    %s
-    function snap() { return { theme: html.getAttribute('data-theme'), metas: metas.map(function (m) { return m.getAttribute('content'); }) }; }
-    var out = { first: snap() };
-    if (THEN !== undefined) { window.pomonaAppearance(THEN); out.then = snap(); }
-    listeners.storage({ key: 'pomona-appearance', newValue: 'dark' });
-    out.storage = snap();
-    console.log(JSON.stringify(out));
-    """ % (json.dumps(saved), json.dumps(storage_throws), "undefined" if then is None else json.dumps(then), _head_js())
-    res = nodeharness.run_node(harness, timeout=30)
-    assert res.returncode == 0, res.stderr
-    return json.loads(res.stdout.strip())
-
-
-@_needs_node
-def test_match_my_phone_changes_nothing():
-    out = _run(None)
-    assert out["first"] == {"theme": None, "metas": ["#1B3328", "#22422F"]}
-
-
-@_needs_node
-def test_forced_dark_and_light_set_the_attribute_and_status_bar():
-    assert _run("dark")["first"] == {"theme": "dark", "metas": ["#22422F", "#22422F"]}
-    assert _run("light")["first"] == {"theme": "light", "metas": ["#1B3328", "#1B3328"]}
-
-
-@_needs_node
-def test_back_to_match_my_phone_restores_both():
-    out = _run("dark", then="phone")
-    assert out["then"] == {"theme": None, "metas": ["#1B3328", "#22422F"]}
-
-
-@_needs_node
-def test_another_tab_choosing_carries_over():
-    assert _run(None)["storage"] == {"theme": "dark", "metas": ["#22422F", "#22422F"]}
-
-
-@_needs_node
-def test_blocked_storage_still_renders_as_match_my_phone():
-    out = _run("dark", storage_throws=True)
-    assert out["first"] == {"theme": None, "metas": ["#1B3328", "#22422F"]}
-
-
-@_needs_node
-def test_junk_in_storage_is_match_my_phone():
-    assert _run("sepia")["first"]["theme"] is None
+def test_the_installed_app_is_cream_too():
+    manifest = _read("manifest.json")
+    assert '"background_color": "#FFFAF3"' in manifest and '"theme_color": "#FFFAF3"' in manifest
+    capacitor = (REPO / "ios-app" / "capacitor.config.json").read_text(encoding="utf-8")
+    assert "#1B3328" not in capacitor and '"style": "LIGHT"' in capacitor

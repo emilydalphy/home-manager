@@ -14,17 +14,16 @@
   usually opens the cached copy instead and this never shows.
 
   No fonts or stylesheets from the network: there isn't one. Colors are
-  copied from static/theme.css (--spruce, --ivory-ink, --apricot,
-  --on-accent-ink); the font stacks are theme.css's own fallbacks.
+  copied from static/theme.css (--cream, --night-ink, --slate,
+  --apricot); the font stacks are theme.css's own fallbacks.
 -->
 <style>
   :root {
-    --spruce: #1B3328;
-    --ivory-ink: #F6EEE1;
-    --ivory-ink-muted: rgba(246, 238, 225, .72);
-    --apricot: #E0915C;
-    --on-accent-ink: #1B3328;
-    --font-display: "Bricolage Grotesque", "Figtree", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    --cream: #FFFAF3;
+    --night-ink: #14264A;
+    --slate: #55607A;
+    --blush: #FBE9D9;
+    --apricot: #FFA45C;
     --font-body: "Figtree", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
   }
   html, body { height: 100%; }
@@ -36,12 +35,8 @@
     justify-content: center;
     box-sizing: border-box;
     padding: calc(24px + env(safe-area-inset-top)) 26px calc(24px + env(safe-area-inset-bottom));
-    background-color: var(--spruce);
-    background-image: radial-gradient(132% 60% at 50% 3%,
-      rgba(224, 145, 92, 0.17) 0%,
-      rgba(224, 145, 92, 0.05) 44%,
-      rgba(27, 51, 40, 0) 74%);
-    color: var(--ivory-ink);
+    background-color: var(--cream);
+    color: var(--night-ink);
     font-family: var(--font-body);
     -webkit-text-size-adjust: 100%;
   }
@@ -50,26 +45,25 @@
   .wrap { max-width: 320px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 18px; }
   .plaque {
     width: 66px; height: 66px; border-radius: 22px;
-    background: rgba(246, 238, 225, 0.05);
-    border: 1.5px solid rgba(169, 196, 176, 0.34);
+    background: var(--blush);
     display: flex; align-items: center; justify-content: center;
     color: var(--apricot);
   }
   h1 {
-    font-family: var(--font-display);
-    font-size: 26px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2;
+    font-family: var(--font-body);
+    font-size: 26px; font-weight: 700; letter-spacing: -0.025em; line-height: 30px;
     margin: 6px 0 0;
   }
-  p { margin: 0; font-size: 17px; line-height: 1.45; color: var(--ivory-ink-muted); }
+  p { margin: 0; font-size: 16px; line-height: 1.45; color: var(--slate); }
   button {
     margin-top: 10px;
     min-height: 50px; min-width: 180px;
-    font-family: var(--font-display); font-weight: 700; font-size: 17px; letter-spacing: -0.02em;
-    background: var(--apricot); color: var(--on-accent-ink);
+    font-family: var(--font-body); font-weight: 700; font-size: 16px;
+    background: var(--apricot); color: var(--night-ink);
     border: none; border-radius: 17px; padding: 15px 22px;
     cursor: pointer;
   }
-  button:focus-visible { outline: 2px solid var(--ivory-ink); outline-offset: 3px; }
+  button:focus-visible { outline: 2px solid var(--night-ink); outline-offset: 3px; }
   button:disabled { opacity: 0.6; }
 </style>
 </head>

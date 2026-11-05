@@ -13,12 +13,9 @@ every colour below is used at normal size. A future palette change that
 takes a value back under the line fails this file rather than reaching a
 household.
 
-Deliberately NOT asserted, all measured on --ground and all short of 4.5:1:
---ink-inactive #948970 (3.21), --ink-done-soft #C6BCA9 (1.75),
---ink-secondary #7C7161 (4.41) and --ink-muted #7E7360 (4.33). They are on
-the ticket for Emily, because forcing every one of the quiet greys to
-4.5:1 collapses five deliberately-distinct values into nearly the same
-colour -- a design decision, not a bug fix.
+Bright Dusk (2026-11-05) folded The Inn's five quiet greys into one, Slate,
+so the gap this file used to carry is closed: every text colour clears 4.5:1
+on every surface it sits on (test_every_bright_dusk_pair_clears_aa).
 """
 import re
 from pathlib import Path
@@ -29,9 +26,10 @@ STATIC = Path(__file__).resolve().parent.parent / "static"
 THEME = (STATIC / "theme.css").read_text()
 
 # The two backdrops every one of these colours is actually drawn on.
-GROUND = "#FBF6EE"   # the app canvas
-SURFACE = "#FFFDF8"  # cards and list containers
-SPRUCE = "#1B3328"   # the sign-in screen and hero panels
+GROUND = "#FFFAF3"   # Warm Cream, the app canvas
+SURFACE = "#FFFFFF"  # tiles and cards
+BLUSH = "#FBE9D9"    # the switcher, round buttons
+SPRUCE = "#1B4392"   # legacy name, Dusk Blue: the sign-in screen until its stage
 
 AA_NORMAL = 4.5
 
@@ -72,10 +70,27 @@ def contrast(foreground: str, background: str) -> float:
 
 
 def token(name: str) -> str:
-    """The value of a custom property as theme.css defines it on :root."""
+    """The value of a custom property as theme.css defines it on :root,
+    following a legacy name to the Bright Dusk value it forwards to."""
     match = re.search(rf"^\s*{re.escape(name)}:\s*([^;]+);", THEME, re.MULTILINE)
     assert match, f"{name} is not defined in theme.css any more"
-    return match.group(1).strip()
+    value = match.group(1).strip()
+    forwarded = re.fullmatch(r"var\((--[\w-]+)\)", value)
+    return token(forwarded.group(1)) if forwarded else value
+
+
+@pytest.mark.parametrize("text, backdrop, floor", [
+    ("--night-ink", GROUND, 14.3), ("--night-ink", SURFACE, 14.9), ("--night-ink", BLUSH, 12.6),
+    ("--night-ink", "#FFA45C", 7.6),
+    ("--slate", GROUND, 6.0), ("--slate", SURFACE, 6.2), ("--slate", BLUSH, 5.3),
+    ("--clay", GROUND, 5.6), ("--clay", SURFACE, 5.9), ("--clay", BLUSH, 4.9),
+    ("--on-dusk", "#1B4392", 8.6), ("--on-dusk-soft", "#1B4392", 6.0), ("--soft-apricot", "#1B4392", 5.8),
+    ("--soft-apricot", "#14264A", 9.3), ("--on-dusk", "#14264A", 13.9),
+])
+def test_every_bright_dusk_pair_clears_aa(text, backdrop, floor):
+    """The pairs DESIGN_SYSTEM.md records, measured against the live tokens."""
+    ratio = contrast(token(text), backdrop)
+    assert ratio >= AA_NORMAL and ratio >= floor, f"{text} on {backdrop} is {ratio:.2f}:1"
 
 
 def test_the_contrast_maths_matches_a_known_reference():
@@ -165,7 +180,7 @@ def test_placeholders_have_a_rule_of_their_own():
     assert "opacity: 1" in rule.group(0)
 
 
-SPRUCE_RAISED = "#24402F"  # .signin-field's own fill, lighter than the page
+SPRUCE_RAISED = "#3F61A3"  # .signin-field's own fill, lighter than the page
 
 # Each translucent-ivory line on the sign-in screen, with the colour it is
 # ACTUALLY drawn on. These differ, and that is the whole point: an earlier

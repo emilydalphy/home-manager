@@ -353,9 +353,10 @@ def test_the_helper_draws_nothing_with_no_key_and_drops_the_shadow_on_dark():
 
 
 def test_the_soft_shadow_is_the_handoffs():
-    css = (ROOT / "static" / "shell.css").read_text(encoding="utf-8")
+    css = (ROOT / "static" / "theme.css").read_text(encoding="utf-8")
     rule = re.search(r"^\.dish-plate \{[^}]*\}", css, re.M).group(0)
-    assert "filter: drop-shadow(0 2px 5px rgba(20, 38, 74, .18))" in rule
+    assert "filter: var(--plate-shadow);" in rule
+    assert "--plate-shadow:   drop-shadow(0 2px 5px rgba(20, 38, 74, .18));" in css
     assert ".dish-plate.on-dark { filter: none; }" in css
 
 

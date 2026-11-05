@@ -127,7 +127,7 @@ def test_the_question_button_takes_its_fill_from_btn_primary_not_a_darker_aprico
     primary = theme[theme.index(".btn-primary, button.btn-primary {"):]
     primary = primary[: primary.index("}")]
     assert "background: var(--apricot);" in primary
-    assert "color: var(--on-accent-ink);" in primary
+    assert "color: var(--night-ink);" in primary
 
 
 def test_no_question_screen_carries_a_second_fill():

@@ -100,7 +100,7 @@ class TestThePillAndTheScreen:
         assert "if (cuisineOpen) closeCuisineScreen();" in _extract("crumbTap")
         # The field's type is 16px+ so a phone doesn't zoom on focus.
         field = PAGE[PAGE.index("  .field {"):PAGE.index("  .field:focus")]
-        assert "font-size: 17px" in field
+        assert "font-size: 16px" in field
 
     def test_the_foot_is_add_what_they_typed_and_never_mind(self):
         assert "var CUISINE_COPY = {" in PAGE

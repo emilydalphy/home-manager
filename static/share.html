@@ -8,8 +8,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>This week's meals</title>
 <link rel="icon" href="/static/icons/icon-192.png" />
-<!-- Exact --spruce (theme.css); a <meta> tag's content attribute cannot reference a CSS var(). Light-only, matching this page's data-theme="light". -->
-<meta name="theme-color" content="#1B3328" />
+<meta name="theme-color" content="#FFFAF3" />
 <meta name="robots" content="noindex, nofollow" />
 <style>
   /*
@@ -112,7 +111,7 @@
     color: var(--ink-muted);
     margin-bottom: 4px;
   }
-  .day-title { font-family: "Bricolage Grotesque", sans-serif; font-weight: 700; font-size: 21px; color: var(--ink); }
+  .day-title { font-family: var(--font-body); font-weight: 700; font-size: 21px; color: var(--ink); }
   .meal-block { text-align: center; margin-bottom: 16px; }
   .meal-block:last-child { margin-bottom: 0; }
   .meal-badge {
@@ -130,7 +129,7 @@
   .meal-badge.lunch { background: var(--celadon); color: var(--on-accent-ink); transform: rotate(2deg); }
   .meal-badge.dinner { background: var(--urgent); color: var(--on-spruce-ink); transform: rotate(-2deg); }
   .meal-badge.snack { background: var(--apricot); color: var(--on-accent-ink); transform: rotate(2deg); }
-  .meal-name { font-family: "Bricolage Grotesque", sans-serif; font-weight: 600; font-size: 14.5px; color: var(--ink); line-height: 1.4; }
+  .meal-name { font-family: var(--font-body); font-weight: 600; font-size: 14.5px; color: var(--ink); line-height: 1.4; }
   .meal-divider { height: 1px; background: var(--urgent); opacity: 0.2; width: 36px; margin: 0 auto 16px; }
 
   .empty, .error { color: var(--ink-secondary); font-size: 0.95rem; padding: 1rem 0; }

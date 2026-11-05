@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8" />
 <link rel="preload" href="/static/fonts/figtree-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
@@ -9,33 +9,7 @@
 <title>Plan the week — Pomona</title>
 <link rel="manifest" href="/static/manifest.json" />
 <link rel="icon" href="/static/icons/icon-192.png" />
-<!-- Exact --spruce light/dark (theme.css); a <meta> tag's content attribute cannot reference a CSS var(). -->
-<meta name="theme-color" content="#1B3328" media="(prefers-color-scheme: light)" />
-<meta name="theme-color" content="#22422F" media="(prefers-color-scheme: dark)" />
-<!-- Settings → Appearance: this device's Light / Dark / Auto, applied before first paint. Same script on every page that loads theme.css (not share.html); tests/test_appearance.py keeps the copies identical. -->
-<script>
-(function () {
-  var root = document.documentElement;
-  function apply(choice) {
-    var t = choice === 'light' || choice === 'dark' ? choice : null;
-    if (t) root.setAttribute('data-theme', t); else root.removeAttribute('data-theme');
-    var metas = document.querySelectorAll('meta[name="theme-color"][media]');
-    var forced = null, i, m;
-    for (i = 0; i < metas.length; i++) {
-      m = metas[i];
-      if (!m.hasAttribute('data-own')) m.setAttribute('data-own', m.getAttribute('content'));
-      if (t && m.getAttribute('media').indexOf(t) !== -1) forced = m.getAttribute('data-own');
-    }
-    for (i = 0; i < metas.length; i++) metas[i].setAttribute('content', forced || metas[i].getAttribute('data-own'));
-  }
-  var saved = null;
-  try { saved = window.localStorage.getItem('pomona-appearance'); } catch (e) { /* private mode */ }
-  apply(saved);
-  window.pomonaAppearance = apply;
-  // A choice made in another tab, or in the shell around an embedded page.
-  window.addEventListener('storage', function (e) { if (e.key === 'pomona-appearance') apply(e.newValue); });
-})();
-</script>
+<meta name="theme-color" content="#FFFAF3" />
 <style>
   /*
     Plan a week — the intake, in the welcome flow's motion (Emily,
@@ -112,22 +86,21 @@
   /* "Plan a week · 2 of 5" — an eyebrow (the only uppercase in the
      system) over the five bars, the ones done in apricot. */
   .eyebrow {
-    font-family: var(--font-body); font-weight: 800; font-size: 10px;
-    letter-spacing: .15em; text-transform: uppercase; color: var(--ink-muted);
+    font-family: var(--font-body); font-weight: 700; font-size: 11px; color: var(--ink-muted);
     margin: 0 0 8px;
   }
   /* The question: onboarding's .q-title, one size down for a five-word
      question that has to fit one line at 390px. */
   h1 {
-    font-family: var(--font-display); font-weight: 700; font-size: 31px;
-    letter-spacing: -0.038em; line-height: 1.05; color: var(--ink);
+    font-family: var(--font-display); font-weight: 700; font-size: 32px;
+    letter-spacing: -0.03em; line-height: 1.05; color: var(--ink);
     margin: 18px 0 0; text-wrap: balance;
   }
   /* The one plain line under the question. Empty means none (S1: the
      screen says its purpose in the title and one line, never a
      paragraph). */
   .step-sub {
-    font-family: var(--font-body); font-size: 17px; font-weight: 500;
+    font-family: var(--font-body); font-size: 16px; font-weight: 500;
     line-height: 1.45; color: var(--ink-secondary); margin: 12px 0 0; text-wrap: pretty;
   }
   .step-sub:empty { display: none; }
@@ -146,9 +119,9 @@
   .chip {
     min-height: 44px; padding: 0 16px;
     display: inline-flex; align-items: center; gap: 6px;
-    font-family: var(--font-body); font-size: 15px; font-weight: 600;
+    font-family: var(--font-body); font-size: 14px; font-weight: 600;
     border-radius: var(--radius-pill);
-    border: 1.5px solid var(--hairline-strong);
+    border: 1.5px solid transparent; box-shadow: var(--shadow-card);
     background: var(--surface); color: var(--ink);
     cursor: pointer;
   }
@@ -179,7 +152,7 @@
   .pre-foot { margin: 0; padding: 0 4px; font-family: var(--font-body); font-size: 14px; line-height: 1.4; color: var(--ink-secondary); }
   /* "First, what's home": the accent half of the title in the one accent
      face (theme.css .accent-line), apricot label ink. */
-  h1 .h1-accent { font-family: var(--font-accent); font-style: italic; font-weight: 400; letter-spacing: -0.01em; color: var(--apricot-label); }
+  h1 .h1-accent { font-family: var(--font-accent); font-weight: 400; color: var(--apricot-label); }
 
   /* ---------- Add a cuisine (boards B4a / B4b) ---------- */
   /* Its own screen in the motion: the field, already focused, and the
@@ -187,7 +160,7 @@
   .field {
     width: 100%; min-height: 54px; padding: 0 16px;
     border-radius: var(--radius-control); border: 1.5px solid var(--apricot);
-    font-family: var(--font-body); font-size: 17px; background: var(--surface); color: var(--ink);
+    font-family: var(--font-body); font-size: 16px; background: var(--surface); color: var(--ink);
   }
   .field:focus { outline: none; border-color: var(--apricot-deep); box-shadow: 0 0 0 3px var(--apricot-rule); }
   .field::placeholder { color: var(--ink-placeholder); }
@@ -198,7 +171,7 @@
 
   /* ---------- Cards ---------- */
   .card {
-    background: var(--surface); border: 1.5px solid var(--hairline);
+    background: var(--surface); border: 1.5px solid transparent; box-shadow: var(--shadow-card);
     border-radius: var(--radius-card); padding: 14px;
   }
   /* A card that is a tap (the away card, the Surprise me card): a 40px
@@ -214,7 +187,7 @@
     display: flex; align-items: center; justify-content: center;
   }
   .card-btn-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-  .card-btn-title { font-size: 15px; font-weight: 600; line-height: 1.3; color: var(--ink); }
+  .card-btn-title { font-size: 14px; font-weight: 600; line-height: 1.3; color: var(--ink); }
   .card-btn-line { font-size: 13px; font-weight: 500; line-height: 1.4; color: var(--ink-secondary); }
   .card-btn-chevron { flex: 0 0 auto; color: var(--ink-secondary); display: flex; }
   /* Surprise me (Emily, 2026-09-21, board B2): the first thing under the
@@ -258,12 +231,12 @@
     flex: 1 1 0; min-width: 0; min-height: 52px;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
     padding: 8px 0 7px; border-radius: var(--radius-tile);
-    background: var(--surface); border: 1.5px solid var(--hairline);
+    background: var(--surface); border: 1.5px solid transparent; box-shadow: var(--shadow-card);
     color: var(--ink); font-family: var(--font-body); text-decoration: none;
   }
   button.dt { cursor: pointer; min-width: 44px; }
   button.dt:hover { border-color: var(--ink-strong); }
-  .dt .dt-dow { font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-muted); }
+  .dt .dt-dow { font-size: 11px; font-weight: 700; color: var(--ink-muted); }
   .dt .dt-num { font-family: var(--font-display); font-weight: 700; font-size: 16px; line-height: 1.05; }
   /* "Which days?" (Emily, 2026-09-22): the first and last day are
      celadon — settled, chosen — and the days between the lighter
@@ -292,22 +265,21 @@
      plan — DATA_MODEL.md's soft lock and DECISIONS.md #4, said once, on
      the first screen about the days. */
   .joined {
-    background: var(--celadon-tint); border: 1.5px solid var(--celadon-edge);
+    background: var(--celadon-tint); border: 1.5px solid transparent;
     border-radius: var(--radius-control);
-    padding: 11px 13px; font-size: 13.5px; font-weight: 500; line-height: 1.45;
+    padding: 11px 13px; font-size: 13px; font-weight: 500; line-height: 1.45;
     color: var(--ink-on-celadon);
   }
   .joined[hidden] { display: none; }
   /* "Already drafted" (re-plan Option B): the notice's own label, then the
      sentence — the mockup's .notice. */
   .joined .joined-label {
-    display: block; margin-bottom: 2px; font-size: 10px; font-weight: 800;
-    letter-spacing: .13em; text-transform: uppercase; color: var(--celadon-label);
+    display: block; margin-bottom: 2px; font-size: 11px; font-weight: 700; color: var(--celadon-label);
   }
 
   .ack {
     color: var(--ack-green);
-    font-size: 0.85rem;
+    font-size: 13px;
     font-weight: 700;
     line-height: 1.45;
     margin-top: 8px;
@@ -324,7 +296,7 @@
   /* What the app already knows about this day, so the household isn't
      re-answering something it has been told. Grey on purpose: it's context,
      not an answer. */
-  .day-hint { font-size: 0.82rem; color: var(--ink-secondary); font-style: italic; margin: 0; }
+  .day-hint { font-size: 13px; color: var(--ink-secondary); margin: 0; }
   /* "Nobody home all day", under the question and above the rows. Its own
      row rather than a fourth pill on somebody's line, and flush left
      rather than in the pills' column (the rows indent by 52px), because it
@@ -343,7 +315,7 @@
     min-width: 44px; height: 44px; padding: 0 8px; flex: 0 0 auto;
     border-radius: var(--radius-pill); border: 1.5px solid var(--hairline-deep);
     background: var(--surface); display: inline-flex; align-items: center; justify-content: center;
-    font-family: var(--font-display); font-weight: 700; font-size: 16px; letter-spacing: -0.01em;
+    font-family: var(--font-display); font-weight: 700; font-size: 16px;
     color: var(--ink);
   }
   .who-avatar.add { border-style: dashed; color: var(--ink-secondary); }
@@ -355,7 +327,7 @@
     min-height: 44px; padding: 0 10px;
     display: inline-flex; align-items: center; white-space: nowrap;
     font-family: var(--font-body); font-size: 13px; font-weight: 600;
-    border-radius: var(--radius-pill); border: 1.5px solid var(--sand);
+    border-radius: var(--radius-pill); border: 1.5px solid transparent;
     background: var(--sand); color: var(--ink); cursor: pointer;
   }
   .pill:hover { border-color: var(--ink-strong); }
@@ -377,18 +349,17 @@
   .stepper { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
   .stepper button {
     width: 44px; height: 44px; flex-shrink: 0;
-    border-radius: var(--radius-control); border: 1.5px solid var(--hairline-strong);
+    border-radius: var(--radius-control); border: 1.5px solid transparent; box-shadow: var(--shadow-card);
     background: var(--surface); color: var(--ink-strong);
-    font-size: 1.1rem; font-family: var(--font-body); line-height: 1; cursor: pointer;
+    font-size: 16px; font-family: var(--font-body); line-height: 1; cursor: pointer;
   }
   .stepper button:hover:not(:disabled) { background: var(--celadon-tint); }
   .stepper button:disabled { opacity: .35; cursor: default; }
-  .stepper output { min-width: 28px; text-align: center; font-weight: 700; font-size: 1rem; color: var(--ink-strong); }
+  .stepper output { min-width: 28px; text-align: center; font-weight: 700; font-size: 16px; color: var(--ink-strong); }
   /* The dinner line under a hairline: Short on time · Got time · Leftovers. */
-  .sheet-section { padding-top: 12px; border-top: 1.5px solid var(--hairline); display: flex; flex-direction: column; gap: 8px; }
+  .sheet-section { padding-top: 12px; border-top: 1px solid var(--hairline); display: flex; flex-direction: column; gap: 8px; }
   .day-section-label {
-    font-size: 10px; font-weight: 800; letter-spacing: 0.13em;
-    text-transform: uppercase; color: var(--ink-muted); margin: 0;
+    font-size: 11px; font-weight: 700; color: var(--ink-muted); margin: 0;
   }
   /* Read by screen readers, drawn for nobody: the full name beside an
      initial that is only ever an abbreviation. */
@@ -398,9 +369,9 @@
   .tag {
     padding: 8px 13px; min-height: 44px;
     display: inline-flex; align-items: center;
-    font-family: var(--font-body); font-size: 0.8rem; font-weight: 500;
+    font-family: var(--font-body); font-size: 13px; font-weight: 500;
     border-radius: var(--radius-pill);
-    border: 1px solid var(--hairline);
+    border: 1.5px solid transparent; box-shadow: var(--shadow-card);
     background: var(--surface-raised); color: var(--ink);
     cursor: pointer;
   }
@@ -414,21 +385,21 @@
      pills as the night tags, so an answer here reads like one there. ---- */
   .holiday {
     margin: 0 0 12px; padding: 13px 14px;
-    background: var(--surface); border: 1.5px solid var(--hairline-strong);
+    background: var(--surface); border: 1.5px solid transparent; box-shadow: var(--shadow-card);
     border-radius: var(--radius-card);
   }
   .holiday-eyebrow {
-    font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+    font-size: 11px; font-weight: 700;
     color: var(--ink-secondary); margin-bottom: 3px;
   }
-  .holiday-q { font-family: var(--font-display); font-weight: 700; font-size: 0.98rem; color: var(--ink-strong); margin: 0 0 9px; }
+  .holiday-q { font-family: var(--font-display); font-weight: 700; font-size: 16px; color: var(--ink-strong); margin: 0 0 9px; }
   .holiday .ack { margin-top: 8px; }
   .holiday .holiday-said:empty { display: none; }
   /* A dish they're bringing that has something someone can't have — "Has
      peanut, which Theo can't have" (Emily, 2026-10-31: warn, don't block).
      The app's one allergy-line style (.day-node-allergy): --warn-ink at
      600, not --urgent — the dish stays, the line only says so. */
-  .holiday-allergy { margin-top: 8px; color: var(--warn-ink); font-size: 0.85rem; font-weight: 600; line-height: 1.45; }
+  .holiday-allergy { margin-top: 8px; color: var(--warn-ink); font-size: 13px; font-weight: 600; line-height: 1.45; }
   .holiday-allergy:empty { display: none; }
   .holiday-dish, .holiday-host { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
   .holiday-host { flex-wrap: wrap; }
@@ -436,8 +407,8 @@
   .holiday-host input[type="text"] { flex: 1 1 160px; }
   .holiday-dish input, .holiday-host input {
     flex: 1 1 auto; min-width: 0; min-height: 44px; padding: 0 12px;
-    border-radius: var(--radius-control); border: 1px solid var(--hairline);
-    font-family: var(--font-body); font-size: 0.9rem;
+    border-radius: var(--radius-control); border: 1.5px solid transparent; box-shadow: var(--shadow-card);
+    font-family: var(--font-body); font-size: 16px;
     background: var(--surface-raised); color: var(--ink);
   }
   .holiday-dish input:focus, .holiday-host input:focus { border-color: var(--ink-strong); outline: none; }
@@ -445,7 +416,7 @@
     min-height: 44px; padding: 0 14px; flex: 0 0 auto;
     border-radius: var(--radius-control); border: 1px solid var(--ink-strong);
     background: var(--surface-raised); color: var(--ink-strong);
-    font-family: var(--font-body); font-size: 0.85rem; font-weight: 600; cursor: pointer;
+    font-family: var(--font-body); font-size: 13px; font-weight: 600; cursor: pointer;
   }
   .holiday-dish button:disabled, .holiday-host button:disabled { opacity: .45; cursor: default; }
 
@@ -457,25 +428,24 @@
   .lunch-count {
     display: flex; align-items: center; justify-content: space-between; gap: 12px;
     min-height: 60px; padding: 8px 8px 8px 14px;
-    background: var(--surface); border: 1.5px solid var(--hairline); border-radius: var(--radius-control);
+    background: var(--surface); border: 1.5px solid transparent; box-shadow: var(--shadow-card); border-radius: var(--radius-control);
   }
   .lunch-count-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-  .lunch-count-label { font-size: 15px; font-weight: 600; line-height: 1.3; color: var(--ink); }
+  .lunch-count-label { font-size: 14px; font-weight: 600; line-height: 1.3; color: var(--ink); }
   .lunch-count-sub { font-size: 13px; font-weight: 500; line-height: 1.35; color: var(--ink-secondary); }
   .lunch-week { display: flex; flex-direction: column; padding: 2px 14px; }
   .lunch-day {
     display: flex; align-items: center; gap: 12px; width: 100%; min-height: 44px;
-    padding: 6px 0; border: 0; border-top: 1.5px solid var(--hairline); background: none;
+    padding: 6px 0; border: 0; border-top: 1px solid var(--hairline); background: none;
     font-family: var(--font-body); text-align: left; color: var(--ink); cursor: pointer;
   }
   .lunch-day:first-child { border-top: 0; }
   .lunch-day:hover .lunch-day-what { color: var(--ink-strong); }
   .lunch-day:focus-visible { outline: 2px solid var(--apricot); outline-offset: 2px; }
   .lunch-day-dow {
-    flex: 0 0 52px; font-size: 10px; font-weight: 800; letter-spacing: .13em;
-    text-transform: uppercase; color: var(--ink-muted);
+    flex: 0 0 52px; font-size: 11px; font-weight: 700; color: var(--ink-muted);
   }
-  .lunch-day-what { flex: 1 1 auto; font-size: 15px; font-weight: 600; line-height: 1.35; }
+  .lunch-day-what { flex: 1 1 auto; font-size: 14px; font-weight: 600; line-height: 1.35; }
   .lunch-day-why { display: block; font-size: 13px; font-weight: 500; color: var(--ink-secondary); }
   .lunch-note { font-size: 13px; font-weight: 500; color: var(--ink-secondary); margin: 8px 0 0; }
 
@@ -488,18 +458,17 @@
   .same-rows { display: flex; flex-direction: column; padding: 2px 14px; overflow: hidden; }
   .same-row {
     display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px;
-    padding: 10px 0; border: 0; border-top: 1.5px solid var(--hairline); background: none;
+    padding: 10px 0; border: 0; border-top: 1px solid var(--hairline); background: none;
     font-family: var(--font-body); text-align: left; color: var(--ink); cursor: pointer;
   }
   .same-row:first-child { border-top: 0; }
   .same-row:focus-visible { outline: 2px solid var(--apricot); outline-offset: -2px; }
   .same-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
   .same-label {
-    font-size: 10px; font-weight: 800; letter-spacing: .13em;
-    text-transform: uppercase; color: var(--ink-muted);
+    font-size: 11px; font-weight: 700; color: var(--ink-muted);
   }
   .same-value {
-    font-size: 15px; font-weight: 600; line-height: 1.35; white-space: pre-line; overflow-wrap: anywhere;
+    font-size: 14px; font-weight: 600; line-height: 1.35; white-space: pre-line; overflow-wrap: anywhere;
     display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
   }
   .same-change { flex: 0 0 auto; font-size: 14px; font-weight: 700; color: var(--apricot-label); }
@@ -529,10 +498,10 @@
      the same seven-column grid as onboarding's .uw-days. */
   .uw-dates {
     display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px;
-    font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+    font-size: 11px; font-weight: 700;
     color: var(--ink-muted); text-align: center; margin: 0 0 -4px;
   }
-  .uw-dates b { display: block; font-size: 13px; letter-spacing: 0; color: var(--ink); }
+  .uw-dates b { display: block; font-size: 13px; color: var(--ink); }
   .replan-group-label { margin: 8px 0 0; }
   /* "Should breakfasts change each week?" on Breakfast is gone, not greyed, for a week with no breakfast. */
   #replan-breakfast-weeks[hidden], #replan-breakfast-weeks-label[hidden] { display: none; }
@@ -547,13 +516,13 @@
   .bring-rows { display: flex; flex-direction: column; padding: 2px 14px; }
   .bring-row {
     display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px;
-    padding: 10px 0; border: 0; border-top: 1.5px solid var(--hairline); background: none;
+    padding: 10px 0; border: 0; border-top: 1px solid var(--hairline); background: none;
     font-family: var(--font-body); text-align: left; color: var(--ink); cursor: pointer;
   }
   .bring-row:first-child { border-top: 0; }
   .bring-row:focus-visible { outline: 2px solid var(--apricot); outline-offset: -2px; }
   .bring-box {
-    width: 26px; height: 26px; flex: 0 0 auto; border-radius: 9px;
+    width: 26px; height: 26px; flex: 0 0 auto; border-radius: 13px;
     border: 1.5px solid var(--hairline-deep); background: var(--ground);
     display: inline-flex; align-items: center; justify-content: center; color: var(--on-accent-ink);
   }
@@ -561,7 +530,7 @@
   .bring-row[aria-checked="true"] .bring-box { background: var(--celadon); border-color: var(--celadon); }
   .bring-row[aria-checked="true"] .bring-box svg { visibility: visible; }
   .bring-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-  .bring-name { font-size: 15px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
+  .bring-name { font-size: 14px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
   .bring-was { font-size: 13px; font-weight: 500; color: var(--ink-secondary); }
 
   /* The typed answer (step 5). 16px so a phone doesn't zoom the page on
@@ -573,7 +542,7 @@
   textarea {
     width: 100%; min-height: 120px; resize: vertical;
     padding: 12px 16px; border-radius: var(--radius-control);
-    border: 1.5px solid var(--hairline-strong);
+    border: 1.5px solid transparent; box-shadow: var(--shadow-card);
     font-family: var(--font-body); font-size: 16px; line-height: 1.5;
     background: var(--surface); color: var(--ink);
     -webkit-user-select: text; user-select: text; -webkit-touch-callout: default;
@@ -612,7 +581,7 @@
      .q-next wears it — 54px, the display face, --shadow-action. */
   .cta {
     width: 100%; min-height: 54px;
-    font-family: var(--font-display); font-weight: 700; font-size: 17px; letter-spacing: -0.02em;
+    font-family: var(--font-display); font-weight: 700; font-size: 16px;
     background: var(--apricot); color: var(--on-accent-ink);
     border: none; padding: 0 22px; border-radius: var(--radius-action);
     box-shadow: var(--shadow-action); cursor: pointer;
@@ -626,25 +595,25 @@
     display: flex; align-items: center; justify-content: center;
     min-height: 44px; margin: 0; width: 100%; padding: 0;
     background: none; border: 0; cursor: pointer;
-    font-family: var(--font-accent); font-style: italic; font-weight: 400;
-    font-size: 17px; color: var(--ink-secondary);
+    font-family: var(--font-accent); font-weight: 400;
+    font-size: 16px; color: var(--ink-secondary);
   }
   .skip:hover { color: var(--ink-strong); }
   .skip[hidden] { display: none; }
 
-  .loading { color: var(--ink-secondary); font-size: 0.92rem; padding: 40px 0; text-align: center; }
+  .loading { color: var(--ink-secondary); font-size: 14px; padding: 40px 0; text-align: center; }
   /* The real-failure state (server unreachable, not "no week to plan" —
      that case is resolved before this ever shows, see resolveWeekStart).
      A dead end needs two doors, not one line of text: a retry for a
      failure that might just be the network, and a way out for a household
      that would rather not wait on it. */
   .failed {
-    color: var(--ink-secondary); font-size: 0.92rem; padding: 40px 20px 0;
+    color: var(--ink-secondary); font-size: 14px; padding: 40px 20px 0;
     text-align: center; display: flex; flex-direction: column; align-items: center; gap: 14px;
   }
   .failed .crumb { margin: 0; }
   .failed-retry {
-    font-family: var(--font-body); font-weight: 700; font-size: 0.9rem;
+    font-family: var(--font-body); font-weight: 700; font-size: 14px;
     background: var(--apricot); color: var(--on-accent-ink); border: none;
     padding: 10px 22px; min-height: 44px; border-radius: var(--radius-control); cursor: pointer;
   }
@@ -664,19 +633,18 @@
   .draft-mark { color: var(--apricot-light); display: flex; }
   .draft-mark svg { width: 56px; height: 56px; }
   .draft-eyebrow {
-    font-family: var(--font-body); font-weight: 800; font-size: 10px;
-    letter-spacing: 0.15em; text-transform: uppercase; color: var(--apricot-light); margin: 0;
+    font-family: var(--font-body); font-weight: 700; font-size: 11px; color: var(--apricot-light); margin: 0;
   }
   .draft-title {
     font-family: var(--font-display); font-weight: 700; font-size: 32px;
-    letter-spacing: -0.038em; line-height: 1.05; color: var(--ivory-ink); margin: 0; text-wrap: balance;
+    letter-spacing: -0.03em; line-height: 1.05; color: var(--ivory-ink); margin: 0; text-wrap: balance;
   }
   .draft-status {
     display: flex; align-items: center; gap: 10px;
-    font-family: var(--font-body); font-weight: 500; font-size: 15px; color: var(--ivory-ink-muted); margin: 0;
+    font-family: var(--font-body); font-weight: 500; font-size: 14px; color: var(--ivory-ink-muted); margin: 0;
   }
   .draft-spinner {
-    flex: none; width: 16px; height: 16px; border-radius: 999px;
+    flex: none; width: 16px; height: 16px; border-radius: 26px;
     border: 2.5px solid var(--apricot-light); border-right-color: transparent;
     animation: draft-spin .8s linear infinite;
   }
@@ -691,22 +659,21 @@
   }
   .using[hidden] { display: none; }
   .using-eyebrow {
-    font-family: var(--font-body); font-weight: 800; font-size: 10px;
-    letter-spacing: 0.15em; text-transform: uppercase; color: var(--apricot-light); margin: 0 0 4px;
+    font-family: var(--font-body); font-weight: 700; font-size: 11px; color: var(--apricot-light); margin: 0 0 4px;
   }
   .using-rows { display: flex; flex-direction: column; }
   .using-row { display: flex; gap: 12px; align-items: center; padding: 11px 0; border-top: 1.5px solid var(--apricot-rule); }
   .using-icon { color: var(--apricot-light); flex: none; display: flex; }
   .using-icon svg { width: 20px; height: 20px; }
-  .using-text { font-family: var(--font-body); font-size: 15px; font-weight: 500; line-height: 1.4; color: var(--ivory-ink); margin: 0; min-width: 0; }
+  .using-text { font-family: var(--font-body); font-size: 14px; font-weight: 500; line-height: 1.4; color: var(--ivory-ink); margin: 0; min-width: 0; }
   /* The typed note: two lines at most, then an ellipsis (board D3). */
   .using-text.using-note {
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
     overflow: hidden; overflow-wrap: anywhere;
   }
   .draft-leave-note {
-    font-family: var(--font-accent); font-style: italic; font-weight: 400;
-    font-size: 17px; line-height: 1.4; color: var(--ivory-ink-muted); text-align: center; margin: 0;
+    font-family: var(--font-accent); font-weight: 400;
+    font-size: 16px; line-height: 1.4; color: var(--ivory-ink-muted); text-align: center; margin: 0;
   }
   @media (prefers-reduced-motion: reduce) {
     .draft-status-text.line-in { animation: none; }
@@ -738,39 +705,38 @@
   }
   .sheet-head { display: flex; align-items: center; gap: 12px; }
   .sheet-title {
-    flex: 1 1 auto; font-family: var(--font-display); font-size: 22px;
+    flex: 1 1 auto; font-family: var(--font-display); font-size: 26px;
     font-weight: 700; letter-spacing: -0.025em; color: var(--ink);
   }
   .sheet-close {
     width: 44px; height: 44px; flex: 0 0 auto; border-radius: var(--radius-chip);
-    background: var(--surface); border: 1.5px solid var(--hairline);
+    background: var(--surface); border: 1.5px solid transparent; box-shadow: var(--shadow-card);
     display: flex; align-items: center; justify-content: center;
     color: var(--ink-secondary); cursor: pointer; padding: 0;
   }
-  .sheet-lede { font-size: 13.5px; font-weight: 500; line-height: 1.5; color: var(--ink-secondary); }
+  .sheet-lede { font-size: 13px; font-weight: 500; line-height: 1.5; color: var(--ink-secondary); }
   .field-label {
-    font-size: 10px; font-weight: 800; letter-spacing: 0.14em;
-    text-transform: uppercase; color: var(--apricot-label);
+    font-size: 16px; font-weight: 700; color: var(--apricot-label);
   }
   .field-group { display: flex; flex-direction: column; gap: 10px; }
   .opt-row { display: flex; gap: 5px; }
   .opt-row.wide { gap: 6px; }
   .opt {
     flex: 1 1 0; min-height: 44px; padding: 0 6px; border-radius: var(--radius-send);
-    border: 1.5px solid var(--hairline); background: var(--surface);
+    border: 1.5px solid transparent; box-shadow: var(--shadow-card); background: var(--surface);
     display: flex; align-items: center; justify-content: center; text-align: center;
-    font-family: var(--font-body); font-size: 12px; font-weight: 700;
+    font-family: var(--font-body); font-size: 13px; font-weight: 700;
     color: var(--ink-secondary); cursor: pointer;
   }
-  .opt.wide-label { font-size: 12.5px; font-weight: 600; }
-  .opt.on { background: var(--spruce); border-color: var(--spruce); color: var(--ivory-ink); font-weight: 800; }
+  .opt.wide-label { font-size: 13px; font-weight: 600; }
+  .opt.on { background: var(--spruce); border-color: var(--spruce); color: var(--ivory-ink); font-weight: 700; }
   /* Same two notes as .pill's rule above: :focus-visible so a tap leaves
      nothing behind, and outranked by theme.css's !important copy. */
   .opt:focus-visible { outline: 2px solid var(--apricot); outline-offset: 2px; }
   .who-row { display: flex; flex-wrap: wrap; gap: 8px; }
   .who-opt {
     min-height: 44px; padding: 0 15px; border-radius: var(--radius-pill);
-    border: 1.5px solid var(--hairline); background: var(--surface);
+    border: 1.5px solid transparent; box-shadow: var(--shadow-card); background: var(--surface);
     display: inline-flex; align-items: center; font-family: var(--font-body);
     font-size: 13px; font-weight: 600; color: var(--ink); cursor: pointer;
   }
@@ -790,14 +756,14 @@
   .covers-text { font-size: 13px; font-weight: 700; line-height: 1.45; color: var(--ink-on-celadon); }
   .sheet-add {
     width: 100%; min-height: 44px; display: flex; align-items: center; justify-content: center;
-    gap: 8px; border-radius: var(--radius-control); border: 1.5px solid var(--hairline-strong);
-    background: transparent; font-family: var(--font-body); font-size: 13.5px;
+    gap: 8px; border-radius: var(--radius-control); border: 1.5px solid transparent;
+    background: var(--blush); font-family: var(--font-body); font-size: 13px;
     font-weight: 700; color: var(--ink-strong); cursor: pointer;
   }
   .sheet-actions { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
   .sheet-cancel {
     min-height: 44px; background: none; border: none; font-family: var(--font-body);
-    font-size: 13.5px; font-weight: 600; color: var(--ink-secondary); cursor: pointer;
+    font-size: 13px; font-weight: 600; color: var(--ink-secondary); cursor: pointer;
   }
   [hidden] { display: none !important; }
 /* The shell's .toast (shell.css), copied here for the same reason .crumb
@@ -813,7 +779,7 @@
   transform: translateX(-50%);
   background: var(--toast-bg);
   color: var(--toast-ink);
-  border-radius: 14px;
+  border-radius: 13px;
   padding: 14px 17px;
   font-family: var(--font-body);
   font-weight: 600;

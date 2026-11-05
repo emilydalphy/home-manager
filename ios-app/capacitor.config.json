@@ -2,7 +2,7 @@
   "appId": "com.heypomona.app",
   "appName": "Pomona",
   "webDir": "www",
-  "backgroundColor": "#1B3328",
+  "backgroundColor": "#FFFAF3",
   "server": {
     "url": "https://app.heypomona.com",
     "errorPath": "offline.html"
@@ -13,19 +13,19 @@
     "limitsNavigationsToAppBoundDomains": true,
     "contentInset": "never",
     "preferredContentMode": "mobile",
-    "backgroundColor": "#1B3328"
+    "backgroundColor": "#FFFAF3"
   },
   "plugins": {
     "SplashScreen": {
       "launchShowDuration": 800,
       "launchAutoHide": true,
-      "backgroundColor": "#1B3328",
+      "backgroundColor": "#FFFAF3",
       "showSpinner": false
     },
     "StatusBar": {
       "overlaysWebView": false,
-      "style": "DARK",
-      "backgroundColor": "#1B3328"
+      "style": "LIGHT",
+      "backgroundColor": "#FFFAF3"
     },
     "PushNotifications": {
       "presentationOptions": [

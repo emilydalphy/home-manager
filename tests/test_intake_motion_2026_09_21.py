@@ -138,7 +138,7 @@ class TestOneQuestionAScreen:
         assert 'class="cta" id="cta"' in foot and 'class="skip" id="skip"' in foot
         assert foot.index('id="cta"') < foot.index('id="skip"'), "the quiet line sits UNDER Continue"
         skip_css = PAGE[PAGE.index("  .skip {"):PAGE.index("  .skip:hover")]
-        assert "font-family: var(--font-accent); font-style: italic;" in skip_css
+        assert "font-family: var(--font-accent);" in skip_css and "italic" not in skip_css
         assert "min-height: 44px" in skip_css
         # The crumb reads "‹ Plan" only on the first step.
         # UPDATED 2026-10-19 (re-plan Option B): "‹ Plan" on the page,
@@ -150,7 +150,7 @@ class TestOneQuestionAScreen:
         body = PAGE[PAGE.index("  body {"):PAGE.index("  body.drafting")]
         assert "background: var(--ground);" in body
         chip = PAGE[PAGE.index("  .chip {"):PAGE.index("  .chip:hover")]
-        assert "background: var(--surface);" in chip and "border: 1.5px solid var(--hairline-strong);" in chip
+        assert "background: var(--surface);" in chip and "box-shadow: var(--shadow-card);" in chip
         assert "min-height: 44px" in chip
         # The only spruce ground is the drafting screen.
         assert PAGE.count("background: var(--spruce); padding-bottom: 40px; }") == 1

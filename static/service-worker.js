@@ -58,7 +58,10 @@
 // now sees non-GET requests too (the sign-in form's POST /login is a
 // navigation): those go straight to the network, untouched — the Cache API
 // refuses to store a POST, and replaying one from cache would be wrong.
-const CACHE_NAME = "pomona-shell-v8";
+//
+// v8 -> v9 (Bright Dusk, 2026-11-05): one font now, Figtree. Two precached
+// font files are gone, and a stale list would fail the whole install.
+const CACHE_NAME = "pomona-shell-v9";
 // Where an offline navigation lands when its own URL was never cached.
 // Every entry serves shell.html; the order only decides which copy is tried
 // first.
@@ -67,11 +70,9 @@ const SHELL_ASSETS = [
   "/static/manifest.json",
   "/static/icons/icon-192.png",
   "/static/icons/icon-512.png",
-  // Self-hosted fonts, so the first offline open has its typefaces.
+  // Self-hosted fonts, so the first offline open has its typeface.
   "/static/fonts/fonts.css",
-  "/static/fonts/bricolage-grotesque-normal-latin.woff2",
   "/static/fonts/figtree-normal-latin.woff2",
-  "/static/fonts/newsreader-italic-latin.woff2",
 ];
 
 self.addEventListener("install", (event) => {

@@ -449,7 +449,7 @@ def test_the_some_of_you_cell_reads_light_beside_the_dark_everyone_cell_in_dark_
     assert base < SHELL_CSS.index(':where(:root:not([data-theme="light"])) .uw-day.is-some')
     # The shared token itself is untouched.
     theme = (_HERE.parent / "static" / "theme.css").read_text()
-    assert "--celadon-tint:   #1C3B2C;" in theme and "--celadon-tint:   #E2EDE5;" in theme
+    assert "--celadon-tint:   #1C3B2C;" in theme and "--celadon-tint:    var(--blush);" in theme
 
 
 def _day_keys(var_name: str) -> list[str]:
