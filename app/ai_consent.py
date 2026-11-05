@@ -27,7 +27,7 @@ Three states, stored in `households.ai_consent`:
 
   ''          never asked — the screen shows on the next visit
   'granted'   yes; AI calls go ahead
-  'declined'  "Not now", or turned off in Preferences; AI calls are refused
+  'declined'  "Not now", or turned off in Settings; AI calls are refused
               with REFUSAL_LINE, and the screen is not pushed again — the
               Preferences row is the way back
 
@@ -63,7 +63,7 @@ CONSENT_VERSION = "2026-09-27"
 # error frame): calm, plain, and the way out in the same breath.
 REFUSAL_LINE = (
     "I need your okay before I share your household's details with Claude. "
-    "You can give it in Preferences, under Sharing with Claude."
+    "You can give it in Settings, under Sharing with Claude."
 )
 
 

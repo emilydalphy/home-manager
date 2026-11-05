@@ -541,7 +541,7 @@ def test_the_tips_sheet_ends_with_the_help_card_not_an_email_address():
 
 def test_the_preferences_sheet_carries_the_way_back_to_the_tips():
     assert 'data-tips="open"' in SHELL_JS
-    assert "<span class=\"prefs-row-title\">Helpful tips</span>" in SHELL_JS
+    assert "name: 'How to ask me for things', attrs: ' data-tips=\"open\"'" in SHELL_JS
     assert "How to ask me for things" in SHELL_JS
 
 

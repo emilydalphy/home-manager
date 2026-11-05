@@ -619,7 +619,7 @@ def test_preferences_ends_with_delete_your_household():
     body = js[start:js.index("\n  }\n", start)]
     assert 'data-prefs="leave"' in body
     assert body.index('data-prefs="signout"') < body.index('data-prefs="leave"')
-    assert "Delete your household</span></button>" in body
+    assert "name: 'Delete your household', nameCls: 'is-clay'" in body
     html = (REPO / "static" / "shell.html").read_text(encoding="utf-8")
     assert 'id="leave-dialog"' in html and 'data-motion="dialog"' in html
     css = (REPO / "static" / "shell.css").read_text(encoding="utf-8")

@@ -326,8 +326,9 @@ console.log(JSON.stringify({
   popWithNothingLeft: popSheetLevel()
 }));
 """))
-    # On the section: Settings is out of the way, one level is recorded.
-    assert out["onSection"]["open"] == {"prefs": False, "kit": True, "uw": False,
+    # On the section: Settings stays underneath (it's a whole screen, and
+    # nothing should flash the tab through it), one level is recorded.
+    assert out["onSection"]["open"] == {"prefs": True, "kit": True, "uw": False,
                                         "recipes": False, "tips": False}
     assert out["onSection"]["depth"] == 1
     # Its x lands on SETTINGS, scrolled where it was — not on the tab.
@@ -433,7 +434,7 @@ console.log(JSON.stringify({ deepest: deepest, middle: middle, outer: outer }));
     assert out["deepest"]["open"]["uw"] is True and out["deepest"]["open"]["kit"] is True
     # One level: the usual-week sheet goes, What we know is still there.
     assert out["middle"]["depth"] == 1
-    assert out["middle"]["open"] == {"prefs": False, "kit": True, "uw": False,
+    assert out["middle"]["open"] == {"prefs": True, "kit": True, "uw": False,
                                     "recipes": False, "tips": False}
     # And the next one lands on Settings.
     assert out["outer"]["depth"] == 0
@@ -522,8 +523,8 @@ openPrefsSheet();
 openSection('Your rhythm', 'prefs');
 console.log(JSON.stringify(snap()));
 """))
-    assert out["crumb"] == {"text": "Preferences › Your rhythm", "hidden": False}
-    assert out["back"] == {"label": "Back to Preferences", "hidden": False}
+    assert out["crumb"] == {"text": "Settings › Your rhythm", "hidden": False}
+    assert out["back"] == {"label": "Back to Settings", "hidden": False}
 
 
 @_needs_node
@@ -774,7 +775,7 @@ console.log(JSON.stringify({
   after: { prefs: open.prefs, who: whoUp, depth: sheetLevelDepth(), scroll: PREFS_ROWS.scrollTop }
 }));
 """))
-    assert out["up"] == {"prefs": False, "who": True, "depth": 1}
+    assert out["up"] == {"prefs": True, "who": True, "depth": 1}
     assert out["after"] == {"prefs": True, "who": False, "depth": 0, "scroll": 60}
 
 
@@ -806,7 +807,7 @@ console.log(JSON.stringify({ afterWho: afterWho, afterCancel: { depth: sheetLeve
     assert out["afterWho"]["depth"] == 1, (
         "the who screen popped a level it was never standing on"
     )
-    assert out["afterWho"]["label"] == "Preferences"
+    assert out["afterWho"]["label"] == "Settings"
     assert out["afterWho"]["prefs"] is True, "Settings stayed under the dialog, as it should"
     assert out["afterCancel"]["depth"] == 0
 
@@ -831,7 +832,7 @@ console.log(JSON.stringify({ before: before, after: sheetLevelDepth(), prefs: op
         "Helpful tips closed a level it never pushed — the section's own x "
         "would then have nothing left to land on"
     )
-    assert out["prefs"] is False
+    assert out["prefs"] is True
 
 
 def test_the_who_switch_row_no_longer_closes_settings_outright():

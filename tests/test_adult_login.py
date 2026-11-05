@@ -503,9 +503,9 @@ def test_the_screen_copy_is_the_approved_wording():
 
 def test_the_preferences_row_offers_a_switch_only_when_there_is_a_choice():
     _in("if (!shellWho.member || shellWho.adults.length < 2) return '';", SHELL_JS, "shell.js")
-    _in("You’re ' + escapeHtml(shellWho.member.name)", SHELL_JS, "shell.js")
+    _in("name: 'You’re ' + shellWho.member.name", SHELL_JS, "shell.js")
     _in("Not you? Switch", SHELL_JS, "shell.js")
-    _in("whoPrefsRowHtml() +", SHELL_JS, "shell.js")
+    _in("return whoPrefsRowHtml() +", SHELL_JS, "shell.js")
 
 
 def test_approving_skips_its_own_picker_when_the_session_knows():

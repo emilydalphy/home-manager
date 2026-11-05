@@ -82,9 +82,8 @@ def _plan_prelude() -> str:
         # The icons in soft tiles (2026-11-01): the slot tile on a day row,
         # the status icon, and the meal sheet's book and arrow.
         + _extract_var("ICONS", SHELL_JS) + "\n"
-        + _extract_var("SLOT_ICONS", SHELL_JS) + "\n"
         + "\n".join(_extract(n, SHELL_JS) for n in (
-            "iconTileHtml", "slotIconTileHtml", "statusIconName", "statusIconHtml")) + "\n"
+            "statusIconName", "statusIconHtml")) + "\n"
         + "\n".join(_extract(n, SHELL_JS) for n in names) + "\n"
     )
 

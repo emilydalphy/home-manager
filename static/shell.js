@@ -180,39 +180,6 @@
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5.5" rx="6.5" ry="2.5"/><path d="M5.5 5.5v13c0 1.4 2.9 2.5 6.5 2.5s6.5-1.1 6.5-2.5v-13"/><path d="M5.5 10c0 1.4 2.9 2.5 6.5 2.5s6.5-1.1 6.5-2.5"/></svg>'
   };
 
-  // ---------- Icons in soft tiles (Emily, 2026-11-01, I1 + I2) ----------
-  // A line icon in a 44px tile (--radius-control, 22px glyph). Two tones:
-  // celadon (--celadon-tint / --celadon-label), the gentle one, and sand
-  // (--sand / --apricot-label) for the heat-and-hands sections. Ivory
-  // surfaces only: never on spruce (the celadon tile is an ivory thing,
-  // DESIGN_SYSTEM §1), so the prep day card and the night-before card keep
-  // none. Decorative: the row already says the slot or the section.
-  var SLOT_ICONS = { breakfast: 'sunrise', lunch: 'bowl', dinner: 'pot', snack: 'apple' };
-  var PREP_SECTION_ICONS = {
-    thaw: ['snowflake', 'celadon'], soak: ['drop', 'celadon'], oven: ['oven', 'sand'],
-    stove: ['flame', 'sand'], slow_cooker: ['slowCooker', 'sand'], chop: ['knife', 'celadon'],
-    sauces: ['bottle', 'celadon'], chill: ['whisk', 'celadon'], freezer: ['freezerBox', 'celadon'],
-    special: ['star', 'sand'], pack: ['container', 'sand'], fresh: ['moon', 'sand']
-  };
-
-  function iconTileHtml(name, tone, extraClass) {
-    var svg = ICONS[name];
-    if (!svg) return '';
-    return '<span class="icon-tile' + (tone === 'sand' ? ' is-sand' : '') + (extraClass ? ' ' + extraClass : '') +
-      '" aria-hidden="true">' + svg + '</span>';
-  }
-
-  // A meal slot as its tile: snack2, snack3… are snacks.
-  function slotIconTileHtml(slot) {
-    var key = /^snack/.test(String(slot || '')) ? 'snack' : slot;
-    return iconTileHtml(SLOT_ICONS[key] || 'pot', 'celadon', 'slot-tile');
-  }
-
-  function prepSectionTileHtml(key) {
-    var pick = PREP_SECTION_ICONS[key];
-    return pick ? iconTileHtml(pick[0], pick[1], 'prep-sec-tile') : '';
-  }
-
   // The 15px icon before a row status word: a check for food already made
   // ("Made ahead", "Made Sunday", "Ready"), the loop for a reheat
   // ("Leftovers", "Reheat"), a clock for minutes ("35 min", "1 hr").
@@ -659,6 +626,22 @@
     return body;
   }
 
+  // Z-Confirm: the question as the title, the action, Cancel.
+  function openConfirmSheet(title, action, onYes, line) {
+    openQuietSheet(quietSheetHeadHtml('', title) +
+      (line ? '<p class="confirm-line">' + escapeHtml(line) + '</p>' : '') +
+      '<div class="confirm-acts">' +
+        '<button type="button" class="btn-main" data-confirm-yes="1">' + escapeHtml(action) + '</button>' +
+        '<button type="button" class="btn-quiet" data-quiet-close="1">Cancel</button>' +
+      '</div>', function (body) {
+      body.querySelector('.confirm-acts [data-quiet-close]').addEventListener('click', closeQuietSheet);
+      body.querySelector('[data-confirm-yes]').addEventListener('click', function () {
+        closeQuietSheet();
+        onYes();
+      });
+    }, null, 'confirm');
+  }
+
   function closeQuietSheet() {
     if (!quietSheetEl) return;
     var done = quietSheetOnClose;
@@ -711,13 +694,12 @@
   // already had.
   var SHEET_LEVELS = {
     // The label is what the back control and the crumb NAME, so it has to
-    // be the title the parent sheet actually shows. The mockup calls this
-    // sheet "Settings"; the sheet itself says "Preferences", and a crumb
-    // that disagrees with the screen it lands on is a thing that isn't
-    // true (DESIGN_SYSTEM section 8). One line to change if the sheet is
-    // ever retitled.
+    // be the title the parent sheet actually shows.
+    // `stays`: Settings is a whole screen (Z-Settings), so everything opened
+    // from it opens over it, and it is left where it was underneath.
     prefs: {
-      label: 'Preferences',
+      label: 'Settings',
+      stays: true,
       close: function () { closePrefsSheet(); },
       open: function () { openPrefsSheet(); },
       scroller: function () { return document.getElementById('prefs-rows'); }
@@ -778,7 +760,7 @@
   function openOverSheet(parentKey, dismiss, opts) {
     var level = parentKey && SHEET_LEVELS[parentKey];
     if (!level) return false;
-    var stays = !!(opts && opts.stays);
+    var stays = !!((opts && opts.stays) || level.stays);
     var scroller = level.scroller && level.scroller();
     sheetBackStack.push({
       key: parentKey,
@@ -893,6 +875,12 @@
   // not coming back, so nothing should reopen them later.
   function forgetSheetLevels() {
     if (!sheetBackStack.length) return;
+    // A parent left on screen underneath would otherwise stay there, over
+    // wherever the household just went.
+    sheetBackStack.forEach(function (back) {
+      var level = SHEET_LEVELS[back.key];
+      if (back.stays && level && level.close) level.close();
+    });
     sheetBackStack.length = 0;
   }
 
@@ -2720,7 +2708,7 @@
       if (state === 'granted') showToast('Notifications were turned on.');
     } catch (err) {
       console.warn('Turning notifications on failed:', err);
-      showToast('Notifications didn’t turn on. Try again from Preferences.');
+      showToast('Notifications didn’t turn on. Try again from Settings.');
     }
     loadPushSettings();
   }
@@ -2750,11 +2738,11 @@
       return '<button type="button" class="wk-seg-btn' + (sel ? ' is-on' : '') + '" role="radio" ' +
         'aria-checked="' + (sel ? 'true' : 'false') + '" data-push="' + o.key + '">' + escapeHtml(o.label) + '</button>';
     }).join('');
-    return '<div class="prefs-appearance prefs-push">' +
-      '<span class="prefs-row-title" id="prefs-push-title">Notifications</span>' +
+    return '<div class="tile tile-text is-wide prefs-push">' +
+      '<span class="tile-name" id="prefs-push-title">Notifications</span>' +
       '<div class="wk-seg" role="radiogroup" aria-labelledby="prefs-push-title">' + seg + '</div>' +
       (pushState.permission === 'denied'
-        ? '<span class="prefs-row-sub">They’re off in your iPhone’s Settings. Turn them on there for Pomona.</span>'
+        ? '<span class="tile-sub">They’re off in your iPhone’s Settings. Turn them on there for Pomona.</span>'
         : '') +
     '</div>';
   }
@@ -10782,11 +10770,12 @@
       // stays because this one is not undoable.
       case 'merge': {
         var mergeIds = el.dataset.ids.split(',').map(Number);
-        if (!window.confirm('Merge these into one line? The amounts will be added together.')) return;
-        el.disabled = true;
-        groDo(function () {
-          return groPost('/api/grocery-list/merge', { ids: mergeIds });
-        }, "Couldn't merge those — try again.");
+        openConfirmSheet('Merge these into one line?', 'Merge', function () {
+          el.disabled = true;
+          groDo(function () {
+            return groPost('/api/grocery-list/merge', { ids: mergeIds });
+          }, "Couldn't merge those — try again.");
+        }, 'The amounts will be added together.');
         return;
       }
 
@@ -12782,6 +12771,11 @@
     var frame = document.getElementById('kit-sheet-frame');
     var body = document.getElementById('wwk-body');
 
+    // From Settings a section is its own screen: one thing, its name as the
+    // title, a round Back. Anywhere else it's the sheet with every section.
+    var fromSettings = parent === 'prefs' && !!meta.native && !!wwkSection(section);
+    wwkState.only = fromSettings ? section : null;
+    if (kitSheetEl) kitSheetEl.classList.toggle('is-screen', fromSettings);
     if (meta.native) {
       // What we know: built here, not loaded. The frame stays hidden (and
       // keeps whatever inventory.html it has loaded, so Inventory reopens
@@ -12804,9 +12798,10 @@
         frame.title = meta.title;
       }
     }
-    document.getElementById('kit-sheet-title').textContent = meta.title;
+    var kitTitle = fromSettings ? wwkSection(section).title : meta.title;
+    document.getElementById('kit-sheet-title').textContent = kitTitle;
     kitSheetOpen = key;
-    paintSheetLevelChrome(kitSheetEl, meta.title);
+    paintSheetLevelChrome(kitSheetEl, kitTitle);
     openSheet(kitSheetEl, kitSheetScrim);
   }
 
@@ -13222,7 +13217,7 @@
         // the one thing the old page's Save buttons used to say.
         '<p class="prefs-sub">Tap anything to change it. It saves as you go.</p>' +
         '<div class="wwk-rows">' +
-          WWK_SECTIONS.map(function (s) {
+          WWK_SECTIONS.filter(function (s) { return !wwkState.only || s.key === wwkState.only; }).map(function (s) {
             return '<div class="wwk-section" data-section="' + s.key + '">' + wwkSectionInnerHtml(s) + '</div>';
           }).join('') +
         '</div>';
@@ -13267,6 +13262,11 @@
   function wwkSectionInnerHtml(s) {
     var mem = wwkMem();
     var open = !!wwkState.openSections[s.key];
+    // Its own screen: the title is the head, and it is always open.
+    if (wwkState.only === s.key) {
+      return '<span class="wwk-saved" aria-live="polite"></span>' +
+        '<div class="wwk-panel" id="wwk-panel-' + s.key + '">' + (mem ? s.body(mem) : '') + '</div>';
+    }
     var line = mem ? s.line(mem) : 'Reading it back…';
     return '<button type="button" class="prefs-row wwk-head" data-wwk="toggle" data-section="' + s.key + '" ' +
         'aria-expanded="' + (open ? 'true' : 'false') + '" aria-controls="wwk-panel-' + s.key + '">' +
@@ -31415,13 +31415,7 @@
   // with one answer.
   function whoPrefsRowHtml() {
     if (!shellWho.member || shellWho.adults.length < 2) return '';
-    return '<button type="button" class="prefs-row" data-who="switch">' +
-      '<span class="prefs-row-text">' +
-        '<span class="prefs-row-title">You’re ' + escapeHtml(shellWho.member.name) + '</span>' +
-        '<span class="prefs-row-sub">Not you? Switch</span>' +
-      '</span>' +
-      ICONS.arrow +
-    '</button>';
+    return tileHtml({ name: 'You’re ' + shellWho.member.name, sub: 'Not you? Switch', attrs: ' data-who="switch"' });
   }
 
   document.addEventListener('click', function (e) {
@@ -31473,7 +31467,7 @@
       { label: 'What for', body: 'Only to plan your meals and answer you. Anthropic doesn’t use it to train its AI.' }
     ],
     moreLabel: 'More about this',
-    more: 'You can turn this off any time in Preferences, under Sharing with Claude. While it’s off, I can’t plan meals or chat, and nothing you’ve saved is lost.',
+    more: 'You can turn this off any time in Settings, under Sharing with Claude. While it’s off, I can’t plan meals or chat, and nothing you’ve saved is lost.',
     linkLabel: 'Pomona’s privacy policy',
     linkUrl: '/privacy#claude',
     allow: 'Allow',
@@ -31710,13 +31704,7 @@
   function aiConsentPrefsRowHtml() {
     if (!shellWho.loaded) return '';
     var on = shellWho.ai_consent === 'granted';
-    return '<button type="button" class="prefs-row" data-aic-prefs="open">' +
-      '<span class="prefs-row-text">' +
-        '<span class="prefs-row-title">Sharing with Claude</span>' +
-        '<span class="prefs-row-sub">' + (on ? 'On' : 'Off · I can’t plan meals or chat') + '</span>' +
-      '</span>' +
-      ICONS.arrow +
-    '</button>';
+    return tileHtml({ name: 'Sharing with Claude', sub: on ? '' : 'Off · I can’t plan meals or chat', attrs: ' data-aic-prefs="open"' });
   }
 
   document.addEventListener('click', function (e) {
@@ -32027,7 +32015,7 @@
     // by giving every root a slot, not just Now.
     return '<span class="bell-slot" data-bell-slot></span>' +
       '<button type="button" class="prefs-gear" data-prefs="open" ' +
-      'aria-label="Preferences" title="Preferences">' + PREFS_GEAR_ICON + '</button>';
+      'aria-label="Settings" title="Settings">' + PREFS_GEAR_ICON + '</button>';
   }
 
 
@@ -32447,30 +32435,41 @@
     prefsSheetEl.setAttribute('aria-modal', 'true');
     prefsSheetEl.setAttribute('aria-labelledby', 'prefs-title');
     prefsSheetEl.innerHTML =
-      '<div class="ask-sheet-handle" id="prefs-handle"></div>' +
-      '<div class="kit-sheet-titlerow">' +
-        '<span class="kit-sheet-title" id="prefs-title">Preferences</span>' +
-        '<span class="kit-sheet-hairline"></span>' +
-        '<button type="button" class="kit-sheet-close" id="prefs-close" aria-label="Close">&times;</button>' +
+      '<div class="set-head">' +
+        roundBtnHtml({ icon: SHEET_BACK_ICON, label: 'Back', attrs: ' id="prefs-close"' }) +
       '</div>' +
-      '<p class="prefs-sub">What Pomona knows about your household</p>' +
+      '<h1 class="screen-title set-title" id="prefs-title">Settings</h1>' +
       '<div class="prefs-age-ask" id="prefs-age-ask" hidden></div>' +
       '<div class="prefs-rows" id="prefs-rows"></div>';
     // Body level, like every other sheet here: position:fixed has to sit
     // outside the tab panel's stacking and scroll context.
     document.body.appendChild(prefsScrimEl);
     document.body.appendChild(prefsSheetEl);
-    prefsScrimEl.addEventListener('click', closePrefsSheet);
-    prefsSheetEl.querySelector('#prefs-handle').addEventListener('click', closePrefsSheet);
-    prefsSheetEl.querySelector('#prefs-close').addEventListener('click', closePrefsSheet);
+    prefsSheetEl.querySelector('#prefs-close').addEventListener('click', prefsBack);
     prefsSheetEl.querySelector('#prefs-age-ask').addEventListener('input', prefsAgeAskInput);
     prefsSheetEl.querySelector('#prefs-age-ask').addEventListener('click', prefsAgeAskClick);
     prefsSheetEl.querySelector('#prefs-age-ask').addEventListener('keydown', function (e) {
       if (e.key === 'Enter' && e.target && e.target.id === 'prefs-age-input') { e.preventDefault(); prefsAgeAskSave(); }
     });
+    // In the capture phase, so with something open over Settings this hears
+    // Escape first and leaves it to that sheet.
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && prefsSheetEl && !prefsSheetEl.hidden) closePrefsSheet();
-    });
+      if (e.key === 'Escape' && prefsSheetEl && !prefsSheetEl.hidden && !sheetLevelDepth()) prefsBack();
+    }, true);
+  }
+
+  // Back: an inside screen goes to the six tiles, the six tiles to the tab.
+  function prefsBack() {
+    if (prefsState.screen) { prefsShowScreen(null); return; }
+    closePrefsSheet();
+  }
+
+  function prefsShowScreen(key) {
+    prefsState.screen = key;
+    renderPrefsRows();
+    var rows = prefsSheetEl && prefsSheetEl.querySelector('#prefs-rows');
+    if (prefsSheetEl) prefsSheetEl.scrollTop = 0;
+    if (rows) rows.scrollTop = 0;
   }
 
   // ---------- "How old is [name]?" (Ages, 2026-10-06) ----------
@@ -32547,89 +32546,102 @@
     }
   }
 
+  // Settings (Z-Settings): six tiles and Help, one tap in. Each tile opens a
+  // screen of tiles (Z-SetWeek, Z-SetAccount, Z-SetHelp) in this same sheet,
+  // so nothing that opens over a screen has to know which one it was. Stores
+  // has the one thing in it, so its tile goes straight there, and Reminders
+  // does too unless the iPhone app has Notifications to show beside it.
+  var PREFS_SCREEN_TITLES = {
+    household: 'Household', food: 'Food', week: 'Your week',
+    reminders: 'Reminders', account: 'Account', help: 'Help'
+  };
+
+  function prefsSectionTileHtml(key, title, sub) {
+    return tileHtml({ name: title, sub: sub || '', attrs: ' data-prefs="section" data-section="' + key + '"' });
+  }
+
+  function prefsHubTileHtml(name, sub, attrs, cls) {
+    return tileHtml({ name: name, sub: sub, attrs: attrs, cls: 'set-hub' + (cls ? ' ' + cls : '') });
+  }
+
+  function prefsLinkTileHtml(href, name) {
+    return '<a class="tile tile-text" href="' + href + '"><span class="tile-words"><span class="tile-name">' + name + '</span></span></a>';
+  }
+
   function renderPrefsRows() {
     if (!prefsSheetEl) return;
     var rows = prefsSheetEl.querySelector('#prefs-rows');
     if (!rows) return;
     var mem = prefsState.memory;
+    var screen = prefsState.screen;
     renderPrefsAgeAsk();
-    writeKeepingPlace(rows,
-      // Who this device is opened as, first — see whoPrefsRowHtml (empty
-      // for a one-adult household).
-      whoPrefsRowHtml() +
-      // The email this adult signs in with (2026-10-06) — see
-      // accountEmailRowHtml. Empty until an adult is known on this device.
-      accountEmailRowHtml() +
-      householdNameRowHtml() +
-      PREFS_ROWS.map(function (row) {
-        var line = mem ? row.line(mem) : 'Reading it back…';
-        return '<button type="button" class="prefs-row" data-prefs="section" data-section="' + row.section + '">' +
-          '<span class="prefs-row-text">' +
-            '<span class="prefs-row-title">' + escapeHtml(row.title) + '</span>' +
-            '<span class="prefs-row-sub">' + escapeHtml(line) + '</span>' +
-          '</span>' +
-          ICONS.arrow +
-        '</button>' +
-        // Settings → Recipes (2026-10-04) sits under "How you eat". Not a
-        // PREFS_ROWS entry: those all open a What we know section.
-        (row.section === 'taste' ? recipesPrefsRowHtml() : '');
-      }).join('') +
-      // Onboarding coaching part 3 (2026-09-08): the permanent way back to
-      // "Helpful tips". A .prefs-row like the five above it, but it opens a
-      // sheet instead of a "What we know" tab, so it is written out here
-      // rather than added to PREFS_ROWS (whose rows all read a memory field
-      // back).
-      '<button type="button" class="prefs-row" data-tips="open">' +
-        '<span class="prefs-row-text">' +
-          '<span class="prefs-row-title">Helpful tips</span>' +
-          '<span class="prefs-row-sub">How to ask me for things</span>' +
-        '</span>' +
-        ICONS.arrow +
-      '</button>' +
-      // The first-open tour, again (Emily, 2026-10-18): replays it from
-      // stop 1 on Plan. See replayTour.
-      '<button type="button" class="prefs-row" data-prefs="tour">' +
-        '<span class="prefs-row-text">' +
-          '<span class="prefs-row-title">Show me around again</span>' +
-          '<span class="prefs-row-sub">Changing the plan, and each tab</span>' +
-        '</span>' +
-        ICONS.arrow +
-      '</button>' +
-      // "Reach me before the moment" (2026-09-11): the morning text. Opens
-      // its own sheet, like Helpful tips — one of the few places an input
-      // is the honest control, since a phone number can't be tapped into
-      // existence.
-      '<button type="button" class="prefs-row" data-morning="open">' +
-        '<span class="prefs-row-text">' +
-          '<span class="prefs-row-title">Morning text</span>' +
-          '<span class="prefs-row-sub">' + escapeHtml(prefsMorningLine()) + '</span>' +
-        '</span>' +
-        ICONS.arrow +
-      '</button>' +
-      // Notifications on the iPhone app (2026-09-27) — empty anywhere else.
-      pushPrefsRowHtml() +
-      // Sharing with Claude — the household's answer to the consent screen,
-      // and the way to change it (aiConsentPrefsRowHtml).
-      aiConsentPrefsRowHtml() +
-      // The second group: a way out of a bad moment, and the way out of the
-      // app. Same quiet tile the Kitchen tab used to carry — one component,
-      // one place it is defined.
-      '<div class="prefs-group2">' +
-        snwTile() +
-        '<button type="button" class="prefs-tile" data-prefs="signout">' +
-          '<span class="snw-tile-icon">' + PREFS_SIGNOUT_ICON + '</span>' +
-          '<span class="snw-tile-text">' +
-            '<span class="snw-tile-title">Sign out</span>' +
-            '<span class="snw-tile-sub">You’ll need to sign in again to get back in</span>' +
-          '</span>' +
-        '</button>' +
-      '</div>' +
-      // The very bottom (App Store, 2026-09-27): deleting the household,
-      // or leaving it. Quiet on purpose — see .prefs-leave-row.
-      '<div class="prefs-leave-row">' +
-        '<button type="button" class="prefs-leave-link" data-prefs="leave"><span>Delete your household</span></button>' +
-      '</div>' +
-      prefsAboutHtml());
+    prefsSheetEl.classList.toggle('is-inner', !!screen);
+    prefsSheetEl.querySelector('#prefs-title').textContent = PREFS_SCREEN_TITLES[screen] || 'Settings';
+    prefsSheetEl.querySelector('#prefs-close').setAttribute('aria-label', screen ? 'Back to Settings' : 'Back');
+    var push = pushPrefsRowHtml();
+    var inner = {
+      household: function () {
+        return prefsSectionTileHtml('people', 'Who’s here') +
+          householdNameRowHtml() +
+          prefsSectionTileHtml('holding', 'Holding for you');
+      },
+      food: function () {
+        // Won't eat has no row of its own in the old list, but it has to be
+        // reachable, and it is a thing about food.
+        return prefsSectionTileHtml('taste', 'How you eat') +
+          prefsSectionTileHtml('wont-eat', 'Won’t eat') +
+          prefsSectionTileHtml('regulars', 'Regulars') +
+          // Settings → Recipes (2026-10-04). Opens its own screen.
+          recipesPrefsRowHtml();
+      },
+      week: function () {
+        return prefsSectionTileHtml('rhythm', 'Your rhythm') +
+          prefsSectionTileHtml('prep-days', 'Prep days') +
+          tileHtml({
+            name: 'Your calendar', sub: mem ? prefsCalendarLine(mem) : '', cls: 'is-wide',
+            attrs: ' data-prefs="section" data-section="calendar"'
+          });
+      },
+      reminders: function () {
+        // "Reach me before the moment" (2026-09-11): the morning text. Its
+        // own sheet, since a phone number can't be tapped into existence.
+        return tileHtml({ name: 'Morning text', sub: prefsMorningLine(), attrs: ' data-morning="open"' }) +
+          // Notifications on the iPhone app (2026-09-27): empty anywhere else.
+          push;
+      },
+      account: function () {
+        // Who this device is opened as, first (empty for one adult).
+        return whoPrefsRowHtml() +
+          accountEmailRowHtml() +
+          // The household's answer to the consent screen, and how to change it.
+          aiConsentPrefsRowHtml() +
+          // One line, plainly, before the app hands the session back.
+          tileHtml({ name: 'Sign out', attrs: ' data-prefs="signout"' }) +
+          // App Store, 2026-09-27: deleting the household, or leaving it.
+          tileHtml({ name: 'Delete your household', nameCls: 'is-clay', attrs: ' data-prefs="leave"' });
+      },
+      help: function () {
+        return snwTile() +
+          // The permanent way back to "Helpful tips" (2026-09-08).
+          tileHtml({ name: 'How to ask me for things', attrs: ' data-tips="open"' }) +
+          // The first-open tour, again (2026-10-18). See replayTour.
+          tileHtml({ name: 'Show me around again', attrs: ' data-prefs="tour"' }) +
+          prefsLinkTileHtml('/support', 'Help and support') +
+          prefsLinkTileHtml('/privacy', 'Privacy policy') +
+          prefsLinkTileHtml('/terms', 'Terms of use');
+      }
+    };
+    writeKeepingPlace(rows, screen
+      ? '<div class="tiles">' + inner[screen]() + '</div>' + (screen === 'help' ? prefsAboutHtml() : '')
+      : '<div class="tiles">' +
+          prefsHubTileHtml('Household', 'Who’s here, name, what I’m holding', ' data-prefs="screen" data-screen="household"') +
+          prefsHubTileHtml('Food', 'How you eat, regulars', ' data-prefs="screen" data-screen="food"') +
+          prefsHubTileHtml('Your week', 'Rhythm, prep days, calendar', ' data-prefs="screen" data-screen="week"') +
+          prefsHubTileHtml('Stores', 'Where you shop', ' data-prefs="section" data-section="stores"') +
+          prefsHubTileHtml('Reminders', 'Morning text', push ? ' data-prefs="screen" data-screen="reminders"' : ' data-morning="open"') +
+          prefsHubTileHtml('Account', 'Email, sharing, sign out', ' data-prefs="screen" data-screen="account"') +
+          prefsHubTileHtml('Help', 'Support, privacy, terms', ' data-prefs="screen" data-screen="help"', 'is-wide') +
+        '</div>');
   }
 
   // ---------- Household name (Emily, 2026-11-01) ----------
@@ -32643,13 +32655,7 @@
 
   function householdNameRowHtml() {
     if (!shellWho.loaded || !shellWho.household_name) return '';
-    return '<button type="button" class="prefs-row" data-hname="open">' +
-      '<span class="prefs-row-text">' +
-        '<span class="prefs-row-title">Household name</span>' +
-        '<span class="prefs-row-sub">' + escapeHtml(shellWho.household_name) + '</span>' +
-      '</span>' +
-      ICONS.arrow +
-    '</button>';
+    return tileHtml({ name: 'Household name', sub: shellWho.household_name, attrs: ' data-hname="open"' });
   }
 
   function buildHnameSheet() {
@@ -32776,13 +32782,7 @@
   function accountEmailRowHtml() {
     var st = prefsState.accountEmail;
     if (!st || !st.can_change) return '';
-    return '<button type="button" class="prefs-row" data-account-email="open">' +
-      '<span class="prefs-row-text">' +
-        '<span class="prefs-row-title">Sign-in email</span>' +
-        '<span class="prefs-row-sub">' + escapeHtml(st.email || 'Add one to sign in with a code') + '</span>' +
-      '</span>' +
-      ICONS.arrow +
-    '</button>';
+    return tileHtml({ name: 'Sign-in email', attrs: ' data-account-email="open"' });
   }
 
   function buildEmailSheet() {
@@ -33022,19 +33022,8 @@
 
   function prefsAboutHtml() {
     var version = shellWho && shellWho.legal_version ? shellWho.legal_version : '';
-    return '<nav class="prefs-about" aria-label="About Pomona">' +
-      '<span class="prefs-about-eyebrow">About</span>' +
-      '<span class="prefs-about-links">' +
-        '<a href="/privacy">Privacy policy</a>' +
-        '<a href="/terms">Terms of use</a>' +
-        '<a href="/support">Help and support</a>' +
-      '</span>' +
-      (version ? '<span class="prefs-about-version">Version ' + escapeHtml(version) + aboutAgreedHtml(version) + '</span>' : '') +
-    '</nav>';
+    return version ? '<p class="prefs-about-version">Version ' + escapeHtml(version) + aboutAgreedHtml(version) + '</p>' : '';
   }
-
-  var PREFS_SIGNOUT_ICON =
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4.5H18a1.5 1.5 0 0 1 1.5 1.5v12a1.5 1.5 0 0 1-1.5 1.5h-3.5"/><path d="M10 8.5 6.5 12l3.5 3.5"/><path d="M6.5 12H15"/></svg>';
 
   // One read per open, cached. The rows render immediately off the cache
   // (or with a placeholder line) rather than waiting on the network — a
@@ -33114,6 +33103,7 @@
     closeKitchenSheet();
     closeSnwSheet();
     prefsState.open = true;
+    prefsState.screen = null;
     renderPrefsRows();
     openSheet(prefsSheetEl, prefsScrimEl);
     loadPrefs();
@@ -33134,6 +33124,7 @@
     var what = target.getAttribute('data-prefs');
     if (what === 'open') return openPrefsSheet();
     if (what === 'tour') return replayTour();
+    if (what === 'screen') return prefsShowScreen(target.getAttribute('data-screen'));
     if (what === 'section') {
       // What we know, opened with the section that owns this answer
       // expanded — the same Kitchen entry sheet the Inventory tile uses,
@@ -33144,13 +33135,11 @@
       return;
     }
     if (what === 'signout') {
-      // One line, plainly, before the app hands the session back. Calm and
-      // reversible-sounding because it is: the way back is the passphrase
-      // they already have.
-      if (window.confirm('Sign out of Pomona on this device?')) {
+      // Z-Confirm: one line, plainly, before the app hands the session back.
+      openConfirmSheet('Sign out of Pomona on this device?', 'Sign out', function () {
         groForgetOffline();   // the grocery copy is this household's, not the phone's
         window.location.href = '/logout';
-      }
+      });
     }
     if (what === 'leave') {
       // Stacks on Settings (2026-10-05): Cancel/Close used to leave the
@@ -34050,13 +34039,7 @@
   }
 
   function recipesPrefsRowHtml() {
-    return '<button type="button" class="prefs-row" data-recipes="open">' +
-      '<span class="prefs-row-text">' +
-        '<span class="prefs-row-title">Recipes</span>' +
-        '<span class="prefs-row-sub">' + escapeHtml(prefsRecipesLine()) + '</span>' +
-      '</span>' +
-      ICONS.arrow +
-    '</button>';
+    return tileHtml({ name: 'Recipes', attrs: ' data-recipes="open"' });
   }
 
   // "35 min" — prep and cook together, the way the menu rows say a time.
@@ -34144,33 +34127,23 @@
     var rows;
     if (!list) {
       rows = recipesState.failed
-        ? '<p class="recipes-empty">Couldn’t load your recipes. Close this and try again.</p>'
+        ? '<p class="recipes-empty note-card">Couldn’t load your recipes. Close this and try again.</p>'
         : '<p class="recipes-empty">Reading it back…</p>';
     } else if (!list.length) {
-      rows = '<p class="recipes-empty">No recipes saved yet.</p>';
+      rows = '<p class="recipes-empty note-card">No recipes saved yet.</p>';
     } else {
-      rows = '<div class="prefs-rows recipes-list">' + list.map(function (r) {
-        var line = recipeListLine(r);
-        return '<button type="button" class="prefs-row" data-recipes="view" data-recipe-id="' + escapeHtml(String(r.id)) + '">' +
-          '<span class="prefs-row-text">' +
-            '<span class="prefs-row-title">' + escapeHtml(r.name || '') + '</span>' +
-            (line ? '<span class="prefs-row-sub">' + escapeHtml(line) + '</span>' : '') +
-          '</span>' +
-          ICONS.arrow +
-        '</button>';
+      rows = '<div class="tiles recipes-list">' + list.map(function (r) {
+        return tileHtml({
+          art: Plates.html(r.plate, 96),
+          name: r.name || '',
+          sub: recipeListLine(r),
+          attrs: ' data-recipes="view" data-recipe-id="' + escapeHtml(String(r.id)) + '"'
+        });
       }).join('') + '</div>';
     }
-    return '<div class="kit-rows recipes-add">' +
-        '<button type="button" class="kit-row" data-recipes="link">' +
-          '<span class="kit-row-icon">' + KITCHEN_ICONS.link + '</span>' +
-          '<span class="kit-row-text"><span class="kit-row-title">Add from a link</span></span>' +
-          '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
-        '</button>' +
-        '<button type="button" class="kit-row" data-recipes="photo">' +
-          '<span class="kit-row-icon">' + GRO_ICONS.camera + '</span>' +
-          '<span class="kit-row-text"><span class="kit-row-title">Add from a cookbook</span></span>' +
-          '<span class="kit-row-chev">' + GRO_ICONS.chevRight + '</span>' +
-        '</button>' +
+    return '<div class="tiles recipes-add">' +
+        tileHtml({ name: 'Add from a link', attrs: ' data-recipes="link"' }) +
+        tileHtml({ name: 'Add from a cookbook', attrs: ' data-recipes="photo"' }) +
       '</div>' +
       rows;
   }
@@ -34198,7 +34171,9 @@
   }
 
   function recipeViewHtml() {
-    var crumb = '<button type="button" class="crumb recipes-crumb" data-recipes="back">&lsaquo; Recipes</button>';
+    var crumb = '<div class="recipes-top">' +
+      roundBtnHtml({ icon: SHEET_BACK_ICON, label: 'Back to Recipes', cls: 'recipes-crumb', attrs: ' data-recipes="back"' }) +
+    '</div>';
     var r = recipesState.detail;
     if (!r) {
       return crumb + '<p class="recipes-empty">' + (recipesState.detailFailed
@@ -34215,6 +34190,7 @@
     var facts = recipeFactsLine(r);
     var hasBody = meal.ingredients.length || meal.instructions.length;
     return crumb +
+      (r.plate ? '<div class="recipes-plate">' + Plates.html(r.plate, 216) + '</div>' : '') +
       '<div class="recipe-body recipes-view">' +
         recipeTitleHtml(meal) +
         recipeViewCreditHtml(r) +
@@ -34229,6 +34205,7 @@
   function renderRecipesSheet() {
     if (!recipesSheetEl) return;
     var body = recipesSheetEl.querySelector('#recipes-body');
+    recipesSheetEl.classList.toggle('is-detail', recipesState.view === 'detail');
     writeKeepingPlace(body, recipesState.view === 'detail' ? recipeViewHtml() : recipesListHtml());
   }
 
@@ -34248,6 +34225,7 @@
     if (opts.parent) openOverSheet(opts.parent, dismissRecipesSheet);
     else closePrefsSheet();
     closeSnwSheet();
+    recipesSheetEl.classList.toggle('is-screen', !!opts.parent);
     paintSheetLevelChrome(recipesSheetEl, 'Recipes');
     recipesScrimEl.hidden = false;
     recipesSheetEl.hidden = false;
@@ -34885,13 +34863,7 @@
   // The Kitchen tile. Quiet on purpose, and last on the screen: it is a
   // way out of a bad moment, not a chore the household is being handed.
   function snwTile() {
-    return '<button type="button" class="snw-tile" data-snw="open">' +
-      '<span class="snw-tile-icon">' + SNW_ICON + '</span>' +
-      '<span class="snw-tile-text">' +
-        '<span class="snw-tile-title">Something not working?</span>' +
-        '<span class="snw-tile-sub">Tell us what happened</span>' +
-      '</span>' +
-    '</button>';
+    return tileHtml({ name: 'Something not working?', attrs: ' data-snw="open"' });
   }
 
   // The in-prose link for an error state. `onSpruce` is for the one error

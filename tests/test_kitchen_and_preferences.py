@@ -338,9 +338,12 @@ def test_the_gear_is_in_the_header_of_every_root_screen():
 
 
 def test_the_preferences_sheet_says_what_it_is():
-    _assert_in(">Preferences<", SHELL_JS, "the sheet title", "shell.js")
-    _assert_in("What Pomona knows about your household", SHELL_JS, "the sheet subtitle", "shell.js")
-    assert "apricot" not in _function("renderPrefsRows"), "Preferences has no apricot"
+    # Z-Settings: the title and six tiles and Help, each saying what's in it.
+    _assert_in(">Settings<", SHELL_JS, "the sheet title", "shell.js")
+    rows = _function("renderPrefsRows")
+    for name in ("Household", "Food", "Your week", "Stores", "Reminders", "Account", "Help"):
+        assert f"prefsHubTileHtml('{name}'" in rows, name
+    assert "apricot" not in rows, "Settings has no apricot"
 
 
 @pytest.mark.parametrize(
@@ -354,12 +357,10 @@ def test_the_five_knowledge_rows(row):
 def test_the_second_group_is_a_way_out_of_trouble_and_a_way_out_of_the_app():
     rows = _function("renderPrefsRows")
     assert "snwTile()" in rows, "Preferences no longer offers 'Something not working?'"
-    assert ">Sign out<" in rows, "Preferences no longer offers Sign out"
+    assert "name: 'Sign out'" in rows, "Preferences no longer offers Sign out"
     signout = SHELL_JS[SHELL_JS.index("if (what === 'signout')") :][:400]
-    assert "window.confirm(" in signout, "signing out asks first"
+    assert "openConfirmSheet('Sign out of Pomona on this device?', 'Sign out'" in signout, "signing out asks first"
     assert "'/logout'" in signout, "sign out no longer hits GET /logout"
-    _assert_in("passphrase", SHELL_JS, "the sign-out sub-line ('passphrase', never 'password')",
-               "shell.js")
     assert "your password" not in SHELL_JS.lower()
 
 

@@ -10524,19 +10524,6 @@ body.first-open-active { overflow: hidden; }
    --apricot-label stroke (the heat-and-hands sections). Ivory surfaces
    only — never on spruce. Both pairs have dark values in theme.css;
    stroke on tile measured 4.46–7.70:1 in light and dark (2026-11-01). */
-.icon-tile {
-  width: 44px;
-  height: 44px;
-  flex: 0 0 44px;
-  border-radius: var(--radius-control);
-  background: var(--celadon-tint);
-  color: var(--celadon-label);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.icon-tile.is-sand { background: var(--sand); color: var(--apricot-label); }
-.icon-tile svg { width: 22px; height: 22px; display: block; }
 /* A status word with its 15px icon before it: Made ahead, Leftovers, 35 min. */
 .wk-row-meta.has-icon { display: inline-flex; align-items: center; gap: 5px; }
 .status-icon { display: inline-flex; flex: 0 0 auto; color: var(--celadon-label); }
@@ -10676,11 +10663,6 @@ button.day-meal { flex-direction: row; align-items: center; gap: 10px; cursor: p
 
 /* =====================================================================
    SHEETS, ONE LOOK (Bright Dusk, Z-PlanMenu)
-   =====================================================================
-   Everything extra slides up from the bottom: a title, a round close
-   button and the content, on a dimmed screen. These sheets were each built
-   on their own, so the shared look is stated once here, last, so it wins
-   over each sheet's own older rule. New sheets use openQuietSheet. */SHEETS, ONE LOOK (Bright Dusk, Z-PlanMenu)
    =====================================================================
    Everything extra slides up from the bottom: a title, a round close
    button and the content, on a dimmed screen. These sheets were each built
@@ -11387,6 +11369,8 @@ button.prep-step-name { cursor: pointer; }
 }
 .ask-composer-bar.is-grown { align-items: flex-end; }
 .ask-composer-bar:focus-within { outline: none; }
+/* The field draws the ring, at the shape a person is looking at. */
+.ask-composer-field:focus-within { outline: 2px solid var(--dusk); outline-offset: 2px; }
 .ask-composer-field {
   flex: 1 1 auto;
   min-width: 0;
@@ -11409,7 +11393,7 @@ button.prep-step-name { cursor: pointer; }
 }
 .ask-composer-input::placeholder { color: var(--ink-secondary); opacity: 1; }
 .ask-composer-mic {
-  width: 40px;
+  width: 44px;
   height: 44px;
   margin: 4px 0;
   border-radius: var(--radius-pill);
@@ -11430,3 +11414,193 @@ button.prep-step-name { cursor: pointer; }
   font-size: 14px;
   font-weight: 700;
 }
+
+/* =====================================================================
+   SETTINGS (Bright Dusk, stage 4)
+   =====================================================================
+   Z-Settings, Z-SetWeek, Z-SetAccount, Z-SetHelp, Z-Confirm. Settings and
+   what opens as a whole screen from it (a section, Recipes) sit under every
+   sheet, over the tab bar: .is-screen. Sheets opened over them stay sheets. */
+#prefs-scrim { display: none; }
+#prefs-sheet, #kit-sheet.is-screen, #recipes-sheet.is-screen, #cr-sheet.is-screen {
+  top: 0;
+  max-height: none;
+  height: 100dvh;
+  border-radius: 0;
+  box-shadow: none;
+  background: var(--cream);
+  padding: 0;
+  gap: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+#prefs-sheet { z-index: 39; }
+.is-screen .ask-sheet-handle, .is-screen .kit-sheet-close, .is-screen .kit-sheet-crumb { display: none; }
+#prefs-sheet .prefs-rows, .is-screen .recipes-body, .is-screen .wwk-body {
+  overflow: visible;
+  padding: 0 0 calc(30px + env(safe-area-inset-bottom, 0px));
+  flex: 0 0 auto;
+}
+.set-head { padding: calc(env(safe-area-inset-top, 0px) + 14px) 20px 0; }
+.set-title { padding: 14px 20px 0; }
+/* A screen's head: the sheet's title row, laid out as a Back over a title. */
+.is-screen .kit-sheet-titlerow {
+  display: block;
+  padding: calc(env(safe-area-inset-top, 0px) + 14px) 20px 0;
+}
+.is-screen .kit-sheet-title {
+  display: block;
+  margin-top: 14px;
+  font-size: 32px;
+  line-height: 38px;
+  letter-spacing: -0.03em;
+}
+.is-screen .kit-sheet-back {
+  width: 44px;
+  height: 44px;
+  margin: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--blush);
+  color: var(--ink);
+}
+.is-screen .kit-sheet-back[hidden] { display: none; }
+/* A sheet over Settings: its round close goes one level up, so no chevron
+   and no crumb are needed beside it. */
+.kit-sheet-crumb { display: none; }
+.kit-sheet-back { display: none; }
+.is-screen .kit-sheet-back { display: flex; align-items: center; justify-content: center; }
+
+.tile.set-hub { min-height: 104px; height: 100%; gap: 4px; }
+.tile.set-hub .tile-name { font-weight: 700; line-height: 22px; }
+.tile.set-hub.is-wide { min-height: 76px; }
+.tile-name.is-clay { color: var(--clay); }
+a.tile { text-decoration: none; }
+.prefs-push .wk-seg { margin: 6px 0 0; }
+.prefs-about-version {
+  margin: 14px 20px 0;
+  font-size: 13px;
+  line-height: 18px;
+  text-align: center;
+  color: var(--slate);
+}
+.prefs-age-ask {
+  margin: 14px 16px 0;
+  padding: 14px;
+  border: 0;
+  background: var(--white);
+  box-shadow: var(--shadow-card);
+}
+#prefs-sheet.is-inner .prefs-age-ask { display: none; }
+.prefs-age-ask .prefs-row-title { font-size: 16px; color: var(--ink); }
+.prefs-age-ask .prefs-row-sub { color: var(--slate); }
+
+/* A section as its own screen: one line, then what's in it. */
+.is-screen .prefs-sub { padding: 6px 20px 0; font-size: 14px; line-height: 20px; color: var(--slate); }
+.is-screen .wwk-rows { padding: 0; }
+.is-screen .wwk-section { border: 0; }
+.is-screen .wwk-panel { padding: 14px 16px 0; }
+
+/* Z-Confirm */
+.confirm-acts { display: flex; flex-direction: column; gap: 10px; padding-top: 4px; }
+.confirm-line { margin: 0; padding: 0 4px; font-size: 16px; line-height: 22px; color: var(--slate); }
+
+/* Recipes in Settings: plates on tiles, and a recipe with its own round Back. */
+.is-detail .kit-sheet-titlerow { display: none; }
+.recipes-top { padding: calc(env(safe-area-inset-top, 0px) + 14px) 20px 0; }
+.recipes-plate { display: flex; justify-content: center; padding-top: 6px; }
+.recipes-add { margin-top: 14px; }
+.recipes-add .tile-text { min-height: 64px; }
+.recipes-list { margin-top: 10px; }
+.recipes-empty { font-size: 16px; line-height: 22px; color: var(--ink); }
+.recipes-empty:not(.note-card) { padding: 0 20px; color: var(--slate); }
+
+/* What was a dusk button is the apricot one now. Dusk is for the tab bar,
+   Use soon, timers and the welcome. */
+.snw-send, .wwk-btn, .rli-read, .ask-change-save, .notif-row-action, .cook-attn-go {
+  background: var(--apricot);
+  border-color: var(--apricot);
+  color: var(--night-ink);
+}
+.snw-send:hover, .wwk-btn:hover, .rli-read:hover:not(:disabled), .ask-change-save:hover { background: var(--apricot); }
+.snw-send { height: 52px; min-height: 52px; border-radius: var(--radius-button); font: 700 16px var(--font-body); }
+.uw-day.is-all { background: var(--apricot); border-color: var(--apricot); color: var(--night-ink); }
+.uw-day.is-some { background: var(--blush); border-color: var(--soft-apricot); color: var(--night-ink); }
+.uw-day.is-open { outline: 2px solid var(--dusk); }
+.uw-q.is-on, .uw-var-opt.is-on { background: var(--apricot); border-color: var(--apricot); color: var(--night-ink); }
+.wwk-chip.is-on { background: var(--apricot); border-color: var(--apricot); color: var(--night-ink); }
+.who-row-initial { background: var(--blush); color: var(--night-ink); }
+.notif-bell { background: var(--blush); color: var(--ink); }
+.notif-bell:hover { background: var(--blush); }
+.ask-change-opt.is-on { border-color: var(--apricot); }
+.terms-agree input { color: var(--night-ink); accent-color: var(--apricot); }
+.wwk-lead { font-size: 14px; line-height: 20px; font-weight: 400; color: var(--slate); }
+.wwk-link { color: var(--ink); }
+.aic-more summary, .aic-more a { color: var(--ink); }
+
+/* Every centred dialog is the Z-Confirm sheet: it rises from the foot, a
+   26px title, stacked full-width buttons, the action first. */
+#reset-dialog, #dinner-confirm-dialog, #approve-who-dialog, #discard-draft-dialog,
+#leave-dialog, #ask-save-dialog, #push-ask-dialog {
+  top: auto;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  transform: translateY(100%);
+  width: auto;
+  max-width: none;
+  max-height: 88%;
+  overflow-y: auto;
+  margin: 0;
+  box-sizing: border-box;
+  background: var(--cream);
+  border: 0;
+  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+  box-shadow: var(--shadow-sheet);
+  padding: 24px 16px max(30px, env(safe-area-inset-bottom, 0px));
+  opacity: 1;
+  scale: 1;
+  animation: none;
+  transition: transform var(--motion-base) var(--motion-ease);
+}
+#reset-dialog.is-open, #dinner-confirm-dialog.is-open, #approve-who-dialog.is-open, #discard-draft-dialog.is-open,
+#leave-dialog.is-open, #ask-save-dialog.is-open, #push-ask-dialog.is-open { transform: none; opacity: 1; }
+[data-motion="dialog"]::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  width: 40px;
+  height: 4px;
+  margin-left: -20px;
+  border-radius: 2px;
+  background: var(--grab);
+}
+.reset-title { margin: 0; padding: 0 4px; font-size: 26px; line-height: 30px; font-weight: 700; letter-spacing: -0.025em; color: var(--ink); text-align: left; }
+.reset-note { margin: 10px 0 0; padding: 0 4px; font-size: 16px; line-height: 22px; color: var(--slate); text-align: left; }
+.reset-actions { flex-direction: column-reverse; gap: 10px; margin-top: 16px; }
+.reset-actions button { flex: none; width: 100%; height: 52px; min-height: 52px; border-radius: var(--radius-button); border: 0; font: 700 16px var(--font-body); }
+.reset-actions .btn-outline-plum, .approve-who-option { background: var(--blush); color: var(--night-ink); border: 0; }
+.reset-actions .btn-gold { background: var(--apricot); color: var(--night-ink); }
+.dialog-cancel-link { font: 600 14px var(--font-body); color: var(--slate); text-decoration: none; }
+@media (min-width: 768px) {
+  #reset-dialog, #dinner-confirm-dialog, #approve-who-dialog, #discard-draft-dialog,
+  #leave-dialog, #ask-save-dialog, #push-ask-dialog { left: 50%; right: auto; width: 520px; margin-left: -260px; }
+}
+
+/* The tour's card */
+.tour-card { border: 0; padding: 14px; }
+.tour-count { font-size: 13px; line-height: 18px; font-weight: 500; color: var(--slate); }
+.tour-title { margin-top: 2px; line-height: 30px; }
+.tour-body { font-size: 16px; line-height: 22px; color: var(--ink); }
+.tour-skip { font: 600 14px var(--font-body); color: var(--slate); }
+.tour-next { min-height: 44px; border-radius: var(--radius-button); color: var(--night-ink); font: 700 16px var(--font-body); }
+.tour-next:focus-visible, .tour-skip:focus-visible { outline-color: var(--dusk); }
+
+/* Helpful tips and the report form: labels in slate, the title at 26. */
+.tips-group-tab { color: var(--slate); }
+.snw-titlerow .snw-title, .snw-title { font-size: 26px; line-height: 30px; letter-spacing: -0.025em; font-weight: 700; }
+.snw-titlerow .kit-sheet-hairline { display: none; }
+
+/* At 320 Ask's hint stays on one line. */
+.ask-composer-input::placeholder { white-space: nowrap; }

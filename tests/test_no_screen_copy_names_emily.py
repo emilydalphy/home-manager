@@ -92,5 +92,5 @@ def test_the_scanner_sees_strings_and_markup_but_not_comments():
 
 def test_the_feedback_sheet_reads_the_neutral_words():
     shell = (STATIC / "shell.js").read_text(encoding="utf-8")
-    assert "Tell us what happened" in shell
+    assert "Something not working?" in shell
     assert "Something not working? Tell us<" in shell

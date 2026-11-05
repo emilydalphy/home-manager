@@ -844,7 +844,7 @@ def test_the_report_says_texting_is_off_when_someone_signed_up(capsys):
 # ---------- the Preferences row and sheet (source markers) ----------
 
 def test_the_preferences_sheet_has_a_morning_text_row():
-    assert "<span class=\"prefs-row-title\">Morning text</span>" in SHELL_JS
+    assert "name: 'Morning text', sub: prefsMorningLine()" in SHELL_JS
     assert "data-morning=\"open\"" in SHELL_JS
     assert "function prefsMorningLine()" in SHELL_JS
     assert "fetch('/api/morning-text')" in SHELL_JS

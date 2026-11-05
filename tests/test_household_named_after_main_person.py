@@ -149,7 +149,7 @@ def test_the_automatic_name_fits_the_same_60_characters():
 
 def test_the_screens_say_it_well():
     js = (REPO / "static" / "shell.js").read_text(encoding="utf-8")
-    assert "'<span class=\"prefs-row-title\">Household name</span>'" in js
+    assert "name: 'Household name', sub: shellWho.household_name" in js
     assert "'/api/household/name'" in js
     assert "savedLine('Household name', 'saved')" in js
     share = (REPO / "static" / "share.html").read_text(encoding="utf-8")

@@ -86,11 +86,12 @@ def test_sign_in_links_to_all_three():
 
 def test_preferences_about_links_to_all_three_and_shows_the_version(signed_in):
     shell = (ROOT / "static" / "shell.js").read_text(encoding="utf-8")
-    start = shell.index("function prefsAboutHtml()")
-    about = shell[start:start + 1200]
+    # Settings → Help: a tile each, and the version under them.
+    start = shell.index("function renderPrefsRows()")
+    render = shell[start:shell.index("// ---------- Household name", start)]
     for path in PAGES:
-        assert f"href=\"{path}\"" in about, path
-    assert "prefsAboutHtml()" in shell[:start], "the About block is never drawn"
+        assert f"prefsLinkTileHtml('{path}'" in render, path
+    assert "prefsAboutHtml()" in render, "the version is never drawn"
     assert signed_in.get("/api/whoami").json()["legal_version"] == legal.LEGAL_VERSION
 
 

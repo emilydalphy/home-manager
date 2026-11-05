@@ -46,10 +46,8 @@ def _icon_prelude() -> str:
     return (
         _extract("escapeHtml", SHELL_JS) + "\n"
         + _extract_var("ICONS", SHELL_JS) + "\n"
-        + _extract_var("SLOT_ICONS", SHELL_JS) + "\n"
-        + _extract_var("PREP_SECTION_ICONS", SHELL_JS) + "\n"
         + "\n".join(_extract(n, SHELL_JS) for n in (
-            "iconTileHtml", "slotIconTileHtml", "prepSectionTileHtml", "statusIconName", "statusIconHtml"))
+            "statusIconName", "statusIconHtml"))
         + "\n"
     )
 
@@ -84,14 +82,9 @@ def test_the_tile_ink_pairs_have_dark_values():
         assert THEME_CSS.count(f"{token}:") >= 3, f"{token} needs light, dark (media) and forced-dark values"
 
 
-def test_the_tile_is_44px_at_the_control_radius_in_tokens_only():
-    tile = _css_rule(".icon-tile")
-    assert "width: 44px" in tile and "height: 44px" in tile
-    assert "border-radius: var(--radius-control)" in tile
-    assert "background: var(--celadon-tint)" in tile and "color: var(--celadon-label)" in tile
-    assert ".icon-tile.is-sand { background: var(--sand); color: var(--apricot-label); }" in SHELL_CSS
-    assert ".icon-tile svg { width: 22px; height: 22px; display: block; }" in SHELL_CSS
+def test_the_status_icon_stays_and_the_icon_tile_is_gone():
     assert ".status-icon svg { width: 15px; height: 15px; display: block; }" in SHELL_CSS
+    assert ".icon-tile" not in SHELL_CSS, "Bright Dusk has no icon tiles: no filler pictures"
 
 
 def test_no_tile_on_the_spruce_cards():

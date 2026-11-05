@@ -180,7 +180,7 @@ def test_a_list_row_says_the_time_and_where_it_came_from_and_nothing_made_up():
 
 def test_the_row_sits_under_how_you_eat_and_the_imports_have_no_in_development_pill():
     render = _function("renderPrefsRows")
-    assert "(row.section === 'taste' ? recipesPrefsRowHtml() : '')" in render
+    assert "prefsSectionTileHtml('regulars', 'Regulars') +" in render and "recipesPrefsRowHtml();" in render
     sheet = _function("recipesListHtml")
     assert "Add from a link" in sheet and "Add from a cookbook" in sheet
     assert "In development" not in sheet
