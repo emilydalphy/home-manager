@@ -1,0 +1,8 @@
+[
+{"dish_name": "Meatloaf", "cuisine": "American", "main_protein": "beef", "ingredients": ["Ground beef", "Panko breadcrumbs", "Milk", "Eggs", "Yellow onion", "Garlic", "Ketchup", "Worcestershire sauce", "Brown sugar", "Apple cider vinegar", "Salt", "Black pepper"]},
+{"dish_name": "Chicken Piccata", "cuisine": "Italian", "main_protein": "chicken", "ingredients": ["Boneless skinless chicken breasts", "All-purpose flour", "Unsalted butter", "Olive oil", "Dry white wine", "Lemons", "Capers", "Fresh parsley", "Salt", "Black pepper"]},
+{"dish_name": "Chana Masala", "cuisine": "Indian", "main_protein": "chickpeas", "ingredients": ["Chickpeas", "Yellow onions", "Roma tomatoes", "Ginger", "Garlic", "Green chili", "Vegetable oil", "Cumin seeds", "Bay leaves", "Ground turmeric", "Kashmiri chili powder", "Ground coriander", "Garam masala", "Kasuri methi", "Lemon", "Cilantro", "Salt"]},
+{"dish_name": "Chicken Tinga", "cuisine": "Mexican", "main_protein": "chicken", "ingredients": ["Boneless skinless chicken thighs", "White onion", "Garlic", "Tomato sauce", "Chipotles in adobo", "Mexican oregano", "Ground cumin", "Olive oil", "Salt", "Black pepper", "Corn tortillas", "Avocado", "Mexican crema", "Queso fresco", "Lime"]},
+{"dish_name": "Thai Basil Chicken", "cuisine": "Thai", "main_protein": "chicken", "ingredients": ["Ground chicken", "Thai bird chilies", "Shallots", "Garlic", "Thai basil", "Eggs", "Vegetable oil", "Sugar", "Soy sauce", "Fish sauce", "Low-sodium chicken broth", "Jasmine rice"]},
+{"dish_name": "Misir Wat", "cuisine": "Ethiopian", "main_protein": "lentils", "ingredients": ["Red lentils", "Ghee", "Yellow onion", "Garlic", "Roma tomato", "Tomato paste", "Berbere", "Vegetable broth", "Salt", "Injera"]}
+]
