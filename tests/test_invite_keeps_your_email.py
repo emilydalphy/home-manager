@@ -178,6 +178,15 @@ def test_a_household_with_a_passphrase_is_not_stopped_on_its_next_open(outbox):
     assert alex.get("/api/whoami").json()["must_add_email"] is False
 
 
+def test_the_first_household_has_a_passphrase_even_with_no_stored_row(outbox, monkeypatch):
+    # Its passphrase is an environment variable (households.py).
+    owner, alex = _household_with_an_invited_adult(outbox, "owner-e@example.com")
+    household = owner.get("/api/whoami").json()["household_id"]
+    assert alex.get("/api/whoami").json()["must_add_email"] is True
+    monkeypatch.setattr(account_email, "DEFAULT_HOUSEHOLD_ID", household)
+    assert alex.get("/api/whoami").json()["must_add_email"] is False
+
+
 def test_an_address_already_in_use_is_told_to_use_another(outbox):
     dana = TestClient(app)
     _email_sign_in(dana, "dana@example.com", outbox)

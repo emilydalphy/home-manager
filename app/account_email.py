@@ -51,7 +51,7 @@ from email.message import EmailMessage
 
 from . import legal
 from .db import get_conn
-from .tools._shared import _ADULT_SQL, UNNAMED_HOUSEHOLD
+from .tools._shared import _ADULT_SQL, DEFAULT_HOUSEHOLD_ID, UNNAMED_HOUSEHOLD
 
 logger = logging.getLogger("home_manager")
 
@@ -546,6 +546,10 @@ def joined_by_invite_without_email(household_id: int, member_id: int) -> bool:
     way back in, and today's testers aren't stopped on their next open.
     /join's own email step has no skip for anyone.
     """
+    # Household 1's passphrase is an environment variable, so it has no
+    # household_credentials row (households.py) but does have a passphrase.
+    if int(household_id) == DEFAULT_HOUSEHOLD_ID:
+        return False
     conn = get_conn()
     try:
         row = conn.execute(
