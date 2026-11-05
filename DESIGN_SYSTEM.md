@@ -280,9 +280,13 @@ These parts of older screens keep their behaviour through the rebuild. The stage
 - **Change card** (`mountChangeCard`): what the chat proposes, one row per slot, nothing written until Save, then a toast with Undo and **Changed** on the row for eight seconds.
 - **Meal sheet** (`planRowSheetHtml`): Swap, Tweak and Move only where they can do something, then See the recipe.
 - **Plate parts and Tweak** (`plateRowHtml`, `openTweakSheet`): the plate as its parts, with a Save and one quiet way out.
-- **Cook's day** (`cookRootParts`): today's meals in eating order. No clock, ever.
+- **Cook's day** (`cookRootParts`): today's prep tile, then today's meals in eating order as equal tiles, then next up (Z-CookDay). One big plain card only when a single meal is left (Z-Cook). No meal is marked, and no clock, ever.
+- **Prep** (`cookSessionHtml`): the server's sections as tiles with tick boxes, two columns, all open, each folds on its head and stays folded through a redraw (Z-Prep). Made on the night at the foot.
+- **Recipe** (`recipeTopHtml`, `recipeTabsHtml`): round Back and ···, plate at 216, name, Ingredients and Steps (Z-Recipe, Z-Steps). No tab bar. What a cook needs before starting stays above the tiles; everything else is under the ··· (`recipeMoreRowsHtml`).
+- **Cooking** (`cookCookerHtml`): one step, its timers in dusk, what it needs, Next step (Z-CookMode). No tab bar.
+- **Ask** (`#ask-sheet`): the sheet from Z-Ask. Dusk bubbles for the person, white for Pomona, a dish named in a reply is a tile under it, Send is the apricot pill.
 - **Before bed** (`cookBedCardHtml`): today's fridge moves and tomorrow's prep as one checklist.
-- **Empty moment** (`emptyMomentHtml`): becomes a note card at its stage.
+- **Empty moment** (`emptyMomentHtml`): only Plan's paused Chores and the unreachable Today still use it. Every other empty screen is a note card: one plain line, one button when there is a next step.
 
 ---
 
@@ -303,7 +307,7 @@ In the app:
 - **Four screens, period: Plan, Shop, Kitchen, Cook. The app opens on Plan.** (Emily retired Today on 2026-11-01.) The code still spells the tab keys `week`, `grocery`, `home` and `kitchen`, on purpose. **Naming trap:** `kitchen` / `/kitchen` in code is the Cook tab, and `home` / `/home` is the Kitchen tab. Everything else is a *state* (a switcher inside a tab), a *sheet*, or a *step*, never a new page with its own header.
 - **Ask is in the tab bar on every main screen, and the sheet it opens is part of the shell, not any one screen.** Its answer arrives over whatever tab you're on and never navigates you somewhere you didn't ask to go. Example chips show only on an empty chat.
 - **Cooking is a *step* of Cook**, not a state of Plan and not its own tab.
-- **Cook's root has one primary action: "Start cooking", in its dock** (Emily, 2026-09-13). It used to read "Cook's root has no primary action". The dock names the next meal's own action: "Make lunch", "Start cooking" for dinner, "Keep cooking", "Mark eaten", and "Start prep" on a prep day. There's no dock on a night with nothing to cook. One step down, the recipe's "Start cooking" and the cooker's "Next step" / "Done — on the table" (it read "Mark it cooked" until 2026-09-17) are each their screen's one apricot.
+- **Cook's root has no dock on a normal day** (Z-CookDay, Emily, 2026-11-05): a tile opens its meal, the prep tile opens the prep. One meal left, its action is on the big card: "Make lunch", "Start cooking" for dinner, "Keep cooking" once under way. The dock holds only a tick a tile can't make: "Mark eaten" or "Mark it cooked" for food already made, and "All done" on the night-before list. There is no dock on a night with nothing to cook.
 - **One way back, and it names its parent**. Every screen deeper than a tab root has exactly one way up, and it goes to the parent, never `history.back()`. The phone's back gesture matches it. The boards draw it as a round Back button; older steps still have the named `‹ This week` crumb until their stage. A tab root has none.
 - **One dock**. The single thing a screen is for lives in a fixed strip above the tab bar, labelled for what it does, and it does not scroll away. A screen with no single action has no dock. Rare actions go behind `···`.
 - **Each screen has one job, and nothing appears twice.**
