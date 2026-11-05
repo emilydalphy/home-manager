@@ -12,19 +12,14 @@
 <meta name="robots" content="noindex, nofollow" />
 <style>
   /*
-    Sign-in — built to the SignInPomona design. This is a reskin only: the
-    form's action, method, field names and the two placeholders that
-    app/main.py:_render_login substitutes into (the next-path value on the
-    hidden input, and the error-banner comment just above the form) are
-    unchanged, so the auth behaviour is exactly what it was.
+    Sign-in, Z-SignIn. The look only: the form's action, method, field names
+    and the two placeholders that app/main.py:_render_login substitutes into
+    (the next-path value on the hidden input, and the error-banner comment
+    just above the form) are unchanged, so auth behaves as it did.
 
     Do not write either placeholder's literal token anywhere else in this
     file, including in a comment: _render_login does a plain global
-    str.replace, so a second copy would get substituted too — the error
-    banner would be injected into this comment as well as into the page.
-
-    The one screen in the app that is spruce-ground rather than ivory: it is
-    the front door, so it gets the anchor colour and the apricot glow.
+    str.replace, so a second copy would get substituted too.
   */
   body {
     margin: 0;
@@ -32,149 +27,49 @@
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
-    background-color: var(--spruce);
-    background-image: radial-gradient(132% 60% at 50% 3%,
-      rgba(224, 145, 92, 0.17) 0%,
-      rgba(224, 145, 92, 0.05) 44%,
-      rgba(27, 51, 40, 0) 74%);
-    color: var(--ivory-ink);
+    background: var(--cream);
+    color: var(--ink);
     font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
   }
 
-  /* ---- the mark ---- */
+  /* The drawn 150px is 844px tall's top, and it gives way on a short screen. */
   .signin-top {
-    flex: 1 1 auto;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 22px;
-    padding: 96px 26px 40px;
-    box-sizing: border-box;
-  }
-  .signin-plaque {
-    width: 66px;
-    height: 66px;
-    flex: 0 0 auto;
-    border-radius: 22px;
-    background: rgba(246, 238, 225, 0.05);
-    border: 1.5px solid rgba(169, 196, 176, 0.34);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--apricot);
-  }
-  .signin-mark {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 16px;
-  }
-  .signin-wordmark {
-    font-family: var(--font-display);
-    font-size: 64px;
-    font-weight: 700;
-    letter-spacing: -0.045em;
-    line-height: 1;
-    color: var(--ivory-ink);
-    margin: 0;
-  }
-  .signin-rule {
-    width: 46px;
-    height: 2px;
-    border-radius: 1px;
-    background: rgba(224, 145, 92, 0.62);
-  }
-
-  /* ---- the two lines of copy ---- */
-  .signin-copy {
-    max-width: 296px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 7px;
-    text-align: center;
-  }
-  /* The one Newsreader italic line on this screen — the brand's exhale.
-     One per screen; a second would make this a serif brand. */
-  .signin-line {
-    font-family: var(--font-accent);
-    font-style: italic;
-    font-size: 20px;
-    font-weight: 400;
-    line-height: 1.35;
-    color: var(--apricot-light);
-    margin: 0;
-  }
-  /* ---- the form ---- */
-  .signin-bottom {
-    flex: 0 0 auto;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding: 0 26px 44px;
-    /* Sign-in-as-desktop-room (Emily, 2026-09-11): at 1440px the field and
-       button used to stretch edge to edge with only the 26px gutter to stop
-       them — a passphrase field wider than most monitors' reading measure.
-       The page itself stays full-bleed spruce (§1 of the desktop-room brief);
-       only the field/button/helper column gets a sane reading width. */
     width: 100%;
     max-width: 420px;
     margin: 0 auto;
+    padding: clamp(40px, calc(100dvh - 694px), 150px) 24px 0;
     box-sizing: border-box;
   }
-  .signin-bottom form {
+  .signin-wordmark {
+    margin: 0;
+    font-size: 32px;
+    line-height: 38px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+  }
+
+  .signin-bottom {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 26px 16px calc(34px + env(safe-area-inset-bottom, 0px));
+    box-sizing: border-box;
+  }
+  .signin-step { display: flex; flex-direction: column; gap: 12px; }
+  .signin-step[hidden] { display: none; }
+  .signin-bottom form, #email-form, #code-form {
     display: flex;
     flex-direction: column;
     gap: 12px;
     margin: 0;
   }
 
-  /* The field is drawn on the wrapper so the key icon can sit inside it;
-     the input itself is transparent and unstyled. */
-  .signin-field {
-    height: 56px;
-    box-sizing: border-box;
-    border-radius: 18px;
-    background: var(--spruce-raised);
-    border: 1.5px solid var(--on-spruce-edge);
-    display: flex;
-    align-items: center;
-    gap: 11px;
-    padding: 0 16px;
-  }
-  .signin-field:focus-within { border-color: var(--celadon); }
-  .signin-field svg {
-    flex: 0 0 auto;
-    color: var(--celadon);
-  }
-  .signin-field input {
-    flex: 1 1 auto;
-    min-width: 0;
-    background: transparent;
-    border: none;
-    outline: none;
-    font-family: var(--font-body);
-    /* 16px keeps iOS Safari from zooming the page on focus */
-    font-size: 16px;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-    color: var(--ivory-ink);
-  }
-  /* .60, not .48. Note the backdrop: the input is transparent, so this
-     text composites over .signin-field's --spruce-raised (#24402F), NOT
-     over the page's --spruce. That is a lighter ground under light text,
-     so it LOWERS contrast — .54 measures 4.56:1 against the page and only
-     4.09:1 against what is actually behind it. .60 gives 4.67:1 where it
-     really sits. This is the field a first-time tester types her
-     passphrase into. */
-  .signin-field input::placeholder {
-    color: rgba(246, 238, 225, 0.98);
-    font-weight: 600;
-  }
-
-  /* Visually hidden, still read aloud — the design shows a placeholder
-     only, but a field with no label is not a field for everybody. */
   .sr-only {
     position: absolute;
     width: 1px; height: 1px;
@@ -185,181 +80,101 @@
     border: 0;
   }
 
-  /* Apricot fill, dark spruce ink — rule one. Extends theme.css's
-     .btn-primary (which also keeps the focus ring spruce, since an apricot
-     ring on an apricot button would vanish). */
-  .signin-btn {
-    height: 56px;
-    width: 100%;
-    border-radius: 18px;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 9px;
-    font-size: 18px;
-    box-shadow: 0 18px 30px -18px rgba(224, 145, 92, 0.8);
-  }
+  .field::placeholder { color: var(--slate); font-weight: 400; opacity: 1; }
+  .field:focus { outline: 2px solid var(--dusk); outline-offset: 2px; }
 
-  .signin-helper {
-    min-height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding-top: 6px;
-    margin: 0;
-    font-size: 12.5px;
-    font-weight: 500;
-    line-height: 1.4;
-    text-align: center;
-    /* .54, not .44 — 12.5px is small text, so it needs the full 4.5:1. */
-    color: rgba(246, 238, 225, 0.85);
-  }
-
-  /* Privacy, terms and help (App Store, 2026-10-06 — app/legal.py). The
-     quietest thing on the screen: the helper line's ink, no underline
-     until hover. Each link is its own 44px row (DESIGN_SYSTEM.md §2
-     rule 6). */
-  .signin-legal {
-    display: flex;
-    justify-content: center;
-    gap: 0 18px;
-    margin: -6px 0 0;
-  }
-  .signin-legal a {
-    display: inline-flex;
-    align-items: center;
-    min-height: 44px;
-    padding: 0 4px;
-    font-size: 12.5px;
-    font-weight: 600;
-    color: rgba(246, 238, 225, 0.85);
-    text-decoration: none;
-  }
-  .signin-legal a:hover { color: var(--ivory-ink); text-decoration: underline; }
-
-  /* The email steps (2026-10-06). One section shows at a time. */
-  .signin-step { display: flex; flex-direction: column; gap: 12px; }
-  .signin-step[hidden] { display: none; }
-  #email-form, #code-form { display: flex; flex-direction: column; gap: 12px; margin: 0; }
   .signin-sent {
     margin: 0;
-    font-size: 15px;
-    line-height: 1.45;
-    text-align: center;
-    color: var(--ivory-ink);
+    font-size: 16px;
+    line-height: 22px;
+    color: var(--ink);
     overflow-wrap: anywhere;
   }
+  .signin-helper {
+    margin: 0;
+    font-size: 13px;
+    line-height: 18px;
+    text-align: center;
+    color: var(--slate);
+  }
+
+  /* The quiet ways round: another way in, another code, another address. */
   .signin-links { display: flex; justify-content: center; flex-wrap: wrap; gap: 0 18px; }
-  /* The quiet ways round: another way in, another code, another address.
-     Text buttons, each its own 44px row (DESIGN_SYSTEM.md §2 rule 6). */
   .signin-switch {
     align-self: center;
     background: none;
-    border: none;
+    border: 0;
     min-height: 44px;
     padding: 0 6px;
     font-family: var(--font-body);
     font-size: 14px;
     font-weight: 600;
-    color: var(--ivory-ink);
-    text-decoration: underline;
-    text-decoration-color: var(--apricot-rule);
-    text-underline-offset: 4px;
+    color: var(--slate);
     cursor: pointer;
   }
   .signin-switch[hidden] { display: none; }
+
+  /* The foot. On a tall phone it sits at the bottom, as drawn. */
+  .signin-foot {
+    margin-top: auto;
+    padding-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
   .signin-agree {
     margin: 0;
-    font-size: 12.5px;
-    font-weight: 500;
-    line-height: 1.45;
+    font-size: 13px;
+    line-height: 18px;
     text-align: center;
-    color: rgba(246, 238, 225, 0.85);
+    color: var(--slate);
   }
   .signin-agree[hidden] { display: none; }
-  .signin-agree a { color: var(--ivory-ink); font-weight: 700; }
-  .error[hidden] { display: none; }
+  .signin-agree a { color: var(--slate); font-weight: 600; }
+  /* The sentence's two links are small words: a 44px tap without a taller line. */
+  .signin-agree a { display: inline-block; padding: 13px 4px; margin: -13px -2px; }
 
-  /* Error banner — app/main.py injects exactly <p class="error">…</p>. */
+  .signin-legal { display: flex; justify-content: center; gap: 0 18px; }
+  /* The agree line already links both pages, so with it up Help stands alone. */
+  .signin-agree:not([hidden]) ~ .signin-legal a:not([href="/support"]) { display: none; }
+  .signin-legal a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--slate);
+    text-decoration: none;
+  }
+
+  /* app/main.py injects exactly <p class="error">...</p>. A problem in clay. */
   .error {
     margin: 0;
-    background: rgba(178, 58, 34, 0.24);
-    border: 1.5px solid rgba(224, 145, 92, 0.34);
-    color: var(--ivory-ink);
-    border-radius: 14px;
-    padding: 11px 14px;
-    font-size: 14.5px;
-    line-height: 1.4;
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 500;
+    color: var(--clay);
     text-align: center;
   }
-
-  /* Short screens (landscape phones, small laptops): let the mark shrink
-     rather than pushing the form off the bottom. */
-  @media (max-height: 640px) {
-    .signin-top { padding-top: 40px; gap: 16px; }
-    .signin-wordmark { font-size: 48px; }
-  }
-
-  /* ---------- Dark mode ----------
-     The sign-in screen is already a full-bleed spruce panel, so it needs no
-     repaint: it rides --spruce, which lifts from #1B3328 to #22422F in dark
-     exactly like every other hero. What DOES change is that a lighter panel
-     costs the quiet ivories some contrast, so the two lowest alphas are
-     raised here to clear 4.5:1 against the lighter ground.
-
-     NOTE FOR EMILY: both of these already fail 4.5:1 in LIGHT mode today
-     (3.93:1 and 3.54:1) — pre-existing, not introduced here, and left alone
-     because this stage could not change light. Dark is now the more legible
-     of the two; the light values want their own small ticket. */
-  @media (prefers-color-scheme: dark) {
-    /*
-      0.72, not the 0.62 that the page-spruce maths suggested. The input is
-      not ON the page spruce: its own translucent fill composites to about
-      #2E5140, which is lighter, so the placeholder had 4.07:1 there and only
-      LOOKED safe when measured against the panel behind it. Caught by
-      auditing what the browser actually renders rather than by arithmetic on
-      the tokens. 4.89:1 on the field, 5.87:1 if it ever sits on bare spruce.
-    */
-    :where(:root:not([data-theme="light"])) .signin-field input::placeholder { color: rgba(246, 238, 225, 0.72); }
-    :where(:root:not([data-theme="light"])) .signin-helper { color: rgba(246, 238, 225, 0.60); }
-  }
-  /* Forced dark (Settings → Appearance → Dark): the twin of the block above.
-     tests/test_appearance.py checks the two match. */
-  :where(:root[data-theme="dark"]) .signin-field input::placeholder { color: rgba(246, 238, 225, 0.72); }
-  :where(:root[data-theme="dark"]) .signin-helper { color: rgba(246, 238, 225, 0.60); }
+  .error[hidden] { display: none; }
 </style>
 </head>
 <body>
   <main class="signin-top">
-    <div class="signin-plaque" aria-hidden="true">
-      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.4c-3.1 0-5.6-2.6-5.6-5.9 0-3.2 2.5-5.7 5.6-5.7s5.6 2.5 5.6 5.7c0 3.3-2.5 5.9-5.6 5.9z"></path><path d="M12 9V6.2"></path><path d="M12.5 7.1c.9-2.2 3.2-3.1 5.3-2.7.4 2.2-.7 4.3-2.8 4.7-1.4.3-2.5-.6-2.5-2z"></path><path d="M12 10.2c-1.1 1.6-1.1 6.3 0 8.2"></path></svg>
-    </div>
-
-    <div class="signin-mark">
-      <h1 class="signin-wordmark">Pomona</h1>
-      <span class="signin-rule" aria-hidden="true"></span>
-    </div>
-
-    <div class="signin-copy">
-      <p class="signin-line">This one&rsquo;s just for your household.</p>
-    </div>
+    <h1 class="signin-wordmark">Pomona</h1>
   </main>
 
   <div class="signin-bottom">
     <!-- Step 1 (the front door since 2026-10-06): an email address. -->
     <section class="signin-step" id="step-email" aria-labelledby="email-label">
       <form id="email-form" novalidate>
-        <div class="signin-field">
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="13" rx="2.5"></rect><path d="M4.5 7.5l7.5 5.5 7.5-5.5"></path></svg>
-          <label class="sr-only" for="email" id="email-label">Your email</label>
-          <input id="email" name="email" type="email" inputmode="email" placeholder="Your email" autocomplete="email" autocapitalize="off" spellcheck="false" maxlength="254" required />
-        </div>
+        <label class="sr-only" for="email" id="email-label">Your email</label>
+        <input class="field" id="email" name="email" type="email" inputmode="email" placeholder="Your email" autocomplete="email" autocapitalize="off" spellcheck="false" maxlength="254" required />
         <p class="error" id="email-msg" role="alert" hidden></p>
-        <button type="submit" class="btn-primary signin-btn" id="email-send">
-          <span>Start with your email</span>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13"></path><path d="M12.5 6l6 6-6 6"></path></svg>
-        </button>
+        <button type="submit" class="btn-main" id="email-send">Start with your email</button>
       </form>
     </section>
 
@@ -367,16 +182,10 @@
     <section class="signin-step" id="step-code" aria-labelledby="code-label" hidden>
       <p class="signin-sent" id="code-sent" aria-live="polite"></p>
       <form id="code-form" novalidate>
-        <div class="signin-field">
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="9.5" rx="2.5"></rect><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"></path></svg>
-          <label class="sr-only" for="code" id="code-label">6-digit code</label>
-          <input id="code" name="code" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="6-digit code" autocomplete="one-time-code" maxlength="6" required />
-        </div>
+        <label class="sr-only" for="code" id="code-label">6-digit code</label>
+        <input class="field" id="code" name="code" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="6-digit code" autocomplete="one-time-code" maxlength="6" required />
         <p class="error" id="code-msg" role="alert" hidden></p>
-        <button type="submit" class="btn-primary signin-btn" id="code-go">
-          <span>Come in</span>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13"></path><path d="M12.5 6l6 6-6 6"></path></svg>
-        </button>
+        <button type="submit" class="btn-main" id="code-go">Come in</button>
       </form>
       <div class="signin-links">
         <button type="button" class="signin-switch" id="code-resend">Send a new code</button>
@@ -389,29 +198,25 @@
     <!--ERROR-->
     <form method="post" action="/login" id="passphrase-form">
       <input type="hidden" name="next" value="__NEXT__" />
-      <div class="signin-field">
-        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8.5" cy="12" r="4"></circle><path d="M12.5 12h8"></path><path d="M17.5 12v3.4"></path><path d="M20.5 12v2.4"></path></svg>
-        <label class="sr-only" for="password">Household passphrase</label>
-        <input id="password" name="password" type="password" placeholder="Passphrase" autocomplete="current-password" required />
-      </div>
-      <button type="submit" class="btn-primary signin-btn">
-        <span>Come in</span>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13"></path><path d="M12.5 6l6 6-6 6"></path></svg>
-      </button>
+      <label class="sr-only" for="password">Household passphrase</label>
+      <input class="field" id="password" name="password" type="password" placeholder="Passphrase" autocomplete="current-password" required />
+      <button type="submit" class="btn-main">Come in</button>
     </form>
     <p class="signin-helper">Don&rsquo;t have the passphrase? Ask whoever set up your household.</p>
     </section>
 
-    <!-- Before the account is created (email steps only). -->
-    <p class="signin-agree" id="signin-agree">By continuing you agree to the <a href="/terms">Terms</a> and <a href="/privacy">Privacy Policy</a>.</p>
     <button type="button" class="signin-switch" id="switch-passphrase" data-show="passphrase">Sign in with a household passphrase</button>
     <button type="button" class="signin-switch" id="switch-email" data-show="email" hidden>Start with your email instead</button>
 
-    <nav class="signin-legal" aria-label="Pomona&rsquo;s policies">
-      <a href="/privacy">Privacy</a>
-      <a href="/terms">Terms</a>
-      <a href="/support">Help</a>
-    </nav>
+    <div class="signin-foot">
+      <!-- Before the account is created (email steps only). -->
+      <p class="signin-agree" id="signin-agree">By continuing you agree to the <a href="/terms">Terms</a> and <a href="/privacy">Privacy Policy</a></p>
+      <nav class="signin-legal" aria-label="Pomona&rsquo;s policies">
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+        <a href="/support">Help</a>
+      </nav>
+    </div>
   </div>
 <script src="/static/api.js"></script>
 <script>

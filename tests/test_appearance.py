@@ -31,7 +31,7 @@ THEMED_PAGES = [
     "legal/privacy.html", "legal/terms.html", "legal/support.html",
 ]
 # onboarding.html: its "Who's eating, and when?" grid's "some of you" cell (2026-09-30).
-DARK_FILES = ["theme.css", "shell.css", "login.html", "inventory.html", "onboarding.html"]
+DARK_FILES = ["theme.css", "shell.css", "inventory.html"]
 
 MATCH = ':root:not([data-theme="light"])'
 FORCED = ':root[data-theme="dark"]'

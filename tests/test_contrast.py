@@ -29,7 +29,6 @@ THEME = (STATIC / "theme.css").read_text()
 GROUND = "#FFFAF3"   # Warm Cream, the app canvas
 SURFACE = "#FFFFFF"  # tiles and cards
 BLUSH = "#FBE9D9"    # the switcher, round buttons
-SPRUCE = "#1B4392"   # legacy name, Dusk Blue: the sign-in screen until its stage
 
 AA_NORMAL = 4.5
 
@@ -180,82 +179,18 @@ def test_placeholders_have_a_rule_of_their_own():
     assert "opacity: 1" in rule.group(0)
 
 
-SPRUCE_RAISED = "#3F61A3"  # .signin-field's own fill, lighter than the page
-
-# Each translucent-ivory line on the sign-in screen, with the colour it is
-# ACTUALLY drawn on. These differ, and that is the whole point: an earlier
-# version of this test measured every line against the page background and
-# so certified a still-failing one as fixed. Light text on a *lighter*
-# backdrop has LESS contrast, not more, so guessing the darker ground
-# flatters the result instead of being conservative.
-SIGN_IN_TEXT = [
-    # (what it is, css rule it lives in, backdrop and why)
-    ("passphrase placeholder", ".signin-field input::placeholder",
-     SPRUCE_RAISED, "the input is transparent, so this sits on the field's fill"),
-    ("helper line under the field", ".signin-helper",
-     SPRUCE, "in .signin-bottom, straight on the page"),
-    ("privacy / terms / help links at the foot", ".signin-legal a",
-     SPRUCE, "in .signin-bottom, straight on the page"),
-    ("'By continuing you agree' line", ".signin-agree",
-     SPRUCE, "in .signin-bottom, straight on the page"),
-]
-
-
 def test_the_sign_in_screen_is_readable():
     """
     The first screen anyone ever sees, and the one screen a new tester has
-    to read carefully -- it is where she types a passphrase she was texted.
+    to read carefully. Z-SignIn: slate and night ink on cream and white, every
+    pair a solid token, so the numbers are the tokens' own.
     """
     login = (STATIC / "login.html").read_text()
-    # Scoped to LIGHT mode only: stage 3 added its own
-    # `@media (prefers-color-scheme: dark)` block to this same page, with
-    # its own translucent-ivory lines, its own backdrop reasoning, and its
-    # own numbers documented right there in a comment. That block is out of
-    # scope for this (light-mode-only) ticket, so it is excluded here rather
-    # than forcing this count to track an unrelated stage's future edits.
-    light_only = re.sub(
-        r"@media \(prefers-color-scheme:\s*dark\)\s*\{.*?\n  \}", "", login, flags=re.DOTALL
-    )
-    # ...and the forced-dark twin of that block (Settings → Appearance,
-    # 2026-09-24), which is the same dark rules again outside the media query.
-    light_only = re.sub(
-        r':where\(:root\[data-theme="dark"\]\)[^{]*\{[^}]*\}', "", light_only
-    )
-    alphas = re.findall(r"color:\s*rgba\(246,\s*238,\s*225,\s*(0?\.\d+)\)", light_only)
-    # Exactly the lines this test knows: the "Enter your passphrase to come
-    # in." sub-line under the tagline was cut on 2026-09-11 (copy cleanse —
-    # the field and the button already say it), and its rule went with it.
-    assert len(alphas) == len(SIGN_IN_TEXT), (
-        f"the sign-in screen has {len(alphas)} translucent-ivory text colours in "
-        f"light mode; this test knows the backdrop for {len(SIGN_IN_TEXT)} of them. "
-        f"A new one needs its own backdrop looked up, not assumed."
-    )
-
-    for what, rule, backdrop, why in SIGN_IN_TEXT:
-        block = re.search(rf"{re.escape(rule)}\s*\{{[^}}]*\}}", login, re.DOTALL)
-        assert block, f"{rule} is gone — update this test"
-        colour = re.search(r"color:\s*(rgba\([^)]*\))", block.group(0))
-        assert colour, f"{rule} no longer sets a colour"
-        ratio = contrast(colour.group(1), backdrop)
-        assert ratio >= AA_NORMAL, (
-            f"{what} is {ratio:.2f}:1 on {backdrop} ({why}) — under AA. "
-            f"Raise the alpha rather than adding a new colour."
-        )
-
-
-def test_the_sign_in_field_fill_is_what_this_test_thinks_it_is():
-    """
-    The test above is only as good as its backdrop. If .signin-field is
-    ever repainted, the placeholder's real contrast moves and nothing else
-    would notice.
-    """
-    login = (STATIC / "login.html").read_text()
-    field = re.search(r"\.signin-field \{[^}]*\}", login, re.DOTALL)
-    assert field and "var(--spruce-raised)" in field.group(0), (
-        ".signin-field's background changed — re-measure the placeholder "
-        "against the new fill and update SPRUCE_RAISED"
-    )
-    assert token("--spruce-raised").lower() == SPRUCE_RAISED.lower()
+    assert "rgba(" not in login, "no see-through ink: its contrast depends on what's behind it"
+    assert contrast(token("--slate"), token("--cream")) >= AA_NORMAL
+    assert contrast(token("--slate"), token("--white")) >= AA_NORMAL
+    assert contrast(token("--night-ink"), token("--apricot")) >= AA_NORMAL
+    assert contrast(token("--clay"), token("--cream")) >= AA_NORMAL
 
 
 # Every rule in the app that strikes text through, with the token it uses.
