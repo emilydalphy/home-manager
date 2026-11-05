@@ -10,7 +10,7 @@ Sources of truth, in priority order:
 
 If they disagree, trust the boards and flag the drift. Everything below is written as a rule you can check, not a vibe.
 
-**The rebuild runs in stages.** Plan, the tab bar, the toast, the head and the shared components are Bright Dusk now. Shop, Kitchen, Cook, Recipe, Settings, Ask, the welcome and sign-in ride on the new tokens but keep their old layout until their stage. Where old code disagrees with this document on those screens, this document wins and the old code is on its way out.
+**The rebuild runs in stages.** Plan, Shop, Kitchen, the tab bar, the toast, the head and the shared components are Bright Dusk now. Cook, Recipe, Settings, Ask, the welcome and sign-in ride on the new tokens but keep their old layout until their stage. Where old code disagrees with this document on those screens, this document wins and the old code is on its way out.
 
 **The look changes, the flows don't.** If a behaviour would have to change to fit a screen, leave the behaviour alone and note it.
 
@@ -258,6 +258,19 @@ One of each, used the same way on every screen. The CSS is in the SHARED COMPONE
 - **··· on a day** is `openPlanDaySheet`, four tiles: Add a meal, Add from the freezer, Swap with another day, Take the night off, each only where it can do something. Each opens the flow it always opened; the night off is today's only, and goes to the chat with the words ready.
 - **··· on All** is the More sheet (`openMealsMoreSheet`): re-planning, the week after, the freezer, the whole week, setup, start over, help. The boards show no buttons on All's head and no way to Settings, so All carries ··· and the gear to keep both reachable.
 - **A slot is never absent.** An open slot is a text tile, "Your call", that reveals its options across the screen. A meal nobody's home for is a quiet text tile. A meal the household asked none of isn't drawn.
+
+### Shop (Z-Shop, Z-AddItem, Z-EmptyShop)
+
+- **The head:** "Shop" and the round + (`groAddButtonHtml`), which opens the add sheet. Under it `groBandExtrasHtml` draws "Before you go ›" when the pass has something to ask, the progress bar (`groProgressHtml`, the whole list or the store showing) and the store switcher (`groStoreChipsHtml`). There is no dock on the root. A deeper step has a round Back above its title and keeps its dock.
+- **The switcher** is `.seg`: All stores, then one segment per store with something left, and the one showing. It needs two to choose between. Past three it scrolls sideways (`.seg.is-long`).
+- **A store** is a heading with "N of M" over its aisle tiles. A tile is one aisle: its name small and slate, then rows (`groLineHtml`): a 22px ring in a 44px `.gro-box`, then one button holding the name and amount, which opens the row's sheet. Notes under a row (Maybe already home, Probably running low, Freezing it?) stay inside the tile, so a tick never changes a tile's width. A done store rolls up to one tile.
+- **The foot** (`groListFootHtml`) is tiles too: what's set aside and what's home go full width, and Spices, Sauces and Pantry staples are two across until opened.
+- **The add sheet** is the field with the camera inside it, the store switcher and one Add. All stores there means no particular store.
+- **Empty** is a note card, with Go to Plan under the line.
+
+### Kitchen (Z-Kitchen)
+
+The tab is keyed `home`. The head is "Kitchen", the server's one line and the round +, which is Snap a shelf and lands on the photo step. That sheet's Back goes to Add to the kitchen, for the other three ways in (`menuBack`). Under the head: the Fridge / Freezer / Pantry switcher, Use soon in dusk (never on Freezer), and that shelf's tiles. A tile opens the item sheet: how much is left as a switcher, then the actions as tiles. `static/kitchen-add.js` and `static/inventory.html` hold their own styles, on the same tokens.
 
 ### Behaviour that stays
 
