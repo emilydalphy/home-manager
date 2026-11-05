@@ -10,7 +10,7 @@ Sources of truth, in priority order:
 
 If they disagree, trust the boards and flag the drift. Everything below is written as a rule you can check, not a vibe.
 
-**The rebuild runs in stages.** Plan, Shop, Kitchen, the tab bar, the toast, the head and the shared components are Bright Dusk now. Cook, Recipe, Settings, Ask, the welcome and sign-in ride on the new tokens but keep their old layout until their stage. Where old code disagrees with this document on those screens, this document wins and the old code is on its way out.
+**The rebuild is done (2026-11-05, four stages).** Every screen is Bright Dusk, except Chores, which is paused and keeps its old layout on the tokens, and the dormant dark rules. Plan a week's steps keep their "‹ Plan" crumb.
 
 **The look changes, the flows don't.** If a behaviour would have to change to fit a screen, leave the behaviour alone and note it.
 
@@ -47,7 +47,7 @@ Green stays in the food. No teal, no pale blue. Purple never leads.
 
 ### Legacy names
 
-`theme.css` still defines The Inn's names (`--spruce`, `--celadon-tint`, `--sand`, `--apricot-label` and so on) in a marked LEGACY block, forwarding to Bright Dusk, because shell.css still says them about 3,000 times. A screen moves to the canonical names when its stage rebuilds it, and the block goes when the last stage is done. **Never add a new use of a legacy name.**
+`theme.css` still defines The Inn's names (`--spruce`, `--celadon-tint`, `--sand`, `--apricot-label` and so on) in a marked LEGACY block, forwarding to Bright Dusk, because shell.css and Chores still say them. The rebuild moved each screen's look, not every name, so the block stays until those rules are renamed. **Never add a new use of a legacy name.**
 
 ### Light mode only
 
@@ -271,6 +271,16 @@ One of each, used the same way on every screen. The CSS is in the SHARED COMPONE
 ### Kitchen (Z-Kitchen)
 
 The tab is keyed `home`. The head is "Kitchen", the server's one line and the round +, which is Snap a shelf and lands on the photo step. That sheet's Back goes to Add to the kitchen, for the other three ways in (`menuBack`). Under the head: the Fridge / Freezer / Pantry switcher, Use soon in dusk (never on Freezer), and that shelf's tiles. A tile opens the item sheet: how much is left as a switcher, then the actions as tiles. `static/kitchen-add.js` and `static/inventory.html` hold their own styles, on the same tokens.
+
+### Setup (Z-WelcomeD, Z-Setup1, Z-Setup2)
+
+The welcome is the one dusk moment: the mark, "Hi, I'm Pomona.", four tiles taking turns in CSS (the first one still, under reduced motion), Continue. Every question after it is the same shape: round Back, 6px progress bar, the question at 32, one line at 16, the answer, one apricot button in the fixed foot. Choices are tiles with a ring that turns apricot with a tick: two are stacked full width, more go two across, an odd last `.q-opt` runs the full width. A chosen tile stays white. People's cards hold their chips as tiles on white with a thin edge. The section's name stays for a screen reader (`.q-eyebrow`).
+
+### Settings (Z-Settings, Z-SetWeek, Z-SetAccount, Z-SetHelp, Z-Confirm)
+
+Six tiles and Help, one tap in. An inside screen is tiles too, in the same `#prefs-sheet` (`prefsState.screen`), so a tile's own hook still opens what it did. Settings is a whole screen and stays underneath what opens from it (`SHEET_LEVELS.prefs.stays`). A section or Recipes is `.is-screen`: a round Back over a 32px title. Everything else is a sheet. A tile shows a second line only when it reads back a state someone would look for.
+
+A question before an action is a sheet, not a centred dialog: `openConfirmSheet(title, action, onYes, line)`, or a `data-motion="dialog"` element, which `shell.css` lays out the same way. The action comes first, Cancel under it.
 
 ### Behaviour that stays
 
