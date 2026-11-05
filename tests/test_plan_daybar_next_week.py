@@ -185,13 +185,32 @@ def _prelude() -> str:
 _CUR = [{"date": f"2026-10-{d}", "isPast": d < 31, "isToday": d == 31} for d in range(26, 32)]
 _NEXT = {"weekly_plan_id": 42, "status": "draft",
          "days": [{"date": f"2026-11-0{d}", "is_past": False, "is_today": False} for d in range(1, 8)]}
+# Past days are hidden (Emily, 2026-11-05), so the plan behind only shows on
+# the bar while its days are still ahead: viewing a week that hasn't started.
 _PREV = {"weekly_plan_id": 41, "status": "approved",
-         "days": [{"date": f"2026-10-{d}", "is_past": True, "is_today": False} for d in range(19, 26)]}
+         "days": [{"date": f"2026-10-{d}", "is_past": False, "is_today": False} for d in range(19, 26)]}
+_AHEAD = [dict(d, isPast=False, isToday=False) for d in _CUR]
 
 
-def _bar(sel="null", adjacent=None) -> str:
+def _bar(sel="null", adjacent=None, days=None) -> str:
     adj = json.dumps(adjacent if adjacent is not None else {"previous": _PREV, "next": _NEXT})
-    return _run(_prelude() + f"console.log(JSON.stringify(planDayBarHtml({json.dumps(_CUR)}, {sel}, {adj})));")
+    days = days if days is not None else _AHEAD
+    return _run(_prelude() + f"console.log(JSON.stringify(planDayBarHtml({json.dumps(days)}, {sel}, {adj})));")
+
+
+@_needs_node
+def test_past_days_are_hidden_on_the_bar_on_both_plans():
+    gone = dict(_PREV, days=[dict(d, is_past=True) for d in _PREV["days"]])
+    html = _bar(adjacent={"previous": gone, "next": _NEXT}, days=_CUR)
+    dates = re.findall(r'data-date="([^"]*)"', html)
+    assert dates == ["2026-10-31"] + [f"2026-11-0{d}" for d in range(1, 8)]
+    # A past day opened from somewhere else keeps its segment.
+    html = _bar(sel="1", adjacent={"previous": None, "next": None}, days=_CUR)
+    assert re.findall(r'data-date="([^"]*)"', html) == ["2026-10-27", "2026-10-31"]
+    # A plan with no day left still shows its days, or there'd be no bar.
+    done = [dict(d, isPast=True, isToday=False) for d in _CUR]
+    html = _bar(adjacent={"previous": None, "next": None}, days=done)
+    assert len(re.findall(r'data-date="([^"]*)"', html)) == 6
 
 
 @_needs_node
@@ -297,12 +316,14 @@ def _reveal(script: str):
 
 
 _CUR_NEXT = json.dumps({"previous": _PREV, "next": _NEXT})
+# The same bar with the plan's earlier days still on it, so it has to scroll.
+_FROM_PREV = [dict(d, isPast=False) for d in _CUR]
 
 
 @_needs_node
 def test_on_the_plans_last_day_tomorrows_tile_opens_in_view():
     out = _reveal(
-        f"build(planDayBarHtml({json.dumps(_CUR)}, null, {_CUR_NEXT}));\n"
+        f"build(planDayBarHtml({json.dumps(_FROM_PREV)}, null, {_CUR_NEXT}));\n"
         "planDayBarReveal(steps);\n"
         "console.log(JSON.stringify({ today: visible('2026-10-31'), tomorrow: visible('2026-11-01'),"
         " scrolled: bar.scrollLeft > 0 }));"
@@ -318,7 +339,7 @@ def test_a_tapped_tile_stays_under_the_thumb_across_the_redraw():
     prev_as_adj = {"weekly_plan_id": 7, "status": "approved",
                    "days": [{"date": d["date"], "is_past": d["isPast"], "is_today": d["isToday"]} for d in _CUR]}
     out = _reveal(
-        f"build(planDayBarHtml({json.dumps(_CUR)}, null, {_CUR_NEXT}));\n"
+        f"build(planDayBarHtml({json.dumps(_FROM_PREV)}, null, {_CUR_NEXT}));\n"
         "bar.scrollLeft = 700;\n"
         "var before = bar.querySelector('[data-date=\"2026-11-03\"]').getBoundingClientRect().left;\n"
         "weekState.planBarAnchor = { date: '2026-11-03', x: before };\n"

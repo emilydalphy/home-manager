@@ -203,7 +203,6 @@ def test_design_system_and_the_decision_log_say_cooks_root_has_a_dock_now():
     # Nav rule 2 no longer names Cook's root as the screen with no dock.
     rule2 = DESIGN.split("- **One dock**", 1)[1][:1200]
     assert "Cook's root is the live example" not in rule2
-    assert "2026-09-13" in rule2
     # The empty-moment row: still no dock on an empty night.
     assert "no dock on a night with nothing to cook" in DESIGN
     assert "2026-09-13 — Cook's root is the shelf" in DECISION_LOG

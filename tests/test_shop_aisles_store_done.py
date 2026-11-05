@@ -205,10 +205,10 @@ def test_the_eyebrow_is_the_ten_px_caps_one_with_a_hairline_above_all_but_the_fi
     assert "var GRO_AISLE_LABELS = {" in SHELL_JS
     assert "'<span class=\"gro-eyebrow\">' + escapeHtml(GRO_AISLE_LABELS[aisle] || aisle) + '</span></div>'" in SHELL_JS
     eyebrow = re.search(r"\.gro-eyebrow \{(.*?)\}", SHELL_CSS, re.S).group(1)
-    assert "font-size: 10px" in eyebrow and "font-weight: 800" in eyebrow
-    assert "text-transform: uppercase" in eyebrow and "color: var(--ink-muted)" in eyebrow
+    assert "font-size: 11px" in eyebrow and "font-weight: 700" in eyebrow
+    assert "text-transform" not in eyebrow and "color: var(--ink-muted)" in eyebrow
     aisle = re.search(r"\n\.gro-aisle \{(.*?)\}", SHELL_CSS, re.S).group(1)
-    assert "border-top: 1.5px solid var(--hairline)" in aisle
+    assert "border-top: 1px solid var(--hairline)" in aisle
     assert ".gro-card-rows > .gro-aisle:first-child, .gro-trip + .gro-aisle { border-top: 0; }" in SHELL_CSS
     assert ".gro-aisle + .gro-line { border-top: 0; }" in SHELL_CSS, "the eyebrow is the separator for the row under it"
 
@@ -532,9 +532,7 @@ def test_the_fold_uses_the_base_token_on_the_leaving_curve_and_is_off_under_redu
 def test_the_design_system_records_the_fifth_animation():
     motion = DESIGN_SYSTEM[DESIGN_SYSTEM.index("- **Motion**"):]
     motion = motion[:motion.index("\n\n")]
-    assert "five animations in the whole app" in motion
-    assert "(5) *(added 2026-09-22, Emily's \"a store done\" mockup)*" in motion
-    assert "`groRollUp`" in motion
+    assert "a finished store rolls up" in motion and "`groRollUp`" in motion
 
 
 def test_the_rolled_up_row_wears_the_celadon_tokens_and_the_toast_carries_its_tick():

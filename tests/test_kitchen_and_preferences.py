@@ -114,11 +114,10 @@ def test_the_kitchen_root_says_the_day_and_the_count():
     assert "return rows.length ? 'nothing left to cook today' : '';" in fn
     assert "dayName(" not in fn, "the day belongs to the band's eyebrow now"
     build = _function("buildKitchenPanel")
-    # cookBandEyebrow: the day ("Sunday") under BAND_IDENTITY 'none'/'mark',
-    # the whole date under 'wordmark' where it leads the sub-line instead
-    # (2026-09-13; tests/test_identity_build.py).
+    # cookBandEyebrow: the whole date, which leads the sub-line
+    # (tests/test_identity_build.py).
     assert "rootBandHtml({ id: 'kit-band', eyebrow: cookBandEyebrow(todayLocalStr()), title: 'Cook' })" in build
-    assert "dayName(todayIso, { weekday: 'long' })" in _function("cookBandEyebrow")
+    assert "bandDateLabel(todayIso)" in _function("cookBandEyebrow")
 
 
 def test_a_row_says_how_long_never_when():

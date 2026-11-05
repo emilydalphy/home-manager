@@ -759,7 +759,7 @@ def test_each_cooking_stage_has_exactly_one_apricot():
     # Back is an outline, not a second fill.
     back = SHELL_CSS[SHELL_CSS.index(".cook-dock-back {"):]
     back = back[:back.index("}")]
-    assert "var(--apricot)" not in back and "border: 1.5px solid var(--hairline-strong)" in back
+    assert "var(--apricot)" not in back and "border: 1.5px solid transparent" in back
 
 
 @_needs_node

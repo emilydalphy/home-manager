@@ -59,9 +59,15 @@ def _light_and_dark():
     value there, exactly as the cascade does."""
     dark_at = THEME.index("\n@media (prefers-color-scheme: dark)")
     light = _tokens(THEME[:dark_at])
+    # Follow a name that forwards to another (the legacy block, theme.css).
+    def resolved(tokens):
+        def one(v):
+            m = re.fullmatch(r"var\((--[\w-]+)\)", v)
+            return one(tokens[m.group(1)]) if m else v
+        return {k: one(v) for k, v in tokens.items()}
     dark = dict(light)
     dark.update(_tokens(THEME[dark_at:]))
-    return light, dark
+    return resolved(light), resolved(dark)
 
 
 # The All set screen and the review dock, with only what they read.

@@ -700,14 +700,6 @@ def _grocery_block() -> str:
     return SHELL_JS[start:end]
 
 
-def _band_identity() -> str:
-    """shell.js's own BAND_IDENTITY line. groBandEyebrow reads it, and a
-    stubbed copy would go on saying 'wordmark' after the real one moved."""
-    line = "  var BAND_IDENTITY = "
-    start = SHELL_JS.index(line)
-    return SHELL_JS[start:SHELL_JS.index("\n", start) + 1]
-
-
 _SHOP_STUB = """
 function escapeHtml(s){return String(s == null ? '' : s)
   .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
@@ -833,7 +825,7 @@ function refreshTodayMoves() {}
 
 def _shop(body: str) -> dict:
     module = "const OFFLINE_MODULE = %s;\n" % json.dumps(str(REPO / "static" / "grocery-offline.js"))
-    script = module + _SHOP_STUB + _band_identity() + _grocery_block() + body
+    script = module + _SHOP_STUB + _grocery_block() + body
     res = nodeharness.run_node(script, timeout=30)
     assert res.returncode == 0, "node failed: %s" % res.stderr
     return json.loads(res.stdout.strip().splitlines()[-1])

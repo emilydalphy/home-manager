@@ -85,7 +85,7 @@ def test_the_swap_sheet_says_you_can_tweak_it_after_on_one_day_and_whole_dish_sh
 def test_the_tweak_sheet_does_not_carry_the_line_and_it_is_styled_as_supporting_copy():
     assert TWEAK_LINE not in _extract("tweakSheetBodyHtml", SHELL_JS)
     rule = _css_rule(".wk-swap-tweak-note")
-    assert "color: var(--ink-secondary)" in rule and "font-size: 15px" in rule
+    assert "color: var(--ink-secondary)" in rule and "font-size: 14px" in rule
 
 
 # ---------------------------------------------------------------------------

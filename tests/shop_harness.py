@@ -130,7 +130,6 @@ var scrollEl = null;
 var TAB_SWITCHES = [];
 function activateTab(key) { TAB_SWITCHES.push(key); }
 var coachState = { householdId: 1 };
-var BAND_IDENTITY = 'wordmark';
 function bandDateLabel() { return 'Friday, Sep 18'; }
 function emptyMomentHtml(icon, sentence, detail) { return '<div class="empty-moment">' + sentence + '</div>'; }
 """ + toast_core()

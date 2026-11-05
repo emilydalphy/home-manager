@@ -1,11 +1,8 @@
-"""The root band — how every tab root opens (Emily, 2026-09-11, Option B).
+"""How every tab root opens (Emily, 2026-09-11; Bright Dusk, 2026-11-05).
 
-Now, Plan, Shop and Cook used to lay their date, title, badge and gear out
-four different ways. They open with ONE component now: a full-bleed spruce
-band (eyebrow, title, at most one chip and one line, the gear and the
-bell's slot top-right), with the ivory content pouring over its foot with
-the hero's radius. Sub-screens keep their crumb and title. The band never
-carries a button; the dock is where the one thing to press lives.
+Plan, Shop, Kitchen and Cook open with ONE component: a plain title and one
+line on cream, with the round header buttons at the right (rootBandHtml; the
+name is history, it was a spruce band). Sub-screens keep their own way back.
 
 Alongside it: the empty states as designed moments (one shared component,
 the next step in the dock), and the dock rows on the roots.
@@ -54,10 +51,7 @@ def _node(script: str):
 _BAND_JS = (
     "function escapeHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;');}\n"
     "var PREFS_GEAR_ICON = '<svg></svg>';\n"
-    "function markSvg(){ return '<svg class=\"pomona-mark\"></svg>'; }\n"
-    # BAND_IDENTITY and the helpers rootBandHtml reads (2026-09-13); the
-    # tests below run the builder under each of its three values.
-    + SHELL_JS[SHELL_JS.index("  var BAND_IDENTITY = "):SHELL_JS.index("  function rootBandHtml(")]
+    + SHELL_JS[SHELL_JS.index("  function bandDateLabel("):SHELL_JS.index("  function rootBandHtml(")]
     + _function("prefsGearHtml") + "\n  }\n"
     + _function("rootBandHtml") + "\n  }\n"
     + _function("emptyMomentHtml") + "\n  }\n"
@@ -69,34 +63,29 @@ _BAND_JS = (
 # The band itself
 # --------------------------------------------------------------------------
 
-def test_the_band_is_one_builder_with_the_five_parts():
+def test_the_head_is_one_builder_with_its_parts():
     fn = _function("rootBandHtml")
-    assert '<header class="root-band"' in fn
+    assert '<header class="root-band screen-head"' in fn
     for part in ("root-band-eyebrow", "root-band-badge", "root-band-title", "root-band-sub", "root-band-tools"):
-        assert part in fn, f"the band is missing its {part}"
-    assert "prefsGearHtml()" in fn, "the gear (and the bell's slot) ride in the band"
-    assert "<button" not in fn, "the band never carries a button of its own"
+        assert part in fn, f"the head is missing its {part}"
+    assert "prefsGearHtml()" in fn, "the gear (and the bell's slot) ride in the head"
 
 
 @_needs_node
-def test_the_band_renders_its_parts_and_hides_the_empty_ones():
-    """Run under BAND_IDENTITY 'none' — the band as it was before the
-    identity round (2026-09-13); tests/test_identity_build.py covers the
-    wordmark and mark renderings, where the eyebrow folds into the line."""
+def test_the_head_renders_its_parts_and_hides_the_empty_ones():
     out = _node(
         _BAND_JS
-        + "BAND_IDENTITY = 'none';\n"
         + "console.log(JSON.stringify({"
         + " full: rootBandHtml({ id: 'x', eyebrow: 'Friday, Sep 11', title: 'Now', sub: '3 of 4 done', badge: 'Draft' }),"
         + " bare: rootBandHtml({ id: 'y', title: 'Shop' })"
         + "}));"
     )
     full, bare = out["full"], out["bare"]
-    assert full.count('class="root-band"') == 1
-    assert '<h1 class="root-band-title" id="x-title">Now</h1>' in full
-    assert 'id="x-eyebrow">Friday, Sep 11<' in full
+    assert full.count('class="root-band screen-head"') == 1
+    assert '<h1 class="root-band-title screen-title" id="x-title">Now</h1>' in full
+    assert 'id="x-eyebrow" hidden>Friday, Sep 11<' in full
     assert 'id="x-badge">Draft<' in full and 'id="x-badge" hidden' not in full
-    assert 'id="x-sub" data-sub="3 of 4 done">3 of 4 done<' in full
+    assert 'id="x-sub" data-sub="3 of 4 done">Friday, Sep 11 · 3 of 4 done<' in full
     assert 'data-bell-slot' in full and 'class="prefs-gear"' in full
     # Nothing to say is nothing shown — no empty chip, no empty line.
     assert 'id="y-badge" hidden' in bare and 'id="y-sub" data-sub="" hidden' in bare
@@ -206,33 +195,28 @@ def test_the_band_says_one_thing_once():
     assert "Nothing to cook today." in _function("cookNightOffHtml")
     # The chips: no "nothing planned" chip over a moment that says so.
     assert "var WEEK_STATE_LABELS = { set: 'Week set', draft: 'Draft' };" in SHELL_JS
-    assert "var WEEK_BADGES = { set: 'Approved', draft: 'Draft' };" in SHELL_JS
+    # Only a draft has a chip: an approved week is the plain title (Z-Week).
+    assert "var WEEK_BADGES = { draft: 'Draft' };" in SHELL_JS
 
 
-def test_the_band_css_is_one_section_built_from_tokens():
+def test_the_head_css_is_one_section_built_from_tokens():
     start = SHELL_CSS.rindex("/* ====", 0, SHELL_CSS.index("THE ROOT BAND"))
     end = SHELL_CSS.index("/* ---------- Today (Pomona — InnToday) ----------", start)
     section = SHELL_CSS[start:end]
-    for rule in (".root-band {", ".root-band::after {", ".root-band-eyebrow {", ".root-band-badge {",
-                 ".root-band-title {", ".root-band-sub {", ".root-band-tools {", ".empty-moment {",
+    for rule in (".root-band-badge {", ".root-band-line {", ".empty-moment {",
                  ".empty-moment-icon {", ".empty-moment-line {", ".dock-row {"):
         assert rule in section, f"missing {rule}"
-    # Rule 9: every colour goes through a token — no literal hex outside the
-    # measured-contrast comment.
+    # Rule 9: every colour goes through a token.
     body = re.sub(r"/\*.*?\*/", "", section, flags=re.S)
-    assert not re.search(r"#[0-9a-fA-F]{3,8}\b", body), "a literal colour in the band CSS"
-    assert "background: var(--spruce);" in section
-    assert "color: var(--apricot-light);" in section.split(".root-band-eyebrow {", 1)[1][:400]
-    assert "border-radius: var(--radius-hero) var(--radius-hero) 0 0;" in section
-    assert "border-top: 1.5px solid var(--spruce-edge);" in section
-    # The chip: raised spruce and the muted ivory, never an accent fill.
+    assert not re.search(r"#[0-9a-fA-F]{3,8}\b", body), "a literal colour in the head CSS"
+    # No band: nothing paints the head, and no curve pours over its foot.
+    assert ".root-band::after" not in body and "background: var(--spruce);" not in body
     chip = section.split(".root-band-badge {", 1)[1][:500]
-    assert "background: var(--spruce-raised);" in chip and "color: var(--ivory-ink-muted);" in chip
-    # Rule 6: the gear and the bell are 44px in the band.
+    assert "background: var(--blush);" in chip and "color: var(--ink);" in chip
+    # Rule 6: the gear and the bell are 44px in the head, round on blush.
     tools = section.split(".root-band-tools .bell-slot .notif-bell {", 1)[1][:300]
     assert "width: 44px;" in tools and "height: 44px;" in tools
-    # Rule 8: the ratios were measured and written down.
-    assert ":1" in section and "Contrast, measured" in section
+    assert "border-radius: var(--radius-pill);" in tools and "background: var(--blush);" in tools
 
 
 def test_the_old_header_rule_sets_are_retired():
@@ -343,7 +327,7 @@ def test_nows_plan_offer_is_one_row_with_not_now_beside_it():
 # The doc moved with the code (Tier 2)
 # --------------------------------------------------------------------------
 
-def test_design_system_names_the_root_band():
-    assert "| Root band |" in DESIGN, "§5's component table needs a Root band row"
-    assert "root-band" in DESIGN
-    assert "Every tab root opens with the root band" in DESIGN, "§6 needs its one sentence"
+def test_design_system_names_the_screen_title():
+    assert "| Screen title |" in DESIGN, "section 5's table needs the row"
+    assert "rootBandHtml(opts)" in DESIGN
+    assert "No band" in DESIGN

@@ -198,11 +198,21 @@ def test_every_stroke_icon_is_drawn_at_the_one_width(name):
     if name == "shell.css":
         return  # the CSS draws no inline SVG (stroke-width never appears in it)
     offenders = []
+    raw = (STATIC / name).read_text(encoding="utf-8")
+    start = raw.find("  var TAB_ICONS = {")
+    tab_lines = set()
+    if start != -1:
+        first = raw.count("\n", 0, start) + 2
+        tab_lines = set(range(first, first + 4))
     for line, tag, inner in _stroke_svgs(name):
         if _is_mark(inner):
             continue
         m = re.search(r'stroke-width="([^"]*)"', tag)
         width = m.group(1) if m else None
+        # The tab bar's four, drawn as they are on the boards (TAB_ICONS).
+        if line in tab_lines:
+            assert width == "1.9", line
+            continue
         if width != ICON_STROKE:
             offenders.append(f"line {line}: stroke-width={width!r}")
         # And the caps and joins are round, so the set is one set.
@@ -226,12 +236,10 @@ def test_the_mark_keeps_its_own_weight_and_is_the_only_exception():
             if _is_mark(inner):
                 m = re.search(r'stroke-width="([^"]*)"', tag)
                 marks.append((name, line, m.group(1) if m else None))
-    assert marks, "the mark should be drawn somewhere (sign-in, the band, the chat button)"
+    assert marks, "the mark should be drawn somewhere (sign-in, the welcome)"
     for name, line, width in marks:
         assert width in {"1.6", "1.7", "1.8"}, f"{name}:{line} draws the mark at {width!r}, not a logo weight"
-    # The band and the chat button draw it at 1.8 (Identity Round, 2026-09-13).
     assert ("shell.js", "1.8") in {(n, w) for n, _, w in marks}
-    assert ("shell.html", "1.8") in {(n, w) for n, _, w in marks}
 
 
 # ---------------------------------------------------------------------------

@@ -131,6 +131,7 @@ def _prelude() -> str:
         + _extract("weekSnackTileHtml", SHELL_JS) + "\n"
         + _extract("weekSnacksHtml", SHELL_JS) + "\n"
         + _extract("weekFrozenItems", SHELL_JS) + "\n"
+        + _extract("weekFreezerLine", SHELL_JS) + "\n"
         + _extract("weekFreezerRowHtml", SHELL_JS) + "\n"
         + _extract("weekDayHtml", SHELL_JS) + "\n"
         + _extract("allSetStepHtml", SHELL_JS) + "\n"
@@ -659,4 +660,4 @@ def test_the_approved_root_has_no_apricot_and_plan_next_week_at_the_right():
     dock = SHELL_CSS[SHELL_CSS.index(".wk-root-dock .wk-dock-row {"):SHELL_CSS.index("}", SHELL_CSS.index(".wk-root-dock .wk-dock-row {"))]
     assert "justify-content: flex-end" in dock
     btn = SHELL_CSS[SHELL_CSS.index(".wk-plan-next {"):SHELL_CSS.index("}", SHELL_CSS.index(".wk-plan-next {"))]
-    assert "background: transparent" in btn and "border: 1.5px solid var(--hairline-strong)" in btn and "apricot" not in btn
+    assert "background: var(--blush)" in btn and "border: 1.5px solid transparent" in btn and "apricot" not in btn

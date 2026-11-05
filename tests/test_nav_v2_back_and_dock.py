@@ -237,7 +237,7 @@ def test_shops_root_has_no_action_and_the_add_button_is_an_outline():
     assert dock.count("gro-primary") == 1
     assert dock.count("dock-primary") == 1
     outline = SHELL_CSS.split(".gro-add-open {", 1)[1][:600]
-    assert "background: transparent" in outline and "--apricot" not in outline
+    assert "background: var(--blush)" in outline and "--apricot" not in outline
     assert "min-height: 48px" in outline
 
 
@@ -314,5 +314,5 @@ def test_a_screen_with_no_single_action_has_no_dock():
     sortall = dock.split("if (step === 'sortall') {", 1)[1]
     assert "return '';" in sortall[:120], "SORT ALL with rows left renders no dock"
     assert ".gro-dock:empty { display: none; }" in SHELL_CSS
-    # And the FAB is cleared by the body when there is no dock under it.
-    assert ".gro-body:has(+ .gro-dock:empty) { padding-bottom: 70px; }" in SHELL_CSS
+    # And the body keeps its foot when there is no dock under it.
+    assert ".gro-body:has(+ .gro-dock:empty) { padding-bottom: 24px; }" in SHELL_CSS

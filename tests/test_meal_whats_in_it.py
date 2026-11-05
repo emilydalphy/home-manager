@@ -219,7 +219,7 @@ def test_add_something_is_an_outline_control_not_a_second_apricot():
     i = SHELL_CSS.index(".wk-ing-add {")
     block = SHELL_CSS[i:SHELL_CSS.index("}", i)]
     assert "var(--apricot)" not in block
-    assert "var(--hairline-strong)" in block
+    assert "background: var(--surface)" in block and "box-shadow: var(--shadow-card)" in block, "a quiet white button"
     assert "min-height: 44px" in block, "tappable at 44px (Rule 6)"
     for cls in (".wk-whatsin", ".wk-ing-tag", ".recipe-card .cook-getout-row",
                 "#wk-add-sheet", ".wk-add-option", ".wk-add-input"):

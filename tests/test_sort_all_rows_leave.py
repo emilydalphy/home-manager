@@ -570,8 +570,7 @@ def test_the_collapse_uses_the_leaving_curve_and_the_fast_token_only():
 def test_the_design_system_records_the_fourth_animation():
     motion = DESIGN_SYSTEM[DESIGN_SYSTEM.index("- **Motion**"):]
     motion = motion[:motion.index("\n\n")]
-    assert "(4) a row on Shop's \"Sort them all\" screen collapses out" in motion
-    assert "exactly three animations" not in motion
+    assert "a row on Shop's \"Sort them all\" screen collapses out" in motion and "`groSortAllLeave`" in motion
 
 
 # --- 6. the route pair the undo relies on --------------------------------

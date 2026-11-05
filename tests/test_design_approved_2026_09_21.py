@@ -88,13 +88,14 @@ def test_the_more_button_is_48px_round_and_the_row_lets_the_primary_fill():
     more = _rule(".wk-dock-more")
     assert "width: 48px" in more and "height: 48px" in more
     assert "border-radius: var(--radius-pill)" in more
-    assert "border: 1.5px solid var(--hairline-strong)" in more
+    assert "border: 1.5px solid transparent" in more
     assert "background: var(--surface)" in more and "color: var(--ink-strong)" in more
     assert re.search(r"#[0-9a-fA-F]{3,6}\b", more) is None, "every colour goes through a token"
     assert ".wk-dock-row { display: flex; align-items: center; gap: 8px; }" in SHELL_CSS
     assert ".wk-dock-row .week-approve-btn { padding: 10px 8px; }" in SHELL_CSS
     assert "@media (max-width: 380px) { .wk-dock-row .week-approve-btn { font-size: 16px; } }" in SHELL_CSS
-    assert "padding: 14px 78px 10px 20px;" in _rule(".wk-decide") and ".wk-root-dock { padding-right: 78px; }" in SHELL_CSS
+    # Ask moved into the tab bar, so nothing clears a floating button.
+    assert "padding: 12px 16px;" in _rule(".wk-decide")
     fill = SHELL_CSS[SHELL_CSS.index(".wk-dock-row .week-approve-btn,"):]
     fill = fill[:fill.index("}")]
     assert ".dock-primary { flex: 1 1 auto; width: auto; min-width: 0;" in fill

@@ -399,7 +399,7 @@ def test_the_draft_row_says_made_sunday():
 
 def test_the_plan_row_shows_the_note_for_breakfast():
     js = (pathlib.Path(__file__).resolve().parent.parent / "static" / "shell.js").read_text()
-    assert "meta: slot === 'breakfast' ? wkRowMetaLine(first.entry, meta) : meta," in js
+    assert "meta: slot === 'breakfast' ? wkRowMetaLine(first.entry, when) : when," in js
 
 
 def test_the_prompt_carries_the_rule():

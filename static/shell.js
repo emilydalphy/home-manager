@@ -321,6 +321,15 @@
     if (input) input.placeholder = hint;
   }
 
+  // The tab bar's four icons, drawn as they are on the boards (Z-Week):
+  // 20px at a 1.9 stroke, lighter than the 2.2 set because they sit on dusk.
+  var TAB_ICONS = {
+    week: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 17h16"/><path d="M5 12h.01M9.5 12h.01M14 12h.01M18.5 12h.01"/></svg>',
+    bag: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8h12l1 12H5z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/></svg>',
+    fridge: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><rect x="6" y="3.5" width="12" height="17" rx="2.5"/><path d="M6 10h12M9.5 6.5v1M9.5 13v2"/></svg>',
+    pot: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 10h14v4a7 7 0 0 1-14 0z"/><path d="M12 6.5V4M3 10h2M19 10h2"/></svg>'
+  };
+
   var TABS = [
     // The Today tab is gone (Emily, 2026-11-01: "The only benefit of the
     // today screen at the moment, is having it tell the user to thaw
@@ -334,19 +343,19 @@
     // left in this file, unreachable from the tab bar, because dozens of
     // tests exercise those pure functions and a later dashboard may reuse
     // them; nothing builds the panel any more.
-    { key: 'week', path: '/week', label: 'Plan', icon: ICONS.week, week: true },
+    { key: 'week', path: '/week', label: 'Plan', icon: TAB_ICONS.week, week: true },
     // Stage 2 slice 2: Grocery is a real shell screen now, not an embedded
     // page. static/grocery.html still exists and still works standalone, but
     // nothing links to it — it is the fallback, the same way
     // static/grocery-legacy.html already was.
-    { key: 'grocery', path: '/grocery', label: 'Shop', icon: ICONS.bag, grocery: true },
+    { key: 'grocery', path: '/grocery', label: 'Shop', icon: TAB_ICONS.bag, grocery: true },
     // The KITCHEN tab (Emily, 2026-10-26, Loop Board C1 — the nav change
     // she approved that day): what's home, and what Pomona will do with
     // it. Between Shop and Cook because that is where food sits: shopping
     // fills it, cooking empties it. NAMING TRAP: it is keyed and pathed
     // `home`, because `kitchen` / '/kitchen' below is the COOK tab (and
     // chat actions tagged tab 'kitchen' mean Cook). See buildHomePanel.
-    { key: 'home', path: '/home', label: 'Kitchen', icon: ICONS.fridge, home: true },
+    { key: 'home', path: '/home', label: 'Kitchen', icon: TAB_ICONS.fridge, home: true },
     // Kitchen is the COOK'S tab (Emily, 2026-09-08). It answers "what's
     // cooking, and what's in the house?": today's cooks, the prep sessions
     // that feed them, the rest of the week, and the two quiet ways into
@@ -359,7 +368,7 @@
     // static/kitchen.html still exists and still works standalone but
     // nothing links to it — the fallback, exactly the treatment
     // static/grocery.html and static/grocery-legacy.html already have.
-    { key: 'kitchen', path: '/kitchen', label: 'Cook', icon: ICONS.pot, kitchen: true }
+    { key: 'kitchen', path: '/kitchen', label: 'Cook', icon: TAB_ICONS.pot, kitchen: true }
   ];
 
   // The Kitchen entry sheets. The blueprint asks for these to open as
@@ -414,6 +423,63 @@
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
+  }
+
+  // ---------- Bright Dusk parts (DESIGN_SYSTEM.md section 5) ----------
+  // One of each, used the same way on every screen. The CSS is in theme.css
+  // (.screen-head, .round-btn, .seg, .section-head, .tile), so a page without
+  // this file can use the classes too. Each builder returns a string.
+
+  // A round header button. `o.attrs` carries its hook: an id, a data- attribute.
+  function roundBtnHtml(o) {
+    return '<button type="button" class="round-btn' + (o.cls ? ' ' + o.cls : '') + '"' + (o.attrs || '') +
+      ' aria-label="' + escapeHtml(o.label) + '">' + o.icon + '</button>';
+  }
+
+  // The section heading over a group of tiles.
+  function sectionHeadHtml(text, cls) {
+    return '<span class="section-head' + (cls ? ' ' + cls : '') + '">' + escapeHtml(text) + '</span>';
+  }
+
+  // The segmented switcher. `items` are { label, on, attrs }, or for a day
+  // { dow, num, on, today, attrs }; `o.days` makes it the taller day bar.
+  function segHtml(items, o) {
+    o = o || {};
+    return '<div class="seg' + (o.days ? ' seg-days' : '') + (o.cls ? ' ' + o.cls : '') + '"' + (o.attrs || '') + '>' +
+      items.map(function (it) {
+        return '<button type="button" class="seg-btn' + (it.on ? ' is-on' : '') + (it.today ? ' is-today' : '') +
+            (it.cls ? ' ' + it.cls : '') + '" aria-pressed="' + (it.on ? 'true' : 'false') + '"' + (it.attrs || '') + '>' +
+          (it.dow
+            ? '<span class="seg-dow">' + escapeHtml(it.dow) + '</span><span class="seg-num">' + escapeHtml(it.num) + '</span>'
+            : escapeHtml(it.label)) +
+        '</button>';
+      }).join('') +
+    '</div>';
+  }
+
+  // One tile. With `attrs` it is a button, without them a thing to read.
+  //   art:   the plate (Plates.html), or a .tile-plates pair
+  //   name:  the one thing it is
+  //   sub:   the one line under it
+  //   kind:  '' a dish, 'row' a small dish (plate beside the name),
+  //          'text' words only
+  //   cls:   extra classes, e.g. is-quiet, is-wide
+  //   extra: anything else that belongs under the name (a Changed tag)
+  //   label: what a screen reader hears, when the words on it aren't enough
+  // A tile with no art is a 'text' tile: no filler pictures.
+  function tileHtml(o) {
+    var tag = o.attrs ? 'button' : 'div';
+    var kind = o.kind || (o.art ? '' : 'text');
+    return '<' + tag + (o.attrs ? ' type="button"' : '') + ' class="tile' + (kind ? ' tile-' + kind : '') +
+        (o.cls ? ' ' + o.cls : '') + '"' + (o.attrs || '') +
+        (o.attrs && o.label ? ' aria-label="' + escapeHtml(o.label) + '"' : '') + '>' +
+      (o.art || '') +
+      '<span class="tile-words">' +
+        '<span class="tile-name' + (o.nameCls ? ' ' + o.nameCls : '') + '">' + escapeHtml(o.name) + '</span>' +
+        (o.sub ? '<span class="tile-sub' + (o.subCls ? ' ' + o.subCls : '') + '">' + escapeHtml(o.sub) + '</span>' : '') +
+        (o.extra || '') +
+      '</span>' +
+    '</' + tag + '>';
   }
 
   // ---------- Motion: opening/closing a sheet or dialog ----------
@@ -1030,6 +1096,11 @@
     btn.addEventListener('click', function () { activateTab(tab.key, true); });
     tabBarEl.appendChild(btn);
   });
+  // Ask is always the apricot pill at the bar's end, after the four tabs
+  // (Emily, 2026-11-05). It replaced the floating chat button: it sits in
+  // the bar, so it never covers anything.
+  var askTabBtn = document.getElementById('chat-fab');
+  if (askTabBtn) tabBarEl.appendChild(askTabBtn);
 
   function activateTab(key, pushHistory, opts) {
     // The retired Today tab's callers land on Plan (TODAY_TAB_ALIAS; the
@@ -1248,24 +1319,8 @@
   // 5). The ids let each root update the parts that change (the sub-line
   // after a load, the badge after an approval) without rebuilding the
   // header and throwing the bell out of its slot.
-  //
-  // Where the mark lives after sign-in (Emily, 2026-09-13, Identity Round
-  // Q1). She chose C — "Mark + wordmark, date moves down" — and kept B in
-  // reserve. The three values, each rendered by the same builder:
-  //   'wordmark' — C (the default): the apricot mark and "Pomona" open the
-  //                band top-left where the date eyebrow was; the eyebrow's
-  //                text (the date, or the context) joins the sub-line
-  //                instead, " · " before whatever the line already says:
-  //                "Sunday, Sep 13 · 60 things · 1 stop".
-  //   'mark'     — B (in the back pocket): the mark before the date
-  //                eyebrow; the eyebrow keeps the date.
-  //   'none'     — the band as it was before 2026-09-13.
-  // Flipping this one constant is the whole switch.
-  var BAND_IDENTITY = 'wordmark';
-  var BAND_WORDMARK = 'Pomona';
 
-  // "Sunday, Sep 13" — the date the band folds into its sub-line under
-  // 'wordmark' (Now's eyebrow has always been this; Shop and Cook adopt it
+  // "Sunday, Sep 13" — the date the head folds into its sub-line (Now's eyebrow has always been this; Shop and Cook adopt it
   // there, see groBandEyebrow / buildKitchenPanel). With no date given it
   // is the HOUSEHOLD's today (todayLocalStr, on households.timezone), not
   // the phone's.
@@ -1275,51 +1330,43 @@
     return d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
   }
 
-  // The band's identity lead — mark alone, mark + wordmark, or nothing.
-  function bandIdentityHtml() {
-    if (BAND_IDENTITY === 'none') return '';
-    return '<span class="root-band-brand' + (BAND_IDENTITY === 'wordmark' ? ' is-wordmark' : '') + '">' +
-      markSvg() +
-      (BAND_IDENTITY === 'wordmark' ? '<span class="root-band-wordmark">' + escapeHtml(BAND_WORDMARK) + '</span>' : '') +
-    '</span>';
-  }
-
-  // The sub-line's words: under 'wordmark' the eyebrow's text leads it;
-  // otherwise the line is what the root said.
+  // The sub-line's words: the eyebrow's text (the date, or the context)
+  // leads it, " · " before whatever the root said.
   function bandSubText(eyebrow, sub) {
-    if (BAND_IDENTITY !== 'wordmark') return sub || '';
-    return [eyebrow || '', sub || ''].filter(Boolean).join(' \u00b7 ');
+    return [eyebrow || '', sub || ''].filter(Boolean).join(' · ');
   }
 
+  // How every tab root opens: a plain title and one line on cream, the
+  // round header buttons at the right (Bright Dusk, 2026-11-05; it was the
+  // spruce band). The name stays because every root calls it, and its ids
+  // are what setRootBand writes to. The eyebrow span stays hidden in the
+  // markup: it holds the date so setRootBand can re-fold it into the line
+  // when either half changes. `opts.noGear`: a screen whose header holds
+  // only its own button.
   function rootBandHtml(opts) {
     var id = opts.id;
     var eyebrow = opts.eyebrow || '';
     var sub = bandSubText(eyebrow, opts.sub);
-    // Under 'wordmark' the eyebrow span stays in the markup, hidden: it
-    // still holds the date so setRootBand can re-fold it into the
-    // sub-line when either half changes.
-    var eyebrowHidden = BAND_IDENTITY === 'wordmark' || !eyebrow;
-    return '<header class="root-band" id="' + id + '" data-identity="' + BAND_IDENTITY + '">' +
-      '<div class="root-band-top">' +
-        '<div class="root-band-lead">' +
-          bandIdentityHtml() +
-          '<span class="root-band-eyebrow" id="' + id + '-eyebrow"' + (eyebrowHidden ? ' hidden' : '') + '>' + escapeHtml(eyebrow) + '</span>' +
+    return '<header class="root-band screen-head" id="' + id + '">' +
+      '<div class="screen-head-text">' +
+        '<h1 class="root-band-title screen-title" id="' + id + '-title">' + escapeHtml(opts.title || '') + '</h1>' +
+        '<div class="root-band-line">' +
+          '<span class="root-band-eyebrow" id="' + id + '-eyebrow" hidden>' + escapeHtml(eyebrow) + '</span>' +
+          '<p class="root-band-sub screen-sub" id="' + id + '-sub" data-sub="' + escapeHtml(opts.sub || '') + '"' + (sub ? '' : ' hidden') + '>' + escapeHtml(sub) + '</p>' +
           '<span class="root-band-badge" id="' + id + '-badge"' + (opts.badge ? '' : ' hidden') + '>' +
             escapeHtml(opts.badge || '') + '</span>' +
         '</div>' +
-        // Every root carries the Preferences gear and the bell's slot
-        // (prefsGearHtml) — here, in the band, and nowhere deeper.
-        '<div class="root-band-tools">' + prefsGearHtml() + '</div>' +
       '</div>' +
-      '<h1 class="root-band-title" id="' + id + '-title">' + escapeHtml(opts.title || '') + '</h1>' +
-      '<p class="root-band-sub" id="' + id + '-sub" data-sub="' + escapeHtml(opts.sub || '') + '"' + (sub ? '' : ' hidden') + '>' + escapeHtml(sub) + '</p>' +
+      // Every root carries the Preferences gear and the bell's slot
+      // (prefsGearHtml) — here, in the head, and nowhere deeper.
+      '<div class="root-band-tools screen-tools">' + (opts.noGear ? '' : prefsGearHtml()) + '</div>' +
     '</header>';
   }
 
   // Update the parts of a band that change after a load. Any key left
   // undefined is left alone; an empty string hides the sub-line or badge.
   // The sub-line keeps the root's own words on data-sub and shows them
-  // composed with the eyebrow under 'wordmark' (bandSubText), so a root
+  // composed with the eyebrow (bandSubText), so a root
   // that only changes its eyebrow, or only its line, never loses the
   // other half.
   function setRootBand(panel, id, parts) {
@@ -1330,7 +1377,6 @@
       if (!el) return;
       el.textContent = parts[key] || '';
       if (key === 'badge') el.hidden = !parts[key];
-      if (key === 'eyebrow') el.hidden = BAND_IDENTITY === 'wordmark' || !parts[key];
     });
     if (parts.sub === undefined && parts.eyebrow === undefined) return;
     var subEl = panel.querySelector('#' + id + '-sub');
@@ -7022,7 +7068,7 @@
   // two stores." — from the data: every row on the cards, bought or not,
   // and the shops with a card (the "Anywhere" card and the one-list
   // stand-in are not stores, so they are not counted). Under the wordmark
-  // band (BAND_IDENTITY, 2026-09-13) the eyebrow's text leads the line:
+  // head the eyebrow's text leads the line:
   // "This week · 14 things, two stores." With nothing on the list the line
   // is empty — the empty moment under it says "nothing to buy", and the
   // band must not say it a second time.
@@ -12252,13 +12298,9 @@
   // A day with nothing on it at all returns nothing: the empty moment
   // under the band says "nothing to cook tonight", and the band must not
   // say it too (Emily, 2026-09-11 — the two used to say it twice).
-  // Cook's eyebrow is the day — "Sunday". Under the wordmark band
-  // (BAND_IDENTITY, 2026-09-13) it leads the sub-line instead, and there
-  // it is the whole date: "Sunday, Sep 13 · 1 cook tonight".
+  // Cook's eyebrow is the whole date, and it leads the sub-line: "Sunday, Sep 13 · 1 cook tonight".
   function cookBandEyebrow(todayIso) {
-    return BAND_IDENTITY === 'wordmark'
-      ? bandDateLabel(todayIso)
-      : dayName(todayIso, { weekday: 'long' });
+    return bandDateLabel(todayIso);
   }
 
   function kitchenSubtitle(rows, meals, todayIso) {
@@ -17582,8 +17624,9 @@
   // popstate handler at the top of this file); a refresh lands on WEEK,
   // because weekState.step starts there and nothing restores it.
 
-  // The band's chip. No plan is no chip — the entry card under it says so.
-  var WEEK_BADGES = { set: 'Approved', draft: 'Draft' };
+  // The head's chip. Only a draft has one: an approved week is the plain
+  // title on the board, and no plan is no chip either.
+  var WEEK_BADGES = { draft: 'Draft' };
 
   function weekPlanState(data) {
     if (!data || !data.weekly_plan_id || !(data.days || []).length) return 'none';
@@ -17679,7 +17722,11 @@
     // custom-length period keeps its dates as the title — "your week"
     // would be a small lie over three days.
     if (state === 'draft' && isWeek) title = 'Here’s your week.';
-    var eyebrow = named ? range : dayCount + ' days';
+    // The one line under the title says which days only when the title
+    // doesn't: an approved "This week" stands alone (Z-Week), and no counts
+    // under titles (Emily, 2026-11-05).
+    var plainWeek = state === 'set' && named && relation === 'current';
+    var eyebrow = plainWeek ? '' : (named ? range : dayCount + ' days');
     var sub = [];
     // A DRAFT's line says whose turn it is, not the shape of the week:
     // the shape is what the rows underneath are for, and the one thing
@@ -17687,13 +17734,7 @@
     // somebody here decides (Emily's approved design, 2026-09-08). Since
     // 2026-09-21 it is "your turn" alone: the chip already says Draft,
     // and a line that said "a draft, your turn" under it said it twice.
-    if (state === 'draft') {
-      sub.push('your turn');
-    } else if (state === 'set') {
-      var counts = weekCountsLabel(days);
-      if (counts) sub.push(counts);
-    }
-    if (data.trip_summary) sub.push(data.trip_summary);
+    if (state === 'draft') sub.push('your turn');
     return {
       id: 'week-band',
       eyebrow: eyebrow,
@@ -17701,6 +17742,18 @@
       sub: sub.join(' · '),
       badge: WEEK_BADGES[state] || ''
     };
+  }
+
+  // A day on the Plan root (Z-Day): the weekday as the title, "Today · Nov 4"
+  // under it, and the ··· that opens that day's sheet. The chip stays.
+  function planDayBandParts(parts, day) {
+    var date = dayName(day.date, { month: 'short', day: 'numeric' });
+    return Object.assign({}, parts, {
+      eyebrow: '',
+      title: dayName(day.date, { weekday: 'long' }),
+      sub: (day.isToday ? 'Today \u00b7 ' : '') + date,
+      noGear: true
+    });
   }
 
   // ---------- The band's own control on the Plan root: More ··· ----------
@@ -17732,8 +17785,7 @@
   }
 
   function weekBandMoreHtml() {
-    return '<button type="button" class="root-band-more" id="wk-band-more" aria-haspopup="dialog" aria-label="More">' +
-      WK_ICONS.more + '</button>';
+    return roundBtnHtml({ cls: 'root-band-more', attrs: ' id="wk-band-more" aria-haspopup="dialog"', label: 'More', icon: WK_ICONS.more });
   }
 
   function fillWeekBandExtras(panel, bandSlot, extras) {
@@ -17743,7 +17795,12 @@
     var tools = band.querySelector('.root-band-tools');
     if (extras.more && tools) tools.insertAdjacentHTML('afterbegin', weekBandMoreHtml());
     var more = band.querySelector('#wk-band-more');
-    if (more) more.addEventListener('click', function () { openMealsMoreSheet(); });
+    if (more) more.addEventListener('click', function () {
+      var days = weekState.days || [];
+      var sel = extras.day ? planDayIndex(days) : null;
+      if (sel !== null) openPlanDaySheet(panel, days[sel], sel);
+      else openMealsMoreSheet();
+    });
   }
 
   // The one road into re-planning — the band's Re-plan pill (the dock's
@@ -18965,19 +19022,20 @@
     function tileHtml(day, attrs, on, extra) {
       var label = dayName(day.date, { weekday: 'long', month: 'long', day: 'numeric' }) +
         (day.isToday ? ', today' : '') + (extra || '');
-      return '<button type="button" class="wk-tile' + (day.isToday ? ' is-today' : '') + (day.isPast ? ' is-past' : '') +
-          (on ? ' is-selected' : '') + '" data-date="' + escapeHtml(day.date) + '"' + attrs + ' aria-pressed="' + (on ? 'true' : 'false') + '" ' +
+      return '<button type="button" class="seg-btn wk-tile' + (day.isToday ? ' is-today' : '') + (day.isPast ? ' is-past' : '') +
+          (on ? ' is-on is-selected' : '') + '" data-date="' + escapeHtml(day.date) + '"' + attrs + ' aria-pressed="' + (on ? 'true' : 'false') + '" ' +
           'aria-label="' + escapeHtml(label) + '">' +
-        '<span class="wk-tile-dow">' + (day.isToday ? 'TODAY' : dayName(day.date, { weekday: 'short' }).slice(0, 3).toUpperCase()) + '</span>' +
-        '<span class="wk-tile-num">' + dayName(day.date, { day: 'numeric' }) + '</span>' +
+        '<span class="seg-dow wk-tile-dow">' + escapeHtml(dayName(day.date, { weekday: 'short' }).slice(0, 3)) + '</span>' +
+        '<span class="seg-num wk-tile-num">' + dayName(day.date, { day: 'numeric' }) + '</span>' +
       '</button>';
     }
     // The server's days are snake_case (is_today); the shown plan's went
     // through classifyDay. Either way the tile reads isToday / isPast.
+    // Past days are hidden (Emily, 2026-11-05), on the plans either side too.
     function otherHtml(plan, before) {
       if (!plan || !plan.weekly_plan_id || !plan.days) return '';
-      var tiles = plan.days.filter(function (d) { return d && d.date && !shown[d.date]; }).map(function (d) {
-        return tileHtml({ date: d.date, isToday: !!d.is_today, isPast: !!d.is_past },
+      var tiles = plan.days.filter(function (d) { return d && d.date && !shown[d.date] && !d.is_past; }).map(function (d) {
+        return tileHtml({ date: d.date, isToday: !!d.is_today, isPast: false },
           ' data-plan-other="' + escapeHtml(String(plan.weekly_plan_id)) + '"', false,
           plan.status === 'draft' ? ', draft' : '');
       }).join('');
@@ -18987,18 +19045,22 @@
     }
     var prev = otherHtml(adjacent.previous, true);
     var next = otherHtml(adjacent.next, false);
-    var week = '<button type="button" class="wk-tile wk-daybar-week' + (sel === null ? ' is-selected' : '') +
-        '" data-plan-day="week" aria-pressed="' + (sel === null ? 'true' : 'false') + '" aria-label="The whole week">' +
-      '<span class="wk-tile-dow">WEEK</span><span class="wk-tile-num">All</span>' +
-    '</button>';
-    var long = days.length > 7 || !!prev || !!next;
-    // Scrolling, All rides in a ground-coloured pin (shell.css) that the
-    // days slide under, so it is never half a tile at the edge.
+    var week = '<button type="button" class="seg-btn wk-tile wk-daybar-week' + (sel === null ? ' is-on is-selected' : '') +
+        '" data-plan-day="week" aria-pressed="' + (sel === null ? 'true' : 'false') + '" aria-label="The whole week">All</button>';
+    // A plan with no day left still shows its days, and a past day opened
+    // from somewhere else (a chat change, a recipe) keeps its tile.
+    var allPast = days.every(function (d) { return d.isPast; });
+    var ownDays = days.map(function (day, i) {
+      if (day.isPast && !allPast && sel !== i) return '';
+      return tileHtml(day, ' data-plan-day="' + i + '"', sel === i);
+    }).join('');
+    var count = days.filter(function (d, i) { return !d.isPast || allPast || sel === i; }).length;
+    var long = count > 7 || !!prev || !!next;
+    // Scrolling, All rides in a pin (shell.css) that the days slide under,
+    // so it is never half a segment at the edge.
     if (long) week = '<span class="wk-daybar-pin">' + week + '</span>';
-    return '<div class="wk-strip wk-daybar' + (long ? ' is-long' : '') + '" role="group" aria-label="Show the week or one day">' +
-      week + prev + days.map(function (day, i) {
-        return tileHtml(day, ' data-plan-day="' + i + '"', sel === i);
-      }).join('') + next +
+    return '<div class="seg seg-days wk-strip wk-daybar' + (long ? ' is-long' : '') + '" role="group" aria-label="Show the week or one day">' +
+      week + prev + ownDays + next +
     '</div>';
   }
 
@@ -19125,27 +19187,20 @@
     return when + ': ' + step;
   }
 
-  // One quiet row. `o.attrs` makes it a button (with the chevron); without
-  // it the row is a line to read. `o.label` is what a screen reader hears.
+  // One meal as a tile (Bright Dusk; it was a quiet row with a chevron, and
+  // keeps the wk-qrow hook). `o.attrs` makes it a button; without it the
+  // tile is a thing to read. `o.tile` is its plate, `o.eyebrow` the slot
+  // that leads the line under the name, `o.label` what a screen reader
+  // hears. A tile with no plate is words only: no filler pictures.
   function planRowHtml(o) {
-    var tappable = !!o.attrs;
-    var open = tappable ? 'button type="button"' : 'div';
-    var close = tappable ? 'button' : 'div';
-    var eyebrow = (o.eyebrow || o.changed)
-      ? '<span class="wk-row-eyebrow">' + escapeHtml(o.eyebrow || '') +
-          (o.changed ? '<span class="wk-changed">Changed</span>' : '') + '</span>'
-      : '';
-    return '<' + open + ' class="wk-qrow' + (o.quiet ? ' is-quiet' : '') + (o.past ? ' is-past' : '') +
-        (o.done ? ' is-done' : '') + '"' + (o.attrs || '') +
-        (tappable && o.label ? ' aria-label="' + escapeHtml(o.label) + '"' : '') + '>' +
-      (o.tile || '') +
-      '<span class="wk-qrow-text">' + eyebrow +
-        '<span class="wk-qrow-name">' + escapeHtml(o.name) + '</span>' +
-        (o.meta ? '<span class="wk-row-meta' + (o.metaIcon ? ' has-icon' : '') + '">' + (o.metaIcon || '') + escapeHtml(o.meta) + '</span>' : '') +
-        (o.step ? '<span class="wk-row-meta wk-qrow-step">' + escapeHtml(o.step) + '</span>' : '') +
-      '</span>' +
-      (tappable ? '<span class="wk-qrow-chev" aria-hidden="true">' + WK_ICONS.chev + '</span>' : '') +
-    '</' + close + '>';
+    var sub = [o.eyebrow || '', o.meta || ''].filter(Boolean).join(' · ');
+    return tileHtml({
+      attrs: o.attrs, label: o.label, art: o.tile, name: o.name, sub: sub, kind: o.kind,
+      nameCls: 'wk-qrow-name', subCls: 'wk-row-meta',
+      cls: 'wk-qrow' + (o.quiet ? ' is-quiet' : '') + (o.past ? ' is-past' : '') + (o.done ? ' is-done' : ''),
+      extra: (o.step ? '<span class="tile-sub wk-qrow-step">' + escapeHtml(o.step) + '</span>' : '') +
+        (o.changed ? '<span class="wk-changed">Changed</span>' : '')
+    });
   }
 
   // One slot of one day as a row. A slot is never absent (CLAUDE.md): a
@@ -19157,52 +19212,77 @@
   // carries its small icon (Emily, 2026-11-01, I1).
   function planSlotRowHtml(day, i, slot, eyebrow, noTile) {
     var entry = daySlotEntry(day, slot);
-    // (typeof: harnesses that slice one region of this file have no ICONS.)
-    var tile = noTile || typeof slotIconTileHtml !== 'function' ? '' : slotIconTileHtml(slot);
     var changed = typeof wasRecentlyChanged === 'function' && wasRecentlyChanged(day.date, slot);
     var at = ' data-wk-day-index="' + i + '"';
     var snack = isSnackSlot(slot);
     if (entry && entry.state === 'planned') {
-      // The dish's drawn plate takes the slot tile's place; the card's
-      // heading already says which meal it is.
-      tile = (typeof Plates !== 'undefined' && Plates.html(entry.plate, 44)) || tile;
-      var name = mealDisplayName(entry);
-      var meta = planDayRowMeta(day, entry);
-      var step = planServeLine(day, slot, entry);
-      // A snack's row opens its sheet; on a day gone by there is nothing
-      // to change, so it is a line to read.
-      var metaIcon = noTile || typeof statusIconHtml !== 'function' ? '' : statusIconHtml(meta);
-      if (snack && day.isPast) return planRowHtml({ tile: tile, name: name, meta: meta, metaIcon: metaIcon, step: step, past: true });
+      // Every dish shows its plate, the neutral one until it has its own.
+      var tile = (typeof Plates !== 'undefined' && Plates.html(entry.plate || 'neutral', snack ? 44 : 96)) || '';
+      var name = planTileName(entry);
+      var meta = planTileMeta(day, slot, entry);
+      // Food made earlier says what to do with it today, right on its tile
+      // (S12, Emily 2026-10-31).
+      var step = snack ? '' : planServeLine(day, slot, entry);
+      var kind = snack ? 'row' : '';
+      // A snack's tile opens its sheet; on a day gone by there is nothing
+      // to change, so it is a tile to read.
+      if (snack && day.isPast) return planRowHtml({ tile: tile, name: name, kind: kind, past: true });
       return planRowHtml({
         attrs: (snack ? ' data-plan-snack="' : ' data-plan-row="') + slot + '"' + at,
-        tile: tile, eyebrow: eyebrow, name: name, meta: meta, metaIcon: metaIcon, step: step, changed: changed,
+        tile: tile, eyebrow: eyebrow, name: name, meta: meta, step: step, kind: kind, changed: changed,
         past: day.isPast, done: !!entry.cooked,
         label: (eyebrow ? eyebrow + ', ' : '') + name + ' — change it'
       });
     }
     if (entry && entry.state === 'open') {
       return '<div class="wk-qrow-open" data-wk-card="' + i + '">' +
-        planRowHtml({ attrs: ' data-wk-pick="' + slot + '"' + at, tile: tile, eyebrow: eyebrow, name: 'Your call',
+        planRowHtml({ attrs: ' data-wk-pick="' + slot + '"' + at, eyebrow: eyebrow, name: 'Your call',
           meta: 'Tap to pick', quiet: true, label: 'Pick ' + slotWord(slot) }) +
         '<div class="wk-slot-open" id="wk-open-' + slot + '" hidden>' + openSlotCardHtml(day.date, slot, entry) + '</div>' +
       '</div>';
     }
     if (entry && entry.state === 'planned_empty') {
       if (entry.meal_off) return '';
-      return planRowHtml({ tile: tile, eyebrow: eyebrow, name: awayLineFor(entry) || entry.title || 'Nothing planned', quiet: true });
+      return planRowHtml({ eyebrow: eyebrow, name: awayLineFor(entry) || entry.title || 'Nothing planned', quiet: true });
     }
     if (day.isPast || day.before_plan_start) {
-      return planRowHtml({ tile: tile, eyebrow: eyebrow, name: pastEmptyWord(day), quiet: true });
+      return planRowHtml({ eyebrow: eyebrow, name: pastEmptyWord(day), quiet: true });
     }
-    return planRowHtml({ attrs: ' data-wk-ask="' + slotWord(slot) + '"' + at, tile: tile, eyebrow: eyebrow, name: 'Nothing yet',
+    return planRowHtml({ attrs: ' data-wk-ask="' + slotWord(slot) + '"' + at, eyebrow: eyebrow, name: 'Nothing yet',
       meta: 'Tap to ask for one', quiet: true, label: 'Ask for a ' + slotWord(slot) });
   }
 
+  // A tile's name. A night eating an earlier batch says just "Leftovers"
+  // (Emily's standing copy rule, and Z-Week); a batch made ahead on purpose
+  // keeps its own name, as on Cook.
+  function planTileName(entry) {
+    return planDayRowMetaIsLeftovers(entry) ? 'Leftovers' : mealDisplayName(entry);
+  }
+  function planDayRowMetaIsLeftovers(entry) {
+    var src = planReheatSource(entry);
+    if (src) return !(src.cook_ahead || src.slot === 'breakfast' || src.slot === 'snack');
+    return !!(entry && entry.source === 'leftovers');
+  }
+
+  // The line after the slot on a day's tile: "Dinner · 35 min" (Z-Day:
+  // minutes are dinner's, the others say just their slot), and on any slot
+  // the word that changes what you do: "Made Sunday", "Takeout". A leftovers
+  // tile already says so in its name.
+  function planTileMeta(day, slot, entry) {
+    if (planDayRowMetaIsLeftovers(entry)) return '';
+    var meta = planDayRowMeta(day, entry);
+    if (slot === 'dinner') return meta;
+    return entry.source === 'takeout' || planReheatSource(entry) ? meta : '';
+  }
+
+  // A meal group on All: the section heading and its tiles. A day's tiles
+  // have no heading and share one grid (planWeekHtml), so with no head this
+  // is the tiles alone.
   function planCardHtml(cls, head, body) {
     if (!body) return '';
-    return '<div class="shell-card wk-pcard ' + cls + '">' +
-      (head ? '<span class="wk-menu-head">' + escapeHtml(head) + '</span>' : '') + body +
-    '</div>';
+    if (!head) return body;
+    return '<section class="wk-pcard ' + cls + '">' + sectionHeadHtml(head, 'wk-menu-head') +
+      '<div class="tiles">' + body + '</div></section>';
   }
 
   // The week view (All) is the menu, by meal type — Breakfast, Lunch,
@@ -19218,47 +19298,50 @@
   // then show the days in the schedule like the others") — each snack
   // once, its days and its time; its row opens the snack's sheet
   // (data-plan-snack), on its first day still ahead.
-  var PLAN_DISH_HEADS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snack: 'Snack' };
+  var PLAN_DISH_HEADS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snack: 'Snacks' };
 
   function planDishRowsHtml(days, slot) {
     var group = wkMenuGroups(days).filter(function (g) { return g.slot === slot; })[0];
-    // A lunch or dinner that is only leftovers of another meal's batch
-    // (dinner eaten as tomorrow's lunch) is not a dish to make, so the menu
-    // leaves it out; the day view still shows it as "Leftovers".
+    // Past days are hidden (Emily, 2026-11-05): a dish whose days are all
+    // behind us leaves the menu, unless the whole plan is behind us.
+    var allPast = days.every(function (d) { return d.isPast; });
     var dishes = (group ? group.dishes : []).filter(function (dish) {
-      return slot === 'breakfast' || slot === 'snack' || !dish.isLeftover;
+      return allPast || dish.days.some(function (d) { return !d.past; });
     });
     var rows = dishes.map(function (dish) {
       var first = dish.days.filter(function (d) { return !d.past; })[0] || dish.days[0];
       var ahead = dish.days.filter(function (d) { return !d.past; });
-      var fact = dish.isLeftover ? planRowMeta(first.entry) : wkMenuFact(dish);
       var changed = typeof wasRecentlyChanged === 'function' &&
         dish.days.some(function (d) { return wasRecentlyChanged(d.date, d.key); });
-      var meta = [wkMenuDaysPhrase(dish, days), fact].filter(Boolean).join(' · ');
-      var plate = typeof Plates !== 'undefined' ? Plates.html(first.entry.plate, 44) : '';
+      var when = planTileDays(ahead.length ? ahead : dish.days, days);
+      var plate = typeof Plates !== 'undefined' ? Plates.html(first.entry.plate || 'neutral', slot === 'snack' ? 44 : 96) : '';
+      // A lunch or dinner that is only leftovers of another batch says just
+      // "Leftovers", with the plate of the dish it is (Z-Week).
+      var name = dish.isLeftover && slot !== 'breakfast' && slot !== 'snack' ? 'Leftovers' : dish.name;
       if (slot === 'snack') {
-        // A snack all behind us has nothing to change: a line to read.
-        if (!ahead.length) return planRowHtml({ tile: plate, name: dish.name, meta: meta, past: true });
+        // Snacks are the small tile: the name alone (Z-Week). The days are
+        // on each day, and in what a screen reader hears.
+        if (!ahead.length) return planRowHtml({ tile: plate, name: dish.name, kind: 'row', past: true });
         return planRowHtml({
           attrs: ' data-plan-snack="' + first.key + '" data-wk-day-index="' + first.index + '"',
-          tile: plate, name: dish.name, changed: changed, meta: meta,
-          label: dish.name + ' — change it'
+          tile: plate, name: dish.name, kind: 'row', changed: changed,
+          label: dish.name + ', ' + when + ' — change it'
         });
       }
       return planRowHtml({
         attrs: ' data-plan-row="' + first.key + '" data-wk-day-index="' + first.index + '"' +
           (ahead.length > 1 ? ' data-plan-dates="' + escapeHtml(ahead.map(function (d) { return d.date; }).join(',')) + '"' : '') +
           (dish.isLeftover ? ' data-plan-reheat="1"' : ''),
-        tile: plate, name: dish.name, changed: changed, past: !ahead.length,
+        tile: plate, name: name, changed: changed, past: !ahead.length,
         done: dish.days.every(function (d) { return !!d.entry.cooked; }),
-        // A breakfast batch made on the prep day says so: "Mon–Wed · 30 min
-        // · Made Sunday" (schedule_note, prep_freshness.draft_batch_notes).
-        meta: slot === 'breakfast' ? wkRowMetaLine(first.entry, meta) : meta,
-        label: PLAN_DISH_HEADS[slot] + ', ' + dish.name + ' — change it'
+        // A breakfast batch made on the prep day says so: "Mon–Wed · Made
+        // Sunday" (schedule_note, prep_freshness.draft_batch_notes).
+        meta: slot === 'breakfast' ? wkRowMetaLine(first.entry, when) : when,
+        label: PLAN_DISH_HEADS[slot] + ', ' + name + ', ' + when + ' — change it'
       });
     }).join('');
     // A meal handed back is a decision, so it is never folded into a
-    // dish: it gets its own row, named by its day.
+    // dish: it gets its own tile, named by its day.
     days.forEach(function (day, i) {
       var e = slot === 'snack' ? null : day[slot];
       if (e && e.state === 'open' && !day.before_plan_start) {
@@ -19268,8 +19351,23 @@
     return rows;
   }
 
+  // The days on a menu tile: "Wed", "Wed, Fri", "Mon–Thu" (three or more in
+  // a row collapse, as the menu's phrase always has).
+  function planTileDays(list, days) {
+    var idx = list.map(function (d) { return d.index; }).sort(function (a, b) { return a - b; });
+    var out = [], i = 0;
+    function short(n) { return dayName(days[n].date, { weekday: 'short' }).slice(0, 3); }
+    while (i < idx.length) {
+      var j = i;
+      while (j + 1 < idx.length && idx[j + 1] === idx[j] + 1) j++;
+      out.push(j - i >= 2 ? short(idx[i]) + '–' + short(idx[j]) : (i === j ? short(idx[i]) : short(idx[i]) + ', ' + short(idx[j])));
+      i = j + 1;
+    }
+    return out.join(', ');
+  }
+
   function planBreakfastHtml(days, sel) {
-    if (sel !== null) return planCardHtml('wk-pcard-breakfast', 'Breakfast', planSlotRowHtml(days[sel], sel, 'breakfast', ''));
+    if (sel !== null) return planCardHtml('wk-pcard-breakfast', '', planSlotRowHtml(days[sel], sel, 'breakfast', 'Breakfast'));
     return planCardHtml('wk-pcard-breakfast', 'Breakfast', planDishRowsHtml(days, 'breakfast'));
   }
 
@@ -19296,7 +19394,7 @@
   // a Lunch card and a Dinner card of dishes (planDishRowsHtml), and a day
   // Pomona can still fill as one quiet row on the Dinner card.
   function planMainsHtml(days, sel) {
-    if (sel !== null) return planCardHtml('wk-pcard-mains', 'Lunch & dinner', planMainsDayRows(days[sel], sel));
+    if (sel !== null) return planCardHtml('wk-pcard-mains', '', planMainsDayRows(days[sel], sel));
     var build = days.map(function (day, i) {
       if (day.before_plan_start || !wkDayCanBuild(day, {})) return '';
       return planRowHtml({ attrs: ' data-wk-build-day="' + escapeHtml(day.date) + '" data-wk-day-index="' + i + '"',
@@ -19316,8 +19414,34 @@
     }).join('');
   }
 
+  // A day's snacks are one tile (Z-Day): their plates, "Snacks", how many.
+  // One snack opens its sheet, several open a sheet of them to choose from.
+  // A snack that is still a decision can't hide in a tile, so a day with one
+  // keeps every snack as a tile of its own.
+  function planDaySnacksTileHtml(day, i) {
+    var snacks = day.snacks || [];
+    if (!snacks.length) return '';
+    var keys = snacks.map(function (_, n) { return snackSlotKey(n); });
+    var entries = keys.map(function (k) { return daySlotEntry(day, k); });
+    if (!entries.every(function (e) { return e && e.state === 'planned'; })) return planSnackRows(day, i);
+    var plates = typeof Plates !== 'undefined' ? entries.slice(0, 2).map(function (e) {
+      return Plates.html(e.plate || 'neutral', entries.length > 1 ? 62 : 96);
+    }).join('') : '';
+    var attrs = entries.length === 1
+      ? ' data-plan-snack="' + keys[0] + '" data-wk-day-index="' + i + '"'
+      : ' data-plan-snacks="' + i + '"';
+    return tileHtml({
+      attrs: day.isPast && entries.length === 1 ? '' : attrs,
+      art: '<span class="tile-plates">' + plates + '</span>',
+      name: 'Snacks',
+      sub: entries.length + (day.isToday ? ' today' : entries.length === 1 ? ' snack' : ' snacks'),
+      cls: 'wk-qrow wk-day-snacks' + (day.isPast ? ' is-past' : ''),
+      label: 'Snacks: ' + entries.map(mealDisplayName).join(', ')
+    });
+  }
+
   function planSnacksHtml(days, sel) {
-    if (sel !== null) return planCardHtml('wk-pcard-snacks', 'Snacks', planSnackRows(days[sel], sel));
+    if (sel !== null) return planCardHtml('wk-pcard-snacks', '', planDaySnacksTileHtml(days[sel], sel));
     return planCardHtml('wk-pcard-snacks', 'Snacks', planDishRowsHtml(days, 'snack'));
   }
 
@@ -19358,24 +19482,99 @@
     '</div>';
   }
 
+  // The Plan root (Z-Week, Z-Day): the head (rootBandHtml) above this, then
+  // the day bar, then All's menu or one day's tiles. Dinner is never
+  // highlighted and there is no Tonight card: every meal is an equal tile.
+  // Add a meal and the freezer are under ··· (openPlanDaySheet, and More on
+  // All).
   function planWeekHtml(data, days) {
     days = days || [];
     var sel = planDayIndex(days);
     var approved = weekPlanState(data) === 'set';
     var day = sel !== null ? days[sel] : null;
     var cards = planBreakfastHtml(days, sel) + planMainsHtml(days, sel) + planSnacksHtml(days, sel);
+    var empty = '<div class="note-card rv-empty">Nothing planned yet.</div>';
     return '<div class="wk-plan">' +
-      weekSuggestedNoteHtml(data) + planEndsLineHtml(data) + planNotesHtml(data, days, sel) +
       planDayBarHtml(days, sel, data.adjacent_plans) +
-      '<h2 class="wk-pview-title">' + escapeHtml(day ? dayName(day.date, { weekday: 'long' }) : 'The whole week') + '</h2>' +
       (day ? planDayTagsHtml(day) : '') +
+      weekSuggestedNoteHtml(data) + planEndsLineHtml(data) + planNotesHtml(data, days, sel) +
       '<div class="wk-pcards">' +
-        (cards || '<div class="rv-empty">Nothing planned yet.</div>') +
-        (day && !day.isPast ? '<button type="button" class="wk-qline" data-wk-add-meal="1">' + WK_ICONS.plus + 'Add a meal</button>' : '') +
-        (approved ? weekFreezerRowHtml(data, days) : '') +
+        (cards ? (day ? '<div class="tiles">' + cards + '</div>' : cards) : empty) +
         (!approved && typeof wkCouldntFitHtml === 'function' ? wkCouldntFitHtml(data) : '') +
       '</div>' +
     '</div>' + planDockHtml(data);
+  }
+
+  // ---------- A day's ··· (Z-PlanMenu) ----------
+  // What a day can do, as tiles in a sheet, each only where it can do
+  // something. Every tile opens the flow it always opened:
+  //   Add a meal             the add-a-meal sheet (wkAddMealFor)
+  //   Add from the freezer   the freezer step, on an approved week
+  //   Swap with another day  the Move sheet for the day's dinner, or its
+  //                          lunch when the dinner can't move (wkCanMove)
+  //   Take the night off     today only: the chat, with the words ready: its
+  //                          take_the_night_off tool is the one road to a
+  //                          night off now Today's Tonight sheet is gone
+  function planDaySheetKeys(day, data) {
+    var keys = [];
+    if (day.isPast) return keys;
+    keys.push('add');
+    if (weekPlanState(data) === 'set') keys.push('freezer');
+    if (planDayMoveSlot(day)) keys.push('swap');
+    // Tonight only: take_the_night_off is about tonight.
+    var dinner = daySlotEntry(day, 'dinner');
+    if (day.isToday && dinner && dinner.state === 'planned' && !dinner.cooked) keys.push('off');
+    return keys;
+  }
+
+  function planDayMoveSlot(day) {
+    return ['dinner', 'lunch'].filter(function (slot) {
+      return typeof wkCanMove === 'function' && wkCanMove(day, slot, daySlotEntry(day, slot));
+    })[0] || '';
+  }
+
+  var PLAN_DAY_SHEET = {
+    add: 'Add a meal',
+    freezer: 'Add from the freezer',
+    swap: 'Swap with another day',
+    off: 'Take the night off'
+  };
+
+  function planDaySheetHtml(day, data) {
+    return quietSheetHeadHtml('', dayName(day.date, { weekday: 'long' })) +
+      '<div class="tiles in-sheet">' + planDaySheetKeys(day, data).map(function (key) {
+        return tileHtml({ attrs: ' data-plan-day-opt="' + key + '"', name: PLAN_DAY_SHEET[key], kind: 'text' });
+      }).join('') + '</div>';
+  }
+
+  function openPlanDaySheet(panel, day, index) {
+    weekState.selectedIndex = index;
+    openQuietSheet(planDaySheetHtml(day, weekState.data || {}), function (body) {
+      body.querySelectorAll('[data-plan-day-opt]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var key = btn.getAttribute('data-plan-day-opt');
+          closeQuietSheet();
+          if (key === 'add') wkAddMealFor(panel, panel.querySelector('#week-steps'), day);
+          else if (key === 'freezer') openFreezerStep(panel);
+          else if (key === 'swap') openMoveSheet(panel, day, planDayMoveSlot(day));
+          else if (key === 'off') openAskSheet('Take tonight off', weekAskContext());
+        });
+      });
+    });
+  }
+
+  // Several snacks on a day: which one (planDaySnacksTileHtml).
+  function openPlanSnacksSheet(panel, day, index) {
+    openQuietSheet(quietSheetHeadHtml('', 'Snacks') +
+      '<div class="tiles in-sheet">' + planSnackRows(day, index) + '</div>', function (body) {
+      body.querySelectorAll('[data-plan-snack]').forEach(function (row) {
+        row.addEventListener('click', function () {
+          var slot = row.getAttribute('data-plan-snack');
+          closeQuietSheet();
+          openPlanRowSheet(panel, day, slot);
+        });
+      });
+    });
   }
 
   // ---------- The row's sheet: everything a meal can do, one tap in ----------
@@ -22116,6 +22315,15 @@
         // More ··· (the declutter, 2026-10-30) rides in the
         // band too (weekBandExtras) — on Meals only, never over Chores.
         var extras = onChores ? null : weekBandExtras(data);
+        // A day chosen on the bar is the head's subject: its name, its
+        // date, and ··· means that day (openPlanDaySheet). The name is
+        // typeof-guarded for the node harnesses that lift this function.
+        var bandDays = weekState.days || [];
+        var bandSel = typeof planDayIndex === 'function' && weekPlanState(data) !== 'none' && !onChores ? planDayIndex(bandDays) : null;
+        if (bandSel !== null) {
+          parts = planDayBandParts(parts, bandDays[bandSel]);
+          extras = { more: true, day: true };
+        }
         var key = JSON.stringify([parts, extras]);
         if (bandSlot.dataset.bandKey !== key) {
           bandSlot.innerHTML = rootBandHtml(parts);
@@ -22218,6 +22426,14 @@
       row.addEventListener('click', function () {
         var day = wkDayForTap(row);
         if (day) openPlanRowSheet(panel, day, row.getAttribute('data-plan-snack'));
+      });
+    });
+    // A day's Snacks tile, with more than one on it: which snack.
+    steps.querySelectorAll('[data-plan-snacks]').forEach(function (tile) {
+      tile.addEventListener('click', function () {
+        var index = Number(tile.getAttribute('data-plan-snacks'));
+        var day = (weekState.days || [])[index];
+        if (day) openPlanSnacksSheet(panel, day, index);
       });
     });
     // The draft's flags, top of the screen: one of Pomona's own two fixes
@@ -23623,7 +23839,10 @@
         mealsMoreRowHtml('wk-more-reopen', WK_ICONS.unlock, 'Reopen the week',
           "Opens it up to change again. Nothing comes off your grocery list.") +
         mealsMoreRowHtml('wk-more-plan-next', WK_ICONS.calendar, planAfterTitle(next),
-          planAfterLine(next));
+          planAfterLine(next)) +
+        // The freezer lives under the menu (Emily, 2026-11-05).
+        mealsMoreRowHtml('wk-more-freezer', WK_ICONS.snow, 'Add from the freezer',
+          weekFreezerLine(data, weekState.days || []));
     }
 
     rows.innerHTML =
@@ -23652,6 +23871,7 @@
     on('wk-more-discard', function () { closeMealsMoreSheet(); discardDraft(panel, data); });
     on('wk-more-reopen', function () { closeMealsMoreSheet(); reopenWeek(panel, data); });
     on('wk-more-plan-next', function () { closeMealsMoreSheet(); planNextWeek(); });
+    on('wk-more-freezer', function () { closeMealsMoreSheet(); openFreezerStep(panel); });
     on('wk-more-whole-week', function () { closeMealsMoreSheet(); openWeekSheet(); });
     // Adjust your setup opens the Preferences sheet — the household's
     // settings behind the header gear (openPrefsSheet) — never the
@@ -24118,14 +24338,15 @@
     return out;
   }
 
+  function weekFreezerLine(data, days) {
+    if (!data.defrost_asked_at) return 'Anything in the freezer this week?';
+    var items = weekFrozenItems(days);
+    return items.length ? items.join(', ') + ' — from the freezer' : 'Nothing frozen this week';
+  }
+
   function weekFreezerRowHtml(data, days) {
     var answered = !!data.defrost_asked_at;
-    var line;
-    if (!answered) line = 'Anything in the freezer this week?';
-    else {
-      var items = weekFrozenItems(days);
-      line = items.length ? items.join(', ') + ' — from the freezer' : 'Nothing frozen this week';
-    }
+    var line = weekFreezerLine(data, days);
     return '<button type="button" class="wk-freezer-row' + (answered ? ' is-answered' : '') + '" data-wk-freezer="1">' +
       '<span class="wk-freezer-tile">' + WK_ICONS.snow + '</span>' +
       '<span class="wk-freezer-text">' + escapeHtml(line) + '</span>' +
@@ -28559,47 +28780,8 @@
   }
 
   // ---------- The chat button ----------
-  // Its icon is the Pomona mark (Emily, 2026-09-13, Identity Round Q2 =
-  // B). Her worry, choosing it: "it's not obvious that's where they go
-  // for the chat" — so for a viewer's first FAB_LABEL_VISITS page loads
-  // on this device a 9px "ASK" sits under the mark inside the button (the
-  // mark shrinks from 26px to 22px while the label shows; both inside the
-  // same 54px, nothing outside it moves — .chat-fab.has-label, shell.css).
-  // After that, the mark alone. 0 = never show the label; Infinity =
-  // always. The counter is localStorage on its own key — the same
-  // per-device mechanism the coaching examples use (coachCountVisit), but
-  // not the same key: that one is per tab and per household, this one is
-  // per device, because the button is the same on every tab and the
-  // lesson is about the device's owner, not the house.
-  var FAB_LABEL_VISITS = 3;
-  var FAB_LABEL_KEY = 'pomona.fabLabelVisits';
-
-  // Which visit this is, 1-based. Stops WRITING past the limit (the only
-  // question is "have the three been spent") but keeps RETURNING the
-  // incremented value, so the fourth visit reads 4 and shows nothing.
-  // Every read and write is wrapped: Safari in private mode throws on
-  // localStorage, and a thrown label must not take the shell down.
-  function fabLabelCountVisit() {
-    var n = 1;
-    try {
-      n = (Number(window.localStorage.getItem(FAB_LABEL_KEY)) || 0) + 1;
-      if (n <= FAB_LABEL_VISITS) window.localStorage.setItem(FAB_LABEL_KEY, String(n));
-    } catch (err) { /* see above */ }
-    return n;
-  }
-
-  function fabLabelShouldShow(visit) {
-    return visit <= FAB_LABEL_VISITS;
-  }
-
-  function placeFabLabel(fab) {
-    var label = fab.querySelector('#chat-fab-label');
-    if (!label) return;
-    var show = fabLabelShouldShow(fabLabelCountVisit());
-    label.hidden = !show;
-    fab.classList.toggle('has-label', show);
-  }
-
+  // Ask, at the end of the tab bar. The word is the button (Emily,
+  // 2026-11-05), so nothing has to teach it.
   var askBar = document.getElementById('chat-fab');
   if (askBar) {
     // Opened from Plan with a week on screen, the chat is about that week
@@ -28607,7 +28789,6 @@
     // so, the server gets the week as the turn's subject, and a change
     // comes back as a card to save rather than a paragraph.
     askBar.addEventListener('click', function () { openAskSheet('', weekAskContext()); });
-    placeFabLabel(askBar);
   }
 
   // ---------- Share meal plan (week sheet's "Share") ----------
@@ -32419,7 +32600,6 @@
       '</button>' +
       // Notifications on the iPhone app (2026-09-27) — empty anywhere else.
       pushPrefsRowHtml() +
-      appearanceRowHtml() +
       // Sharing with Claude — the household's answer to the consent screen,
       // and the way to change it (aiConsentPrefsRowHtml).
       aiConsentPrefsRowHtml() +
@@ -32843,54 +33023,6 @@
       '</span>' +
       (version ? '<span class="prefs-about-version">Version ' + escapeHtml(version) + aboutAgreedHtml(version) + '</span>' : '') +
     '</nav>';
-  }
-
-  // ---------- Appearance (2026-09-24) ----------
-  // Light / Dark / Auto, saved on this device only. The page's
-  // <head> script (the same one on every page that loads theme.css) reads
-  // the saved choice before first paint and defines window.pomonaAppearance,
-  // which sets data-theme on <html> and points the theme-color meta tags at
-  // the forced colour. This row just saves and calls it. The control is the
-  // Plan root's .wk-seg, as a radio group.
-  var APPEARANCE_STORE_KEY = 'pomona-appearance';
-  var APPEARANCE_OPTIONS = [
-    { key: 'phone', label: 'Auto' },
-    { key: 'light', label: 'Light' },
-    { key: 'dark', label: 'Dark' }
-  ];
-
-  function appearanceChoice() {
-    var saved = null;
-    try { saved = window.localStorage.getItem(APPEARANCE_STORE_KEY); } catch (err) { /* private mode */ }
-    return saved === 'light' || saved === 'dark' ? saved : 'phone';
-  }
-
-  function setAppearance(key) {
-    try {
-      if (key === 'light' || key === 'dark') window.localStorage.setItem(APPEARANCE_STORE_KEY, key);
-      else window.localStorage.removeItem(APPEARANCE_STORE_KEY);
-    } catch (err) { /* private mode: applies for this page view only */ }
-    if (typeof window.pomonaAppearance === 'function') window.pomonaAppearance(key);
-    document.querySelectorAll('.prefs-appearance .wk-seg-btn').forEach(function (btn) {
-      var on = btn.getAttribute('data-appearance') === key;
-      btn.classList.toggle('is-on', on);
-      btn.setAttribute('aria-checked', on ? 'true' : 'false');
-    });
-  }
-
-  function appearanceRowHtml() {
-    var current = appearanceChoice();
-    return '<div class="prefs-appearance">' +
-      '<span class="prefs-row-title" id="prefs-appearance-title">Appearance</span>' +
-      '<div class="wk-seg" role="radiogroup" aria-labelledby="prefs-appearance-title">' +
-        APPEARANCE_OPTIONS.map(function (o) {
-          var on = o.key === current;
-          return '<button type="button" class="wk-seg-btn' + (on ? ' is-on' : '') + '" role="radio" ' +
-            'aria-checked="' + (on ? 'true' : 'false') + '" data-appearance="' + o.key + '">' +
-            escapeHtml(o.label) + '</button>';
-        }).join('') +
-      '</div>' +
-    '</div>';
   }
 
   var PREFS_SIGNOUT_ICON =
@@ -33332,11 +33464,6 @@
       e.preventDefault();
       submitLeave('delete');
     }
-  });
-
-  document.addEventListener('click', function (e) {
-    var btn = e.target && e.target.closest && e.target.closest('.prefs-appearance [data-appearance]');
-    if (btn) setAppearance(btn.getAttribute('data-appearance'));
   });
 
   // ---------- Onboarding coaching (Emily + Julia, 2026-09-08) ----------

@@ -337,11 +337,11 @@ def test_the_household_facts_are_set_off_from_the_last_person():
     assert "'<div class=\"wwk-household-facts\">' + html + '</div>'" in fn
     title_rule = SHELL_CSS[SHELL_CSS.index(".prefs-row-title {"):SHELL_CSS.index("}", SHELL_CSS.index(".prefs-row-title {"))]
     lead_rule = SHELL_CSS[SHELL_CSS.index(".wwk-household-lead {"):SHELL_CSS.index("}", SHELL_CSS.index(".wwk-household-lead {"))]
-    for prop in ("font-size: 15px", "font-weight: 800", "letter-spacing: -0.015em"):
+    for prop in ("font-size: 14px", "font-weight: 700"):
         assert prop in title_rule and prop in lead_rule, f"{prop} should match the sheet's section-header weight"
     assert ".wwk-household-facts {" in SHELL_CSS
     facts_rule = SHELL_CSS[SHELL_CSS.index(".wwk-household-facts {"):SHELL_CSS.index("}", SHELL_CSS.index(".wwk-household-facts {"))]
-    assert "border-top: 1.5px solid var(--hairline)" in facts_rule, "a visible separation from the last person"
+    assert "border-top: 1px solid var(--hairline)" in facts_rule, "a visible separation from the last person"
 
 
 # --- 5. the lines, run for real -----------------------------------------------

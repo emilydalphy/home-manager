@@ -1,23 +1,18 @@
-"""The Identity Round, built (Emily, 2026-09-13).
+"""What's left of the Identity Round (Emily, 2026-09-13), under Bright Dusk.
 
-Four decisions from the Identity Round canvas, each a checkable claim:
+Bright Dusk (Emily, 2026-11-05) replaced two of its four decisions:
 
-  Q1 = C  The root band opens with the apricot mark and "Pomona" top-left;
-          the date leaves the eyebrow for the sub-line ("Sunday, Sep 13 ·
-          2 of 5 done"). B (the mark before the date eyebrow) is kept in
-          reserve behind the same constant: BAND_IDENTITY in shell.js,
-          'wordmark' | 'mark' | 'none', one builder for all three.
-  Q2 = B  The chat button's icon is the mark, apricot on spruce, with a
-          small "ASK" under it for a device's first three visits
-          (FAB_LABEL_VISITS) so the fruit is findable as the chat.
-  Q3 = B  Plan's tab glyph is the week as a row — five dots between two
-          rules; the bullseye is retired.
-  Q4 = B  One 2.2px stroke for the whole icon set; the mark, a logo, keeps
-          its own weight (the sweep itself is guarded in
-          tests/test_design_hygiene.py, (d)).
+  Q1      The band and its mark and wordmark are gone. A root opens with a
+          plain title and one line on cream; the date, or the context, still
+          leads that line ("Sunday, Sep 13 · 1 cook tonight").
+  Q2      The chat button is Ask, the apricot pill at the tab bar's end, with
+          the word on it. The mark and the three-visit label went with it.
+  Q3      Plan's tab glyph is still the week as a row, drawn as on the board.
+  Q4      One 2.2px stroke for the icon set; the tab bar's four icons are 1.9
+          as drawn on the boards, and the mark, a logo, keeps its own weight
+          (the sweep is guarded in tests/test_design_hygiene.py, (d)).
 
-The band and the counter are pure enough to run under node; the rest is
-read off the source.
+The head is pure enough to run under node; the rest is read off the source.
 """
 
 import json
@@ -37,7 +32,6 @@ SHELL_CSS = (STATIC / "shell.css").read_text(encoding="utf-8")
 DESIGN = (REPO / "DESIGN_SYSTEM.md").read_text(encoding="utf-8")
 
 MARK_FIRST_PATH = "M12 20.4c-3.1"
-BUBBLE_PATH = 'M4 5h16v10H9l-5 4z'
 DATE_RE = r"[A-Z][a-z]+day, [A-Z][a-z]{2} \d{1,2}"
 
 
@@ -67,14 +61,13 @@ def _node(script: str):
     return json.loads(res.stdout.strip().splitlines()[-1])
 
 
-# The band, with everything it reads: the mark, the identity constant and
-# its helpers, the gear, and a panel fake for setRootBand.
+# The head, with everything it reads: its helpers, the gear, and a panel
+# fake for setRootBand.
 _BAND_JS = (
     "function escapeHtml(s){return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;')"
     ".replace(/>/g,'&gt;').replace(/\"/g,'&quot;');}\n"
     "var PREFS_GEAR_ICON = '<svg></svg>';\n"
-    + _region("  var MARK_PATHS =", "  var ICONS = {")
-    + _region("  var BAND_IDENTITY = ", "  // ---------- Empty states as designed moments ----------")
+    + _region("  function bandDateLabel(", "  // ---------- Empty states as designed moments ----------")
     + _function("prefsGearHtml")
     + _function("dayName")
     + _function("cookBandEyebrow")
@@ -97,8 +90,8 @@ function el() { return { textContent: '', hidden: false, dataset: {} }; }
 function bandPanel(eyebrow, sub) {
   var els = { '#b-eyebrow': el(), '#b-title': el(), '#b-sub': el(), '#b-badge': el() };
   els['#b-eyebrow'].textContent = eyebrow || '';
-  // As rootBandHtml renders it: hidden under 'wordmark', shown otherwise.
-  els['#b-eyebrow'].hidden = BAND_IDENTITY === 'wordmark';
+  // As rootBandHtml renders it: always hidden, it leads the line instead.
+  els['#b-eyebrow'].hidden = true;
   els['#b-sub'].dataset.sub = sub || '';
   els['#b-sub'].textContent = sub || '';
   return { els: els, querySelector: function (sel) { return els[sel] || null; } };
@@ -113,90 +106,41 @@ function after(panel, parts) {
 
 
 # --------------------------------------------------------------------------
-# Q1 — the mark in the band: one builder, three identities
+# The head: no band, no mark, the date in the line
 # --------------------------------------------------------------------------
 
-def test_emily_chose_c_and_kept_b_in_reserve():
-    band = _region("  var BAND_IDENTITY = ", "  function rootBandHtml(")
-    assert "var BAND_IDENTITY = 'wordmark';" in band, "C is the default"
-    comment = SHELL_JS[SHELL_JS.index("Identity Round\n  // Q1)"):SHELL_JS.index("var BAND_IDENTITY = ")]
-    assert "She chose C" in comment and "kept B in\n  // reserve" in comment
-    for value in ("'wordmark'", "'mark'", "'none'"):
-        assert value in comment, f"the comment should name {value}"
-    assert "var BAND_WORDMARK = 'Pomona';" in band
-
-
 @_needs_node
-def test_wordmark_puts_the_mark_and_pomona_top_left_and_the_date_in_the_line():
+def test_the_head_is_a_title_and_one_line_and_the_date_leads_it():
     out = _node(
         _BAND_JS
-        + "BAND_IDENTITY = 'wordmark';\n"
         + "console.log(JSON.stringify({"
-        + " now: rootBandHtml({ id: 'x', eyebrow: 'Sunday, Sep 13', title: 'Now', sub: '2 of 5 done', badge: 'Week set' }),"
-        + " plan: rootBandHtml({ id: 'p', eyebrow: 'Sep 14–20', title: 'This week', sub: 'a draft, your turn', badge: 'Draft' }),"
-        + " bare: rootBandHtml({ id: 'y', title: 'Shop' })"
+        + " now: rootBandHtml({ id: 'x', eyebrow: 'Sunday, Sep 13', title: 'Now', sub: '2 of 5 done', badge: 'Draft' }),"
+        + " plan: rootBandHtml({ id: 'p', eyebrow: 'Sep 14–20', title: 'This week', sub: 'your turn', badge: 'Draft' }),"
+        + " bare: rootBandHtml({ id: 'y', title: 'Shop' }),"
+        + " day: rootBandHtml({ id: 'd', title: 'Friday', noGear: true })"
         + "}));"
     )
     now = out["now"]
-    assert 'data-identity="wordmark"' in now
-    brand = now[now.index('<span class="root-band-brand is-wordmark">'):now.index('<span class="root-band-eyebrow"')]
-    assert 'class="pomona-mark"' in brand and 'stroke-width="1.8"' in brand and MARK_FIRST_PATH in brand
-    assert '<span class="root-band-wordmark">Pomona</span>' in brand
-    # The brand leads: it is the first thing inside the band's lead slot.
-    assert now.index('root-band-brand') < now.index('root-band-eyebrow') < now.index('root-band-badge')
-    # The eyebrow keeps the date but is hidden; the line carries it.
+    assert 'class="root-band screen-head"' in now
+    assert "root-band-brand" not in now and "root-band-wordmark" not in now and "Pomona" not in now
+    assert MARK_FIRST_PATH not in now, "no mark in the head"
     assert 'id="x-eyebrow" hidden>Sunday, Sep 13<' in now
     assert 'id="x-sub" data-sub="2 of 5 done">Sunday, Sep 13 · 2 of 5 done<' in now
-    assert 'id="x-badge">Week set<' in now, "the status chip stays where it is"
-    assert 'id="p-sub" data-sub="a draft, your turn">Sep 14–20 · a draft, your turn<' in out["plan"]
+    assert 'id="x-badge">Draft<' in now
+    assert 'id="p-sub" data-sub="your turn">Sep 14–20 · your turn<' in out["plan"]
     # Nothing to fold in and nothing to say: no line at all.
     assert 'id="y-sub" data-sub="" hidden' in out["bare"]
-    assert '<span class="root-band-wordmark">Pomona</span>' in out["bare"]
-
-
-@_needs_node
-def test_mark_keeps_the_date_eyebrow_with_the_mark_before_it():
-    out = _node(
-        _BAND_JS
-        + "BAND_IDENTITY = 'mark';\n"
-        + "console.log(JSON.stringify({"
-        + " now: rootBandHtml({ id: 'x', eyebrow: 'Sunday, Sep 13', title: 'Now', sub: '2 of 5 done' })"
-        + "}));"
-    )
-    now = out["now"]
-    assert 'data-identity="mark"' in now
-    assert '<span class="root-band-brand">' in now and MARK_FIRST_PATH in now
-    assert "root-band-wordmark" not in now and "Pomona" not in now
-    assert now.index('root-band-brand') < now.index('root-band-eyebrow')
-    assert 'id="x-eyebrow">Sunday, Sep 13<' in now, "the eyebrow keeps the date, shown"
-    assert 'id="x-sub" data-sub="2 of 5 done">2 of 5 done<' in now, "the line is the root's own"
-
-
-@_needs_node
-def test_none_is_the_band_as_it_was():
-    out = _node(
-        _BAND_JS
-        + "BAND_IDENTITY = 'none';\n"
-        + "console.log(JSON.stringify({"
-        + " now: rootBandHtml({ id: 'x', eyebrow: 'Sunday, Sep 13', title: 'Now', sub: '2 of 5 done' })"
-        + "}));"
-    )
-    now = out["now"]
-    assert 'data-identity="none"' in now
-    assert "root-band-brand" not in now and MARK_FIRST_PATH not in now and "Pomona" not in now
-    assert 'id="x-eyebrow">Sunday, Sep 13<' in now
-    assert 'id="x-sub" data-sub="2 of 5 done">2 of 5 done<' in now
+    assert "prefs-gear" in out["bare"] and "prefs-gear" not in out["day"], "noGear leaves the gear out"
 
 
 @_needs_node
 def test_set_root_band_keeps_the_date_in_the_line_whichever_half_changes():
     out = _node(
         _BAND_JS
-        + "BAND_IDENTITY = 'wordmark';\n"
         + "var r = {};\n"
-        # Now after a load: the line arrives, the eyebrow was rendered.
-        + "r.load = after(bandPanel('Sunday, Sep 13', ''), { sub: '2 of 5 done', badge: 'Week set' });\n"
-        # Only the line changes (a tick): the date stays in front of it.
+        # A load: the line arrives, the eyebrow was rendered.
+        + "r.load = after(bandPanel('Sunday, Sep 13', ''), { sub: '2 of 5 done', badge: 'Draft' });\n"
+        # Only the line changes: the date stays in front of it.
         + "r.tick = after(bandPanel('Sunday, Sep 13', '2 of 5 done'), { sub: '3 of 5 done' });\n"
         # Only the eyebrow changes (Cook re-rendering the day): the line keeps its words.
         + "r.day = after(bandPanel('Saturday, Sep 12', '1 cook tonight'), { eyebrow: 'Sunday, Sep 13' });\n"
@@ -204,25 +148,15 @@ def test_set_root_band_keeps_the_date_in_the_line_whichever_half_changes():
         + "r.empty = after(bandPanel('Sunday, Sep 13', '2 of 5 done'), { sub: '' });\n"
         # A title-only update touches neither.
         + "r.title = after(bandPanel('Sunday, Sep 13', '2 of 5 done'), { title: 'Now' });\n"
-        + "BAND_IDENTITY = 'none';\n"
-        + "r.noneEmpty = after(bandPanel('Sunday, Sep 13', '2 of 5 done'), { sub: '' });\n"
-        + "r.noneTick = after(bandPanel('Sunday, Sep 13', ''), { sub: '3 of 5 done' });\n"
         + "console.log(JSON.stringify(r));"
     )
     assert out["load"]["sub"] == "Sunday, Sep 13 · 2 of 5 done" and not out["load"]["subHidden"]
-    assert out["load"]["eyebrowHidden"], "under wordmark the eyebrow stays hidden after an update too"
+    assert out["load"]["eyebrowHidden"], "the eyebrow stays hidden after an update too"
     assert out["tick"]["sub"] == "Sunday, Sep 13 · 3 of 5 done"
     assert out["day"]["sub"] == "Sunday, Sep 13 · 1 cook tonight"
     assert out["empty"]["sub"] == "Sunday, Sep 13" and not out["empty"]["subHidden"]
     assert out["title"]["sub"] == "2 of 5 done", "an untouched line is left alone (data-sub is the source, not re-derived)"
-    # Under 'none' an empty line hides, as before 2026-09-13.
-    assert out["noneEmpty"]["sub"] == "" and out["noneEmpty"]["subHidden"]
-    assert out["noneTick"]["sub"] == "3 of 5 done" and not out["noneTick"]["eyebrowHidden"]
 
-
-# --------------------------------------------------------------------------
-# Q1 — the date reaches each root's line
-# --------------------------------------------------------------------------
 
 def test_now_hands_the_band_todays_date_as_its_eyebrow():
     build = _function("buildTodayPanel")
@@ -234,26 +168,17 @@ def test_now_hands_the_band_todays_date_as_its_eyebrow():
 
 
 @_needs_node
-def test_shop_and_cook_lead_their_lines_with_their_eyebrow_under_wordmark_only():
-    """Cook's eyebrow is the date; Shop's is "This week" (Emily's
-    shopping-list mockup, 2026-09-18 — it was the date with the list's
-    count until then). Under 'wordmark' each leads its own sub-line."""
+def test_shop_and_cook_lead_their_lines_with_their_eyebrow():
+    """Cook's eyebrow is the date; Shop's is "This week"."""
     out = _node(
         _BAND_JS
         + "var r = {};\n"
-        + "BAND_IDENTITY = 'wordmark';\n"
         + "r.shop = groBandEyebrow({ all: 60, stops: ['A'] });\n"
         + "r.shopNone = groBandEyebrow({ all: 0, stops: [] });\n"
         + "r.cook = cookBandEyebrow('2026-09-13');\n"
         + "r.cookLine = after(bandPanel(cookBandEyebrow('2026-09-13'), ''), { sub: '1 cook tonight' }).sub;\n"
         + "r.shopLine = after(bandPanel(r.shop, ''), { sub: groBandLine({ all: 14, stops: ['A', 'B'] }) }).sub;\n"
         + "r.shopLineNone = after(bandPanel(r.shopNone, ''), { sub: groBandLine({ all: 0, stops: [] }) }).sub;\n"
-        + "BAND_IDENTITY = 'mark';\n"
-        + "r.shopMark = groBandEyebrow({ all: 60, stops: ['A'] });\n"
-        + "r.cookMark = cookBandEyebrow('2026-09-13');\n"
-        + "BAND_IDENTITY = 'none';\n"
-        + "r.shopPlain = groBandEyebrow({ all: 60, stops: ['A'] });\n"
-        + "r.cookPlain = cookBandEyebrow('2026-09-13');\n"
         + "console.log(JSON.stringify(r));"
     )
     assert out["shop"] == "This week" and out["shopNone"] == "This week"
@@ -261,9 +186,6 @@ def test_shop_and_cook_lead_their_lines_with_their_eyebrow_under_wordmark_only()
     assert out["shopLineNone"] == "This week", "nothing to buy: the eyebrow alone — the empty moment says the rest"
     assert out["cook"] == "Sunday, Sep 13"
     assert out["cookLine"] == "Sunday, Sep 13 · 1 cook tonight"
-    # B and the old band keep the eyebrows they had.
-    assert out["shopMark"] == "This week" and out["shopPlain"] == "This week"
-    assert out["cookMark"] == "Sunday" and out["cookPlain"] == "Sunday"
 
 
 def test_plan_and_cook_pass_through_the_same_band_builder():
@@ -275,129 +197,49 @@ def test_plan_and_cook_pass_through_the_same_band_builder():
     assert "setRootBand(panel, 'kit-band', { eyebrow: cookBandEyebrow(todayIso) });" in kitchen
     assert "setRootBand(panel, 'kit-band', { sub: kitchenSubtitle(rows, meals, todayIso) });" in kitchen
     shop = _function("renderGrocery")
-    # The band's subtitle was removed 2026-09-25 (declutter) — see
-    # tests/test_root_band.py.
     assert "setRootBand(panel, 'gro-band', { eyebrow: '', sub: '' });" in shop
 
 
-def test_the_band_brand_css_is_the_canvas_sizes_from_tokens():
-    start = SHELL_CSS.index(".root-band-brand {")
-    section = SHELL_CSS[start:SHELL_CSS.index(".root-band-eyebrow {", start)]
-    assert "color: var(--apricot-light);" in section
-    assert ".root-band-brand .pomona-mark { width: 20px; height: 20px;" in section
-    wordmark = section[section.index(".root-band-wordmark {"):]
-    for rule in ("font-family: var(--font-display);", "font-weight: 700;", "font-size: 15px;",
-                 "letter-spacing: -0.02em;", "color: var(--ivory-ink-muted);"):
-        assert rule in wordmark, rule
-    assert not re.search(r"#[0-9a-fA-F]{3,8}\b", re.sub(r"/\*.*?\*/", "", section, flags=re.S))
-    assert ".root-band-eyebrow[hidden] { display: none; }" in SHELL_CSS
-
-
 # --------------------------------------------------------------------------
-# Q2 — the chat button: the mark, and "ASK" for three visits
+# Ask: the apricot pill at the end of the tab bar
 # --------------------------------------------------------------------------
 
-def test_the_chat_button_is_the_mark_and_still_says_chat_with_pomona():
-    fab = SHELL_HTML[SHELL_HTML.index('id="chat-fab"'):SHELL_HTML.index("</button>", SHELL_HTML.index('id="chat-fab"'))]
-    assert 'aria-label="Chat with Pomona" title="Chat with Pomona"' in fab
-    assert BUBBLE_PATH not in fab, "the speech bubble is gone"
-    assert 'class="pomona-mark"' in fab and MARK_FIRST_PATH in fab
-    assert 'stroke-width="1.8"' in fab, "the mark is a logo: its own weight, not the set's 2.2"
-    assert '<span class="chat-fab-label" id="chat-fab-label" aria-hidden="true" hidden>Ask</span>' in fab
-    assert BUBBLE_PATH not in SHELL_JS and BUBBLE_PATH not in SHELL_CSS
+def test_ask_is_the_word_on_an_apricot_pill_inside_the_tab_bar():
+    bar = SHELL_HTML[SHELL_HTML.index('<div id="tab-bar">'):]
+    fab = bar[:bar.index("</button>")]
+    assert 'id="chat-fab"' in fab and fab.rstrip().endswith(">Ask")
+    assert 'class="pomona-mark"' not in fab, "the word is the button"
+    assert 'id="ask-bar-dock"' not in SHELL_HTML, "nothing floats over the content"
+    assert "chat-fab-label" not in SHELL_HTML + SHELL_JS + SHELL_CSS
+    assert "FAB_LABEL_VISITS" not in SHELL_JS
+    css = SHELL_CSS[SHELL_CSS.index(".chat-fab {"):]
+    css = css[:css.index("}")]
+    for rule in ("width: 58px;", "height: 44px;", "background: var(--apricot);", "color: var(--night-ink);",
+                 "border-radius: var(--radius-pill);", "font-size: 14px;", "font-weight: 700;"):
+        assert rule in css, rule
+    assert "position:" not in css, "it sits in the bar's grid"
 
 
-def test_the_fab_css_stacks_the_mark_and_label_inside_the_same_54px():
-    fab = SHELL_CSS[SHELL_CSS.index(".chat-fab {"):]
-    fab = fab[:fab.index("}")]
-    assert "width: 54px;" in fab and "height: 54px;" in fab
-    assert "color: var(--apricot-light);" in fab, "the mark is apricot on the spruce"
-    assert "flex-direction: column;" in fab
-    assert ".chat-fab .pomona-mark { width: 26px; height: 26px;" in SHELL_CSS
-    assert ".chat-fab.has-label .pomona-mark { width: 22px; height: 22px; }" in SHELL_CSS
-    label = SHELL_CSS[SHELL_CSS.index(".chat-fab-label {"):]
-    label = label[:label.index("}")]
-    for rule in ("font-size: 9px;", "font-weight: 800;", "letter-spacing: .14em;",
-                 "text-transform: uppercase;", "color: var(--apricot-light);"):
-        assert rule in label, rule
-    assert ".chat-fab-label[hidden] { display: none; }" in SHELL_CSS
-    assert ".chat-fab svg { width: 24px; height: 24px; }" not in SHELL_CSS
-
-
-def test_the_label_constant_and_key_are_named_and_the_button_is_wired():
-    assert "var FAB_LABEL_VISITS = 3;" in SHELL_JS
-    assert "var FAB_LABEL_KEY = 'pomona.fabLabelVisits';" in SHELL_JS
-    assert "pomona.coaching.visits" not in _function("fabLabelCountVisit"), "its own key, not the coaching one"
+def test_ask_goes_to_the_end_of_the_bar_and_opens_the_sheet():
+    assert "tabBarEl.appendChild(askTabBtn);" in SHELL_JS
+    assert SHELL_JS.index("tabBarEl.appendChild(btn);") < SHELL_JS.index("tabBarEl.appendChild(askTabBtn);")
     wiring = SHELL_JS[SHELL_JS.index("var askBar = document.getElementById('chat-fab');"):]
     wiring = wiring[:wiring.index("\n  }\n")]
-    assert "placeFabLabel(askBar);" in wiring
-    place = _function("placeFabLabel")
-    assert "label.hidden = !show;" in place and "fab.classList.toggle('has-label', show);" in place
-
-
-_FAB_JS = (
-    _region("  var FAB_LABEL_VISITS = 3;", "  var askBar = document.getElementById('chat-fab');")
-    + """
-function store(initial) {
-  var s = { v: initial };
-  return { getItem: function () { return s.v; }, setItem: function (k, v) { s.v = v; } };
-}
-function run(limit, initial) {
-  FAB_LABEL_VISITS = limit;
-  window.localStorage = store(initial);
-  var visits = [];
-  for (var i = 0; i < 5; i++) {
-    var n = fabLabelCountVisit();
-    visits.push({ n: n, show: fabLabelShouldShow(n), stored: window.localStorage.getItem() });
-  }
-  return visits;
-}
-var window = {};
-var r = { three: run(3, null), zero: run(0, null), always: run(Infinity, null), resumed: run(3, '2') };
-window.localStorage = { getItem: function () { throw new Error('private mode'); }, setItem: function () { throw new Error('private mode'); } };
-FAB_LABEL_VISITS = 3;
-var n = fabLabelCountVisit();
-r.throwing = { n: n, show: fabLabelShouldShow(n) };
-console.log(JSON.stringify(r));
-"""
-)
-
-
-@_needs_node
-def test_the_label_shows_for_three_visits_and_not_the_fourth():
-    out = _node(_FAB_JS)
-    three = out["three"]
-    # The counter stops writing once the three are spent (the fourth
-    # visit reads 4, and so does every visit after — the only question it
-    # answers is "have the three been spent", same as coachCountVisit).
-    assert [v["n"] for v in three] == [1, 2, 3, 4, 4]
-    assert [v["show"] for v in three] == [True, True, True, False, False]
-    assert [v["stored"] for v in three] == ["1", "2", "3", "3", "3"]
-    # A device already on its third visit shows once more, then stops.
-    assert [v["show"] for v in out["resumed"]] == [True, False, False, False, False]
-    # 0 = never; Infinity = always.
-    assert not any(v["show"] for v in out["zero"])
-    assert all(v["show"] for v in out["always"])
-    # Storage that throws (Safari private mode): visit 1, label shown, no crash.
-    assert out["throwing"] == {"n": 1, "show": True}
+    assert "openAskSheet('', weekAskContext())" in wiring
 
 
 # --------------------------------------------------------------------------
 # Q3 — Plan's glyph: the week as a row
 # --------------------------------------------------------------------------
 
-WEEK_DOTS = ['<circle cx="%s" cy="12" r="1.4" fill="currentColor" stroke="none"/>' % cx for cx in (4, 8, 12, 16, 20)]
-
-
 def test_plan_wears_the_week_as_a_row_and_the_bullseye_is_gone():
-    icons = _region("  var ICONS = {", "  var REHEAT_ACTION_LABEL")
-    week = icons[icons.index("    week:"):icons.index("    pot:")]
-    for dot in WEEK_DOTS:
-        assert dot in week, dot
-    assert '<path d="M3 6.5h18"/><path d="M3 17.5h18"/>' in week
-    assert 'viewBox="0 0 24 24"' in week and 'stroke-width="2.2"' in week
-    assert "{ key: 'week', path: '/week', label: 'Plan', icon: ICONS.week, week: true }" in SHELL_JS
-    assert "ICONS.plate" not in SHELL_JS and "    plate:" not in icons
+    tabs = _region("  var TAB_ICONS = {", "  var TABS = [")
+    week = tabs[tabs.index("    week:"):tabs.index("    bag:")]
+    assert '<path d="M4 7h16M4 17h16"/>' in week, "two rules"
+    assert 'd="M5 12h.01M9.5 12h.01M14 12h.01M18.5 12h.01"' in week, "the days between them"
+    assert 'viewBox="0 0 24 24"' in week and 'stroke-width="1.9"' in week
+    assert "{ key: 'week', path: '/week', label: 'Plan', icon: TAB_ICONS.week, week: true }" in SHELL_JS
+    assert "ICONS.plate" not in SHELL_JS
     assert '<circle cx="12" cy="12" r="8.2"/><circle cx="12" cy="12" r="3"/>' not in SHELL_JS
 
 
@@ -431,15 +273,15 @@ def test_the_sweep_left_one_width_for_the_set_and_the_marks_alone():
     # 71 icons at the time of the sweep (77 stroke SVGs less the six marks);
     # the floor rather than the exact number, so a new icon at 2.2 passes.
     assert len(icons) >= 70, len(icons)
-    assert {w for _, w in icons} == {"2.2"}, sorted({(n, w) for n, w in icons if w != "2.2"})
-    # The mark: seven drawings, each at the weight it was drawn. Since
-    # 2026-09-18 the Week 1 screen's head carries the root band's 20px mark
-    # (1.8) where the welcome flow's 64px glyph (1.6) used to stand; since
-    # 2026-09-21 the intake's "Cooking up your week…" screen carries the
-    # welcome flow's 56px glyph (1.6) — the same paths, never redrawn.
-    assert len(marks) == 7, marks
+    # The tab bar's four are 1.9, as drawn on the boards (TAB_ICONS).
+    tab_icons = [(n, w) for n, w in icons if w == "1.9"]
+    assert tab_icons == [("shell.js", "1.9")] * 4, tab_icons
+    assert {w for _, w in icons} == {"2.2", "1.9"}, sorted({(n, w) for n, w in icons if w not in ("2.2", "1.9")})
+    # The mark: each drawing at the weight it was drawn, the same paths,
+    # never redrawn. The chat button's went with Bright Dusk (2026-11-05).
+    assert len(marks) == 6, marks
     assert {w for _, w in marks} == {"1.6", "1.7", "1.8"}
-    assert sorted(n for n, w in marks if w == "1.8") == ["onboarding.html", "shell.html", "shell.js"]
+    assert sorted(n for n, w in marks if w == "1.8") == ["onboarding.html", "shell.js"]
     assert sorted(n for n, w in marks if w == "1.6") == ["onboarding.html", "plan-week.html"]
 
 
@@ -456,11 +298,8 @@ def test_the_week_glyphs_dots_are_filled_not_stroked():
 # The doc moved with the code (Tier 2)
 # --------------------------------------------------------------------------
 
-def test_design_system_carries_the_four_decisions():
-    assert "~2.2px stroke (one width for the whole set since 2026-09-13; the mark is 1.8)" in DESIGN
-    band_row = DESIGN[DESIGN.index("| Root band |"):]
-    band_row = band_row[:band_row.index("\n")]
-    assert "BAND_IDENTITY" in band_row and "wordmark" in band_row
-    chat = DESIGN[DESIGN.index("**The chat is one icon on every screen"):]
-    chat = chat[:chat.index("\n- **")]
-    assert "the mark" in chat and "Ask" in chat and "three" in chat
+def test_design_system_carries_the_decisions_that_stand():
+    assert "the tab bar's four icons are 1.9" in DESIGN
+    assert "the Pomona mark, a logo, keeps the weight it was drawn at" in DESIGN
+    assert "Ask, the apricot pill with the word Ask at its end" in DESIGN
+    assert "BAND_IDENTITY" not in DESIGN

@@ -60,6 +60,8 @@ def _plan_prelude() -> str:
     names = [
         "planDayIndex", "planDayBarHtml", "planRowMeta", "planIsReheat", "planRowHtml",
         "planReheatSource", "planDayRowMeta", "planServeWhen", "planServeLine",
+        "tileHtml", "sectionHeadHtml", "planTileName", "planDayRowMetaIsLeftovers", "planTileMeta", "planTileDays",
+        "planDaySnacksTileHtml", "planDaySheetKeys", "planDayMoveSlot", "planDaySheetHtml",
         "planSlotRowHtml", "planCardHtml",
         "planDishRowsHtml", "planBreakfastHtml", "planMainsDayRows", "planMainsHtml", "planSnackRows",
         "planSnacksHtml", "planDayTagsHtml", "planNotesHtml", "planDockHtml",
@@ -76,6 +78,7 @@ def _plan_prelude() -> str:
         + _extract_var("MOVE_SLOTS", SHELL_JS) + "\n"
         + _extract_var("PLAN_DISH_HEADS", SHELL_JS) + "\n"
         + _extract_var("PLAN_SHEET_OPTS", SHELL_JS) + "\n"
+        + _extract_var("PLAN_DAY_SHEET", SHELL_JS) + "\n"
         # The icons in soft tiles (2026-11-01): the slot tile on a day row,
         # the status icon, and the meal sheet's book and arrow.
         + _extract_var("ICONS", SHELL_JS) + "\n"
@@ -133,11 +136,13 @@ def test_the_week_is_the_default_view_with_a_day_bar_of_week_then_each_day():
         "console.log(JSON.stringify(planWeekHtml(data, DAYS)));"
     )
     tiles = _row_attrs(out, "data-plan-day")
-    assert tiles == ["week", "0", "1", "2", "3"], "Week first, then one tile per day"
+    assert tiles == ["week", "1", "2", "3"], "All first, then a segment per day; Monday has gone by, so it is hidden"
     assert 'data-plan-day="week" aria-pressed="true"' in out
-    assert "The whole week" in out
-    # Every day's lunch and dinner is in the week view.
-    assert set(_row_attrs(out, "data-wk-day-index")) >= {"0", "1", "2", "3"}
+    assert 'aria-label="The whole week">All<' in out
+    # Past days are hidden, so All's tiles open the days still ahead. Monday's
+    # own dishes have left the menu.
+    assert set(_row_attrs(out, "data-wk-day-index")) >= {"1", "2", "3"}
+    assert "Lemon chicken" not in out and "Chickpea salad" not in out
 
 
 @_needs_node
@@ -150,12 +155,15 @@ def test_a_day_on_the_bar_shows_only_that_day_in_the_same_groups():
     assert 'data-plan-day="2" aria-pressed="true"' in out
     assert 'data-plan-day="week" aria-pressed="false"' in out
     assert set(_row_attrs(out, "data-wk-day-index")) == {"2"}, "only Wednesday's rows"
-    assert '<h2 class="wk-pview-title">Wednesday</h2>' in out
-    for head in ("Breakfast", "Lunch &amp; dinner", "Snacks"):
-        assert head in out
-    # A day's snacks are rows straight away — no fold.
-    assert "data-plan-snacks" not in out
-    assert _row_attrs(out, "data-plan-snack") == ["snack", "snack2"]
+    # The weekday is the head's title now (planDayBandParts). The tiles share
+    # one grid with no headings, breakfast then lunch then dinner then snacks.
+    assert "wk-pview-title" not in out and "section-head" not in out
+    order = [out.index(k) for k in ('data-plan-row="breakfast"', 'data-plan-row="lunch"', 'data-plan-row="dinner"', 'data-plan-snacks="2"')]
+    assert order == sorted(order)
+    assert out.count('<div class="tiles">') == 1
+    # Two snacks are one tile (Z-Day), with both plates' worth of words.
+    assert ">Snacks<" in out and ">2 snacks<" in out
+    assert 'aria-label="Snacks: Rice cakes, Grapes"' in out
 
 
 @_needs_node
@@ -169,8 +177,8 @@ def test_rows_carry_no_swap_tweak_move_or_done_buttons():
         )
         for attr in ("data-wk-swap-sheet", "data-wk-tweak", "data-wk-move", "data-wk-done", "wk-mini"):
             assert attr not in out, f"{status}: {attr} is on a row"
-        assert 'class="wk-qrow' in out
-        assert "wk-qrow-chev" in out
+        assert 'class="tile wk-qrow' in out
+        assert "wk-qrow-chev" not in out, "a tile is one tap, no chevron"
 
 
 @_needs_node
@@ -181,8 +189,8 @@ def test_a_leftover_meal_row_says_just_leftovers():
         "console.log(JSON.stringify(planWeekHtml(data, DAYS)));"
     )
     lunch = out.split('data-plan-row="lunch"', 1)[1].split("</button>", 1)[0]
-    # The word carries its loop icon since I1 (2026-11-01).
-    assert '</span>Leftovers</span>' in lunch and 'wk-row-meta has-icon' in lunch
+    assert '<span class="tile-name wk-qrow-name">Leftovers</span>' in lunch
+    assert '<span class="tile-sub wk-row-meta">Lunch</span>' in lunch
     assert "from" not in re.sub(r"<[^>]+>", "", lunch).lower() and "Tuesday" not in lunch
 
 
@@ -193,8 +201,10 @@ def test_breakfast_in_the_week_is_each_dish_once_with_its_days():
         "console.log(JSON.stringify(planBreakfastHtml(DAYS, null)));"
     )
     assert out.count("data-plan-row=") == 2, "oats and frittata, once each"
-    assert "Mon, Tue · 13 min" in out
-    assert "Wed, Thu · 30 min" in out
+    # The tile's line is its days and nothing else (Z-Week).
+    assert ">Mon, Tue<" in out
+    assert ">Wed, Thu<" in out
+    assert "13 min" not in out
     # Frittata has two days still ahead: its row is the whole dish.
     assert f'data-plan-dates="{_WED},{_THU}"' in out
     assert f'data-plan-dates="{_MON},{_TUE}"' in out
@@ -208,12 +218,15 @@ def test_the_weeks_snacks_list_each_snack_once_with_its_days_no_fold():
     out = _plan("console.log(JSON.stringify(planSnacksHtml(DAYS, null)));")
     assert "data-plan-snacks" not in out, "no fold"
     assert "wk-pgroup" not in out, "no per-day groups"
-    assert '<span class="wk-menu-head">Snacks</span>' in out
-    for name in ("Apple", "Yogurt", "Pear", "Edamame", "Rice cakes", "Grapes", "Nuts", "Cheese"):
+    assert '<span class="section-head wk-menu-head">Snacks</span>' in out
+    for name in ("Pear", "Edamame", "Rice cakes", "Grapes", "Nuts", "Cheese"):
         assert out.count(">" + name + "<") == 1, name
-    assert out.count("data-plan-snack=") == 6, "Monday has gone by: its two are lines, not swaps"
-    assert "Had Monday · 5 min" in out
-    assert "Wednesday · 5 min" in out
+    # Past days are hidden (Emily, 2026-11-05): Monday's two have left.
+    assert ">Apple<" not in out and ">Yogurt<" not in out
+    assert out.count("data-plan-snack=") == 6
+    # The small tile is the name alone; its days are in what a screen reader hears.
+    assert out.count("tile-row") == 6 and "tile-sub" not in out
+    assert 'aria-label="Rice cakes, Wed — change it"' in out
 
 
 @_needs_node
@@ -225,13 +238,13 @@ def test_a_snack_on_several_days_is_one_row_with_its_days_and_its_swap():
     )
     week = out["week"]
     assert week.count(">Apple<") == 1, "each snack once"
-    assert "Mon–Wed · 5 min" in week
-    assert "Thursday · 5 min" in week, "Nuts, Thursday only"
+    assert 'aria-label="Apple, Mon–Wed — change it"' in week
+    assert 'aria-label="Nuts, Thu — change it"' in week, "Nuts, Thursday only"
     # Its row is the snack's swap, on its first day still ahead.
     assert 'data-plan-snack="snack" data-wk-day-index="0"' in week
     assert "data-plan-row=" not in week
-    # A day tile still shows that day's snacks as rows, each its swap.
-    assert _row_attrs(out["day"], "data-plan-snack") == ["snack", "snack2"]
+    # A day's two snacks are one tile that opens a sheet of them.
+    assert 'data-plan-snacks="2"' in out["day"]
     assert "Apple" in out["day"] and "Grapes" in out["day"] and "Pear" not in out["day"]
 
 
@@ -301,7 +314,7 @@ def _more_sheet(status):
         "function thisWeekStartLocal() { return '2026-09-21'; }\n"
     )
     names = ["mealsMoreRowHtml", "mealsMoreGroupHtml", "planAfterTitle", "planAfterLine", "nextPeriodFor",
-             "renderMealsMoreSheet"]
+             "weekFreezerLine", "weekFrozenItems", "renderMealsMoreSheet"]
     return _run(
         _prelude() + stub + "\n".join(_extract(n, SHELL_JS) for n in names) + "\n"
         + "weekState.data = " + json.dumps(_data(status, [_day(_MON)])) + ";\n"
@@ -323,8 +336,8 @@ def test_the_more_sheet_for_a_draft():
 @_needs_node
 def test_the_more_sheet_for_an_approved_week():
     assert _more_sheet("approved") == [
-        "Reopen the week", "Plan the week after", "See the whole week", "Adjust your setup", "Start over",
-        "Need a hand?",
+        "Reopen the week", "Plan the week after", "Add from the freezer", "See the whole week",
+        "Adjust your setup", "Start over", "Need a hand?",
     ]
 
 
@@ -577,11 +590,14 @@ def test_the_week_view_is_the_menu_by_meal_type_and_a_day_is_the_schedule():
     # Each dish once: no data-plan-row name repeats on the week.
     # Shrimp paella is Tuesday's dinner and Wednesday's leftovers lunch:
     # one dish to make, so it is on the menu once.
-    names = re.findall(r'<span class="wk-qrow-name">([^<]+)</span>', week)
+    names = re.findall(r'<span class="tile-name wk-qrow-name">([^<]+)</span>', week)
     assert len(names) == len(set(names)), names
     assert names.count("Shrimp paella") == 1
-    # The day keeps the schedule: its lunch and dinner rows under one card.
-    assert "Lunch &amp; dinner" in day
+    # Its leftovers lunch shows under Lunch as "Leftovers" (Z-Week), which
+    # is a lunch to eat, and still not a second dish to make.
+    assert names.count("Leftovers") == 1
+    # The day keeps the schedule: a tile per meal, no headings.
+    assert "section-head" not in day and ">Dinner · 1 hr<" in day
 
 
 @_needs_node
@@ -603,3 +619,60 @@ def test_tapping_a_snack_row_opens_the_rows_sheet_not_the_swap():
     handler = SHELL_JS.split("steps.querySelectorAll('[data-plan-snack]')", 1)[1].split("});\n    });", 1)[0]
     assert "openPlanRowSheet(panel, day, row.getAttribute('data-plan-snack'))" in handler
     assert "openSwapSheet" not in handler
+
+
+# ---------------------------------------------------------------------------
+# BRIGHT DUSK: a day's head and its ··· (Z-Day, Z-PlanMenu)
+# ---------------------------------------------------------------------------
+
+@_needs_node
+def test_a_days_head_is_its_name_and_the_week_keeps_the_gear():
+    out = _run(
+        _plan_prelude() + _extract("dayName", SHELL_JS) + "\n" + _extract("planDayBandParts", SHELL_JS) + "\n"
+        + "console.log(JSON.stringify({\n"
+        + " today: planDayBandParts({ id: 'week-band', badge: '' }, { date: '2026-11-04', isToday: true }),\n"
+        + " other: planDayBandParts({ id: 'week-band', badge: 'Draft' }, { date: '2026-11-06', isToday: false }) }));"
+    )
+    assert out["today"]["title"] == "Wednesday" and out["today"]["sub"] == "Today · Nov 4"
+    assert out["other"]["title"] == "Friday" and out["other"]["sub"] == "Nov 6"
+    assert out["other"]["badge"] == "Draft", "the chip stays"
+    assert out["today"]["noGear"] is True, "the board's day head holds only its ···"
+
+
+def _day_sheet(status, day_js):
+    return _plan(
+        "var data = Object.assign(" + json.dumps(_data(status, [])) + ", { days: DAYS });\n"
+        f"var day = {day_js};\n"
+        "console.log(JSON.stringify({ keys: planDaySheetKeys(day, data), html: planDaySheetHtml(day, data) }));"
+    )
+
+
+@_needs_node
+def test_the_days_menu_is_four_tiles_each_only_where_it_can_do_something():
+    out = _day_sheet("approved", "DAYS[1]")
+    assert out["keys"] == ["add", "freezer", "swap", "off"]
+    for words in ("Add a meal", "Add from the freezer", "Swap with another day", "Take the night off"):
+        assert f">{words}<" in out["html"], words
+    assert out["html"].count("tile-text") == 4 and "tiles in-sheet" in out["html"]
+    # A draft has no freezer step yet: that question is asked of a built list.
+    assert _day_sheet("draft", "DAYS[1]")["keys"] == ["add", "swap", "off"]
+    # The night off is tonight's: its tool has no other day.
+    assert _day_sheet("approved", "DAYS[2]")["keys"] == ["add", "freezer", "swap"]
+    # Its dinner is still open, and its lunch can still move.
+    assert _day_sheet("approved", "DAYS[3]")["keys"] == ["add", "freezer", "swap"]
+    # A day gone by has nothing to change.
+    assert _day_sheet("approved", "DAYS[0]")["keys"] == []
+
+
+def test_each_menu_tile_opens_the_flow_it_always_opened():
+    sheet = _extract("openPlanDaySheet", SHELL_JS)
+    assert "wkAddMealFor(panel, panel.querySelector('#week-steps'), day)" in sheet
+    assert "openFreezerStep(panel)" in sheet
+    assert "openMoveSheet(panel, day, planDayMoveSlot(day))" in sheet
+    assert "openAskSheet(" in sheet, "the night off goes through the chat's take_the_night_off"
+
+
+def test_a_tile_never_highlights_dinner():
+    for name in ("planSlotRowHtml", "planRowHtml", "planWeekHtml", "planDishRowsHtml"):
+        src = _extract(name, SHELL_JS)
+        assert "is-tonight" not in src and "tonight-card" not in src and "cook-tonight" not in src, name

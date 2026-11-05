@@ -66,6 +66,7 @@ def test_plan_is_where_the_app_opens(path, expected):
     link) and anything unknown is Plan."""
     script = (
         "var ICONS = new Proxy({}, { get: function () { return '<svg></svg>'; } });\n"
+        "var TAB_ICONS = ICONS;\n"
         "var window = { location: { pathname: " + json.dumps(path) + " } };\n"
         + _tabs_block() + "  ];\n"
         + shelf._between("  var DEFAULT_TAB = ", "  function escapeHtml(")

@@ -56,6 +56,7 @@ def _band_prelude() -> str:
         + _extract_var("WK_ICONS", SHELL_JS) + "\n"
         + _extract("draftView", SHELL_JS) + "\n"
         + _extract("weekBandExtras", SHELL_JS) + "\n"
+        + _extract("roundBtnHtml", SHELL_JS) + "\n"
         + _extract("weekBandMoreHtml", SHELL_JS) + "\n"
         + "function openMealsMoreSheet() { CALLS.push(['more']); }\n"
         + _extract("planEntryLabel", SHELL_JS) + "\n"
@@ -130,7 +131,7 @@ res.tools = b.tools.html; res.top = b.top.html; res.calls = CALLS;
 console.log(JSON.stringify(res));""")
     assert out["draft"] == {"more": True} and out["set"] == {"more": True}
     assert out["none"] is None
-    assert out["tools"].startswith('<button type="button" class="root-band-more" id="wk-band-more"'), "top right, before the gear"
+    assert out["tools"].startswith('<button type="button" class="round-btn root-band-more" id="wk-band-more"'), "top right, before the gear"
     assert "wk-replan" not in out["tools"] and out["top"] == "", "no pill, no second row under the brand"
     assert out["calls"] == [["more"]]
 

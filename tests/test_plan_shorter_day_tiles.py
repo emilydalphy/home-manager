@@ -12,20 +12,15 @@ REPO = Path(__file__).resolve().parents[1]
 SHELL_CSS = (REPO / "static" / "shell.css").read_text(encoding="utf-8")
 
 
-def _rule(selector):
-    m = re.search(r"(?m)^" + re.escape(selector) + r" \{(.*?)\n\}", SHELL_CSS, re.S)
-    assert m, selector
-    return m.group(1)
+def test_the_day_bar_is_the_shared_switcher_with_no_72px_floor():
+    # Bright Dusk: the day bar is .seg-days, 52px (Z-Week), so every segment
+    # keeps a tap target of 46px by 44px or more across the bar.
+    theme = (REPO / "static" / "theme.css").read_text(encoding="utf-8")
+    assert ".seg-days { height: 52px; }" in theme
+    assert "min-height: 72px" not in SHELL_CSS[SHELL_CSS.index(".wk-daybar.is-long"):][:200]
+    assert ".wk-daybar.is-long .wk-tile { flex: 0 0 44px; }" in SHELL_CSS
 
 
-def test_the_tile_has_no_72px_floor_and_keeps_a_44px_tap_target():
-    tile = _rule(".wk-tile")
-    assert "min-height: 72px" not in tile
-    assert re.search(r"(?m)^\s*min-height: 44px;", tile)
-    # Same padding as before the change — only the empty space went.
-    assert "padding: 10px 2px 9px;" in tile
-
-
-def test_the_selected_rim_and_today_tint_are_untouched():
-    assert ".wk-tile.is-selected { border-color: var(--ink-strong); }" in SHELL_CSS
-    assert ".wk-tile.is-today { background: var(--sand); border-color: var(--hairline-deep); }" in SHELL_CSS
+def test_the_chosen_segment_and_today_read_off_the_switcher():
+    theme = (REPO / "static" / "theme.css").read_text(encoding="utf-8")
+    assert ".seg-btn.is-on {" in theme and ".seg-btn.is-today { color: var(--clay); }" in theme

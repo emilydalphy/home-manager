@@ -168,5 +168,5 @@ def test_the_dock_stays_in_flow_so_the_page_still_clears_it():
     reaches everything — nothing is ever hidden behind the footer."""
     dock = _rule(".dock")
     assert "position: sticky" in dock and "bottom: 0" in dock
-    assert "padding: 8px 84px 14px 20px" in dock, "the row stops 84px short of the chat icon"
+    assert "padding: 12px 16px" in dock, "Ask is in the tab bar, so the row runs the full width"
     assert "position: fixed" not in _rule(".wk-decide")

@@ -93,8 +93,8 @@ def test_the_bar_reads_plan_shop_kitchen_cook():
     # Today retired 2026-11-01 (Emily): Plan opens first, the thaw is Cook's.
     assert labels == ["Plan", "Shop", "Kitchen", "Cook"]
     assert keys == ["week", "grocery", "home", "kitchen"]
-    assert "{ key: 'home', path: '/home', label: 'Kitchen', icon: ICONS.fridge, home: true }" in tabs
-    assert "grid-template-columns: repeat(4, minmax(0, 1fr));" in SHELL_CSS
+    assert "{ key: 'home', path: '/home', label: 'Kitchen', icon: TAB_ICONS.fridge, home: true }" in tabs
+    assert "grid-template-columns: repeat(4, minmax(0, 1fr)) 72px;" in SHELL_CSS, "four tabs, then Ask"
 
 
 def test_home_route_serves_the_shell_and_is_a_shell_route_everywhere(signed_in):

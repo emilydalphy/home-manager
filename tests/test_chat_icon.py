@@ -25,18 +25,16 @@ def test_the_bar_is_gone_and_one_icon_opens_the_sheet():
     assert "askBar.addEventListener('click', function () { openAskSheet('', weekAskContext()); });" in SHELL_JS
 
 
-def test_the_icon_floats_bottom_right_and_the_dock_clears_it():
+def test_ask_sits_in_the_bar_and_the_dock_runs_the_full_width():
+    """Bright Dusk (Emily, 2026-11-05): Ask replaced the floating button, so
+    it never covers anything and nothing has to clear it."""
     fab = SHELL_CSS[SHELL_CSS.index(".chat-fab {"):]
     fab = fab[:fab.index("}")]
-    assert "position: absolute;" in fab and "right: 16px;" in fab and "bottom: 12px;" in fab
-    assert "width: 54px;" in fab and "height: 54px;" in fab  # over the 44px floor
+    assert "position:" not in fab
+    assert "width: 58px;" in fab and "height: 44px;" in fab
     dock = SHELL_CSS[SHELL_CSS.index(".dock {"):]
     dock = dock[:dock.index("}")]
-    assert "padding: 8px 84px 14px 20px;" in dock
-    # The FAB is visible at every width (2026-09-11: no more desktop Ask
-    # column for it to make way for), so nothing resets the dock's
-    # clearance back down at a wider breakpoint.
-    assert ".dock, .wk-decide.dock { padding-right: 20px; }" not in SHELL_CSS
+    assert "padding: 12px 16px;" in dock
 
 
 def test_one_line_for_the_composer_on_every_tab():
@@ -54,8 +52,8 @@ def test_prompts_and_tips_live_inside_the_sheet():
     sheet = SHELL_HTML[SHELL_HTML.index('id="ask-sheet"'):SHELL_HTML.index('id="week-sheet-scrim"')]
     assert 'id="ask-examples"' in sheet
     assert 'id="ask-tips-btn"' in sheet
-    dock = SHELL_HTML[SHELL_HTML.index('id="ask-bar-dock"'):SHELL_HTML.index('id="tab-bar"')]
-    assert 'ask-examples' not in dock and 'ask-tips-btn' not in dock and 'bell-home-dock' not in dock
+    bar = SHELL_HTML[SHELL_HTML.index('id="tab-bar"'):SHELL_HTML.index('id="ask-sheet"')]
+    assert 'ask-examples' not in bar and 'ask-tips-btn' not in bar and 'bell-home-dock' not in bar
     # In the sheet the examples yield to the named intents.
     # In the sheet the examples yield to a next-step chip (the fixed named
     # intents were retired 2026-09-11, design-tidy item 15).
@@ -70,38 +68,16 @@ def test_the_bell_has_a_slot_beside_every_gear():
 
 
 def test_the_design_system_describes_the_icon_not_the_bar():
-    assert "The chat is one icon on every screen" in DESIGN
+    assert "Ask is in the tab bar on every main screen" in DESIGN
     assert "not yet built" not in DESIGN
 
 
-# ---------- FAB clearance on a panel's own trailing row ----------
-# Loop Board 3da1f4c0-5231-81c9-8123-f230175d2310: "Plan week root: 'More
-# ···' is hidden under the floating chat button on phones." #shell-scroll
-# (the one scrolling panel every tab shares) has no bottom padding of its
-# own, and #ask-bar-dock — the non-scrolling, zero-height strip that holds
-# the FAB, positioned right after #shell-scroll and before #tab-bar in
-# shell.html — floats the 54px FAB (+16px inset) up over the scroll area's
-# own last ~66px, which a sticky .dock already clears (its own 84px right
-# padding) but a plain trailing row does not. Four screens' own last row
-# can be exactly that plain trailing row, each verified live in a browser
-# at 390px scrolled to the very bottom: Plan's week root/solo More row,
-# Cook's root "More ···" when its dock is empty, Shop's "Add something"
-# row when its dock is empty, and Now's own content when its dock is
-# hidden and the day is long enough to scroll.
-def test_wk_foot_clears_the_fab_when_no_dock_follows_it():
-    assert ".wk-foot:not(:has(+ .dock)) { padding-bottom: 70px; }" in SHELL_CSS
-
-
-def test_cook_roots_more_row_clears_the_fab_when_its_dock_is_empty():
-    assert ".kit-body:not(:has(+ .dock:not([hidden]))) { padding-bottom: 70px; }" in SHELL_CSS
-
-
-def test_shops_list_clears_the_fab_when_its_dock_is_empty():
-    """The root has no dock since 2026-09-18 (the list is the checklist),
-    so the body itself clears the FAB; the add row moved from the foot to
-    the top of the list the same day."""
-    assert ".gro-body:has(+ .gro-dock:empty) { padding-bottom: 70px; }" in SHELL_CSS
-
-
-def test_nows_content_clears_the_fab_when_its_dock_is_hidden():
-    assert ".today-content:not(:has(> .today-dock:not([hidden]))) { padding-bottom: 70px; }" in SHELL_CSS
+# ---------- A panel's own trailing row ----------
+# The floating button those rows used to clear is gone, so each keeps only an
+# ordinary foot: Plan's More row, Cook's root, Shop's list, Now's content.
+def test_each_trailing_row_keeps_an_ordinary_foot():
+    for rule in (".wk-foot:not(:has(+ .dock)) { padding-bottom: 24px; }",
+                 ".kit-body:not(:has(+ .dock:not([hidden]))) { padding-bottom: 24px; }",
+                 ".gro-body:has(+ .gro-dock:empty) { padding-bottom: 24px; }",
+                 ".today-content:not(:has(> .today-dock:not([hidden]))) { padding-bottom: 24px; }"):
+        assert rule in SHELL_CSS, rule

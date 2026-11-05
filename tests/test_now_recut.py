@@ -79,6 +79,7 @@ def test_the_dinner_suggestions_fold_behind_one_pick():
 
 
 def test_the_design_system_says_today_has_a_dock_and_no_hero():
-    # "Now" until 2026-09-17; the tab is Today now and the rules say so.
-    assert "Today (called Now until 2026-09-17) got a dock on 2026-09-11" in DESIGN
-    assert "Today has no hero" in DESIGN
+    # Today was retired 2026-11-01, and Bright Dusk has no heroes at all:
+    # the rule that stands is that dinner is never highlighted.
+    assert "Dinner is never highlighted." in DESIGN
+    assert "There is no Tonight card and no dark hero on a meal." in DESIGN

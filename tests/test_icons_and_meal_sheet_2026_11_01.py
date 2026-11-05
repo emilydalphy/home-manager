@@ -133,8 +133,8 @@ def test_the_meal_sheet_is_three_pills_and_the_recipe_pill():
 
 def test_the_meal_sheet_css_matches_m2():
     act = _css_rule(".plan-act")
-    for want in ("flex: 1 1 0", "min-height: 48px", "border: 1.5px solid var(--hairline-strong)",
-                 "border-radius: var(--radius-pill)", "background: transparent",
+    for want in ("flex: 1 1 0", "min-height: 48px", "border: 1.5px solid transparent",
+                 "border-radius: var(--radius-pill)", "background: var(--blush)",
                  "font-size: 14px", "font-weight: 700"):
         assert want in act, want
     assert ".plan-act-icon { display: flex; flex: 0 0 auto; color: var(--celadon-label); }" in SHELL_CSS
@@ -142,7 +142,7 @@ def test_the_meal_sheet_css_matches_m2():
     rec = _css_rule(".plan-recipe")
     for want in ("width: 100%", "min-height: 58px", "border-radius: var(--radius-pill)",
                  "background: var(--apricot)", "color: var(--on-accent-ink)",
-                 "font-family: var(--font-display)", "font-size: 18px", "font-weight: 700"):
+                 "font-family: var(--font-display)", "font-size: 16px", "font-weight: 700"):
         assert want in rec, want
     assert "#" not in act and "#" not in rec, "tokens only"
 
@@ -152,44 +152,21 @@ def test_the_meal_sheet_css_matches_m2():
 # ---------------------------------------------------------------------------
 
 @_needs_node
-def test_every_plan_day_row_leads_with_its_slot_tile():
+def test_a_plan_tile_is_its_plate_and_no_slot_icon():
+    """Bright Dusk (Emily, 2026-11-05) took I1 off Plan: every dish shows its
+    plate, a tile with no dish is words only, and the line under the name
+    carries no icon. No filler pictures. Cook's rows keep theirs until its
+    stage."""
     out = _plan(
-        "console.log(JSON.stringify({ icons: ICONS,\n"
-        "  breakfast: planSlotRowHtml(DAYS[2], 2, 'breakfast', ''),\n"
+        "console.log(JSON.stringify({\n"
         "  lunch: planSlotRowHtml(DAYS[2], 2, 'lunch', 'Lunch'),\n"
         "  dinner: planSlotRowHtml(DAYS[2], 2, 'dinner', 'Dinner'),\n"
-        "  snack: planSlotRowHtml(DAYS[2], 2, 'snack', ''),\n"
-        "  snack2: planSlotRowHtml(DAYS[2], 2, 'snack2', ''),\n"
-        "  open: planSlotRowHtml(DAYS[3], 3, 'dinner', 'Dinner'),\n"
-        "  menu: planDishRowsHtml(DAYS, 'dinner') }));"
+        "  open: planSlotRowHtml(DAYS[3], 3, 'dinner', 'Dinner') }));"
     )
-    icons = out["icons"]
-    for key, icon in (("breakfast", "sunrise"), ("lunch", "bowl"), ("dinner", "pot"),
-                      ("snack", "apple"), ("snack2", "apple"), ("open", "pot")):
-        html = out[key]
-        m = re.search(r'<span class="icon-tile slot-tile" aria-hidden="true">(.*?</svg>)</span>', html)
-        assert m, f"{key}: no slot tile"
-        assert m.group(1) == icons[icon], f"{key} should carry the {icon}"
-        # It leads: before the row's text.
-        assert html.index("slot-tile") < html.index("wk-qrow-text"), key
-    # The week menu is by meal type already: no tiles there.
-    assert "slot-tile" not in out["menu"]
-
-
-@_needs_node
-def test_a_plan_rows_status_word_carries_its_icon():
-    out = _plan(
-        "console.log(JSON.stringify({ icons: ICONS,\n"
-        "  leftovers: planSlotRowHtml(DAYS[2], 2, 'lunch', 'Lunch'),\n"
-        "  minutes: planSlotRowHtml(DAYS[2], 2, 'dinner', 'Dinner'),\n"
-        "  names: ['Made ahead', 'Made Sunday', 'Ready', 'Leftovers', 'Reheat', '35 min', '1 hr', 'Takeout', '']\n"
-        "    .map(statusIconName) }));"
-    )
-    icons = out["icons"]
-    assert out["names"] == ["check", "check", "check", "loop", "loop", "clock", "clock", "", ""]
-    assert '<span class="wk-row-meta has-icon"><span class="status-icon" aria-hidden="true">' + icons["loop"] + \
-        '</span>Leftovers</span>' in out["leftovers"]
-    assert '<span class="status-icon" aria-hidden="true">' + icons["clock"] + '</span>1 hr' in out["minutes"]
+    for key in ("lunch", "dinner", "open"):
+        assert "slot-tile" not in out[key] and "status-icon" not in out[key], key
+    assert ">Dinner · 1 hr<" in out["dinner"]
+    assert 'class="tile tile-text wk-qrow is-quiet"' in out["open"], "no plate, words only"
 
 
 @_needs_node

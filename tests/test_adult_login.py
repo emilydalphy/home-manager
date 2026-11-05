@@ -22,6 +22,7 @@ lies about its member reads as nobody, never as anyone.
 from __future__ import annotations
 
 import datetime
+import re
 from pathlib import Path
 
 import pytest
@@ -516,5 +517,5 @@ def test_the_rows_are_real_tap_targets_and_every_colour_is_a_token():
     _in(".who-row {", SHELL_CSS, "shell.css")
     _in("min-height: 64px;", SHELL_CSS, "shell.css")
     _in(".who-cancel {", SHELL_CSS, "shell.css")
-    block = SHELL_CSS[SHELL_CSS.index('"Who\'s this?"'):]
-    assert "#" not in block.replace("#who-screen", ""), "Rule 9: no literal hex outside theme.css"
+    block = SHELL_CSS[SHELL_CSS.index('"Who\'s this?"'):SHELL_CSS.index("SHEETS, ONE LOOK")]
+    assert not re.search(r"#[0-9a-fA-F]{3,8}\b", block), "Rule 9: no literal hex outside theme.css"

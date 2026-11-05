@@ -101,8 +101,8 @@ console.log(JSON.stringify(groDockHtml(groceryState.data, 'list')));
 
 def test_the_dock_button_is_an_outline_of_48px_and_the_sheet_is_at_body_level():
     outline = SHELL_CSS.split(".gro-add-open {", 1)[1][:700]
-    assert "min-height: 48px" in outline and "background: transparent" in outline
-    assert "border: 1.5px solid var(--hairline-strong)" in outline
+    assert "min-height: 48px" in outline and "background: var(--blush)" in outline
+    assert "border: 1.5px solid transparent" in outline
     assert "--apricot" not in outline
     assert 'id="gro-add-sheet" hidden role="dialog" aria-label="Add something"' in SHELL_HTML
     assert 'id="gro-add-body"' in SHELL_HTML and 'id="gro-add-scrim"' in SHELL_HTML

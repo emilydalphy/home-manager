@@ -147,6 +147,8 @@ def _harness() -> str:
         + "function planNextWeek() { CALLS.push(['planNextWeek']); }\n"
         + _extract("planAfterTitle", SHELL_JS) + "\n"
         + _extract("planAfterLine", SHELL_JS) + "\n"
+        + _extract("weekFrozenItems", SHELL_JS) + "\n"
+        + _extract("weekFreezerLine", SHELL_JS) + "\n"
         + _extract("renderMealsMoreSheet", SHELL_JS) + "\n"
         + _HARNESS_TAIL
     )

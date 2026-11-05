@@ -96,7 +96,9 @@ def test_approval_lands_on_the_list_and_the_all_set_screen_is_kept_unrouted():
     assert "All set." in allset and "' is planned.'" in allset and "'Week 1 is planned.'" in allset
     assert "receipt.meals" in allset and "receipt.recipes" in allset and "receipt.list_count" not in allset
     assert '<div class="dock wk-allset-dock">' in allset
-    assert ".tab-panel.is-allset { background: var(--spruce); }" in SHELL_CSS
+    # On cream since Bright Dusk: dusk is for the tab bar, Use soon, timers
+    # and the welcome (Emily, 2026-11-05).
+    assert ".tab-panel.is-allset { background" not in SHELL_CSS
     # No asks on it any more: the freezer question is the next step.
     assert "wk-allset-asks" not in SHELL_JS and "renderAllSetAsks" not in SHELL_JS
     assert "goAfterWeekSet(panel, data)" in _fn("wireAllSetStep")
@@ -104,4 +106,5 @@ def test_approval_lands_on_the_list_and_the_all_set_screen_is_kept_unrouted():
 
 def test_the_today_tile_says_so():
     assert "(day.isToday ? 'TODAY' : dayName(day.date, { weekday: 'short' }).slice(0, 3).toUpperCase())" in _fn("weekTileHtml")
-    assert ".wk-tile.is-today { background: var(--sand); border-color: var(--hairline-deep); }" in SHELL_CSS
+    # The day bar's today is the switcher's clay, and it says the day (Z-Week).
+    assert "' is-today'" in _fn("planDayBarHtml")

@@ -249,7 +249,7 @@ def test_the_changed_pill_has_room_and_a_gap():
     assert ".wk-changed { height: auto; padding: 3px 8px; line-height: 1.2; }" in SHELL_CSS
     shared = SHELL_CSS[SHELL_CSS.index(".ask-change-kept,\n.wk-changed"):]
     shared = shared[:shared.index("}")]
-    assert "font-size: 10px" in shared and "font-weight: 800" in shared and "text-transform: uppercase" in shared
+    assert "font-size: 11px" in shared and "font-weight: 700" in shared and "text-transform" not in shared
     assert "border-radius: var(--radius-badge-sm)" in shared
     assert ".wk-row-eyebrow .wk-changed { margin-top: 0; margin-left: 10px;" in SHELL_CSS
 
@@ -269,9 +269,7 @@ def test_the_row_css_uses_tokens_and_keeps_the_targets():
 
 def test_the_design_system_says_what_the_reason_is_now():
     assert "The reason a tap away |" not in DESIGN
-    assert "| The reason, said on the line |" in DESIGN
-    assert "| Plan row (1A) |" in DESIGN
-    assert "Tweak" in DESIGN
+    assert "**Meal sheet**" in DESIGN and "Tweak" in DESIGN
 
 
 def test_undo_takes_the_changed_pill_off_the_row():

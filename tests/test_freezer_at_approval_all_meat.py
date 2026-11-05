@@ -709,6 +709,7 @@ def test_the_roots_freezer_row_reads_from_the_freezer():
         + _extract("daySlotEntry", SHELL_JS) + "\n"
         + _extract("daySlotKeys", SHELL_JS) + "\n"
         + _extract("weekFrozenItems", SHELL_JS) + "\n"
+        + _extract("weekFreezerLine", SHELL_JS) + "\n"
         + _extract("weekFreezerRowHtml", SHELL_JS) + "\n"
     )
     days = [

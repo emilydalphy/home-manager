@@ -209,8 +209,9 @@ def test_the_root_is_a_strip_of_day_tiles_and_the_selected_day():
     # day, so the root's card doesn't say it again.
     _assert_in("wkDayCardHtml(day, i, { done: true, swapLabel: 'Swap', dayNamed: true })", SHELL_JS,
                "the day's one card with its rows (Done + Swap), 2026-09-18", "shell.js")
-    _assert_in(".wk-tile.is-today { background: var(--sand);", SHELL_CSS, "today's tinted tile", "shell.css")
-    _assert_in(".wk-tile.is-selected { border-color: var(--ink-strong); }", SHELL_CSS, "the selected tile's rim", "shell.css")
+    # Bright Dusk: the day bar is the shared switcher, today in clay.
+    _assert_in(".seg-btn.is-today { color: var(--clay); }", (REPO / "static" / "theme.css").read_text(encoding="utf-8"),
+               "today's segment", "theme.css")
     _assert_in("grid-template-columns: repeat(2, minmax(0, 1fr));", SHELL_CSS, "the two-up snack grid", "shell.css")
     for gone in ("weekRowHtml", "weekRowLineHtml", "wk-week-card", "wk-day-row"):
         _assert_not_in(gone, SHELL_JS, gone)

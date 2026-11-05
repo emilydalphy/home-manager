@@ -215,7 +215,9 @@ def test_plans_title_says_this_week_only_when_the_plan_covers_today():
     """CATCH for the 2027 and three-weeks-out cases; the rest are guards."""
     today = "2026-09-15"  # a Tuesday
     covering = _band(today, _plan_data("2026-09-14"))
-    assert (covering["title"], covering["eyebrow"]) == ("This week", "Sep 14–20")
+    # An approved "This week" stands alone (Z-Week): the dates only come
+    # back when the title doesn't place the plan.
+    assert (covering["title"], covering["eyebrow"]) == ("This week", "")
 
     # A draft's title is the moment, not the calendar (board C2, 2026-09-21):
     # the dates in its eyebrow still say which week it is.

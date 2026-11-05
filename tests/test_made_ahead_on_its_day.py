@@ -127,13 +127,11 @@ def test_a_day_says_made_sunday_and_what_to_do_this_morning():
         "console.log(JSON.stringify(planWeekHtml({ status: 'approved', days: DAYS }, DAYS)));"
     )
     breakfast = out.split('data-plan-row="breakfast"', 1)[1].split("</button>", 1)[0]
-    # The status word carries its icon since I1 (2026-11-01): a check.
-    assert '<span class="wk-row-meta has-icon"><span class="status-icon" aria-hidden="true">' in breakfast
-    assert '</span>Made Tuesday</span>' in breakfast
-    assert '<span class="wk-row-meta wk-qrow-step">In the morning: heat until hot all the way through.</span>' in breakfast
+    assert '<span class="tile-sub wk-row-meta">Breakfast · Made Tuesday</span>' in breakfast
+    assert '<span class="tile-sub wk-qrow-step">In the morning: heat until hot all the way through.</span>' in breakfast
     # A leftovers night still says just "Leftovers" (S11), with its step.
     lunch = out.split('data-plan-row="lunch"', 1)[1].split("</button>", 1)[0]
-    assert '</span>Leftovers</span>' in lunch and 'wk-row-meta has-icon' in lunch
+    assert '<span class="tile-name wk-qrow-name">Leftovers</span>' in lunch
     assert "At lunch: heat until hot" in lunch
     assert "Tuesday" not in lunch
     # The cook's own day says nothing about serving.

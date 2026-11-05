@@ -81,7 +81,7 @@ def _prelude() -> str:
         # The band's identity lead (2026-09-13): setRootBand folds the
         # eyebrow into the sub-line under BAND_IDENTITY 'wordmark'; the
         # fake band's eyebrow is empty here, so the line is the day's own.
-        + _region("  var BAND_IDENTITY = ", "  function rootBandHtml(")
+        + _region("  function bandDateLabel(", "  function rootBandHtml(")
         + "  var WEEK_STATE_LABELS = { set: 'Week set', draft: 'Draft' };\n"
         + "  function renderTodayEmpty() {}\n"
         + "  function runTodayMoveAction() {}\n"
@@ -476,20 +476,20 @@ def test_the_groups_css_is_one_banner_section_built_from_tokens():
         assert rule in section, f"missing {rule}"
     body = re.sub(r"/\*.*?\*/", "", section, flags=re.S)
     assert not re.search(r"#[0-9a-fA-F]{3,8}\b", body), "a literal colour in the groups CSS (Rule 9)"
-    # The head: a 32px sand tile, the title in the display face at 19px,
+    # The head: a 32px sand tile, the title in the display face at 16px,
     # the count at the right.
     icon = section.split(".day-group-icon {", 1)[1].split("}", 1)[0]
     assert "width: 32px;" in icon and "height: 32px;" in icon and "background: var(--sand);" in icon
     title = section.split(".day-group-title {", 1)[1].split("}", 1)[0]
-    assert "font-family: var(--font-display);" in title and "font-size: 19px;" in title
+    assert "font-family: var(--font-display);" in title and "font-size: 16px;" in title
     assert "margin-left: auto;" in section.split(".day-group-count {", 1)[1].split("}", 1)[0]
     # The row: a flex row with a hairline between rows, none under the head.
     node = section.split(".day-node {", 1)[1].split("}", 1)[0]
-    assert "display: flex;" in node and "border-top: 1.5px solid var(--hairline);" in node
+    assert "display: flex;" in node and "border-top: 1px solid var(--hairline);" in node
     assert ".day-group-head + .day-node { border-top: 0; }" in section
     dot = section.split(".day-dot {", 1)[1].split("}", 1)[0]
     assert "width: 28px;" in dot and "height: 28px;" in dot
-    assert "border: 1.5px solid var(--hairline-strong);" in dot
+    assert "border: 1.5px solid transparent;" in dot
     assert "background: var(--surface);" in dot and "color: var(--ink-secondary);" in dot
     # The rail is gone with the clock.
     for dead in (".day-node-rail {", ".day-node-time {", ".day-node-line {", ".day-node-tile {", ".day-strip {"):
@@ -510,7 +510,7 @@ def test_the_three_dot_states_and_the_one_tint():
     # celadon-edge border, the tile radius.
     tint = section.split(".day-node.is-now {", 1)[1].split("}", 1)[0]
     assert "background: var(--celadon-tint);" in tint
-    assert "border: 1.5px solid var(--celadon-edge);" in tint
+    assert "border: 1.5px solid transparent;" in tint
     assert "border-radius: var(--radius-tile);" in tint
     assert "color: var(--celadon-label);" in section.split(".day-node-eyebrow {", 1)[1].split("}", 1)[0]
     assert ".day-node.is-done .day-node-title { color: var(--ink-done); }" in section
@@ -521,10 +521,10 @@ def test_the_three_dot_states_and_the_one_tint():
     assert "width: 44px;" in tick and "height: 44px;" in tick
     # The title: 15px / 600. The tag: 10px / 800 / uppercase / --ink-muted.
     title = section.split(".day-node-title {", 1)[1].split("}", 1)[0]
-    assert "font-size: 15px;" in title and "font-weight: 600;" in title
+    assert "font-size: 14px;" in title and "font-weight: 600;" in title
     tag = section.split(".day-node-tag {", 1)[1].split("}", 1)[0]
-    assert "font-size: 10px;" in tag and "font-weight: 800;" in tag
-    assert "text-transform: uppercase;" in tag and "color: var(--ink-muted);" in tag
+    assert "font-size: 11px;" in tag and "font-weight: 700;" in tag
+    assert "text-transform" not in tag and "color: var(--ink-muted);" in tag
 
 
 def test_the_settle_is_animation_three_not_a_fourth():

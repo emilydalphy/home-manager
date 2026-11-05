@@ -686,7 +686,7 @@ function markSvg() { return '<svg class="pomona-mark"></svg>'; }
 def _band_identity_js() -> str:
     """BAND_IDENTITY, bandDateLabel, bandIdentityHtml and bandSubText — the
     band's identity lead (2026-09-13), which rootBandHtml reads."""
-    start = SHELL_JS.index("  var BAND_IDENTITY = ")
+    start = SHELL_JS.index("  function bandDateLabel(")
     end = SHELL_JS.index("  function rootBandHtml(", start)
     # bandDateLabel's default day is the household's (todayLocalStr, 2026-10-07).
     return SHELL_JS[start:end] + _function("todayLocalStr")

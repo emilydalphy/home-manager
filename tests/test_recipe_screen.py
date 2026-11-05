@@ -696,7 +696,7 @@ def _rule(selector: str) -> str:
 
 def test_the_recipe_is_drawn_to_the_board_and_every_colour_is_a_token():
     title = _rule(".recipe-title")
-    assert "font-size: 31px" in title and "var(--font-display)" in title and "-0.038em" in title
+    assert "font-size: 32px" in title and "var(--font-display)" in title and "-0.03em" in title
     btn = _rule(".recipe-serves .cook-serves-btn")
     assert "width: 36px" in btn and "height: 36px" in btn and "var(--radius-control)" in btn
     assert "inset: -5px" in _rule(".cook-serves-btn::after"), "36px of box on a 44px target (Rule 6)"
@@ -709,14 +709,14 @@ def test_the_recipe_is_drawn_to_the_board_and_every_colour_is_a_token():
     block = SHELL_CSS[SHELL_CSS.index("/* ---------- The recipe, as the recipe ----------"):SHELL_CSS.index("/* ---------- The dock: where a screen's one action lives")]
     assert not re.search(r"#[0-9a-fA-F]{3,8}\b", block), "Rule 9 — every colour goes through a token"
     assert not re.search(r"^\s*(transition|animation)\b", block, re.M), "§4 — nothing new animates"
-    # The one italic on the cooker is the accent line, Newsreader at 17px.
+    # The accent line on the cooker is Figtree since Bright Dusk: no italics.
     nxt = _rule(".cook-next")
-    assert "var(--font-accent)" in nxt and "font-style: italic" in nxt and "font-size: 17px" in nxt
-    assert block.count("italic") == 1
+    assert "var(--font-accent)" in nxt and "font-style: italic" not in nxt and "font-size: 16px" in nxt
+    assert not re.search(r"font-style:\s*italic", block)
     # The old rules went with the old screens.
     for gone in (".wk-stop", ".wk-clock", ".wk-meal-hero", ".wk-meal-by", ".cook-ahead-day", ".cook-hero-slim",
                  ".cook-detail", ".cook-focus-end", ".cook-kit-chip", ".cook-step-stage", ".cook-meta-chip.is-live",
                  ".cook-dock-link", ".wk-ing-qty", ".wk-ing-list"):
         assert gone not in SHELL_CSS, gone
     # The last card clears the chat icon when there is no dock to do it.
-    assert ".wk-meal-body:not(:has(+ .dock)) { padding-bottom: 84px; }" in SHELL_CSS
+    assert ".wk-meal-body:not(:has(+ .dock)) { padding-bottom: 24px; }" in SHELL_CSS
