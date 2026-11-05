@@ -364,8 +364,9 @@ def _shop(body: str):
 def test_shop_chips_are_all_then_each_store_with_what_is_left():
     out = _shop("console.log(JSON.stringify(groStoreChipsHtml(data)));")
     labels = re.findall(r'data-gro="store-filter"[^>]*>([^<]*)<', out)
-    assert labels == ["All · 6", "Costco · 2", "T&amp;T · 1", "Anywhere · 3"]
-    assert 'data-filter="" aria-pressed="true"' in out, "All is the default"
+    # Z-Shop's switcher: names only, All stores first.
+    assert labels == ["All stores", "Costco", "T&amp;T", "Anywhere"]
+    assert 'class="seg-btn is-on" aria-pressed="true" data-gro="store-filter" data-filter=""' in out, "All is the default"
 
 
 @shop_harness.needs_node
@@ -378,7 +379,7 @@ def test_a_store_chip_filters_the_list_to_that_store():
         "console.log(JSON.stringify({ one: cards(one), chips: chips, all: cards(groListHtml(data)) }));"
     )
     assert out["one"] == ["Costco"]
-    assert 'data-filter="Costco" aria-pressed="true"' in out["chips"]
+    assert 'aria-pressed="true" data-gro="store-filter" data-filter="Costco"' in out["chips"]
     assert out["all"] == ["Costco", "T&amp;T", "Anywhere"]
 
 
@@ -418,9 +419,7 @@ def test_pick_stores_replaces_the_things_to_sort_row_and_the_dock_is_add_alone()
     assert "have a store yet" not in out["list"]
     anywhere = out["list"].split('gro-anywhere', 1)[1].split("gro-card-rows", 1)[0]
     assert 'data-gro="goto-sort"' in anywhere and "Pick stores" in anywhere
-    assert 'data-gro="add-open"' in out["dock"]
-    for gone in ("dock-primary", "goto-beforeshop", "goto-sort"):
-        assert gone not in out["dock"], gone
+    assert out["dock"] == "", "Z-Shop: no dock, the + is in the head"
 
 
 @shop_harness.needs_node

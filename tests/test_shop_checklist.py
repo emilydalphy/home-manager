@@ -122,13 +122,7 @@ console.log(JSON.stringify({
     assert a == -1, "no add row at the top of the list (2026-09-21: it is the dock's button)"
     assert 0 <= b < c < d, "the cards, in stop order"
     assert out["preShop"] == -1
-    assert 'data-gro="add-open"' in out["dock"] and "Add something" in out["dock"], "the dock holds Add something"
-    # 2026-10-30 (the declutter, Emily's "Shop with store filter"): LIST's
-    # dock is "+ Add something" alone — the chat button floats beside it.
-    # The pass is "Before you go ›" in the band and the sort is "Pick
-    # stores" in the Anywhere card's head; neither is the dock's button.
-    assert "gro-primary" not in out["dock"]
-    assert "dock-primary" not in out["dock"] and "goto-sort" not in out["dock"], "ticking a row is still the action"
+    assert out["dock"] == "", "Z-Shop: no dock; the + is in the head, ticking a row is the action"
 
 
 @_needs_node
@@ -354,7 +348,7 @@ console.log(JSON.stringify({
     assert out["toDo"] == []
     assert out["tonight"] is True
     assert out["folded"] is True
-    assert 'data-gro="add-open"' in out["dock"] and "dock-primary" not in out["dock"]
+    assert out["dock"] == ""
 
 
 # --- 3. the tick with no signal -----------------------------------------------

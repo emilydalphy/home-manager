@@ -194,12 +194,6 @@
     sauces: ['bottle', 'celadon'], chill: ['whisk', 'celadon'], freezer: ['freezerBox', 'celadon'],
     special: ['star', 'sand'], pack: ['container', 'sand'], fresh: ['moon', 'sand']
   };
-  // The aisles of a Shop card (GRO_SECTION_ORDER), plus bakery should a
-  // store ever file one.
-  var AISLE_ICONS = {
-    produce: 'leaf', dairy: 'bottle', 'meat/seafood': 'fish', bakery: 'bread',
-    pantry: 'jar', canned: 'can', frozen: 'snowflake', other: 'bag'
-  };
 
   function iconTileHtml(name, tone, extraClass) {
     var svg = ICONS[name];
@@ -212,12 +206,6 @@
   function slotIconTileHtml(slot) {
     var key = /^snack/.test(String(slot || '')) ? 'snack' : slot;
     return iconTileHtml(SLOT_ICONS[key] || 'pot', 'celadon', 'slot-tile');
-  }
-
-  // A Shop aisle eyebrow's 16px --apricot-label icon (no tile).
-  function aisleIconHtml(aisle) {
-    var name = AISLE_ICONS[aisle];
-    return name && ICONS[name] ? '<span class="gro-aisle-icon" aria-hidden="true">' + ICONS[name] + '</span>' : '';
   }
 
   function prepSectionTileHtml(key) {
@@ -1342,7 +1330,7 @@
   // are what setRootBand writes to. The eyebrow span stays hidden in the
   // markup: it holds the date so setRootBand can re-fold it into the line
   // when either half changes. `opts.noGear`: a screen whose header holds
-  // only its own button.
+  // only its own button. `opts.tools`: a screen's own round buttons.
   function rootBandHtml(opts) {
     var id = opts.id;
     var eyebrow = opts.eyebrow || '';
@@ -1359,7 +1347,7 @@
       '</div>' +
       // Every root carries the Preferences gear and the bell's slot
       // (prefsGearHtml) — here, in the head, and nowhere deeper.
-      '<div class="root-band-tools screen-tools">' + (opts.noGear ? '' : prefsGearHtml()) + '</div>' +
+      '<div class="root-band-tools screen-tools">' + (opts.tools || '') + (opts.noGear ? '' : prefsGearHtml()) + '</div>' +
     '</header>';
   }
 
@@ -5642,7 +5630,7 @@
   // because groceryState.step starts there and nothing restores it.
   //
   // The per-row ⋯ (groRowMenuHtml — quantity, store, remove, on the routes
-  // the old menu used), the dock's "Add something" and its sheet
+  // the old menu used), the head's + and its sheet
   // (groAddItem, one POST to /api/grocery-list/add) and the duplicate line
   // (groDuplicatesHtml) are all still here: the ask bar is the escape
   // hatch for anything wordier, but it is not the ONLY way to fix a row.
@@ -5661,6 +5649,7 @@
     basket: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9.5h14V19a1.8 1.8 0 0 1-1.8 1.8H6.8A1.8 1.8 0 0 1 5 19z"/><path d="M3.5 5.5h17v4h-17z"/><path d="M12 9.5v11"/></svg>',
     dots: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5.5" r="0.6"/><circle cx="12" cy="12" r="0.6"/><circle cx="12" cy="18.5" r="0.6"/></svg>',
     camera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5h4l1.5-2.5h6L16.5 8.5h4V19a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 19z"/><circle cx="12" cy="13.5" r="3.4"/></svg>',
+    back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 6l-6 6 6 6"/></svg>',
     plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
     // The freezer step's snowflake (WK_ICONS.snow), at the mini button's size.
     snow: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M12 3l-2 2M12 3l2 2M12 21l-2-2M12 21l2-2"/></svg>'
@@ -6476,19 +6465,15 @@
         // The root band, LIST's head (renderGrocery shows one or the other:
         // the band on the root, the crumb and .gro-head on every deeper
         // step). Its eyebrow counts the list — "60 things · 1 stop" — and
-        // the gear rides in it. What used to be the head's TO SORT badge
-        // is a row at the top of the list now (groSortRowHtml): the band
-        // carries no button.
-        // The band (Emily, 2026-10-30, "Shop with store filter"): "Before
-        // you go ›" beside the title, and the store chips under it — both
-        // drawn by renderGrocery into the slot groBandExtrasHtml fills.
-        rootBandHtml({ id: 'gro-band', title: 'Shop' }).replace('</header>',
-          '<div class="gro-band-extras" id="gro-band-extras"></div></header>') +
-        '<button type="button" class="crumb" id="gro-back" data-gro="step-back" hidden></button>' +
+        // the + rides in it (Z-Shop, Bright Dusk). "Before you go ›", the
+        // progress bar and the store switcher sit under the head, drawn by
+        // renderGrocery into the slot groBandExtrasHtml fills.
+        rootBandHtml({ id: 'gro-band', title: 'Shop', noGear: true, tools: groAddButtonHtml() }) +
+        '<div class="gro-band-extras" id="gro-band-extras"></div>' +
+        roundBtnHtml({ label: 'Back to Shop', icon: GRO_ICONS.back, cls: 'gro-back', attrs: ' id="gro-back" data-gro="step-back" hidden' }) +
         '<div class="gro-head" id="gro-head" hidden>' +
           '<div class="gro-head-row">' +
-            '<h1 class="gro-title" id="gro-title">Shop</h1>' +
-            '<span class="gro-hairline"></span>' +
+            '<h1 class="gro-title screen-title" id="gro-title">Shop</h1>' +
             // The mic and the refresh button left the head on 2026-09-11
             // (Emily, screen-by-screen review): hands-free returns with
             // cook-mode voice after launch, and pull-to-refresh is the
@@ -6505,7 +6490,7 @@
               (SHOW_GRO_HEADER_TOOLS ? '' : 'hidden ') +
               'title="Reload the latest list" aria-label="Reload the latest list">' + GRO_ICONS.refresh + '</button>' +
           '</div>' +
-          '<div class="gro-sub" id="gro-sub" hidden></div>' +
+          '<div class="gro-sub screen-sub" id="gro-sub" hidden></div>' +
         '</div>' +
         // The no-signal line (renderGroceryOfflineLine). Hidden unless the
         // list on screen is the phone's copy or a tick is still waiting.
@@ -6513,10 +6498,8 @@
         '<div class="gro-voice" id="gro-voice" hidden></div>' +
         '<div class="gro-body" id="gro-body"><p class="gro-empty">Loading&hellip;</p></div>' +
         // The dock (rule 2) — last in the markup because that is where a
-        // sticky footer's flow position has to be. On the root it holds
-        // "Add something" (groAddButtonHtml, 2026-09-21; the add row that
-        // opened the list before that went with it), on the deeper steps
-        // their one action.
+        // sticky footer's flow position has to be. The root has none (the
+        // + is in the head, Z-Shop); the deeper steps hold their one action.
         '<div class="dock gro-dock" id="gro-dock"></div>' +
       '</div>';
 
@@ -6919,9 +6902,9 @@
       setRootBand(panel, 'gro-band', { eyebrow: '', sub: '' });
       body.classList.remove('is-empty');
       body.innerHTML = groceryState.loadError === 'no-signal'
-        ? '<p class="gro-empty">' + escapeHtml(GRO_NO_COPY_LINE) + '</p>'
+        ? '<p class="note-card gro-empty">' + escapeHtml(GRO_NO_COPY_LINE) + '</p>'
         : groceryState.loadError
-        ? '<p class="gro-error">Couldn\'t load the grocery list right now — pull down to refresh.' + snwLink() + '</p>'
+        ? '<p class="note-card gro-error">Couldn\'t load the grocery list right now — pull down to refresh.' + snwLink() + '</p>'
         : '<p class="gro-empty">Loading&hellip;</p>';
       dock.innerHTML = '';
       return;
@@ -6944,8 +6927,8 @@
         groceryState.step !== 'beforeshop') groceryState.step = 'list';
     var step = groceryState.step;
 
-    // The root wears the band (and the gear in it); every deeper step
-    // wears the crumb and the step head instead. One or the other, never
+    // The root wears the band (and the + in it); every deeper step wears
+    // the round Back and the step head instead. One or the other, never
     // both.
     var onRoot = step === 'list';
     band.hidden = !onRoot;
@@ -6968,9 +6951,11 @@
         extras.hidden = !extrasHtml;
       }
     } else {
+      var deepExtras = panel.querySelector('#gro-band-extras');
+      if (deepExtras) deepExtras.hidden = true;
       var headFor = groHeadFor(data, step);
       back.hidden = !headFor.back;
-      if (headFor.back) back.textContent = headFor.back;
+      if (headFor.back) back.setAttribute('aria-label', headFor.back);
       title.textContent = headFor.title;
       sub.hidden = !headFor.sub;
       if (headFor.sub) sub.textContent = headFor.sub;
@@ -7043,7 +7028,7 @@
   function groHeadFor(data, step) {
     if (step === 'carry') {
       return {
-        back: '‹ Shop',
+        back: 'Back to Shop',
         title: 'Still on the list from last week',
         sub: groPlural(groceryState.carried.length, 'thing', 'things') + ' · still need them?'
       };
@@ -7055,12 +7040,12 @@
       // body, under the progress bar — the mockup's own structure, and it
       // keeps the bar from saying "step 2 of 3" twice (it says it once,
       // in its own ARIA).
-      return { back: '‹ Shop', title: BEFORE_SHOP_LABEL, sub: '' };
+      return { back: 'Back to Shop', title: BEFORE_SHOP_LABEL, sub: '' };
     }
     // 'sortall' — the only other step. "Where does this go?" was the
     // queue's question; this screen is named for what it does.
     var allLeft = groUnsorted(data).length;
-    return { back: '‹ Shop', title: 'Sort them all', sub: allLeft ? allLeft + ' to sort' : '' };
+    return { back: 'Back to Shop', title: 'Sort them all', sub: allLeft ? allLeft + ' to sort' : '' };
   }
 
   // The root band's two lines (Emily's shopping-list mockup, 2026-09-18):
@@ -7117,8 +7102,8 @@
   // no single action, the rows are the actions.
   function groCarryHtml(data) {
     var carried = groceryState.carried;
-    if (!carried.length) return '<p class="gro-empty">Nothing left from last week.</p>';
-    return '<div class="shell-card gro-carry">' +
+    if (!carried.length) return '<p class="note-card gro-empty">Nothing left from last week.</p>';
+    return '<div class="gro-carry">' +
       carried.map(function (c) {
         var id = String(c.item_id);
         return '<div class="gro-ps-row gro-carry-row">' +
@@ -7261,7 +7246,7 @@
         '<button type="button" class="gro-box' + (c.ticked ? ' checked' : '') + '" role="checkbox" ' +
           'aria-checked="' + (c.ticked ? 'true' : 'false') + '" data-gro="bs-reg-tick" data-idx="' + i + '" ' +
           'aria-label="' + escapeHtml((c.ticked ? 'Don’t add ' : 'Add ') + c.name) + '">' +
-          (c.ticked ? GRO_ICONS.tick : '') + '</button>' +
+          groTickRingHtml(c.ticked) + '</button>' +
         '<p class="gro-name">' + escapeHtml(c.name) +
           (c.reason ? ' <span class="gro-bs-why">· ' + escapeHtml(c.reason) + '</span>' : '') + '</p>' +
       '</div>';
@@ -7273,7 +7258,7 @@
           '<button type="button" class="gro-bs-add-go" data-gro="bs-reg-add">Add</button>' +
         '</div>'
       : '<button type="button" class="gro-bs-add-open" data-gro="bs-reg-add-open">+ Add a regular</button>';
-    return '<div class="shell-card gro-bs-card">' + rows + '</div>' + add +
+    return '<div class="tiles gro-bs-card">' + rows + '</div>' + add +
       bsOnListHtml(part.on_list, 'line');
   }
   function bsTickedRegulars() {
@@ -7334,7 +7319,7 @@
         '<button type="button" class="gro-box' + (r.ticked ? ' checked' : '') + '" role="checkbox" ' +
           'aria-checked="' + (r.ticked ? 'true' : 'false') + '" data-gro="bs-have-tick" data-id="' + id + '" ' +
           'aria-label="' + escapeHtml((r.ticked ? 'Still need ' : 'Already have ') + r.name) + '">' +
-          (r.ticked ? GRO_ICONS.tick : '') + '</button>' +
+          groTickRingHtml(r.ticked) + '</button>' +
         '<p class="gro-name">' + escapeHtml(r.name) +
           (r.reason ? ' <span class="gro-bs-why">· ' + escapeHtml(r.reason) + '</span>' : '') + '</p>' +
       '</div>';
@@ -7348,7 +7333,7 @@
           ? 'Only ' + groPlural(after, 'thing', 'things') + ' left to sort, down from ' + before + '.'
           : 'Nothing left to sort.') + '</p>'
       : '';
-    return '<div class="shell-card gro-bs-card">' + rows + '</div>' + foot;
+    return '<div class="tiles gro-bs-card">' + rows + '</div>' + foot;
   }
   // The step's line counts what is ticked, so it is the step's own rather
   // than a fixed string: "Pomona thinks you have 6 of these at home."
@@ -7431,13 +7416,13 @@
       escapeHtml(BEFORE_YOU_GO_LABEL) + ' <span aria-hidden="true">›</span></button>';
   }
 
-  // ---------- The band's store chips: one list, filtered ----------
-  // Emily, 2026-10-30 ("Shop with store filter"): "All · N" first (the
-  // default), then one chip per card with something still to buy —
-  // "Costco · 2", "Anywhere · 92". A chip shows that card alone; All shows
-  // every card. N is what is left to buy, never a score of what's done.
-  // Only drawn when there are two cards to choose between.
+  // ---------- The store switcher: one list, filtered ----------
+  // Emily, 2026-10-30 ("Shop with store filter"), drawn as Z-Shop's
+  // switcher since Bright Dusk: All stores first (the default), then one
+  // segment per card with something still to buy. A segment shows that
+  // card alone. Only drawn when there are two cards to choose between.
   var GRO_FILTER_ANYWHERE = '*anywhere*';
+  var GRO_ALL_STORES = 'All stores';
 
   // The cards LIST draws, by key, in stop order — the store's name, or
   // GRO_ANYWHERE_KEY for the loose pile once there are store cards for it
@@ -7468,31 +7453,47 @@
     return groCardLines(data, key).filter(function (it) { return !groIsBought(it); }).length;
   }
 
+  // The store switcher (Z-Shop): "All stores", then one segment per card
+  // with something still to buy, and the one showing. Past three it can't
+  // fit a phone's width, so it scrolls sideways.
   function groStoreChipsHtml(data) {
     var keys = groCardKeys(data);
     if (keys.length < 2) return '';
     var active = groActiveFilter(data);
-    var chips = [];
-    var all = keys.reduce(function (n, key) { return n + groLeftOn(data, key); }, 0);
-    function chip(filter, label, n, on) {
-      return '<button type="button" class="gro-chip' + (on ? ' is-on' : '') + '" data-gro="store-filter" ' +
-        'data-filter="' + escapeHtml(filter) + '" aria-pressed="' + (on ? 'true' : 'false') + '">' +
-        escapeHtml(label + ' · ' + n) + '</button>';
+    function seg(filter, label, on) {
+      return { label: label, on: on, attrs: ' data-gro="store-filter" data-filter="' + escapeHtml(filter) + '"' };
     }
-    chips.push(chip('', 'All', all, active === null));
+    var items = [seg('', GRO_ALL_STORES, active === null)];
     keys.forEach(function (key) {
-      var n = groLeftOn(data, key);
-      if (!n && active !== key) return;
-      chips.push(chip(groFilterKey(key), key === GRO_ANYWHERE_KEY ? GRO_ANYWHERE_CARD : key, n, active === key));
+      if (!groLeftOn(data, key) && active !== key) return;
+      items.push(seg(groFilterKey(key), key === GRO_ANYWHERE_KEY ? GRO_ANYWHERE_CARD : key, active === key));
     });
-    return '<div class="gro-chips" role="group" aria-label="Show one store">' + chips.join('') + '</div>';
+    if (items.length < 2) return '';
+    return segHtml(items, { cls: 'gro-seg' + (items.length > 3 ? ' is-long' : ''), attrs: ' role="group" aria-label="Show one store"' });
+  }
+
+  // How far through the list, or through the store showing (Z-Shop's bar).
+  function groProgressHtml(data) {
+    var keys = groCardKeys(data);
+    var active = groActiveFilter(data);
+    if (active !== null) keys = [active];
+    var all = 0, left = 0;
+    keys.forEach(function (key) {
+      all += groCardLines(data, key).length;
+      left += groLeftOn(data, key);
+    });
+    if (!all) return '';
+    var done = all - left;
+    var pct = Math.round(done / all * 100);
+    return '<div class="gro-progress" role="progressbar" aria-label="Bought so far" aria-valuemin="0" ' +
+        'aria-valuemax="' + all + '" aria-valuenow="' + done + '">' +
+      '<div class="gro-progress-fill" style="width:' + pct + '%"></div></div>';
   }
 
   function groBandExtrasHtml(data) {
     var link = groBeforeYouGoHtml(data);
-    var chips = groStoreChipsHtml(data);
-    if (!link && !chips) return '';
-    return (link ? '<div class="gro-band-links">' + link + '</div>' : '') + chips;
+    return (link ? '<div class="gro-band-links">' + link + '</div>' : '') +
+      groProgressHtml(data) + groStoreChipsHtml(data);
   }
 
   // The last step's primary: the sort it was in front of, or — with
@@ -7598,6 +7599,14 @@
     '</button></div>';
   }
 
+  // Z-EmptyShop: one plain line. "Go to Plan" stays with it, never over the
+  // shops question: the Plan tab is where the list gets built.
+  function groEmptyNoteHtml() {
+    return '<div class="note-card gro-empty-note">Nothing to buy. Approve a week and I’ll build the list.' +
+      (groStoresPromptShouldShow() ? '' : '<button type="button" class="btn-main" data-gro="goto-plan">Go to Plan</button>') +
+    '</div>';
+  }
+
   function groListHtml(data) {
     var stops = groStoresOnList(data);
     var loose = groLooseLineItems(data);
@@ -7623,7 +7632,7 @@
       // keeps its place under it: the last thing on the list set
       // aside by a thumb-slip has to be findable from the empty screen
       // it left behind.
-      return html + emptyMomentHtml('bag', 'Nothing to buy. Approve a week and I’ll build the list.') + groListFootHtml();
+      return html + groEmptyNoteHtml() + groListFootHtml();
     }
 
     // Every card done: the finished moment stands at the top of the list
@@ -7632,7 +7641,7 @@
     // back to it" folds it to one line for this page view.
     if (groListDone(data)) {
       html += groceryState.shopDoneHandoffDismissed
-        ? '<div class="shell-card gro-shop-done-card gro-shop-done-dismissed">' +
+        ? '<div class="note-card gro-shop-done-card gro-shop-done-dismissed">' +
             '<div class="gro-shop-done-line">That’s the shopping done.</div>' +
             '<button type="button" class="gro-shop-done-link" data-gro="shop-done-tonight">See tonight’s dinner &rarr;</button>' +
           '</div>'
@@ -7673,7 +7682,8 @@
   // LIST ends the same way: what's set aside, what's not needed this
   // week, the spices.
   function groListFootHtml() {
-    return groElsewhereHtml() + groNotNeededHtml() + groSpicesHtml();
+    var html = groElsewhereHtml() + groNotNeededHtml() + groSpicesHtml();
+    return html ? '<div class="tiles gro-list-foot">' + html + '</div>' : '';
   }
 
   // ---------- Getting elsewhere: what's set aside ----------
@@ -7693,7 +7703,6 @@
     if (!aside.length) return '';
     return '<div class="gro-staples gro-elsewhere">' +
       '<div class="gro-ps-head">' +
-        GRO_ICONS.basket +
         '<span class="gro-ps-text">' +
           '<span class="gro-ps-title">' + escapeHtml(GRO_ELSEWHERE_SECTION) + ' &middot; ' + aside.length + '</span>' +
         '</span>' +
@@ -7751,9 +7760,8 @@
     var ticked = items.filter(function (sp) { return sp.ticked; }).length;
     var anyNew = items.some(function (sp) { return sp.new; });
     var sub = groPlural(items.length, sec.one, sec.many) + (ticked ? ' · ' + ticked + ' to buy' : '');
-    var html = '<div class="gro-staples gro-spices gro-assumed-' + sec.key + '">' +
+    var html = '<div class="gro-staples gro-spices gro-assumed-' + sec.key + (open ? ' is-open' : '') + '">' +
       '<button type="button" class="gro-ps-head" data-gro="spices-toggle" data-section="' + sec.key + '" aria-expanded="' + open + '">' +
-        GRO_ICONS.basket +
         '<span class="gro-ps-text">' +
           '<span class="gro-ps-title">' + escapeHtml(sec.title) + '</span>' +
           '<span class="gro-ps-sub">' + escapeHtml(sub) + '</span>' +
@@ -7778,7 +7786,7 @@
               'aria-checked="' + (sp.ticked ? 'true' : 'false') + '" data-gro="spice-tick" data-id="' + id + '" ' +
               'data-ticked="' + (sp.ticked ? '1' : '0') + '" ' +
               'aria-label="' + escapeHtml((sp.ticked ? 'Don’t need to buy ' : 'Need to buy ') + sp.item) + '">' +
-              (sp.ticked ? GRO_ICONS.tick : '') + '</button>' +
+              groTickRingHtml(sp.ticked) + '</button>' +
             '<p class="gro-name">' + escapeHtml(sp.item) +
               (note ? '<span class="gro-spice-due">' + escapeHtml(note) + '</span>' : '') +
             '</p>' +
@@ -7879,29 +7887,27 @@
         (done ? '' : (headExtra || '')) +
         '<span class="gro-store-count">' + bought + ' of ' + items.length + '</span>' +
       '</div>' +
-      '<div class="gro-card-rows">' + groCardRowsHtml(items, data) + '</div>' +
+      '<div class="gro-card-rows tiles">' + groCardRowsHtml(items, data) + '</div>' +
     '</div>';
   }
 
-  // The rows of a card under their aisle eyebrows. `items` arrive in
+  // The rows of a card, one tile per aisle (Z-Shop). `items` arrive in
   // aisle order already (groSortLines), so a run of the same aisle is
-  // one group; the eyebrow is the aisle's label, 10px/800 caps in
-  // --ink-muted (.gro-eyebrow, the one the staples card wears too), with
-  // a --hairline above every eyebrow but a card's first (shell.css).
+  // one tile, its name small and slate at the top (.gro-eyebrow).
   function groAisleGroupsHtml(items, data) {
     var html = '';
     var last = null;
     items.forEach(function (it) {
       var aisle = groAisleOf(it);
       if (aisle !== last) {
-        html += '<div class="gro-aisle" data-aisle="' + escapeHtml(aisle) + '">' +
-          (typeof aisleIconHtml === 'function' ? aisleIconHtml(aisle) : '') +
+        html += (last === null ? '' : '</div>') + '<div class="tile gro-aisle-tile">' +
+          '<div class="gro-aisle" data-aisle="' + escapeHtml(aisle) + '">' +
           '<span class="gro-eyebrow">' + escapeHtml(GRO_AISLE_LABELS[aisle] || aisle) + '</span></div>';
         last = aisle;
       }
       html += groLineHtml(it, data);
     });
-    return html;
+    return html + (last === null ? '' : '</div>');
   }
 
   function groCardRowsHtml(items, data) {
@@ -8007,14 +8013,14 @@
         (key ? ' data-store="' + escapeHtml(key) + '"' : '') + '>' +
       '<button type="button" class="gro-rolled-head" data-gro="rolled-toggle" data-store="' + escapeHtml(key) + '" ' +
         'aria-expanded="' + open + '" aria-label="' + escapeHtml(label + ', ' + count + (open ? ', hide them' : ', see them')) + '">' +
-        '<span class="gro-rolled-tick">' + GRO_ICONS.tick + '</span>' +
+        '<span class="gro-rolled-tick tick-ring">' + GRO_ICONS.tick + '</span>' +
         '<span class="gro-rolled-text">' +
           '<span class="gro-rolled-title">' + escapeHtml(label) + '</span>' +
           '<span class="gro-rolled-sub">' + count + '</span>' +
         '</span>' +
         '<span class="gro-chev">' + (open ? GRO_ICONS.chevDown : GRO_ICONS.chevRight) + '</span>' +
       '</button>' +
-      (open ? '<div class="gro-card-rows">' + groCardRowsHtml(items, data) + '</div>' : '') +
+      (open ? '<div class="gro-card-rows tiles">' + groCardRowsHtml(items, data) + '</div>' : '') +
     '</div>';
   }
 
@@ -8041,7 +8047,7 @@
         'aria-checked="' + (bought ? 'true' : 'false') + '" data-gro="line-tick" data-id="' + id + '" ' +
         'data-bought="' + (bought ? '1' : '0') + '" ' +
         'aria-label="' + escapeHtml((bought ? 'Put ' + it.item + ' back on the list' : 'Bought ' + it.item)) + '">' +
-        (bought ? GRO_ICONS.tick : '') + '</button>' +
+        groTickRingHtml(bought) + '</button>' +
       '<button type="button" class="gro-line-open" data-gro="row-menu" data-id="' + id + '" ' +
         'aria-haspopup="dialog" aria-expanded="' + open + '" aria-label="' + escapeHtml(it.item + (it.quantity ? ', ' + it.quantity : '') + ' — change it') + '">' +
         (it.week_note
@@ -8057,6 +8063,11 @@
     groFlagHtml(it) +
     (staple && !bought ? groStapleLineHtml(it) : '') +
     (groceryState.freezing && groceryState.freezing.id === id ? groFreezingHtml(groceryState.freezing) : '');
+  }
+
+  // The 22px ring inside a 44px .gro-box (theme.css .tick-ring).
+  function groTickRingHtml(on) {
+    return '<span class="tick-ring">' + (on ? GRO_ICONS.tick : '') + '</span>';
   }
 
   // "2 l" reads "2 L" — a litre's own capital.
@@ -8535,11 +8546,11 @@
       // list" (groDockHtml). Only after sorting got here — arriving with
       // nothing to sort never shows this screen at all (renderGrocery).
       return groceryState.sortAllDone
-        ? emptyMomentHtml('bag', 'All sorted.')
-        : '<p class="gro-empty">Nothing left to sort.</p>';
+        ? '<p class="note-card gro-sort-done">All sorted.</p>'
+        : '<p class="note-card gro-empty">Nothing left to sort.</p>';
     }
     var pillStores = groPillStores(data);
-    return '<div class="shell-card gro-sortall">' +
+    return '<div class="gro-sortall">' +
       unsorted.map(function (it) { return groSortAllRowHtml(it, pillStores); }).join('') +
     '</div>';
   }
@@ -8785,7 +8796,6 @@
     var open = groceryState.openFlagKey === 'already-have';
     return '<div class="gro-flag' + (home.length ? ' gro-home' : '') + '">' +
       '<button type="button" class="gro-flag-head" data-gro="flag-toggle" data-key="already-have" aria-expanded="' + open + '">' +
-        '<span class="gro-flag-badge">' + GRO_ICONS.tick + '</span>' +
         // "Already home · N" counts what Pomona left off (the mockup's N);
         // the household's own answers are listed below it, uncounted.
         '<span class="gro-flag-title">' + (home.length ? GRO_ALREADY_HOME_TITLE + ' &middot; ' + home.length : 'Already had on hand &middot; ' + already.length) + '</span>' +
@@ -8871,13 +8881,12 @@
     '</button>';
   }
 
-  // ---------- "Add something": the dock's button and its sheet ----------
-  // Emily's S1 / S1b mockups (2026-09-21; Loop Board 3e31f4c0-5231-817d).
-  // Until then an add row — field, camera, Add — sat at the top of the
-  // list and scrolled away with it. It is an outline button in the dock
-  // now, the one strip that stays put while the list scrolls (rule 2),
-  // beside the chat FAB; and the add itself is a bottom sheet that asks
-  // the one thing the row never did: where do you get it? The answer
+  // ---------- "Add something": the head's + and its sheet ----------
+  // Emily's S1 / S1b mockups (2026-09-21; Loop Board 3e31f4c0-5231-817d),
+  // drawn as Z-AddItem since Bright Dusk. Until then an add row — field,
+  // camera, Add — sat at the top of the list and scrolled away with it.
+  // The add is a bottom sheet with the store switcher under the field,
+  // the one thing the row never asked: where do you get it? The answer
   // rides with the add (the /add route's store, one request, one queued
   // op with no signal) and is remembered as the item's usual (card
   // 3e31f4c0-5231-81ca), so a thing added once lands in its store's card
@@ -8891,10 +8900,9 @@
   // level. Quantity comes from what's typed (groParseAddInput: "2 lb
   // carrots", "milk 2"), never a box of its own.
   var GRO_ADD_LABEL = 'Add something';
-  var GRO_ADD_ANYWHERE = 'Anywhere';
   var GRO_ADD_PLACEHOLDER = 'What do you need?';
   var GRO_ADD_WHERE = 'Where do you get it?';
-  var GRO_ADD_TO_LIST = 'Add to the list';
+  var GRO_ADD_GO = 'Add';
   // Where the last add went, so the sheet's third guess survives a reload.
   var GRO_LAST_ADD_STORE_KEY = 'pomona.grocery.lastAddStore';
   // How long after the last keystroke the typed name is looked up
@@ -8902,9 +8910,9 @@
   var GRO_ADD_LOOKUP_MS = 250;
   var GRO_ADD_WAITING_TOAST = 'That one’s still on its way — tick it once we’re back.';
 
+  // The head's round + (Z-Shop).
   function groAddButtonHtml() {
-    return '<button type="button" class="gro-add-open" data-gro="add-open">' +
-      GRO_ICONS.plus + escapeHtml(GRO_ADD_LABEL) + '</button>';
+    return roundBtnHtml({ label: GRO_ADD_LABEL, icon: GRO_ICONS.plus, cls: 'gro-add-open', attrs: ' data-gro="add-open"' });
   }
 
   // The sheet's body. Pure — a string from the state and the list — so
@@ -8919,7 +8927,7 @@
     var store = asks ? (state.store || '') : '';
     var typed = state.typed || '';
     var html = '<div class="gro-add-field">' +
-        '<input type="text" class="gro-add-item" id="gro-add-item" value="' + escapeHtml(typed) + '" ' +
+        '<input type="text" class="gro-add-item field" id="gro-add-item" value="' + escapeHtml(typed) + '" ' +
           'placeholder="' + escapeHtml(GRO_ADD_PLACEHOLDER) + '" aria-label="Something to add to the list" ' +
           'autocomplete="off" autocapitalize="none" enterkeyhint="done" />' +
         '<button type="button" class="gro-scan-btn" id="gro-scan-btn" data-gro="scan-open" ' +
@@ -8928,21 +8936,18 @@
         '</button>' +
       '</div>';
     if (asks) {
-      html += '<p class="gro-add-q">' + escapeHtml(GRO_ADD_WHERE) + '</p>' +
-        '<div class="gro-pills open gro-add-chips">' +
-          stores.map(function (n) { return groAddChipHtml(n, n, n === store); }).join('') +
-          groAddChipHtml('', GRO_ADD_ANYWHERE, store === '') +
-        '</div>';
+      var segs = [groAddSeg('', GRO_ALL_STORES, store === '')].concat(stores.map(function (n) {
+        return groAddSeg(n, n, n === store);
+      }));
+      html += segHtml(segs, { cls: 'gro-add-seg' + (segs.length > 3 ? ' is-long' : ''), attrs: ' role="group" aria-label="' + escapeHtml(GRO_ADD_WHERE) + '"' });
     }
     html += '<button type="button" class="dock-primary gro-add-go" id="gro-add-go" data-gro="add">' +
-      escapeHtml(groAddSheetLabel(store)) + '</button>';
+      escapeHtml(GRO_ADD_GO) + '</button>';
     return html;
   }
-  function groAddChipHtml(store, label, on) {
-    return '<button type="button" class="gro-pill' + (on ? ' gro-pill-on' : '') + '" data-gro="add-store" ' +
-      'data-store="' + escapeHtml(store) + '" aria-pressed="' + on + '">' + escapeHtml(label) + '</button>';
+  function groAddSeg(store, label, on) {
+    return { label: label, on: on, attrs: ' data-gro="add-store" data-store="' + escapeHtml(store) + '"' };
   }
-  function groAddSheetLabel(store) { return store ? 'Add to ' + store : GRO_ADD_TO_LIST; }
   // The typed text without its quantity, in lower case — "cilantro", not
   // "2 Cilantro" — so it can be looked up against a remembered store
   // (groAddSheetPrePick) the same way regardless of how much was typed.
@@ -9074,9 +9079,8 @@
     st.picked = true;
     groAddSheetSync();
   }
-  // The parts of the sheet that follow the typing and the chip — which
-  // chip is on, and the button's label. The field is never redrawn: it
-  // is being typed into.
+  // The part of the sheet that follows the typing and the switcher: which
+  // segment is on. The field is never redrawn: it is being typed into.
   function groAddSheetSync() {
     var st = groceryState.addSheet;
     var body = groAddSheetBody();
@@ -9084,42 +9088,16 @@
     var chips = body.querySelectorAll('[data-gro="add-store"]');
     for (var i = 0; i < chips.length; i++) {
       var on = chips[i].getAttribute('data-store') === st.store;
-      chips[i].classList.toggle('gro-pill-on', on);
+      chips[i].classList.toggle('is-on', on);
       chips[i].setAttribute('aria-pressed', String(on));
     }
-    var go = body.querySelector('#gro-add-go');
-    if (go) go.textContent = groAddSheetLabel(st.store);
   }
 
   // ---------- The dock: one apricot action per step (Rule 5) ----------
-  // The root has no apricot (Emily, 2026-09-18: the list is the checklist,
-  // and nothing single is left to press), except "Go to Plan" under the
-  // empty moment; since 2026-09-21 it carries "Add something" as an
-  // outline beside the chat FAB (groAddButtonHtml) — a side errand that
-  // has to stay reachable while the list scrolls, not the screen's
-  // action. The "See the week" link that used to ride beside "Start the
-  // trip" went with it: the week is one tap away on the tab bar.
+  // The root has no dock (Z-Shop): ticking a row is the action, the + is in
+  // the head, "Before you go ›" sits under it and "Pick stores" is in the
+  // Anywhere card's head. "Go to Plan" goes with the empty line.
   function groDockHtml(data, step) {
-    if (step === 'list') {
-      // Nothing to buy at all: the empty moment's next step is the Plan
-      // tab, where a week gets approved and this list gets built. Only
-      // when the list is genuinely empty — never over the shops question,
-      // and not while spices wait unticked: there is a list then, it is
-      // just all in one section, and "Go to Plan" would send someone away
-      // from it.
-      // "Add something" rides along either way (2026-09-21): an empty
-      // list is still a list a person can put one thing on.
-      if (!groStoresOnList(data).length && !groLooseLineItems(data).length && !groStoresPromptShouldShow() &&
-          !groceryState.spices.items.length) {
-        return '<button type="button" class="dock-primary" data-gro="goto-plan">Go to Plan</button>' + groAddButtonHtml();
-      }
-      // "+ Add something" and the chat button, nothing else (Emily,
-      // 2026-10-30): "Before you go ›" is in the band now and "Pick
-      // stores" in the Anywhere card's head — the pass and the sort are
-      // each one tap away and neither is the screen's button. Ticking a
-      // row is the action.
-      return groAddButtonHtml();
-    }
     if (step === 'beforeshop') return beforeShopStepDockHtml(data);
     // SORT ALL writes every answer as it is tapped, so there is nothing
     // to save and no button while rows are left — the crumb is the way
@@ -9159,7 +9137,6 @@
 
     var html = '<div class="gro-ps">' +
       '<button type="button" class="gro-ps-head" data-gro="ps-toggle" aria-expanded="' + open + '">' +
-        GRO_ICONS.basket +
         '<span class="gro-ps-text">' +
           '<span class="gro-ps-title">' + GRO_PS_TITLE + '</span>' +
           '<span class="gro-ps-sub">' + groPlural(flags.length, 'thing', 'things') + '</span>' +
@@ -9327,11 +9304,11 @@
     // line alone, so the old buttons never flash up and get replaced.
     // Offline there is no read coming, so the handoff stands as it was.
     if (now === undefined && !groceryState.offline) {
-      return '<div class="shell-card gro-shop-done-card">' +
+      return '<div class="note-card gro-shop-done-card">' +
         '<div class="gro-shop-done-line">' + line + '</div></div>';
     }
     return (
-      '<div class="shell-card gro-shop-done-card">' +
+      '<div class="note-card gro-shop-done-card">' +
         '<div class="gro-shop-done-line">' + line + '</div>' +
         '<div class="gro-shop-done-actions">' +
           '<button type="button" class="btn-gold" data-gro="shop-done-tonight">Show me tonight</button>' +
@@ -9365,16 +9342,16 @@
         '<span class="gro-kitchen-aside">' + escapeHtml(u.plan) + '</span></li>';
     }).join('');
     return (
-      '<div class="shell-card gro-shop-done-card">' +
+      '<div class="note-card gro-shop-done-card">' +
         '<div class="gro-shop-done-line">' + line + '</div>' +
       '</div>' +
-      '<section class="shell-card gro-kitchen-card" aria-labelledby="gro-kitchen-now-title">' +
+      '<section class="note-card gro-kitchen-card" aria-labelledby="gro-kitchen-now-title">' +
         '<h2 class="gro-kitchen-title" id="gro-kitchen-now-title">Now in the kitchen</h2>' +
         '<p class="gro-kitchen-note">From what you ticked off. Didn’t get something? Untick it on the list.</p>' +
         '<ul class="gro-kitchen-rows">' + places + '</ul>' +
       '</section>' +
       (first
-        ? '<section class="shell-card gro-kitchen-card" aria-labelledby="gro-kitchen-first-title">' +
+        ? '<section class="note-card gro-kitchen-card" aria-labelledby="gro-kitchen-first-title">' +
             '<h2 class="gro-kitchen-title" id="gro-kitchen-first-title">Use these first</h2>' +
             '<ul class="gro-kitchen-rows">' + first + '</ul>' +
           '</section>'
@@ -9498,11 +9475,11 @@
     // skip, and it keeps the exact words the quiet dismissal used to carry.
     var done = count ? 'That&rsquo;s where we shop' : 'One list is fine';
     return (
-      '<div class="shell-card gro-stores-prompt">' +
+      '<div class="note-card gro-stores-prompt">' +
         '<p class="gro-stores-prompt-title">Where do you usually shop?</p>' +
         '<div class="gro-pills open">' + chips + '</div>' +
         '<div class="gro-stores-prompt-add">' +
-          '<input type="text" class="gro-stores-prompt-input" id="gro-stores-prompt-input" ' +
+          '<input type="text" class="gro-stores-prompt-input field" id="gro-stores-prompt-input" ' +
             'placeholder="Somewhere else?" aria-label="Add a store you usually shop at" />' +
           '<button type="button" class="gro-linkbtn" data-gro="stores-prompt-add">Add</button>' +
         '</div>' +

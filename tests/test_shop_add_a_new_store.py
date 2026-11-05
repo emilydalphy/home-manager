@@ -221,7 +221,7 @@ def test_the_way_back_is_page_view_state_not_a_url():
 
 def test_the_add_control_is_a_link_not_a_second_apricot():
     add = SHELL_CSS[SHELL_CSS.index(".gro-pill-add {"):SHELL_CSS.index("}", SHELL_CSS.index(".gro-pill-add {"))]
-    assert "var(--apricot-label)" in add and "var(--apricot)" not in add, "a link, not a second apricot fill"
+    assert "background: none" in add and "var(--apricot)" not in add, "a link, not a second apricot fill"
 
 
 def test_the_wrap_up_is_gone():

@@ -567,7 +567,7 @@ def test_decide_later_is_styled_as_the_quiet_way_out():
     start = css.index(".gro-carry-later {")
     rule = css[start:css.index("}", start)]
     assert "background: none" in rule and "border: none" in rule
-    assert "color: var(--apricot-label)" in rule
+    assert "color: var(--ink)" in rule
     assert "min-height: 44px" in rule, "a 44px tap target"
 
 

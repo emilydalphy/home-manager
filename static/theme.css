@@ -386,8 +386,11 @@ a:hover { color: var(--apricot-label-hover); }
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  position: relative;
   transition: background var(--motion-fast) ease, color var(--motion-fast) ease;
 }
+/* The drawn segment is the track less 3px each side; the tap is the track. */
+.seg-btn::after { content: ""; position: absolute; inset: -3px 0; }
 .seg-days .seg-btn { color: var(--ink); }
 .seg-btn.is-on {
   background: var(--white);

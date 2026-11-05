@@ -204,13 +204,13 @@ console.log(JSON.stringify(marks));
 def test_the_eyebrow_is_the_ten_px_caps_one_with_a_hairline_above_all_but_the_first():
     assert "var GRO_AISLE_LABELS = {" in SHELL_JS
     assert "'<span class=\"gro-eyebrow\">' + escapeHtml(GRO_AISLE_LABELS[aisle] || aisle) + '</span></div>'" in SHELL_JS
+    # Z-Shop: an aisle is a tile, its name 13/600 slate at the top.
     eyebrow = re.search(r"\.gro-eyebrow \{(.*?)\}", SHELL_CSS, re.S).group(1)
-    assert "font-size: 11px" in eyebrow and "font-weight: 700" in eyebrow
-    assert "text-transform" not in eyebrow and "color: var(--ink-muted)" in eyebrow
-    aisle = re.search(r"\n\.gro-aisle \{(.*?)\}", SHELL_CSS, re.S).group(1)
-    assert "border-top: 1px solid var(--hairline)" in aisle
-    assert ".gro-card-rows > .gro-aisle:first-child, .gro-trip + .gro-aisle { border-top: 0; }" in SHELL_CSS
-    assert ".gro-aisle + .gro-line { border-top: 0; }" in SHELL_CSS, "the eyebrow is the separator for the row under it"
+    assert "font-size: 13px" in eyebrow and "font-weight: 600" in eyebrow
+    assert "text-transform" not in eyebrow and "color: var(--ink-secondary)" in eyebrow
+    assert '<div class="tile gro-aisle-tile">' in SHELL_JS
+    tile = re.search(r"\.tile\.gro-aisle-tile \{(.*?)\}", SHELL_CSS, re.S).group(1)
+    assert "text-align: left" in tile and "align-items: stretch" in tile
 
 
 # --- Card 2: a store done -----------------------------------------------------
@@ -228,7 +228,7 @@ setTimeout(function () {
   var after = groListHtml(groceryState.data);
   console.log(JSON.stringify({ during: during, after: { cards: cards(after), rolled: rolled(after), doneBeat: groceryState.doneBeat,
     below: after.indexOf('gro-rolled') > after.indexOf('gro-anywhere'), sub: /gro-rolled-sub">([^<]*)</.exec(after)[1],
-    tick: /gro-rolled-tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"/.test(after),
+    tick: /gro-rolled-tick tick-ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"/.test(after),
     chevron: rolledCard(after, 'Costco').indexOf('gro-chev') !== -1,
     tap: /data-gro="rolled-toggle" data-store="Costco" aria-expanded="false"/.test(after) } }));
 }, 700);
@@ -536,15 +536,13 @@ def test_the_design_system_records_the_fifth_animation():
 
 
 def test_the_rolled_up_row_wears_the_celadon_tokens_and_the_toast_carries_its_tick():
-    rolled_css = re.search(r"\.gro-store\.gro-rolled \{(.*?)\}", SHELL_CSS, re.S).group(1)
-    assert "background: var(--celadon-tint)" in rolled_css and "border-color: var(--celadon-edge)" in rolled_css
-    tick = re.search(r"\.gro-rolled-tick \{(.*?)\}", SHELL_CSS, re.S).group(1)
-    assert "width: 32px" in tick and "height: 32px" in tick and "background: var(--celadon)" in tick
-    assert "border-radius: var(--radius-pill)" in tick
+    # Bright Dusk: one white tile with an apricot ring.
+    tick = re.search(r"\.gro-rolled-tick\.tick-ring \{(.*?)\}", SHELL_CSS, re.S).group(1)
+    assert "background: var(--apricot)" in tick and "color: var(--night-ink)" in tick
     title = re.search(r"\.gro-rolled-title \{(.*?)\}", SHELL_CSS, re.S).group(1)
-    assert "color: var(--celadon-label)" in title
+    assert "color: var(--ink)" in title
     head = re.search(r"\.gro-rolled-head \{(.*?)\}", SHELL_CSS, re.S).group(1)
-    assert "min-height: 56px" in head, "the whole row is the tap (Rule 6)"
-    assert ".toast-icon { display: inline-flex;" in SHELL_CSS and "color: var(--celadon)" in SHELL_CSS.split(".toast-icon {")[1].split("}")[0]
+    assert "min-height: 68px" in head and "background: var(--white)" in head, "the whole tile is the tap (Rule 6)"
+    assert ".toast-icon { display: inline-flex;" in SHELL_CSS and "color: var(--soft-apricot)" in SHELL_CSS.split(".toast-icon {")[1].split("}")[0]
     assert "showToast(groStoreDoneToast(key, groCardLines(data, key).length), wayBack, null, { icon: GRO_ICONS.tick });" in SHELL_JS
     assert "return 'That’s ' + key + ' done — ' + groPlural(count, 'thing', 'things') + '.';" in SHELL_JS

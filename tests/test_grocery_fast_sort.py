@@ -79,7 +79,7 @@ console.log(JSON.stringify({ opened: opened, back: groceryState.step, head: groH
 """)
     assert out["opened"] == "sortall"
     assert out["back"] == "list"
-    assert out["head"] == {"back": "‹ Shop", "title": "Sort them all", "sub": "6 to sort"}
+    assert out["head"] == {"back": "Back to Shop", "title": "Sort them all", "sub": "6 to sort"}
 
 
 # --- 2. sort them all on one screen ---------------------------------------
@@ -500,4 +500,4 @@ console.log(JSON.stringify({ cards: cards(html), band: groBandLine(groceryState.
 """)
     assert out["cards"] == ["Anywhere"]
     assert out["band"] == "2 things."
-    assert "dock-primary" not in out["dock"] and 'data-gro="add-open"' in out["dock"]
+    assert out["dock"] == ""

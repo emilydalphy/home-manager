@@ -398,11 +398,10 @@ def test_a_picked_chip_is_coloured_from_tokens_only():
     rule = re.search(r"^\.gro-pill-on \{([^}]*)\}", SHELL_CSS, re.M)
     assert rule, ".gro-pill-on is what says a shop is picked"
     assert "#" not in rule.group(1)
-    for token in ("--celadon-tint", "--ink-on-celadon", "--ink-strong"):
-        assert token in rule.group(1)
-    # And the state is carried by the BORDER, which is the one channel that
-    # clears 3:1 against the unpicked chip beside it (WCAG 1.4.11).
-    assert "border-color: var(--ink-strong)" in rule.group(1)
+    # White with a rim: the state is carried by the rim, the one channel
+    # that clears 3:1 against the unpicked chip beside it (WCAG 1.4.11).
+    assert "background: var(--white)" in rule.group(1)
+    assert "inset 0 0 0 1.5px var(--ink)" in rule.group(1)
 
 
 # --- 6. the write path, over HTTP -----------------------------------------

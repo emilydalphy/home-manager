@@ -263,10 +263,11 @@ def test_now_shop_and_cook_each_have_their_moment_and_its_next_step():
     # The offer card and tonight's card step aside for the moment.
     assert "nudgeWrap.hidden = hideFurniture;" in today
     assert "tonightCard.hidden = hideFurniture && !panel._justTonight;" in today
-    # Shop: the sentence, with Plan in the dock.
-    assert "emptyMomentHtml('bag', 'Nothing to buy. Approve a week and I’ll build the list.')" in _function("groListHtml")
-    gro_dock = SHELL_JS[SHELL_JS.index("function groDockHtml("):SHELL_JS.index('// ---------- "Maybe already home" ----------')]
-    assert '<button type="button" class="dock-primary" data-gro="goto-plan">Go to Plan</button>' in gro_dock
+    # Shop (Z-EmptyShop): the sentence in a note card, with Plan under it.
+    assert "groEmptyNoteHtml()" in _function("groListHtml")
+    empty_note = _function("groEmptyNoteHtml")
+    assert "Nothing to buy. Approve a week and I’ll build the list." in empty_note
+    assert '<button type="button" class="btn-main" data-gro="goto-plan">Go to Plan</button>' in empty_note
     assert "case 'goto-plan':\n        activateTab('week', true);" in SHELL_JS
     # Cook: "Night off" and the next cook, and no dock on an empty day
     # (Option A, 2026-11-01, mockup A-Thu — it replaced the empty moment on a

@@ -451,8 +451,8 @@ console.log(JSON.stringify({
 """)
     assert out["dockMid"] == "", "no dead button while rows are left — the crumb is the way out"
     assert out["done"] is True
-    assert "All sorted." in out["body"] and "empty-moment" in out["body"]
-    assert out["head"] == {"back": "‹ Shop", "title": "Sort them all", "sub": ""}, "no '0 to sort' over the finish"
+    assert "All sorted." in out["body"] and "note-card" in out["body"]
+    assert out["head"] == {"back": "Back to Shop", "title": "Sort them all", "sub": ""}, "no '0 to sort' over the finish"
     assert 'data-gro="sortall-done"' in out["dock"] and "Back to the list" in out["dock"]
     assert out["dock"].count("gro-primary") == 1, "one apricot (rule 5)"
 

@@ -223,22 +223,19 @@ def test_shops_root_has_no_action_and_the_add_button_is_an_outline():
     add = SHELL_JS[SHELL_JS.index("function groAddButtonHtml("):SHELL_JS.index("function groDockHtml(")]
     assert "gro-primary" not in add and "dock-primary" not in add.split("function groAddSheetHtml(", 1)[0], (
         "the dock's add button renders no screen action")
-    assert 'class="gro-add-open"' in add
+    assert "cls: 'gro-add-open'" in add and "roundBtnHtml(" in add, "the head's round +"
     assert "function groAddRowHtml(" not in SHELL_JS, "the add row is gone"
     assert "gro-add-item" not in SHELL_JS[SHELL_JS.index("function groListHtml("):SHELL_JS.index("function groListFootHtml(")], (
         "the list body renders no add field")
 
     dock = _gro_dock_body()
-    assert "groAddButtonHtml()" in dock
+    assert "groAddButtonHtml()" not in dock, "the + is in the head (Z-Shop)"
     assert "gro-add-item" not in dock, "the field is the sheet's, not the dock's"
     # One step has an action, and it puts exactly one fill in the dock:
-    # SORT ALL's finish. LIST's "Go to Plan" over an empty list is the
-    # shared .dock-primary.
+    # SORT ALL's finish. "Go to Plan" sits with the empty line.
     assert dock.count("gro-primary") == 1
-    assert dock.count("dock-primary") == 1
-    outline = SHELL_CSS.split(".gro-add-open {", 1)[1][:600]
-    assert "background: var(--blush)" in outline and "--apricot" not in outline
-    assert "min-height: 48px" in outline
+    assert dock.count("dock-primary") == 0
+    assert "tools: groAddButtonHtml()" in SHELL_JS
 
 
 def test_the_dock_is_the_last_thing_in_its_container():
@@ -303,13 +300,11 @@ def test_a_screen_with_no_single_action_has_no_dock():
     """
     dock = _gro_dock_body()
     assert "start-trip" not in dock
-    assert "!groStoresPromptShouldShow() &&" in dock, "never over the shops question"
-    after_plan = dock.split("data-gro=\"goto-plan\"", 1)[1]
-    # 2026-10-30 (the declutter): LIST's dock is "+ Add something" alone.
-    # The pass is "Before you go ›" in the band (groBeforeYouGoHtml) and
-    # the sort is "Pick stores" on the Anywhere card — one tap away, and
-    # neither is the screen's button.
-    assert "return groAddButtonHtml();" in after_plan[:900], "LIST's dock is the add button alone"
+    # Z-Shop: LIST has no dock. The pass is "Before you go ›" under the head
+    # (groBeforeYouGoHtml) and the sort is "Pick stores" on the Anywhere
+    # card — one tap away, and neither is the screen's button.
+    empty = SHELL_JS[SHELL_JS.index("function groEmptyNoteHtml("):SHELL_JS.index("function groListHtml(")]
+    assert "groStoresPromptShouldShow() ? ''" in empty, "Go to Plan, never over the shops question"
     assert "beforeShopDockHtml" not in SHELL_JS
     sortall = dock.split("if (step === 'sortall') {", 1)[1]
     assert "return '';" in sortall[:120], "SORT ALL with rows left renders no dock"

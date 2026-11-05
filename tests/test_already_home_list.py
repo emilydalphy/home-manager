@@ -348,7 +348,7 @@ SHELL_JS = (pathlib.Path(__file__).resolve().parent.parent / "static" / "shell.j
 
 def _render(already, *, stored=None, toggles=0):
     start = SHELL_JS.index("  function groNotNeededHtml() {")
-    end = SHELL_JS.index('  // ---------- "Add something": the dock\'s button and its sheet ----------')
+    end = SHELL_JS.index('  // ---------- "Add something": the head\'s + and its sheet ----------')
     script = (
         "var store = " + json.dumps(stored or {}) + ";\n"
         "var window = { localStorage: { getItem: function (k) { return k in store ? store[k] : null; },"

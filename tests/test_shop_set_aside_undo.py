@@ -118,8 +118,8 @@ def test_the_chip_is_visually_apart_from_add_a_new_store():
     kinds of thing on the same card. Neither is apricot (Rule 5)."""
     else_rule = SHELL_CSS.split(".gro-pill-else {", 1)[1][:120]
     add_rule = SHELL_CSS.split(".gro-pill-add {", 1)[1][:120]
-    assert "var(--sand)" in else_rule and "var(--ink-secondary)" in else_rule
-    assert "background: none" in add_rule and "var(--apricot-label)" in add_rule
+    assert "var(--blush)" in else_rule
+    assert "background: none" in add_rule
     assert "var(--apricot)" not in else_rule
 
 

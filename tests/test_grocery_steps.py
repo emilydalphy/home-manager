@@ -113,9 +113,9 @@ def test_a_done_card_says_so_in_celadon():
     _in("'Done at ' + name", SHELL_JS, "\"Done at Costco\"", "shell.js")
     _in("var GRO_ANYWHERE_DONE = 'All bought';", SHELL_JS, "the Anywhere card's done line", "shell.js")
     _in("var GRO_ONE_LIST_DONE = 'Done shopping';", SHELL_JS, "the one-list card's done line", "shell.js")
-    _in(".gro-store.is-done .gro-store-name, .gro-store.is-done .gro-store-count { color: var(--celadon-label); }",
+    _in(".gro-store.is-done .gro-store-name, .gro-store.is-done .gro-store-count { color: var(--ink-secondary); }",
         SHELL_CSS, "the done head's ink", "shell.css")
-    _in(".gro-line.done .gro-line-qty { color: var(--ink-done); }", SHELL_CSS, "a struck row's amount", "shell.css")
+    _in(".gro-row.done .gro-name { color: var(--ink-secondary); }", SHELL_CSS, "a struck row's name", "shell.css")
 
 
 def test_the_band_says_this_week_and_counts_the_list():
@@ -184,7 +184,6 @@ def test_a_list_row_keeps_its_quiet_row_action():
     /exclude), and /remove with an undo. Quiet — no apricot."""
     _in("function groRowMenuHtml(", SHELL_JS, "the row menu", "shell.js")
     _in("data-gro=\"row-menu\"", SHELL_JS, "the ⋯ control", "shell.js")
-    _in("GRO_ICONS.dots", SHELL_JS, "its ⋯ glyph", "shell.js")
     _in("openRowId", SHELL_JS, "the one-open-at-a-time state", "shell.js")
     _in("data-gro=\"row-qty\"", SHELL_JS, "edit quantity", "shell.js")
     _in("'/update', { quantity: rowQty }", SHELL_JS, "its update call", "shell.js")
@@ -199,11 +198,10 @@ def test_a_list_row_keeps_its_quiet_row_action():
     _in("label: 'Undo',", SHELL_JS, "the remove undo", "shell.js")
     _not_in("function groOfferRememberToast(", SHELL_JS, "the remember-this-store toast (a store is remembered at once since 2026-09-21)", "shell.js")
     _in("function groRememberLocally(", SHELL_JS, "the screen's copy of the usual stores kept in step", "shell.js")
-    _in(".gro-rowmore", SHELL_CSS, "the ⋯ style", "shell.css")
     _in(".gro-rowmenu", SHELL_CSS, "the row menu style", "shell.css")
-    rowmore = SHELL_CSS.split(".gro-rowmore {", 1)[1][:400]
-    assert "width: 44px" in rowmore and "height: 44px" in rowmore
-    rowmenu = SHELL_CSS.split(".gro-rowmenu {", 1)[1][:900]
+    # The row is one button into its sheet (2026-10-30), 44px tall.
+    assert "min-height: 44px" in SHELL_CSS.split(".gro-line-open {", 1)[1][:200]
+    rowmenu = SHELL_CSS.split(".gro-rowsheet .gro-rowmenu {", 1)[1][:900]
     assert "--apricot" not in rowmenu
 
 
@@ -247,7 +245,7 @@ def test_the_quiet_sections_keep_their_places():
     # The closed Staples card left the foot on 2026-10-05 ("Before you
     # shop"): regulars are step 1 of that pass and Settings → Regulars now.
     _not_in("function groStaplesHtml(", SHELL_JS, "the staples card (moved to Settings → Regulars)", "shell.js")
-    _in("return groElsewhereHtml() + groNotNeededHtml() + groSpicesHtml();", SHELL_JS,
+    _in("var html = groElsewhereHtml() + groNotNeededHtml() + groSpicesHtml();", SHELL_JS,
         "the foot in one place", "shell.js")
     _not_in("function groAlreadyHaveHtml(", SHELL_JS, "the old two-part confirmation", "shell.js")
 
@@ -292,7 +290,7 @@ def test_sorting_has_one_way():
     _in("function groSortAllRender(", SHELL_JS, "its row-by-row render", "shell.js")
     _in("data-gro=\"sortall-pick\"", SHELL_JS, "its chips", "shell.js")
     _in("title: 'Sort them all'", SHELL_JS, "its title", "shell.js")
-    _in("emptyMomentHtml('bag', 'All sorted.')", SHELL_JS, "its finish", "shell.js")
+    _in("gro-sort-done\">All sorted.</p>", SHELL_JS, "its finish", "shell.js")
     for gone in ("function groSortHowHtml(", "function groSortHtml(", "data-gro=\"assign\"",
                  "data-gro=\"goto-sort-one\"", "data-gro=\"goto-sortall\"", "data-gro=\"sort-all-at\"",
                  "data-gro=\"sort-later\"", "GRO_FAST_SORT_MIN", "GRO_SORT_STEPS", "showToast('All sorted.');",

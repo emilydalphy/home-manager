@@ -347,9 +347,7 @@ loadGrocery().then(function () {
     # dock is "+ Add something" alone — the chat button floats beside it.
     # The pass is "Before you go ›" in the band and the sort is "Pick
     # stores" in the Anywhere card's head; neither is the dock's button.
-    assert 'data-gro="add-open"' in out["dock"], "the dock holds Add something"
-    assert "dock-primary" not in out["dock"] and "goto-sort" not in out["dock"], "ticking a row is still the list's action"
-    assert "start-trip" not in out["dock"]
+    assert out["dock"] == "", "Z-Shop: ticking a row is the list's action"
 
 
 @_needs_node

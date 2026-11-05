@@ -48,9 +48,8 @@ def _icon_prelude() -> str:
         + _extract_var("ICONS", SHELL_JS) + "\n"
         + _extract_var("SLOT_ICONS", SHELL_JS) + "\n"
         + _extract_var("PREP_SECTION_ICONS", SHELL_JS) + "\n"
-        + _extract_var("AISLE_ICONS", SHELL_JS) + "\n"
         + "\n".join(_extract(n, SHELL_JS) for n in (
-            "iconTileHtml", "slotIconTileHtml", "prepSectionTileHtml", "aisleIconHtml", "statusIconName", "statusIconHtml"))
+            "iconTileHtml", "slotIconTileHtml", "prepSectionTileHtml", "statusIconName", "statusIconHtml"))
         + "\n"
     )
 
@@ -93,7 +92,6 @@ def test_the_tile_is_44px_at_the_control_radius_in_tokens_only():
     assert ".icon-tile.is-sand { background: var(--sand); color: var(--apricot-label); }" in SHELL_CSS
     assert ".icon-tile svg { width: 22px; height: 22px; display: block; }" in SHELL_CSS
     assert ".status-icon svg { width: 15px; height: 15px; display: block; }" in SHELL_CSS
-    assert ".gro-aisle-icon svg { width: 16px; height: 16px; display: block; }" in SHELL_CSS
 
 
 def test_no_tile_on_the_spruce_cards():
@@ -235,7 +233,9 @@ def test_each_prep_section_and_made_on_the_night_has_its_tile():
 
 
 @_needs_node
-def test_each_shop_aisle_header_has_its_icon():
+def test_each_shop_aisle_is_a_tile_with_its_name_and_no_icon():
+    """Z-Shop: an aisle's tile says its name, with no icon. Superseded the
+    2026-11-01 aisle icons: Bright Dusk draws none."""
     script = (
         _icon_prelude()
         + _extract_var("GRO_SECTION_ORDER", SHELL_JS) + "\n"
@@ -247,11 +247,9 @@ def test_each_shop_aisle_header_has_its_icon():
         + "console.log(JSON.stringify({ icons: ICONS, order: GRO_SECTION_ORDER, html: groAisleGroupsHtml(items, {}) }));"
     )
     out = _run(script)
-    want = {"produce": "leaf", "dairy": "bottle", "meat/seafood": "fish", "pantry": "jar",
-            "canned": "can", "frozen": "snowflake", "other": "bag"}
-    assert set(out["order"]) == set(want), "a new aisle needs an icon"
-    for aisle, icon in want.items():
-        head = re.search(r'<div class="gro-aisle" data-aisle="' + re.escape(aisle) + r'">(.*?)</div>', out["html"])
+    for aisle in out["order"]:
+        head = re.search(r'<div class="tile gro-aisle-tile"><div class="gro-aisle" data-aisle="' + re.escape(aisle) + r'">(.*?)</div>', out["html"])
         assert head, aisle
-        assert head.group(1).startswith('<span class="gro-aisle-icon" aria-hidden="true">' + out["icons"][icon]), aisle
-        assert '<span class="gro-eyebrow">' in head.group(1)
+        assert head.group(1).startswith('<span class="gro-eyebrow">'), aisle
+    assert out["html"].count("gro-aisle-tile") == len(out["order"]), "one tile per aisle"
+    assert "gro-aisle-icon" not in SHELL_JS and "gro-aisle-icon" not in SHELL_CSS

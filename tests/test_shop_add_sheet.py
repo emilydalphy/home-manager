@@ -71,21 +71,16 @@ var html = groListHtml(data);
 console.log(JSON.stringify({
   addRowInList: html.indexOf('gro-add-item') !== -1 || html.indexOf('gro-scan-btn') !== -1,
   dock: groDockHtml(data, 'list'),
+  add: groAddButtonHtml(),
   sortallDock: (function () { groceryState.step = 'sortall'; var d = groDockHtml(data, 'sortall'); groceryState.step = 'list'; return d; })()
 }));
 """)
     assert out["addRowInList"] is False, "the add row is gone from the top of the list"
-    dock = out["dock"]
-    assert '<button type="button" class="gro-add-open" data-gro="add-open">' in dock
-    assert 'stroke-width="2.2"' in dock and 'd="M12 5v14M5 12h14"' in dock, "the plus, a stroke icon"
-    assert dock.endswith("Add something</button>")
-    # 2026-10-30 (the declutter, Emily's "Shop with store filter"): LIST's
-    # dock is "+ Add something" alone — the chat button floats beside it.
-    # The pass is "Before you go ›" in the band and the sort is "Pick
-    # stores" in the Anywhere card's head; neither is the dock's button.
-    add = dock[dock.index('class="gro-add-open"'):]
-    assert "dock-primary" not in add and "gro-primary" not in add, "an outline, not the screen's action"
-    assert "dock-primary" not in dock and "goto-sort" not in dock and "goto-beforeshop" not in dock
+    # Z-Shop: no dock on the root; the head's round + is the way in.
+    assert out["dock"] == ""
+    assert out["add"].startswith('<button type="button" class="round-btn gro-add-open" data-gro="add-open"')
+    assert 'stroke-width="2.2"' in out["add"] and 'd="M12 5v14M5 12h14"' in out["add"], "the plus, a stroke icon"
+    assert 'aria-label="Add something"' in out["add"]
     assert out["sortallDock"] == "", "the deeper steps keep their own docks"
 
 
@@ -93,18 +88,14 @@ console.log(JSON.stringify({
 def test_an_empty_list_keeps_go_to_plan_and_still_offers_add_something():
     out = _node("""
 setUp(0, [], ['Costco', 'Loblaws']);
-console.log(JSON.stringify(groDockHtml(groceryState.data, 'list')));
+console.log(JSON.stringify(groListHtml(groceryState.data)));
 """)
-    assert out.index('data-gro="goto-plan"') < out.index('data-gro="add-open"')
-    assert out.count("dock-primary") == 1
+    assert 'data-gro="goto-plan"' in out and out.count("btn-main") == 1
 
 
 def test_the_dock_button_is_an_outline_of_48px_and_the_sheet_is_at_body_level():
-    outline = SHELL_CSS.split(".gro-add-open {", 1)[1][:700]
-    assert "min-height: 48px" in outline and "background: var(--blush)" in outline
-    assert "border: 1.5px solid transparent" in outline
-    assert "--apricot" not in outline
-    assert 'id="gro-add-sheet" hidden role="dialog" aria-label="Add something"' in SHELL_HTML
+    assert 'id="gro-add-sheet" hidden role="dialog" aria-label="Add to your list"' in SHELL_HTML
+    assert '<span class="kit-sheet-title">Add to your list</span>' in SHELL_HTML, "Z-AddItem's title"
     assert 'id="gro-add-body"' in SHELL_HTML and 'id="gro-add-scrim"' in SHELL_HTML
     assert "#gro-scan-sheet, #gro-add-sheet {" in SHELL_CSS, "the same sheet mechanics as the photo sheet"
     # The row's CSS went with the row; the celadon note's own CSS went
@@ -128,25 +119,25 @@ console.log(JSON.stringify({
 """)
     c = out["costco"]
     assert 'id="gro-add-item" value="Cilantro"' in c
-    assert c.index('id="gro-add-item"') < c.index('data-gro="scan-open"') < c.index("Where do you get it?"), (
-        "the field with the camera beside it, then the question")
-    assert c.count('data-gro="add-store"') == 3, "one chip per store, plus Anywhere"
-    assert '<button type="button" class="gro-pill gro-pill-on" data-gro="add-store" data-store="Costco" aria-pressed="true">Costco</button>' in c
-    assert 'class="gro-pill" data-gro="add-store" data-store="Loblaws" aria-pressed="false">Loblaws</button>' in c
-    assert 'class="gro-pill" data-gro="add-store" data-store="" aria-pressed="false">Anywhere</button>' in c
-    assert '<button type="button" class="dock-primary gro-add-go" id="gro-add-go" data-gro="add">Add to Costco</button>' in c
+    assert c.index('id="gro-add-item"') < c.index('data-gro="scan-open"') < c.index('data-gro="add-store"'), (
+        "the field with the camera inside it, then the switcher (Z-AddItem)")
+    assert c.count('data-gro="add-store"') == 3, "All stores, plus one segment per store"
+    assert '<button type="button" class="seg-btn is-on" aria-pressed="true" data-gro="add-store" data-store="Costco">Costco</button>' in c
+    assert '<button type="button" class="seg-btn" aria-pressed="false" data-gro="add-store" data-store="Loblaws">Loblaws</button>' in c
+    assert '<button type="button" class="seg-btn" aria-pressed="false" data-gro="add-store" data-store="">All stores</button>' in c
+    assert '<button type="button" class="dock-primary gro-add-go" id="gro-add-go" data-gro="add">Add</button>' in c
     assert c.count("dock-primary") == 1
     # The celadon note under the chips is gone (2026-09-23, Emily: "remove
     # the blue text box" — the remembering doesn't need an announcement).
     assert "gro-add-note" not in c and "I’ll remember" not in c
 
     a = out["anywhere"]
-    assert 'data-store="" aria-pressed="true">Anywhere</button>' in a
-    assert 'data-gro="add">Add to the list</button>' in a
+    assert 'class="seg-btn is-on" aria-pressed="true" data-gro="add-store" data-store="">All stores</button>' in a
+    assert 'data-gro="add">Add</button>' in a
     assert "I’ll put it under" not in a and "gro-add-note" not in a
 
     e = out["empty"]
-    assert 'data-gro="add">Add to Loblaws</button>' in e
+    assert 'data-gro="add">Add</button>' in e
     assert "gro-add-note" not in e
 
 
@@ -160,17 +151,17 @@ var none = groAddSheetHtml({ typed: 'Cilantro', store: '' }, groceryState.data);
 console.log(JSON.stringify({ one: one, none: none }));
 """)
     for html in (out["one"], out["none"]):
-        assert "Where do you get it?" not in html and 'data-gro="add-store"' not in html
+        assert 'data-gro="add-store"' not in html
         assert "gro-add-note" not in html
-        assert 'data-gro="add">Add to the list</button>' in html
+        assert 'data-gro="add">Add</button>' in html
         assert 'id="gro-add-item"' in html and 'data-gro="scan-open"' in html
 
 
 @needs_node
 def test_the_chips_are_44px_pills():
-    pill = SHELL_CSS.split(".gro-pill {", 1)[1][:400]
+    pill = SHELL_CSS.split("\n.gro-pill {", 1)[1][:400]
     assert "min-height: 44px" in pill
-    assert "border-radius: 999px" in pill
+    assert "border-radius: var(--radius-pill)" in pill
 
 
 # --- 3. the pre-pick ------------------------------------------------------------

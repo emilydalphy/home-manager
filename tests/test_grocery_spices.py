@@ -508,7 +508,7 @@ console.log(JSON.stringify({ body: groListHtml(groceryState.data), dock: groDock
     assert "Nothing to buy" not in out["body"]
     assert "Spices this week" in out["body"]
     assert 'data-gro="goto-plan"' not in out["dock"], "nowhere to send anyone: there is a list"
-    assert 'data-gro="add-open"' in out["dock"]
+    assert out["dock"] == ""
 
 
 @_needs_node

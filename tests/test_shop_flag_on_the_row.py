@@ -338,9 +338,9 @@ def test_one_pair_of_labels_serves_both_doors():
 
 def test_the_row_flag_uses_tokens_only():
     """DESIGN_SYSTEM rule 9 — no literal colour in new work."""
-    block = SHELL_CSS[SHELL_CSS.index('.gro-athome {'):SHELL_CSS.index('.gro-sortall-row .gro-athome')]
+    block = SHELL_CSS[SHELL_CSS.index('.gro-freeze, .gro-athome {'):SHELL_CSS.index('.gro-sortall-row .gro-athome')]
     assert "#" not in block, "every colour goes through a token"
-    assert "var(--celadon-tint)" in block
+    assert "var(--blush)" in block
     # No apricot on it: ticking the row is still the screen's one action.
     assert "apricot" not in block
 

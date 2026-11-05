@@ -87,7 +87,16 @@ def quiet_head() -> str:
     return SHELL_JS[start:end] + "\n"
 
 
-STUB = """
+def bright_dusk_parts() -> str:
+    """The shared builders at the top of static/shell.js (roundBtnHtml,
+    sectionHeadHtml, segHtml, tileHtml): Shop draws its head + and its store
+    switcher with them. Sliced, never retyped."""
+    start = SHELL_JS.index("  function roundBtnHtml(")
+    end = SHELL_JS.index("  // ---------- Motion: opening/closing a sheet or dialog")
+    return SHELL_JS[start:end] + "\n"
+
+
+STUB = bright_dusk_parts() + """
 function escapeHtml(s){return String(s == null ? '' : s)
   .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 const POSTS = [];

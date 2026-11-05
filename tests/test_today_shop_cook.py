@@ -531,7 +531,7 @@ def test_the_settle_is_animation_three_not_a_fourth():
     motion = SHELL_CSS[SHELL_CSS.index("   Motion (Emily, 2026-09-11)."):]
     assert "a ticked row on Today's Shop / Cook cards" in motion
     # The dot rides the grocery checkbox's own transition rule.
-    assert ".gro-row .gro-box, .day-dot {" in motion
+    assert ".gro-box .tick-ring, .day-dot {" in motion
     assert ".day-node.is-done .day-node-title { text-decoration-color: currentColor; }" in motion
     strike = motion.split(".day-node-title {", 1)[1].split("}", 1)[0]
     assert "text-decoration: line-through;" in strike and "text-decoration-color: transparent;" in strike
