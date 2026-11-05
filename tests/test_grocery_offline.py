@@ -574,7 +574,7 @@ def test_a_failed_script_response_never_replaces_the_cached_good_copy():
 
 def test_service_worker_cache_version_was_bumped_for_the_new_fallback():
     src = SW.read_text(encoding="utf-8")
-    assert 'const CACHE_NAME = "pomona-shell-v9";' in src
+    assert 'const CACHE_NAME = "pomona-shell-v10";' in src
     assert 'if (url.pathname.startsWith("/api/")) return;' in src
 
 

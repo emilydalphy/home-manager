@@ -61,7 +61,11 @@
 //
 // v8 -> v9 (Bright Dusk, 2026-11-05): one font now, Figtree. Two precached
 // font files are gone, and a stale list would fail the whole install.
-const CACHE_NAME = "pomona-shell-v9";
+// v9 -> v10 (Bright Dusk, stage 4, 2026-11-05): pages, scripts and styles are
+// network-first, so the new look reaches a returning phone on its next load
+// with signal. The bump clears the last offline copy of the old look, so a
+// phone that opens offline doesn't show it after that one online load.
+const CACHE_NAME = "pomona-shell-v10";
 // Where an offline navigation lands when its own URL was never cached.
 // Every entry serves shell.html; the order only decides which copy is tried
 // first.
