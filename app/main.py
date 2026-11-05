@@ -431,6 +431,10 @@ async def security_headers(request: Request, call_next):
         # no page the household opens, and an offline reload of Shop got
         # the browser's own "no internet" page (2026-10-30).
         response.headers["Service-Worker-Allowed"] = "/"
+    if request.url.path.startswith("/static/plates/"):
+        # The Plan screen asks for a dozen at once, every open. A day, not
+        # forever: a redrawn plate keeps its address (plate_drawings.py).
+        response.headers["Cache-Control"] = "private, max-age=86400"
     return response
 
 
@@ -2758,11 +2762,19 @@ def set_memory_primary_member(req: PrimaryMemberRequest):
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
 
 
+def _cooker_view(weekly_plan_id: int | None = None) -> dict:
+    """get_cooker_view for a screen: with each meal's drawn plate. Added here
+    and not in the tool, which the chat also reads."""
+    view = tools.get_cooker_view(weekly_plan_id)
+    tools.attach_plates(view.get("meals") or [])
+    return view
+
+
 @app.get("/api/cooker-view")
 def get_cooker_view(weekly_plan_id: int | None = None):
     """Everything needed to cook the current (or given) weekly plan — powers the dedicated Cooker view page."""
     try:
-        view = tools.get_cooker_view(weekly_plan_id)
+        view = _cooker_view(weekly_plan_id)
     except Exception as e:
         logger.exception("Cooker view lookup failed")
         raise HTTPException(status_code=500, detail=f"Server error: {e}")
@@ -2905,7 +2917,7 @@ def recipe_photo(recipe_id: int, position: int):
 def recipes_list():
     """The household's recipes, A to Z, light fields only (tools.recipe_shelf)."""
     try:
-        recipes = tools.recipe_shelf()
+        recipes = tools.attach_recipe_plates(tools.recipe_shelf())
     except Exception:
         logger.exception("Recipe list failed")
         raise HTTPException(status_code=500, detail="Couldn't load your recipes just now.")
@@ -2931,6 +2943,7 @@ def recipe_detail(recipe_id: int):
             "citation", "photo_urls", "details_pending",
         )
     }
+    out["plate"] = tools.plate_for_recipe(recipe_id)
     # The amounts a cook reads, the ones cook mode and the servings stepper
     # show (defect hunt, 2026-10-22): the stored qty is the SHOPPING amount,
     # so this page said "1 bottle olive oil" over a method using 2 tbsp, and
@@ -3463,7 +3476,7 @@ def cooker_check_meal(req: CheckOffMealRequest):
     """Mark a planned meal cooked/pending directly from the Cooker view (no chat round-trip needed)."""
     try:
         ticked = tools.check_off_meal(req.entry_id, req.status)
-        view = tools.get_cooker_view()
+        view = _cooker_view()
         # What the tick took out of the kitchen, for the toast (Undo is
         # POST /api/cooker/undo-eaten). Absent when nothing came out.
         if ticked.get("kitchen_took"):
@@ -3491,7 +3504,7 @@ def cooker_undo_eaten(req: UndoEatenRequest):
     inventory row that tick changed, exactly (tools.undo_eaten_meal)."""
     try:
         tools.undo_eaten_meal(req.entry_id)
-        return tools.get_cooker_view()
+        return _cooker_view()
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
@@ -3536,7 +3549,7 @@ def cooker_cook_ahead(req: CookAheadRequest):
         result = tools.set_cook_ahead(req.source_entry_id, req.covered_entry_ids)
         if isinstance(result, str):
             raise HTTPException(status_code=400, detail=result)
-        view = tools.get_cooker_view()
+        view = _cooker_view()
     except HTTPException:
         raise
     except Exception as e:
@@ -3550,7 +3563,7 @@ def cooker_check_prep(req: CheckOffPrepRequest):
     """Mark a prep task done/pending directly from the Cooker view (no chat round-trip needed)."""
     try:
         tools.check_off_prep_step(req.prep_task_id, req.status)
-        view = tools.get_cooker_view()
+        view = _cooker_view()
     except tools.InvalidPrepStatus as e:
         # A bad status is a bad request, not a missing prep task — 422 like
         # check-meal above, not the 404 below. Must come first: it IS a
@@ -3575,7 +3588,7 @@ def cooker_prep_list_mark(req: PrepListMarkRequest):
     """
     try:
         result = tools.set_prep_list_mark(req.weekly_plan_id, req.prep_date, req.key, req.action)
-        view = tools.get_cooker_view()
+        view = _cooker_view()
     except LookupError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except ValueError as e:
@@ -3605,7 +3618,7 @@ def cooker_fill_recipe(req: FillRecipeRequest):
     """Generate and save a full step-by-step for a recipe that's missing one, directly from the Cooker view."""
     try:
         fill_in_recipe(req.recipe_name)
-        view = tools.get_cooker_view()
+        view = _cooker_view()
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except AssistantUnavailableError as e:
@@ -4195,6 +4208,8 @@ def week_menu(weekly_plan_id: int | None = None):
     """
     try:
         menu = tools.get_week_menu(weekly_plan_id)
+        # Here and not in the tool, for the reason given below.
+        tools.attach_plates(tools.week_menu_entries(menu))
         # "I added a small side" — said once, and this is the moment it
         # actually reaches a person, so this is where it gets marked as
         # said. Not inside get_week_menu, which the assistant also calls
@@ -6277,7 +6292,7 @@ def add_prep_cut_view(req: PrepCutRequest):
             raise HTTPException(status_code=404, detail="No current plan to add prep to.")
     try:
         tools.add_prep_cut(plan_id, req.prep_date, req.description, req.entry_ids)
-        return tools.get_cooker_view(plan_id)
+        return _cooker_view(plan_id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

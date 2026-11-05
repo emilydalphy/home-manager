@@ -423,6 +423,8 @@ names, correct the claim in the same change.
   a child or the listed kit gets a small edit (`app/tools/library_tweak.py`),
   never a rewrite; anything wrong with the edit leaves it as filed.
 
+- **Drawn plates are generated, not edited** (2026-11-05). `plates/specs` is the source; `python3 plates/build_plates.py` writes `static/plates/*.svg` and `data/plate_index.json`, and `tests/test_plate_drawings.py` fails if they drift. Screens use `Plates.html(key, size)` (`static/plates.js`). Add a plate key in a route, not in a tool the chat reads (`tools.attach_plates`).
+
 - **`home_manager` logger's INFO output was silently dropped** until
   `main.py` added `logging.basicConfig(level=logging.INFO, ...)`. Nothing
   else in the app configures logging, and Python's default "handler of last

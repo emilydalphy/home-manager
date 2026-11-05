@@ -572,6 +572,10 @@ from .plates import (  # noqa: F401
     side_ingredients,
     suggest_additions,
 )
+# The drawn plate for a dish (2026-11-05), not the full-plate rule above.
+from .plate_drawings import attach as attach_plates  # noqa: F401
+from .plate_drawings import attach_to_recipes as attach_recipe_plates  # noqa: F401
+from .plate_drawings import plate_for_recipe, week_menu_entries  # noqa: F401
 from .plates import get_sides as get_plate_sides  # noqa: F401
 from .plates import has_food_groups as plate_has_food_groups  # noqa: F401
 from .plates import is_complete as plate_is_complete  # noqa: F401

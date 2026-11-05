@@ -414,6 +414,9 @@ CREATE TABLE IF NOT EXISTS recipes (
     -- recipe_library.file_new_recipe never files it, also when the recipe
     -- pass writes it up later (2026-11-03).
     library_private INTEGER NOT NULL DEFAULT 0,
+    -- The drawn plate (tools/plate_drawings.py): a file in static/plates.
+    -- NULL = worked out on read.
+    plate_key TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

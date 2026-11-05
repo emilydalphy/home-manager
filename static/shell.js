@@ -12166,6 +12166,7 @@
         idx: idx,
         entryId: meal.entry_id,
         slot: meal.slot || 'dinner',
+        plate: meal.plate,
         isReheat: isReheat,
         isTakeout: isTakeout,
         done: done,
@@ -12365,7 +12366,8 @@
     return '<button type="button" class="cook-today-row' + (row.done ? ' is-done' : '') + (isNext ? ' is-next' : '') + '" ' +
         'data-cook="focus" data-idx="' + row.idx + '">' +
       mark +
-      (typeof slotIconTileHtml === 'function' ? slotIconTileHtml(row.slot) : '') +
+      ((typeof Plates !== 'undefined' && Plates.html(row.plate, 44)) ||
+        (typeof slotIconTileHtml === 'function' ? slotIconTileHtml(row.slot) : '')) +
       '<span class="cook-today-text">' +
         '<span class="cook-today-slot">' + escapeHtml(label) + '</span>' +
         '<span class="cook-today-dish">' + escapeHtml(row.title) + '</span>' +
@@ -19161,6 +19163,9 @@
     var at = ' data-wk-day-index="' + i + '"';
     var snack = isSnackSlot(slot);
     if (entry && entry.state === 'planned') {
+      // The dish's drawn plate takes the slot tile's place; the card's
+      // heading already says which meal it is.
+      tile = (typeof Plates !== 'undefined' && Plates.html(entry.plate, 44)) || tile;
       var name = mealDisplayName(entry);
       var meta = planDayRowMeta(day, entry);
       var step = planServeLine(day, slot, entry);
@@ -19230,12 +19235,13 @@
       var changed = typeof wasRecentlyChanged === 'function' &&
         dish.days.some(function (d) { return wasRecentlyChanged(d.date, d.key); });
       var meta = [wkMenuDaysPhrase(dish, days), fact].filter(Boolean).join(' · ');
+      var plate = typeof Plates !== 'undefined' ? Plates.html(first.entry.plate, 44) : '';
       if (slot === 'snack') {
         // A snack all behind us has nothing to change: a line to read.
-        if (!ahead.length) return planRowHtml({ name: dish.name, meta: meta, past: true });
+        if (!ahead.length) return planRowHtml({ tile: plate, name: dish.name, meta: meta, past: true });
         return planRowHtml({
           attrs: ' data-plan-snack="' + first.key + '" data-wk-day-index="' + first.index + '"',
-          name: dish.name, changed: changed, meta: meta,
+          tile: plate, name: dish.name, changed: changed, meta: meta,
           label: dish.name + ' — change it'
         });
       }
@@ -19243,7 +19249,7 @@
         attrs: ' data-plan-row="' + first.key + '" data-wk-day-index="' + first.index + '"' +
           (ahead.length > 1 ? ' data-plan-dates="' + escapeHtml(ahead.map(function (d) { return d.date; }).join(',')) + '"' : '') +
           (dish.isLeftover ? ' data-plan-reheat="1"' : ''),
-        name: dish.name, changed: changed, past: !ahead.length,
+        tile: plate, name: dish.name, changed: changed, past: !ahead.length,
         done: dish.days.every(function (d) { return !!d.entry.cooked; }),
         // A breakfast batch made on the prep day says so: "Mon–Wed · 30 min
         // · Made Sunday" (schedule_note, prep_freshness.draft_batch_notes).
@@ -21559,6 +21565,7 @@
     return '<button type="button" class="crumb" data-wk-back="' + back + '">‹ ' +
         escapeHtml(back === 'week' ? 'This week' : back === 'review' ? 'Check the week' : dayName(day.date, { weekday: 'long' })) + '</button>' +
       '<div class="wk-meal-body recipe-body">' +
+        (typeof Plates !== 'undefined' ? Plates.html(entry.plate, 96) : '') +
         '<h1 class="recipe-title">' + escapeHtml(mealDisplayName(entry)) + '</h1>' +
         (line ? '<p class="recipe-line">' + escapeHtml(line) + '</p>' : '') +
         (typeof mealSourceLinkHtml === 'function' ? mealSourceLinkHtml(entry) : '') +
@@ -26485,7 +26492,8 @@
 
   // The title: the dish, in the display face at screen-title size.
   function recipeTitleHtml(meal) {
-    return '<h1 class="recipe-title' + (meal.cooked_status === 'done' ? ' is-done' : '') + '">' +
+    return (typeof Plates !== 'undefined' ? Plates.html(meal.plate, 96) : '') +
+      '<h1 class="recipe-title' + (meal.cooked_status === 'done' ? ' is-done' : '') + '">' +
       escapeHtml(meal.meal || 'Dinner') + '</h1>';
   }
 

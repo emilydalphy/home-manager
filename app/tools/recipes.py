@@ -18,6 +18,7 @@ from . import quantities as _quantities
 from . import bring_over as _bring_over
 from . import spices as _spices
 from . import already_home as _already_home
+from . import plate_drawings as _plate_drawings
 
 logger = logging.getLogger("home_manager")
 
@@ -289,8 +290,8 @@ def add_recipe(
         cur = conn.execute(
             "INSERT INTO recipes (household_id, name, notes, ingredients_json, tags_json, food_groups_json, cuisine, main_protein, "
             "instructions_json, default_servings, prep_time_minutes, cook_time_minutes, advance_prep_notes, advance_prep_step_indices_json, "
-            "source_url, source_book, source_author, source_page, details_pending, dish_note, from_draft) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "source_url, source_book, source_author, source_page, details_pending, dish_note, from_draft, plate_key) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 household_id(), name, notes, json.dumps(ingredients), json.dumps(tags or []),
                 json.dumps(food_groups or []), cuisine, main_protein,
@@ -298,6 +299,8 @@ def add_recipe(
                 advance_prep_notes, json.dumps(advance_prep_step_indices or []), source_url or "",
                 (source_book or "").strip(), (source_author or "").strip(), (source_page or "").strip(),
                 1 if details_pending else 0, (dish_note or "").strip(), 1 if from_draft else 0,
+                # Its drawn plate, straight away and with no model call.
+                _plate_drawings.to_store(_plate_drawings.plate_for(name, main_protein, ingredients, cuisine=cuisine)),
             ),
         )
         conn.commit()
@@ -659,6 +662,8 @@ def update_recipe_details(
                 f"UPDATE recipes SET {', '.join(fields)} WHERE id = ? AND household_id = ?",
                 params,
             )
+            if any(f.startswith("ingredients_json") for f in fields):
+                _plate_drawings.settle(conn, existing["id"], existing["ingredients_json"])
             if users:
                 # Less what is already in the cart or bought for those nights.
                 _recipe_change._rebuy_after_edit(conn, users)
@@ -772,6 +777,8 @@ def fill_recipe_details(
                 row["id"], household_id(),
             ),
         )
+        # Now the list is known, the plate is chosen from it.
+        _plate_drawings.settle(conn, row["id"])
         conn.commit()
     except Exception:
         conn.rollback()

@@ -12536,6 +12536,13 @@ body.first-open-active { overflow: hidden; }
 .status-icon svg { width: 15px; height: 15px; display: block; }
 .wk-qrow .slot-tile { margin-right: 2px; }
 .wk-qrow.is-past .slot-tile, .wk-qrow.is-quiet .slot-tile { opacity: .62; }
+.wk-qrow .dish-plate { margin-right: 2px; }
+.wk-qrow.is-past .dish-plate, .wk-qrow.is-done .dish-plate, .cook-today-row.is-done .dish-plate { opacity: .62; }
+/* A drawn plate (static/plates.js). The shadow is the app's, not the
+   drawing's: a white rim disappears on cream without it (PLATE_RULES 39). */
+.dish-plate { display: block; flex: 0 0 auto; object-fit: contain; filter: drop-shadow(0 2px 5px rgba(20, 38, 74, .18)); }
+.dish-plate.on-dark { filter: none; }
+.recipe-body > .dish-plate { margin-bottom: 12px; }
 .quiet-section { display: flex; flex-direction: column; gap: 8px; }
 .quiet-section-head {
   font-family: var(--font-body);

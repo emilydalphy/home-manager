@@ -437,6 +437,10 @@ _MIGRATIONS = [
     # the starter list's own `meal`), and what a variant was written around
     # (kinds only, never a household's words) — recipe_library.file_new_recipe.
     ("recipes", "library_private", "INTEGER NOT NULL DEFAULT 0"),
+    # The drawn plate this recipe was given (plate_drawings.py, 2026-11-05).
+    # NULL = worked out on read: every older recipe stays NULL, nothing is
+    # backfilled.
+    ("recipes", "plate_key", "TEXT"),
     ("recipe_library", "meal", "TEXT NOT NULL DEFAULT ''"),
     ("recipe_library", "adapted_for_json", "TEXT NOT NULL DEFAULT '[]'"),
     # 1 for a dish the week-draft generator wrote (agent._ensure_recipe_saved);

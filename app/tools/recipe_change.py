@@ -58,6 +58,7 @@ from . import grocery as _grocery
 from . import leftovers as _leftovers
 from . import quantities as _quantities
 from . import recipes as _recipes
+from . import plate_drawings as _plate_drawings
 from ._shared import household_id, member_id
 
 logger = logging.getLogger("home_manager")
@@ -1014,7 +1015,7 @@ def rewrite_spec(entry_id: int) -> dict:
 _SNAPSHOT_COLUMNS = (
     "name", "ingredients_json", "instructions_json", "default_servings",
     "prep_time_minutes", "cook_time_minutes", "advance_prep_notes",
-    "advance_prep_step_indices_json",
+    "advance_prep_step_indices_json", "plate_key",
 )
 
 
@@ -1128,6 +1129,7 @@ def apply_rewrite(spec: dict, detail: dict, request_text: str, this_meal_only: b
             f"SELECT {', '.join(_SNAPSHOT_COLUMNS)} FROM recipes WHERE id = ? AND household_id = ?",
             (target_id, hid),
         ).fetchone())
+        list_before = snapshot["ingredients_json"]
         if shared_elsewhere:
             # Only this chain's nights still ahead have shopping to move.
             users = {plan_id: _live_ids(conn, ids)} if approved else {}
@@ -1163,6 +1165,7 @@ def apply_rewrite(spec: dict, detail: dict, request_text: str, this_meal_only: b
              json.dumps(detail.get("advance_prep_step_indices") or []),
              target_id, hid),
         )
+        _plate_drawings.settle(conn, target_id, list_before or "[]")
         after = _resync_users(conn, users) if users else before
         conn.commit()
     except Exception:
