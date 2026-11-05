@@ -57,6 +57,7 @@
 	</array>
 	<key>WKAppBoundDomains</key>
 	<array>
+		<string>app.heypomona.com</string>
 		<string>home-manager-production-4949.up.railway.app</string>
 		<string>localhost</string>
 	</array>
