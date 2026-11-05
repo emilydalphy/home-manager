@@ -38,10 +38,10 @@ def test_ask_sits_in_the_bar_and_the_dock_runs_the_full_width():
 
 
 def test_one_line_for_the_composer_on_every_tab():
-    assert "_default: 'Ask anything about the week'" in SHELL_JS
+    assert "_default: 'Ask anything'" in SHELL_JS
     for old in ("today: 'Ask me anything", "week: 'Tweak this week", "kitchen: 'What", "grocery: 'Add oat milk"):
         assert old not in SHELL_JS, old
-    assert SHELL_HTML.count('placeholder="Ask anything about the week"') == 1
+    assert SHELL_HTML.count('placeholder="Ask anything"') == 1
     assert 'Ask me anything about today&hellip;' not in SHELL_JS
     # The sheet's title, as drawn (Z-Ask).
     assert '<div class="ask-sheet-title">Ask Pomona</div>' in SHELL_HTML

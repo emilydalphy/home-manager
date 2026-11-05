@@ -406,7 +406,7 @@ def test_the_chat_carries_one_line_on_every_tab():
     """Since 2026-09-11 the chat is an icon and its composer says the same
     thing on every tab — the topic isn't always today (Emily). The per-tab
     hints, Kitchen's included, went with the always-open bar."""
-    _assert_in("_default: 'Ask anything about the week'", SHELL_JS,
+    _assert_in("_default: 'Ask anything'", SHELL_JS,
                "the one chat hint", "shell.js")
     assert "kitchen: 'What" not in SHELL_JS
 

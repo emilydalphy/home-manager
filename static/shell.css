@@ -2499,6 +2499,7 @@ button.day-tick:hover .day-dot { border-color: var(--celadon); }
      scrollbar only appears once there's something to scroll. resize:none
      because growth is driven by content, not a user-draggable handle. */
   resize: none;
+  overflow-x: hidden;
   overflow-y: hidden;
   max-height: 128px; /* ~4-5 lines; mirrors ASK_COMPOSER_MAX_HEIGHT in shell.js */
 }
