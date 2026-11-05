@@ -62,7 +62,7 @@ def test_the_list_is_a_to_z_with_light_fields(signed_in):
     assert body["count"] == 3
     assert [r["name"] for r in body["recipes"]] == ["Apple Crumble", "Banana Bread", "weeknight chili"]
     chili = body["recipes"][2]
-    assert set(chili) == {"id", "name", "prep_time_minutes", "cook_time_minutes", "citation", "has_photo"}
+    assert set(chili) == {"id", "name", "prep_time_minutes", "cook_time_minutes", "citation", "has_photo", "plate"}
     assert chili["citation"]["text"] == "From seriouseats.com"
     assert chili["prep_time_minutes"] == 15 and chili["cook_time_minutes"] == 30
     assert body["recipes"][0]["citation"] is None
