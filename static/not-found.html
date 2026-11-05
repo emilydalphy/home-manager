@@ -27,17 +27,25 @@
   body {
     margin: 0;
     min-height: 100dvh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
+    padding: calc(env(safe-area-inset-top, 0px) + clamp(40px, calc(100dvh - 694px), 150px)) 16px calc(34px + env(safe-area-inset-bottom, 0px));
+    box-sizing: border-box;
+    -webkit-font-smoothing: antialiased;
   }
-  .nf-wrap { max-width: 320px; text-align: center; }
-  .nf-mark { width: 40px; height: 40px; color: var(--apricot-label); display: block; margin: 0 auto 16px; }
-  .nf-line { font-size: 21px; margin: 0 0 20px; }
+  .nf-wrap { max-width: 420px; width: 100%; margin: 0 auto; }
+  .nf-line {
+    margin: 0 4px 6px;
+    font-size: 32px;
+    line-height: 38px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+  }
   .nf-back {
-    display: inline-flex; align-items: center; justify-content: center; min-height: 44px;
-    padding: 0 4px; font-weight: 700; font-size: 0.95rem;
+    display: flex; align-items: center; justify-content: center;
+    height: 52px; margin-top: 20px;
+    border-radius: var(--radius-button);
+    background: var(--apricot); color: var(--night-ink);
+    font-size: 16px; font-weight: 700; text-decoration: none;
   }
 </style>
 </head>
@@ -46,12 +54,6 @@
   <!-- The Pomona mark (static/shell.js's MARK_PATHS) — a logo, so it keeps
        its own 1.8 stroke rather than the icon set's 2.2 (DESIGN_SYSTEM.md
        §2 rule 7). -->
-  <svg class="nf-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-    <path d="M12 20.4c-3.1 0-5.6-2.6-5.6-5.9 0-3.2 2.5-5.7 5.6-5.7s5.6 2.5 5.6 5.7c0 3.3-2.5 5.9-5.6 5.9z"/>
-    <path d="M12 9V6.2"/>
-    <path d="M12.5 7.1c.9-2.2 3.2-3.1 5.3-2.7.4 2.2-.7 4.3-2.8 4.7-1.4.3-2.5-.6-2.5-2z"/>
-    <path d="M12 10.2c-1.1 1.6-1.1 6.3 0 8.2"/>
-  </svg>
   <h2 class="nf-line">That page isn&rsquo;t here.</h2>
   <a class="nf-back" href="/">&larr; Back to Plan</a>
 </div>

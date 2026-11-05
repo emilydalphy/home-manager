@@ -57,8 +57,8 @@ def test_the_sheet_says_its_four_rows_verbatim_and_offers_two_ways_out():
         ("Nothing’s locked in", "Approve now, change any day later from the Plan tab."),
         ("If I get it wrong, say so", "Correct me right where it happens and I’ll remember for next week."),
     ]
-    assert html.count('class="help-row-icon"') == 4
-    assert html.count('stroke-width="2.2"') == 4, "every row's icon is a stroke icon at the one width"
+    assert html.count('class="help-row"') == 4
+    assert 'help-row-icon' not in html, "no filler pictures"
     assert '<button type="button" class="help-quiet" data-help="snw">Something not working? Tell me</button>' in html
     assert '<button type="button" class="help-outline" data-help="close">Got it</button>' in html
 

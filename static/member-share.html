@@ -15,64 +15,61 @@
   body {
     max-width: 640px;
     margin: 0 auto;
-    padding: 24px;
+    padding: 58px 16px 34px;
+    -webkit-font-smoothing: antialiased;
   }
-  h1 { font-size: 1.6rem; margin: 0 0 4px; }
-  p.subtitle { margin: 0 0 1.5rem; }
+  h1 { margin: 0 4px 3px; font-size: 32px; line-height: 38px; font-weight: 700; letter-spacing: -0.03em; }
+  p.subtitle { margin: 0 4px 14px; font-size: 14px; line-height: 20px; font-weight: 500; color: var(--slate); }
   .card {
-    background: var(--surface-raised);
-    border: 1px solid var(--hairline);
+    background: var(--white);
     border-radius: var(--radius-card);
     box-shadow: var(--shadow-card);
-    padding: 16px 18px;
-    margin-bottom: 14px;
+    padding: 14px;
+    margin-bottom: 10px;
   }
-  .card h2 { font-size: 1rem; margin: 0 0 4px; }
-  .card .hint { color: var(--ink-secondary); font-size: 0.8rem; margin: 0 0 10px; }
+  .card h2 { margin: 0 0 2px; font-size: 16px; line-height: 22px; font-weight: 700; }
+  .card .hint { color: var(--slate); font-size: 14px; line-height: 20px; margin: 0 0 10px; }
   .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
   .chip {
-    background: var(--celadon-tint);
-    color: var(--ink-strong);
-    border: 1px solid var(--hairline);
-    font-family: var(--font-body);
+    background: var(--blush);
+    color: var(--night-ink);
     font-weight: 500;
-    padding: 5px 12px;
-    border-radius: var(--radius-pill);
-    font-size: 0.85rem;
+    padding: 6px 12px;
+    border-radius: var(--radius-control);
+    font-size: 14px;
   }
-  .empty { color: var(--ink-secondary); font-size: 0.85rem; font-style: italic; }
-  .error { color: var(--urgent); font-size: 0.95rem; padding: 1rem 0; }
+  .empty { color: var(--slate); font-size: 14px; }
+  .error { color: var(--clay); font-size: 16px; line-height: 22px; padding: 14px 4px; }
   .add-row { display: flex; gap: 8px; }
   input[type=text], textarea {
     flex: 1;
-    padding: 8px 10px;
-    border-radius: var(--radius-control);
-    border: 1px solid var(--hairline);
-    font-size: 0.95rem;
-    background: var(--surface-raised);
+    min-width: 0;
+    height: 52px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: var(--radius-button);
+    box-shadow: inset 0 0 0 1.6px var(--line);
+    background: var(--cream);
     color: var(--ink);
-    font-family: var(--font-body);
+    font: 500 16px var(--font-body);
   }
-  textarea { width: 100%; min-height: 70px; resize: vertical; box-sizing: border-box; margin-bottom: 8px; }
+  input[type=text]:focus, textarea:focus { outline: 2px solid var(--dusk); outline-offset: 2px; }
+  textarea { display: block; width: 100%; height: auto; min-height: 88px; padding: 12px 14px; line-height: 22px; resize: vertical; margin-bottom: 8px; }
   button.action {
-    font-family: var(--font-body);
-    font-weight: 700;
-    padding: 11px 16px;
-    min-height: 44px;
-    border-radius: var(--radius-control);
-    border: none;
-    background: var(--spruce);
-    color: var(--on-spruce-ink);
-    font-size: 0.9rem;
+    height: 52px;
+    padding: 0 18px;
+    border: 0;
+    border-radius: var(--radius-button);
+    background: var(--apricot);
+    color: var(--night-ink);
+    font: 700 16px var(--font-body);
     cursor: pointer;
-    transition: background 0.15s ease;
   }
-  button.action:hover:not(:disabled) { background: var(--spruce-raised); }
   button.action:disabled { opacity: 0.6; cursor: default; }
-  .note-item { padding: 8px 0; border-bottom: 1px solid var(--hairline); font-size: 0.9rem; color: var(--ink); font-family: var(--font-body); }
+  .note-item { padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 16px; line-height: 22px; color: var(--ink); }
   .note-item:last-child { border-bottom: none; }
-  .note-date { color: var(--ink-secondary); font-size: 0.75rem; }
-  .footer-note { color: var(--ink-secondary); font-size: 0.8rem; margin-top: 1.5rem; text-align: center; }
+  .note-date { color: var(--slate); font-size: 13px; }
+  .footer-note { color: var(--slate); font-size: 13px; line-height: 18px; margin-top: 20px; text-align: center; }
 </style>
 </head>
 <body>

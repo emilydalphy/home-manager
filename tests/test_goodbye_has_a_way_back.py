@@ -37,7 +37,7 @@ def test_goodbye_links_back_to_sign_in_for_both_endings():
 def test_the_way_back_is_tall_enough_to_tap():
     html = _page()
     rule = re.search(r"\.gb-back\s*\{([^}]*)\}", html)
-    assert rule and "min-height: 44px" in rule.group(1)
+    assert rule and int(re.search(r"height: (\d+)px", rule.group(1)).group(1)) >= 44
 
 
 def test_the_way_back_lands_somewhere_a_signed_out_device_can_open():

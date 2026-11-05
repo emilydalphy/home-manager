@@ -11,11 +11,12 @@
 body {
   margin: 0;
   min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
 }
 .legal-wrap {
   max-width: 640px;
   margin: 0 auto;
-  padding: 24px 20px 56px;
+  padding: calc(env(safe-area-inset-top, 0px) + 14px) 20px 56px;
   box-sizing: border-box;
 }
 .legal-top {
@@ -23,85 +24,78 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 14px;
 }
 .legal-mark {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
   min-height: 44px;
   color: var(--ink);
   text-decoration: none;
-  font-family: var(--font-display);
   font-weight: 700;
-  font-size: 19px;
-  letter-spacing: -0.02em;
+  font-size: 16px;
 }
 .legal-wrap .legal-mark { color: var(--ink); }
-.legal-mark svg { width: 26px; height: 26px; color: var(--apricot-label); }
-.legal-back {
+.legal-mark svg { display: none; }
+.legal-wrap .legal-back {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
-  padding: 0 4px;
-  font-weight: 700;
-  font-size: 15px;
-  color: var(--apricot-label);
+  padding: 0 16px;
+  border-radius: var(--radius-pill);
+  background: var(--blush);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--night-ink);
   text-decoration: none;
 }
-.legal-back:hover { color: var(--apricot-label-hover); }
 
-/* The card's banner. Sand, not urgent: nothing is wrong, the words are
-   simply not final yet (rule 3 keeps --urgent for genuine trouble). */
+/* The banner on a page that isn't final. Blush: nothing is wrong. */
 .legal-draft {
   display: flex;
   flex-direction: column;
   gap: 2px;
   margin: 0 0 20px;
   padding: 12px 14px;
-  border-radius: var(--radius-control);
-  background: var(--sand);
-  border: 1.5px solid var(--hairline-strong);
-  font-size: 15px;
-  font-weight: 600;
-  line-height: 1.4;
-  color: var(--ink);
+  border-radius: var(--radius-button);
+  background: var(--blush);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  color: var(--night-ink);
 }
 .legal-draft-eyebrow {
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--apricot-label);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--night-ink);
 }
 
 .legal-wrap h1 {
-  font-family: var(--font-display);
-  font-size: 31px;
+  font-size: 32px;
   font-weight: 700;
-  letter-spacing: -0.038em;
-  line-height: 1.1;
-  margin: 0 0 6px;
+  letter-spacing: -0.03em;
+  line-height: 38px;
+  margin: 0 0 3px;
 }
 .legal-version {
-  margin: 0 0 24px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--ink-secondary);
+  margin: 0 0 22px;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  color: var(--slate);
 }
 .legal-wrap h2 {
-  font-family: var(--font-display);
-  font-size: 21px;
+  font-size: 26px;
   font-weight: 700;
-  letter-spacing: -0.028em;
-  margin: 32px 0 8px;
+  letter-spacing: -0.025em;
+  line-height: 30px;
+  margin: 30px 0 8px;
 }
 .legal-wrap h3 {
-  font-family: var(--font-display);
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 700;
-  letter-spacing: -0.02em;
-  margin: 20px 0 6px;
+  line-height: 22px;
+  margin: 20px 0 4px;
 }
 /* A section a link lands on (/privacy#claude, from Sharing with Claude):
    a little air above it, and clear of the notch in the iPhone app. */
@@ -111,29 +105,28 @@ body {
 .legal-wrap p,
 .legal-wrap li {
   font-size: 16px;
-  line-height: 1.55;
+  line-height: 24px;
 }
 .legal-wrap p { margin: 0 0 12px; }
 .legal-wrap ul { margin: 0 0 12px; padding-left: 22px; }
 .legal-wrap li { margin: 0 0 6px; }
-.legal-wrap a { color: var(--apricot-label); font-weight: 600; }
-.legal-wrap a:hover { color: var(--apricot-label-hover); }
+.legal-wrap a { color: var(--ink); font-weight: 600; }
 
-/* A placeholder the lawyer or Emily fills in — square brackets in the
-   words, and marked so nobody mistakes one for a finished line. */
+/* A placeholder the lawyer or Emily fills in: square brackets in the words,
+   and marked so nobody mistakes one for a finished line. */
 .legal-fill {
-  background: var(--sand);
+  background: var(--blush);
   border-radius: 4px;
   padding: 0 4px;
   font-weight: 700;
 }
 
 /* The three pages, linked to each other at the foot. Each link is its own
-   44px row (rule 6). */
+   44px row. */
 .legal-foot {
   margin-top: 40px;
-  padding-top: 16px;
-  border-top: 1.5px solid var(--hairline);
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
   display: flex;
   flex-wrap: wrap;
   gap: 4px 20px;
@@ -142,5 +135,6 @@ body {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
-  font-size: 15px;
+  font-size: 14px;
+  color: var(--slate);
 }
