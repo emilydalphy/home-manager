@@ -13,7 +13,8 @@ ARITY = dict(well=1, pool=(2, 3), rice=7, mash=7, band=4, strips=(6, 8), slices=
              rounds=6, glass=3, eggplant=(3, 5), ribbons=5, shrimp=(5, 7), omelette=5, steak=7, bread=5, tortellini=5, fillet=8, bacon=4, chop=6, potatoes=4, wedgering=5, noodles=5, wrap=4, pizza=4, pancakes=3, flatbread=3, dipbowl=3, bowl=2, pastries=4, stuffed=3, cutlet=7, block=7, rolls=3, wedges=5, yolk=3, ringbread=1, skewers=(1, 4), tacos=(1, 5), sandwiches=1, toast=(1, 4), cups=(1, 5),
              drumstick=(7, 8), muffin=(3, 5), quesadilla=5, burger=(2, 7), mushroom=(5, 7), broccoli=(4, 6), chip=(6, 8), chipring=5, pretzel=(1, 4), waffle=(1, 3),
              shell=(5, 7), sando=(4, 5), onigiri=(1, 5), bao=3, spiral=(3, 4), ricecakes=(5, 7), sticks=5, ribs=(3, 4), smallfish=5, wholefish=7, pecans=5, okra=(3, 5), tamagoyaki=(1, 3), summerroll=1, madeleine=5, teaegg=3,
-             cauliflower=(5, 7), calamari=(3, 6), orzo=(5, 6), shortpasta=(5, 7), scallops=(4, 6), fritters=(7, 9))
+             cauliflower=(5, 7), calamari=(3, 6), orzo=(5, 6), shortpasta=(5, 7), scallops=(4, 6), fritters=(7, 9),
+             sausages=(1, 7), tart=(1, 7), hotdog=(1, 4), avocado=(1, 7), leeks=(1, 6), sardines=(1, 5), porkbelly=(1, 6), volauvent=(1, 8))
 bad = []
 for r in recs:
     name = r["dish_name"]
@@ -41,7 +42,7 @@ import re, collections
 EX = json.load(open(f"{H}/examples.json"))
 LOCKED = json.load(open(f"{H}/locked.json"))
 FOOD = set(ARITY) - {"well", "pool"}
-WHOLE = {"baguette", "flautas", "phyllo", "loaf", "ringbread", "skewers", "tacos", "sandwiches", "toast", "cups", "omelette", "steak", "bread", "fillet", "chop", "potatoes", "wrap", "pizza", "pancakes", "flatbread", "pastries", "stuffed", "rolls", "patties", "glass", "wedgering", "noodles", "cutlet", "block", "bowl", "dipbowl", "drumstick", "muffin", "quesadilla", "burger", "pretzel", "waffle", "sando", "onigiri", "bao", "spiral", "ribs", "tamagoyaki", "summerroll", "madeleine", "smallfish", "wholefish", "sticks", "teaegg"}
+WHOLE = {"tart", "hotdog", "baguette", "flautas", "phyllo", "loaf", "ringbread", "skewers", "tacos", "sandwiches", "toast", "cups", "omelette", "steak", "bread", "fillet", "chop", "potatoes", "wrap", "pizza", "pancakes", "flatbread", "pastries", "stuffed", "rolls", "patties", "glass", "wedgering", "noodles", "cutlet", "block", "bowl", "dipbowl", "drumstick", "muffin", "quesadilla", "burger", "pretzel", "waffle", "sando", "onigiri", "bao", "spiral", "ribs", "tamagoyaki", "summerroll", "madeleine", "smallfish", "wholefish", "sticks", "teaegg"}
 PASTA = re.compile(r"pasta|spaghetti|penne|rigatoni|bucatini|linguine|fettuccine|pappardelle|tagliatelle|carbonara|tortellini|ravioli|bolognese|macaroni|mac and cheese|ziti|orecchiette|fusilli|cacio|lasagn", re.I)
 SOUPY = re.compile(r"soup|salad|e fagioli|e ceci|e piselli|lasagn|bake", re.I)
 DRINK = re.compile(r"smoothie(?! bowl)|\\blassi|lemonade|horchata|milkshake", re.I)
@@ -68,7 +69,9 @@ _ANYMEAT = r"bacon|pancetta|guanciale|lardon|ham\b|prosciutto|sausage|chorizo|po
 MEATSHAPES = {"bacon": r"bacon|pancetta|guanciale|lardon", "chop": r"pork|lamb|veal", "steak": r"steak|beef|sirloin|ribeye|flank", "shrimp": r"shrimp|prawn",
               "fillet": r"salmon|tuna|cod\b|tilapia|trout|halibut|sole\b|snapper|mackerel|sardine|fish|haddock|branzino|bass\b", "slices": _ANYMEAT,
               "drumstick": r"chicken|turkey|duck", "ribs": r"\bribs?\b|pork|beef", "shell": r"clam|mussel|cockle", "smallfish": r"anchov|sardine|smelt|fish",
-              "calamari": r"squid|calamar|kalamar", "scallops": r"scallop"}
+              "calamari": r"squid|calamar|kalamar", "scallops": r"scallop",
+              "sausages": r"sausage|chorizo|merguez|kielbasa|bratwurst|hot dog|frank|makanek|ground (beef|lamb|pork|chicken|turkey)|minced|kofta|kafta|lamb|beef",
+              "hotdog": r"hot dog|frank|sausage|wiener|bratwurst", "sardines": r"sardine", "porkbelly": r"pork belly|pork|samgyeopsal"}
 NOTMEAT = re.compile(r"vegan|vegetarian|plant[- ]based|meatless|\bbroth\b|\bstock\b|bouillon|\bsauce\b|\bpaste\b|\bpowder\b", re.I)
 def has_meat(r, pattern):
     return any(re.search(pattern, i, re.I) and not NOTMEAT.search(i) for i in r.get("ingredients", []))
@@ -109,6 +112,39 @@ for r in recs:
             cy = o[ci + 1] if len(o) > ci + 1 else 50
             if ((cx - 50) ** 2 + (cy - 50) ** 2) ** 0.5 + o[ri] * 1.05 + size > 39:
                 bad.append(f"{name}: {o[0]} spills past the plate; reduce r or move it in")
+        def v(i, d):  # an optional value, "" meaning the default
+            return o[i] if len(o) > i and o[i] != "" else d
+        reach = None  # (centre x, centre y, how far the drawing reaches from it)
+        if o[0] in ("sausages", "leeks", "sardines", "porkbelly"):  # links or lengths laid side by side in a row
+            if o[0] == "sausages":
+                fing = v(6, "links") == "fingers"
+                n_, L_, ci, w_ = v(2, 4 if fing else 3), v(3, 22 if fing else 30), 4, 10 if fing else 8.6
+                gap, half = w_ + 3.4, v(3, 22 if fing else 30) / 2 + 3.4
+            elif o[0] == "leeks":
+                n_, L_, ci = v(1, 4), v(2, 50), 3
+                w_, gap, half = 9.6, 12, L_ / 2 + 2
+            elif o[0] == "sardines":
+                n_, L_, ci = v(1, 4), v(2, 40), 3
+                w_, gap, half = 14.8 * L_ / 42, 12.4 * L_ / 42, 23 * L_ / 42 + 1.5
+            else:
+                n_, L_, ci = v(1, 4), v(2, 30), 3
+                w_, gap, half = 13.4, 15, L_ / 2 + 3
+            ext = (n_ - 1) / 2 * gap  # centre line of the outermost item
+            if o[0] == "porkbelly":  # square-ended slices
+                far = (half ** 2 + (ext + w_ / 2) ** 2) ** .5
+            else:  # rounded or tapered ends
+                far = ((half - w_ / 2) ** 2 + ext ** 2) ** .5 + w_ / 2
+            reach = (v(ci, 50), v(ci + 1, 50), far)
+        elif o[0] == "tart":
+            reach = (v(5, 50), v(6, 50), v(4, 31) + 5)  # a tart edge may run to radius 34
+        elif o[0] == "avocado":
+            n_ = v(2, 2)
+            reach = (v(5, 50), v(6, 50), v(4, 14 if n_ > 1 else 0) + 18.5 * v(3, 1))
+        elif o[0] == "volauvent":
+            n_ = v(3, 3)
+            reach = (v(6, 50), v(7, 50), v(5, 15 if n_ > 1 else 0) + 1.5 + 14 * v(4, 1.25))
+        if reach and ((reach[0] - 50) ** 2 + (reach[1] - 50) ** 2) ** .5 + reach[2] > 39:
+            bad.append(f"{name}: {o[0]} spills past the plate; make it smaller or move it in")
         if o[0] == "orzo" and ((o[1] - 50) ** 2 + (o[2] - 50) ** 2) ** 0.5 + max(o[3], o[4]) * 1.08 > 37:
             bad.append(f"{name}: orzo spills past the plate; make it smaller or move it in")
     if "band" in kinds:

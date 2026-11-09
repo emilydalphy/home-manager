@@ -898,6 +898,17 @@ def shortpasta(rng, o):  # short pasta: "rotini" twists, "penne" ridged tubes or
                     f'<path d="M-1 -5.6Q-3.4 0 -1 5M2.4 -5.6Q.4 0 2.4 5.2M5.2 -3.8Q3.6 0 5 3.6" fill="none" stroke="{shade}" stroke-width="1.1" stroke-linecap="round"/>'
                     f'<path d="M-5.6 -3.6Q-1.4 -2.6 -1.6 1.4Q-1.8 4.6 -4.4 5Q-7.4 1 -5.6 -3.6z" fill="{dark}"/><path d="M-5.2 -3.2Q-2.2 -1.8 -2.6 2" fill="none" stroke="{light}" stroke-width=".9" stroke-linecap="round"/>'
                     f'<path d="M-.6 -5.2Q2 -6 4.4 -4.6" fill="none" stroke="{light}" stroke-width=".9" stroke-linecap="round"/>')
+        elif shape == "elbow":  # a curved macaroni tube with a dark opening at one end
+            arc = "M-6.4 4.2Q-6.6 -3.8 2.6 -4.6"
+            out += (f'<path d="{arc}" fill="none" stroke="{shade}" stroke-width="6.2" stroke-linecap="round"/>'
+                    f'<path d="{arc}" fill="none" stroke="{c}" stroke-width="4.8" stroke-linecap="round"/>'
+                    f'<path d="M-5 2.6Q-5 -2.6 1 -3.4" fill="none" stroke="{light}" stroke-width="1" stroke-linecap="round"/>'
+                    f'<ellipse cx="3.4" cy="-4.6" rx="1.6" ry="2.9" fill="{c}" stroke="{shade}" stroke-width=".7"/><ellipse cx="3.5" cy="-4.6" rx=".9" ry="1.9" fill="{dark}"/>')
+        elif shape == "ditalini":  # short stubby tubes, the open end turned toward you
+            out += (f'<rect x="-5.6" y="-3.6" width="9" height="7.2" rx="1.6" fill="{shade}"/>'
+                    f'<rect x="-5.6" y="-3.6" width="8.4" height="6" rx="1.6" fill="{c}"/>'
+                    f'<path d="M-4.2 -2.2H1.6" stroke="{light}" stroke-width=".9" stroke-linecap="round"/>'
+                    f'<ellipse cx="3.6" cy="0" rx="2.6" ry="3.8" fill="{c}" stroke="{shade}" stroke-width=".8"/><ellipse cx="3.7" cy="0" rx="1.4" ry="2.3" fill="{dark}"/>')
         else:  # rotini: slanted lobes over a darker core read as a twist
             out += f'<rect x="-9" y="-3.4" width="18" height="6.8" rx="3.4" fill="{dark}"/>'
             for lx in (-6.4, -2.2, 2, 6.2):
@@ -967,7 +978,204 @@ def fritters(rng, o):  # lacy fried clusters of shredded vegetables: kakiage, pa
     return out
 
 
-NEWER = dict(cauliflower=cauliflower, calamari=calamari, orzo=orzo, shortpasta=shortpasta, scallops=scallops, fritters=fritters)
+def _row(n, gap, cx, cy, rot):  # items laid side by side in a loose row, as (x, y) group transform and each item's offset
+    return f'<g transform="translate({cx} {cy}) rotate({rot})">', [(i - (n - 1) / 2) * gap for i in range(n)]
+
+
+def sausages(rng, o):  # browned links with a gloss and a slight curve; shape "fingers" is oval minced-meat kofta with char marks
+    shape = at(o, 6, "links")
+    c = at(o, 1, "#7A4226" if shape == "fingers" else "#B5683A")
+    n = at(o, 2, 3 if shape != "fingers" else 4)
+    L = at(o, 3, 30 if shape != "fingers" else 22)
+    cx = at(o, 4, 50); cy = at(o, 5, 50)
+    w = 8.6 if shape != "fingers" else 10
+    shade, dark, light = mix(c, "#3A1A08", .45), mix(c, "#2A1206", .6), mix(c, "#FFFFFF", .55)
+    out, offs = _row(n, w + 3.4, cx, cy, -22)
+    for i, dy in enumerate(offs):
+        b = (2.6 if i % 2 else -2.6) if shape != "fingers" else 0
+        sx = (2 if i % 2 else -2) + rng.uniform(-1, 1)
+        x0 = -L / 2 + w / 2 + sx
+        x1 = L / 2 - w / 2 + sx
+        d = f"M{x0:.1f} {dy:.1f}Q{(x0+x1)/2:.1f} {dy+b:.1f} {x1:.1f} {dy:.1f}"
+        if shape == "fingers":  # a tapered oval of minced meat with char marks across it
+            h = w / 2
+            e = f"M{x0-h:.1f} {dy:.1f}C{x0-h:.1f} {dy-h*.9:.1f} {x0:.1f} {dy-h:.1f} {sx:.1f} {dy-h:.1f}C{x1:.1f} {dy-h:.1f} {x1+h:.1f} {dy-h*.9:.1f} {x1+h:.1f} {dy:.1f}C{x1+h:.1f} {dy+h*.9:.1f} {x1:.1f} {dy+h:.1f} {sx:.1f} {dy+h:.1f}C{x0:.1f} {dy+h:.1f} {x0-h:.1f} {dy+h*.9:.1f} {x0-h:.1f} {dy:.1f}z"
+            out += f'<path d="{e}" fill="{c}" stroke="{shade}" stroke-width="1.4"/>'
+            for t in (.15, .38, .62, .85):
+                mx = x0 + (x1 - x0) * t
+                out += f'<path d="M{mx-1.4:.1f} {dy+h*.6:.1f}L{mx+1.4:.1f} {dy-h*.6:.1f}" stroke="{dark}" stroke-width="1.7" stroke-linecap="round" opacity=".85"/>'
+        else:
+            out += (f'<path d="{d}" fill="none" stroke="{shade}" stroke-width="{w+1.6}" stroke-linecap="round"/>'
+                    f'<path d="{d}" fill="none" stroke="{c}" stroke-width="{w}" stroke-linecap="round"/>')  # pinched tips and a browned underside
+            out += (f'<path d="{d}" fill="none" stroke="{shade}" stroke-width="{w*.3:.1f}" stroke-linecap="round" opacity=".55" transform="translate(0 {w*.28:.1f})"/>'
+                    f'<circle cx="{x0-w/2+.6:.1f}" cy="{dy:.1f}" r="1.1" fill="{dark}"/><circle cx="{x1+w/2-.6:.1f}" cy="{dy:.1f}" r="1.1" fill="{dark}"/>')
+        hx0, hx1 = x0 + (x1 - x0) * .08, x0 + (x1 - x0) * .62
+        out += f'<path d="M{hx0:.1f} {dy-w*.24+b*.3:.1f}Q{(hx0+hx1)/2:.1f} {dy-w*.24+b*.75:.1f} {hx1:.1f} {dy-w*.24+b*.45:.1f}" fill="none" stroke="{light}" stroke-width="1.5" stroke-linecap="round" opacity=".7"/>'
+    return out + "</g>"
+
+
+def tart(rng, o):  # a round tart or quiche from above: crimped golden pastry edge, filling, optional slices and bits on top
+    fill = at(o, 1, "#F2CF6A")
+    t1, t2 = at(o, 2, ""), at(o, 3, "")
+    R = at(o, 4, 31)
+    cx = at(o, 5, 50); cy = at(o, 6, 50)
+    crust = "#DCA24E"
+    shade, light = mix(crust, "#6E3F16", .42), mix(crust, "#FFFFFF", .5)
+    m = max(12, round(6.283 * R / 6.2))
+    out = f'<circle cx="{cx}" cy="{cy+1.2}" r="{R}" fill="{shade}"/>'
+    out += "".join(f'<circle cx="{cx+(R-2.8)*math.cos(6.283*i/m):.1f}" cy="{cy+(R-2.8)*math.sin(6.283*i/m):.1f}" r="3.2" fill="{crust}"/>' for i in range(m))
+    out += f'<circle cx="{cx}" cy="{cy}" r="{R-2.8}" fill="{crust}"/>'
+    for i in range(m):  # crimp marks between the scallops
+        a = 6.283 * (i + .5) / m
+        out += f'<path d="M{cx+(R-4.6)*math.cos(a):.1f} {cy+(R-4.6)*math.sin(a):.1f}L{cx+(R-.8)*math.cos(a):.1f} {cy+(R-.8)*math.sin(a):.1f}" stroke="{shade}" stroke-width="1" stroke-linecap="round" opacity=".7"/>'
+    out += f'<circle cx="{cx}" cy="{cy}" r="{R-5.6}" fill="{shade}"/>'
+    out += f'<path d="{blob(rng,cx,cy+.4,R-6.6,R-6.6,14,.02)}" fill="{fill}"/>'
+    for x, y, a in spots(rng, 7, R - 11, cx, cy):  # baked, browned patches
+        out += f'<ellipse cx="{x:.1f}" cy="{y:.1f}" rx="3.4" ry="2" fill="{mix(fill, "#8A4A16", .4)}" opacity=".45" transform="rotate({a:.0f} {x:.1f} {y:.1f})"/>'
+    if t1:
+        for x, y, _ in spots(rng, 7 if R > 26 else 5, R - 14, cx, cy):
+            out += (f'<circle cx="{x:.1f}" cy="{y:.1f}" r="5.2" fill="{t1}"/><circle cx="{x:.1f}" cy="{y:.1f}" r="3.4" fill="{mix(t1, "#FFFFFF", .32)}"/>'
+                    f'<circle cx="{x:.1f}" cy="{y:.1f}" r="1.1" fill="{t1}"/>')
+    if t2:
+        for x, y, a in spots(rng, 14, R - 9, cx, cy):
+            out += f'<ellipse cx="{x:.1f}" cy="{y:.1f}" rx="1.6" ry="1" fill="{t2}" transform="rotate({a:.0f} {x:.1f} {y:.1f})"/>'
+    return out + f'<path d="M{cx-R*.72:.1f} {cy-R*.5:.1f}A{R-1.4:.1f} {R-1.4:.1f} 0 0 1 {cx-R*.1:.1f} {cy-R*.88:.1f}" fill="none" stroke="{light}" stroke-width="1.6" stroke-linecap="round" opacity=".8"/>'
+
+
+def hotdog(rng, o):  # two hot dogs in split buns; mustard and ketchup lines optional
+    c = at(o, 1, "#B4502E")
+    mustard, ketchup = at(o, 2, ""), at(o, 3, "")
+    bun, bshade, crumb = "#DDA05A", "#B57834", "#F5E0B4"
+    shade, light = mix(c, "#3A1A08", .4), mix(c, "#FFFFFF", .5)
+    out = '<g transform="rotate(-24 50 50)">'
+    for dy in (-13, 13):
+        y = 50 + dy
+        out += (f'<rect x="26" y="{y-8.6}" width="48" height="20" rx="10" fill="{bshade}"/><rect x="26" y="{y-10}" width="48" height="20" rx="10" fill="{bun}"/>'
+                f'<rect x="28.5" y="{y-5.6}" width="43" height="11.2" rx="5.6" fill="{crumb}"/>'
+                f'<path d="M33 {y-8}Q50 {y-10} 67 {y-8}" fill="none" stroke="#FFFFFF" stroke-width="1.4" stroke-linecap="round" opacity=".35"/>'
+                f'<rect x="21" y="{y-4}" width="58" height="8.4" rx="4.2" fill="{shade}"/><rect x="21" y="{y-4.4}" width="58" height="8" rx="4" fill="{c}"/>'
+                f'<path d="M25 {y-2.2}H52" stroke="{light}" stroke-width="1.3" stroke-linecap="round" opacity=".6"/>')
+        if ketchup:
+            out += f'<path d="M31 {y}q3 -3 6 0t6 0t6 0t6 0t6 0t6 0" fill="none" stroke="{ketchup}" stroke-width="2.2" stroke-linecap="round"/>'
+        if mustard:
+            out += f'<path d="M32 {y+1.2}l3 -3l3 3l3 -3l3 3l3 -3l3 3l3 -3l3 3l3 -3l3 3l3 -3" fill="none" stroke="{mustard}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>'
+    return out + "</g>"
+
+
+def avocado(rng, o):  # avocado halves: dark skin, green-to-yellow flesh; filling in the hollow, or the pit when filling is ""
+    fill = at(o, 1, "")
+    n = at(o, 2, 2); sz = at(o, 3, 1); r = at(o, 4, 14 if n > 1 else 0)
+    cx = at(o, 5, 50); cy = at(o, 6, 50)
+    d = "M0 -17C5.6 -17 7.6 -10 9.6 -4C13.6 3.4 12.6 15 0 15C-12.6 15 -13.6 3.4 -9.6 -4C-7.6 -10 -5.6 -17 0 -17z"
+    out = ""
+    for i in range(n):
+        a = 6.283 * i / n + math.pi
+        x, y = cx + r * math.cos(a), cy + r * math.sin(a)
+        rot = math.degrees(a) + 90 + 18 if n > 1 else -28
+        out += (f'<g transform="translate({x:.1f} {y:.1f}) rotate({rot:.0f}) scale({sz})"><path d="{d}" fill="#9DC155" stroke="#2F3D1C" stroke-width="2.6"/>'
+                f'<path d="{d}" fill="#DCE184" transform="translate(0 2.6) scale(.74)"/>')
+        if fill:
+            fs, fl = mix(fill, "#5A3210", .3), mix(fill, "#FFFFFF", .5)
+            out += f'<ellipse cx="0" cy="4.6" rx="8.4" ry="8" fill="{mix("#DCE184", "#6E8A3A", .45)}"/><path d="{blob(rng,0,3.4,8.4,7.8,10,.12)}" fill="{fs}"/><path d="{blob(rng,-.3,2.8,7.6,7,10,.12)}" fill="{fill}"/>'
+            for bx, by, ba in spots(rng, 6, 5.4, 0, 3.6):
+                out += f'<rect x="{bx-1.2:.1f}" y="{by-1:.1f}" width="2.4" height="2" rx=".7" fill="{fs}" transform="rotate({ba:.0f} {bx:.1f} {by:.1f})"/>'
+            out += f'<path d="M-4.6 .6Q-2 -2.4 1.6 -2.4" fill="none" stroke="{fl}" stroke-width="1.2" stroke-linecap="round" opacity=".8"/>'
+        else:
+            out += ('<circle cx="0" cy="4.6" r="6.8" fill="#6B4024"/><circle cx="0" cy="4.2" r="6.2" fill="#8E5732"/>'
+                    '<ellipse cx="-2.2" cy="1.8" rx="2.2" ry="1.3" fill="#FFFFFF" opacity=".35" transform="rotate(-30 -2.2 1.8)"/>')
+        out += '<path d="M-6 -6Q-4.4 -12.6 0 -14" fill="none" stroke="#FFFFFF" stroke-width="1.2" stroke-linecap="round" opacity=".35"/></g>'
+    return out
+
+
+def leeks(rng, o):  # halved braised leek lengths: white root end, pale green, then dark green; optional golden sear
+    n = at(o, 1, 4); L = at(o, 2, 50)
+    cx = at(o, 3, 50); cy = at(o, 4, 50)
+    sear = at(o, 5, "")
+    w = 9.6
+    out, offs = _row(n, w + 2.4, cx, cy, -22)
+    for i, dy in enumerate(offs):
+        h = w / 2
+        out += f'<g transform="translate({rng.uniform(-1.5,1.5):.1f} {dy:.1f})">'
+        out += f'<rect x="{-L/2}" y="{-h}" width="{L}" height="{w}" rx="{h*.8:.1f}" fill="#5E8C3C"/>'
+        xg = L * .22  # where pale green turns dark: a V like the leaf layers
+        out += f'<path d="M{-L/2+h*.8:.1f} {-h}H{xg-3:.1f}L{xg+3:.1f} 0L{xg-3:.1f} {h}H{-L/2+h*.8:.1f}A{h*.8:.1f} {h*.8:.1f} 0 0 1 {-L/2+h*.8:.1f} {-h}z" fill="#BFD889"/>'
+        xw = -L * .08
+        out += f'<path d="M{-L/2+h*.8:.1f} {-h}H{xw-3:.1f}L{xw+2:.1f} 0L{xw-3:.1f} {h}H{-L/2+h*.8:.1f}A{h*.8:.1f} {h*.8:.1f} 0 0 1 {-L/2+h*.8:.1f} {-h}z" fill="#F4F0D8"/>'
+        out += (f'<path d="M{-L/2+2:.1f} {-h*.36:.1f}H{L/2-3:.1f}M{-L/2+2:.1f} {h*.36:.1f}H{L/2-3:.1f}" stroke="#7FA052" stroke-width=".8" stroke-linecap="round" opacity=".6"/>'
+                f'<rect x="{-L/2-.6:.1f}" y="{-h*.6:.1f}" width="2" height="{w*.6:.1f}" rx="1" fill="#D9CFA8"/>')
+        out += f'<path d="M{L/2-.4:.1f} 0L{xg+6:.1f} 0" stroke="#3F6B2A" stroke-width="1.4" stroke-linecap="round"/><path d="M{L/2-2.4:.1f} -.8L{L/2+.6:.1f} 0L{L/2-2.4:.1f} .8z" fill="#3F6B2A"/>'
+        if sear:  # golden braised streaks along the cut face
+            out += f'<path d="M{-L*.4:.1f} {h*.1:.1f}H{L*.3:.1f}" stroke="{sear}" stroke-width="{w*.34:.1f}" stroke-linecap="round" stroke-dasharray="{L*.16:.1f} {L*.07:.1f}" opacity=".55"/>'
+        out += f'<path d="M{-L/2+3:.1f} {-h+1.6:.1f}H{L*.1:.1f}" stroke="#FFFFFF" stroke-width="1.2" stroke-linecap="round" opacity=".5"/></g>'
+    return out + "</g>"
+
+
+def sardines(rng, o):  # small whole grilled sardines side by side: silver-blue, char lines, forked tail, no eyes
+    n = at(o, 1, 4); L = at(o, 2, 40)
+    cx = at(o, 3, 50); cy = at(o, 4, 50)
+    s = L / 42
+    out, offs = _row(n, 12.4 * s, cx, cy, -22)
+    for i, dy in enumerate(offs):
+        f = -1 if i % 2 else 1
+        out += (f'<g transform="translate({rng.uniform(-1.5,1.5):.1f} {dy:.1f}) scale({s*f:.2f} {s:.2f})"><path d="M-15 0L-23 -6.4Q-20 0 -23 6.4z" fill="#3E5A74"/>'
+                '<path d="M-16 0Q-4 -7.4 9 -5.6Q15 -3.6 19 0Q15 3.6 9 5.6Q-4 7.4 -16 0z" fill="#DCE3E8"/>'
+                '<path d="M-16 0Q-4 -7.4 9 -5.6Q15 -3.6 19 0Q6 -1.2 -16 0z" fill="#4E6F8E"/>'
+                '<path d="M-14 .6Q2 -.4 17 .3" fill="none" stroke="#8FA8BE" stroke-width="1" stroke-linecap="round"/>'
+                '<path d="M11.6 -4.6Q9.6 0 11.6 4.6" fill="none" stroke="#9AA8B4" stroke-width="1.1" stroke-linecap="round"/>'
+                '<path d="M-9 4L-5 -4.6M-2 4.6L2 -5M5 4.4L8.6 -4.4" stroke="#2B2420" stroke-width="1.7" stroke-linecap="round" opacity=".6"/>'
+                '<path d="M-6 -4Q2 -6.4 9 -4.8" fill="none" stroke="#FFFFFF" stroke-width="1.2" stroke-linecap="round" opacity=".45"/></g>')
+    return out + "</g>"
+
+
+def porkbelly(rng, o):  # slices of pork belly side by side: crisp top, then clear pale fat and pink-brown meat layers; optional glaze
+    n = at(o, 1, 4); L = at(o, 2, 30)
+    cx = at(o, 3, 50); cy = at(o, 4, 50)
+    glaze = at(o, 5, "")
+    skin = glaze or "#C98A45"
+    meat = mix("#D4917A", glaze, .35) if glaze else "#D4917A"
+    meat2 = mix(meat, "#7A3E22", .18)
+    fat = "#F7EBD6"
+    out, offs = _row(n, 15, cx, cy, -22)
+    for i, dy in enumerate(offs):
+        g = f'<g transform="translate({(2 if i % 2 else -2) + rng.uniform(-1, 1):.1f} {dy:.1f})">'
+        g += (f'<rect x="{-L/2}" y="-6.4" width="{L}" height="13.4" rx="2.4" fill="{mix(meat2, "#3A1A08", .3)}"/>'
+              f'<rect x="{-L/2}" y="-6.8" width="{L}" height="13.2" rx="2.4" fill="{skin}"/>'
+              f'<rect x="{-L/2}" y="-4.2" width="{L}" height="10.6" rx="2.2" fill="{fat}"/>'
+              f'<rect x="{-L/2}" y="-1" width="{L}" height="7.4" rx="2.2" fill="{meat}"/>'
+              f'<rect x="{-L/2}" y="1.8" width="{L}" height="1.8" fill="{fat}"/>'
+              f'<path d="M{-L/2+2.4} -5.6H{L/2-2.4}" stroke="#FFFFFF" stroke-width="1" stroke-linecap="round" stroke-dasharray="2 2.6" opacity=".45"/>')
+        for t in (-.24, .2):  # two soft grill marks
+            g += f'<path d="M{L*t-1.6:.1f} 5.6L{L*t+1.6:.1f} -6" stroke="#3A1E10" stroke-width="1.6" stroke-linecap="round" opacity=".3"/>'
+        out += g + "</g>"
+    return out + "</g>"
+
+
+def volauvent(rng, o):  # round puff pastry shells: tall flaky golden rim, creamy filling heaped and spilling, a little pastry lid
+    fill = at(o, 1, "#F1E2BC")
+    bit = at(o, 2, "")
+    n = at(o, 3, 3); sz = at(o, 4, 1.25); r = at(o, 5, 15 if n > 1 else 0)
+    cx = at(o, 6, 50); cy = at(o, 7, 50)
+    side, rim, inner, flake = "#C27E32", "#E9B45E", "#A86A28", "#F4D08A"
+    fs, fl = mix(fill, "#6E4A20", .3), mix(fill, "#FFFFFF", .55)
+    out = ""
+    for i in range(n):
+        a = 6.283 * i / n - 1.571
+        x, y = cx + r * math.cos(a), cy + r * math.sin(a) + 1.5
+        out += (f'<g transform="translate({x:.1f} {y:.1f}) scale({sz})"><path d="M-10 -3V7A10 4.4 0 0 0 10 7V-3z" fill="{side}"/>'
+                f'<path d="M-10 3.4V7A10 4.4 0 0 0 10 7V3.4A10 4.4 0 0 1 -10 3.4z" fill="{mix(side, "#5A3210", .3)}"/>'
+                + "".join(f'<path d="M{px} {-1+abs(px)*.05:.1f}V{5.6+(1-(px/10)**2)**.5*4:.1f}" stroke="{flake}" stroke-width="1" stroke-linecap="round" opacity=".55"/>' for px in (-6, -2, 2, 6))
+                + f'<ellipse cx="0" cy="-3" rx="10" ry="4.6" fill="{rim}"/><ellipse cx="0" cy="-3" rx="6.8" ry="2.9" fill="{inner}"/>'
+                f'<path d="M-6.8 -3Q-7 -9.4 0 -9.6Q7 -9.4 6.8 -3Q6.6 -.4 4.4 -.6Q4.2 3 2.6 2.6Q1.4 2.4 1.4 -.4Q-2 0 -4.4 -.6Q-6.6 -.6 -6.8 -3z" fill="{fill}"/>'
+                f'<path d="M-4.6 -6.6Q-2.6 -8.4 .4 -8.4" fill="none" stroke="{fl}" stroke-width="1.1" stroke-linecap="round"/>')
+        for bx, by in ((-3.2, -4), (1, -6.6), (-.2, -2.6)):
+            out += f'<ellipse cx="{bx}" cy="{by}" rx="1.6" ry="1.1" fill="{bit or fs}"/>'
+        out += (f'<g transform="translate(6.6 -8.6) rotate(-24)"><path d="M-5.2 0V1.8A5.2 2.2 0 0 0 5.2 1.8V0z" fill="{side}"/>'
+                f'<ellipse cx="0" cy="0" rx="5.2" ry="2.3" fill="{rim}"/><path d="M-3 -.6Q0 -1.6 2.6 -.8" fill="none" stroke="{flake}" stroke-width=".9" stroke-linecap="round"/></g></g>')
+    return out
+
+
+NEWER = dict(cauliflower=cauliflower, calamari=calamari, orzo=orzo, shortpasta=shortpasta, scallops=scallops, fritters=fritters,
+             sausages=sausages, tart=tart, hotdog=hotdog, avocado=avocado, leeks=leeks, sardines=sardines, porkbelly=porkbelly, volauvent=volauvent)
 
 
 
