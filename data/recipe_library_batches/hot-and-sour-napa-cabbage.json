@@ -1,0 +1,106 @@
+{
+ "dish_name": "Hot and Sour Napa Cabbage",
+ "cuisine": "Chinese",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Napa cabbage",
+   "qty": "1 small head",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Chinese black vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Start the rice first. Rinse 1 1/2 cups jasmine rice, then add it to a medium pot with 2 1/4 cups water. Bring it to a boil over high heat, cover, turn the heat to low and cook for 15 minutes. Leave the lid on and take the pot off the heat until you're ready to serve.",
+  "In a small bowl, stir together 3 tbsp soy sauce, 1 1/2 tbsp black vinegar and 1 tbsp sugar until the sugar dissolves. In a cup, stir the cornstarch into 2 tbsp cold water.",
+  "Cut the white stems off the cabbage and slice them on an angle into 1-inch pieces. That should be about 1 lb. Slice the green leaves into wide strips and keep them in a separate pile.",
+  "Smash and chop the garlic. Chop 2 scallions.",
+  "Heat the oil in a wok or large skillet over medium-low heat. Add the garlic and scallions and cook, stirring, for 1 minute, until they smell fragrant. Don't let the garlic brown.",
+  "Turn the heat to high and add the cabbage stems. Stir-fry for 2 minutes, until the edges turn a little translucent but the stems still crunch.",
+  "Add the leaves and stir-fry for 30 seconds, until they wilt.",
+  "Pour in the sauce and let it bubble for 1 minute.",
+  "Stir the cornstarch mixture again, pour it in and cook for 1 minute, until the sauce is thick and glossy.",
+  "Take the pan off the heat. Taste it. If it's flat, add a pinch of salt.",
+  "Serve over the rice. Put the red pepper flakes in a small bowl on the table for anyone who wants it hot."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 10,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The Woks of Life Sichuan version leads (garlic, scallion and chili in oil, cabbage stems over high heat, a soy and black vinegar sauce thickened with cornstarch). Its oyster sauce is left out so the dish is vegan, with extra soy sauce in its place. Omnivore's Cookbook cooks it the same way with a simpler sauce. The dried chilies are replaced by red pepper flakes on the table so the base stays mild.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Sichuan Napa Cabbage Stir-fry (Suan La Bai Cai)",
+   "url": "https://thewoksoflife.com/hot-sour-cabbage-stir-fry/",
+   "rating": 4.92,
+   "rating_count": 34,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Omnivore's Cookbook",
+   "title": "Napa Cabbage Stir Fry with Vinegar Sauce",
+   "url": "https://omnivorescookbook.com/napa-cabbage-stir-fry-with-vinegar-sauce/",
+   "rating": 4.78,
+   "rating_count": 9,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

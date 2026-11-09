@@ -1,0 +1,128 @@
+{
+ "dish_name": "Beef with Oyster Sauce",
+ "cuisine": "Chinese",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Flank steak",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Broccoli",
+   "qty": "1 large crown",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece",
+   "category": "produce",
+   "cook_qty": "4 thin slices"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "White pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 1/2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Start the rice first. Rinse 1 1/2 cups jasmine rice, then add it to a medium pot with 2 1/4 cups water. Bring it to a boil over high heat, cover, turn the heat to low and cook for 15 minutes. Leave the lid on and take the pot off the heat until you're ready to serve.",
+  "Slice the flank steak across the grain into slices about 1/8 inch thick. Transfer them to a bowl and add 3 tbsp water, 1 1/2 tsp of the cornstarch, 1 1/2 tsp of the oil and 1 tbsp of the oyster sauce. Mix with your hands and let it sit for 15 minutes.",
+  "Meanwhile, stir together the broth, 2 tbsp oyster sauce, the sugar, the remaining 1 1/2 tsp cornstarch, the soy sauce and the white pepper in a small bowl.",
+  "Cut the broccoli into small florets and the onion into wedges. Slice the garlic and the ginger.",
+  "Heat a wok or large skillet over high heat until it's very hot. Add 1 tbsp oil, then half the beef in a single layer. Leave it alone for 1 minute, until the underside is browned. Flip the slices and cook for 30 seconds. Transfer to a plate.",
+  "Add 1 tbsp oil and cook the second half of the beef the same way. Transfer it to the plate.",
+  "Turn the heat to medium and add the last 1 tbsp oil. Add the ginger and cook for 30 seconds, then the garlic for 15 seconds.",
+  "Turn the heat to high. Add the onion, broccoli and 3 tbsp water, cover and cook for 2 minutes, until the broccoli is bright green.",
+  "Take the lid off and pour in the Shaoxing wine. Stir the sauce again and pour it in. Bring it to a simmer and cook for 1 minute, until it thickens.",
+  "Return the beef and any juices on the plate to the pan. Toss for 30 seconds, until the beef is coated and hot.",
+  "Taste it. If it's flat, add a pinch of salt.",
+  "Serve over the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 13,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No exact beef with oyster sauce page had 20 ratings, so this is the fallback. The Woks of Life Beef with Oyster Sauce (4.82 from 11) leads, with its water and cornstarch marinade and broth-and-oyster-sauce sauce. Its 30 minute marinade and blanched Chinese broccoli were shortened to a 15 minute marinade and broccoli steamed in the pan to fit a weeknight. RecipeTin Eats' Easy Chinese Beef Stir Fry (4.92 from 156) is a near-dish that confirmed the high heat and quick sear, and is credited here only.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Beef with Oyster Sauce",
+   "url": "https://thewoksoflife.com/beef-oyster-sauce/",
+   "rating": 4.82,
+   "rating_count": 11,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Carmy",
+   "title": "Beef with Oyster Sauce",
+   "url": "https://carmyy.com/beef-with-oyster-sauce",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

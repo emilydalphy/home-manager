@@ -1,0 +1,146 @@
+{
+ "dish_name": "Sweet and Sour Tofu",
+ "cuisine": "Chinese",
+ "main_protein": "tofu",
+ "ingredients": [
+  {
+   "item": "Extra-firm tofu",
+   "qty": "1 block (14 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Bell peppers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece",
+   "category": "produce",
+   "cook_qty": "3/4 tsp minced"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 1/2 tbsp"
+  },
+  {
+   "item": "Ketchup",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Maple syrup",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "5 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Start the rice first. Rinse 1 1/2 cups jasmine rice, then add it to a medium pot with 2 1/4 cups water. Bring it to a boil over high heat, cover, turn the heat to low and cook for 15 minutes. Leave the lid on and take the pot off the heat until you're ready to serve.",
+  "Pat the tofu dry with paper towels, pressing gently. Tear it into 1-inch pieces. Transfer them to a bowl.",
+  "In a small bowl, whisk together the ketchup, 1 1/2 tbsp of the soy sauce, the rice vinegar, the maple syrup, 3/4 tsp minced ginger, 1 minced garlic clove, 1 tbsp of the cornstarch and 1/2 cup cold water.",
+  "Toss the tofu with the remaining 1 tbsp soy sauce, the garlic powder, the salt and the black pepper. Sprinkle on the remaining 1/4 cup cornstarch and toss until every piece has an even coat.",
+  "Cut the bell peppers into 1-inch pieces, chop the red onion and slice the scallions.",
+  "Heat 3 tbsp of the oil in a large nonstick skillet over medium-high heat. Add the tofu in a single layer and cook for 4 minutes, until the underside is golden and crisp. Flip the pieces and cook the other side for 3 minutes. Transfer to a plate.",
+  "Turn the heat to medium and add the last 1 tbsp oil. Add the peppers and onion and cook for 3 minutes, until they soften a little.",
+  "Stir the sauce again and pour it in. Cook for 1 minute, until it thickens and turns glossy.",
+  "Return the tofu to the pan and toss for 30 seconds, until it's coated.",
+  "Take the pan off the heat. Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice, topped with the scallions and sesame seeds."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 14,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Running to the Kitchen's version leads: crisp pan-fried tofu, peppers and onion, and a ketchup, soy and rice vinegar sauce thickened with starch. Maple syrup replaces its honey so the dish is vegan, cornstarch replaces the arrowroot and cornmeal, and the sauce is scaled up by half so four people get a proper spoonful. Omnivore's Cookbook and All Ways Delicious agree on the method and add a splash of Shaoxing wine, brown sugar and a longer marinade, which a weeknight doesn't need.",
+ "sources": [
+  {
+   "name": "Running to the Kitchen",
+   "title": "Sweet and Sour Tofu",
+   "url": "https://www.runningtothekitchen.com/sweet-and-sour-tofu/",
+   "rating": 4.72,
+   "rating_count": 21,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Omnivore's Cookbook",
+   "title": "Sweet and Sour Tofu",
+   "url": "https://omnivorescookbook.com/sweet-and-sour-tofu",
+   "rating": 4.95,
+   "rating_count": 17,
+   "read": true
+  },
+  {
+   "name": "All Ways Delicious",
+   "title": "Sweet and Sour Tofu",
+   "url": "https://allwaysdelicious.com/sweet-and-sour-tofu/",
+   "rating": 4.88,
+   "rating_count": 8,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

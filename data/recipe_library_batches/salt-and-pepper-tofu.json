@@ -1,0 +1,142 @@
+{
+ "dish_name": "Salt and Pepper Tofu",
+ "cuisine": "Chinese",
+ "main_protein": "tofu",
+ "ingredients": [
+  {
+   "item": "Firm tofu",
+   "qty": "1 block (14 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "White pepper",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground Sichuan peppercorn",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "5 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Shallot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Start the rice first. Rinse 1 1/2 cups jasmine rice, then add it to a medium pot with 2 1/4 cups water. Bring it to a boil over high heat, cover, turn the heat to low and cook for 15 minutes. Leave the lid on and take the pot off the heat until you're ready to serve.",
+  "Cut the tofu into rectangles about 1/2 inch thick. Stir 1/2 tsp of the salt and 1 tsp of the sugar into 1 1/4 cups very hot water in a shallow bowl. Add the tofu and let it sit for 10 minutes.",
+  "Meanwhile, in a small bowl, mix the remaining 1 tsp salt, the white pepper and the Sichuan peppercorn. Transfer half of it to a wide plate and stir in the flour and cornstarch. That's your coating. The other half is for finishing.",
+  "Chop the garlic roughly. Dice the bell pepper, thinly slice the shallot into rounds, and chop the scallion.",
+  "Lift the tofu out of the water and pat it dry on paper towels. Transfer it to a bowl and toss gently with the sesame oil and Shaoxing wine. Press each piece into the coating on both sides and shake off the extra.",
+  "Heat the vegetable oil in a large nonstick skillet or wok over low heat. Add the garlic and cook, stirring, for 2 to 3 minutes, until it's light golden. Transfer it to a small plate with a slotted spoon and leave the oil in the pan.",
+  "Turn the heat to medium-high. Lay the tofu in the oil in a single layer and cook for 3 minutes, until the underside is deep golden and lets go of the pan. Flip each piece and cook the other side for 3 minutes. Transfer the tofu to a plate.",
+  "Leave about 1 tbsp of oil in the pan and pour out the rest. Over high heat, add the bell pepper and shallot and stir-fry for 1 minute.",
+  "Return the tofu to the pan and add the crispy garlic and the scallion. Sprinkle on the rest of the spice mix and toss for 30 seconds.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The Woks of Life version leads: brined tofu, a flour and cornstarch coating, garlic fried slowly until golden, then a quick toss with peppers and the white pepper and Sichuan salt. Its brine is 1 to 2 hours, so this recipe uses a 10 minute hot salt-and-sugar soak (the quick brine the other sources use) to fit a weeknight. Garlic powder, onion powder and the hot green pepper were dropped and a mild green bell pepper used so the base stays mild; fresh chilies can go on the side. The dish is dry by nature, so it is served over rice.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Salt and Pepper Tofu",
+   "url": "https://thewoksoflife.com/salt-and-pepper-tofu/",
+   "rating": 4.96,
+   "rating_count": 46,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Takes Two Eggs",
+   "title": "Salt and Pepper Tofu",
+   "url": "https://takestwoeggs.com/?p=14140",
+   "rating": 5,
+   "rating_count": 3,
+   "read": true
+  },
+  {
+   "name": "Two Plaid Aprons",
+   "title": "Salt and Pepper Tofu",
+   "url": "https://twoplaidaprons.com/salt-and-pepper-tofu/",
+   "rating": 5,
+   "rating_count": 3,
+   "read": true
+  },
+  {
+   "name": "Made With Lau",
+   "title": "Salt & Pepper Tofu",
+   "url": "https://www.madewithlau.com/recipes/salt-pepper-tofu",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
