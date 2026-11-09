@@ -1,0 +1,115 @@
+{
+ "dish_name": "Tapenade with Baguette",
+ "cuisine": "French",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 8,
+ "ingredients": [
+  {
+   "item": "Mixed pitted olives",
+   "qty": "1 container (about 8 oz)",
+   "category": "pantry",
+   "cook_qty": "1 1/4 cups"
+  },
+  {
+   "item": "Capers",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Marinated sun-dried tomatoes",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp leaves"
+  },
+  {
+   "item": "Fresh basil",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 1/2 tsp chopped"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "a squeeze (about 1 1/2 tsp juice)"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "a few grinds"
+  },
+  {
+   "item": "Baguette",
+   "qty": "1",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F.",
+  "Slice the baguette into 1/2-inch pieces and lay them in one layer on a rimmed baking sheet. Brush the tops with 1 tbsp of the olive oil.",
+  "Bake for 5 to 8 minutes, until the toasts are crisp and golden.",
+  "Meanwhile, put the olives, capers, sun-dried tomatoes, garlic, oregano, 2 tbsp parsley leaves and the chopped basil in a food processor. Add a squeeze of lemon juice, the remaining 2 tbsp olive oil and a few grinds of pepper.",
+  "Pulse 15 to 17 times, scraping down the bowl a few times, until it's a chunky spread. Stop sooner for a coarser relish, or keep going for a smooth paste.",
+  "Transfer the tapenade to a small bowl. Serve with the warm baguette toasts.",
+  "Keep any leftover tapenade in a covered container in the fridge for up to 2 weeks."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Vanilla & Bean's 10-minute tapenade leads (4.92 from 25 ratings): mixed olives, capers, sun-dried tomato, garlic, herbs, lemon and oil, with capers standing in for anchovy so it stays vegan. It is halved here to make about 1 cup for four. The baguette toasts (sliced, oiled, baked at 400°F) come from The Quicker Kitchen, since the lead only suggests baguette. Marisol Cooks also toasts the slices in a skillet.",
+ "sources": [
+  {
+   "name": "Vanilla & Bean",
+   "title": "10-Minute Olive Tapenade",
+   "url": "https://vanillaandbean.com/olive-tapenade/",
+   "rating": 4.92,
+   "rating_count": 25,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Quicker Kitchen",
+   "title": "Easy Olive Tapenade",
+   "url": "https://thequickerkitchen.com/easy-olive-tapenade/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Marisol Cooks",
+   "title": "Tapenade with Toasted Bread",
+   "url": "https://marisolcooks.com/2022/01/16/tapenade-with-toasted-bread/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

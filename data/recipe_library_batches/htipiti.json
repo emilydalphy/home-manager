@@ -1,0 +1,101 @@
+{
+ "dish_name": "Htipiti",
+ "cuisine": "Greek",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Red bell peppers",
+   "qty": "2 large",
+   "category": "produce"
+  },
+  {
+   "item": "Feta",
+   "qty": "1 block (8 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "to taste"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "to taste"
+  },
+  {
+   "item": "Persian cucumbers",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1 lb",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 450°F with a rack in the center. Line a rimmed baking sheet with parchment. Take the feta out of the fridge so it can come to room temperature.",
+  "Halve the bell peppers and remove the seeds. Lay them skin side up on the sheet and roast for 30 to 35 minutes, until the skins are blackened and blistered.",
+  "Transfer the hot peppers to a heatproof bowl and cover tightly with foil or a plate. Let them steam until cool enough to handle.",
+  "Rub off the blackened skins under running water. Pat the peppers dry.",
+  "Put the peppers in a food processor with the feta, garlic and the olive oil. Pulse until mostly smooth, leaving a few small chunks of feta.",
+  "Season with a pinch of salt and a few grinds of pepper, then pulse once to combine. Taste, and add a pinch of salt if it's flat.",
+  "Transfer the dip to a bowl. Cut the cucumbers and carrots into sticks. Put the red pepper flakes in a small bowl at the table for anyone who wants heat.",
+  "Serve with the cucumber and carrot sticks. Leftover dip keeps in the fridge for 3 to 4 days. Let it sit out for a few minutes before serving."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Eat Mediterranean Food leads (5.0 from 26 ratings): roasted red peppers blended with feta, olive oil and garlic. Souvlaki For The Soul and Urban Farm and Kitchen agree on peppers and feta, with red wine vinegar or lemon and chili flakes. The pepper flakes are moved to the table to keep the base mild. The dip is served with vegetable sticks to stay gluten-free; pita works if gluten isn't a concern.",
+ "sources": [
+  {
+   "name": "Eat Mediterranean Food",
+   "title": "Spicy Roasted Red Pepper and Feta Dip (Htipiti)",
+   "url": "https://eatmediterraneanfood.com/spicy-roasted-red-pepper-and-feta-dip-htipiti/",
+   "rating": 5.0,
+   "rating_count": 26,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Souvlaki For The Soul",
+   "title": "Htipiti - Greek Red Pepper and Feta Dip",
+   "url": "https://souvlakiforthesoul.com/htipiti-greek-red-pepper-feta-dip/",
+   "rating": 5.0,
+   "rating_count": 9,
+   "read": true
+  },
+  {
+   "name": "Urban Farm and Kitchen",
+   "title": "Roasted Red Pepper Feta Dip (Htipiti)",
+   "url": "https://urbanfarmandkitchen.com/roasted-red-pepper-and-feta-dip-htipiti-or-tirokafteri/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

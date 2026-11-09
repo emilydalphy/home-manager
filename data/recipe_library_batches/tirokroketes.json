@@ -1,0 +1,110 @@
+{
+ "dish_name": "Tirokroketes",
+ "cuisine": "Greek",
+ "main_protein": "cheese",
+ "default_servings": 4,
+ "prep_time_minutes": 55,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {
+   "item": "Feta",
+   "qty": "1 block (8 oz)",
+   "category": "dairy",
+   "cook_qty": "1 cup crumbled"
+  },
+  {
+   "item": "Kefalotyri",
+   "qty": "1 wedge",
+   "category": "dairy",
+   "cook_qty": "1/2 cup grated"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 1/2 tsp chopped"
+  },
+  {
+   "item": "Fresh dill",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 1/2 tsp chopped"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/8 tsp"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Breadcrumbs",
+   "qty": "1 canister",
+   "category": "pantry",
+   "cook_qty": "1 1/4 cups"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  }
+ ],
+ "instructions": [
+  "In a bowl, mash together the feta, kefalotyri, egg, parsley, dill and pepper until creamy. No salt is needed.",
+  "Work in the flour and 3/4 cup of the breadcrumbs until the mixture is thick enough to roll. Cover and chill for 30 minutes.",
+  "Roll the mixture into walnut-sized balls. Roll each ball in the remaining 1/2 cup breadcrumbs, set them on a plate and chill for 10 minutes.",
+  "Pour the oil into a heavy pot, about 1 inch deep, and heat over medium to 350°F. No thermometer? A breadcrumb dropped in should sizzle right away.",
+  "Fry in batches for 2 to 3 minutes, until golden and crisp. Don't crowd the pot.",
+  "Transfer the croquettes to a plate lined with paper towels. Serve warm with a drizzle of honey.",
+  "To make them ahead, freeze the breaded balls before frying. Fry them straight from frozen, adding about 1 minute."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version has 20 ratings, so this follows Maria's Cook Book (no rating shown): feta and kefalotyri bound with egg, flour and breadcrumbs, chilled, breaded and fried, halved to serve four. The Family Cooking and Lemon & Olives show the same shape with kasseri or gouda, and Gourmet Traveller's is a larger, spicier batch. Feta and kefalotyri often use animal rennet, so choose ones labelled vegetarian.",
+ "sources": [
+  {
+   "name": "Maria's Cook Book",
+   "title": "Greek Tirokroketes (Fried Cheese Balls)",
+   "url": "https://mariascookbook.com/greek-tirokroketes-fried-cheese-balls/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Family Cooking",
+   "title": "Tirokroketes: Greek Cheese Croquettes",
+   "url": "https://thefamilycooking.com/tirokroketes-greek-cheese-croquettes/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Lemon & Olives",
+   "title": "Tirokroketes",
+   "url": "https://www.lemonandolives.com/tirokroketes-fried-cheese-balls/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,76 @@
+{
+ "dish_name": "Pasteli",
+ "cuisine": "Greek",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Sesame seeds",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "200 g (about 1 1/4 cups)"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "220 g (about 2/3 cup)"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "the zest"
+  }
+ ],
+ "instructions": [
+  "Line an 8 x 8 inch tin with baking paper.",
+  "Toast the sesame seeds in a large dry frying pan over medium heat for about 2 minutes, until lightly golden. Transfer them to a plate.",
+  "Heat the honey in a saucepan over medium heat until it starts to bubble. Lower the heat and simmer for about 4 minutes.",
+  "Turn the heat to low and stir in the toasted seeds and the salt. Keep cooking, stirring, until the mixture is thick enough to coat a wooden spoon.",
+  "Take the pan off the heat and stir in the lemon zest.",
+  "Press the mixture into the tin and smooth the top with the back of a metal spoon.",
+  "Let it cool for 15 to 20 minutes. While it's still slightly warm, cut it into small squares with a pizza cutter or sharp knife.",
+  "Keep the pasteli in an airtight container at room temperature for up to 3 weeks, or in the fridge for up to 1 month if you like it firmer."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version has a rating, so this follows Lord Lucy: toasted sesame, honey cooked to a thick coat, lemon zest and a little salt, pressed and cut while warm. Anne's Appetite uses the same seeds and honey in equal weight and no salt. Versions with almonds or pistachios are left out to keep it nut-free. Makes about 36 small pieces.",
+ "sources": [
+  {
+   "name": "Lord Lucy",
+   "title": "Pasteli: Greek honey and sesame bars",
+   "url": "https://www.lordlucy.com/post/honey-and-sesame-bars",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Anne's Appetite",
+   "title": "How to Make Pasteli Greek Sesame Bars",
+   "url": "https://www.annesappetite.com/pasteli-greek-sesame-bars/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Melanie Cooks",
+   "title": "Sesame Honey Bars (Greek Pasteli)",
+   "url": "https://www.melaniecooks.com/sesame-honey-bars/16530/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

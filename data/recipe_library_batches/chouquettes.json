@@ -1,0 +1,89 @@
+{
+ "dish_name": "Chouquettes",
+ "cuisine": "French",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Unsalted butter",
+   "qty": "1 stick",
+   "category": "dairy",
+   "cook_qty": "6 tbsp"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 cup (125 g)"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  },
+  {
+   "item": "Swedish pearl sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F and line a baking sheet with parchment.",
+  "Make the glaze first. Boil 2 tbsp water with 2 tbsp of the sugar in a small pan for about 1 minute, stirring until the sugar dissolves. Set it aside to cool.",
+  "In a medium saucepan, bring 1 cup water, the remaining 1 tbsp sugar, the salt and the butter to a boil, stirring until the butter melts.",
+  "Take the pan off the heat and add the flour all at once. Stir hard until the dough is smooth and pulls away from the sides of the pan.",
+  "Let the dough cool for 2 minutes. Whisk in the eggs one at a time, until the dough is smooth and shiny. It may look lumpy after the first egg. That's normal.",
+  "Drop level tablespoons of dough onto the sheet, spaced about 2 inches apart. You should get about 35 mounds.",
+  "Brush the tops with the glaze and sprinkle on the pearl sugar.",
+  "Bake for 20 to 25 minutes, until puffed and deep golden. Don't open the oven in the first 15 minutes.",
+  "Turn the oven off, prop the door open a crack and leave the chouquettes inside for 5 minutes.",
+  "Serve warm or at room temperature. They are best the day they're made. Re-crisp leftovers in a warm oven."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version has 20 ratings, so this follows Pinch and Swirl (4.84 from 18), which brushes the mounds with a sugar glaze before the pearl sugar. The Flavor Bender (5.0 from 12) and Spatula Desserts agree on the choux method but bake lower and pierce the puffs after baking. Pearl sugar must be Swedish, not Belgian, because Belgian melts. Re-crisping leftovers is from The Flavor Bender.",
+ "sources": [
+  {
+   "name": "Pinch and Swirl",
+   "title": "Homemade Chouquettes (French Pastry Sugar Puffs)",
+   "url": "https://pinchandswirl.com/homemade-chouquettes-french-pastry-sugar-puffs/",
+   "rating": 4.84,
+   "rating_count": 18,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Flavor Bender",
+   "title": "Classic Chouquettes",
+   "url": "https://www.theflavorbender.com/chouquettes-recipe-french-sugar-puffs/",
+   "rating": 5.0,
+   "rating_count": 12,
+   "read": true
+  },
+  {
+   "name": "One Sarcastic Baker",
+   "title": "Chouquettes",
+   "url": "https://www.onesarcasticbaker.com/chouquettes/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

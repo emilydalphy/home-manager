@@ -1,0 +1,97 @@
+{
+ "dish_name": "Pissaladiere",
+ "cuisine": "French",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 45,
+ "ingredients": [
+  {
+   "item": "Dairy-free flatbreads",
+   "qty": "1 pack (2 flatbreads, 8 oz each)",
+   "category": "other",
+   "cook_qty": "2 flatbreads"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Fresh thyme",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped leaves"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Anchovy fillets",
+   "qty": "2 tins (2 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Pitted Kalamata olives",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "a pinch"
+  }
+ ],
+ "instructions": [
+  "Open one tin of anchovies and mince 2 of the fillets. Peel and thinly slice the onion, chop the thyme and grate the garlic.",
+  "Heat the olive oil in a large deep skillet over medium heat.",
+  "Add the minced anchovies, thyme, garlic and onion. Cook for about 20 minutes, stirring now and then, until the onion is soft and starting to brown. Keep an eye on it so it doesn't burn.",
+  "Lower the heat to medium-low and add a pinch of salt. Cook for 15 to 20 minutes, until the onions are golden and very soft.",
+  "Take the pan off the heat and let the onions cool while you heat the oven to the temperature on the flatbread package.",
+  "Halve the olives. Lay the flatbreads on a baking sheet and spread the cooled onions evenly over them.",
+  "Arrange the rest of the anchovies over the onions in a criss-cross pattern, then scatter on the olives.",
+  "Bake as the package says, until the edges are crisp and golden. Cut into pieces and serve warm."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Killing Thyme's flatbread version leads (5.0 from 2 ratings; nothing for this dish has 20), chosen because it keeps the classic anchovy, onion and olive topping and uses a bought base. Mon Petit Four (4.8 from 4) makes a butter shortcrust, which would break dairy-free. Homemade Italian Cooking and Simone's Kitchen agree on long, slow onions. The anchovies are what make it a pissaladiere, so they stay; check that the flatbread has no butter or milk.",
+ "sources": [
+  {
+   "name": "Killing Thyme",
+   "title": "Easy Pissaladiere Flatbread",
+   "url": "https://www.killingthyme.net/easy-pissaladiere-flatbread-caramelized-onions-olives-and-anchovies/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Mon Petit Four",
+   "title": "Pissaladiere (French Pizza with Anchovies)",
+   "url": "https://www.monpetitfour.com/pissaladiere/",
+   "rating": 4.8,
+   "rating_count": 4,
+   "read": true
+  },
+  {
+   "name": "Simone's Kitchen",
+   "title": "Classic French Pissaladiere",
+   "url": "https://insimoneskitchen.com/classic-french-pissaladiere-recipe/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

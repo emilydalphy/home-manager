@@ -1,0 +1,104 @@
+{
+ "dish_name": "Loukoumades",
+ "cuisine": "Greek",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 75,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Bread flour",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "250 g (about 2 cups)"
+  },
+  {
+   "item": "Instant yeast",
+   "qty": "1 packet",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to its lowest setting for 10 minutes (about 120°F), then turn it off.",
+  "In a large glass or plastic bowl, stir together the flour, yeast and sugar. Whisk in 1 cup of lukewarm water and the salt until you have a loose, sticky batter.",
+  "Cover the bowl with a damp tea towel and put it in the warm oven. Leave it until the batter has doubled, about 1 hour.",
+  "Pour the olive oil and vegetable oil into a heavy pot, about 2 inches deep. Heat over medium until it reaches 320°F. No thermometer? Drop in a little batter. It should sizzle gently, float up and turn golden in about 2 minutes.",
+  "Set a bowl of cold water and a cooling rack with paper towels underneath beside the stove. Dip a teaspoon in the water, scoop up a small spoonful of batter and push it into the oil with a second wet teaspoon.",
+  "Fry 6 to 8 at a time, turning them with two forks, for about 3 minutes, until golden all over. Don't crowd the pot.",
+  "Transfer the loukoumades to the rack to drain. Repeat with the rest of the batter.",
+  "Warm the honey in a small pan over low heat until it pours easily. Drizzle it over the loukoumades and dust with the cinnamon. Serve warm."
+ ],
+ "advance_prep_notes": "the batter needs about 1 hour to rise before frying",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3
+ ],
+ "method_notes": "No version has 20 ratings, so this follows Real Greek Recipes (4.06 from 17), halved: a flour, water, yeast and sugar batter, no egg or milk, fried in a mix of olive and vegetable oil. Taste of Home and Eleni Saltas agree on a sticky batter that rises about an hour and a half. The honey drizzle and amount are from Taste of Home. Walnuts and other nuts are left off to keep it nut-free. Makes about 20.",
+ "sources": [
+  {
+   "name": "Real Greek Recipes",
+   "title": "Loukoumades (Greek Honey Balls)",
+   "url": "https://realgreekrecipes.com/greek-honey-balls/",
+   "rating": 4.06,
+   "rating_count": 17,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Taste of Home",
+   "title": "Loukoumades (Greek Doughnuts)",
+   "url": "https://www.tasteofhome.com/recipes/loukoumades/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Eleni Saltas",
+   "title": "Loukoumades (Greek Honey Donuts)",
+   "url": "https://elenisaltas.com/2018/01/12/loukoumades-greek-honey-donuts/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
