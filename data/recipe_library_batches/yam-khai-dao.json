@@ -1,0 +1,113 @@
+{
+ "dish_name": "Yam Khai Dao",
+ "cuisine": "Thai",
+ "main_protein": "eggs",
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Limes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Light brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "5 tsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Celery",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 stalks"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Romaine lettuce",
+   "qty": "1 head",
+   "category": "produce",
+   "cook_qty": "about 2 cups chopped"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "about 1/2 cup sprigs"
+  },
+  {
+   "item": "Thai chili",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Cut the celery, onion and carrots into thin matchsticks, about 1 cup of each. Chop the romaine until you have about 2 cups, and pick the cilantro into sprigs until you have about 1/2 cup.",
+  "Thinly slice the garlic. Slice the chili into thin rounds and put them in a small bowl for the table.",
+  "Juice the limes. That should be about 3 tbsp plus 1 tsp.",
+  "Put the sugar and 5 tsp of water in a small saucepan. Stir over low heat for 1 minute, until the sugar dissolves. Take it off the heat.",
+  "Stir in the fish sauce, the lime juice and the garlic. Let it sit off the heat while you fry the eggs.",
+  "In a large bowl, toss the celery, onion, carrots and romaine together.",
+  "Put the oil in a 10-inch skillet and heat it over medium-high heat for 3 to 4 minutes, until a drop of egg sizzles hard the moment it hits. Set a plate lined with paper towels beside the stove. Stand back a little. The eggs will spatter.",
+  "Crack one egg into a small cup, then slide it into the hot oil. Spoon the hot oil over the white for about 30 seconds, until the edges are brown and crisp and the white is set.",
+  "Lift the egg out with a slotted spatula onto the plate. Fry the remaining 7 eggs the same way, one at a time. You can fry two at once if the pan has room.",
+  "Cut each egg into quarters.",
+  "Pour the dressing over the salad and toss. Top with the eggs and the cilantro.",
+  "Serve right away, with the sliced chili on the side for anyone who wants heat."
+ ],
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 10,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version of yam khai dao shows a rating, so this is a fallback lead: Lucy Waverman's (eggs fried in hot oil and basted until crisp, a fish sauce, lime and palm sugar syrup dressing, celery, onion, carrot, romaine and cilantro). Umami Days' version agrees on the fish sauce, lime and palm sugar dressing and the brown, crisp egg edges, and adds lemongrass, shallot and cilantro. The source's palm sugar syrup is light brown sugar and water here, and the chili is moved to the table to keep it mild. Fish sauce is gluten-free by itself, so check the label.",
+ "sources": [
+  {
+   "name": "Lucy Waverman",
+   "title": "Yam khai dao (crispy fried egg salad)",
+   "url": "https://www.lucywaverman.com/recipes/yam-khai-dao-crispy-fried-egg-salad",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Umami Days",
+   "title": "Thai Fried Egg Salad (Yum Khai Dao)",
+   "url": "https://cooking.umamidays.com/thai-fried-egg-salad-yum-khai-dao/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed"
+}

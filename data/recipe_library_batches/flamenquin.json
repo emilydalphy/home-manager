@@ -1,0 +1,94 @@
+{
+ "dish_name": "Flamenquin",
+ "cuisine": "Spanish",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Boneless pork chops",
+   "qty": "4 (about 1 1/4 lbs)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Serrano ham",
+   "qty": "4 slices",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Muenster cheese",
+   "qty": "4 slices",
+   "category": "dairy"
+  },
+  {
+   "item": "Panko breadcrumbs",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Parmesan cheese",
+   "qty": "1 small wedge",
+   "category": "dairy",
+   "cook_qty": "1/4 cup freshly grated"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "In a shallow dish, stir together the panko, the grated Parmesan and the salt.",
+  "In a second shallow dish, whisk the eggs with 1 tsp of water.",
+  "Trim the fat from the pork chops. Put one chop between two sheets of parchment and pound it with a rolling pin or the bottom of a pan until it's about twice as wide and a bit under 1/4 inch thick. Do the same with the other three.",
+  "Lay a slice of ham and a slice of cheese on each chop. Roll each one up tightly from the long edge, with the seam underneath.",
+  "Dip a roll in the egg, then press it into the panko on all sides. Set it on a plate and do the rest.",
+  "Heat the olive oil in a large skillet over medium heat for 1 to 2 minutes, until a pinch of panko sizzles at once.",
+  "Add the rolls, seam side down, and leave them alone for 3 minutes, until the underside is golden.",
+  "Turn them and cook the other sides for 2 to 3 minutes each, until all sides are golden and crisp. You're cooking the pork to 145°F in the middle, so if you have a thermometer, check one roll there. No thermometer? Cut into the thickest roll: the pork should be white with just a blush of pink, and the cheese melted.",
+  "Transfer the rolls to a plate and let them rest for 5 minutes. Cut each one into slices about 3/4 inch thick.",
+  "Cut the lemon into wedges. Serve the slices with the lemon wedges.",
+  "To pack for lunch, let the rolls cool completely and keep them whole in a lidded container in the fridge for up to 2 days. Slice them cold, or warm them in a 350°F (180°C) oven for 10 minutes."
+ ],
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version of flamenquin shows 20 or more ratings, so this is a fallback lead: Elle & Pear's pan-fried pork chop rolls (5.0 from 4), which are filled with ham and melting cheese and coated in panko. Fascinating Spain's traditional version (unrated) agrees on thin pork rolled around Serrano ham and breaded, but deep-fries it and adds bacon; the cheese filling is the common Cordoba variation. Pan-frying keeps it near 30 minutes in all. Muenster stands in for the melting cheese; Manchego also works.",
+ "sources": [
+  {
+   "name": "Elle & Pear",
+   "title": "Flamenquines",
+   "url": "https://www.elleandpear.com/flamenquines/",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Fascinating Spain",
+   "title": "Flamenquines from Cordoba",
+   "url": "https://www.fascinatingspain.com/articulo/spanish-cuisine-recipes/flamenquines-from-cordoba-recipe/20200423073610070704.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed"
+}

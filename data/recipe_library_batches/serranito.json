@@ -1,0 +1,97 @@
+{
+ "dish_name": "Serranito",
+ "cuisine": "Spanish",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Thin pork loin cutlets",
+   "qty": "1 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Soft crusty rolls",
+   "qty": "4",
+   "category": "other"
+  },
+  {
+   "item": "Green bell peppers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Serrano ham",
+   "qty": "4 slices",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Tomato",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Mayonnaise",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Slice the peppers into strips about 1/2 inch wide. Slice the tomato into 4 rounds.",
+  "Heat 2 tbsp of the olive oil in a large skillet over medium-high heat. Add the pepper strips and cook for 4 minutes, stirring now and then, until they're charred in spots.",
+  "Lower the heat to medium-low and cook for 5 minutes, until they're soft. Transfer them to a plate.",
+  "Meanwhile, grate 1 garlic clove into a small bowl and stir in the mayonnaise.",
+  "Pat the pork dry and sprinkle both sides with the salt and pepper.",
+  "Add the remaining tbsp of oil to the same skillet and set it over medium-high heat. Add the pork in one layer, working in two batches if it doesn't fit.",
+  "Cook for 2 to 3 minutes per side, until golden. You're cooking it to 145°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest piece: it's done when it's white with just a faint blush of pink.",
+  "Halve the rolls and toast the cut sides in a dry pan or toaster for 1 to 2 minutes.",
+  "Cut the second garlic clove in half and rub the cut side over the toasted halves of the bottom rolls.",
+  "Spread the garlic mayonnaise on the top halves. Layer the pork, peppers, Serrano ham and tomato on the bottom halves, close the sandwiches and serve right away."
+ ],
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version of the pork serranito has a rating, so this is a fallback lead: Food.com's pork loin version (21 minutes, broiled pork, garlic mayonnaise, roasted green pepper, Serrano ham, tomato). The pepper is pan-fried until charred and soft as in the Nomad Paradise chicken serranito (5.0 from 1) instead of roasted, to keep it quick, and the pork is pan-fried rather than broiled so it shares the pepper pan. The garlic mayonnaise is mayonnaise with grated garlic, as in Nomad Paradise. Honest total is 30 minutes. Best eaten right away, or pack the parts and build at lunch.",
+ "sources": [
+  {
+   "name": "Food.com",
+   "title": "Serranitos (Spanish Sandwiches)",
+   "url": "https://www.food.com/recipe/serranitos-spanish-sandwiches-233802",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Nomad Paradise",
+   "title": "Serranito Recipe",
+   "url": "https://nomadparadise.com/serranito-recipe",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed"
+}

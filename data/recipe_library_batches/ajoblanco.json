@@ -1,0 +1,90 @@
+{
+ "dish_name": "Ajoblanco",
+ "cuisine": "Spanish",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Blanched almonds",
+   "qty": "150 g",
+   "category": "pantry",
+   "cook_qty": "130 g for the soup + 20 g to toast"
+  },
+  {
+   "item": "White bread",
+   "qty": "3 slices (about 75 g)",
+   "category": "other"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/2 cup + 1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sherry vinegar",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Seedless green grapes",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "1 cup"
+  }
+ ],
+ "instructions": [
+  "The night before, or at least 2 hours ahead: remove the crusts and tear the bread into pieces. Put 130 g of the almonds, the bread, garlic, 1/2 cup of the olive oil, sherry vinegar, 2 1/2 cups of cold water, the salt and the pepper in a large bowl.",
+  "Cover the bowl and chill it for at least 2 hours, so the bread and almonds soften.",
+  "Blend everything until it's completely smooth, working in two batches if your blender is small. This can take a couple of minutes.",
+  "Taste it. Add a pinch more salt or a splash more vinegar if it's flat. If it's thicker than you like, stir in a little cold water. Chill it again until you're ready to eat.",
+  "Slice the remaining 20 g of almonds. Toast them in a dry skillet over medium heat for about 1 minute, stirring, until they smell nutty. Transfer them to a small bowl.",
+  "Halve the grapes.",
+  "Stir the soup well and ladle it into bowls. Top each bowl with the grapes, the toasted almonds and a drizzle of the last tbsp of olive oil.",
+  "To pack it for lunch, keep the soup in a lidded jar in the fridge for up to 2 days, and add the grapes and almonds when you eat it. Shake or stir it first."
+ ],
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 5,
+ "advance_prep_notes": "chill at least 2 hours, or the night before",
+ "advance_prep_step_indices": [
+  1,
+  2
+ ],
+ "method_notes": "No version of this soup shows a rating, so this is a fallback lead: The Spanish Chef's (150 g almonds, 75 g bread, 1 small garlic clove, 125 ml oil, 2 tbsp sherry vinegar, everything chilled together before blending, grapes to finish). Andalucia.com's Malaga version blends a soaked bread paste with 3 cloves of garlic and 1 litre of water for 200 g of almonds; the lead's 400 ml of water would be very thick, so the water is raised to 2 1/2 cups (600 ml) toward that ratio and the garlic to 2 cloves. Both serve it cold with grapes. Gluten-free was not asked for, so ordinary bread is used.",
+ "sources": [
+  {
+   "name": "The Spanish Chef",
+   "title": "Ajoblanco | Chilled almond soup",
+   "url": "https://www.thespanishchef.com/recipes/ajoblanco-chilled-almond-soup",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Andalucia.com",
+   "title": "Ajo Blanco (White Gazpacho)",
+   "url": "https://www.andalucia.com/taste/gazpacho/rec3.htm",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed"
+}

@@ -1,0 +1,75 @@
+{
+ "dish_name": "Thai Cucumber Salad",
+ "cuisine": "Thai",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Persian cucumbers",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Shallots",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "White vinegar",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red chili",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Slice the cucumbers into half-moons about 1/4 inch thick. Thinly slice the shallots. Put both in a large bowl.",
+  "Put the vinegar, sugar and salt in a small saucepan over medium heat. Stir until the sugar dissolves.",
+  "Simmer for about 5 minutes, until it's slightly thickened and looks a little syrupy.",
+  "Pour the dressing into a shallow bowl and leave it for 10 minutes, until it's completely cool. Pouring it over warm cucumbers would soften them.",
+  "Meanwhile, thinly slice the chili and put it in a small bowl for the table.",
+  "Pour the cooled dressing over the cucumbers and shallots and toss. Taste it, and add a pinch more salt if it's flat.",
+  "Serve right away, or chill it for up to 1 hour. Put the sliced chili on the table for anyone who wants it.",
+  "To pack for lunch, keep the dressing in a small jar and the cucumbers and shallots in a container in the fridge for up to 2 days. Toss them together when you eat."
+ ],
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 10,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Hungry in Thailand's cucumber salad for satay (5.0 from 3 ratings) is a fallback lead: cucumber and shallot in a simmered sweet vinegar syrup. Kitchen Dreaming (no rating shown) mixes rice vinegar and sugar cold at 1/4 cup vinegar to 2 tablespoons sugar, which is much less sweet. The lead's ratio is about 5 tbsp vinegar to 1/2 cup sugar for 2, so here sugar is cut to 1/2 cup against 1/2 cup of vinegar for 4 to keep it sweet and tangy without being syrupy. The chili is moved to the table to keep the base mild.",
+ "sources": [
+  {
+   "name": "Hungry in Thailand",
+   "title": "Thai Cucumber Salad for Satay (Ajaad)",
+   "url": "https://hungryinthailand.com/thai-cucumber-salad-for-satay/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Kitchen Dreaming",
+   "title": "Thai Cucumber Salad",
+   "url": "https://kitchendreaming.com/thai-cucumber-salad/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed"
+}

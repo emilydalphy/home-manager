@@ -1,0 +1,94 @@
+{
+ "dish_name": "Coca de Recapte",
+ "cuisine": "Spanish",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Bread flour",
+   "qty": "400 g",
+   "category": "pantry"
+  },
+  {
+   "item": "Active dry yeast",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp for the dough + 1 tsp for the onions"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "9 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggplants",
+   "qty": "2 (about 500 g)",
+   "category": "produce"
+  },
+  {
+   "item": "Red bell peppers",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2 large",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2 (about 200 g)",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "At least 1 1/2 hours ahead: stir the flour, 1 tsp of the salt and 2 tbsp of the olive oil together in a large bowl. In a cup, stir the yeast and 1/4 tsp of the sugar into 200 ml of warm water and leave it for 5 minutes, until it's foamy.",
+  "Pour the yeast water into the flour and mix to a soft dough, adding a splash more warm water if it's dry. Knead on a floured counter for 10 minutes, until smooth and stretchy.",
+  "Oil the bowl with 1 tbsp of the olive oil, put the dough in and cover it. Leave it somewhere warm for 1 to 2 hours, until it has doubled.",
+  "Heat the oven to 350°F (180°C). Line a baking sheet with foil.",
+  "Prick the eggplants all over with a fork. Put them on the foil with the whole red peppers and roast the peppers for about 25 minutes, until the skins are blistered, and the eggplants for about 45 minutes, until they've collapsed.",
+  "Transfer the hot peppers to a bowl, cover it and leave them for 10 minutes. Peel and seed the peppers. Peel the eggplants and let them drain in a colander.",
+  "Dice the peppers and eggplants into pieces about 1/2 inch across. Toss them with 2 tbsp of the olive oil and 1/4 tsp of the salt.",
+  "Meanwhile, chop the onions. Peel and chop the tomatoes.",
+  "Warm 3 tbsp of the olive oil in a large skillet over medium-low heat. Add the onions and cook gently for 15 minutes, stirring now and then, until they're very soft.",
+  "Add the tomatoes, 1 tsp of the sugar and the remaining 1/4 tsp salt. Simmer for about 10 minutes, until most of the liquid has cooked off and the mixture is thick.",
+  "Oil two baking sheets with the last tbsp of the olive oil.",
+  "Cut the dough in half. Roll each half into an oval about 11 by 15 inches and put one on each sheet.",
+  "Spread the cooked onions and tomatoes over both ovals, leaving a small border. Scatter the pepper and eggplant over the onions.",
+  "Bake for about 30 minutes, swapping the sheets halfway, until the edges are crisp and golden.",
+  "Let the cocas cool for 5 minutes, then cut each into squares. Serve warm or at room temperature.",
+  "To pack for lunch, let the cocas cool completely, then keep them in a lidded container in the fridge for up to 2 days. Eat them cold or warm them in a 350°F (180°C) oven for 10 minutes."
+ ],
+ "prep_time_minutes": 40,
+ "cook_time_minutes": 90,
+ "advance_prep_notes": "make the dough at least 1 1/2 hours ahead (it rises 1 to 2 hours)",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3
+ ],
+ "method_notes": "The only readable full recipe was The Happy Foodie's (unrated), so it is a fallback lead; its dough, roasted vegetables and sweet onion and tomato topping are used as written. Search summaries of other versions agree the vegetables are roasted whole and that sardines or anchovies are the classic topping, which are left off to keep it vegetarian and vegan. This is a make-ahead dish, not a 30-minute one: the dough rises 1 to 2 hours and the eggplants roast for 45 minutes, so about 2 hours 10 minutes in all, and it is meant to be baked the day before and packed. Written for 4 as a lunch (the source serves 8 as a starter).",
+ "sources": [
+  {
+   "name": "The Happy Foodie",
+   "title": "Open pie with roasted peppers and aubergines (Coca de recapte)",
+   "url": "https://thehappyfoodie.co.uk/recipes/open-pie-with-roasted-peppers-and-aubergines-coca-de-recapte/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed"
+}

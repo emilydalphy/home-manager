@@ -1,0 +1,72 @@
+{
+ "dish_name": "Patatas Alinadas",
+ "cuisine": "Spanish",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Waxy potatoes",
+   "qty": "2 1/4 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/2 cup chopped"
+  },
+  {
+   "item": "Extra virgin olive oil",
+   "qty": "6 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sherry vinegar",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Peel the potatoes and cut them into 1-inch pieces. Put them in a pot and cover with cold water by about 1 inch.",
+  "Add 1 tbsp of the salt to the water and bring it to a boil over high heat. Lower to a steady boil and cook for 15 to 20 minutes, until a toothpick slides into a piece with no resistance.",
+  "Meanwhile, finely chop the onion. Chop the parsley until you have about 1/2 cup.",
+  "In a large bowl, whisk the olive oil and sherry vinegar together.",
+  "Drain the potatoes in a colander and let the steam rise off them for a minute or two.",
+  "When they're cool enough to handle, transfer the potatoes to the bowl with the dressing. Add the onion, parsley, a pinch of salt and the pepper.",
+  "Toss gently so the potatoes stay in pieces. Taste one, and add a pinch more salt if it's flat.",
+  "Serve chilled or at room temperature. To pack it for lunch, keep it in a lidded container in the fridge for up to 3 days."
+ ],
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Only one version could be read for this dish (Spain on a Fork, the lead, 5.0 from 1 rating), so this is a fallback lead. It is the plain Cadiz style: boiled potatoes, raw onion, parsley and a sherry vinegar and oil dressing, with no egg or tuna so it stays vegan. A search summary of other Cadiz versions agrees on dressing the potatoes while still warm and says the egg and tuna version is a separate topping. The fridge time of 3 to 4 days comes from the same site's egg and tuna version, and this plain one is written as 3 days. Honest total is 30 minutes.",
+ "sources": [
+  {
+   "name": "Spain on a Fork",
+   "title": "Spanish Vinegar & Oil Potatoes (Papas Alinadas)",
+   "url": "https://spainonafork.com/spanish-vinegar-and-oil-potatoes-recipe/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed"
+}
