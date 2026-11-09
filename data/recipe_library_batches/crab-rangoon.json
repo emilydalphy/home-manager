@@ -1,0 +1,76 @@
+{
+ "dish_name": "Crab Rangoon",
+ "cuisine": "Chinese",
+ "main_protein": "seafood",
+ "ingredients": [
+  {
+   "item": "Canned crab meat",
+   "qty": "1 can (5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Cream cheese",
+   "qty": "4 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Worcestershire sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Wonton wrappers",
+   "qty": "1 package (18 wrappers)",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Drain the crab well. In a small bowl, gently stir together the crab, the softened cream cheese, the sliced green onion, 1 tsp Worcestershire, 1 tsp soy sauce and the garlic powder. Stir just until combined so the crab stays in flakes.",
+  "Pour the oil into a medium heavy pot so it's about 1 inch deep. Heat it over medium to 325°F. If you don't have a thermometer, drop in a scrap of wonton wrapper. It should sizzle gently and turn golden in about 30 seconds.",
+  "While the oil heats, set out a small bowl of water. Work with 3 wrappers at a time and keep the rest covered. Spoon 2 tsp of filling into the center of each wrapper.",
+  "Wet the edges of each wrapper with a finger dipped in the water. Fold two opposite corners together to make a triangle and press the edges to seal. Dampen the two tips and fold them in. Repeat until the filling is used up.",
+  "Fry 6 at a time for 2 to 3 minutes, until they're deep golden and crisp. Turn them once if one side is browning faster. Transfer them to a plate lined with paper towels.",
+  "Let the oil come back to 325°F between batches. Serve warm."
+ ],
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 10,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead is Spend With Pennies (4.89 from 409): canned crab, cream cheese, green onion, Worcestershire, soy, garlic powder, 2 tsp filling per wrapper, fried at 325°F for 2 to 3 minutes. Dinner at the Zoo could not be read (blocked), so there was no second source to compare. The lead also gives baking (425°F, 12 to 14 minutes) and air frying; this version fries, since that is the crisp one. Sweet and sour dip is left out because the lead doesn't include one.",
+ "sources": [
+  {
+   "name": "Spend With Pennies",
+   "title": "Crab Rangoon (crab and cream cheese filled crispy wontons)",
+   "url": "https://www.spendwithpennies.com/crab-rangoon-crab-cream-cheese-filled-crispy-wontons/",
+   "rating": 4.89,
+   "rating_count": 409,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "origin": "seed"
+}

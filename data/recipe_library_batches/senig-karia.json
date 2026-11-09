@@ -1,0 +1,87 @@
+{
+ "dish_name": "Senig Karia",
+ "cuisine": "Ethiopian",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Anaheim peppers",
+   "qty": "6",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Plum tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "White wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Mitmita",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "In a bowl, whisk together the oil, vinegar, 1 tbsp lemon juice, the salt and the pepper.",
+  "Finely chop the onions. Cut the tomatoes in half, scoop out the seeds, and chop them fine. Add both to the bowl and toss.",
+  "Put on rubber gloves. Cut a T-shaped slit along one side of each pepper and scrape out the seeds with a teaspoon.",
+  "Hold each pepper open and pack it full with the onion and tomato filling.",
+  "Arrange the peppers on a platter. Serve with the mitmita in a small bowl at the table for anyone who wants heat."
+ ],
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 0,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version of senig karia has a rating. The lead is Senig Karia Be'timatim from Kittee Berns' Teff Love (chiles stuffed with minced onion and tomato, oil, salt, pepper and mitmita; only part of the page could be read). Yohanis Gebreyesus' stuffed green peppers give the amounts and a light vinaigrette of oil, vinegar and lemon. Mild Anaheim peppers replace jalapeños, and the mitmita goes on the side.",
+ "sources": [
+  {
+   "name": "Ckbk (Teff Love)",
+   "title": "Senig Karia Be'timatim",
+   "url": "https://app.ckbk.com/recipe/teff73115c09s001r019/senig-karia-betimatim",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food & Travel (Yohanis Gebreyesus)",
+   "title": "Stuffed Anaheim peppers",
+   "url": "https://foodandtravel.com/food/recipes/stuffed-hot-green-peppers",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed"
+}

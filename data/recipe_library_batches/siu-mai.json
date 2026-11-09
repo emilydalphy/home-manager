@@ -1,0 +1,125 @@
+{
+ "dish_name": "Siu Mai",
+ "cuisine": "Chinese",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Dried shiitake mushrooms",
+   "qty": "2 small",
+   "category": "produce"
+  },
+  {
+   "item": "Shrimp",
+   "qty": "4 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Ground pork",
+   "qty": "8 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Baking soda",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1/2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "White pepper",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1/2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 tbsp"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Round dumpling wrappers",
+   "qty": "1 package (12 wrappers)",
+   "category": "produce"
+  },
+  {
+   "item": "Carrot",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Chili garlic sauce",
+   "qty": "1 jar",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "At least 2 hours ahead, or the night before: soak the dried shiitake in 1/4 cup hot water. Keep them in the fridge if it's overnight.",
+  "Squeeze the mushrooms dry, trim off the tough stems, and chop them fine. That should be about 2 tbsp.",
+  "Peel and devein the shrimp. Toss them in a bowl with 1/2 tsp of the sugar, the pinch of baking soda and 1 tbsp water. Leave them 15 minutes, then rinse them under cold water until the water runs clear. Drain well and chop them roughly.",
+  "While the shrimp sit, put the pork in a large bowl with the remaining 1 1/2 tsp sugar, the cornstarch, Shaoxing wine, salt and white pepper. Stir in one direction with chopsticks or a wooden spoon for about 5 to 8 minutes, until it turns into a sticky paste that clings to the bowl.",
+  "Add the shrimp and keep stirring in the same direction for about 3 minutes. Stir in the mushrooms, vegetable oil, oyster sauce and sesame oil for another minute or two.",
+  "Peel the carrot and mince 1 tbsp of it very fine. Put 2 tbsp of filling in the center of a wrapper. Gather the sides up around it to make an open cup, pack the filling in, and press the top flat. Repeat with the rest, then top each with a pinch of carrot.",
+  "Line a steamer with parchment and set the first 6 siu mai in it, about 1 inch apart. Pour water into a wok or pot so it sits 1/2 inch below the steamer's bottom, and bring it to a simmer.",
+  "Steam over medium heat for 9 minutes. You're cooking the filling to 165°F, so if you have a thermometer, check one there. No thermometer? Cut one open. It's done when the pork has no pink and the shrimp are opaque.",
+  "Steam the second batch the same way, topping up the water with boiling water if it runs low. Serve with the chili garlic sauce on the side."
+ ],
+ "prep_time_minutes": 40,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "soak the dried shiitake at least 2 hours ahead, or overnight",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "The lead is The Woks of Life (5 from 23): ground pork, shrimp treated with sugar and baking soda, shiitake, oyster sauce, steamed 9 minutes per batch. Written at half the lead's amounts, so 12 dumplings. A second page (Takes Two Eggs, 5 from 1) agrees on the filling and steams for 7 to 8 minutes with a 165°F target. The lead's 2 hour mushroom soak is the only ahead step; the wrappers can be thin Hong Kong style rounds or square wonton wrappers.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Siu Mai",
+   "url": "https://thewoksoflife.com/siu-mai/",
+   "rating": 5.0,
+   "rating_count": 23,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Takes Two Eggs",
+   "title": "Cantonese Shumai (Pork and Shrimp Siu Mai)",
+   "url": "https://takestwoeggs.com/?p=7556",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "origin": "seed"
+}

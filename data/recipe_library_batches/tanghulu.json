@@ -1,0 +1,73 @@
+{
+ "dish_name": "Tanghulu",
+ "cuisine": "Chinese",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Strawberries",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Bamboo skewers",
+   "qty": "1 pack",
+   "category": "other"
+  },
+  {
+   "item": "Ice",
+   "qty": "1 bag",
+   "category": "frozen"
+  }
+ ],
+ "instructions": [
+  "Wash the strawberries, pull off the stems, and dry them completely with a towel. Any water on them will stop the sugar from sticking.",
+  "Thread 1 or 2 strawberries onto each skewer, near one end so you have a handle. Line a tray with parchment.",
+  "Fill a large bowl with cold water and plenty of ice.",
+  "Put the sugar and 1 cup water in a medium saucepan and bring to a boil over medium heat. Don't stir it.",
+  "Cook for 5 to 10 minutes, until the syrup is amber and reaches 300°F. If you don't have a thermometer, drop a little syrup into the ice water. It's ready when it sets at once into brittle threads that snap. If the threads bend, keep cooking.",
+  "Take the pot off the heat and tilt it so the syrup pools deep on one side. Stand back, since the syrup is very hot.",
+  "Dip a skewer in the syrup and twirl it to coat, then plunge it straight into the ice water for a couple of seconds. Set it on the tray. Repeat with the rest.",
+  "Let them rest for a few minutes, then serve right away."
+ ],
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version has 20 ratings. The lead is Alphafoodie (4.43 from 7): sugar and water cooked to 300°F (hard crack), then dipped and plunged in ice water. Izzy Cooking (5 from 2) and Takes Two Eggs (5 from 1) add corn syrup to stop crystals and go up to 320°F; the lead doesn't use it, so this version doesn't either. Use firm strawberries and dry them well.",
+ "sources": [
+  {
+   "name": "Alphafoodie",
+   "title": "Tanghulu Recipe (Candied Fruit)",
+   "url": "https://www.alphafoodie.com/how-to-make-tanghulu/",
+   "rating": 4.43,
+   "rating_count": 7,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Izzy Cooking",
+   "title": "Easy Homemade Tanghulu (Candied Fruit)",
+   "url": "https://izzycooking.com/candied-fruit-tanghulu/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true
+  },
+  {
+   "name": "Takes Two Eggs",
+   "title": "Strawberry Tanghulu",
+   "url": "https://takestwoeggs.com/?p=5659",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed"
+}
