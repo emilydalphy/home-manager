@@ -1,0 +1,123 @@
+{
+ "dish_name": "Red-Braised Beef",
+ "cuisine": "Chinese",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Boneless beef chuck roast",
+   "qty": "2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Shaoxing wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece",
+   "category": "produce",
+   "cook_qty": "5 slices"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "7 tsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Light soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Dark soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Scallions",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "5 scallions"
+  },
+  {
+   "item": "Star anise",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "3",
+   "category": "pantry"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the beef into 1 1/2-inch chunks. Slice 5 thin slices of ginger. Peel the 6 garlic cloves. Cut the white parts off 5 scallions and chop them, and thinly slice the green parts for the top.",
+  "Put the beef in a large pot with 2 of the ginger slices and 1 tbsp of the Shaoxing wine. Cover with cold water, bring it to a boil, and boil for 1 minute. Drain the beef, rinse it under running water, and discard the ginger. Rinse out the pot.",
+  "Put the pot back on the stove over medium heat. Add the 2 tbsp oil and 7 tsp sugar. Cook, stirring, for about 2 minutes, until the sugar melts and turns pale amber.",
+  "Add the beef, the other 3 ginger slices and the garlic. Stir-fry for 3 to 4 minutes, until the edges of the beef are lightly browned.",
+  "Pour in the other 2 tbsp Shaoxing wine and cook for 1 minute. Add the 2 tbsp light soy sauce and 1 tsp dark soy sauce and stir for 1 minute.",
+  "Add the 1 tbsp oyster sauce, the chopped scallion whites, the star anise, bay leaves, cinnamon stick and 6 cups water. Bring it to a boil, then cover and turn the heat down to medium-low. Simmer for 1 hour, stirring now and then, until a fork slides into the beef easily. If it isn't tender, add a cup of water and keep simmering, checking every 10 minutes.",
+  "While the beef simmers, rinse the rice and cook it in 2 1/4 cups water, covered, the way you usually do.",
+  "Take off the lid and fish out the star anise, bay leaves and cinnamon stick. Turn the heat up to medium-high and stir for 10 to 15 minutes, until the sauce thickens enough to coat the beef.",
+  "Taste it. If it's flat, add a splash of light soy sauce.",
+  "Serve the beef over the rice with the scallion greens on top. Leftovers keep in an airtight container in the fridge for up to 4 days, or in the freezer for up to 3 months. Reheat on the stove with a splash of water."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 90,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version of this dish had 20 ratings, and RecipeTin Eats has no red-braised beef page, so it leads with the best one found: The Woks of Life (4.80 from 10 ratings). America's Test Kitchen (4.5 from 16 ratings) is a 3 1/2 hour version with potatoes, carrots and tomato that agrees on the sugar caramel, the blanch and the braise. The lead blanches the beef, melts sugar in oil, browns the beef with ginger and garlic, then simmers with soy, oyster sauce, star anise, bay leaf and cinnamon until tender and reduces the sauce. The dried chili is left out to keep it mild. It's a batch dish: about 1 1/2 hours of cooking, and the leftovers keep.",
+ "sources": [
+  {
+   "name": "The Woks of Life",
+   "title": "Red Braised Beef (红烧牛肉)",
+   "url": "https://thewoksoflife.com/red-braised-beef/",
+   "rating": 4.8,
+   "rating_count": 10,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "America's Test Kitchen",
+   "title": "Red-Braised Beef with Carrots and Potatoes",
+   "url": "https://www.americastestkitchen.com/recipes/17254-red-braised-beef-with-carrots-and-potatoes",
+   "rating": 4.5,
+   "rating_count": 16,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

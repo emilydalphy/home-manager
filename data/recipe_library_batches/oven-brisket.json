@@ -1,0 +1,81 @@
+{
+ "dish_name": "Oven Brisket",
+ "cuisine": "American",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Beef brisket, flat cut",
+   "qty": "3 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Kosher salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 can (6 oz)",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tbsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "3",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 350°F with a rack in the middle.",
+  "Trim the brisket, leaving a thin layer of fat on top. Pat it dry. Rub 2 tsp salt and the 1/2 tsp pepper all over it.",
+  "Slice the onions 1/2 inch thick. Peel the carrots and cut them into large chunks. Chop the 2 garlic cloves.",
+  "Heat the oil in a Dutch oven or heavy roasting pan over medium-high heat. Add the brisket and sear it for 5 to 7 minutes on each side, until it's deep brown. Transfer it to a platter.",
+  "Add the onions to the same pot over medium heat. Cook for about 15 minutes, stirring and scraping up the browned bits, until they're golden. If they start to burn, add a splash of water.",
+  "Take the pot off the heat. Set the brisket on the onions with the fat side up and pour over any juices from the platter. Spread the 1 1/2 tbsp tomato paste over the top, then scatter the garlic and carrots around the edges.",
+  "Cover the pot tightly with its lid or heavy foil. Bake for 1 hour.",
+  "Transfer the brisket to a cutting board and slice it across the grain, 1/4 inch thick. Put the slices back in the pot, overlapping them, and cover tightly again.",
+  "Turn the oven down to 325°F. Bake for 1 hour to 1 hour 30 minutes, until a fork slides in easily.",
+  "Taste the juices. If they're flat, stir in a pinch more salt.",
+  "Serve the slices with the onions, carrots and juices spooned over.",
+  "To store, keep the sliced brisket in its juices, covered, in the fridge for up to 3 days. For the freezer, freeze it in portions with some of the juices for up to 2 months, then thaw it in the fridge for a day or two. Reheat covered in a baking dish at 300°F for about 45 minutes, with a splash of water if the juices have thickened."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 180,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Once Upon a Chef (4.85 from 288 ratings) is the only readable braised oven brisket found with a strong rating, so it leads and is scaled to a 3 lb flat cut. It sears the brisket, softens a mountain of onions, adds no liquid and bakes it covered, then slices it and finishes it back in the pot in its own juices. The flour dusting is left out so the dish stays gluten-free. It's a braise in the oven rather than a dry roast, which is why it makes juices and keeps and freezes well. The honest time is about 3 1/2 hours with 30 minutes of prep.",
+ "sources": [
+  {
+   "name": "Once Upon a Chef",
+   "title": "Classic Braised Brisket with Onions",
+   "url": "https://www.onceuponachef.com/recipes/onion-braised-beef-brisket.html",
+   "rating": 4.85,
+   "rating_count": 288,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

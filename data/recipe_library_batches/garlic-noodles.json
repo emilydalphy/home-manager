@@ -1,0 +1,94 @@
+{
+ "dish_name": "Garlic Noodles",
+ "cuisine": "Chinese",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Spaghetti or fettuccine",
+   "qty": "8 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "12 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Vegetarian oyster sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp plus 1 tsp"
+  },
+  {
+   "item": "Sesame oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Bring a large pot of water to a boil.",
+  "While it heats, mince the 12 garlic cloves and thinly slice the green onions. Set a quarter of the green onions aside for the top.",
+  "In a medium bowl, stir together 3 tbsp brown sugar, 3 tbsp vegetarian oyster sauce, 1 tbsp plus 1 tsp soy sauce, 1 tsp sesame oil and 1 1/2 tsp salt until the sugar dissolves.",
+  "Add the spaghetti to the boiling water and cook until it's tender. Drain it and set it aside.",
+  "Heat the 4 tbsp oil in a large skillet over medium-high heat. Add the garlic and the rest of the green onions. Stir for about 1 minute, until they smell fragrant and the garlic is just turning light gold.",
+  "Turn the heat down to medium and pour in the sauce. Stir for 30 seconds.",
+  "Add the spaghetti and toss until it's coated and hot, 1 to 2 minutes.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve warm with the reserved green onions on top."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Hungry Huy (5.0 from 20 ratings) leads: a pile of garlic cooked in fat, tossed with noodles and a sauce of oyster sauce, soy, brown sugar and sesame oil. Every source uses butter (RecipeTin Eats' 4.93 from 51 ratings also has parmesan and fish sauce), so the butter is swapped for vegetable oil to keep this dairy-free, and vegetarian oyster sauce replaces oyster sauce. The garlic is 12 cloves instead of the lead's 21 to keep it mild for kids. The honest time is 30 minutes, not 20, and with the butter gone it's garlicky rather than buttery.",
+ "sources": [
+  {
+   "name": "Hungry Huy",
+   "title": "Asian Garlic Noodles (Quick & Easy)",
+   "url": "https://www.hungryhuy.com/garlic-noodles-recipe/",
+   "rating": 5.0,
+   "rating_count": 20,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "RecipeTin Eats",
+   "title": "Garlic Noodles",
+   "url": "https://www.recipetineats.com/garlic-noodles/",
+   "rating": 4.93,
+   "rating_count": 51,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

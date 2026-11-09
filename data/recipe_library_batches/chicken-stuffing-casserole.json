@@ -1,0 +1,79 @@
+{
+ "dish_name": "Chicken Stuffing Casserole",
+ "cuisine": "American",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Stuffing mix",
+   "qty": "1 box (6 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Frozen mixed vegetables",
+   "qty": "1 bag (16 oz)",
+   "category": "frozen",
+   "cook_qty": "3 cups"
+  },
+  {
+   "item": "Rotisserie chicken",
+   "qty": "1",
+   "category": "meat/seafood",
+   "cook_qty": "about 2 cups chopped meat"
+  },
+  {
+   "item": "Condensed cream of chicken soup",
+   "qty": "1 can (10.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Sour cream",
+   "qty": "1 tub (8 oz)",
+   "category": "dairy",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F. Rub the inside of a 2 1/2-quart baking dish with the oil.",
+  "Put the stuffing mix in a bowl and stir in the hot water the box calls for. Set it aside for 5 minutes.",
+  "Meanwhile, pull the meat off the rotisserie chicken and discard the skin and bones. Chop the meat. That should be about 2 cups.",
+  "Put 3 cups of the frozen vegetables in a colander and run hot water over them until they're thawed. Drain them well.",
+  "In the baking dish, stir together the vegetables, chicken, soup, 1/3 cup sour cream, 1/2 tsp salt and 1/4 tsp pepper.",
+  "Spread the stuffing evenly over the top.",
+  "Bake for 25 to 30 minutes, until the edges are bubbling and the top is golden.",
+  "Serve it hot, spooned straight from the dish. Leftovers keep in an airtight container in the fridge for up to 4 days, or in the freezer for up to 3 months."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Spend With Pennies (4.94 from 424 ratings) leads: cooked chicken, thawed mixed vegetables, cream of chicken soup and a little sour cream under a layer of prepared stuffing, baked at 400°F. Cooked chicken is used straight from a rotisserie bird, so the honest time is 45 minutes. Other versions (Taste of Home style, Amanda's Cookin') add more soup or broth or use raw chicken under the stuffing; this follows the lead. It isn't dairy-free or gluten-free, only nut-free as asked.",
+ "sources": [
+  {
+   "name": "Spend With Pennies",
+   "title": "Chicken Stuffing Casserole",
+   "url": "https://www.spendwithpennies.com/chicken-stuffing-casserole/",
+   "rating": 4.94,
+   "rating_count": 424,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

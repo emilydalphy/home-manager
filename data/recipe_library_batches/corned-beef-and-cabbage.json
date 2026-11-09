@@ -1,0 +1,84 @@
+{
+ "dish_name": "Corned Beef and Cabbage",
+ "cuisine": "American",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Corned beef brisket",
+   "qty": "3 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Black peppercorns",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Small red potatoes",
+   "qty": "1 1/2 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Green cabbage",
+   "qty": "1 small head",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Rinse the corned beef under cold water and pat it dry. Put it in a large Dutch oven or stockpot with the fat side up.",
+  "Tear open the spice packet that came with the beef and sprinkle it over the top. Add the 2 bay leaves and the 1/2 tsp peppercorns.",
+  "Pour in enough cold water to cover the beef by about 1 inch. Set the pot on the stove over medium-high heat, uncovered, and bring it just to a boil. Skim off any gray foam.",
+  "Turn the heat down to low and cover the pot. Keep it at a gentle simmer with a few small bubbles, not a rolling boil. Cook for 2 hours 30 minutes.",
+  "Meanwhile, scrub the potatoes and halve any large ones. Peel the carrots and cut them into 2-inch chunks. Cut the cabbage through the core into 8 wedges and leave them together.",
+  "After the 2 hours 30 minutes, add the carrots and potatoes and push them under the liquid. If the pot looks low, add up to 2 cups of hot water. Cover and cook for 30 minutes, until a knife slides into a potato easily.",
+  "Nestle the cabbage wedges into the liquid. Cover and cook for 15 minutes, until the cabbage is soft.",
+  "Transfer the beef to a cutting board and let it rest for 10 minutes. You're cooking it until a fork slides in easily, which is about 195°F in the middle if you have a thermometer. No thermometer? If a fork meets resistance, put it back in the pot and check every 15 minutes.",
+  "Slice the beef thinly across the grain. Transfer the vegetables to a platter with a ladle of the cooking liquid, and serve with the sliced beef.",
+  "Store the leftover beef and the vegetables in separate airtight containers in the fridge for up to 4 days. For the freezer, freeze the sliced beef in portions for up to 2 months. Reheat gently on the stove with a splash of the cooking liquid."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 195,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Cup of Yum (5.0 from 40 ratings) is the lead: a Dutch oven simmer with carrots and potatoes added for the last 45 minutes and cabbage for the last 15. Jessica Gavin (4.88 from 8 ratings) and Kitchen Dreaming (no rating shown) agree on the gentle simmer, fat side up, and cabbage last, and Jessica Gavin adds celery, onion and garlic that this version leaves out. Water is used instead of broth so the dish stays gluten-free, and the brisket's own spice packet is worth checking for gluten-free on the label. The honest time is about 3 1/2 hours, so this is a weekend batch dinner with leftovers, not a weeknight one.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "Corned Beef and Cabbage (Stove Top)",
+   "url": "https://cupofyum.com/recipes/corned-beef-and-cabbage-stove-top",
+   "rating": 5.0,
+   "rating_count": 40,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Jessica Gavin",
+   "title": "Corned Beef and Cabbage",
+   "url": "https://www.jessicagavin.com/corned-beef-and-cabbage/",
+   "rating": 4.88,
+   "rating_count": 8,
+   "read": true
+  },
+  {
+   "name": "Kitchen Dreaming",
+   "title": "Traditional Corned Beef and Cabbage Recipe (Stovetop Boiled Method)",
+   "url": "https://kitchendreaming.com/traditional-corned-beef-and-cabbage-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

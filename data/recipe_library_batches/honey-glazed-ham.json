@@ -1,0 +1,78 @@
+{
+ "dish_name": "Honey Glazed Ham",
+ "cuisine": "American",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Fully cooked spiral-cut bone-in ham",
+   "qty": "5 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Brown sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cloves",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 325°F with a rack in the lower third. Take the packaging and the plastic disk off the ham.",
+  "Set the ham cut side down in a shallow roasting pan. Cover the ham and the pan loosely with foil.",
+  "Bake for 12 to 16 minutes per pound, which is about 1 hour 15 minutes for a 5 lb ham. You're heating it to 135°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut a slice from the thickest part near the bone: it should be steaming hot all the way through.",
+  "While the ham bakes, stir the 1/2 cup honey, 2 tbsp brown sugar, 1 tbsp Dijon, 1/2 tsp garlic powder and 1/8 tsp cloves together in a small bowl.",
+  "When the ham is hot, take it out and turn the oven up to 425°F. Remove the foil. Brush the ham with the glaze in 2 to 3 generous coats, getting it between the slices.",
+  "Put the ham back in the oven uncovered for 15 to 20 minutes, until the glaze is browned and the ham reaches 140°F in the middle.",
+  "Let the ham rest for 15 minutes before you cut it.",
+  "Serve the slices with the pan juices spooned over.",
+  "Store the leftover ham in an airtight container in the fridge for up to 4 days. For the freezer, freeze sliced ham with a spoonful of pan juices for up to 2 months. Thaw it overnight in the fridge, then reheat it covered at 300°F with a splash of water."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 100,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Spend With Pennies (4.99 from 89 ratings) leads: bake the fully cooked spiral ham covered at 325°F to 135°F, then brush on the honey glaze and finish at 425°F to 140°F. Its glaze has melted butter, which is left out here to keep the dish dairy-free; the honey, brown sugar, mustard and cloves still make a thick glaze. The amounts are halved for a 5 lb half ham, which still leaves leftovers for days. Check the ham's label for gluten-free, since some glazed or cured hams carry gluten. Jessica Gavin's version (5.0 from 5 ratings) uses pineapple juice and a longer bake and agrees on the covered bake and the 425°F finish.",
+ "sources": [
+  {
+   "name": "Spend With Pennies",
+   "title": "Honey Baked Ham",
+   "url": "https://www.spendwithpennies.com/honey-baked-ham/",
+   "rating": 4.99,
+   "rating_count": 89,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Jessica Gavin",
+   "title": "Honey Glazed Ham",
+   "url": "https://www.jessicagavin.com/baked-honey-glazed-ham/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
