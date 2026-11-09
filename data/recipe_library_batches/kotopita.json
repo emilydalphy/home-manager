@@ -1,0 +1,122 @@
+{
+ "dish_name": "Kotopita",
+ "cuisine": "Greek",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Bone-in chicken thighs",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Kefalotyri cheese",
+   "qty": "1/2 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Butter",
+   "qty": "8 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Whole milk",
+   "qty": "3/4 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "3 1/2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Phyllo dough",
+   "qty": "1 box",
+   "category": "frozen",
+   "cook_qty": "7 sheets"
+  },
+  {
+   "item": "Deli ham",
+   "qty": "1 small pack",
+   "category": "meat/seafood",
+   "cook_qty": "1 oz"
+  },
+  {
+   "item": "Bacon",
+   "qty": "1 pack",
+   "category": "meat/seafood",
+   "cook_qty": "1 oz"
+  },
+  {
+   "item": "Ground nutmeg",
+   "qty": "a pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sesame seeds",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  }
+ ],
+ "instructions": [
+  "Put the chicken in a medium pot with the red onion, sliced, and 1/2 teaspoon of the salt. Cover with about 4 cups of water and bring to a boil. Skim off the foam.",
+  "Turn the heat down to a gentle simmer, cover, and cook for 25 minutes, until the chicken is cooked through. Lift out the chicken and let it cool. Strain the broth and keep 3/4 cup.",
+  "Remove the skin and bones and shred the meat into thin strips. Finely chop the ham and bacon.",
+  "Heat the oven to 350°F. Melt 3 tablespoons of the butter in a saucepan over medium heat. Whisk in the flour and cook for 1 minute.",
+  "Whisk in the milk and the 3/4 cup broth a little at a time. Keep whisking over medium heat for 4 to 5 minutes, until the sauce is thick and bubbling. Take it off the heat.",
+  "Beat the egg in a small bowl and whisk in a ladle of the hot sauce. Stir it back into the saucepan with the cheese, the nutmeg, the remaining 1/2 teaspoon salt and the pepper.",
+  "Fold in the chicken, ham and bacon. Taste it, and add a pinch more salt if it's flat.",
+  "Melt the remaining 5 tablespoons butter. Brush an 8 inch square baking dish with butter and lay in 4 sheets of phyllo, brushing each with butter and letting the edges hang over the sides.",
+  "Spread the filling over the phyllo and fold the overhanging edges in over it.",
+  "Lay the remaining 3 sheets on top, scrunching each loosely. Brush with the rest of the butter, sprinkle with the sesame seeds, and poke a few holes in the top for steam.",
+  "Bake for 50 to 60 minutes, until the top is deep golden and crisp. Let it rest for 10 minutes, then cut into squares.",
+  "To keep it, cool the leftovers, cover, and refrigerate for up to 3 days or freeze for up to 2 months. Reheat squares in a 350°F oven for 15 to 20 minutes, until hot in the middle and crisp on top.."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 40,
+ "cook_time_minutes": 60,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is My Greek Dish (4.91 from 606): chicken poached with onions, a cheesy bechamel, ham and bacon, baked between buttered phyllo sheets. Its amounts are for a big tray of 8 to 10 pieces, so everything here is halved for an 8 inch pan. The recipe lists no stock but its method adds 1 1/2 cups, so the poaching broth is used. Dimitra's Dishes uses roasted thighs, roasted red peppers and three cheeses with no ham, and bakes a bigger tray. It is a pie that reheats well, so the keeping and reheating line is the last step.",
+ "sources": [
+  {
+   "name": "My Greek Dish",
+   "title": "Greek Chicken Pie (Kotopita)",
+   "url": "https://www.mygreekdish.com/recipe/greek-chicken-pie-kotopita/",
+   "rating": 4.91,
+   "rating_count": 606,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Dimitra's Dishes",
+   "title": "Kotopita Greek Style Chicken in Phyllo Pie",
+   "url": "https://www.dimitrasdishes.com/kotopita-greek-style-chicken-in-phyllo-pie/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

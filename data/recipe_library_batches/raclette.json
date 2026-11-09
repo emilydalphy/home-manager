@@ -1,0 +1,105 @@
+{
+ "dish_name": "Raclette",
+ "cuisine": "French",
+ "main_protein": "cheese",
+ "ingredients": [
+  {
+   "item": "Raclette cheese",
+   "qty": "1 lb",
+   "category": "dairy"
+  },
+  {
+   "item": "Baby potatoes",
+   "qty": "2 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Cornichons",
+   "qty": "1 jar",
+   "category": "pantry"
+  },
+  {
+   "item": "Pickled onions",
+   "qty": "1 jar",
+   "category": "pantry"
+  },
+  {
+   "item": "Mixed salad greens",
+   "qty": "1 bag",
+   "category": "produce"
+  },
+  {
+   "item": "Dijon mustard",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "White wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the potatoes in a large pot, cover them with cold water by about an inch, and add 2 teaspoons of the salt.",
+  "Bring the pot to a boil over high heat, then turn it down to a steady simmer. Cook the potatoes for 15 to 20 minutes, until a fork slides in easily.",
+  "Meanwhile, set the oven rack about 6 inches under the broiler and turn the broiler on high.",
+  "In a large salad bowl, whisk the Dijon and the vinegar. Slowly whisk in the olive oil until it thickens a little, then stir in the remaining 1/2 teaspoon salt and the pepper. Put the greens on top and leave them untossed for now.",
+  "Drain the potatoes and let them steam dry for 2 minutes. Halve them and lay them cut side up in a single layer on two rimmed baking sheets.",
+  "Cover each potato half with a slice of cheese, using half the cheese on each sheet.",
+  "Broil the first sheet for 3 to 4 minutes, until the cheese is bubbling and spotted brown. Stay close. Broilers vary, and the cheese goes from brown to burnt fast.",
+  "Transfer the first sheet to the table, then slide the second sheet under the broiler for 3 to 4 minutes.",
+  "Toss the salad with its dressing. Put the cornichons and pickled onions in small bowls. Serve the potatoes hot with the pickles and the salad."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is Christina's Cucina (raclette potatoes with cornichons, 4.9 from 26), which uses no raclette grill: boiled potatoes, cheese melted under the broiler, cornichons. It is written as an appetizer for two, so the amounts here are scaled up to a dinner (about 4 oz of cheese a person). The pickled onions and mustard salad come from Obviously French's family raclette dinner; Good Cheap Eats adds ham, which is left out here. Naturally gluten-free and nut-free.",
+ "sources": [
+  {
+   "name": "Christina's Cucina",
+   "title": "Raclette Potatoes with Cornichons",
+   "url": "https://www.christinascucina.com/raclette-with-potatoes-and-cornichons/",
+   "rating": 4.9,
+   "rating_count": 26,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Obviously French",
+   "title": "Raclette",
+   "url": "https://obviouslyfrench.com/raclette/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Good Cheap Eats",
+   "title": "Raclette",
+   "url": "https://goodcheapeats.com/raclette/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,137 @@
+{
+ "dish_name": "Pastitsada",
+ "cuisine": "Greek",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Beef chuck",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Whole cloves",
+   "qty": "4",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground allspice",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Dry red wine",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Beef broth",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato passata",
+   "qty": "1 3/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Red wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Bucatini",
+   "qty": "12 oz",
+   "category": "pantry"
+  },
+  {
+   "item": "Parmesan",
+   "qty": "1 wedge",
+   "category": "dairy",
+   "cook_qty": "1/2 cup grated"
+  },
+  {
+   "item": "Red pepper flakes",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the beef into 3/4 inch cubes and pat them dry. Season with 1 teaspoon of the salt, then toss with the flour.",
+  "Heat 3 tablespoons of the oil in a heavy pot over medium-high heat. Brown the beef in 3 batches, 3 to 4 minutes a batch, until deep golden. Don't crowd the pot. Transfer each batch to a plate.",
+  "Turn the heat down to medium. Dice the onions and add them to the pot with the remaining 1 tablespoon oil and the cloves. Cook for 6 to 8 minutes, scraping up the browned bits, until the onions are soft.",
+  "Return the beef and its juices to the pot. Stir in the cinnamon, allspice and sugar and cook for 1 minute, until you can smell the spices.",
+  "Add the wine, turn the heat up, and cook for 6 to 8 minutes, until it has reduced by about half.",
+  "Add the broth and the passata. Bring to a simmer, then turn the heat down to medium-low and cover, leaving the lid slightly open. Cook for 1 hour 45 minutes, stirring now and then, until the beef is very tender and the sauce coats the spoon. Add a splash of water if it gets too thick.",
+  "About 15 minutes before it's done, bring a large pot of salted water to a boil. Cook the bucatini until al dente, then drain.",
+  "Stir the vinegar into the stew and take out the cloves. Taste it, and add the remaining 1/2 teaspoon salt if it's flat.",
+  "Divide the bucatini among bowls and spoon the stew over it. Top with the Parmesan. Put the red pepper flakes on the table for the adults.",
+  "To keep it, cool the stew and refrigerate it for up to 4 days or freeze it for up to 3 months. Cook fresh bucatini each time. Reheat the stew over low heat with a splash of water."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 150,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version has 20 ratings (Krumpli has none, Dimitra's Dishes has none, Culinary Flavors 4.7 from 3, Food.com one review), and RecipeTin Eats has no pastitsada, so this is a fallback led by Krumpli, whose staged method (flour-dusted beef, wine reduced, vinegar at the end) is the most careful. Dimitra's Dishes uses the tomato, cloves and cinnamon without wine; Culinary Flavors adds more spices and mushrooms. Amounts are doubled from Krumpli's version for two. Chili flakes are on the table, not in the pot. It is a long braise but a batch dish that keeps.",
+ "sources": [
+  {
+   "name": "Krumpli",
+   "title": "Beef Pastitsada with Pasta",
+   "url": "https://www.krumpli.co.uk/beef-pastitsada-with-pasta/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Dimitra's Dishes",
+   "title": "Pastitsada from Corfu, Beef Stew with Pasta",
+   "url": "https://www.dimitrasdishes.com/pastitsada-from-corfu-beef-stew-with-pasta/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Culinary Flavors",
+   "title": "Beef Pastitsada from Corfu Island",
+   "url": "https://www.culinaryflavors.gr/beef-pastitsada-from-corfu-island/",
+   "rating": 4.7,
+   "rating_count": 3,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

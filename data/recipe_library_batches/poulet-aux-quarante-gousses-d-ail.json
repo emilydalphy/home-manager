@@ -1,0 +1,112 @@
+{
+ "dish_name": "Poulet aux Quarante Gousses d'Ail",
+ "cuisine": "French",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Bone-in skin-on chicken thighs",
+   "qty": "2 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Garlic",
+   "qty": "40 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Gluten-free chicken broth",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Fresh thyme",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 sprigs"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 450°F with a rack in the upper middle. Peel the garlic cloves. You need 40, which is about 3 to 4 heads.",
+  "Pat the chicken dry. Season it all over with 1 teaspoon of the salt and the pepper.",
+  "Heat 1 teaspoon of the oil in a 12 inch ovenproof skillet over medium-high heat. Add the chicken skin side down and cook for 7 to 10 minutes, until the skin is deep golden and lets go of the pan. Transfer the chicken to a plate.",
+  "Pour off all but 1 tablespoon of fat from the skillet and turn the heat down to medium. Toss the garlic with the remaining 1 teaspoon oil and the sugar, add it to the skillet, and stir for 1 to 2 minutes, until it starts to spot with brown.",
+  "Take the skillet off the heat and add the wine. Put it back on medium heat, scrape up the browned bits, and cook for about 4 minutes, until the pan is nearly dry.",
+  "Stir the cornstarch into 1 tablespoon of cold water. Add the broth, the cornstarch mixture, the thyme and the bay leaf to the skillet. Simmer for 5 minutes, until the sauce is slightly thickened and the garlic is starting to soften.",
+  "Return the chicken skin side up, along with any juices on the plate. Bake for 18 to 22 minutes. You're cooking it to 175°F in the thickest part, so if you have a thermometer, check it there. No thermometer? Cut into a thigh near the bone: the juices should run clear and the meat shouldn't look pink.",
+  "Transfer the chicken and half the garlic to a serving dish. Take out the thyme and bay leaf.",
+  "Mash the garlic left in the skillet into the sauce with a fork. Taste it, and add the remaining 1/2 teaspoon salt if it's flat.",
+  "Pour half the sauce around the chicken and put the rest in a bowl. Serve with the extra sauce."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 50,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is America's Test Kitchen (4.5 from 131). The original sauce has cream; it is left out to keep this dairy-free, and the mashed garlic thickens the sauce instead, with a little more broth. Dry white wine replaces the sherry (Nigella and Recipe Girl both use white wine), and the microwave step for softening the garlic is replaced by simmering it in the sauce before the chicken goes in. Chicken broth is specified gluten-free. Other versions (Nigella, Recipe Girl) bake the chicken with garlic in the pot at 350°F for 1 hour or longer, with a drier result.",
+ "sources": [
+  {
+   "name": "America's Test Kitchen",
+   "title": "Chicken with 40 Cloves of Garlic",
+   "url": "https://www.americastestkitchen.com/recipes/7348-chicken-with-40-cloves-of-garlic",
+   "rating": 4.5,
+   "rating_count": 131,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Nigella Lawson",
+   "title": "Chicken with 40 Cloves of Garlic",
+   "url": "https://www.nigella.com/recipes/chicken-with-40-cloves-of-garlic",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Recipe Girl",
+   "title": "Chicken with 40 Cloves of Garlic",
+   "url": "https://www.recipegirl.com/chicken-with-40-cloves-of-garlic/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

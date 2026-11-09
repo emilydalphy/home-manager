@@ -1,0 +1,104 @@
+{
+ "dish_name": "Arni Fricassee",
+ "cuisine": "Greek",
+ "main_protein": "lamb",
+ "ingredients": [
+  {
+   "item": "Boneless lamb shoulder",
+   "qty": "2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Scallions",
+   "qty": "2 bunches",
+   "category": "produce"
+  },
+  {
+   "item": "Romaine lettuce",
+   "qty": "2 heads",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh dill",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the lamb into 1 1/2 inch cubes and pat them dry. Season them with 1 teaspoon of the salt and the pepper.",
+  "Heat the oil in a large heavy pot over medium-high heat. Brown the lamb in two batches, 3 to 4 minutes a side, until deep brown. Transfer each batch to a plate.",
+  "Meanwhile, slice the scallions, keeping the white and green parts apart. Shred the lettuce. Chop 1/4 cup each of the dill and the parsley.",
+  "Add the white parts of the scallions to the pot and stir for 1 minute, scraping up the browned bits.",
+  "Return the lamb and its juices to the pot. Add 2 cups of water and bring to a boil. Turn the heat down to medium-low, cover, and cook for 1 hour, until a cube of lamb is tender when you press it.",
+  "Add the lettuce, the dill, the parsley and the green parts of the scallions. Stir, cover, and cook for 10 minutes, until the lettuce has wilted. Take the pot off the heat.",
+  "Juice the lemon. In a bowl, whisk the eggs with the lemon juice until frothy.",
+  "Whisk in a ladle of the hot broth from the pot. Add a second ladle, then a third, whisking the whole time.",
+  "Pour the egg mixture slowly into the pot, stirring gently. Cover and leave it off the heat for 5 minutes. Don't put it back on the heat or it will curdle.",
+  "Taste it, and add the remaining 1 teaspoon salt if it's flat. Serve in bowls."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 90,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Lead is Souvlaki for the Soul (no ratings shown): lamb browned, simmered with scallions, lettuce, dill and parsley, then finished with egg and lemon. None of the lamb fricassee pages shows a star rating or count, so this is a fallback and no trusted cook for Greek has the dish (RecipeTin Eats does not). Dimitra's Dishes and Greek Boston agree on the method and add the scallion whites to the browned lamb first; the greens go in near the end as in those two. Dimitra's uses cornstarch in the sauce; it is left out here. Bread is left off the serving line to keep this gluten-free. It is a real braise at about 1 hour 55 minutes, longer than a 60 minute dinner.",
+ "sources": [
+  {
+   "name": "Souvlaki for the Soul",
+   "title": "Lamb Fricassee",
+   "url": "https://souvlakiforthesoul.com/lamb-fricassee-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Dimitra's Dishes",
+   "title": "Lamb Fricassee, Greek Style Lamb and Greens in Avgolemono Sauce",
+   "url": "https://www.dimitrasdishes.com/lamb-fricassee-greek-style-lamb-greens-in-avgolemono-sauce/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Greek Boston",
+   "title": "Lamb Fricassee with Egg Lemon Sauce",
+   "url": "https://www.greekboston.com/food/lamb-fricassee-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
