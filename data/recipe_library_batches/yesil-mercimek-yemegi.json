@@ -1,0 +1,85 @@
+{
+ "dish_name": "Yesil Mercimek Yemegi",
+ "cuisine": "Turkish",
+ "main_protein": "lentils",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 38,
+ "ingredients": [
+  {
+   "item": "Green lentils",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "4 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the lentils in a sieve and drain. Finely chop the onion and slice the garlic. Grate the tomatoes on the large holes of a box grater and throw away the skins. That should be about 1 cup.",
+  "Heat the olive oil in a large pot over medium heat. Add the onion and cook for 5 minutes, stirring, until soft.",
+  "Add the garlic and the lentils and stir for 2 minutes.",
+  "Add the cumin and stir for 20 seconds, until it smells toasty.",
+  "Add the tomatoes and the vegetable broth and bring to a boil. Add the salt.",
+  "Cover and cook on low for 25 to 30 minutes, until the lentils are tender. Stir once or twice and add a splash of water if it gets too thick.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve in bowls."
+ ],
+ "method_notes": "Turkish Food and Recipes (the lead) and Taste Table print the same lentil stew: onion softened in olive oil, green lentils toasted for a few minutes, grated tomato and hot stock, simmered 20 to 30 minutes with optional garlic and cumin. The lead soaks the lentils overnight; here they are not soaked and simmer a little longer. Chicken stock is swapped for vegetable broth, and the optional orzo is left out to stay gluten-free. Neither page shows a rating, so this is a fallback lead. The list's line mentions rice, but no version found has it, so none is added.",
+ "sources": [
+  {
+   "name": "Turkish Food and Recipes",
+   "title": "Green Lentil Dish (Yesil Mercimek Yemegi)",
+   "url": "https://www.turkishfoodandrecipes.com/2009/04/green-lentil-dish-yesil-mercimek-yemegi.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Taste Table",
+   "title": "Green Lentil Dish (Yesil Mercimek Yemegi)",
+   "url": "https://tastetable.blogspot.com/2016/08/green-lentil-dish-yesil-mercimek-yemegi.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

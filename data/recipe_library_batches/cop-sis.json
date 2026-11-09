@@ -1,0 +1,93 @@
+{
+ "dish_name": "Cop Sis",
+ "cuisine": "Turkish",
+ "main_protein": "lamb",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 12,
+ "ingredients": [
+  {
+   "item": "Lamb shoulder",
+   "qty": "1 1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh rosemary",
+   "qty": "1 small bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh oregano",
+   "qty": "1 small bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lemons",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Gluten-free flatbread",
+   "qty": "1 package (4 pieces)",
+   "category": "pantry"
+  },
+  {
+   "item": "Wooden skewers",
+   "qty": "1 pack",
+   "category": "other"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put 16 thin wooden skewers in a baking dish of water to soak for 20 minutes.",
+  "Cut the lamb into small cubes, about 1/2 inch. Trim off any big pieces of gristle but leave the fat on.",
+  "Put the lamb in a bowl with 2 tbsp of the olive oil, the salt and the pepper and toss to coat.",
+  "Heat the broiler to high with a rack about 6 inches below it, and line a rimmed baking sheet with foil.",
+  "Thread 5 or 6 pieces of lamb onto each skewer, pushing them close together. Lay the skewers on the sheet.",
+  "Strip 1 tbsp of rosemary leaves and 1 tbsp of oregano leaves from the stems and chop them finely. Stir them into the remaining olive oil in a small bowl. Cut the lemon into wedges.",
+  "Broil the skewers for 5 minutes. Turn them over and broil for 4 to 5 minutes, until browned and a little charred at the edges.",
+  "You're cooking the lamb to 145°F in the middle, so if you have a thermometer, check a thick piece. No thermometer? Cut into one: it should be browned all through with just a hint of pink or none.",
+  "Meanwhile, warm the flatbreads one at a time in a dry skillet over medium heat, about 20 seconds on each side.",
+  "Taste a piece of lamb. If it's flat, add a pinch of salt.",
+  "Serve the skewers on the warm flatbreads with the herb oil spooned over and the lemon wedges."
+ ],
+ "method_notes": "Great British Chefs (Esra Muslu) threads small cubes of lamb shoulder and fat on thin skewers, grills them for about 10 minutes and serves them on pitta with a rosemary and oregano oil. Turkish Style Cooking uses 1 cm cubes with salt and pepper and a milk marinade of 2 to 24 hours; the milk is left out to keep it dairy-free. Neither page shows a rating, so this is a fallback lead; the lead is the GBC version without its pickled chillies and walnut dressing. Gluten-free flatbread stands in for pitta, and the list's onions are not in either source so none are added.",
+ "sources": [
+  {
+   "name": "Great British Chefs",
+   "title": "Cop Sis",
+   "url": "https://www.greatbritishchefs.com/recipes/cop-sis-recipe",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Turkish Style Cooking",
+   "title": "Cop Sis Recipe",
+   "url": "https://turkishstylecooking.com/cop-sis-recipe.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

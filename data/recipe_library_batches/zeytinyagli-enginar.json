@@ -1,0 +1,93 @@
+{
+ "dish_name": "Zeytinyagli Enginar",
+ "cuisine": "Turkish",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Frozen artichoke hearts",
+   "qty": "2 bags (12 oz each)",
+   "category": "frozen"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Potatoes",
+   "qty": "2 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Frozen peas",
+   "qty": "1 cup",
+   "category": "frozen"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemons",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh dill",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Sugar",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Dice the onion. Peel the carrots and potatoes and cut them into 1/2-inch cubes. Chop 1/4 cup of the dill.",
+  "Heat 3 tbsp of the olive oil in a wide, heavy pot over medium heat. Add the onion and cook for 5 minutes, stirring now and then, until soft but not brown.",
+  "Add the carrots and potatoes and cook for 3 minutes, stirring.",
+  "Add the frozen artichoke hearts, the sugar, the salt, the pepper and 1 1/2 cups of water. The artichokes should be about half covered.",
+  "Bring to a boil, then cover and cook on low for 15 minutes, until the artichokes and potatoes are tender when you poke them with a knife.",
+  "Stir in the peas. Cover and cook for 2 minutes.",
+  "Take the pot off the heat. Squeeze in the juice of half the lemon and drizzle over the remaining olive oil. Leave it uncovered for 15 minutes to cool to room temperature.",
+  "Cut the other half of the lemon into wedges.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of lemon.",
+  "Scatter the dill over the top and serve warm or at room temperature, with the lemon wedges."
+ ],
+ "method_notes": "Both detailed versions braise artichoke bottoms with onion, carrot, potato and peas in olive oil with lemon and a little sugar, and serve the dish cool with dill. The lead (The Thirlby) simmers everything together for 15 minutes and chills it for 2 hours; here the pot is softened in oil first for flavor and cooled for only 15 minutes, so it is served at room temperature rather than cold. Frozen artichoke hearts replace fresh bottoms (the lead allows frozen), and canned artichokes in oil are avoided. None of the versions showed a usable rating, so this is a fallback lead.",
+ "sources": [
+  {
+   "name": "The Thirlby",
+   "title": "Turkish Braised Artichoke Hearts with Peas, Carrots & Dill",
+   "url": "https://thethirlby.com/thejournal/2018/12/11/turkish-braised-artichoke-hearts-with-peas-carrots-amp-dill",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": true,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

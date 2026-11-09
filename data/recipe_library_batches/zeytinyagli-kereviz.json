@@ -1,0 +1,107 @@
+{
+ "dish_name": "Zeytinyagli Kereviz",
+ "cuisine": "Turkish",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Celery root",
+   "qty": "2 medium (about 2 lb)",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Potatoes",
+   "qty": "2 small",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Orange juice",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemons",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh dill",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut the top and bottom off the celery root, then cut away the thick skin with a sharp knife. Cut it into 3/4-inch cubes.",
+  "Dice the onion. Peel the carrots and cut them into thick half-moons. Cut the potatoes into 3/4-inch pieces. Mince 1/4 cup of the parsley and chop 2 tbsp of the dill.",
+  "Heat the olive oil in a large pot over medium heat. Add the onion and cook for 4 minutes, until soft and shiny.",
+  "Add the celery root, carrots and potatoes with 1/2 tsp of the salt. Cook for 5 minutes, stirring, until the edges are lightly browned.",
+  "Add the paprika and stir for 20 seconds. Pour in the orange juice and 1/2 cup of water.",
+  "Cover and cook on medium-low for 15 minutes, until a fork slides into the celery root. Add a splash of water if the pot looks dry.",
+  "Take the pot off the heat. Squeeze in 1 tbsp lemon juice, then stir in the sugar, the parsley and the remaining 1/2 tsp salt.",
+  "Cut the rest of the lemon into wedges.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of lemon.",
+  "Transfer to a serving dish and top with the dill. Serve warm or at room temperature, with the lemon wedges."
+ ],
+ "method_notes": "Cooking Gorgeous and Cinnamon Snail both braise celery root with onion, carrot and potato in olive oil, orange and lemon juice and a little sugar, and serve it at room temperature. Cinnamon Snail (the lead, 32 minutes) browns the vegetables briefly and adds the lemon and sugar after cooking; Cooking Gorgeous simmers about 30 minutes and takes longer to cut. This follows the faster one. Each page has only one or two ratings, so this is a fallback lead.",
+ "sources": [
+  {
+   "name": "Cinnamon Snail",
+   "title": "Zeytinyagli Kereviz Yemegi (Turkish Braised Celery Root)",
+   "url": "https://cinnamonsnail.com/zeytinyagli-kereviz-yemegi-turkish-braised-celery-root/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cooking Gorgeous",
+   "title": "Zeytinyagli Kereviz Yemegi (Braised Celeriac)",
+   "url": "https://cookingorgeous.com/blog/zeytinyagli-kereviz-yemegi-braised-celeriac/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

@@ -1,0 +1,99 @@
+{
+ "dish_name": "Tavuk Pirzola",
+ "cuisine": "Turkish",
+ "main_protein": "chicken",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 35,
+ "ingredients": [
+  {
+   "item": "Bone-in chicken thighs",
+   "qty": "8 (about 3 lb)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried thyme",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "At least 1 hour ahead, or the night before: grate the garlic into a large bowl. Add the tomato paste, the olive oil, the paprika, the thyme, the salt and the pepper and stir into a thick paste.",
+  "Pat the chicken thighs dry. Add them to the bowl and rub the paste all over each one, under the skin too. Cover and refrigerate.",
+  "Heat the oven to 425°F. Line a rimmed baking sheet with parchment and set the thighs on it skin side up, with space between them.",
+  "Bake for 30 to 35 minutes, until the skin is deep golden and the tops are browned in spots.",
+  "Meanwhile, rinse the rice, then bring 3 cups of water to a boil in a medium pot. Add the rice and 1/2 tsp salt, cover, and cook on low for 15 minutes. Leave it covered off the heat for 5 minutes, then fluff with a fork. Chop 1/4 cup of the parsley.",
+  "You're cooking the chicken to 175°F at the thickest part, so if you have a thermometer, check it there. No thermometer? Cut into the thickest thigh: it's done when the juices run clear and there's no pink left.",
+  "Let the chicken rest for 5 minutes, then spoon the juices from the tray over it.",
+  "Taste a piece of the chicken. If it's flat, add a pinch of salt.",
+  "Scatter the parsley over the chicken and serve with the rice."
+ ],
+ "method_notes": "Yemek.com's Tavuk Pirzola (the lead, 4.2 from 23 ratings) rubs bone-in thighs with a yogurt, olive oil, garlic, red pepper and thyme paste, marinates at least an hour and bakes them. A second yemek.com version uses tomato paste, yogurt and cumin and cooks in a pan. The yogurt is replaced with tomato paste from the second version to keep it dairy-free, the oven is set hotter than the lead's 356°F so it fits the time, and the red pepper is paprika to keep the base mild. The list line mentions a pepper paste, which neither version uses.",
+ "sources": [
+  {
+   "name": "Yemek.com",
+   "title": "Tavuk Pirzola",
+   "url": "https://yemek.com/tarif/tavuk-pirzola/",
+   "rating": 4.2,
+   "rating_count": 23,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Yemek.com",
+   "title": "Tavada Tavuk Pirzola",
+   "url": "https://yemek.com/tarif/tavada-tavuk-pirzola/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "advance_prep_notes": "marinate at least 1 hour ahead (or overnight)",
+ "advance_prep_step_indices": [
+  1,
+  2
+ ],
+ "origin": "seed"
+}
