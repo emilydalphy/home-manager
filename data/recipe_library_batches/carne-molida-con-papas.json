@@ -1,0 +1,120 @@
+{
+ "dish_name": "Carne Molida con Papas",
+ "cuisine": "Mexican",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Ground beef",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "1.5 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato sauce",
+   "qty": "1 can (8 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Gluten-free beef broth",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp + 1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Peel the potatoes and dice them, along with the carrots, into 1/4-inch cubes. Finely chop half the onion, mince the garlic and dice the tomato.",
+  "Heat 1 tbsp of the oil in a large deep skillet over medium-high. Add the beef, 1 tsp of the salt and 1/2 tsp of the pepper. Break it up with a spoon and cook for 6 minutes, until no pink is left and it's browned in places.",
+  "Add the chopped onion and the garlic. Stir for 2 minutes, until the onion is soft.",
+  "Stir in the cumin and cook for 20 seconds, until it smells toasty. Add the tomato and cook for 1 minute.",
+  "Add the potatoes, the carrots, the broth, 1/2 cup hot water, the remaining 1/2 tsp salt and the remaining 1/4 tsp pepper. Stir, bring to a simmer, then cover and cook on medium-low for 10 minutes, until a potato cube is fork-tender.",
+  "Meanwhile, slice the jalapeño. Heat the remaining 1 tsp oil in a small skillet over medium and cook the slices for 3 minutes, until soft. Transfer them to a small bowl for the table.",
+  "Stir the tomato sauce into the beef, uncovered, and cook for 1 minute.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve in bowls with the jalapeño on the side for anyone who wants heat."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Everyday Latina leads: brown the beef, soften the onion and garlic, add small-cubed potatoes and carrots with broth and water, and finish with tomato sauce, about 30 minutes in all. Growing Up Sarita blends fresh tomatoes into the sauce and simmers 18 minutes; Thrift and Spice uses a spicy canned tomato sauce and simmers 40 minutes. The other two read lighter on tomato than this dish's name suggests, so here the lead's 1/4-inch cubes and short simmer are kept, scaled to 1.5 lbs of beef, and the jalapeño is cooked separately for the table. None of the pages read had 20 or more ratings (Thrift and Spice 5.0 from 3, the others unrated), so the lead is the one that fits a 30-minute dinner. Gluten-free broth is called for to keep the dish gluten-free.",
+ "sources": [
+  {
+   "name": "Everyday Latina",
+   "title": "Picadillo con Papas",
+   "url": "https://everydaylatina.com/picadillo-con-papas/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Growing Up Sarita",
+   "title": "Picadillo con Papas, Mexican Ground Beef and Potatoes",
+   "url": "https://growingupsarita.com/recipe/picadillo-con-papas-mexican-ground-beef-and-potatoes/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Thrift and Spice",
+   "title": "Picadillo con Papas",
+   "url": "https://thriftandspice.com/mexican-picadillo-recipe/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

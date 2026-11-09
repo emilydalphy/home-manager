@@ -1,0 +1,104 @@
+{
+ "dish_name": "Huevos Ahogados",
+ "cuisine": "Mexican",
+ "main_protein": "eggs",
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "6",
+   "category": "produce"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Serrano peppers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Avocados",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Corn tortillas",
+   "qty": "12",
+   "category": "other"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Dice the tomatoes and the onion. Slice the garlic. Seed 1 of the serranos and mince it. Chop 1/4 cup of the cilantro.",
+  "Heat the oil in a wide, deep 12-inch skillet over medium. Add the onion and cook for 2 minutes, until soft. Add the garlic and the minced serrano and cook for 1 minute.",
+  "Add the tomatoes and cook for 5 minutes, until they break down.",
+  "Pour in 1 cup water and bring it to a boil. Carefully transfer everything to a blender, hold the lid down with a towel and blend until smooth.",
+  "Return the sauce to the skillet, stir in the chopped cilantro and bring it to a low simmer. Taste it, and add a pinch of salt if it's flat.",
+  "Meanwhile, warm the tortillas in a dry skillet for 20 seconds on each side and keep them wrapped in a clean towel. Slice the avocados and the remaining serrano.",
+  "Crack the eggs into the sauce one at a time, spaced evenly apart. Cover and cook on low for 5 minutes, until the whites are set and the yolks are still soft.",
+  "Spoon an egg or two with plenty of sauce into each shallow bowl. Serve with the tortillas and avocado, and the sliced serrano on the side for anyone who wants heat."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Muy Delish leads: soften onion, garlic and serrano, cook the tomatoes down, add water, blend, and then poach the eggs in the sauce with cilantro stirred in. The Half Jalapeño blends raw tomatoes and simmers the sauce only 5 to 7 minutes, and La Cocina de Leslie uses roasted poblano strips in a simmered tomato sauce. All of them cook the eggs in the sauce. Tomatoes are raised from the lead's 2 to 6 because the lead is written for 4 to 6 eggs and this one uses 8 for a dinner. The optional bouillon is left out. No version found had 20 or more ratings (Muy Delish 5.0 from 1, the others unrated), so this is a fallback lead.",
+ "sources": [
+  {
+   "name": "Muy Delish",
+   "title": "Huevos Ahogados",
+   "url": "https://www.muydelish.com/huevos-ahogados/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Half Jalapeño",
+   "title": "Huevos Ahogados Recipe",
+   "url": "https://www.thehalfjalapeno.com/huevos-ahogados-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "La Cocina de Leslie",
+   "title": "Huevos Ahogados with Roasted Poblano Strips",
+   "url": "https://www.lacocinadeleslie.com/2014/02/huevos-ahogados-eggs-in-tomato-salsa-w.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

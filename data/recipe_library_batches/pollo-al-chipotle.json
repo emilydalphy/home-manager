@@ -1,0 +1,105 @@
+{
+ "dish_name": "Pollo al Chipotle",
+ "cuisine": "Mexican",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken breasts",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Milk",
+   "qty": "1 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Chipotle peppers in adobo",
+   "qty": "1 can (7 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice. Put it in a medium pot with 3 cups water and 1/2 tsp of the salt, bring to a boil over high heat, then cover and cook on low for 15 minutes. Leave it covered off the heat until the chicken is done.",
+  "Meanwhile, cut the chicken across into strips about 1/2 inch thick. Pat them dry and season with 1/2 tsp of the salt and the pepper.",
+  "Finely chop half the onion and mince the garlic.",
+  "In a blender, combine 3 of the chipotle peppers, 1 tbsp of the adobo sauce, the cream, the milk and the remaining 1/2 tsp salt. Blend until smooth. Chop 1 more pepper and put it in a small bowl for the table.",
+  "Heat the oil in a 12-inch skillet over medium-high. Add the chicken in a single layer and cook for 4 minutes, turning once, until browned in spots.",
+  "Add the onion and cook for 1 minute. Add the garlic and cook for 1 minute more.",
+  "Pour in the sauce and bring it to a gentle simmer. Cook for 3 minutes, then take the pan off the heat. You're cooking the chicken to 160°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest strip: it's done when there's no pink left.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve over the rice with the chopped chipotle on the side for anyone who wants heat."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Mamá Maggie's Kitchen leads (4.90 from 29): season strips of chicken breast and brown them with onion and garlic, blend chipotles in adobo with cream and milk, and simmer the chicken in it briefly. Kitchen Divas and Camila Made agree on the blended chipotle cream sauce and differ in the dairy: heavy cream with broth in one, sour cream and cheese in the other. The lead uses a whole 7 oz can of chipotles for two servings, which is far hotter than a family table wants. Kitchen Divas uses 2 chipotles for four servings, so this uses 3 peppers and a spoon of adobo in the sauce and puts a chopped pepper on the side. The lead's cream and milk are kept in equal parts, and rice is cooked alongside, as every version suggests serving it.",
+ "sources": [
+  {
+   "name": "Mamá Maggie's Kitchen",
+   "title": "Chicken in Creamy Chipotle Sauce, or Pollo al Chipotle",
+   "url": "https://inmamamaggieskitchen.com/chicken-in-creamy-chipotle-sauce-or-pollo-al-chipotle/",
+   "rating": 4.9,
+   "rating_count": 29,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Kitchen Divas",
+   "title": "Creamy Chipotle Chicken (Pollo en Crema Chipotle)",
+   "url": "https://kitchendivas.com/pollo-en-crema-chipotle/",
+   "rating": 5.0,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Camila Made",
+   "title": "Pollo en Crema de Chipotle",
+   "url": "https://camilamade.com/pollo-en-crema-de-chipotle/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

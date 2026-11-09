@@ -1,0 +1,120 @@
+{
+ "dish_name": "Pollo en Salsa Verde",
+ "cuisine": "Mexican",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken thighs",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Tomatillos",
+   "qty": "3/4 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Zucchini",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Serrano peppers",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Corn tortillas",
+   "qty": "12",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Husk the tomatillos and rinse off the sticky film. Halve them. Put them in a medium saucepan with the zucchini cut in half, half of the onion and 1 of the serranos. Cover with water, bring to a boil and cook for 8 minutes, until the tomatillos are soft and olive-colored.",
+  "Meanwhile, cut the chicken into 1-inch pieces and pat them dry. Season with 1 tsp of the salt and the pepper. Slice the remaining half onion thin.",
+  "Heat 2 tbsp of the oil in a large deep skillet over medium-high. Add the chicken in a single layer and leave it alone for 3 minutes, until the underside is browned. Stir and cook for 2 minutes more.",
+  "Add the remaining 1 tbsp oil and the sliced onion. Cook for 2 minutes, until the onion starts to soften.",
+  "Drain the boiled vegetables. Transfer them to a blender with the cilantro, garlic, cumin, oregano, the remaining 1 tsp salt and 1 cup water. Blend until smooth. Hold the lid down with a towel, since the vegetables are hot.",
+  "Pour the sauce over the chicken and bring it to a simmer. Cook for 10 minutes, stirring now and then. You're cooking the chicken to 175°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into a piece: it's done when there's no pink left and the juices are clear.",
+  "While it simmers, warm the tortillas in a dry skillet for 20 seconds on each side, and keep them wrapped in a clean towel. Slice the remaining serrano thin and put it in a small bowl for the table.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the warm tortillas and the sliced serrano on the side for anyone who wants heat."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 22,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Maricruz Avalos leads: boil tomatillos, chiles, onion and zucchini, blend them with cilantro, garlic, cumin and oregano, and simmer cubed chicken in that sauce. SnapCalorie sears bone-in thighs and chars the vegetables, and Sur La Table adds poblanos and crema; both simmer 30 to 40 minutes. This is the lead cut down to fit a weeknight: boneless thighs in small pieces, 1.5 lbs rather than 2, and 3/4 lb of tomatillos. The lead's second round of zucchini and jalapeño strips is left out, and its three serranos become one in the sauce and one for the table. The lead has no rating shown and none of the others read had one either, so this is a fallback lead. The 22 cook minutes make this about 34 minutes in all, a little over 30.",
+ "sources": [
+  {
+   "name": "Maricruz Avalos",
+   "title": "Pollo En Salsa Verde",
+   "url": "https://www.maricruzavalos.com/pollo-en-salsa-verde/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "SnapCalorie",
+   "title": "Pollo Con Salsa Verde (Chicken with Green Sauce)",
+   "url": "https://www.snapcalorie.com/recipes/pollo_con_salsa_verde_chicken_with_green_sauce.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Sur La Table",
+   "title": "Pollo En Salsa Verde",
+   "url": "https://www.surlatable.com/recipe/pollo-en-salsa-verde/REC-511372",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

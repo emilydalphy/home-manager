@@ -1,0 +1,100 @@
+{
+ "dish_name": "Quesadillas de Flor de Calabaza",
+ "cuisine": "Mexican",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Squash blossoms",
+   "qty": "12",
+   "category": "produce"
+  },
+  {
+   "item": "Corn tortillas",
+   "qty": "8",
+   "category": "other"
+  },
+  {
+   "item": "Oaxaca cheese",
+   "qty": "6 oz",
+   "category": "dairy"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Jalapeño",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salsa verde",
+   "qty": "1 jar",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Pull the green base off each squash blossom and pinch out the center stamen. Rinse them gently, pat them dry and tear any large ones in half.",
+  "Pull the cheese into thin strands. Finely chop half the onion and mince the garlic and jalapeño.",
+  "Heat 1 tbsp of the oil in a large skillet over medium. Add the onion and cook for 3 minutes, until soft.",
+  "Add the garlic and jalapeño and cook for 1 minute.",
+  "Add the blossoms and the salt. Cook for 5 minutes, stirring, until they're wilted and the pan is nearly dry. Transfer the filling to a bowl and wipe out the skillet.",
+  "Heat two skillets over medium-high and brush each with a little of the remaining oil. Warm each tortilla for 15 seconds on each side so it folds without cracking.",
+  "Fill each tortilla: cheese over half, a spoonful of the filling on top, then fold it over. Put 2 quesadillas in each skillet.",
+  "Cook for 2 minutes per side, until golden and the cheese has melted. Repeat with the remaining 4 quesadillas.",
+  "Serve with the salsa verde."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Ale Cooks leads: cook onion, garlic and chile, soften the squash blossoms for about 5 minutes with salt, then fold the filling with Oaxaca cheese in corn tortillas and griddle until golden. Maricruz Avalos adds corn and epazote, and Cilantro Parsley uses roasted peppers, grated tomato and cilantro; this keeps the plain onion, garlic and chile filling that Ale Cooks and Maricruz Avalos share. No version found had 20 or more ratings (Ale Cooks none, Cilantro Parsley 5.0 from 1), so this is a fallback lead. Fresh blossoms are seasonal; Ale Cooks says well-drained canned blossoms work. Cooking 8 quesadillas in two skillets keeps the cook time at about 20 minutes.",
+ "sources": [
+  {
+   "name": "Ale Cooks",
+   "title": "Squash Blossom Quesadillas (Quesadillas de Flor de Calabaza)",
+   "url": "https://www.alecooks.com/squash-blossom-quesadillas-quesadillas-de-flor-de-calabaza/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Maricruz Avalos",
+   "title": "Quesadillas de Flor de Calabaza",
+   "url": "https://www.maricruzavalos.com/quesadillas-de-flor-de-calabaza/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Cilantro Parsley",
+   "title": "Squash Blossom Quesadilla Recipe",
+   "url": "https://www.cilantroparsley.com/quesadillas-de-flor-de-calabaza/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

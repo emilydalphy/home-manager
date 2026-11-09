@@ -1,0 +1,89 @@
+{
+ "dish_name": "Sopa de Papa",
+ "cuisine": "Mexican",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "2 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable broth",
+   "qty": "4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried oregano",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Peel the potatoes and cut them into 1/2-inch cubes.",
+  "Quarter the tomatoes. Blend them with half the onion, the garlic and a splash of water until smooth.",
+  "Heat the oil in a large pot over medium-high. Pour in the blended tomato mixture. Stand back, it will spatter. Cook for 5 minutes, stirring, until it darkens and thickens.",
+  "Add the potatoes, the broth, 2 cups water, the oregano, 3 sprigs of the cilantro and 3/4 tsp of the salt. Bring it to a boil over high heat.",
+  "Reduce to a steady simmer and cook for 12 minutes, until a potato cube mashes easily against the side of the pot.",
+  "Chop 2 tbsp of the cilantro leaves. Taste the soup, and add a pinch more salt if it's flat.",
+  "Ladle into bowls and top with the chopped cilantro."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 24,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Mexican Food Journal leads (4.25 from 32): fry blended tomatoes with onion, then simmer potatoes in water and tomato until tender. Alecooks does the same with a blended tomato, onion and garlic base fried until deep red, oregano and a cilantro sprig, and finishes in 20 minutes. This follows the lead's 6 cups of liquid and tomato-to-potato ratio, with the faster blended base from Alecooks and 1/2-inch cubes in place of the lead's strips, which need 30 minutes. The lead's chicken bouillon is replaced with vegetable broth to keep it vegetarian. It is a brothy tomato soup, not a creamy one as the list line says. About 34 minutes in all, a little over 30.",
+ "sources": [
+  {
+   "name": "Mexican Food Journal",
+   "title": "Mexican Potato Soup (Sopa de Papa)",
+   "url": "https://mexicanfoodjournal.com/potato-soup/",
+   "rating": 4.25,
+   "rating_count": 32,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Ale Cooks",
+   "title": "Sopa de Papa (Traditional Mexican Potato Soup)",
+   "url": "https://www.alecooks.com/sopa-de-papa-traditional-mexican-potato-soup/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

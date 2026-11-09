@@ -1,0 +1,87 @@
+{
+ "dish_name": "Pollo al Limon",
+ "cuisine": "Spanish",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Boneless skinless chicken breasts",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Lemons",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Dry white wine",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Gluten-free chicken broth",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Italian parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Cut 1 of the lemons into thin rounds. Juice the other 2. That should be about 1/3 cup.",
+  "Cut each chicken breast in half horizontally into 2 thin cutlets. Pat them dry and season both sides with 3/4 tsp of the salt and the pepper.",
+  "Heat 2 tbsp of the oil in a 12-inch skillet over medium-high. Add the cutlets in a single layer and cook for 3 minutes per side, until golden.",
+  "Pour in the wine and let it boil for 2 minutes, scraping up the browned bits.",
+  "Add the lemon juice and the broth. Simmer on medium for 6 minutes, turning the chicken once, until the sauce has reduced by about a third. You're cooking the chicken to 160°F in the middle, so if you have a thermometer, check it there. No thermometer? Cut into the thickest cutlet: it's done when there's no pink left.",
+  "Transfer the chicken to a plate and let it rest for 2 minutes. Keep the sauce on low.",
+  "Meanwhile, heat the remaining 1 tbsp oil in a small skillet over high. Cook the lemon rounds for 1 to 2 minutes per side, until browned at the edges. Chop 2 tbsp of the parsley.",
+  "Taste the sauce. If it's flat, add a pinch more salt.",
+  "Spoon the sauce over the chicken and top with the parsley. Serve with the seared lemon rounds."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Hola's pollo al limón leads: brown thin chicken breast, add white wine and boil it, then lemon juice and broth, simmer until tender and finish with seared lemon slices and parsley. The Spanish Radish makes a thigh version with lots of garlic, white wine and thyme, which is closer to pollo al ajillo. Hola browns in oil and butter; here it is all olive oil to keep the dish dairy-free. The cutlets are cut thin so they cook within about 20 minutes, and the wine, juice and broth amounts are scaled up from Hola's 'splash' to make enough sauce for four. No version found showed 20 or more ratings, so this is a fallback lead.",
+ "sources": [
+  {
+   "name": "Hola",
+   "title": "Pollo al limón",
+   "url": "https://www.hola.com/cocina/recetas/2017041193331/pollo-al-limon/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Spanish Radish",
+   "title": "Spanish Garlic Lemon Chicken",
+   "url": "https://thespanishradish.com/recipes/spanish-garlic-lemon-chicken/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

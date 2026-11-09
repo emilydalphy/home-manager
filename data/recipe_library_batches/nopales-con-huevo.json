@@ -1,0 +1,80 @@
+{
+ "dish_name": "Nopales con Huevo",
+ "cuisine": "Mexican",
+ "main_protein": "eggs",
+ "ingredients": [
+  {
+   "item": "Nopales",
+   "qty": "1 jar (30 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "White onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Corn tortillas",
+   "qty": "12",
+   "category": "other"
+  },
+  {
+   "item": "Salsa",
+   "qty": "1 jar",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Drain the nopales in a colander and rinse them under cold water for 30 seconds. Shake them dry. Slice the onion thin.",
+  "Beat the eggs in a bowl with 1/2 tsp of the salt.",
+  "Heat the oil in a large nonstick skillet over medium. Add the onion and cook for 2 minutes, until soft.",
+  "Add the nopales and cook for 5 minutes, stirring now and then, until they're hot and the liquid in the pan has cooked off.",
+  "Pour in the eggs. Stir gently every few seconds for 2 to 3 minutes, until they're softly set.",
+  "Meanwhile, warm the tortillas in a dry skillet for 20 seconds on each side and keep them wrapped in a clean towel.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the warm tortillas and the salsa."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 12,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Ale Cooks leads: cook sliced onion for a minute, add drained jarred nopales and cook about 5 minutes, then stir in eggs and salt until done. Mexican Made Meatless is the same method with more nopales for fewer eggs. Both are kept to the same plain onion, nopales and egg. This is scaled for a dinner: 8 eggs and one 30 oz jar of nopales. No version found had 20 or more ratings (Ale Cooks 5.0 from 2, Mexican Made Meatless 5.0 from 1), so this is a fallback lead. Rinsing the jarred nopales well and letting the liquid cook off before the eggs go in is what both pages stress.",
+ "sources": [
+  {
+   "name": "Ale Cooks",
+   "title": "Nopales con Huevo (Cactus and Eggs)",
+   "url": "https://www.alecooks.com/nopales-con-huevo-cactus-with-egg/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Mexican Made Meatless",
+   "title": "How To Make Nopales Con Huevos",
+   "url": "https://mexicanmademeatless.com/how-to-make-nopales-con-huevos-cactus-with-egg/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
