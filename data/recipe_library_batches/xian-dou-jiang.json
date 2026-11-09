@@ -1,0 +1,89 @@
+{
+ "dish_name": "Xian Dou Jiang",
+ "cuisine": "Chinese",
+ "main_protein": "tofu",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 10,
+ "ingredients": [
+  {
+   "item": "Unsweetened soy milk",
+   "qty": "4 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Rice vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Soy sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "4 tsp"
+  },
+  {
+   "item": "Pickled mustard (zha cai)",
+   "qty": "1 pouch",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Scallions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Fried dough sticks (you tiao)",
+   "qty": "3 pairs",
+   "category": "frozen"
+  },
+  {
+   "item": "Chili oil (nut-free)",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "at the table"
+  }
+ ],
+ "instructions": [
+  "If the you tiao are frozen, heat the oven to 350°F (180°C). Warm them on a baking sheet for 8 to 10 minutes, until hot and crisp.",
+  "Meanwhile, finely mince the 4 tbsp pickled mustard and the 2 scallions. Separate each pair of you tiao and cut them into large pieces.",
+  "Pour the 4 cups soy milk into a saucepan and bring it to a boil over medium heat. Watch it, because soy milk boils over fast. Turn the heat down and simmer for 1 minute, then take it off the heat.",
+  "Divide the soy milk among 4 bowls, about 1 cup each. Stir 1 tsp of the rice vinegar into each bowl. The soy milk will curdle softly.",
+  "Stir 1 tsp of the soy sauce into each bowl, then top with 1 tbsp of the pickled mustard and a sprinkle of the scallions.",
+  "Serve with the you tiao on the side and the chili oil at the table."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "What To Cook Today leads with a ratio of about 1 cup of soy milk, 1 tsp vinegar, 1 tsp soy sauce and 1 tbsp zha cai per bowl; the Woks of Life version has the same idea with black vinegar, white pepper and sesame oil but no amounts. Every source heats the soy milk and pours it on the vinegar so it curdles, and most add dried shrimp, which is left out here. Neither has 20 ratings (5 stars from 4, and 5 stars from 7), so it counts as a fallback. Chili oil is on the side; check the label for peanuts.",
+ "sources": [
+  {
+   "name": "What To Cook Today",
+   "title": "Taiwanese Savory Soy Milk Soup (Xian Dou Jiang)",
+   "url": "https://whattocooktoday.com/xian-dou-jiang.html",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Woks of Life",
+   "title": "Savory Soy Milk Soup w/ Fried Dough (Dou Jiang)",
+   "url": "https://thewoksoflife.com/soy-milk-soup-w-fried-dough-dou-jiang/",
+   "rating": 5.0,
+   "rating_count": 7,
+   "read": true
+  },
+  {
+   "name": "Chichihehe",
+   "title": "Xian Dou Jiang Salty Soy Milk",
+   "url": "https://chichihehe.wordpress.com/2012/04/23/%E9%B9%B9%E8%B1%86%E6%BC%BF-xian-dou-jiang-salty-soy-milk/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,111 @@
+{
+ "dish_name": "Yemarina Yewotet Dabo",
+ "cuisine": "Ethiopian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 60,
+ "ingredients": [
+  {
+   "item": "Active dry yeast",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Honey",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cloves",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground ginger",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole milk",
+   "qty": "1 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "6 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "4 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Sprinkle the yeast over 1/4 cup lukewarm water (105 to 115°F/40 to 46°C), stir, and leave it for 10 minutes, until frothy.",
+  "Warm the milk until it's just warm to the touch. Melt 4 tbsp of the butter and let it cool a little. In a large bowl or a stand mixer, mix the egg, honey, coriander, cinnamon, cloves, ginger, salt, warm milk, melted butter and 1 cup of the flour.",
+  "Add the yeast mixture and mix well. Add the rest of the flour 1/2 cup at a time, until you have a soft dough.",
+  "Knead on a lightly floured counter for 5 minutes, using as little extra flour as you can, until smooth and stretchy.",
+  "Put the dough in an oiled bowl and turn it once to coat. Cover and leave it in a warm spot for 1 to 2 hours, until doubled.",
+  "Grease a 3-quart round baking dish (3 inches deep) or a 10-inch springform pan generously with the remaining 2 tbsp butter.",
+  "Punch the dough down, knead it briefly and shape it into a ball. Press it into the pan so it covers the bottom. Cover and leave it for about 1 hour, until it reaches the rim of the pan.",
+  "Near the end of the rise, heat the oven to 300°F (150°C).",
+  "Bake for about 1 hour, until the top is golden brown. If you have a thermometer, the center should be 190°F (88°C). No thermometer? Tap the bottom of the loaf. It should sound hollow.",
+  "Let the loaf sit in the pan for 5 minutes, then move it to a wire rack to cool completely before slicing. Slice and serve.",
+  "To keep it for the week, freeze the slices in a single layer on a baking sheet, then move them to a freezer bag. Warm a few slices in the oven when you want them."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Tara's Multicultural Table leads: a milk, honey and egg dough with coriander, cinnamon, cloves and ginger, baked low at 300°F for about an hour. My Cooking Journey uses a smaller dough baked at 325°F for 35 to 40 minutes, and Cozy Delicious a milk-free honey and water dough with cardamom and nutmeg baked at 350°F. None shows a rating, so this counts as a fallback. Tara's page itself says the coriander may really be cardamom; coriander is kept here. Plan on about 3 hours of rising on top of the 30 minutes of prep and the hour in the oven. Best the day it's baked; freezing the slices is from Tara's.",
+ "sources": [
+  {
+   "name": "Tara's Multicultural Table",
+   "title": "Yemarina Yewotet Dabo (Ethiopian Honey Milk Bread)",
+   "url": "https://tarasmulticulturaltable.com/yemarina-yewotet-dabo-ethiopian-honey-milk-bread/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "My Cooking Journey",
+   "title": "Yemarina Yewotet Dabo",
+   "url": "https://www.mycookingjourney.com/yemarina-yewotet-dabo-ethiopian-spiced-honey-bread/",
+   "rating": null,
+   "rating_count": 0,
+   "read": true
+  },
+  {
+   "name": "Cozy Delicious",
+   "title": "Yemarina Yewotet Dabo Honey Bread",
+   "url": "https://www.cozydelicious.com/yemarina-yewotet-dabo-honey-bread/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

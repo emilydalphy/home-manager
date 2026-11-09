@@ -1,0 +1,70 @@
+{
+ "dish_name": "Xiao Mi Zhou",
+ "cuisine": "Chinese",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Millet",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  }
+ ],
+ "instructions": [
+  "Rinse the 1 cup millet in a fine-mesh strainer under running water, then drain it.",
+  "Put 6 cups of water in a large pot over high heat and bring it to a boil.",
+  "Meanwhile, heat a dry skillet over medium-high heat and add the millet. Stir it often for 5 to 8 minutes, until it smells toasty. Millet burns easily, so don't walk away.",
+  "Carefully add the toasted millet to the boiling water and stir. When it comes back to a boil, turn the heat down to low.",
+  "Simmer, uncovered, for 20 minutes, stirring now and then so nothing sticks to the bottom. The water will turn golden and a little starchy, and the millet won't soak up all of it.",
+  "Stir in the 1/2 tsp salt. If you'd like it thicker, simmer it for a few minutes longer.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve in bowls, stirring 1/2 tbsp of the sugar into each of the 4 bowls.",
+  "To keep it, cool the porridge, cover it and refrigerate it for up to 4 days. It thickens as it sits, so stir in a splash of water when you reheat it in a pot over medium-low heat or in the microwave."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Mayuri's Jikoni, Food.com and Seduce Your Tastebuds all rinse the millet and simmer it in plenty of water, then serve it plain or with a little sweetener. None of them showed a real rating (Food.com has one review), so the lead is Food.com, the only version with a toasting step and a full ratio. Water runs from about 3.5 cups per cup of millet (Food.com) to 8 to 12 cups (Mayuri's thin congee); this uses 6 for a porridge you can spoon. Wuxi-style versions with adzuki beans and peanuts were left out to keep it nut-free. Sugar is served on the side so it stays vegan. The fridge time is a general guideline for cooked grains.",
+ "sources": [
+  {
+   "name": "Food.com",
+   "title": "Xiao Mi Zhou (Millet Porridge)",
+   "url": "https://www.food.com/recipe/xiao-mi-zhou-millet-porridge-176786",
+   "rating": null,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Mayuri's Jikoni",
+   "title": "Xiao Mi Zhou",
+   "url": "https://mayuris-jikoni.com/2018/04/28/xiao-mi-zhou/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Seduce Your Tastebuds",
+   "title": "Wuzi China - Xiao Mi Zhou",
+   "url": "https://seduceyourtastebuds.com/2014/09/wuzi-china-xiao-mi-zhou.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

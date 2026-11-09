@@ -1,0 +1,76 @@
+{
+ "dish_name": "Atmit",
+ "cuisine": "Ethiopian",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "Oat flour",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Milk",
+   "qty": "2 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Cinnamon sticks",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 pinch"
+  }
+ ],
+ "instructions": [
+  "Off the heat, whisk the 2 cups oat flour, the 2 cups milk and 2 1/2 cups water together in a large pot until no lumps are left.",
+  "Add a pinch of salt and the 2 cinnamon sticks.",
+  "Set the pot over medium-low heat. Stir often and scrape the bottom so it doesn't stick or burn. Cook for 15 to 20 minutes, until it thickens to a loose, velvety porridge.",
+  "Take the pot off the heat, lift out the cinnamon sticks and stir in the honey.",
+  "Serve hot in bowls or mugs."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The Bale Moya version leads: oat flour, milk, water, cinnamon and honey, stirred over medium-low heat for 15 to 20 minutes. Ethiopian-Food.org's Gebs Atmit uses roasted barley flour and water with a little honey (5 stars from 2 reviews), and ChildFund's uses oat powder with milk and sugar; all of them whisk the flour in smooth and stir often. None has 20 ratings, so this counts as a fallback. Atmit is often drunk rather than eaten with a spoon, so thin it with a splash of milk if you like. Barley flour or niter kibbeh are not used here.",
+ "sources": [
+  {
+   "name": "The Bale Moya",
+   "title": "Atmeet: An Ethiopian Porridge Comfort Drink",
+   "url": "https://thebalemoya.com/blogs/recipies/atmeet-an-ethiopian-porridge-comfort-drink",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Ethiopian-Food.org",
+   "title": "Gebs Atmit Recipe",
+   "url": "https://ethiopian-food.org/gebs-atmit-recipe/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true
+  },
+  {
+   "name": "ChildFund",
+   "title": "Ethiopian Atmit",
+   "url": "https://www.childfund.org/stories/2016/comfort-food-around-the-globe",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

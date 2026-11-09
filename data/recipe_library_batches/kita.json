@@ -1,0 +1,66 @@
+{
+ "dish_name": "Kita",
+ "cuisine": "Ethiopian",
+ "main_protein": "vegan",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "2 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  }
+ ],
+ "instructions": [
+  "In a large bowl, stir the 2 1/2 cups flour and the salt together. Add 1 cup of water a little at a time, mixing, until you have a soft dough. If it's dry, add a teaspoon of water. If it's sticky, add a spoonful of flour.",
+  "Knead the dough on a lightly floured counter for 5 minutes, until smooth. Cover it and let it rest for 10 minutes.",
+  "Cut the dough into 4 equal pieces. Roll each one into a round about 8 inches across and 1/4 inch thick, and prick it a few times with a fork.",
+  "Heat a large skillet over medium heat and brush it with 1/2 tbsp of the oil. Cook one round for 2 to 3 minutes per side, until both sides are golden and crisp with brown spots. Brush the pan with 1/2 tbsp oil before each of the other rounds.",
+  "Serve warm."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Gurmestan's kita (flour, water, salt, a short rest, a dry pan) and Ethiopian-Food.org's (rounds pricked with a fork and cooked in a little fat until crisp and spotted) agree on the dough. Ratios differ: Gurmestan uses about 3/8 cup water per cup of flour, Ethiopian-Food.org about 4/7; this uses 2/5. Both fry in niter kibbeh (clarified butter), which is swapped for vegetable oil so it stays vegan and dairy-free. Neither source shows a rating, so this counts as a fallback.",
+ "sources": [
+  {
+   "name": "Gurmestan",
+   "title": "Chechebsa recipe (kita)",
+   "url": "https://gurmestan.com/en/recipes/chechebsa/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Ethiopian-Food.org",
+   "title": "Kita (Kicha) Recipe",
+   "url": "https://ethiopian-food.org/kita-kicha-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Ethiopian-Food.org",
+   "title": "Chechebsa Recipe: How To Make Kita Firfir",
+   "url": "https://ethiopian-food.org/chechebsa-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

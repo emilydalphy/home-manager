@@ -1,0 +1,108 @@
+{
+ "dish_name": "Shou Zhua Bing",
+ "cuisine": "Chinese",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "2 1/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Baking powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Scallions",
+   "qty": "2 bunches",
+   "category": "produce",
+   "cook_qty": "12 stalks"
+  },
+  {
+   "item": "Chinese five-spice powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Parchment paper",
+   "qty": "1 roll",
+   "category": "other"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  }
+ ],
+ "instructions": [
+  "Up to a month ahead, or the night before: in a large bowl, stir the 2 cups (240 g) of the flour, the baking powder and 1/2 tsp of the salt together. Add 2/3 cup (150 ml) water and knead by hand for 5 minutes. If you see dry spots, add water 1 tbsp at a time. Cut the dough into 4 pieces and knead each into a ball.",
+  "Pour 1 1/2 tbsp of the oil into an 8-inch cake pan, add the dough balls and turn them to coat well. Cover and let them rest for at least 40 minutes, or overnight in the fridge.",
+  "Near the end of the rest, chop all 12 scallion stalks and stir them in a heatproof bowl with 1/4 cup of the flour, the five-spice, the sugar and the last 1/2 tsp salt. Heat 1/4 cup of the oil in a small pot until a scrap of scallion sizzles right away (about 350°F/180°C). Pour it carefully over the scallion mixture and stir. It will sizzle.",
+  "Lightly oil the counter. Flatten one dough ball, then stretch it into a thin rectangle about 12 by 7 inches. Spread a quarter of the scallion mixture over it and press lightly so it sticks. Lift the bottom edge, fold it over the filling and keep folding up to the top, then press the end down. Roll the long strip into a coil and tuck the end underneath. Do the same with the other 3 balls, then let all 4 coils rest for 15 minutes.",
+  "Press each coil with your palm into a disc about 5 to 6 inches across and 1/2 inch thick. Cut 5 squares of parchment, about 7 inches. Stack the discs with a square of parchment between each and one on top, then freeze them in a container or freezer bag for up to 1 month. If you'd rather cook them right away, go straight to the next step.",
+  "Peel the parchment off the frozen discs. Set a large skillet over medium-low heat with a thin layer of oil, and put in 2 discs, still frozen. Cover and cook for 3 minutes, until the underside is golden in spots.",
+  "Flip the discs and crack an egg onto the top of each. Break the yolk with a spatula and spread the egg to the edges. Sprinkle on a pinch of salt. Cook for about 1 minute, until the egg is mostly set.",
+  "Flip each one so the egg side is down and cook for 30 seconds. Fold in half and move to a plate. Wipe out the pan and cook the other 2 the same way.",
+  "Serve hot, folded."
+ ],
+ "advance_prep_notes": "make the dough and freeze the pancakes ahead (the night before, or up to a month)",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5
+ ],
+ "method_notes": "WoonHeng's shou zhua pancake leads: it is the only home version with a full dough and layering method and it freezes, though it has only 5 ratings, so this counts as a fallback lead. It has no egg; the egg is cooked on in the way Woks of Love does it with a frozen scallion pancake (crack it on the cooked side, spread it, flip it egg side down). Most of the work is the make-ahead dough, about 1 hour 45 minutes the first time. Cooking from frozen is the 15 minutes of the morning. WoonHeng cooks fresh discs 2 to 3 minutes per side; the frozen time here is an estimate.",
+ "sources": [
+  {
+   "name": "WoonHeng",
+   "title": "The Best and Easy Shou Zhua Scallion Pancake",
+   "url": "https://woonheng.com/shou-zhua-scallion-pancake/",
+   "rating": 4.8,
+   "rating_count": 5,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Woks of Love",
+   "title": "Black Pepper Garlic Scallion Pancake Roll (Shou Zhua Bing)",
+   "url": "https://woksoflove.com/black-pepper-garlic-scallion-pancake-roll-shou-zhua-bing/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Black Sesame Kitchen",
+   "title": "Zha Cai / Zhua Bing",
+   "url": "https://blacksesamekitchen.com/zhua-bing/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

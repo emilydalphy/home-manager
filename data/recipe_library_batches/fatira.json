@@ -1,0 +1,70 @@
+{
+ "dish_name": "Fatira",
+ "cuisine": "Ethiopian",
+ "main_protein": "eggs",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 20,
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Eggs",
+   "qty": "4",
+   "category": "dairy"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  }
+ ],
+ "instructions": [
+  "In a bowl, stir the 2 cups (260 g) flour and 1/4 tsp of the salt together. Add 100 g (a scant 1/2 cup) of water and 1 tsp of the oil and mix. The dough starts out stiff. Knead it for 10 minutes, until it's smooth and stretchy.",
+  "Cut the dough into 4 equal balls and rub a little oil over each. Cover them and let them rest for 15 minutes.",
+  "Meanwhile, beat the 4 eggs with the last 1/4 tsp salt. Heat 1 tsp oil in a nonstick skillet over medium heat and scramble the eggs for 1 to 2 minutes, just until set. Transfer them to a plate.",
+  "On a lightly oiled counter, roll one ball as thin as you can, into a square you can nearly see through. Brush it with 1/2 tsp oil, spoon a quarter of the eggs into the middle, and fold the four sides over them into a square parcel.",
+  "Heat a large skillet over medium-high heat. Cook the parcel for 2 to 3 minutes per side, until golden with dark bubbles. Roll, fill and cook the other 3 the same way, keeping the finished ones on a plate under a towel.",
+  "Serve warm with the honey."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Only one fatira recipe by name was readable (a blog that rolls flour, water, salt and oil very thin, greases it, folds it into a square and cooks it in a hot pan, served with honey), so it leads, with no rating shown. It has no egg. The egg comes from the descriptions of fatira in Harar (a pancake with a cooked egg in the middle, dipped in honey), so the eggs are scrambled and folded in. The 15 minute rest is added so the dough rolls thin. It takes about 50 minutes, not 15, because the dough has to be kneaded and rolled; a source of fatira with egg in the middle was not found.",
+ "sources": [
+  {
+   "name": "My Mum is the best Cook ever",
+   "title": "Ethiopian flatbread Fatira",
+   "url": "http://triinuvosueng.blogspot.com/2019/05/ethiopian-flatbread-fatira.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Peace Traveler",
+   "title": "Fatira and Coffee",
+   "url": "https://thepeacetraveler.wordpress.com/2014/05/23/fatira-and-coffee/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

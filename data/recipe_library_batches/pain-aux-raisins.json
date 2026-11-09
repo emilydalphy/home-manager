@@ -1,0 +1,107 @@
+{
+ "dish_name": "Pain aux Raisins",
+ "cuisine": "French",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 30,
+ "ingredients": [
+  {
+   "item": "Frozen puff pastry sheets",
+   "qty": "2 sheets (17.3 oz package)",
+   "category": "frozen"
+  },
+  {
+   "item": "Whole milk",
+   "qty": "1 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 pinch"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "1 1/2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Golden raisins",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Apricot preserves",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Take the puff pastry out and thaw it as the package says. Heat the oven to 375°F (190°C) and line a sheet pan with parchment.",
+  "Put the raisins in a bowl, cover them with hot water and leave them for 15 minutes. Drain them and pat them dry.",
+  "Make the cream while they soak. Heat the milk in a saucepan over medium heat until it's just steaming. Meanwhile, whisk the 2 egg yolks, the sugar, the cornstarch, the vanilla and a pinch of salt in a bowl. Keep the 2 egg whites for later.",
+  "Slowly pour the hot milk into the yolk mixture, whisking the whole time. Pour it back into the saucepan and cook over medium heat, whisking, for 1 to 2 minutes, until it bubbles and thickens. Off the heat, whisk in the butter. That should be about 1 cup.",
+  "Transfer the cream to a bowl, press plastic wrap on the surface and let it cool completely. If you make it the night before, keep it in the fridge.",
+  "Unfold the pastry sheets. Spread half the cream over each sheet, then scatter 1/4 cup of the raisins over each.",
+  "Cut each sheet into 8 strips about 1 inch wide. Roll one strip into a spiral, then wrap a second strip around it. Each sheet makes 4 pastries, so you'll have 8 in all.",
+  "Place the pastries on the sheet pan, spaced apart, and brush them with the egg whites.",
+  "Bake for 28 to 30 minutes, until golden. The time varies by oven.",
+  "Just before they finish, warm the apricot preserves with 2 tbsp hot water for about 30 seconds and stir until smooth. Brush the warm glaze over the pastries as soon as they come out of the oven.",
+  "Let them cool a little before serving. Keep leftovers in an airtight container at cool room temperature for up to 2 days, and reheat in a toaster oven or for about 10 seconds in the microwave. To freeze, cool the pastries before glazing, wrap each one and freeze for up to 1 month. Thaw, warm and glaze before serving."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Cookin' With Mima's easy version leads: puff pastry, pastry cream and soaked raisins rolled in strips, baked at 375°F, then glazed with apricot (4.5 from 30 ratings). Her page doesn't give the cream's amounts, so they come from Baking with Butter's pastry cream (milk, yolks, sugar, cornstarch, vanilla, butter), which makes about the 1 cup she uses. The traditional versions (Baking with Butter, Paul Hollywood's) laminate their own dough over about 17 hours. This one uses bought puff pastry. The storage and freezing notes are Mima's.",
+ "sources": [
+  {
+   "name": "Cookin' With Mima",
+   "title": "Easy Pain Aux Raisins",
+   "url": "https://www.cookinwithmima.com/easy-pain-aux-raisins/",
+   "rating": 4.5,
+   "rating_count": 30,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Baking with Butter",
+   "title": "Pain aux Raisins",
+   "url": "https://bakingwithbutter.com/pain-aux-raisins/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true
+  },
+  {
+   "name": "The Great British Bake Off",
+   "title": "Paul Hollywood's Pain aux Raisins",
+   "url": "https://thegreatbritishbakeoff.co.uk/recipes/all/paul-hollywood-pain-aux-raisins/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
