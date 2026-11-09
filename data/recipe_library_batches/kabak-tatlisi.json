@@ -1,0 +1,31 @@
+{
+ "dish_name": "Kabak Tatlisi",
+ "cuisine": "Turkish",
+ "main_protein": "vegan",
+ "ingredients": [
+  {"item": "Sugar pumpkin", "qty": "1 (about 2 lbs)", "category": "produce"},
+  {"item": "Sugar", "qty": "1 bag", "category": "pantry", "cook_qty": "1 cup"},
+  {"item": "Tahini", "qty": "1 jar", "category": "pantry", "cook_qty": "3 tbsp"}
+ ],
+ "instructions": [
+  "The night before, or at least 6 hours ahead: Peel the pumpkin and scoop out the seeds and stringy bits. Cut the flesh into 2-inch chunks.",
+  "The night before, or at least 6 hours ahead: Transfer the chunks into a large saucepan, add the sugar and toss until every piece is coated. Cover and leave it on the counter, or in the fridge if your kitchen is warm. By morning the sugar will have turned into a syrup around the pumpkin.",
+  "Set the saucepan over medium heat, uncovered. Bring the syrup to a gentle bubble, about 4 minutes.",
+  "Turn the heat down to medium-low. Spoon the syrup over the pumpkin every few minutes and simmer for 20 minutes. It's done when a fork goes in easily but the pieces still hold their shape. Don't stir it hard, or the pieces will break up.",
+  "Take the pan off the heat and let it cool for 20 minutes. Then refrigerate it for at least 1 hour, until chilled.",
+  "Stir the tahini well. Arrange the pumpkin on a plate or in bowls and drizzle the tahini over it. Serve with a spoon of the syrup from the pan."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "toss the pumpkin with the sugar at least 6 hours ahead, or the night before. Once cooked it keeps in its syrup in a covered container in the fridge for up to 4 days. Serve it cold or let it sit out for 20 minutes. It doesn't freeze well.",
+ "advance_prep_step_indices": [1, 2],
+ "method_notes": "The by-name versions I could read agree on the core: pumpkin sits in sugar for 6 to 8 hours or overnight with no water added, then cooks in the syrup it releases until tender but still whole, and is served cold with a tahini drizzle. They differ on the cooking: one simmers about 10 minutes on the stove, one simmers 45 to 60 minutes and sets it with pectin or gelatin, and one bakes it 40 to 50 minutes. This follows the stovetop version, with the sugar ratio taken between the sources. The walnuts that every source puts on top are left out to keep it nut-free, and no pectin, gelatin or ice cream is used so it stays vegan. None of the versions I could read had 20 or more ratings, and the trusted cook for the cuisine has no version of this dish.",
+ "sources": [
+  {"name": "Turkeys for Life", "title": "Turkish Pumpkin Dessert (Kabak Tatlisi)", "url": "https://www.turkeysforlife.com/2021/10/turkish-pumpkin-dessert-kabak-tatlisi.html", "rating": 5, "rating_count": 1, "read": true, "lead": true},
+  {"name": "Savory Thoughts", "title": "Turkish Pumpkin Dessert (Kabak Tatlisi)", "url": "https://www.savorythoughts.com/turkish-pumpkin-dessert-kabak-tatlisi/", "rating": 5, "rating_count": 7, "read": true},
+  {"name": "Food Network Kitchen", "title": "Kabak Tatlisi (Turkish Pumpkin Dessert)", "url": "https://www.foodnetwork.com/recipes/food-network-kitchen/kabak-tatls-17884665", "rating": null, "rating_count": null, "read": true}
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
