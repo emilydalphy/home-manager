@@ -1,0 +1,174 @@
+{
+ "dish_name": "Kosha Mangsho",
+ "cuisine": "Indian",
+ "main_protein": "lamb",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 110,
+ "ingredients": [
+  {
+   "item": "Bone-in lamb shoulder",
+   "qty": "2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "6 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 1/2 inch)",
+   "category": "produce"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Mustard oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "3"
+  },
+  {
+   "item": "Cinnamon sticks",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "2 pieces (1 inch each)"
+  },
+  {
+   "item": "Green cardamom pods",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "8"
+  },
+  {
+   "item": "Whole cloves",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "10"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3/4 tsp"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3/4 tsp"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Ground fennel",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  }
+ ],
+ "instructions": [
+  "Cut the lamb into 2 inch pieces if it isn't already, leaving the bones in. Pat the pieces dry with paper towels and rub them with 1/2 tsp of the salt.",
+  "Thinly slice the onions and the tomato and keep them in separate piles. Remove the seeds from the green chili. Pound or grate the garlic, ginger and green chili into a rough paste.",
+  "In a small bowl, whisk the turmeric, cumin, coriander, fennel and chili powder with 1/4 cup water until smooth.",
+  "Heat the mustard oil in a heavy pot over medium heat until it shimmers. Add the sugar, then the bay leaves, cinnamon, cardamom and cloves and stir for 30 seconds, until they smell fragrant.",
+  "Add the garlic, ginger and chili paste and stir for 1 minute.",
+  "Add the onions and 1/4 tsp of the salt. Cook for 7 to 8 minutes, stirring often, until they're deep golden.",
+  "Pour in the spice mixture and stir for 1 minute.",
+  "Add the lamb and the remaining 3/4 tsp salt and stir for 3 minutes, until every piece is coated and starting to brown.",
+  "Add the tomato. Rinse the spice bowl with 2 tbsp water, pour that in too, and bring it to a simmer. Turn the heat to medium-low.",
+  "Cook for about 1 hour 30 minutes, partly covered, stirring every 10 to 15 minutes. The lamb will give off juices first, then the gravy darkens and clings to the meat. If the pot looks dry, add 2 tbsp water. It's done when the lamb is tender and pulls easily from the bone.",
+  "Stir in the garam masala, the vegetable oil and 1/4 cup water. Cook uncovered for 5 minutes, stirring, until the gravy is thick and glossy.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with steamed rice.",
+  "Let leftovers cool, then keep them in a covered container in the fridge for up to 4 days, or in the freezer for up to 3 months. Reheat on low with a splash of water. It tastes even better the next day."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Playful Cooking's kosha mangsho cooks goat in mustard oil with a garlic, ginger and chili paste, sliced onion, a smooth paste of ground spices, tomato and a little water for about 90 minutes, then finishes with garam masala and ghee, and it uses no yogurt. Sen's Kitchen, Archana's Kitchen and Headbanger's Kitchen marinate the meat in yogurt and use more onion, and take longer or a pressure cooker. No version with 20 or more ratings was found, so this follows Playful Cooking, which has no rating, and it matches the dairy-free tag. Lamb shoulder replaces the goat, oil replaces the ghee, and there are two onions instead of one small one, so the gravy is the rich onion one the dish is known for. Only one seeded chili goes in, so it stays mild.",
+ "sources": [
+  {
+   "name": "Playful Cooking",
+   "title": "Kosha Mangsho (Spiced Slow-Cooked Mutton Stew)",
+   "url": "https://www.playfulcooking.com/wprm_print/kosha-mangsho-spiced-slow-cooked-mutton-stew",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Archana's Kitchen",
+   "title": "Bengali Kosha Mangsho (Slow Cooked Mutton Curry)",
+   "url": "https://www.archanaskitchen.com/bengali-kosha-mangsho-recipe-slow-cooked-mutton-curry-recipe",
+   "rating": null,
+   "rating_count": 3024,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Sen's Kitchen",
+   "title": "Kosha Mangsho",
+   "url": "https://senskitchen.com/recipe/kosha-mangsho/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

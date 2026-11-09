@@ -1,0 +1,198 @@
+{
+ "dish_name": "Mutton Curry",
+ "cuisine": "Indian",
+ "main_protein": "lamb",
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 125,
+ "ingredients": [
+  {
+   "item": "Bone-in lamb shoulder",
+   "qty": "1 1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce",
+   "cook_qty": "1 tbsp grated"
+  },
+  {
+   "item": "Green cardamom pods",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "2"
+  },
+  {
+   "item": "Whole cloves",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3"
+  },
+  {
+   "item": "Star anise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1",
+   "category": "pantry",
+   "cook_qty": "2 inch piece"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3/4 tsp"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 small can",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Coconut cream",
+   "qty": "1 can",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 tsp"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1/2 of it, juiced"
+  },
+  {
+   "item": "Russet potatoes",
+   "qty": "2 medium (about 1 lb)",
+   "category": "produce"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3 tbsp chopped"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Cut the lamb into 2 inch pieces if it isn't already, leaving the bones in. Pat the pieces dry and rub them with 3/4 tsp of the salt.",
+  "Thinly slice the onion, mince the garlic and grate the ginger. Peel the potatoes, cut them into 1 1/2 inch cubes and keep them in a bowl of cold water.",
+  "Heat the oil in a large heavy pot over medium heat. Add the cardamom, bay leaves, cloves, star anise and cinnamon and stir for 30 seconds, until they smell fragrant.",
+  "Add the onion and cook for about 10 minutes, stirring often, until it's deep golden.",
+  "Add the garlic and ginger and stir for 1 minute. Add the lamb and cook for 3 minutes, turning the pieces, until they're browned in places.",
+  "Add the coriander, cumin, chili powder, paprika, turmeric and the tomato paste. Stir for 2 minutes, until the paste darkens a little.",
+  "Stir in the coconut cream, 1/2 cup water, the pepper, the lemon juice and the remaining 3/4 tsp salt. Bring it to a boil.",
+  "Turn the heat to medium-low, cover and simmer for about 1 hour 15 minutes, stirring now and then, until the lamb is tender and breaks apart when you press it with a wooden spoon. If the pot looks dry, add 1/4 cup water.",
+  "Drain the potatoes and add them with 1 1/2 cups water. Bring it back to a simmer, then cover and cook for 20 to 25 minutes, until the potatoes are fork tender.",
+  "Take the pot off the heat and stir in the garam masala and cilantro.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of the other half of the lemon.",
+  "Slice the green chili for the table. Serve with steamed rice and the green chili.",
+  "Let leftovers cool, then keep them in a covered container in the fridge for up to 4 days. Reheat on low with a splash of water. It tastes even better the next day."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Veena Azmanov's goat curry, also called mutton curry (5 from 45 ratings), blooms whole spices, cooks the onion until deep golden, then adds ginger, garlic, the meat, ground spices, tomato paste and coconut cream and simmers it for one to one and a half hours. Her recipe has no potatoes. Tea for Turmeric's aloo gosht (4.90 from 46 ratings) and Piping Pot Curry add cubed potatoes and extra water once the meat is nearly tender, and that timing is used here, since the list promises a lamb curry with potatoes. Amounts are three quarters of Veena's, with lamb shoulder for the goat and mild Kashmiri chili. Fenugreek powder, mace and black cardamom are left out because they are hard to find. The green chili goes on the side.",
+ "sources": [
+  {
+   "name": "Veena Azmanov",
+   "title": "Indian Goat Curry Recipe (Mutton Curry)",
+   "url": "https://veenaazmanov.com/indian-goat-curry-recipe/",
+   "rating": 5,
+   "rating_count": 45,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Tea for Turmeric",
+   "title": "Aloo Gosht (Mutton/Lamb and Potato Curry)",
+   "url": "https://www.teaforturmeric.com/mutton-and-potato-curry-aloo-gosht/",
+   "rating": 4.9,
+   "rating_count": 46,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Piping Pot Curry",
+   "title": "Aloo Gosht (Mutton/Lamb Curry with Potato)",
+   "url": "https://pipingpotcurry.com/aloo-gosht/",
+   "rating": 5,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

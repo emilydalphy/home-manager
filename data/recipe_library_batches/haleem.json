@@ -1,0 +1,182 @@
+{
+ "dish_name": "Haleem",
+ "cuisine": "Indian",
+ "main_protein": "lamb",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 150,
+ "ingredients": [
+  {
+   "item": "Bone-in lamb shoulder",
+   "qty": "1 1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Cracked wheat (dalia)",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Pearl barley",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chana dal",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Masoor dal (red lentils)",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Moong dal",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Urad dal",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2 large",
+   "category": "produce"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "6 tbsp"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (1 inch)",
+   "category": "produce",
+   "cook_qty": "1 tbsp grated"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce",
+   "cook_qty": "1 tbsp grated"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3 tsp"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3/4 tsp"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3/4 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "3/4 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 1/4 tsp"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3 tbsp chopped"
+  },
+  {
+   "item": "Mint",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Put the cracked wheat, barley, chana dal, masoor dal, moong dal and urad dal in a bowl, cover them with water and let them soak for 30 minutes.",
+  "Meanwhile, thinly slice the onions. Grate the ginger and garlic. Heat the 6 tbsp oil in a large heavy pot over medium heat and add the onions. Fry for 15 to 20 minutes, stirring often, until they're deep golden and crisp at the edges.",
+  "Lift the onions out with a slotted spoon onto a plate lined with paper towels. Spoon 2 tbsp of the oil into a small bowl and set it aside for the end. Leave the rest in the pot.",
+  "Pat the lamb dry and rub it with 1/4 tsp of the salt. Turn the heat to medium-high and brown the lamb in the pot for 6 to 8 minutes, turning the pieces until they're browned on all sides.",
+  "Add the ginger and garlic and stir for 1 minute.",
+  "Add half of the fried onions, 2 tsp of the garam masala, the coriander, cumin, chili powder, turmeric, pepper and 1/2 tsp of the salt. Stir for 1 minute.",
+  "Pour in 2 cups water and bring it to a boil. Turn the heat to low, cover and simmer for about 1 hour 30 minutes, until the lamb is tender and pulls easily from the bone.",
+  "About 30 minutes after the lamb goes on, drain the soaked grains and lentils and put them in a second large pot with 4 cups water. Bring it to a boil, then turn the heat to low and simmer for 1 hour, stirring now and then, until they're very soft and starting to break apart. If it gets too thick, add a splash of hot water.",
+  "Lift the lamb out onto a plate and let it cool for 5 minutes. Pull off the meat, throw away the bones, and shred the meat as finely as you can with two forks. Return it to the pot with its liquid.",
+  "Blend the cooked grains and lentils until completely smooth, using an immersion blender or a countertop blender in two batches with the lid vented. Stir the blended mix into the lamb.",
+  "Stir in 1 1/2 tbsp of the cilantro, 1 tbsp of the mint and the remaining 1/4 tsp salt. Bring to a gentle boil, then turn the heat to low and simmer for 30 minutes, stirring often, until it's the thickness of a thick porridge. Add the last 1 tsp garam masala for the final 10 minutes. If it gets too thick, add hot water, 1/4 cup at a time.",
+  "Taste it. If it's flat, add a pinch more salt or a squeeze of the lemon.",
+  "Ladle into bowls and drizzle each with some of the reserved oil. Top with the rest of the fried onions, cilantro and mint. Slice the green chili for the table. Serve with lemon wedges and the green chili.",
+  "Let leftovers cool, then keep them in a covered container in the fridge for up to 4 days, or in the freezer for up to 3 months. It sets firm when cold, so reheat on low with a splash of water, stirring."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The Delicious Crescent's lamb haleem browns bone-in meat with ginger, garlic, garam masala and ground spices, simmers it until tender, and cooks cracked wheat, barley and four lentils separately before shredding the meat, blending the grains, and simmering them together with fresh herbs. Dishoom's version uses milk, butter and cream and a spice bundle, and Cup of Yum's Hyderabadi haleem is a 14 serving batch that is pounded with a mallet and garnished with cashews and almonds. Cup of Yum has the top rating (4.9 from 144) and leads by the app's rule, and its method matches: fried onions, a ginger and garlic meat masala, lentils and grains cooked soft, then mashed smooth. Its page gives amounts for 14 servings, with grain weights that look inflated, and it adds ground almonds, cashews, cream and ghee. So the amounts here are scaled from The Delicious Crescent (5 from 12 ratings), the only readable home-sized version. The yogurt, ghee and cashews are left out for the dairy-free and nut-free tags, the frying oil replaces the ghee, and the green chilies go on the side. It is scaled to about three quarters of that recipe, a big thick pot that freezes well.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "Hyderabadi Haleem",
+   "url": "https://cupofyum.com/recipes/hyderabadi-haleem",
+   "rating": 4.9,
+   "rating_count": 144,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Delicious Crescent",
+   "title": "Haleem Recipe",
+   "url": "https://www.thedeliciouscrescent.com/haleem-recipe/",
+   "rating": 5,
+   "rating_count": 12,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Dishoom",
+   "title": "Haleem: Savoury Porridge",
+   "url": "https://www.dishoom.com/journal/recipes/haleem-savoury-porridge-a-slow-cooked-delicacy/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

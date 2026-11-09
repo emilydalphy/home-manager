@@ -1,0 +1,133 @@
+{
+ "dish_name": "Dal Gosht",
+ "cuisine": "Indian",
+ "main_protein": "lamb",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 100,
+ "ingredients": [
+  {
+   "item": "Chana dal",
+   "qty": "1 cup (180 g)",
+   "category": "pantry"
+  },
+  {
+   "item": "Bone-in lamb shoulder",
+   "qty": "1 1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "3 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "8 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "2 3/4 tsp"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "6 tbsp"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "3 tbsp chopped"
+  },
+  {
+   "item": "Green chilies",
+   "qty": "2",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "At least 1 hour ahead, rinse the chana dal and cover it with plenty of water to soak.",
+  "Chop 2 of the onions and the tomatoes. Pat the lamb dry. Put the lamb in a large heavy pot with the chopped onions, tomatoes, whole garlic cloves, 2 tsp of the salt, 1/2 tsp of the turmeric, the ground cumin, coriander and 1/2 cup water.",
+  "Bring it to a simmer over medium heat, then turn the heat to low and cover. Cook for about 1 hour 15 minutes, stirring now and then, until the lamb pulls easily from the bone. If the pot looks dry, add 2 tbsp water.",
+  "Meanwhile, drain the dal and put it in a medium pot with 6 cups water, the remaining 3/4 tsp salt and the remaining 1/2 tsp turmeric. Bring it to a boil and skim off any foam. Turn the heat to low and simmer for 40 to 45 minutes, until the dal is completely soft. Add hot water if it gets low.",
+  "Drain the dal, keeping 1/2 cup of its liquid.",
+  "When the lamb is tender, take the lid off, turn the heat to high and cook for 5 to 8 minutes, until almost all the liquid has cooked off.",
+  "Add 3 tbsp of the oil. Stir hard and constantly for 5 to 6 minutes, until the masala is dry and glossy and starting to catch on the bottom. Don't walk away from it.",
+  "Add the dal and the reserved liquid and stir well. Simmer for 5 minutes, adding hot water if it's thicker than you'd like. The stew should be spoonable but not soupy.",
+  "Slice the remaining onion. Heat the remaining 3 tbsp oil in a small pan over medium-high heat. Add the onion and cook for 6 to 8 minutes, stirring often, until it's light brown.",
+  "Add the cumin seeds and cook for 30 seconds, until they sizzle and smell toasty. Keep stirring until the onion is deep brown. Pour it, oil and all, over the dal gosht.",
+  "Stir in the cilantro. Taste it. If it's flat, add a pinch more salt.",
+  "Slice the green chilies for the table. Serve with steamed rice and the green chilies.",
+  "Let leftovers cool, then keep them in a covered container in the fridge for up to 4 days, or in the freezer for up to 3 months. Reheat on low with a splash of water."
+ ],
+ "advance_prep_notes": "soak the chana dal at least 1 hour ahead",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "Fatima Cooks simmers bone-in lamb with onion, tomato and whole garlic, boils the chana dal separately, cooks the meat dry in oil, combines the two and pours over a fried onion and cumin tadka. Cup of Yum builds a spiced masala first and cooks the dal in the pot with the meat, adding mung dal. Neither has 20 ratings (Fatima 4.89 from 18, Cup of Yum 4.7 from 18), and no trusted cook version was found, so this follows Fatima Cooks. The tadka is cut down from the original, the chilies go on the side, and the soaked dal is boiled separately so it stays whole and the stew keeps well for days.",
+ "sources": [
+  {
+   "name": "Fatima Cooks",
+   "title": "Dal Gosht (Meat & Lentils)",
+   "url": "https://fatimacooks.net/dal-gosht-meat-lentils/",
+   "rating": 4.89,
+   "rating_count": 18,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cup of Yum",
+   "title": "Dal Gosht: Lentil and Meat Curry",
+   "url": "https://cupofyum.com/recipes/dal-gosht-lentil-and-meat-curry",
+   "rating": 4.7,
+   "rating_count": 18,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Spoon Fork and Food",
+   "title": "Mutton Dalcha",
+   "url": "https://www.spoonforkandfood.com/mutton-dalcha-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

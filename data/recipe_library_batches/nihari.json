@@ -1,0 +1,223 @@
+{
+ "dish_name": "Nihari",
+ "cuisine": "Indian",
+ "main_protein": "beef",
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 330,
+ "ingredients": [
+  {
+   "item": "Beef chuck (or boneless beef shank)",
+   "qty": "2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "2 1/2 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Ghee",
+   "qty": "1 jar",
+   "category": "dairy",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2 large",
+   "category": "produce"
+  },
+  {
+   "item": "Star anise",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "1 package",
+   "category": "pantry",
+   "cook_qty": "2"
+  },
+  {
+   "item": "Cinnamon stick",
+   "qty": "1",
+   "category": "pantry",
+   "cook_qty": "2 inch piece"
+  },
+  {
+   "item": "Garlic",
+   "qty": "10 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Ginger",
+   "qty": "1 piece (3 inch)",
+   "category": "produce",
+   "cook_qty": "a 1 1/2 inch piece, crushed, plus a 1 inch piece in thin sticks"
+  },
+  {
+   "item": "Whole cloves",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "5"
+  },
+  {
+   "item": "Green cardamom pods",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "5"
+  },
+  {
+   "item": "Fennel seeds",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Kashmiri chili powder",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Ground ginger",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Onion powder",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Ground nutmeg",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/8 tsp"
+  },
+  {
+   "item": "Atta (whole wheat flour)",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Garam masala",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Crispy fried onions",
+   "qty": "1 container",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1/4 bunch, chopped"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Cut the beef into 1 1/2 inch cubes and pat them dry with paper towels. Rub them with 1 tsp of the salt.",
+  "Grind the cloves, cardamom pods and fennel seeds to a fine powder in a spice grinder or a mortar. Stir in the paprika, coriander, cumin, turmeric, chili powder, pepper, ground ginger, onion powder and nutmeg in a small bowl.",
+  "Thinly slice the onions. Mince the garlic and crush the 1 1/2 inch piece of ginger.",
+  "Heat the oil and ghee in a large heavy pot over medium-high heat. Add the star anise, bay leaves, cinnamon and onions. Cook for about 10 minutes, stirring often, until the onions are golden. If the pot gets dry, add 2 tbsp water and let it cook off.",
+  "Add the garlic and crushed ginger and stir for 30 seconds.",
+  "Add the beef and cook for about 5 minutes, stirring, until it has lost its raw color and the edges are browned.",
+  "Turn the heat to low. Add the spice mix and the remaining 1 1/2 tsp salt and stir for 20 seconds. Pour in 12 cups water right away.",
+  "Turn the heat to high, cover and bring it to a boil. Turn the heat to low, so it barely bubbles, and cover. Cook for about 4 hours, until the beef breaks apart when you press it with a wooden spoon.",
+  "Ladle 1 cup of the liquid into a bowl and let it cool for a few minutes. Put the 1/2 cup atta in another bowl and whisk in the liquid a little at a time until it's a smooth, thin paste.",
+  "Stir the paste into the pot slowly, a little at a time, so it doesn't clump. Cover and simmer for 30 to 45 minutes, until it's the thickness of a thick soup. If it's too thick, add boiling water, 1/4 cup at a time.",
+  "Stir in the garam masala. Taste it. If it's flat, add a pinch more salt.",
+  "Cut the 1 inch piece of ginger into thin sticks, chop the cilantro, slice the green chili and cut the lemon into wedges.",
+  "Ladle into bowls and top with the ginger sticks, cilantro and fried onions. Serve with naan, the lemon wedges and the green chili.",
+  "Let leftovers cool, then keep them in a covered container in the fridge for up to 4 days, or in the freezer for up to 3 months. It thickens when cold, so reheat on low with a splash of water."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Tea for Turmeric's easy nihari fries onion in oil and ghee with whole spices, browns the beef, adds ground spices and a large amount of water, braises it for hours, and thickens it with an atta paste. The Delicious Crescent and Jamil Ghar also toast and grind whole spices and thicken with flour. They differ on the cut (shank, with marrow bones, or stew meat) and on the time, from 4 to 7 hours. This follows Tea for Turmeric's stew meat stovetop version, doubled to feed a family and with a simple spice mix in place of its homemade nihari masala (mace, long pepper and black cardamom are hard to find). The cooked pot freezes well.",
+ "sources": [
+  {
+   "name": "Tea for Turmeric",
+   "title": "Easy Nihari (Pakistani Beef Stew)",
+   "url": "https://www.teaforturmeric.com/easy-slow-cooker-nihari-beef-stew/",
+   "rating": 4.99,
+   "rating_count": 66,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Delicious Crescent",
+   "title": "Nihari (Beef Shank Stew)",
+   "url": "https://www.thedeliciouscrescent.com/nihari-beef-stew/",
+   "rating": 5,
+   "rating_count": 9,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Jamil Ghar",
+   "title": "Beef Nihari",
+   "url": "https://jamilghar.com/nihari/",
+   "rating": 4.86,
+   "rating_count": 14,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
