@@ -1,0 +1,116 @@
+{
+ "dish_name": "Kalitsounia",
+ "cuisine": "Greek",
+ "main_protein": "cheese",
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "2 1/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Baking powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/3 cup for the dough + 1/4 cup for the filling"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Greek yogurt",
+   "qty": "1/4 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Orange",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ricotta",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  }
+ ],
+ "instructions": [
+  "A day or two ahead, or up to 2 months ahead for the freezer: in a large bowl, whisk the olive oil, 1/3 cup of the sugar, the yogurt, 1 egg, 2 tbsp juice squeezed from the orange and the vanilla until smooth.",
+  "Stir the baking powder into 2 cups of the flour. Add it to the bowl a little at a time and knead until the dough is soft and no longer sticky. If it still sticks, knead in the last 1/4 cup flour a spoonful at a time.",
+  "Cover the dough and let it rest for 30 minutes.",
+  "Meanwhile, separate the second egg. In a bowl, stir the yolk with the ricotta, the remaining 1/4 cup sugar and 1/4 tsp of the cinnamon until smooth. Keep the white for the egg wash.",
+  "Heat the oven to 375°F and line two baking sheets with parchment.",
+  "Roll the dough out to about 1/8 inch thick. Cut out 4-inch circles and gather the scraps to roll and cut again. You should get about 16.",
+  "Put 1 tbsp of the filling in the middle of each circle. Pinch the edges up and together around the filling, leaving the middle open. Set them on the baking sheets and leave them for 20 minutes.",
+  "Beat the egg white with 1 tbsp water. Brush it over the pastries and sprinkle with the last 1/4 tsp cinnamon.",
+  "Bake for 20 to 25 minutes, until golden. Cool them on the sheets for 20 minutes.",
+  "Once they're completely cool, store them in an airtight container with parchment between the layers. They keep in the fridge for up to 3 days or in the freezer for up to 2 months.",
+  "In the morning, heat the oven to 350°F. Warm the pastries on a baking sheet for 8 minutes from the fridge or 15 minutes from frozen. Drizzle with the honey."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 60,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "Make and bake the pastries ahead, then refrigerate or freeze them",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10
+ ],
+ "method_notes": "My Greek Dish (the lead) uses an olive oil and yogurt dough with orange juice and a sweet myzithra or ricotta filling, baked with a cinnamon egg wash and served with honey. This is scaled down to about a quarter of its batch, and Lemon and Olives, a smaller recipe, was used as a check on the dough proportions and the 375°F bake. Reviewers of the lead said its dough can come out dry, so flour is held back to add only if needed. Neither source gives fridge or freezer times; the storage and reheating times are Pomona's own guidance for a baked cheese pastry.",
+ "sources": [
+  {
+   "name": "My Greek Dish",
+   "title": "Cretan Sweet Cheese Pastries Recipe (Kalitsounia)",
+   "url": "https://www.mygreekdish.com/recipe/cretan-sweet-cheese-pastries-kalitsounia/",
+   "rating": 4.83,
+   "rating_count": 526,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Lemon and Olives",
+   "title": "Kalitsounia",
+   "url": "https://www.lemonandolives.com/kalitsounia-cretan-sweet-cheese-pies/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

@@ -1,0 +1,95 @@
+{
+ "dish_name": "Melopita",
+ "cuisine": "Greek",
+ "main_protein": "cheese",
+ "ingredients": [
+  {
+   "item": "Ricotta",
+   "qty": "1 tub (15 oz)",
+   "category": "dairy"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 cup + 4 tbsp"
+  },
+  {
+   "item": "Eggs",
+   "qty": "2",
+   "category": "dairy"
+  },
+  {
+   "item": "Cornstarch",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "1 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "The day before, or at least 4 hours ahead: heat the oven to 350°F. Grease an 8-inch springform or round cake pan with the butter.",
+  "Spoon the ricotta into a sieve set over a bowl and let it drain for 15 minutes.",
+  "In a large bowl, whisk the drained ricotta with 1/4 cup plus 1 tbsp of the honey, the eggs, the cornstarch and the vanilla until smooth with no lumps.",
+  "Pour the batter into the pan and smooth the top.",
+  "Bake for 30 to 35 minutes, until the top is browned and the middle no longer wobbles.",
+  "Let the pie cool in the pan for 5 minutes. Take it out of the pan and let it cool completely. Cover it and refrigerate for at least 2 hours.",
+  "In the morning, cut the pie into 8 slices. Drizzle with the remaining 3 tbsp honey and dust with the cinnamon. Serve cold or after 15 minutes at room temperature.",
+  "Cover the leftover slices and refrigerate. They keep for up to 3 days. For longer, freeze the slices without honey for up to 1 month and thaw them in the fridge overnight."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 35,
+ "advance_prep_notes": "Bake the pie the day before and chill it",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6
+ ],
+ "method_notes": "Souvlaki For The Soul (the lead) makes a crustless pie of ricotta, honey, eggs and a little cornstarch, baked until set and drizzled with more honey and cinnamon; it is scaled here to one 15 oz tub for an 8-inch pan. Kopiaste and Easy World Recipes agree it is crustless and baked around 350°F (180°C), and Easy World Recipes says to drain ricotta first, which is why that step is here. The fridge and freezer times come from Easy World Recipes. The smaller pie bakes a little faster than the full size one.",
+ "sources": [
+  {
+   "name": "Souvlaki For The Soul",
+   "title": "Melopita",
+   "url": "https://souvlakiforthesoul.com/melopita-recipe/",
+   "rating": 4.91,
+   "rating_count": 32,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Kopiaste",
+   "title": "Melopita (Honey Cheesecake) from Sifnos",
+   "url": "https://www.kopiaste.org/2019/02/melopita-honey-cheesecake-from-sifnos/",
+   "rating": 4.8,
+   "rating_count": 5,
+   "read": true
+  },
+  {
+   "name": "Easy World Recipes",
+   "title": "Melopita: Greek Honey Pie",
+   "url": "https://easyworldrecipes.com/melopita-greek-honey-pie/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

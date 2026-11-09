@@ -1,0 +1,119 @@
+{
+ "dish_name": "Galatopita",
+ "cuisine": "Greek",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Whole milk",
+   "qty": "2 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/3 cup"
+  },
+  {
+   "item": "Fine semolina",
+   "qty": "1/3 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Eggs",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Egg yolks",
+   "qty": "1",
+   "category": "dairy"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Orange",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  }
+ ],
+ "instructions": [
+  "The day before, or at least 8 hours ahead: heat the oven to 350°F and grease an 8-inch round baking pan with 1 tsp of the butter.",
+  "In a bowl, whisk the egg, the egg yolk and half the sugar until slightly foamy. Set it aside.",
+  "In a medium pot, stir the milk with the rest of the sugar, 1/4 tsp of the cinnamon and the vanilla. Grate in the zest of the orange. Warm it over medium heat for about 4 minutes, until it's steamy. Don't let it boil.",
+  "Take the pot off the heat. Ladle half the hot milk into the egg mixture a spoonful at a time, whisking the whole time.",
+  "Pour the egg mixture back into the pot and set it over medium heat.",
+  "Whisk in the semolina slowly. Keep stirring until the cream thickens and starts to bubble. Once it bubbles hard, keep stirring for 1 minute.",
+  "Take the pot off the heat and stir in 1 tbsp of the butter until it melts.",
+  "Spread the cream evenly in the pan. Melt 2 tsp of the butter and brush it over the top.",
+  "Bake for 30 to 35 minutes, until the top is deep golden. It will look jiggly in the middle and sets as it cools.",
+  "Let the pie cool in the pan for 45 minutes. Cover it and refrigerate for at least 6 hours or overnight.",
+  "In the morning, cut the pie into 8 squares. Dust them with the last 1/4 tsp cinnamon and drizzle with the honey. Serve cold or after 15 minutes at room temperature.",
+  "Cover the leftover squares and refrigerate. They keep for up to 4 days."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 35,
+ "advance_prep_notes": "Bake the pie the day before and chill it at least 6 hours",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10
+ ],
+ "method_notes": "Real Greek Recipes (the lead) makes a crustless semolina custard from milk, eggs and sugar, thickened on the stove and then baked; it is scaled here to a 2 cup milk pie for an 8-inch pan. Souvlaki For The Soul and Mia Kouppa agree on the method but use cornstarch or more eggs and a hotter stove step. The 4 day fridge keep comes from the lead; none of the three says it freezes, so no freezer time is given. The smaller pie bakes in less time than the full size one.",
+ "sources": [
+  {
+   "name": "Real Greek Recipes",
+   "title": "Galatopita - Baked Semolina Milk Pie",
+   "url": "https://realgreekrecipes.com/galatopita/",
+   "rating": 4.19,
+   "rating_count": 32,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Souvlaki For The Soul",
+   "title": "Galatopita - Greek Milk Pie",
+   "url": "https://souvlakiforthesoul.com/galatopita/",
+   "rating": 4.89,
+   "rating_count": 9,
+   "read": true
+  },
+  {
+   "name": "Mia Kouppa",
+   "title": "Galatopita, Greek milk custard pie",
+   "url": "https://miakouppa.com/recipe-galatopita-greek-milk-custard-pie/",
+   "rating": 5.0,
+   "rating_count": 8,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

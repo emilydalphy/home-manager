@@ -1,0 +1,151 @@
+{
+ "dish_name": "Poori with Aloo Bhaji",
+ "cuisine": "Indian",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Whole wheat flour",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Fine semolina",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "3 1/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Potatoes",
+   "qty": "1 1/2 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 small piece",
+   "category": "produce"
+  },
+  {
+   "item": "Mustard seeds",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Urad dal",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Chana dal",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dried red chili",
+   "qty": "1",
+   "category": "pantry"
+  },
+  {
+   "item": "Asafoetida",
+   "qty": "1 pinch",
+   "category": "pantry"
+  },
+  {
+   "item": "Curry leaves",
+   "qty": "1 small bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Green chili",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "The night before, or up to 2 days ahead: peel the potatoes and cut them into 3/4-inch cubes. Put them in a pot with 1 1/2 cups water and 1/2 tsp of the salt. Cover and bring to a boil, then simmer for 10 minutes, until a fork slides in easily. Drain, keeping 1/2 cup of the cooking water.",
+  "Heat 2 tbsp of the oil in a wide pan over medium heat. Add the mustard seeds, urad dal, chana dal, the dried red chili broken in half, the asafoetida and 10 curry leaves. Cook for about 1 minute, until the seeds crackle and the dals turn golden.",
+  "Peel and chop a 1-inch piece of ginger. Slice the onion. Add both to the pan and cook for 4 minutes, stirring, until the onion softens and turns slightly golden.",
+  "Stir in the turmeric and 1/4 tsp of the salt. Cook for 1 minute.",
+  "Add the potatoes and the reserved cooking water. Cover and cook over medium-low heat for 5 minutes, until the bhaji is thick and the potatoes have taken on the flavor.",
+  "Take the pan off the heat. Stir in 1 tbsp lemon juice and 2 tbsp chopped cilantro. Let it cool, then cover and refrigerate. It keeps for up to 3 days.",
+  "In the morning, stir the flour, semolina, sugar, the last 1/2 tsp salt and 2 tsp of the oil together in a large bowl. Rub it between your fingers until the flour looks evenly damp.",
+  "Add about 1/2 cup water a splash at a time and knead for 5 minutes, until you have a firm, tight dough. Cover it and let it sit for 15 minutes.",
+  "Meanwhile, spoon the bhaji into a pan with 2 tbsp water. Warm it over low heat, covered, for 5 minutes, stirring once. Keep it covered off the heat.",
+  "Mince the green chili and put it in a small bowl for the table.",
+  "Roll the dough into a log and cut it into 20 pieces. Roll each piece into a ball and put them in a bowl with 1 tsp of the oil. Toss to coat so they don't dry out.",
+  "Pour 3 cups of the oil into a deep, 8-inch-wide pot. Heat it over medium-high until a small pinch of dough dropped in rises to the top within a few seconds. You're aiming for about 360°F, so if you have a thermometer, check it there.",
+  "Roll 4 or 5 of the balls into slightly thick 4-inch rounds. Stand back a little. They will spatter.",
+  "Slide one round into the oil and press it gently with a slotted spoon so it puffs. Spoon hot oil over the top. When it's puffed and pale gold, after about 20 seconds, flip it and fry for about 20 seconds, until golden.",
+  "Lift it onto a plate lined with paper towels. Fry the rest the same way, rolling a few balls at a time while each batch fries.",
+  "Serve the pooris hot with the aloo bhaji."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 45,
+ "advance_prep_notes": "Make the aloo bhaji the night before and refrigerate it",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6
+ ],
+ "method_notes": "Hebbar's Kitchen (the lead) pairs a firm whole wheat and semolina poori dough, fried until it puffs, with a South Indian style potato bhaji tempered with mustard, dals, curry leaves and ginger. My Ginger Garlic Kitchen agrees on the poori but makes a tomato and yogurt sabji; that yogurt is left out here to keep the dish vegan. The lead cooks the potatoes in a pressure cooker, so they are boiled in a pot here, and the dough rest is borrowed from the second source. Green chili sits on the side so the base stays mild.",
+ "sources": [
+  {
+   "name": "Hebbar's Kitchen",
+   "title": "Poori and Aloo Bhaji",
+   "url": "https://hebbarskitchen.com/poori-recipe-puri-bhaji-recipe/",
+   "rating": 5.0,
+   "rating_count": 293,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "My Ginger Garlic Kitchen",
+   "title": "Aloo Puri Recipe - Puri Sabji",
+   "url": "https://www.mygingergarlickitchen.com/aloo-poori-recipe-puri-sabji-recipe-video-aloo-ki-rasewali-sabzi-with-puri/",
+   "rating": 5.0,
+   "rating_count": 243,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
