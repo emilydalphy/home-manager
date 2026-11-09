@@ -1,0 +1,63 @@
+{
+ "dish_name": "Kinako Toast",
+ "cuisine": "Japanese",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Bread",
+   "qty": "4 slices",
+   "category": "pantry"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Kinako (roasted soybean flour)",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Powdered sugar",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  }
+ ],
+ "instructions": [
+  "In a small bowl, stir the kinako and powdered sugar together.",
+  "Toast the bread until golden.",
+  "Spread the butter over the toast while it is hot, so it melts in.",
+  "Sprinkle a generous 1 1/2 tbsp of the kinako sugar over each slice and serve right away."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 3,
+ "cook_time_minutes": 3,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The one source that names this dish, a Japanese bread company's page repeated on a Japanese products blog, gives only the order: butter or margarine on toast, then kinako, then powdered sugar or a brown syrup. It gives no amounts, so the quantities here are Pomona's own, about two parts kinako to one part sugar, like the kinako sugar a Cookpad Japan toast uses. No ratings exist for any version, so the page counts as a fallback lead.",
+ "sources": [
+  {
+   "name": "Japanese Products Blog",
+   "title": "Kinako Toast",
+   "url": "https://japanese-products.blog/2017/06/12/delicious-and-easy-recipes-using-kinako-roasted-soybean-flour/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cookpad Japan",
+   "title": "Kinako Cheese Toast",
+   "url": "https://cookpad.com/eng/recipes/150727",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

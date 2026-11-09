@@ -1,0 +1,98 @@
+{
+ "dish_name": "Castella",
+ "cuisine": "Japanese",
+ "main_protein": "eggs",
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "6",
+   "category": "dairy"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 cup"
+  },
+  {
+   "item": "Honey",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Vanilla extract",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Cake flour",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups"
+  }
+ ],
+ "instructions": [
+  "The day before: heat the oven to 315°F. Line an 8 by 8 inch metal pan with parchment paper that stands at least 1 inch above the rim.",
+  "Let the eggs come to room temperature. In a stand mixer with the whisk attachment, beat the eggs with the sugar on high until the mixture is pale, thick and about tripled, and a ribbon of batter sits on top for a few seconds.",
+  "In a small bowl, stir the honey with 2 tbsp warm water, the vanilla and the salt.",
+  "On low speed, mix in the honey mixture, then the cake flour. Stop as soon as everything is combined.",
+  "Pour the batter into the pan and tap the pan on the counter to bring up large bubbles.",
+  "Bake for about 45 minutes. The cake is ready when the top is dark brown and puffed and a toothpick in the center comes out clean.",
+  "Lift the cake out by the parchment and wrap it in plastic wrap while it is still warm. Let it cool completely, then leave it wrapped for at least 6 hours or overnight.",
+  "Unwrap the cake and trim the browned edges. Cut the square in half, then slice each half into 1/2 inch slices with a serrated knife. This makes 24 slices.",
+  "Keep the slices wrapped at room temperature for up to 2 days, or in the fridge for up to 5 days. Eat them cool or at room temperature."
+ ],
+ "default_servings": 24,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 45,
+ "advance_prep_notes": "Bake the day before. The wrapped cake needs at least 6 hours to rest.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7
+ ],
+ "method_notes": "Spicy Perspective is the lead (5.0 from 11 ratings), a whole-egg honey castella baked in a square pan with the cake flour added last, so it holds fewer than 20 ratings. Japanese Taste folds whipped whites into yolks with reduced mirin, olive oil and a drop of soy sauce, and SBS (Adam Liaw) bakes two stages in a castella box with raw sugar crystals and butter. All of them leave the cake wrapped to rest before slicing, which is what makes the crumb moist. It is dairy free and keeps for days, but it needs the rest, so bake it the day before.",
+ "sources": [
+  {
+   "name": "A Spicy Perspective",
+   "title": "Japanese Sponge Cake (Castella Cake)",
+   "url": "https://www.aspicyperspective.com/japanese-castella-cake-wagashi-sponge-cake/",
+   "rating": 5.0,
+   "rating_count": 11,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Japanese Taste",
+   "title": "How To Make Castella Cake",
+   "url": "https://japanesetaste.com/blogs/japanese-taste-recipes/how-to-make-castella-cake-japanese-sponge-cake-recipe",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "SBS Food",
+   "title": "Japanese sponge cake (castella)",
+   "url": "https://www.sbs.com.au/food/recipe/japanese-sponge-cake-castella/qlo2m43k6",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,65 @@
+{
+ "dish_name": "Anko Butter Toast",
+ "cuisine": "Japanese",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Thick-cut white bread or shokupan",
+   "qty": "4 slices",
+   "category": "pantry"
+  },
+  {
+   "item": "Salted butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Sweet red bean paste (anko)",
+   "qty": "1 can",
+   "category": "pantry",
+   "cook_qty": "1/2 cup"
+  }
+ ],
+ "instructions": [
+  "Toast the bread until golden.",
+  "Spread the butter over the hot toast, so it melts in.",
+  "Spread 2 tbsp of the anko over each slice and serve right away."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 3,
+ "cook_time_minutes": 3,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Sylvia Wakana's Anko Butter Toast is the lead: toast, butter, then a thick layer of red bean paste, with salted butter for contrast. No Recipes spreads the butter and bean paste on a thick slice and adds a little flaky salt, and Pickled Plum warms the topped slices in the oven for 3 minutes so the paste softens. This keeps the simple toaster version. None of the versions have 20 or more ratings.",
+ "sources": [
+  {
+   "name": "Sylvia Wakana",
+   "title": "Anko Butter Toast (Ogura Toast)",
+   "url": "https://sylviawakana.com/anko-butter-toast/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "No Recipes",
+   "title": "Ogura toast (Red Bean Toast)",
+   "url": "https://norecipes.com/ogura-toast-red-bean/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Pickled Plum",
+   "title": "Ogura Toast",
+   "url": "https://pickledplum.com/ogura-toast/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,87 @@
+{
+ "dish_name": "Japanese Fruit Sando",
+ "cuisine": "Japanese",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Soft white sandwich bread or shokupan",
+   "qty": "8 slices",
+   "category": "pantry"
+  },
+  {
+   "item": "Strawberries",
+   "qty": "12",
+   "category": "produce"
+  },
+  {
+   "item": "Kiwis",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Navel orange",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Heavy cream",
+   "qty": "1 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "5 tsp"
+  }
+ ],
+ "instructions": [
+  "Up to the night before: hull the strawberries, peel the kiwis, and peel the orange and cut out the segments. Pat all the fruit dry with paper towels.",
+  "Set a bowl over a larger bowl of ice. Pour in the cream, add the sugar and whip to medium peaks.",
+  "Spread cream over 4 slices of bread. Lay the fruit in a row on the cream, along the line where you will cut, and fill the gaps with more cream. Cover with cream and top with the other 4 slices of bread.",
+  "Wrap each sandwich tightly in plastic wrap and mark the cut line on the wrap. Set a plate on top and refrigerate for at least 1 hour, or overnight. They keep until the next morning.",
+  "Unwrap the sandwiches, trim the crusts and cut along the marked line with a serrated knife to show the fruit. Serve cold."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 0,
+ "advance_prep_notes": "Make the sandwiches the night before, or at least 1 hour ahead, and chill them.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4
+ ],
+ "method_notes": "Just One Cookbook is the lead, with 4.75 from 111 ratings: strawberry, kiwi and orange between thick whipped cream on soft bread, wrapped and chilled so it slices cleanly. Take Two Eggs and No Recipes use the same method with mango, vanilla or sweetened condensed milk in the cream. The page lists the prep as an hour, so this is not a fifteen-minute breakfast. The work takes about 25 minutes, and the sandwiches then need a chill of at least an hour, so make them the night before.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Japanese Fruit Sandwich (Fruit Sando)",
+   "url": "https://www.justonecookbook.com/japanese-fruit-sandwich-fruit-sando/",
+   "rating": 4.75,
+   "rating_count": 111,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "No Recipes",
+   "title": "Japanese Fruit Sandwich",
+   "url": "https://norecipes.com/japanese-fruit-sandwich/",
+   "rating": 4.67,
+   "rating_count": 6,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Takes Two Eggs",
+   "title": "Japanese Fruit Sandwich (Fruit Sando Recipe)",
+   "url": "https://takestwoeggs.com/japanese-fruit-sandwich-fruit-sando-recipe/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

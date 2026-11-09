@@ -1,0 +1,106 @@
+{
+ "dish_name": "Pizza Toast",
+ "cuisine": "Japanese",
+ "main_protein": "cheese",
+ "ingredients": [
+  {
+   "item": "Thick-cut shokupan or white bread",
+   "qty": "4 slices",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Ketchup",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "a pinch"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "a pinch"
+  },
+  {
+   "item": "Sweet onion",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1/4"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce",
+   "cook_qty": "1/2"
+  },
+  {
+   "item": "Cherry tomatoes",
+   "qty": "1 pint",
+   "category": "produce",
+   "cook_qty": "5"
+  },
+  {
+   "item": "Shredded mozzarella",
+   "qty": "3/4 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Crushed red pepper flakes",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "a pinch for each adult's slice"
+  }
+ ],
+ "instructions": [
+  "Heat the oven or toaster oven to 450°F.",
+  "Mince the garlic. Warm the olive oil and garlic in a small pan over medium-low heat for about 2 minutes, until fragrant but not brown. Stir in the ketchup, salt and pepper, then take it off the heat.",
+  "Thinly slice 1/4 of the onion and the pepper into thin strips. Halve the cherry tomatoes.",
+  "Spread about 1 tbsp of the sauce on each slice of bread. Sprinkle a little of the mozzarella over the sauce, then top with the onion, pepper and tomatoes. Cover with the rest of the mozzarella.",
+  "Bake on the middle rack for about 10 minutes, until the edges are browned and the cheese has melted.",
+  "Serve hot. Pass the red pepper flakes at the table for the adults."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 12,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Just One Cookbook is the lead (4.73 from 18 ratings, so just short of the 20 needed): a quick ketchup and garlic sauce, onion, green pepper and tomato under melted mozzarella on thick milk bread, baked in a toaster oven. Its ham is left out to keep this vegetarian, as the MIWA's Japanese Cook version does, and its red pepper flakes move from the sauce to the side to keep the toast mild. Japanese Cooking 101 uses a ketchup, mustard and garlic sauce. The 15 minutes in the list's promise holds only for the toppings and bake; with the sauce it is about 20.",
+ "sources": [
+  {
+   "name": "Just One Cookbook",
+   "title": "Japanese Pizza Toast",
+   "url": "https://www.justonecookbook.com/pizza-toast/",
+   "rating": 4.73,
+   "rating_count": 18,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Japanese Cooking 101",
+   "title": "Pizza Toast Recipe",
+   "url": "https://japanesecooking101.com/pizza-toast-recipe/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

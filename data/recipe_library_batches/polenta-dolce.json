@@ -1,0 +1,79 @@
+{
+ "dish_name": "Polenta Dolce",
+ "cuisine": "Italian",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Milk",
+   "qty": "4 1/2 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 box",
+   "category": "pantry",
+   "cook_qty": "1 tsp"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Instant polenta",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "4 tbsp"
+  },
+  {
+   "item": "Ground nutmeg",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "a pinch for each bowl"
+  }
+ ],
+ "instructions": [
+  "Up to 4 days ahead: pour 4 cups of the milk into a medium saucepan, add the salt and heat over medium-high until it simmers. Stir in the butter.",
+  "Slowly whisk in the polenta until the mixture is smooth and bubbling. Lower the heat and stir for about 5 minutes, until the polenta is thick and pulling away from the sides of the pan.",
+  "Spoon the polenta into 4 containers, let it cool for 15 minutes, then cover and refrigerate. It keeps in the fridge for up to 4 days.",
+  "To serve, stir 2 tbsp of the remaining milk into one container. Microwave it for 1 to 1 1/2 minutes, stirring halfway, until it is hot all the way through and loose again. You can also warm it in a small saucepan over low heat, stirring.",
+  "Sprinkle each bowl with 1 tbsp sugar and a pinch of nutmeg and serve."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "Cook a pot of polenta up to 4 days ahead and pack it into 4 containers.",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3
+ ],
+ "method_notes": "Polenta Dolce has no rated version online. The lead (CDKitchen) simmers instant polenta in milk with salt and butter and tops each bowl with sugar. The Mario Batali version cooks the polenta in water and adds nutmeg with the sugar, which this keeps as a finish. This is the lead's pot, cooked once and packed into four containers so a bowl can be reheated with a splash of milk on any morning that week.",
+ "sources": [
+  {
+   "name": "CDKitchen",
+   "title": "Polenta Dolce",
+   "url": "https://www.cdkitchen.com/recipes/recs/482/Polenta-Dolce124980.shtml",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cooking Index",
+   "title": "Sweet Polenta (Polenta Dolce)",
+   "url": "https://www.cookingindex.com/recipes/50374/sweet-polenta-polenta-dolce.htm",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
