@@ -1,0 +1,85 @@
+{
+ "dish_name": "Sujuk bi Bayd",
+ "cuisine": "Lebanese",
+ "main_protein": "eggs",
+ "ingredients": [
+  {
+   "item": "Sujuk",
+   "qty": "2 links (about 1/2 lb)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Eggs",
+   "qty": "8",
+   "category": "dairy"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Cut the sujuk into 1/4 inch slices. Chop the onion into small pieces and dice the tomatoes.",
+  "Crack the eggs into a bowl, add 1/2 tsp salt and the pepper, and whisk until no streaks of white are left.",
+  "Heat the olive oil in a large nonstick skillet over medium heat. Add the sujuk in a single layer and cook for 1 to 2 minutes per side, until the edges are browned and it has released its fat.",
+  "Add the onion and tomatoes to the same skillet. Cook for 3 to 4 minutes, stirring now and then, until the onion is soft and the tomatoes have broken down.",
+  "Pour in the eggs. Stir slowly with a spatula for 3 to 4 minutes, until the eggs are just set but still look glossy.",
+  "Take the pan off the heat. Chop 2 tbsp of parsley and scatter it over the top.",
+  "Taste it. The sujuk is salty, so add a pinch more salt only if it's flat.",
+  "Serve straight from the pan."
+ ],
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 12,
+ "method_notes": "Welcome2Jordan's version is the lead: sujuk fried in its own fat, then onion and tomato cooked in that fat, then beaten eggs stirred through. It serves 2, so the amounts are doubled here. Peanutswirls and Binnur's Turkish Cookbook cook the sujuk first and crack the eggs on top instead of scrambling them. A little olive oil is added so the sujuk browns evenly. Pita is left off so the dish stays gluten-free, and sujuk brands vary, so check the label for flour or other fillers.",
+ "sources": [
+  {
+   "name": "Welcome2Jordan",
+   "title": "Sujuk with Eggs (Middle Eastern Style)",
+   "url": "https://welcome2jordan.com/sujuk-with-eggs/",
+   "rating": 5.0,
+   "rating_count": 2,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Peanutswirls",
+   "title": "Sucuk & Eggs",
+   "url": "https://peanutswirls.com/recipe/sucuk-eggs/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

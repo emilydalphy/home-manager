@@ -1,0 +1,100 @@
+{
+ "dish_name": "Kebab Halabi",
+ "cuisine": "Lebanese",
+ "main_protein": "lamb",
+ "ingredients": [
+  {
+   "item": "Ground lamb",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Aleppo pepper",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "1 lb",
+   "category": "produce"
+  },
+  {
+   "item": "Mild red pepper paste",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "4 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Pine nuts",
+   "qty": "1 small bag",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the rice, 2 3/4 cups of water and 1/2 tsp salt in a medium pot over high heat. Bring it to a boil, then cover and turn the heat to low. Cook for 15 minutes, then take it off the heat and leave it covered until you serve.",
+  "In a large bowl, knead the lamb with 1 1/2 tsp salt and 1/2 tsp of the Aleppo pepper for about 2 minutes, until it looks sticky and holds together.",
+  "Divide the meat into 8 pieces and shape each into an oval patty about 1/2 inch thick.",
+  "Grate the tomatoes on the large holes of a box grater into a bowl, and leave the skins behind. That should be about 2 cups. Mince the garlic.",
+  "Heat 1 tbsp olive oil in a medium saucepan over medium heat. Add the garlic and cook for 30 seconds. Stir in the red pepper paste and cook for 1 minute.",
+  "Add the grated tomatoes, 1/2 tsp of the Aleppo pepper and 1/4 tsp salt. Simmer for 15 minutes, stirring now and then, until the sauce coats the back of a spoon.",
+  "While the sauce simmers, heat 1 tbsp olive oil in a large skillet over medium-high heat. Add the pine nuts and cook for 1 to 2 minutes, stirring, until golden. Transfer them to a small bowl.",
+  "Add 2 tbsp olive oil to the same skillet. Sear half the patties for 2 1/2 minutes per side, until deep brown and they let go of the pan. Transfer them to a plate and sear the rest.",
+  "You're cooking the lamb to 160°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut one open: it's done when there's no pink left.",
+  "Chop 1/4 cup of parsley. Taste the sauce and add a pinch more salt if it's flat.",
+  "Spoon the rice onto plates and lay the patties on top. Pour the sauce over them and top with the pine nuts and parsley. Put the last 1 tsp Aleppo pepper in a small bowl on the table for the adults."
+ ],
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 20,
+ "method_notes": "Howtomakeakebab's Aleppo version is the lead (no rating shown): lamb kneaded with Aleppo pepper and salt, and a sauce of grated tomatoes, mild red pepper paste, garlic and Aleppo pepper simmered in olive oil, topped with toasted pine nuts and parsley. It grills the meat on skewers and serves it on sauce-soaked flatbread. This version presses it into patties, pan-sears them, and serves them over rice, so the dish stays gluten-free. Maryam's Culinary Wonders and Alfarah mix onion, garlic and herbs into the meat. Most of the Aleppo pepper goes to the table to keep the pot mild, and the red pepper paste can be swapped for tomato paste if you can't find it. Total time runs a couple of minutes over 30.",
+ "sources": [
+  {
+   "name": "How to Make a Kebab",
+   "title": "Kebab Halabi Recipe: Aleppo Skewers on Sauce-Soaked Bread",
+   "url": "https://howtomakeakebab.com/kebab/kebab-halabi",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Maryam's Culinary Wonders",
+   "title": "Kebab/Kofta Halabi with Roasted Tomato",
+   "url": "https://maryamsculinarywonders.blogspot.com/2013/09/456-kebabkofta-halabi-with-roasted.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

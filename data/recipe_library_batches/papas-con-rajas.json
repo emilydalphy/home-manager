@@ -1,0 +1,98 @@
+{
+ "dish_name": "Papas con Rajas",
+ "cuisine": "Mexican",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Yukon Gold potatoes",
+   "qty": "1.5 lbs",
+   "category": "produce"
+  },
+  {
+   "item": "Poblano peppers",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "White onion",
+   "qty": "1 small",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Corn tortillas",
+   "qty": "1 pack (12)",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Turn the broiler to high with a rack about 4 inches from the heat.",
+  "Cut the potatoes into 3/4 inch cubes. Put them in a medium pot, cover with cold water by an inch, and bring to a boil over high heat. Turn the heat to medium and cook for 8 minutes, until a knife slides in easily.",
+  "Meanwhile, put the whole poblanos on a baking sheet under the broiler. Broil for 8 minutes, turning once halfway, until the skin is blistered and black in spots.",
+  "Transfer the poblanos to a bowl and cover it with a plate. Leave them to steam for 8 minutes.",
+  "Thinly slice the onion. Drain the potatoes and shake them dry.",
+  "Heat the olive oil in a large skillet over medium-high heat. Add the potatoes in a single layer and leave them alone for 2 minutes. Toss, and cook for 3 minutes more, until golden in spots.",
+  "Add the onion, garlic powder, 1 tsp salt and the pepper. Cook for 3 minutes, stirring, until the onion is soft.",
+  "Peel the skin off the poblanos. It should slide off. Pull out the stems and seeds, and cut the flesh into 1/4 inch strips.",
+  "Add the strips to the skillet and toss for 2 minutes, until hot.",
+  "Warm the tortillas in a dry skillet over medium heat for 20 seconds per side.",
+  "Taste it. If it's flat, add a pinch more salt.",
+  "Serve with the warm corn tortillas."
+ ],
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 22,
+ "method_notes": "Mama Maggie's Kitchen is the lead: potatoes boiled until tender, poblanos charred, steamed and cut into strips, then everything tossed in a skillet with onion and olive oil. Her version tops it with shredded cheese, which is left off here to keep it vegan. Andrea's Recipes browns the potatoes in the pan before the peppers go in, and Maricruz Avalos adds garlic powder and onion, so the potatoes are boiled first and then fried until golden, with garlic powder and a little pepper. Tortillas are corn, so the dish stays gluten-free. Total time runs a couple of minutes over 30.",
+ "sources": [
+  {
+   "name": "Mama Maggie's Kitchen",
+   "title": "Papas con Rajas",
+   "url": "https://inmamamaggieskitchen.com/papas-con-rajas/",
+   "rating": 5.0,
+   "rating_count": 3,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Andrea's Recipes",
+   "title": "Papas Fritas con Rajas (Fried Potatoes with Poblano Peppers)",
+   "url": "https://andreasrecipes.com/papas-fritas-con-rajas-fried-potatoes-with-poblano-pepper-strips/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Maricruz Avalos",
+   "title": "Papas con Rajas",
+   "url": "https://www.maricruzavalos.com/papas-con-rajas/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

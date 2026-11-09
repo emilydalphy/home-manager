@@ -1,0 +1,88 @@
+{
+ "dish_name": "Black Bean Quesadillas",
+ "cuisine": "Mexican",
+ "main_protein": "beans",
+ "ingredients": [
+  {
+   "item": "Black beans",
+   "qty": "2 cans (15 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Salsa",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "2 cups"
+  },
+  {
+   "item": "Sharp cheddar cheese",
+   "qty": "8 oz",
+   "category": "dairy",
+   "cook_qty": "1 1/2 cups"
+  },
+  {
+   "item": "Flour tortillas (8-inch)",
+   "qty": "1 pack (8)",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cumin",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sour cream",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1/2 cup"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F with the racks in the top and bottom thirds.",
+  "Drain and rinse the black beans. In a large bowl, mash about a quarter of them with a fork.",
+  "Add 1 cup of the salsa, 1 1/2 cups grated cheddar, the cumin and the salt, and stir until it's evenly mixed.",
+  "Lay 4 tortillas on each of two baking sheets. Spread the bean mixture over one half of each tortilla, then fold the other half over it.",
+  "Brush the tops with the olive oil, about 1 tsp on each.",
+  "Bake for 10 minutes, swapping the pans after 5, until the cheese is melted and the tops are golden and crisp.",
+  "Let them sit on the pans for 2 minutes, then cut each into wedges.",
+  "Serve with the rest of the salsa and the sour cream."
+ ],
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 12,
+ "method_notes": "Foodal's 20 minute oven version is the lead: mashed black beans with salsa and cheddar, folded in flour tortillas and baked, which keeps it hands off. Lazy Meal Prep's skillet version fills the folds with lightly mashed beans and cheese and toasts them in a pan, with cumin as an optional seasoning. Neither page shows a rating. Cumin comes from the second source, and the tortilla tops are brushed with oil to crisp them the way pan toasting would. The sour cream is for the table, as in both sources.",
+ "sources": [
+  {
+   "name": "Foodal",
+   "title": "20-Minute Black Bean Oven Quesadillas",
+   "url": "https://foodal.com/recipes/vegetarian/black-bean-oven-quesadillas/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Lazy Meal Prep",
+   "title": "Black Bean Quesadillas",
+   "url": "https://www.lazymealprep.com/black-bean-quesadillas/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

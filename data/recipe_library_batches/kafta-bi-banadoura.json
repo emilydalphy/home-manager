@@ -1,0 +1,110 @@
+{
+ "dish_name": "Kafta bi Banadoura",
+ "cuisine": "Lebanese",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Ground beef",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Ground allspice",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato sauce",
+   "qty": "1 can (15 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Diced tomatoes",
+   "qty": "1 can (14.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Long-grain white rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Put the rice, 2 3/4 cups of water and 1/2 tsp salt in a medium pot over high heat. Bring it to a boil, then cover and turn the heat to low. Cook for 15 minutes, then take it off the heat and leave it covered until you serve.",
+  "Meanwhile, grate the onion on the large holes of a box grater into a large bowl. Finely chop the parsley leaves from the bunch, and add them to the bowl.",
+  "Add the beef, allspice, cinnamon, pepper and 1 1/2 tsp of the salt. Mix with your hands until it's evenly combined, and stop there.",
+  "Shape the mixture into balls about the size of a tablespoon, and flatten each one a little. You should get about 28.",
+  "Heat 3 tbsp olive oil in a large deep skillet over medium-high heat. Add half the kafta in a single layer and cook for 1 to 2 minutes per side, until lightly browned. They won't be cooked through yet. Transfer them to a plate and brown the rest.",
+  "Return all the kafta to the skillet. Add the tomato sauce, the diced tomatoes with their juice, 1 cup of water and the last 1/2 tsp salt, and stir gently.",
+  "Bring it to a boil, then cover, turn the heat to medium-low and simmer for 12 minutes. You're cooking the kafta to 160°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut one open: it's done when there's no pink left.",
+  "Taste the sauce. If it's flat, add a pinch more salt.",
+  "Fluff the rice with a fork. Serve the kafta and sauce over the rice."
+ ],
+ "prep_time_minutes": 12,
+ "cook_time_minutes": 18,
+ "method_notes": "The Salt and Sweet Kitchen's Lebanese kafta stew is the lead: kafta of beef, grated onion and parsley with allspice and cinnamon, browned lightly, then simmered in tomato sauce, diced tomatoes and water. Its version adds sliced potatoes and simmers 30 minutes, so this one leaves the potatoes out and makes small flat kafta that cook through in 12 minutes, to serve over rice. Falasteeni Foodie bakes the kafta with potatoes and uses a paste and tomato sauce base with seven spice and dried mint. Bistro Badia builds a sauce from onion, garlic and tomato paste, with thyme and cinnamon, and tops it with tahini.",
+ "sources": [
+  {
+   "name": "The Salt and Sweet Kitchen",
+   "title": "Kafta Stew (Lebanese)",
+   "url": "https://thesaltandsweet.com/lebanese-kafta-stew/",
+   "rating": 5.0,
+   "rating_count": 57,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Falasteeni Foodie",
+   "title": "Kafta Bi Bandora (Middle Eastern Kafta in Tomato Sauce)",
+   "url": "https://falasteenifoodie.com/kafta-bi-bandora-middle-eastern-kafta-in-tomato-sauce/",
+   "rating": 4.6,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Bistro Badia",
+   "title": "Kafta in tomato sauce",
+   "url": "https://bistrobadia.de/en/kafta-in-tomato-sauce/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}

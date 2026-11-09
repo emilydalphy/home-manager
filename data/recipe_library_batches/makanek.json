@@ -1,0 +1,125 @@
+{
+ "dish_name": "Makanek",
+ "cuisine": "Lebanese",
+ "main_protein": "lamb",
+ "ingredients": [
+  {
+   "item": "Ground lamb",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Pine nuts",
+   "qty": "1 small bag",
+   "category": "pantry",
+   "cook_qty": "1/4 cup"
+  },
+  {
+   "item": "Ground coriander",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Paprika",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground nutmeg",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cloves",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Red wine vinegar",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Pomegranate molasses",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Lemons",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Put the pine nuts in a dry large skillet over medium heat. Toast them for 2 to 3 minutes, shaking the pan, until they're golden and smell nutty. Transfer them to a plate.",
+  "In a large bowl, mix 2 tsp salt, the coriander, paprika, nutmeg, black pepper and cloves. Stir in the vinegar.",
+  "Add the lamb and mix it with your hands for about 2 minutes, until the meat looks sticky and holds together.",
+  "Divide the meat into 16 pieces and roll each into a short log about 2 1/2 inches long. Wet your hands if the meat sticks.",
+  "Heat the olive oil in the same skillet over medium heat. Lay the makanek in a single layer with a little space between them.",
+  "Cook for 7 minutes, turning every 1 to 2 minutes, until they're browned on all sides.",
+  "Add 1/4 cup of water to the pan and cover it right away. Stand back a little, it will spit. Cook for 3 minutes.",
+  "Uncover and cook for 2 minutes, until the water has cooked off. You're cooking them to 160°F in the middle, so if you have a thermometer, check one there. No thermometer? Cut one open: it's done when there's no pink left.",
+  "Turn the heat down to medium-low. Add the pomegranate molasses and the juice of the lemon (about 3 tbsp), and toss for about 1 minute, until the glaze thickens and coats the makanek.",
+  "Taste one. If it's flat, add a pinch more salt.",
+  "Chop 1/4 cup of parsley. Top the makanek with the toasted pine nuts and the parsley, and serve."
+ ],
+ "prep_time_minutes": 14,
+ "cook_time_minutes": 16,
+ "method_notes": "No source has a 30 minute version, so this takes Hadia's Lebanese Cuisine for the spicing (coriander, paprika, nutmeg, black and white pepper, cloves, a splash of red vinegar) and the finish of lemon juice and pomegranate molasses. It skips the sheep casings and the 24 hour chill of Hadia's casing-free version: the meat is rolled into short logs and browned, then steamed briefly with a splash of water as Zaffaron does, which lets it cook through in minutes. Sofra Beirut also finishes ready-made links with pomegranate molasses, lemon and parsley. Pine nuts are toasted as a garnish instead of being mixed into the meat. The white pepper is left out and the garlic and allspice of Zaffaron's version are not used.",
+ "sources": [
+  {
+   "name": "Hadia's Lebanese Cuisine",
+   "title": "Makanek (Lebanese Mini Sausages)",
+   "url": "https://hadiaslebanesecuisine.com/newsite/recipe-items/makanek-lebanese-mini-sausages/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Zaffaron",
+   "title": "Makanek (Lebanese Spiced Lamb Sausages with Pomegranate Molasses)",
+   "url": "https://zaffaron.com/recipe/makanek-lebanese-spiced-lamb-sausages-with-pomegranate-molasses",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Sofra Beirut",
+   "title": "Makanek (Spiced Lamb Sausages)",
+   "url": "https://sofrabeirut.com/recipes/makanek",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "origin": "seed"
+}
