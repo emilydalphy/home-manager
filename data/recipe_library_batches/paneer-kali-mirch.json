@@ -15,7 +15,7 @@
   },
   {
    "item": "Fresh ginger",
-   "qty": "1/2 inch",
+   "qty": "1 small piece", "cook_qty": "1/2 inch",
    "category": "produce"
   },
   {
@@ -35,7 +35,7 @@
   },
   {
    "item": "Cinnamon stick",
-   "qty": "1 inch",
+   "qty": "1 stick", "cook_qty": "1 inch",
    "category": "pantry"
   },
   {

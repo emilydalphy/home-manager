@@ -42,7 +42,7 @@
   },
   {
    "item": "Cinnamon stick",
-   "qty": "1 inch",
+   "qty": "1 stick", "cook_qty": "1 inch",
    "category": "pantry"
   },
   {
@@ -67,7 +67,7 @@
   },
   {
    "item": "Fenugreek seeds",
-   "qty": "2 pinches",
+   "qty": "a pinch", "cook_qty": "2 pinches",
    "category": "pantry"
   },
   {
@@ -77,7 +77,7 @@
   },
   {
    "item": "Unsweetened dried coconut",
-   "qty": "1 tbsp",
+   "qty": "1 bag", "cook_qty": "1 tbsp",
    "category": "pantry"
   },
   {
@@ -112,8 +112,8 @@
    "category": "pantry"
   },
   {
-   "item": "Gluten-free asafoetida",
-   "qty": "1 pinch",
+   "item": "Gluten-free asafoetida (hing)",
+   "qty": "a pinch",
    "category": "pantry"
   }
  ],

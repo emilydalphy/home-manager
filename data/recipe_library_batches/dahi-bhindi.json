@@ -20,7 +20,7 @@
   },
   {
    "item": "Fresh ginger",
-   "qty": "1 inch",
+   "qty": "1 piece (1 inch)", "cook_qty": "1 inch",
    "category": "produce"
   },
   {
@@ -44,8 +44,8 @@
    "category": "pantry"
   },
   {
-   "item": "Asafoetida (gluten-free)",
-   "qty": "1 pinch",
+   "item": "Gluten-free asafoetida (hing)",
+   "qty": "a pinch",
    "category": "pantry"
   },
   {

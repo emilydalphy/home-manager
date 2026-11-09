@@ -6,7 +6,7 @@
   {"item": "Eggs", "qty": "6", "category": "dairy"},
   {"item": "Jasmine rice", "qty": "1 1/2 cups", "category": "pantry"},
   {"item": "Dried wood ear mushrooms", "qty": "1 small bag", "category": "pantry", "cook_qty": "1/2 oz"},
-  {"item": "Glass noodles", "qty": "1 small bundle", "category": "pantry", "cook_qty": "3/4 oz"},
+  {"item": "Glass noodles", "qty": "1 package", "category": "pantry", "cook_qty": "3/4 oz"},
   {"item": "Scallions", "qty": "1 bunch", "category": "produce", "cook_qty": "4 scallions"},
   {"item": "Cilantro", "qty": "1 bunch", "category": "produce", "cook_qty": "1/2 cup chopped"},
   {"item": "Shallots", "qty": "2", "category": "produce"},

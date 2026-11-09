@@ -874,7 +874,7 @@ def orzo(rng, o):  # a mound of rice-shaped pasta: bigger, pointed grains in a p
     base = "#D3A04A" if not sauce else sauce
     edge = mix(pasta, "#7A4A16", .35)
     out = f'<path d="{blob(rng,cx,cy,rx,ry,12,.08)}" fill="{base}"/>'
-    for _ in range(int(rx * ry / 3.2)):
+    for _ in range(min(int(rx * ry / 3.2), 170)):  # capped so a big mound stays a small file
         a, d = rng.uniform(0, 6.28), math.sqrt(rng.uniform(0, 1))
         x, y = cx + (rx - 2.6) * d * math.cos(a), cy + (ry - 2.6) * d * math.sin(a)
         out += f'<path d="M-2.8 0Q0 -1.6 2.8 0Q0 1.6 -2.8 0z" fill="{pasta}" stroke="{edge}" stroke-width=".35" transform="translate({x:.1f} {y:.1f}) rotate({rng.uniform(0,180):.0f})"/>'

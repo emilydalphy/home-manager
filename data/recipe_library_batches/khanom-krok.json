@@ -5,12 +5,12 @@
  "ingredients": [
   {
    "item": "Rice flour",
-   "qty": "1 cup + 1 tbsp",
+   "qty": "1 bag", "cook_qty": "1 cup + 1 tbsp",
    "category": "pantry"
   },
   {
    "item": "Glutinous rice flour",
-   "qty": "1/2 tbsp",
+   "qty": "1 bag", "cook_qty": "1/2 tbsp",
    "category": "pantry"
   },
   {

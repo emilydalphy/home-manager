@@ -8,7 +8,7 @@
  "ingredients": [
   {
    "item": "Nopales (cactus paddles), cleaned of spines",
-   "qty": "4 paddles",
+   "qty": "4 pieces", "cook_qty": "4 paddles",
    "category": "produce"
   },
   {

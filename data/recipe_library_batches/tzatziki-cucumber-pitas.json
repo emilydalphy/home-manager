@@ -5,7 +5,7 @@
  "ingredients": [
   {
    "item": "Pita bread",
-   "qty": "4 pockets",
+   "qty": "1 package", "cook_qty": "4 pockets",
    "category": "pantry"
   },
   {

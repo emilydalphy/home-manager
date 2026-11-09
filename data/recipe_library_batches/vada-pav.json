@@ -59,7 +59,7 @@
   },
   {
    "item": "Rice flour",
-   "qty": "2 tbsp",
+   "qty": "1 bag", "cook_qty": "2 tbsp",
    "category": "pantry"
   },
   {
@@ -84,7 +84,7 @@
   },
   {
    "item": "Gluten-free asafoetida (hing)",
-   "qty": "3 pinches",
+   "qty": "a pinch", "cook_qty": "3 pinches",
    "category": "pantry"
   },
   {

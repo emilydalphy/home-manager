@@ -10,7 +10,7 @@
   },
   {
    "item": "Gram flour (besan)",
-   "qty": "3 tbsp",
+   "qty": "1 bag", "cook_qty": "3 tbsp",
    "category": "pantry"
   },
   {
@@ -20,12 +20,12 @@
   },
   {
    "item": "Bajra (pearl millet) flour",
-   "qty": "3 tbsp",
+   "qty": "1 bag", "cook_qty": "3 tbsp",
    "category": "pantry"
   },
   {
    "item": "Rice flour",
-   "qty": "3 tbsp",
+   "qty": "1 bag", "cook_qty": "3 tbsp",
    "category": "pantry"
   },
   {

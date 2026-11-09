@@ -15,7 +15,7 @@
   },
   {
    "item": "Fennel",
-   "qty": "1 bulb",
+   "qty": "1 whole", "cook_qty": "1 bulb",
    "category": "produce"
   },
   {
@@ -64,7 +64,7 @@
   },
   {
    "item": "Red pepper flakes",
-   "qty": "1 pinch",
+   "qty": "a pinch",
    "category": "pantry"
   },
   {

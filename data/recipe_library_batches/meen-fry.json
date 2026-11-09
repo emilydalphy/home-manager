@@ -41,12 +41,12 @@
   },
   {
    "item": "Rice flour",
-   "qty": "2 tbsp",
+   "qty": "1 bag", "cook_qty": "2 tbsp",
    "category": "pantry"
   },
   {
    "item": "Chickpea flour",
-   "qty": "2 tbsp",
+   "qty": "1 bag", "cook_qty": "2 tbsp",
    "category": "pantry"
   },
   {

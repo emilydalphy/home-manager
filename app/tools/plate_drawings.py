@@ -398,11 +398,12 @@ def _closest(name: str, main_protein: str, items: tuple, cuisine: str) -> str:
             return _best(same_kind, words, kind, main, cuisine, ingredient_words, lib).key
     if main in MEATS and (family or cousins):
         return _best(family or cousins, words, kind, main, cuisine, ingredient_words, lib).key
-    near = [p for p in family if words & p.words or (ingredient_words and ingredient_words & p.ingredients)]
+    # Near enough: shares a word of the name, or three foods of the list. The
+    # best of those, so a closer-scoring plate that is not near enough (two
+    # foods in common) can't hide one that is.
+    near = [p for p in family if words & p.words or len(ingredient_words & p.ingredients) >= 3]
     if near and (main or words):
-        best = _best(near, words, kind, main, cuisine, ingredient_words, lib)
-        if words & best.words or len(ingredient_words & best.ingredients) >= 3:
-            return best.key
+        return _best(near, words, kind, main, cuisine, ingredient_words, lib).key
     return NEUTRAL
 
 

@@ -10,7 +10,7 @@
   },
   {
    "item": "Piloncillo",
-   "qty": "1 cone",
+   "qty": "1 piece",
    "category": "pantry",
    "cook_qty": "1/2 cup, chopped"
   },
@@ -21,7 +21,7 @@
   },
   {
    "item": "Mexican chocolate",
-   "qty": "1 tablet (3.1 oz)",
+   "qty": "1 bar (3.1 oz)", "cook_qty": "1 tablet (3.1 oz)",
    "category": "pantry"
   },
   {

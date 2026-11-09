@@ -1,7 +1,7 @@
 {
  "dish_name": "Sushi Bake",
  "cuisine": "Japanese",
- "main_protein": "seafood",
+ "main_protein": "fish",
  "ingredients": [
   {
    "item": "Sushi rice",
@@ -50,7 +50,7 @@
   },
   {
    "item": "Furikake",
-   "qty": "2 tbsp",
+   "qty": "1 jar", "cook_qty": "2 tbsp",
    "category": "pantry"
   },
   {

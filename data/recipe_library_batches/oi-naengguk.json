@@ -58,7 +58,7 @@
   },
   {
    "item": "Ice cubes",
-   "qty": "1 tray",
+   "qty": "1 bag", "cook_qty": "1 tray",
    "category": "other"
   }
  ],

@@ -60,7 +60,7 @@ def test_every_library_recipe_has_a_plate():
     batches = [json.loads(p.read_text())["dish_name"] for p in (ROOT / "data" / "recipe_library_batches").glob("*.json")]
     samples = [d["dish_name"] for d in json.loads((ROOT / "data" / "recipe_library_samples.json").read_text())["samples"]]
     names = {d["dish_name"] for d in seed} | set(batches) | set(samples)
-    assert len(names) == 1104
+    assert len(names) == 2104
     for name in names:
         key = drawings.key_for_name(name)
         assert key, name

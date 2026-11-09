@@ -25,7 +25,7 @@
   },
   {
    "item": "Cinnamon stick",
-   "qty": "2 inches",
+   "qty": "1 stick", "cook_qty": "2 inches",
    "category": "pantry"
   },
   {
@@ -60,7 +60,7 @@
   },
   {
    "item": "Ginger",
-   "qty": "1 inch",
+   "qty": "1 piece (1 inch)", "cook_qty": "1 inch",
    "category": "produce"
   },
   {
