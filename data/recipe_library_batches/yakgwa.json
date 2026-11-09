@@ -1,0 +1,124 @@
+{
+ "dish_name": "Yakgwa",
+ "cuisine": "Korean",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "1 3/4 cups",
+   "category": "pantry",
+   "cook_qty": "1 3/4 cups (210 g)"
+  },
+  {
+   "item": "Sweet rice flour",
+   "qty": "1/2 cup",
+   "category": "pantry",
+   "cook_qty": "1/2 cup (80 g)"
+  },
+  {
+   "item": "Toasted sesame oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp for the dough plus 4 cups for frying"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Honey",
+   "qty": "1/2 cup",
+   "category": "pantry",
+   "cook_qty": "1/4 cup for the dough plus 1/4 cup for the syrup"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1 tsp",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp for the dough plus 1/2 tsp for the syrup"
+  },
+  {
+   "item": "Korean rice syrup",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground ginger",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh ginger",
+   "qty": "1 small piece",
+   "category": "produce",
+   "cook_qty": "8 thin slices"
+  }
+ ],
+ "instructions": [
+  "At least 4 hours before you want to serve them: in a large bowl, whisk the flour, sweet rice flour and 1/2 tsp of the cinnamon. Add the sesame oil and 1 tbsp vegetable oil and rub it in with your fingertips until the mixture looks like fine crumbs.",
+  "Stir the salt, 1/4 cup of the honey and 1/2 cup hot water together in a measuring cup. Pour it over the flour and mix with a spatula into a soft dough. Cover and refrigerate for 30 minutes.",
+  "Meanwhile, make the syrup. In a small saucepan, combine the rice syrup, the remaining 1/4 cup honey, 1/4 cup water, the ground ginger, the remaining 1/2 tsp cinnamon and the 8 slices of fresh ginger. Simmer over medium heat for 10 to 12 minutes, until it's thick but still runny. Take it off the heat and set it aside.",
+  "Roll the chilled dough out on the counter to about 1/4 inch (7 mm) thick. Cut it into diamonds about 1 1/2 inches across. You should get about 24. Poke 2 or 3 holes in each one with a fork.",
+  "Pour 4 cups vegetable oil into a heavy pot and heat it over low to medium heat to 250°F (120°C). You're frying at 250°F, so if you have a thermometer, check it there. No thermometer? A small piece of dough dropped in should sink, then rise slowly with just a few bubbles. Fry 5 or 6 cookies at a time for 5 minutes per side, until pale golden. Transfer them to a wire rack.",
+  "Raise the heat until the oil reaches 330°F (165°C). A piece of dough should now sizzle as soon as it goes in. Fry the cookies again in batches for 2 to 3 minutes, until golden brown. Transfer them to the rack and let them cool.",
+  "Put the cooled cookies in a wide bowl, pour the syrup over them and turn them until they're coated all over. Leave them for 3 hours, turning them once or twice.",
+  "Lift the cookies out of the syrup onto a plate and serve."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 35,
+ "cook_time_minutes": 45,
+ "advance_prep_notes": "make at least 4 hours before serving; the cookies soak in the syrup for 3 hours",
+ "advance_prep_step_indices": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7
+ ],
+ "method_notes": "No version has 20 ratings at 4.0 or better, so this is a fallback: Asian Inspirations (4.5 from 3) leads with a sesame oil and rice flour dough, a ginger honey syrup and two frying temperatures. Beyond Kimchee and Jeanelleats agree on the two fries and the syrup soak but soak for a day or more (Beyond Kimchee) or use soju and pine nuts (Jeanelleats). The lead's mold is replaced by cutting diamonds, as Jeanelleats does, and the short 3 hour soak is used so the cookies are ready the same day. Honey keeps it vegetarian; there are no nuts in the lead.",
+ "sources": [
+  {
+   "name": "Asian Inspirations",
+   "title": "Korean Honey Cookies (Yakgwa)",
+   "url": "https://asianinspirations.com.au/recipes/korean-honey-cookies-yakgwa/",
+   "rating": 4.5,
+   "rating_count": 3,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Beyond Kimchee",
+   "title": "Yakgwa (Crispy Korean Honey Cookies Soaked in Syrup)",
+   "url": "https://www.beyondkimchee.com/yakgwa-korean-honey-cookies/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true
+  },
+  {
+   "name": "Jeanelleats",
+   "title": "Yakgwa (Korean Deep Fried Honey Cookies)",
+   "url": "https://jeanelleats.com/yakgwa/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Cathlyn's Korean Kitchen",
+   "title": "Yakgwa Honey Cookie Recipe",
+   "url": "https://koreancuisinerecipes.com/yakgwa-%EC%95%BD%EA%B3%BC/",
+   "rating": 3.5,
+   "rating_count": 20,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

@@ -1,0 +1,91 @@
+{
+ "dish_name": "Bunuelos",
+ "cuisine": "Mexican",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "1 1/2 cups",
+   "category": "pantry",
+   "cook_qty": "1 1/4 cups for the dough plus 1/4 cup for rolling"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp for the dough plus 1/2 cup for the coating"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Baking powder",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Vegetable shortening",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Canola oil",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "In a large bowl, whisk 1 1/4 cups of the flour, 2 tbsp of the sugar, the salt and the baking powder.",
+  "Add the shortening and rub it in with your fingers until the mixture is crumbly.",
+  "Slowly stir in 1/2 cup water until a dough forms. If it's too sticky, add a spoonful of the remaining flour.",
+  "Knead the dough on the counter for 5 to 6 minutes, until smooth.",
+  "Divide the dough into 9 golf-ball-sized pieces, cover them with a towel and let them rest for 15 to 20 minutes.",
+  "Meanwhile, stir the remaining 1/2 cup sugar and the cinnamon together on a plate.",
+  "Dust the counter with the remaining 1/4 cup flour. Roll each ball out into a thin round about 6 inches across, and pinch shut any holes.",
+  "Pour the oil into a large frying pan and heat it over medium heat. A pinch of dough dropped in should sizzle right away.",
+  "Poke the center of one round with a fork several times, then lay it in the oil. Fry for 2 to 3 minutes per side, until golden. Fry the rest one at a time.",
+  "Transfer each buñuelo to a paper towel for a moment, leaving a little oil on it so the coating sticks. Sprinkle both sides with the cinnamon sugar while it's still warm."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 30,
+ "cook_time_minutes": 25,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "In Mama Maggie's Kitchen (5.0 from 50) leads: a shortening dough rested, rolled thin, fork-pricked, fried and tossed in cinnamon sugar while warm. Gemma's adds an egg and anise tea to the dough, and Mexican Made Meatless fries flour tortillas as a shortcut. The lead makes 18, so the amounts are halved to make 9. The piloncillo syrup that some versions serve on top is not in the lead and is left out.",
+ "sources": [
+  {
+   "name": "In Mama Maggie's Kitchen",
+   "title": "Authentic Mexican Buñuelos (Crispy Fritters)",
+   "url": "https://inmamamaggieskitchen.com/bunuelos-mexican-fritters/",
+   "rating": 5,
+   "rating_count": 50,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Gemma's Bigger Bolder Baking",
+   "title": "Light & Crisp Mexican Buñuelos",
+   "url": "https://www.biggerbolderbaking.com/mexican-bunuelos-recipe/",
+   "rating": 4.82,
+   "rating_count": 16,
+   "read": true
+  },
+  {
+   "name": "Mexican Made Meatless",
+   "title": "Easy Buñuelos Recipe",
+   "url": "https://mexicanmademeatless.com/quick-and-easy-bunuelos-recipe/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

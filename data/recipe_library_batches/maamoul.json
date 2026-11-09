@@ -1,0 +1,106 @@
+{
+ "dish_name": "Maamoul",
+ "cuisine": "Lebanese",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "Fine semolina",
+   "qty": "1 cup",
+   "category": "pantry",
+   "cook_qty": "1 cup (175 g)"
+  },
+  {
+   "item": "All-purpose flour",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Instant yeast",
+   "qty": "1/8 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Unsalted butter",
+   "qty": "6 tbsp",
+   "category": "dairy",
+   "cook_qty": "5 tbsp for the dough plus 1 tbsp for the filling"
+  },
+  {
+   "item": "Rose water",
+   "qty": "1 small bottle",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Pitted dates",
+   "qty": "5 oz",
+   "category": "produce",
+   "cook_qty": "5 oz (150 g)"
+  },
+  {
+   "item": "Ground cinnamon",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Powdered sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  }
+ ],
+ "instructions": [
+  "At least 2 hours ahead: in a bowl, whisk the semolina, flour, yeast and sugar. Rub in 5 tbsp of the butter, softened, with your fingertips until the mixture is crumbly.",
+  "Add the rose water and 2 tbsp water and knead for a few minutes into a smooth dough. Cover and leave it at room temperature for 1 1/2 to 2 hours.",
+  "Meanwhile, if the dates are dry, soak them in hot water for 10 to 15 minutes and drain them. Blend the dates with the remaining 1 tbsp butter, melted, and the cinnamon in a food processor until mostly smooth. Chill the filling until you need it.",
+  "Heat the oven to 350°F and line a baking sheet with parchment.",
+  "Divide the dough into 20 balls, about 16 g each. Divide the date filling into 20 portions of 7 to 8 g each, about 1 1/2 tsp, and flatten each one into a small disc.",
+  "Flatten a ball of dough into a thin round, a little thinner at the edges. Put a date disc in the middle, fold the edges up around it and pinch them shut. Roll it gently between your palms and set it seam side down on the baking sheet. Fill and shape the rest the same way.",
+  "Press the tines of a fork across the top of each cookie to leave a pattern.",
+  "Bake for about 15 minutes, until golden. Transfer the cookies to a rack and let them cool completely. Dust them with the powdered sugar, then keep them in an airtight container."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 40,
+ "cook_time_minutes": 15,
+ "advance_prep_notes": "the dough rests 1 1/2 to 2 hours",
+ "advance_prep_step_indices": [
+  1,
+  2
+ ],
+ "method_notes": "The best-rated pages that load (Catastrophic Cook 4.9 from 7) make 90 cookies with shortening and a 24 hour rest, and the most-rated sites block the reader, so this is a fallback led by Vidar Bergum, which has no rating. It makes a small butter and semolina dough with a little yeast and rose water, a date and butter filling, and a 15 minute bake at 350°F. All three versions agree a mold is optional and a fork pattern works, and that the dough needs a long rest. Nut-free: no pistachio or walnut filling.",
+ "sources": [
+  {
+   "name": "Vidar Bergum",
+   "title": "Ma'amoul (Date Stuffed Semolina Cookies)",
+   "url": "https://vidarbergum.com/recipe/maamoul-date-stuffed-semolina-cookies/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Catastrophic Cook",
+   "title": "Maamoul - Date Filled Cookies",
+   "url": "https://catastrophiccook.com/maamoul/",
+   "rating": 4.9,
+   "rating_count": 7,
+   "read": true
+  },
+  {
+   "name": "Chef Tariq",
+   "title": "Maamoul (Date Filled Semolina Cookies)",
+   "url": "https://www.cheftariq.com/recipe/maamoul/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

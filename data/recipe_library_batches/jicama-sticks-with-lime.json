@@ -1,0 +1,75 @@
+{
+ "dish_name": "Jicama Sticks with Lime",
+ "cuisine": "Mexican",
+ "main_protein": "vegan",
+ "ingredients": [
+  {
+   "item": "Jicama",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Limes",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Chili powder",
+   "qty": "1 tbsp",
+   "category": "pantry",
+   "cook_qty": "1 tsp on the jicama plus 2 tsp for the side"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh cilantro",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  }
+ ],
+ "instructions": [
+  "Peel the jicama with a vegetable peeler. Cut it into sticks about 1/2 inch thick and 3 inches long and transfer them to a bowl.",
+  "Squeeze the juice of the lime over the sticks. Sprinkle on 1 tsp of the chili powder and the salt and toss until every stick is coated.",
+  "Chop 2 tbsp of the cilantro and toss it through.",
+  "Put the remaining 2 tsp chili powder in a small bowl for anyone who wants more heat. Serve the sticks with the bowl of chili powder on the side."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 0,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "No version has a rating, so this is a fallback. FoodShare South Carolina leads: jicama sticks with lime juice, chili powder, salt and chopped cilantro, with nothing cooked. Food.com serves the jicama with lime wedges and a chili salt to dip, and The Splendid Table adds mango and uses about 1 tsp of chile for a pound of jicama. The lead's 1 tbsp of chili powder is kept, but only 1 tsp goes on the sticks and the rest is served on the side to keep the base mild. Check the chili powder label if gluten matters.",
+ "sources": [
+  {
+   "name": "FoodShare South Carolina",
+   "title": "Jicama Sticks",
+   "url": "https://foodsharesc.org/recipe-collection/jicama-sticks/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Food.com",
+   "title": "Jicama With Chili Salt",
+   "url": "https://www.food.com/recipe/jicama-with-chili-salt-117963",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "The Splendid Table",
+   "title": "Jicama and Mango Sticks in Chile and Lime",
+   "url": "https://www.splendidtable.org/story/2015/07/08/jicama-and-mango-sticks-in-chile-and-lime",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

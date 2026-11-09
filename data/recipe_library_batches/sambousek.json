@@ -1,0 +1,127 @@
+{
+ "dish_name": "Sambousek",
+ "cuisine": "Lebanese",
+ "main_protein": "cheese",
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "1 3/4 cups",
+   "category": "pantry",
+   "cook_qty": "1 1/2 cups for the dough plus 1/4 cup for dusting"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Instant yeast",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole milk",
+   "qty": "1 carton",
+   "category": "dairy",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Plain yogurt",
+   "qty": "1 tub",
+   "category": "dairy",
+   "cook_qty": "1 1/2 tsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp for the dough plus 3 cups for frying"
+  },
+  {
+   "item": "Shredded mozzarella",
+   "qty": "1 bag",
+   "category": "dairy",
+   "cook_qty": "3/4 cup"
+  },
+  {
+   "item": "Feta cheese",
+   "qty": "1 small block",
+   "category": "dairy",
+   "cook_qty": "1/4 cup crumbled"
+  },
+  {
+   "item": "Fresh mint",
+   "qty": "1 bunch",
+   "category": "produce",
+   "cook_qty": "1 tbsp chopped"
+  },
+  {
+   "item": "Sweet paprika",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "a pinch",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "In a large bowl, whisk 1 1/2 cups of the flour, the sugar, the salt and the yeast.",
+  "In a measuring cup, stir together 1/4 cup warm water, the warm milk, 2 tbsp of the oil and the yogurt. Pour it into the flour and mix until it comes together. Knead on the counter for 8 to 10 minutes, until the dough is smooth and stretchy. Cover and leave it somewhere warm for 30 to 40 minutes, until doubled.",
+  "While the dough rises, stir the mozzarella, feta, 1 tbsp chopped mint, paprika and a pinch of pepper together in a bowl.",
+  "Punch the dough down and cut it in half. Dust the counter with the remaining 1/4 cup flour. Roll one half out to about 1/8 inch thick and cut out 3 inch circles. Repeat with the other half, rerolling the scraps. You should get about 12.",
+  "Put a heaping tablespoon of the cheese filling in the middle of each circle. Fold it over into a half moon and press the edges shut with a fork.",
+  "Pour 3 cups oil into a deep pot and heat it over medium heat to 350°F (175°C). You're frying at 350°F, so if you have a thermometer, check it there. No thermometer? A scrap of dough dropped in should sizzle right away and turn golden in about a minute.",
+  "Fry 4 or 5 sambousek at a time for 2 to 3 minutes per side, until golden and crisp. Transfer them to a plate lined with paper towels. Serve warm."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 45,
+ "cook_time_minutes": 20,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "None of the cheese sambousek pages show a rating, so this is a fallback and The Hungry Goddess leads: a yeast dough, an akkawi and feta filling and frying at 350°F. Hadia's uses a butter dough rested overnight and a cooked cheese filling, Baiti Ana a quick oil dough with mostly mozzarella, and Yummy Mideast a no yeast dough with halloumi style cheese. Low-moisture mozzarella stands in for the akkawi as the lead allows, so there's no soaking step. Halved from the lead's 25 pieces, and the optional nigella seeds are left out.",
+ "sources": [
+  {
+   "name": "The Hungry Goddess",
+   "title": "Cheese-Filled Lebanese Sambousek with Crispy Dough",
+   "url": "https://thehungrygoddess.com/cheese-filled-lebanese-sambousek-with-crispy-dough/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Hadia's Lebanese Cuisine",
+   "title": "Authentic Lebanese Cheese Borek (Sambousek)",
+   "url": "https://hadiaslebanesecuisine.com/blog/cheese-sambousek/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Baiti Ana",
+   "title": "Cheese Sambousek",
+   "url": "https://baitiana.com/2025/02/03/cheese-sambousek/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Yummy Mideast",
+   "title": "Warm and Delicious Lebanese Cheese Sambousek",
+   "url": "https://yummymideast.com/vegetarian-dishes/cheese-sambousek/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

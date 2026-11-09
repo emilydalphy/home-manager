@@ -1,0 +1,96 @@
+{
+ "dish_name": "Sfouf",
+ "cuisine": "Lebanese",
+ "main_protein": "vegetarian",
+ "ingredients": [
+  {
+   "item": "All-purpose flour",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Fine semolina",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Coarse semolina",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 3/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Baking powder",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole milk",
+   "qty": "1 1/2 cups",
+   "category": "dairy"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Tahini",
+   "qty": "1 jar",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 375°F with a rack in the middle. Brush a 9 by 13 inch baking pan with the tahini, covering the bottom and sides.",
+  "In a large bowl, whisk the flour, both semolinas, sugar, baking powder and turmeric.",
+  "Add the milk and oil and whisk until smooth. The batter will be thick.",
+  "Scrape the batter into the pan and smooth the top. Bake for 35 to 40 minutes, until the top is golden and a toothpick in the middle comes out clean.",
+  "Switch the oven to broil and put the pan back in for 2 to 4 minutes, until the top is a deeper gold. Stay by the oven and watch it.",
+  "Let the cake cool completely in the pan, then cut it into squares or diamonds."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 45,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Simply Lebanese (4.43 from 40) leads: two semolinas and flour, turmeric, a thick oil and milk batter, a tahini greased pan and a short broil at the end. Zaatar and Zaytoun and the other versions agree on the egg-free batter and the tahini pan but use more flour and less semolina, or add orange blossom water. The pine nuts or almonds that go on top are left off to keep it nut-free. The cake is not cut small, so it makes about 12 squares, which keep well for snacks.",
+ "sources": [
+  {
+   "name": "Simply Lebanese",
+   "title": "Sfouf",
+   "url": "https://www.simplyleb.com/recipe/sfouf/",
+   "rating": 4.43,
+   "rating_count": 40,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Zaatar and Zaytoun",
+   "title": "Sfouf (Lebanese Turmeric Cake)",
+   "url": "https://zaatarandzaytoun.com/sfouf/",
+   "rating": 5,
+   "rating_count": 10,
+   "read": true
+  },
+  {
+   "name": "Global Kitchen Travels",
+   "title": "Sfoof - Lebanese Semolina Turmeric Cake",
+   "url": "https://globalkitchentravels.com/sfoof-lebanese-semolina-turmeric-cake/",
+   "rating": 5,
+   "rating_count": 2,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}
