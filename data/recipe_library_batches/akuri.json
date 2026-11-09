@@ -1,0 +1,105 @@
+{
+ "dish_name": "Akuri",
+ "cuisine": "Indian",
+ "main_protein": "eggs",
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 8,
+ "ingredients": [
+  {
+   "item": "Eggs",
+   "qty": "6",
+   "category": "dairy"
+  },
+  {
+   "item": "Butter",
+   "qty": "2 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Cumin seeds",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Ground turmeric",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Cilantro",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Serrano chili",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Gluten-free bread",
+   "qty": "1 loaf",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Finely chop the onion and the tomatoes. Chop 2 tbsp of the cilantro. Crack the eggs into a bowl, add the salt, and whisk until the yolks and whites are mixed.",
+  "Melt the butter in a nonstick skillet over medium heat. Add the cumin seeds. After about 20 seconds they'll sizzle and smell toasty.",
+  "Add the onion and stir for 3 minutes, until it's soft and just starting to turn pink.",
+  "Add the turmeric and the tomatoes. Cook for 2 minutes, stirring and pressing the tomatoes with the back of the spoon, until they turn pulpy.",
+  "Turn the heat to low and pour in the eggs. Leave them for 20 seconds, then scrape from the edges into the middle in slow folds.",
+  "Keep folding for 1 to 2 minutes. Take the pan off the heat while the eggs still look soft and a little runny. They'll finish cooking in the pan.",
+  "Stir in the cilantro. Taste it. If it's flat, add a pinch more salt.",
+  "Meanwhile, toast the bread. Slice the Serrano chili thin and put it on the table for the adults.",
+  "Serve with the toast."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Every version found makes a soft scramble over a cooked onion and tomato base with turmeric and cilantro, and takes the eggs off the heat while they're still loose. The quick 15-minute version (My Tasty Curry) sets the order here, with cumin seeds from The Cook's Cook. Chili is moved to the table for the base to stay mild. The usual roti is swapped for gluten-free toast to keep it gluten-free. No version had 20+ ratings; the lead has 5.0 from 1 vote.",
+ "sources": [
+  {
+   "name": "My Tasty Curry",
+   "title": "Akuri Recipe (Parsi Style Scrambled Eggs)",
+   "url": "https://mytastycurry.com/akuri-recipe-parsi-style-scrambled-eggs/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "The Cook's Cook",
+   "title": "Parsi Akuri (Creamy Curried Scrambled Eggs)",
+   "url": "https://theculinarykonnoisseur.in/2021/01/10/parsi-akuri-creamy-curried-scrambled-eggs/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Grantourismo",
+   "title": "Akuri Recipe for Parsi Style Scrambled Eggs",
+   "url": "https://grantourismotravels.com/akuri-recipe-parsi-style-scrambled-eggs/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed"
+}

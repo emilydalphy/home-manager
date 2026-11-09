@@ -1,0 +1,122 @@
+{
+ "dish_name": "Ca Kho Thom",
+ "cuisine": "Vietnamese",
+ "main_protein": "fish",
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Jasmine rice",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Mackerel fillets",
+   "qty": "1.5 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Pineapple chunks",
+   "qty": "1 can (20 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Sweet onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Shallots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Green onions",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Coconut water",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Fish sauce",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "3 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Vegetable oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Thai chilies",
+   "qty": "2",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Rinse the rice in a strainer until the water runs mostly clear. Add it to a small pot with 2 1/4 cups of cold tap water, bring to a boil, then cover and turn the heat to low. Cook for 15 minutes, then take it off the heat and leave the lid on.",
+  "Meanwhile, cut the mackerel into 2-inch pieces and pat them dry. Season them with the salt and 1/4 tsp of the pepper.",
+  "Thinly slice the onion and the shallots. Mince the garlic. Slice the green onions, keeping the white parts and the green parts in separate piles. Drain the pineapple.",
+  "Heat the oil and the sugar in a wide, deep skillet over medium heat, without stirring. After 2 to 3 minutes the sugar will melt and turn the color of dark amber. Don't walk away from it, because it goes from amber to bitter fast.",
+  "Add the onion, shallots and the white green-onion parts. Stir for 2 minutes, until they start to soften.",
+  "Add the garlic and cook for 30 seconds, until it smells good.",
+  "Add the pineapple and cook for 3 minutes, stirring now and then, until the edges start to brown.",
+  "Pour in the coconut water and the fish sauce. Bring it to a boil. Stand back a little, because the first whiff of fish sauce is strong.",
+  "Add the mackerel in a single layer. Spoon some of the sauce over the top. Turn the heat to medium-low, cover, and cook for 5 minutes.",
+  "Flip the pieces and cook, covered, for 5 minutes. The sauce should coat a spoon. If it's thin, take the lid off and let it bubble for a minute or two.",
+  "Take the pan off the heat. Sprinkle on the remaining 1/4 tsp pepper and the green parts of the green onions.",
+  "Taste the sauce. If it's flat, add a pinch more salt.",
+  "Serve with the rice and a spoonful of the pineapple sauce over each bowl. Slice the Thai chilies and put them on the table for the adults."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Both versions found by name (Helen's Recipes, Mama Snow Cooks) braise mackerel with pineapple, fish sauce and a sugar caramel, and finish with pepper and green onion over rice. Helen's is a plain caramel and fish sauce braise; Mama Snow Cooks builds the sauce on seared onion and shallot first, so this version takes that order. Neither page shows a rating and no trusted-cook version exists for it, so no rated lead was possible. Coconut water replaces the soda in one source and the chili moves to the table. Naturally gluten-free and dairy-free (fish sauce is gluten-free).",
+ "sources": [
+  {
+   "name": "Mama Snow Cooks",
+   "title": "Vietnamese Braised Mackerel with Pineapple and Onions",
+   "url": "https://mamasnowcooks.com/recipe/fish-seafood-vegetarian/vietnamese-braised-mackerel-with-pineapple-and-onions/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Helen's Recipes",
+   "title": "Braised Mackerel w/ Pineapple - Cá nục kho thơm",
+   "url": "https://helenrecipes.com/recipe-braised-mackerel-w-pineapple-ca-nuc-kho-thom/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "default_servings": 4,
+ "origin": "seed"
+}

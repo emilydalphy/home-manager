@@ -1,0 +1,100 @@
+{
+ "dish_name": "Ful Medames",
+ "cuisine": "Lebanese",
+ "main_protein": "beans",
+ "prep_time_minutes": 5,
+ "cook_time_minutes": 12,
+ "ingredients": [
+  {
+   "item": "Canned fava beans",
+   "qty": "2 cans (15 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Lemon",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Extra virgin olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Gluten-free pita bread",
+   "qty": "1 package",
+   "category": "pantry"
+  },
+  {
+   "item": "Radishes",
+   "qty": "1 bunch",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Rinse and drain the fava beans. Add them to a saucepan with 1 cup cold water.",
+  "Bring to a boil over medium heat, then turn the heat to low. Simmer uncovered for 10 minutes, until the beans are hot and soft.",
+  "Meanwhile, crush the garlic and juice the lemon into a small bowl. That should be about 3 tbsp of juice. Stir in the salt.",
+  "Dice the tomatoes. Chop 1/3 cup of the parsley. Slice the radishes.",
+  "Take the pan off the heat. Mash the beans with a fork or potato masher, as smooth or as chunky as you like.",
+  "Stir in the garlic and lemon mixture. Taste it. If it's flat, add a pinch more salt.",
+  "Spoon the beans into a shallow bowl. Drizzle the olive oil over the top, then scatter on the tomatoes and parsley.",
+  "Warm the pita in a dry skillet over medium heat for 30 seconds on each side.",
+  "Serve with the warm pita and the radishes."
+ ],
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Silk Road Recipes (5.0 from 53 ratings) leads: canned fava simmered in a little water, mashed, then finished with a raw garlic, lemon and salt mixture, olive oil, tomato and parsley. Alphafoodie and The Salt and Sweet Kitchen make the same garlic and lemon finish. Cumin and chili from other versions are left out to keep it mild. Pita is gluten-free pita to keep the dish gluten-free; it is vegan as written.",
+ "sources": [
+  {
+   "name": "Silk Road Recipes",
+   "title": "Lebanese Fava Beans (Ful Medames)",
+   "url": "https://silkroadrecipes.com/lebanese-ful-medames/",
+   "rating": 5.0,
+   "rating_count": 53,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Alphafoodie",
+   "title": "Best Ful Medames Recipe",
+   "url": "https://www.alphafoodie.com/ful-medames-recipe/",
+   "rating": 5.0,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "The Salt and Sweet Kitchen",
+   "title": "Lebanese Ful (Fava Beans)",
+   "url": "https://thesaltandsweet.com/lebanese-ful-fava-beans/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": false,
+ "default_servings": 4,
+ "origin": "seed"
+}
