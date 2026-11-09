@@ -1,0 +1,118 @@
+{
+ "dish_name": "Poulet Vallee d'Auge",
+ "cuisine": "French",
+ "main_protein": "chicken",
+ "ingredients": [
+  {
+   "item": "Butter",
+   "qty": "4 tbsp",
+   "category": "dairy"
+  },
+  {
+   "item": "Smoked bacon, in small pieces",
+   "qty": "4 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Chicken leg quarters (drumstick and thigh)",
+   "qty": "4 (about 2 1/2 lb)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh thyme",
+   "qty": "1 tbsp",
+   "category": "produce",
+   "cook_qty": "1 tbsp leaves"
+  },
+  {
+   "item": "Calvados",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Dry hard cider",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Crème fraîche",
+   "qty": "1/2 cup",
+   "category": "dairy"
+  },
+  {
+   "item": "Firm apples",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "1 tbsp chopped"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Melt 2 tbsp of the butter in a large Dutch oven over medium heat. Cook the bacon about 6 minutes, until crisp, and move it to a plate, leaving the fat in the pot.",
+  "Season the chicken with 1/2 tsp of the salt and the pepper. Brown it in the pot over medium high heat about 5 minutes, turning once, until golden. Move it to the plate.",
+  "Turn the heat down to medium low. Add 1 tbsp of the butter, the onion sliced thin, the crushed garlic, the thyme and a pinch of salt. Cook about 10 minutes, until soft and golden.",
+  "Return the chicken and bacon to the pot and pour in the Calvados. Simmer about 1 minute, until the alcohol smell is gone. Add the cider, bring to a boil, cover and simmer gently 45 minutes, until the chicken is very tender. That should be about 175°F at the thickest part of the thigh; a thermometer is optional. Without one, the meat should pull easily from the bone and the juices run clear.",
+  "Stir in the crème fraîche and heat through about 5 minutes without boiling.",
+  "While the sauce heats, core the apples and cut them into wedges. Melt the remaining 1 tbsp butter in a skillet over medium heat and cook the apples about 5 minutes, until golden.",
+  "Add the apples to the pot with 1 tbsp chopped parsley and the remaining 1/2 tsp salt, or more to taste. Serve with the sauce spooned over."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 80,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "Complete France (Louise Pickford) is the lead, with no ratings shown, so this is a fallback. It browns bacon and chicken, softens onion, flambes with Calvados, braises in cider, then finishes with crème fraîche and buttered apples. Supergolden Bakes and Europe Is Our Playground make faster, flour or cornstarch versions with chicken breast; those were not followed. Olivia's Cuisine was blocked. The Calvados simmers off in the pot. Total time is over an hour because of the 45 minute braise.",
+ "sources": [
+  {
+   "name": "Complete France",
+   "title": "Recipe: Poulet Vallee d'Auge",
+   "url": "https://www.completefrance.com/news/recipe-poulet-vallee-d-auge-6249998/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Supergolden Bakes",
+   "title": "Chicken Normandy (Poulet a la Normande)",
+   "url": "https://www.supergoldenbakes.com/?p=59985",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "Europe Is Our Playground",
+   "title": "Simple Poulet Vallee D'Auge",
+   "url": "https://www.europeisourplayground.com/simple-poulet-vallee-dauge-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

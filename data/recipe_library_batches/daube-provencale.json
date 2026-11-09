@@ -1,0 +1,152 @@
+{
+ "dish_name": "Daube Provencale",
+ "cuisine": "French",
+ "main_protein": "beef",
+ "ingredients": [
+  {
+   "item": "Dried porcini mushrooms",
+   "qty": "1/2 oz",
+   "category": "produce"
+  },
+  {
+   "item": "Beef chuck roast, boneless",
+   "qty": "2 1/2 lb",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "3/4 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt pork",
+   "qty": "4 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Carrots",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Onions",
+   "qty": "2 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Dry red wine",
+   "qty": "2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Low sodium chicken broth",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Water",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Orange",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Niçoise olives, pitted",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Anchovy fillets",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh thyme",
+   "qty": "4 sprigs",
+   "category": "produce"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Whole canned tomatoes",
+   "qty": "1 can (14.5 oz)",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "1 small bunch",
+   "category": "produce",
+   "cook_qty": "2 tbsp chopped"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 325°F with a rack in the lower middle. Put the porcini in a bowl, cover with the 1 cup hot water and let them soften 15 minutes. Strain through a fine strainer over a bowl, keeping the liquid, and chop the mushrooms.",
+  "Cut the beef into 2 inch chunks and pat dry. Season with 1 tsp of the salt and the pepper. Heat 2 tbsp of the oil in a Dutch oven over medium high heat until shimmering. Brown the beef in two batches, 8 to 10 minutes each, until deep brown on all sides. Move it to a bowl.",
+  "Turn the heat down to medium. Add the remaining 1 tbsp oil, the salt pork, carrots cut into 1 inch rounds, onions sliced thin, garlic sliced thin, tomato paste and the remaining 1/2 tsp salt. Cook, stirring, 8 to 10 minutes, until the onions are soft and lightly browned.",
+  "Pour in the wine and scrape up the browned bits. Add the broth, the strained mushroom liquid, the beef and its juices, the porcini, long strips of zest peeled from the orange, 6 tbsp of the olives, the 2 minced anchovy fillets, the thyme tied in a bundle and the bay leaves.",
+  "Bring to a simmer, then set the lid slightly ajar and put the pot in the oven. Braise 2 1/2 to 3 hours, until the beef is tender but not falling apart. That is the check: a fork should slide in with little push.",
+  "Take out the salt pork, thyme and bay leaves. Stir in the canned tomatoes, drained and diced, and the remaining olives, and heat on the stove for 5 minutes. Let the stew sit a few minutes, then skim the fat from the top with a spoon.",
+  "Stir in 2 tbsp chopped parsley and taste for salt. Serve in warm bowls. Leftovers keep in the fridge up to 4 days, and are even better the next day; skim any hardened fat before reheating."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 35,
+ "cook_time_minutes": 195,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "America's Test Kitchen is the lead (4.0 from 37 ratings); it browns the beef, braises it in red wine with orange zest, olives and anchovy, and adds tomatoes and olives at the end. Other versions (Pardon Your French, Perfectly Provence, Taste of France) marinate the beef overnight and use no tomato paste or anchovy; this follows the lead and skips the marinade. The flour is left out to keep it gluten-free, so the sauce is looser and the beef is still rich. Scaled to 4 servings. A long braise that keeps well for a batch.",
+ "sources": [
+  {
+   "name": "America's Test Kitchen",
+   "title": "Daube Provencal",
+   "url": "https://www.americastestkitchen.com/recipes/2190-daube-provencal",
+   "rating": 4.0,
+   "rating_count": 37,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Pardon Your French",
+   "title": "French Beef Daube",
+   "url": "https://pardonyourfrench.com/french-beef-daube",
+   "rating": 5.0,
+   "rating_count": 4,
+   "read": true
+  },
+  {
+   "name": "Perfectly Provence",
+   "title": "Daube Provencale (Beef Stew)",
+   "url": "https://perfectlyprovence.co/recipe/recipe-for-daube-a-provencale-beef-stew/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": false,
+ "origin": "seed"
+}

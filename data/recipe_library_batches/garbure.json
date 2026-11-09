@@ -1,0 +1,128 @@
+{
+ "dish_name": "Garbure",
+ "cuisine": "French",
+ "main_protein": "pork",
+ "ingredients": [
+  {
+   "item": "Dried white beans (cannellini or great northern)",
+   "qty": "1/2 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Pork belly, fresh or lightly salted",
+   "qty": "10 oz",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Leeks",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Turnips",
+   "qty": "2 small",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "3 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh thyme",
+   "qty": "4 sprigs",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh parsley",
+   "qty": "4 sprigs",
+   "category": "produce"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Black peppercorns",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Potatoes",
+   "qty": "3 medium",
+   "category": "produce"
+  },
+  {
+   "item": "Savoy cabbage",
+   "qty": "1/2 head",
+   "category": "produce"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Water",
+   "qty": "6 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "The night before, put the beans in a bowl, cover with 2 inches of cold water and let them soak overnight. Drain them before using.",
+  "Cut the pork belly into 1 inch chunks. Cut the leeks into 1 inch pieces and wash them well. Cut the carrots into large chunks, coarsely chop the onion, chop the turnips and chop the garlic.",
+  "Put the pork belly, leeks, carrots, onion, turnips, garlic and drained beans in a large pot. Add the 6 cups water, 1 tsp of the salt and the peppercorns. Tie the thyme, parsley and bay leaves together with string and add the bundle.",
+  "Bring to a boil over high heat, then turn the heat down so it simmers gently. Cover and cook 1 hour.",
+  "Peel and cube the potatoes. Core the cabbage and cut it into strips. Add both to the pot, cover and simmer 45 minutes, until the beans and potatoes are soft.",
+  "Take out the herb bundle. Lift the pork belly onto a board and slice it. Season the broth with the remaining 1 tsp salt and more if it needs it.",
+  "Ladle the soup into bowls and serve the sliced pork belly alongside. Leftovers keep in the fridge for 4 days; reheat on the stove until hot."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 25,
+ "cook_time_minutes": 105,
+ "advance_prep_notes": "soak the beans overnight",
+ "advance_prep_step_indices": [
+  1
+ ],
+ "method_notes": "Kate Hill's garbure (Rancho Gordo) is the lead, with no ratings shown, so this is a fallback. It simmers pork belly, leeks, carrots, onions, turnips, garlic and white beans in plain water, then adds potatoes and cabbage near the end. The Good Life France and Gourmet Traveller versions use stock or smoked ham hock and sausage; those are left out for a simpler pot. Duck confit, bread and cheese are left out of this one so it stays gluten-free and dairy-free. Scaled from 6 servings to 4. Big pot that keeps well.",
+ "sources": [
+  {
+   "name": "Rancho Gordo",
+   "title": "Kate Hill's Garbure",
+   "url": "https://ranchogordo.com/blogs/recipes/kate-hills-garbure",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Gourmet Traveller",
+   "title": "Garbure",
+   "url": "https://www.gourmettraveller.com.au/recipes/browse-all/garbure-10445",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  },
+  {
+   "name": "The Good Life France",
+   "title": "Garbure (Cabbage and Bean Soup)",
+   "url": "https://thegoodlifefrance.com/garbure/",
+   "rating": null,
+   "rating_count": null,
+   "read": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}

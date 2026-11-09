@@ -1,0 +1,110 @@
+{
+ "dish_name": "Souris d'Agneau",
+ "cuisine": "French",
+ "main_protein": "lamb",
+ "ingredients": [
+  {
+   "item": "Lamb shanks (souris)",
+   "qty": "4 (about 3 1/2 lb)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "3",
+   "category": "produce"
+  },
+  {
+   "item": "Celery",
+   "qty": "2 stalks",
+   "category": "produce"
+  },
+  {
+   "item": "Chicken broth",
+   "qty": "1 1/4 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Dry red wine",
+   "qty": "3/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Fresh thyme",
+   "qty": "3 sprigs",
+   "category": "produce"
+  },
+  {
+   "item": "Bay leaves",
+   "qty": "2",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Long grain white rice",
+   "qty": "1 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Water",
+   "qty": "1 3/4 cups",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Pat the lamb shanks dry and season them with 1 tsp of the salt and the pepper. Slice the onions thin, crush the garlic, cut the carrots into rounds and chop the celery.",
+  "Heat the oil in a Dutch oven over medium high heat. Brown the shanks on all sides, about 10 minutes in all. Move them to a plate.",
+  "Turn the heat down to medium. Add the onions, garlic, carrots and celery and cook about 5 minutes, until lightly golden. Stir in the tomato paste and cook 1 minute.",
+  "Pour in the wine, scrape up the browned bits and let it bubble until it has reduced by half. Add the broth, thyme and bay leaves, and set the shanks back in the pot.",
+  "Bring to a simmer, cover and cook on low 2 hours, turning the shanks and spooning the juices over them every 30 minutes. They are done when the meat pulls easily from the bone. That should be about 167°F at the thickest part; a thermometer is optional.",
+  "About 30 minutes before the end, put the rice, the water and the remaining 1/2 tsp salt in a saucepan. Bring to a boil, cover and cook on low 15 minutes, then leave it covered 5 minutes.",
+  "Serve the shanks over the rice with the vegetables and cooking juices spooned over. Leftovers keep in the fridge up to 4 days; reheat covered on low heat."
+ ],
+ "default_servings": 4,
+ "prep_time_minutes": 20,
+ "cook_time_minutes": 130,
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": [],
+ "method_notes": "The lead is the Du Bocal a l'Assiette souris d'agneau en cocotte, a French home version with no ratings, so this is a fallback. It browns the shanks, softens onion, carrot and celery, then braises everything in wine, stock and tomato paste for 2 hours. The source serves it with semolina; rice is used here to keep it gluten-free, and the optional honey was left out. Others found were sous vide or confit versions (Anova) and a pressure cooker version. Written for 4 shanks.",
+ "sources": [
+  {
+   "name": "Du Bocal a l'Assiette",
+   "title": "Recette de souris d'agneau en cocotte",
+   "url": "https://dubocalalassiette.fr/blog/recette-de-souris-d-agneau-en-cocotte-marmiton/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed"
+}
