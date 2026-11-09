@@ -1,0 +1,132 @@
+{
+ "dish_name": "Balik Ekmek",
+ "cuisine": "Turkish",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 18,
+ "cook_time_minutes": 12,
+ "ingredients": [
+  {
+   "item": "Mackerel fillets",
+   "qty": "4 (about 1 lb)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Ciabatta rolls",
+   "qty": "4",
+   "category": "other"
+  },
+  {
+   "item": "Red onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Tomatoes",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Arugula",
+   "qty": "1 bag (5 oz)",
+   "category": "produce"
+  },
+  {
+   "item": "Fresh mint",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "1 clove",
+   "category": "produce"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "10 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Pomegranate molasses",
+   "qty": "1 bottle",
+   "category": "pantry",
+   "cook_qty": "2 tbsp"
+  },
+  {
+   "item": "Sumac",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Pul biber (Aleppo pepper)",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Heat the oven to 400°F.",
+  "Squeeze the lemons. That should be about 4 tbsp of juice. Put 4 tbsp of the olive oil, the lemon juice, the pomegranate molasses, sumac, pul biber, 1/2 tsp of the salt, the black pepper and the bashed garlic clove in a jar. Seal and shake, then let it sit for 5 minutes.",
+  "Slice the red onion thin and put it in a shallow bowl. Remove the garlic from the jar and pour the dressing over the onion.",
+  "Halve the rolls and warm them in the oven for 5 minutes, until lightly toasted.",
+  "Spoon 4 tsp of the dressing from the onion bowl over the flesh side of the mackerel fillets. Sprinkle them with 1/2 tsp of the salt.",
+  "Heat 4 tbsp of the olive oil in a large skillet over medium-high heat. Add 2 fillets skin side down and cook for 3 to 4 minutes, until the skin is crisp. Flip and cook for 1 to 2 minutes, until the fish flakes. Transfer to a plate and repeat with the other 2 fillets.",
+  "Meanwhile, chop a small handful of the mint and grate the carrot. Toss them with the arugula and the onion in its dressing.",
+  "Slice the tomatoes and sprinkle them with a pinch of salt.",
+  "Drizzle the remaining 2 tbsp olive oil over the cut sides of the rolls. Layer on the mackerel, then the tomato, then the salad. Spoon 2 tsp of the dressing from the bowl over each sandwich and close the rolls.",
+  "Taste a bit of the salad. If it's flat, add a pinch more salt."
+ ],
+ "method_notes": "No rated version could be found. Olive magazine's Istanbul mackerel sandwich (no reviews) leads: pan-fried fillets, a pomegranate molasses and lemon dressing, onion marinated in it, and a rocket and carrot salad. Great British Chefs and Great Curry Recipes (no ratings) use smoked mackerel or a cumin rub with mayonnaise, which are left out. The fillets are pan-fried, not grilled, which is how the lead does it. Scaled from 2 sandwiches to 4.",
+ "sources": [
+  {
+   "name": "Olive Magazine",
+   "title": "Istanbul's Mackerel Sandwiches (Balik Ekmek)",
+   "url": "https://www.olivemagazine.com/recipes/fish-and-seafood/istanbuls-mackerel-sandwich/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Great British Chefs",
+   "title": "Balik Ekmek",
+   "url": "https://www.greatbritishchefs.com/recipes/balik-ekmek-recipe",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Great Curry Recipes",
+   "title": "Turkish Fish Sandwich Recipe",
+   "url": "https://greatcurryrecipes.net/2024/11/28/turkish-fish-sandwich-recipe/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

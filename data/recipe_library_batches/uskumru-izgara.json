@@ -1,0 +1,70 @@
+{
+ "dish_name": "Uskumru Izgara",
+ "cuisine": "Turkish",
+ "main_protein": "fish",
+ "default_servings": 4,
+ "prep_time_minutes": 15,
+ "cook_time_minutes": 15,
+ "ingredients": [
+  {
+   "item": "Whole mackerel",
+   "qty": "4 (about 12 oz each, gutted)",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Salt",
+   "qty": "2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "2 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onions",
+   "qty": "2",
+   "category": "produce"
+  },
+  {
+   "item": "Lemons",
+   "qty": "2",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Rinse the mackerel and pat them dry. If the fish isn't gutted, ask the fishmonger to do it.",
+  "Rub 1 1/2 tsp of the salt over the fish, inside and out. Let them rest for 10 to 15 minutes.",
+  "Meanwhile, slice the onions into rings and toss them with the remaining 1/2 tsp salt and 1 tbsp of the olive oil. Cut the lemons into wedges.",
+  "Heat a grill pan or grill over medium heat. Grill the onion rings for 4 minutes on each side, until golden at the edges. Transfer them to a plate.",
+  "Brush the fish with the remaining 1 tbsp olive oil. Grill for 5 to 6 minutes on one side, then flip and grill the other side for 5 to 6 minutes. The skin should be golden and the flesh should flake when you press the thickest part near the bone.",
+  "Transfer the fish to a platter and squeeze over a lemon wedge.",
+  "Taste it. If it's flat, add a pinch more salt, or a squeeze of the lemon.",
+  "Serve with the grilled onions and the remaining lemon wedges."
+ ],
+ "method_notes": "No version with a rating could be found. Turkish Food and Recipes (no rating) leads, and Taste Table (no rating) is the same recipe: salt the fish, rest it 10 to 15 minutes, grill with onion rings over medium heat, serve with lemon. A little olive oil is added so the fish doesn't stick. The sources' carrot garnish is left out because it wouldn't cook through in this time.",
+ "sources": [
+  {
+   "name": "Turkish Food and Recipes",
+   "title": "Grilled Mackerel (Uskumru Izgara)",
+   "url": "https://www.turkishfoodandrecipes.com/2008/12/grilled-mackerel-uskumru-izgara.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Taste Table",
+   "title": "Grilled Mackerel (Uskumru Izgara)",
+   "url": "https://tastetable.blogspot.com/2016/08/grilled-mackerel-uskumru-izgara.html",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

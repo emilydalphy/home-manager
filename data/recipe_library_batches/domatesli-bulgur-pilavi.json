@@ -1,0 +1,97 @@
+{
+ "dish_name": "Domatesli Bulgur Pilavi",
+ "cuisine": "Turkish",
+ "main_protein": "vegetarian",
+ "default_servings": 4,
+ "prep_time_minutes": 8,
+ "cook_time_minutes": 26,
+ "ingredients": [
+  {
+   "item": "Coarse bulgur",
+   "qty": "1 1/2 cups",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Green bell pepper",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Roma tomatoes",
+   "qty": "4",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 tube",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Black pepper",
+   "qty": "1/4 tsp",
+   "category": "pantry"
+  }
+ ],
+ "instructions": [
+  "Boil about 2 1/2 cups of water in a kettle or small pot. Chop the onion and bell pepper fine. Chop the tomatoes.",
+  "Heat the olive oil in a deep pot over medium heat. Add the onion and pepper and cook for 4 minutes, until the onion is soft.",
+  "Add the tomatoes and cook for 2 minutes, until they start to break down.",
+  "Add the tomato paste and stir for 1 minute, until it darkens.",
+  "Add the bulgur and stir for 2 minutes.",
+  "Turn the heat to high and pour in 2 1/4 cups of the hot water. Add the salt and the black pepper, stir a couple of times and bring to a boil.",
+  "Cover, turn the heat to medium-low and cook for 10 minutes, until the water is absorbed.",
+  "Take the pot off the heat and leave it covered for 5 minutes.",
+  "Uncover and stir with a fork. Taste it. If it's flat, add a pinch more salt.",
+  "Serve hot."
+ ],
+ "method_notes": "Cup of Yum's bulgur pilaf with tomatoes (5 from 6 ratings, under 20) leads. Chocolates and Chai and Cinnamon Snail agree on the order: onion and pepper first, then tomato and paste, then toast the bulgur, then hot water and a covered simmer and rest. Cup of Yum uses 1 1/2 cups water per 200 g bulgur; this uses a slightly higher ratio for 1 1/2 cups. Tomato paste is used because it is easier to find than red pepper paste, and water replaces stock and butter to keep it vegan.",
+ "sources": [
+  {
+   "name": "Cup of Yum",
+   "title": "Bulgur Pilaf With Tomatoes",
+   "url": "https://cupofyum.com/recipes/bulgur-pilaf-with-tomatoes",
+   "rating": 5,
+   "rating_count": 6,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cinnamon Snail",
+   "title": "Bulgur Wheat Pilavi (Turkish Cracked Wheat Pilaf)",
+   "url": "https://cinnamonsnail.com/bulgur-pilavi-turkish-cracked-wheat-pilaf/",
+   "rating": 4.8,
+   "rating_count": 5,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Chocolates and Chai",
+   "title": "Bulgur Pilavi (Turkish Bulgur Pilaf)",
+   "url": "https://www.chocolatesandchai.com/bulgur-pilavi-turkish-bulgur-pilaf/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

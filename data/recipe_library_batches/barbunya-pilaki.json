@@ -1,0 +1,110 @@
+{
+ "dish_name": "Barbunya Pilaki",
+ "cuisine": "Turkish",
+ "main_protein": "beans",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 25,
+ "ingredients": [
+  {
+   "item": "Canned borlotti (cranberry) beans",
+   "qty": "2 cans (15 oz each)",
+   "category": "pantry"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "3 tbsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Yellow onion",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Celery",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Carrots",
+   "qty": "1 large",
+   "category": "produce"
+  },
+  {
+   "item": "Garlic",
+   "qty": "2 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Tomato paste",
+   "qty": "1 tube",
+   "category": "pantry",
+   "cook_qty": "1 tbsp"
+  },
+  {
+   "item": "Sugar",
+   "qty": "1 bag",
+   "category": "pantry",
+   "cook_qty": "1/2 tsp"
+  },
+  {
+   "item": "Salt",
+   "qty": "1 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lemons",
+   "qty": "1",
+   "category": "produce"
+  }
+ ],
+ "instructions": [
+  "Dice the onion. Slice 1 celery stalk and the carrot into half-moons. Mince the garlic. Chop 3 tbsp of the parsley. Drain and rinse the beans.",
+  "Heat the olive oil in a large pot over medium heat. Add the onion, celery, carrot and 1/2 tsp of the salt. Cook for 7 minutes, stirring now and then, until the onion is soft and translucent.",
+  "Add the garlic and stir for 30 seconds. Add the tomato paste and stir for 1 minute, until it darkens.",
+  "Add the beans, 1 1/2 cups water, the sugar and the remaining 1/2 tsp salt. Bring to a boil, then lower the heat and simmer, partly covered, for 15 minutes, until the carrot is soft and the liquid has thickened to a light sauce.",
+  "Take the pot off the heat. Squeeze in the juice of half the lemon and stir in the parsley. Cut the other half into wedges.",
+  "Taste it. If it's flat, add a pinch more salt, or more lemon.",
+  "Serve warm or at room temperature with the lemon wedges."
+ ],
+ "method_notes": "No version with 20 or more ratings could be read, so Cooking Gorgeous (5 from 8 ratings, 40 minutes) leads: onion, celery and carrot softened, tomato paste, then beans simmered in stock or water. Cup of Yum (5 from 3) and Cinnamon Snail (5 from 1) start from dried beans, which take 9 hours with the soak, and use tatli biber salcasi and tomatoes. Canned beans keep this under 35 minutes, and water replaces stock to keep it vegan.",
+ "sources": [
+  {
+   "name": "Cooking Gorgeous",
+   "title": "Barbunya Pilaki (Turkish Borlotti Beans)",
+   "url": "https://cookingorgeous.com/blog/barbunya-turkish-style-borlotti-beans/",
+   "rating": 5,
+   "rating_count": 8,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Cup of Yum",
+   "title": "Barbunya Pilaki (Turkish Borlotti Beans)",
+   "url": "https://cupofyum.com/recipes/barbunya-pilaki-turkish-borlotti-beans",
+   "rating": 5,
+   "rating_count": 3,
+   "read": true,
+   "lead": false
+  },
+  {
+   "name": "Cinnamon Snail",
+   "title": "Barbunya Pilaki (Turkish Borlotti Beans)",
+   "url": "https://cinnamonsnail.com/barbunya-pilaki-borlotti-beans/",
+   "rating": 5,
+   "rating_count": 1,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}

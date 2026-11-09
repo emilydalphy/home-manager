@@ -1,0 +1,86 @@
+{
+ "dish_name": "Karides Tava",
+ "cuisine": "Turkish",
+ "main_protein": "shrimp",
+ "default_servings": 4,
+ "prep_time_minutes": 10,
+ "cook_time_minutes": 8,
+ "ingredients": [
+  {
+   "item": "Medium shrimp",
+   "qty": "1 1/2 lbs",
+   "category": "meat/seafood"
+  },
+  {
+   "item": "Olive oil",
+   "qty": "1/4 cup",
+   "category": "pantry"
+  },
+  {
+   "item": "Garlic",
+   "qty": "4 cloves",
+   "category": "produce"
+  },
+  {
+   "item": "Pul biber (Aleppo pepper)",
+   "qty": "1 1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Salt",
+   "qty": "1/2 tsp",
+   "category": "pantry"
+  },
+  {
+   "item": "Flat-leaf parsley",
+   "qty": "1 bunch",
+   "category": "produce"
+  },
+  {
+   "item": "Lemons",
+   "qty": "1",
+   "category": "produce"
+  },
+  {
+   "item": "Crusty bread",
+   "qty": "1 loaf",
+   "category": "other"
+  }
+ ],
+ "instructions": [
+  "Peel and devein the shrimp if they aren't already. Pat them dry with paper towels and sprinkle with the salt.",
+  "Slice the garlic thin. Chop 2 tbsp of the parsley and cut the lemon into wedges.",
+  "Heat the olive oil in a large skillet over medium heat for about 1 minute, until it shimmers.",
+  "Add 1 tsp of the pul biber and stir for 1 to 2 minutes, until the oil turns red and smells warm. Lower the heat if it starts to spit.",
+  "Add the garlic and stir for 30 seconds. Don't let it brown.",
+  "Add the shrimp in a single layer. Work in two batches if the pan is crowded. Cook for 1 to 2 minutes on one side, then flip and cook the other side for 1 to 2 minutes, until they're pink and curled.",
+  "Take the pan off the heat. Sprinkle on the parsley and squeeze over a lemon wedge.",
+  "Taste it. If it's flat, add a pinch more salt, or a squeeze of the lemon.",
+  "Serve in the skillet with the crusty bread and the remaining lemon wedges. Put the last 1/2 tsp pul biber on the table for anyone who wants it."
+ ],
+ "method_notes": "No version with a rating could be found, so The Navage Patch's tereyagli karides (no ratings yet) leads: pul biber bloomed in the fat, then garlic, then shrimp for about a minute a side. Yemek.com's karides tava (no rating shown) adds lemon and uses butter. Both use butter, so the fat here is all olive oil to keep it dairy free. The Navage Patch cooks one skillet per person; this is scaled to four.",
+ "sources": [
+  {
+   "name": "The Navage Patch",
+   "title": "Shrimp, Garlic & Butter - Turkish Style! (Tereyagli Karides)",
+   "url": "https://www.thenavagepatch.com/shrimp-garlic-butter-turkish-style-tereyagli-karides/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": true
+  },
+  {
+   "name": "Yemek.com",
+   "title": "Karides Tava",
+   "url": "https://yemek.com/tarif/karides-tava-2/",
+   "rating": null,
+   "rating_count": null,
+   "read": true,
+   "lead": false
+  }
+ ],
+ "fallback_used": true,
+ "origin": "seed",
+ "advance_prep_notes": "",
+ "advance_prep_step_indices": []
+}
